@@ -26,7 +26,10 @@ export const ClientDescription = ({
     <FormAccess role="manage-clients" fineGrainedAccess={configure} unWrap>
       <FormGroup
         labelIcon={
-          <HelpItem helpText="clients-help:clientId" fieldLabelId="clientId" />
+          <HelpItem
+            helpText={t("clients-help:clientId")}
+            fieldLabelId="clientId"
+          />
         }
         label={t("common:clientId")}
         fieldId="kc-client-id"

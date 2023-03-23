@@ -33,7 +33,12 @@
     },
 
     "globalLock": {
-        "provider": "${keycloak.globalLock.provider:dblock}"
+        "provider": "${keycloak.globalLock.provider:dblock}",
+        "map": {
+            "storage": {
+                "provider": "${keycloak.lock.map.storage.provider,keycloak.mapStorage.provider.default:concurrenthashmap}"
+            }
+        }
     },
 
     "realm": {

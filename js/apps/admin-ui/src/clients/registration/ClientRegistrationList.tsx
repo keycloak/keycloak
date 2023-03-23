@@ -6,7 +6,10 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 
 import { useAlerts } from "../../components/alert/Alerts";
 import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
-import { KeycloakDataTable } from "../../components/table-toolbar/KeycloakDataTable";
+import {
+  Action,
+  KeycloakDataTable,
+} from "../../components/table-toolbar/KeycloakDataTable";
 import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import useToggle from "../../utils/useToggle";
@@ -17,6 +20,25 @@ import { AddProviderDialog } from "./AddProviderDialog";
 
 type ClientRegistrationListProps = {
   subType: "anonymous" | "authenticated";
+};
+
+const DetailLink = (comp: ComponentRepresentation) => {
+  const { realm } = useRealm();
+  const { subTab } = useParams<ClientRegistrationParams>();
+
+  return (
+    <Link
+      key={comp.id}
+      to={toRegistrationProvider({
+        realm,
+        subTab: subTab || "anonymous",
+        providerId: comp.providerId!,
+        id: comp.id,
+      })}
+    >
+      {comp.name}
+    </Link>
+  );
 };
 
 export const ClientRegistrationList = ({
@@ -41,20 +63,6 @@ export const ClientRegistrationList = ({
       }),
     (policies) => setPolicies(policies.filter((p) => p.subType === subType)),
     [selectedPolicy]
-  );
-
-  const DetailLink = (comp: ComponentRepresentation) => (
-    <Link
-      key={comp.id}
-      to={toRegistrationProvider({
-        realm,
-        subTab: subTab || "anonymous",
-        providerId: comp.providerId!,
-        id: comp.id,
-      })}
-    >
-      {comp.name}
-    </Link>
   );
 
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
@@ -113,7 +121,7 @@ export const ClientRegistrationList = ({
               setSelectedPolicy(policy);
               toggleDeleteDialog();
             },
-          },
+          } as Action<ComponentRepresentation>,
         ]}
         columns={[
           {

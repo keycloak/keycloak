@@ -69,4 +69,17 @@ describe("Policies", () => {
       );
     });
   });
+
+  describe("Accessibility tests for authentication policies", () => {
+    beforeEach(() => {
+      loginPage.logIn();
+      keycloakBefore();
+      sidebarPage.goToAuthentication();
+      cy.injectAxe();
+    });
+
+    it("Check a11y violations on load/ authentication policies", () => {
+      cy.checkA11y();
+    });
+  });
 });

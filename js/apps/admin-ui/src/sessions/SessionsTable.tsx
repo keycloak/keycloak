@@ -16,6 +16,7 @@ import { useAlerts } from "../components/alert/Alerts";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
 import {
+  Action,
   Field,
   KeycloakDataTable,
   LoaderFunction,
@@ -165,7 +166,7 @@ export default function SessionsTable({
           {
             title: t("common:signOut"),
             onRowClick: onClickSignOut,
-          },
+          } as Action<UserSessionRepresentation>,
         ]}
         emptyState={
           <ListEmptyState

@@ -87,6 +87,8 @@ import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.UUID;
@@ -705,13 +707,26 @@ public class SamlClient {
             // if the public key is passed verify the signature of the redirect URI
             try {
                 KeyLocator locator = new KeyLocator() {
+
+                    private final Key key = org.keycloak.testsuite.util.KeyUtils.publicKeyFromString(realmPublicKey);
+
                     @Override
                     public Key getKey(String kid) throws KeyManagementException {
-                        return org.keycloak.testsuite.util.KeyUtils.publicKeyFromString(realmPublicKey);
+                        return this.key;
+                    }
+
+                    @Override
+                    public Key getKey(Key key) throws KeyManagementException {
+                        return this.key;
                     }
 
                     @Override
                     public void refreshKeyCache() {
+                    }
+
+                    @Override
+                    public Iterator<Key> iterator() {
+                        return Collections.singleton(this.key).iterator();
                     }
                 };
                 SamlProtocolUtils.verifyRedirectSignature(documentHolder, locator, encodedParams,

@@ -28,7 +28,10 @@ import { IconMapper } from "ui-shared";
 import { useAlerts } from "../components/alert/Alerts";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import { ClickableCard } from "../components/keycloak-card/ClickableCard";
-import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
+import {
+  Action,
+  KeycloakDataTable,
+} from "../components/table-toolbar/KeycloakDataTable";
 import { ViewHeader } from "../components/view-header/ViewHeader";
 import { useAdminClient, useFetch } from "../context/auth/AdminClient";
 import { useRealm } from "../context/realm-context/RealmContext";
@@ -255,7 +258,7 @@ export default function IdentityProvidersSection() {
                   setSelectedProvider(provider);
                   toggleDeleteDialog();
                 },
-              },
+              } as Action<IdentityProviderRepresentation>,
             ]}
             columns={[
               {

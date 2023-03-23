@@ -375,4 +375,17 @@ describe("Identity provider test", () => {
       masthead.checkNotificationMessage(deleteSuccessMsg, true);
     });
   });
+
+  describe("Accessibility tests for identity providers", () => {
+    beforeEach(() => {
+      loginPage.logIn();
+      keycloakBefore();
+      sidebarPage.goToIdentityProviders();
+      cy.injectAxe();
+    });
+
+    it("Check a11y violations on load/ identity providers", () => {
+      cy.checkA11y();
+    });
+  });
 });

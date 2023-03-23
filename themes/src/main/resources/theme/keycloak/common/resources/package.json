@@ -5,7 +5,7 @@
   "license": "Apache-2.0",
   "repository": "https://github.com/keycloak/keycloak",
   "dependencies": {
-    "jquery": "3.6.3",
+    "jquery": "3.6.4",
     "patternfly": "3.59.5"
   }
 }

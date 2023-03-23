@@ -65,5 +65,7 @@
     <class>org.keycloak.models.map.storage.jpa.user.entity.JpaUserAttributeEntity</class>
     <class>org.keycloak.models.map.storage.jpa.user.entity.JpaUserConsentEntity</class>
     <class>org.keycloak.models.map.storage.jpa.user.entity.JpaUserFederatedIdentityEntity</class>
+    <!--locks-->
+    <class>org.keycloak.models.map.storage.jpa.lock.entity.JpaLockEntity</class>
   </persistence-unit>
 </persistence>

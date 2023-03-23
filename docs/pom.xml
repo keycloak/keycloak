@@ -32,5 +32,6 @@
     <modules>
         <module>maven-plugin</module>
         <module>guides</module>
+        <module>documentation</module>
     </modules>
 </project>

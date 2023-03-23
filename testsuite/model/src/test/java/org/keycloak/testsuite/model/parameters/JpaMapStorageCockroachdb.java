@@ -17,13 +17,13 @@
 package org.keycloak.testsuite.model.parameters;
 
 import com.google.common.collect.ImmutableSet;
-import org.jboss.logging.Logger;
 import org.keycloak.authorization.store.StoreFactorySpi;
 import org.keycloak.events.EventStoreSpi;
 import org.keycloak.models.DeploymentStateSpi;
 import org.keycloak.models.SingleUseObjectSpi;
 import org.keycloak.models.UserLoginFailureSpi;
 import org.keycloak.models.UserSessionSpi;
+import org.keycloak.models.locking.GlobalLockProviderSpi;
 import org.keycloak.models.map.authSession.MapRootAuthenticationSessionProviderFactory;
 import org.keycloak.models.map.authorization.MapAuthorizationStoreFactory;
 import org.keycloak.models.map.client.MapClientProviderFactory;
@@ -32,6 +32,7 @@ import org.keycloak.models.map.deploymentState.MapDeploymentStateProviderFactory
 import org.keycloak.models.map.events.MapEventStoreProviderFactory;
 import org.keycloak.models.map.group.MapGroupProviderFactory;
 import org.keycloak.models.map.keys.MapPublicKeyStorageProviderFactory;
+import org.keycloak.models.map.lock.MapGlobalLockProviderFactory;
 import org.keycloak.models.map.loginFailure.MapUserLoginFailureProviderFactory;
 import org.keycloak.models.map.realm.MapRealmProviderFactory;
 import org.keycloak.models.map.role.MapRoleProviderFactory;
@@ -60,8 +61,6 @@ import static org.keycloak.testsuite.model.transaction.StorageTransactionTest.LO
 
 public class JpaMapStorageCockroachdb extends KeycloakModelParameters {
 
-    private static final Logger LOG = Logger.getLogger(JpaMapStorageCockroachdb.class.getName());
-
     private static final Boolean START_CONTAINER = Boolean.valueOf(System.getProperty("cockroachdb.start-container", "true"));
     private static final String COCKROACHDB_DOCKER_IMAGE_NAME = System.getProperty("keycloak.map.storage.cockroachdb.docker.image", "cockroachdb/cockroach:v22.1.0");
     private static final CockroachContainer COCKROACHDB_CONTAINER = new CockroachContainer(DockerImageName.parse(COCKROACHDB_DOCKER_IMAGE_NAME).asCompatibleSubstituteFor("cockroachdb"));
@@ -80,6 +79,7 @@ public class JpaMapStorageCockroachdb extends KeycloakModelParameters {
             .add(JpaMapStorageProviderFactory.class)
             .add(MapJpaUpdaterProviderFactory.class)
             .add(MapLiquibaseConnectionProviderFactory.class)
+            .add(MapGlobalLockProviderFactory.class)
             .build();
 
     public JpaMapStorageCockroachdb() {
@@ -115,7 +115,9 @@ public class JpaMapStorageCockroachdb extends KeycloakModelParameters {
           .spi("publicKeyStorage").provider(MapPublicKeyStorageProviderFactory.PROVIDER_ID)                             .config(STORAGE_CONFIG, ConcurrentHashMapStorageProviderFactory.PROVIDER_ID)
           .spi(UserSessionSpi.NAME).provider(MapUserSessionProviderFactory.PROVIDER_ID)                                 .config(STORAGE_CONFIG, JpaMapStorageProviderFactory.PROVIDER_ID)
           .spi(EventStoreSpi.NAME).provider(MapEventStoreProviderFactory.PROVIDER_ID)                                   .config("storage-admin-events.provider", JpaMapStorageProviderFactory.PROVIDER_ID)
-                                                                                                                        .config("storage-auth-events.provider", JpaMapStorageProviderFactory.PROVIDER_ID);
+                                                                                                                        .config("storage-auth-events.provider", JpaMapStorageProviderFactory.PROVIDER_ID)
+          .spi(GlobalLockProviderSpi.GLOBAL_LOCK)                                                                       .config("provider", MapGlobalLockProviderFactory.PROVIDER_ID)
+          .spi(GlobalLockProviderSpi.GLOBAL_LOCK).provider(MapGlobalLockProviderFactory.PROVIDER_ID)                    .config(STORAGE_CONFIG, JpaMapStorageProviderFactory.PROVIDER_ID);
     }
 
     @Override

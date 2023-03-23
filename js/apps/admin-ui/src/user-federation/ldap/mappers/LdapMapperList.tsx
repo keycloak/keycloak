@@ -12,7 +12,10 @@ import { Link, To, useNavigate, useParams } from "react-router-dom";
 import { useAlerts } from "../../../components/alert/Alerts";
 import { useConfirmDialog } from "../../../components/confirm-dialog/ConfirmDialog";
 import { ListEmptyState } from "../../../components/list-empty-state/ListEmptyState";
-import { KeycloakDataTable } from "../../../components/table-toolbar/KeycloakDataTable";
+import {
+  Action,
+  KeycloakDataTable,
+} from "../../../components/table-toolbar/KeycloakDataTable";
 import { useAdminClient, useFetch } from "../../../context/auth/AdminClient";
 import useLocaleSort, { mapByKey } from "../../../utils/useLocaleSort";
 
@@ -20,6 +23,14 @@ export type LdapMapperListProps = {
   toCreate: To;
   toDetail: (mapperId: string) => To;
 };
+
+type MapperLinkProps = ComponentRepresentation & {
+  toDetail: (mapperId: string) => To;
+};
+
+const MapperLink = ({ toDetail, ...mapper }: MapperLinkProps) => (
+  <Link to={toDetail(mapper.id!)}>{mapper.name}</Link>
+);
 
 export const LdapMapperList = ({ toCreate, toDetail }: LdapMapperListProps) => {
   const navigate = useNavigate();
@@ -77,10 +88,6 @@ export const LdapMapperList = ({ toCreate, toDetail }: LdapMapperListProps) => {
     },
   });
 
-  const MapperLink = (mapper: ComponentRepresentation) => (
-    <Link to={toDetail(mapper.id!)}>{mapper.name}</Link>
-  );
-
   return (
     <>
       <DeleteConfirm />
@@ -107,12 +114,12 @@ export const LdapMapperList = ({ toCreate, toDetail }: LdapMapperListProps) => {
               setSelectedMapper(mapper);
               toggleDeleteDialog();
             },
-          },
+          } as Action<ComponentRepresentation>,
         ]}
         columns={[
           {
             name: "name",
-            cellRenderer: MapperLink,
+            cellRenderer: (row) => <MapperLink {...row} toDetail={toDetail} />,
           },
           {
             name: "type",

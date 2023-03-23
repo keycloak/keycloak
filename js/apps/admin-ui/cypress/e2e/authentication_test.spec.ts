@@ -253,3 +253,22 @@ describe("Password policies tab", () => {
     passwordPoliciesPage.shouldShowEmptyState();
   });
 });
+
+describe("Accessibility tests for authentication", () => {
+  const realmName = "a11y-realm";
+
+  before(() => adminClient.createRealm(realmName));
+  after(() => adminClient.deleteRealm(realmName));
+
+  beforeEach(() => {
+    loginPage.logIn();
+    keycloakBefore();
+    sidebarPage.goToRealm(realmName);
+    sidebarPage.goToAuthentication();
+    cy.injectAxe();
+  });
+
+  it("Check a11y violations on load/ authentication", () => {
+    cy.checkA11y();
+  });
+});

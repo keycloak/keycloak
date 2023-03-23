@@ -12,10 +12,12 @@ import { FormFields } from "../ClientDetails";
 
 type LoginSettingsProps = {
   protocol?: string;
+  isDisabled?: boolean;
 };
 
 export const LoginSettings = ({
   protocol = "openid-connect",
+  ...rest
 }: LoginSettingsProps) => {
   const { t } = useTranslation("clients");
   const { register, watch } = useFormContext<FormFields>();
@@ -40,6 +42,7 @@ export const LoginSettings = ({
           id="kc-root-url"
           type="url"
           {...register("rootUrl")}
+          {...rest}
         />
       </FormGroup>
       <FormGroup
@@ -56,6 +59,7 @@ export const LoginSettings = ({
           id="kc-home-url"
           type="url"
           {...register("baseUrl")}
+          {...rest}
         />
       </FormGroup>
       <FormGroup
@@ -73,6 +77,7 @@ export const LoginSettings = ({
           name="redirectUris"
           aria-label={t("validRedirectUri")}
           addButtonLabel="clients:addRedirectUri"
+          {...rest}
         />
       </FormGroup>
       <FormGroup
@@ -93,6 +98,7 @@ export const LoginSettings = ({
           aria-label={t("validPostLogoutRedirectUri")}
           addButtonLabel="clients:addPostLogoutRedirectUri"
           stringify
+          {...rest}
         />
       </FormGroup>
       {protocol === "saml" && (
@@ -117,6 +123,7 @@ export const LoginSettings = ({
               id="idpInitiatedSsoUrlName"
               data-testid="idpInitiatedSsoUrlName"
               {...register("attributes.saml_idp_initiated_sso_url_name")}
+              {...rest}
             />
           </FormGroup>
           <FormGroup
@@ -133,6 +140,7 @@ export const LoginSettings = ({
               id="idpInitiatedSsoRelayState"
               data-testid="idpInitiatedSsoRelayState"
               {...register("attributes.saml_idp_initiated_sso_relay_state")}
+              {...rest}
             />
           </FormGroup>
           <FormGroup
@@ -150,6 +158,7 @@ export const LoginSettings = ({
               type="url"
               data-testid="masterSamlProcessingUrl"
               {...register("adminUrl")}
+              {...rest}
             />
           </FormGroup>
         </>
@@ -170,6 +179,7 @@ export const LoginSettings = ({
             name="webOrigins"
             aria-label={t("webOrigins")}
             addButtonLabel="clients:addWebOrigins"
+            {...rest}
           />
         </FormGroup>
       )}

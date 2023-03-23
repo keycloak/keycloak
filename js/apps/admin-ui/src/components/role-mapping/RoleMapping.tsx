@@ -14,7 +14,7 @@ import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/
 import type RoleRepresentation from "@keycloak/keycloak-admin-client/lib/defs/roleRepresentation";
 import type KeycloakAdminClient from "@keycloak/keycloak-admin-client";
 import { AddRoleMappingModal } from "./AddRoleMappingModal";
-import { KeycloakDataTable } from "../table-toolbar/KeycloakDataTable";
+import { Action, KeycloakDataTable } from "../table-toolbar/KeycloakDataTable";
 import { emptyFormatter, upperCaseFormatter } from "../../util";
 import { useAlerts } from "../alert/Alerts";
 import { useConfirmDialog } from "../confirm-dialog/ConfirmDialog";
@@ -158,30 +158,6 @@ export const RoleMapping = ({
     },
   });
 
-  const ManagerToolbarItems = () => {
-    if (!isManager) return <span />;
-
-    return (
-      <>
-        <ToolbarItem>
-          <Button data-testid="assignRole" onClick={() => setShowAssign(true)}>
-            {t("common:assignRole")}
-          </Button>
-        </ToolbarItem>
-        <ToolbarItem>
-          <Button
-            variant="link"
-            data-testid="unAssignRole"
-            onClick={toggleDeleteDialog}
-            isDisabled={selected.length === 0}
-          >
-            {t("common:unAssignRole")}
-          </Button>
-        </ToolbarItem>
-      </>
-    );
-  };
-
   return (
     <>
       {showAssign && (
@@ -219,7 +195,28 @@ export const RoleMapping = ({
                 }}
               />
             </ToolbarItem>
-            <ManagerToolbarItems />
+            {isManager && (
+              <>
+                <ToolbarItem>
+                  <Button
+                    data-testid="assignRole"
+                    onClick={() => setShowAssign(true)}
+                  >
+                    {t("common:assignRole")}
+                  </Button>
+                </ToolbarItem>
+                <ToolbarItem>
+                  <Button
+                    variant="link"
+                    data-testid="unAssignRole"
+                    onClick={toggleDeleteDialog}
+                    isDisabled={selected.length === 0}
+                  >
+                    {t("common:unAssignRole")}
+                  </Button>
+                </ToolbarItem>
+              </>
+            )}
           </>
         }
         actions={
@@ -232,7 +229,7 @@ export const RoleMapping = ({
                     toggleDeleteDialog();
                     return false;
                   },
-                },
+                } as Action<Awaited<ReturnType<typeof loader>>[0]>,
               ]
             : []
         }
