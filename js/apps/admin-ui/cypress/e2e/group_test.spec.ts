@@ -495,6 +495,8 @@ describe("Group test", () => {
   });
 
   describe("Accessibility tests for groups", () => {
+    const a11yGroupName = "a11y-group";
+
     beforeEach(() => {
       loginPage.logIn();
       keycloakBefore();
@@ -508,6 +510,12 @@ describe("Group test", () => {
 
     it("Check a11y violations on empty create group form", () => {
       groupPage.openCreateGroupModal(true);
+      cy.checkA11y();
+      cy.findByTestId("cancel").click();
+    });
+
+    it("Check a11y violations after creating a group", () => {
+      groupPage.createGroup(a11yGroupName, true);
       cy.checkA11y();
     });
   });
