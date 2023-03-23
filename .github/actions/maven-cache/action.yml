@@ -1,6 +1,14 @@
 name: Maven Cache
 description: Caches Maven artifacts
 
+inputs:
+  create-cache-if-it-doesnt-exist:
+    description: > 
+      Only those callers which fill the cache with the right contents should set this to true to avoid creating a cache
+      which contains too few or too many entries.
+    required: false
+    default: false
+
 runs:
   using: composite
   steps:
@@ -12,17 +20,32 @@ runs:
     - id: cache-maven-repository
       name: Maven cache
       uses: actions/cache@v3
+      if: inputs.create-cache-if-it-doesnt-exist == 'true'
       with:
-        path: ~/.m2/repository
+        # Two asterisks are needed to make the follow-up exclusion work
+        # see https://github.com/actions/toolkit/issues/713 for the upstream issue
+        path: |
+          ~/.m2/repository/*/*
+          !~/.m2/repository/org/keycloak
         key: ${{ steps.weekly-cache-key.outputs.key }}
 
-    - id: check-maven-cache
-      name: Check cache has no Keycloak artifacts
-      if: steps.cache-maven-repository.outputs.cache-hit == 'true'
-      shell: bash
-      run: |
-        if ( stat ~/.m2/repository/org/keycloak &>/dev/null ); then
-          echo "Found org/keycloak artifacts in Maven repository cache"
-          ls ~/.m2/repository/org/keycloak
-          exit 1
-        fi
+    - id: restore-maven-repository
+      name: Maven cache
+      uses: actions/cache/restore@v3
+      if: inputs.create-cache-if-it-doesnt-exist == 'false'
+      with:
+        # Two asterisks are needed to make the follow-up exclusion work
+        # see https://github.com/actions/toolkit/issues/713 for the upstream issue
+        path: |
+          ~/.m2/repository/*/*
+          !~/.m2/repository/org/keycloak
+        key: ${{ steps.weekly-cache-key.outputs.key }}
+
+    - name: Cache Maven Wrapper
+      uses: actions/cache@v3
+      with:
+        path: .mvn/wrapper/maven-wrapper.jar
+        key: ${{ runner.os }}-maven-wrapper-${{ hashFiles('**/maven-wrapper.properties') }}
+        # use a previously cached JAR file as something else besides the version could have changed in the file
+        restore-keys: |
+          ${{ runner.os }}-maven-wrapper-

@@ -17,6 +17,7 @@
 package org.keycloak.services.resources;
 
 import org.jboss.logging.Logger;
+import org.keycloak.common.util.ResponseSessionTask;
 import org.keycloak.http.HttpRequest;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.TokenVerifier;
@@ -255,6 +256,21 @@ public class LoginActionsService {
                                  @QueryParam(Constants.EXECUTION) String execution,
                                  @QueryParam(Constants.CLIENT_ID) String clientId,
                                  @QueryParam(Constants.TAB_ID) String tabId) {
+        return KeycloakModelUtils.runJobInRetriableTransaction(session.getKeycloakSessionFactory(), new ResponseSessionTask(session) {
+            @Override
+            public Response runInternal(KeycloakSession session) {
+                // create another instance of the endpoint to isolate each run.
+                session.getContext().getHttpResponse().setWriteCookiesOnTransactionComplete();
+                LoginActionsService other = new LoginActionsService(session, new EventBuilder(session.getContext().getRealm(), session, clientConnection));
+                // process the request in the created instance.
+                return other.authenticateInternal(authSessionId, code, execution, clientId, tabId);
+            }
+        }, 10, 100);
+
+    }
+
+    private Response authenticateInternal(final String authSessionId, final String code, final String execution,
+                                          final String clientId, final String tabId) {
         event.event(EventType.LOGIN);
 
         SessionCodeChecks checks = checksForCode(authSessionId, code, execution, clientId, tabId, AUTHENTICATE_PATH);
@@ -757,6 +773,7 @@ public class LoginActionsService {
 
         SessionCodeChecks checks = checksForCode(authSessionId, code, execution, clientId, tabId, flowPath);
         if (!checks.verifyActiveAndValidAction(AuthenticationSessionModel.Action.AUTHENTICATE.name(), ClientSessionCode.ActionType.LOGIN)) {
+            event.error("Failed to verify login action");
             return checks.getResponse();
         }
         event.detail(Details.CODE_ID, code);
@@ -768,7 +785,9 @@ public class LoginActionsService {
         SerializedBrokeredIdentityContext serializedCtx = SerializedBrokeredIdentityContext.readFromAuthenticationSession(authSession, noteKey);
         if (serializedCtx == null) {
             ServicesLogger.LOGGER.notFoundSerializedCtxInClientSession(noteKey);
-            throw new WebApplicationException(ErrorPage.error(session, authSession, Response.Status.BAD_REQUEST, "Not found serialized context in authenticationSession."));
+            String message = "Not found serialized context in authenticationSession.";
+            event.error(message);
+            throw new WebApplicationException(ErrorPage.error(session, authSession, Response.Status.BAD_REQUEST, message));
         }
         BrokeredIdentityContext brokerContext = serializedCtx.deserialize(session, authSession);
         final String identityProviderAlias = brokerContext.getIdpConfig().getAlias();
@@ -776,16 +795,22 @@ public class LoginActionsService {
         String flowId = firstBrokerLogin ? brokerContext.getIdpConfig().getFirstBrokerLoginFlowId() : brokerContext.getIdpConfig().getPostBrokerLoginFlowId();
         if (flowId == null) {
             ServicesLogger.LOGGER.flowNotConfigForIDP(identityProviderAlias);
-            throw new WebApplicationException(ErrorPage.error(session, authSession, Response.Status.BAD_REQUEST, "Flow not configured for identity provider"));
+            String message = "Flow not configured for identity provider";
+            event.error(message);
+            throw new WebApplicationException(ErrorPage.error(session, authSession, Response.Status.BAD_REQUEST, message));
         }
         AuthenticationFlowModel brokerLoginFlow = realm.getAuthenticationFlowById(flowId);
         if (brokerLoginFlow == null) {
             ServicesLogger.LOGGER.flowNotFoundForIDP(flowId, identityProviderAlias);
-            throw new WebApplicationException(ErrorPage.error(session, authSession, Response.Status.BAD_REQUEST, "Flow not found for identity provider"));
+            String message = "Flow not found for identity provider";
+            event.error(message);
+            throw new WebApplicationException(ErrorPage.error(session, authSession, Response.Status.BAD_REQUEST, message));
         }
 
         event.detail(Details.IDENTITY_PROVIDER, identityProviderAlias)
                 .detail(Details.IDENTITY_PROVIDER_USERNAME, brokerContext.getUsername());
+
+        event.success();
 
         AuthenticationProcessor processor = new AuthenticationProcessor() {
 

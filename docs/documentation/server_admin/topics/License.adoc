@@ -1,0 +1,11 @@
+= License
+:doctype: book
+:sectnums:
+:toc: left
+:icons: font
+:experimental:
+:sourcedir: .
+
+Keycloak codebase is distributed under the ASL 2.0 license.
+It does not distribute any third party libraries that are GPL.
+It does ship third party libraries licensed under Apache ASL 2.0 and LGPL.

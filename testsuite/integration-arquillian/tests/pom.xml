@@ -24,7 +24,7 @@
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
         <artifactId>integration-arquillian</artifactId>
-        <version>999-SNAPSHOT</version>
+        <version>999.0.0-SNAPSHOT</version>
     </parent>
 
     <packaging>pom</packaging>
@@ -222,9 +222,9 @@
         <firefoxLegacyDriver>false</firefoxLegacyDriver>
         <firefoxDriverVersion/>
         <firefoxUserPreferences/>
-        <firefoxHeadless>false</firefoxHeadless>
+        <firefoxHeadless>true</firefoxHeadless>
         <chromeBinary/>
-        <chromeArguments/>
+        <chromeArguments>--headless --window-size=1920,1080 --remote-allow-origins=*</chromeArguments>
         <chromeDriverVersion/>
 
         <appium.platformName/>
@@ -265,6 +265,8 @@
         <auth.server.quarkus.cluster.config>local</auth.server.quarkus.cluster.config>
         <auth.server.fips.mode>disabled</auth.server.fips.mode>
         <auth.server.supported.keystore.types>JKS,PKCS12,BCFKS</auth.server.supported.keystore.types>
+        <auth.server.supported.rsa.key.sizes>1024,2048,4096</auth.server.supported.rsa.key.sizes>
+        <auth.server.kerberos.supported>true</auth.server.kerberos.supported>
     </properties>
 
     <build>
@@ -690,6 +692,8 @@
                             <auth.server.fips.mode>${auth.server.fips.mode}</auth.server.fips.mode>
                             <auth.server.fips.keystore.type>${auth.server.fips.keystore.type}</auth.server.fips.keystore.type>
                             <auth.server.supported.keystore.types>${auth.server.supported.keystore.types}</auth.server.supported.keystore.types>
+                            <auth.server.supported.rsa.key.sizes>${auth.server.supported.rsa.key.sizes}</auth.server.supported.rsa.key.sizes>
+                            <auth.server.kerberos.supported>${auth.server.kerberos.supported}</auth.server.kerberos.supported>
 
                             <!--
                               ~ Used for Wildfly Elytron 1.13.0.CR3+ RESTEasy client SSL truststore configuration.
@@ -1565,9 +1569,10 @@
         <profile>
             <id>auth-server-fips140-2</id>
             <properties>
-                <auth.server.fips.mode>enabled</auth.server.fips.mode>
+                <auth.server.fips.mode>non-strict</auth.server.fips.mode>
 
                 <auth.server.supported.keystore.types>PKCS12,BCFKS</auth.server.supported.keystore.types>
+                <auth.server.kerberos.supported>false</auth.server.kerberos.supported>
 
                 <auth.server.keystore.type>pkcs12</auth.server.keystore.type>
                 <auth.server.keystore>${auth.server.config.dir}/keycloak-fips.keystore.${auth.server.keystore.type}</auth.server.keystore>

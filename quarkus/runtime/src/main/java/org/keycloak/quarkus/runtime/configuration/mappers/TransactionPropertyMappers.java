@@ -40,7 +40,7 @@ public class TransactionPropertyMappers {
 
         if (storage != null && StorageOptions.StorageType.jpa.name().equals(storage.getValue())) {
             isJtaEnabled = true;
-            isXaEnabled = false;
+            isXaEnabled = true;
         }
 
         if (!isJtaEnabled) {

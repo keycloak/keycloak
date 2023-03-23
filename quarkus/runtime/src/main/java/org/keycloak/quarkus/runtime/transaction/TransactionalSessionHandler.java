@@ -49,7 +49,7 @@ public interface TransactionalSessionHandler {
      * @param session a transactional session
      */
     default void close(KeycloakSession session) {
-        if (DefaultKeycloakSession.class.cast(session).isClosed()) {
+        if (session == null || DefaultKeycloakSession.class.cast(session).isClosed()) {
             return;
         }
 

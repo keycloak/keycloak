@@ -7,18 +7,19 @@
     <parent>
         <groupId>org.keycloak</groupId>
         <artifactId>keycloak-parent</artifactId>
-        <version>999-SNAPSHOT</version>
+        <version>999.0.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
     <artifactId>keycloak-authz-parent</artifactId>
     <packaging>pom</packaging>
 
-    <name>KeyCloak Authz: Parent</name>
+    <name>Keycloak Authz: Parent</name>
     <description>KeyCloak AuthZ: Parent</description>
 
     <modules>
         <module>policy</module>
         <module>client</module>
+        <module>policy-enforcer</module>
     </modules>
 </project>

@@ -22,7 +22,7 @@
     <parent>
         <groupId>org.keycloak</groupId>
         <artifactId>keycloak-testsuite-pom</artifactId>
-        <version>999-SNAPSHOT</version>
+        <version>999.0.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     
@@ -207,21 +207,12 @@
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-dependencies-admin-ui-wrapper</artifactId>
-                <type>pom</type>
+                <artifactId>keycloak-admin-ui</artifactId>
                 <version>${project.version}</version>
-                <scope>import</scope>
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-admin-ui</artifactId>
-                <version>${keycloak.admin-ui.version}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>*</groupId>
-                        <artifactId>*</artifactId>
-                    </exclusion>
-                </exclusions>
+                <artifactId>keycloak-rest-admin-ui-ext</artifactId>
             </dependency>
         </dependencies>
     </dependencyManagement>
@@ -622,6 +613,30 @@
                 <dballocator.type>oracle19cRAC</dballocator.type>
                 <dballocator.skip>false</dballocator.skip>
             </properties>
+        </profile>
+
+        <!-- Workaround for issues related to PhantomJS in some newer linux environment. See for example here for more details https://github.com/nodejs/node/issues/43132 -->
+        <profile>
+            <id>phantomjs-openssl-workaround</id>
+            <activation>
+                <os>
+                    <family>unix</family>
+                </os>
+            </activation>
+            <build>
+                <pluginManagement>
+                    <plugins>
+                        <plugin>
+                            <artifactId>maven-surefire-plugin</artifactId>
+                            <configuration>
+                                <environmentVariables>
+                                    <OPENSSL_CONF>/dev/null</OPENSSL_CONF>
+                                </environmentVariables>
+                            </configuration>
+                        </plugin>
+                    </plugins>
+                </pluginManagement>
+            </build>
         </profile>
     </profiles>
 

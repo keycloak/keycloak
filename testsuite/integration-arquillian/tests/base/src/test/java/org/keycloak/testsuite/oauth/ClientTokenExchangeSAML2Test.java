@@ -25,6 +25,7 @@ import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.Base64Url;
+import org.keycloak.crypto.Algorithm;
 import org.keycloak.dom.saml.v2.assertion.AssertionType;
 import org.keycloak.dom.saml.v2.assertion.AudienceRestrictionType;
 import org.keycloak.dom.saml.v2.assertion.NameIDType;
@@ -41,6 +42,7 @@ import org.keycloak.protocol.saml.SamlConfigAttributes;
 import org.keycloak.protocol.saml.SamlProtocol;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessTokenResponse;
+import org.keycloak.representations.idm.KeysMetadataRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.authorization.ClientPolicyRepresentation;
 import org.keycloak.representations.idm.authorization.DecisionStrategy;
@@ -56,6 +58,7 @@ import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.arquillian.annotation.UncaughtServerErrorExpected;
 import org.keycloak.testsuite.util.AdminClientUtil;
+import org.keycloak.testsuite.util.KeyUtils;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.util.BasicAuthHelper;
 import org.w3c.dom.Document;
@@ -69,6 +72,7 @@ import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -91,8 +95,6 @@ public class ClientTokenExchangeSAML2Test extends AbstractKeycloakTest {
     private static final String SAML_SIGNED_AND_ENCRYPTED_TARGET = "http://localhost:8080/saml-signed-and-encrypted-assertion/";
     private static final String SAML_UNSIGNED_AND_UNENCRYPTED_TARGET = "http://localhost:8080/saml-unsigned-and-unencrypted-assertion/";
 
-    private static final String REALM_PRIVATE_KEY = "MIICXAIBAAKBgQCrVrCuTtArbgaZzL1hvh0xtL5mc7o0NqPVnYXkLvgcwiC3BjLGw1tGEGoJaXDuSaRllobm53JBhjx33UNv+5z/UMG4kytBWxheNVKnL6GgqlNabMaFfPLPCF8kAgKnsi79NMo+n6KnSY8YeUmec/p2vjO2NjsSAVcWEQMVhJ31LwIDAQABAoGAfmO8gVhyBxdqlxmIuglbz8bcjQbhXJLR2EoS8ngTXmN1bo2L90M0mUKSdc7qF10LgETBzqL8jYlQIbt+e6TH8fcEpKCjUlyq0Mf/vVbfZSNaVycY13nTzo27iPyWQHK5NLuJzn1xvxxrUeXI6A2WFpGEBLbHjwpx5WQG9A+2scECQQDvdn9NE75HPTVPxBqsEd2z10TKkl9CZxu10Qby3iQQmWLEJ9LNmy3acvKrE3gMiYNWb6xHPKiIqOR1as7L24aTAkEAtyvQOlCvr5kAjVqrEKXalj0Tzewjweuxc0pskvArTI2Oo070h65GpoIKLc9jf+UA69cRtquwP93aZKtW06U8dQJAF2Y44ks/mK5+eyDqik3koCI08qaC8HYq2wVl7G2QkJ6sbAaILtcvD92ToOvyGyeE0flvmDZxMYlvaZnaQ0lcSQJBAKZU6umJi3/xeEbkJqMfeLclD27XGEFoPeNrmdx0q10Azp4NfJAY+Z8KRyQCR2BEG+oNitBOZ+YXF9KCpH3cdmECQHEigJhYg+ykOvr1aiZUMFT72HU0jnmQe2FVekuG+LJUt2Tm7GtMjTFoGpf0JwrVuZN39fOYAlo+nTixgeW7X8Y=";
-    private static final String REALM_PUBLIC_KEY = "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCrVrCuTtArbgaZzL1hvh0xtL5mc7o0NqPVnYXkLvgcwiC3BjLGw1tGEGoJaXDuSaRllobm53JBhjx33UNv+5z/UMG4kytBWxheNVKnL6GgqlNabMaFfPLPCF8kAgKnsi79NMo+n6KnSY8YeUmec/p2vjO2NjsSAVcWEQMVhJ31LwIDAQAB";
     private static final String ENCRYPTION_CERTIFICATE = "MIIB1DCCAT0CBgFJGVacCDANBgkqhkiG9w0BAQsFADAwMS4wLAYDVQQDEyVodHRwOi8vbG9jYWxob3N0OjgwODAvc2FsZXMtcG9zdC1lbmMvMB4XDTE0MTAxNjE0MjA0NloXDTI0MTAxNjE0MjIyNlowMDEuMCwGA1UEAxMlaHR0cDovL2xvY2FsaG9zdDo4MDgwL3NhbGVzLXBvc3QtZW5jLzCBnzANBgkqhkiG9w0BAQEFAAOBjQAwgYkCgYEA2+5MCT5BnVN+IYnKZcH6ev1pjXGi4feE0nOycq/VJ3aeaZMi4G9AxOxCBPupErOC7Kgm/Bw5AdJyw+Q12wSRXfJ9FhqCrLXpb7YOhbVSTJ8De5O8mW35DxAlh/cxe9FXjqPb286wKTUZ3LfGYR+X235UQeCTAPS/Ufi21EXaEikCAwEAATANBgkqhkiG9w0BAQsFAAOBgQBMrfGD9QFfx5v7ld/OAto5rjkTe3R1Qei8XRXfcs83vLaqEzjEtTuLGrJEi55kXuJgBpVmQpnwCCkkjSy0JxbqLDdVi9arfWUxEGmOr01ZHycELhDNaQcFqVMPr5kRHIHgktT8hK2IgCvd3Fy9/JCgUgCPxKfhwecyEOKxUc857g==";
     private static final String ENCRYPTION_PRIVATE_KEY = "MIICXQIBAAKBgQDb7kwJPkGdU34hicplwfp6/WmNcaLh94TSc7Jyr9Undp5pkyLgb0DE7EIE+6kSs4LsqCb8HDkB0nLD5DXbBJFd8n0WGoKstelvtg6FtVJMnwN7k7yZbfkPECWH9zF70VeOo9vbzrApNRnct8ZhH5fbflRB4JMA9L9R+LbURdoSKQIDAQABAoGBANtbZG9bruoSGp2s5zhzLzd4hczT6Jfk3o9hYjzNb5Z60ymN3Z1omXtQAdEiiNHkRdNxK+EM7TcKBfmoJqcaeTkW8cksVEAW23ip8W9/XsLqmbU2mRrJiKa+KQNDSHqJi1VGyimi4DDApcaqRZcaKDFXg2KDr/Qt5JFD/o9IIIPZAkEA+ZENdBIlpbUfkJh6Ln+bUTss/FZ1FsrcPZWu13rChRMrsmXsfzu9kZUWdUeQ2Dj5AoW2Q7L/cqdGXS7Mm5XhcwJBAOGZq9axJY5YhKrsksvYRLhQbStmGu5LG75suF+rc/44sFq+aQM7+oeRr4VY88Mvz7mk4esdfnk7ae+cCazqJvMCQQCx1L1cZw3yfRSn6S6u8XjQMjWE/WpjulujeoRiwPPY9WcesOgLZZtYIH8nRL6ehEJTnMnahbLmlPFbttxPRUanAkA11MtSIVcKzkhp2KV2ipZrPJWwI18NuVJXb+3WtjypTrGWFZVNNkSjkLnHIeCYlJIGhDd8OL9zAiBXEm6kmgLNAkBWAg0tK2hCjvzsaA505gWQb4X56uKWdb0IzN+fOLB3Qt7+fLqbVQNQoNGzqey6B4MoS1fUKAStqdGTFYPG/+9t";
 
@@ -105,8 +107,6 @@ public class ClientTokenExchangeSAML2Test extends AbstractKeycloakTest {
         testRealmRep.setId(TEST);
         testRealmRep.setRealm(TEST);
         testRealmRep.setEnabled(true);
-        testRealmRep.setPrivateKey(REALM_PRIVATE_KEY);
-        testRealmRep.setPublicKey(REALM_PUBLIC_KEY);
         testRealmRep.setAccessCodeLifespan(60); // Used as default assertion lifespan
         testRealms.add(testRealmRep);
     }
@@ -258,7 +258,7 @@ public class ClientTokenExchangeSAML2Test extends AbstractKeycloakTest {
             Element assertionElement = DocumentUtil.getDocument(assertionXML).getDocumentElement();
             Assert.assertTrue(AssertionUtil.isSignedElement(assertionElement));
             AssertionType assertion = (AssertionType) SAMLParser.getInstance().parse(assertionElement);
-            Assert.assertTrue(AssertionUtil.isSignatureValid(assertionElement, publicKeyFromString(REALM_PUBLIC_KEY)));
+            Assert.assertTrue(AssertionUtil.isSignatureValid(assertionElement, publicKeyFromString()));
 
             // Expires
             Assert.assertEquals(60, response.getExpiresIn());
@@ -288,7 +288,7 @@ public class ClientTokenExchangeSAML2Test extends AbstractKeycloakTest {
             Element assertionElement = DocumentUtil.getDocument(assertionXML).getDocumentElement();
             Assert.assertTrue(AssertionUtil.isSignedElement(assertionElement));
             AssertionType assertion = (AssertionType) SAMLParser.getInstance().parse(assertionElement);
-            Assert.assertTrue(AssertionUtil.isSignatureValid(assertionElement, publicKeyFromString(REALM_PUBLIC_KEY)));
+            Assert.assertTrue(AssertionUtil.isSignatureValid(assertionElement, publicKeyFromString()));
 
             // Audience
             AudienceRestrictionType aud = (AudienceRestrictionType) assertion.getConditions().getConditions().get(0);
@@ -335,7 +335,7 @@ public class ClientTokenExchangeSAML2Test extends AbstractKeycloakTest {
 
             // Decrypt assertion
             Document assertionDoc = DocumentUtil.getDocument(assertionXML);
-            Element assertionElement = XMLEncryptionUtil.decryptElementInDocument(assertionDoc, privateKeyFromString(ENCRYPTION_PRIVATE_KEY));
+            Element assertionElement = XMLEncryptionUtil.decryptElementInDocument(assertionDoc, data -> Collections.singletonList(privateKeyFromString(ENCRYPTION_PRIVATE_KEY)));
             Assert.assertFalse(AssertionUtil.isSignedElement(assertionElement));
             AssertionType assertion = (AssertionType) SAMLParser.getInstance().parse(assertionElement);
 
@@ -383,10 +383,10 @@ public class ClientTokenExchangeSAML2Test extends AbstractKeycloakTest {
 
             // Verify assertion
             Document assertionDoc = DocumentUtil.getDocument(assertionXML);
-            Element assertionElement = XMLEncryptionUtil.decryptElementInDocument(assertionDoc, privateKeyFromString(ENCRYPTION_PRIVATE_KEY));
+            Element assertionElement = XMLEncryptionUtil.decryptElementInDocument(assertionDoc, data -> Collections.singletonList(privateKeyFromString(ENCRYPTION_PRIVATE_KEY)));
             Assert.assertTrue(AssertionUtil.isSignedElement(assertionElement));
             AssertionType assertion = (AssertionType) SAMLParser.getInstance().parse(assertionElement);
-            Assert.assertTrue(AssertionUtil.isSignatureValid(assertionElement, publicKeyFromString(REALM_PUBLIC_KEY)));
+            Assert.assertTrue(AssertionUtil.isSignatureValid(assertionElement, publicKeyFromString()));
 
             // Audience
             AudienceRestrictionType aud = (AudienceRestrictionType) assertion.getConditions().getConditions().get(0);
@@ -478,7 +478,7 @@ public class ClientTokenExchangeSAML2Test extends AbstractKeycloakTest {
             Element assertionElement = DocumentUtil.getDocument(assertionXML).getDocumentElement();
             Assert.assertTrue(AssertionUtil.isSignedElement(assertionElement));
             AssertionType assertion = (AssertionType) SAMLParser.getInstance().parse(assertionElement);
-            Assert.assertTrue(AssertionUtil.isSignatureValid(assertionElement, publicKeyFromString(REALM_PUBLIC_KEY)));
+            Assert.assertTrue(AssertionUtil.isSignatureValid(assertionElement, publicKeyFromString()));
 
             // Audience
             AudienceRestrictionType aud = (AudienceRestrictionType) assertion.getConditions().getConditions().get(0);
@@ -556,7 +556,7 @@ public class ClientTokenExchangeSAML2Test extends AbstractKeycloakTest {
             Element assertionElement = DocumentUtil.getDocument(assertionXML).getDocumentElement();
             Assert.assertTrue(AssertionUtil.isSignedElement(assertionElement));
             AssertionType assertion = (AssertionType) SAMLParser.getInstance().parse(assertionElement);
-            Assert.assertTrue(AssertionUtil.isSignatureValid(assertionElement, publicKeyFromString(REALM_PUBLIC_KEY)));
+            Assert.assertTrue(AssertionUtil.isSignatureValid(assertionElement, publicKeyFromString()));
 
             // Audience
             AudienceRestrictionType aud = (AudienceRestrictionType) assertion.getConditions().getConditions().get(0);
@@ -698,8 +698,9 @@ public class ClientTokenExchangeSAML2Test extends AbstractKeycloakTest {
         impersonatedUser.grantRole(exampleRole);
     }
 
-    private PublicKey publicKeyFromString(String publicKey) {
-        return org.keycloak.testsuite.util.KeyUtils.publicKeyFromString(publicKey);
+    private PublicKey publicKeyFromString() {
+        KeysMetadataRepresentation.KeyMetadataRepresentation keyRep = KeyUtils.findActiveSigningKey(adminClient.realm(TEST), Algorithm.RS256);
+        return org.keycloak.testsuite.util.KeyUtils.publicKeyFromString(keyRep.getPublicKey());
     }
 
     private PrivateKey privateKeyFromString(String privateKey) {

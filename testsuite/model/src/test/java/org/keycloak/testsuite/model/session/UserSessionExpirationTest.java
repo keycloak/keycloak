@@ -18,11 +18,11 @@
 package org.keycloak.testsuite.model.session;
 
 import org.junit.Test;
-import org.keycloak.common.util.Time;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RealmProvider;
+import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.UserSessionProvider;
 import org.keycloak.models.map.userSession.MapUserSessionProviderFactory;
 import org.keycloak.testsuite.model.KeycloakModelTest;
@@ -63,13 +63,12 @@ public class UserSessionExpirationTest extends KeycloakModelTest {
             return null;
         });
 
-        String uSId= withRealm(realmId, (session, realm) -> session.sessions().createUserSession(realm, session.users().getUserByUsername(realm, "user1"), "user1", "127.0.0.1", "form", true, null, null).getId());
+        String uSId= withRealm(realmId, (session, realm) -> session.sessions().createUserSession(null, realm, session.users().getUserByUsername(realm, "user1"), "user1", "127.0.0.1", "form", true, null, null, UserSessionModel.SessionPersistenceState.PERSISTENT).getId());
 
         assertThat(withRealm(realmId, (session, realm) -> session.sessions().getUserSession(realm, uSId)), notNullValue());
 
-        Time.setOffset(5);
+        setTimeOffset(5);
 
         assertThat(withRealm(realmId, (session, realm) -> session.sessions().getUserSession(realm, uSId)), nullValue());
-
     }
 }

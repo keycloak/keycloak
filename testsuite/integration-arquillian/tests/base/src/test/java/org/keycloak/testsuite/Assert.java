@@ -29,6 +29,7 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserFederationProviderFactoryRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.representations.info.ThemeInfoRepresentation;
 
 import java.util.Arrays;
 import java.util.LinkedList;
@@ -92,6 +93,8 @@ public class Assert extends org.junit.Assert {
             return ((ComponentRepresentation) o1).getName();
         } else if (o1 instanceof ClientScopeRepresentation) {
             return ((ClientScopeRepresentation) o1).getName();
+        } else if (o1 instanceof ThemeInfoRepresentation) {
+            return ((ThemeInfoRepresentation) o1).getName();
         }
 
         throw new IllegalArgumentException();

@@ -17,7 +17,7 @@
 
 package org.keycloak;
 
-import static java.util.concurrent.CompletableFuture.runAsync;
+import static java.util.Optional.ofNullable;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -27,9 +27,18 @@ import java.util.List;
 import java.util.concurrent.TimeoutException;
 import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 import org.keycloak.common.Version;
+import org.keycloak.common.crypto.FipsMode;
+import org.keycloak.config.DatabaseOptions;
+import org.keycloak.config.HttpOptions;
+import org.keycloak.config.LoggingOptions;
+import org.keycloak.config.Option;
+import org.keycloak.config.SecurityOptions;
+import org.keycloak.config.StorageOptions;
 import org.keycloak.platform.Platform;
 import org.keycloak.quarkus.runtime.Environment;
+import org.keycloak.quarkus.runtime.cli.Picocli;
 import org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource;
+import org.keycloak.quarkus.runtime.configuration.Configuration;
 
 import io.quarkus.bootstrap.app.AugmentAction;
 import io.quarkus.bootstrap.app.CuratedApplication;
@@ -48,6 +57,16 @@ import io.quarkus.maven.dependency.DependencyBuilder;
 import io.quarkus.runtime.configuration.QuarkusConfigFactory;
 
 public class Keycloak {
+
+    static {
+        System.setProperty("java.util.logging.manager", "org.jboss.logmanager.LogManager");
+        System.setProperty("quarkus.http.test-port", "${kc.http-port}");
+        System.setProperty("quarkus.http.test-ssl-port", "${kc.https-port}");
+    }
+
+    public static void main(String[] args) {
+        Keycloak.builder().start(args);
+    }
 
     public static class Builder {
 
@@ -88,11 +107,78 @@ public class Keycloak {
             return start(List.of(args));
         }
 
-        public Keycloak start(List<String> args) {
+        public Keycloak start(List<String> rawArgs) {
             if (homeDir == null) {
                 homeDir = Platform.getPlatform().getTmpDirectory().toPath();
             }
-            return new Keycloak(homeDir, version, dependencies).start(args);
+
+            List<String> args = new ArrayList<>(rawArgs);
+
+            addOptionIfNotSet(args, HttpOptions.HTTP_ENABLED, true);
+            addOptionIfNotSet(args, HttpOptions.HTTP_PORT);
+            addOptionIfNotSet(args, HttpOptions.HTTPS_PORT);
+
+            if (getOptionValue(args, DatabaseOptions.DB) == null) {
+                addOptionIfNotSet(args, StorageOptions.STORAGE, StorageOptions.StorageType.chm);
+            }
+
+            boolean isFipsEnabled = ofNullable(getOptionValue(args, SecurityOptions.FIPS_MODE)).orElse(FipsMode.DISABLED).isFipsEnabled();
+
+            if (isFipsEnabled) {
+                String logLevel = getOptionValue(args, LoggingOptions.LOG_LEVEL);
+
+                if (logLevel == null) {
+                    args.add("--log-level=org.keycloak.common.crypto:TRACE,org.keycloak.crypto:TRACE");
+                }
+            }
+
+            return new Keycloak(homeDir, version, dependencies, isFipsEnabled).start(args);
+        }
+
+        private <T> void addOptionIfNotSet(List<String> args, Option<T> option) {
+            addOptionIfNotSet(args, option, null);
+        }
+
+        private <T> void addOptionIfNotSet(List<String> args, Option<T> option, T defaultValue) {
+            T value = getOptionValue(args, option);
+
+            if (value == null) {
+                defaultValue = ofNullable(defaultValue).orElseGet(option.getDefaultValue()::get);
+                args.add(Configuration.toCliFormat(option.getKey()) + "=" + defaultValue);
+            }
+        }
+
+        private <T> T getOptionValue(List<String> args, Option<T> option) {
+            for (String arg : args) {
+                if (arg.contains(option.getKey())) {
+                    if (arg.endsWith(option.getKey())) {
+                        throw new IllegalArgumentException("Option '" + arg + "' value must be set using '=' as a separator");
+                    }
+
+                    String value = arg.substring(Picocli.ARG_PREFIX.length() + option.getKey().length() + 1);
+                    Class<T> type = option.getType();
+
+                    if (type.equals(String.class)) {
+                        return (T) value;
+                    }
+
+                    if (type.isEnum()) {
+                        return (T) Enum.valueOf((Class<Enum>) type, value);
+                    }
+
+                    if (Integer.class.isAssignableFrom(type)) {
+                        return (T) Integer.valueOf(value);
+                    }
+
+                    if (Boolean.class.isAssignableFrom(type)) {
+                        return (T) Boolean.valueOf(value);
+                    }
+
+                    throw new RuntimeException("Unsupported option type '" + type + "'");
+                }
+            }
+
+            return null;
         }
     }
 
@@ -100,18 +186,21 @@ public class Keycloak {
         return new Builder();
     }
 
+    private CuratedApplication curated;
     private RunningQuarkusApplication application;
     private ApplicationModel applicationModel;
     private Path homeDir;
     private List<Dependency> dependencies;
+    private boolean fipsEnabled;
 
     public Keycloak() {
-        this(null, Version.VERSION, List.of());
+        this(null, Version.VERSION, List.of(), false);
     }
 
-    public Keycloak(Path homeDir, String version, List<Dependency> dependencies) {
+    public Keycloak(Path homeDir, String version, List<Dependency> dependencies, boolean fipsEnabled) {
         this.homeDir = homeDir;
         this.dependencies = dependencies;
+        this.fipsEnabled = fipsEnabled;
         try {
             applicationModel = createApplicationModel(version);
         } catch (Exception e) {
@@ -125,13 +214,14 @@ public class Keycloak {
                 .setApplicationRoot(applicationModel.getApplicationModule().getModuleDir().toPath())
                 .setTargetDirectory(applicationModel.getApplicationModule().getModuleDir().toPath())
                 .setIsolateDeployment(true)
+                .setFlatClassPath(true)
                 .setMode(QuarkusBootstrap.Mode.TEST);
 
-        try (CuratedApplication curated = builder.build().bootstrap()) {
+        try {
+            curated = builder.build().bootstrap();
             AugmentAction action = curated.createAugmentor();
             Environment.setHomeDir(homeDir);
             ConfigArgsConfigSource.setCliArgs(args.toArray(new String[0]));
-
             StartupAction startupAction = action.createInitialRuntimeApplication();
 
             application = startupAction.runMainClass(args.toArray(new String[0]));
@@ -162,20 +252,33 @@ public class Keycloak {
 
     private WorkspaceModule createWorkspaceModule(String keycloakVersion) {
         Path moduleDir = createModuleDir();
+        DependencyBuilder serverDependency = DependencyBuilder.newInstance()
+                .setGroupId("org.keycloak")
+                .setArtifactId("keycloak-quarkus-server")
+                .setVersion(keycloakVersion)
+                .addExclusion("org.jboss.logmanager", "log4j-jboss-logmanager");
+
+        if (fipsEnabled) {
+            serverDependency.addExclusion("org.bouncycastle", "bcprov-jdk15on");
+            serverDependency.addExclusion("org.bouncycastle", "bcpkix-jdk15on");
+            serverDependency.addExclusion("org.keycloak", "keycloak-crypto-default");
+        } else {
+            serverDependency.addExclusion("org.keycloak", "keycloak-crypto-fips1402");
+        }
 
         WorkspaceModule.Mutable builder = WorkspaceModule.builder()
-                .setModuleId(WorkspaceModuleId.of("io.playground", "keycloak-app", "1"))
+                .setModuleId(WorkspaceModuleId.of("org.keycloak", "keycloak-embedded", "1"))
                 .setModuleDir(moduleDir)
                 .setBuildDir(moduleDir)
                 .addDependencyConstraint(
                         Dependency.pomImport("org.keycloak", "keycloak-quarkus-parent", keycloakVersion))
-                .addDependency(DependencyBuilder.newInstance()
-                        .setGroupId("org.keycloak")
-                        .setArtifactId("keycloak-quarkus-server-app")
-                        .setVersion(keycloakVersion)
-                        .addExclusion("org.jboss.logmanager", "log4j-jboss-logmanager")
-                        .addExclusion("org.keycloak", "keycloak-crypto-fips1402") //TODO: enable fips
-                        .build());
+                .addDependency(serverDependency.build());
+
+        if (fipsEnabled) {
+            builder.addDependency(Dependency.of("org.bouncycastle", "bc-fips"));
+            builder.addDependency(Dependency.of("org.bouncycastle", "bctls-fips"));
+            builder.addDependency(Dependency.of("org.bouncycastle", "bcpkix-fips"));
+        }
 
         for (Dependency dependency : dependencies) {
             builder.addDependency(dependency);
@@ -208,14 +311,11 @@ public class Keycloak {
 
     private void closeApplication() {
         if (application != null) {
-            ClassLoader old = Thread.currentThread().getContextClassLoader();
-            Thread.currentThread().setContextClassLoader(application.getClassLoader());
             try {
+                // curated application is also closed
                 application.close();
-            } catch (Exception e) {
-                e.printStackTrace();
-            } finally {
-                Thread.currentThread().setContextClassLoader(old);
+            } catch (Exception cause) {
+                cause.printStackTrace();
             }
         }
 
@@ -233,5 +333,6 @@ public class Keycloak {
         }
 
         application = null;
+        curated = null;
     }
 }

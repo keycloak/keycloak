@@ -33,12 +33,16 @@ import java.util.concurrent.atomic.AtomicReference;
 public class HotRodLocksUtils {
 
     public static final String SEPARATOR = ";";
-    private static final String INSTANCE_IDENTIFIER = getKeycloakInstanceIdentifier();
 
     /**
      * Repeatedly attempts to put an entry with the key {@code lockName}
      * to the {@code locksCache}. Succeeds only if there is no entry with
      * the same key already.
+     * <p/>
+     * The value of created entry is equal to instance identifier. It is
+     * possible to make the method succeed even if the value already exists
+     * with the same instance identifier. This behaviour is enabled using
+     * {@code isReentrant} switch.
      * <p/>
      * Execution of this method is time bounded, if this method does not
      * succeed within {@code timeoutMilliseconds} it gives up and returns
@@ -52,19 +56,23 @@ public class HotRodLocksUtils {
      * @param timeout        duration to wait until the lock is acquired
      * @param repeatInterval Number of milliseconds to wait after each
      *                       unsuccessful attempt
+     * @param isReentrant    if this is set to true, the method succeeds also when the value for given key is
+     *                       equal to the instance identifier
      * @throws LockAcquiringTimeoutException the key {@code lockName} was NOT put into the {@code map}
      *                                       within time boundaries
      * @throws IllegalStateException         when a {@code lock} value found in the storage has wrong format. It is expected
      *                                       the lock value has the following format {@code 'timeAcquired;keycloakInstanceIdentifier'}
      */
-    public static void repeatPutIfAbsent(RemoteCache<String, String> locksCache, String lockName, Duration timeout, int repeatInterval) throws LockAcquiringTimeoutException {
+    public static void repeatPutIfAbsent(RemoteCache<String, String> locksCache, String lockName, Duration timeout, int repeatInterval, boolean isReentrant) throws LockAcquiringTimeoutException {
         final AtomicReference<String> currentOwnerRef = new AtomicReference<>(null);
         try {
             Retry.executeWithBackoff(i -> {
-                String curr = locksCache.withFlags(Flag.FORCE_RETURN_VALUE).putIfAbsent(lockName, Time.currentTimeMillis() + SEPARATOR + INSTANCE_IDENTIFIER);
+                String curr = locksCache.withFlags(Flag.FORCE_RETURN_VALUE).putIfAbsent(lockName, Time.currentTimeMillis() + SEPARATOR + getKeycloakInstanceIdentifier());
                 currentOwnerRef.set(curr);
                 if (curr != null) {
-                    throw new AssertionError("Acquiring lock in iteration " + i + " was not successful");
+                    if (!isReentrant || !curr.endsWith(SEPARATOR + getKeycloakInstanceIdentifier())) {
+                        throw new AssertionError("Acquiring lock in iteration " + i + " was not successful");
+                    }
                 }
             }, timeout, repeatInterval);
         } catch (AssertionError ex) {
@@ -85,7 +93,8 @@ public class HotRodLocksUtils {
             hostname = "unknown-host";
         }
 
-        return pid + "@" + hostname;
+        String threadName = Thread.currentThread().getName();
+        return threadName + "#" + pid + "@" + hostname;
     }
 
     /**
@@ -98,7 +107,7 @@ public class HotRodLocksUtils {
      */
     public static boolean removeWithInstanceIdentifier(ConcurrentMap<String, String> map, String lockName) {
         String value = map.get(lockName);
-        if (value != null && value.endsWith(INSTANCE_IDENTIFIER)) {
+        if (value != null && value.endsWith(getKeycloakInstanceIdentifier())) {
             map.remove(lockName);
             return true;
         } else {

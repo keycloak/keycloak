@@ -1,0 +1,29 @@
+name: Setup NPM
+description: Sets up Node.js and runs NPM so dependencies are installed.
+
+inputs:
+  node-version:
+    description: Node.js version
+    required: false
+    default: "18"
+
+  working-directory:
+    description: The working directory where the `package-lock.json` is located.
+    required: false
+    default: ""
+
+runs:
+  using: composite
+  steps:
+    - name: Set up Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: ${{ inputs.node-version }}
+        check-latest: true
+        cache: npm
+        cache-dependency-path: ${{ inputs.working-directory }}/package-lock.json
+
+    - name: Install dependencies
+      working-directory: ${{ inputs.working-directory }}
+      shell: bash
+      run: npm ci

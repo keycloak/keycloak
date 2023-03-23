@@ -111,7 +111,8 @@ public class AccountConsole {
             if (auth != null) user = auth.getUser();
             Locale locale = session.getContext().resolveLocale(user);
             map.put("locale", locale.toLanguageTag());
-            Properties messages = theme.getMessages(locale);
+            Properties messages = new Properties();
+            messages.putAll(theme.getMessages(locale));
             if(StringUtil.isNotBlank(realm.getDefaultLocale())) {
                 messages.putAll(realm.getRealmLocalizationTextsByLocale(realm.getDefaultLocale()));
             }
@@ -209,7 +210,7 @@ public class AccountConsole {
         return Response.status(302).location(session.getContext().getUri().getRequestUriBuilder().path("../").build()).build();
     }
 
-    // TODO: took this code from elsewhere - refactor
+
     private String[] getReferrer() {
         String referrer = session.getContext().getUri().getQueryParameters().getFirst("referrer");
         if (referrer == null) {
@@ -223,7 +224,7 @@ public class AccountConsole {
             if (referrerUri != null) {
                 referrerUri = RedirectUtils.verifyRedirectUri(session, referrerUri, referrerClient);
             } else {
-                referrerUri = ResolveRelative.resolveRelativeUri(session, client.getRootUrl(), referrerClient.getBaseUrl());
+                referrerUri = ResolveRelative.resolveRelativeUri(session, referrerClient.getRootUrl(), referrerClient.getBaseUrl());
             }
             
             if (referrerUri != null) {
@@ -232,15 +233,6 @@ public class AccountConsole {
                     referrerName = referrer;
                 }
                 return new String[]{referrer, referrerName, referrerUri};
-            }
-        } else if (referrerUri != null) {
-            referrerClient = realm.getClientByClientId(referrer);
-            if (client != null) {
-                referrerUri = RedirectUtils.verifyRedirectUri(session, referrerUri, referrerClient);
-
-                if (referrerUri != null) {
-                    return new String[]{referrer, referrer, referrerUri};
-                }
             }
         }
 

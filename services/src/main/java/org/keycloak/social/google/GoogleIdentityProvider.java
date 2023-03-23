@@ -31,6 +31,7 @@ import org.keycloak.representations.JsonWebToken;
 
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.UriBuilder;
+import java.util.Arrays;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -100,11 +101,11 @@ public class GoogleIdentityProvider extends OIDCIdentityProvider implements Soci
         if (hostedDomain != null) {
             uriBuilder.queryParam(OIDC_PARAMETER_HOSTED_DOMAINS, hostedDomain);
         }
-        
+
         if (googleConfig.isOfflineAccess()) {
             uriBuilder.queryParam(OIDC_PARAMETER_ACCESS_TYPE, ACCESS_TYPE_OFFLINE);
         }
-        
+
         return uriBuilder;
     }
 
@@ -123,7 +124,7 @@ public class GoogleIdentityProvider extends OIDCIdentityProvider implements Soci
             throw new IdentityBrokerException("Identity token does not contain hosted domain parameter.");
         }
 
-        if (hostedDomain.equals("*") || hostedDomain.equals(receivedHdParam))  {
+        if (hostedDomain.equals("*") || Arrays.asList(hostedDomain.split(",")).contains(receivedHdParam))  {
             return token;
         }
 

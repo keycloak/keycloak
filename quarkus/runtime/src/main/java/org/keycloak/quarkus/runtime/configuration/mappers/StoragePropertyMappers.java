@@ -203,6 +203,12 @@ final class StoragePropertyMappers {
                         .transformer(StoragePropertyMappers::getGlobalLockProvider)
                         .paramLabel("type")
                         .build(),
+                fromOption(StorageOptions.STORAGE_GLOBAL_LOCK_PROVIDER)
+                        .to("kc.spi-global-lock-map-storage-provider")
+                        .mapFrom("storage")
+                        .transformer(StoragePropertyMappers::resolveMapStorageProvider)
+                        .paramLabel("type")
+                        .build(),
                 fromOption(StorageOptions.STORAGE_CACHE_REALM_ENABLED)
                         .to("kc.spi-realm-cache-default-enabled")
                         .mapFrom("storage")
@@ -230,7 +236,7 @@ final class StoragePropertyMappers {
                 fromOption(StorageOptions.STORAGE_SINGLE_USE_OBJECT_STORE)
                         .to("kc.spi-single-use-object-map-storage-provider")
                         .mapFrom("storage")
-                        .transformer(StoragePropertyMappers::resolveMapStorageProvider)
+                        .transformer(StoragePropertyMappers::resolveMapStorageProviderSingleUseObjects)
                         .paramLabel("type")
                         .build(),
                 fromOption(StorageOptions.STORAGE_PUBLIC_KEY_STORAGE_STORE)
@@ -298,6 +304,16 @@ final class StoragePropertyMappers {
                 fromOption(StorageOptions.STORAGE_HOTROD_CACHE_REINDEX)
                         .to("kc.spi-connections-hot-rod-default-reindex-caches")
                         .paramLabel("[cache1,cache2,...]|all")
+                        .build(),
+                fromOption(StorageOptions.STORAGE_FILE_DIR)
+                        .to("kc.spi-map-storage-file-dir")
+                        .mapFrom("storage")
+                        .paramLabel("dir")
+                        .build(),
+                fromOption(StorageOptions.STORAGE_JPA_DB)
+                        .to("kc.spi-map-storage-jpa-db")
+                        .mapFrom("storage")
+                        .paramLabel("type")
                         .build()
         };
     }
@@ -329,10 +345,15 @@ final class StoragePropertyMappers {
     private static Optional<String> getGlobalLockProvider(Optional<String> storage, ConfigSourceInterceptorContext context) {
         try {
             if (storage.isPresent()) {
-                return of(storage.map(StorageType::valueOf)
-                        .filter(type -> type.equals(StorageType.hotrod))
-                        .map(StorageType::getProvider)
-                        .orElse("none"));
+                StorageType storageType = StorageType.valueOf(storage.get());
+                switch (storageType) {
+                    case hotrod:
+                        return Optional.of(storageType.getProvider());
+                    case jpa:
+                        return Optional.of("map");
+                    default:
+                        return Optional.of("none");
+                }
             }
         } catch (IllegalArgumentException iae) {
             throw new IllegalArgumentException("Invalid storage provider: " + storage.orElse(null), iae);
@@ -357,6 +378,21 @@ final class StoragePropertyMappers {
         try {
             if (value.isPresent()) {
                 return of(value.map(StorageType::valueOf).map(StorageType::getProvider)
+                        .orElse(StorageType.chm.getProvider()));
+            }
+        } catch (IllegalArgumentException iae) {
+            throw new IllegalArgumentException("Invalid storage provider: " + value.orElse(null), iae);
+        }
+
+        return value;
+    }
+
+    private static Optional<String> resolveMapStorageProviderSingleUseObjects(Optional<String> value, ConfigSourceInterceptorContext context) {
+        try {
+            if (value.isPresent()) {
+                return of(value.map(StorageType::valueOf)
+                        .filter(not(StorageType.file::equals))
+                        .map(StorageType::getProvider)
                         .orElse(StorageType.chm.getProvider()));
             }
         } catch (IllegalArgumentException iae) {

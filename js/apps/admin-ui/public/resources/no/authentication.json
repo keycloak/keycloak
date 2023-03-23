@@ -1,0 +1,34 @@
+{
+  "title": "Autentisering",
+  "flows": "Flyt",
+  "requiredActions": "Påkrevde handlinger",
+  "policies": "Policier",
+  "passwordPolicy": "Passordpolicy",
+  "otpPolicy": "Policy for engangskode",
+  "otpType": "Type engangskode",
+  "policyType": {
+    "totp": "Tidsbasert",
+    "hotp": "Tellerbasert"
+  },
+  "otpHashAlgorithm": "OTP hash-algoritme",
+  "otpPolicyDigits": "Antall siffer",
+  "lookAhead": "Look Ahead Window",
+  "otpPolicyPeriod": "Engangskode token",
+  "initialCounter": "Initiell teller",
+  "attestationPreference": {
+    "none": "Ingen"
+  },
+  "flow": {
+    "browserFlow": "Nettleserflyt",
+    "registrationFlow": "Registreringsflyt",
+    "directGrantFlow": "Direct Grant Flyt"
+  },
+  "edit": "Rediger",
+  "flowType": "Type av flyt",
+  "flow-type": {
+    "form-flow": "skjema"
+  },
+  "addExecution": "Legg til eksekvering",
+  "requirement": "Krav",
+  "alias": "Alias"
+}

@@ -391,6 +391,8 @@ public class UserAttributeLDAPStorageMapper extends AbstractLDAPStorageMapper {
                     Set<String> allLdapAttrValues = ldapUser.getAttributeAsSet(ldapAttrName);
                     if (allLdapAttrValues != null) {
                         attrs.put(userModelAttrName, new ArrayList<>(allLdapAttrValues));
+                    } else {
+                        attrs.remove(userModelAttrName);
                     }
                     return attrs;
                 }

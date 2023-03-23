@@ -62,6 +62,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.AuthenticationFlowResolver;
 import org.keycloak.models.utils.FormMessage;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.TokenManager;
@@ -474,6 +475,10 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
                         return corsResponse(badRequest("User [" + authResult.getUser().getId() + "] is not associated with identity provider [" + providerId + "]."), clientModel);
                     }
 
+                    if (identity.getToken() == null) {
+                        return corsResponse(notFound("No token stored for user [" + authResult.getUser().getId() + "] with associated identity provider [" + providerId + "]."), clientModel);
+                    }
+
                     this.event.success();
 
                     return corsResponse(identityProvider.retrieveToken(session, identity), clientModel);
@@ -856,15 +861,16 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
 
 
     @Override
-    public Response cancelled() {
+    public Response cancelled(IdentityProviderModel idpConfig) {
         AuthenticationSessionModel authSession = session.getContext().getAuthenticationSession();
 
-        Response accountManagementFailedLinking = checkAccountManagementFailedLinking(authSession, Messages.CONSENT_DENIED);
+        String idpDisplayName = KeycloakModelUtils.getIdentityProviderDisplayName(session, idpConfig);
+        Response accountManagementFailedLinking = checkAccountManagementFailedLinking(authSession, Messages.ACCESS_DENIED_WHEN_IDP_AUTH, idpDisplayName);
         if (accountManagementFailedLinking != null) {
             return accountManagementFailedLinking;
         }
 
-        return browserAuthentication(authSession, null);
+        return browserAuthentication(authSession, Messages.ACCESS_DENIED_WHEN_IDP_AUTH, idpDisplayName);
     }
 
     @Override
@@ -1188,7 +1194,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
     }
 
 
-    protected Response browserAuthentication(AuthenticationSessionModel authSession, String errorMessage) {
+    protected Response browserAuthentication(AuthenticationSessionModel authSession, String errorMessage, Object... parameters) {
         this.event.event(EventType.LOGIN);
         AuthenticationFlowModel flow = AuthenticationFlowResolver.resolveBrowserFlow(authSession);
         String flowId = flow.getId();
@@ -1203,7 +1209,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
                 .setSession(session)
                 .setUriInfo(session.getContext().getUri())
                 .setRequest(request);
-        if (errorMessage != null) processor.setForwardedErrorMessage(new FormMessage(null, errorMessage));
+        if (errorMessage != null) processor.setForwardedErrorMessage(new FormMessage(null, errorMessage, parameters));
 
         try {
             CacheControlUtil.noBackButtonCacheControlHeader(session);
@@ -1222,6 +1228,11 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
     private Response forbidden(String message) {
         fireErrorEvent(message);
         return ErrorResponse.error(message, Response.Status.FORBIDDEN);
+    }
+
+    private Response notFound(String message) {
+        fireErrorEvent(message);
+        return ErrorResponse.error(message, Response.Status.NOT_FOUND);
     }
 
     public static IdentityProvider getIdentityProvider(KeycloakSession session, RealmModel realm, String alias) {

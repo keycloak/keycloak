@@ -72,7 +72,7 @@ public class MapRealmProvider implements RealmProvider {
             throw new ModelDuplicateException("Realm with given name exists: " + name);
         }
 
-        if (id != null && tx.read(id) != null) {
+        if (id != null && tx.exists(id)) {
             throw new ModelDuplicateException("Realm exists: " + id);
         }
 

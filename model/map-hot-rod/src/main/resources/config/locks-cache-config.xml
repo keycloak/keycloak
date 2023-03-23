@@ -15,5 +15,7 @@
   ~ limitations under the License.
   -->
 <replicated-cache name="locks" mode="SYNC">
+    <locking isolation="REPEATABLE_READ" />
+    <transaction mode="NON_XA"/>
     <encoding media-type="text/plain"/>
 </replicated-cache>

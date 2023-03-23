@@ -18,6 +18,9 @@ package org.keycloak.testsuite.model.parameters;
 
 import org.keycloak.authorization.store.StoreFactorySpi;
 import org.keycloak.events.EventStoreSpi;
+import org.keycloak.exportimport.ExportSpi;
+import org.keycloak.exportimport.dir.DirExportProviderFactory;
+import org.keycloak.exportimport.singlefile.SingleFileExportProviderFactory;
 import org.keycloak.keys.PublicKeyStorageSpi;
 import org.keycloak.models.DeploymentStateSpi;
 import org.keycloak.models.SingleUseObjectProviderFactory;
@@ -34,6 +37,8 @@ import org.keycloak.models.map.loginFailure.MapUserLoginFailureProviderFactory;
 import org.keycloak.models.map.singleUseObject.MapSingleUseObjectProviderFactory;
 import org.keycloak.models.map.storage.chm.ConcurrentHashMapStorageProviderFactory;
 import org.keycloak.models.map.userSession.MapUserSessionProviderFactory;
+import org.keycloak.services.clientpolicy.ClientPolicyManagerFactory;
+import org.keycloak.services.clientpolicy.ClientPolicyManagerSpi;
 import org.keycloak.sessions.AuthenticationSessionSpi;
 import org.keycloak.testsuite.model.KeycloakModelParameters;
 import org.keycloak.models.map.client.MapClientProviderFactory;

@@ -94,7 +94,7 @@ public class ProviderManager {
                 List<ProviderFactory> f = loader.load(spi);
                 if (f != null) {
                     for (ProviderFactory pf: f) {
-                        String uniqueId = spi.getName() + "-" + pf.getId();
+                        String uniqueId = spi.getName() + "-" + pf.getId() + "-" + pf.getClass().getName();
                         if (!loaded.contains(uniqueId)) {
                             cache.add(spi.getProviderClass(), pf);
                             loaded.add(uniqueId);

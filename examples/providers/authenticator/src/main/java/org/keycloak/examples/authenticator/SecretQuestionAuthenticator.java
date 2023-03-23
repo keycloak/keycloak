@@ -17,6 +17,7 @@
 
 package org.keycloak.examples.authenticator;
 
+import org.keycloak.http.HttpCookie;
 import org.keycloak.http.HttpResponse;
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.AuthenticationFlowError;
@@ -24,7 +25,6 @@ import org.keycloak.authentication.Authenticator;
 import org.keycloak.authentication.CredentialValidator;
 import org.keycloak.authentication.RequiredActionFactory;
 import org.keycloak.authentication.RequiredActionProvider;
-import org.keycloak.common.util.ServerCookie;
 import org.keycloak.credential.CredentialProvider;
 import org.keycloak.models.AuthenticatorConfigModel;
 import org.keycloak.models.KeycloakSession;
@@ -33,7 +33,6 @@ import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 
 import javax.ws.rs.core.Cookie;
-import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import java.net.URI;
@@ -97,10 +96,7 @@ public class SecretQuestionAuthenticator implements Authenticator, CredentialVal
 
     public void addCookie(AuthenticationFlowContext context, String name, String value, String path, String domain, String comment, int maxAge, boolean secure, boolean httpOnly) {
         HttpResponse response = context.getSession().getContext().getHttpResponse();
-        StringBuffer cookieBuf = new StringBuffer();
-        ServerCookie.appendCookieValue(cookieBuf, 1, name, value, path, domain, comment, maxAge, secure, httpOnly, null);
-        String cookie = cookieBuf.toString();
-        response.addHeader(HttpHeaders.SET_COOKIE, cookie);
+        response.setCookieIfAbsent(new HttpCookie(1, name, value, path, domain, comment, maxAge, secure, httpOnly, null));
     }
 
 

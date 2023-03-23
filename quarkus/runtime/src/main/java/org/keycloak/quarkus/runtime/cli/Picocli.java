@@ -366,7 +366,7 @@ public final class Picocli {
             boolean includeBuildTime = false;
             boolean includeRuntime = false;
 
-            if (Start.NAME.equals(command.name()) || StartDev.NAME.equals(command.name())) {
+            if (Start.NAME.equals(command.name()) || StartDev.NAME.equals(command.name()) || Export.NAME.equals(command.name())) {
                 includeBuildTime = isRebuilt() || !cliArgs.contains(OPTIMIZED_BUILD_OPTION_LONG);
                 includeRuntime = true;
             } else if (Build.NAME.equals(command.name())) {
@@ -413,6 +413,18 @@ public final class Picocli {
 
     private static void addMappedOptionsToArgGroups(CommandSpec cSpec, Map<OptionCategory, List<PropertyMapper>> propertyMappers) {
         for(OptionCategory category : OptionCategory.values()) {
+            if (cSpec.name().equals(Export.NAME)) {
+                // The export command should show only export options
+                if (category != OptionCategory.EXPORT) {
+                    continue;
+                }
+            } else {
+                // No other command should have the export options
+                if (category == OptionCategory.EXPORT) {
+                    continue;
+                }
+            }
+
             List<PropertyMapper> mappersInCategory = propertyMappers.get(category);
 
             if (mappersInCategory == null) {

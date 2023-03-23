@@ -222,23 +222,6 @@ that you need to use property `migration.mode` with the value `manual` .
 
     -Dmigration.mode=manual
 
-## Old Admin Console UI tests
-The UI tests are real-life, UI focused integration tests. Hence they do not support the default HtmlUnit browser. Only the following real-life browsers are supported: Mozilla Firefox and Google Chrome. For details on how to run the tests with these browsers, please refer to [Different Browsers](#different-browsers) chapter.
-
-The UI tests are focused on the Admin Console. They are placed in the `old-admin-console` module and are disabled by default.
-
-The tests also use some constants placed in [test-constants.properties](tests/base/src/test/resources/test-constants.properties). A different file can be specified by `-Dtestsuite.constants=path/to/different-test-constants.properties`
-
-In case a custom `settings.xml` is used for Maven, you need to specify it also in `-Dkie.maven.settings.custom=path/to/settings.xml`.
-
-#### Execution example
-```
-mvn -f testsuite/integration-arquillian/tests/other/old-admin-console/pom.xml \
-    clean test \
-    -Dbrowser=firefox \
-    -Dfirefox_binary=/opt/firefox-45.1.1esr/firefox
-```
-
 ## Spring Boot adapter tests
 
 Currently, we are testing Spring Boot with three different containers `Tomcat 8`, `Undertow` and `Jetty 9.4`. 
@@ -965,8 +948,22 @@ networks dns configuration and run the tests.
 
 ## FIPS 140-2 testing
 
-On the FIPS enabled platform with FIPS enabled OpenJDK 11, you can run this to test against Keycloak server on Quarkus
-with FIPS 140.2 integration enabled
+### Unit tests
+
+```
+mvn clean install -f crypto/fips1402
+```
+
+To run unit tests with the BouncyCastle approved mode, which is more strict in the used crypto algorithms:
+```
+mvn clean install -f crypto/fips1402 -Dorg.bouncycastle.fips.approved_only=true
+```
+
+### Integration tests
+
+On the FIPS enabled platform with FIPS enabled OpenJDK 17, you can run this to test against a Keycloak server on Quarkus
+with FIPS 140-2 integration enabled
+
 ```
 mvn -B -f testsuite/integration-arquillian/pom.xml \
   clean install \
@@ -979,7 +976,7 @@ there should be messages similar to those:
 ```
 2022-10-11 19:34:29,521 DEBUG [org.keycloak.common.crypto.CryptoIntegration] (main) Using the crypto provider: org.keycloak.crypto.fips.FIPS1402Provider
 2022-10-11 19:34:31,072 TRACE [org.keycloak.common.crypto.CryptoIntegration] (main) Java security providers: [ 
- KC(BCFIPS version 1.000203) version 1.0 - class org.keycloak.crypto.fips.KeycloakFipsSecurityProvider, 
+ KC(BCFIPS version 1.000203, FIPS-JVM: enabled) version 1.0 - class org.keycloak.crypto.fips.KeycloakFipsSecurityProvider, 
  BCFIPS version 1.000203 - class org.bouncycastle.jcajce.provider.BouncyCastleFipsProvider, 
  BCJSSE version 1.001202 - class org.bouncycastle.jsse.provider.BouncyCastleJsseProvider,
 ]
@@ -991,9 +988,10 @@ For running testsuite with server using BCFIPS approved mode, those additional p
 ```
 -Dauth.server.fips.mode=strict \
 -Dauth.server.supported.keystore.types=BCFKS \
--Dauth.server.keystore.type=bcfks
+-Dauth.server.keystore.type=bcfks \
+-Dauth.server.supported.rsa.key.sizes=2048,4096
 ```
 The log should contain `KeycloakFipsSecurityProvider` mentioning "Approved mode". Something like:
 ```
-KC(BCFIPS version 1.000203 Approved Mode) version 1.0 - class org.keycloak.crypto.fips.KeycloakFipsSecurityProvider,
+KC(BCFIPS version 1.000203 Approved Mode, FIPS-JVM: enabled) version 1.0 - class org.keycloak.crypto.fips.KeycloakFipsSecurityProvider,
 ```

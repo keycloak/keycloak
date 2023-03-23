@@ -57,6 +57,7 @@ import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.testsuite.client.resources.TestApplicationResourceUrls;
 import org.keycloak.testsuite.client.resources.TestOIDCEndpointsApplicationResource;
 import org.keycloak.testsuite.pages.LoginPage;
+import org.keycloak.testsuite.util.KeyUtils;
 import org.keycloak.testsuite.util.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
@@ -440,7 +441,7 @@ public class UserInfoTest extends AbstractKeycloakTest {
                     .assertEvent();
 
             // Check signature and content
-            PublicKey publicKey = PemUtils.decodePublicKey(ApiUtil.findActiveSigningKey(adminClient.realm("test")).getPublicKey());
+            PublicKey publicKey = PemUtils.decodePublicKey(KeyUtils.findActiveSigningKey(adminClient.realm("test")).getPublicKey());
 
             Assert.assertEquals(200, response.getStatus());
             Assert.assertEquals(response.getHeaderString(HttpHeaders.CONTENT_TYPE), MediaType.APPLICATION_JWT);

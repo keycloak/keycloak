@@ -16,24 +16,27 @@
  */
 package org.keycloak.models.map.storage.hotRod.connections;
 
-import org.infinispan.client.hotrod.Flag;
 import org.infinispan.client.hotrod.RemoteCache;
 import org.infinispan.client.hotrod.RemoteCacheManager;
 import org.infinispan.client.hotrod.RemoteCacheManagerAdmin;
 import org.infinispan.client.hotrod.configuration.ClientIntelligence;
 import org.infinispan.client.hotrod.configuration.ConfigurationBuilder;
 import org.infinispan.client.hotrod.configuration.NearCacheMode;
+import org.infinispan.client.hotrod.configuration.TransactionMode;
 import org.infinispan.commons.marshall.ProtoStreamMarshaller;
+import org.infinispan.commons.tx.lookup.TransactionManagerLookup;
 import org.infinispan.protostream.GeneratedSchema;
 import org.infinispan.query.remote.client.ProtobufMetadataManagerConstants;
 import org.jboss.logging.Logger;
+import org.keycloak.common.Profile;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.models.locking.LockAcquiringTimeoutException;
 import org.keycloak.models.map.storage.hotRod.locking.HotRodLocksUtils;
 import org.keycloak.models.map.storage.hotRod.common.HotRodEntityDescriptor;
 import org.keycloak.models.map.storage.hotRod.common.CommonPrimitivesProtoSchemaInitializer;
 import org.keycloak.models.map.storage.hotRod.common.HotRodVersionUtils;
+import org.keycloak.models.map.storage.hotRod.transaction.HotRodTransactionManagerLookup;
+import org.keycloak.provider.EnvironmentDependentProviderFactory;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -51,9 +54,10 @@ import static org.keycloak.models.map.storage.hotRod.common.HotRodVersionUtils.i
 /**
  * @author <a href="mailto:mkanis@redhat.com">Martin Kanis</a>
  */
-public class DefaultHotRodConnectionProviderFactory implements HotRodConnectionProviderFactory {
+public class DefaultHotRodConnectionProviderFactory implements HotRodConnectionProviderFactory, EnvironmentDependentProviderFactory {
 
     public static final String PROVIDER_ID = "default";
+    public static final String SCRIPT_CACHE = "___script_cache";
     public static final String HOT_ROD_LOCKS_CACHE_NAME = "locks";
     private static final String HOT_ROD_INIT_LOCK_NAME = "HOT_ROD_INIT_LOCK";
     private static final Logger LOG = Logger.getLogger(DefaultHotRodConnectionProviderFactory.class);
@@ -62,12 +66,14 @@ public class DefaultHotRodConnectionProviderFactory implements HotRodConnectionP
 
     private volatile RemoteCacheManager remoteCacheManager;
 
+    private TransactionManagerLookup transactionManagerLookup;
+
     @Override
     public HotRodConnectionProvider create(KeycloakSession session) {
         if (remoteCacheManager == null) {
             synchronized (this) {
                 if (remoteCacheManager == null) {
-                    lazyInit();
+                    lazyInit(session);
                 }
             }
         }
@@ -97,8 +103,10 @@ public class DefaultHotRodConnectionProviderFactory implements HotRodConnectionP
         this.config = config;
     }
 
-    public void lazyInit() {
+    public void lazyInit(KeycloakSession session) {
         LOG.debugf("Initializing HotRod client connection to Infinispan server.");
+        transactionManagerLookup = new HotRodTransactionManagerLookup(session);
+
         ConfigurationBuilder remoteBuilder = new ConfigurationBuilder();
         remoteBuilder.addServer()
                 .host(config.get("host", "localhost"))
@@ -129,7 +137,7 @@ public class DefaultHotRodConnectionProviderFactory implements HotRodConnectionP
         // Acquire initial phase lock to avoid concurrent schema update
         RemoteCache<String, String> locksCache = remoteCacheManager.getCache(HOT_ROD_LOCKS_CACHE_NAME);
         try {
-            HotRodLocksUtils.repeatPutIfAbsent(locksCache, HOT_ROD_INIT_LOCK_NAME, Duration.ofMillis(900), 50);
+            HotRodLocksUtils.repeatPutIfAbsent(locksCache, HOT_ROD_INIT_LOCK_NAME, Duration.ofMillis(900), 50, false);
 
             Set<String> remoteCaches = ENTITY_DESCRIPTOR_MAP.values().stream()
                     .map(HotRodEntityDescriptor::getCacheName).collect(Collectors.toSet());
@@ -155,8 +163,6 @@ public class DefaultHotRodConnectionProviderFactory implements HotRodConnectionP
             }
 
             LOG.infof("HotRod client configuration was successful.");
-        } catch (LockAcquiringTimeoutException e) {
-            throw new RuntimeException(e);
         } finally {
             if (!HotRodLocksUtils.removeWithInstanceIdentifier(locksCache, HOT_ROD_INIT_LOCK_NAME)) {
                 throw new RuntimeException("Cannot release HotRod init lock");
@@ -266,9 +272,16 @@ public class DefaultHotRodConnectionProviderFactory implements HotRodConnectionP
             LOG.debugf("Configuring cache %s", cacheName);
             builder.remoteCache(cacheName)
                     .configurationURI(getCacheConfigUri(cacheName))
+                    .transactionMode(TransactionMode.FULL_XA)
+                    .transactionManagerLookup(transactionManagerLookup)
                     .nearCacheMode(config.scope(cacheName).getBoolean("nearCacheEnabled", config.getBoolean("nearCacheEnabled", true)) ? NearCacheMode.INVALIDATED : NearCacheMode.DISABLED)
                     .nearCacheMaxEntries(config.scope(cacheName).getInt("nearCacheMaxEntries", config.getInt("nearCacheMaxEntries", 10000)))
                     .nearCacheUseBloomFilter(config.scope(cacheName).getBoolean("nearCacheBloomFilter", config.getBoolean("nearCacheBloomFilter", false)));
         };
+    }
+
+    @Override
+    public boolean isSupported() {
+        return Profile.isFeatureEnabled(Profile.Feature.MAP_STORAGE);
     }
 }

@@ -1,0 +1,82 @@
+<#import "/templates/guide.adoc" as tmpl>
+<#import "/templates/kc.adoc" as kc>
+<#import "/templates/options.adoc" as opts>
+<#import "/templates/links.adoc" as links>
+
+<@tmpl.guide
+title="Enabling Keycloak Health checks"
+summary="Learn how to enable and use Keycloak health checks"
+includedOptions="health-enabled">
+
+Keycloak has built in support for health checks. This guide describes how to enable and use the Keycloak health checks.
+
+== Keycloak Health checks
+
+Keycloak exposed health endpoints are three:
+
+* `/health`
+* `/health/live`
+* `/health/ready`
+
+The result is returned in json format and it looks as follows:
+[source, json]
+----
+{
+    "status": "UP",
+    "checks": []
+}
+----
+
+== Enabling the health checks
+It is possible to enable the health checks using the build time option `health-enabled`:
+
+<@kc.build parameters="--health-enabled=true"/>
+
+By default, no check is returned from the health endpoints.
+
+== Using the health checks
+
+It is recommended that the health endpoints be monitored by external HTTP requests. Due to security measures that remove `curl` and other packages from the Keycloak container image, local command-based monitoring will not function easily.
+
+If you are not using Keycloak in a container, use whatever you want to access the health check endpoints.
+
+=== curl
+
+You may use a simple HTTP HEAD request to determine the `+live+` or `+ready+` state of Keycloak. `+curl+` is a good HTTP client for this purpose.
+
+If Keycloak is deployed in a container, you must run this command from outside it due to the previously mentioned security measures. For example:
+
+[source, bash]
+----
+curl --head -fsS http://localhost:8080/health/ready
+----
+
+If the command returns with status 0, then Keycloak is `+live+` or `+ready+`, depending on which endpoint you called. Otherwise there is a problem.
+
+=== Kubernetes
+
+Define a https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#http-probes[HTTP Probe] so that Kubernetes may externally monitor the health endpoints. Do not use a liveness command.
+
+=== HEALTHCHECK
+
+The Dockerfile image `+HEALTHCHECK+` instruction defines a command that will be periodically executed inside the container as it runs. The Keycloak container does not have any CLI HTTP clients installed. Consider installing `+curl+` as an additional RPM, as detailed by the containers guide. Note that your container may be less secure because of this.
+
+== Available Checks
+
+The table below shows the available checks.
+
+|===
+|*Check* | *Description* | *Requires Metrics*
+
+|Database
+|Returns the status of the database connection pool.
+|Yes
+
+|===
+
+For some checks, you'll need to also enable metrics as indicated by the `Requires Metrics` column. To enable metrics
+use the `metrics-enabled` option as follows:
+
+<@kc.build parameters="--health-enabled=true --metrics-enabled=true"/>
+
+</@tmpl.guide>

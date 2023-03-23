@@ -344,6 +344,13 @@ public class GenerateHotRodEntityImplementationsProcessor extends AbstractGenera
             return "this." + ENTITY_VARIABLE + "." + fieldName;
         }
 
+        private String getFieldNameForCollectionKey(TypeMirror fieldType, ExecutableElement callingMethod) {
+            ExecutableElement collectionKey = getCollectionKey(fieldType, callingMethod);
+            char[] c = determineAttributeFromMethodName(collectionKey).toCharArray();
+            c[0] = Character.toLowerCase(c[0]);
+            return new String(c);
+        }
+
         private boolean printMethodBody(PrintWriter pw, FieldAccessorType accessorType, ExecutableElement method, String fieldName, TypeMirror fieldType, TypeMirror hotRodFieldType) {
             TypeMirror firstParameterType = method.getParameters().isEmpty()
                     ? types.getNullType()
@@ -393,6 +400,7 @@ public class GenerateHotRodEntityImplementationsProcessor extends AbstractGenera
                     pw.println("    }");
                     return true;
                 case COLLECTION_DELETE:
+                {
                     collectionItemType = getGenericsDeclaration(hotRodFieldType).get(0);
                     boolean needsReturn = method.getReturnType().getKind() != TypeKind.VOID;
                     pw.println("    @SuppressWarnings(\"unchecked\") @Override public " + method.getReturnType() + " " + method.getSimpleName() + "(" + firstParameterType + " p0) {");
@@ -412,6 +420,27 @@ public class GenerateHotRodEntityImplementationsProcessor extends AbstractGenera
                     if (needsReturn) pw.println("        return removed;");
                     pw.println("    }");
                     return true;
+                }
+                case COLLECTION_DELETE_BY_ID:
+                {
+                    boolean needsReturn = method.getReturnType().getKind() != TypeKind.VOID;
+                    pw.println("    @SuppressWarnings(\"unchecked\") @Override public " + method.getReturnType() + " " + method.getSimpleName() + "(String p0) {");
+                    pw.println("        boolean removed = " + hotRodEntityField(fieldName) + " != null && " + hotRodEntityField(fieldName) + ".removeIf(o -> Objects.equals(o." + getFieldNameForCollectionKey(fieldType, method) + ", p0));");
+                    pw.println("        " + hotRodEntityField("updated") + " |= removed;");
+                    if (needsReturn) pw.println("        return removed;");
+                    pw.println("    }");
+                    return true;
+                }
+                case COLLECTION_GET_BY_ID:
+                {
+                    collectionItemType = getGenericsDeclaration(hotRodFieldType).get(0);
+                    TypeMirror returnTypeGeneric = getGenericsDeclaration(method.getReturnType()).get(0);
+                    pw.println("    @SuppressWarnings(\"unchecked\") @Override public " + method.getReturnType() + " " + method.getSimpleName() + "(String p0) {");
+                    pw.println("        if (" + hotRodEntityField(fieldName) + " == null || " + hotRodEntityField(fieldName) + ".isEmpty()) return Optional.empty();");
+                    pw.println("        return " + hotRodEntityField(fieldName) + ".stream().filter(o -> Objects.equals(o." + getFieldNameForCollectionKey(fieldType, method) + ", p0)).findFirst().map(e -> " + migrateToType(returnTypeGeneric, collectionItemType, "e") + ");");
+                    pw.println("    }");
+                    return true;
+                }
                 case MAP_ADD:
                     collectionItemType = getGenericsDeclaration(hotRodFieldType).get(0);
                     TypeMirror secondParameterType = method.getParameters().get(1).asType();

@@ -1,0 +1,16 @@
+:toc:
+:toclevels: 3
+:numbered:
+:linkattrs:
+
+include::topics/templates/document-attributes.adoc[]
+
+:secure_applications_and_services_guide:
+
+= {adapterguide_name}
+
+:release_header_guide: {adapterguide_name_short}
+:release_header_latest_link: {adapterguide_link_latest}
+include::topics/templates/release-header.adoc[]
+
+include::topics.adoc[]

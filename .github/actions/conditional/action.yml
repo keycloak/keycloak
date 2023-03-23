@@ -1,0 +1,30 @@
+name: Changed Files
+description: Checks changes against target branch
+
+outputs:
+  ci:
+    description: Should "ci.yml" execute
+    value: ${{ steps.changes.outputs.ci }}
+  operator:
+    description: Should "operator-ci.yml" execute
+    value: ${{ steps.changes.outputs.operator }}
+  js:
+    description: Should "js-ci.yml" execute
+    value: ${{ steps.changes.outputs.js }}
+  codeql-java:
+    description: Should "codeql-analysis.yml / java" execute
+    value: ${{ steps.changes.outputs.codeql-java }}
+  codeql-themes:
+    description: Should "codeql-analysis.yml / themes" execute
+    value: ${{ steps.changes.outputs.codeql-themes }}
+  docs:
+    description: Should "docs.yml" execute
+    value: ${{ steps.changes.outputs.docs }}
+
+runs:
+  using: composite
+  steps:
+    - id: changes
+      name: Find changes
+      shell: bash
+      run: .github/actions/conditional/conditional.sh origin ${{ github.base_ref }}

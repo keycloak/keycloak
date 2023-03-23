@@ -24,7 +24,7 @@
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
         <artifactId>integration-arquillian-servers-auth-server-services</artifactId>
-        <version>999-SNAPSHOT</version>
+        <version>999.0.0-SNAPSHOT</version>
     </parent>
 
     <artifactId>integration-arquillian-testsuite-providers</artifactId>
@@ -67,6 +67,11 @@
             <version>${project.version}</version>
             <scope>runtime</scope>
         </dependency>
+        <dependency>
+            <groupId>org.infinispan</groupId>
+            <artifactId>infinispan-tasks-api</artifactId>
+            <version>${infinispan.version}</version>
+        </dependency>
     </dependencies>
 
     <build>
@@ -102,7 +107,7 @@
                             <artifactItems>
                                 <artifactItem>
                                     <groupId>org.keycloak</groupId>
-                                    <artifactId>keycloak-js-adapter</artifactId>
+                                    <artifactId>keycloak-js-adapter-jar</artifactId>
                                     <version>${js-adapter.version}</version>
                                     <type>jar</type>
                                     <outputDirectory>${js-adapter.file.path}</outputDirectory>

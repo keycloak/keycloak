@@ -29,6 +29,7 @@ import org.keycloak.storage.ldap.kerberos.LDAPProviderKerberosConfig;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.util.KerberosRule;
 import org.keycloak.testsuite.KerberosEmbeddedServer;
+import org.keycloak.testsuite.util.OAuthClient;
 
 import javax.ws.rs.core.Response;
 
@@ -67,7 +68,8 @@ public class KerberosLdapCrossRealmTrustTest extends AbstractKerberosTest {
     @Test
     public void test01SpnegoLoginCRTSuccess() throws Exception {
         // Login as user from realm KC2.COM . Realm KEYCLOAK.ORG will trust us
-        AccessToken token = assertSuccessfulSpnegoLogin("hnelson2@KC2.COM", "hnelson2", "secret");
+        OAuthClient.AccessTokenResponse tokenResponse = assertSuccessfulSpnegoLogin("hnelson2@KC2.COM", "hnelson2", "secret");
+        AccessToken token = oauth.verifyToken(tokenResponse.getAccessToken());
 
         Assert.assertEquals(token.getEmail(), "hnelson2@kc2.com");
         assertUser("hnelson2", "hnelson2@kc2.com", "Horatio", "Nelson", false);

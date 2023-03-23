@@ -44,6 +44,8 @@ import javax.ws.rs.BadRequestException;
 import javax.ws.rs.core.Response;
 import java.util.List;
 
+import static org.keycloak.testsuite.util.KerberosUtils.assumeKerberosSupportExpected;
+
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
@@ -84,6 +86,8 @@ public class UserStorageRestTest extends AbstractAdminTest {
 
     @Test
     public void testKerberosAuthenticatorEnabledAutomatically() {
+        assumeKerberosSupportExpected();
+
         // Assert kerberos authenticator DISABLED
         AuthenticationExecutionInfoRepresentation kerberosExecution = findKerberosExecution();
         Assert.assertEquals(kerberosExecution.getRequirement(), AuthenticationExecutionModel.Requirement.DISABLED.toString());
@@ -141,6 +145,8 @@ public class UserStorageRestTest extends AbstractAdminTest {
 
     @Test
     public void testKerberosAuthenticatorChangedOnlyIfDisabled() {
+        assumeKerberosSupportExpected();
+
         // Change kerberos to REQUIRED
         AuthenticationExecutionInfoRepresentation kerberosExecution = findKerberosExecution();
         kerberosExecution.setRequirement(AuthenticationExecutionModel.Requirement.REQUIRED.toString());
@@ -179,6 +185,8 @@ public class UserStorageRestTest extends AbstractAdminTest {
     // KEYCLOAK-4438
     @Test
     public void testKerberosAuthenticatorDisabledWhenProviderRemoved() {
+        assumeKerberosSupportExpected();
+
         // Assert kerberos authenticator DISABLED
         AuthenticationExecutionInfoRepresentation kerberosExecution = findKerberosExecution();
         Assert.assertEquals(kerberosExecution.getRequirement(), AuthenticationExecutionModel.Requirement.DISABLED.toString());

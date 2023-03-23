@@ -275,6 +275,7 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
                         new OAuthGrantBean(accessCode, client, clientScopesRequested));
                 break;
             case CODE:
+                attributes.remove("message"); // No need to include "message" attribute as error is included in separate field anyway
                 attributes.put(OAuth2Constants.CODE, new CodeBean(accessCode, messageType == MessageType.ERROR ? getFirstMessageUnformatted() : null));
                 break;
             case X509_CONFIRM:

@@ -16,6 +16,7 @@
  */
 
 package org.keycloak.http;
+
 /**
  * <p>Represents an out coming HTTP response.
  *
@@ -45,4 +46,20 @@ public interface HttpResponse {
      * @param value the header value
      */
     void setHeader(String name, String value);
+
+    /**
+     * Sets a new cookie only if not yet set.
+     *
+     * @param cookie the cookie
+     */
+    void setCookieIfAbsent(HttpCookie cookie);
+
+    /**
+     * Adding cookies at the end of the transaction helps when retrying a transaction might add the
+     * cookie multiple times. In some scenarios it must not be added at the end of the transaction,
+     * as at that time the response has already been sent to the caller ("committed"), so the code
+     * needs to make a choice. As retrying transactions is the exception, adding cookies at the end
+     * of the transaction is also the exception and needs to be switched on where necessary.
+     */
+    void setWriteCookiesOnTransactionComplete();
 }

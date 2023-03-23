@@ -48,6 +48,11 @@ public class EventBuilder {
     private Event event;
 
     public EventBuilder(RealmModel realm, KeycloakSession session, ClientConnection clientConnection) {
+        this(realm, session);
+        ipAddress(clientConnection.getRemoteAddr());
+    }
+
+    public EventBuilder(RealmModel realm, KeycloakSession session) {
         this.realm = realm;
 
         event = new Event();
@@ -76,7 +81,6 @@ public class EventBuilder {
                 .collect(Collectors.toList());
 
         realm(realm);
-        ipAddress(clientConnection.getRemoteAddr());
     }
 
     private EventBuilder(EventStoreProvider store, List<EventListenerProvider> listeners, RealmModel realm, Event event) {
@@ -152,7 +156,7 @@ public class EventBuilder {
      * Add event detail where strings from the input Collection are filtered not to contain <code>null</code> and then joined using <code>::</code> character. 
      * 
      * @param key of the detail
-     * @param value, can be null
+     * @param values, can be null
      * @return builder for chaining
      */
     public EventBuilder detail(String key, Collection<String> values) {
@@ -166,7 +170,7 @@ public class EventBuilder {
      * Add event detail where strings from the input Stream are filtered not to contain <code>null</code> and then joined using <code>::</code> character. 
      * 
      * @param key of the detail
-     * @param value, can be null
+     * @param values, can be null
      * @return builder for chaining
      */
     public EventBuilder detail(String key, Stream<String> values) {

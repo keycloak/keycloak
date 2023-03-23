@@ -288,7 +288,7 @@ public class OIDCWellKnownProviderTest extends AbstractKeycloakTest {
         String jwksUri = representation.getJwksUri();
 
         JSONWebKeySet jsonWebKeySet = SimpleHttp.doGet(jwksUri, client).asJson(JSONWebKeySet.class);
-        assertEquals(2, jsonWebKeySet.getKeys().length);
+        assertEquals(3, jsonWebKeySet.getKeys().length);
     }
 
     @Test

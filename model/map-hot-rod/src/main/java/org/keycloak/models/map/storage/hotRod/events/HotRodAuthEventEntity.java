@@ -68,7 +68,6 @@ public class HotRodAuthEventEntity extends AbstractHotRodEntity {
     @ProtoField(number = 3)
     public Integer type;
 
-    @Basic(sortable = true)
     @ProtoField(number = 4)
     public Long expiration;
 

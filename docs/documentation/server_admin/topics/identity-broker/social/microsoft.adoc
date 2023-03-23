@@ -1,0 +1,20 @@
+
+[[_microsoft]]
+
+==== Microsoft
+
+.Procedure
+. Click *Identity Providers* in the menu.
+. From the `Add provider` list, select `Microsoft`.
++
+.Add identity provider
+image:images/microsoft-add-identity-provider.png[Add Identity Provider]
++
+. Copy the value of *Redirect URI* to your clipboard.
+. In a separate browser tab, https://account.live.com/developers/applications/create[create a Microsoft app].
+.. Click *Add URL* to add the redirect URL to the Microsoft app.
+.. Note the *Application ID* and *Application Secret*.
+. In {project_name}, paste the value of the *Application ID* into the *Client ID* field.
+. In {project_name}, paste the value of the *Application Secret* into the *Client Secret* field.
+. Click *Add*.
+

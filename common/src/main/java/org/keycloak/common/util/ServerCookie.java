@@ -178,7 +178,7 @@ public class ServerCookie implements Serializable {
 
 
     // TODO RFC2965 fields also need to be passed
-    public static void appendCookieValue(StringBuffer headerBuf,
+    public static void appendCookieValue(StringBuilder headerBuf,
                                          int version,
                                          String name,
                                          String value,

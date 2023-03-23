@@ -109,7 +109,6 @@ public class HotRodUserSessionEntity extends AbstractHotRodEntity {
     @ProtoField(number = 12)
     public Long lastSessionRefresh;
 
-    @Basic(sortable = true)
     @ProtoField(number = 13)
     public Long expiration;
 
@@ -165,25 +164,6 @@ public class HotRodUserSessionEntity extends AbstractHotRodEntity {
         public void clearUpdatedFlag() {
             getHotRodEntity().updated = false;
             Optional.ofNullable(getAuthenticatedClientSessions()).orElseGet(Collections::emptySet).forEach(UpdatableEntity::clearUpdatedFlag);
-        }
-
-        @Override
-        public Optional<MapAuthenticatedClientSessionEntity> getAuthenticatedClientSession(String clientUUID) {
-            Set<HotRodAuthenticatedClientSessionEntityReference> acss = getHotRodEntity().authenticatedClientSessions;
-            if (acss == null || acss.isEmpty()) return Optional.empty();
-
-            return acss.stream()
-                    .filter(acs -> Objects.equals(acs.clientId, clientUUID))
-                    .findFirst()
-                    .map(HotRodTypesUtils::migrateHotRodAuthenticatedClientSessionEntityReferenceToMapAuthenticatedClientSessionEntity);
-        }
-
-        @Override
-        public Boolean removeAuthenticatedClientSession(String clientUUID) {
-            Set<HotRodAuthenticatedClientSessionEntityReference> acss = getHotRodEntity().authenticatedClientSessions;
-            boolean removed = acss != null && acss.removeIf(uc -> Objects.equals(uc.clientId, clientUUID));
-            getHotRodEntity().updated |= removed;
-            return removed;
         }
 
         @Override

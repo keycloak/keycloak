@@ -24,7 +24,7 @@
     <parent>
         <artifactId>keycloak-quarkus-test-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>999-SNAPSHOT</version>
+        <version>999.0.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -118,7 +118,7 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
-                    <argLine>-Djdk.net.hosts.file=${project.build.testOutputDirectory}/hosts_file -XX:+ExitOnOutOfMemoryError -XX:+HeapDumpOnOutOfMemoryError</argLine>
+                    <argLine>-Djdk.net.hosts.file=${project.build.testOutputDirectory}/hosts_file -XX:+ExitOnOutOfMemoryError -XX:+HeapDumpOnOutOfMemoryError --add-opens=java.base/java.security=ALL-UNNAMED</argLine>
                     <systemPropertyVariables>
                         <kc.quarkus.tests.dist>${kc.quarkus.tests.dist}</kc.quarkus.tests.dist>
                     </systemPropertyVariables>

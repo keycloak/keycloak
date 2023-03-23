@@ -20,8 +20,10 @@ import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.keycloak.authentication.RequiredActionProvider;
 import org.keycloak.authentication.actiontoken.execactions.ExecuteActionsActionToken;
+import org.keycloak.authentication.requiredactions.util.RequiredActionsValidator;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.Profile;
+import org.keycloak.common.util.CollectionUtil;
 import org.keycloak.common.util.Time;
 import org.keycloak.credential.CredentialModel;
 import org.keycloak.email.EmailException;
@@ -204,15 +206,20 @@ public class UserResource {
             }
             return Response.noContent().build();
         } catch (ModelDuplicateException e) {
+            session.getTransactionManager().setRollbackOnly();
             return ErrorResponse.exists("User exists with same username or email");
         } catch (ReadOnlyException re) {
+            session.getTransactionManager().setRollbackOnly();
             return ErrorResponse.error("User is read only!", Status.BAD_REQUEST);
         } catch (ModelException me) {
             logger.warn("Could not update user!", me);
+            session.getTransactionManager().setRollbackOnly();
             return ErrorResponse.error("Could not update user!", Status.BAD_REQUEST);
         } catch (ForbiddenException fe) {
+            session.getTransactionManager().setRollbackOnly();
             throw fe;
         } catch (Exception me) { // JPA
+            session.getTransactionManager().setRollbackOnly();
             logger.warn("Could not update user!", me);// may be committed by JTA which can't
             return ErrorResponse.error("Could not update user!", Status.BAD_REQUEST);
         }
@@ -330,7 +337,7 @@ public class UserResource {
         }
         EventBuilder event = new EventBuilder(realm, session, clientConnection);
 
-        UserSessionModel userSession = session.sessions().createUserSession(realm, user, user.getUsername(), clientConnection.getRemoteAddr(), "impersonate", false, null, null);
+        UserSessionModel userSession = new UserSessionManager(session).createUserSession(realm, user, user.getUsername(), clientConnection.getRemoteAddr(), "impersonate", false, null, null);
 
         UserModel adminUser = auth.adminAuth().getUser();
         String impersonatorId = adminUser.getId();
@@ -758,7 +765,7 @@ public class UserResource {
 
 
     /**
-     * Send a update account email to the user
+     * Send an email to the user with a link they can click to execute particular actions.
      *
      * An email contains a link the user can click to perform a set of required actions.
      * The redirectUri and clientId parameters are optional. If no redirect is given, then there will
@@ -768,7 +775,7 @@ public class UserResource {
      * @param redirectUri Redirect uri
      * @param clientId Client id
      * @param lifespan Number of seconds after which the generated token expires
-     * @param actions required actions the user needs to complete
+     * @param actions Required actions the user needs to complete
      * @return
      */
     @Path("execute-actions-email")
@@ -796,6 +803,11 @@ public class UserResource {
 
         if (clientId == null) {
             clientId = Constants.ACCOUNT_MANAGEMENT_CLIENT_ID;
+        }
+
+        if (CollectionUtil.isNotEmpty(actions) && !RequiredActionsValidator.validRequiredActions(session, actions)) {
+            throw new WebApplicationException(
+                ErrorResponse.error("Provided invalid required actions", Status.BAD_REQUEST));
         }
 
         ClientModel client = realm.getClientByClientId(clientId);
@@ -878,12 +890,10 @@ public class UserResource {
                                                        @QueryParam("briefRepresentation") @DefaultValue("true") boolean briefRepresentation) {
         auth.users().requireView(user);
 
-        if (Objects.nonNull(search) && Objects.nonNull(firstResult) && Objects.nonNull(maxResults)) {
+        if (Objects.nonNull(search)) {
             return ModelToRepresentation.searchForGroupByName(user, !briefRepresentation, search.trim(), firstResult, maxResults);
-        } else if(Objects.nonNull(firstResult) && Objects.nonNull(maxResults)) {
-            return ModelToRepresentation.toGroupHierarchy(user, !briefRepresentation, firstResult, maxResults);
         } else {
-            return ModelToRepresentation.toGroupHierarchy(user, !briefRepresentation);
+            return ModelToRepresentation.toGroupHierarchy(user, !briefRepresentation, firstResult, maxResults);
         }
     }
 

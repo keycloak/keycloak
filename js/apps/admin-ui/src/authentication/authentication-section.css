@@ -1,0 +1,7 @@
+.keycloak_authentication-section__usedby {
+  color: var(--pf-global--success-color--100);
+}
+
+.keycloak_authentication-section__usedby_label .pf-c-label__icon {
+  color: var(--pf-global--success-color--100);
+}

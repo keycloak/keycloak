@@ -1,0 +1,10 @@
+{
+  "name": "客户端模板的名称。在领域中必须是唯一的",
+  "description": "客户端模板的描述",
+  "protocol": "此客户端模板提供的SSO协议配置",
+  "prefix": "每个领域角色的前缀（可选）。",
+  "multiValued": "表示此值是否支持多值.如果为真，所有值会设置为已知。如果为假，只有第一个值是已知。",
+  "tokenClaimName": "token中加入的申请者名. 这可以是个完整的分级信息例如 'address.street'. 这种情况下，会生成一个复杂的json回复",
+  "claimJsonType": "用来展现申请的JSON 类型 long, int, boolean, 和 String 是有效值",
+  "protocolMapper": "协议..."
+}

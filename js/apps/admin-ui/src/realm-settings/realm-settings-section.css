@@ -1,0 +1,299 @@
+.pf-c-card.pf-m-flat.kc-login-screen,
+.pf-c-card.pf-m-flat.kc-email-settings,
+.pf-c-card.pf-m-flat.kc-user-info-settings,
+.pf-c-card.pf-m-flat.kc-email-template,
+.pf-c-card.pf-m-flat.kc-email-connection,
+.pf-c-card.pf-m-flat.kc-message-bundles,
+.pf-c-card.pf-m-flat.kc-sso-session-template,
+.pf-c-card.pf-m-flat.kc-client-session-template,
+.pf-c-card.pf-m-flat.kc-offline-session-template,
+.pf-c-card.pf-m-flat.kc-login-settings-template {
+  border: none;
+  margin-top: 0px;
+  margin-bottom: 0px;
+  padding-bottom: var(--pf-global--spacer--sm);
+}
+
+article.pf-c-card.pf-m-flat.kc-email-template
+  > .pf-c-card__header.kc-form-panel__header,
+article.pf-c-card.pf-m-flat.kc-email-connection
+  > .pf-c-card__header.kc-form-panel__header {
+  margin-top: 0px;
+  margin-bottom: 0px;
+  padding-left: 0px;
+  padding-bottom: 0px;
+}
+
+.kc-login-screen > div.pf-c-card__header.kc-form-panel__header,
+.kc-email-settings > div.pf-c-card__header.kc-form-panel__header,
+.kc-email-template > div.pf-c-card__header.kc-form-panel__header,
+.kc-user-info-settings > div.pf-c-card__header.kc-form-panel__header {
+  padding-bottom: 0px;
+  padding-left: 0px;
+  padding-top: 0px;
+}
+
+.kc-email-settings > div.pf-c-card__body.kc-form-panel__body,
+.kc-email-template > div.pf-c-card__body.kc-form-panel__body,
+.kc-login-screen > div.pf-c-card__body.kc-form-panel__body,
+.kc-user-info-settings > div.pf-c-card__body.kc-form-panel__body {
+  padding-left: 0px;
+  padding-bottom: var(--pf-global--spacer--2xl);
+}
+
+button.kc-certificate.pf-c-button.pf-m-secondary {
+  margin-left: var(--pf-global--spacer--md);
+}
+
+.pf-c-data-list__item-row.test {
+  font-weight: bold;
+}
+
+.pf-c-data-list__item-content.data-list-cells {
+  margin-left: var(--pf-global--spacer--xl);
+}
+
+button.pf-c-data-list__item-draggable-button.pf-m-disabled.header-drag-button {
+  display: none;
+}
+
+button.pf-c-data-list__item-draggable-button.row-drag-button {
+  padding-top: var(--pf-global--spacer--md);
+}
+
+.pf-c-data-list__item-control {
+  margin-right: 0px;
+}
+
+.pf-c-data-list__item-row.test {
+  font-weight: bold;
+}
+
+button.pf-c-button.pf-m-link.add-provider {
+  padding: 0px;
+}
+
+.pf-c-toolbar__group.providers-toolbar {
+  padding-left: var(--pf-c-toolbar__content--PaddingLeft);
+}
+
+div#login-action-timeout-label > .pf-c-form__group-label,
+div#offline-session-max-label > .pf-c-form__group-label {
+  width: 90%;
+}
+
+div#offline-session-max-label > .pf-c-form__group-label {
+  width: 85%;
+}
+
+.add-provider-modal > div.pf-c-modal-box__body {
+  overflow: visible;
+}
+
+.pf-c-content.messageBundleDescription {
+  max-width: 1024px;
+  padding-bottom: var(--pf-global--spacer--lg);
+}
+
+.kc-message-bundles > .pf-c-card__body.kc-form-panel__body > div.tableBorder {
+  border-style: solid;
+  border-width: 1px;
+  border-color: var(--pf-global--BorderColor--100);
+  max-width: 1024px;
+}
+
+.pf-c-form__group.kc-email-form-group {
+  display: inline-block !important;
+}
+
+.pf-c-content.kc-provide-email-text {
+  padding-bottom: var(--pf-global--spacer--md);
+}
+
+.kc-sso-session-idle-input,
+.kc-sso-session-max-input,
+.kc-sso-session-max-input,
+.kc-sso-session-idle-remember-me-input,
+.kc-sso-session-max-remember-me-input,
+.kc-offline-session-idle-input,
+.kc-offline-session-max-input,
+.kc-client-session-idle-input,
+.kc-client-session-max-input,
+.kc-login-timeout-input,
+.kc-login-action-timeout-input,
+.kc-access-token-lifespan-input,
+.kc-user-initiated-action-lifespan-input,
+.kc-default-admin-initiated-input,
+.kc-access-token-lifespan-implicit-input,
+.kc-client-login-timeout-input,
+.kc-email-verification-input,
+.kc-idp-email-verification-input,
+.kc-idp-forgot-password-input,
+.kc-forgot-pw-input,
+.kc-execute-actions-input {
+  width: 170px;
+  margin-right: 12px;
+}
+
+.kc-sso-session-idle-select,
+.kc-sso-session-max-select,
+.kc-sso-session-idle-remember-me-select,
+.kc-sso-session-max-remember-me-select,
+.kc-client-session-idle-select,
+.kc-client-session-max-select,
+.kc-offline-session-idle-select,
+.kc-offline-session-max-select,
+.kc-login-action-timeout-select,
+.kc-sso-session-idle-select.pf-m-expanded,
+.kc-sso-session-max-select.pf-m-expanded {
+  width: 170px;
+}
+
+article.pf-c-card.pf-m-flat.kc-sso-session-template
+  > .pf-c-card__header.kc-form-panel__header,
+article.pf-c-card.pf-m-flat.kc-sso-session-template
+  > .pf-c-card__body.kc-form-panel__body,
+article.pf-c-card.pf-m-flat.kc-client-session-template
+  > .pf-c-card__header.kc-form-panel__header,
+article.pf-c-card.pf-m-flat.kc-client-session-template
+  > .pf-c-card__body.kc-form-panel__body,
+article.pf-c-card.pf-m-flat.kc-offline-session-template
+  > .pf-c-card__header.kc-form-panel__header,
+article.pf-c-card.pf-m-flat.kc-offline-session-template
+  > .pf-c-card__body.kc-form-panel__body,
+article.pf-c-card.pf-m-flat.kc-login-settings-template
+  > .pf-c-card__header.kc-form-panel__header,
+article.pf-c-card.pf-m-flat.kc-login-settings-template
+  > .pf-c-card__body.kc-form-panel__body,
+article.pf-c-card.pf-m-flat.kc-email-connection
+  > .pf-c-card__body.kc-form-panel__body {
+  padding: 0px;
+}
+
+.kc-override-action-tokens-subtitle {
+  font-size: var(--pf-global--FontSize--md);
+  font-weight: bold;
+}
+
+.kc-row-drag-button {
+  padding: var(--pf-global--spacer--sm);
+}
+
+.kc-profiles-config-section {
+  align-items: center;
+}
+
+.kc-form-radio-btn > input {
+  transform: scale(1.6);
+}
+
+.kc-editor-radio-btn > input {
+  transform: scale(1.6);
+}
+
+.kc-emptyExecutors {
+  color: #8d9195;
+}
+
+.kc-emptyConditions {
+  color: #8d9195;
+}
+
+.kc-emptyClientProfiles {
+  color: #8d9195;
+}
+
+.kc-action-dropdown {
+  background-color: transparent;
+}
+
+.kc-executor-link {
+  margin-right: 0.625rem;
+}
+
+.kc-unclickable-executor {
+  font-size: var(--pf-global--FontSize--md);
+  padding: 0 var(--pf-global--spacer--md) 0 var(--pf-global--spacer--md);
+}
+
+.kc-backToPolicies,
+.kc-backToPolicies {
+  width: 5rem;
+}
+
+.kc-backToPolicies {
+  float: left;
+}
+
+.kc-executor-trash-icon {
+  margin-left: 0.5rem;
+  color: var(--pf-global--Color--200);
+}
+
+.kc-executor-trash-icon:hover {
+  filter: brightness(55%);
+}
+
+.kc-condition-link {
+  margin-right: 0.625rem;
+}
+
+.kc-conditionType-trash-icon {
+  margin-left: 0.5rem;
+  color: var(--pf-global--Color--400);
+}
+
+.kc-conditionType-trash-icon:hover {
+  filter: brightness(55%);
+}
+
+.kc_eventListeners_select {
+  width: 35rem;
+}
+
+input#kc-scopes {
+  width: 630px;
+
+  margin-right: 24px;
+}
+
+.kc-client-scopes-chip-group {
+  margin-right: var(--pf-global--spacer--2xl);
+  max-width: 585px;
+  min-width: 585px;
+  padding-left: none;
+}
+
+.kc-join-group-modal-check {
+  margin-right: var(--pf-global--spacer--sm);
+}
+
+.kc-requiredFor {
+  display: flex;
+}
+
+.kc-requiredFor-option {
+  margin-right: 20px;
+}
+
+.kc-emptyValidators {
+  color: #8d9195;
+  margin-left: 25px;
+}
+
+.kc-attributes-validations {
+  max-width: 1024px;
+  margin-bottom: 52px;
+}
+
+.kc-attributeCancel {
+  align-self: center;
+}
+
+.kc--attributes-validations--add-validation-button {
+  margin-top: -55px;
+  float: right;
+}
+.kc--attributes-validations--action-cell {
+  text-align: right;
+}

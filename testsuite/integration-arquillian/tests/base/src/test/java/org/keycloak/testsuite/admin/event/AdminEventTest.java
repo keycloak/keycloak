@@ -23,6 +23,7 @@ import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.representations.idm.AdminEventRepresentation;
 import org.keycloak.representations.idm.AuthDetailsRepresentation;
+import org.keycloak.representations.idm.RealmEventsConfigRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.admin.ApiUtil;
@@ -39,7 +40,7 @@ import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.keycloak.testsuite.auth.page.AuthRealm.MASTER;
 
 /**
@@ -188,7 +189,7 @@ public class AdminEventTest extends AbstractEventTest {
     private void checkUpdateRealmEventsConfigEvent(int size) {
         List<AdminEventRepresentation> events = events();
         assertThat(events.size(), is(equalTo(size)));
-        
+
         AdminEventRepresentation event = events().get(0);
         assertThat(event.getOperationType(), is(equalTo("UPDATE")));
         assertThat(event.getRealmId(), is(equalTo(realmName())));
@@ -196,7 +197,7 @@ public class AdminEventTest extends AbstractEventTest {
         assertThat(event.getAuthDetails().getRealmId(), is(equalTo(masterRealmId)));
         assertThat(event.getRepresentation(), is(notNullValue()));
     }
-    
+
     @Test
     public void updateRealmEventsConfig() {
         // change from OFF to ON should be stored
@@ -204,20 +205,58 @@ public class AdminEventTest extends AbstractEventTest {
         configRep.setAdminEventsEnabled(Boolean.TRUE);
         saveConfig();
         checkUpdateRealmEventsConfigEvent(1);
-        
+
         // any other change should be store too
         configRep.setEventsEnabled(Boolean.TRUE);
         saveConfig();
         checkUpdateRealmEventsConfigEvent(2);
-        
+
         // change from ON to OFF should be stored too
         configRep.setAdminEventsEnabled(Boolean.FALSE);
         saveConfig();
         checkUpdateRealmEventsConfigEvent(3);
-        
+
         // another change should not be stored cos it was OFF already
         configRep.setAdminEventsDetailsEnabled(Boolean.FALSE);
         saveConfig();
         assertThat(events().size(), is(equalTo(3)));
+    }
+
+    @Test
+    public void createAndDeleteRealm() {
+        // Enable admin events on "master" realm, since realm create/delete events will be stored in realm of
+        // the authenticated user who executes the operations (admin in master realm),
+        RealmResource master = adminClient.realm(MASTER);
+        RealmEventsConfigRepresentation masterConfig = master.getRealmEventsConfig();
+        masterConfig.setAdminEventsDetailsEnabled(true);
+        masterConfig.setAdminEventsEnabled(true);
+        master.updateRealmEventsConfig(masterConfig);
+        master.clearAdminEvents();
+
+        // Create realm.
+        RealmRepresentation realm = new RealmRepresentation();
+        realm.setId("test-realm");
+        realm.setRealm("test-realm");
+        importRealm(realm);
+
+        // Delete realm.
+        removeRealm("test-realm");
+
+        // Check that events were logged.
+        List<AdminEventRepresentation> events = master.getAdminEvents();
+        assertThat(events.size(), is(equalTo(2)));
+
+        AdminEventRepresentation createEvent = events.get(1);
+        assertThat(createEvent.getOperationType(), is(equalTo("CREATE")));
+        assertThat(createEvent.getRealmId(), is(equalTo(masterRealmId)));
+        assertThat(createEvent.getResourceType(), is(equalTo("REALM")));
+        assertThat(createEvent.getResourcePath(), is(equalTo("test-realm")));
+        assertThat(createEvent.getRepresentation(), is(notNullValue()));
+
+        AdminEventRepresentation deleteEvent = events.get(0);
+        assertThat(deleteEvent.getOperationType(), is(equalTo("DELETE")));
+        assertThat(deleteEvent.getRealmId(), is(equalTo(masterRealmId)));
+        assertThat(deleteEvent.getResourceType(), is(equalTo("REALM")));
+        assertThat(deleteEvent.getResourcePath(), is(equalTo("test-realm")));
     }
 }

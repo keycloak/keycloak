@@ -1,0 +1,33 @@
+{
+  "create": "Crear",
+  "save": "Guardar",
+  "key": "Clave",
+  "export": "Exportar",
+  "download": "Descargar",
+  "clear": "Limpiar",
+  "on": "Activado",
+  "edit": "Editar",
+  "enabled": "Habilitado",
+  "none": "ninguno",
+  "description": "Descripción",
+  "type": "Tipo",
+  "category": "Categoría",
+  "clients": "Clientes",
+  "realmRoles": "Roles de dominio",
+  "sessions": "Sesiones",
+  "mappers": "Asignadores",
+  "identityProviders": "Proveedores de identidad",
+  "settings": "Ajustes",
+  "times": {
+    "seconds": "Segundos",
+    "minutes": "Minutos",
+    "hours": "Horas",
+    "days": "Días"
+  },
+  "credentials": "Credenciales",
+  "clientId": "ID Cliente",
+  "clientName": "Nombre",
+  "id": "ID",
+  "mapperType": "Tipo de asignador",
+  "password": "Contraseña"
+}
