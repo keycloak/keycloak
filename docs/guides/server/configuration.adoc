@@ -24,13 +24,13 @@ Configuration sources have a descending ordinal: command-line parameters take pr
 |*Source* | *Format*
 
 |CLI
-|--db-url=cliValue
+|--db-url-host=cliValue
 
 |Environment Variable
-|KC_DB_URL=envVarValue
+|KC_DB_URL_HOST=envVarValue
 
 |Configuration file
-|db-url=confFileValue
+|db-url-host=confFileValue
 |===
 
 In the example above, the `db-url` value is set in all three configuration sources. The actual value that is used at startup would be the `cliValue`. If `--db-url=cliValue` is not used, the used value would be `KC_DB_URL=envVarValue`, and last but not least the `db-url=confFileValue` would be used when no environment variable with the same Key is present. When this value is specified in a user defined configuration file and in `conf/keycloak.conf`, the value from the user defined configuration file takes precedence.
