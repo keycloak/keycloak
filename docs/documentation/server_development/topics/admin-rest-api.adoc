@@ -10,6 +10,8 @@ You can obtain a token by enabling authentication for your application using {pr
 
 ==== Authenticating with a username and password
 
+NOTE: The following example assumes that you created the user `admin` with the password `password` in the `master` realm as shown in the link:{gettingstarted_link}[{gettingstarted_name}] tutorial.
+
 .Procedure
 
 . Obtain an access token for the user in the realm `master` with username `admin` and password `password`:
