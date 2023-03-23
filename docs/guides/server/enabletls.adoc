@@ -18,7 +18,7 @@ When both alternatives are configured, the PEM files takes precedence over the J
 === Providing certificates in PEM format
 When you use a pair of matching certificate and private key files in PEM format, you configure Keycloak to use them by running the following command:
 
-<@kc.start parameters="--https-certificate-file=/path/to/certfile.pem --https-certificate-key-file=/path/to/keyfile.pem"/>
+<@kc.start parameters="--https-certificate-file=/path/to/certfile.pem --https-certificate-key-file=/path/to/keyfile.key"/>
 
 Keycloak creates a keystore out of these files in memory and uses this keystore afterwards.
 
