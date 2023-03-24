@@ -67,11 +67,7 @@ const SecuredRoute = ({ route }: SecuredRouteProps) => {
       : hasAccess(route.access);
 
   if (accessAllowed)
-    return (
-      <Suspense fallback={<KeycloakSpinner />}>
-        <route.component />
-      </Suspense>
-    );
+    return <Suspense fallback={<KeycloakSpinner />}>{route.element}</Suspense>;
 
   return <ForbiddenSection permissionNeeded={route.access} />;
 };
