@@ -23,6 +23,8 @@ export default class GroupDetailPage extends GroupPage {
   private renameGroupModalGroupNameInput = "groupNameInput";
   private renameGroupModalRenameBtn = "renameGroup";
   private permissionSwitch = "permissionSwitch";
+  private actionsDrpDwnBtn = "Rename";
+
   public goToChildGroupsTab() {
     cy.findByTestId(this.childGroupsTab).click();
     return this;
@@ -66,6 +68,16 @@ export default class GroupDetailPage extends GroupPage {
     modalUtils.confirmModal();
     return this;
   }
+
+  // public actionRenameGroup() {
+  //   super.openDropdownMenu("", cy.findByText(this.actionsDrpDwnBtn));
+  //   return this;
+  // }
+
+  // public showRenameGroupDialog() {
+  //   this.actionRenameGroup();
+  //   return this;
+  // }
 
   public renameGroup(newGroupName: string) {
     this.headerActionRenameGroup();
