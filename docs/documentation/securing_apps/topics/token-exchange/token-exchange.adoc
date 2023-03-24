@@ -9,7 +9,8 @@ include::../templates/techpreview.adoc[]
 
 [NOTE]
 ====
-In order to use token exchange you should also enable the `token_exchange` feature. Please, take a look at the https://www.keycloak.org/server/features[Enabling and disabling features] guide.
+To use more than the <<_internal-token-to-internal-token-exchange,Internal Token to Internal Token Exchange>> flow, also enable the `admin_fine_grained_authz` feature.
+For details, see the https://www.keycloak.org/server/features[Enabling and disabling features] guide.
 ====
 
 === How token exchange works
@@ -123,6 +124,7 @@ The rest of this chapter discusses the setup requirements and provides examples 
 For simplicity's sake, let's call a token minted by the current realm as an _internal_ token and a token minted by
 an external realm or identity provider as an _external_ token.
 
+[[_internal-token-to-internal-token-exchange]]
 === Internal token to internal token exchange
 
 With an internal token to token exchange you have an existing token minted to a specific client and you want to exchange
