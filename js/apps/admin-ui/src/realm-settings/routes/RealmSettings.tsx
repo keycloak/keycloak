@@ -29,7 +29,9 @@ export const RealmSettingsRoute: RouteDef = {
   path: "/:realm/realm-settings",
   element: <RealmSettingsSection />,
   breadcrumb: (t) => t("realmSettings"),
-  access: "view-realm",
+  handle: {
+    access: "view-realm",
+  },
 };
 
 export const RealmSettingsRouteWithTab: RouteDef = {

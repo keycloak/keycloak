@@ -11,7 +11,9 @@ export const AddClientPolicyRoute: RouteDef = {
   path: "/:realm/realm-settings/client-policies/policies/add-client-policy",
   element: <NewClientPolicyForm />,
   breadcrumb: (t) => t("realm-settings:createPolicy"),
-  access: "manage-clients",
+  handle: {
+    access: "manage-clients",
+  },
 };
 
 export const toAddClientPolicy = (

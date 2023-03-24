@@ -17,7 +17,9 @@ export const NewCustomUserFederationRoute: RouteDef = {
   path: "/:realm/user-federation/:providerId/new",
   element: <CustomProviderSettings />,
   breadcrumb: (t) => t("user-federation:addCustomProvider"),
-  access: "view-realm",
+  handle: {
+    access: "view-realm",
+  },
 };
 
 export const toNewCustomUserFederation = (

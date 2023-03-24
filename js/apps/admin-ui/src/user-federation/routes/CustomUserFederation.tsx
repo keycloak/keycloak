@@ -18,7 +18,9 @@ export const CustomUserFederationRoute: RouteDef = {
   path: "/:realm/user-federation/:providerId/:id",
   element: <CustomProviderSettings />,
   breadcrumb: (t) => t("user-federation:providerDetails"),
-  access: "view-realm",
+  handle: {
+    access: "view-realm",
+  },
 };
 
 export const toCustomUserFederation = (

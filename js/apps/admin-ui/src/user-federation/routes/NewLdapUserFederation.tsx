@@ -14,7 +14,9 @@ export const NewLdapUserFederationRoute: RouteDef = {
   element: <CreateUserFederationLdapSettings />,
   breadcrumb: (t) =>
     t("user-federation:addProvider", { provider: "LDAP", count: 1 }),
-  access: "view-realm",
+  handle: {
+    access: "view-realm",
+  },
 };
 
 export const toNewLdapUserFederation = (

@@ -11,7 +11,9 @@ export const IdentityProviderKeycloakOidcRoute: RouteDef = {
   path: "/:realm/identity-providers/keycloak-oidc/add",
   element: <AddOpenIdConnect />,
   breadcrumb: (t) => t("identity-providers:addKeycloakOpenIdProvider"),
-  access: "manage-identity-providers",
+  handle: {
+    access: "manage-identity-providers",
+  },
 };
 
 export const toIdentityProviderKeycloakOidc = (

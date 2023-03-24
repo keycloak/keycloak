@@ -16,7 +16,9 @@ export const KeysRoute: RouteDef = {
   path: "/:realm/realm-settings/keys/:tab",
   element: <RealmSettingsSection />,
   breadcrumb: (t) => t("realm-settings:keys"),
-  access: "view-realm",
+  handle: {
+    access: "view-realm",
+  },
 };
 
 export const toKeysTab = (params: KeysParams): Partial<Path> => ({

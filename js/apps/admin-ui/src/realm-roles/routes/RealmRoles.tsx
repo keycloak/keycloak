@@ -11,7 +11,9 @@ export const RealmRolesRoute: RouteDef = {
   path: "/:realm/roles",
   element: <RealmRolesSection />,
   breadcrumb: (t) => t("roles:realmRolesList"),
-  access: "view-realm",
+  handle: {
+    access: "view-realm",
+  },
 };
 
 export const toRealmRoles = (params: RealmRolesParams): Partial<Path> => ({

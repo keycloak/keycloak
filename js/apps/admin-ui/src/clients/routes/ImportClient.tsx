@@ -11,7 +11,9 @@ export const ImportClientRoute: RouteDef = {
   path: "/:realm/clients/import-client",
   element: <ImportForm />,
   breadcrumb: (t) => t("clients:importClient"),
-  access: "manage-clients",
+  handle: {
+    access: "manage-clients",
+  },
 };
 
 export const toImportClient = (params: ImportClientParams): Partial<Path> => ({

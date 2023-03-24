@@ -16,7 +16,9 @@ export const ClientRegistrationRoute: RouteDef = {
   path: "/:realm/clients/client-registration/:subTab",
   element: <ClientsSection />,
   breadcrumb: (t) => t("clients:clientRegistration"),
-  access: "view-clients",
+  handle: {
+    access: "view-clients",
+  },
 };
 
 export const toClientRegistration = (

@@ -13,7 +13,9 @@ export const IdentityProvidersRoute: RouteDef = {
   path: "/:realm/identity-providers",
   element: <IdentityProvidersSection />,
   breadcrumb: (t) => t("identityProviders"),
-  access: "view-identity-providers",
+  handle: {
+    access: "view-identity-providers",
+  },
 };
 
 export const toIdentityProviders = (

@@ -10,7 +10,9 @@ const UserFederationSection = lazy(() => import("../UserFederationSection"));
 export const UserFederationsLdapRoute: RouteDef = {
   path: "/:realm/user-federation/ldap",
   element: <UserFederationSection />,
-  access: "view-realm",
+  handle: {
+    access: "view-realm",
+  },
 };
 
 export const toUserFederationsLdap = (

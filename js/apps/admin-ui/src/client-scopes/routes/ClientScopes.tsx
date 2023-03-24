@@ -11,7 +11,9 @@ export const ClientScopesRoute: RouteDef = {
   path: "/:realm/client-scopes",
   element: <ClientScopesSection />,
   breadcrumb: (t) => t("client-scopes:clientScopeList"),
-  access: "view-clients",
+  handle: {
+    access: "view-clients",
+  },
 };
 
 export const toClientScopes = (params: ClientScopesParams): Partial<Path> => ({
