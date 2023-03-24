@@ -89,6 +89,11 @@ export default class GroupPage extends PageObject {
     return this;
   }
 
+  public showDeleteSelectedGroupsDialog() {
+    this.clickToolbarAction("Delete");
+    return this;
+  }
+
   public deleteGroupItem(groupName: string, confirmModal = true) {
     listingPage.deleteItem(groupName);
     if (confirmModal) {
@@ -184,6 +189,12 @@ export default class GroupPage extends PageObject {
         groupName +
         "' already exists."
     );
+    return this;
+  }
+
+  public goToGroupActions(groupName: string) {
+    listingPage.clickRowDetails(groupName);
+
     return this;
   }
 }
