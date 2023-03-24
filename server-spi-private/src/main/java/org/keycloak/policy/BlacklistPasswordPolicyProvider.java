@@ -46,7 +46,7 @@ public class BlacklistPasswordPolicyProvider implements PasswordPolicyProvider {
 
     PasswordBlacklist blacklist = (FileBasedPasswordBlacklist) policyConfig;
 
-    if (!blacklist.contains(password.toLowerCase())) {
+    if (!blacklist.contains(password)) {
       return null;
     }
 
