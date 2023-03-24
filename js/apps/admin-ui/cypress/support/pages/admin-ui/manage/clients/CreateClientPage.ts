@@ -3,9 +3,9 @@ import CommonPage from "../../../CommonPage";
 export default class CreateClientPage extends CommonPage {
   private clientTypeDrpDwn = ".pf-c-select__toggle";
   private clientTypeList = ".pf-c-select__toggle + ul";
-  private clientIdInput = "#kc-client-id";
-  private clientIdError = "#kc-client-id + div";
-  private clientNameInput = "#kc-name";
+  private clientIdInput = "#clientId";
+  private clientIdError = "#clientId + div";
+  private clientNameInput = "#name";
   private clientDescriptionInput = "#kc-description";
   private alwaysDisplayInUISwitch =
     '[for="kc-always-display-in-ui-switch"] .pf-c-switch__toggle';

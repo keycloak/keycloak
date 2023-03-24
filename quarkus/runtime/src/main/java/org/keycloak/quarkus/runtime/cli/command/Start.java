@@ -21,6 +21,7 @@ import static org.keycloak.quarkus.runtime.Environment.setProfile;
 import static org.keycloak.quarkus.runtime.cli.Picocli.NO_PARAM_LABEL;
 import static org.keycloak.quarkus.runtime.configuration.Configuration.getRawPersistedProperty;
 
+import org.keycloak.config.OptionCategory;
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.Messages;
 
@@ -29,6 +30,7 @@ import picocli.CommandLine.Command;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Command(name = Start.NAME,
         header = "Start the server.",
@@ -84,5 +86,14 @@ public final class Start extends AbstractStartCommand implements Runnable {
         }
 
         return false;
+    }
+
+    public List<OptionCategory> getOptionCategories() {
+        return super.getOptionCategories().stream().filter(optionCategory -> optionCategory != OptionCategory.EXPORT && optionCategory != OptionCategory.IMPORT).collect(Collectors.toList());
+    }
+
+    @Override
+    public boolean includeRuntime() {
+        return true;
     }
 }
