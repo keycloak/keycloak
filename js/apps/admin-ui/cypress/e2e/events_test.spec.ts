@@ -231,6 +231,17 @@ describe.skip("Events tests", () => {
       listingPage.itemsGreaterThan(0);
     });
 
+    it("Search by Ip Adress to", () => {
+      userEventsTab
+        .assertIpAddressChipGroupExist(true)
+        .assertUserIdChipGroupExist(false)
+        .assertEventTypeChipGroupExist(false)
+        .assertClientChipGroupExist(false)
+        .assertDateFromChipGroupExist(false)
+        .assertDateToChipGroupExist(false);
+      listingPage.itemsGreaterThan(0);
+    });
+
     it("Search by all elements", () => {
       const searchData = new UserEventSearchData();
       searchData.client = eventsTestUserClientId;
@@ -246,6 +257,13 @@ describe.skip("Events tests", () => {
         .assertDateFromChipGroupExist(true)
         .assertDateToChipGroupExist(true);
       listingPage.itemsGreaterThan(0);
+    });
+
+    it("Check `search user events` button enabled", () => {
+      userEventsTab
+        .openSearchUserEventDropdownMenu()
+        .typeIpAddress("11111")
+        .assertSearchEventBtnIsEnabled(true);
     });
   });
 
