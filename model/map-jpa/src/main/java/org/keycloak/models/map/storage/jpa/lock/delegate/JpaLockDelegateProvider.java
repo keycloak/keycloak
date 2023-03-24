@@ -23,7 +23,7 @@ import org.keycloak.models.map.lock.MapLockEntityFields;
 import org.keycloak.models.map.storage.jpa.JpaDelegateProvider;
 import org.keycloak.models.map.storage.jpa.lock.entity.JpaLockEntity;
 
-import javax.persistence.EntityManager;
+import jakarta.persistence.EntityManager;
 import java.util.UUID;
 
 /**
