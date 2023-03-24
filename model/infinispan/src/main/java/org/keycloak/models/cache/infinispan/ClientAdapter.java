@@ -54,10 +54,12 @@ public class ClientAdapter implements ClientModel, CachedObject {
     private void getDelegateForUpdate() {
         if (updated == null) {
             cacheSession.registerClientInvalidation(cached.getId(), cached.getClientId(), cachedRealm.getId());
-            updated = cacheSession.getClientDelegate().getClientById(cachedRealm, cached.getId());
+            updated = getClient();
             if (updated == null) throw new IllegalStateException("Not found in database");
         }
     }
+
+
     protected boolean invalidated;
     public void invalidate() {
         invalidated = true;
@@ -66,7 +68,7 @@ public class ClientAdapter implements ClientModel, CachedObject {
     protected boolean isUpdated() {
         if (updated != null) return true;
         if (!invalidated) return false;
-        updated = cacheSession.getClientDelegate().getClientById(cachedRealm, cached.getId());
+        updated = getClient();
         if (updated == null) throw new IllegalStateException("Not found in database");
         return true;
     }
@@ -298,14 +300,14 @@ public class ClientAdapter implements ClientModel, CachedObject {
     @Override
     public String getAttribute(String name) {
         if (isUpdated()) return updated.getAttribute(name);
-        return cached.getAttributes().get(name);
+        return cached.getAttributes(this::getClient).get(name);
     }
 
     @Override
     public Map<String, String> getAttributes() {
         if (isUpdated()) return updated.getAttributes();
         Map<String, String> copy = new HashMap<>();
-        copy.putAll(cached.getAttributes());
+        copy.putAll(cached.getAttributes(this::getClient));
         return copy;
     }
 
@@ -326,21 +328,21 @@ public class ClientAdapter implements ClientModel, CachedObject {
     @Override
     public String getAuthenticationFlowBindingOverride(String name) {
         if (isUpdated()) return updated.getAuthenticationFlowBindingOverride(name);
-        return cached.getAuthFlowBindings().get(name);
+        return cached.getAuthFlowBindings(this::getClient).get(name);
     }
 
     @Override
     public Map<String, String> getAuthenticationFlowBindingOverrides() {
         if (isUpdated()) return updated.getAuthenticationFlowBindingOverrides();
         Map<String, String> copy = new HashMap<>();
-        copy.putAll(cached.getAuthFlowBindings());
+        copy.putAll(cached.getAuthFlowBindings(this::getClient));
         return copy;
     }
 
     @Override
     public Stream<ProtocolMapperModel> getProtocolMappersStream() {
         if (isUpdated()) return updated.getProtocolMappersStream();
-        return cached.getProtocolMappers().stream();
+        return cached.getProtocolMappers(this::getClient).stream();
     }
 
     @Override
@@ -365,7 +367,7 @@ public class ClientAdapter implements ClientModel, CachedObject {
 
     @Override
     public ProtocolMapperModel getProtocolMapperById(String id) {
-        for (ProtocolMapperModel mapping : cached.getProtocolMappers()) {
+        for (ProtocolMapperModel mapping : cached.getProtocolMappers(this::getClient)) {
             if (mapping.getId().equals(id)) return mapping;
         }
         return null;
@@ -373,7 +375,7 @@ public class ClientAdapter implements ClientModel, CachedObject {
 
     @Override
     public ProtocolMapperModel getProtocolMapperByName(String protocol, String name) {
-        for (ProtocolMapperModel mapping : cached.getProtocolMappers()) {
+        for (ProtocolMapperModel mapping : cached.getProtocolMappers(this::getClient)) {
             if (mapping.getProtocol().equals(protocol) && mapping.getName().equals(name)) return mapping;
         }
         return null;
@@ -627,6 +629,10 @@ public class ClientAdapter implements ClientModel, CachedObject {
 
         ClientModel that = (ClientModel) o;
         return that.getId().equals(getId());
+    }
+
+    private ClientModel getClient() {
+        return cacheSession.getClientDelegate().getClientById(cachedRealm, cached.getId());
     }
 
     @Override
