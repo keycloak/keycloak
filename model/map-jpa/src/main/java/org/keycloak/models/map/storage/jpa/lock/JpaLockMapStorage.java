@@ -26,10 +26,10 @@ import org.keycloak.models.map.storage.jpa.JpaRootEntity;
 import org.keycloak.models.map.storage.jpa.lock.delegate.JpaLockDelegateProvider;
 import org.keycloak.models.map.storage.jpa.lock.entity.JpaLockEntity;
 
-import javax.persistence.EntityManager;
-import javax.persistence.criteria.CriteriaBuilder;
-import javax.persistence.criteria.Root;
-import javax.persistence.criteria.Selection;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.Root;
+import jakarta.persistence.criteria.Selection;
 
 public class JpaLockMapStorage extends JpaMapStorage<JpaLockEntity, MapLockEntity, MapLockEntity> {
 
