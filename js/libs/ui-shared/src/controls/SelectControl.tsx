@@ -8,12 +8,12 @@ import {
   UseControllerProps,
 } from "react-hook-form";
 import {
-  FormGroup,
   Select,
   SelectOption,
   SelectProps,
   ValidatedOptions,
 } from "@patternfly/react-core";
+import { FormLabel } from "./FormLabel";
 
 type Option = {
   key: string;
@@ -50,14 +50,11 @@ export const SelectControl = <
   } = useFormContext();
   const [open, setOpen] = useState(false);
   return (
-    <FormGroup
+    <FormLabel
+      name={name}
+      label={label}
       isRequired={controller.rules?.required === true}
-      label={label || name}
-      fieldId={name}
-      helperTextInvalid={errors[name]?.message as string}
-      validated={
-        errors[name] ? ValidatedOptions.error : ValidatedOptions.default
-      }
+      error={errors[name]}
     >
       <Controller
         {...controller}
@@ -97,6 +94,6 @@ export const SelectControl = <
           </Select>
         )}
       />
-    </FormGroup>
+    </FormLabel>
   );
 };
