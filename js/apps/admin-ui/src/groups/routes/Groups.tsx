@@ -5,9 +5,11 @@ import type { RouteDef } from "../../route-config";
 
 export type GroupsParams = { realm: string; id?: string };
 
+const GroupsSection = lazy(() => import("../GroupsSection"));
+
 export const GroupsRoute: RouteDef = {
   path: "/:realm/groups/*",
-  component: lazy(() => import("../GroupsSection")),
+  element: <GroupsSection />,
   access: "query-groups",
 };
 
