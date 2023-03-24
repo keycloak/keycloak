@@ -19,6 +19,7 @@
 package org.keycloak.testsuite.federation.ldap;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -122,6 +123,20 @@ public class LDAPNoCacheTest extends AbstractLDAPTest {
     @Page
     protected LoginPasswordUpdatePage updatePasswordPage;
 
+    private static void checkEmailAddressMultipleVariants(KeycloakTestingClient testingClient, String username, String newEmail) {
+        testingClient.server().run((KeycloakSession session) -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+
+            RealmModel realm = ctx.getRealm();
+            UserModel user = session.users().getUserByUsername(realm, username);
+            Assert.assertNotNull("User not found", user);
+            Assert.assertEquals(newEmail, user.getEmail());
+            Assert.assertEquals(Collections.singletonList(newEmail), user.getAttributes().get(UserModel.EMAIL));
+            Assert.assertEquals(Collections.singletonList(newEmail), user.getAttributeStream(UserModel.EMAIL).collect(Collectors.toList()));
+        });
+    }
+
+
     // KEYCLOAK-10852
     @Test
     public void resetPasswordLink() throws IOException, MessagingException {
@@ -135,9 +150,8 @@ public class LDAPNoCacheTest extends AbstractLDAPTest {
         changeEmailAddressInLDAP(testingClient,"john_new@email.org");
 
         try {
-            // Search for the user and check email is new address
-            UserRepresentation john = testRealm().users().search("johnkeycloak").get(0);
-            Assert.assertEquals("john_new@email.org", john.getEmail());
+            // Search for the user and check email is new address in the multiple attribute variants
+            checkEmailAddressMultipleVariants(testingClient, "johnkeycloak", "john_new@email.org");
 
             // Test 1 - Use username on the ResetPassword form. Mail should be sent to new address
             triggerForgetPasswordForUser("johnkeycloak", 2, "john_new@email.org");
