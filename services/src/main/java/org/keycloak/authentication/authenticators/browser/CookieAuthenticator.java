@@ -20,6 +20,7 @@ package org.keycloak.authentication.authenticators.browser;
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.Authenticator;
 import org.keycloak.authentication.authenticators.util.AcrStore;
+import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -61,7 +62,13 @@ public class CookieAuthenticator implements Authenticator {
                 context.setForwardedInfoMessage(Messages.REAUTHENTICATE);
                 context.attempted();
             } else {
-                int previouslyAuthenticatedLevel = acrStore.getHighestAuthenticatedLevelFromPreviousAuthentication();
+                String flowId = context.getExecution().getParentFlow();
+                AuthenticationExecutionModel execution = context.getRealm().getAuthenticationExecutionByFlowId(flowId);
+                while (execution != null) {
+                    flowId = execution.getParentFlow();
+                    execution = context.getRealm().getAuthenticationExecutionByFlowId(flowId);
+                }
+                int previouslyAuthenticatedLevel = acrStore.getHighestAuthenticatedLevelFromPreviousAuthentication(flowId);
                 if (acrStore.getRequestedLevelOfAuthentication() > previouslyAuthenticatedLevel) {
                     // Step-up authentication, we keep the loa from the existing user session.
                     // The cookie alone is not enough and other authentications must follow.
