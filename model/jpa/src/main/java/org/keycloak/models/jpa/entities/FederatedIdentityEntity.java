@@ -156,6 +156,11 @@ public class FederatedIdentityEntity {
             result = 31 * result + (identityProvider != null ? identityProvider.hashCode() : 0);
             return result;
         }
+
+        @Override
+        public String toString() {
+            return "FederatedIdentityEntity.Key [user=" + (user != null ? user.getId() : null) + ", identityProvider=" + identityProvider + "]";
+        }
     }
 
     @Override
