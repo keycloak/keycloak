@@ -1,3 +1,4 @@
+import { ProxyAgent, setGlobalDispatcher } from "undici";
 export type NetworkErrorOptions = { response: Response; responseData: unknown };
 
 export class NetworkError extends Error {
@@ -15,6 +16,8 @@ export async function fetchWithError(
   input: RequestInfo | URL,
   init?: RequestInit
 ) {
+  await useProxyIfSet(input);
+
   const response = await fetch(input, init);
 
   if (!response.ok) {
@@ -41,4 +44,27 @@ export async function parseResponse(response: Response): Promise<any> {
   } catch (error) {}
 
   return data;
+}
+
+async function useProxyIfSet(input: RequestInfo | URL) {
+  const request = new Request(input);
+  const url = new URL(request.url);
+  const protocol = url.protocol
+  
+  let proxyUri;
+
+  if ( protocol === "https:" && process.env.HTTPS_PROXY ) {
+    proxyUri = process.env.HTTPS_PROXY;
+  }
+  else  if ( protocol === "http:" && process.env.HTTP_PROXY ) {
+    proxyUri = process.env.HTTP_PROXY;
+  }
+
+  if (proxyUri) {
+    const agent = new ProxyAgent({
+      uri: proxyUri
+    })
+
+    setGlobalDispatcher(agent)
+  }
 }
