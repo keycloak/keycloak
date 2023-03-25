@@ -6,7 +6,7 @@
     <div id="kc-form">
       <div id="kc-form-wrapper">
         <#if realm.password>
-            <form id="kc-form-login" onsubmit="login.disabled = true; return true;" action="${url.loginAction}" method="post">
+            <form id="kc-form-login" onsubmit="return validateLoginForm(e);" action="${url.loginAction}" method="post">
                 <#if !usernameHidden??>
                     <div class="${properties.kcFormGroupClass!}">
                         <label for="username" class="${properties.kcLabelClass!}"><#if !realm.loginWithEmailAllowed>${msg("username")}<#elseif !realm.registrationEmailAsUsername>${msg("usernameOrEmail")}<#else>${msg("email")}</#if></label>
@@ -66,6 +66,21 @@
                       <input tabindex="4" class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonBlockClass!} ${properties.kcButtonLargeClass!}" name="login" id="kc-login" type="submit" value="${msg("doLogIn")}"/>
                   </div>
             </form>
+
+            <script>
+                function validateLoginForm(e){
+                    e.preventDefault();
+                    const passwordNode = document.getElementById("password");
+                    if(!passwordNode.value){
+                        passwordNode.setAttribute("aria-invalid", "true")
+                        return false;
+                    }
+                    login.disabled = true;
+                    return true;
+                }
+                const loginForm = document.getElementById("kc-form-login");
+                loginForm && loginForm.addEventListener("submit", validateLoginForm);
+            </script>
         </#if>
         </div>
 

@@ -292,6 +292,19 @@ public class LoginTest extends AbstractTestRealmKeycloakTest {
                 .assertEvent();
     }
 
+    @Test
+    public void loginMissingPasswordClientValidation() {
+        loginPage.open();
+        loginPage.missingPassword("login-test");
+
+        boolean errorExist = loginPage.checkPasswordFieldHasError();
+
+        Assert.assertEquals("login-test", loginPage.getUsername());
+        Assert.assertEquals("", loginPage.getPassword());
+
+        Assert.assertTrue(errorExist);
+    }
+
     private void setUserEnabled(String id, boolean enabled) {
         UserRepresentation rep = adminClient.realm("test").users().get(id).toRepresentation();
         rep.setEnabled(enabled);
