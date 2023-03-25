@@ -7,7 +7,6 @@
       <div id="kc-form-wrapper">
         <#if realm.password>
             <form id="kc-form-login" onsubmit="return validateLoginForm(e);" action="${url.loginAction}" method="post">
-            <form id="kc-form-login" onsubmit="return validateLoginForm(e);" action="${url.loginAction}" method="post">
                 <#if !usernameHidden??>
                     <div class="${properties.kcFormGroupClass!}">
                         <label for="username" class="${properties.kcLabelClass!}"><#if !realm.loginWithEmailAllowed>${msg("username")}<#elseif !realm.registrationEmailAsUsername>${msg("usernameOrEmail")}<#else>${msg("email")}</#if></label>
