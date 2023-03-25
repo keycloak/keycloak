@@ -161,6 +161,15 @@ public class LoginPage extends LanguageComboboxAwarePage {
         }
     }
 
+    public boolean checkPasswordFieldHasError(){
+        try {
+            String attributeValue = passwordInput.getAttribute("aria-invalid");
+            return attributeValue.equals("true");
+        } catch (NoSuchElementException e) {
+            return false;
+        }
+    }
+
     public String getInstruction() {
         return instruction != null ? instruction.getText() : null;
     }
