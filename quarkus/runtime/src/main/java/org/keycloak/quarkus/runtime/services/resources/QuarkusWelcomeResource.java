@@ -36,6 +36,8 @@ import org.keycloak.theme.freemarker.FreeMarkerProvider;
 import org.keycloak.urls.UrlType;
 import org.keycloak.utils.MediaType;
 
+import io.quarkus.logging.Log;
+
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
@@ -58,6 +60,7 @@ import java.net.URISyntaxException;
 import java.net.UnknownHostException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -160,6 +163,15 @@ public class QuarkusWelcomeResource {
     private Response createWelcomePage(String successMessage, String errorMessage) {
         try {
             Theme theme = getTheme();
+            
+            if(Objects.isNull(theme)) {
+                Log.error("Theme is null please check the \"--spi-theme-default\" parameter");
+                errorMessage = "The theme is null";
+                ResponseBuilder rb = Response.status(Status.BAD_REQUEST)
+                        .entity(errorMessage)
+                        .cacheControl(CacheControlUtil.noCache());
+                return rb.build();
+            }
 
             Map<String, Object> map = new HashMap<>();
 
