@@ -267,14 +267,17 @@ public class GroupResource {
     @Produces(MediaType.APPLICATION_JSON)
     public Stream<UserRepresentation> getMembers(@QueryParam("first") Integer firstResult,
                                                @QueryParam("max") Integer maxResults,
-                                               @QueryParam("briefRepresentation") Boolean briefRepresentation) {
+                                               @QueryParam("briefRepresentation") Boolean briefRepresentation,
+                                                @QueryParam("validated") Boolean validated) {
         this.auth.groups().requireViewMembers(group);
-        
+
+
         firstResult = firstResult != null ? firstResult : 0;
         maxResults = maxResults != null ? maxResults : Constants.DEFAULT_MAX_RESULTS;
         boolean briefRepresentationB = briefRepresentation != null && briefRepresentation;
+        boolean validatedB = validated != null && validated;
 
-        return session.users().getGroupMembersStream(realm, group, firstResult, maxResults)
+        return session.users().getGroupMembersStream(realm, group, firstResult, maxResults, validatedB)
                 .map(user -> briefRepresentationB
                         ? ModelToRepresentation.toBriefRepresentation(user)
                         : ModelToRepresentation.toRepresentation(session, realm, user));

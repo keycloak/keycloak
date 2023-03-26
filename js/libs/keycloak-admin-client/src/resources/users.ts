@@ -30,6 +30,7 @@ interface UserBaseQuery {
 
 export interface UserQuery extends PaginationQuery, SearchQuery, UserBaseQuery {
   exact?: boolean;
+  validated?: boolean;
   [key: string]: string | number | undefined | boolean;
 }
 

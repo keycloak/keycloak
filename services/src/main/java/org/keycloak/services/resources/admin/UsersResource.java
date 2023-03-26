@@ -244,6 +244,7 @@ public class UsersResource {
      * @param firstResult Pagination offset
      * @param maxResults Maximum results size (defaults to 100)
      * @param enabled Boolean representing if user is enabled or not
+     * @param validated Boolean representing weather user should be validated via ImportValidation#validation
      * @param briefRepresentation Boolean which defines whether brief representations are returned (default: false)
      * @param exact Boolean which defines whether the params "last", "first", "email" and "username" must match exactly
      * @param searchQuery A query to search for custom attributes, in the format 'key1:value2 key2:value2'
@@ -265,6 +266,7 @@ public class UsersResource {
                                                @QueryParam("enabled") Boolean enabled,
                                                @QueryParam("briefRepresentation") Boolean briefRepresentation,
                                                @QueryParam("exact") Boolean exact,
+                                               @QueryParam("validated") Boolean validated,
                                                @QueryParam("q") String searchQuery) {
         UserPermissionEvaluator userPermissionEvaluator = auth.users();
 
@@ -272,6 +274,8 @@ public class UsersResource {
 
         firstResult = firstResult != null ? firstResult : -1;
         maxResults = maxResults != null ? maxResults : Constants.DEFAULT_MAX_RESULTS;
+
+        boolean validatedB = validated == null || validated;
 
         Map<String, String> searchAttributes = searchQuery == null
                 ? Collections.emptyMap()
@@ -292,7 +296,7 @@ public class UsersResource {
                     attributes.put(UserModel.ENABLED, enabled.toString());
                 }
                 return searchForUser(attributes, realm, userPermissionEvaluator, briefRepresentation, firstResult,
-                        maxResults, false);
+                        maxResults, false, validatedB);
             }
         } else if (last != null || first != null || email != null || username != null || emailVerified != null
                 || idpAlias != null || idpUserId != null || enabled != null || exact != null || !searchAttributes.isEmpty()) {
@@ -328,10 +332,10 @@ public class UsersResource {
                     attributes.putAll(searchAttributes);
 
                     return searchForUser(attributes, realm, userPermissionEvaluator, briefRepresentation, firstResult,
-                            maxResults, true);
+                            maxResults, true, validatedB);
                 } else {
                     return searchForUser(new HashMap<>(), realm, userPermissionEvaluator, briefRepresentation,
-                            firstResult, maxResults, false);
+                            firstResult, maxResults, false, validatedB);
                 }
 
         return toRepresentation(realm, userPermissionEvaluator, briefRepresentation, userModels);
@@ -433,8 +437,9 @@ public class UsersResource {
         return new UserProfileResource(session, auth);
     }
 
-    private Stream<UserRepresentation> searchForUser(Map<String, String> attributes, RealmModel realm, UserPermissionEvaluator usersEvaluator, Boolean briefRepresentation, Integer firstResult, Integer maxResults, Boolean includeServiceAccounts) {
+    private Stream<UserRepresentation> searchForUser(Map<String, String> attributes, RealmModel realm, UserPermissionEvaluator usersEvaluator, Boolean briefRepresentation, Integer firstResult, Integer maxResults, Boolean includeServiceAccounts, Boolean validated) {
         attributes.put(UserModel.INCLUDE_SERVICE_ACCOUNT, includeServiceAccounts.toString());
+        attributes.put(UserModel.VALIDATED, validated.toString());
 
         if (!auth.users().canView()) {
             Set<String> groupModels = auth.groups().getGroupsWithViewPermission();

@@ -72,6 +72,7 @@ public class BruteForceUsersResource {
             @QueryParam("enabled") Boolean enabled,
             @QueryParam("briefRepresentation") Boolean briefRepresentation,
             @QueryParam("exact") Boolean exact,
+            @QueryParam("validated") Boolean validated,
             @QueryParam("q") String searchQuery) {
         final UserPermissionEvaluator userPermissionEvaluator = auth.users();
         userPermissionEvaluator.requireQuery();
@@ -79,6 +80,8 @@ public class BruteForceUsersResource {
         Map<String, String> searchAttributes = searchQuery == null
                 ? Collections.emptyMap()
                 : SearchQueryUtils.getFields(searchQuery);
+
+        boolean validatedB = validated == null || validated;
 
         Stream<UserModel> userModels = Stream.empty();
         if (search != null) {
@@ -95,7 +98,7 @@ public class BruteForceUsersResource {
                     attributes.put(UserModel.ENABLED, enabled.toString());
                 }
                 return searchForUser(attributes, realm, userPermissionEvaluator, briefRepresentation, firstResult,
-                        maxResults, false);
+                        maxResults, false, validatedB);
             }
         } else if (last != null || first != null || email != null || username != null || emailVerified != null
                 || idpAlias != null || idpUserId != null || enabled != null || exact != null || !searchAttributes.isEmpty()) {
@@ -131,18 +134,19 @@ public class BruteForceUsersResource {
             attributes.putAll(searchAttributes);
 
             return searchForUser(attributes, realm, userPermissionEvaluator, briefRepresentation, firstResult,
-                    maxResults, true);
+                    maxResults, true, validatedB);
         } else {
             return searchForUser(new HashMap<>(), realm, userPermissionEvaluator, briefRepresentation,
-                    firstResult, maxResults, false);
+                    firstResult, maxResults, false, validatedB);
         }
 
         return toRepresentation(realm, userPermissionEvaluator, briefRepresentation, userModels);
 
     }
 
-    private Stream<BruteUser> searchForUser(Map<String, String> attributes, RealmModel realm, UserPermissionEvaluator usersEvaluator, Boolean briefRepresentation, Integer firstResult, Integer maxResults, Boolean includeServiceAccounts) {
+    private Stream<BruteUser> searchForUser(Map<String, String> attributes, RealmModel realm, UserPermissionEvaluator usersEvaluator, Boolean briefRepresentation, Integer firstResult, Integer maxResults, Boolean includeServiceAccounts, Boolean validated) {
         attributes.put(UserModel.INCLUDE_SERVICE_ACCOUNT, includeServiceAccounts.toString());
+        attributes.put(UserModel.VALIDATED, validated.toString());
 
         if (!auth.users().canView()) {
             Set<String> groupModels = auth.groups().getGroupsWithViewPermission();

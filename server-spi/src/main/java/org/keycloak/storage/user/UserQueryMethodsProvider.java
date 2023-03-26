@@ -88,6 +88,7 @@ public interface UserQueryMethodsProvider {
      *     <li>{@link UserModel#EXACT} - whether search with FIRST_NAME, LAST_NAME, USERNAME or EMAIL should be exact match</li>
      *     <li>{@link UserModel#EMAIL_VERIFIED} - search only for users with verified/non-verified email (true/false)</li>
      *     <li>{@link UserModel#ENABLED} - search only for enabled/disabled users (true/false)</li>
+     *     <li>{@link UserModel#VALIDATED} - weather to execute ImportedUserValidation#validate on each search result (true/false)</li>
      *     <li>{@link UserModel#IDP_ALIAS} - search only for users that have a federated identity
      *     from idp with the given alias configured (case sensitive string)</li>
      *     <li>{@link UserModel#IDP_USER_ID} - search for users with federated identity with
@@ -118,6 +119,7 @@ public interface UserQueryMethodsProvider {
      *     <li>{@link UserModel#EXACT} - whether search with FIRST_NAME, LAST_NAME, USERNAME or EMAIL should be exact match</li>
      *     <li>{@link UserModel#EMAIL_VERIFIED} - search only for users with verified/non-verified email (true/false)</li>
      *     <li>{@link UserModel#ENABLED} - search only for enabled/disabled users (true/false)</li>
+     *     <li>{@link UserModel#VALIDATED} - weather to execute ImportedUserValidation#validate on each search result (true/false)</li>
      *     <li>{@link UserModel#IDP_ALIAS} - search only for users that have a federated identity
      *     from idp with the given alias configured (case sensitive string)</li>
      *     <li>{@link UserModel#IDP_USER_ID} - search for users with federated identity with
@@ -141,10 +143,11 @@ public interface UserQueryMethodsProvider {
      *
      * @param realm a reference to the realm.
      * @param group a reference to the group.
+     * @param validated whether to do validation on users found. Default: validation is done.
      * @return a non-null {@link Stream} of users that belong to the group.
      */
-    default Stream<UserModel> getGroupMembersStream(RealmModel realm, GroupModel group) {
-        return getGroupMembersStream(realm, group, null, null);
+    default Stream<UserModel> getGroupMembersStream(RealmModel realm, GroupModel group, Boolean validated) {
+        return getGroupMembersStream(realm, group, null, null, validated);
     }
 
     /**
@@ -154,19 +157,21 @@ public interface UserQueryMethodsProvider {
      * @param group       a reference to the group.
      * @param firstResult first result to return. Ignored if negative, zero, or {@code null}.
      * @param maxResults  maximum number of results to return. Ignored if negative or {@code null}.
+     * @param validated whether to do validation on users found. Default: validation is done.
      * @return a non-null {@link Stream} of users that belong to the group.
      */
-    Stream<UserModel> getGroupMembersStream(RealmModel realm, GroupModel group, Integer firstResult, Integer maxResults);
+    Stream<UserModel> getGroupMembersStream(RealmModel realm, GroupModel group, Integer firstResult, Integer maxResults, Boolean validated);
 
     /**
      * Obtains users that have the specified role.
      *
      * @param realm a reference to the realm.
      * @param role  a reference to the role.
+     * @param validated whether to do validation on users found. Default: validation is done.
      * @return a non-null {@link Stream} of users that have the specified role.
      */
-    default Stream<UserModel> getRoleMembersStream(RealmModel realm, RoleModel role) {
-        return getRoleMembersStream(realm, role, null, null);
+    default Stream<UserModel> getRoleMembersStream(RealmModel realm, RoleModel role, Boolean validated) {
+        return getRoleMembersStream(realm, role, null, null, validated);
     }
 
     /**
@@ -176,9 +181,10 @@ public interface UserQueryMethodsProvider {
      * @param role        a reference to the role.
      * @param firstResult first result to return. Ignored if negative or {@code null}.
      * @param maxResults  maximum number of results to return. Ignored if negative or {@code null}.
+     * @param validated whether to do validation on users found. Default: validation is done.
      * @return a non-null {@link Stream} of users that have the specified role.
      */
-    default Stream<UserModel> getRoleMembersStream(RealmModel realm, RoleModel role, Integer firstResult, Integer maxResults) {
+    default Stream<UserModel> getRoleMembersStream(RealmModel realm, RoleModel role, Integer firstResult, Integer maxResults, Boolean validated) {
         return Stream.empty();
     }
 

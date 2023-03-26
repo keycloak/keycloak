@@ -3,6 +3,7 @@ import type UserProfileConfig from "@keycloak/keycloak-admin-client/lib/defs/use
 import {
   Button,
   ButtonVariant,
+  Checkbox,
   Dropdown,
   DropdownItem,
   DropdownToggle,
@@ -10,8 +11,9 @@ import {
   KebabToggle,
   SearchInput,
   ToolbarItem,
+  Tooltip,
 } from "@patternfly/react-core";
-import { ReactNode, useState } from "react";
+import React, { ReactNode, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useAccess } from "../../context/access/Access";
 import { UserDataTableAttributeSearchForm } from "./UserDataTableAttributeSearchForm";
@@ -31,6 +33,8 @@ type UserDataTableToolbarItemsProps = {
   setSearchUser: (searchUser: string) => void;
   activeFilters: UserAttribute[];
   setActiveFilters: (activeFilters: UserAttribute[]) => void;
+  validated: boolean;
+  toggleValidated: () => void;
   refresh: () => void;
   profile: UserProfileConfig;
   clearAllFilters: () => void;
@@ -50,6 +54,8 @@ export function UserDataTableToolbarItems({
   setSearchUser,
   activeFilters,
   setActiveFilters,
+  validated,
+  toggleValidated,
   refresh,
   profile,
   clearAllFilters,
@@ -81,6 +87,16 @@ export function UserDataTableToolbarItems({
           />
           {searchType === "default" && defaultSearchInput()}
           {searchType === "attribute" && attributeSearchInput()}
+          <ToolbarItem>
+
+            <Checkbox
+              isChecked={validated}
+              id="validated"
+              label="Validated"
+              data-testid="validated-checkbox"
+              onChange={toggleValidated}
+            />
+          </ToolbarItem>
         </InputGroup>
       </ToolbarItem>
     );

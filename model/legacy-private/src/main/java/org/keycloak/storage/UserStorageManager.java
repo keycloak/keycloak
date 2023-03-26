@@ -388,10 +388,10 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
         {@link UserQueryProvider} methods implementation start here */
 
     @Override
-    public Stream<UserModel> getGroupMembersStream(final RealmModel realm, final GroupModel group, Integer firstResult, Integer maxResults) {
+    public Stream<UserModel> getGroupMembersStream(final RealmModel realm, final GroupModel group, Integer firstResult, Integer maxResults, Boolean validated) {
         Stream<UserModel> results = query((provider, firstResultInQuery, maxResultsInQuery) -> {
             if (provider instanceof UserQueryMethodsProvider) {
-                return ((UserQueryMethodsProvider)provider).getGroupMembersStream(realm, group, firstResultInQuery, maxResultsInQuery);
+                return ((UserQueryMethodsProvider)provider).getGroupMembersStream(realm, group, firstResultInQuery, maxResultsInQuery, validated);
 
             } else if (provider instanceof UserFederatedStorageProvider) {
                 return ((UserFederatedStorageProvider)provider).getMembershipStream(realm, group, firstResultInQuery, maxResultsInQuery).
@@ -400,18 +400,27 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
             return Stream.empty();
         }, realm, firstResult, maxResults);
 
-        return importValidation(realm, results);
+        if(validated) {
+            return importValidation(realm, results);
+        } else {
+            return results;
+        }
     }
 
     @Override
-    public Stream<UserModel> getRoleMembersStream(final RealmModel realm, final RoleModel role, Integer firstResult, Integer maxResults) {
+    public Stream<UserModel> getRoleMembersStream(final RealmModel realm, final RoleModel role, Integer firstResult, Integer maxResults, Boolean validated) {
         Stream<UserModel> results = query((provider, firstResultInQuery, maxResultsInQuery) -> {
             if (provider instanceof UserQueryMethodsProvider) {
-                return ((UserQueryMethodsProvider)provider).getRoleMembersStream(realm, role, firstResultInQuery, maxResultsInQuery);
+                return ((UserQueryMethodsProvider)provider).getRoleMembersStream(realm, role, firstResultInQuery, maxResultsInQuery, validated);
             }
             return Stream.empty();
         }, realm, firstResult, maxResults);
-        return importValidation(realm, results);
+
+        if(validated) {
+            return importValidation(realm, results);
+        } else {
+            return results;
+        }
     }
 
     @Override
@@ -469,7 +478,16 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
             return 0;
         }
         , realm, firstResult, maxResults);
-        return importValidation(realm, results);
+
+        if(isImportValidationEnabledDefaultIsTrue(attributes)){
+            return importValidation(realm, results);
+        } else{
+            return results;
+        }
+    }
+
+    private boolean isImportValidationEnabledDefaultIsTrue(Map<String, String> attributes) {
+        return Boolean.parseBoolean(attributes.getOrDefault(UserModel.VALIDATED, "true"));
     }
 
     @Override

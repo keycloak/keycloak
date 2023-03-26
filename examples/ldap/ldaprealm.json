@@ -131,6 +131,7 @@
       "changedSyncPeriod": -1,
       "config": {
         "pagination" : "true",
+        "validateOnAccess": "true",
         "debug" : "false",
         "searchScope" : "1",
         "connectionPooling" : "true",

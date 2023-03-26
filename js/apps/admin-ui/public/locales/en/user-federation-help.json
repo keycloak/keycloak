@@ -27,6 +27,7 @@
   "ldapSynchronizationSettingsDescription": "This section contains options related to synchronization of users from LDAP to the Keycloak database.",
   "syncRegistrations": "Should newly created users be created within LDAP store? Priority effects which provider is chosen to sync the new user. This setting is effectively appplied only with WRITABLE edit mode.",
   "importUsersHelp": "If true, LDAP users will be imported into the Keycloak DB and synced by the configured sync policies.",
+  "validateOnAccessHelp": "If on, import validation of a LDAP federation provider will be performed for each user on every access. The validation checks if the user is still present in LDAP with dedicated LDAP queries, and depending on the configuration uses the data from LDAP instead of previously cached data. If off, then changes made in LDAP are only visible locally after explicit or periodic synchronization.",
   "batchSizeHelp": "Count of LDAP users to be imported from LDAP to Keycloak within a single transaction",
   "periodicFullSyncHelp": "Whether periodic full synchronization of LDAP users to Keycloak should be enabled or not",
   "fullSyncPeriodHelp": "Period for full synchronization in seconds",
