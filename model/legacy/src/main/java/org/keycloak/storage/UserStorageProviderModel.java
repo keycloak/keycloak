@@ -28,6 +28,7 @@ import org.keycloak.component.ComponentModel;
 public class UserStorageProviderModel extends CacheableStorageProviderModel {
 
     public static final String IMPORT_ENABLED = "importEnabled";
+    public static final String VALIDATE_USER_LISTINGS = "validateUserListings";
     public static final String FULL_SYNC_PERIOD = "fullSyncPeriod";
     public static final String CHANGED_SYNC_PERIOD = "changedSyncPeriod";
     public static final String LAST_SYNC = "lastSync";
@@ -44,6 +45,7 @@ public class UserStorageProviderModel extends CacheableStorageProviderModel {
     private transient Integer changedSyncPeriod;
     private transient Integer lastSync;
     private transient Boolean importEnabled;
+    private transient Boolean validateUserListings;
 
     public boolean isImportEnabled() {
         if (importEnabled == null) {
@@ -63,6 +65,23 @@ public class UserStorageProviderModel extends CacheableStorageProviderModel {
         getConfig().putSingle(IMPORT_ENABLED, Boolean.toString(flag));
     }
 
+    public boolean isValidateUserListings() {
+        if (validateUserListings == null) {
+            String val = getConfig().getFirst(VALIDATE_USER_LISTINGS);
+            if (val == null) {
+                validateUserListings = true;
+            } else {
+                validateUserListings = Boolean.valueOf(val);
+            }
+        }
+        return validateUserListings;
+
+    }
+
+    public void setValidateUserListings(boolean flag) {
+        validateUserListings = flag;
+        getConfig().putSingle(VALIDATE_USER_LISTINGS, Boolean.toString(flag));
+    }
 
     public int getFullSyncPeriod() {
         if (fullSyncPeriod == null) {

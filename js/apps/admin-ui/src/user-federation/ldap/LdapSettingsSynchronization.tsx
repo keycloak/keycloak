@@ -65,6 +65,36 @@ export const LdapSettingsSynchronization = ({
         </FormGroup>
         <FormGroup
           hasNoPaddingTop
+          label={t("validateUserListings")}
+          labelIcon={
+            <HelpItem
+              helpText={t("user-federation-help:validateUserListings")}
+              fieldLabelId="user-federation:validateUserListings"
+            />
+          }
+          fieldId="kc-validate-on-access"
+        >
+          <Controller
+            name="config.validateUserListings"
+            defaultValue={["true"]}
+            control={form.control}
+            render={({ field }) => (
+              <Switch
+                id="kc-validate-on-access"
+                data-testid="validate-on-access"
+                name="validateUserListings"
+                label={t("common:on")}
+                labelOff={t("common:off")}
+                onChange={(value) => field.onChange([`${value}`])}
+                isChecked={field.value[0] === "true"}
+                isDisabled={false}
+                aria-label={t("validateUserListings")}
+              />
+            )}
+          ></Controller>
+        </FormGroup>
+        <FormGroup
+          hasNoPaddingTop
           label={t("syncRegistrations")}
           labelIcon={
             <HelpItem

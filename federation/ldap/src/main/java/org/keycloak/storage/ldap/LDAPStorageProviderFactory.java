@@ -107,6 +107,10 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
                 .type(ProviderConfigProperty.BOOLEAN_TYPE)
                 .defaultValue("true")
                 .add()
+                .property().name(UserStorageProviderModel.VALIDATE_USER_LISTINGS)
+                .type(ProviderConfigProperty.BOOLEAN_TYPE)
+                .defaultValue("true")
+                .add()
                 .property().name(LDAPConstants.SYNC_REGISTRATIONS)
                 .type(ProviderConfigProperty.BOOLEAN_TYPE)
                 .defaultValue("false")
@@ -300,9 +304,17 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
             }
         }
 
+        if(!userStorageModel.isValidateUserListings() && synchronizationDisabled(cfg, userStorageModel)) {
+            throw new ComponentValidationException("ldapErrorCantDisbleValidateUserListingsWithoutEnabledSync");
+        }
+
         if (!userStorageModel.isImportEnabled() && cfg.getEditMode() == UserStorageProvider.EditMode.UNSYNCED) {
             throw new ComponentValidationException("ldapErrorCantEnableUnsyncedAndImportOff");
         }
+    }
+
+    private static boolean synchronizationDisabled(LDAPConfig cfg, UserStorageProviderModel userStorageModel) {
+        return userStorageModel.getFullSyncPeriod() < 0 && userStorageModel.getChangedSyncPeriod() < 0;
     }
 
     @Override

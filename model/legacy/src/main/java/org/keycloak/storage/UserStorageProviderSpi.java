@@ -70,6 +70,8 @@ public class UserStorageProviderSpi implements Spi {
                 .property()
                 .name("importEnabled").type(ProviderConfigProperty.BOOLEAN_TYPE).add()
                 .property()
+                .name("validateUserListings").type(ProviderConfigProperty.BOOLEAN_TYPE).add()
+                .property()
                 .name("cachePolicy").type(ProviderConfigProperty.STRING_TYPE).add()
                 .property()
                 .name("maxLifespan").type(ProviderConfigProperty.STRING_TYPE).add()
