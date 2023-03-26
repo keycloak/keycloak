@@ -19,7 +19,8 @@ package org.keycloak.quarkus.runtime.configuration.mappers;
 
 import io.smallrye.config.ConfigSourceInterceptorContext;
 import io.smallrye.config.ConfigValue;
-import org.keycloak.config.ExportOptions;
+import org.keycloak.config.ImportOptions;
+import org.keycloak.exportimport.Strategy;
 import picocli.CommandLine;
 
 import java.util.Optional;
@@ -27,59 +28,59 @@ import java.util.Optional;
 import static org.keycloak.exportimport.ExportImportConfig.PROVIDER;
 import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromOption;
 
-final class ExportPropertyMappers {
+final class ImportPropertyMappers {
 
-    private ExportPropertyMappers() {
+    private ImportPropertyMappers() {
     }
 
     public static PropertyMapper<?>[] getMappers() {
         return new PropertyMapper[] {
-                fromOption(ExportOptions.FILE)
-                        .to("kc.spi-export-exporter")
-                        .transformer(ExportPropertyMappers::transformExporter)
+                fromOption(ImportOptions.FILE)
+                        .to("kc.spi-import-importer")
+                        .transformer(ImportPropertyMappers::transformImporter)
                         .paramLabel("file")
                         .build(),
-                fromOption(ExportOptions.FILE)
-                        .to("kc.spi-export-single-file-file")
+                fromOption(ImportOptions.FILE)
+                        .to("kc.spi-import-single-file-file")
                         .paramLabel("file")
                         .build(),
-                fromOption(ExportOptions.DIR)
-                        .to("kc.spi-export-dir-dir")
+                fromOption(ImportOptions.DIR)
+                        .to("kc.spi-import-dir-dir")
                         .paramLabel("dir")
                         .build(),
-                fromOption(ExportOptions.REALM)
-                        .to("kc.spi-export-single-file-realm-name")
-                        .paramLabel("realm")
+                fromOption(ImportOptions.OVERRIDE)
+                        .to("kc.spi-import-single-file-strategy")
+                        .transformer(ImportPropertyMappers::transformOverride)
                         .build(),
-                fromOption(ExportOptions.REALM)
-                        .to("kc.spi-export-dir-realm-name")
-                        .paramLabel("realm")
+                fromOption(ImportOptions.OVERRIDE)
+                        .to("kc.spi-import-dir-strategy")
+                        .transformer(ImportPropertyMappers::transformOverride)
                         .build(),
-                fromOption(ExportOptions.USERS)
-                        .to("kc.spi-export-dir-users-export-strategy")
-                        .paramLabel("strategy")
-                        .build(),
-                fromOption(ExportOptions.USERS_PER_FILE)
-                        .to("kc.spi-export-dir-users-per-file")
-                        .paramLabel("number")
-                        .build()
         };
     }
 
-    private static Optional<String> transformExporter(Optional<String> option, ConfigSourceInterceptorContext context) {
-        ConfigValue exporter = context.proceed("kc.spi-export-exporter");
-        if (exporter != null) {
-            return Optional.of(exporter.getValue());
+    private static Optional<String> transformOverride(Optional<String> option, ConfigSourceInterceptorContext context) {
+        if (option.isPresent() && Boolean.parseBoolean(option.get())) {
+            return Optional.of(Strategy.OVERWRITE_EXISTING.name());
+        } else {
+            return Optional.of(Strategy.IGNORE_EXISTING.name());
+        }
+    }
+
+    private static Optional<String> transformImporter(Optional<String> option, ConfigSourceInterceptorContext context) {
+        ConfigValue importer = context.proceed("kc.spi-import-importer");
+        if (importer != null) {
+            return Optional.of(importer.getValue());
         }
         if (option.isPresent()) {
             return Optional.of("singleFile");
         }
-        ConfigValue dirConfigValue = context.proceed("kc.spi-export-dir-dir");
+        ConfigValue dirConfigValue = context.proceed("kc.spi-import-dir-dir");
         if (dirConfigValue != null && dirConfigValue.getValue() != null) {
             return Optional.of("dir");
         }
         ConfigValue dirValue = context.proceed("kc.dir");
-        if (dirValue != null && dirValue.getValue() != null) {
+        if (dirConfigValue != null && dirValue.getValue() != null) {
             return Optional.of("dir");
         }
         if (System.getProperty(PROVIDER) == null) {

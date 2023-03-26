@@ -22,6 +22,7 @@ import static org.keycloak.quarkus.runtime.Environment.isDevMode;
 import static org.keycloak.quarkus.runtime.cli.Picocli.println;
 import static org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource.getAllCliArgs;
 
+import org.keycloak.config.OptionCategory;
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.Messages;
 
@@ -31,6 +32,9 @@ import io.quarkus.bootstrap.runner.RunnerClassLoader;
 import io.quarkus.runtime.configuration.ProfileManager;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
+
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Command(name = Build.NAME,
         header = "Creates a new and optimized server image.",
@@ -79,6 +83,15 @@ public final class Build extends AbstractCommand implements Runnable {
         } finally {
             cleanTempResources();
         }
+    }
+
+    @Override
+    public boolean includeBuildTime() {
+        return true;
+    }
+
+    public List<OptionCategory> getOptionCategories() {
+        return super.getOptionCategories().stream().filter(optionCategory -> optionCategory != OptionCategory.EXPORT && optionCategory != OptionCategory.IMPORT).collect(Collectors.toList());
     }
 
     private void exitWithErrorIfDevProfileIsSetAndNotStartDev() {

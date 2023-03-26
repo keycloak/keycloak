@@ -62,16 +62,8 @@ public class ExportImportConfig {
         System.setProperty(ACTION, exportImportAction);
     }
 
-    public static String getProvider() {
-        return System.getProperty(PROVIDER, PROVIDER_DEFAULT);
-    }
-
     public static void setProvider(String exportImportProvider) {
         System.setProperty(PROVIDER, exportImportProvider);
-    }
-
-    public static String getRealmName() {
-        return System.getProperty(REALM_NAME);
     }
 
     public static void setRealmName(String realmName) {
@@ -82,25 +74,12 @@ public class ExportImportConfig {
         }
     }
 
-    public static String getDir() {
-        return System.getProperty(DIR);
-    }
-
-    public static String setDir(String dir) {
-        return System.setProperty(DIR, dir);
-    }
-
-    public static String getFile() {
-        return System.getProperty(FILE);
+    public static void setDir(String dir) {
+        System.setProperty(DIR, dir);
     }
 
     public static void setFile(String file) {
         System.setProperty(FILE, file);
-    }
-
-    public static Strategy getStrategy() {
-        String strategy = System.getProperty(STRATEGY, DEFAULT_STRATEGY.toString());
-        return Enum.valueOf(Strategy.class, strategy);
     }
 
     public static boolean isReplacePlaceholders() {
