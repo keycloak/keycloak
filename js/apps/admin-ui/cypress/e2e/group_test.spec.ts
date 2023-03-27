@@ -526,13 +526,6 @@ describe("Group test", () => {
       groupModal.closeModal();
     });
 
-    // it("Check a11y violations on renaming group from actions", () => {
-    //   groupPage.goToGroupActions(a11yGroup);
-    //   groupDetailPage.showRenameGroupDialog();
-    //   cy.findByTestId("cancel").click();
-    //   cy.checkA11y();
-    // });
-
     it("Check a11y violations on group details/ empty child groups tab", () => {
       groupPage.goToGroupChildGroupsTab(a11yGroup);
       cy.checkA11y();

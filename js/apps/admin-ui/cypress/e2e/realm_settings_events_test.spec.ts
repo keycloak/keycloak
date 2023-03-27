@@ -6,12 +6,14 @@ import ModalUtils from "../support/util/ModalUtils";
 import { keycloakBefore } from "../support/util/keycloak_hooks";
 import ListingPage from "../support/pages/admin-ui/ListingPage";
 import adminClient from "../support/util/AdminClient";
+import KeysTab from "../support/pages/admin-ui/manage/realm_settings/KeysTab";
 
 const loginPage = new LoginPage();
 const sidebarPage = new SidebarPage();
 const masthead = new Masthead();
 const modalUtils = new ModalUtils();
 const realmSettingsPage = new RealmSettingsPage();
+const keysTab = new KeysTab();
 
 describe("Realm settings events tab tests", () => {
   const realmName = "Realm_" + crypto.randomUUID();
@@ -35,7 +37,7 @@ describe("Realm settings events tab tests", () => {
     const keysUrl = `/admin/realms/${realmName}/keys`;
     cy.intercept(keysUrl).as("keysFetch");
 
-    cy.findByTestId("rs-keys-tab").click();
+    keysTab.goToKeysTab();
     cy.findByTestId("rs-providers-tab").click();
     cy.findAllByTestId("provider-name-link")
       .contains("test_aes-generated")
@@ -43,7 +45,7 @@ describe("Realm settings events tab tests", () => {
 
     sidebarPage.goToRealmSettings();
 
-    cy.findByTestId("rs-keys-tab").click();
+    keysTab.goToKeysTab();
     cy.findByTestId("rs-providers-tab").click();
     cy.findAllByTestId("provider-name-link")
       .contains("test_hmac-generated")
@@ -51,13 +53,13 @@ describe("Realm settings events tab tests", () => {
 
     sidebarPage.goToRealmSettings();
 
-    cy.findByTestId("rs-keys-tab").click();
+    keysTab.goToKeysTab();
     cy.findByTestId("rs-providers-tab").click();
     cy.findAllByTestId("provider-name-link").contains("test_rsa").click();
 
     sidebarPage.goToRealmSettings();
 
-    cy.findByTestId("rs-keys-tab").click();
+    keysTab.goToKeysTab();
     cy.findByTestId("rs-providers-tab").click();
     cy.findAllByTestId("provider-name-link")
       .contains("test_rsa-generated")
@@ -65,7 +67,7 @@ describe("Realm settings events tab tests", () => {
 
     sidebarPage.goToRealmSettings();
 
-    cy.findByTestId("rs-keys-tab").click();
+    keysTab.goToKeysTab();
     cy.findByTestId("rs-providers-tab").click();
     cy.findAllByTestId("provider-name-link")
       .contains("test_rsa-enc-generated")
@@ -79,7 +81,7 @@ describe("Realm settings events tab tests", () => {
   const goToKeys = () => {
     const keysUrl = `/admin/realms/${realmName}/keys`;
     cy.intercept(keysUrl).as("keysFetch");
-    cy.findByTestId("rs-keys-tab").click();
+    keysTab.goToKeysTab();
     cy.findByTestId("rs-keys-list-tab").click();
     cy.wait(["@keysFetch"]);
 
@@ -129,13 +131,13 @@ describe("Realm settings events tab tests", () => {
   it("Go to keys tab", () => {
     sidebarPage.goToRealmSettings();
 
-    cy.findByTestId("rs-keys-tab").click();
+    keysTab.goToKeysTab();
   });
 
   it("add Providers", () => {
     sidebarPage.goToRealmSettings();
 
-    cy.findByTestId("rs-keys-tab").click();
+    keysTab.goToKeysTab();
 
     cy.findByTestId("rs-providers-tab").click();
 
@@ -181,7 +183,7 @@ describe("Realm settings events tab tests", () => {
   it("search providers", () => {
     sidebarPage.goToRealmSettings();
 
-    cy.findByTestId("rs-keys-tab").click();
+    keysTab.goToKeysTab();
 
     cy.findByTestId("rs-providers-tab").click();
 
@@ -233,7 +235,7 @@ describe("Realm settings events tab tests", () => {
   it("delete provider", () => {
     sidebarPage.goToRealmSettings();
 
-    cy.findByTestId("rs-keys-tab").click();
+    keysTab.goToKeysTab();
 
     cy.findByTestId("rs-providers-tab").click();
 
@@ -242,7 +244,7 @@ describe("Realm settings events tab tests", () => {
 
   it("list keys", () => {
     sidebarPage.goToRealmSettings();
-    cy.findByTestId("rs-keys-tab").click();
+    keysTab.goToKeysTab();
     realmSettingsPage.checkKeyPublic();
   });
 
