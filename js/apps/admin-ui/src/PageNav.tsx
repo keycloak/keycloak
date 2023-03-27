@@ -14,7 +14,7 @@ import { RealmSelector } from "./components/realm-selector/RealmSelector";
 import { useAccess } from "./context/access/Access";
 import { useRealm } from "./context/realm-context/RealmContext";
 import { AddRealmRoute } from "./realm/routes/AddRealm";
-import { routes } from "./route-config";
+import { routes } from "./routes";
 
 import "./page-nav.css";
 

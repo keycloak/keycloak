@@ -2,7 +2,7 @@ import { lazy } from "react";
 import type { Path } from "react-router-dom";
 import { generatePath } from "react-router-dom";
 
-import type { RouteDef } from "../../route-config";
+import type { AppRouteObject } from "../../routes";
 
 export type CustomUserFederationRouteParams = {
   realm: string;
@@ -14,7 +14,7 @@ const CustomProviderSettings = lazy(
   () => import("../custom/CustomProviderSettings")
 );
 
-export const CustomUserFederationRoute: RouteDef = {
+export const CustomUserFederationRoute: AppRouteObject = {
   path: "/:realm/user-federation/:providerId/:id",
   element: <CustomProviderSettings />,
   breadcrumb: (t) => t("user-federation:providerDetails"),

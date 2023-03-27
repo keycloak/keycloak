@@ -1,7 +1,7 @@
 import { lazy } from "react";
 import type { Path } from "react-router-dom";
 import { generatePath } from "react-router-dom";
-import type { RouteDef } from "../../route-config";
+import type { AppRouteObject } from "../../routes";
 
 export type AuthenticationTab = "flows" | "required-actions" | "policies";
 
@@ -9,7 +9,7 @@ export type AuthenticationParams = { realm: string; tab?: AuthenticationTab };
 
 const AuthenticationSection = lazy(() => import("../AuthenticationSection"));
 
-export const AuthenticationRoute: RouteDef = {
+export const AuthenticationRoute: AppRouteObject = {
   path: "/:realm/authentication",
   element: <AuthenticationSection />,
   breadcrumb: (t) => t("authentication"),
@@ -18,7 +18,7 @@ export const AuthenticationRoute: RouteDef = {
   },
 };
 
-export const AuthenticationRouteWithTab: RouteDef = {
+export const AuthenticationRouteWithTab: AppRouteObject = {
   ...AuthenticationRoute,
   path: "/:realm/authentication/:tab",
 };

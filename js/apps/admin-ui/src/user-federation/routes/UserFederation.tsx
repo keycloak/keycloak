@@ -1,13 +1,13 @@
 import { lazy } from "react";
 import type { Path } from "react-router-dom";
 import { generatePath } from "react-router-dom";
-import type { RouteDef } from "../../route-config";
+import type { AppRouteObject } from "../../routes";
 
 export type UserFederationParams = { realm: string };
 
 const UserFederationSection = lazy(() => import("../UserFederationSection"));
 
-export const UserFederationRoute: RouteDef = {
+export const UserFederationRoute: AppRouteObject = {
   path: "/:realm/user-federation",
   element: <UserFederationSection />,
   breadcrumb: (t) => t("userFederation"),

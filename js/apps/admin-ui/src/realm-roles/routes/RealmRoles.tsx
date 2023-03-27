@@ -1,13 +1,13 @@
 import { lazy } from "react";
 import type { Path } from "react-router-dom";
 import { generatePath } from "react-router-dom";
-import type { RouteDef } from "../../route-config";
+import type { AppRouteObject } from "../../routes";
 
 export type RealmRolesParams = { realm: string };
 
 const RealmRolesSection = lazy(() => import("../RealmRolesSection"));
 
-export const RealmRolesRoute: RouteDef = {
+export const RealmRolesRoute: AppRouteObject = {
   path: "/:realm/roles",
   element: <RealmRolesSection />,
   breadcrumb: (t) => t("roles:realmRolesList"),

@@ -21,7 +21,7 @@ import { ForbiddenSection } from "./ForbiddenSection";
 import { SubGroups } from "./groups/SubGroupsContext";
 import { Header } from "./PageHeader";
 import { PageNav } from "./PageNav";
-import { RouteDef, routes } from "./route-config";
+import { AppRouteObject, routes } from "./routes";
 
 export const mainPageContentId = "kc-main-content-page-container";
 
@@ -58,7 +58,7 @@ const AppContexts = ({
 
 // If someone tries to go directly to a route they don't
 // have access to, show forbidden page.
-type SecuredRouteProps = { route: RouteDef };
+type SecuredRouteProps = { route: AppRouteObject };
 const SecuredRoute = ({ route }: SecuredRouteProps) => {
   const { hasAccess } = useAccess();
   const accessAllowed =

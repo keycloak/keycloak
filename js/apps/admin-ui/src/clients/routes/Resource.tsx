@@ -1,7 +1,7 @@
 import { lazy } from "react";
 import type { Path } from "react-router-dom";
 import { generatePath } from "react-router-dom";
-import type { RouteDef } from "../../route-config";
+import type { AppRouteObject } from "../../routes";
 
 export type ResourceDetailsParams = {
   realm: string;
@@ -11,7 +11,7 @@ export type ResourceDetailsParams = {
 
 const ResourceDetails = lazy(() => import("../authorization/ResourceDetails"));
 
-export const ResourceDetailsRoute: RouteDef = {
+export const ResourceDetailsRoute: AppRouteObject = {
   path: "/:realm/clients/:id/authorization/resource",
   element: <ResourceDetails />,
   breadcrumb: (t) => t("clients:createResource"),
@@ -20,7 +20,7 @@ export const ResourceDetailsRoute: RouteDef = {
   },
 };
 
-export const ResourceDetailsWithResourceIdRoute: RouteDef = {
+export const ResourceDetailsWithResourceIdRoute: AppRouteObject = {
   ...ResourceDetailsRoute,
   path: "/:realm/clients/:id/authorization/resource/:resourceId",
 };

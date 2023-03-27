@@ -1,7 +1,7 @@
 import { lazy } from "react";
 import type { Path } from "react-router-dom";
 import { generatePath } from "react-router-dom";
-import type { RouteDef } from "../../route-config";
+import type { AppRouteObject } from "../../routes";
 
 export type NewLdapUserFederationParams = { realm: string };
 
@@ -9,7 +9,7 @@ const CreateUserFederationLdapSettings = lazy(
   () => import("../CreateUserFederationLdapSettings")
 );
 
-export const NewLdapUserFederationRoute: RouteDef = {
+export const NewLdapUserFederationRoute: AppRouteObject = {
   path: "/:realm/user-federation/ldap/new",
   element: <CreateUserFederationLdapSettings />,
   breadcrumb: (t) =>
