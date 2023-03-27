@@ -2209,7 +2209,7 @@ public class RealmAdapter implements LegacyRealmModel, JpaModel<RealmEntity> {
         }
         else {
             RealmLocalizationTextsEntity realmLocalizationTextsEntity = new RealmLocalizationTextsEntity();
-            realmLocalizationTextsEntity.setRealmId(realm.getId());
+            realmLocalizationTextsEntity.setRealm(realm);
             realmLocalizationTextsEntity.setLocale(locale);
             realmLocalizationTextsEntity.setTexts(localizationTexts);
 

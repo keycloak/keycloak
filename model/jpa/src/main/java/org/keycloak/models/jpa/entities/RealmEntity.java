@@ -237,7 +237,7 @@ public class RealmEntity {
     @Column(name="ALLOW_USER_MANAGED_ACCESS")
     private boolean allowUserManagedAccess;
 
-    @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "realmId")
+    @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "realm")
     @MapKey(name="locale")
     Map<String, RealmLocalizationTextsEntity> realmLocalizationTexts = new HashMap<>();
 
@@ -840,6 +840,13 @@ public class RealmEntity {
         if (!id.equals(that.getId())) return false;
 
         return true;
+    }
+
+    public String toString() {
+        return "Realm{" +
+                "id='" + id + '\'' +
+                ", name='" + name + '\'' +
+                '}';
     }
 
     @Override
