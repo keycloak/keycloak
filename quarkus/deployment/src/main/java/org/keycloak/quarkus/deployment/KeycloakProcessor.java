@@ -62,7 +62,6 @@ import org.keycloak.authorization.policy.provider.PolicySpi;
 import org.keycloak.authorization.policy.provider.js.DeployedScriptPolicyFactory;
 import org.keycloak.common.Profile;
 import org.keycloak.common.crypto.FipsMode;
-import org.keycloak.common.profile.PropertiesFileProfileConfigResolver;
 import org.keycloak.common.util.StreamUtil;
 import org.keycloak.config.SecurityOptions;
 import org.keycloak.config.StorageOptions;
@@ -84,7 +83,6 @@ import org.keycloak.provider.ProviderManager;
 import org.keycloak.provider.Spi;
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.KeycloakRecorder;
-import org.keycloak.quarkus.runtime.QuarkusProfileConfigResolver;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
 import org.keycloak.quarkus.runtime.configuration.KeycloakConfigSourceProvider;
 import org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider;
@@ -139,6 +137,7 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
 import static org.keycloak.connections.jpa.util.JpaUtils.loadSpecificNamedQueries;
+import static org.keycloak.quarkus.runtime.Environment.getCurrentOrCreateFeatureProfile;
 import static org.keycloak.quarkus.runtime.Environment.getProviderFiles;
 import static org.keycloak.quarkus.runtime.KeycloakRecorder.DEFAULT_HEALTH_ENDPOINT;
 import static org.keycloak.quarkus.runtime.KeycloakRecorder.DEFAULT_METRICS_ENDPOINT;
@@ -222,9 +221,9 @@ class KeycloakProcessor {
     @BuildStep
     @Consume(ConfigBuildItem.class)
     ProfileBuildItem configureProfile(KeycloakRecorder recorder) {
-        Profile profile = Profile.configure(
-                new QuarkusProfileConfigResolver(),
-                new PropertiesFileProfileConfigResolver()); // Need profile.properties for now as testsuite relies on it
+        Profile profile = getCurrentOrCreateFeatureProfile();
+
+        // record the features so that they are not calculated again at runtime
         recorder.configureProfile(profile.getName(), profile.getFeatures());
 
         return new ProfileBuildItem();

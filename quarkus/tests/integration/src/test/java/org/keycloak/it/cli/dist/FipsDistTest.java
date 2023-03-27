@@ -38,6 +38,7 @@ public class FipsDistTest {
         runOnFipsEnabledDistribution(dist, () -> {
             CLIResult cliResult = dist.run("start");
             cliResult.assertStarted();
+            cliResult.assertMessageWasShownExactlyNumberOfTimes("Preview features enabled: fips", 2);
             cliResult.assertMessage("Java security providers: [ \n"
                     + " KC(BCFIPS version 1.000203, FIPS-JVM: " + KeycloakFipsSecurityProvider.isSystemFipsEnabled() + ") version 1.0 - class org.keycloak.crypto.fips.KeycloakFipsSecurityProvider");
         });
