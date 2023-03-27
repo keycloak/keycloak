@@ -1063,7 +1063,7 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
 
     private RealmLocalizationTextsEntity getRealmLocalizationTextsEntity(String locale, String realmId) {
         RealmLocalizationTextsEntity.RealmLocalizationTextEntityKey key = new RealmLocalizationTextsEntity.RealmLocalizationTextEntityKey();
-        key.setRealmId(realmId);
+        key.setRealm(em.getReference(RealmEntity.class, realmId));
         key.setLocale(locale);
         return em.find(RealmLocalizationTextsEntity.class, key);
     }
@@ -1086,7 +1086,7 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
         RealmLocalizationTextsEntity entity = getRealmLocalizationTextsEntity(locale, realm.getId());
         if(entity == null) {
             entity = new RealmLocalizationTextsEntity();
-            entity.setRealmId(realm.getId());
+            entity.setRealm(em.getReference(RealmEntity.class, realm.getId()));
             entity.setLocale(locale);
             entity.setTexts(new HashMap<>());
             em.persist(entity);
@@ -1099,7 +1099,7 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
         RealmLocalizationTextsEntity entity = new RealmLocalizationTextsEntity();
         entity.setTexts(localizationTexts);
         entity.setLocale(locale);
-        entity.setRealmId(realm.getId());
+        entity.setRealm(em.getReference(RealmEntity.class, realm.getId()));
         em.merge(entity);
     }
 
