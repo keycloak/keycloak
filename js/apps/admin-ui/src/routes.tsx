@@ -1,8 +1,12 @@
 import type { AccessType } from "@keycloak/keycloak-admin-client/lib/defs/whoAmIRepresentation";
 import type { TFunction } from "i18next";
 import type { ComponentType } from "react";
-import type { NonIndexRouteObject } from "react-router";
+import type { NonIndexRouteObject, RouteObject } from "react-router";
+import { initAdminClient } from "./context/auth/AdminClient";
+import { initI18n } from "./i18n";
 
+import { App } from "./App";
+import { PageNotFoundSection } from "./PageNotFoundSection";
 import authenticationRoutes from "./authentication/routes";
 import clientScopesRoutes from "./client-scopes/routes";
 import clientRoutes from "./clients/routes";
@@ -10,7 +14,6 @@ import dashboardRoutes from "./dashboard/routes";
 import eventRoutes from "./events/routes";
 import groupsRoutes from "./groups/routes";
 import identityProviders from "./identity-providers/routes";
-import { PageNotFoundSection } from "./PageNotFoundSection";
 import realmRoleRoutes from "./realm-roles/routes";
 import realmSettingRoutes from "./realm-settings/routes";
 import realmRoutes from "./realm/routes";
@@ -28,7 +31,7 @@ export interface AppRouteObject extends NonIndexRouteObject {
   handle: AppRouteObjectHandle;
 }
 
-const NotFoundRoute: AppRouteObject = {
+export const NotFoundRoute: AppRouteObject = {
   path: "*",
   element: <PageNotFoundSection />,
   handle: {
@@ -52,3 +55,13 @@ export const routes: AppRouteObject[] = [
   ...dashboardRoutes,
   NotFoundRoute,
 ];
+
+const { keycloak, adminClient } = await initAdminClient();
+
+await initI18n(adminClient);
+
+export const RootRoute: RouteObject = {
+  path: "/",
+  element: <App keycloak={keycloak} adminClient={adminClient} />,
+  children: routes,
+};
