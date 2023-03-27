@@ -27,7 +27,9 @@ export const KeyProviderFormRoute: RouteDef = {
   path: "/:realm/realm-settings/keys/providers/:id/:providerType/settings",
   element: <KeyProviderForm />,
   breadcrumb: (t) => t("realm-settings:editProvider"),
-  access: "view-realm",
+  handle: {
+    access: "view-realm",
+  },
 };
 
 export const toKeyProvider = (params: KeyProviderParams): Partial<Path> => ({

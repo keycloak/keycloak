@@ -14,7 +14,9 @@ export const AttributeRoute: RouteDef = {
   path: "/:realm/realm-settings/user-profile/attributes/:attributeName/edit-attribute",
   element: <NewAttributeSettings />,
   breadcrumb: (t) => t("realm-settings:editAttribute"),
-  access: "manage-realm",
+  handle: {
+    access: "manage-realm",
+  },
 };
 
 export const toAttribute = (params: AttributeParams): Partial<Path> => ({

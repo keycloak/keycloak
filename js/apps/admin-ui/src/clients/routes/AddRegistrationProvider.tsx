@@ -17,7 +17,9 @@ export const AddRegistrationProviderRoute: RouteDef = {
   path: "/:realm/clients/client-registration/:subTab/:providerId",
   element: <DetailProvider />,
   breadcrumb: (t) => t("clients:clientSettings"),
-  access: "manage-clients",
+  handle: {
+    access: "manage-clients",
+  },
 };
 
 export const EditRegistrationProviderRoute: RouteDef = {

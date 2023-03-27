@@ -30,9 +30,9 @@ const LeftNav = ({ title, path }: LeftNavProps) => {
 
   const accessAllowed =
     route &&
-    (route.access instanceof Array
-      ? hasAccess(...route.access)
-      : hasAccess(route.access));
+    (route.handle.access instanceof Array
+      ? hasAccess(...route.handle.access)
+      : hasAccess(route.handle.access));
 
   if (!accessAllowed) {
     return null;

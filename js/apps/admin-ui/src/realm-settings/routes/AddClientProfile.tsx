@@ -14,7 +14,9 @@ export const AddClientProfileRoute: RouteDef = {
   path: "/:realm/realm-settings/client-policies/:tab/add-profile",
   element: <ClientProfileForm />,
   breadcrumb: (t) => t("realm-settings:newClientProfile"),
-  access: "manage-realm",
+  handle: {
+    access: "manage-realm",
+  },
 };
 
 export const toAddClientProfile = (

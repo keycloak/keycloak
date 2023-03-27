@@ -16,7 +16,9 @@ export const FlowRoute: RouteDef = {
   path: "/:realm/authentication/:id/:usedBy",
   element: <FlowDetails />,
   breadcrumb: (t) => t("authentication:flowDetails"),
-  access: "view-authorization",
+  handle: {
+    access: "view-authorization",
+  },
 };
 
 export const FlowWithBuiltInRoute: RouteDef = {

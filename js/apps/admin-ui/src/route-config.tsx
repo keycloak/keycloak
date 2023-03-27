@@ -18,16 +18,22 @@ import sessionRoutes from "./sessions/routes";
 import userFederationRoutes from "./user-federation/routes";
 import userRoutes from "./user/routes";
 
+export type RouteObjectHandle = {
+  access: AccessType | AccessType[];
+};
+
 export type RouteDef = Required<Pick<RouteObject, "element">> & {
   path: string;
   breadcrumb?: (t: TFunction) => string | ComponentType<any>;
-  access: AccessType | AccessType[];
+  handle: RouteObjectHandle;
 };
 
 const NotFoundRoute: RouteDef = {
   path: "*",
   element: <PageNotFoundSection />,
-  access: "anyone",
+  handle: {
+    access: "anyone",
+  },
 };
 
 export const routes: RouteDef[] = [

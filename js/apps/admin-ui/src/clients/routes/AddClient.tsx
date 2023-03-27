@@ -11,7 +11,9 @@ export const AddClientRoute: RouteDef = {
   path: "/:realm/clients/add-client",
   element: <NewClientForm />,
   breadcrumb: (t) => t("clients:createClient"),
-  access: "manage-clients",
+  handle: {
+    access: "manage-clients",
+  },
 };
 
 export const toAddClient = (params: AddClientParams): Partial<Path> => ({

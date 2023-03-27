@@ -25,7 +25,9 @@ export const UserRoute: RouteDef = {
   path: "/:realm/users/:id/:tab",
   element: <EditUser />,
   breadcrumb: (t) => t("users:userDetails"),
-  access: "query-users",
+  handle: {
+    access: "query-users",
+  },
 };
 
 export const toUser = (params: UserParams): Partial<Path> => ({

@@ -19,7 +19,9 @@ export const ClientsRoute: RouteDef = {
   path: "/:realm/clients",
   element: <ClientsSection />,
   breadcrumb: (t) => t("clients:clientList"),
-  access: "query-clients",
+  handle: {
+    access: "query-clients",
+  },
 };
 
 export const ClientsRouteWithTab: RouteDef = {

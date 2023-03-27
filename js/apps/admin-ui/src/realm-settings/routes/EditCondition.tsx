@@ -17,7 +17,9 @@ export const EditClientPolicyConditionRoute: RouteDef = {
   path: "/:realm/realm-settings/client-policies/:policyName/edit-policy/:conditionName/edit-condition",
   element: <NewClientPolicyCondition />,
   breadcrumb: (t) => t("realm-settings:editCondition"),
-  access: "manage-clients",
+  handle: {
+    access: "manage-clients",
+  },
 };
 
 export const toEditClientPolicyCondition = (

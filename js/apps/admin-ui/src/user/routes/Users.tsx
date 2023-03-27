@@ -13,7 +13,9 @@ export const UsersRoute: RouteDef = {
   path: "/:realm/users",
   element: <UsersSection />,
   breadcrumb: (t) => t("users:title"),
-  access: "query-users",
+  handle: {
+    access: "query-users",
+  },
 };
 
 export const UsersRouteWithTab: RouteDef = {

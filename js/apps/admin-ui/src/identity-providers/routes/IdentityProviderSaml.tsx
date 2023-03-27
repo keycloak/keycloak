@@ -11,7 +11,9 @@ export const IdentityProviderSamlRoute: RouteDef = {
   path: "/:realm/identity-providers/saml/add",
   element: <AddSamlConnect />,
   breadcrumb: (t) => t("identity-providers:addSamlProvider"),
-  access: "manage-identity-providers",
+  handle: {
+    access: "manage-identity-providers",
+  },
 };
 
 export const toIdentityProviderSaml = (

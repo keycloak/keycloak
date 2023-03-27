@@ -15,8 +15,10 @@ const AddMapper = lazy(() => import("../add/AddMapper"));
 export const IdentityProviderEditMapperRoute: RouteDef = {
   path: "/:realm/identity-providers/:providerId/:alias/mappers/:id",
   element: <AddMapper />,
-  access: "manage-identity-providers",
   breadcrumb: (t) => t("identity-providers:editIdPMapper"),
+  handle: {
+    access: "manage-identity-providers",
+  },
 };
 
 export const toIdentityProviderEditMapper = (

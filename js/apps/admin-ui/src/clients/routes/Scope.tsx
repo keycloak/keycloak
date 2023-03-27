@@ -15,7 +15,9 @@ export const ScopeDetailsRoute: RouteDef = {
   path: "/:realm/clients/:id/authorization/scope",
   element: <ScopeDetails />,
   breadcrumb: (t) => t("clients:createAuthorizationScope"),
-  access: "manage-clients",
+  handle: {
+    access: "manage-clients",
+  },
 };
 
 export const ScopeDetailsWithScopeIdRoute: RouteDef = {

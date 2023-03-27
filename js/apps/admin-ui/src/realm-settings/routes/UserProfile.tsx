@@ -16,7 +16,9 @@ export const UserProfileRoute: RouteDef = {
   path: "/:realm/realm-settings/user-profile/:tab",
   element: <RealmSettingsSection />,
   breadcrumb: (t) => t("realm-settings:userProfile"),
-  access: "view-realm",
+  handle: {
+    access: "view-realm",
+  },
 };
 
 export const toUserProfile = (params: UserProfileParams): Partial<Path> => ({

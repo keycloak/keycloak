@@ -62,14 +62,14 @@ type SecuredRouteProps = { route: RouteDef };
 const SecuredRoute = ({ route }: SecuredRouteProps) => {
   const { hasAccess } = useAccess();
   const accessAllowed =
-    route.access instanceof Array
-      ? hasAccess(...route.access)
-      : hasAccess(route.access);
+    route.handle.access instanceof Array
+      ? hasAccess(...route.handle.access)
+      : hasAccess(route.handle.access);
 
   if (accessAllowed)
     return <Suspense fallback={<KeycloakSpinner />}>{route.element}</Suspense>;
 
-  return <ForbiddenSection permissionNeeded={route.access} />;
+  return <ForbiddenSection permissionNeeded={route.handle.access} />;
 };
 
 export const App = ({ keycloak, adminClient }: AdminClientProps) => {

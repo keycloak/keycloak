@@ -14,7 +14,9 @@ export const ClientProfileRoute: RouteDef = {
   path: "/:realm/realm-settings/client-policies/:profileName/edit-profile",
   element: <ClientProfileForm />,
   breadcrumb: (t) => t("realm-settings:clientProfile"),
-  access: ["view-realm", "view-users"],
+  handle: {
+    access: ["view-realm", "view-users"],
+  },
 };
 
 export const toClientProfile = (

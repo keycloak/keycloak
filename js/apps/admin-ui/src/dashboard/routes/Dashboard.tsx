@@ -13,7 +13,9 @@ export const DashboardRoute: RouteDef = {
   path: "/",
   element: <Dashboard />,
   breadcrumb: (t) => t("common:home"),
-  access: "anyone",
+  handle: {
+    access: "anyone",
+  },
 };
 
 export const DashboardRouteWithRealm: RouteDef = {

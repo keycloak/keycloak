@@ -11,7 +11,9 @@ export const AddRoleRoute: RouteDef = {
   path: "/:realm/roles/new",
   element: <CreateRealmRole />,
   breadcrumb: (t) => t("roles:createRole"),
-  access: "manage-realm",
+  handle: {
+    access: "manage-realm",
+  },
 };
 
 export const toAddRole = (params: AddRoleParams): Partial<Path> => ({

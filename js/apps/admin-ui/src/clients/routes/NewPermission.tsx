@@ -20,7 +20,9 @@ export const NewPermissionRoute: RouteDef = {
   path: "/:realm/clients/:id/authorization/permission/new/:permissionType",
   element: <PermissionDetails />,
   breadcrumb: (t) => t("clients:createPermission"),
-  access: "view-clients",
+  handle: {
+    access: "view-clients",
+  },
 };
 
 export const NewPermissionWithSelectedIdRoute: RouteDef = {

@@ -17,7 +17,9 @@ export const UserFederationLdapMapperRoute: RouteDef = {
   path: "/:realm/user-federation/ldap/:id/mappers/:mapperId",
   element: <LdapMapperDetails />,
   breadcrumb: (t) => t("common:mappingDetails"),
-  access: "view-realm",
+  handle: {
+    access: "view-realm",
+  },
 };
 
 export const toUserFederationLdapMapper = (

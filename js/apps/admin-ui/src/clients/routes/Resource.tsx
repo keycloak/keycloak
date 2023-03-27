@@ -15,7 +15,9 @@ export const ResourceDetailsRoute: RouteDef = {
   path: "/:realm/clients/:id/authorization/resource",
   element: <ResourceDetails />,
   breadcrumb: (t) => t("clients:createResource"),
-  access: "view-clients",
+  handle: {
+    access: "view-clients",
+  },
 };
 
 export const ResourceDetailsWithResourceIdRoute: RouteDef = {

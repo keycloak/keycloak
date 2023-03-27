@@ -10,7 +10,9 @@ const GroupsSection = lazy(() => import("../GroupsSection"));
 export const GroupsRoute: RouteDef = {
   path: "/:realm/groups/*",
   element: <GroupsSection />,
-  access: "query-groups",
+  handle: {
+    access: "query-groups",
+  },
 };
 
 export const GroupsWithIdRoute: RouteDef = {

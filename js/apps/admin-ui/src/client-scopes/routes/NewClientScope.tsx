@@ -11,7 +11,9 @@ export const NewClientScopeRoute: RouteDef = {
   path: "/:realm/client-scopes/new",
   element: <CreateClientScope />,
   breadcrumb: (t) => t("client-scopes:createClientScope"),
-  access: "manage-clients",
+  handle: {
+    access: "manage-clients",
+  },
 };
 
 export const toNewClientScope = (

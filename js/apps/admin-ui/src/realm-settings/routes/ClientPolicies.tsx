@@ -16,7 +16,9 @@ export const ClientPoliciesRoute: RouteDef = {
   path: "/:realm/realm-settings/client-policies/:tab",
   element: <RealmSettingsSection />,
   breadcrumb: (t) => t("realm-settings:clientPolicies"),
-  access: "view-realm",
+  handle: {
+    access: "view-realm",
+  },
 };
 
 export const toClientPolicies = (
