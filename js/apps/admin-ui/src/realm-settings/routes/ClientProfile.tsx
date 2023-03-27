@@ -1,7 +1,7 @@
 import { lazy } from "react";
 import type { Path } from "react-router-dom";
 import { generatePath } from "react-router-dom";
-import type { RouteDef } from "../../route-config";
+import type { AppRouteObject } from "../../routes";
 
 export type ClientProfileParams = {
   realm: string;
@@ -10,11 +10,13 @@ export type ClientProfileParams = {
 
 const ClientProfileForm = lazy(() => import("../ClientProfileForm"));
 
-export const ClientProfileRoute: RouteDef = {
+export const ClientProfileRoute: AppRouteObject = {
   path: "/:realm/realm-settings/client-policies/:profileName/edit-profile",
   element: <ClientProfileForm />,
   breadcrumb: (t) => t("realm-settings:clientProfile"),
-  access: ["view-realm", "view-users"],
+  handle: {
+    access: ["view-realm", "view-users"],
+  },
 };
 
 export const toClientProfile = (

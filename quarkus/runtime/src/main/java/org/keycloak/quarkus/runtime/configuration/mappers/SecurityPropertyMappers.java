@@ -5,6 +5,8 @@ import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.
 
 import java.util.Optional;
 
+import org.keycloak.common.Profile;
+import org.keycloak.common.Profile.Feature;
 import org.keycloak.common.crypto.FipsMode;
 import org.keycloak.config.SecurityOptions;
 
@@ -25,21 +27,13 @@ final class SecurityPropertyMappers {
 
     private static Optional<String> resolveFipsMode(Optional<String> value, ConfigSourceInterceptorContext context) {
         if (value.isEmpty()) {
+            if (Profile.isFeatureEnabled(Feature.FIPS)) {
+                return of(FipsMode.NON_STRICT.toString());
+            }
+
             return of(FipsMode.DISABLED.toString());
         }
 
         return of(FipsMode.valueOfOption(value.get()).toString());
-    }
-
-    private static Optional<String> resolveSecurityProvider(Optional<String> value,
-            ConfigSourceInterceptorContext configSourceInterceptorContext) {
-        FipsMode fipsMode = value.map(FipsMode::valueOfOption)
-                .orElse(FipsMode.DISABLED);
-
-        if (fipsMode.isFipsEnabled()) {
-            return of("BCFIPS");
-        }
-
-        return value;
     }
 }

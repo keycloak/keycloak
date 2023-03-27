@@ -1,7 +1,7 @@
 import { lazy } from "react";
 import type { Path } from "react-router-dom";
 import { generatePath } from "react-router-dom";
-import type { RouteDef } from "../../route-config";
+import type { AppRouteObject } from "../../routes";
 
 export type ScopeDetailsParams = {
   realm: string;
@@ -11,14 +11,16 @@ export type ScopeDetailsParams = {
 
 const ScopeDetails = lazy(() => import("../authorization/ScopeDetails"));
 
-export const ScopeDetailsRoute: RouteDef = {
+export const ScopeDetailsRoute: AppRouteObject = {
   path: "/:realm/clients/:id/authorization/scope",
   element: <ScopeDetails />,
   breadcrumb: (t) => t("clients:createAuthorizationScope"),
-  access: "manage-clients",
+  handle: {
+    access: "manage-clients",
+  },
 };
 
-export const ScopeDetailsWithScopeIdRoute: RouteDef = {
+export const ScopeDetailsWithScopeIdRoute: AppRouteObject = {
   ...ScopeDetailsRoute,
   path: "/:realm/clients/:id/authorization/scope/:scopeId",
 };

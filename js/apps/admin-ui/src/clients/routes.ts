@@ -1,4 +1,4 @@
-import type { RouteDef } from "../route-config";
+import type { AppRouteObject } from "../routes";
 import { AddClientRoute } from "./routes/AddClient";
 import {
   AddRegistrationProviderRoute,
@@ -36,7 +36,7 @@ import {
   ScopeDetailsWithScopeIdRoute,
 } from "./routes/Scope";
 
-const routes: RouteDef[] = [
+const routes: AppRouteObject[] = [
   ClientRegistrationRoute,
   AddRegistrationProviderRoute,
   EditRegistrationProviderRoute,

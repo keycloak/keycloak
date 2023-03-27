@@ -1,7 +1,7 @@
 import { lazy } from "react";
 import type { Path } from "react-router-dom";
 import { generatePath } from "react-router-dom";
-import type { RouteDef } from "../../route-config";
+import type { AppRouteObject } from "../../routes";
 
 export type UserFederationKerberosParams = {
   realm: string;
@@ -12,11 +12,13 @@ const UserFederationKerberosSettings = lazy(
   () => import("../UserFederationKerberosSettings")
 );
 
-export const UserFederationKerberosRoute: RouteDef = {
+export const UserFederationKerberosRoute: AppRouteObject = {
   path: "/:realm/user-federation/kerberos/:id",
   element: <UserFederationKerberosSettings />,
   breadcrumb: (t) => t("common:settings"),
-  access: "view-realm",
+  handle: {
+    access: "view-realm",
+  },
 };
 
 export const toUserFederationKerberos = (

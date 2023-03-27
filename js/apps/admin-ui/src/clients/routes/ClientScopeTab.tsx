@@ -1,7 +1,7 @@
 import { lazy } from "react";
 import type { Path } from "react-router-dom";
 import { generatePath } from "react-router-dom";
-import type { RouteDef } from "../../route-config";
+import type { AppRouteObject } from "../../routes";
 
 export type ClientScopesTab = "setup" | "evaluate";
 
@@ -13,11 +13,13 @@ export type ClientScopesParams = {
 
 const ClientDetails = lazy(() => import("../ClientDetails"));
 
-export const ClientScopesRoute: RouteDef = {
+export const ClientScopesRoute: AppRouteObject = {
   path: "/:realm/clients/:clientId/clientScopes/:tab",
   element: <ClientDetails />,
   breadcrumb: (t) => t("clients:clientSettings"),
-  access: "view-clients",
+  handle: {
+    access: "view-clients",
+  },
 };
 
 export const toClientScopesTab = (

@@ -1,16 +1,18 @@
 import { lazy } from "react";
 import type { Path } from "react-router-dom";
 import { generatePath } from "react-router-dom";
-import type { RouteDef } from "../../route-config";
+import type { AppRouteObject } from "../../routes";
 
 export type UserFederationsLdapParams = { realm: string };
 
 const UserFederationSection = lazy(() => import("../UserFederationSection"));
 
-export const UserFederationsLdapRoute: RouteDef = {
+export const UserFederationsLdapRoute: AppRouteObject = {
   path: "/:realm/user-federation/ldap",
   element: <UserFederationSection />,
-  access: "view-realm",
+  handle: {
+    access: "view-realm",
+  },
 };
 
 export const toUserFederationsLdap = (

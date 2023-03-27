@@ -1,7 +1,7 @@
 import { lazy } from "react";
 import type { Path } from "react-router-dom";
 import { generatePath } from "react-router-dom";
-import type { RouteDef } from "../../route-config";
+import type { AppRouteObject } from "../../routes";
 
 export type EditClientPolicyParams = {
   realm: string;
@@ -10,11 +10,13 @@ export type EditClientPolicyParams = {
 
 const NewClientPolicyForm = lazy(() => import("../NewClientPolicyForm"));
 
-export const EditClientPolicyRoute: RouteDef = {
+export const EditClientPolicyRoute: AppRouteObject = {
   path: "/:realm/realm-settings/client-policies/:policyName/edit-policy",
   element: <NewClientPolicyForm />,
-  access: "manage-realm",
   breadcrumb: (t) => t("realm-settings:policyDetails"),
+  handle: {
+    access: "manage-realm",
+  },
 };
 
 export const toEditClientPolicy = (

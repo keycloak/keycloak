@@ -1,4 +1,4 @@
-import type { RouteDef } from "../route-config";
+import type { AppRouteObject } from "../routes";
 import { CustomUserFederationRoute } from "./routes/CustomUserFederation";
 import { NewCustomUserFederationRoute } from "./routes/NewCustomUserFederation";
 import { NewKerberosUserFederationRoute } from "./routes/NewKerberosUserFederation";
@@ -13,7 +13,7 @@ import { UserFederationLdapMapperRoute } from "./routes/UserFederationLdapMapper
 import { UserFederationsKerberosRoute } from "./routes/UserFederationsKerberos";
 import { UserFederationsLdapRoute } from "./routes/UserFederationsLdap";
 
-const routes: RouteDef[] = [
+const routes: AppRouteObject[] = [
   UserFederationRoute,
   UserFederationsKerberosRoute,
   NewKerberosUserFederationRoute,
