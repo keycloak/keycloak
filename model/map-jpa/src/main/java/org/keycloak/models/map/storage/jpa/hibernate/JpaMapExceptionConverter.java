@@ -34,7 +34,7 @@ public class JpaMapExceptionConverter implements ExceptionConverter, Environment
     @Override
     public Throwable convert(Throwable e) {
         if (!(e instanceof PersistenceException)) return null;
-        return PersistenceExceptionConverter.convert(e.getCause() != null ? e.getCause() : e);
+        return PersistenceExceptionConverter.convert(e);
     }
 
     @Override
