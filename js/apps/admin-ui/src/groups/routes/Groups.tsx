@@ -1,13 +1,13 @@
 import { lazy } from "react";
 import type { Path } from "react-router-dom";
 import { generatePath } from "react-router-dom";
-import type { RouteDef } from "../../route-config";
+import type { AppRouteObject } from "../../routes";
 
 export type GroupsParams = { realm: string; id?: string };
 
 const GroupsSection = lazy(() => import("../GroupsSection"));
 
-export const GroupsRoute: RouteDef = {
+export const GroupsRoute: AppRouteObject = {
   path: "/:realm/groups/*",
   element: <GroupsSection />,
   handle: {
@@ -15,7 +15,7 @@ export const GroupsRoute: RouteDef = {
   },
 };
 
-export const GroupsWithIdRoute: RouteDef = {
+export const GroupsWithIdRoute: AppRouteObject = {
   ...GroupsRoute,
   path: "/:realm/groups/:id",
 };

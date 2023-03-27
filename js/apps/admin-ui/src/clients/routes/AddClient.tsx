@@ -1,13 +1,13 @@
 import { lazy } from "react";
 import type { Path } from "react-router-dom";
 import { generatePath } from "react-router-dom";
-import type { RouteDef } from "../../route-config";
+import type { AppRouteObject } from "../../routes";
 
 export type AddClientParams = { realm: string };
 
 const NewClientForm = lazy(() => import("../add/NewClientForm"));
 
-export const AddClientRoute: RouteDef = {
+export const AddClientRoute: AppRouteObject = {
   path: "/:realm/clients/add-client",
   element: <NewClientForm />,
   breadcrumb: (t) => t("clients:createClient"),
