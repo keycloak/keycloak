@@ -11,7 +11,9 @@ export const IdentityProviderOidcRoute: RouteDef = {
   path: "/:realm/identity-providers/oidc/add",
   element: <AddOpenIdConnect />,
   breadcrumb: (t) => t("identity-providers:addOpenIdProvider"),
-  access: "manage-identity-providers",
+  handle: {
+    access: "manage-identity-providers",
+  },
 };
 
 export const toIdentityProviderOidc = (

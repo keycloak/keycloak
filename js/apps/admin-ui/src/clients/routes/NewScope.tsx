@@ -11,7 +11,9 @@ export const NewScopeRoute: RouteDef = {
   path: "/:realm/clients/:id/authorization/scope/new",
   element: <ScopeDetails />,
   breadcrumb: (t) => t("clients:createAuthorizationScope"),
-  access: "view-clients",
+  handle: {
+    access: "view-clients",
+  },
 };
 
 export const toNewScope = (params: NewScopeParams): Partial<Path> => ({

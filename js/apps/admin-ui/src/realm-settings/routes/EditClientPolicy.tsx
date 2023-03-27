@@ -13,8 +13,10 @@ const NewClientPolicyForm = lazy(() => import("../NewClientPolicyForm"));
 export const EditClientPolicyRoute: RouteDef = {
   path: "/:realm/realm-settings/client-policies/:policyName/edit-policy",
   element: <NewClientPolicyForm />,
-  access: "manage-realm",
   breadcrumb: (t) => t("realm-settings:policyDetails"),
+  handle: {
+    access: "manage-realm",
+  },
 };
 
 export const toEditClientPolicy = (

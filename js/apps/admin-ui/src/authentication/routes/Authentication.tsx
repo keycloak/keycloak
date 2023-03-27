@@ -13,7 +13,9 @@ export const AuthenticationRoute: RouteDef = {
   path: "/:realm/authentication",
   element: <AuthenticationSection />,
   breadcrumb: (t) => t("authentication"),
-  access: ["view-realm", "view-identity-providers", "view-clients"],
+  handle: {
+    access: ["view-realm", "view-identity-providers", "view-clients"],
+  },
 };
 
 export const AuthenticationRouteWithTab: RouteDef = {

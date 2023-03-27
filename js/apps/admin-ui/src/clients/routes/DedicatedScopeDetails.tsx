@@ -17,7 +17,9 @@ export const DedicatedScopeDetailsRoute: RouteDef = {
   path: "/:realm/clients/:clientId/clientScopes/dedicated",
   element: <DedicatedScopes />,
   breadcrumb: (t) => t("clients:dedicatedScopes"),
-  access: "view-clients",
+  handle: {
+    access: "view-clients",
+  },
 };
 
 export const DedicatedScopeDetailsWithTabRoute: RouteDef = {

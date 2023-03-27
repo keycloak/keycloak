@@ -24,7 +24,9 @@ export const AuthorizationRoute: RouteDef = {
   path: "/:realm/clients/:clientId/authorization/:tab",
   element: <ClientDetails />,
   breadcrumb: (t) => t("clients:clientSettings"),
-  access: "view-clients",
+  handle: {
+    access: "view-clients",
+  },
 };
 
 export const toAuthorizationTab = (

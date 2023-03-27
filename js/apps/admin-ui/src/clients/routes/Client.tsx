@@ -28,7 +28,9 @@ export const ClientRoute: RouteDef = {
   path: "/:realm/clients/:clientId/:tab",
   element: <ClientDetails />,
   breadcrumb: (t) => t("clients:clientSettings"),
-  access: "query-clients",
+  handle: {
+    access: "query-clients",
+  },
 };
 
 export const toClient = (params: ClientParams): Partial<Path> => ({

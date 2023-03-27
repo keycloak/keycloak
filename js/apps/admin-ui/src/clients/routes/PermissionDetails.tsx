@@ -19,7 +19,9 @@ export const PermissionDetailsRoute: RouteDef = {
   path: "/:realm/clients/:id/authorization/permission/:permissionType/:permissionId",
   element: <PermissionDetails />,
   breadcrumb: (t) => t("clients:permissionDetails"),
-  access: "view-clients",
+  handle: {
+    access: "view-clients",
+  },
 };
 
 export const toPermissionDetails = (

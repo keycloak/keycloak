@@ -22,7 +22,9 @@ export const ClientRoleRoute: RouteDef = {
   path: "/:realm/clients/:clientId/roles/:id/:tab" as const,
   element: <RealmRoleTabs />,
   breadcrumb: (t) => t("roles:roleDetails"),
-  access: "view-realm",
+  handle: {
+    access: "view-realm",
+  },
 } satisfies RouteDef;
 
 export const toClientRole = (params: ClientRoleParams): Partial<Path> => ({

@@ -16,7 +16,9 @@ export const EditAttributesGroupRoute: RouteDef = {
   path: "/:realm/realm-settings/user-profile/attributesGroup/edit/:name",
   element: <AttributesGroupDetails />,
   breadcrumb: (t) => t("realm-settings:editGroupText"),
-  access: "view-realm",
+  handle: {
+    access: "view-realm",
+  },
 };
 
 export const toEditAttributesGroup = (

@@ -11,7 +11,9 @@ export const UserFederationRoute: RouteDef = {
   path: "/:realm/user-federation",
   element: <UserFederationSection />,
   breadcrumb: (t) => t("userFederation"),
-  access: "view-realm",
+  handle: {
+    access: "view-realm",
+  },
 };
 
 export const toUserFederation = (

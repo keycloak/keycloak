@@ -16,7 +16,9 @@ export const EventsRoute: RouteDef = {
   path: "/:realm/events",
   element: <EventsSection />,
   breadcrumb: (t) => t("events:title"),
-  access: "view-events",
+  handle: {
+    access: "view-events",
+  },
 };
 
 export const EventsRouteWithTab: RouteDef = {

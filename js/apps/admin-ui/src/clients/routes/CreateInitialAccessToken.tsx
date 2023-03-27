@@ -13,7 +13,9 @@ export const CreateInitialAccessTokenRoute: RouteDef = {
   path: "/:realm/clients/initialAccessToken/create",
   element: <CreateInitialAccessToken />,
   breadcrumb: (t) => t("clients:createToken"),
-  access: "manage-clients",
+  handle: {
+    access: "manage-clients",
+  },
 };
 
 export const toCreateInitialAccessToken = (

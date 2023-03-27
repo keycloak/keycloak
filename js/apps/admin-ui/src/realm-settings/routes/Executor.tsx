@@ -15,7 +15,9 @@ export const ExecutorRoute: RouteDef = {
   path: "/:realm/realm-settings/client-policies/:profileName/edit-profile/:executorName",
   element: <ExecutorForm />,
   breadcrumb: (t) => t("realm-settings:executorDetails"),
-  access: ["manage-realm"],
+  handle: {
+    access: ["manage-realm"],
+  },
 };
 
 export const toExecutor = (params: ExecutorParams): Partial<Path> => ({

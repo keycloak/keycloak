@@ -11,7 +11,9 @@ export const SessionsRoute: RouteDef = {
   path: "/:realm/sessions",
   element: <SessionsSection />,
   breadcrumb: (t) => t("sessions:title"),
-  access: ["view-realm", "view-clients", "view-users"],
+  handle: {
+    access: ["view-realm", "view-clients", "view-users"],
+  },
 };
 
 export const toSessions = (params: SessionsParams): Partial<Path> => ({

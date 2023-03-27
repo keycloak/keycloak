@@ -12,7 +12,9 @@ export const AddUserRoute: RouteDef = {
   path: "/:realm/users/add-user",
   element: <CreateUser />,
   breadcrumb: (t) => t("users:createUser"),
-  access: ["query-users", "query-groups"],
+  handle: {
+    access: ["query-users", "query-groups"],
+  },
 };
 
 export const toAddUser = (params: AddUserParams): Partial<Path> => ({

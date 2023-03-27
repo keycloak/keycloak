@@ -13,7 +13,9 @@ export const NewPolicyRoute: RouteDef = {
   path: "/:realm/clients/:id/authorization/policy/new/:policyType",
   element: <PolicyDetails />,
   breadcrumb: (t) => t("clients:createPolicy"),
-  access: "view-clients",
+  handle: {
+    access: "view-clients",
+  },
 };
 
 export const toCreatePolicy = (params: NewPolicyParams): Partial<Path> => ({

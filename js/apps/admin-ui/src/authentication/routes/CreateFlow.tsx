@@ -11,7 +11,9 @@ export const CreateFlowRoute: RouteDef = {
   path: "/:realm/authentication/flows/create",
   element: <CreateFlow />,
   breadcrumb: (t) => t("authentication:createFlow"),
-  access: "manage-authorization",
+  handle: {
+    access: "manage-authorization",
+  },
 };
 
 export const toCreateFlow = (params: CreateFlowParams): Partial<Path> => ({

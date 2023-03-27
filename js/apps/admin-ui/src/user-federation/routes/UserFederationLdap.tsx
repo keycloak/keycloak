@@ -19,7 +19,9 @@ export const UserFederationLdapRoute: RouteDef = {
   path: "/:realm/user-federation/ldap/:id",
   element: <UserFederationLdapSettings />,
   breadcrumb: (t) => t("common:settings"),
-  access: "view-realm",
+  handle: {
+    access: "view-realm",
+  },
 };
 
 export const UserFederationLdapWithTabRoute: RouteDef = {

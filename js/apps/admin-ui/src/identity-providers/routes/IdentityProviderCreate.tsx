@@ -14,7 +14,9 @@ export const IdentityProviderCreateRoute: RouteDef = {
   path: "/:realm/identity-providers/:providerId/add",
   element: <AddIdentityProvider />,
   breadcrumb: (t) => t("identity-providers:addProvider"),
-  access: "manage-identity-providers",
+  handle: {
+    access: "manage-identity-providers",
+  },
 };
 
 export const toIdentityProviderCreate = (

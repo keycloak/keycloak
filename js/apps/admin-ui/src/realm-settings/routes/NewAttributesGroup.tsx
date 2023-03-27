@@ -15,7 +15,9 @@ export const NewAttributesGroupRoute: RouteDef = {
   path: "/:realm/realm-settings/user-profile/attributesGroup/new",
   element: <AttributesGroupDetails />,
   breadcrumb: (t) => t("realm-settings:createGroupText"),
-  access: "view-realm",
+  handle: {
+    access: "view-realm",
+  },
 };
 
 export const toNewAttributesGroup = (

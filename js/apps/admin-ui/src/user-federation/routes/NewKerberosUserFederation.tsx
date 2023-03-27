@@ -13,7 +13,9 @@ export const NewKerberosUserFederationRoute: RouteDef = {
   path: "/:realm/user-federation/kerberos/new",
   element: <UserFederationKerberosSettings />,
   breadcrumb: (t) => t("common:settings"),
-  access: "view-realm",
+  handle: {
+    access: "view-realm",
+  },
 };
 
 export const toNewKerberosUserFederation = (

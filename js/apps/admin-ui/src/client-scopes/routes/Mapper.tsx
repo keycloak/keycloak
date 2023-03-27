@@ -15,7 +15,9 @@ export const MapperRoute: RouteDef = {
   path: "/:realm/client-scopes/:id/mappers/:mapperId",
   element: <MappingDetails />,
   breadcrumb: (t) => t("common:mappingDetails"),
-  access: "view-clients",
+  handle: {
+    access: "view-clients",
+  },
 };
 
 export const toMapper = (params: MapperParams): Partial<Path> => ({

@@ -11,7 +11,9 @@ export const AddRealmRoute: RouteDef = {
   path: "/:realm/add-realm",
   element: <NewRealmForm />,
   breadcrumb: (t) => t("realm:createRealm"),
-  access: "view-realm",
+  handle: {
+    access: "view-realm",
+  },
 };
 
 export const toAddRealm = (params: AddRealmParams): Partial<Path> => ({

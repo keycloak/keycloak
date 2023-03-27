@@ -17,7 +17,9 @@ export const ClientScopesRoute: RouteDef = {
   path: "/:realm/clients/:clientId/clientScopes/:tab",
   element: <ClientDetails />,
   breadcrumb: (t) => t("clients:clientSettings"),
-  access: "view-clients",
+  handle: {
+    access: "view-clients",
+  },
 };
 
 export const toClientScopesTab = (
