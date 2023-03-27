@@ -401,7 +401,7 @@ one of the specified levels. If it is not able to return one of the specified le
 in the authentication flow), then {project_name} will throw an error.
 
 [[_user_session_limits]]
-==== User session limits
+=== User session limits
 
 Limits on the number of session that a user can have can be configured. Sessions can be limited per realm or per client.
 
@@ -425,14 +425,30 @@ If both session limits and client session limits are enabled, it makes sense to 
 
 Note that the user session limits should be added to your bound *Browser flow*, *Direct grant flow*, *Reset credentials* and also to any *Post broker login flow*.
 The authenticator should be added at the point when the user is already known during authentication (usually at the end of the authentication flow) and should be typically REQUIRED. Note that it is not possible to have
-ALTERNATIVE and REQUIRED executions at the same level. For example for the default browser flow, it may be necessary to wrap the existing flow as a REQUIRED level-1 subflow and
-add `User Session Count Limiter` to the same level as this new subflow. Example of such flow is below.
+ALTERNATIVE and REQUIRED executions at the same level.
 
-image:images/authentication-user-session-limits.png[Authentication User Session Limits Flow]
+For most of authenticators like `Direct grant flow`, `Reset credentials` or `Post broker login flow`, it is recommended to add the authenticator as REQUIRED at the end of the authentication flow.
+For example it can look like this for `Reset credentials` flow:
 
-Currently, the administrator is responsible for maintaining consistency between the different configurations.
+image:images/authentication-user-session-limits-resetcred.png[Authentication User Session Limits Reset Credentials Flow]
 
-Note also that the user session limit feature is not available for CIBA.
+For `Browser` flow, it can be beneficial to not add the Session Limits authenticator at the top level flow. This is due the `Cookie` authenticator, which automatically re-authenticates users based
+on SSO cookie, is at top level and we do not want to check session limits during SSO re-authentication as user session already exists. So instead, it can be good to add separate ALTERNATIVE
+subflow (like `authenticate-user-with-session-limit` at the example below) at the same level like `Cookie`. Then it it possible to add REQUIRED subflow (in the example below
+`real-authentication-subflow`) as nested subflow of `authenticate-user-with-session-limit` and add `User Session Limit` at the same level as well. Inside `real-authentication-subflow`,
+you can add real authenticators similarly like in the default browser flow. For example you can see the example flow below, which allows to authenticate users either with identity provider or
+with password and OTP:
+
+image:images/authentication-user-session-limits-browser.png[Authentication User Session Limits Browser Flow]
+
+Regarding `Post Broker login flow`, it can be fine to just add the `User Session Limits` as only authenticator in the authentication flow (as long as you do not have any other authenticators,
+which you want to trigger after authentication with your identity provider) and make sure that this flow is configured as `Post Broker Flow` at your identity providers. This is needed, so
+the authentication with Identity providers also participates in the session limits.
+
+NOTE: Currently, the administrator is responsible for maintaining consistency between the different configurations. So make sure that all your flows use same configuration
+of `User Session Limits`.
+
+NOTE: User session limit feature is not available for CIBA.
 
 ifeval::[{project_community}==true]
 === Script Authenticator
