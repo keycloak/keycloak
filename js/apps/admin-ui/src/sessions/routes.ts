@@ -1,6 +1,6 @@
-import type { RouteDef } from "../route-config";
+import type { AppRouteObject } from "../routes";
 import { SessionsRoute } from "./routes/Sessions";
 
-const routes: RouteDef[] = [SessionsRoute];
+const routes: AppRouteObject[] = [SessionsRoute];
 
 export default routes;

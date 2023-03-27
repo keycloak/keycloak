@@ -1,7 +1,7 @@
 import { lazy } from "react";
 import type { Path } from "react-router-dom";
 import { generatePath } from "react-router-dom";
-import type { RouteDef } from "../../route-config";
+import type { AppRouteObject } from "../../routes";
 
 export type PermissionType = "resource" | "scope";
 
@@ -16,7 +16,7 @@ const PermissionDetails = lazy(
   () => import("../authorization/PermissionDetails")
 );
 
-export const NewPermissionRoute: RouteDef = {
+export const NewPermissionRoute: AppRouteObject = {
   path: "/:realm/clients/:id/authorization/permission/new/:permissionType",
   element: <PermissionDetails />,
   breadcrumb: (t) => t("clients:createPermission"),
@@ -25,7 +25,7 @@ export const NewPermissionRoute: RouteDef = {
   },
 };
 
-export const NewPermissionWithSelectedIdRoute: RouteDef = {
+export const NewPermissionWithSelectedIdRoute: AppRouteObject = {
   ...NewPermissionRoute,
   path: "/:realm/clients/:id/authorization/permission/new/:permissionType/:selectedId",
 };

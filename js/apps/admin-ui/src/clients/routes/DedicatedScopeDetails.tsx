@@ -1,7 +1,7 @@
 import { lazy } from "react";
 import type { Path } from "react-router-dom";
 import { generatePath } from "react-router-dom";
-import type { RouteDef } from "../../route-config";
+import type { AppRouteObject } from "../../routes";
 
 export type DedicatedScopeTab = "mappers" | "scope";
 
@@ -13,7 +13,7 @@ export type DedicatedScopeDetailsParams = {
 
 const DedicatedScopes = lazy(() => import("../scopes/DedicatedScopes"));
 
-export const DedicatedScopeDetailsRoute: RouteDef = {
+export const DedicatedScopeDetailsRoute: AppRouteObject = {
   path: "/:realm/clients/:clientId/clientScopes/dedicated",
   element: <DedicatedScopes />,
   breadcrumb: (t) => t("clients:dedicatedScopes"),
@@ -22,7 +22,7 @@ export const DedicatedScopeDetailsRoute: RouteDef = {
   },
 };
 
-export const DedicatedScopeDetailsWithTabRoute: RouteDef = {
+export const DedicatedScopeDetailsWithTabRoute: AppRouteObject = {
   ...DedicatedScopeDetailsRoute,
   path: "/:realm/clients/:clientId/clientScopes/dedicated/:tab",
 };

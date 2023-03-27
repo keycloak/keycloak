@@ -1,7 +1,7 @@
 import { lazy } from "react";
 import type { Path } from "react-router-dom";
 import { generatePath } from "react-router-dom";
-import type { RouteDef } from "../../route-config";
+import type { AppRouteObject } from "../../routes";
 
 export type AddAttributeParams = {
   realm: string;
@@ -9,7 +9,7 @@ export type AddAttributeParams = {
 
 const NewAttributeSettings = lazy(() => import("../NewAttributeSettings"));
 
-export const AddAttributeRoute: RouteDef = {
+export const AddAttributeRoute: AppRouteObject = {
   path: "/:realm/realm-settings/user-profile/attributes/add-attribute",
   element: <NewAttributeSettings />,
   breadcrumb: (t) => t("realm-settings:createAttribute"),

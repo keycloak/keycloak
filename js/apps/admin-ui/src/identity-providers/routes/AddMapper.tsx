@@ -1,7 +1,7 @@
 import { lazy } from "react";
 import type { Path } from "react-router-dom";
 import { generatePath } from "react-router-dom";
-import type { RouteDef } from "../../route-config";
+import type { AppRouteObject } from "../../routes";
 
 export type IdentityProviderAddMapperParams = {
   realm: string;
@@ -12,7 +12,7 @@ export type IdentityProviderAddMapperParams = {
 
 const AddMapper = lazy(() => import("../add/AddMapper"));
 
-export const IdentityProviderAddMapperRoute: RouteDef = {
+export const IdentityProviderAddMapperRoute: AppRouteObject = {
   path: "/:realm/identity-providers/:providerId/:alias/:tab/create",
   element: <AddMapper />,
   breadcrumb: (t) => t("identity-providers:addIdPMapper"),

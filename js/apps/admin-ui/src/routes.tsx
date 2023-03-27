@@ -1,7 +1,7 @@
 import type { AccessType } from "@keycloak/keycloak-admin-client/lib/defs/whoAmIRepresentation";
 import type { TFunction } from "i18next";
 import type { ComponentType } from "react";
-import { RouteObject } from "react-router-dom";
+import type { NonIndexRouteObject } from "react-router";
 
 import authenticationRoutes from "./authentication/routes";
 import clientScopesRoutes from "./client-scopes/routes";
@@ -18,17 +18,17 @@ import sessionRoutes from "./sessions/routes";
 import userFederationRoutes from "./user-federation/routes";
 import userRoutes from "./user/routes";
 
-export type RouteObjectHandle = {
+export type AppRouteObjectHandle = {
   access: AccessType | AccessType[];
 };
 
-export type RouteDef = Required<Pick<RouteObject, "element">> & {
+export interface AppRouteObject extends NonIndexRouteObject {
   path: string;
   breadcrumb?: (t: TFunction) => string | ComponentType<any>;
-  handle: RouteObjectHandle;
-};
+  handle: AppRouteObjectHandle;
+}
 
-const NotFoundRoute: RouteDef = {
+const NotFoundRoute: AppRouteObject = {
   path: "*",
   element: <PageNotFoundSection />,
   handle: {
@@ -36,7 +36,7 @@ const NotFoundRoute: RouteDef = {
   },
 };
 
-export const routes: RouteDef[] = [
+export const routes: AppRouteObject[] = [
   ...authenticationRoutes,
   ...clientRoutes,
   ...clientScopesRoutes,

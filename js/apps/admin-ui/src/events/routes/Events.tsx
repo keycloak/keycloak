@@ -1,7 +1,7 @@
 import { lazy } from "react";
 import type { Path } from "react-router-dom";
 import { generatePath } from "react-router-dom";
-import type { RouteDef } from "../../route-config";
+import type { AppRouteObject } from "../../routes";
 
 export type EventsTab = "user-events" | "admin-events";
 
@@ -12,7 +12,7 @@ export type EventsParams = {
 
 const EventsSection = lazy(() => import("../EventsSection"));
 
-export const EventsRoute: RouteDef = {
+export const EventsRoute: AppRouteObject = {
   path: "/:realm/events",
   element: <EventsSection />,
   breadcrumb: (t) => t("events:title"),
@@ -21,7 +21,7 @@ export const EventsRoute: RouteDef = {
   },
 };
 
-export const EventsRouteWithTab: RouteDef = {
+export const EventsRouteWithTab: AppRouteObject = {
   ...EventsRoute,
   path: "/:realm/events/:tab",
 };

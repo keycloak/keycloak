@@ -1,4 +1,4 @@
-import type { RouteDef } from "../route-config";
+import type { AppRouteObject } from "../routes";
 import {
   AuthenticationRoute,
   AuthenticationRouteWithTab,
@@ -6,7 +6,7 @@ import {
 import { CreateFlowRoute } from "./routes/CreateFlow";
 import { FlowRoute, FlowWithBuiltInRoute } from "./routes/Flow";
 
-const routes: RouteDef[] = [
+const routes: AppRouteObject[] = [
   AuthenticationRoute,
   AuthenticationRouteWithTab,
   CreateFlowRoute,

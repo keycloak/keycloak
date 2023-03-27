@@ -1,9 +1,9 @@
-import type { RouteDef } from "../route-config";
+import type { AppRouteObject } from "../routes";
 import { AddUserRoute } from "./routes/AddUser";
 import { UserRoute } from "./routes/User";
 import { UsersRoute, UsersRouteWithTab } from "./routes/Users";
 
-const routes: RouteDef[] = [
+const routes: AppRouteObject[] = [
   AddUserRoute,
   UsersRoute,
   UsersRouteWithTab,
