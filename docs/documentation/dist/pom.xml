@@ -6,12 +6,21 @@
         <groupId>org.keycloak.documentation</groupId>
         <artifactId>documentation-parent</artifactId>
         <version>999.0.0-SNAPSHOT</version>
-        <relativePath>../</relativePath>
+        <relativePath>../pom.xml</relativePath>
     </parent>
 
     <name>Keycloak Documentation dist</name>
     <artifactId>keycloak-documentation</artifactId>
     <packaging>pom</packaging>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.keycloak.documentation</groupId>
+            <artifactId>aggregation</artifactId>
+            <version>${project.version}</version>
+            <type>pom</type>
+        </dependency>
+    </dependencies>
 
     <build>
         <plugins>
