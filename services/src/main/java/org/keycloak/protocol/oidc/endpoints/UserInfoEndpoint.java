@@ -121,7 +121,7 @@ public class UserInfoEndpoint {
     @Path("/")
     @GET
     @NoCache
-    @Produces(javax.ws.rs.core.MediaType.APPLICATION_JSON)
+    @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_JWT})
     public Response issueUserInfoGet() {
         setupCors();
         String accessToken = this.appAuthManager.extractAuthorizationHeaderTokenOrReturnNull(session.getContext().getRequestHeaders());
@@ -132,7 +132,7 @@ public class UserInfoEndpoint {
     @Path("/")
     @POST
     @NoCache
-    @Produces(javax.ws.rs.core.MediaType.APPLICATION_JSON)
+    @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_JWT})
     public Response issueUserInfoPost() {
         setupCors();
 
