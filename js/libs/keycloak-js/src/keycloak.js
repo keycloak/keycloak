@@ -21,15 +21,6 @@ if (typeof Promise === 'undefined') {
     throw Error('Keycloak requires an environment that supports Promises. Make sure that you include the appropriate polyfill.');
 }
 
-var loggedPromiseDeprecation = false;
-
-function logPromiseDeprecation() {
-    if (!loggedPromiseDeprecation) {
-        loggedPromiseDeprecation = true;
-        console.warn('[KEYCLOAK] Usage of legacy style promise methods such as `.error()` and `.success()` has been deprecated and support will be removed in future versions. Use standard style promise methods such as `.then() and `.catch()` instead.');
-    }
-}
-
 function Keycloak (config) {
     if (!(this instanceof Keycloak)) {
         return new Keycloak(config);
@@ -1165,26 +1156,6 @@ function Keycloak (config) {
             p.resolve = resolve;
             p.reject = reject;
         });
-
-        p.promise.success = function(callback) {
-            logPromiseDeprecation();
-
-            this.then(function handleSuccess(value) {
-                callback(value);
-            });
-
-            return this;
-        }
-
-        p.promise.error = function(callback) {
-            logPromiseDeprecation();
-
-            this.catch(function handleError(error) {
-                callback(error);
-            });
-
-            return this;
-        }
 
         return p;
     }
