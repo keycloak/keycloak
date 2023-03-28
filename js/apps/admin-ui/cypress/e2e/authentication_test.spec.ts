@@ -259,12 +259,12 @@ describe("Password policies tab", () => {
 
 describe("Accessibility tests for authentication", () => {
   const realmName = "a11y-realm";
+  const flowName = "SubFlow";
   const requiredActionsPage = new RequiredActions();
   const passwordPoliciesPage = new PasswordPolicies();
   const otpPoliciesPage = new OTPPolicies();
   const webAuthnPolicies = new WebAuthnPolicies();
   const detailPage = new FlowDetails();
-  const flowName = "SubFlow";
 
   before(() => adminClient.createRealm(realmName));
   after(() => adminClient.deleteRealm(realmName));
