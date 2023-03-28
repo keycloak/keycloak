@@ -55,7 +55,7 @@ export const RequiredActionMultiSelect = ({
         render={({ field }) => (
           <Select
             maxHeight={375}
-            toggleId="actions"
+            toggleId={`${name}-actions`}
             variant={SelectVariant.typeaheadMulti}
             chipGroupProps={{
               numChips: 3,
