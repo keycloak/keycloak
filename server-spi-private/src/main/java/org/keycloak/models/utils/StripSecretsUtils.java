@@ -18,6 +18,7 @@
 package org.keycloak.models.utils;
 
 import org.keycloak.common.util.MultivaluedHashMap;
+import org.keycloak.models.ClientSecretConstants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -137,6 +138,12 @@ public class StripSecretsUtils {
     public static ClientRepresentation strip(ClientRepresentation rep) {
         if (rep.getSecret() != null) {
             rep.setSecret(maskNonVaultValue(rep.getSecret()));
+        }
+        if (rep.getAttributes() != null && rep.getAttributes().containsKey(ClientSecretConstants.CLIENT_ROTATED_SECRET)) {
+            rep.getAttributes().put(
+                    ClientSecretConstants.CLIENT_ROTATED_SECRET,
+                    maskNonVaultValue(rep.getAttributes().get(ClientSecretConstants.CLIENT_ROTATED_SECRET))
+            );
         }
         return rep;
     }
