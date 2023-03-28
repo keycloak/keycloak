@@ -88,6 +88,22 @@ export const FineGrainSamlEndpointConfig = ({
         />
       </FormGroup>
       <FormGroup
+        label={t("logoutServiceSoapBindingUrl")}
+        fieldId="logoutServiceSoapBindingUrl"
+        labelIcon={
+          <HelpItem
+            helpText="clients-help:logoutServiceSoapBindingUrl"
+            fieldLabelId="clients:logoutServiceSoapBindingUrl"
+          />
+        }
+      >
+        <KeycloakTextInput
+          id="logoutServiceSoapBindingUrl"
+          type="url"
+          {...register("attributes.saml_single_logout_service_url_soap")}
+        />
+      </FormGroup>
+      <FormGroup
         label={t("logoutServiceArtifactBindingUrl")}
         fieldId="logoutServiceArtifactBindingUrl"
         labelIcon={
