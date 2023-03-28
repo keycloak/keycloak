@@ -23,6 +23,7 @@ import org.keycloak.common.Profile;
 import org.keycloak.common.crypto.CryptoIntegration;
 import org.keycloak.common.util.Resteasy;
 import org.keycloak.config.ConfigProviderFactory;
+import org.keycloak.exportimport.ExportImportConfig;
 import org.keycloak.exportimport.ExportImportManager;
 import org.keycloak.exportimport.Strategy;
 import org.keycloak.models.KeycloakSession;
@@ -256,7 +257,8 @@ public class KeycloakApplication extends Application {
         String dir = System.getProperty("keycloak.import");
         if (dir != null) {
             try {
-                exportImportManager.runImportAtStartup(dir, Strategy.IGNORE_EXISTING);
+                System.setProperty(ExportImportConfig.STRATEGY, Strategy.IGNORE_EXISTING.toString());
+                exportImportManager.runImportAtStartup(dir);
             } catch (IOException cause) {
                 throw new RuntimeException("Failed to import realms", cause);
             }

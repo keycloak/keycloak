@@ -127,7 +127,7 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
     public void backchannelLogout(KeycloakSession session, UserSessionModel userSession, UriInfo uriInfo, RealmModel realm) {
         if (getConfig().getLogoutUrl() == null || getConfig().getLogoutUrl().trim().equals("") || !getConfig().isBackchannelSupported())
             return;
-        String idToken = getIDTokenForLogout(session, userSession);
+        String idToken = userSession.getNote(FEDERATED_ID_TOKEN);
         if (idToken == null) return;
         backchannelLogout(userSession, idToken);
     }
@@ -165,7 +165,7 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
     @Override
     public Response keycloakInitiatedBrowserLogout(KeycloakSession session, UserSessionModel userSession, UriInfo uriInfo, RealmModel realm) {
         if (getConfig().getLogoutUrl() == null || getConfig().getLogoutUrl().trim().equals("")) return null;
-        String idToken = getIDTokenForLogout(session, userSession);
+        String idToken = userSession.getNote(FEDERATED_ID_TOKEN);
         if (idToken != null && getConfig().isBackchannelSupported()) {
             backchannelLogout(userSession, idToken);
             return null;
@@ -246,25 +246,6 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
             return Response.ok(tokenResponse).type(MediaType.APPLICATION_JSON_TYPE).build();
         } catch (IOException e) {
             throw new RuntimeException(e);
-        }
-    }
-
-    private String getIDTokenForLogout(KeycloakSession session, UserSessionModel userSession) {
-        String tokenExpirationString = userSession.getNote(FEDERATED_TOKEN_EXPIRATION);
-        long exp = tokenExpirationString == null ? 0 : Long.parseLong(tokenExpirationString);
-        int currentTime = Time.currentTime();
-        if (exp > 0 && currentTime > exp) {
-            String response = refreshTokenForLogout(session, userSession);
-            AccessTokenResponse tokenResponse = null;
-            try {
-                tokenResponse = JsonSerialization.readValue(response, AccessTokenResponse.class);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-            return tokenResponse.getIdToken();
-        } else {
-            return userSession.getNote(FEDERATED_ID_TOKEN);
-
         }
     }
 

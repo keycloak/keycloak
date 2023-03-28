@@ -1,6 +1,5 @@
 import type GroupRepresentation from "@keycloak/keycloak-admin-client/lib/defs/groupRepresentation";
 import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
-import type RequiredActionProviderRepresentation from "@keycloak/keycloak-admin-client/lib/defs/requiredActionProviderRepresentation";
 import type UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
 import {
   ActionGroup,
@@ -10,8 +9,6 @@ import {
   ChipGroup,
   FormGroup,
   InputGroup,
-  Select,
-  SelectOption,
   Switch,
 } from "@patternfly/react-core";
 import { useState } from "react";
@@ -32,6 +29,7 @@ import useFormatDate from "../utils/useFormatDate";
 import useIsFeatureEnabled, { Feature } from "../utils/useIsFeatureEnabled";
 import { FederatedUserLink } from "./FederatedUserLink";
 import { UserProfileFields } from "./UserProfileFields";
+import { RequiredActionMultiSelect } from "./user-credentials/RequiredActionMultiSelect";
 
 export type BruteForced = {
   isBruteForceProtected?: boolean;
@@ -93,10 +91,6 @@ export const UserForm = ({
   const formatDate = useFormatDate();
   const isFeatureEnabled = useIsFeatureEnabled();
 
-  const [
-    isRequiredUserActionsDropdownOpen,
-    setRequiredUserActionsDropdownOpen,
-  ] = useState(false);
   const navigate = useNavigate();
   const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
@@ -118,22 +112,14 @@ export const UserForm = ({
   const [open, setOpen] = useState(false);
   const [locked, setLocked] = useState(isLocked);
   const [realm, setRealm] = useState<RealmRepresentation>();
-  const [requiredActions, setRequiredActions] = useState<
-    RequiredActionProviderRepresentation[]
-  >([]);
 
   useFetch(
-    () =>
-      Promise.all([
-        adminClient.realms.findOne({ realm: realmName }),
-        adminClient.authenticationManagement.getRequiredActions(),
-      ]),
-    ([realm, actions]) => {
+    () => adminClient.realms.findOne({ realm: realmName }),
+    (realm) => {
       if (!realm) {
         throw new Error(t("common:notFound"));
       }
       setRealm(realm);
-      setRequiredActions(actions);
     },
     []
   );
@@ -145,10 +131,6 @@ export const UserForm = ({
     } catch (error) {
       addError("users:unlockError", error);
     }
-  };
-
-  const clearSelection = () => {
-    setRequiredUserActionsDropdownOpen(false);
   };
 
   const deleteItem = (id: string) => {
@@ -233,56 +215,11 @@ export const UserForm = ({
           </FormGroup>
         </>
       )}
-      <FormGroup
-        label={t("requiredUserActions")}
-        fieldId="kc-required-user-actions"
-        validated={errors.requiredActions ? "error" : "default"}
-        helperTextInvalid={t("common:required")}
-        labelIcon={
-          <HelpItem
-            helpText={t("users-help:requiredUserActions")}
-            fieldLabelId="users:requiredUserActions"
-          />
-        }
-      >
-        <Controller
-          name="requiredActions"
-          defaultValue={[]}
-          control={control}
-          render={({ field }) => (
-            <Select
-              data-testid="required-actions-select"
-              placeholderText="Select action"
-              toggleId="kc-required-user-actions"
-              onToggle={() =>
-                setRequiredUserActionsDropdownOpen(
-                  !isRequiredUserActionsDropdownOpen
-                )
-              }
-              isOpen={isRequiredUserActionsDropdownOpen}
-              selections={field.value}
-              onSelect={(_, v) => {
-                const option = v as string;
-                if (field.value.includes(option)) {
-                  field.onChange(
-                    field.value.filter((item: string) => item !== option)
-                  );
-                } else {
-                  field.onChange([...field.value, option]);
-                }
-              }}
-              onClear={clearSelection}
-              variant="typeaheadmulti"
-            >
-              {requiredActions.map(({ alias, name }) => (
-                <SelectOption key={alias} value={alias}>
-                  {name}
-                </SelectOption>
-              ))}
-            </Select>
-          )}
-        />
-      </FormGroup>
+      <RequiredActionMultiSelect
+        name="requiredActions"
+        label="requiredUserActions"
+        help="users-help:requiredUserActions"
+      />
       {(user?.federationLink || user?.origin) && (
         <FormGroup
           label={t("federationLink")}
@@ -355,6 +292,7 @@ export const UserForm = ({
             <KeycloakTextInput
               data-testid="lastName-input"
               id="kc-lastname"
+              aria-label={t("lastName")}
               {...register("lastName")}
             />
           </FormGroup>

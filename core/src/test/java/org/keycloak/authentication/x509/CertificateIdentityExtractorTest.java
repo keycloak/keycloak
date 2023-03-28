@@ -21,7 +21,9 @@ package org.keycloak.authentication.x509;
 
 import java.io.InputStream;
 import java.nio.charset.Charset;
+import java.security.Principal;
 import java.security.cert.X509Certificate;
+import java.util.function.Function;
 
 import org.junit.Assert;
 import org.junit.ClassRule;
@@ -40,9 +42,12 @@ public abstract class CertificateIdentityExtractorTest {
     @ClassRule
     public static CryptoInitRule cryptoInitRule = new CryptoInitRule();
 
+    private static final String UPN_CERT_PATH = "/certs/UPN-cert.pem";
+    private static final String ANS_CERT_PATH = "/certs/ANS-cert.pem";
+
     @Test
     public void testExtractsCertInPemFormat() throws Exception {
-        X509Certificate x509Certificate = getCertificate();
+        X509Certificate x509Certificate = getCertificate(UPN_CERT_PATH);
 
         String certificatePem = PemUtils.encodeCertificate(x509Certificate);
 
@@ -56,7 +61,7 @@ public abstract class CertificateIdentityExtractorTest {
 
     @Test
     public void testExtractsCertInSubjectDNFormat() throws Exception {
-        X509Certificate x509Certificate = getCertificate();
+        X509Certificate x509Certificate = getCertificate(UPN_CERT_PATH);
 
         UserIdentityExtractor extractor = CryptoIntegration.getProvider().getIdentityExtractorProvider().getX500NameExtractor("CN", certs -> {
             return certs[0].getSubjectX500Principal();
@@ -69,7 +74,7 @@ public abstract class CertificateIdentityExtractorTest {
     public void testX509SubjectAltName_otherName() throws Exception {
         UserIdentityExtractor extractor = CryptoIntegration.getProvider().getIdentityExtractorProvider().getSubjectAltNameExtractor(0);
 
-        X509Certificate cert = getCertificate();
+        X509Certificate cert = getCertificate(UPN_CERT_PATH);
 
         Object upn = extractor.extractUserIdentity(new X509Certificate[] { cert});
         Assert.assertEquals("test-user@some-company-domain", upn);
@@ -80,18 +85,34 @@ public abstract class CertificateIdentityExtractorTest {
     public void testX509SubjectAltName_email() throws Exception {
         UserIdentityExtractor extractor = CryptoIntegration.getProvider().getIdentityExtractorProvider().getSubjectAltNameExtractor(1);
 
-        X509Certificate cert = getCertificate();
+        X509Certificate cert = getCertificate(UPN_CERT_PATH);
 
         Object upn = extractor.extractUserIdentity(new X509Certificate[] { cert});
         Assert.assertEquals("test@somecompany.com", upn);
     }
 
 
-    private X509Certificate getCertificate() throws Exception {
-        InputStream is = getClass().getResourceAsStream("/certs/UPN-cert.pem");
+    private X509Certificate getCertificate(String resourceFilename) throws Exception {
+        InputStream is = getClass().getResourceAsStream(resourceFilename);
 
         String s = StreamUtil.readString(is, Charset.defaultCharset());
 
         return PemUtils.decodeCertificate(s);
     }
+
+
+    private static final Function<X509Certificate[], Principal> subject = certs -> {
+        return certs[0].getSubjectX500Principal();
+    };
+
+
+    @Test
+    public void testX509SubjectCommonName() throws Exception {
+        UserIdentityExtractor extractor = CryptoIntegration.getProvider().getIdentityExtractorProvider().getX500NameExtractor("CN", subject);
+        X509Certificate cert = getCertificate(ANS_CERT_PATH);
+
+        Object cn = extractor.extractUserIdentity(new X509Certificate[] { cert });
+        Assert.assertEquals("899700252580", cn);
+    }
+
 }

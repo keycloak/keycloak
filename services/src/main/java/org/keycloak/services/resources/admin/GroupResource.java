@@ -156,6 +156,10 @@ public class GroupResource {
         if (ObjectUtil.isBlank(groupName)) {
             return ErrorResponse.error("Group name is missing", Response.Status.BAD_REQUEST);
         }
+        boolean childExists = group.getSubGroupsStream().anyMatch(s -> Objects.equals(s.getName(), groupName));
+        if (childExists) {
+            return ErrorResponse.exists("Sibling group named '" + groupName + "' already exists.");
+        }
 
         Response.ResponseBuilder builder = Response.status(204);
         GroupModel child = null;

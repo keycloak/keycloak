@@ -17,6 +17,8 @@ import MappersTab from "../support/pages/admin-ui/manage/client_scopes/client_sc
 import MapperDetailsPage, {
   ClaimJsonType,
 } from "../support/pages/admin-ui/manage/client_scopes/client_scope_details/tabs/mappers/MapperDetailsPage";
+import DedicatedScopesMappersTab from "../support/pages/admin-ui/manage/clients/client_details/DedicatedScopesMappersTab";
+import ClientDetailsPage from "../support/pages/admin-ui/manage/clients/client_details/ClientDetailsPage";
 
 let itemId = "client_scope_crud";
 const loginPage = new LoginPage();
@@ -27,6 +29,8 @@ const commonPage = new CommonPage();
 const listingPage = new ListingPage();
 const createClientScopePage = new CreateClientScopePage();
 const modalUtils = new ModalUtils();
+const dedicatedScopesMappersTab = new DedicatedScopesMappersTab();
+const clientDetailsPage = new ClientDetailsPage();
 
 describe("Client Scopes test", () => {
   const modalMessageDeleteConfirmation =
@@ -402,6 +406,70 @@ describe("Client Scopes test", () => {
       commonPage.tableUtils().checkRowItemExists(predefinedMapperName, true);
 
       mappersTab.removeMappers([predefinedMapperName]);
+    });
+  });
+
+  describe("Accessibility tests for client scopes", () => {
+    beforeEach(() => {
+      loginPage.logIn();
+      keycloakBefore();
+      sidebarPage.goToClientScopes();
+      cy.injectAxe();
+    });
+
+    const scopeName = "a11y";
+
+    after(async () => {
+      await adminClient.deleteClientScope(scopeName);
+    });
+
+    it("Check a11y violations on load/ client scopes", () => {
+      cy.checkA11y();
+    });
+
+    it("Check a11y violations on empty client scope", () => {
+      listingPage.goToCreateItem();
+      cy.checkA11y();
+    });
+
+    it("Check a11y violations on client scope details", () => {
+      const clientScopeDetailsPage = new ClientScopeDetailsPage();
+      const mappersTab = new MappersTab();
+      const predefinedMapperName = "Predefined Mapper test";
+      const predefinedMapper = "Allowed Web Origins";
+      const scopeTab = new RoleMappingTab("client-scope");
+      const role = "admin";
+
+      listingPage.goToCreateItem();
+      createClientScopePage.fillClientScopeData(scopeName).save();
+      cy.checkA11y();
+
+      clientScopeDetailsPage.goToMappersTab();
+      cy.checkA11y();
+
+      dedicatedScopesMappersTab.addPredefinedMapper();
+      cy.checkA11y();
+      clientDetailsPage.modalUtils().table().clickHeaderItem(1, "input");
+      cy.findByTestId("confirm").click();
+      cy.checkA11y();
+
+      mappersTab.addMappersByConfiguration(
+        predefinedMapper,
+        predefinedMapperName
+      );
+      cy.checkA11y();
+
+      sidebarPage.goToClientScopes();
+      listingPage.searchItem(scopeName, false).goToItemDetails(scopeName);
+      clientScopeDetailsPage.goToScopesTab();
+      cy.checkA11y();
+
+      cy.findByTestId("no-roles-for-this-client-scope-empty-action").click();
+      cy.checkA11y();
+      cy.findByTestId("cancel").click();
+
+      scopeTab.goToScopeTab().assignRole().selectRow(role).assign();
+      cy.checkA11y();
     });
   });
 });

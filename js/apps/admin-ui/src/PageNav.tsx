@@ -14,7 +14,7 @@ import { RealmSelector } from "./components/realm-selector/RealmSelector";
 import { useAccess } from "./context/access/Access";
 import { useRealm } from "./context/realm-context/RealmContext";
 import { AddRealmRoute } from "./realm/routes/AddRealm";
-import { routes } from "./route-config";
+import { routes } from "./routes";
 
 import "./page-nav.css";
 
@@ -30,9 +30,9 @@ const LeftNav = ({ title, path }: LeftNavProps) => {
 
   const accessAllowed =
     route &&
-    (route.access instanceof Array
-      ? hasAccess(...route.access)
-      : hasAccess(route.access));
+    (route.handle.access instanceof Array
+      ? hasAccess(...route.handle.access)
+      : hasAccess(route.handle.access));
 
   if (!accessAllowed) {
     return null;

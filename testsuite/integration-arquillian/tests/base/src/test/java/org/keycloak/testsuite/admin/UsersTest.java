@@ -74,6 +74,17 @@ public class UsersTest extends AbstractAdminTest {
 
         assertCaseInsensitiveSearch();
     }
+    
+    @Test
+    public void searchUserMatchUsersCount() {
+        createUser(REALM_NAME, "john.doe", "password", "John", "Doe Smith", "john.doe@keycloak.org");
+        String search = "jo do";
+
+        assertThat(adminClient.realm(REALM_NAME).users().count(search), is(1));
+        List<UserRepresentation> users = adminClient.realm(REALM_NAME).users().search(search, null, null);
+        assertThat(users, hasSize(1));
+        assertThat(users.get(0).getUsername(), is("john.doe"));
+    }
 
     @Test
     public void searchUserCaseSensitiveFirst() throws Exception {

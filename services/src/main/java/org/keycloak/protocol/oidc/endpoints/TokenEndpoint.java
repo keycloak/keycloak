@@ -748,6 +748,7 @@ public class TokenEndpoint {
         ClientSessionContext clientSessionCtx = TokenManager.attachAuthenticationSession(session, userSession, authSession);
 
         // Notes about client details
+        userSession.setNote(ServiceAccountConstants.CLIENT_ID_SESSION_NOTE, client.getClientId()); // This is for backwards compatibility
         userSession.setNote(ServiceAccountConstants.CLIENT_ID, client.getClientId());
         userSession.setNote(ServiceAccountConstants.CLIENT_HOST, clientConnection.getRemoteHost());
         userSession.setNote(ServiceAccountConstants.CLIENT_ADDRESS, clientConnection.getRemoteAddr());

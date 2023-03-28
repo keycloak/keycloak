@@ -16,9 +16,10 @@ public enum OptionCategory {
     LOGGING("Logging", 110, ConfigSupportLevel.SUPPORTED),
     SECURITY("Security", 120, ConfigSupportLevel.PREVIEW),
     EXPORT("Export", 130, ConfigSupportLevel.SUPPORTED),
+    IMPORT("Import", 140, ConfigSupportLevel.SUPPORTED),
     GENERAL("General", 999, ConfigSupportLevel.SUPPORTED);
 
-    private String heading;
+    private final String heading;
     //Categories with a lower number are shown before groups with a higher number
     private final int order;
     private final ConfigSupportLevel supportLevel;

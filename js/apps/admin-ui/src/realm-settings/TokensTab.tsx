@@ -26,7 +26,7 @@ import {
 } from "../components/time-selector/TimeSelector";
 import { useServerInfo } from "../context/server-info/ServerInfoProvider";
 import { useWhoAmI } from "../context/whoami/WhoAmI";
-import { convertToFormValues } from "../util";
+import { convertToFormValues, sortProviders } from "../util";
 
 import "./realm-settings-section.css";
 
@@ -48,18 +48,8 @@ export const RealmSettingsTokensTab = ({
   const [defaultSigAlgDrpdwnIsOpen, setDefaultSigAlgDrpdwnOpen] =
     useState(false);
 
-  const allComponentTypes =
-    serverInfo.componentTypes?.["org.keycloak.keys.KeyProvider"] ?? [];
-
-  const esOptions = ["ES256", "ES384", "ES512"];
-
-  const hmacAlgorithmOptions = allComponentTypes[2].properties[4].options;
-
-  const javaKeystoreAlgOptions = allComponentTypes[3].properties[3].options;
-
-  const defaultSigAlgOptions = esOptions.concat(
-    hmacAlgorithmOptions!,
-    javaKeystoreAlgOptions!
+  const defaultSigAlgOptions = sortProviders(
+    serverInfo.providers!["signature"].providers
   );
 
   const form = useForm<RealmRepresentation>();
