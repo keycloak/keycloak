@@ -167,9 +167,9 @@ function Keycloak (config) {
             kc.flow = 'standard';
         }
 
-        var promise = createPromise();
+        var promise = kc.createPromise();
 
-        var initPromise = createPromise();
+        var initPromise = kc.createPromise();
         initPromise.promise.then(function() {
             kc.onReady && kc.onReady(kc.authenticated);
             promise.setSuccess(kc.authenticated);
@@ -205,8 +205,8 @@ function Keycloak (config) {
                         return;
                     }
 
-                    var oauth = parseCallback(event.data);
-                    processCallback(oauth, initPromise);
+                    var oauth = kc.parseCallback(event.data);
+                    kc.processCallback(oauth, initPromise);
 
                     document.body.removeChild(ifrm);
                     window.removeEventListener("message", messageCallback);
@@ -243,7 +243,7 @@ function Keycloak (config) {
         }
 
         function processInit() {
-            var callback = parseCallback(window.location.href);
+            var callback = kc.parseCallback(window.location.href);
 
             if (callback) {
                 window.history.replaceState(window.history.state, null, callback.newUrl);
@@ -251,7 +251,7 @@ function Keycloak (config) {
 
             if (callback && callback.valid) {
                 return setupCheckLoginIframe().then(function() {
-                    processCallback(callback, initPromise);
+                    kc.processCallback(callback, initPromise);
                 }).catch(function (error) {
                     initPromise.setError(error);
                 });
@@ -297,7 +297,7 @@ function Keycloak (config) {
         }
 
         function domReady() {
-            var promise = createPromise();
+            var promise = kc.createPromise();
 
             var checkReadyState = function () {
                 if (document.readyState === 'interactive' || document.readyState === 'complete') {
@@ -537,7 +537,7 @@ function Keycloak (config) {
         req.setRequestHeader('Accept', 'application/json');
         req.setRequestHeader('Authorization', 'bearer ' + kc.token);
 
-        var promise = createPromise();
+        var promise = kc.createPromise();
 
         req.onreadystatechange = function () {
             if (req.readyState == 4) {
@@ -562,7 +562,7 @@ function Keycloak (config) {
         req.setRequestHeader('Accept', 'application/json');
         req.setRequestHeader('Authorization', 'bearer ' + kc.token);
 
-        var promise = createPromise();
+        var promise = kc.createPromise();
 
         req.onreadystatechange = function () {
             if (req.readyState == 4) {
@@ -601,7 +601,7 @@ function Keycloak (config) {
     }
 
     kc.updateToken = function(minValidity) {
-        var promise = createPromise();
+        var promise = kc.createPromise();
 
         if (!kc.refreshToken) {
             promise.setError();
@@ -717,7 +717,7 @@ function Keycloak (config) {
         }
     }
 
-    function processCallback(oauth, promise) {
+    kc.processCallback = function processCallback(oauth, promise) {
         var code = oauth.code;
         var error = oauth.error;
         var prompt = oauth.prompt;
@@ -798,7 +798,7 @@ function Keycloak (config) {
     }
 
     function loadConfig(url) {
-        var promise = createPromise();
+        var promise = kc.createPromise();
         var configUrl;
 
         if (!config) {
@@ -1053,7 +1053,7 @@ function Keycloak (config) {
         return uuid;
     }
 
-    function parseCallback(url) {
+    kc.parseCallback = function parseCallback(url) {
         var oauth = parseCallbackUrl(url);
         if (!oauth) {
             return;
@@ -1149,7 +1149,7 @@ function Keycloak (config) {
         return result;
     }
 
-    function createPromise() {
+    kc.createPromise = function createPromise() {
         // Need to create a native Promise which also preserves the
         // interface of the custom promise type previously used by the API
         var p = {
@@ -1204,7 +1204,7 @@ function Keycloak (config) {
     }
 
     function setupCheckLoginIframe() {
-        var promise = createPromise();
+        var promise = kc.createPromise();
 
         if (!loginIframe.enable) {
             promise.setSuccess();
@@ -1281,7 +1281,7 @@ function Keycloak (config) {
     }
 
     function checkLoginIframe() {
-        var promise = createPromise();
+        var promise = kc.createPromise();
 
         if (loginIframe.iframe && loginIframe.iframeOrigin ) {
             var msg = kc.clientId + ' ' + (kc.sessionId ? kc.sessionId : '');
@@ -1298,7 +1298,7 @@ function Keycloak (config) {
     }
 
     function check3pCookiesSupported() {
-        var promise = createPromise();
+        var promise = kc.createPromise();
 
         if (loginIframe.enable || kc.silentCheckSsoRedirectUri) {
             var iframe = document.createElement('iframe');
@@ -1341,17 +1341,17 @@ function Keycloak (config) {
             return {
                 login: function(options) {
                     window.location.replace(kc.createLoginUrl(options));
-                    return createPromise().promise;
+                    return kc.createPromise().promise;
                 },
 
                 logout: function(options) {
                     window.location.replace(kc.createLogoutUrl(options));
-                    return createPromise().promise;
+                    return kc.createPromise().promise;
                 },
 
                 register: function(options) {
                     window.location.replace(kc.createRegisterUrl(options));
-                    return createPromise().promise;
+                    return kc.createPromise().promise;
                 },
 
                 accountManagement : function() {
@@ -1361,7 +1361,7 @@ function Keycloak (config) {
                     } else {
                         throw "Not supported by the OIDC server";
                     }
-                    return createPromise().promise;
+                    return kc.createPromise().promise;
                 },
 
                 redirectUri: function(options, encodeHash) {
@@ -1422,7 +1422,7 @@ function Keycloak (config) {
             
             return {
                 login: function(options) {
-                    var promise = createPromise();
+                    var promise = kc.createPromise();
 
                     var cordovaOptions = createCordovaOptions(options);
                     var loginUrl = kc.createLoginUrl(options);
@@ -1437,8 +1437,8 @@ function Keycloak (config) {
 
                     ref.addEventListener('loadstart', function(event) {
                         if (event.url.indexOf(cordovaRedirectUri) == 0) {
-                            var callback = parseCallback(event.url);
-                            processCallback(callback, promise);
+                            var callback = kc.parseCallback(event.url);
+                            kc.processCallback(callback, promise);
                             closeBrowser();
                             completed = true;
                         }
@@ -1447,8 +1447,8 @@ function Keycloak (config) {
                     ref.addEventListener('loaderror', function(event) {
                         if (!completed) {
                             if (event.url.indexOf(cordovaRedirectUri) == 0) {
-                                var callback = parseCallback(event.url);
-                                processCallback(callback, promise);
+                                var callback = kc.parseCallback(event.url);
+                                kc.processCallback(callback, promise);
                                 closeBrowser();
                                 completed = true;
                             } else {
@@ -1470,7 +1470,7 @@ function Keycloak (config) {
                 },
 
                 logout: function(options) {
-                    var promise = createPromise();
+                    var promise = kc.createPromise();
 
                     var logoutUrl = kc.createLogoutUrl(options);
                     var ref = cordovaOpenWindowWrapper(logoutUrl, '_blank', 'location=no,hidden=yes,clearcache=yes');
@@ -1505,15 +1505,15 @@ function Keycloak (config) {
                 },
 
                 register : function(options) {
-                    var promise = createPromise();
+                    var promise = kc.createPromise();
                     var registerUrl = kc.createRegisterUrl();
                     var cordovaOptions = createCordovaOptions(options);
                     var ref = cordovaOpenWindowWrapper(registerUrl, '_blank', cordovaOptions);
                     ref.addEventListener('loadstart', function(event) {
                         if (event.url.indexOf(cordovaRedirectUri) == 0) {
                             ref.close();
-                            var oauth = parseCallback(event.url);
-                            processCallback(oauth, promise);
+                            var oauth = kc.parseCallback(event.url);
+                            kc.processCallback(oauth, promise);
                         }
                     });
                     return promise.promise;
@@ -1544,14 +1544,14 @@ function Keycloak (config) {
 
             return {
                 login: function(options) {
-                    var promise = createPromise();
+                    var promise = kc.createPromise();
                     var loginUrl = kc.createLoginUrl(options);
 
                     universalLinks.subscribe('keycloak', function(event) {
                         universalLinks.unsubscribe('keycloak');
                         window.cordova.plugins.browsertab.close();
-                        var oauth = parseCallback(event.url);
-                        processCallback(oauth, promise);
+                        var oauth = kc.parseCallback(event.url);
+                        kc.processCallback(oauth, promise);
                     });
 
                     window.cordova.plugins.browsertab.openUrl(loginUrl);
@@ -1559,7 +1559,7 @@ function Keycloak (config) {
                 },
 
                 logout: function(options) {
-                    var promise = createPromise();
+                    var promise = kc.createPromise();
                     var logoutUrl = kc.createLogoutUrl(options);
 
                     universalLinks.subscribe('keycloak', function(event) {
@@ -1574,13 +1574,13 @@ function Keycloak (config) {
                 },
 
                 register : function(options) {
-                    var promise = createPromise();
+                    var promise = kc.createPromise();
                     var registerUrl = kc.createRegisterUrl(options);
                     universalLinks.subscribe('keycloak' , function(event) {
                         universalLinks.unsubscribe('keycloak');
                         window.cordova.plugins.browsertab.close();
-                        var oauth = parseCallback(event.url);
-                        processCallback(oauth, promise);
+                        var oauth = kc.parseCallback(event.url);
+                        kc.processCallback(oauth, promise);
                     });
                     window.cordova.plugins.browsertab.openUrl(registerUrl);
                     return promise.promise;

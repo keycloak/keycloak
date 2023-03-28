@@ -296,9 +296,37 @@ export interface KeycloakPromise<TSuccess, TError> extends Promise<TSuccess> {
 	error(callback: KeycloakPromiseCallback<TError>): KeycloakPromise<TSuccess, TError>;
 }
 
+interface KeycloakPromiseWrapper<SuccessType, ErrorType> {
+	promise: KeycloakPromise<SuccessType, ErrorType>;
+	setSuccess(value: SuccessType): void;
+	setError(value: ErrorType): void;
+	resolve(value: SuccessType): void;
+	reject(value: ErrorType): void;
+}
+
 export interface KeycloakError {
 	error: string;
 	error_description: string;
+}
+
+interface KeycloakOAuth {
+	code?: string,
+	state?: string,
+	session_state?: string,
+	kc_action_status?: string,
+	access_token?: string,
+	token_type?: string,
+	id_token?: string,
+	expires_in?: string,
+	error?: string,
+	error_description?: string,
+	error_uri?: string,
+	newUrl?: string
+	valid?: boolean;
+	redirectUri?: string;
+	storedNonce?: string;
+	prompt?: string;
+	pkceCodeVerifier?: string;
 }
 
 export interface KeycloakAdapter {
@@ -619,6 +647,25 @@ declare class Keycloak {
 	* callback listener being invoked.
 	*/
 	clearToken(): void;
+
+	/**
+	 * Processes the parameters from a callback URL.
+	 * @param oauth The parameters from the callback URL as returned by parseCallback().
+	 * @param promise A promise to be resolved when the callback has been processed.
+	 */
+	processCallback(oauth: KeycloakOAuth, promise: KeycloakPromiseWrapper<void, void>): void;
+
+	/**
+	 * Extracts the OAuth parameters from the given callback URL.
+	 * @param url A callback URL.
+	 * @returns The OAuth parameters.
+	 */
+	parseCallback(url: string): KeycloakOAuth;
+
+	/**
+	 * Creates a Keycloak-specific Promise wrapper.
+	 */
+	createPromise<SuccessType = void, ErrorType = void>(): KeycloakPromiseWrapper<SuccessType, ErrorType>;
 
 	/**
 	* Returns true if the token has the given realm role.
