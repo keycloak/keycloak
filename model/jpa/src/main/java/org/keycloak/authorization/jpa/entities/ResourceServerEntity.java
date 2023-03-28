@@ -18,6 +18,8 @@
 
 package org.keycloak.authorization.jpa.entities;
 
+import org.hibernate.annotations.JdbcType;
+import org.hibernate.type.descriptor.jdbc.VarcharJdbcType;
 import org.keycloak.representations.idm.authorization.DecisionStrategy;
 import org.keycloak.representations.idm.authorization.PolicyEnforcementMode;
 
@@ -41,6 +43,7 @@ public class ResourceServerEntity {
     private boolean allowRemoteResourceManagement;
 
     @Column(name = "POLICY_ENFORCE_MODE")
+    @JdbcType(VarcharJdbcType.class)
     private PolicyEnforcementMode policyEnforcementMode = PolicyEnforcementMode.ENFORCING;
 
     @Column(name = "DECISION_STRATEGY")
