@@ -80,7 +80,7 @@ For example, consider the following regex:
 
 [source]
 ----
-*\.(google|googleapis)\.com
+.*\.(google|googleapis)\.com
 ----
 
 You apply a regex-based hostname pattern by entering this command:
