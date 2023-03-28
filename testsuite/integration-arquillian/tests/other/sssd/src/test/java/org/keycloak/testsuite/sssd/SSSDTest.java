@@ -10,6 +10,7 @@ import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.PropertiesConfiguration;
 import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.logging.Logger;
+import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -26,7 +27,7 @@ import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
-import org.keycloak.testsuite.pages.AccountPasswordPage;
+import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.pages.AccountUpdateProfilePage;
 import org.keycloak.testsuite.pages.LoginPage;
 
@@ -52,9 +53,6 @@ public class SSSDTest extends AbstractKeycloakTest {
 
     @Page
     protected LoginPage accountLoginPage;
-
-    @Page
-    protected AccountPasswordPage changePasswordPage;
 
     @Page
     protected AccountUpdateProfilePage profilePage;
@@ -197,10 +195,10 @@ public class SSSDTest extends AbstractKeycloakTest {
     @Test
     public void changeReadOnlyPassword() {
         String username = getUsername();
-        changePasswordPage.open();
+        accountLoginPage.open();
         accountLoginPage.login(username, getPassword(username));
 
-        changePasswordPage.changePassword(getPassword(username), "new-password", "new-password");
+        Assert.assertFalse(AccountHelper.updatePassword(adminClient.realm(REALM_NAME), getPassword(username), "new-password"));
         assertThat(profilePage.getError(), is("You can't update your password as your account is read only."));
     }
 
