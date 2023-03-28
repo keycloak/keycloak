@@ -109,6 +109,7 @@
                             </goals>
                             <configuration>
                                 <target>
+                                    <!-- print the link on the console to be able to open it in the local browser -->
                                     <echo>OUTPUT: file://${project.build.directory}/generated-docs/${masterFile}.html ${projectLatestBuild}</echo>
                                 </target>
                             </configuration>
@@ -136,7 +137,7 @@
                                 <goal>header</goal>
                             </goals>
                             <configuration>
-                                <masterFile>${masterFile}</masterFile>
+                                <masterFileName>${masterFile}</masterFileName>
                             </configuration>
                         </execution>
                     </executions>
