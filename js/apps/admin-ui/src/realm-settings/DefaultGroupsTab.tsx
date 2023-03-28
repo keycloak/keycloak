@@ -30,6 +30,7 @@ import { useRealm } from "../context/realm-context/RealmContext";
 import { GroupPickerDialog } from "../components/group/GroupPickerDialog";
 import { KeycloakSpinner } from "../components/keycloak-spinner/KeycloakSpinner";
 import { useHelp } from "ui-shared";
+import "../realm-settings/default-groups-tab.css";
 
 export const DefaultsGroupsTab = () => {
   const { t } = useTranslation("realm-settings");
@@ -221,7 +222,10 @@ export const DefaultsGroupsTab = () => {
             instructions={
               <Trans i18nKey="realm-settings:noDefaultGroupsInstructions">
                 {" "}
-                <Link to={toUserFederation({ realm })} />
+                <Link
+                  className="list-empty-state-link"
+                  to={toUserFederation({ realm })}
+                />
                 Add groups...
               </Trans>
             }
