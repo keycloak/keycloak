@@ -75,6 +75,7 @@ import org.keycloak.testsuite.util.AdminClientUtil;
 import org.keycloak.testsuite.util.ClientManager;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.RealmBuilder;
+import org.keycloak.testsuite.util.RoleBuilder;
 import org.keycloak.testsuite.util.TokenSignatureUtil;
 import org.keycloak.testsuite.util.UserInfoClientUtil;
 import org.keycloak.testsuite.util.WaitUtils;
@@ -107,7 +108,6 @@ import static org.junit.Assert.assertThat;
 import static org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper.INCLUDE_IN_USERINFO;
 import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
 import static org.keycloak.testsuite.util.OAuthClient.AUTH_SERVER_ROOT;
-import org.keycloak.testsuite.util.RoleBuilder;
 
 /**
  * @author pedroigor
@@ -143,13 +143,12 @@ public class UserInfoTest extends AbstractKeycloakTest {
         samlApp.setDirectAccessGrantsEnabled(true);
     }
 
-    @Test
-    public void testSuccess_getMethod_header() throws Exception {
+    public void testSuccessGet(String acceptHeader) throws Exception {
         Client client = AdminClientUtil.createResteasyClient();
 
         try {
             AccessTokenResponse accessTokenResponse = executeGrantAccessTokenRequest(client);
-            Response response = UserInfoClientUtil.executeUserInfoRequest_getMethod(client, accessTokenResponse.getToken());
+            Response response = UserInfoClientUtil.executeUserInfoRequest_getMethod(client, accessTokenResponse.getToken(), acceptHeader);
 
             UserInfo userInfo = testSuccessfulUserInfoResponse(response);
             testRolesAreNotInUserInfoResponse(userInfo);
@@ -157,6 +156,16 @@ public class UserInfoTest extends AbstractKeycloakTest {
         } finally {
             client.close();
         }
+    }
+
+    @Test
+    public void testSuccess_getMethod_header() throws Exception {
+        testSuccessGet(null);
+    }
+
+    @Test
+    public void testSuccess_getMethod_header_accept_json() throws Exception {
+        testSuccessGet(MediaType.APPLICATION_JSON);
     }
 
     @Test
@@ -473,12 +482,17 @@ public class UserInfoTest extends AbstractKeycloakTest {
 
     @Test
     public void testSuccessSignedResponseES256() throws Exception {
-        testSuccessSignedResponse(Algorithm.ES256);
+        testSuccessSignedResponse(Algorithm.ES256, null);
     }
 
     @Test
     public void testSuccessSignedResponsePS256() throws Exception {
-        testSuccessSignedResponse(Algorithm.PS256);
+        testSuccessSignedResponse(Algorithm.PS256, null);
+    }
+
+    @Test
+    public void testSuccessSignedResponseRS256AcceptJWT() throws Exception {
+        testSuccessSignedResponse(Algorithm.RS256, MediaType.APPLICATION_JWT);
     }
  
     @Test
@@ -920,7 +934,7 @@ public class UserInfoTest extends AbstractKeycloakTest {
         return UserInfoClientUtil.testSuccessfulUserInfoResponse(response, "test-user@localhost", "test-user@localhost");
     }
 
-    private void testSuccessSignedResponse(String sigAlg) throws Exception {
+    private void testSuccessSignedResponse(String sigAlg, String acceptHeader) throws Exception {
 
         try {
             // Require signed userInfo request
@@ -935,7 +949,7 @@ public class UserInfoTest extends AbstractKeycloakTest {
             try {
                 AccessTokenResponse accessTokenResponse = executeGrantAccessTokenRequest(client);
 
-                Response response = UserInfoClientUtil.executeUserInfoRequest_getMethod(client, accessTokenResponse.getToken());
+                Response response = UserInfoClientUtil.executeUserInfoRequest_getMethod(client, accessTokenResponse.getToken(), acceptHeader);
 
                 events.expect(EventType.USER_INFO_REQUEST)
                         .session(Matchers.notNullValue(String.class))
