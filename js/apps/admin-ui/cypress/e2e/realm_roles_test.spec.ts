@@ -248,10 +248,10 @@ describe("Realm roles test", () => {
       listingPage.itemExist(editRoleName).goToItemDetails(editRoleName);
 
       createRealmRolePage.goToAttributesTab();
-      keyValue.fillKeyValue({ key: "one", value: "1" }).validateRows(2);
+      keyValue.fillKeyValue({ key: "one", value: "1" }).validateRows(1);
       keyValue.save();
       masthead.checkNotificationMessage("The role has been saved", true);
-      keyValue.validateRows(2);
+      keyValue.validateRows(1);
     });
 
     it("should add attribute multiple", () => {
@@ -259,17 +259,17 @@ describe("Realm roles test", () => {
 
       createRealmRolePage.goToAttributesTab();
       keyValue
-        .fillKeyValue({ key: "two", value: "2" }, 1)
-        .fillKeyValue({ key: "three", value: "3" }, 2)
+        .fillKeyValue({ key: "two", value: "2" })
+        .fillKeyValue({ key: "three", value: "3" })
         .save()
-        .validateRows(4);
+        .validateRows(3);
     });
 
     it("should delete attribute", () => {
       listingPage.itemExist(editRoleName).goToItemDetails(editRoleName);
       createRealmRolePage.goToAttributesTab();
 
-      keyValue.deleteRow(1).save().validateRows(3);
+      keyValue.deleteRow(1).save().validateRows(2);
     });
   });
 
