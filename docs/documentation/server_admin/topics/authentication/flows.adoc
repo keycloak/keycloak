@@ -435,7 +435,7 @@ image:images/authentication-user-session-limits-resetcred.png[Authentication Use
 For `Browser` flow, consider not adding the Session Limits authenticator at the top level flow. This recommendation is due to the `Cookie` authenticator, which automatically re-authenticates users based
 on SSO cookie. It is at the top level and it is better to not check session limits during SSO re-authentication because a user session already exists. So instead, consider adding a separate ALTERNATIVE
 subflow, such as the following `authenticate-user-with-session-limit` example at the same level like `Cookie`. Then you can add a REQUIRED subflow, in the following `real-authentication-subflow`example, as a nested subflow of `authenticate-user-with-session-limit` and add a `User Session Limit` at the same level as well. Inside the `real-authentication-subflow`,
-you can add real authenticators similarly like in the default browser flow. For example you can see the example flow below, which allows to authenticate users either with identity provider or
+you can add real authenticators in a similar fashion to the default browser flow. The following example flow allows to users to authenticate with an identity provider or
 with password and OTP:
 
 image:images/authentication-user-session-limits-browser.png[Authentication User Session Limits Browser Flow]
