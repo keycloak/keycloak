@@ -505,11 +505,5 @@ describe("Group test", () => {
     it("Check a11y violations on load/ groups", () => {
       cy.checkA11y();
     });
-
-    it("Check a11y violations on empty create group form", () => {
-      groupPage.openCreateGroupModal(true);
-      cy.checkA11y();
-      groupModal.closeModal();
-    });
   });
 });

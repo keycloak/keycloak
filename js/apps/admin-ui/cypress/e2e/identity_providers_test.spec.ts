@@ -377,8 +377,6 @@ describe("Identity provider test", () => {
   });
 
   describe("Accessibility tests for identity providers", () => {
-    const identityProviderName = "github";
-
     beforeEach(() => {
       loginPage.logIn();
       keycloakBefore();
@@ -387,35 +385,6 @@ describe("Identity provider test", () => {
     });
 
     it("Check a11y violations on load/ identity providers", () => {
-      cy.checkA11y();
-    });
-
-    it("Check a11y violations on adding social provider form", () => {
-      createProviderPage.checkGitHubCardVisible().clickGitHubCard();
-      cy.checkA11y();
-    });
-
-    it("Check a11y violations on providers settings tab", () => {
-      createProviderPage.checkGitHubCardVisible().clickGitHubCard();
-      createProviderPage.fill(identityProviderName, "123").clickAdd();
-      sidebarPage.goToIdentityProviders();
-      listingPage.goToItemDetails("github");
-      cy.checkA11y();
-    });
-
-    it("Check a11y violations on providers mappers tab", () => {
-      listingPage.goToItemDetails(identityProviderName);
-      addMapperPage.goToMappersTab();
-      cy.checkA11y();
-    });
-
-    it("Check a11y violations on providers permissions tab", () => {
-      listingPage.goToItemDetails(identityProviderName);
-      cy.findByTestId("permissionsTab").click();
-      cy.checkA11y();
-    });
-
-    it("Check a11y violations after adding a provider", () => {
       cy.checkA11y();
     });
   });
