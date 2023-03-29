@@ -69,6 +69,10 @@ export default function GroupsSection() {
   const canViewDetails =
     hasAccess("query-groups", "view-users") ||
     hasAccess("manage-users", "query-groups");
+  const canViewMembers =
+    hasAccess("view-users") ||
+    currentGroup()?.access?.viewMembers ||
+    currentGroup()?.access?.manageMembers;
 
   useFetch(
     async () => {
@@ -177,13 +181,15 @@ export default function GroupsSection() {
                           canViewDetails={canViewDetails}
                         />
                       </Tab>
-                      <Tab
-                        data-testid="members"
-                        eventKey={1}
-                        title={<TabTitleText>{t("members")}</TabTitleText>}
-                      >
-                        <Members />
-                      </Tab>
+                      {canViewMembers && (
+                        <Tab
+                          data-testid="members"
+                          eventKey={1}
+                          title={<TabTitleText>{t("members")}</TabTitleText>}
+                        >
+                          <Members />
+                        </Tab>
+                      )}
                       <Tab
                         data-testid="attributes"
                         eventKey={2}
