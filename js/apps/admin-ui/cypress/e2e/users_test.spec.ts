@@ -457,12 +457,6 @@ describe("User creation", () => {
       cy.injectAxe();
     });
 
-    after(() => {
-      sidebarPage.goToUsers();
-      listingPage.deleteItem(a11yUser);
-      modalUtils.checkModalTitle("Delete user?").confirmModal();
-    });
-
     it("Check a11y violations on load/ users list", () => {
       cy.checkA11y();
     });
@@ -577,6 +571,9 @@ describe("User creation", () => {
     it("Check a11y violations on permissions tab", () => {
       usersPage.goToPermissionsTab();
       cy.checkA11y();
+      sidebarPage.goToUsers();
+      listingPage.deleteItem(a11yUser);
+      modalUtils.checkModalTitle("Delete user?").confirmModal();
     });
   });
 });
