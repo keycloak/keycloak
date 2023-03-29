@@ -432,8 +432,8 @@ Here is an example for the `Reset credentials` flow:
 
 image:images/authentication-user-session-limits-resetcred.png[Authentication User Session Limits Reset Credentials Flow]
 
-For `Browser` flow, it can be beneficial to not add the Session Limits authenticator at the top level flow. This is due the `Cookie` authenticator, which automatically re-authenticates users based
-on SSO cookie, is at top level and we do not want to check session limits during SSO re-authentication as user session already exists. So instead, it can be good to add separate ALTERNATIVE
+For `Browser` flow, consider not adding the Session Limits authenticator at the top level flow. This recommendation is due to the `Cookie` authenticator, which automatically re-authenticates users based
+on SSO cookie. It is at the top level and it is better to not check session limits during SSO re-authentication because a user session already exists. So instead, consider adding a separate ALTERNATIVE
 subflow (like `authenticate-user-with-session-limit` at the example below) at the same level like `Cookie`. Then it it possible to add REQUIRED subflow (in the example below
 `real-authentication-subflow`) as nested subflow of `authenticate-user-with-session-limit` and add `User Session Limit` at the same level as well. Inside `real-authentication-subflow`,
 you can add real authenticators similarly like in the default browser flow. For example you can see the example flow below, which allows to authenticate users either with identity provider or
