@@ -5,7 +5,6 @@ import { useTranslation } from "react-i18next";
 import { useAlerts } from "../../components/alert/Alerts";
 import { FormAccess } from "../../components/form-access/FormAccess";
 import { HelpItem } from "ui-shared";
-import { HelpItem } from "../../components/help-enabler/HelpItem";
 import { WizardSectionHeader } from "../../components/wizard-section-header/WizardSectionHeader";
 import { useAdminClient } from "../../context/auth/AdminClient";
 import { useRealm } from "../../context/realm-context/RealmContext";
