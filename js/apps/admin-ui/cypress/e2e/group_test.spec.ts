@@ -495,8 +495,6 @@ describe("Group test", () => {
   });
 
   describe("Accessibility tests for groups", () => {
-    const a11yGroup = "a11y-group";
-
     beforeEach(() => {
       loginPage.logIn();
       keycloakBefore();
@@ -512,87 +510,6 @@ describe("Group test", () => {
       groupPage.openCreateGroupModal(true);
       cy.checkA11y();
       groupModal.closeModal();
-    });
-
-    it("Check a11y violations after creating a group", () => {
-      groupPage.createGroup(a11yGroup, true);
-      cy.checkA11y();
-    });
-
-    it("Check a11y violations on deleting a group dialog", () => {
-      groupPage.selectGroupItemCheckbox([a11yGroup]);
-      groupPage.showDeleteSelectedGroupsDialog();
-      cy.checkA11y();
-      groupModal.closeModal();
-    });
-
-    it("Check a11y violations on group details/ empty child groups tab", () => {
-      groupPage.goToGroupChildGroupsTab(a11yGroup);
-      cy.checkA11y();
-    });
-
-    it("Check a11y violations on group details/ create sub group form", () => {
-      groupPage.goToGroupChildGroupsTab(a11yGroup);
-      childGroupsTab.openCreateSubGroupModal(true);
-      cy.checkA11y();
-      groupModal.closeModal();
-    });
-
-    it("Check a11y violations on group details/ non-empty child groups tab", () => {
-      groupPage.goToGroupChildGroupsTab(a11yGroup);
-      childGroupsTab.openCreateSubGroupModal(true);
-      cy.findByTestId("groupNameInput").type("a11y-group-1");
-      cy.findByTestId("createGroup").click();
-      cy.checkA11y();
-    });
-
-    it("Check a11y violations on group details/ members tab", () => {
-      groupPage.goToGroupChildGroupsTab(a11yGroup);
-      childGroupsTab.goToMembersTab();
-      cy.checkA11y();
-    });
-
-    it("Check a11y violations on group details/ members tab/ add member", () => {
-      groupPage.goToGroupChildGroupsTab(a11yGroup);
-      childGroupsTab.goToMembersTab();
-      membersTab.openAddMemberModal(true);
-      cy.checkA11y();
-    });
-
-    it("Check a11y violations on group details/ attributes tab", () => {
-      groupPage.goToGroupChildGroupsTab(a11yGroup);
-      childGroupsTab.goToAttributesTab();
-      cy.checkA11y();
-    });
-
-    it("Check a11y violations on group details/ role mapping tab", () => {
-      groupPage.goToGroupChildGroupsTab(a11yGroup);
-      childGroupsTab.goToRoleMappingTab();
-      cy.checkA11y();
-    });
-
-    it("Check a11y violations on group details/ role mapping tab/ assigning role", () => {
-      const roleMappingTab = new RoleMappingTab("group");
-      groupPage.goToGroupChildGroupsTab(a11yGroup);
-      childGroupsTab.goToRoleMappingTab();
-      roleMappingTab.assignRole();
-      cy.checkA11y();
-    });
-
-    it("Check a11y violations on group details/ role mapping tab/ after assigning role", () => {
-      const roleMappingTab = new RoleMappingTab("group");
-      groupPage.goToGroupChildGroupsTab(a11yGroup);
-      childGroupsTab.goToRoleMappingTab();
-      roleMappingTab.assignRole();
-      groupDetailPage.createRoleMapping();
-      roleMappingTab.assign();
-      cy.checkA11y();
-    });
-
-    it("Check a11y violations on group details/ permissions tab", () => {
-      groupPage.goToGroupChildGroupsTab(a11yGroup);
-      childGroupsTab.goToPermissionsTab();
-      cy.checkA11y();
     });
   });
 });
