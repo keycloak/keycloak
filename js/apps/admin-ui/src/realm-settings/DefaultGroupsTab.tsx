@@ -221,7 +221,10 @@ export const DefaultsGroupsTab = () => {
             instructions={
               <Trans i18nKey="realm-settings:noDefaultGroupsInstructions">
                 {" "}
-                <Link to={toUserFederation({ realm })} />
+                <Link
+                  className="pf-u-font-weight-light"
+                  to={toUserFederation({ realm })}
+                />
                 Add groups...
               </Trans>
             }
