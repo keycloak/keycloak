@@ -457,6 +457,10 @@ describe("User creation", () => {
       cy.injectAxe();
     });
 
+    after(async () => {
+      await adminClient.deleteUser(a11yUser);
+    });
+
     it("Check a11y violations on load/ users list", () => {
       cy.checkA11y();
     });
