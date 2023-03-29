@@ -440,8 +440,7 @@ with password and OTP:
 
 image:images/authentication-user-session-limits-browser.png[Authentication User Session Limits Browser Flow]
 
-Regarding `Post Broker login flow`, it can be fine to just add the `User Session Limits` as only authenticator in the authentication flow (as long as you do not have any other authenticators,
-which you want to trigger after authentication with your identity provider) and make sure that this flow is configured as `Post Broker Flow` at your identity providers. This is needed, so
+Regarding `Post Broker login flow`,  you can add the `User Session Limits` as the only authenticator in the authentication flow  as long as you have no other authenticators that you  trigger after authentication with your identity provider.  However, make sure that this flow is configured as `Post Broker Flow` at your identity providers. This requirement exists needed so that 
 the authentication with Identity providers also participates in the session limits.
 
 NOTE: Currently, the administrator is responsible for maintaining consistency between the different configurations. So make sure that all your flows use same configuration
