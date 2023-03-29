@@ -443,7 +443,7 @@ image:images/authentication-user-session-limits-browser.png[Authentication User 
 Regarding `Post Broker login flow`,  you can add the `User Session Limits` as the only authenticator in the authentication flow  as long as you have no other authenticators that you  trigger after authentication with your identity provider.  However, make sure that this flow is configured as `Post Broker Flow` at your identity providers. This requirement exists needed so that 
 the authentication with Identity providers also participates in the session limits.
 
-NOTE: Currently, the administrator is responsible for maintaining consistency between the different configurations. So make sure that all your flows use same configuration
+NOTE: Currently, the administrator is responsible for maintaining consistency between the different configurations. So make sure that all your flows use same the configuration
 of `User Session Limits`.
 
 NOTE: User session limit feature is not available for CIBA.
