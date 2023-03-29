@@ -37,6 +37,8 @@ public class KeycloakUriBuilder {
     private String scheme;
     private int port = -1;
 
+    private boolean preserveDefaultPort = false;
+
     private String userInfo;
     private String path;
     private String query;
@@ -290,6 +292,19 @@ public class KeycloakUriBuilder {
         return this;
     }
 
+    /**
+     * When this is called, then the port will be preserved in the build URL even if it is default port for the protocol (http, https)
+     *
+     * For example:
+     * - KeycloakUriBuilder.fromUri("https://localhost:443/path").buildAsString() will return "https://localhost/path" (port not preserved)
+     * - KeycloakUriBuilder.fromUri("https://localhost:443/path").preserveDefaultPort().buildAsString() will return "https://localhost:443/path" (port is preserved even if default port)
+     * - KeycloakUriBuilder.fromUri("https://localhost/path").preserveDefaultPort().buildAsString() will return "https://localhost/path" (port not included even if "preserveDefaultPort" as it was not in the original URL)
+     */
+    public KeycloakUriBuilder preserveDefaultPort() {
+        this.preserveDefaultPort = true;
+        return this;
+    }
+
     protected static String paths(boolean encode, String basePath, String... segments) {
         String path = basePath;
         if (path == null) path = "";
@@ -429,7 +444,7 @@ public class KeycloakUriBuilder {
                 if ("".equals(host)) throw new RuntimeException("empty host name");
                 replaceParameter(paramMap, fromEncodedMap, isTemplate, host, buffer, encodeSlash);
             }
-            if (port != -1 && !(("http".equals(scheme) && port == 80) || ("https".equals(scheme) && port == 443))) {
+            if (port != -1 && (preserveDefaultPort || !(("http".equals(scheme) && port == 80) || ("https".equals(scheme) && port == 443)))) {
                 buffer.append(":").append(Integer.toString(port));
             }
         } else if (authority != null) {
