@@ -457,8 +457,10 @@ describe("User creation", () => {
       cy.injectAxe();
     });
 
-    after(async () => {
-      await adminClient.deleteUser(a11yUser);
+    after(() => {
+      sidebarPage.goToUsers();
+      listingPage.deleteItem(a11yUser);
+      modalUtils.checkModalTitle("Delete user?").confirmModal();
     });
 
     it("Check a11y violations on load/ users list", () => {
