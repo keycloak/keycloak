@@ -21,6 +21,7 @@ import org.apache.http.NameValuePair;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.message.BasicNameValuePair;
+import org.apache.http.util.EntityUtils;
 import org.jboss.logging.Logger;
 import org.keycloak.broker.saml.SAMLDataMarshaller;
 import org.keycloak.common.VerificationException;
@@ -107,7 +108,6 @@ import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.util.EntityUtils;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -772,7 +772,10 @@ public class SamlProtocol implements LoginProtocol {
             try {
                 LogoutRequestType logoutRequest = createLogoutRequest(soapLogoutUrl, clientSession, client);
                 Document samlLogoutRequest = createBindingBuilder(samlClient, false).soapBinding(SAML2Request.convert(logoutRequest)).getDocument();
-                SOAPMessage soapResponse = Soap.createMessage().addToBody(samlLogoutRequest).call(soapLogoutUrl);
+                SOAPMessage soapResponse = Soap.createMessage()
+                        .addMimeHeader("SOAPAction", "http://www.oasis-open.org/committees/security") // MAY in SOAP binding spec
+                        .addToBody(samlLogoutRequest)
+                        .call(soapLogoutUrl, session);
                 Document logoutResponse = Soap.extractSoapMessage(soapResponse);
                 SAMLDocumentHolder samlDocResponse = SAML2Response.getSAML2ObjectFromDocument(logoutResponse);
                 if (!validateLogoutResponse(logoutRequest, samlDocResponse, client)) {
