@@ -140,6 +140,7 @@ export const Credentials = ({ client, save, refresh }: CredentialsProps) => {
         isHorizontal
         className="pf-u-mt-md"
         role="manage-clients"
+        fineGrainedAccess={client.access?.configure}
       >
         <ClientSecretConfirm />
         <AccessTokenConfirm />

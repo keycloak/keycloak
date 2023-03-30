@@ -194,11 +194,14 @@ export default function ClientDetails() {
   const { profileInfo } = useServerInfo();
 
   const { hasAccess } = useAccess();
+  const hasManageAuthorization = hasAccess("manage-authorization");
   const permissionsEnabled =
     !profileInfo?.disabledFeatures?.includes("ADMIN_FINE_GRAINED_AUTHZ") &&
-    hasAccess("manage-authorization");
+    hasManageAuthorization;
   const hasManageClients = hasAccess("manage-clients");
+  const hasViewClients = hasAccess("view-clients");
   const hasViewUsers = hasAccess("view-users");
+  const hasQueryUsers = hasAccess("query-users");
 
   const navigate = useNavigate();
 
@@ -452,7 +455,7 @@ export default function ClientDetails() {
             )}
             {!client.publicClient &&
               !isRealmClient(client) &&
-              (hasManageClients || client.access?.configure) && (
+              (hasViewClients || client.access?.configure) && (
                 <Tab
                   id="credentials"
                   title={<TabTitleText>{t("credentials")}</TabTitleText>}
@@ -488,7 +491,7 @@ export default function ClientDetails() {
                 isReadOnly={!(hasManageClients || client.access?.configure)}
               />
             </Tab>
-            {!isRealmClient(client) && !client.bearerOnly && (
+            {!isRealmClient(client) && !client.bearerOnly && hasQueryUsers && (
               <Tab
                 id="clientScopes"
                 data-testid="clientScopesTab"
@@ -527,7 +530,7 @@ export default function ClientDetails() {
                 </RoutableTabs>
               </Tab>
             )}
-            {client!.authorizationServicesEnabled && (
+            {client!.authorizationServicesEnabled && hasManageAuthorization && (
               <Tab
                 id="authorization"
                 data-testid="authorizationTab"
