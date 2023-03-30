@@ -31,6 +31,7 @@ export function AlertPanel({ alerts, onCloseAlert }: AlertPanelProps) {
               onClose={() => onCloseAlert(id)}
             />
           }
+          aria-modal="true"
         >
           {description && <p>{description}</p>}
         </Alert>
