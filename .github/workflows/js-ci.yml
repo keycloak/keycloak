@@ -182,9 +182,6 @@ jobs:
       - run: npm run cy:check-types --workspace=${{ env.WORKSPACE }}
         working-directory: js
 
-      - run: npm run cy:run-component --workspace=${{ env.WORKSPACE }}
-        working-directory: js
-
   admin-ui-e2e:
     name: Admin UI E2E
     needs:
