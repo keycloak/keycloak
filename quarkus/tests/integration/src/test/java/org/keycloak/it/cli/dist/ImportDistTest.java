@@ -18,15 +18,12 @@
 package org.keycloak.it.cli.dist;
 
 import org.junit.jupiter.api.MethodOrderer;
-import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
 import org.keycloak.it.junit5.extension.RawDistOnly;
-
-import io.quarkus.test.junit.main.Launch;
-import io.quarkus.test.junit.main.LaunchResult;
+import org.keycloak.it.utils.KeycloakDistribution;
 
 @DistributionTest
 @RawDistOnly(reason = "Containers are immutable")
@@ -34,19 +31,14 @@ import io.quarkus.test.junit.main.LaunchResult;
 public class ImportDistTest {
 
     @Test
-    @Order(1)
-    @Launch({"export", "--realm=master", "--dir=."})
-    void testExport(LaunchResult result) {
-        CLIResult cliResult = (CLIResult) result;
+    void testImport(KeycloakDistribution dist) {
+        CLIResult cliResult = dist.run("build");
+
+        cliResult = dist.run("export", "--realm=master", "--dir=.");
         cliResult.assertMessage("Export of realm 'master' requested.");
         cliResult.assertMessage("Export finished successfully");
-    }
 
-    @Test
-    @Order(2)
-    @Launch({"import", "--dir=." })
-    void testMissingDir(LaunchResult result) {
-        CLIResult cliResult = (CLIResult) result;
+        cliResult = dist.run("import", "--dir=.");
         cliResult.assertMessage("Realm 'master' imported");
         cliResult.assertMessage("Import finished successfully");
         cliResult.assertNoMessage("Changes detected in configuration");

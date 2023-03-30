@@ -17,6 +17,8 @@
 
 package org.keycloak.models.map.storage.hotRod.clientscope;
 
+import org.infinispan.api.annotations.indexing.Basic;
+import org.infinispan.api.annotations.indexing.Indexed;
 import org.infinispan.protostream.GeneratedSchema;
 import org.infinispan.protostream.annotations.AutoProtoSchemaBuilder;
 import org.infinispan.protostream.annotations.ProtoDoc;
@@ -43,7 +45,7 @@ import java.util.Set;
         topLevelEntity = true,
         modelClass = "org.keycloak.models.ClientScopeModel"
 )
-@ProtoDoc("@Indexed")
+@Indexed
 @ProtoDoc("schema-version: " + HotRodClientScopeEntity.VERSION)
 public class HotRodClientScopeEntity extends AbstractHotRodEntity  {
 
@@ -63,18 +65,18 @@ public class HotRodClientScopeEntity extends AbstractHotRodEntity  {
     }
 
 
-    @ProtoDoc("@Field(index = Index.YES, store = Store.YES)")
+    @Basic(projectable = true)
     @ProtoField(number = 1)
     public Integer entityVersion = VERSION;
 
     @ProtoField(number = 2)
     public String id;
 
-    @ProtoDoc("@Field(index = Index.YES, store = Store.YES)")
+    @Basic(sortable = true)
     @ProtoField(number = 3)
     public String realmId;
 
-    @ProtoDoc("@Field(index = Index.YES, store = Store.YES)")
+    @Basic(sortable = true)
     @ProtoField(number = 4)
     public String name;
 

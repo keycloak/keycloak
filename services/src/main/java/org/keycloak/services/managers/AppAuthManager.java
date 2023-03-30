@@ -44,7 +44,7 @@ public class AppAuthManager extends AuthenticationManager {
         if (authResult == null) return null;
         // refresh the cookies!
         createLoginCookie(session, realm, authResult.getUser(), authResult.getSession(), session.getContext().getUri(), session.getContext().getConnection());
-        if (authResult.getSession().isRememberMe()) createRememberMeCookie(realm, authResult.getUser().getUsername(), session.getContext().getUri(), session.getContext().getConnection());
+        if (authResult.getSession().isRememberMe()) createRememberMeCookie(authResult.getUser().getUsername(), session.getContext().getUri(), session);
         return authResult;
     }
 

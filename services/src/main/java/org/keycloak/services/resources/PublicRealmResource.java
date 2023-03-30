@@ -18,8 +18,8 @@ package org.keycloak.services.resources;
 
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
-import org.jboss.resteasy.spi.HttpRequest;
-import org.jboss.resteasy.spi.HttpResponse;
+import org.keycloak.http.HttpRequest;
+import org.keycloak.http.HttpResponse;
 import org.keycloak.common.util.PemUtils;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -31,7 +31,6 @@ import javax.ws.rs.GET;
 import javax.ws.rs.OPTIONS;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
-import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
@@ -45,11 +44,9 @@ import javax.ws.rs.core.UriInfo;
 public class PublicRealmResource {
     protected static final Logger logger = Logger.getLogger(PublicRealmResource.class);
 
-    @Context
-    protected HttpRequest request;
+    protected final HttpRequest request;
 
-    @Context
-    protected HttpResponse response;
+    protected final HttpResponse response;
 
     protected final KeycloakSession session;
 
@@ -58,6 +55,8 @@ public class PublicRealmResource {
     public PublicRealmResource(KeycloakSession session) {
         this.session = session;
         this.realm = session.getContext().getRealm();
+        this.request = session.getContext().getHttpRequest();
+        this.response = session.getContext().getHttpResponse();
     }
 
     /**

@@ -36,6 +36,8 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
 
+import static org.keycloak.models.utils.DefaultRequiredActions.getDefaultRequiredActionCaseInsensitively;
+
 /**
  *
  * @author hmlnarik
@@ -115,13 +117,13 @@ public class ExecuteActionsActionTokenHandler extends AbstractActionTokenHandler
         KeycloakSessionFactory sessionFactory = tokenContext.getSession().getKeycloakSessionFactory();
 
         return token.getRequiredActions().stream()
-          .map(actionName -> realm.getRequiredActionProviderByAlias(actionName))    // get realm-specific model from action name and filter out irrelevant
+          .map(realm::getRequiredActionProviderByAlias)    // get realm-specific model from action name and filter out irrelevant
           .filter(Objects::nonNull)
           .filter(RequiredActionProviderModel::isEnabled)
 
           .map(RequiredActionProviderModel::getProviderId)      // get provider ID from model
 
-          .map(providerId -> (RequiredActionFactory) sessionFactory.getProviderFactory(RequiredActionProvider.class, providerId))
+          .map(providerId -> (RequiredActionFactory) sessionFactory.getProviderFactory(RequiredActionProvider.class, getDefaultRequiredActionCaseInsensitively(providerId)))
           .filter(Objects::nonNull)
 
           .noneMatch(RequiredActionFactory::isOneTimeAction);

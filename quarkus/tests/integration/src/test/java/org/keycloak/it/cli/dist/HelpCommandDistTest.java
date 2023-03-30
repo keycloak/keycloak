@@ -18,19 +18,97 @@
 package org.keycloak.it.cli.dist;
 
 import static org.junit.Assert.assertEquals;
+import static org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand.OPTIMIZED_BUILD_OPTION_LONG;
 
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.OS;
-import org.keycloak.it.cli.HelpCommandTest;
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
 import org.keycloak.it.junit5.extension.RawDistOnly;
 import org.keycloak.it.utils.KeycloakDistribution;
+import org.keycloak.quarkus.runtime.cli.command.Build;
+import org.keycloak.quarkus.runtime.cli.command.Start;
+import org.keycloak.quarkus.runtime.cli.command.StartDev;
+
+import io.quarkus.test.junit.main.Launch;
+import io.quarkus.test.junit.main.LaunchResult;
 
 @DistributionTest
 @RawDistOnly(reason = "Verifying the help message output doesn't need long spin-up of docker dist tests.")
-public class HelpCommandDistTest extends HelpCommandTest {
+public class HelpCommandDistTest {
+
+    @Test
+    @Launch({})
+    void testDefaultToHelp(LaunchResult result) {
+        CLIResult cliResult = (CLIResult) result;
+        cliResult.assertHelp();
+    }
+
+    @Test
+    @Launch({ "--help" })
+    void testHelp(LaunchResult result) {
+        CLIResult cliResult = (CLIResult) result;
+        cliResult.assertHelp();
+    }
+
+    @Test
+    @Launch({ "-h" })
+    void testHelpShort(LaunchResult result) {
+        CLIResult cliResult = (CLIResult) result;
+        cliResult.assertHelp();
+    }
+
+    @Test
+    @Launch({ Start.NAME, "--help", OPTIMIZED_BUILD_OPTION_LONG})
+    void testStartOptimizedHelp(LaunchResult result) {
+        CLIResult cliResult = (CLIResult) result;
+        cliResult.assertHelp();
+    }
+
+    @Test
+    @Launch({ Start.NAME, "--help" })
+    void testStartHelp(LaunchResult result) {
+        CLIResult cliResult = (CLIResult) result;
+        cliResult.assertHelp();
+    }
+
+    @Test
+    @Launch({ Start.NAME, "--optimized", "--help-all" })
+    void testStartOptimizedHelpAll(LaunchResult result) {
+        CLIResult cliResult = (CLIResult) result;
+        cliResult.assertHelp();
+        cliResult.assertNoMessage("--storage ");
+    }
+
+    @Test
+    @Launch({ StartDev.NAME, "--help" })
+    void testStartDevHelp(LaunchResult result) {
+        CLIResult cliResult = (CLIResult) result;
+        cliResult.assertHelp();
+    }
+
+    @Test
+    @Launch({ StartDev.NAME, "--help-all" })
+    void testStartDevHelpAll(LaunchResult result) {
+        CLIResult cliResult = (CLIResult) result;
+        cliResult.assertHelp();
+    }
+
+    @Test
+    @Launch({ Start.NAME, "--help-all" })
+    void testStartHelpAll(LaunchResult result) {
+        CLIResult cliResult = (CLIResult) result;
+        cliResult.assertHelp();
+        cliResult.assertMessage("--storage");
+    }
+
+    @Test
+    @Launch({ Build.NAME, "--help" })
+    void testBuildHelp(LaunchResult result) {
+        CLIResult cliResult = (CLIResult) result;
+        cliResult.assertHelp();
+    }
 
     @Test
     public void testHelpDoesNotStartReAugJvm(KeycloakDistribution dist) {

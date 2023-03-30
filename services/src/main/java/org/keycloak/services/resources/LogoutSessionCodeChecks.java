@@ -23,8 +23,7 @@ import java.net.URI;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 
-import org.jboss.resteasy.spi.HttpRequest;
-import org.keycloak.authentication.AuthenticationProcessor;
+import org.keycloak.http.HttpRequest;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;

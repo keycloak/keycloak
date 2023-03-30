@@ -23,7 +23,7 @@ import java.util.Set;
 
 import org.jboss.logging.Logger;
 import org.jboss.logging.Logger.Level;
-import org.jboss.resteasy.spi.HttpRequest;
+import org.keycloak.http.HttpRequest;
 import org.keycloak.common.crypto.CryptoIntegration;
 import org.keycloak.common.util.PemException;
 import org.keycloak.common.util.PemUtils;

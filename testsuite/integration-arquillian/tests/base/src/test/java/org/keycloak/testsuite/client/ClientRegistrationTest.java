@@ -33,11 +33,15 @@ import org.keycloak.client.registration.ClientRegistration;
 import org.keycloak.client.registration.ClientRegistrationException;
 import org.keycloak.client.registration.HttpErrorException;
 import org.keycloak.models.Constants;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.representations.idm.authorization.PolicyRepresentation;
+import org.keycloak.representations.idm.authorization.ResourceRepresentation;
+import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
 import org.keycloak.testsuite.arquillian.annotation.UncaughtServerErrorExpected;
 import org.keycloak.util.JsonSerialization;
 
@@ -59,6 +63,7 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -229,6 +234,40 @@ public class ClientRegistrationTest extends AbstractClientRegistrationTest {
                 "Redirect URIs must not contain an URI fragment",
                 "http://redhat.com/abcd#someFragment"
         );
+    }
+
+    @Test
+    public void testUpdateAuthorizationSettings() throws ClientRegistrationException {
+        authManageClients();
+        ClientRepresentation clientRep = buildClient();
+        clientRep.setAuthorizationServicesEnabled(true);
+
+        ClientRepresentation rep = registerClient(clientRep);
+        rep = adminClient.realm("test").clients().get(rep.getId()).toRepresentation();
+
+        assertTrue(rep.getAuthorizationServicesEnabled());
+
+        ResourceServerRepresentation authzSettings = new ResourceServerRepresentation();
+
+        authzSettings.setAllowRemoteResourceManagement(false);
+        authzSettings.setResources(List.of(new ResourceRepresentation("foo", "scope-a", "scope-b")));
+
+        PolicyRepresentation permission = new PolicyRepresentation();
+
+        permission.setName(KeycloakModelUtils.generateId());
+        permission.setType("resource");
+        permission.setResources(Collections.singleton("foo"));
+
+        authzSettings.setPolicies(List.of(permission));
+
+        rep.setAuthorizationSettings(authzSettings);
+
+        reg.update(rep);
+        authzSettings = adminClient.realm("test").clients().get(rep.getId()).authorization().exportSettings();
+
+        assertFalse(authzSettings.getResources().isEmpty());
+        assertFalse(authzSettings.getScopes().isEmpty());
+        assertFalse(authzSettings.getPolicies().isEmpty());
     }
 
     private void testClientUriValidation(String expectedRootUrlError, String expectedBaseUrlError, String expectedBackchannelLogoutUrlError, String expectedRedirectUrisError, String... testUrls) {

@@ -22,9 +22,9 @@ import com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException;
 
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.core.Context;
-import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.ext.ExceptionMapper;
+import org.keycloak.models.KeycloakSession;
 
 /**
  * Override explicitly added ExceptionMapper for handling <code>UnrecognizedPropertyException</code> in RestEasy Jackson
@@ -34,13 +34,13 @@ import javax.ws.rs.ext.ExceptionMapper;
 public class KcUnrecognizedPropertyExceptionHandler implements ExceptionMapper<UnrecognizedPropertyException> {
 
     @Context
-    private HttpHeaders headers;
+    KeycloakSession session;
 
     /**
      * Return escaped original message
      */
     @Override
     public Response toResponse(UnrecognizedPropertyException exception) {
-        return KeycloakErrorHandler.getResponse(headers, new BadRequestException(exception.getMessage()));
+        return KeycloakErrorHandler.getResponse(session, new BadRequestException(exception.getMessage()));
     }
 }

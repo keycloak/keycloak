@@ -27,6 +27,7 @@ import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
 import org.keycloak.testsuite.auth.page.account.Applications;
 import org.keycloak.testsuite.auth.page.login.OAuthGrant;
 import org.keycloak.testsuite.auth.page.login.UpdatePassword;
+import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.util.JavascriptBrowser;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.RealmBuilder;
@@ -50,16 +51,18 @@ import static java.lang.Math.toIntExact;
 import static org.hamcrest.CoreMatchers.anyOf;
 import static org.hamcrest.CoreMatchers.both;
 import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.CoreMatchers.not;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.lessThan;
 import static org.hamcrest.collection.IsMapContaining.hasEntry;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_HOST;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlDoesntStartWith;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
+import static org.keycloak.testsuite.util.WaitUtils.pause;
 import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
 import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
 
@@ -386,21 +389,23 @@ public class JavascriptAdapterTest extends AbstractJavascriptTest {
 
     @Test
     public void implicitFlowOnTokenExpireTest() {
-        RealmRepresentation realm = adminClient.realms().realm(REALM_NAME).toRepresentation();
-        Integer storeAccesTokenLifespan = realm.getAccessTokenLifespanForImplicitFlow();
-        try {
-            realm.setAccessTokenLifespanForImplicitFlow(5);
-            adminClient.realms().realm(REALM_NAME).update(realm);
+        try (RealmAttributeUpdater rau = new RealmAttributeUpdater(adminClient.realms().realm(REALM_NAME))
+                .setAccessTokenLifespanForImplicitFlow(3)
+                .update()
+        ) {
+                setImplicitFlowForClient();
+                testExecutor.init(defaultArguments().implicitFlow());
 
-            setImplicitFlowForClient();
-            testExecutor.logInAndInit(defaultArguments().implicitFlow(), testUser, this::assertInitAuth)
-                  .addTimeSkew(-5); // Move in time instead of wait
+                testExecutor.logInAndInit(defaultArguments().implicitFlow(), testUser, this::assertInitAuth);
+                assertThat(driver.getPageSource(), not(containsString("Access token expired")));
 
-            waitUntilElement(eventsArea).text().contains("Access token expired");
-        } finally {
-            // Get to origin state
-            realm.setAccessTokenLifespanForImplicitFlow(storeAccesTokenLifespan);
-            adminClient.realms().realm(REALM_NAME).update(realm);
+                // Here we can't move in time because we are waiting for onTokenExpired execution which is already
+                //   scheduled by setTimeout method, so we can't make it execute sooner
+                pause(1000);
+
+                waitUntilElement(eventsArea).text().contains("Access token expired");
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
     }
 

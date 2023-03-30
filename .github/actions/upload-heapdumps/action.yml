@@ -1,0 +1,13 @@
+name: Upload JVM Heapdumps
+description: Upload JVM Heapdumps
+
+runs:
+  using: composite
+  steps:
+    - id: upload-jvm-heapdumps
+      name: Upload JVM Heapdumps
+      uses: actions/upload-artifact@v3
+      with:
+        name: jvm-heap-dumps
+        path: '**/java_pid*.hprof'
+        if-no-files-found: ignore

@@ -62,13 +62,4 @@
         <module>utils</module>
     </modules>
 
-    <profiles>
-        <profile>
-            <id>performance</id>
-            <modules>
-                <module>performance</module>
-            </modules>
-        </profile>
-    </profiles>
-        
 </project>

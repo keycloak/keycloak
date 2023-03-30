@@ -30,7 +30,7 @@ import org.keycloak.sessions.AuthenticationSessionModel;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilderException;
 import javax.ws.rs.core.UriInfo;
-import org.jboss.resteasy.spi.HttpRequest;
+import org.keycloak.http.HttpRequest;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
 
 /**

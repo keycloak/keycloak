@@ -203,4 +203,16 @@ public final class DockerKeycloakDistribution implements KeycloakDistribution {
         return this.manualStop;
     }
 
+    @Override
+    public <D extends KeycloakDistribution> D unwrap(Class<D> type) {
+        if (!KeycloakDistribution.class.isAssignableFrom(type)) {
+            throw new IllegalArgumentException("Not a " + KeycloakDistribution.class + " type");
+        }
+
+        if (type.isInstance(this)) {
+            return (D) this;
+        }
+
+        throw new IllegalArgumentException("Not a " + type + " type");
+    }
 }

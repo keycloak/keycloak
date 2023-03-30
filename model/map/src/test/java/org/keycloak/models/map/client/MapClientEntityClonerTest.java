@@ -86,7 +86,7 @@ public class MapClientEntityClonerTest {
         newInstance.setId("my-id");
         newInstance.setClientId("a-client-id");
         newInstance.setAttribute("attr", Arrays.asList("aa", "bb", "cc"));
-        MapProtocolMapperEntity pmm = new MapProtocolMapperEntityImpl();
+        MapProtocolMapperEntity pmm = DeepCloner.DUMB_CLONER.newInstance(MapProtocolMapperEntity.class);
         pmm.setId("pmm-id");
         Map<String, String> config = new HashMap<>();
         config.put("key1", "value1");
@@ -121,11 +121,11 @@ public class MapClientEntityClonerTest {
 
     @Test
     public void testCloneToExistingInstanceDumb() {
-        MapClientEntity newInstance = new MapClientEntityImpl();
+        MapClientEntity newInstance = DeepCloner.DUMB_CLONER.newInstance(MapClientEntity.class);
         newInstance.setId("my-id");
         newInstance.setClientId("a-client-id");
         newInstance.setAttribute("attr", Arrays.asList("aa", "bb", "cc"));
-        MapProtocolMapperEntity pmm = new MapProtocolMapperEntityImpl();
+        MapProtocolMapperEntity pmm = DeepCloner.DUMB_CLONER.newInstance(MapProtocolMapperEntity.class);
         pmm.setId("pmm-id");
         Map<String, String> config = new HashMap<>();
         config.put("key1", "value1");

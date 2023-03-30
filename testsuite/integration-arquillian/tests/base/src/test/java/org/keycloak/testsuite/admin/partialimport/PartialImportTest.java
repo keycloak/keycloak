@@ -25,7 +25,9 @@ import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.IdentityProviderResource;
 import org.keycloak.admin.client.resource.RoleResource;
 import org.keycloak.admin.client.resource.UserResource;
+import org.keycloak.authentication.requiredactions.TermsAndConditions;
 import org.keycloak.events.admin.OperationType;
+import org.keycloak.models.UserModel;
 import org.keycloak.partialimport.PartialImportResult;
 import org.keycloak.partialimport.PartialImportResults;
 import org.keycloak.representations.idm.AdminEventRepresentation;
@@ -58,6 +60,8 @@ import java.util.Set;
 
 import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.CoreMatchers.startsWith;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.contains;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -245,7 +249,7 @@ public class PartialImportTest extends AbstractAuthTest {
     private void addUsersWithTermsAndConditions() {
         List<UserRepresentation> users = new ArrayList<>();
         List<String> requiredActions = new ArrayList<>();
-        requiredActions.add("terms_and_conditions");
+        requiredActions.add(UserModel.RequiredAction.TERMS_AND_CONDITIONS.name());
 
         for (int i = 0; i < NUM_ENTITIES; i++) {
             UserRepresentation user = createUserRepresentation(USER_PREFIX + i, USER_PREFIX + i + "@foo.com", "foo", "bar", true);
@@ -476,6 +480,7 @@ public class PartialImportTest extends AbstractAuthTest {
             UserRepresentation user = userRsc.toRepresentation();
             assertTrue(user.getUsername().startsWith(USER_PREFIX));
             Assert.assertTrue(userIds.contains(id));
+            assertThat(user.getRequiredActions(), contains(TermsAndConditions.PROVIDER_ID));
         }
     }
 

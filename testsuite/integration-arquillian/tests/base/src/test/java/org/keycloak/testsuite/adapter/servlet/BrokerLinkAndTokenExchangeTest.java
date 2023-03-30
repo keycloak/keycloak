@@ -227,7 +227,7 @@ public class BrokerLinkAndTokenExchangeTest extends AbstractServletsAdapterTest 
         user.setUsername(PARENT3_USERNAME);
         user.setFirstName("first name");
         user.setLastName("last name");
-        user.setEmail("email");
+        user.setEmail("email@keycloak.org");
         user.setEnabled(true);
         createUserAndResetPasswordWithAdminClient(realm, user, "password");        
     }
@@ -749,7 +749,7 @@ public class BrokerLinkAndTokenExchangeTest extends AbstractServletsAdapterTest 
             Assert.assertEquals(PARENT3_USERNAME, token.getPreferredUsername());
             Assert.assertEquals("first name", token.getGivenName());
             Assert.assertEquals("last name", token.getFamilyName());
-            Assert.assertEquals("email", token.getEmail());
+            Assert.assertEquals("email@keycloak.org", token.getEmail());
 
             // cleanup remove the user
             childRealm.users().get(token.getSubject()).remove();

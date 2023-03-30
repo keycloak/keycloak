@@ -29,7 +29,7 @@ import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.map.authorization.adapter.MapResourceServerAdapter;
 import org.keycloak.models.map.authorization.entity.MapResourceServerEntity;
-import org.keycloak.models.map.authorization.entity.MapResourceServerEntityImpl;
+import org.keycloak.models.map.common.DeepCloner;
 import org.keycloak.models.map.storage.MapKeycloakTransaction;
 import org.keycloak.models.map.storage.MapStorage;
 import org.keycloak.models.map.storage.ModelCriteriaBuilder.Operator;
@@ -76,7 +76,7 @@ public class MapResourceServerStore implements ResourceServerStore {
             throw new ModelDuplicateException("Resource server assiciated with client : " + client.getClientId() + " already exists.");
         }
 
-        MapResourceServerEntity entity = new MapResourceServerEntityImpl();
+        MapResourceServerEntity entity = DeepCloner.DUMB_CLONER.newInstance(MapResourceServerEntity.class);
         entity.setClientId(clientId);
         entity.setRealmId(client.getRealm().getId());
 

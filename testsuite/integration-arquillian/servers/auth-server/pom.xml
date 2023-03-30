@@ -37,21 +37,6 @@
     <modules>
         <module>services</module>
         <module>undertow</module>
+        <module>quarkus</module>
     </modules>
-    
-    <profiles>
-        <profile>
-            <id>auth-server-quarkus</id>
-            <modules>
-                <module>quarkus</module>
-            </modules>
-        </profile>
-        <profile>
-            <id>auth-server-cluster-quarkus</id>
-            <modules>
-                <module>quarkus</module>
-            </modules>
-        </profile>
-    </profiles>
-
 </project>

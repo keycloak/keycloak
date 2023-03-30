@@ -33,8 +33,6 @@ import liquibase.Scope;
 
 import org.hibernate.cfg.AvailableSettings;
 import org.infinispan.manager.DefaultCacheManager;
-import io.quarkus.smallrye.metrics.runtime.SmallRyeMetricsHandler;
-import io.vertx.core.Handler;
 import io.vertx.ext.web.RoutingContext;
 
 import org.keycloak.Config;
@@ -114,12 +112,6 @@ public class KeycloakRecorder {
                 QuarkusKeycloakSessionFactory.getInstance().close();
             }
         });
-    }
-
-    public Handler<RoutingContext> createMetricsHandler(String path) {
-        SmallRyeMetricsHandler metricsHandler = new SmallRyeMetricsHandler();
-        metricsHandler.setMetricsPath(path);
-        return metricsHandler;
     }
 
     public HibernateOrmIntegrationRuntimeInitListener createUserDefinedUnitListener(String name) {

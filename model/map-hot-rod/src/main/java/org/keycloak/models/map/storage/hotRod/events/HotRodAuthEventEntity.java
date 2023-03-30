@@ -17,6 +17,8 @@
 
 package org.keycloak.models.map.storage.hotRod.events;
 
+import org.infinispan.api.annotations.indexing.Basic;
+import org.infinispan.api.annotations.indexing.Indexed;
 import org.infinispan.protostream.GeneratedSchema;
 import org.infinispan.protostream.annotations.AutoProtoSchemaBuilder;
 import org.infinispan.protostream.annotations.ProtoDoc;
@@ -36,7 +38,7 @@ import java.util.Set;
         topLevelEntity = true,
         modelClass = "org.keycloak.events.Event"
 )
-@ProtoDoc("@Indexed")
+@Indexed
 @ProtoDoc("schema-version: " + HotRodAuthEventEntity.VERSION)
 public class HotRodAuthEventEntity extends AbstractHotRodEntity {
 
@@ -55,44 +57,44 @@ public class HotRodAuthEventEntity extends AbstractHotRodEntity {
         HotRodAuthEventEntitySchema INSTANCE = new HotRodAuthEventEntitySchemaImpl();
     }
 
-    @ProtoDoc("@Field(index = Index.YES, store = Store.YES)")
+    @Basic(projectable = true)
     @ProtoField(number = 1)
     public Integer entityVersion = VERSION;
 
     @ProtoField(number = 2)
     public String id;
 
-    @ProtoDoc("@Field(index = Index.YES, store = Store.YES)")
+    @Basic(sortable = true)
     @ProtoField(number = 3)
     public Integer type;
 
-    @ProtoDoc("@Field(index = Index.YES, store = Store.YES)")
+    @Basic(sortable = true)
     @ProtoField(number = 4)
     public Long expiration;
 
-    @ProtoDoc("@Field(index = Index.YES, store = Store.YES)")
+    @Basic(sortable = true)
     @ProtoField(number = 5)
     public Long timestamp;
 
-    @ProtoDoc("@Field(index = Index.YES, store = Store.YES)")
+    @Basic(sortable = true)
     @ProtoField(number = 6)
     public String clientId;
 
     @ProtoField(number = 7)
     public String error;
 
-    @ProtoDoc("@Field(index = Index.YES, store = Store.YES)")
+    @Basic(sortable = true)
     @ProtoField(number = 8)
     public String ipAddress;
 
-    @ProtoDoc("@Field(index = Index.YES, store = Store.YES)")
+    @Basic(sortable = true)
     @ProtoField(number = 9)
     public String realmId;
 
     @ProtoField(number = 10)
     public String sessionId;
 
-    @ProtoDoc("@Field(index = Index.YES, store = Store.YES)")
+    @Basic(sortable = true)
     @ProtoField(number = 11)
     public String userId;
 

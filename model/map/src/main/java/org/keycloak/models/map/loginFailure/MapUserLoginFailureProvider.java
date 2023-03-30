@@ -21,6 +21,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserLoginFailureProvider;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserLoginFailureModel;
+import org.keycloak.models.map.common.DeepCloner;
 import org.keycloak.models.map.storage.MapKeycloakTransaction;
 import org.keycloak.models.map.storage.MapStorage;
 
@@ -78,7 +79,7 @@ public class MapUserLoginFailureProvider implements UserLoginFailureProvider {
         MapUserLoginFailureEntity userLoginFailureEntity = userLoginFailureTx.read(withCriteria(mcb)).findFirst().orElse(null);
 
         if (userLoginFailureEntity == null) {
-            userLoginFailureEntity = new MapUserLoginFailureEntityImpl();
+            userLoginFailureEntity = DeepCloner.DUMB_CLONER.newInstance(MapUserLoginFailureEntity.class);
             userLoginFailureEntity.setRealmId(realm.getId());
             userLoginFailureEntity.setUserId(userId);
 

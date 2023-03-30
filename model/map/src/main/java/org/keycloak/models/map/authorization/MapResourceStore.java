@@ -29,7 +29,7 @@ import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.map.authorization.adapter.MapResourceAdapter;
 import org.keycloak.models.map.authorization.entity.MapResourceEntity;
-import org.keycloak.models.map.authorization.entity.MapResourceEntityImpl;
+import org.keycloak.models.map.common.DeepCloner;
 import org.keycloak.models.map.storage.MapKeycloakTransaction;
 import org.keycloak.models.map.storage.MapStorage;
 import org.keycloak.models.map.storage.ModelCriteriaBuilder.Operator;
@@ -89,7 +89,7 @@ public class MapResourceStore implements ResourceStore {
             throw new ModelDuplicateException("Resource with name '" + name + "' for " + resourceServer.getId() + " already exists for request owner " + owner);
         }
 
-        MapResourceEntity entity = new MapResourceEntityImpl();
+        MapResourceEntity entity = DeepCloner.DUMB_CLONER.newInstance(MapResourceEntity.class);
         entity.setId(id);
         entity.setName(name);
         entity.setResourceServerId(resourceServer.getId());

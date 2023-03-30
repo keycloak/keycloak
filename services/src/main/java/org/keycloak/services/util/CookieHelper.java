@@ -18,10 +18,11 @@
 package org.keycloak.services.util;
 
 import org.jboss.logging.Logger;
-import org.jboss.resteasy.spi.HttpResponse;
+import org.keycloak.http.HttpResponse;
 import org.jboss.resteasy.util.CookieParser;
 import org.keycloak.common.util.Resteasy;
 import org.keycloak.common.util.ServerCookie;
+import org.keycloak.models.KeycloakSession;
 
 import javax.ws.rs.core.Cookie;
 import javax.ws.rs.core.HttpHeaders;
@@ -55,7 +56,7 @@ public class CookieHelper {
      * @param httpOnly
      * @param sameSite
      */
-    public static void addCookie(String name, String value, String path, String domain, String comment, int maxAge, boolean secure, boolean httpOnly, SameSiteAttributeValue sameSite) {
+    public static void addCookie(String name, String value, String path, String domain, String comment, int maxAge, boolean secure, boolean httpOnly, SameSiteAttributeValue sameSite, KeycloakSession session) {
         SameSiteAttributeValue sameSiteParam = sameSite;
         // when expiring a cookie we shouldn't set the sameSite attribute; if we set e.g. SameSite=None when expiring a cookie, the new cookie (with maxAge == 0)
         // might be rejected by the browser in some cases resulting in leaving the original cookie untouched; that can even prevent user from accessing their application
@@ -65,15 +66,15 @@ public class CookieHelper {
 
         boolean secure_sameSite = sameSite == SameSiteAttributeValue.NONE || secure; // when SameSite=None, Secure attribute must be set
 
-        HttpResponse response = Resteasy.getContextData(HttpResponse.class);
+        HttpResponse response = session.getContext().getHttpResponse();
         StringBuffer cookieBuf = new StringBuffer();
         ServerCookie.appendCookieValue(cookieBuf, 1, name, value, path, domain, comment, maxAge, secure_sameSite, httpOnly, sameSite);
         String cookie = cookieBuf.toString();
-        response.getOutputHeaders().add(HttpHeaders.SET_COOKIE, cookie);
+        response.addHeader(HttpHeaders.SET_COOKIE, cookie);
 
         // a workaround for browser in older Apple OSs – browsers ignore cookies with SameSite=None
         if (sameSiteParam == SameSiteAttributeValue.NONE) {
-            addCookie(name + LEGACY_COOKIE, value, path, domain, comment, maxAge, secure, httpOnly, null);
+            addCookie(name + LEGACY_COOKIE, value, path, domain, comment, maxAge, secure, httpOnly, null, session);
         }
     }
 
@@ -88,23 +89,23 @@ public class CookieHelper {
      * @param secure
      * @param httpOnly
      */
-    public static void addCookie(String name, String value, String path, String domain, String comment, int maxAge, boolean secure, boolean httpOnly) {
-        addCookie(name, value, path, domain, comment, maxAge, secure, httpOnly, null);
+    public static void addCookie(String name, String value, String path, String domain, String comment, int maxAge, boolean secure, boolean httpOnly, KeycloakSession session) {
+        addCookie(name, value, path, domain, comment, maxAge, secure, httpOnly, null, session);
     }
 
 
-    public static Set<String> getCookieValue(String name) {
-        Set<String> ret = getInternalCookieValue(name);
+    public static Set<String> getCookieValue(KeycloakSession session, String name) {
+        Set<String> ret = getInternalCookieValue(session, name);
         if (ret.size() == 0) {
             String legacy = name + LEGACY_COOKIE;
             logger.debugv("Could not find any cookies with name '{0}', trying '{1}'", name, legacy);
-            ret = getInternalCookieValue(legacy);
+            ret = getInternalCookieValue(session, legacy);
         }
         return ret;
     }
 
-    private static Set<String> getInternalCookieValue(String name) {
-        HttpHeaders headers = Resteasy.getContextData(HttpHeaders.class);
+    private static Set<String> getInternalCookieValue(KeycloakSession session, String name) {
+        HttpHeaders headers = session.getContext().getHttpRequest().getHttpHeaders();
         Set<String> cookiesVal = new HashSet<>();
 
         // check for cookies in the request headers

@@ -1634,7 +1634,19 @@ module.controller('RealmUserProfileCtrl', function($scope, Realm, realm, clientS
 		return attributeName != "username" && attributeName != "email";
 	}; 
 
-	$scope.guiOrderUp = function(index) {
+    $scope.showRequiredSettings = function(attributeName) {
+        if (attributeName == "username") {
+            return false;
+        }
+
+        if (attributeName == "email" && realm.registrationEmailAsUsername) {
+            return false;
+        }
+
+        return true;
+    };
+
+    $scope.guiOrderUp = function(index) {
 		$scope.moveAttribute(index, index - 1);
 	};
 

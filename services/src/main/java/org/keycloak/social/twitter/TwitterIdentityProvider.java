@@ -52,7 +52,6 @@ import twitter4j.conf.ConfigurationBuilder;
 import javax.ws.rs.GET;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
@@ -171,8 +170,7 @@ public class TwitterIdentityProvider extends AbstractIdentityProvider<OAuth2Iden
 
         protected final ClientConnection clientConnection;
 
-        @Context
-        protected HttpHeaders headers;
+        protected final HttpHeaders headers;
 
         public Endpoint(KeycloakSession session, AuthenticationCallback callback, EventBuilder event, TwitterIdentityProvider provider) {
             this.session = session;
@@ -181,6 +179,7 @@ public class TwitterIdentityProvider extends AbstractIdentityProvider<OAuth2Iden
             this.callback = callback;
             this.event = event;
             this.provider = provider;
+            this.headers = session.getContext().getRequestHeaders();
         }
 
         @GET

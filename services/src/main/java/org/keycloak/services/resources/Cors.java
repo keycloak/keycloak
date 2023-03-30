@@ -25,9 +25,9 @@ import java.util.function.BiConsumer;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.ResponseBuilder;
 import org.jboss.logging.Logger;
-import org.jboss.resteasy.spi.HttpRequest;
-import org.jboss.resteasy.spi.HttpResponse;
+import org.keycloak.http.HttpRequest;
 import org.keycloak.common.util.CollectionUtil;
+import org.keycloak.http.HttpResponse;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oidc.utils.WebOriginsUtils;
@@ -141,11 +141,11 @@ public class Cors {
     }
 
     public void build(HttpResponse response) {
-        build(response.getOutputHeaders()::add);
+        build(response::addHeader);
         logger.debug("Added CORS headers to response");
     }
 
-    public void build(BiConsumer<String, Object> addHeader) {
+    public void build(BiConsumer<String, String> addHeader) {
         String origin = request.getHttpHeaders().getRequestHeaders().getFirst(ORIGIN_HEADER);
         if (origin == null) {
             logger.trace("No origin header ignoring");
@@ -184,7 +184,7 @@ public class Cors {
         }
 
         if (preflight) {
-            addHeader.accept(ACCESS_CONTROL_MAX_AGE, DEFAULT_MAX_AGE);
+            addHeader.accept(ACCESS_CONTROL_MAX_AGE, String.valueOf(DEFAULT_MAX_AGE));
         }
     }
 

@@ -40,6 +40,7 @@ import org.jboss.arquillian.test.spi.event.suite.BeforeClass;
 import org.jboss.arquillian.test.spi.event.suite.BeforeSuite;
 import org.jboss.logging.Logger;
 import org.keycloak.admin.client.Keycloak;
+import org.keycloak.common.crypto.FipsMode;
 import org.keycloak.common.util.StringPropertyReplacer;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.error.KeycloakErrorHandler;
@@ -127,6 +128,10 @@ public class AuthServerTestEnricher {
     public static final boolean AUTH_SERVER_CROSS_DC = Boolean.parseBoolean(System.getProperty(AUTH_SERVER_CROSS_DC_PROPERTY, "false"));
 
     public static final String AUTH_SERVER_HOME_PROPERTY = "auth.server.home";
+
+    public static final String AUTH_SERVER_FIPS_MODE_PROPERTY = "auth.server.fips.mode";
+
+    public static final FipsMode AUTH_SERVER_FIPS_MODE = FipsMode.valueOf(System.getProperty(AUTH_SERVER_FIPS_MODE_PROPERTY, FipsMode.disabled.toString()));
 
     public static final String CACHE_SERVER_LIFECYCLE_SKIP_PROPERTY = "cache.server.lifecycle.skip";
     public static final boolean CACHE_SERVER_LIFECYCLE_SKIP = Boolean.parseBoolean(System.getProperty(CACHE_SERVER_LIFECYCLE_SKIP_PROPERTY, "false"));

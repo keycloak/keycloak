@@ -16,6 +16,9 @@
  */
 package org.keycloak.models.map.storage.hotRod.role;
 
+import org.infinispan.api.annotations.indexing.Basic;
+import org.infinispan.api.annotations.indexing.Indexed;
+import org.infinispan.api.annotations.indexing.Keyword;
 import org.infinispan.protostream.GeneratedSchema;
 import org.infinispan.protostream.annotations.AutoProtoSchemaBuilder;
 import org.infinispan.protostream.annotations.ProtoDoc;
@@ -37,7 +40,7 @@ import java.util.Set;
         topLevelEntity = true,
         modelClass = "org.keycloak.models.RoleModel"
 )
-@ProtoDoc("@Indexed")
+@Indexed
 @ProtoDoc("schema-version: " + HotRodRoleEntity.VERSION)
 public class HotRodRoleEntity extends AbstractHotRodEntity {
 
@@ -77,51 +80,42 @@ public class HotRodRoleEntity extends AbstractHotRodEntity {
             HotRodRoleEntity entity = getHotRodEntity();
             entity.updated |= ! Objects.equals(entity.name, name);
             entity.name = name;
-            entity.nameLowercase = name == null ? null : name.toLowerCase();
         }
     }
 
-    @ProtoDoc("@Field(index = Index.YES, store = Store.YES)")
+    @Basic(projectable = true)
     @ProtoField(number = 1)
     public Integer entityVersion = VERSION;
 
-    @ProtoDoc("@Field(index = Index.YES, store = Store.YES)")
+    @Basic(projectable = true, sortable = true)
     @ProtoField(number = 2)
     public String id;
 
-    @ProtoDoc("@Field(index = Index.YES, store = Store.YES)")
+    @Basic(sortable = true)
     @ProtoField(number = 3)
     public String realmId;
 
-    @ProtoDoc("@Field(index = Index.YES, store = Store.YES)")
+    @Keyword(sortable = true, normalizer = "lowercase")
     @ProtoField(number = 4)
     public String name;
 
-    /**
-     * Lowercase interpretation of {@link #name} field. Infinispan doesn't support case-insensitive LIKE for non-analyzed fields.
-     * Search on analyzed fields can be case-insensitive (based on used analyzer) but doesn't support ORDER BY analyzed field.
-     */
-    @ProtoDoc("@Field(index = Index.YES, store = Store.YES)")
+    @Keyword(sortable = true, normalizer = "lowercase")
     @ProtoField(number = 5)
-    public String nameLowercase;
-
-    @ProtoDoc("@Field(index = Index.YES, store = Store.YES, analyze = Analyze.YES, analyzer = @Analyzer(definition = \"filename\"))")
-    @ProtoField(number = 6)
     public String description;
 
-    @ProtoDoc("@Field(index = Index.YES, store = Store.YES)")
-    @ProtoField(number = 7)
+    @Basic(sortable = true)
+    @ProtoField(number = 6)
     public Boolean clientRole;
 
-    @ProtoDoc("@Field(index = Index.YES, store = Store.YES)")
-    @ProtoField(number = 8)
+    @Basic(sortable = true)
+    @ProtoField(number = 7)
     public String clientId;
 
-    @ProtoDoc("@Field(index = Index.YES, store = Store.YES)")
-    @ProtoField(number = 9)
+    @Basic(sortable = true)
+    @ProtoField(number = 8)
     public Set<String> compositeRoles;
 
-    @ProtoField(number = 10)
+    @ProtoField(number = 9)
     public Set<HotRodAttributeEntityNonIndexed> attributes;
 
     @Override

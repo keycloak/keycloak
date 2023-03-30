@@ -78,7 +78,7 @@ public class UserModelTest extends KeycloakModelTest {
 
     @Override
     public void createEnvironment(KeycloakSession s) {
-        RealmModel realm = s.realms().createRealm("realm");
+        RealmModel realm = createRealm(s, "realm");
         realm.setDefaultRole(s.roles().addRealmRole(realm, Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + realm.getName()));
         this.realmId = realm.getId();
 
@@ -139,6 +139,20 @@ public class UserModelTest extends KeycloakModelTest {
         withRealm(realm1Id, (session, realm) -> {
             UserModel user1 = session.users().addUser(realm, "user");
             UserModel user2 = session.users().addUser(realm, "USER");
+
+            assertThat(user1, not(nullValue()));
+            assertThat(user2, not(nullValue()));
+
+            assertThat(user1.getUsername(), equalTo("user"));
+            assertThat(user2.getUsername(), equalTo("USER"));
+
+            return null;
+        });
+
+        // try to query storage in a separate transaction to make sure that storage can handle case-sensitive usernames
+        withRealm(realm1Id, (session, realm) -> {
+            UserModel user1 = session.users().getUserByUsername(realm, "user");
+            UserModel user2 = session.users().getUserByUsername(realm, "USER");
 
             assertThat(user1, not(nullValue()));
             assertThat(user2, not(nullValue()));

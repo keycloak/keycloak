@@ -258,7 +258,7 @@ class KeycloakProcessor {
 
             if ("keycloak-default".equals(descriptor.getName())) {
                 defaultUnitDescriptor = descriptor;
-                configureDefaultPersistenceUnitProperties(defaultUnitDescriptor, config, jdbcDataSources);
+                configureDefaultPersistenceUnitProperties(defaultUnitDescriptor, config, getDefaultDataSource(jdbcDataSources));
                 runtimeConfigured.produce(new HibernateOrmIntegrationRuntimeConfiguredBuildItem("keycloak", defaultUnitDescriptor.getName())
                         .setInitListener(recorder.createDefaultUnitListener()));
             } else {
@@ -295,7 +295,11 @@ class KeycloakProcessor {
     }
 
     private void configureDefaultPersistenceUnitProperties(ParsedPersistenceXmlDescriptor descriptor, HibernateOrmConfig config,
-            List<JdbcDataSourceBuildItem> jdbcDataSources) {
+            JdbcDataSourceBuildItem defaultDataSource) {
+        if (defaultDataSource == null || !defaultDataSource.isDefault()) {
+            throw new RuntimeException("The server datasource must be the default datasource.");
+        }
+
         Properties unitProperties = descriptor.getProperties();
 
         unitProperties.setProperty(AvailableSettings.DIALECT, config.defaultPersistenceUnit.dialect.dialect.orElse(null));
@@ -320,7 +324,7 @@ class KeycloakProcessor {
 
         unitProperties.setProperty(AvailableSettings.QUERY_STARTUP_CHECKING, Boolean.FALSE.toString());
 
-        String dbKind = jdbcDataSources.get(0).getDbKind();
+        String dbKind = defaultDataSource.getDbKind();
 
         for (Entry<Object, Object> query : loadSpecificNamedQueries(dbKind.toLowerCase()).entrySet()) {
             unitProperties.setProperty(QUERY_PROPERTY_PREFIX + query.getKey(), query.getValue().toString());
@@ -825,5 +829,15 @@ class KeycloakProcessor {
 
     private boolean isHealthEnabled() {
         return Configuration.getOptionalBooleanValue(MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX.concat("health-enabled")).orElse(false);
+    }
+
+    static JdbcDataSourceBuildItem getDefaultDataSource(List<JdbcDataSourceBuildItem> jdbcDataSources) {
+        for (JdbcDataSourceBuildItem jdbcDataSource : jdbcDataSources) {
+            if (jdbcDataSource.isDefault()) {
+                return jdbcDataSource;
+            }
+        }
+
+        throw new RuntimeException("No default datasource found. The server datasource must be the default datasource.");
     }
 }

@@ -40,7 +40,7 @@ import javax.persistence.criteria.Join;
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 
-import org.apache.commons.lang.BooleanUtils;
+import org.hibernate.Session;
 import org.jboss.logging.Logger;
 import org.keycloak.common.util.Time;
 import org.keycloak.connections.jpa.util.JpaUtils;
@@ -441,10 +441,12 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
         if (toParent != null && group.getId().equals(toParent.getId())) {
             return;
         }
+
+        GroupModel previousParent = group.getParent();
+
         if (group.getParentId() != null) {
             group.getParent().removeChild(group);
         }
-        GroupModel previousParent = group.getParent();
         group.setParent(toParent);
         if (toParent != null) toParent.addChild(group);
         else session.groups().addTopLevelGroup(realm, group);
@@ -786,6 +788,9 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
 
         predicates.add(builder.equal(root.get("realmId"), realm.getId()));
 
+        //noinspection resource
+        String dbProductName = em.unwrap(Session.class).doReturningWork(connection -> connection.getMetaData().getDatabaseProductName());
+
         for (Map.Entry<String, String> entry : filteredAttributes.entrySet()) {
             String key = entry.getKey();
             String value = entry.getValue();
@@ -793,7 +798,19 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
             Join<ClientEntity, ClientAttributeEntity> attributeJoin = root.join("attributes");
 
             Predicate attrNamePredicate = builder.equal(attributeJoin.get("name"), key);
-            Predicate attrValuePredicate = builder.equal(attributeJoin.get("value"), value);
+
+            Predicate attrValuePredicate;
+            if (dbProductName.equals("Oracle")) {
+                // SELECT * FROM client_attributes WHERE ... DBMS_LOB.COMPARE(value, '0') = 0 ...;
+                // Oracle is not able to compare a CLOB with a VARCHAR unless it being converted with TO_CHAR
+                // But for this all values in the table need to be smaller than 4K, otherwise the cast will fail with
+                // "ORA-22835: Buffer too small for CLOB to CHAR" (even if it is in another row).
+                // This leaves DBMS_LOB.COMPARE as the option to compare the CLOB with the value.
+                attrValuePredicate = builder.equal(builder.function("DBMS_LOB.COMPARE", Integer.class, attributeJoin.get("value"), builder.literal(value)), 0);
+            } else {
+                attrValuePredicate = builder.equal(attributeJoin.get("value"), value);
+            }
+
             predicates.add(builder.and(attrNamePredicate, attrValuePredicate));
         }
 

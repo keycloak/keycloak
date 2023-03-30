@@ -27,7 +27,7 @@ public class JpaUserSessionMetadata extends MapUserSessionEntityImpl implements 
     }
 
     public JpaUserSessionMetadata() {
-        super();
+        super(DeepCloner.DUMB_CLONER);
     }
 
     private Integer entityVersion;

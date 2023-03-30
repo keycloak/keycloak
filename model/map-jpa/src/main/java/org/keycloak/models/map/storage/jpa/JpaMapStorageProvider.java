@@ -32,12 +32,14 @@ public class JpaMapStorageProvider implements MapStorageProvider {
     private final KeycloakSession session;
     private final EntityManager em;
     private final String sessionTxKey;
+    private final boolean jtaEnabled;
 
-    public JpaMapStorageProvider(JpaMapStorageProviderFactory factory, KeycloakSession session, EntityManager em, String sessionTxKey) {
+    public JpaMapStorageProvider(JpaMapStorageProviderFactory factory, KeycloakSession session, EntityManager em, String sessionTxKey, boolean jtaEnabled) {
         this.factory = factory;
         this.session = session;
         this.em = em;
         this.sessionTxKey = sessionTxKey;
+        this.jtaEnabled = jtaEnabled;
     }
 
     @Override
@@ -50,8 +52,9 @@ public class JpaMapStorageProvider implements MapStorageProvider {
     public <V extends AbstractEntity, M> MapStorage<V, M> getStorage(Class<M> modelType, Flag... flags) {
         // validate and update the schema for the storage.
         this.factory.validateAndUpdateSchema(this.session, modelType);
-        // create the JPA transaction and enlist it if needed.
-        if (session.getAttribute(this.sessionTxKey) == null) {
+        // Create the JPA transaction and enlist it if needed.
+        // Don't enlist if JTA is enabled as it has been enlisted with JTA automatically.
+        if (!jtaEnabled && session.getAttribute(this.sessionTxKey) == null) {
             KeycloakTransaction jpaTransaction = new JpaTransactionWrapper(em.getTransaction());
             session.getTransactionManager().enlist(jpaTransaction);
             session.setAttribute(this.sessionTxKey, jpaTransaction);

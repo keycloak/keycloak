@@ -46,6 +46,7 @@ import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserModel.SearchableFields;
 import org.keycloak.models.UserProvider;
+import org.keycloak.models.map.common.DeepCloner;
 import org.keycloak.models.map.common.TimeAdapter;
 import org.keycloak.models.map.credential.MapUserCredentialManager;
 import org.keycloak.models.map.storage.MapKeycloakTransactionWithAuth;
@@ -343,7 +344,7 @@ public class MapUserProvider implements UserProvider {
             throw new ModelDuplicateException("User exists: " + id);
         }
 
-        MapUserEntity entity = new MapUserEntityImpl();
+        MapUserEntity entity = DeepCloner.DUMB_CLONER.newInstance(MapUserEntity.class);
         entity.setId(id);
         entity.setRealmId(realm.getId());
         entity.setEmailConstraint(KeycloakModelUtils.generateId());

@@ -24,6 +24,8 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 
 import java.util.function.Consumer;
 
+import static org.keycloak.models.utils.KeycloakModelUtils.GROUP_PATH_SEPARATOR;
+
 /**
  * Updates a group reference in a mapper config, when the path of a group changes.
  *
@@ -58,10 +60,17 @@ public class GroupConfigPropertyByPathSynchronizer extends AbstractConfigPropert
         String configuredGroupPath = KeycloakModelUtils.normalizeGroupPath(currentPropertyValue);
 
         String previousGroupPath = event.getPreviousPath();
-        if (previousGroupPath.equals(configuredGroupPath)) {
+        if (configuredGroupPath.equals(previousGroupPath)) {
             String newPath = event.getNewPath();
             propertyUpdater.accept(newPath);
+        } else if (isSubGroupOf(configuredGroupPath, previousGroupPath)) {
+            String newPath = event.getNewPath() + configuredGroupPath.substring(previousGroupPath.length());
+            propertyUpdater.accept(newPath);
         }
+    }
+
+    private static boolean isSubGroupOf(String groupPath, String potentialParentGroupPath) {
+        return groupPath.startsWith(potentialParentGroupPath + GROUP_PATH_SEPARATOR);
     }
 
 }

@@ -17,7 +17,7 @@
 package org.keycloak.protocol.oidc.endpoints;
 
 import org.jboss.resteasy.annotations.cache.NoCache;
-import org.jboss.resteasy.spi.HttpRequest;
+import org.keycloak.http.HttpRequest;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
@@ -33,8 +33,8 @@ import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.context.TokenIntrospectContext;
 
 import javax.ws.rs.POST;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.Produces;
+import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
@@ -50,11 +50,8 @@ public class TokenIntrospectionEndpoint {
     private static final String PARAM_TOKEN = "token";
 
     private final KeycloakSession session;
-    @Context
-    private HttpRequest request;
 
-    @Context
-    private HttpHeaders headers;
+    private final HttpRequest request;
 
     private final ClientConnection clientConnection;
 
@@ -66,10 +63,12 @@ public class TokenIntrospectionEndpoint {
         this.clientConnection = session.getContext().getConnection();
         this.realm = session.getContext().getRealm();
         this.event = event;
+        this.request = session.getContext().getHttpRequest();
     }
 
     @POST
     @NoCache
+    @Produces(MediaType.APPLICATION_JSON)
     public Response introspect() {
         event.event(EventType.INTROSPECT_TOKEN);
 

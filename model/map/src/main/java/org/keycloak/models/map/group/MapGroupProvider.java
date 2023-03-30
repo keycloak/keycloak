@@ -26,6 +26,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
+import org.keycloak.models.map.common.DeepCloner;
 import org.keycloak.models.map.storage.MapKeycloakTransaction;
 import org.keycloak.models.map.storage.MapStorage;
 
@@ -221,7 +222,7 @@ public class MapGroupProvider implements GroupProvider {
             throw new ModelDuplicateException("Group with name '" + name + "' in realm " + realm.getName() + " already exists for requested parent" );
         }
 
-        MapGroupEntity entity = new MapGroupEntityImpl();
+        MapGroupEntity entity = DeepCloner.DUMB_CLONER.newInstance(MapGroupEntity.class);
         entity.setId(id);
         entity.setRealmId(realm.getId());
         entity.setName(name);

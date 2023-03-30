@@ -318,9 +318,9 @@ public class StorageOptions {
 
     public static final Option<String> STORAGE_HOTROD_CACHE_REINDEX = new OptionBuilder<>("storage-hotrod-cache-reindex", String.class)
             .category(OptionCategory.STORAGE)
-            .defaultValue("all")
+            .defaultValue(Optional.empty())
             .expectedValues(StorageOptions::getExpectedCacheNames)
-            .description("List of cache names that should be indexed on Keycloak startup. Defaulting to `all` which means all caches are reindexed.")
+            .description("List of cache names that should be indexed on Keycloak startup. When set to `all`, all caches are reindexed. By default no caches are reindexed.")
             .hidden()
             .build();
 

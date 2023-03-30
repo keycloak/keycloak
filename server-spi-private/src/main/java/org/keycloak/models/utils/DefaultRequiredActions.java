@@ -74,7 +74,7 @@ public class DefaultRequiredActions {
         UPDATE_PROFILE(UserModel.RequiredAction.UPDATE_PROFILE.name(), DefaultRequiredActions::addUpdateProfileAction),
         CONFIGURE_TOTP(UserModel.RequiredAction.CONFIGURE_TOTP.name(), DefaultRequiredActions::addConfigureTotpAction),
         UPDATE_PASSWORD(UserModel.RequiredAction.UPDATE_PASSWORD.name(), DefaultRequiredActions::addUpdatePasswordAction),
-        TERMS_AND_CONDITIONS("terms_and_conditions", DefaultRequiredActions::addTermsAndConditionsAction),
+        TERMS_AND_CONDITIONS(UserModel.RequiredAction.TERMS_AND_CONDITIONS.name(), DefaultRequiredActions::addTermsAndConditionsAction),
         DELETE_ACCOUNT("delete_account", DefaultRequiredActions::addDeleteAccountAction),
         UPDATE_USER_LOCALE("update_user_locale", DefaultRequiredActions::addUpdateLocaleAction),
         UPDATE_EMAIL(UserModel.RequiredAction.UPDATE_EMAIL.name(), DefaultRequiredActions::addUpdateEmailAction, () -> isFeatureEnabled(Profile.Feature.UPDATE_EMAIL)),
@@ -169,12 +169,12 @@ public class DefaultRequiredActions {
     }
 
     public static void addTermsAndConditionsAction(RealmModel realm) {
-        if (realm.getRequiredActionProviderByAlias("terms_and_conditions") == null) {
+        if (realm.getRequiredActionProviderByAlias(UserModel.RequiredAction.TERMS_AND_CONDITIONS.name()) == null) {
             RequiredActionProviderModel termsAndConditions = new RequiredActionProviderModel();
             termsAndConditions.setEnabled(false);
-            termsAndConditions.setAlias("terms_and_conditions");
+            termsAndConditions.setAlias(UserModel.RequiredAction.TERMS_AND_CONDITIONS.name());
             termsAndConditions.setName("Terms and Conditions");
-            termsAndConditions.setProviderId("terms_and_conditions");
+            termsAndConditions.setProviderId(UserModel.RequiredAction.TERMS_AND_CONDITIONS.name());
             termsAndConditions.setDefaultAction(false);
             termsAndConditions.setPriority(20);
             realm.addRequiredActionProvider(termsAndConditions);
@@ -288,6 +288,25 @@ public class DefaultRequiredActions {
             webauthnRegister.setDefaultAction(false);
             webauthnRegister.setPriority(80);
             realm.addRequiredActionProvider(webauthnRegister);
+        }
+    }
+
+    /**
+     * Checks whether given {@code providerId} case insensitively matches any of {@link UserModel.RequiredAction} enum
+     * and if yes, it returns the value in correct form.
+     * <p/>
+     * This is necessary to stay backward compatible with older deployments where not all provider factories had ids
+     * in uppercase. This means that storage can contain some values in incorrect letter-case.
+     *
+     * @param providerId the required actions providerId
+     * @return providerId with correct letter-case, or the original value if it doesn't match any
+     *         of {@link UserModel.RequiredAction}
+     */
+    public static String getDefaultRequiredActionCaseInsensitively(String providerId) {
+        try {
+            return UserModel.RequiredAction.valueOf(providerId.toUpperCase()).name();
+        } catch (IllegalArgumentException iae) {
+            return providerId;
         }
     }
 }

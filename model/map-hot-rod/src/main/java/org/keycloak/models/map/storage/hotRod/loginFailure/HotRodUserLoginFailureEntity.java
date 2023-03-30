@@ -17,6 +17,8 @@
 
 package org.keycloak.models.map.storage.hotRod.loginFailure;
 
+import org.infinispan.api.annotations.indexing.Basic;
+import org.infinispan.api.annotations.indexing.Indexed;
 import org.infinispan.protostream.GeneratedSchema;
 import org.infinispan.protostream.annotations.AutoProtoSchemaBuilder;
 import org.infinispan.protostream.annotations.ProtoDoc;
@@ -34,7 +36,7 @@ import org.keycloak.models.map.storage.hotRod.common.UpdatableHotRodEntityDelega
         topLevelEntity = true,
         modelClass = "org.keycloak.models.UserLoginFailureModel"
 )
-@ProtoDoc("@Indexed")
+@Indexed
 @ProtoDoc("schema-version: " + HotRodUserLoginFailureEntity.VERSION)
 public class HotRodUserLoginFailureEntity extends AbstractHotRodEntity {
 
@@ -51,18 +53,18 @@ public class HotRodUserLoginFailureEntity extends AbstractHotRodEntity {
         HotRodUserLoginFailureEntitySchema INSTANCE = new HotRodUserLoginFailureEntitySchemaImpl();
     }
 
-    @ProtoDoc("@Field(index = Index.YES, store = Store.YES)")
+    @Basic(projectable = true)
     @ProtoField(number = 1)
     public Integer entityVersion = VERSION;
 
     @ProtoField(number = 2)
     public String id;
 
-    @ProtoDoc("@Field(index = Index.YES, store = Store.YES)")
+    @Basic(sortable = true)
     @ProtoField(number = 3)
     public String realmId;
 
-    @ProtoDoc("@Field(index = Index.YES, store = Store.YES)")
+    @Basic(sortable = true)
     @ProtoField(number = 4)
     public String userId;
 

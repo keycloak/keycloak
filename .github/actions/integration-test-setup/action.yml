@@ -1,0 +1,41 @@
+name: Setup integration test
+description: Download Maven caches needed for integration tests
+
+inputs:
+  jdk-dist:
+    description: JDK distribution
+    required: false
+    default: temurin
+  jdk-version:
+    description: JDK version
+    required: false
+    default: 11
+
+runs:
+  using: composite
+  steps:
+    - id: setup-java
+      name: Setup Java
+      uses: actions/setup-java@v3
+      with:
+        distribution: ${{ inputs.jdk-dist }}
+        java-version: ${{ inputs.jdk-version }}
+
+    - id: maven-cache
+      name: Maven cache
+      uses: ./.github/actions/maven-cache
+
+    - id: phantomjs-cache
+      name: PhantomJS cache
+      uses: ./.github/actions/phantomjs-cache
+
+    - id: download-keycloak
+      name: Download Keycloak Maven artifacts
+      uses: actions/download-artifact@v3
+      with:
+        name: m2-keycloak.tzts
+
+    - id: extract-maven-artifacts
+      name: Extract Keycloak Maven artifacts
+      shell: bash
+      run: tar -C ~/ --use-compress-program unzstd -xf m2-keycloak.tzts

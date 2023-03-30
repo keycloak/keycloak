@@ -39,10 +39,6 @@
             <artifactId>keycloak-core</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>${keycloak.crypto.artifactId}</artifactId>
-        </dependency>
-        <dependency>
             <groupId>org.jboss.logging</groupId>
             <artifactId>jboss-logging</artifactId>
         </dependency>
@@ -94,18 +90,6 @@
                                         <include>org/keycloak/common/util/**</include>
                                         <include>org/keycloak/common/crypto/**</include>
                                     </includes>
-                                </filter>
-                                <filter>
-                                    <artifact>org.bouncycastle:bcprov-jdk15on</artifact>
-                                    <includes>
-                                        <include>**/**</include>
-                                    </includes>
-                                </filter>
-                                <filter>
-                                    <artifact>org.bouncycastle:bcpkix-jdk15on</artifact>
-                                    <excludes>
-                                        <exclude>**/**</exclude>
-                                    </excludes>
                                 </filter>
                                 <filter>
                                     <artifact>com.fasterxml.jackson.core:jackson-core</artifact>

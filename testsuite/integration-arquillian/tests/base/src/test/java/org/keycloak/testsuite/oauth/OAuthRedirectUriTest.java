@@ -337,6 +337,20 @@ public class OAuthRedirectUriTest extends AbstractKeycloakTest {
         checkRedirectUri("http://localhost:8280/foo/bar", true, true);
         checkRedirectUri("http://example.com/foobar", false);
         checkRedirectUri("http://localhost:8280/foobar", false, true);
+
+        checkRedirectUri("http://example.com/foo/../", false);
+        checkRedirectUri("http://example.com/foo/%2E%2E/", false); // url-encoded "http://example.com/foobar/../"
+        checkRedirectUri("http://example.com/foo%2F%2E%2E%2F", false); // url-encoded "http://example.com/foobar/../"
+        checkRedirectUri("http://example.com/foo/%252E%252E/", false); // double-encoded "http://example.com/foobar/../"
+        checkRedirectUri("http://example.com/foo/%252E%252E/?some_query_param=some_value", false); // double-encoded "http://example.com/foobar/../?some_query_param=some_value"
+        checkRedirectUri("http://example.com/foo/%252E%252E/?encodeTest=a%3Cb", false); // double-encoded "http://example.com/foobar/../?encodeTest=a<b"
+        checkRedirectUri("http://example.com/foo/%252E%252E/#encodeTest=a%3Cb", false); // double-encoded "http://example.com/foobar/../?encodeTest=a<b"
+        checkRedirectUri("http://example.com/foo/%25252E%25252E/", false); // triple-encoded "http://example.com/foobar/../"
+        checkRedirectUri("http://example.com/foo/%2525252525252E%2525252525252E/", false); // seventh-encoded "http://example.com/foobar/../"
+
+        checkRedirectUri("http://example.com/foo?encodeTest=a%3Cb", true);
+        checkRedirectUri("http://example.com/foo?encodeTest=a%3Cb#encode2=a%3Cb", true);
+        checkRedirectUri("http://example.com/foo/#encode2=a%3Cb", true);
     }
 
     @Test
@@ -381,7 +395,7 @@ public class OAuthRedirectUriTest extends AbstractKeycloakTest {
         oauth.clientId("test-relative-url");
 
         checkRedirectUri("http://with-dash.example.local/foo", false);
-        checkRedirectUri("http://localhost:8180/auth", true);
+        checkRedirectUri(OAuthClient.AUTH_SERVER_ROOT, true);
     }
 
     @Test
@@ -455,6 +469,7 @@ public class OAuthRedirectUriTest extends AbstractKeycloakTest {
             if (!checkCodeToToken) {
                 oauth.openLoginForm();
                 Assert.assertTrue(loginPage.isCurrent());
+                Assert.assertFalse(errorPage.isCurrent());
             } else {
                 oauth.doLogin("test-user@localhost", "password");
 

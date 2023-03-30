@@ -1,0 +1,26 @@
+name: Setup unit test
+description: Download Maven caches needed for unit tests
+
+inputs:
+  jdk-dist:
+    description: JDK distribution
+    required: false
+    default: temurin
+  jdk-version:
+    description: JDK version
+    required: false
+    default: 11
+
+runs:
+  using: composite
+  steps:
+    - id: setup-java
+      name: Setup Java
+      uses: actions/setup-java@v3
+      with:
+        distribution: ${{ inputs.jdk-dist }}
+        java-version: ${{ inputs.jdk-version }}
+
+    - id: maven-cache
+      name: Maven cache
+      uses: ./.github/actions/maven-cache

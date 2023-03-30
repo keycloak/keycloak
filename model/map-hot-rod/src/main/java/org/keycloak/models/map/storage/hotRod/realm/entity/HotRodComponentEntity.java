@@ -1,6 +1,7 @@
 package org.keycloak.models.map.storage.hotRod.realm.entity;
 
-import org.infinispan.protostream.annotations.ProtoDoc;
+import org.infinispan.api.annotations.indexing.Basic;
+import org.infinispan.api.annotations.indexing.Indexed;
 import org.infinispan.protostream.annotations.ProtoField;
 import org.keycloak.models.map.annotations.GenerateHotRodEntityImplementation;
 import org.keycloak.models.map.storage.hotRod.common.AbstractHotRodEntity;
@@ -11,7 +12,7 @@ import java.util.Set;
 @GenerateHotRodEntityImplementation(
         implementInterface = "org.keycloak.models.map.realm.entity.MapComponentEntity"
 )
-@ProtoDoc("@Indexed")
+@Indexed
 public class HotRodComponentEntity extends AbstractHotRodEntity {
     @ProtoField(number = 1)
     public String id;
@@ -22,7 +23,7 @@ public class HotRodComponentEntity extends AbstractHotRodEntity {
     @ProtoField(number = 4)
     public String providerId;
 
-    @ProtoDoc("@Field(index = Index.YES, store = Store.YES)")
+    @Basic(sortable = true)
     @ProtoField(number = 5)
     public String providerType;
 

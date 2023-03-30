@@ -25,7 +25,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand.OPTIMIZED_BUILD_OPTION_LONG;
 
 import org.junit.jupiter.api.Test;
-import org.keycloak.it.cli.StartCommandTest;
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
 
@@ -34,7 +33,35 @@ import io.quarkus.test.junit.main.LaunchResult;
 import org.keycloak.it.utils.KeycloakDistribution;
 
 @DistributionTest
-public class StartCommandDistTest extends StartCommandTest {
+public class StartCommandDistTest {
+
+    @Test
+    @Launch({ "start", "--hostname-strict=false" })
+    void failNoTls(LaunchResult result) {
+        assertTrue(result.getOutput().contains("Key material not provided to setup HTTPS"),
+                () -> "The Output:\n" + result.getOutput() + "doesn't contains the expected string.");
+    }
+
+    @Test
+    @Launch({ "--profile=dev", "start" })
+    void failUsingDevProfile(LaunchResult result) {
+        assertTrue(result.getErrorOutput().contains("ERROR: You can not 'start' the server in development mode. Please re-build the server first, using 'kc.sh build' for the default production mode."),
+                () -> "The Output:\n" + result.getErrorOutput() + "doesn't contains the expected string.");
+    }
+
+    @Test
+    @Launch({ "-v", "start", "--http-enabled=true", "--hostname-strict=false" })
+    void testHttpEnabled(LaunchResult result) {
+        CLIResult cliResult = (CLIResult) result;
+        cliResult.assertStarted();
+    }
+
+    @Test
+    @Launch({ "-v", "start", "--db=dev-mem", OPTIMIZED_BUILD_OPTION_LONG})
+    void failBuildPropertyNotAvailable(LaunchResult result) {
+        CLIResult cliResult = (CLIResult) result;
+        cliResult.assertError("Unknown option: '--db'");
+    }
 
     @Test
     @Launch({ "--profile=dev", "start", "--http-enabled=true", "--hostname-strict=false" })
@@ -52,7 +79,7 @@ public class StartCommandDistTest extends StartCommandTest {
     }
 
     @Test
-    @Launch({ "start", "--http-enabled=true", "--hostname-strict=false", "--cache=local" })
+    @Launch({ "start", "--http-enabled=true", "--hostname-strict=false", "--metrics-enabled=true" })
     void testStartUsingAutoBuild(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
         cliResult.assertMessage("Changes detected in configuration. Updating the server image.");
@@ -61,7 +88,7 @@ public class StartCommandDistTest extends StartCommandTest {
         cliResult.assertMessage(KeycloakDistribution.SCRIPT_CMD + " show-config");
         cliResult.assertMessage("Next time you run the server, just run:");
         cliResult.assertMessage(KeycloakDistribution.SCRIPT_CMD + " start " + OPTIMIZED_BUILD_OPTION_LONG + " --http-enabled=true --hostname-strict=false");
-        assertFalse(cliResult.getOutput().contains("--cache"));
+        assertFalse(cliResult.getOutput().contains("--metrics-enabled"));
         cliResult.assertStarted();
     }
 

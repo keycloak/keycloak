@@ -32,7 +32,7 @@ import org.keycloak.it.utils.RawKeycloakDistribution;
 import io.quarkus.test.junit.main.Launch;
 import io.quarkus.test.junit.main.LaunchResult;
 
-@DistributionTest(reInstall = DistributionTest.ReInstall.BEFORE_TEST)
+@DistributionTest
 @RawDistOnly(reason = "Containers are immutable")
 public class ImportAtStartupDistTest {
 
@@ -84,7 +84,7 @@ public class ImportAtStartupDistTest {
         public void accept(KeycloakDistribution distribution) {
             distribution.copyOrReplaceFileFromClasspath("/quickstart-realm.json", Path.of("data", "import", "realm.json"));
 
-            RawKeycloakDistribution rawDist = (RawKeycloakDistribution) distribution;
+            RawKeycloakDistribution rawDist = distribution.unwrap(RawKeycloakDistribution.class);
 
             rawDist.getDistPath().resolve("data").resolve("import").resolve("sub-dir").toFile().mkdirs();
         }

@@ -16,12 +16,11 @@
  */
 package org.keycloak.connections.jpa;
 
-import org.keycloak.models.KeycloakSession;
-
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
+import org.keycloak.models.KeycloakSession;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

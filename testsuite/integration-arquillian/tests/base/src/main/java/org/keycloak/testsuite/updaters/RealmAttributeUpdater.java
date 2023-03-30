@@ -69,6 +69,11 @@ public class RealmAttributeUpdater extends ServerResourceUpdater<RealmAttributeU
         return this;
     }
 
+    public RealmAttributeUpdater setAccessTokenLifespanForImplicitFlow(Integer lifespan) {
+        rep.setAccessTokenLifespanForImplicitFlow(lifespan);
+        return this;
+    }
+
     public RealmAttributeUpdater setRememberMe(Boolean rememberMe) {
         rep.setRememberMe(rememberMe);
         return this;

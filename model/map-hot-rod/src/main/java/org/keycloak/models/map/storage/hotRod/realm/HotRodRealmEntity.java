@@ -17,6 +17,8 @@
 
 package org.keycloak.models.map.storage.hotRod.realm;
 
+import org.infinispan.api.annotations.indexing.Basic;
+import org.infinispan.api.annotations.indexing.Indexed;
 import org.infinispan.protostream.GeneratedSchema;
 import org.infinispan.protostream.annotations.AutoProtoSchemaBuilder;
 import org.infinispan.protostream.annotations.ProtoDoc;
@@ -75,7 +77,7 @@ import static org.keycloak.models.map.common.ExpirationUtils.isExpired;
         topLevelEntity = true,
         modelClass = "org.keycloak.models.RealmModel"
 )
-@ProtoDoc("@Indexed")
+@Indexed
 @ProtoDoc("schema-version: " + HotRodRealmEntity.VERSION)
 public class HotRodRealmEntity extends AbstractHotRodEntity {
 
@@ -106,14 +108,14 @@ public class HotRodRealmEntity extends AbstractHotRodEntity {
         HotRodRealmEntitySchema INSTANCE = new HotRodRealmEntitySchemaImpl();
     }
 
-    @ProtoDoc("@Field(index = Index.YES, store = Store.YES)")
+    @Basic(projectable = true)
     @ProtoField(number = 1)
     public Integer entityVersion = VERSION;
 
     @ProtoField(number = 2)
     public String id;
 
-    @ProtoDoc("@Field(index = Index.YES, store = Store.YES)")
+    @Basic(sortable = true)
     @ProtoField(number = 3)
     public String name;
 
@@ -242,11 +244,11 @@ public class HotRodRealmEntity extends AbstractHotRodEntity {
     @ProtoField(number = 65)
     public Set<HotRodAuthenticatorConfigEntity> authenticatorConfigs;
 
-    @ProtoDoc("@Field(index = Index.YES, store = Store.YES)")
+    @Basic(sortable = true)
     @ProtoField(number = 66)
     public Set<HotRodClientInitialAccessEntity> clientInitialAccesses;
 
-    @ProtoDoc("@Field(index = Index.YES, store = Store.YES)")
+    @Basic(sortable = true)
     @ProtoField(number = 67)
     public Set<HotRodComponentEntity> components;
 

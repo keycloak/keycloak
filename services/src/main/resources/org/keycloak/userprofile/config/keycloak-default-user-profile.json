@@ -3,6 +3,10 @@
 		{
 			"name": "username",
 			"displayName": "${username}",
+			"permissions": {
+				"view": ["admin", "user"],
+				"edit": ["admin", "user"]
+			},
 			"validations": {
 				"length": { "min": 3, "max": 255 },
 				"username-prohibited-characters": {}
@@ -11,6 +15,11 @@
 		{
 			"name": "email",
 			"displayName": "${email}",
+			"required": {"roles" : ["user"]},
+			"permissions": {
+				"view": ["admin", "user"],
+				"edit": ["admin", "user"]
+			},
 			"validations": {
 				"email" : {},
 				"length": { "max": 255 }

@@ -30,7 +30,7 @@ import java.util.Comparator;
 public interface MapUserCredentialEntity extends UpdatableEntity {
 
     public static MapUserCredentialEntity fromModel(CredentialModel model) {
-        MapUserCredentialEntity credentialEntity = new MapUserCredentialEntityImpl();
+        MapUserCredentialEntity credentialEntity = DeepCloner.DUMB_CLONER.newInstance(MapUserCredentialEntity.class);
         String id = model.getId() == null ? KeycloakModelUtils.generateId() : model.getId();
         credentialEntity.setId(id);
         credentialEntity.setCreatedDate(model.getCreatedDate());

@@ -27,7 +27,9 @@ import java.security.NoSuchAlgorithmException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -174,7 +176,7 @@ public class KeycloakQuarkusServerDeployableContainer implements DeployableConta
     }
 
     private Process startContainer() throws IOException {
-        ProcessBuilder pb = new ProcessBuilder(getProcessCommands());
+        ProcessBuilder pb = getProcessBuilder();
         File wrkDir = configuration.getProvidersPath().resolve("bin").toFile();
         ProcessBuilder builder = pb.directory(wrkDir).redirectErrorStream(true);
 
@@ -199,8 +201,10 @@ public class KeycloakQuarkusServerDeployableContainer implements DeployableConta
         return builder.start();
     }
 
-    private String[] getProcessCommands() {
+    private ProcessBuilder getProcessBuilder() {
         List<String> commands = new ArrayList<>();
+        Map<String, String> env = new HashMap<>();
+
         commands.add(getCommand());
         commands.add("-v");
         commands.add("start");
@@ -209,10 +213,13 @@ public class KeycloakQuarkusServerDeployableContainer implements DeployableConta
 
         if (Boolean.parseBoolean(System.getProperty("auth.server.debug", "false"))) {
             commands.add("--debug");
-            if (configuration.getDebugPort() > 0) {
-                commands.add(Integer.toString(configuration.getDebugPort()));
-            } else {
-                commands.add(System.getProperty("auth.server.debug.port", "5005"));
+
+            String debugPort = configuration.getDebugPort() > 0 ? Integer.toString(configuration.getDebugPort()) : System.getProperty("auth.server.debug.port", "5005");
+            env.put("DEBUG_PORT", debugPort);
+
+            String debugSuspend = System.getProperty("auth.server.debug.suspend");
+            if (debugSuspend != null) {
+                env.put("DEBUG_SUSPEND", debugSuspend);
             }
         }
 
@@ -256,7 +263,12 @@ public class KeycloakQuarkusServerDeployableContainer implements DeployableConta
 
         log.debugf("Quarkus parameters: %s", commands);
 
-        return commands.toArray(new String[0]);
+        String[] processCommands = commands.toArray(new String[0]);
+
+        ProcessBuilder pb = new ProcessBuilder(processCommands);
+        pb.environment().putAll(env);
+
+        return pb;
     }
 
     private void addStorageOptions(StoreProvider storeProvider, List<String> commands) {

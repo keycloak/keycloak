@@ -17,12 +17,12 @@
 package org.keycloak.models.map.authSession;
 
 import org.jboss.logging.Logger;
-import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.map.common.DeepCloner;
 import org.keycloak.models.map.common.TimeAdapter;
 import org.keycloak.models.map.storage.MapKeycloakTransaction;
 import org.keycloak.models.map.storage.MapStorage;
@@ -96,7 +96,7 @@ public class MapRootAuthenticationSessionProvider implements AuthenticationSessi
         LOG.tracef("createRootAuthenticationSession(%s)%s", realm.getName(), getShortStackTrace());
 
         // create map authentication session entity
-        MapRootAuthenticationSessionEntity entity = new MapRootAuthenticationSessionEntityImpl();
+        MapRootAuthenticationSessionEntity entity = DeepCloner.DUMB_CLONER.newInstance(MapRootAuthenticationSessionEntity.class);
         entity.setId(id);
         entity.setRealmId(realm.getId());
         long timestamp = Time.currentTimeMillis();

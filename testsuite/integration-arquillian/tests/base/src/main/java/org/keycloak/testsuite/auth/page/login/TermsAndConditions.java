@@ -16,6 +16,7 @@
  */
 package org.keycloak.testsuite.auth.page.login;
 
+import org.keycloak.models.UserModel;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
@@ -38,7 +39,7 @@ public class TermsAndConditions extends RequiredActions {
 
     @Override
     public String getActionId() {
-        return "terms_and_conditions";
+        return UserModel.RequiredAction.TERMS_AND_CONDITIONS.name();
     }
 
     public void acceptTerms() {

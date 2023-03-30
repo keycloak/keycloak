@@ -32,6 +32,7 @@ import org.keycloak.it.junit5.extension.BeforeStartDistribution;
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
 import org.keycloak.it.junit5.extension.KeepServerAlive;
+import org.keycloak.it.junit5.extension.LegacyStore;
 import org.keycloak.it.junit5.extension.RawDistOnly;
 import org.keycloak.it.utils.KeycloakDistribution;
 
@@ -41,13 +42,14 @@ import io.quarkus.test.junit.main.LaunchResult;
 @DistributionTest(reInstall = DistributionTest.ReInstall.NEVER)
 @RawDistOnly(reason = "Containers are immutable")
 @TestMethodOrder(OrderAnnotation.class)
+@LegacyStore
 public class QuarkusPropertiesDistTest {
 
     private static final String QUARKUS_BUILDTIME_HIBERNATE_METRICS_KEY = "quarkus.hibernate-orm.metrics.enabled";
     private static final String QUARKUS_RUNTIME_CONSOLE_LOGLVL_KEY = "quarkus.log.console.level";
 
     @Test
-    @Launch({ "build", "--cache=local" })
+    @Launch({ "build" })
     @Order(1)
     void testBuildWithPropertyFromQuarkusProperties(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
@@ -106,6 +108,7 @@ public class QuarkusPropertiesDistTest {
     @Order(7)
     void testBuildRunTimeMismatchOnQuarkusBuildPropWarning(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
+        cliResult.assertNoBuild();
         cliResult.assertBuildRuntimeMismatchWarning(QUARKUS_BUILDTIME_HIBERNATE_METRICS_KEY);
     }
 
@@ -126,7 +129,7 @@ public class QuarkusPropertiesDistTest {
         CLIResult cliResult = (CLIResult) result;
         cliResult.assertNoBuild();
         when().get("/metrics").then().statusCode(200)
-                .body(containsString("vendor_hibernate_cache_query_plan_total"));
+                .body(containsString("jvm_gc_"));
     }
 
     public static class UpdateConsoleLogLevelToWarnFromQuarkusProps implements Consumer<KeycloakDistribution> {

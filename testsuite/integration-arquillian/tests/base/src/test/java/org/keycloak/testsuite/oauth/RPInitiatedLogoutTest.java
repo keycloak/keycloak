@@ -83,6 +83,7 @@ import org.keycloak.testsuite.pages.PageUtils;
 import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.updaters.UserAttributeUpdater;
+import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.ClientManager;
 import org.keycloak.testsuite.util.InfinispanTestTimeServiceRule;
 import org.keycloak.testsuite.util.Matchers;
@@ -237,7 +238,7 @@ public class RPInitiatedLogoutTest extends AbstractTestRealmKeycloakTest {
         driver.navigate().to(logoutUrl);
         logoutConfirmPage.assertCurrent();
         logoutConfirmPage.confirmLogout();
-        events.expectLogout(sessionId2).detail(Details.REDIRECT_URI, redirectUri).assertEvent();
+        events.expectLogoutError(Errors.SESSION_EXPIRED);
         MatcherAssert.assertThat(false, is(isSessionActive(sessionId2)));
         assertCurrentUrlEquals(redirectUri + "&state=something");
     }
@@ -260,7 +261,7 @@ public class RPInitiatedLogoutTest extends AbstractTestRealmKeycloakTest {
 
             // should not throw an internal server error. But no logout event is sent as nothing was logged-out
             appPage.assertCurrent();
-            events.assertEmpty();
+            events.expectLogoutError(Errors.SESSION_EXPIRED);
             MatcherAssert.assertThat(false, is(isSessionActive(tokenResponse.getSessionState())));
 
             // check if the back channel logout succeeded
@@ -317,7 +318,7 @@ public class RPInitiatedLogoutTest extends AbstractTestRealmKeycloakTest {
         // Try logout even if user already logged-out by admin. Should redirect back to the application, but no logout-event should be triggered
         String logoutUrl = oauth.getLogoutUrl().postLogoutRedirectUri(APP_REDIRECT_URI).idTokenHint(idTokenString).build();
         driver.navigate().to(logoutUrl);
-        events.assertEmpty();
+        events.expectLogoutError(Errors.SESSION_EXPIRED);
         assertCurrentUrlEquals(APP_REDIRECT_URI);
 
         // Login again in the browser. Ensure to use newest idTokenHint after logout
@@ -377,7 +378,7 @@ public class RPInitiatedLogoutTest extends AbstractTestRealmKeycloakTest {
             assertThat(response, Matchers.statusCodeIsHC(Response.Status.FOUND));
             assertThat(response.getFirstHeader(HttpHeaders.LOCATION).getValue(), is(APP_REDIRECT_URI));
         }
-        events.assertEmpty();
+        events.expectLogoutError(Errors.SESSION_EXPIRED);
 
         MatcherAssert.assertThat(false, is(isSessionActive(tokenResponse.getSessionState())));
     }
@@ -400,7 +401,7 @@ public class RPInitiatedLogoutTest extends AbstractTestRealmKeycloakTest {
             assertThat(response, Matchers.statusCodeIsHC(Response.Status.FOUND));
             assertThat(response.getFirstHeader(HttpHeaders.LOCATION).getValue(), is(APP_REDIRECT_URI));
         }
-        events.assertEmpty();
+        events.expectLogoutError(Errors.SESSION_EXPIRED);
 
         MatcherAssert.assertThat(false, is(isSessionActive(tokenResponse.getSessionState())));
     }
@@ -931,7 +932,7 @@ public class RPInitiatedLogoutTest extends AbstractTestRealmKeycloakTest {
         errorPage.assertCurrent();
         Assert.assertEquals("Logout failed", errorPage.getError());
 
-        events.expectLogoutError(Errors.SESSION_EXPIRED).assertEvent();
+        events.expectLogoutError(Errors.LOGOUT_FAILED).assertEvent();
     }
 
 
@@ -1065,6 +1066,33 @@ public class RPInitiatedLogoutTest extends AbstractTestRealmKeycloakTest {
 
             MatcherAssert.assertThat(false, is(isSessionActive(sessionId)));
             MatcherAssert.assertThat(false, is(isSessionActive(tokenResponse.getSessionState())));
+        }
+    }
+
+    @Test
+    public void logoutWithIdTokenAndRemovedClient() throws Exception {
+        ClientRepresentation clientRep = ClientBuilder.create()
+                .clientId("my-foo-client")
+                .enabled(true)
+                .baseUrl("https://foo/bar")
+                .addRedirectUri(APP_REDIRECT_URI)
+                .secret("password")
+                .build();
+        try (Response response = testRealm().clients().create(clientRep)) {
+            String uuid = ApiUtil.getCreatedId(response);
+            oauth.clientId("my-foo-client");
+
+            OAuthClient.AccessTokenResponse tokenResponse = loginUser();
+
+            // Remove client after login of user
+            testRealm().clients().get(uuid).remove();
+
+            String logoutUrl = oauth.getLogoutUrl().postLogoutRedirectUri(APP_REDIRECT_URI).idTokenHint(tokenResponse.getIdToken()).build();
+            driver.navigate().to(logoutUrl);
+
+            // Invalid redirect URI page is shown. It was not possible to verify post_logout_redirect_uri due the client was removed
+            errorPage.assertCurrent();
+            events.expectLogoutError(OAuthErrorException.INVALID_REDIRECT_URI).detail(Details.REDIRECT_URI, APP_REDIRECT_URI).assertEvent();
         }
     }
 

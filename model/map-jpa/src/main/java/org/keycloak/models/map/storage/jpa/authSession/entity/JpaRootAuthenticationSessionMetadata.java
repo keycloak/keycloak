@@ -27,7 +27,7 @@ public class JpaRootAuthenticationSessionMetadata extends MapRootAuthenticationS
     }
 
     public JpaRootAuthenticationSessionMetadata() {
-        super();
+        super(DeepCloner.DUMB_CLONER);
     }
 
     private Integer entityVersion;

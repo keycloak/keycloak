@@ -29,7 +29,7 @@ import org.keycloak.models.map.singleUseObject.MapSingleUseObjectEntityImpl;
 public class JpaSingleUseObjectMetadata extends MapSingleUseObjectEntityImpl implements Serializable {
 
     public JpaSingleUseObjectMetadata() {
-        super();
+        super(DeepCloner.DUMB_CLONER);
     }
 
     public JpaSingleUseObjectMetadata(final DeepCloner cloner) {

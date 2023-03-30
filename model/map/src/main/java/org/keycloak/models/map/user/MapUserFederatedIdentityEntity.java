@@ -28,7 +28,7 @@ public interface MapUserFederatedIdentityEntity extends UpdatableEntity {
 
     public static MapUserFederatedIdentityEntity fromModel(FederatedIdentityModel model) {
         if (model == null) return null;
-        MapUserFederatedIdentityEntity entity = new MapUserFederatedIdentityEntityImpl();
+        MapUserFederatedIdentityEntity entity = DeepCloner.DUMB_CLONER.newInstance(MapUserFederatedIdentityEntity.class);
         entity.setIdentityProvider(model.getIdentityProvider());
         entity.setUserId(model.getUserId());
         entity.setUserName(model.getUserName().toLowerCase());

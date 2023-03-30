@@ -175,8 +175,8 @@ public abstract class AbstractAdvancedGroupMapperTest extends AbstractGroupMappe
     }
 
     @Override
-    protected String setupScenarioWithMatchingGroup() {
-        String mapperId = createAdvancedGroupMapper(CLAIMS_OR_ATTRIBUTES, false, MAPPER_TEST_GROUP_PATH);
+    protected String setupScenarioWithGroupPath(String groupPath) {
+        String mapperId = createAdvancedGroupMapper(CLAIMS_OR_ATTRIBUTES, false, groupPath);
         createUserInProviderRealm(createMatchingAttributes());
         return mapperId;
     }

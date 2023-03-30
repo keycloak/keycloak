@@ -17,7 +17,7 @@
 
 package org.keycloak.examples.authenticator;
 
-import org.jboss.resteasy.spi.HttpResponse;
+import org.keycloak.http.HttpResponse;
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.authentication.Authenticator;
@@ -96,11 +96,11 @@ public class SecretQuestionAuthenticator implements Authenticator, CredentialVal
     }
 
     public void addCookie(AuthenticationFlowContext context, String name, String value, String path, String domain, String comment, int maxAge, boolean secure, boolean httpOnly) {
-        HttpResponse response = context.getSession().getContext().getContextObject(HttpResponse.class);
+        HttpResponse response = context.getSession().getContext().getHttpResponse();
         StringBuffer cookieBuf = new StringBuffer();
         ServerCookie.appendCookieValue(cookieBuf, 1, name, value, path, domain, comment, maxAge, secure, httpOnly, null);
         String cookie = cookieBuf.toString();
-        response.getOutputHeaders().add(HttpHeaders.SET_COOKIE, cookie);
+        response.addHeader(HttpHeaders.SET_COOKIE, cookie);
     }
 
 

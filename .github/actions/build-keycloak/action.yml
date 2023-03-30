@@ -1,0 +1,82 @@
+name: Build Keycloak
+description: Builds Keycloak providing Maven repository with all artifacts
+
+inputs:
+  upload-m2-repo:
+    description: Upload Maven repository for org.keycloak artifacts
+    required: false
+    default: true
+  upload-dist:
+    description: Upload distribution
+    required: false
+    default: false
+  jdk-dist:
+    description: JDK distribution
+    required: false
+    default: temurin
+  jdk-version:
+    description: JDK version
+    required: false
+    default: 11
+
+runs:
+  using: composite
+  steps:
+    - id: setup-java
+      name: Setup Java
+      uses: actions/setup-java@v3
+      with:
+        distribution: ${{ inputs.jdk-dist }}
+        java-version: ${{ inputs.jdk-version }}
+
+    - id: maven-cache
+      name: Maven cache
+      uses: ./.github/actions/maven-cache
+
+    - id: phantomjs-cache
+      name: PhantomJS cache
+      uses: ./.github/actions/phantomjs-cache
+
+    - id: npm-cache
+      name: NPM cache
+      uses: ./.github/actions/npm-cache
+
+    - id: build-keycloak
+      name: Build Keycloak
+      shell: bash
+      run: |
+        MVN_HTTP_CONFIG="-Dhttp.keepAlive=false -Dmaven.wagon.http.pool=false -Dmaven.wagon.http.retryHandler.class=standard -Dmaven.wagon.http.retryHandler.count=3 -Dmaven.wagon.httpconnectionManager.ttlSeconds=120"
+        ./mvnw install -nsu -B -e -DskipTests -DskipExamples $MVN_HTTP_CONFIG 
+
+    - id: compress-keycloak-maven-repository
+      name: Compress Keycloak Maven artifacts
+      if: inputs.upload-m2-repo == 'true'
+      shell: bash
+      run: |
+        tar -C ~/ --use-compress-program zstd -cf m2-keycloak.tzts \
+        --exclude '*.tar.gz' \
+        .m2/repository/org/keycloak
+
+    - id: upload-keycloak-maven-repository
+      name: Upload Keycloak Maven artifacts
+      if: inputs.upload-m2-repo == 'true'
+      uses: actions/upload-artifact@v3
+      with:
+        name: m2-keycloak.tzts
+        path: m2-keycloak.tzts
+        retention-days: 1
+
+    - id: upload-keycloak-dist
+      name: Upload Keycloak dist
+      if: inputs.upload-dist == 'true'
+      uses: actions/upload-artifact@v3
+      with:
+        name: keycloak-dist
+        path: quarkus/dist/target/keycloak*.tar.gz
+        retention-days: 1
+
+    - id: maven-cache-cleanup
+      name: Maven cache cleanup
+      if: steps.maven-cache.outputs.cache-hit != 'true'
+      shell: bash
+      run: rm -rf ~/.m2/repository/org/keycloak

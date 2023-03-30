@@ -232,6 +232,8 @@ public class LDAPRule extends ExternalResource {
         switch (defaultProperties.getProperty(LDAPEmbeddedServer.PROPERTY_ENABLE_ANONYMOUS_ACCESS)) {
             case "true":
                 config.put(LDAPConstants.AUTH_TYPE, LDAPConstants.AUTH_TYPE_NONE);
+                config.remove(LDAPConstants.BIND_DN);
+                config.remove(LDAPConstants.BIND_CREDENTIAL);
                 break;
             default:
                 // Default to username + password LDAP authentication method

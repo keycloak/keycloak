@@ -18,10 +18,8 @@
 package org.keycloak.testsuite.admin;
 
 import org.hamcrest.Matchers;
-import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataOutput;
 import org.junit.AfterClass;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.admin.client.Keycloak;
@@ -642,12 +640,12 @@ public class PermissionsTest extends AbstractKeycloakTest {
 
         invoke(new Invocation() {
             public void invoke(RealmResource realm) {
-                realm.clients().get(foo.getId()).getCertficateResource("nosuch").uploadJks(new MultipartFormDataOutput());
+                realm.clients().get(foo.getId()).getCertficateResource("nosuch").uploadJks(null);
             }
         }, Resource.CLIENT, true);
         invoke(new Invocation() {
             public void invoke(RealmResource realm) {
-                realm.clients().get(foo.getId()).getCertficateResource("nosuch").uploadJksCertificate(new MultipartFormDataOutput());
+                realm.clients().get(foo.getId()).getCertficateResource("nosuch").uploadJksCertificate(null);
             }
         }, Resource.CLIENT, true);
 
@@ -1727,7 +1725,7 @@ public class PermissionsTest extends AbstractKeycloakTest {
         }, Resource.IDENTITY_PROVIDER, true);
         invoke(new Invocation() {
             public void invoke(RealmResource realm) {
-                realm.identityProviders().importFrom(new MultipartFormDataOutput());
+                realm.identityProviders().importFrom(null);
             }
         }, Resource.IDENTITY_PROVIDER, true);
     }

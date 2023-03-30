@@ -15,4 +15,4 @@
 # * limitations under the License.
 #
 
-org.keycloak.testsuite.admin.client.authorization.MyCustomCIPFactory
+org.keycloak.testsuite.authz.admin.MyCustomCIPFactory

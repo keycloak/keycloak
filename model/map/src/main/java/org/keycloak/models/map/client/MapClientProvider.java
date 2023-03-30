@@ -39,6 +39,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
+import org.keycloak.models.map.common.DeepCloner;
 import org.keycloak.models.map.common.TimeAdapter;
 import org.keycloak.models.map.storage.MapKeycloakTransaction;
 import org.keycloak.models.map.storage.ModelCriteriaBuilder.Operator;
@@ -154,7 +155,7 @@ public class MapClientProvider implements ClientProvider {
             throw new ModelDuplicateException("Client with same clientId in realm " + realm.getName() + " exists: " + clientId);
         }
 
-        MapClientEntity entity = new MapClientEntityImpl();
+        MapClientEntity entity = DeepCloner.DUMB_CLONER.newInstance(MapClientEntity.class);
         entity.setId(id);
         entity.setRealmId(realm.getId());
         entity.setClientId(clientId);

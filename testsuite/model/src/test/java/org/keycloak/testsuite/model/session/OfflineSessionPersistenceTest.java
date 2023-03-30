@@ -85,7 +85,7 @@ public class OfflineSessionPersistenceTest extends KeycloakModelTest {
     }
 
     private static RealmModel prepareRealm(KeycloakSession s, String name) {
-        RealmModel realm = s.realms().createRealm(name);
+        RealmModel realm = createRealm(s, name);
         realm.setDefaultRole(s.roles().addRealmRole(realm, Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + realm.getName()));
         realm.setSsoSessionMaxLifespan(10 * 60 * 60);
         realm.setSsoSessionIdleTimeout(1 * 60 * 60);

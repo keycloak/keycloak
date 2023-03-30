@@ -25,7 +25,7 @@ import javax.ws.rs.core.Response;
  *
  * @author Stan Silvert ssilvert@redhat.com (C) 2016 Red Hat Inc.
  */
-public class ErrorResponseException extends Exception {
+public class ErrorResponseException extends RuntimeException {
     private final Response response;
 
     public ErrorResponseException(Response response) {

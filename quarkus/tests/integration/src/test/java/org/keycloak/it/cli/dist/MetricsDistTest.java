@@ -46,7 +46,7 @@ public class MetricsDistTest {
     void testMetricsEndpoint() {
         when().get("/metrics").then()
                 .statusCode(200)
-                .body(containsString("base_gc_total"));
+                .body(containsString("jvm_gc_"));
     }
 
     @Test
@@ -54,7 +54,7 @@ public class MetricsDistTest {
     void testMetricsEndpointUsingRelativePath() {
         when().get("/auth/metrics").then()
                 .statusCode(200)
-                .body(containsString("base_gc_total"));
+                .body(containsString("jvm_gc_"));
     }
 
     @Test

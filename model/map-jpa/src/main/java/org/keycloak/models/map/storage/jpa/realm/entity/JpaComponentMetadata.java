@@ -33,7 +33,7 @@ public class JpaComponentMetadata extends MapComponentEntityImpl implements Seri
     }
 
     public JpaComponentMetadata() {
-        super();
+        super(DeepCloner.DUMB_CLONER);
     }
 
     private Integer entityVersion;

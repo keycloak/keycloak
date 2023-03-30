@@ -32,7 +32,7 @@ import javax.ws.rs.core.Response;
 import com.webauthn4j.WebAuthnRegistrationManager;
 import com.webauthn4j.data.AuthenticatorTransport;
 import org.jboss.logging.Logger;
-import org.jboss.resteasy.spi.HttpRequest;
+import org.keycloak.http.HttpRequest;
 import org.keycloak.WebAuthnConstants;
 import org.keycloak.authentication.CredentialRegistrator;
 import org.keycloak.authentication.InitiatedActionSupport;

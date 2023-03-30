@@ -29,12 +29,12 @@ import org.keycloak.it.utils.RawKeycloakDistribution;
 import io.quarkus.test.junit.main.Launch;
 import io.quarkus.test.junit.main.LaunchResult;
 
-@DistributionTest(reInstall = DistributionTest.ReInstall.BEFORE_TEST)
+@DistributionTest(createAdminUser = true)
 @RawDistOnly(reason = "Containers are immutable")
 public class FipsDistTest {
 
     @Test
-    @Launch({ "start", "--http-enabled=true", "--hostname-strict=false", "--fips-mode=enabled", "--cache=local", "--log-level=org.keycloak.common.crypto.CryptoIntegration:trace" })
+    @Launch({ "start", "--http-enabled=true", "--hostname-strict=false", "--fips-mode=enabled", "--log-level=org.keycloak.common.crypto.CryptoIntegration:trace" })
     @BeforeStartDistribution(FipsDistTest.InstallBcFipsDependencies.class)
     void testFipsNonApprovedMode(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
@@ -44,7 +44,7 @@ public class FipsDistTest {
     }
 
     @Test
-    @Launch({ "start", "--http-enabled=true", "--hostname-strict=false", "--fips-mode=strict", "--cache=local", "--log-level=org.keycloak.common.crypto.CryptoIntegration:trace" })
+    @Launch({ "start", "--http-enabled=true", "--hostname-strict=false", "--fips-mode=strict", "--log-level=org.keycloak.common.crypto.CryptoIntegration:trace" })
     @BeforeStartDistribution(FipsDistTest.InstallBcFipsDependencies.class)
     void testFipsApprovedMode(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
@@ -55,7 +55,7 @@ public class FipsDistTest {
     }
 
     @Test
-    @Launch({ "start", "--http-enabled=true", "--hostname-strict=false", "--fips-mode=enabled", "--cache=local", "--log-level=org.keycloak.common.crypto.CryptoIntegration:trace" })
+    @Launch({ "start", "--http-enabled=true", "--hostname-strict=false", "--fips-mode=enabled", "--log-level=org.keycloak.common.crypto.CryptoIntegration:trace" })
     void failStartDueToMissingFipsDependencies(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
         cliResult.assertError("Failed to configure FIPS. Make sure you have added the Bouncy Castle FIPS dependencies to the 'providers' directory.");
@@ -65,7 +65,7 @@ public class FipsDistTest {
 
         @Override
         public void accept(KeycloakDistribution distribution) {
-            RawKeycloakDistribution rawDist = (RawKeycloakDistribution) distribution;
+            RawKeycloakDistribution rawDist = distribution.unwrap(RawKeycloakDistribution.class);
             rawDist.copyProvider("org.bouncycastle", "bc-fips");
             rawDist.copyProvider("org.bouncycastle", "bctls-fips");
             rawDist.copyProvider("org.bouncycastle", "bcpkix-fips");

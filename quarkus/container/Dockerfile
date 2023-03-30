@@ -23,7 +23,7 @@ ENV LANG en_US.UTF-8
 COPY --from=build-env --chown=1000:0 /opt/keycloak /opt/keycloak
 
 RUN microdnf update -y && \
-    microdnf install -y --nodocs java-11-openjdk-headless glibc-langpack-en && microdnf clean all && rm -rf /var/cache/yum/* && \
+    microdnf install -y --nodocs java-17-openjdk-headless glibc-langpack-en && microdnf clean all && rm -rf /var/cache/yum/* && \
     echo "keycloak:x:0:root" >> /etc/group && \
     echo "keycloak:x:1000:0:keycloak user:/opt/keycloak:/sbin/nologin" >> /etc/passwd
 

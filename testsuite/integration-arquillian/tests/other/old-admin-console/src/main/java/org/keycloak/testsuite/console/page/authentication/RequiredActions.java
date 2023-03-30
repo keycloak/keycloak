@@ -18,7 +18,7 @@ public class RequiredActions extends Authentication {
     public final static String DEFAULT = ".defaultAction";
     public final static String CONFIGURE_TOTP = "CONFIGURE_TOTP";
     public final static String UPDATE_PROFILE = "UPDATE_PROFILE";
-    public final static String TERMS_AND_CONDITIONS = "terms_and_conditions";
+    public final static String TERMS_AND_CONDITIONS = "TERMS_AND_CONDITIONS";
     public final static String UPDATE_PASSWORD = "UPDATE_PASSWORD";
     public final static String VERIFY_EMAIL = "VERIFY_EMAIL";
 

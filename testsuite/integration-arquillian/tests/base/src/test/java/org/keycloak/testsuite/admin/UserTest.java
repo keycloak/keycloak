@@ -48,6 +48,7 @@ import org.keycloak.models.credential.OTPCredentialModel;
 import org.keycloak.models.credential.PasswordCredentialModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ModelToRepresentation;
+import org.keycloak.models.utils.StripSecretsUtils;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ComponentRepresentation;
@@ -107,9 +108,12 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.lessThanOrEqualTo;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
@@ -181,6 +185,8 @@ public class UserTest extends AbstractAdminTest {
         try (Response response = realm.users().create(userRep)) {
             createdId = ApiUtil.getCreatedId(response);
         }
+
+        StripSecretsUtils.strip(userRep);
 
         if (assertAdminEvent) {
             assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.userResourcePath(createdId), userRep,
@@ -1692,7 +1698,7 @@ public class UserTest extends AbstractAdminTest {
 
         try {
             final AccessToken accessToken = TokenVerifier.create(token, AccessToken.class).getToken();
-            assertEquals(lifespan, accessToken.getExpiration() - accessToken.getIssuedAt());
+            assertThat(accessToken.getExp() - accessToken.getIat(), allOf(greaterThanOrEqualTo(lifespan - 1l), lessThanOrEqualTo(lifespan + 1l)));
         } catch (VerificationException e) {
             throw new IOException(e);
         }
@@ -3112,5 +3118,25 @@ public class UserTest extends AbstractAdminTest {
             assertEquals(parentGroupName, obtainedGroups.get(0).getName());
             assertEquals(subGroupName, obtainedGroups.get(1).getName());
         }
+    }
+
+    @Test
+    public void expectNoPasswordShownWhenCreatingUserWithPassword() throws IOException {
+        CredentialRepresentation credential = new CredentialRepresentation();
+        credential.setType(CredentialRepresentation.PASSWORD);
+        credential.setValue("password");
+
+        UserRepresentation user = new UserRepresentation();
+        user.setUsername("test");
+        user.setCredentials(Collections.singletonList(credential));
+        user.setEnabled(true);
+
+        createUser(user, false);
+
+        String actualRepresentation = assertAdminEvents.poll().getRepresentation();
+        assertEquals(
+            JsonSerialization.writeValueAsString(user),
+            actualRepresentation
+        );
     }
 }

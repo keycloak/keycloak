@@ -1,0 +1,26 @@
+name: PhantomJS Cache
+description: Caches PhantomJS driver
+
+inputs:
+  version:
+    description: PhantomJS Driver version
+    required: false
+    default: 2.1.1
+
+runs:
+  using: composite
+  steps:
+    - id: cache-phantomjs-driver
+      name: PhantomJS Driver cache
+      uses: actions/cache@v3
+      with:
+        path: ~/.arquillian/drone
+        key: phantomjs-${{ inputs.version }}
+
+    - id: download-phantomjs-driver
+      name: Download PhantomJS Driver
+      if: steps.cache-phantomjs-driver.outputs.cache-hit != 'true'
+      shell: bash
+      run: |
+        mkdir -p ~/.arquillian/drone/phantomjs/${{ inputs.version }}/
+        curl -L https://bitbucket.org/ariya/phantomjs/downloads/phantomjs-${{ inputs.version }}-linux-x86_64.tar.bz2 --output ~/.arquillian/drone/phantomjs/${{ inputs.version }}/phantomjs-${{ inputs.version }}-linux-x86_64.tar.bz2

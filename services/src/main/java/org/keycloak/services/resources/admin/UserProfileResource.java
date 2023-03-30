@@ -49,7 +49,7 @@ public class UserProfileResource {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     public String getConfiguration() {
-        auth.realm().requireViewRealm();
+        auth.requireAnyAdminRole();
         return session.getProvider(UserProfileProvider.class).getConfiguration();
     }
 
