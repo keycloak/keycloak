@@ -1428,9 +1428,9 @@ public class LegacyExportImportManager implements ExportImportManager {
         model.setPriority(rep.getPriority());
         model.setDefaultAction(rep.isDefaultAction());
         model.setEnabled(rep.isEnabled());
-        model.setProviderId(rep.getProviderId());
+        model.setProviderId(getDefaultRequiredActionCaseInsensitively(rep.getProviderId()));
         model.setName(rep.getName());
-        model.setAlias(rep.getAlias());
+        model.setAlias(getDefaultRequiredActionCaseInsensitively(rep.getAlias()));
         return model;
     }
 
