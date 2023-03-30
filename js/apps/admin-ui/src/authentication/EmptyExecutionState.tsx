@@ -66,7 +66,7 @@ export const EmptyExecutionState = ({
         {SECTIONS.map((section) => (
           <Flex key={section} className="keycloak__empty-execution-state__help">
             <FlexItem flex={{ default: "flex_1" }}>
-              <Title headingLevel="h3" size={TitleSizes.md}>
+              <Title headingLevel="h2" size={TitleSizes.md}>
                 {t(`${section}Title`)}
               </Title>
               <p>{t(`authentication-help:${section}`)}</p>
