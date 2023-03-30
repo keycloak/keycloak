@@ -166,7 +166,6 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
         if (realm == null) {
             return false;
         }
-        em.refresh(realm);
         final RealmAdapter adapter = new RealmAdapter(session, em, realm);
         session.users().preRemove(adapter);
 
