@@ -22,7 +22,7 @@
     <parent>
         <groupId>org.keycloak</groupId>
         <artifactId>keycloak-rest-parent</artifactId>
-        <version>999-SNAPSHOT</version>
+        <version>21.0.2</version>
     </parent>
 
     <artifactId>keycloak-rest-admin-ui-ext</artifactId>
