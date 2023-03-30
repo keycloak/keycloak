@@ -6,7 +6,8 @@ export default class CredentialsPage {
   private readonly setPasswordBtn = "confirm";
   private readonly credentialResetModal = "credential-reset-modal";
   private readonly resetModalActionsToggleBtn =
-    "[data-testid=credential-reset-modal] #actions";
+    "[data-testid=credential-reset-modal] #actions-actions";
+
   private readonly passwordField = "passwordField";
   private readonly passwordConfirmationField = "passwordConfirmationField";
   private readonly resetActions = [

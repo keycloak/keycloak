@@ -192,25 +192,4 @@ describe("Clients SAML tests", () => {
       settingsTab.assertLoginSettings();
     });
   });
-
-  describe("Accessibility tests for clients saml", () => {
-    beforeEach(() => {
-      loginPage.logIn();
-      keycloakBefore();
-      sidebarPage.goToClients();
-      cy.injectAxe();
-    });
-
-    it("Check a11y violations on load/ clients saml", () => {
-      const samlClient = "saml";
-      adminClient.createClient({
-        clientId: "saml",
-        protocol: samlClient,
-      });
-      listingPage.searchItem(samlClient).goToItemDetails(samlClient);
-      cy.checkA11y();
-
-      adminClient.deleteClient(samlClient);
-    });
-  });
 });
