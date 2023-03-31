@@ -24,16 +24,19 @@ import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.CollectionCertStoreParameters;
 import java.util.Arrays;
-import java.util.Collections;
+import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 import javax.crypto.Cipher;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKeyFactory;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SNIHostName;
+import javax.net.ssl.SNIServerName;
 import javax.net.ssl.SSLParameters;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
@@ -230,9 +233,10 @@ public class FIPS1402Provider implements CryptoProvider {
             log.tracef("Not found keycloakSession in the resteasy context when trying to retrieve hostname attribute from it");
             return delegate;
         }
-        String hostname = session.getAttribute(Constants.SSL_SERVER_HOST_ATTR, String.class);
-        log.tracef("Found hostname '%s' to be used by SSLSocketFactory", hostname);
-        if (hostname == null) return delegate;
+
+        List<String> sslHostnames = session.getAttribute(Constants.SSL_SERVER_HOSTS_ATTR, List.class);
+        log.tracef("Found hostnames '%s' to be used by SSLSocketFactory", sslHostnames);
+        if (sslHostnames == null) return delegate;
 
         // See https://downloads.bouncycastle.org/fips-java/BC-FJA-(D)TLSUserGuide-1.0.9.pdf - Section 3.5.2 (Endpoint identification)
         return new CustomSSLSocketFactory(delegate) {
@@ -241,10 +245,17 @@ public class FIPS1402Provider implements CryptoProvider {
             protected Socket configureSocket(Socket s) {
                 if (s instanceof SSLSocket) {
                     SSLSocket ssl = (SSLSocket)s;
-                    SNIHostName sniHostName = getSNIHostName(hostname);
-                    if (sniHostName != null) {
-                        SSLParameters sslParameters = new SSLParameters();
-                        sslParameters.setServerNames(Collections.singletonList(sniHostName));
+                    List<SNIServerName> sniHostNames = sslHostnames.stream()
+                            .map(this::getSNIHostName)
+                            .filter(Objects::nonNull)
+                            .collect(Collectors.toList());
+
+                    if (!sniHostNames.isEmpty()) {
+                        SSLParameters sslParameters = ssl.getSSLParameters();
+                        if (sslParameters == null) {
+                            sslParameters = new SSLParameters();
+                        }
+                        sslParameters.setServerNames(sniHostNames);
                         ssl.setSSLParameters(sslParameters);
                     }
                 }

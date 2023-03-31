@@ -497,7 +497,7 @@ public class LDAPOperationManager {
         StartTlsResponse tlsResponse = null;
 
         try {
-            LDAPUtils.setLDAPHostnameToKeycloakSession(session, config);
+            LDAPUtils.setLDAPHostnamesToKeycloakSession(session, config);
 
             Hashtable<Object, Object> env = LDAPContextManager.getNonAuthConnectionProperties(config);
 

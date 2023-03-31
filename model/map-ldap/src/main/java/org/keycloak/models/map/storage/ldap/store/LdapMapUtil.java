@@ -21,12 +21,16 @@ import org.jboss.logging.Logger;
 import org.keycloak.common.util.UriUtils;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.map.storage.ldap.config.LdapMapConfig;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.List;
+import java.util.Objects;
 import java.util.TimeZone;
+import java.util.stream.Collectors;
 
 /**
  * <p>Utility class for working with LDAP.</p>
@@ -257,10 +261,17 @@ public class LdapMapUtil {
         }
     }
 
-    public static void setLDAPHostnameToKeycloakSession(KeycloakSession session, LdapMapConfig ldapConfig) {
-        String hostname = UriUtils.getHost(ldapConfig.getConnectionUrl());
-        session.setAttribute(Constants.SSL_SERVER_HOST_ATTR, hostname);
-        logger.tracef("Setting LDAP server hostname '%s' as KeycloakSession attribute", hostname);
+    public static void setLDAPHostnamesToKeycloakSession(KeycloakSession session, LdapMapConfig ldapConfig) {
+        if (ldapConfig.getConnectionUrl() == null) return;
+
+        List<String> ldapHosts = LDAPConstants.toLdapUrls(ldapConfig.getConnectionUrl()).stream()
+                .map(UriUtils::getHost)
+                .filter(Objects::nonNull)
+                .distinct()
+                .collect(Collectors.toList());
+
+        logger.tracef("Setting SSL Server hosts '%s' as KeycloakSession attribute", ldapHosts);
+        session.setAttribute(Constants.SSL_SERVER_HOSTS_ATTR, ldapHosts);
     }
 
 

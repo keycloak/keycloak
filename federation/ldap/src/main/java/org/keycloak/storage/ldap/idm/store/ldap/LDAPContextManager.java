@@ -67,7 +67,7 @@ public final class LDAPContextManager implements AutoCloseable {
     }
 
     private void createLdapContext() throws NamingException {
-        LDAPUtils.setLDAPHostnameToKeycloakSession(session, ldapConfig);
+        LDAPUtils.setLDAPHostnamesToKeycloakSession(session, ldapConfig);
 
         Hashtable<Object, Object> connProp = getConnectionProperties(ldapConfig);
 

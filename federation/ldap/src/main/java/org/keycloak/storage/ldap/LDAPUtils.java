@@ -381,9 +381,16 @@ public class LDAPUtils {
         return userModelProperties;
     }
 
-    public static void setLDAPHostnameToKeycloakSession(KeycloakSession session,LDAPConfig ldapConfig) {
-        String hostname = UriUtils.getHost(ldapConfig.getConnectionUrl());
-        session.setAttribute(Constants.SSL_SERVER_HOST_ATTR, hostname);
-        log.tracef("Setting LDAP server hostname '%s' as KeycloakSession attribute", hostname);
+    public static void setLDAPHostnamesToKeycloakSession(KeycloakSession session, LDAPConfig ldapConfig) {
+        if (ldapConfig.getConnectionUrl() == null) return;
+
+        List<String> ldapHosts = LDAPConstants.toLdapUrls(ldapConfig.getConnectionUrl()).stream()
+                .map(UriUtils::getHost)
+                .filter(Objects::nonNull)
+                .distinct()
+                .collect(Collectors.toList());
+
+        log.tracef("Setting SSL Server hosts '%s' as KeycloakSession attribute", ldapHosts);
+        session.setAttribute(Constants.SSL_SERVER_HOSTS_ATTR, ldapHosts);
     }
 }
