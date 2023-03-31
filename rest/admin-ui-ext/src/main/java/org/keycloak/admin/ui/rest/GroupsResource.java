@@ -1,5 +1,6 @@
 package org.keycloak.admin.ui.rest;
 
+import java.util.List;
 import static org.keycloak.models.utils.ModelToRepresentation.toRepresentation;
 
 import java.util.stream.Collectors;
@@ -68,21 +69,33 @@ public class GroupsResource {
 
     private GroupRepresentation toGroupHierarchy(GroupModel group, final String search, boolean exact) {
         GroupRepresentation rep = toRepresentation(group, true);
-        rep.setAccess(auth.groups().getAccess(group));
         rep.setSubGroups(group.getSubGroupsStream().filter(g ->
                 groupMatchesSearchOrIsPathElement(
                         g, search
                 )
-        ).map(subGroup -> {
-                    final GroupRepresentation subRep = ModelToRepresentation.toGroupHierarchy(
-                            subGroup, true, search, exact
-                    );
-                    subRep.setAccess(auth.groups().getAccess(subGroup));
-                    return subRep;
-                }
+        ).map(subGroup ->
+            ModelToRepresentation.toGroupHierarchy(
+                    subGroup, true, search, exact
+            )
+
         ).collect(Collectors.toList()));
 
+        setAccess(group, rep);
+
         return rep;
+    }
+
+    // set fine-grained access for each group in the tree
+    private void setAccess(GroupModel groupTree, GroupRepresentation rootGroup) {
+        if (rootGroup == null) return;
+
+        rootGroup.setAccess(auth.groups().getAccess(groupTree));
+
+        rootGroup.getSubGroups().stream().forEach(subGroup -> {
+            GroupModel foundGroupModel = groupTree.getSubGroupsStream().filter(g -> g.getId().equals(subGroup.getId())).findFirst().get();
+            setAccess(foundGroupModel, subGroup);
+        });
+
     }
 
     private static boolean groupMatchesSearchOrIsPathElement(GroupModel group, String search) {
