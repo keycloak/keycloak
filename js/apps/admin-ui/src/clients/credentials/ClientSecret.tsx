@@ -17,6 +17,7 @@ import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog"
 import { useAdminClient } from "../../context/auth/AdminClient";
 import { useAlerts } from "../../components/alert/Alerts";
 import useFormatDate from "../../utils/useFormatDate";
+import { useAccess } from "../../context/access/Access";
 
 export type ClientSecretProps = {
   client: ClientRepresentation;
@@ -24,14 +25,22 @@ export type ClientSecretProps = {
   toggle: () => void;
 };
 
-type SecretInputProps = Omit<ClientSecretProps, "client"> & {
+type SecretInputProps = ClientSecretProps & {
   id: string;
   buttonLabel: string;
 };
 
-const SecretInput = ({ id, buttonLabel, secret, toggle }: SecretInputProps) => {
+const SecretInput = ({
+  id,
+  buttonLabel,
+  client,
+  secret,
+  toggle,
+}: SecretInputProps) => {
   const { t } = useTranslation("clients");
   const form = useFormContext<ClientRepresentation>();
+  const { hasAccess } = useAccess();
+  const isManager = hasAccess("manage-clients") || client.access?.configure;
 
   return (
     <Split hasGutter>
@@ -49,7 +58,7 @@ const SecretInput = ({ id, buttonLabel, secret, toggle }: SecretInputProps) => {
       <SplitItem>
         <Button
           variant="secondary"
-          isDisabled={form.formState.isDirty}
+          isDisabled={form.formState.isDirty || !isManager}
           onClick={toggle}
         >
           {t(buttonLabel)}
@@ -117,6 +126,7 @@ export const ClientSecret = ({ client, secret, toggle }: ClientSecretProps) => {
       >
         <SecretInput
           id="kc-client-secret"
+          client={client}
           secret={secret}
           toggle={toggle}
           buttonLabel="regenerate"
@@ -130,6 +140,7 @@ export const ClientSecret = ({ client, secret, toggle }: ClientSecretProps) => {
         <FormGroup label={t("secretRotated")} fieldId="secretRotated">
           <SecretInput
             id="secretRotated"
+            client={client}
             secret={secretRotated}
             toggle={toggleInvalidateConfirm}
             buttonLabel="invalidateSecret"
