@@ -2,6 +2,7 @@ import { useServerInfo } from "../context/server-info/ServerInfoProvider";
 
 export enum Feature {
   DeclarativeUserProfile = "DECLARATIVE_USER_PROFILE",
+  ClientPolicies = "CLIENT_POLICIES",
 }
 
 export default function useIsFeatureEnabled() {
