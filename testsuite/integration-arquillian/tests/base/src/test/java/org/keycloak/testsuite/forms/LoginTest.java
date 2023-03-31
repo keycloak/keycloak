@@ -33,6 +33,7 @@ import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.UserResource;
+import org.keycloak.admin.client.resource.UsersResource;
 import org.keycloak.common.Profile;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.events.Details;
@@ -42,6 +43,7 @@ import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.models.BrowserSecurityHeaders;
 import org.keycloak.models.ClientScopeModel;
+import org.keycloak.models.UserModel.RequiredAction;
 import org.keycloak.models.utils.SessionTimeoutHelper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
@@ -50,6 +52,7 @@ import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.ProfileAssume;
@@ -60,6 +63,7 @@ import org.keycloak.testsuite.pages.AccountUpdateProfilePage;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
 import org.keycloak.testsuite.pages.ErrorPage;
+import org.keycloak.testsuite.pages.LoginConfigTotpPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginPasswordUpdatePage;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
@@ -73,6 +77,7 @@ import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.TokenSignatureUtil;
 import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.testsuite.util.WaitUtils;
+import org.openqa.selenium.Cookie;
 import org.openqa.selenium.JavascriptExecutor;
 
 import static org.hamcrest.Matchers.containsString;
@@ -145,6 +150,9 @@ public class LoginTest extends AbstractTestRealmKeycloakTest {
 
     @Page
     protected LoginPasswordUpdatePage updatePasswordPage;
+
+    @Page
+    protected LoginConfigTotpPage configTotpPage;
 
     @Rule
     public InfinispanTestTimeServiceRule ispnTestTimeService = new InfinispanTestTimeServiceRule(this);
@@ -982,4 +990,36 @@ public class LoginTest extends AbstractTestRealmKeycloakTest {
         events.expectLogin().user(userId).assertEvent();
     }
 
+    @Test
+    public void testExecuteActionIfSessionExists() {
+        loginPage.open();
+        loginPage.login("test-user@localhost", "password");
+        Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        events.expectLogin().assertEvent();
+
+        UsersResource users = adminClient.realm("test").users();
+        UserRepresentation user = users.search("test-user@localhost").get(0);
+
+        user.setRequiredActions(List.of(RequiredAction.CONFIGURE_TOTP.name()));
+
+        try {
+            users.get(user.getId()).update(user);
+
+            driver.navigate().to(oauth.getLoginFormUrl());
+
+            // make sure the authentication session is no longer available
+            for (Cookie cookie : driver.manage().getCookies()) {
+                if (cookie.getName().startsWith(AuthenticationSessionManager.AUTH_SESSION_ID)) {
+                    driver.manage().deleteCookie(cookie);
+                }
+            }
+
+            driver.navigate().to(oauth.getLoginFormUrl());
+            configTotpPage.assertCurrent();
+        } finally {
+            user.setRequiredActions(List.of());
+            users.get(user.getId()).update(user);
+        }
+
+    }
 }
