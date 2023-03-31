@@ -76,7 +76,7 @@
         <cxf.undertow.version>3.3.10</cxf.undertow.version>
         <dom4j.version>2.1.3</dom4j.version>
         <h2.version>2.1.214</h2.version>
-        <hibernate-orm.version>6.2.0.CR4</hibernate-orm.version>
+        <hibernate-orm.version>6.2.0.Final</hibernate-orm.version>
         <hibernate.c3p0.version>${hibernate-orm.version}</hibernate.c3p0.version>
         <infinispan.version>14.0.4.Final</infinispan.version>
         <infinispan.protostream.processor.version>4.6.0.Final</infinispan.protostream.processor.version>
