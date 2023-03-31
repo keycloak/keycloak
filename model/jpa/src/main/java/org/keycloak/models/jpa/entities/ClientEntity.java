@@ -226,14 +226,7 @@ public class ClientEntity {
     }
 
     public void setWebOrigins(Set<String> webOrigins) {
-        // Workaround to avoid a problem in Hibernate 6.2.CR3: https://hibernate.atlassian.net/browse/HHH-16337
-        // Tracked via GitHub issue: https://github.com/keycloak/keycloak/issues/19162
-        if (this.webOrigins != null) {
-            this.webOrigins.clear();
-            this.webOrigins.addAll(webOrigins);
-        } else {
-            this.webOrigins = webOrigins;
-        }
+        this.webOrigins = webOrigins;
     }
 
     public Set<String> getRedirectUris() {
@@ -244,14 +237,7 @@ public class ClientEntity {
     }
 
     public void setRedirectUris(Set<String> redirectUris) {
-        // Workaround to avoid a problem in Hibernate 6.2.CR3: https://hibernate.atlassian.net/browse/HHH-16337
-        // Tracked via GitHub issue: https://github.com/keycloak/keycloak/issues/19162
-        if (this.redirectUris != null) {
-            this.redirectUris.clear();
-            this.redirectUris.addAll(redirectUris);
-        } else {
-            this.redirectUris = redirectUris;
-        }
+        this.redirectUris = redirectUris;
     }
 
     public String getClientAuthenticatorType() {
