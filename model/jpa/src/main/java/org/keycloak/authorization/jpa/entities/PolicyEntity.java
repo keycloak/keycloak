@@ -41,9 +41,7 @@ import jakarta.persistence.UniqueConstraint;
 import org.hibernate.annotations.BatchSize;
 import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.FetchMode;
-import org.hibernate.annotations.JdbcType;
 import org.hibernate.annotations.Nationalized;
-import org.hibernate.type.descriptor.jdbc.VarcharJdbcType;
 import org.keycloak.representations.idm.authorization.DecisionStrategy;
 import org.keycloak.representations.idm.authorization.Logic;
 
@@ -88,11 +86,9 @@ public class PolicyEntity {
     private String type;
 
     @Column(name = "DECISION_STRATEGY")
-    @JdbcType(VarcharJdbcType.class)
     private DecisionStrategy decisionStrategy = DecisionStrategy.UNANIMOUS;
 
     @Column(name = "LOGIC")
-    @JdbcType(VarcharJdbcType.class)
     private Logic logic = Logic.POSITIVE;
 
     @ElementCollection(fetch = FetchType.LAZY)
