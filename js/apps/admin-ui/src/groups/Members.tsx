@@ -115,6 +115,13 @@ export const Members = () => {
     });
   };
 
+  const removeAriaHidden = () => {
+    const appDiv = document.getElementById("app");
+    if (appDiv) {
+      appDiv.removeAttribute("aria-hidden");
+    }
+  };
+
   return (
     <>
       {addMembers && (
@@ -123,6 +130,7 @@ export const Members = () => {
           onClose={() => {
             setAddMembers(false);
             refresh();
+            removeAriaHidden();
           }}
         />
       )}
@@ -189,6 +197,7 @@ export const Members = () => {
                         }
 
                         refresh();
+                        removeAriaHidden();
                       }}
                     >
                       {t("leave")}
