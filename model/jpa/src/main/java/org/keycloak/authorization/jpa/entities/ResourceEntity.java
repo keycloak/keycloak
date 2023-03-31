@@ -145,16 +145,7 @@ public class ResourceEntity {
     }
 
     public void setUris(Set<String> uris) {
-        // Workaround to avoid a problem in Hibernate 6.2.CR3: https://hibernate.atlassian.net/browse/HHH-16337
-        // Tracked via GitHub issue: https://github.com/keycloak/keycloak/issues/19162
-        if (this.uris != null) {
-            this.uris.clear();
-            if (uris != null) {
-                this.uris.addAll(uris);
-            }
-        } else {
-            this.uris = uris;
-        }
+        this.uris = uris;
     }
 
     public String getType() {
