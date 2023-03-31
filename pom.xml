@@ -79,7 +79,7 @@
         <h2.version>2.1.214</h2.version>
         <jakarta.persistence.version>2.2.3</jakarta.persistence.version>
         <jakarta.servlet.jakarta-servlet-api.version>6.0.0</jakarta.servlet.jakarta-servlet-api.version>
-        <hibernate-orm.version>6.2.0.CR4</hibernate-orm.version>
+        <hibernate-orm.version>6.2.0.Final</hibernate-orm.version>
         <hibernate.c3p0.version>${hibernate-orm.version}</hibernate.c3p0.version>
         <infinispan.version>14.0.7.Final</infinispan.version>
         <infinispan.protostream.processor.version>4.6.0.Final</infinispan.protostream.processor.version>
