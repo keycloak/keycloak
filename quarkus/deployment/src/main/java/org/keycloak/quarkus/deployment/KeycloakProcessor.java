@@ -323,12 +323,6 @@ class KeycloakProcessor {
         if (storage != null && Objects.equals(storage.getValue(), StorageOptions.StorageType.jpa.name())) {
             // if JPA map storage is enabled, pass on the property to 'EventListenerIntegrator' to activate the necessary event listeners for JPA map storage
             unitProperties.setProperty(EventListenerIntegrator.JPA_MAP_STORAGE_ENABLED, Boolean.TRUE.toString());
-        } else {
-            // With the update to Hibernate 6.2.CR3, when updating multiple entities with a composite key and non-primitive parameters,
-            // this started to fail with the legacy store. As a workaround, ordering updates is disabled.
-            // This might have a negative performance impact for batch updates, and should therefore be reverted.
-            // https://github.com/keycloak/keycloak/issues/19321
-            unitProperties.setProperty(AvailableSettings.ORDER_UPDATES, Boolean.FALSE.toString());
         }
 
         unitProperties.setProperty(AvailableSettings.QUERY_STARTUP_CHECKING, Boolean.FALSE.toString());
