@@ -117,8 +117,16 @@ export const Members = () => {
 
   const removeAriaHidden = () => {
     const appDiv = document.getElementById("app");
+    const element = document.querySelector(
+      'div[aria-hidden="true"]:nth-child(5)'
+    );
+
     if (appDiv) {
       appDiv.removeAttribute("aria-hidden");
+    }
+
+    if (element) {
+      element.removeAttribute("aria-hidden");
     }
   };
 
@@ -129,8 +137,8 @@ export const Members = () => {
           groupId={id!}
           onClose={() => {
             setAddMembers(false);
-            refresh();
             removeAriaHidden();
+            refresh();
           }}
         />
       )}
@@ -226,7 +234,7 @@ export const Members = () => {
                     } catch (error) {
                       addError("groups:usersLeftError", error);
                     }
-
+                    removeAriaHidden();
                     return true;
                   },
                 } as Action<UserRepresentation>,
