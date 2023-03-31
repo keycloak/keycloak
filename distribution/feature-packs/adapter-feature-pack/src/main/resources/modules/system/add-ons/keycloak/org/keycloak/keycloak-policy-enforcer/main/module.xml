@@ -31,6 +31,7 @@
         <module name="javax.ws.rs.api"/>
         <module name="org.keycloak.keycloak-core"/>
         <module name="org.keycloak.keycloak-common"/>
+        <module name="org.keycloak.keycloak-authz-client"/>
         <module name="org.apache.httpcomponents"/>
         <module name="com.fasterxml.jackson.core.jackson-core"/>
         <module name="com.fasterxml.jackson.core.jackson-annotations"/>

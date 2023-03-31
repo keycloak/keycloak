@@ -6,7 +6,8 @@ export default class CredentialsPage {
   private readonly setPasswordBtn = "confirm";
   private readonly credentialResetModal = "credential-reset-modal";
   private readonly resetModalActionsToggleBtn =
-    "[data-testid=credential-reset-modal] #actions";
+    "[data-testid=credential-reset-modal] #actions-actions";
+
   private readonly passwordField = "passwordField";
   private readonly passwordConfirmationField = "passwordConfirmationField";
   private readonly resetActions = [
@@ -14,7 +15,7 @@ export default class CredentialsPage {
     "UPDATE_PROFILE-option",
     "CONFIGURE_TOTP-option",
     "UPDATE_PASSWORD-option",
-    "terms_and_conditions-option",
+    "TERMS_AND_CONDITIONS-option",
   ];
   private readonly confirmationButton = "confirm";
   private readonly editLabelBtn = "editUserLabelBtn";

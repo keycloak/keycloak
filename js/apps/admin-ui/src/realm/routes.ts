@@ -1,6 +1,6 @@
-import type { RouteDef } from "../route-config";
+import type { AppRouteObject } from "../routes";
 import { AddRealmRoute } from "./routes/AddRealm";
 
-const routes: RouteDef[] = [AddRealmRoute];
+const routes: AppRouteObject[] = [AddRealmRoute];
 
 export default routes;

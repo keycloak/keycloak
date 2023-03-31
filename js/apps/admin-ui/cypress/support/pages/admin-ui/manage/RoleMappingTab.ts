@@ -12,7 +12,7 @@ export default class RoleMappingTab {
   private hideInheritedRolesBtn = "#hideInheritedRoles";
   private assignedRolesTable = "assigned-roles";
   private namesColumn = 'td[data-label="Name"]:visible';
-  private actionBtn = 'button[aria-label="Actions"]';
+  private roleMappingTab = "role-mapping-tab";
 
   constructor(type: string) {
     this.type = type;
@@ -88,6 +88,11 @@ export default class RoleMappingTab {
     } else {
       cy.findByTestId(this.assignedRolesTable).should("not.exist");
     }
+    return this;
+  }
+
+  goToRoleMappingTab() {
+    cy.findByTestId(this.roleMappingTab).click();
     return this;
   }
 }

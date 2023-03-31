@@ -11,6 +11,9 @@ import PasswordPolicies from "../support/pages/admin-ui/manage/authentication/Pa
 import ModalUtils from "../support/util/ModalUtils";
 import CommonPage from "../support/pages/CommonPage";
 import BindFlowModal from "../support/pages/admin-ui/manage/authentication/BindFlowModal";
+import OTPPolicies from "../support/pages/admin-ui/manage/authentication/OTPPolicies";
+import WebAuthnPolicies from "../support/pages/admin-ui/manage/authentication/WebAuthnPolicies";
+import CIBAPolicyPage from "../support/pages/admin-ui/manage/authentication/CIBAPolicyPage";
 
 const loginPage = new LoginPage();
 const masthead = new Masthead();
@@ -251,5 +254,86 @@ describe("Password policies tab", () => {
     passwordPoliciesPage.removePolicy("remove-passwordHistory").save();
     masthead.checkNotificationMessage("Password policies successfully updated");
     passwordPoliciesPage.shouldShowEmptyState();
+  });
+});
+
+describe("Accessibility tests for authentication", () => {
+  const realmName = "a11y-realm";
+  const flowName = "SubFlow";
+  const requiredActionsPage = new RequiredActions();
+  const passwordPoliciesPage = new PasswordPolicies();
+  const otpPoliciesPage = new OTPPolicies();
+  const webAuthnPolicies = new WebAuthnPolicies();
+  const detailPage = new FlowDetails();
+
+  before(() => adminClient.createRealm(realmName));
+  after(() => adminClient.deleteRealm(realmName));
+
+  beforeEach(() => {
+    loginPage.logIn();
+    keycloakBefore();
+    sidebarPage.goToRealm(realmName);
+    sidebarPage.goToAuthentication();
+    cy.injectAxe();
+  });
+
+  it("Check a11y violations on load/ authentication tab/ flows sub tab", () => {
+    cy.checkA11y();
+  });
+
+  it("Check a11y violations on load/ authentication tab/ flows sub tab/ creating flow form", () => {
+    listingPage.goToCreateItem();
+    cy.checkA11y();
+    cy.findByTestId("cancel").click();
+  });
+
+  it("Check a11y violations on load/ authentication tab/ flows sub tab/ creating flow", () => {
+    listingPage.goToCreateItem();
+    detailPage.fillCreateForm(
+      flowName,
+      "Some nice description about what this flow does",
+      "Client flow"
+    );
+    cy.checkA11y();
+  });
+
+  it("Check a11y violations on load/ authentication tab/ flows sub tab/ creating flow form", () => {
+    listingPage.goToItemDetails("reset credentials");
+    cy.checkA11y();
+  });
+
+  it("Check a11y violations on load/ authentication tab/ required actions sub tab", () => {
+    requiredActionsPage.goToTab();
+    cy.checkA11y();
+  });
+
+  it("Check a11y violations on load/ policies tab/ password policy sub tab", () => {
+    passwordPoliciesPage.goToTab();
+    cy.checkA11y();
+  });
+
+  it("Check a11y violations on load/ authentication tab/ policies sub tab/ adding policy", () => {
+    passwordPoliciesPage.goToTab().addPolicy("Not Recently Used");
+    cy.checkA11y();
+  });
+
+  it("Check a11y violations on load/ policies tab/ otp policy sub tab", () => {
+    otpPoliciesPage.goToTab();
+    cy.checkA11y();
+  });
+
+  it("Check a11y violations on load/ policies tab/ WebAuthn Policies sub tab", () => {
+    webAuthnPolicies.goToTab();
+    cy.checkA11y();
+  });
+
+  it("Check a11y violations on load/ policies tab/ WebAuthn Passwordless Policies sub tab", () => {
+    webAuthnPolicies.goToPasswordlessTab();
+    cy.checkA11y();
+  });
+
+  it("Check a11y violations on load/ policies tab/ CIBA Policy sub tab", () => {
+    CIBAPolicyPage.goToTab();
+    cy.checkA11y();
   });
 });

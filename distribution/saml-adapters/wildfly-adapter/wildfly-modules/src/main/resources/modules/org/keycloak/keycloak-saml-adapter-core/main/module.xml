@@ -38,6 +38,11 @@
         <module name="org.keycloak.keycloak-core"/>
         <module name="org.keycloak.keycloak-crypto-default" services="import"/>
         <module name="org.apache.httpcomponents"/>
+        <module name="org.apache.santuario.xmlsec">
+            <imports>
+                <exclude path="javax/*"/>
+            </imports>
+        </module>
     </dependencies>
 
 </module>

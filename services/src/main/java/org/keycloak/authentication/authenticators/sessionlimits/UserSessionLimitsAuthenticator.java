@@ -2,6 +2,7 @@ package org.keycloak.authentication.authenticators.sessionlimits;
 
 import java.util.Collections;
 import org.jboss.logging.Logger;
+import org.keycloak.authentication.AuthenticationFlowException;
 import org.keycloak.authentication.Authenticator;
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.AuthenticationFlowError;
@@ -43,6 +44,10 @@ public class UserSessionLimitsAuthenticator implements Authenticator {
     @Override
     public void authenticate(AuthenticationFlowContext context) {
         AuthenticatorConfigModel authenticatorConfig = context.getAuthenticatorConfig();
+        if (authenticatorConfig == null) {
+            throw new AuthenticationFlowException("No configuration found of 'User Session Count Limiter' authenticator. Please make sure to configure this authenticator in your authentication flow in the realm '" + context.getRealm().getName() + "'!"
+                    , AuthenticationFlowError.INTERNAL_ERROR);
+        }
         Map<String, String> config = authenticatorConfig.getConfig();
 
         // Get the configuration for this authenticator

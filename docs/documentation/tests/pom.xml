@@ -10,22 +10,28 @@
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>default-jar</id>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
                 <configuration>
-                    <source>1.8</source>
-                    <target>1.8</target>
+                    <skip>true</skip>
                 </configuration>
             </plugin>
 
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-jar-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>default-jar</id>
-                        <phase>none</phase>
-                    </execution>
-                </executions>
+                <artifactId>maven-deploy-plugin</artifactId>
+                <configuration>
+                    <skip>true</skip>
+                </configuration>
             </plugin>
 
             <plugin>
@@ -50,10 +56,10 @@
         <groupId>org.keycloak.documentation</groupId>
         <artifactId>documentation-parent</artifactId>
         <version>999.0.0-SNAPSHOT</version>
-        <relativePath>../</relativePath>
+        <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <name>Tests</name>
+    <name>Keycloak Documentation tests</name>
     <artifactId>tests</artifactId>
     <packaging>jar</packaging>
 
@@ -85,6 +91,18 @@
         <dependency>
             <groupId>org.keycloak.documentation</groupId>
             <artifactId>server-development</artifactId>
+            <version>${project.version}</version>
+            <type>pom</type>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak.documentation</groupId>
+            <artifactId>upgrading</artifactId>
+            <version>${project.version}</version>
+            <type>pom</type>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak.documentation</groupId>
+            <artifactId>release-notes</artifactId>
             <version>${project.version}</version>
             <type>pom</type>
         </dependency>
@@ -124,6 +142,10 @@
             <artifactId>httpclient5</artifactId>
             <version>5.0.1</version>
             <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-log4j12</artifactId>
         </dependency>
     </dependencies>
 

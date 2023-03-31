@@ -1,4 +1,4 @@
-import type { RouteDef } from "../route-config";
+import type { AppRouteObject } from "../routes";
 import { KeyProviderFormRoute } from "./routes/KeyProvider";
 import {
   RealmSettingsRoute,
@@ -20,7 +20,7 @@ import { AttributeRoute } from "./routes/Attribute";
 import { NewAttributesGroupRoute } from "./routes/NewAttributesGroup";
 import { EditAttributesGroupRoute } from "./routes/EditAttributesGroup";
 
-const routes: RouteDef[] = [
+const routes: AppRouteObject[] = [
   RealmSettingsRoute,
   RealmSettingsRouteWithTab,
   KeysRoute,

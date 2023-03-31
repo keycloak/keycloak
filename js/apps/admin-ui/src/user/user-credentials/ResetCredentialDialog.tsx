@@ -3,7 +3,7 @@ import { FormProvider, useForm, useWatch } from "react-hook-form";
 import { ModalVariant, Form, AlertVariant } from "@patternfly/react-core";
 
 import type { RequiredActionAlias } from "@keycloak/keycloak-admin-client/lib/defs/requiredActionProviderRepresentation";
-import { CredentialsResetActionMultiSelect } from "./CredentialsResetActionMultiSelect";
+import { RequiredActionMultiSelect } from "./RequiredActionMultiSelect";
 import { ConfirmDialogModal } from "../../components/confirm-dialog/ConfirmDialog";
 import { useAdminClient } from "../../context/auth/AdminClient";
 import { useAlerts } from "../../components/alert/Alerts";
@@ -84,7 +84,11 @@ export const ResetCredentialDialog = ({
         data-testid="credential-reset-modal"
       >
         <FormProvider {...form}>
-          <CredentialsResetActionMultiSelect />
+          <RequiredActionMultiSelect
+            name="actions"
+            label="resetActions"
+            help="clients-help:resetActions"
+          />
           <LifespanField />
         </FormProvider>
       </Form>

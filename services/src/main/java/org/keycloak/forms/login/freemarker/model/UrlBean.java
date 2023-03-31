@@ -18,10 +18,12 @@ package org.keycloak.forms.login.freemarker.model;
 
 import static org.keycloak.protocol.oidc.grants.device.DeviceGrantType.realmOAuth2DeviceVerificationAction;
 
+import org.jboss.logging.Logger;
 import org.keycloak.models.RealmModel;
 import org.keycloak.services.Urls;
 import org.keycloak.theme.Theme;
 
+import java.io.IOException;
 import java.net.URI;
 
 /**
@@ -29,6 +31,7 @@ import java.net.URI;
  */
 public class UrlBean {
 
+    private static final Logger logger = Logger.getLogger(UrlBean.class);
     private final URI actionuri;
     private URI baseURI;
     private Theme theme;
@@ -126,6 +129,15 @@ public class UrlBean {
 
     public String getResourcesCommonPath() {
         URI uri = Urls.themeRoot(baseURI);
-        return uri.getPath() + "/common/keycloak";
+        String commonPath = "";
+        try {
+            commonPath = theme.getProperties().getProperty("import");
+        } catch (IOException ex) {
+            logger.warn("Failed to load properties", ex);
+        }
+        if (commonPath == null || commonPath.isEmpty()) {
+            commonPath = "/common/keycloak";
+        }
+        return uri.getPath() + "/" + commonPath;
     }
 }

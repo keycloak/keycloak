@@ -57,6 +57,7 @@ Impersonated user sessions provide the following details:
 Service account sessions provide the following details:
 
 * *clientId*: The client ID of the service account.
+* *client_id*: The client ID of the service account.
 * *clientAddress*: The remote host IP of the service account's authenticated device.
 * *clientHost*: The remote host name of the service account's authenticated device.
 

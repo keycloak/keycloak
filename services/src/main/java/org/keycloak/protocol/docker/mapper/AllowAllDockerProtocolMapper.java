@@ -41,10 +41,12 @@ public class AllowAllDockerProtocolMapper extends DockerAuthV2ProtocolMapper imp
 
         responseToken.getAccessItems().clear();
 
-        final String requestedScope = clientSession.getNote(DockerAuthV2Protocol.SCOPE_PARAM);
-        if (requestedScope != null) {
-            final DockerAccess allRequestedAccess = new DockerAccess(requestedScope);
-            responseToken.getAccessItems().add(allRequestedAccess);
+        final String requestedScopes = clientSession.getNote(DockerAuthV2Protocol.SCOPE_PARAM);
+        if (requestedScopes != null) {
+            for (String requestedScope : requestedScopes.split(" ")) {
+                final DockerAccess requestedAccess = new DockerAccess(requestedScope);
+                responseToken.getAccessItems().add(requestedAccess);
+            }
         }
 
         return responseToken;

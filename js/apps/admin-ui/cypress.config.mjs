@@ -22,11 +22,4 @@ export default defineConfig({
     slowTestThreshold: 30000,
     specPattern: "cypress/e2e/**/*.{js,jsx,ts,tsx}",
   },
-
-  component: {
-    devServer: {
-      framework: "react",
-      bundler: "vite",
-    },
-  },
 });

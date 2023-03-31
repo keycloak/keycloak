@@ -21,13 +21,13 @@ public class ExportOptions {
 
     public static final Option<String> FILE = new OptionBuilder<>("file", String.class)
             .category(OptionCategory.EXPORT)
-            .hidden() // hidden for now until we refactor the import command
+            .description("Set the path to a file that will be created with the exported data.")
             .buildTime(false)
             .build();
 
     public static final Option<String> DIR = new OptionBuilder<>("dir", String.class)
             .category(OptionCategory.EXPORT)
-            .hidden() // hidden for now until we refactor the import command
+            .description("Set the path to a directory where files will be created with the exported data.")
             .buildTime(false)
             .build();
 

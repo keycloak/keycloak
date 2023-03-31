@@ -1,6 +1,6 @@
-import type { RouteDef } from "../route-config";
+import type { AppRouteObject } from "../routes";
 import { GroupsRoute, GroupsWithIdRoute } from "./routes/Groups";
 
-const routes: RouteDef[] = [GroupsRoute, GroupsWithIdRoute];
+const routes: AppRouteObject[] = [GroupsRoute, GroupsWithIdRoute];
 
 export default routes;

@@ -12,6 +12,8 @@ import adminClient from "../support/util/AdminClient";
 import CredentialsPage from "../support/pages/admin-ui/manage/users/CredentialsPage";
 import UsersPage from "../support/pages/admin-ui/manage/users/UsersPage";
 import IdentityProviderLinksTab from "../support/pages/admin-ui/manage/users/user_details/tabs/IdentityProviderLinksTab";
+import RoleMappingTab from "../support/pages/admin-ui/manage/RoleMappingTab";
+import CommonPage from "../support/pages/CommonPage";
 
 let groupName = "group";
 let groupsList: string[] = [];
@@ -441,5 +443,134 @@ describe("User creation", () => {
     sidebarPage.waitForPageLoad();
 
     listingPage.itemExist(itemIdWithCred, false);
+  });
+
+  describe("Accessibility tests for users", () => {
+    const a11yUser = "a11y-user";
+    const role = "admin";
+    const roleMappingTab = new RoleMappingTab("");
+
+    beforeEach(() => {
+      loginPage.logIn();
+      keycloakBefore();
+      sidebarPage.goToUsers();
+      cy.injectAxe();
+    });
+
+    it("Check a11y violations on load/ users list", () => {
+      cy.checkA11y();
+    });
+
+    it("Check a11y violations on empty create user form", () => {
+      createUserPage.goToCreateUser();
+      cy.checkA11y();
+    });
+
+    it("Check a11y violations on user details tab", () => {
+      createUserPage.goToCreateUser();
+      createUserPage.createUser(a11yUser);
+      userDetailsPage.fillUserData();
+      createUserPage.save();
+      cy.checkA11y();
+    });
+
+    it("Check a11y violations on user attributes tab", () => {
+      usersPage.goToUserListTab().goToUserDetailsPage(a11yUser);
+      attributesTab.goToAttributesTab();
+      cy.checkA11y();
+    });
+
+    it("Check a11y violations on user credentials tab setting a password", () => {
+      usersPage.goToUserListTab().goToUserDetailsPage(a11yUser);
+      credentialsPage.goToCredentialsTab();
+      credentialsPage
+        .clickEmptyStatePasswordBtn()
+        .fillPasswordForm()
+        .clickConfirmationBtn()
+        .clickSetPasswordBtn();
+      cy.checkA11y();
+    });
+
+    it("Check a11y violations on user credentials tab resetting a password", () => {
+      usersPage.goToUserListTab().goToUserDetailsPage(a11yUser);
+      credentialsPage.goToCredentialsTab();
+      credentialsPage.clickResetBtn();
+      cy.checkA11y();
+      modalUtils.cancelModal();
+    });
+
+    it("Check a11y violations on user role mapping tab", () => {
+      usersPage.goToUserListTab().goToUserDetailsPage(a11yUser);
+      roleMappingTab.goToRoleMappingTab();
+      cy.checkA11y();
+    });
+
+    it("Check a11y violations on user role mapping tab assigning a role dialog", () => {
+      usersPage.goToUserListTab().goToUserDetailsPage(a11yUser);
+      roleMappingTab.goToRoleMappingTab();
+      cy.findByTestId("assignRole").click();
+      cy.checkA11y();
+      roleMappingTab.selectRow(role).assign();
+    });
+
+    it("Check a11y violations on user groups tab", () => {
+      usersPage.goToUserListTab().goToUserDetailsPage(a11yUser);
+      userGroupsPage.goToGroupsTab();
+      cy.checkA11y();
+    });
+
+    it("Check a11y violations on user groups tab joining group dialog", () => {
+      usersPage.goToUserListTab().goToUserDetailsPage(a11yUser);
+      userGroupsPage.goToGroupsTab();
+      cy.findByTestId("no-groups-empty-action").click();
+      cy.checkA11y();
+    });
+
+    it("Check a11y violations on user groups tab joining group", () => {
+      usersPage.goToUserListTab().goToUserDetailsPage(a11yUser);
+      userGroupsPage.goToGroupsTab();
+      cy.findByTestId("no-groups-empty-action").click();
+      const groupsListCopy = groupsList.slice(0, 1);
+      groupsListCopy.forEach((element) => {
+        cy.findByTestId(`${element}-check`).click();
+      });
+
+      createUserPage.joinGroups();
+      cy.checkA11y();
+    });
+
+    it("Check a11y violations on user consents tab", () => {
+      usersPage.goToUserListTab().goToUserDetailsPage(a11yUser);
+      userDetailsPage.goToConsentsTab();
+      cy.checkA11y();
+    });
+
+    it("Check a11y violations on user identity provider links tab", () => {
+      usersPage.goToUserListTab().goToUserDetailsPage(a11yUser);
+      userDetailsPage.goToIdentityProviderLinksTab();
+      cy.checkA11y();
+    });
+
+    it("Check a11y violations on user sessions tab", () => {
+      usersPage.goToUserListTab().goToUserDetailsPage(a11yUser);
+      userDetailsPage.goToSessionsTab();
+      cy.checkA11y();
+    });
+
+    it("Check a11y violations on user deleting dialog", () => {
+      const commonPage = new CommonPage();
+      usersPage.goToUserListTab().goToUserDetailsPage(a11yUser);
+      commonPage
+        .actionToolbarUtils()
+        .clickActionToggleButton()
+        .clickDropdownItem("Delete");
+      cy.checkA11y();
+      cy.findByTestId("confirm").click();
+    });
+
+    it("Check a11y violations on permissions tab", () => {
+      usersPage.goToPermissionsTab();
+      cy.checkA11y();
+    });
   });
 });

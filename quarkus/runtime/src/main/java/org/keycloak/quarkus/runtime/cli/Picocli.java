@@ -50,6 +50,7 @@ import java.util.stream.Collectors;
 import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.keycloak.config.MultiOption;
 import org.keycloak.config.OptionCategory;
+import org.keycloak.quarkus.runtime.cli.command.AbstractCommand;
 import org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand;
 import org.keycloak.quarkus.runtime.cli.command.Build;
 import org.keycloak.quarkus.runtime.cli.command.Export;
@@ -347,7 +348,7 @@ public final class Picocli {
 
         if (isRebuildCheck()) {
             // build command should be available when running re-aug
-            addCommandOptions(cliArgs, spec.subcommands().get(Build.NAME).getCommandSpec());
+            addCommandOptions(cliArgs, spec.subcommands().get(Build.NAME));
         }
 
         CommandLine cmd = new CommandLine(spec);
@@ -361,16 +362,22 @@ public final class Picocli {
         return cmd;
     }
 
-    private static void addCommandOptions(List<String> cliArgs, CommandSpec command) {
+    private static void addCommandOptions(List<String> cliArgs, CommandLine command) {
         if (command != null) {
             boolean includeBuildTime = false;
             boolean includeRuntime = false;
 
-            if (Start.NAME.equals(command.name()) || StartDev.NAME.equals(command.name()) || Export.NAME.equals(command.name())) {
+            if (command.getCommand() instanceof AbstractCommand) {
+                AbstractCommand abstractCommand = command.getCommand();
+                includeRuntime = abstractCommand.includeRuntime();
+                includeBuildTime = abstractCommand.includeBuildTime();
+            }
+
+            if (!includeBuildTime && !includeRuntime) {
+                return;
+            } else if (includeRuntime && !includeBuildTime && (Start.NAME.equals(command.getCommandName())) || StartDev.NAME.equals(command.getCommandName())) {
                 includeBuildTime = isRebuilt() || !cliArgs.contains(OPTIMIZED_BUILD_OPTION_LONG);
-                includeRuntime = true;
-            } else if (Build.NAME.equals(command.name())) {
-                includeBuildTime = true;
+            } else if (includeBuildTime && !includeRuntime) {
                 includeRuntime = isRebuildCheck();
             }
 
@@ -378,19 +385,19 @@ public final class Picocli {
         }
     }
 
-    private static CommandSpec getCurrentCommandSpec(List<String> cliArgs, CommandSpec spec) {
+    private static CommandLine getCurrentCommandSpec(List<String> cliArgs, CommandSpec spec) {
         for (String arg : cliArgs) {
             CommandLine command = spec.subcommands().get(arg);
 
             if (command != null) {
-                return command.getCommandSpec();
+                return command;
             }
         }
 
         return null;
     }
 
-    private static void addOptionsToCli(CommandSpec commandSpec, boolean includeBuildTime, boolean includeRuntime) {
+    private static void addOptionsToCli(CommandLine commandLine, boolean includeBuildTime, boolean includeRuntime) {
         Map<OptionCategory, List<PropertyMapper>> mappers = new EnumMap<>(OptionCategory.class);
 
         if (includeRuntime) {
@@ -408,23 +415,12 @@ public final class Picocli {
             }
         }
 
-        addMappedOptionsToArgGroups(commandSpec, mappers);
+        addMappedOptionsToArgGroups(commandLine, mappers);
     }
 
-    private static void addMappedOptionsToArgGroups(CommandSpec cSpec, Map<OptionCategory, List<PropertyMapper>> propertyMappers) {
-        for(OptionCategory category : OptionCategory.values()) {
-            if (cSpec.name().equals(Export.NAME)) {
-                // The export command should show only export options
-                if (category != OptionCategory.EXPORT) {
-                    continue;
-                }
-            } else {
-                // No other command should have the export options
-                if (category == OptionCategory.EXPORT) {
-                    continue;
-                }
-            }
-
+    private static void addMappedOptionsToArgGroups(CommandLine commandLine, Map<OptionCategory, List<PropertyMapper>> propertyMappers) {
+        CommandSpec cSpec = commandLine.getCommandSpec();
+        for(OptionCategory category : ((AbstractCommand) commandLine.getCommand()).getOptionCategories()) {
             List<PropertyMapper> mappersInCategory = propertyMappers.get(category);
 
             if (mappersInCategory == null) {

@@ -70,4 +70,18 @@ describe("Masthead tests", () => {
       cy.get(helpLabel).should("exist");
     });
   });
+
+  describe.skip("Accessibility tests for masthead", () => {
+    beforeEach(() => {
+      loginPage.logIn();
+      keycloakBefore();
+      sidebarPage.waitForPageLoad();
+      masthead.accountManagement();
+      cy.injectAxe();
+    });
+
+    it("Check a11y violations on load/ masthead", () => {
+      cy.checkA11y();
+    });
+  });
 });

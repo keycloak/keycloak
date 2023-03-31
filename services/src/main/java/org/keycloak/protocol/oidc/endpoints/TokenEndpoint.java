@@ -386,6 +386,7 @@ public class TokenEndpoint {
 
         if (redirectUri != null && !redirectUri.equals(redirectUriParam)) {
             event.error(Errors.INVALID_CODE);
+            logger.tracef("Parameter 'redirect_uri' did not match originally saved redirect URI used in initial OIDC request. Saved redirectUri: %s, redirectUri parameter: %s", redirectUri, redirectUriParam);
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT, "Incorrect redirect_uri", Response.Status.BAD_REQUEST);
         }
 
@@ -748,6 +749,7 @@ public class TokenEndpoint {
         ClientSessionContext clientSessionCtx = TokenManager.attachAuthenticationSession(session, userSession, authSession);
 
         // Notes about client details
+        userSession.setNote(ServiceAccountConstants.CLIENT_ID_SESSION_NOTE, client.getClientId()); // This is for backwards compatibility
         userSession.setNote(ServiceAccountConstants.CLIENT_ID, client.getClientId());
         userSession.setNote(ServiceAccountConstants.CLIENT_HOST, clientConnection.getRemoteHost());
         userSession.setNote(ServiceAccountConstants.CLIENT_ADDRESS, clientConnection.getRemoteAddr());
