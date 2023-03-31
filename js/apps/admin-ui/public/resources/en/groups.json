@@ -66,5 +66,6 @@
   "groupUpdateError": "Error updating group {{error}}",
   "roleMapping": "Role mapping",
   "noRoles": "No roles for this group",
-  "noRolesInstructions": "You haven't created any roles for this group. Create a role to get started."
+  "noRolesInstructions": "You haven't created any roles for this group. Create a role to get started.",
+  "noViewRights": "You do not have rights to view this group."
 }
