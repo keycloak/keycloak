@@ -21,8 +21,18 @@ if (typeof Promise === 'undefined') {
     throw Error('Keycloak requires an environment that supports Promises. Make sure that you include the appropriate polyfill.');
 }
 
+var loggedConstructorDeprecation = false;
+
+function logConstructorDeprecation() {
+    if (!loggedConstructorDeprecation) {
+        loggedConstructorDeprecation = true;
+        console.warn('[KEYCLOAK] Instantiation using the `Keycloak` function has been deprecated and support will be removed in future versions. Use the `new` operator to create an instance instead.');
+    }
+}
+
 function Keycloak (config) {
     if (!(this instanceof Keycloak)) {
+        logConstructorDeprecation();
         return new Keycloak(config);
     }
 
