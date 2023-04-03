@@ -345,53 +345,6 @@ The name of the script file. This property is *mandatory* and should map to a fi
 
 Once you have a JAR file with a descriptor and the scripts you want to deploy, you just need to copy the JAR to the {project_name} `providers/` directory, then run `bin/kc.[sh|bat] build`.
 
-===== Deploy the script engine on Java 15 and later
-
-To run the scripts, JavaScript providers require that a JavaScript engine is available in your Java application. Java 14 and lower versions include the Nashorn JavaScript Engine. It is
-automatically available as part of the Java itself and JavaScript providers are able to use this script engine by default. However, for Java 15 or higher versions, the script engine is not part
-of the Java itself. It needs to be added to your server because {project_name} does not have any script engine by default. Java 15 and higher versions require an extra step when deploying script
-providers - adding the script engine of your choice to your distribution.
-
-You can use any script engine. However, we only test with the Nashorn JavaScript Engine. The following steps assume that this engine is used:
-
-Install the script engine by copying the nashorn script engine JAR and its dependencies directly to the `KEYCLOAK_HOME/providers` directory. In the `pom.xml` file
-of your script project, you can declare the dependency such as this in the `dependencies` section:
-
-```xml
-<dependency>
-    <groupId>org.openjdk.nashorn</groupId>
-    <artifactId>nashorn-core</artifactId>
-    <version>15.3</version>
-</dependency>
-```
-
-and declare `maven-dependency-plugin` in the `plugins` section to copy the dependencies to the specified directory:
-
-```xml
-<plugin>
-    <groupId>org.apache.maven.plugins</groupId>
-    <artifactId>maven-dependency-plugin</artifactId>
-    <executions>
-        <execution>
-                <id>copy-dependencies-quarkus</id>
-                <phase>package</phase>
-            <goals>
-                <goal>copy-dependencies</goal>
-            </goals>
-            <configuration>
-                <outputDirectory>${project.build.directory}/keycloak-server-copy/providers</outputDirectory>
-                <includeArtifactIds>nashorn-core,asm,asm-util,asm-commons</includeArtifactIds>
-            </configuration>
-        </execution>
-    </executions>
-</plugin>
-```
-Once the project is built, copy the script engine and its dependencies to the `KEYCLOAK_HOME/providers` directory.
-```bash
-cp target/keycloak-server-copy/providers/*.jar KEYCLOAK_HOME/providers/
-```
-After re-augment the distribution with `kc.sh build`, the script engine should be deployed and your script providers should work.
-
 === Available SPIs
 
 If you want to see list of all available SPIs at runtime, you can check `Server Info` page in Admin Console as described in <<_providers_admin_console,Admin Console>> section.
