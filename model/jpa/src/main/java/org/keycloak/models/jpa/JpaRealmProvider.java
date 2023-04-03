@@ -166,12 +166,6 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
         if (realm == null) {
             return false;
         }
-
-        // Workaround tracked by issue https://github.com/keycloak/keycloak/pull/19069
-        // As of Hibernate 6.2.0.CR3, after the em.refresh(entity) the lazily loaded collections in realm don't load anymore, instead there is a
-        // LazyInitializationException. As a workaround, comment out the refresh call.
-        // em.refresh(realm);
-
         final RealmAdapter adapter = new RealmAdapter(session, em, realm);
         session.users().preRemove(adapter);
 
