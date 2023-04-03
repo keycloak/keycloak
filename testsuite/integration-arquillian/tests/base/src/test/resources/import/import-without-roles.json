@@ -830,7 +830,7 @@
   "supportedLocales": [],
   "authenticationFlows": [
     {
-      "id": "aed29d4f-aba7-4992-a600-18c0a28c1fc3",
+      "id": "bed29d4f-aba7-4992-a600-18c0a28c1fc3",
       "alias": "Handle Existing Account",
       "description": "Handle what to do if there is existing account with same email/username like authenticated identity provider",
       "providerId": "basic-flow",
@@ -861,7 +861,7 @@
       ]
     },
     {
-      "id": "d8b8f564-6d56-4171-ba36-a8922c6eae49",
+      "id": "e8b8f564-6d56-4171-ba36-a8922c6eae49",
       "alias": "Verify Existing Account by Re-authentication",
       "description": "Reauthentication of existing account",
       "providerId": "basic-flow",
@@ -885,7 +885,7 @@
       ]
     },
     {
-      "id": "73dcb1e4-2c7c-4494-825d-f2677cbc114c",
+      "id": "83dcb1e4-2c7c-4494-825d-f2677cbc114c",
       "alias": "browser",
       "description": "browser based authentication",
       "providerId": "basic-flow",
@@ -923,7 +923,7 @@
       ]
     },
     {
-      "id": "a0a80dc3-d473-468e-b6e8-f1d306c21360",
+      "id": "b0a80dc3-d473-468e-b6e8-f1d306c21360",
       "alias": "clients",
       "description": "Base authentication for clients",
       "providerId": "client-flow",
@@ -954,7 +954,7 @@
       ]
     },
     {
-      "id": "91882f46-54be-4738-847a-32e849d53240",
+      "id": "a1882f46-54be-4738-847a-32e849d53240",
       "alias": "direct grant",
       "description": "OpenID Connect Resource Owner Grant",
       "providerId": "basic-flow",
@@ -985,7 +985,7 @@
       ]
     },
     {
-      "id": "b727a208-587c-4f27-8f48-ba2a0d4effdd",
+      "id": "c727a208-587c-4f27-8f48-ba2a0d4effdd",
       "alias": "docker auth",
       "description": "Used by Docker clients to authenticate against the IDP",
       "providerId": "basic-flow",
@@ -1002,7 +1002,7 @@
       ]
     },
     {
-      "id": "5a6ac775-4000-4ccf-9271-6cb599297d4b",
+      "id": "6a6ac775-4000-4ccf-9271-6cb599297d4b",
       "alias": "first broker login",
       "description": "Actions taken after first broker login with identity provider account, which is not yet linked to any Keycloak account",
       "providerId": "basic-flow",
@@ -1035,7 +1035,7 @@
       ]
     },
     {
-      "id": "1a84808d-e0c7-4759-aee8-cf9229542429",
+      "id": "2a84808d-e0c7-4759-aee8-cf9229542429",
       "alias": "forms",
       "description": "Username, password, otp and other auth forms.",
       "providerId": "basic-flow",
@@ -1059,7 +1059,7 @@
       ]
     },
     {
-      "id": "717f990a-1c46-464c-9051-5e0ae39d63db",
+      "id": "817f990a-1c46-464c-9051-5e0ae39d63db",
       "alias": "registration",
       "description": "registration flow",
       "providerId": "basic-flow",
@@ -1077,7 +1077,7 @@
       ]
     },
     {
-      "id": "166fca50-7b69-4cd4-80eb-a569e87ff8a2",
+      "id": "266fca50-7b69-4cd4-80eb-a569e87ff8a2",
       "alias": "registration form",
       "description": "registration form",
       "providerId": "form-flow",
@@ -1115,7 +1115,7 @@
       ]
     },
     {
-      "id": "a516cb39-8f6d-4d08-ac82-236377be6500",
+      "id": "b516cb39-8f6d-4d08-ac82-236377be6500",
       "alias": "reset credentials",
       "description": "Reset credentials for a user if they forgot their password or something",
       "providerId": "basic-flow",
@@ -1153,7 +1153,7 @@
       ]
     },
     {
-      "id": "8b9ae730-11e0-451f-b693-e32f09415e42",
+      "id": "9b9ae730-11e0-451f-b693-e32f09415e42",
       "alias": "saml ecp",
       "description": "SAML ECP Profile Authentication Flow",
       "providerId": "basic-flow",
@@ -1172,14 +1172,14 @@
   ],
   "authenticatorConfig": [
     {
-      "id": "a6d38dcd-7b53-4991-b4eb-c866ce3c5e70",
+      "id": "b6d38dcd-7b53-4991-b4eb-c866ce3c5e70",
       "alias": "create unique user config",
       "config": {
         "require.password.update.after.registration": "false"
       }
     },
     {
-      "id": "7408f503-b929-422f-b52b-277cebda44ba",
+      "id": "8408f503-b929-422f-b52b-277cebda44ba",
       "alias": "review profile config",
       "config": {
         "update.profile.on.first.login": "missing"
