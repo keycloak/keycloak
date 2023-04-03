@@ -1454,9 +1454,7 @@ public class MapExportImportManager implements ExportImportManager {
             if (rep.getAuthenticationFlows() != null) {
                 for (AuthenticationFlowRepresentation flowRep : rep.getAuthenticationFlows()) {
                     AuthenticationFlowModel model = RepresentationToModel.toModel(flowRep);
-                    // make sure new id is generated for new AuthenticationFlowModel instance
                     String previousId = model.getId();
-                    model.setId(null);
                     model = newRealm.addAuthenticationFlow(model);
                     // store the mapped ids so that clients can reference the correct flow when importing the authenticationFlowBindingOverrides
                     mappedFlows.put(previousId, model.getId());

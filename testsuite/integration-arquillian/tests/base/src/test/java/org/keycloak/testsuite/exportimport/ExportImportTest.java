@@ -31,6 +31,7 @@ import org.keycloak.exportimport.dir.DirExportProvider;
 import org.keycloak.exportimport.dir.DirExportProviderFactory;
 import org.keycloak.exportimport.singlefile.SingleFileExportProviderFactory;
 import org.keycloak.models.UserModel;
+import org.keycloak.representations.idm.AuthenticationExecutionInfoRepresentation;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.KeysMetadataRepresentation;
 import org.keycloak.representations.idm.RealmEventsConfigRepresentation;
@@ -375,6 +376,8 @@ public class ExportImportTest extends AbstractKeycloakTest {
         testingClient.testing().exportImport().setAction(ExportImportConfig.ACTION_EXPORT);
         testingClient.testing().exportImport().setRealmName("test");
 
+        String[] authFlowObjectIdsBeforeImport = getSomeAuthenticationFlowsObjectIds();
+
         testingClient.testing().exportImport().runExport();
 
         List<ComponentRepresentation> components = adminClient.realm("test").components().query();
@@ -418,6 +421,9 @@ public class ExportImportTest extends AbstractKeycloakTest {
         assertTrue(testRealmRealm.users().search("user-requiredWebAuthn").get(0)
                 .getRequiredActions().get(0).equals(WebAuthnRegisterFactory.PROVIDER_ID));
 
+        String[] authFlowObjectIdsAfterImport = getSomeAuthenticationFlowsObjectIds();
+        // Test that IDs of authentication-flows (both top level and nested) and authenticationConfiguration was preserved
+        Assert.assertArrayEquals(authFlowObjectIdsBeforeImport, authFlowObjectIdsAfterImport);
 
         List<ComponentRepresentation> componentsImported = adminClient.realm("test").components().query();
         assertComponents(components, componentsImported);
@@ -476,6 +482,25 @@ public class ExportImportTest extends AbstractKeycloakTest {
                 Assert.assertNames(eList, aList.toArray(new String[] {}));
             }
         }
+    }
+
+
+    // Get IDs of some objects (top authentication flow, nested authentication flow, authentication config) to be able to test if IDs are same after re-import
+    private String[] getSomeAuthenticationFlowsObjectIds() {
+        String firstBrokerLoginFlowID = adminClient.realm("test").flows().getFlows().stream()
+                .filter(flow -> "first broker login".equals(flow.getAlias()))
+                .findFirst().get().getId();
+
+        List<AuthenticationExecutionInfoRepresentation> authExecutions = adminClient.realm("test").flows().getExecutions("User creation or linking");
+        Assert.assertEquals("idp-create-user-if-unique", authExecutions.get(0).getProviderId());
+
+        String authConfigId = authExecutions.get(0).getAuthenticationConfig();
+        Assert.assertEquals("create unique user config", adminClient.realm("test").flows().getAuthenticatorConfig(authConfigId).getAlias());
+
+        String handleExistingAccountSubflowId = authExecutions.get(1).getFlowId();
+        Assert.assertEquals("Handle Existing Account", adminClient.realm("test").flows().getFlow(handleExistingAccountSubflowId).getAlias());
+
+        return new String[] {firstBrokerLoginFlowID, handleExistingAccountSubflowId, authConfigId };
     }
 
     private void clearExportImportProperties() {
