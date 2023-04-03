@@ -1,6 +1,6 @@
 package org.keycloak.services.error;
 
-import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.spi.Failure;
 import org.keycloak.Config;
@@ -106,7 +106,7 @@ public class KeycloakErrorHandler implements ExceptionMapper<Throwable> {
             Failure f = (Failure) throwable;
             status = f.getErrorCode();
         }
-        if (throwable instanceof JsonParseException) {
+        if (throwable instanceof JsonProcessingException) {
             status = Response.Status.BAD_REQUEST.getStatusCode();
         }
         
