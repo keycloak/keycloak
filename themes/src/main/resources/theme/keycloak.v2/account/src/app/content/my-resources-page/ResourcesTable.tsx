@@ -91,7 +91,7 @@ export class ResourcesTable extends AbstractResourcesTable<CollapsibleResourcesT
     }
 
     private fetchPermissions(resource: Resource, row: number): void {
-        this.context!.doGet(`/resources/${resource._id}/permissions`)
+        this.context!.doGet(`/resources/${encodeURIComponent(resource._id)}/permissions`)
             .then((response: HttpResponse<Permission[]>) => {
                 const newPermissions: Map<number, Permission[]> = new Map(this.state.permissions);
                 newPermissions.set(row, response.data || []);
@@ -101,7 +101,7 @@ export class ResourcesTable extends AbstractResourcesTable<CollapsibleResourcesT
 
     private removeShare(resource: Resource, row: number): Promise<void> {
         const permissions = this.state.permissions.get(row)!.map(a => ({ username: a.username, scopes: [] }));
-        return this.context!.doPut(`/resources/${resource._id}/permissions`, permissions)
+        return this.context!.doPut(`/resources/${encodeURIComponent(resource._id)}/permissions`, permissions)
             .then(() => {
                 ContentAlert.success(Msg.localize('unShareSuccess'));
             });
