@@ -74,8 +74,10 @@ public class WelcomeScreen extends AbstractAccountPage {
     @Override
     public UriBuilder getUriBuilder() {
         UriBuilder uriBuilder = super.getUriBuilder();
-        if (referrer != null && referrerUri != null) {
+        if (referrer != null) {
             uriBuilder.queryParam("referrer", referrer);
+        }
+        if (referrerUri != null) {
             uriBuilder.queryParam("referrer_uri", referrerUri);
         }
         return uriBuilder;

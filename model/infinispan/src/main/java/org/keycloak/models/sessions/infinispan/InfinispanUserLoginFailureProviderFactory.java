@@ -181,6 +181,10 @@ public class InfinispanUserLoginFailureProviderFactory implements UserLoginFailu
         }
     }
 
+    private int getStalledTimeoutInSeconds(int defaultTimeout) {
+         return config.getInt("stalledTimeoutInSeconds", defaultTimeout);
+    }
+
     private void loadLoginFailuresFromRemoteCaches(final KeycloakSessionFactory sessionFactory, String cacheName, final int sessionsPerSegment, final int maxErrors) {
         log.debugf("Check pre-loading sessions from remote cache '%s'", cacheName);
 
@@ -190,9 +194,12 @@ public class InfinispanUserLoginFailureProviderFactory implements UserLoginFailu
             public void run(KeycloakSession session) {
                 InfinispanConnectionProvider connections = session.getProvider(InfinispanConnectionProvider.class);
                 Cache<String, Serializable> workCache = connections.getCache(InfinispanConnectionProvider.WORK_CACHE_NAME);
+                int defaultStateTransferTimeout = (int) (connections.getCache(InfinispanConnectionProvider.LOGIN_FAILURE_CACHE_NAME)
+                  .getCacheConfiguration().clustering().stateTransfer().timeout() / 1000);
 
                 InfinispanCacheInitializer initializer = new InfinispanCacheInitializer(sessionFactory, workCache,
-                        new RemoteCacheSessionsLoader(cacheName, sessionsPerSegment), "remoteCacheLoad::" + cacheName, sessionsPerSegment, maxErrors);
+                        new RemoteCacheSessionsLoader(cacheName, sessionsPerSegment), "remoteCacheLoad::" + cacheName, sessionsPerSegment, maxErrors,
+                        getStalledTimeoutInSeconds(defaultStateTransferTimeout));
 
                 initializer.initCache();
                 initializer.loadSessions();

@@ -84,9 +84,9 @@ public class KeycloakRecorder {
         QuarkusKeycloakSessionFactory.setInstance(new QuarkusKeycloakSessionFactory(factories, defaultProviders, preConfiguredProviders, themes, reaugmented));
     }
 
-    public RuntimeValue<CacheManagerFactory> createCacheInitializer(String config, ShutdownContext shutdownContext) {
+    public RuntimeValue<CacheManagerFactory> createCacheInitializer(String config, boolean metricsEnabled, ShutdownContext shutdownContext) {
         try {
-            CacheManagerFactory cacheManagerFactory = new CacheManagerFactory(config);
+            CacheManagerFactory cacheManagerFactory = new CacheManagerFactory(config, metricsEnabled);
 
             shutdownContext.addShutdownTask(new Runnable() {
                 @Override

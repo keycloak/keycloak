@@ -5,7 +5,7 @@
     <parent>
         <artifactId>keycloak-quarkus-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>999-SNAPSHOT</version>
+        <version>999.0.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
@@ -96,11 +96,6 @@
             <groupId>org.wildfly.security</groupId>
             <artifactId>wildfly-elytron</artifactId>
         </dependency>
-        <dependency>
-            <groupId>io.quarkiverse.vault</groupId>
-            <artifactId>quarkus-vault</artifactId>
-            <version>${io.quarkiverse.vault.version}</version>
-        </dependency>
 
         <!-- CLI -->
         <dependency>
@@ -121,7 +116,7 @@
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-js-adapter</artifactId>
+            <artifactId>keycloak-js-adapter-jar</artifactId>
             <exclusions>
                 <exclusion>
                     <groupId>*</groupId>
@@ -353,6 +348,27 @@
                 </exclusion>
             </exclusions>
         </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-admin-ui</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-rest-admin-ui-ext</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
 
         <!-- Keycloak Dependencies-->
         <dependency>
@@ -534,6 +550,16 @@
             </exclusions>
         </dependency>
         <dependency>
+            <groupId>org.snakeyaml</groupId>
+            <artifactId>snakeyaml-engine</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
             <groupId>com.google.zxing</groupId>
             <artifactId>core</artifactId>
             <exclusions>
@@ -659,35 +685,6 @@
             </exclusions>
         </dependency>
     </dependencies>
-
-    <profiles>
-        <profile>
-            <id>skip-admin2</id>
-            <activation>
-                <property>
-                    <name>!skipAdmin2</name>
-                </property>
-            </activation>
-            <dependencies>
-                <dependency>
-                    <groupId>org.keycloak</groupId>
-                    <artifactId>keycloak-dependencies-admin-ui-wrapper</artifactId>
-                    <type>pom</type>
-                    <scope>import</scope>
-                </dependency>
-                <dependency>
-                    <groupId>org.keycloak</groupId>
-                    <artifactId>keycloak-admin-ui</artifactId>
-                    <exclusions>
-                        <exclusion>
-                            <groupId>*</groupId>
-                            <artifactId>*</artifactId>
-                        </exclusion>
-                    </exclusions>
-                </dependency>
-            </dependencies>
-        </profile>
-    </profiles>
 
     <build>
         <plugins>

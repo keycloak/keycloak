@@ -1,0 +1,284 @@
+name: Keycloak JavaScript CI
+
+on:
+  push:
+    branches-ignore:
+      - main
+      - dependabot/**
+  pull_request:
+  schedule:
+    - cron: 0 20,23,2,5 * * *
+  workflow_dispatch:
+
+concurrency:
+  # Only cancel jobs for PR updates
+  group: js-ci-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  conditional:
+    name: Check conditional workflows and jobs
+    if: github.event_name != 'schedule' || github.repository == 'keycloak/keycloak'
+    runs-on: ubuntu-latest
+    outputs:
+      js-ci: ${{ steps.conditional.outputs.js }}
+    steps:
+      - uses: actions/checkout@v3
+
+      - id: conditional
+        uses: ./.github/actions/conditional
+
+  build-keycloak:
+    name: Build Keycloak
+    needs: conditional
+    if: needs.conditional.outputs.js-ci == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup Java
+        uses: actions/setup-java@v3
+        with:
+          distribution: temurin
+          java-version: 17
+          check-latest: true
+          cache: maven
+
+      - name: Build Keycloak
+        run: |
+          mvn clean install --batch-mode --errors -DskipTests -DskipTestsuite -DskipExamples -DskipAccount2 -DskipCommon -Pdistribution
+          mv ./quarkus/dist/target/keycloak-999.0.0-SNAPSHOT.tar.gz ./keycloak-999.0.0-SNAPSHOT.tar.gz
+
+      - name: Upload Keycloak dist
+        uses: actions/upload-artifact@v3
+        with:
+          name: keycloak
+          path: keycloak-999.0.0-SNAPSHOT.tar.gz
+
+  admin-client:
+    name: Admin Client
+    needs: conditional
+    if: needs.conditional.outputs.js-ci == 'true'
+    runs-on: ubuntu-latest
+    env:
+      WORKSPACE: "@keycloak/keycloak-admin-client"
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: ./.github/actions/npm-setup
+        with:
+          working-directory: js
+
+      - run: npm run lint --workspace=${{ env.WORKSPACE }}
+        working-directory: js
+
+      - run: npm run build --workspace=${{ env.WORKSPACE }}
+        working-directory: js
+
+  keycloak-js:
+    name: Keycloak JS
+    needs: conditional
+    if: needs.conditional.outputs.js-ci == 'true'
+    runs-on: ubuntu-latest
+    env:
+      WORKSPACE: keycloak-js
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: ./.github/actions/npm-setup
+        with:
+          working-directory: js
+
+      - run: npm run build --workspace=${{ env.WORKSPACE }}
+        working-directory: js
+
+  keycloak-masthead:
+    name: Keycloak Masthead
+    needs: conditional
+    if: needs.conditional.outputs.js-ci == 'true'
+    runs-on: ubuntu-latest
+    env:
+      WORKSPACE: keycloak-masthead
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: ./.github/actions/npm-setup
+        with:
+          working-directory: js
+
+      - run: npm run lint --workspace=${{ env.WORKSPACE }}
+        working-directory: js
+
+      - run: npm run build --workspace=${{ env.WORKSPACE }}
+        working-directory: js
+
+  ui-shared:
+    name: UI Shared
+    needs: conditional
+    if: needs.conditional.outputs.js-ci == 'true'
+    runs-on: ubuntu-latest
+    env:
+      WORKSPACE: ui-shared
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: ./.github/actions/npm-setup
+        with:
+          working-directory: js
+
+      - run: npm run lint --workspace=${{ env.WORKSPACE }}
+        working-directory: js
+
+      - run: npm run build --workspace=${{ env.WORKSPACE }}
+        working-directory: js
+
+  account-ui:
+    name: Account UI
+    needs: conditional
+    if: needs.conditional.outputs.js-ci == 'true'
+    runs-on: ubuntu-latest
+    env:
+      WORKSPACE: account-ui
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: ./.github/actions/npm-setup
+        with:
+          working-directory: js
+
+      - run: npm run lint --workspace=${{ env.WORKSPACE }}
+        working-directory: js
+
+      - run: npm run build --workspace=${{ env.WORKSPACE }}
+        working-directory: js
+
+  admin-ui:
+    name: Admin UI
+    needs: conditional
+    if: needs.conditional.outputs.js-ci == 'true'
+    runs-on: ubuntu-latest
+    env:
+      WORKSPACE: admin-ui
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: ./.github/actions/npm-setup
+        with:
+          working-directory: js
+
+      - run: npm run lint --workspace=${{ env.WORKSPACE }}
+        working-directory: js
+
+      - run: npm run test --workspace=${{ env.WORKSPACE }}
+        working-directory: js
+
+      - run: npm run build --workspace=${{ env.WORKSPACE }}
+        working-directory: js
+
+      - run: npm run cy:check-types --workspace=${{ env.WORKSPACE }}
+        working-directory: js
+
+  admin-ui-e2e:
+    name: Admin UI E2E
+    needs:
+      - conditional
+      - build-keycloak
+    if: needs.conditional.outputs.js-ci == 'true' && github.repository == 'keycloak/keycloak'
+    runs-on: ubuntu-latest
+    env:
+      WORKSPACE: admin-ui
+    strategy:
+      matrix:
+        container: [1, 2, 3, 4, 5]
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Install Google Chrome
+        uses: browser-actions/setup-chrome@v1
+        with:
+          chrome-version: stable
+
+      - uses: ./.github/actions/npm-setup
+        with:
+          working-directory: js
+
+      - name: Compile Admin Client
+        run: npm run build --workspace=@keycloak/keycloak-admin-client
+        working-directory: js
+
+      - name: Download Keycloak server
+        uses: actions/download-artifact@v3
+        with:
+          name: keycloak
+
+      - name: Start Keycloak Server
+        run: |
+          tar xfvz keycloak-999.0.0-SNAPSHOT.tar.gz
+          keycloak-999.0.0-SNAPSHOT/bin/kc.sh start-dev --features=admin-fine-grained-authz,declarative-user-profile &> ~/server.log &
+        env:
+          KEYCLOAK_ADMIN: admin
+          KEYCLOAK_ADMIN_PASSWORD: admin
+
+      - name: Start LDAP server
+        run: npm run cy:ldap-server --workspace=${{ env.WORKSPACE }} &
+        working-directory: js
+
+      - name: Run Cypress
+        uses: cypress-io/github-action@v5
+        with:
+          install: false
+          record: true
+          parallel: true
+          browser: chrome
+          wait-on: http://localhost:8080
+          working-directory: js/apps/admin-ui
+        env:
+          CYPRESS_BASE_URL: http://localhost:8080/admin/
+          CYPRESS_KEYCLOAK_SERVER: http://localhost:8080
+          CYPRESS_RECORD_KEY: b8f1d15e-eab8-4ee7-8e44-c6d7cd8fc0eb
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload server logs
+        uses: actions/upload-artifact@v3
+        with:
+          name: server-log-${{ matrix.container }}
+          path: ~/server.log
+
+  check-set-status:
+    name: Set check conclusion
+    needs:
+      - admin-client
+      - keycloak-js
+      - keycloak-masthead
+      - ui-shared
+      - account-ui
+      - admin-ui
+      - admin-ui-e2e
+    runs-on: ubuntu-latest
+    outputs:
+      conclusion: ${{ steps.check.outputs.conclusion }}
+    steps:
+      - uses: actions/checkout@v3
+
+      - id: check
+        uses: ./.github/actions/checks-success
+
+  check:
+    name: Status Check - Keycloak JavaScript CI
+    if: always() && ( github.event_name != 'schedule' || github.repository == 'keycloak/keycloak' )
+    needs:
+      - conditional
+      - check-set-status
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Check status
+        uses: ./.github/actions/checks-job-pass
+        with:
+          required: ${{ needs.conditional.outputs.js-ci }}
+          conclusion: ${{ needs.check-set-status.outputs.conclusion }}

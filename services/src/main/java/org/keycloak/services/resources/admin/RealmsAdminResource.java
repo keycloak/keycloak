@@ -19,12 +19,15 @@ package org.keycloak.services.resources.admin;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.keycloak.common.ClientConnection;
+import org.keycloak.events.admin.OperationType;
+import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.ModelToRepresentation;
+import org.keycloak.models.utils.StripSecretsUtils;
 import org.keycloak.policy.PasswordPolicyNotMetException;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -134,15 +137,24 @@ public class RealmsAdminResource {
             URI location = AdminRoot.realmsUrl(session.getContext().getUri()).path(realm.getName()).build();
             logger.debugv("imported realm success, sending back: {0}", location.toString());
 
+            // The create event is associated with the realm of the user executing the operation,
+            // instead of the realm being created.
+            AdminEventBuilder adminEvent = new AdminEventBuilder(auth.getRealm(), auth, session, clientConnection);
+            adminEvent.resource(ResourceType.REALM).realm(auth.getRealm().getId()).operation(OperationType.CREATE)
+                    .resourcePath(realm.getName())
+                    .representation(
+                            StripSecretsUtils.strip(ModelToRepresentation.toRepresentation(session, realm, false)))
+                    .success();
+
             return Response.created(location).build();
         } catch (ModelDuplicateException e) {
             logger.error("Conflict detected", e);
             if (session.getTransactionManager().isActive()) session.getTransactionManager().setRollbackOnly();
-            return ErrorResponse.exists("Conflict detected. See logs for details");
+            throw ErrorResponse.exists("Conflict detected. See logs for details");
         } catch (PasswordPolicyNotMetException e) {
             logger.error("Password policy not met for user " + e.getUsername(), e);
             if (session.getTransactionManager().isActive()) session.getTransactionManager().setRollbackOnly();
-            return ErrorResponse.error("Password policy not met. See logs for details", Response.Status.BAD_REQUEST);
+            throw ErrorResponse.error("Password policy not met. See logs for details", Response.Status.BAD_REQUEST);
         }
     }
 

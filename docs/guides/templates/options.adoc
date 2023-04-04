@@ -1,0 +1,34 @@
+<#macro expectedValues option>
+<#list ctx.options.getOption(option).expectedValues as expectedValue>
+* ${expectedValue}
+</#list>
+</#macro>
+
+<#macro list options buildIcon=true>
+[cols="12a,4",role="options"]
+|===
+| |Value
+
+<#list options as option>
+|
+[.options-key]#``${option.key}``# <#if buildIcon><#if option.build>[.none]#icon:tools[role=options-build]#</#if></#if>
+
+[.options-description]#${option.description}#
+
+[#option-extended-${option.key},role="options-extended"]
+--
+<#if option.descriptionExtended?has_content>[.options-description-extended]#${option.descriptionExtended!}#</#if>
+
+*CLI:* `${option.keyCli}` +
+*Env:* `${option.keyEnv}`
+--
+|<#if option.expectedValues?has_content>
+<#list option.expectedValues as value>`+${value!}+`<#if option.defaultValue?has_content && value = option.defaultValue> (default)</#if><#if value?has_next>, </#if></#list>
+<#else>
+<#if option.defaultValue?has_content>[.options-default]#`+${option.defaultValue!}+`# (default)</#if><#if option.type?has_content && option.defaultValue?has_content> or </#if><#if option.type?has_content && !option.expectedValues?has_content>any `+${option.type!}+`</#if>
+</#if>
+
+</#list>
+
+|===
+</#macro>

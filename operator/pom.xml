@@ -7,7 +7,7 @@
     <parent>
         <artifactId>keycloak-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>999-SNAPSHOT</version>
+        <version>999.0.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     
@@ -32,10 +32,10 @@
         <maven.compiler.target>11</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-        <quarkus.operator.sdk.version>4.0.4</quarkus.operator.sdk.version>
-        <quarkus.version>2.13.3.Final</quarkus.version>
+        <quarkus.operator.sdk.version>4.0.7</quarkus.operator.sdk.version>
+        <quarkus.version>2.13.7.Final</quarkus.version>
         <quarkus.container-image.group>keycloak</quarkus.container-image.group>
-        <quarkus.jib.base-jvm-image>registry.access.redhat.com/ubi8/openjdk-11-runtime</quarkus.jib.base-jvm-image>
+        <quarkus.jib.base-jvm-image>registry.access.redhat.com/ubi9/openjdk-11-runtime</quarkus.jib.base-jvm-image>
     </properties>
     
     <dependencyManagement>

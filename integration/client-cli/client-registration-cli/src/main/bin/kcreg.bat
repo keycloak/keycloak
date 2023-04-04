@@ -5,4 +5,4 @@ if "%OS%" == "Windows_NT" (
 ) else (
   set DIRNAME=.\
 )
-java %KC_OPTS% -cp "%DIRNAME%\client\keycloak-client-registration-cli-${project.version}.jar" -Dkc.lib.dir="%DIRNAME%\client\lib" org.keycloak.client.registration.cli.KcRegMain %*
+java %KC_OPTS% -cp "%DIRNAME%\client\keycloak-client-registration-cli-${project.version}.jar" --add-opens=java.base/java.security=ALL-UNNAMED -Dkc.lib.dir="%DIRNAME%\client\lib" org.keycloak.client.registration.cli.KcRegMain %*

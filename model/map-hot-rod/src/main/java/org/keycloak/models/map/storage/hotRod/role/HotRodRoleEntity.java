@@ -76,6 +76,13 @@ public class HotRodRoleEntity extends AbstractHotRodEntity {
         }
 
         @Override
+        public void setClientId(String clientId) {
+            HotRodRoleEntity entity = getHotRodEntity();
+            entity.updated |= ! Objects.equals(entity.clientId, clientId);
+            entity.clientId = clientId;
+        }
+
+        @Override
         public void setName(String name) {
             HotRodRoleEntity entity = getHotRodEntity();
             entity.updated |= ! Objects.equals(entity.name, name);
@@ -102,10 +109,6 @@ public class HotRodRoleEntity extends AbstractHotRodEntity {
     @Keyword(sortable = true, normalizer = "lowercase")
     @ProtoField(number = 5)
     public String description;
-
-    @Basic(sortable = true)
-    @ProtoField(number = 6)
-    public Boolean clientRole;
 
     @Basic(sortable = true)
     @ProtoField(number = 7)

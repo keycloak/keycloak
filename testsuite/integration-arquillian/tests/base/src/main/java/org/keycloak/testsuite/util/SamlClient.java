@@ -75,6 +75,7 @@ import javax.xml.soap.SOAPException;
 import javax.xml.soap.SOAPHeader;
 import javax.xml.soap.SOAPHeaderElement;
 import javax.xml.soap.SOAPMessage;
+import javax.xml.ws.soap.SOAPFaultException;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -86,6 +87,8 @@ import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.UUID;
@@ -348,23 +351,31 @@ public class SamlClient {
             @Override
             public SAMLDocumentHolder extractResponse(CloseableHttpResponse response, String realmPublicKey) throws IOException {
 
-                assertThat(response, statusCodeIsHC(200));
-
-                MessageFactory messageFactory = null;
                 try {
-                    messageFactory = MessageFactory.newInstance();
-                    SOAPMessage soapMessage = messageFactory.createMessage(null, response.getEntity().getContent());
-                    SOAPBody soapBody = soapMessage.getSOAPBody();
-                    Node authnRequestNode = soapBody.getFirstChild();
-                    Document document = DocumentUtil.createDocument();
-                    document.appendChild(document.importNode(authnRequestNode, true));
+                    int statusCode = response.getStatusLine().getStatusCode();
+                    if (statusCode == 200) {
+                        MessageFactory messageFactory = MessageFactory.newInstance();
+                        SOAPMessage soapMessage = messageFactory.createMessage(null, response.getEntity().getContent());
+                        SOAPBody soapBody = soapMessage.getSOAPBody();
+                        Node authnRequestNode = soapBody.getFirstChild();
+                        Document document = DocumentUtil.createDocument();
+                        document.appendChild(document.importNode(authnRequestNode, true));
 
-                    SAMLParser samlParser = SAMLParser.getInstance();
-                    JAXPValidationUtil.checkSchemaValidation(document);
+                        SAMLParser samlParser = SAMLParser.getInstance();
+                        JAXPValidationUtil.checkSchemaValidation(document);
 
-                    SAML2Object responseType = (SAML2Object) samlParser.parse(document);
+                        SAML2Object responseType = (SAML2Object) samlParser.parse(document);
 
-                    return new SAMLDocumentHolder(responseType, document);
+                        return new SAMLDocumentHolder(responseType, document);
+
+                    } else if (statusCode == 500) {
+                        MessageFactory messageFactory = MessageFactory.newInstance();
+                        SOAPMessage soapMessage = messageFactory.createMessage(null, response.getEntity().getContent());
+                        SOAPBody soapBody = soapMessage.getSOAPBody();
+                        throw new SOAPFaultException(soapBody.getFault());
+                    } else {
+                        throw new RuntimeException("Unexpected response status code (" + statusCode + ")");
+                    }
                 } catch (SOAPException | ConfigurationException | ProcessingException | ParsingException e) {
                     throw new RuntimeException(e);
                 }
@@ -696,13 +707,26 @@ public class SamlClient {
             // if the public key is passed verify the signature of the redirect URI
             try {
                 KeyLocator locator = new KeyLocator() {
+
+                    private final Key key = org.keycloak.testsuite.util.KeyUtils.publicKeyFromString(realmPublicKey);
+
                     @Override
                     public Key getKey(String kid) throws KeyManagementException {
-                        return org.keycloak.testsuite.util.KeyUtils.publicKeyFromString(realmPublicKey);
+                        return this.key;
+                    }
+
+                    @Override
+                    public Key getKey(Key key) throws KeyManagementException {
+                        return this.key;
                     }
 
                     @Override
                     public void refreshKeyCache() {
+                    }
+
+                    @Override
+                    public Iterator<Key> iterator() {
+                        return Collections.singleton(this.key).iterator();
                     }
                 };
                 SamlProtocolUtils.verifyRedirectSignature(documentHolder, locator, encodedParams,

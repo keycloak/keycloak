@@ -1,0 +1,35 @@
+{
+  "title": "Аутентификация",
+  "flows": "Сценарии",
+  "requiredActions": "Требуемые действия",
+  "policies": "Политики",
+  "passwordPolicy": "Политики пароля",
+  "otpPolicy": "Политики OTP",
+  "otpType": "Тип одноразового пароля OTP",
+  "policyType": {
+    "totp": "Основан на времени",
+    "hotp": "Основан на счетчике"
+  },
+  "otpHashAlgorithm": "Алгоритм хеша OTP",
+  "otpPolicyDigits": "Количество цифр",
+  "lookAhead": "Окно вперед",
+  "otpPolicyPeriod": "Период токена OTP",
+  "initialCounter": "Начальное значение счетчика",
+  "attestationPreference": {
+    "none": "нет"
+  },
+  "flow": {
+    "browserFlow": "Сценарий браузера",
+    "registrationFlow": "Сценарий регистрации",
+    "directGrantFlow": "Сценарий Direct Grant Flow"
+  },
+  "edit": "Редактировать",
+  "flowType": "Тип сценария",
+  "flow-type": {
+    "basic-flow": "общий",
+    "form-flow": "форма"
+  },
+  "addExecution": "Добавить исполнение",
+  "requirement": "Требования",
+  "alias": "Синоним"
+}

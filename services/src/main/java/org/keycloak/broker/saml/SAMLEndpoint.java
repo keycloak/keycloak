@@ -54,6 +54,7 @@ import org.keycloak.protocol.saml.SamlProtocolUtils;
 import org.keycloak.protocol.saml.SamlService;
 import org.keycloak.protocol.saml.SamlSessionUtils;
 import org.keycloak.protocol.saml.preprocessor.SamlAuthenticationPreprocessor;
+import org.keycloak.protocol.saml.SAMLDecryptionKeysLocator;
 import org.keycloak.saml.SAML2LogoutResponseBuilder;
 import org.keycloak.saml.SAMLRequestParser;
 import org.keycloak.saml.common.constants.GeneralConstants;
@@ -147,6 +148,9 @@ public class SAMLEndpoint {
     private final ClientConnection clientConnection;
 
     private final HttpHeaders headers;
+
+    public static final String ENCRYPTION_DEPRECATED_MODE_PROPERTY = "keycloak.saml.deprecated.encryption";
+    private final boolean DEPRECATED_ENCRYPTION = Boolean.getBoolean(ENCRYPTION_DEPRECATED_MODE_PROPERTY);
 
 
     public SAMLEndpoint(KeycloakSession session, SAMLIdentityProvider provider, SAMLIdentityProviderConfig config, IdentityProvider.AuthenticationCallback callback, DestinationValidator destinationValidator) {
@@ -415,7 +419,6 @@ public class SAMLEndpoint {
                 }
                 session.getContext().setAuthenticationSession(authSession);
 
-                KeyManager.ActiveRsaKey keys = session.keys().getActiveRsaKey(realm);
                 if (! isSuccessfulSamlResponse(responseType)) {
                     String statusMessage = responseType.getStatus() == null || responseType.getStatus().getStatusMessage() == null ? Messages.IDENTITY_PROVIDER_UNEXPECTED_ERROR : responseType.getStatus().getStatusMessage();
                     return callback.error(statusMessage);
@@ -433,11 +436,22 @@ public class SAMLEndpoint {
                     return ErrorPage.error(session, authSession, Response.Status.BAD_REQUEST, Messages.INVALID_REQUESTER);
                 }
 
-                Element assertionElement;
+                Element assertionElement = null;
 
                 if (assertionIsEncrypted) {
-                    // This methods writes the parsed and decrypted assertion back on the responseType parameter:
-                    assertionElement = AssertionUtil.decryptAssertion(holder, responseType, keys.getPrivateKey());
+                    try {
+                        /* This code is deprecated and will be removed in Keycloak 24 */
+                        if (DEPRECATED_ENCRYPTION) {
+                            KeyManager.ActiveRsaKey keys = session.keys().getActiveRsaKey(realm);
+                            assertionElement = AssertionUtil.decryptAssertion(responseType, keys.getPrivateKey());
+                        } else {
+                        /* End of deprecated code */
+                            assertionElement = AssertionUtil.decryptAssertion(responseType, new SAMLDecryptionKeysLocator(session, realm, config.getEncryptionAlgorithm()));
+                        }
+                    } catch (ProcessingException ex) {
+                        logger.warnf(ex, "Not possible to decrypt SAML assertion. Please check realm keys of usage ENC in the realm '%s' and make sure there is a key able to decrypt the assertion encrypted by identity provider '%s'", realm.getName(), config.getAlias());
+                        throw new WebApplicationException(ex, Response.Status.BAD_REQUEST);
+                    }
                 } else {
                     /* We verify the assertion using original document to handle cases where the IdP
                     includes whitespace and/or newlines inside tags. */
@@ -477,9 +491,20 @@ public class SAMLEndpoint {
                     return ErrorPage.error(session, authSession, Response.Status.BAD_REQUEST, Messages.INVALID_REQUESTER);
                 }
 
-                if(AssertionUtil.isIdEncrypted(responseType)) {
-                    // This methods writes the parsed and decrypted id back on the responseType parameter:
-                    AssertionUtil.decryptId(responseType, keys.getPrivateKey());
+                if (AssertionUtil.isIdEncrypted(responseType)) {
+                    try {
+                        /* This code is deprecated and will be removed in Keycloak 24 */
+                        if (DEPRECATED_ENCRYPTION) {
+                            KeyManager.ActiveRsaKey keys = session.keys().getActiveRsaKey(realm);
+                            AssertionUtil.decryptId(responseType, data -> Collections.singletonList(keys.getPrivateKey()));
+                        } else {
+                            /* End of deprecated code */
+                            AssertionUtil.decryptId(responseType, new SAMLDecryptionKeysLocator(session, realm, config.getEncryptionAlgorithm()));
+                        }
+                    } catch (ProcessingException ex) {
+                        logger.warnf(ex, "Not possible to decrypt SAML encryptedId. Please check realm keys of usage ENC in the realm '%s' and make sure there is a key able to decrypt the encryptedId encrypted by identity provider '%s'", realm.getName(), config.getAlias());
+                        throw new WebApplicationException(ex, Response.Status.BAD_REQUEST);
+                    }
                 }
 
                 AssertionType assertion = responseType.getAssertions().get(0).getAssertion();

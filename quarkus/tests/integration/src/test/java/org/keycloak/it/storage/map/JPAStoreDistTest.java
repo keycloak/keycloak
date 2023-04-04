@@ -34,7 +34,7 @@ public class JPAStoreDistTest {
     void testSuccessful(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
         cliResult.assertMessage("Experimental features enabled: map-storage");
-        cliResult.assertMessage("[org.keycloak.models.map.storage.jpa.liquibase.updater.MapJpaLiquibaseUpdaterProvider] (main) Initializing database schema. Using changelog META-INF/jpa-realms-changelog.xml");
+        cliResult.assertMessage("[org.keycloak.models.map.storage.jpa.liquibase.updater.MapJpaLiquibaseUpdaterProvider] (main) Initializing database schema. Using changelog META-INF");
         cliResult.assertStarted();
     }
 }

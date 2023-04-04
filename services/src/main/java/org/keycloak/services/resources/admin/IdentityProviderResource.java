@@ -165,9 +165,9 @@ public class IdentityProviderResource {
                 message = "Invalid request";
             }
 
-            return ErrorResponse.error(message, BAD_REQUEST);
+            throw ErrorResponse.error(message, BAD_REQUEST);
         } catch (ModelDuplicateException e) {
-            return ErrorResponse.exists("Identity Provider " + providerRep.getAlias() + " already exists");
+            throw ErrorResponse.exists("Identity Provider " + providerRep.getAlias() + " already exists");
         }
     }
 
@@ -261,7 +261,7 @@ public class IdentityProviderResource {
             IdentityProviderFactory factory = getIdentityProviderFactory();
             return factory.create(session, identityProviderModel).export(session.getContext().getUri(), realm, format);
         } catch (Exception e) {
-            return ErrorResponse.error("Could not export public broker configuration for identity provider [" + identityProviderModel.getProviderId() + "].", Response.Status.NOT_FOUND);
+            throw ErrorResponse.error("Could not export public broker configuration for identity provider [" + identityProviderModel.getProviderId() + "].", Response.Status.NOT_FOUND);
         }
     }
 
@@ -339,7 +339,7 @@ public class IdentityProviderResource {
         try {
             model = realm.addIdentityProviderMapper(model);
         } catch (Exception e) {
-            return ErrorResponse.error("Failed to add mapper '" + model.getName() + "' to identity provider [" + identityProviderModel.getProviderId() + "].", Response.Status.BAD_REQUEST);
+            throw ErrorResponse.error("Failed to add mapper '" + model.getName() + "' to identity provider [" + identityProviderModel.getProviderId() + "].", Response.Status.BAD_REQUEST);
         }
 
         adminEvent.operation(OperationType.CREATE).resource(ResourceType.IDENTITY_PROVIDER_MAPPER).resourcePath(session.getContext().getUri(), model.getId())

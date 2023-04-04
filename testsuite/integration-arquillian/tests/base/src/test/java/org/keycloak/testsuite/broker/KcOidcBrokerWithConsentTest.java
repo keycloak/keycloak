@@ -185,6 +185,6 @@ public class KcOidcBrokerWithConsentTest extends AbstractInitializedBaseBrokerTe
 
         // Assert account error page with "consentDenied" error displayed
         accountFederatedIdentityPage.assertCurrent();
-        Assert.assertEquals("Consent denied.", accountFederatedIdentityPage.getError());
+        Assert.assertEquals("Access denied when authenticating with kc-oidc-idp", accountFederatedIdentityPage.getError());
     }
 }

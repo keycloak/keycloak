@@ -73,6 +73,7 @@ public class AdminEventQueryTest extends KeycloakModelTest {
         withRealm(realmId, (session, realm) -> {
             EventStoreProvider eventStore = session.getProvider(EventStoreProvider.class);
             assertThat(eventStore.createAdminQuery()
+                    .realm(realmId)
                     .firstResult(2)
                     .getResultStream()
                     .collect(Collectors.counting()),
@@ -92,6 +93,7 @@ public class AdminEventQueryTest extends KeycloakModelTest {
             eventStore.onEvent(firstEvent, false);
             eventStore.onEvent(secondEvent, false);
             List<AdminEvent> adminEventsAsc = eventStore.createAdminQuery()
+                    .realm(realmId)
                     .orderByAscTime()
                     .getResultStream()
                     .collect(Collectors.toList());
@@ -100,6 +102,7 @@ public class AdminEventQueryTest extends KeycloakModelTest {
             assertThat(adminEventsAsc.get(1).getOperationType(), is(OperationType.DELETE));
 
             List<AdminEvent> adminEventsDesc = eventStore.createAdminQuery()
+                    .realm(realmId)
                     .orderByDescTime()
                     .getResultStream()
                     .collect(Collectors.toList());

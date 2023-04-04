@@ -20,7 +20,6 @@ import org.hamcrest.Matchers;
 import org.infinispan.client.hotrod.RemoteCache;
 import org.junit.Assert;
 import org.junit.Test;
-import org.keycloak.common.util.Time;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
@@ -193,7 +192,7 @@ public class UserSessionProviderModelTest extends KeycloakModelTest {
                         clientSession.setTimestamp(1);
                     });
                 } else {
-                    Time.setOffset(1000);
+                    setTimeOffset(1000);
                 }
             });
 
@@ -211,7 +210,7 @@ public class UserSessionProviderModelTest extends KeycloakModelTest {
                 });
             });
         } finally {
-            Time.setOffset(0);
+            setTimeOffset(0);
             kcSession.getKeycloakSessionFactory().publish(new ResetTimeOffsetEvent());
             if (timer != null && timerTaskCtx != null) {
                 timer.schedule(timerTaskCtx.getRunnable(), timerTaskCtx.getIntervalMillis(), PersisterLastSessionRefreshStoreFactory.DB_LSR_PERIODIC_TASK_NAME);
@@ -302,7 +301,7 @@ public class UserSessionProviderModelTest extends KeycloakModelTest {
         inIndependentFactories(4, 30, () -> {
             withRealm(realmId, (session, realm) -> {
                 UserModel user = session.users().getUserByUsername(realm, "user1");
-                UserSessionModel userSession = session.sessions().createUserSession(realm, user, "user1", "", "", false, null, null);
+                UserSessionModel userSession = session.sessions().createUserSession(null, realm, user, "user1", "", "", false, null, null, UserSessionModel.SessionPersistenceState.PERSISTENT);
                 userSessionIds.add(userSession.getId());
 
                 latch.countDown();

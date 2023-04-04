@@ -128,9 +128,13 @@ public abstract class AbstractClientRegistrationTest extends AbstractKeycloakTes
         reg.auth(Auth.token(getToken("no-access", "password")));
     }
 
-    private String getToken(String username, String password) {
+    protected String getToken(String username, String password) {
+        return getToken(Constants.ADMIN_CLI_CLIENT_ID, null, username, password);
+    }
+
+    protected String getToken(String clientId, String clientSecret, String username, String password) {
         try {
-            return oauth.doGrantAccessTokenRequest(REALM_NAME, username, password, null, Constants.ADMIN_CLI_CLIENT_ID, null).getAccessToken();
+            return oauth.doGrantAccessTokenRequest(REALM_NAME, username, password, null, clientId, clientSecret).getAccessToken();
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

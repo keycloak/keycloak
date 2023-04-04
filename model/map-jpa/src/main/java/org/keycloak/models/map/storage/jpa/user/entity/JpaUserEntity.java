@@ -54,6 +54,7 @@ import org.keycloak.models.map.user.MapUserEntity;
 import org.keycloak.models.map.user.MapUserFederatedIdentityEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
+import java.util.Optional;
 import static org.keycloak.models.map.storage.jpa.JpaMapStorageProviderFactory.CLONER;
 
 /**
@@ -472,6 +473,14 @@ public class JpaUserEntity extends MapUserEntity.AbstractUserEntity implements J
     }
 
     @Override
+    public Optional<MapUserConsentEntity> getUserConsent(String clientId) {
+        return this.consents.stream()
+          .map(MapUserConsentEntity.class::cast)
+          .filter(muce -> Objects.equals(muce.getClientId(), clientId))
+          .findAny();
+    }
+
+    @Override
     public void setUserConsents(Set<MapUserConsentEntity> userConsents) {
         this.consents.clear();
         if (userConsents != null) {
@@ -489,7 +498,7 @@ public class JpaUserEntity extends MapUserEntity.AbstractUserEntity implements J
 
     @Override
     public Boolean removeUserConsent(MapUserConsentEntity userConsentEntity) {
-        return this.consents.removeIf(uc -> Objects.equals(uc.getClientId(), userConsentEntity.getClientId()));
+        return removeUserConsent(userConsentEntity.getClientId());
     }
 
     @Override
@@ -504,6 +513,11 @@ public class JpaUserEntity extends MapUserEntity.AbstractUserEntity implements J
     }
 
     @Override
+    public Optional<MapUserCredentialEntity> getCredential(String id) {
+        return metadata.getCredential(id);
+    }
+
+    @Override
     public void setCredentials(List<MapUserCredentialEntity> credentials) {
         this.metadata.setCredentials(credentials);
     }
@@ -515,13 +529,26 @@ public class JpaUserEntity extends MapUserEntity.AbstractUserEntity implements J
 
     @Override
     public Boolean removeCredential(MapUserCredentialEntity credentialEntity) {
-        return super.removeCredential(credentialEntity.getId());
+        return removeCredential(credentialEntity.getId());
+    }
+
+    @Override
+    public Boolean removeCredential(String id) {
+        return metadata.removeCredential(id);
     }
 
     //user federated identities
     @Override
     public Set<MapUserFederatedIdentityEntity> getFederatedIdentities() {
         return this.federatedIdentities.stream().map(MapUserFederatedIdentityEntity.class::cast).collect(Collectors.toSet());
+    }
+
+    @Override
+    public Optional<MapUserFederatedIdentityEntity> getFederatedIdentity(String identityProviderId) {
+        return this.federatedIdentities.stream()
+          .map(MapUserFederatedIdentityEntity.class::cast)
+          .filter(muce -> Objects.equals(muce.getIdentityProvider(), identityProviderId))
+          .findAny();
     }
 
     @Override
@@ -542,7 +569,7 @@ public class JpaUserEntity extends MapUserEntity.AbstractUserEntity implements J
 
     @Override
     public Boolean removeFederatedIdentity(MapUserFederatedIdentityEntity federatedIdentity) {
-        return this.federatedIdentities.removeIf(fi -> Objects.equals(fi.getIdentityProvider(), federatedIdentity.getIdentityProvider()));
+        return removeFederatedIdentity(federatedIdentity.getIdentityProvider());
     }
 
     @Override

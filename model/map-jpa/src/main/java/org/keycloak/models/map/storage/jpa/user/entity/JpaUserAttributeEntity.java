@@ -20,7 +20,7 @@ import javax.persistence.Entity;
 import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
 
-import org.keycloak.models.map.storage.jpa.JpaAttributeEntity;
+import org.keycloak.models.map.storage.jpa.JpaAttributeEntityWithHashValue;
 
 /**
  * JPA implementation for user attributes. This entity represents a user attribute and has a many-to-one relationship
@@ -30,9 +30,9 @@ import org.keycloak.models.map.storage.jpa.JpaAttributeEntity;
  */
 @Entity
 @Table(name = "kc_user_attribute", uniqueConstraints = {
-        @UniqueConstraint(columnNames = {"fk_root", "name", "value"})
+        @UniqueConstraint(columnNames = {"fk_root", "name", "value_hash"})
 })
-public class JpaUserAttributeEntity extends JpaAttributeEntity<JpaUserEntity> {
+public class JpaUserAttributeEntity extends JpaAttributeEntityWithHashValue<JpaUserEntity> {
 
     public JpaUserAttributeEntity() {
     }

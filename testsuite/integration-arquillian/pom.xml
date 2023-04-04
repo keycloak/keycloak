@@ -22,7 +22,7 @@
     <parent>
         <groupId>org.keycloak</groupId>
         <artifactId>keycloak-testsuite-pom</artifactId>
-        <version>999-SNAPSHOT</version>
+        <version>999.0.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     
@@ -207,21 +207,12 @@
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-dependencies-admin-ui-wrapper</artifactId>
-                <type>pom</type>
+                <artifactId>keycloak-admin-ui</artifactId>
                 <version>${project.version}</version>
-                <scope>import</scope>
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-admin-ui</artifactId>
-                <version>${keycloak.admin-ui.version}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>*</groupId>
-                        <artifactId>*</artifactId>
-                    </exclusion>
-                </exclusions>
+                <artifactId>keycloak-rest-admin-ui-ext</artifactId>
             </dependency>
         </dependencies>
     </dependencyManagement>
@@ -535,7 +526,7 @@
                 <jdbc.mvn.groupId>org.mariadb.jdbc</jdbc.mvn.groupId>
                 <jdbc.mvn.artifactId>mariadb-java-client</jdbc.mvn.artifactId>
                 <jdbc.mvn.version>${mariadb-jdbc.version}</jdbc.mvn.version>
-                <docker.database.image>mariadb:${mariadb.version}</docker.database.image>
+                <docker.database.image>docker.io/mariadb:${mariadb.version}</docker.database.image>
                 <docker.database.port>3306</docker.database.port>
                 <docker.database.skip>false</docker.database.skip>
                 <!-- Need to explicitly enable utf8 as it is not the default settings in the mariadb docker image -->
@@ -565,7 +556,7 @@
                 <keycloak.connectionsJpa.database>keycloak</keycloak.connectionsJpa.database>
                 <keycloak.connectionsJpa.user>sa</keycloak.connectionsJpa.user>
                 <keycloak.connectionsJpa.password>vEry5tron9Pwd</keycloak.connectionsJpa.password>
-                <keycloak.connectionsJpa.url>jdbc:sqlserver://${auth.server.db.host}:${docker.database.port};databaseName=${keycloak.connectionsJpa.database}</keycloak.connectionsJpa.url>
+                <keycloak.connectionsJpa.url>jdbc:sqlserver://${auth.server.db.host}:${docker.database.port};databaseName=${keycloak.connectionsJpa.database};integratedSecurity=false;encrypt=false;trustServerCertificate=true;sendStringParametersAsUnicode=false;</keycloak.connectionsJpa.url>
                 <!-- Map Store JPA -->
                 <keycloak.map.storage.connectionsJpa.url>${keycloak.connectionsJpa.url}</keycloak.map.storage.connectionsJpa.url>
                 <keycloak.map.storage.connectionsJpa.user>${keycloak.connectionsJpa.user}</keycloak.map.storage.connectionsJpa.user>
@@ -622,6 +613,30 @@
                 <dballocator.type>oracle19cRAC</dballocator.type>
                 <dballocator.skip>false</dballocator.skip>
             </properties>
+        </profile>
+
+        <!-- Workaround for issues related to PhantomJS in some newer linux environment. See for example here for more details https://github.com/nodejs/node/issues/43132 -->
+        <profile>
+            <id>phantomjs-openssl-workaround</id>
+            <activation>
+                <os>
+                    <family>unix</family>
+                </os>
+            </activation>
+            <build>
+                <pluginManagement>
+                    <plugins>
+                        <plugin>
+                            <artifactId>maven-surefire-plugin</artifactId>
+                            <configuration>
+                                <environmentVariables>
+                                    <OPENSSL_CONF>/dev/null</OPENSSL_CONF>
+                                </environmentVariables>
+                            </configuration>
+                        </plugin>
+                    </plugins>
+                </pluginManagement>
+            </build>
         </profile>
     </profiles>
 

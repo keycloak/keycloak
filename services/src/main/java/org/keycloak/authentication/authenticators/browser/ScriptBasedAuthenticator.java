@@ -50,7 +50,7 @@ import java.util.Map;
  * <li>{@code session} the active {@link KeycloakSession}</li>
  * <li>{@code authenticationSession} the current {@link org.keycloak.sessions.AuthenticationSessionModel}</li>
  * <li>{@code httpRequest} the current {@link org.keycloak.http.HttpRequest}</li>
- * <li>{@code LOG} a {@link org.jboss.logging.Logger} scoped to {@link ScriptBasedAuthenticator}/li>
+ * <li>{@code LOG} a {@link org.jboss.logging.Logger} scoped to {@link ScriptBasedAuthenticator}</li>
  * </ol>
  * </p>
  * <p>

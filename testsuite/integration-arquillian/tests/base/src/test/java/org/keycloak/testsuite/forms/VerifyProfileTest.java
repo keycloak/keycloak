@@ -272,6 +272,10 @@ public class VerifyProfileTest extends AbstractTestRealmKeycloakTest {
                 + "{\"name\": \"email\", " + VerifyProfileTest.PERMISSIONS_ALL + "}"
                 + "]}");
 
+        RealmRepresentation realm = testRealm().toRepresentation();
+        realm.setEditUsernameAllowed(true);
+        testRealm().update(realm);
+
         loginPage.open();
         loginPage.login("login-test5", "password");
 
@@ -384,6 +388,9 @@ public class VerifyProfileTest extends AbstractTestRealmKeycloakTest {
     public void testUsernameOnlyIfEditAllowed() {
         RealmRepresentation realm = testRealm().toRepresentation();
 
+        setUserProfileConfiguration(CONFIGURATION_FOR_USER_EDIT);
+        updateUser(user5Id, null, "ExistingLast", null);
+
         boolean r = realm.isEditUsernameAllowed();
         try {
             setUserProfileConfiguration(null);
@@ -392,9 +399,11 @@ public class VerifyProfileTest extends AbstractTestRealmKeycloakTest {
             testRealm().update(realm);
 
             loginPage.open();
-            loginPage.login("login-test", "password");
+            loginPage.login("login-test5", "password");
 
+            verifyProfilePage.assertCurrent();
             assertFalse(verifyProfilePage.isUsernamePresent());
+            assertTrue(verifyProfilePage.isEmailPresent());
 
             realm.setEditUsernameAllowed(true);
             testRealm().update(realm);
@@ -403,6 +412,98 @@ public class VerifyProfileTest extends AbstractTestRealmKeycloakTest {
             assertTrue(verifyProfilePage.isUsernamePresent());
         } finally {
             realm.setEditUsernameAllowed(r);
+            testRealm().update(realm);
+        }
+    }
+
+    @Test
+    public void testUsernameOnlyIfEmailAsUsernameIsDisabled() {
+        RealmRepresentation realm = testRealm().toRepresentation();
+
+        setUserProfileConfiguration(CONFIGURATION_FOR_USER_EDIT);
+        updateUser(user5Id, null, "ExistingLast", null);
+
+        try {
+            setUserProfileConfiguration(null);
+
+            realm.setEditUsernameAllowed(true);
+            realm.setRegistrationEmailAsUsername(true);
+            testRealm().update(realm);
+
+            loginPage.open();
+            loginPage.login("login-test5", "password");
+
+            verifyProfilePage.assertCurrent();
+            assertFalse(verifyProfilePage.isUsernamePresent());
+            assertTrue(verifyProfilePage.isEmailPresent());
+
+            realm.setEditUsernameAllowed(false);
+            realm.setRegistrationEmailAsUsername(true);
+            testRealm().update(realm);
+
+            driver.navigate().refresh();
+            verifyProfilePage.assertCurrent();
+            assertFalse(verifyProfilePage.isUsernamePresent());
+            assertFalse(verifyProfilePage.isEmailPresent());
+
+            realm.setEditUsernameAllowed(true);
+            realm.setRegistrationEmailAsUsername(false);
+            testRealm().update(realm);
+
+            driver.navigate().refresh();
+            verifyProfilePage.assertCurrent();
+            assertTrue(verifyProfilePage.isUsernamePresent());
+            assertTrue(verifyProfilePage.isEmailPresent());
+        } finally {
+            realm.setEditUsernameAllowed(false);
+            realm.setRegistrationEmailAsUsername(false);
+            testRealm().update(realm);
+        }
+    }
+
+    @Test
+    @EnableFeature(Profile.Feature.UPDATE_EMAIL)
+    public void testUsernameOnlyIfEmailAsUsernameIsDisabledWithUpdateEmailFeature() throws Exception {
+        reconnectAdminClient();
+        RealmRepresentation realm = testRealm().toRepresentation();
+
+        setUserProfileConfiguration(CONFIGURATION_FOR_USER_EDIT);
+        updateUser(user5Id, null, "ExistingLast", null);
+
+        try {
+            setUserProfileConfiguration(null);
+
+            realm.setEditUsernameAllowed(true);
+            realm.setRegistrationEmailAsUsername(true);
+            testRealm().update(realm);
+
+            loginPage.open();
+            loginPage.login("login-test5", "password");
+
+            verifyProfilePage.assertCurrent();
+            assertFalse(verifyProfilePage.isUsernamePresent());
+            assertFalse(verifyProfilePage.isEmailPresent());
+
+            realm.setEditUsernameAllowed(false);
+            realm.setRegistrationEmailAsUsername(true);
+            testRealm().update(realm);
+
+            driver.navigate().refresh();
+            verifyProfilePage.assertCurrent();
+            assertFalse(verifyProfilePage.isUsernamePresent());
+            assertFalse(verifyProfilePage.isEmailPresent());
+
+            realm.setEditUsernameAllowed(true);
+            realm.setRegistrationEmailAsUsername(false);
+            testRealm().update(realm);
+
+            driver.navigate().refresh();
+            verifyProfilePage.assertCurrent();
+            assertTrue(verifyProfilePage.isUsernamePresent());
+            assertFalse(verifyProfilePage.isEmailPresent());
+        } finally {
+            realm.setEditUsernameAllowed(false);
+            realm.setRegistrationEmailAsUsername(false);
             testRealm().update(realm);
         }
     }

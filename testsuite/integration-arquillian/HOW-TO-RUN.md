@@ -44,6 +44,23 @@ This can be achieved by add the `auth-server-quarkus` profile when running the t
 Unlike the "development" setup described above, this requires re-build the whole distribution
 after doing any change in the code.
 
+### Running tests using an embedded server
+
+For test driven development, it is possible to run the Keycloak server deployed on real Quarkus server.
+This can be achieved by add the `auth-server-quarkus-embedded` profile when running the testsuite.
+
+    mvn -f testsuite/integration-arquillian/pom.xml -Pauth-server-quarkus-embedded clean install -Dtest=LoginTest
+
+After running this command, you should also be able to run tests from your IDE. For that, make sure you have the `auth-server-quarkus-embedded` profile enabled.
+
+When running in embedded mode, the `build` phase happens every time the server is started, and it is based on the same configuration used during a full-distribution test run(e.g.: `auth-server-quarkus` profile is active).
+
+There are a few limitations when running tests. The well-known limitations are:
+
+* FIPS tests not working
+* Deploying script providers not working. Probably any test deploying JAR files.
+* Re-starting the server during a test execution is taking too much metaspace. Need more investigation.
+
 ## Debugging - tips & tricks
 
 ### Arquillian debugging
@@ -204,23 +221,6 @@ The test is executed in same way as the "auto" DB migration test with the only d
 that you need to use property `migration.mode` with the value `manual` .
 
     -Dmigration.mode=manual
-
-## Old Admin Console UI tests
-The UI tests are real-life, UI focused integration tests. Hence they do not support the default HtmlUnit browser. Only the following real-life browsers are supported: Mozilla Firefox and Google Chrome. For details on how to run the tests with these browsers, please refer to [Different Browsers](#different-browsers) chapter.
-
-The UI tests are focused on the Admin Console. They are placed in the `old-admin-console` module and are disabled by default.
-
-The tests also use some constants placed in [test-constants.properties](tests/base/src/test/resources/test-constants.properties). A different file can be specified by `-Dtestsuite.constants=path/to/different-test-constants.properties`
-
-In case a custom `settings.xml` is used for Maven, you need to specify it also in `-Dkie.maven.settings.custom=path/to/settings.xml`.
-
-#### Execution example
-```
-mvn -f testsuite/integration-arquillian/tests/other/old-admin-console/pom.xml \
-    clean test \
-    -Dbrowser=firefox \
-    -Dfirefox_binary=/opt/firefox-45.1.1esr/firefox
-```
 
 ## Spring Boot adapter tests
 
@@ -465,7 +465,6 @@ This is temporary and database configuration should be more integrated with the 
 
 Activate the following profiles:
 
-* `quarkus`
 * `auth-server-cluster-quarkus`
 
 Then run any cluster test as usual.
@@ -949,8 +948,22 @@ networks dns configuration and run the tests.
 
 ## FIPS 140-2 testing
 
-On the FIPS enabled platform with FIPS enabled OpenJDK 11, you can run this to test against Keycloak server on Quarkus
-with FIPS 140.2 integration enabled
+### Unit tests
+
+```
+mvn clean install -f crypto/fips1402
+```
+
+To run unit tests with the BouncyCastle approved mode, which is more strict in the used crypto algorithms:
+```
+mvn clean install -f crypto/fips1402 -Dorg.bouncycastle.fips.approved_only=true
+```
+
+### Integration tests
+
+On the FIPS enabled platform with FIPS enabled OpenJDK 17, you can run this to test against a Keycloak server on Quarkus
+with FIPS 140-2 integration enabled
+
 ```
 mvn -B -f testsuite/integration-arquillian/pom.xml \
   clean install \
@@ -963,8 +976,22 @@ there should be messages similar to those:
 ```
 2022-10-11 19:34:29,521 DEBUG [org.keycloak.common.crypto.CryptoIntegration] (main) Using the crypto provider: org.keycloak.crypto.fips.FIPS1402Provider
 2022-10-11 19:34:31,072 TRACE [org.keycloak.common.crypto.CryptoIntegration] (main) Java security providers: [ 
- KC(BCFIPS version 1.000203) version 1.0 - class org.keycloak.crypto.fips.KeycloakFipsSecurityProvider, 
+ KC(BCFIPS version 1.000203, FIPS-JVM: enabled) version 1.0 - class org.keycloak.crypto.fips.KeycloakFipsSecurityProvider, 
  BCFIPS version 1.000203 - class org.bouncycastle.jcajce.provider.BouncyCastleFipsProvider, 
  BCJSSE version 1.001202 - class org.bouncycastle.jsse.provider.BouncyCastleJsseProvider,
 ]
+```
+
+### BCFIPS approved mode
+
+For running testsuite with server using BCFIPS approved mode, those additional properties should be added when running tests:
+```
+-Dauth.server.fips.mode=strict \
+-Dauth.server.supported.keystore.types=BCFKS \
+-Dauth.server.keystore.type=bcfks \
+-Dauth.server.supported.rsa.key.sizes=2048,4096
+```
+The log should contain `KeycloakFipsSecurityProvider` mentioning "Approved mode". Something like:
+```
+KC(BCFIPS version 1.000203 Approved Mode, FIPS-JVM: enabled) version 1.0 - class org.keycloak.crypto.fips.KeycloakFipsSecurityProvider,
 ```

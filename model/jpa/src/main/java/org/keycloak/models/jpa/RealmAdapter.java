@@ -19,6 +19,9 @@ package org.keycloak.models.jpa;
 
 import org.keycloak.Config;
 import org.jboss.logging.Logger;
+import org.keycloak.broker.provider.IdentityProvider;
+import org.keycloak.broker.provider.IdentityProviderFactory;
+import org.keycloak.broker.social.SocialIdentityProvider;
 import org.keycloak.common.enums.SslRequired;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.Time;
@@ -1197,7 +1200,7 @@ public class RealmAdapter implements LegacyRealmModel, JpaModel<RealmEntity> {
     }
 
     private IdentityProviderModel entityToModel(IdentityProviderEntity entity) {
-        IdentityProviderModel identityProviderModel = new IdentityProviderModel();
+        IdentityProviderModel identityProviderModel = getModelFromProviderFactory(entity.getProviderId());
         identityProviderModel.setProviderId(entity.getProviderId());
         identityProviderModel.setAlias(entity.getAlias());
         identityProviderModel.setDisplayName(entity.getDisplayName());
@@ -1216,6 +1219,21 @@ public class RealmAdapter implements LegacyRealmModel, JpaModel<RealmEntity> {
         identityProviderModel.setStoreToken(entity.isStoreToken());
         identityProviderModel.setAddReadTokenRoleOnCreate(entity.isAddReadTokenRoleOnCreate());
         return identityProviderModel;
+    }
+
+    private IdentityProviderModel getModelFromProviderFactory(String providerId) {
+        Optional<IdentityProviderFactory> factory = Stream.concat(session.getKeycloakSessionFactory().getProviderFactoriesStream(IdentityProvider.class),
+                                                                  session.getKeycloakSessionFactory().getProviderFactoriesStream(SocialIdentityProvider.class))
+                                                          .filter(providerFactory -> Objects.equals(providerFactory.getId(), providerId))
+                                                          .map(IdentityProviderFactory.class::cast)
+                                                          .findFirst();
+
+        if (factory.isPresent()) {
+            return factory.get().createConfig();
+        } else {
+            logger.warn("Couldn't find a suitable identity provider factory for " + providerId);
+            return new IdentityProviderModel();
+        }
     }
 
     @Override

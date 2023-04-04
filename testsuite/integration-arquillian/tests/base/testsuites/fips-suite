@@ -1,4 +1,6 @@
-org.keycloak.testsuite.forms.**
+LoginTest
+LoginTotpTest
+PasswordHashingTest
 ClientAuthSignedJWTTest
 CredentialsTest
 JavaKeystoreKeyProviderTest
@@ -13,3 +15,12 @@ KcRegTest
 KcRegCreateTest
 KcAdmTest
 KcAdmCreateTest
+SAMLServletAdapterTest
+SamlSignatureTest
+KcSamlBrokerTest
+KcSamlFirstBrokerLoginTest
+KcSamlEncryptedIdTest
+KcSamlSignedBrokerTest
+KcSamlSpDescriptorTest
+KerberosLdapTest
+TrustStoreEmailTest

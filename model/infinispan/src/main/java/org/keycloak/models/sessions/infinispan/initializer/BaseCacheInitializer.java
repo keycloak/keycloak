@@ -72,6 +72,11 @@ public abstract class BaseCacheInitializer extends CacheInitializer {
         return transport == null || transport.isCoordinator();
     }
 
+    @Override
+    protected int getProgressIndicator() {
+        InitializerState state = getStateFromCache();
+        return state == null ? 0 : state.getProgressIndicator();
+    }
 
     protected InitializerState getStateFromCache() {
         // We ignore cacheStore for now, so that in Cross-DC scenario (with RemoteStore enabled) is the remoteStore ignored.

@@ -13,6 +13,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.jboss.arquillian.graphene.Graphene.waitGui;
 import static org.junit.Assert.assertEquals;
+import static org.keycloak.testsuite.util.UIUtils.clickLink;
 
 public class MyResourcesPage extends AbstractLoggedInPage {
 
@@ -32,7 +33,7 @@ public class MyResourcesPage extends AbstractLoggedInPage {
     }
 
     public void clickRefreshButton() {
-        refreshButton.click();
+        clickLink(refreshButton);
     }
 
     public void clickExpandButton(int row) {

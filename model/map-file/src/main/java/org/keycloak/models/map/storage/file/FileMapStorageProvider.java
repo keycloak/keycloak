@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Red Hat, Inc. and/or its affiliates
+ * Copyright 2023 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -28,12 +28,17 @@ import org.keycloak.models.map.storage.MapStorageProviderFactory;
  */
 public class FileMapStorageProvider implements MapStorageProvider {
 
-    public FileMapStorageProvider() {
+    private final FileMapStorageProviderFactory factory;
+
+    public FileMapStorageProvider(FileMapStorageProviderFactory factory) {
+        this.factory = factory;
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public <V extends AbstractEntity, M> MapStorage<V, M> getStorage(Class<M> modelType, MapStorageProviderFactory.Flag... flags) {
-        return null;
+        FileMapStorage storage = factory.getStorage(modelType, flags);
+        return (MapStorage<V, M>) storage;
     }
 
     @Override

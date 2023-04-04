@@ -23,6 +23,7 @@ import org.keycloak.representations.idm.AuthenticationExecutionExportRepresentat
 import org.keycloak.representations.idm.AuthenticationExecutionInfoRepresentation;
 import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
 import org.keycloak.representations.idm.AuthenticatorConfigRepresentation;
+import org.keycloak.testsuite.util.KerberosUtils;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -119,6 +120,7 @@ public class InitialFlowsTest extends AbstractAuthenticationTest {
 
     private LinkedList<FlowExecutions> expectedFlows() {
         LinkedList<FlowExecutions> expected = new LinkedList<>();
+        String[] kerberosAuthExpectedChoices = KerberosUtils.isKerberosSupportExpected() ? new String[]{REQUIRED, ALTERNATIVE, DISABLED} : new String[]{DISABLED};
 
         AuthenticationFlowRepresentation flow = newFlow("browser", "browser based authentication", "basic-flow", true, true);
         addExecExport(flow, null, false, "auth-cookie", false, null, ALTERNATIVE, 10);
@@ -128,7 +130,7 @@ public class InitialFlowsTest extends AbstractAuthenticationTest {
 
         List<AuthenticationExecutionInfoRepresentation> execs = new LinkedList<>();
         addExecInfo(execs, "Cookie", "auth-cookie", false, 0, 0, ALTERNATIVE, null, new String[]{REQUIRED, ALTERNATIVE, DISABLED});
-        addExecInfo(execs, "Kerberos", "auth-spnego", false, 0, 1, DISABLED, null, new String[]{REQUIRED, ALTERNATIVE, DISABLED});
+        addExecInfo(execs, "Kerberos", "auth-spnego", false, 0, 1, DISABLED, null, kerberosAuthExpectedChoices);
         addExecInfo(execs, "Identity Provider Redirector", "identity-provider-redirector", true, 0, 2, ALTERNATIVE, null, new String[]{REQUIRED, ALTERNATIVE, DISABLED});
         addExecInfo(execs, "forms", null, false, 0, 3, ALTERNATIVE, true, new String[]{REQUIRED, ALTERNATIVE, DISABLED, CONDITIONAL});
         addExecInfo(execs, "Username Password Form", "auth-username-password-form", false, 1, 0, REQUIRED, null, new String[]{REQUIRED});
@@ -199,7 +201,7 @@ public class InitialFlowsTest extends AbstractAuthenticationTest {
         addExecInfo(execs, "Authentication Options", null, false, 0, 1, REQUIRED, true, new String[]{REQUIRED, ALTERNATIVE, DISABLED, CONDITIONAL});
         addExecInfo(execs, "Basic Auth Challenge", "basic-auth", false, 1, 0, REQUIRED, null, new String[]{REQUIRED, ALTERNATIVE, DISABLED});
         addExecInfo(execs, "Basic Auth Password+OTP", "basic-auth-otp", false, 1, 1, DISABLED, null, new String[]{REQUIRED, ALTERNATIVE, DISABLED});
-        addExecInfo(execs, "Kerberos", "auth-spnego", false, 1, 2, DISABLED, null, new String[]{REQUIRED, ALTERNATIVE, DISABLED});
+        addExecInfo(execs, "Kerberos", "auth-spnego", false, 1, 2, DISABLED, null, kerberosAuthExpectedChoices);
         expected.add(new FlowExecutions(flow, execs));
 
          flow = newFlow("registration", "registration flow", "basic-flow", true, true);

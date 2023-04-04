@@ -259,6 +259,7 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
                     .l1()
                         .enabled(l1Enabled)
                         .lifespan(l1Lifespan)
+                    .stateTransfer().timeout(30, TimeUnit.SECONDS)
                     .build();
         }
 

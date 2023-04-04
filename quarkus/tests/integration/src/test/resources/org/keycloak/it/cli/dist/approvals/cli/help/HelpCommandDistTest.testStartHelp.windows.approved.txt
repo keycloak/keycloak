@@ -72,19 +72,19 @@ Transaction:
 
 Feature:
 
---features <feature> Enables a set of one or more features. Possible values are: authorization,
-                       account2, account-api, admin-fine-grained-authz, admin2, docker,
-                       impersonation, openshift-integration, scripts, token-exchange, web-authn,
-                       client-policies, ciba, map-storage, par, declarative-user-profile,
-                       dynamic-scopes, client-secret-rotation, step-up-authentication,
-                       recovery-codes, update-email, js-adapter, preview.
+--features <feature> Enables a set of one or more features. Possible values are: account-api,
+                       account2, admin-api, admin-fine-grained-authz, admin2, authorization, ciba,
+                       client-policies, client-secret-rotation, declarative-user-profile, docker,
+                       dynamic-scopes, fips, impersonation, js-adapter, kerberos, map-storage,
+                       openshift-integration, par, preview, recovery-codes, scripts,
+                       step-up-authentication, token-exchange, update-email, web-authn.
 --features-disabled <feature>
-                     Disables a set of one or more features. Possible values are: authorization,
-                       account2, account-api, admin-fine-grained-authz, admin2, docker,
-                       impersonation, openshift-integration, scripts, token-exchange, web-authn,
-                       client-policies, ciba, map-storage, par, declarative-user-profile,
-                       dynamic-scopes, client-secret-rotation, step-up-authentication,
-                       recovery-codes, update-email, js-adapter, preview.
+                     Disables a set of one or more features. Possible values are: account-api,
+                       account2, admin-api, admin-fine-grained-authz, admin2, authorization, ciba,
+                       client-policies, client-secret-rotation, declarative-user-profile, docker,
+                       dynamic-scopes, fips, impersonation, js-adapter, kerberos, map-storage,
+                       openshift-integration, par, preview, recovery-codes, scripts,
+                       step-up-authentication, token-exchange, update-email, web-authn.
 
 Hostname:
 
@@ -119,7 +119,8 @@ HTTP/TLS:
 --http-host <host>   The used HTTP Host. Default: 0.0.0.0.
 --http-port <port>   The used HTTP port. Default: 8080.
 --http-relative-path <path>
-                     Set the path relative to '/' for serving resources. Default: /.
+                     Set the path relative to '/' for serving resources. The path must start with a
+                       '/'. Default: /.
 --https-certificate-file <file>
                      The file path to a server certificate or certificate chain in PEM format.
 --https-certificate-key-file <file>
@@ -136,7 +137,8 @@ HTTP/TLS:
                      The password of the key store file. Default: password.
 --https-key-store-type <type>
                      The type of the key store file. If not given, the type is automatically
-                       detected based on the file name.
+                       detected based on the file name. If 'fips-mode' is set to 'strict' and no
+                       value is set, it defaults to 'BCFKS'.
 --https-port <port>  The used HTTPS port. Default: 8443.
 --https-protocols <protocols>
                      The list of protocols to explicitly enable. Default: TLSv1.3.
@@ -147,7 +149,8 @@ HTTP/TLS:
                      The password of the trust store file.
 --https-trust-store-type <type>
                      The type of the trust store file. If not given, the type is automatically
-                       detected based on the file name.
+                       detected based on the file name. If 'fips-mode' is set to 'strict' and no
+                       value is set, it defaults to 'BCFKS'.
 
 Health:
 
@@ -169,7 +172,7 @@ Proxy:
 
 Vault:
 
---vault <provider>   Enables a vault provider. Possible values are: file, hashicorp.
+--vault <provider>   Enables a vault provider. Possible values are: file.
 --vault-dir <dir>    If set, secrets can be obtained by reading the content of files within the
                        given directory.
 

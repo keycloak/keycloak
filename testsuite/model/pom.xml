@@ -4,7 +4,7 @@
     <parent>
         <groupId>org.keycloak</groupId>
         <artifactId>keycloak-testsuite-pom</artifactId>
-        <version>999-SNAPSHOT</version>
+        <version>999.0.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -127,6 +127,12 @@
             <version>${testcontainers.version}</version>
             <scope>test</scope>
         </dependency>
+        <!-- annotations needed to avoid compile time warnings about enums constants -->
+        <dependency>
+            <groupId>org.infinispan</groupId>
+            <artifactId>infinispan-component-annotations</artifactId>
+            <scope>provided</scope>
+        </dependency>
     </dependencies>
 
     <build>
@@ -160,7 +166,8 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
-                    <argLine>@{argLine} -Xmx1024m -XX:+ExitOnOutOfMemoryError -XX:+HeapDumpOnOutOfMemoryError</argLine>
+                    <!-- See also https://github.com/wildfly/wildfly-core/blob/7e5624cf92ebe4b64a4793a8c0b2a340c0d6d363/core-feature-pack/common/src/main/resources/content/bin/common.sh#L57-L60 -->
+                    <argLine>@{argLine} -Xmx1536m -XX:+ExitOnOutOfMemoryError -XX:+HeapDumpOnOutOfMemoryError --add-opens=java.base/java.util=ALL-UNNAMED --add-opens=java.base/java.util.concurrent=ALL-UNNAMED</argLine>
                     <systemPropertyVariables>
                         <!-- keycloak.model.parameters lists parameter classes from 
                              org.keycloak.model.parameters package and determine enabled providers -->
@@ -179,6 +186,7 @@
                         <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
                         <org.jboss.logging.provider>log4j</org.jboss.logging.provider>
                         <infinispan.version>${infinispan.version}</infinispan.version>
+                        <project.version>${project.version}</project.version>
                     </systemPropertyVariables>
                     <properties>
                         <property>
@@ -207,7 +215,24 @@
                         </configuration>
                     </execution>
                 </executions>
-            </plugin>                        
+            </plugin>
+            <plugin>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>copy-testsuite-providers-to-model-testsuite</id>
+                        <phase>generate-test-resources</phase>
+                        <goals>
+                            <goal>copy-dependencies</goal>
+                        </goals>
+                        <configuration>
+                            <includeGroupIds>org.keycloak.testsuite</includeGroupIds>
+                            <includeArtifactIds>integration-arquillian-testsuite-providers</includeArtifactIds>
+                            <outputDirectory>${project.build.directory}/lib</outputDirectory>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
     
@@ -317,6 +342,14 @@
             <properties>
                 <keycloak.profile.feature.map_storage>enabled</keycloak.profile.feature.map_storage>
                 <keycloak.model.parameters>Map,ConcurrentHashMapStorage</keycloak.model.parameters>
+            </properties>
+        </profile>
+
+        <profile>
+            <id>file</id>
+            <properties>
+                <keycloak.profile.feature.map_storage>enabled</keycloak.profile.feature.map_storage>
+                <keycloak.model.parameters>Map,FileMapStorage</keycloak.model.parameters>
             </properties>
         </profile>
 

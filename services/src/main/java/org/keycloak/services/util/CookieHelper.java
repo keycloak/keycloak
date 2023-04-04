@@ -18,10 +18,9 @@
 package org.keycloak.services.util;
 
 import org.jboss.logging.Logger;
+import org.keycloak.http.HttpCookie;
 import org.keycloak.http.HttpResponse;
 import org.jboss.resteasy.util.CookieParser;
-import org.keycloak.common.util.Resteasy;
-import org.keycloak.common.util.ServerCookie;
 import org.keycloak.models.KeycloakSession;
 
 import javax.ws.rs.core.Cookie;
@@ -67,10 +66,9 @@ public class CookieHelper {
         boolean secure_sameSite = sameSite == SameSiteAttributeValue.NONE || secure; // when SameSite=None, Secure attribute must be set
 
         HttpResponse response = session.getContext().getHttpResponse();
-        StringBuffer cookieBuf = new StringBuffer();
-        ServerCookie.appendCookieValue(cookieBuf, 1, name, value, path, domain, comment, maxAge, secure_sameSite, httpOnly, sameSite);
-        String cookie = cookieBuf.toString();
-        response.addHeader(HttpHeaders.SET_COOKIE, cookie);
+        HttpCookie cookie = new HttpCookie(1, name, value, path, domain, comment, maxAge, secure_sameSite, httpOnly, sameSite);
+
+        response.setCookieIfAbsent(cookie);
 
         // a workaround for browser in older Apple OSs – browsers ignore cookies with SameSite=None
         if (sameSiteParam == SameSiteAttributeValue.NONE) {

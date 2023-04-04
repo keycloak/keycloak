@@ -20,7 +20,7 @@
     <parent>
         <artifactId>keycloak-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>999-SNAPSHOT</version>
+        <version>999.0.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <name>Keycloak Quarkus Parent</name>
@@ -46,11 +46,6 @@
         <org.jboss.spec.javax.xml.bind.jboss-jaxb-api_2.3_spec.version>2.0.1.Final</org.jboss.spec.javax.xml.bind.jboss-jaxb-api_2.3_spec.version>
         <sun.saaj-impl.version>1.4.1.SP1</sun.saaj-impl.version>
         <org.jvnet.staxex.version>1.8.3</org.jvnet.staxex.version>
-
-        <!--
-            Quarkiverse dependency versions
-         -->
-        <io.quarkiverse.vault.version>2.0.0</io.quarkiverse.vault.version>
 
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.plugin.version>3.8.1</maven.compiler.plugin.version>

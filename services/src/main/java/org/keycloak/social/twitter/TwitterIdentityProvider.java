@@ -28,6 +28,7 @@ import org.keycloak.broker.provider.IdentityProvider;
 import org.keycloak.broker.provider.util.IdentityBrokerState;
 import org.keycloak.broker.social.SocialIdentityProvider;
 import org.keycloak.common.ClientConnection;
+import org.keycloak.common.util.Base64;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
@@ -43,12 +44,14 @@ import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.vault.VaultStringSecret;
+import twitter4j.AccessToken;
+import twitter4j.OAuthAuthorization;
+import twitter4j.RequestToken;
 import twitter4j.Twitter;
-import twitter4j.TwitterFactory;
-import twitter4j.auth.AccessToken;
-import twitter4j.auth.RequestToken;
-import twitter4j.conf.ConfigurationBuilder;
+import twitter4j.v1.User;
 
+import java.io.ByteArrayInputStream;
+import java.io.ObjectInputStream;
 import javax.ws.rs.GET;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.WebApplicationException;
@@ -67,14 +70,19 @@ public class TwitterIdentityProvider extends AbstractIdentityProvider<OAuth2Iden
 
     String TWITTER_TOKEN_TYPE="twitter";
 
-
     protected static final Logger logger = Logger.getLogger(TwitterIdentityProvider.class);
 
     private static final String TWITTER_TOKEN = "twitter_token";
-    private static final String TWITTER_TOKENSECRET = "twitter_tokenSecret";
+
+    private final OAuthAuthorization oAuthAuthorization;
 
     public TwitterIdentityProvider(KeycloakSession session, OAuth2IdentityProviderConfig config) {
         super(session, config);
+        try (VaultStringSecret vaultStringSecret = session.vault().getStringSecret(getConfig().getClientSecret())) {
+            oAuthAuthorization = OAuthAuthorization.newBuilder()
+                    .oAuthConsumer(getConfig().getClientId(), vaultStringSecret.get().orElse(getConfig().getClientSecret()))
+                    .build();
+        }
     }
 
     @Override
@@ -84,17 +92,12 @@ public class TwitterIdentityProvider extends AbstractIdentityProvider<OAuth2Iden
 
     @Override
     public Response performLogin(AuthenticationRequest request) {
-        try (VaultStringSecret vaultStringSecret = session.vault().getStringSecret(getConfig().getClientSecret())) {
-            Twitter twitter = new TwitterFactory().getInstance();
-            twitter.setOAuthConsumer(getConfig().getClientId(), vaultStringSecret.get().orElse(getConfig().getClientSecret()));
-
+        try {
             URI uri = new URI(request.getRedirectUri() + "?state=" + request.getState().getEncoded());
-
-            RequestToken requestToken = twitter.getOAuthRequestToken(uri.toString());
+            RequestToken requestToken = oAuthAuthorization.getOAuthRequestToken(uri.toString());
             AuthenticationSessionModel authSession = request.getAuthenticationSession();
 
-            authSession.setAuthNote(TWITTER_TOKEN, requestToken.getToken());
-            authSession.setAuthNote(TWITTER_TOKENSECRET, requestToken.getTokenSecret());
+            authSession.setAuthNote(TWITTER_TOKEN, Base64.encodeObject(requestToken));
 
             URI authenticationUrl = URI.create(requestToken.getAuthenticationURL());
 
@@ -199,22 +202,25 @@ public class TwitterIdentityProvider extends AbstractIdentityProvider<OAuth2Iden
             AuthenticationSessionModel authSession = ClientSessionCode.getClientSession(state, tabId, session, realm, client, event, AuthenticationSessionModel.class);
 
             if (denied != null) {
-                return callback.cancelled();
+                return callback.cancelled(provider.getConfig());
             }
 
             OAuth2IdentityProviderConfig providerConfig = provider.getConfig();
 
             try (VaultStringSecret vaultStringSecret = session.vault().getStringSecret(providerConfig.getClientSecret())) {
-                Twitter twitter = new TwitterFactory(new ConfigurationBuilder().setIncludeEmailEnabled(true).build()).getInstance();
-                twitter.setOAuthConsumer(providerConfig.getClientId(), vaultStringSecret.get().orElse(providerConfig.getClientSecret()));
-
                 String twitterToken = authSession.getAuthNote(TWITTER_TOKEN);
-                String twitterSecret = authSession.getAuthNote(TWITTER_TOKENSECRET);
+                RequestToken requestToken;
+                try (ObjectInputStream in = new ObjectInputStream(new ByteArrayInputStream(Base64.decode(twitterToken)))) {
+                    requestToken = (RequestToken) in.readObject();
+                }
 
-                RequestToken requestToken = new RequestToken(twitterToken, twitterSecret);
+                AccessToken oAuthAccessToken = provider.oAuthAuthorization.getOAuthAccessToken(requestToken, verifier);
 
-                AccessToken oAuthAccessToken = twitter.getOAuthAccessToken(requestToken, verifier);
-                twitter4j.User twitterUser = twitter.verifyCredentials();
+                Twitter twitter = Twitter.newBuilder()
+                        .oAuthConsumer(providerConfig.getClientId(), vaultStringSecret.get().orElse(providerConfig.getClientSecret()))
+                        .oAuthAccessToken(oAuthAccessToken)
+                        .build();
+                User twitterUser = twitter.v1().users().verifyCredentials();
 
                 BrokeredIdentityContext identity = new BrokeredIdentityContext(Long.toString(twitterUser.getId()));
                 identity.setIdp(provider);

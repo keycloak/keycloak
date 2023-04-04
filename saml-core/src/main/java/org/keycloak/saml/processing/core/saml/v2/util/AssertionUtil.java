@@ -61,7 +61,6 @@ import org.w3c.dom.Node;
 
 import javax.xml.crypto.dsig.XMLSignature;
 import javax.xml.datatype.XMLGregorianCalendar;
-import javax.xml.namespace.QName;
 import javax.xml.stream.XMLEventReader;
 
 import java.io.ByteArrayInputStream;
@@ -69,7 +68,9 @@ import java.io.ByteArrayOutputStream;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -566,7 +567,7 @@ public class AssertionUtil {
             if (privateKey == null) {
                 throw new ProcessingException("Encryptd assertion and decrypt private key is null");
             }
-            decryptAssertion(holder, responseType, privateKey);
+            decryptAssertion(responseType, privateKey);
 
         }
         return responseType.getAssertions().get(0).getAssertion();
@@ -583,25 +584,32 @@ public class AssertionUtil {
         return rtChoiceType.getEncryptedAssertion() != null;
     }
 
+    public static Element decryptAssertion(ResponseType responseType, PrivateKey privateKey) throws ParsingException, ProcessingException, ConfigurationException {
+        return decryptAssertion(responseType, encryptedData -> Collections.singletonList(privateKey));
+    }
+
     /**
      * This method modifies the given responseType, and replaces the encrypted assertion with a decrypted version.
-     * @param responseType a response containg an encrypted assertion
+     *
+     * @param responseType a response containing an encrypted assertion
+     * @param decryptionKeyLocator locator of keys suitable for decrypting encrypted element
+     *
      * @return the assertion element as it was decrypted. This can be used in signature verification.
      */
-    public static Element decryptAssertion(SAMLDocumentHolder holder, ResponseType responseType, PrivateKey privateKey) throws ParsingException, ProcessingException, ConfigurationException {
-        Document doc = holder.getSamlDocument();
-        Element enc = DocumentUtil.getElement(doc, new QName(JBossSAMLConstants.ENCRYPTED_ASSERTION.get()));
-
-        if (enc == null) {
-            throw new ProcessingException("No encrypted assertion found.");
-        }
+    public static Element decryptAssertion(ResponseType responseType, XMLEncryptionUtil.DecryptionKeyLocator decryptionKeyLocator) throws ParsingException, ProcessingException, ConfigurationException {
+        Element enc = responseType.getAssertions().stream()
+                .map(ResponseType.RTChoiceType::getEncryptedAssertion)
+                .filter(Objects::nonNull)
+                .findFirst()
+                .map(EncryptedElementType::getEncryptedElement)
+                .orElseThrow(() -> new ProcessingException("No encrypted assertion found."));
 
         String oldID = enc.getAttribute(JBossSAMLConstants.ID.get());
         Document newDoc = DocumentUtil.createDocument();
         Node importedNode = newDoc.importNode(enc, true);
         newDoc.appendChild(importedNode);
 
-        Element decryptedDocumentElement = XMLEncryptionUtil.decryptElementInDocument(newDoc, privateKey);
+        Element decryptedDocumentElement = XMLEncryptionUtil.decryptElementInDocument(newDoc, decryptionKeyLocator);
         SAMLParser parser = SAMLParser.getInstance();
 
         JAXPValidationUtil.checkSchemaValidation(decryptedDocumentElement);
@@ -618,7 +626,14 @@ public class AssertionUtil {
         return subTypeElement != null && subTypeElement.getEncryptedID() != null;
     }
 
-    public static void decryptId(final ResponseType responseType, final PrivateKey privateKey) throws ConfigurationException, ProcessingException, ParsingException {
+    /**
+     * This method modifies the given responseType, and replaces the encrypted id with a decrypted version.
+     *
+     * @param responseType a response containing an encrypted id
+     * @param decryptionKeyLocator locator of keys suitable for decrypting encrypted element
+     *
+     */
+    public static void decryptId(final ResponseType responseType, XMLEncryptionUtil.DecryptionKeyLocator decryptionKeyLocator) throws ConfigurationException, ProcessingException, ParsingException {
         final STSubType subTypeElement = getSubTypeElement(responseType);
         if(subTypeElement == null) {
             return;
@@ -631,7 +646,7 @@ public class AssertionUtil {
         Document newDoc = DocumentUtil.createDocument();
         Node importedNode = newDoc.importNode(encryptedElement, true);
         newDoc.appendChild(importedNode);
-        Element decryptedNameIdElement = XMLEncryptionUtil.decryptElementInDocument(newDoc, privateKey);
+        Element decryptedNameIdElement = XMLEncryptionUtil.decryptElementInDocument(newDoc, decryptionKeyLocator);
 
         final XMLEventReader xmlEventReader = StaxParserUtil.getXMLEventReader(DocumentUtil.getNodeAsStream(decryptedNameIdElement));
         NameIDType nameIDType = SAMLParserUtil.parseNameIDType(xmlEventReader);

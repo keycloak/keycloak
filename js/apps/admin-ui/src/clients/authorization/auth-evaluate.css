@@ -1,0 +1,34 @@
+td#permit {
+  color: var(--pf-global--success-color--100);
+  font-weight: bold;;
+}
+
+td#deny {
+  color: var(--pf-global--danger-color--100);
+  font-weight: bold;
+}
+
+.kc-evaluated-options {
+    padding-top: 300px
+}
+
+button#back-btn {
+  margin-right: var(--pf-global--spacer--md);
+}
+
+button#reevaluate-btn {
+  margin-right: var(--pf-global--spacer--md);
+}
+
+.kc-identity-information, .kc-permissions {
+  border: none !important;
+}
+
+.kc-identity-information > div.pf-c-card__header.kc-form-panel__header {
+  padding-top: 0;
+}
+
+#resourcesAndScopes > .pf-c-form__group-control > .kc-attributes__table > thead #key,
+#resourcesAndScopes > .pf-c-form__group-control > .kc-attributes__table > thead #value {
+  display:none
+}

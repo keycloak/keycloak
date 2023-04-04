@@ -21,7 +21,11 @@ import org.jboss.logging.Logger;
 import org.keycloak.testsuite.arquillian.HotRodStoreTestEnricher;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.wait.strategy.Wait;
+import org.testcontainers.utility.MountableFile;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.Duration;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -50,6 +54,18 @@ public class InfinispanContainer extends GenericContainer<InfinispanContainer> {
         withEnv("USER", USERNAME);
         withEnv("PASS", PASSWORD);
         withNetworkMode("host");
+        
+        Path dir = Path.of(Path.of("").toAbsolutePath() + "/target/lib");
+        String projectVersion = System.getProperty("project.version");
+        Path timeTaskPath;
+        try {
+            timeTaskPath  = Files.find(dir, 1, (path, attr) -> path.toString()
+                    .endsWith("integration-arquillian-testsuite-providers-" + projectVersion + ".jar")).findFirst().orElse(null);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        MountableFile mountableFile = MountableFile.forHostPath(timeTaskPath, 0666);
+        withCopyFileToContainer(mountableFile, "/opt/infinispan/server/lib/integration-arquillian-testsuite-providers.jar");
 
         withStartupTimeout(Duration.ofMinutes(5));
         waitingFor(Wait.forLogMessage(".*Infinispan Server.*started in.*", 1));

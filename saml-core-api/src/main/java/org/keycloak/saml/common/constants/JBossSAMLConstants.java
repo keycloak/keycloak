@@ -155,6 +155,7 @@ public enum JBossSAMLConstants {
 
     // Attribute names and other constants
     ADDRESS("Address"),
+    ALGORITHM("Algorithm"),
     ALLOW_CREATE("AllowCreate"),
     ASSERTION_CONSUMER_SERVICE_URL("AssertionConsumerServiceURL"),
     ASSERTION_CONSUMER_SERVICE_INDEX("AssertionConsumerServiceIndex"),

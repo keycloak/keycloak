@@ -17,6 +17,7 @@
 
 package org.keycloak.testsuite.rest;
 
+import org.infinispan.client.hotrod.RemoteCache;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.keycloak.http.HttpRequest;
 import org.keycloak.Config;
@@ -45,6 +46,13 @@ import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.UserSessionProvider;
+import org.keycloak.models.UserSessionSpi;
+import org.keycloak.models.map.common.AbstractMapProviderFactory;
+import org.keycloak.models.map.storage.MapStorageProvider;
+import org.keycloak.models.map.storage.hotRod.connections.DefaultHotRodConnectionProviderFactory;
+import org.keycloak.models.map.storage.hotRod.connections.HotRodConnectionProvider;
+import org.keycloak.models.map.userSession.MapUserSessionProviderFactory;
 import org.keycloak.models.sessions.infinispan.changes.sessions.CrossDCLastSessionRefreshStoreFactory;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.ResetTimeOffsetEvent;
@@ -238,8 +246,16 @@ public class TestingResourceProvider implements RealmResourceProvider {
     public Map<String, String> setTimeOffset(Map<String, String> time) {
         int offset = Integer.parseInt(time.get("offset"));
 
-        if (offset > 60) {
-            suspendTask(ClearExpiredUserSessions.TASK_NAME);
+        // move time on Hot Rod server if present
+        // determine usage of Infinispan based on user sessions config
+        String userSessionProvider = Config.scope(UserSessionSpi.NAME, MapUserSessionProviderFactory.PROVIDER_ID, AbstractMapProviderFactory.CONFIG_STORAGE).get("provider");
+        if (Profile.isFeatureEnabled(Profile.Feature.MAP_STORAGE) && "hotrod".equals(userSessionProvider)) {
+            RemoteCache<Object, Object> scriptCache = session.getProvider(HotRodConnectionProvider.class).getRemoteCache(DefaultHotRodConnectionProviderFactory.SCRIPT_CACHE);
+            if (scriptCache != null) {
+                Map<String, Object> param = new HashMap<>();
+                param.put("timeService", offset);
+                scriptCache.execute("InfinispanTimeServiceTask", param);
+            }
         }
 
         Time.setOffset(offset);
@@ -247,7 +263,6 @@ public class TestingResourceProvider implements RealmResourceProvider {
         // Time offset was restarted
         if (offset == 0) {
             session.getKeycloakSessionFactory().publish(new ResetTimeOffsetEvent());
-            restorePeriodicTasks();
         }
 
         return getTimeOffset();
@@ -309,7 +324,7 @@ public class TestingResourceProvider implements RealmResourceProvider {
         EventStoreProvider eventStore = session.getProvider(EventStoreProvider.class);
         RealmModel realm = session.realms().getRealm(realmId);
 
-        if (realm == null) return ErrorResponse.error("Realm not found", Response.Status.NOT_FOUND);
+        if (realm == null) throw ErrorResponse.error("Realm not found", Response.Status.NOT_FOUND);
 
         eventStore.clear(realm);
         return Response.noContent().build();
@@ -438,7 +453,7 @@ public class TestingResourceProvider implements RealmResourceProvider {
         EventStoreProvider eventStore = session.getProvider(EventStoreProvider.class);
         RealmModel realm = session.realms().getRealm(realmId);
 
-        if (realm == null) return ErrorResponse.error("Realm not found", Response.Status.NOT_FOUND);
+        if (realm == null) throw ErrorResponse.error("Realm not found", Response.Status.NOT_FOUND);
 
         eventStore.clearAdmin(realm);
         return Response.noContent().build();
@@ -451,7 +466,7 @@ public class TestingResourceProvider implements RealmResourceProvider {
         EventStoreProvider eventStore = session.getProvider(EventStoreProvider.class);
         RealmModel realm = session.realms().getRealm(realmId);
 
-        if (realm == null) return ErrorResponse.error("Realm not found", Response.Status.NOT_FOUND);
+        if (realm == null) throw ErrorResponse.error("Realm not found", Response.Status.NOT_FOUND);
 
         eventStore.clearAdmin(realm, olderThan);
         return Response.noContent().build();

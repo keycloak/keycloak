@@ -19,6 +19,17 @@ package org.keycloak.adapters.saml.profile;
 
 import static org.keycloak.adapters.saml.SamlPrincipal.DEFAULT_ROLE_ATTRIBUTE_NAME;
 
+import java.io.IOException;
+import java.net.URI;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
+import javax.xml.crypto.dsig.XMLSignature;
+import javax.xml.datatype.XMLGregorianCalendar;
+import javax.xml.namespace.QName;
 import org.jboss.logging.Logger;
 import org.keycloak.adapters.saml.AbstractInitiateLogin;
 import org.keycloak.adapters.saml.OnSessionCreated;
@@ -36,6 +47,7 @@ import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.Base64;
 import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.common.util.MultivaluedHashMap;
+import org.keycloak.dom.saml.v2.SAML2Object;
 import org.keycloak.dom.saml.v2.assertion.AssertionType;
 import org.keycloak.dom.saml.v2.assertion.AttributeStatementType;
 import org.keycloak.dom.saml.v2.assertion.AttributeType;
@@ -43,12 +55,14 @@ import org.keycloak.dom.saml.v2.assertion.AuthnStatementType;
 import org.keycloak.dom.saml.v2.assertion.NameIDType;
 import org.keycloak.dom.saml.v2.assertion.StatementAbstractType;
 import org.keycloak.dom.saml.v2.assertion.SubjectType;
+import org.keycloak.dom.saml.v2.protocol.ExtensionsType;
 import org.keycloak.dom.saml.v2.protocol.LogoutRequestType;
 import org.keycloak.dom.saml.v2.protocol.RequestAbstractType;
 import org.keycloak.dom.saml.v2.protocol.ResponseType;
 import org.keycloak.dom.saml.v2.protocol.StatusCodeType;
 import org.keycloak.dom.saml.v2.protocol.StatusResponseType;
 import org.keycloak.dom.saml.v2.protocol.StatusType;
+import org.keycloak.rotation.KeyLocator;
 import org.keycloak.saml.BaseSAML2BindingBuilder;
 import org.keycloak.saml.SAML2AuthnRequestBuilder;
 import org.keycloak.saml.SAMLRequestParser;
@@ -62,32 +76,15 @@ import org.keycloak.saml.common.util.DocumentUtil;
 import org.keycloak.saml.processing.api.saml.v2.sig.SAML2Signature;
 import org.keycloak.saml.processing.core.saml.v2.common.SAMLDocumentHolder;
 import org.keycloak.saml.processing.core.saml.v2.util.AssertionUtil;
+import org.keycloak.saml.processing.core.util.KeycloakKeySamlExtensionGenerator;
+import org.keycloak.saml.processing.core.util.RedirectBindingSignatureUtil;
+import org.keycloak.saml.processing.core.util.XMLEncryptionUtil;
 import org.keycloak.saml.processing.web.util.PostBindingUtil;
+import org.keycloak.saml.validators.ConditionsValidator;
+import org.keycloak.saml.validators.DestinationValidator;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
-
-import java.io.IOException;
-import java.net.URI;
-import java.security.InvalidKeyException;
-import java.security.Key;
-import java.security.KeyManagementException;
-import java.security.PublicKey;
-import java.security.Signature;
-import java.security.SignatureException;
-import java.util.*;
-
-import javax.xml.datatype.XMLGregorianCalendar;
-import javax.xml.namespace.QName;
-
-import org.keycloak.dom.saml.v2.SAML2Object;
-import org.keycloak.dom.saml.v2.protocol.ExtensionsType;
-import org.keycloak.rotation.KeyLocator;
-import org.keycloak.saml.processing.core.util.KeycloakKeySamlExtensionGenerator;
-import org.keycloak.saml.processing.core.util.XMLEncryptionUtil;
-import org.keycloak.saml.validators.ConditionsValidator;
-import org.keycloak.saml.validators.DestinationValidator;
-import javax.xml.crypto.dsig.XMLSignature;
 import org.w3c.dom.NodeList;
 
 /**
@@ -533,7 +530,8 @@ public abstract class AbstractSamlAuthenticationHandler implements SamlAuthentic
             // We'll need to decrypt it first.
             Document encryptedAssertionDocument = DocumentUtil.createDocument();
             encryptedAssertionDocument.appendChild(encryptedAssertionDocument.importNode(encryptedAssertion, true));
-            return XMLEncryptionUtil.decryptElementInDocument(encryptedAssertionDocument, deployment.getDecryptionKey());
+
+            return XMLEncryptionUtil.decryptElementInDocument(encryptedAssertionDocument, data -> Collections.singletonList(deployment.getDecryptionKey()));
         }
         return DocumentUtil.getElement(responseHolder.getSamlDocument(), new QName(JBossSAMLConstants.ASSERTION.get()));
     }
@@ -675,73 +673,12 @@ public abstract class AbstractSamlAuthenticationHandler implements SamlAuthentic
 
             SignatureAlgorithm signatureAlgorithm = SignatureAlgorithm.getFromXmlMethod(decodedAlgorithm);
 
-            if (! validateRedirectBindingSignature(signatureAlgorithm, rawQueryBytes, decodedSignature, keyLocator, keyId)) {
+            if (!RedirectBindingSignatureUtil.validateRedirectBindingSignature(signatureAlgorithm, rawQueryBytes, decodedSignature, keyLocator, keyId)) {
                 throw new VerificationException("Invalid query param signature");
             }
         } catch (Exception e) {
             throw new VerificationException(e);
         }
-    }
-
-    private boolean validateRedirectBindingSignature(SignatureAlgorithm sigAlg, byte[] rawQueryBytes, byte[] decodedSignature, KeyLocator locator, String keyId)
-      throws KeyManagementException, VerificationException {
-        try {
-            Key key;
-            try {
-                key = locator.getKey(keyId);
-                boolean keyLocated = key != null;
-
-                if (keyLocated) {
-                    return validateRedirectBindingSignatureForKey(sigAlg, rawQueryBytes, decodedSignature, key);
-                }
-            } catch (KeyManagementException ex) {
-            }
-        } catch (SignatureException ex) {
-            log.debug("Verification failed for key %s: %s", keyId, ex);
-            log.trace(ex);
-        }
-
-        if (locator instanceof Iterable) {
-            Iterable<Key> availableKeys = (Iterable<Key>) locator;
-
-            log.trace("Trying hard to validate XML signature using all available keys.");
-
-            for (Key key : availableKeys) {
-                try {
-                    if (validateRedirectBindingSignatureForKey(sigAlg, rawQueryBytes, decodedSignature, key)) {
-                        return true;
-                    }
-                } catch (SignatureException ex) {
-                    log.debug("Verification failed: %s", ex);
-                }
-            }
-        }
-
-        return false;
-    }
-
-    private boolean validateRedirectBindingSignatureForKey(SignatureAlgorithm sigAlg, byte[] rawQueryBytes, byte[] decodedSignature, Key key)
-      throws SignatureException {
-        if (key == null) {
-            return false;
-        }
-
-        if (! (key instanceof PublicKey)) {
-            log.warnf("Unusable key for signature validation: %s", key);
-            return false;
-        }
-
-        Signature signature = sigAlg.createSignature(); // todo plugin signature alg
-        try {
-            signature.initVerify((PublicKey) key);
-        } catch (InvalidKeyException ex) {
-            log.warnf(ex, "Unusable key for signature validation: %s", key);
-            return false;
-        }
-
-        signature.update(rawQueryBytes);
-
-        return signature.verify(decodedSignature);
     }
 
     protected boolean isAutodetectedBearerOnly(HttpFacade.Request request) {

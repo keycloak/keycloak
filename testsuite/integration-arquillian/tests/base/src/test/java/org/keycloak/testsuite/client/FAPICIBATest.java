@@ -99,6 +99,7 @@ import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientPoliciesBuilder;
 import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientPolicyBuilder;
 import org.keycloak.testsuite.util.OAuthClient.AuthenticationRequestAcknowledgement;
 import org.keycloak.util.JsonSerialization;
+import org.keycloak.testsuite.client.policies.AbstractClientPoliciesTest;
 
 /**
  * Test for the FAPI CIBA specifications (still implementer's draft):

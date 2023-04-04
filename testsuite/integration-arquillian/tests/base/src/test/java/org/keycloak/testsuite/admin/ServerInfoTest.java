@@ -19,18 +19,25 @@ package org.keycloak.testsuite.admin;
 
 import org.junit.Test;
 import org.keycloak.common.Version;
+import org.keycloak.keys.Attributes;
+import org.keycloak.keys.GeneratedRsaKeyProviderFactory;
+import org.keycloak.keys.KeyProvider;
+import org.keycloak.representations.idm.ComponentTypeRepresentation;
+import org.keycloak.representations.idm.ConfigPropertyRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.info.ProviderRepresentation;
 import org.keycloak.representations.info.ServerInfoRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.Assert;
+import org.keycloak.testsuite.util.KeyUtils;
+import org.keycloak.testsuite.util.KeystoreUtils;
+import org.keycloak.testsuite.util.WaitUtils;
 
 import java.util.List;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.fail;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -48,22 +55,29 @@ public class ServerInfoTest extends AbstractKeycloakTest {
         assertNotNull(info.getProviders().get("authenticator"));
 
         assertNotNull(info.getThemes());
+        // Not checking account themes for now as old account console is going to be removed soon, which would remove "keycloak" theme. So that is just to avoid another "test to update" when it is removed :)
         assertNotNull(info.getThemes().get("account"));
-        assertNotNull(info.getThemes().get("admin"));
-        assertNotNull(info.getThemes().get("email"));
-        assertNotNull(info.getThemes().get("login"));
-        assertNotNull(info.getThemes().get("welcome"));
+        Assert.assertNames(info.getThemes().get("admin"), "base", "keycloak.v2");
+        Assert.assertNames(info.getThemes().get("email"), "base", "keycloak");
+        Assert.assertNames(info.getThemes().get("login"), "address", "base", "environment-agnostic", "keycloak");
+        Assert.assertNames(info.getThemes().get("welcome"), "keycloak");
 
         assertNotNull(info.getEnums());
 
         assertNotNull(info.getMemoryInfo());
         assertNotNull(info.getSystemInfo());
         assertNotNull(info.getCryptoInfo());
-        String expectedSupportedKeystoreTypes = System.getProperty("auth.server.supported.keystore.types");
-        if (expectedSupportedKeystoreTypes == null) {
-            fail("Property 'auth.server.supported.keystore.types' not set");
-        }
-        Assert.assertNames(info.getCryptoInfo().getSupportedKeystoreTypes(), expectedSupportedKeystoreTypes.split(","));
+        Assert.assertNames(info.getCryptoInfo().getSupportedKeystoreTypes(), KeystoreUtils.getSupportedKeystoreTypes());
+
+        ComponentTypeRepresentation rsaGeneratedProviderInfo = info.getComponentTypes().get(KeyProvider.class.getName())
+                .stream()
+                .filter(componentType -> GeneratedRsaKeyProviderFactory.ID.equals(componentType.getId()))
+                .findFirst().orElseThrow(() -> new RuntimeException("Not found provider with ID 'rsa-generated'"));
+        ConfigPropertyRepresentation keySizeRep = rsaGeneratedProviderInfo.getProperties()
+                .stream()
+                .filter(configProp -> Attributes.KEY_SIZE_KEY.equals(configProp.getName()))
+                .findFirst().orElseThrow(() -> new RuntimeException("Not found provider with ID 'rsa-generated'"));
+        Assert.assertNames(keySizeRep.getOptions(), KeyUtils.getExpectedSupportedRsaKeySizes());
 
         assertEquals(Version.VERSION, info.getSystemInfo().getVersion());
         assertNotNull(info.getSystemInfo().getServerTime());

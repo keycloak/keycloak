@@ -30,6 +30,7 @@ public final class DockerKeycloakDistribution implements KeycloakDistribution {
 
     private File distributionFile = new File("../../dist/target/keycloak-" + Version.VERSION + ".tar.gz");
     private File dockerFile = new File("../../container/Dockerfile");
+    private File dockerScriptFile = new File("../../container/ubi-null.sh");
 
     private GenericContainer<?> keycloakContainer = null;
     private String containerId = null;
@@ -48,6 +49,7 @@ public final class DockerKeycloakDistribution implements KeycloakDistribution {
         return new GenericContainer(
                 new ImageFromDockerfile("keycloak-under-test", false)
                         .withFileFromFile("keycloak.tar.gz", distributionFile)
+                        .withFileFromFile("ubi-null.sh", dockerScriptFile)
                         .withFileFromFile("Dockerfile", dockerFile)
                         .withBuildArg("KEYCLOAK_DIST", "keycloak.tar.gz")
         )

@@ -23,11 +23,8 @@ import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.models.GroupProvider;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
-import org.keycloak.testsuite.arquillian.containers.KeycloakQuarkusServerDeployableContainer;
+import org.keycloak.testsuite.arquillian.containers.AbstractQuarkusDeployableContainer;
 import org.keycloak.testsuite.updaters.Creator;
-import org.wildfly.extras.creaper.core.online.OnlineManagementClient;
-import org.wildfly.extras.creaper.core.online.operations.admin.Administration;
 
 public class GroupSearchTest extends AbstractGroupTest {
     @ArquillianResource
@@ -166,7 +163,7 @@ public class GroupSearchTest extends AbstractGroupTest {
                     .toArray(String[]::new);
             String s = String.join(",", searchableAttributes);
             controller.stop(suiteContext.getAuthServerInfo().getQualifier());
-            KeycloakQuarkusServerDeployableContainer container = (KeycloakQuarkusServerDeployableContainer) suiteContext.getAuthServerInfo().getArquillianContainer().getDeployableContainer();
+            AbstractQuarkusDeployableContainer container = (AbstractQuarkusDeployableContainer) suiteContext.getAuthServerInfo().getArquillianContainer().getDeployableContainer();
             container.setAdditionalBuildArgs(
                     Collections.singletonList("--spi-group-jpa-searchable-attributes=\"" + s + "\""));
             controller.start(suiteContext.getAuthServerInfo().getQualifier());
@@ -184,7 +181,7 @@ public class GroupSearchTest extends AbstractGroupTest {
             System.clearProperty(SEARCHABLE_ATTRS_PROP);
             controller.start(suiteContext.getAuthServerInfo().getQualifier());
         } else if (suiteContext.getAuthServerInfo().isQuarkus()) {
-            KeycloakQuarkusServerDeployableContainer container = (KeycloakQuarkusServerDeployableContainer) suiteContext.getAuthServerInfo().getArquillianContainer().getDeployableContainer();
+            AbstractQuarkusDeployableContainer container = (AbstractQuarkusDeployableContainer) suiteContext.getAuthServerInfo().getArquillianContainer().getDeployableContainer();
             container.setAdditionalBuildArgs(Collections.emptyList());
             container.restartServer();
         } else {

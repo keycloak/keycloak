@@ -21,7 +21,7 @@
     <parent>
         <artifactId>keycloak-testsuite-pom</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>999-SNAPSHOT</version>
+        <version>999.0.0-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -50,12 +50,6 @@
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-dependencies-admin-ui-wrapper</artifactId>
-            <type>pom</type>
-            <scope>import</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.keycloak</groupId>
             <artifactId>keycloak-admin-ui</artifactId>
             <exclusions>
                 <exclusion>
@@ -63,6 +57,10 @@
                     <artifactId>*</artifactId>
                 </exclusion>
             </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-rest-admin-ui-ext</artifactId>
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>

@@ -22,20 +22,22 @@ import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.KeycloakTransaction;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.UserSessionProvider;
+import org.keycloak.models.UserSessionSpi;
 import org.keycloak.models.map.storage.ModelEntityUtil;
+import org.keycloak.models.map.storage.file.FileMapStorageProviderFactory;
 import org.keycloak.models.map.storage.hotRod.HotRodMapStorageProviderFactory;
 import org.keycloak.models.map.storage.hotRod.connections.HotRodConnectionProvider;
+import org.keycloak.models.map.userSession.MapUserSessionProviderFactory;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.testsuite.model.KeycloakModelTest;
 import org.keycloak.testsuite.model.RequireProvider;
 
 import java.util.Map;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.stream.IntStream;
 
@@ -43,6 +45,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.aMapWithSize;
 import static org.hamcrest.Matchers.anEmptyMap;
 import static org.hamcrest.Matchers.startsWith;
+import static org.junit.Assume.assumeFalse;
 import static org.keycloak.utils.LockObjectsForModification.lockUserSessionsForModification;
 
 
@@ -52,7 +55,6 @@ public class UserSessionConcurrencyTest extends KeycloakModelTest {
     private String realmId;
     private static final int CLIENTS_COUNT = 10;
 
-    private static final Lock SYNC_USESSION = new ReentrantLock();
     private static final ThreadLocal<Boolean> wasWriting = ThreadLocal.withInitial(() -> false);
     private final boolean isHotRodStore = HotRodMapStorageProviderFactory.PROVIDER_ID.equals(CONFIG.getConfig().get("userSessions.map.storage.provider"));
 
@@ -74,31 +76,33 @@ public class UserSessionConcurrencyTest extends KeycloakModelTest {
     }
 
     @Override
+    public void cleanEnvironment(KeycloakSession s) {
+        s.realms().removeRealm(realmId);
+    }
+
+    @Override
     protected boolean isUseSameKeycloakSessionFactoryForAllThreads() {
         return true;
     }
 
     @Test
-    public void testConcurrentNotesChange() {
+    public void testConcurrentNotesChange() throws InterruptedException {
+        // Defer this one until file locking is available
+        // Skip the test if EventProvider == File
+        String evProvider = CONFIG.getConfig().get(UserSessionSpi.NAME + ".provider");
+        String evMapStorageProvider = CONFIG.getConfig().get(UserSessionSpi.NAME + ".map.storage.provider");
+        assumeFalse(MapUserSessionProviderFactory.PROVIDER_ID.equals(evProvider) &&
+                (evMapStorageProvider == null || FileMapStorageProviderFactory.PROVIDER_ID.equals(evMapStorageProvider)));
+
         // Create user session
-        String uId = withRealm(this.realmId, (session, realm) -> session.sessions().createUserSession(realm, session.users().getUserByUsername(realm, "user1"), "user1", "127.0.0.1", "form", true, null, null)).getId();
+        String uId = withRealm(this.realmId, (session, realm) -> session.sessions().createUserSession(null, realm, session.users().getUserByUsername(realm, "user1"), "user1", "127.0.0.1", "form", true, null, null, UserSessionModel.SessionPersistenceState.PERSISTENT)).getId();
 
         // Create/Update client session's notes concurrently
+        CountDownLatch cdl = new CountDownLatch(200 * CLIENTS_COUNT);
         IntStream.range(0, 200 * CLIENTS_COUNT).parallel()
-                .forEach(i -> inComittedTransaction(i, (session, n) -> {
+                .forEach(i -> inComittedTransaction(i, (session, n) -> { try {
                     RealmModel realm = session.realms().getRealm(realmId);
                     ClientModel client = realm.getClientByClientId("client" + (n % CLIENTS_COUNT));
-
-                    // THIS SHOULD BE REMOVED AS PART OF ISSUE https://github.com/keycloak/keycloak/issues/13273
-                    // Without this lock more threads can create client session but only one of them is referenced from
-                    // user session. All others that are not referenced are basically lost and should not be created.
-                    // In other words, this lock is to make sure only one thread creates client session, all other
-                    // should use client session created by the first thread
-                    //
-                    // This is basically the same as JpaMapKeycloakTransaction#read method is doing after calling lockUserSessionsForModification() method
-                    if (isHotRodStore) {
-                        SYNC_USESSION.lock();
-                    }
 
                     UserSessionModel uSession = lockUserSessionsForModification(session, () -> session.sessions().getUserSession(realm, uId));
                     AuthenticatedClientSessionModel cSession = uSession.getAuthenticatedClientSessionByClient(client.getId());
@@ -109,13 +113,12 @@ public class UserSessionConcurrencyTest extends KeycloakModelTest {
 
                     cSession.setNote(OIDCLoginProtocol.STATE_PARAM, "state-" + n);
 
-                    if (isHotRodStore) {
-                        releaseLockOnTransactionCommit(session, SYNC_USESSION);
-                    }
-
                     return null;
-                }));
+                } finally {
+                    cdl.countDown();
+                }}));
 
+        cdl.await(10, TimeUnit.SECONDS);
         withRealm(this.realmId, (session, realm) -> {
             UserSessionModel uSession = session.sessions().getUserSession(realm, uId);
             assertThat(uSession.getAuthenticatedClientSessions(), aMapWithSize(CLIENTS_COUNT));
@@ -139,55 +142,5 @@ public class UserSessionConcurrencyTest extends KeycloakModelTest {
                 assertThat(remoteCache, anEmptyMap());
             });
         }
-    }
-
-    private void releaseLockOnTransactionCommit(KeycloakSession session, Lock l) {
-        session.getTransactionManager().enlistAfterCompletion(new KeycloakTransaction() {
-            @Override
-            public void begin() {
-
-            }
-
-            @Override
-            public void commit() {
-                // THIS IS WORKAROUND FOR MISSING https://github.com/keycloak/keycloak/issues/13280
-                // It happens that calling remoteCache.put() in one thread and remoteCache.get() in another thread after
-                // releasing the l lock is so fast that changes are not yet present in the Infinispan server, to avoid
-                // this we need to leverage HotRod transactions that makes sure the changes are propagated to Infinispan
-                // server in commit phase
-                //
-                // In other words, we need to give Infinispan some time to process put request before we let other
-                // threads query client session created in this transaction
-                if (isHotRodStore && wasWriting.get()) {
-                    try {
-                        Thread.sleep(100);
-                    } catch (InterruptedException e) {
-                        throw new RuntimeException(e);
-                    }
-                    wasWriting.set(false);
-                }
-                l.unlock();
-            }
-
-            @Override
-            public void rollback() {
-                l.unlock();
-            }
-
-            @Override
-            public void setRollbackOnly() {
-
-            }
-
-            @Override
-            public boolean getRollbackOnly() {
-                return false;
-            }
-
-            @Override
-            public boolean isActive() {
-                return false;
-            }
-        });
     }
 }

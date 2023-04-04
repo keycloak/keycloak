@@ -30,6 +30,7 @@ import org.keycloak.dom.saml.v2.metadata.KeyTypes;
 import org.keycloak.dom.saml.v2.metadata.SPSSODescriptorType;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
+import org.keycloak.models.Constants;
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderMapperSyncMode;
 import org.keycloak.models.IdentityProviderModel;
@@ -41,15 +42,19 @@ import org.keycloak.representations.idm.ErrorRepresentation;
 import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
 import org.keycloak.representations.idm.IdentityProviderMapperTypeRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
+import org.keycloak.rotation.HardcodedKeyLocator;
 import org.keycloak.saml.common.exceptions.ConfigurationException;
 import org.keycloak.saml.common.exceptions.ParsingException;
 import org.keycloak.saml.common.exceptions.ProcessingException;
 import org.keycloak.saml.common.util.DocumentUtil;
+import org.keycloak.saml.processing.api.saml.v2.sig.SAML2Signature;
 import org.keycloak.saml.processing.core.parsers.saml.SAMLParser;
+import org.keycloak.saml.processing.core.util.XMLSignatureUtil;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.broker.OIDCIdentityProviderConfigRep;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.util.AdminEventPaths;
+import org.keycloak.testsuite.util.KeyUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
@@ -67,7 +72,11 @@ import java.net.URL;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.security.PublicKey;
+import java.security.cert.CertificateEncodingException;
+import java.security.cert.X509Certificate;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -92,6 +101,8 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.keycloak.saml.common.constants.JBossSAMLURIConstants.XMLDSIG_NSURI;
+
+import org.keycloak.saml.common.util.XmlKeyInfoKeyNameTransformer;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -567,7 +578,7 @@ public class IdentityProviderTest extends AbstractAdminTest {
         create(createRep("saml", "saml"));
         provider = realm.identityProviders().get("saml");
         mapperTypes = provider.getMapperTypes();
-        assertMapperTypes(mapperTypes, "saml-user-attribute-idp-mapper", "saml-role-idp-mapper", "saml-username-idp-mapper", "saml-advanced-role-idp-mapper", "saml-xpath-attribute-idp-mapper");
+        assertMapperTypes(mapperTypes, "saml-user-attribute-idp-mapper", "saml-role-idp-mapper", "saml-username-idp-mapper", "saml-advanced-role-idp-mapper", "saml-advanced-group-idp-mapper", "saml-xpath-attribute-idp-mapper");
     }
 
     private void assertMapperTypes(Map<String, IdentityProviderMapperTypeRepresentation> mapperTypes, String ... mapperIds) {
@@ -1044,7 +1055,7 @@ public class IdentityProviderTest extends AbstractAdminTest {
     }
 
     @Test
-    public void testSamlExportSignatureOn() throws URISyntaxException, IOException, ConfigurationException, ParsingException, ProcessingException {
+    public void testSamlExportSignatureOn() throws URISyntaxException, IOException, ConfigurationException, ParsingException, ProcessingException, CertificateEncodingException {
         // Use import-config to convert IDPSSODescriptor file into key value pairs
         // to use when creating a SAML Identity Provider
         MultipartFormDataOutput form = new MultipartFormDataOutput();
@@ -1059,6 +1070,7 @@ public class IdentityProviderTest extends AbstractAdminTest {
 
         // Explicitly enable SP Metadata Signature
         result.put(SAMLIdentityProviderConfig.SIGN_SP_METADATA, "true");
+        result.put(SAMLIdentityProviderConfig.XML_SIG_KEY_INFO_KEY_NAME_TRANSFORMER, XmlKeyInfoKeyNameTransformer.CERT_SUBJECT.name());
 
         // Create new SAML identity provider using configuration retrieved from import-config
         IdentityProviderRepresentation idpRep = createRep("saml", "saml", true, result);
@@ -1073,6 +1085,32 @@ public class IdentityProviderTest extends AbstractAdminTest {
         Document document = DocumentUtil.getDocument(body);
 
         Element signatureElement = DocumentUtil.getDirectChildElement(document.getDocumentElement(), XMLDSIG_NSURI.get(), "Signature");
-        Assert.assertNotNull(signatureElement);
+        Assert.assertThat("Signature not null", signatureElement, notNullValue());
+
+        Element keyInfoElement = DocumentUtil.getDirectChildElement(signatureElement, XMLDSIG_NSURI.get(), "KeyInfo");
+        Assert.assertThat("KeyInfo not null", keyInfoElement, notNullValue());
+
+        Element x509DataElement = DocumentUtil.getDirectChildElement(keyInfoElement, XMLDSIG_NSURI.get(), "X509Data");
+        Assert.assertThat("X509Data not null", x509DataElement, notNullValue());
+
+        Element x509CertificateElement = DocumentUtil.getDirectChildElement(x509DataElement, XMLDSIG_NSURI.get(), "X509Certificate");
+        Assert.assertThat("X509Certificate not null", x509CertificateElement, notNullValue());
+
+        Element keyNameElement = DocumentUtil.getDirectChildElement(keyInfoElement, XMLDSIG_NSURI.get(), "KeyName");
+        Assert.assertThat("KeyName not null", keyNameElement, notNullValue());
+
+        String activeSigCert = KeyUtils.findActiveSigningKey(realm, Constants.DEFAULT_SIGNATURE_ALGORITHM).getCertificate();
+        Assert.assertThat("activeSigCert not null", activeSigCert, notNullValue());
+
+        X509Certificate activeX509SigCert = XMLSignatureUtil.getX509CertificateFromKeyInfoString(activeSigCert);
+        Assert.assertThat("KeyName matches subject DN",
+                keyNameElement.getTextContent().trim(), equalTo(activeX509SigCert.getSubjectDN().getName()));
+
+        Assert.assertThat("Signing cert matches active realm cert",
+                x509CertificateElement.getTextContent().trim(), equalTo(Base64.getEncoder().encodeToString(activeX509SigCert.getEncoded())));
+
+        PublicKey activePublicSigKey = activeX509SigCert.getPublicKey();
+        Assert.assertThat("Metadata signature is valid",
+                new SAML2Signature().validate(document, new HardcodedKeyLocator(activePublicSigKey)), is(true));
     }
 }

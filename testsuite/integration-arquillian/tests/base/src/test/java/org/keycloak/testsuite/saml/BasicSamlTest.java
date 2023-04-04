@@ -2,6 +2,7 @@ package org.keycloak.testsuite.saml;
 
 import org.junit.Test;
 import org.keycloak.dom.saml.v2.protocol.AuthnRequestType;
+import org.keycloak.protocol.saml.SamlConfigAttributes;
 import org.keycloak.protocol.saml.SamlProtocol;
 import org.keycloak.saml.SignatureAlgorithm;
 import org.keycloak.saml.common.constants.GeneralConstants;
@@ -14,6 +15,7 @@ import org.keycloak.saml.processing.api.saml.v2.request.SAML2Request;
 import org.keycloak.saml.processing.core.saml.v2.common.SAMLDocumentHolder;
 import org.keycloak.saml.processing.web.util.RedirectBindingUtil;
 import org.keycloak.services.resources.RealmsResource;
+import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
 import org.keycloak.testsuite.util.KeyUtils;
 import org.keycloak.testsuite.util.Matchers;
 import org.keycloak.testsuite.util.SamlClient;
@@ -48,6 +50,7 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.matchesRegex;
 import static org.keycloak.saml.common.constants.JBossSAMLURIConstants.NAMEID_FORMAT_TRANSIENT;
 import static org.keycloak.saml.common.constants.JBossSAMLURIConstants.PROTOCOL_NSURI;
 import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_PORT;
@@ -303,5 +306,25 @@ public class BasicSamlTest extends AbstractSamlTest {
         assertThat("AuthnRequest/NameIdPolicy Format should be present, but it is not", formatAttribute, notNullValue());
         assertThat("AuthnRequest/NameIdPolicy Format should be Transient, but it is not", formatAttribute.getNodeValue(), is(NAMEID_FORMAT_TRANSIENT.get()));
         assertThat("AuthnRequest/NameIdPolicy element shouldn't contain the AllowCreate attribute when Format is set to Transient, but it does", allowCreateAttribute, nullValue());
+    }
+
+    @Test
+    public void testSignatureContainsAllowedCharactersOnly() throws IOException {
+        try (var c = ClientAttributeUpdater.forClient(adminClient, REALM_NAME, SAML_CLIENT_ID_SALES_POST)
+          .setAttribute(SamlConfigAttributes.SAML_SERVER_SIGNATURE, "true")
+          .update()
+        ) {
+            SAMLDocumentHolder documentHolder = new SamlClientBuilder()
+            .authnRequest(getAuthServerSamlEndpoint(REALM_NAME), SAML_CLIENT_ID_SALES_POST, SAML_ASSERTION_CONSUMER_URL_SALES_POST, Binding.POST).build()
+            .login().user(bburkeUser).build()
+            .getSamlResponse(Binding.POST);
+
+            final String signature = documentHolder.getSamlDocument()
+              .getElementsByTagName("dsig:SignatureValue")
+              .item(0).getTextContent();
+
+            // Corresponds to https://www.w3.org/TR/xmlschema-2/#base64Binary
+            assertThat(signature, matchesRegex("^[A-Za-z0-9+/ ]+[= ]*$"));
+        }
     }
 }

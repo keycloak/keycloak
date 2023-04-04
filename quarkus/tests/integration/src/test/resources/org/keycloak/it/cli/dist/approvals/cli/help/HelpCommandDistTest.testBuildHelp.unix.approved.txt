@@ -44,16 +44,16 @@ Transaction:
 Feature:
 
 --features <feature> Enables a set of one or more features. Possible values are: account-api,
-                       account2, admin, admin-api, admin-fine-grained-authz, admin2, authorization,
-                       ciba, client-policies, client-secret-rotation, declarative-user-profile,
-                       docker, dynamic-scopes, impersonation, js-adapter, map-storage,
+                       account2, admin-api, admin-fine-grained-authz, admin2, authorization, ciba,
+                       client-policies, client-secret-rotation, declarative-user-profile, docker,
+                       dynamic-scopes, fips, impersonation, js-adapter, kerberos, map-storage,
                        openshift-integration, par, preview, recovery-codes, scripts,
                        step-up-authentication, token-exchange, update-email, web-authn.
 --features-disabled <feature>
                      Disables a set of one or more features. Possible values are: account-api,
-                       account2, admin, admin-api, admin-fine-grained-authz, admin2, authorization,
-                       ciba, client-policies, client-secret-rotation, declarative-user-profile,
-                       docker, dynamic-scopes, impersonation, js-adapter, map-storage,
+                       account2, admin-api, admin-fine-grained-authz, admin2, authorization, ciba,
+                       client-policies, client-secret-rotation, declarative-user-profile, docker,
+                       dynamic-scopes, fips, impersonation, js-adapter, kerberos, map-storage,
                        openshift-integration, par, preview, recovery-codes, scripts,
                        step-up-authentication, token-exchange, update-email, web-authn.
 
@@ -78,7 +78,7 @@ Metrics:
 
 Vault:
 
---vault <provider>   Enables a vault provider. Possible values are: file, hashicorp.
+--vault <provider>   Enables a vault provider. Possible values are: file.
 
 Examples:
 

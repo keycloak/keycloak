@@ -1,0 +1,8 @@
+[[_saml-tomcat-adapter]]
+
+==== Tomcat SAML adapters
+
+To be able to secure WAR apps deployed on Tomcat 8 or 9 you must install the Keycloak Tomcat SAML adapter into your Tomcat installation.
+You then have to provide some extra configuration in each WAR you deploy to Tomcat.
+
+

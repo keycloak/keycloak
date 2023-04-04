@@ -272,7 +272,7 @@ public class RealmsResource {
     }
 
     private void checkSsl(RealmModel realm) {
-        if (!session.getContext().getUri().getBaseUri().getScheme().equals("https")
+        if (!"https".equals(session.getContext().getUri().getBaseUri().getScheme())
                 && realm.getSslRequired().isRequired(session.getContext().getConnection())) {
             HttpRequest request = session.getContext().getHttpRequest();
             Cors cors = Cors.add(request).auth().allowedMethods(request.getHttpMethod()).auth().exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS);

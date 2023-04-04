@@ -214,7 +214,7 @@ public class ComponentResource {
         }).toArray();
 
         String message = MessageFormat.format(messages.getProperty(cve.getMessage(), cve.getMessage()), localizedParameters);
-        return ErrorResponse.error(message, Response.Status.BAD_REQUEST);
+        throw ErrorResponse.error(message, Response.Status.BAD_REQUEST);
     }
 
     /**

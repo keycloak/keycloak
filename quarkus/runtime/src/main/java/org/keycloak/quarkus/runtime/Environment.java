@@ -18,7 +18,6 @@
 package org.keycloak.quarkus.runtime;
 
 import static org.keycloak.quarkus.runtime.configuration.Configuration.getBuildTimeProperty;
-import static org.keycloak.quarkus.runtime.configuration.Configuration.getConfig;
 
 import java.io.File;
 import java.io.FilenameFilter;
@@ -33,7 +32,11 @@ import java.util.stream.Collectors;
 
 import io.quarkus.runtime.LaunchMode;
 import io.quarkus.runtime.configuration.ProfileManager;
+import io.smallrye.config.SmallRyeConfig;
+
 import org.apache.commons.lang3.SystemUtils;
+import org.keycloak.common.Profile;
+import org.keycloak.common.profile.PropertiesFileProfileConfigResolver;
 import org.keycloak.quarkus.runtime.configuration.PersistedConfigSource;
 
 public final class Environment {
@@ -109,6 +112,7 @@ public final class Environment {
     public static void setProfile(String profile) {
         System.setProperty(PROFILE, profile);
         System.setProperty(ProfileManager.QUARKUS_PROFILE_PROP, profile);
+        System.setProperty(SmallRyeConfig.SMALLRYE_CONFIG_PROFILE, profile);
         if (isTestLaunchMode()) {
             System.setProperty("mp.config.profile", profile);
         }
@@ -177,10 +181,6 @@ public final class Environment {
         })).collect(Collectors.toMap(File::getName, Function.identity()));
     }
 
-    public static boolean isQuarkusDevMode() {
-        return ProfileManager.getLaunchMode().equals(LaunchMode.DEVELOPMENT);
-    }
-
     public static boolean isTestLaunchMode() {
         return "test".equals(System.getProperty(LAUNCH_MODE));
     }
@@ -220,7 +220,7 @@ public final class Environment {
     }
 
     public static boolean isDistribution() {
-        if (isQuarkusDevMode()) {
+        if (LaunchMode.current().isDevOrTest()) {
             return false;
         }
         return getHomeDir() != null;
@@ -232,5 +232,26 @@ public final class Environment {
 
     public static boolean isRebuilt() {
         return Boolean.getBoolean("kc.config.built");
+    }
+
+    public static void setHomeDir(Path path) {
+        System.setProperty("kc.home.dir", path.toFile().getAbsolutePath());
+    }
+
+    /**
+     * Do not call this method at runtime.</p>
+     *
+     * The method is marked as {@code synchronized} because build steps are executed in parallel.
+     *
+     * @return the current feature profile instance
+     */
+    public synchronized static Profile getCurrentOrCreateFeatureProfile() {
+        Profile profile = Profile.getInstance();
+
+        if (profile == null) {
+            profile = Profile.configure(new QuarkusProfileConfigResolver(), new PropertiesFileProfileConfigResolver());
+        }
+
+        return profile;
     }
 }

@@ -21,13 +21,15 @@ import static org.keycloak.models.map.storage.jpa.updater.MapJpaUpdaterProvider.
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiFunction;
 
@@ -75,12 +77,11 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserLoginFailureModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
-import org.keycloak.models.locking.GlobalLock;
 import org.keycloak.models.locking.GlobalLockProvider;
-import org.keycloak.models.locking.LockAcquiringTimeoutException;
 import org.keycloak.models.map.client.MapProtocolMapperEntity;
 import org.keycloak.models.map.client.MapProtocolMapperEntityImpl;
 import org.keycloak.models.map.common.DeepCloner;
+import org.keycloak.models.map.lock.MapLockEntity;
 import org.keycloak.models.map.realm.entity.MapAuthenticationExecutionEntity;
 import org.keycloak.models.map.realm.entity.MapAuthenticationExecutionEntityImpl;
 import org.keycloak.models.map.realm.entity.MapAuthenticationFlowEntity;
@@ -127,6 +128,8 @@ import org.keycloak.models.map.storage.jpa.event.auth.JpaAuthEventMapKeycloakTra
 import org.keycloak.models.map.storage.jpa.event.auth.entity.JpaAuthEventEntity;
 import org.keycloak.models.map.storage.jpa.group.JpaGroupMapKeycloakTransaction;
 import org.keycloak.models.map.storage.jpa.group.entity.JpaGroupEntity;
+import org.keycloak.models.map.storage.jpa.lock.JpaLockMapKeycloakTransaction;
+import org.keycloak.models.map.storage.jpa.lock.entity.JpaLockEntity;
 import org.keycloak.models.map.storage.jpa.loginFailure.JpaUserLoginFailureMapKeycloakTransaction;
 import org.keycloak.models.map.storage.jpa.loginFailure.entity.JpaUserLoginFailureEntity;
 import org.keycloak.models.map.storage.jpa.realm.JpaRealmMapKeycloakTransaction;
@@ -146,12 +149,13 @@ import org.keycloak.models.map.storage.jpa.user.entity.JpaUserEntity;
 import org.keycloak.models.map.storage.jpa.user.entity.JpaUserFederatedIdentityEntity;
 import org.keycloak.models.map.user.MapUserCredentialEntity;
 import org.keycloak.models.map.user.MapUserCredentialEntityImpl;
-import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
+import org.keycloak.provider.ProviderConfigProperty;
+import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
 import org.keycloak.transaction.JtaTransactionManagerLookup;
 
-public class JpaMapStorageProviderFactory implements 
+public class JpaMapStorageProviderFactory implements
         AmphibianProviderFactory<MapStorageProvider>,
         MapStorageProviderFactory,
         EnvironmentDependentProviderFactory {
@@ -163,11 +167,14 @@ public class JpaMapStorageProviderFactory implements
 
     public static final String HIBERNATE_DEFAULT_SCHEMA = "hibernate.default_schema";
 
+    private static final long DEFAULT_LOCK_TIMEOUT = 10000;
+
     private volatile EntityManagerFactory emf;
     private final Set<Class<?>> validatedModels = ConcurrentHashMap.newKeySet();
     private Config.Scope config;
     private final String sessionProviderKey;
     private final String sessionTxKey;
+    private String databaseShortName;
 
     // Object instances for each single JpaMapStorageProviderFactory instance per model type.
     // Used to synchronize on when validating the model type area.
@@ -220,6 +227,8 @@ public class JpaMapStorageProviderFactory implements
         //user/client session
         .constructor(JpaClientSessionEntity.class,              JpaClientSessionEntity::new)
         .constructor(JpaUserSessionEntity.class,                JpaUserSessionEntity::new)
+        //lock
+        .constructor(JpaLockEntity.class,                       JpaLockEntity::new)
         .build();
 
     private static final Map<Class<?>, BiFunction<KeycloakSession, EntityManager, MapKeycloakTransaction>> MODEL_TO_TX = new HashMap<>();
@@ -253,6 +262,8 @@ public class JpaMapStorageProviderFactory implements
         MODEL_TO_TX.put(UserModel.class,                        JpaUserMapKeycloakTransaction::new);
         //sessions
         MODEL_TO_TX.put(UserSessionModel.class,                 JpaUserSessionMapKeycloakTransaction::new);
+        //locks
+        MODEL_TO_TX.put(MapLockEntity.class,                    JpaLockMapKeycloakTransaction::new);
     }
 
     private boolean jtaEnabled;
@@ -260,7 +271,14 @@ public class JpaMapStorageProviderFactory implements
 
     public JpaMapStorageProviderFactory() {
         int index = ENUMERATOR.getAndIncrement();
+        // this identifier is used to create HotRodMapProvider only once per session per factory instance
         this.sessionProviderKey = PROVIDER_ID + "-" + index;
+
+        // When there are more JPA configurations available in Keycloak (for example, global/realm1/realm2 etc.)
+        // there will be more instances of this factory created where each holds one configuration.
+        // The following identifier can be used to uniquely identify instance of this factory.
+        // This can be later used, for example, to store provider/transaction instances inside session
+        // attributes without collisions between several configurations
         this.sessionTxKey = SESSION_TX_PREFIX + index;
     }
 
@@ -281,7 +299,29 @@ public class JpaMapStorageProviderFactory implements
     }
 
     protected EntityManager getEntityManager() {
-        return emf.createEntityManager();
+        EntityManager em = emf.createEntityManager();
+
+        // This is a workaround for Hibernate not supporting javax.persistence.lock.timeout
+        //   config option for Postgresql/CockroachDB - https://hibernate.atlassian.net/browse/HHH-16181
+        if ("postgresql".equals(databaseShortName) || "cockroachdb".equals(databaseShortName)) {
+            Long lockTimeout = config.getLong("lockTimeout", DEFAULT_LOCK_TIMEOUT);
+            if (lockTimeout >= 0) {
+                em.unwrap(SessionImpl.class)
+                        .doWork(connection -> {
+                            // 'SET LOCAL lock_timeout = ...' can't be used with parameters in a prepared statement, leads to an
+                            //   'ERROR: syntax error at or near "$1"'
+                            // on PostgreSQL.
+                            // Using 'set_config()' instead as described here: https://www.postgresql.org/message-id/CAKFQuwbMaoO9%3DVUY1K0Nz5YBDyE6YQ9A_A6ncCxD%2Bt0yK1AxJg%40mail.gmail.com
+                            // See https://www.postgresql.org/docs/13/functions-admin.html for the documentation on this function
+                            try (PreparedStatement preparedStatement = connection.prepareStatement("SELECT set_config('lock_timeout', ?, true)")) {
+                                preparedStatement.setString(1, String.valueOf(lockTimeout));
+                                ResultSet resultSet = preparedStatement.executeQuery();
+                                resultSet.close();
+                            }
+                        });
+            }
+        }
+        return em;
     }
 
     @Override
@@ -373,6 +413,16 @@ public class JpaMapStorageProviderFactory implements
         properties.put("hibernate.show_sql", config.getBoolean("showSql", false));
         properties.put("hibernate.format_sql", config.getBoolean("formatSql", true));
         properties.put("hibernate.dialect", config.get("driverDialect"));
+        Long lockTimeout = config.getLong("lockTimeout", DEFAULT_LOCK_TIMEOUT);
+        if (lockTimeout >= 0) {
+            // This property does not work for PostgreSQL/CockroachDB - https://hibernate.atlassian.net/browse/HHH-16181
+            properties.put(AvailableSettings.JPA_LOCK_TIMEOUT, String.valueOf(lockTimeout));
+        } else {
+            logger.warnf("Database %s used without lockTimeout option configured. This can result in deadlock where one connection waits for a pessimistic write lock forever.", databaseShortName);
+        }
+
+        // Pass on the property to 'EventListenerIntegrator' to activate the necessary event listeners for JPA map storage
+        properties.put(EventListenerIntegrator.JPA_MAP_STORAGE_ENABLED, Boolean.TRUE.toString());
 
         logger.trace("Creating EntityManagerFactory");
         ParsedPersistenceXmlDescriptor descriptor = PersistenceXmlParser.locateIndividualPersistenceUnit(
@@ -419,6 +469,7 @@ public class JpaMapStorageProviderFactory implements
 
                             MapJpaUpdaterProvider updater = session.getProvider(MapJpaUpdaterProvider.class);
                             MapJpaUpdaterProvider.Status status = updater.validate(modelType, connection, config.get("schema"));
+                            databaseShortName = updater.getDatabaseShortName();
 
                             if (!status.equals(VALID)) {
                                 update(modelType, connection, session);
@@ -470,8 +521,8 @@ public class JpaMapStorageProviderFactory implements
             } else {
                 Class.forName(config.get("driver"));
                 return DriverManager.getConnection(
-                        StringPropertyReplacer.replaceProperties(config.get("url"), System.getProperties()), 
-                        config.get("user"), 
+                        StringPropertyReplacer.replaceProperties(config.get("url"), System.getProperties()),
+                        config.get("user"),
                         config.get("password"));
             }
         } catch (ClassNotFoundException | SQLException | NamingException e) {
@@ -495,13 +546,25 @@ public class JpaMapStorageProviderFactory implements
     }
 
     private void update(Class<?> modelType, Connection connection, KeycloakSession session) {
-        KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession lockSession) -> {
-            GlobalLockProvider globalLock = session.getProvider(GlobalLockProvider.class);
-            try (GlobalLock l = globalLock.acquireLock(modelType.getName())) {
-                session.getProvider(MapJpaUpdaterProvider.class).update(modelType, connection, config.get("schema"));
-            } catch (LockAcquiringTimeoutException e) {
-                throw new RuntimeException("Acquiring " + modelType.getName() + " failed.", e);
-            }
-        });
+        if (modelType == MapLockEntity.class) {
+            // as the MapLockEntity is used by the MapGlobalLockProvider itself, don't create a global lock for creating that schema
+            session.getProvider(MapJpaUpdaterProvider.class).update(modelType, connection, config.get("schema"));
+        } else {
+            session.getProvider(GlobalLockProvider.class).withLock(modelType.getName(), lockedSession -> {
+                lockedSession.getProvider(MapJpaUpdaterProvider.class).update(modelType, connection, config.get("schema"));
+                return null;
+            });
+        }
+    }
+
+    @Override
+    public List<ProviderConfigProperty> getConfigMetadata() {
+        return ProviderConfigurationBuilder.create()
+                .property()
+                .name("lockTimeout")
+                .type("long")
+                .defaultValue(10000L)
+                .helpText("The maximum time to wait in milliseconds when waiting for acquiring a pessimistic read lock. If set to negative there is no timeout configured.")
+                .add().build();
     }
 }

@@ -28,6 +28,8 @@ import org.keycloak.it.junit5.extension.DistributionTest;
 import org.keycloak.it.junit5.extension.RawDistOnly;
 import org.keycloak.it.utils.KeycloakDistribution;
 import org.keycloak.quarkus.runtime.cli.command.Build;
+import org.keycloak.quarkus.runtime.cli.command.Export;
+import org.keycloak.quarkus.runtime.cli.command.Import;
 import org.keycloak.quarkus.runtime.cli.command.Start;
 import org.keycloak.quarkus.runtime.cli.command.StartDev;
 
@@ -106,6 +108,34 @@ public class HelpCommandDistTest {
     @Test
     @Launch({ Build.NAME, "--help" })
     void testBuildHelp(LaunchResult result) {
+        CLIResult cliResult = (CLIResult) result;
+        cliResult.assertHelp();
+    }
+
+    @Test
+    @Launch({ Export.NAME, "--help" })
+    void testExportHelp(LaunchResult result) {
+        CLIResult cliResult = (CLIResult) result;
+        cliResult.assertHelp();
+    }
+
+    @Test
+    @Launch({ Export.NAME, "--help-all" })
+    void testExportHelpAll(LaunchResult result) {
+        CLIResult cliResult = (CLIResult) result;
+        cliResult.assertHelp();
+    }
+
+    @Test
+    @Launch({ Import.NAME, "--help" })
+    void testImportHelp(LaunchResult result) {
+        CLIResult cliResult = (CLIResult) result;
+        cliResult.assertHelp();
+    }
+
+    @Test
+    @Launch({ Import.NAME, "--help-all" })
+    void testImportHelpAll(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
         cliResult.assertHelp();
     }

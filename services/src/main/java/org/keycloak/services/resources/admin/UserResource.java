@@ -20,8 +20,10 @@ import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.keycloak.authentication.RequiredActionProvider;
 import org.keycloak.authentication.actiontoken.execactions.ExecuteActionsActionToken;
+import org.keycloak.authentication.requiredactions.util.RequiredActionsValidator;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.Profile;
+import org.keycloak.common.util.CollectionUtil;
 import org.keycloak.common.util.Time;
 import org.keycloak.credential.CredentialModel;
 import org.keycloak.email.EmailException;
@@ -204,17 +206,22 @@ public class UserResource {
             }
             return Response.noContent().build();
         } catch (ModelDuplicateException e) {
-            return ErrorResponse.exists("User exists with same username or email");
+            session.getTransactionManager().setRollbackOnly();
+            throw ErrorResponse.exists("User exists with same username or email");
         } catch (ReadOnlyException re) {
-            return ErrorResponse.error("User is read only!", Status.BAD_REQUEST);
+            session.getTransactionManager().setRollbackOnly();
+            throw ErrorResponse.error("User is read only!", Status.BAD_REQUEST);
         } catch (ModelException me) {
             logger.warn("Could not update user!", me);
-            return ErrorResponse.error("Could not update user!", Status.BAD_REQUEST);
+            session.getTransactionManager().setRollbackOnly();
+            throw ErrorResponse.error("Could not update user!", Status.BAD_REQUEST);
         } catch (ForbiddenException fe) {
+            session.getTransactionManager().setRollbackOnly();
             throw fe;
         } catch (Exception me) { // JPA
+            session.getTransactionManager().setRollbackOnly();
             logger.warn("Could not update user!", me);// may be committed by JTA which can't
-            return ErrorResponse.error("Could not update user!", Status.BAD_REQUEST);
+            throw ErrorResponse.error("Could not update user!", Status.BAD_REQUEST);
         }
     }
 
@@ -228,7 +235,7 @@ public class UserResource {
                 errors.add(new ErrorRepresentation(error.getFormattedMessage(new AdminMessageFormatter(session, user))));
             }
 
-            return ErrorResponse.errors(errors, Status.BAD_REQUEST);
+            throw ErrorResponse.errors(errors, Status.BAD_REQUEST);
         }
 
         return null;
@@ -330,7 +337,7 @@ public class UserResource {
         }
         EventBuilder event = new EventBuilder(realm, session, clientConnection);
 
-        UserSessionModel userSession = session.sessions().createUserSession(realm, user, user.getUsername(), clientConnection.getRemoteAddr(), "impersonate", false, null, null);
+        UserSessionModel userSession = new UserSessionManager(session).createUserSession(realm, user, user.getUsername(), clientConnection.getRemoteAddr(), "impersonate", false, null, null);
 
         UserModel adminUser = auth.adminAuth().getUser();
         String impersonatorId = adminUser.getId();
@@ -421,7 +428,7 @@ public class UserResource {
     public Response addFederatedIdentity(final @PathParam("provider") String provider, FederatedIdentityRepresentation rep) {
         auth.users().requireManage(user);
         if (session.users().getFederatedIdentity(realm, user, provider) != null) {
-            return ErrorResponse.exists("User is already linked with provider");
+            throw ErrorResponse.exists("User is already linked with provider");
         }
 
         FederatedIdentityModel socialLink = new FederatedIdentityModel(provider, rep.getUserId(), rep.getUserName());
@@ -571,7 +578,7 @@ public class UserResource {
             adminEvent.operation(OperationType.DELETE).resourcePath(session.getContext().getUri()).success();
             return Response.noContent().build();
         } else {
-            return ErrorResponse.error("User couldn't be deleted", Status.BAD_REQUEST);
+            throw ErrorResponse.error("User couldn't be deleted", Status.BAD_REQUEST);
         }
     }
 
@@ -758,7 +765,7 @@ public class UserResource {
 
 
     /**
-     * Send a update account email to the user
+     * Send an email to the user with a link they can click to execute particular actions.
      *
      * An email contains a link the user can click to perform a set of required actions.
      * The redirectUri and clientId parameters are optional. If no redirect is given, then there will
@@ -768,7 +775,7 @@ public class UserResource {
      * @param redirectUri Redirect uri
      * @param clientId Client id
      * @param lifespan Number of seconds after which the generated token expires
-     * @param actions required actions the user needs to complete
+     * @param actions Required actions the user needs to complete
      * @return
      */
     @Path("execute-actions-email")
@@ -781,41 +788,40 @@ public class UserResource {
         auth.users().requireManage(user);
 
         if (user.getEmail() == null) {
-            return ErrorResponse.error("User email missing", Status.BAD_REQUEST);
+            throw ErrorResponse.error("User email missing", Status.BAD_REQUEST);
         }
 
         if (!user.isEnabled()) {
-            throw new WebApplicationException(
-                ErrorResponse.error("User is disabled", Status.BAD_REQUEST));
+            throw ErrorResponse.error("User is disabled", Status.BAD_REQUEST);
         }
 
         if (redirectUri != null && clientId == null) {
-            throw new WebApplicationException(
-                ErrorResponse.error("Client id missing", Status.BAD_REQUEST));
+            throw ErrorResponse.error("Client id missing", Status.BAD_REQUEST);
         }
 
         if (clientId == null) {
             clientId = Constants.ACCOUNT_MANAGEMENT_CLIENT_ID;
         }
 
+        if (CollectionUtil.isNotEmpty(actions) && !RequiredActionsValidator.validRequiredActions(session, actions)) {
+            throw ErrorResponse.error("Provided invalid required actions", Status.BAD_REQUEST);
+        }
+
         ClientModel client = realm.getClientByClientId(clientId);
         if (client == null) {
             logger.debugf("Client %s doesn't exist", clientId);
-            throw new WebApplicationException(
-                ErrorResponse.error("Client doesn't exist", Status.BAD_REQUEST));
+            throw ErrorResponse.error("Client doesn't exist", Status.BAD_REQUEST);
         }
         if (!client.isEnabled()) {
             logger.debugf("Client %s is not enabled", clientId);
-            throw new WebApplicationException(
-                    ErrorResponse.error("Client is not enabled", Status.BAD_REQUEST));
+            throw ErrorResponse.error("Client is not enabled", Status.BAD_REQUEST);
         }
 
         String redirect;
         if (redirectUri != null) {
             redirect = RedirectUtils.verifyRedirectUri(session, redirectUri, client);
             if (redirect == null) {
-                throw new WebApplicationException(
-                    ErrorResponse.error("Invalid redirect uri.", Status.BAD_REQUEST));
+                throw ErrorResponse.error("Invalid redirect uri.", Status.BAD_REQUEST);
             }
         }
 
@@ -844,7 +850,7 @@ public class UserResource {
             return Response.noContent().build();
         } catch (EmailException e) {
             ServicesLogger.LOGGER.failedToSendActionsEmail(e);
-            return ErrorResponse.error("Failed to send execute actions email", Status.INTERNAL_SERVER_ERROR);
+            throw ErrorResponse.error("Failed to send execute actions email", Status.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -878,12 +884,10 @@ public class UserResource {
                                                        @QueryParam("briefRepresentation") @DefaultValue("true") boolean briefRepresentation) {
         auth.users().requireView(user);
 
-        if (Objects.nonNull(search) && Objects.nonNull(firstResult) && Objects.nonNull(maxResults)) {
+        if (Objects.nonNull(search)) {
             return ModelToRepresentation.searchForGroupByName(user, !briefRepresentation, search.trim(), firstResult, maxResults);
-        } else if(Objects.nonNull(firstResult) && Objects.nonNull(maxResults)) {
-            return ModelToRepresentation.toGroupHierarchy(user, !briefRepresentation, firstResult, maxResults);
         } else {
-            return ModelToRepresentation.toGroupHierarchy(user, !briefRepresentation);
+            return ModelToRepresentation.toGroupHierarchy(user, !briefRepresentation, firstResult, maxResults);
         }
     }
 

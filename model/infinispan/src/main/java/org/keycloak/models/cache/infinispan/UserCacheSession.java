@@ -65,6 +65,7 @@ import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.UserStorageProviderModel;
 import org.keycloak.storage.client.ClientStorageProvider;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -681,13 +682,35 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
         CachedUserConsents cached = cache.get(cacheKey, CachedUserConsents.class);
 
         if (cached == null) {
+            UserConsentModel consent = getDelegate().getConsentByClient(realm, userId, clientId);
+            List<CachedUserConsent> consents;
+
+            if (consent == null) {
+                consents = Collections.singletonList(new CachedUserConsent(clientId));
+            } else {
+                consents = Collections.singletonList(new CachedUserConsent(consent));
+            }
+
             Long loaded = cache.getCurrentRevision(cacheKey);
-            List<UserConsentModel> consents = getDelegate().getConsentsStream(realm, userId).collect(Collectors.toList());
-            cached = new CachedUserConsents(loaded, cacheKey, realm, consents);
+            cached = new CachedUserConsents(loaded, cacheKey, realm, consents, false);
             cache.addRevisioned(cached, startupRevision);
         }
-        CachedUserConsent cachedConsent = cached.getConsents().get(clientId);
-        if (cachedConsent == null) return null;
+
+        Map<String, CachedUserConsent> consents = cached.getConsents();
+        CachedUserConsent cachedConsent = consents.get(clientId);
+
+        if (cachedConsent == null) {
+            UserConsentModel consent = getDelegate().getConsentByClient(realm, userId, clientId);
+
+            if (consent == null) {
+                cachedConsent = new CachedUserConsent(clientId);
+            } else {
+                cachedConsent = new CachedUserConsent(consent);
+            }
+
+            consents.put(cachedConsent.getClientDbId(), cachedConsent);
+        }
+
         return toConsentModel(realm, cachedConsent);
     }
 
@@ -702,10 +725,15 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
 
         CachedUserConsents cached = cache.get(cacheKey, CachedUserConsents.class);
 
+        if (cached != null && !cached.isAllConsents()) {
+            cached = null;
+            cache.invalidateObject(cacheKey);
+        }
+
         if (cached == null) {
             Long loaded = cache.getCurrentRevision(cacheKey);
             List<UserConsentModel> consents = getDelegate().getConsentsStream(realm, userId).collect(Collectors.toList());
-            cached = new CachedUserConsents(loaded, cacheKey, realm, consents);
+            cached = new CachedUserConsents(loaded, cacheKey, realm, consents.stream().map(CachedUserConsent::new).collect(Collectors.toList()));
             cache.addRevisioned(cached, startupRevision);
             return consents.stream();
         } else {
@@ -715,6 +743,10 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
     }
 
     private UserConsentModel toConsentModel(RealmModel realm, CachedUserConsent cachedConsent) {
+        if (cachedConsent.isNotExistent()) {
+            return null;
+        }
+
         ClientModel client = session.clients().getClientById(realm, cachedConsent.getClientDbId());
         if (client == null) {
             return null;

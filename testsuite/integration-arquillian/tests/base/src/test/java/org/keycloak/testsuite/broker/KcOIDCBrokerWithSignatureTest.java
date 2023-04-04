@@ -43,12 +43,9 @@ import org.keycloak.representations.idm.KeysMetadataRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.ProfileAssume;
-import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.client.resources.TestingCacheResource;
 import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
-import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.util.OAuthClient;
-import org.keycloak.testsuite.util.WaitUtils;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
@@ -150,7 +147,7 @@ public class KcOIDCBrokerWithSignatureTest extends AbstractBaseBrokerTest {
         cfg.setValidateSignature(true);
         cfg.setUseJwksUrl(false);
 
-        KeysMetadataRepresentation.KeyMetadataRepresentation key = ApiUtil.findActiveSigningKey(providerRealm(), Algorithm.RS256);
+        KeysMetadataRepresentation.KeyMetadataRepresentation key = org.keycloak.testsuite.util.KeyUtils.findActiveSigningKey(providerRealm(), Algorithm.RS256);
         cfg.setPublicKeySignatureVerifier(key.getPublicKey());
         updateIdentityProvider(idpRep);
 
@@ -185,7 +182,7 @@ public class KcOIDCBrokerWithSignatureTest extends AbstractBaseBrokerTest {
 
         rotateKeys(Algorithm.ES256, "ecdsa-generated");
 
-        KeysMetadataRepresentation.KeyMetadataRepresentation key = ApiUtil.findActiveSigningKey(providerRealm(), Algorithm.ES256);
+        KeysMetadataRepresentation.KeyMetadataRepresentation key = org.keycloak.testsuite.util.KeyUtils.findActiveSigningKey(providerRealm(), Algorithm.ES256);
         cfg.setPublicKeySignatureVerifier(key.getPublicKey());
         updateIdentityProvider(idpRep);
 
@@ -213,7 +210,7 @@ public class KcOIDCBrokerWithSignatureTest extends AbstractBaseBrokerTest {
 
         rotateKeys(Algorithm.PS512, "rsa-generated");
 
-        KeysMetadataRepresentation.KeyMetadataRepresentation key = ApiUtil.findActiveSigningKey(providerRealm(), Algorithm.PS512);
+        KeysMetadataRepresentation.KeyMetadataRepresentation key = org.keycloak.testsuite.util.KeyUtils.findActiveSigningKey(providerRealm(), Algorithm.PS512);
         cfg.setPublicKeySignatureVerifier(key.getPublicKey());
         updateIdentityProvider(idpRep);
 
@@ -267,7 +264,7 @@ public class KcOIDCBrokerWithSignatureTest extends AbstractBaseBrokerTest {
         cfg.setValidateSignature(true);
         cfg.setUseJwksUrl(false);
 
-        KeysMetadataRepresentation.KeyMetadataRepresentation key = ApiUtil.findActiveSigningKey(providerRealm(), Algorithm.RS256);
+        KeysMetadataRepresentation.KeyMetadataRepresentation key = org.keycloak.testsuite.util.KeyUtils.findActiveSigningKey(providerRealm(), Algorithm.RS256);
         String pemData = key.getPublicKey();
         cfg.setPublicKeySignatureVerifier(pemData);
         String expectedKeyId = KeyUtils.createKeyId(PemUtils.decodePublicKey(pemData));

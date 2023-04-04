@@ -32,6 +32,7 @@ import org.keycloak.client.registration.Auth;
 import org.keycloak.client.registration.ClientRegistration;
 import org.keycloak.client.registration.ClientRegistrationException;
 import org.keycloak.client.registration.HttpErrorException;
+import org.keycloak.events.Errors;
 import org.keycloak.models.Constants;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
@@ -46,6 +47,7 @@ import org.keycloak.testsuite.arquillian.annotation.UncaughtServerErrorExpected;
 import org.keycloak.util.JsonSerialization;
 
 import javax.ws.rs.NotFoundException;
+import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -173,6 +175,41 @@ public class ClientRegistrationTest extends AbstractClientRegistrationTest {
             fail("Expected 403");
         } catch (ClientRegistrationException e) {
             assertEquals(403, ((HttpErrorException) e.getCause()).getStatusLine().getStatusCode());
+        }
+    }
+
+    @Test
+    public void registerClientUsingRevokedToken() throws Exception {
+        reg.auth(Auth.token(getToken("manage-clients", "password")));
+
+        ClientRepresentation myclient = new ClientRepresentation();
+
+        myclient.setClientId("myclient");
+        myclient.setServiceAccountsEnabled(true);
+        myclient.setSecret("password");
+        myclient.setDirectAccessGrantsEnabled(true);
+
+        reg.create(myclient);
+
+        oauth.clientId("myclient");
+        String bearerToken = getToken("myclient", "password", "manage-clients", "password");
+        try (CloseableHttpResponse response = oauth.doTokenRevoke(bearerToken, "access_token", "password")) {
+            assertEquals(Response.Status.OK.getStatusCode(), response.getStatusLine().getStatusCode());
+        }
+
+        try {
+            reg.auth(Auth.token(bearerToken));
+
+            ClientRepresentation clientRep = buildClient();
+            clientRep.setServiceAccountsEnabled(true);
+
+            registerClient(clientRep);
+        } catch (ClientRegistrationException cre) {
+            HttpErrorException cause = (HttpErrorException) cre.getCause();
+            assertEquals(401, cause.getStatusLine().getStatusCode());
+            OAuth2ErrorRepresentation error = cause.toErrorRepresentation();
+            assertEquals(Errors.INVALID_TOKEN, error.getError());
+            assertEquals("Failed decode token", error.getErrorDescription());
         }
     }
 

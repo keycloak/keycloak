@@ -644,6 +644,7 @@ public abstract class AbstractKeycloakTest {
 
     /**
      * Sets time offset in seconds that will be added to Time.currentTime() and Time.currentTimeMillis() both for client and server.
+     * Moves time on the remote Infinispan server as well if the HotRod storage is used.
      *
      * @param offset
      */
@@ -674,6 +675,14 @@ public abstract class AbstractKeycloakTest {
         // adminClient depends on Time.offset for auto-refreshing tokens
         Time.setOffset(offset);
         Map result = testingClient.testing().setTimeOffset(Collections.singletonMap("offset", String.valueOf(offset)));
+
+        // force refreshing token after time offset has changed
+        try {
+            adminClient.tokenManager().refreshToken();
+        } catch (RuntimeException e) {
+            adminClient.tokenManager().grantToken();
+        }
+
         return String.valueOf(result);
     }
 

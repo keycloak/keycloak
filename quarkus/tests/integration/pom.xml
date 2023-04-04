@@ -24,7 +24,7 @@
     <parent>
         <artifactId>keycloak-quarkus-test-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>999-SNAPSHOT</version>
+        <version>999.0.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -61,6 +61,12 @@
         <dependency>
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-junit5-internal</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>${junit.version}</version>
+            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
@@ -100,6 +106,10 @@
             <groupId>org.testcontainers</groupId>
             <artifactId>mysql</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.apache.maven.wagon</groupId>
+            <artifactId>wagon-http-shared</artifactId>
+        </dependency>
     </dependencies>
 
     <build>
@@ -108,7 +118,7 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
-                    <argLine>-Djdk.net.hosts.file=${project.build.testOutputDirectory}/hosts_file -XX:+ExitOnOutOfMemoryError -XX:+HeapDumpOnOutOfMemoryError</argLine>
+                    <argLine>-Djdk.net.hosts.file=${project.build.testOutputDirectory}/hosts_file -XX:+ExitOnOutOfMemoryError -XX:+HeapDumpOnOutOfMemoryError --add-opens=java.base/java.security=ALL-UNNAMED</argLine>
                     <systemPropertyVariables>
                         <kc.quarkus.tests.dist>${kc.quarkus.tests.dist}</kc.quarkus.tests.dist>
                     </systemPropertyVariables>

@@ -20,7 +20,7 @@
     <parent>
         <artifactId>keycloak-docs-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>999-SNAPSHOT</version>
+        <version>999.0.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -31,17 +31,12 @@
     <description>Keycloak Guides Maven Plugin</description>
     <packaging>maven-plugin</packaging>
 
-    <dependencyManagement>
-        <dependencies>
-            <dependency>
-                <groupId>io.quarkus</groupId>
-                <artifactId>quarkus-bom</artifactId>
-                <version>${quarkus.version}</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
-        </dependencies>
-    </dependencyManagement>
+    <properties>
+        <maven.compiler.release>11</maven.compiler.release>
+        <maven.compiler.source>11</maven.compiler.source>
+        <maven.compiler.target>11</maven.compiler.target>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>org.apache.maven</groupId>
@@ -62,20 +57,6 @@
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-quarkus-server</artifactId>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.keycloak</groupId>
-                    <artifactId>keycloak-admin-ui</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>io.quarkus</groupId>
-            <artifactId>quarkus-core</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.smallrye.config</groupId>
-            <artifactId>smallrye-config</artifactId>
         </dependency>
         <dependency>
             <groupId>org.freemarker</groupId>

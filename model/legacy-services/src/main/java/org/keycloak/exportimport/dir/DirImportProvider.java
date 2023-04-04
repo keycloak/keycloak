@@ -19,7 +19,7 @@ package org.keycloak.exportimport.dir;
 
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
-import org.keycloak.exportimport.ImportProvider;
+import org.keycloak.exportimport.AbstractFileBasedImportProvider;
 import org.keycloak.exportimport.Strategy;
 import org.keycloak.exportimport.util.ExportImportSessionTask;
 import org.keycloak.exportimport.util.ImportUtils;
@@ -28,70 +28,90 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.platform.Platform;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.services.ServicesLogger;
 import org.keycloak.util.JsonSerialization;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FilenameFilter;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.keycloak.services.managers.RealmManager;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class DirImportProvider implements ImportProvider {
+public class DirImportProvider extends AbstractFileBasedImportProvider {
+
+    private final Strategy strategy;
+    private final KeycloakSessionFactory factory;
 
     private static final Logger logger = Logger.getLogger(DirImportProvider.class);
 
-    private final File rootDirectory;
+    private File rootDirectory;
 
-    public DirImportProvider() {
-        // Determine platform tmp directory
-        this.rootDirectory = new File(Platform.getPlatform().getTmpDirectory(), "keycloak-export");
-        if (!this.rootDirectory .exists()) {
-            throw new IllegalStateException("Directory " + this.rootDirectory + " doesn't exist");
-        }
+    private String realmName;
 
-        logger.infof("Importing from directory %s", this.rootDirectory.getAbsolutePath());
+    public DirImportProvider(KeycloakSessionFactory factory, Strategy strategy) {
+        this.factory = factory;
+        this.strategy = strategy;
     }
 
-    public DirImportProvider(File rootDirectory) {
-        this.rootDirectory = rootDirectory;
+    public DirImportProvider withDir(String dir) {
+        this.rootDirectory = new File(dir);
 
         if (!this.rootDirectory.exists()) {
             throw new IllegalStateException("Directory " + this.rootDirectory + " doesn't exist");
         }
 
         logger.infof("Importing from directory %s", this.rootDirectory.getAbsolutePath());
+        return this;
     }
 
-    @Override
-    public void importModel(KeycloakSessionFactory factory, Strategy strategy) throws IOException {
-        List<String> realmNames = getRealmsToImport();
+    public DirImportProvider withRealmName(String realmName) {
+        this.realmName = realmName;
+        return this;
+    }
 
-        for (String realmName : realmNames) {
-            importRealm(factory, realmName, strategy);
+    private File getRootDirectory() {
+        if (rootDirectory == null) {
+            this.rootDirectory = new File(Platform.getPlatform().getTmpDirectory(), "keycloak-export");
+            if (!this.rootDirectory.exists()) {
+                throw new IllegalStateException("Directory " + this.rootDirectory + " doesn't exist");
+            }
+
+            logger.infof("Importing from directory %s", this.rootDirectory.getAbsolutePath());
         }
+        return rootDirectory;
     }
 
     @Override
-    public boolean isMasterRealmExported() throws IOException {
+    public void importModel() throws IOException {
+        if (realmName != null) {
+            ServicesLogger.LOGGER.realmImportRequested(realmName, strategy.toString());
+            importRealm(realmName, strategy);
+        } else {
+            ServicesLogger.LOGGER.fullModelImport(strategy.toString());
+            List<String> realmNames = getRealmsToImport();
+
+            for (String realmName : realmNames) {
+                importRealm(realmName, strategy);
+            }
+        }
+        ServicesLogger.LOGGER.importSuccess();
+    }
+
+    @Override
+    public boolean isMasterRealmExported() {
         List<String> realmNames = getRealmsToImport();
         return realmNames.contains(Config.getAdminRealm());
     }
 
-    private List<String> getRealmsToImport() throws IOException {
-        File[] realmFiles = this.rootDirectory.listFiles(new FilenameFilter() {
-
-            @Override
-            public boolean accept(File dir, String name) {
-                return (name.endsWith("-realm.json"));
-            }
-        });
-
+    private List<String> getRealmsToImport() {
+        File[] realmFiles = getRootDirectory().listFiles((dir, name) -> (name.endsWith("-realm.json")));
+        Objects.requireNonNull(realmFiles, "Directory not found: " + getRootDirectory().getName());
         List<String> realmNames = new ArrayList<>();
         for (File file : realmFiles) {
             String fileName = file.getName();
@@ -108,33 +128,22 @@ public class DirImportProvider implements ImportProvider {
         return realmNames;
     }
 
-    @Override
-    public void importRealm(KeycloakSessionFactory factory, final String realmName, final Strategy strategy) throws IOException {
-        File realmFile = new File(this.rootDirectory + File.separator + realmName + "-realm.json");
-        File[] userFiles = this.rootDirectory.listFiles(new FilenameFilter() {
-
-            @Override
-            public boolean accept(File dir, String name) {
-                return name.matches(realmName + "-users-[0-9]+\\.json");
-            }
-        });
-        File[] federatedUserFiles = this.rootDirectory.listFiles(new FilenameFilter() {
-
-            @Override
-            public boolean accept(File dir, String name) {
-                return name.matches(realmName + "-federated-users-[0-9]+\\.json");
-            }
-        });
+    public void importRealm(final String realmName, final Strategy strategy) throws IOException {
+        File realmFile = new File(getRootDirectory() + File.separator + realmName + "-realm.json");
+        File[] userFiles = getRootDirectory().listFiles((dir, name) -> name.matches(realmName + "-users-[0-9]+\\.json"));
+        Objects.requireNonNull(userFiles, "directory not found: " + getRootDirectory().getName());
+        File[] federatedUserFiles = getRootDirectory().listFiles((dir, name) -> name.matches(realmName + "-federated-users-[0-9]+\\.json"));
+        Objects.requireNonNull(federatedUserFiles, "directory not found: " + getRootDirectory().getName());
 
         // Import realm first
-        FileInputStream is = new FileInputStream(realmFile);
+        InputStream is = parseFile(realmFile);
         final RealmRepresentation realmRep = JsonSerialization.readValue(is, RealmRepresentation.class);
         final AtomicBoolean realmImported = new AtomicBoolean();
 
         KeycloakModelUtils.runJobInTransaction(factory, new ExportImportSessionTask() {
 
             @Override
-            public void runExportImportTask(KeycloakSession session) throws IOException {
+            public void runExportImportTask(KeycloakSession session) {
                 boolean imported = ImportUtils.importRealm(session, realmRep, strategy, true);
                 realmImported.set(imported);
             }
@@ -144,37 +153,41 @@ public class DirImportProvider implements ImportProvider {
         if (realmImported.get()) {
             // Import users
             for (final File userFile : userFiles) {
-                final FileInputStream fis = new FileInputStream(userFile);
-                KeycloakModelUtils.runJobInTransaction(factory, new ExportImportSessionTask() {
-                    @Override
-                    protected void runExportImportTask(KeycloakSession session) throws IOException {
-                        ImportUtils.importUsersFromStream(session, realmName, JsonSerialization.mapper, fis);
-                        logger.infof("Imported users from %s", userFile.getAbsolutePath());
-                    }
-                });
+                try (InputStream fis = parseFile(userFile)) {
+                    KeycloakModelUtils.runJobInTransaction(factory, new ExportImportSessionTask() {
+                        @Override
+                        protected void runExportImportTask(KeycloakSession session) throws IOException {
+                            ImportUtils.importUsersFromStream(session, realmName, JsonSerialization.mapper, fis);
+                            logger.infof("Imported users from %s", userFile.getAbsolutePath());
+                        }
+                    });
+                }
             }
             for (final File userFile : federatedUserFiles) {
-                final FileInputStream fis = new FileInputStream(userFile);
-                KeycloakModelUtils.runJobInTransaction(factory, new ExportImportSessionTask() {
-                    @Override
-                    protected void runExportImportTask(KeycloakSession session) throws IOException {
-                        ImportUtils.importFederatedUsersFromStream(session, realmName, JsonSerialization.mapper, fis);
-                        logger.infof("Imported federated users from %s", userFile.getAbsolutePath());
-                    }
-                });
+                try (InputStream fis = parseFile(userFile)) {
+                    KeycloakModelUtils.runJobInTransaction(factory, new ExportImportSessionTask() {
+                        @Override
+                        protected void runExportImportTask(KeycloakSession session) throws IOException {
+                            ImportUtils.importFederatedUsersFromStream(session, realmName, JsonSerialization.mapper, fis);
+                            logger.infof("Imported federated users from %s", userFile.getAbsolutePath());
+                        }
+                    });
+                }
             }
         }
 
-        // Import authorization and initialize service accounts last, as they require users already in DB
-        KeycloakModelUtils.runJobInTransaction(factory, new ExportImportSessionTask() {
+        if (realmImported.get()) {
+            // Import authorization and initialize service accounts last, as they require users already in DB
+            KeycloakModelUtils.runJobInTransaction(factory, new ExportImportSessionTask() {
 
-            @Override
-            public void runExportImportTask(KeycloakSession session) throws IOException {
-                RealmManager realmManager = new RealmManager(session);
-                realmManager.setupClientServiceAccountsAndAuthorizationOnImport(realmRep, false);
-            }
+                @Override
+                public void runExportImportTask(KeycloakSession session) {
+                    RealmManager realmManager = new RealmManager(session);
+                    realmManager.setupClientServiceAccountsAndAuthorizationOnImport(realmRep, false);
+                }
 
-        });
+            });
+        }
     }
 
     @Override

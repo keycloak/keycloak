@@ -24,7 +24,7 @@
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
         <artifactId>integration-arquillian-tests</artifactId>
-        <version>999-SNAPSHOT</version>
+        <version>999.0.0-SNAPSHOT</version>
     </parent>
 
     <artifactId>integration-arquillian-tests-other</artifactId>
@@ -121,12 +121,6 @@
             </modules>
         </profile>
         <profile>
-            <id>old-admin-console</id>
-            <modules>
-                <module>old-admin-console</module>
-            </modules>
-        </profile>
-        <profile>
             <id>mod_auth_mellon</id>
             <modules>
                 <module>mod_auth_mellon</module>
@@ -159,7 +153,6 @@
         <profile>
             <id>webauthn</id>
             <modules>
-                <module>old-admin-console</module>
                 <module>base-ui</module>
                 <module>webauthn</module>
             </modules>

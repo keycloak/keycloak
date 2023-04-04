@@ -167,10 +167,10 @@ public class JavascriptTestExecutor {
         jsExecutor.executeScript("console.warn = event;");
 
         if (argumentsBuilder == null) {
-            jsExecutor.executeScript("window.keycloak = Keycloak();");
+            jsExecutor.executeScript("window.keycloak = new Keycloak();");
         } else {
             String configArguments = argumentsBuilder.build();
-            jsExecutor.executeScript("window.keycloak = Keycloak(" + configArguments + ");");
+            jsExecutor.executeScript("window.keycloak = new Keycloak(" + configArguments + ");");
         }
 
         jsExecutor.executeScript("window.keycloak.onAuthSuccess = function () {event('Auth Success')};"); // event function is declared in index.html

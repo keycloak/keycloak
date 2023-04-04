@@ -31,7 +31,19 @@ public class StackUtil {
         return getShortStackTrace("\n    ");
     }
 
-    private static final Pattern IGNORED = Pattern.compile("sun\\.|java\\.(lang|util|stream)\\.|org\\.jboss\\.(arquillian|logging).|org.apache.maven.surefire|org\\.junit\\.|org.keycloak.testsuite.model.KeycloakModelTest\\.");
+    private static final Pattern IGNORED = Pattern.compile("sun\\.|"
+      + "java\\.(lang|util|stream)\\.|"
+      + "jdk\\.internal\\.|"
+      + "org\\.jboss\\.(arquillian|logging|logmanager|threads).|"
+      + "org.apache.maven.surefire|"
+      + "org\\.xnio\\.|"
+      + "org\\.junit\\.|"
+      + "org\\.infinispan\\.(interceptors|cache|notifications\\.cachelistener)\\.|"
+      + "io\\.quarkus\\.|"
+      + "io\\.undertow\\.|"
+      + "picocli\\.|"
+      + "org.keycloak.testsuite.model.KeycloakModelTest\\."
+    );
     private static final StringBuilder EMPTY = new StringBuilder(0);
 
     /**

@@ -71,6 +71,7 @@ import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.util.KerberosRule;
+import org.keycloak.testsuite.util.KerberosUtils;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.junit.BeforeClass;
 
@@ -132,6 +133,11 @@ public abstract class AbstractKerberosTest extends AbstractAuthTest {
         ProfileAssume.assumeFeatureDisabled(Feature.MAP_STORAGE);
     }
 
+    @BeforeClass
+    public static void checkKerberosSupportedByAuthServer() {
+        KerberosUtils.assumeKerberosSupportExpected();
+    }
+
     @Before
     @Override
     public void beforeAbstractKeycloakTest() throws Exception {
@@ -173,11 +179,11 @@ public abstract class AbstractKerberosTest extends AbstractAuthTest {
 //    }
 
 
-    protected AccessToken assertSuccessfulSpnegoLogin(String loginUsername, String expectedUsername, String password) throws Exception {
+    protected OAuthClient.AccessTokenResponse assertSuccessfulSpnegoLogin(String loginUsername, String expectedUsername, String password) throws Exception {
         return assertSuccessfulSpnegoLogin("kerberos-app", loginUsername, expectedUsername, password);
     }
 
-    protected AccessToken assertSuccessfulSpnegoLogin(String clientId, String loginUsername, String expectedUsername, String password) throws Exception {
+    protected OAuthClient.AccessTokenResponse assertSuccessfulSpnegoLogin(String clientId, String loginUsername, String expectedUsername, String password) throws Exception {
         oauth.clientId(clientId);
         Response spnegoResponse = spnegoLogin(loginUsername, password);
         Assert.assertEquals(302, spnegoResponse.getStatus());
@@ -200,7 +206,7 @@ public abstract class AbstractKerberosTest extends AbstractAuthTest {
 
         oauth.idTokenHint(tokenResponse.getIdToken());
 
-        return token;
+        return tokenResponse;
     }
 
 

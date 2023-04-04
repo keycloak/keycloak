@@ -137,12 +137,13 @@ public class SOAPBindingTest extends AbstractSamlTest {
                 .processSamlResponse(POST)
                 .transformObject(this::extractNameIdAndSessionIndexAndTerminate)
                 .build()
+                .clearCookies()
                 .logoutRequest(getAuthServerSamlEndpoint(REALM_NAME), SAML_CLIENT_ID_ECP_SP, SOAP)
                     .nameId(nameIdRef::get)
                     .sessionIndex(sessionIndexRef::get)
                     .signWith(SAML_CLIENT_SALES_POST_SIG_PRIVATE_KEY, SAML_CLIENT_SALES_POST_SIG_PUBLIC_KEY)
                 .build()
-                .executeAndTransform(POST::extractResponse);
+                .executeAndTransform(SOAP::extractResponse);
 
 
         assertThat(response.getSamlObject(), instanceOf(StatusResponseType.class));
@@ -164,11 +165,12 @@ public class SOAPBindingTest extends AbstractSamlTest {
                 .processSamlResponse(POST)
                     .transformObject(this::extractNameIdAndSessionIndexAndTerminate)
                 .build()
+                .clearCookies()
                 .logoutRequest(getAuthServerSamlEndpoint(REALM_NAME), SAML_CLIENT_ID_ECP_SP, SOAP)
                     .nameId(nameIdRef::get)
                     .sessionIndex(sessionIndexRef::get)
                 .build()
-                .executeAndTransform(POST::extractResponse);
+                .executeAndTransform(SOAP::extractResponse);
 
 
         assertThat(response.getSamlObject(), instanceOf(StatusResponseType.class));
@@ -184,6 +186,7 @@ public class SOAPBindingTest extends AbstractSamlTest {
                 .processSamlResponse(POST)
                     .transformObject(this::extractNameIdAndSessionIndexAndTerminate)
                 .build()
+                .clearCookies()
                 .logoutRequest(getAuthServerSamlEndpoint(REALM_NAME), SAML_CLIENT_ID_ECP_SP, SOAP)
                     .nameId(nameIdRef::get)
                     .sessionIndex(sessionIndexRef::get)
@@ -193,7 +196,7 @@ public class SOAPBindingTest extends AbstractSamlTest {
                         return logoutRequestType;
                     })
                 .build()
-                .executeAndTransform(POST::extractResponse);
+                .executeAndTransform(SOAP::extractResponse);
 
 
         assertThat(response.getSamlObject(), instanceOf(StatusResponseType.class));
@@ -215,6 +218,7 @@ public class SOAPBindingTest extends AbstractSamlTest {
                 .processSamlResponse(POST)
                 .transformObject(this::extractNameIdAndSessionIndexAndTerminate)
                 .build()
+                .clearCookies()
                 .logoutRequest(getAuthServerSamlEndpoint(REALM_NAME), SAML_CLIENT_ID_ECP_SP, SOAP)
                 .nameId(nameIdRef::get)
                 .sessionIndex(sessionIndexRef::get)
@@ -223,7 +227,7 @@ public class SOAPBindingTest extends AbstractSamlTest {
                     return logoutRequestType;
                 })
                 .build()
-                .executeAndTransform(POST::extractResponse);
+                .executeAndTransform(SOAP::extractResponse);
 
 
         assertThat(response.getSamlObject(), instanceOf(StatusResponseType.class));

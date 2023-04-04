@@ -53,10 +53,9 @@ import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.models.UserSessionSpi;
 import org.keycloak.models.map.common.AbstractMapProviderFactory;
-import org.keycloak.models.map.storage.MapStorageProviderFactory;
-import org.keycloak.models.map.storage.jpa.JpaMapStorageProviderFactory;
+import org.keycloak.models.map.storage.hotRod.HotRodMapStorageProviderFactory;
+import org.keycloak.models.map.storage.chm.ConcurrentHashMapStorageProviderFactory;
 import org.keycloak.models.map.userSession.MapUserSessionProviderFactory;
-import org.keycloak.models.sessions.infinispan.InfinispanUserSessionProviderFactory;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.representations.AccessToken;
@@ -76,6 +75,7 @@ import org.apache.http.impl.client.BasicCookieStore;
 import org.hamcrest.Matchers;
 import org.keycloak.util.JsonSerialization;
 
+import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_SSL_REQUIRED;
@@ -127,10 +127,9 @@ public class ConcurrentLoginTest extends AbstractConcurrencyTest {
     @Test
     public void concurrentLoginSingleUser() throws Throwable {
         // remove this restriction once GHI #15410 is resolved.
-        Assume.assumeThat("Test runs only with InfinispanUserSessionProvider or MapUserSessionProvider using JPA",
+        Assume.assumeThat("Test does not work with ConcurrentHashMap storage",
                 userSessionProvider,
-                Matchers.either(equalTo(InfinispanUserSessionProviderFactory.PROVIDER_ID))
-                        .or(equalTo(MapUserSessionProviderFactory.PROVIDER_ID + "-" + JpaMapStorageProviderFactory.PROVIDER_ID)));
+                not(equalTo(MapUserSessionProviderFactory.PROVIDER_ID + "-" + ConcurrentHashMapStorageProviderFactory.PROVIDER_ID)));
 
         log.info("*********************************************");
         long start = System.currentTimeMillis();
@@ -197,10 +196,9 @@ public class ConcurrentLoginTest extends AbstractConcurrencyTest {
     @Test
     public void concurrentLoginMultipleUsers() throws Throwable {
         // remove this restriction once GHI #15410 is resolved.
-        Assume.assumeThat("Test runs only with InfinispanUserSessionProvider or MapUserSessionProvider using JPA",
+        Assume.assumeThat("Test does not work with ConcurrentHashMap storage",
                 userSessionProvider,
-                Matchers.either(equalTo(InfinispanUserSessionProviderFactory.PROVIDER_ID))
-                        .or(equalTo(MapUserSessionProviderFactory.PROVIDER_ID + "-" + JpaMapStorageProviderFactory.PROVIDER_ID)));
+                not(equalTo(MapUserSessionProviderFactory.PROVIDER_ID + "-" + ConcurrentHashMapStorageProviderFactory.PROVIDER_ID)));
 
         log.info("*********************************************");
         long start = System.currentTimeMillis();

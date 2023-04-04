@@ -1,0 +1,37 @@
+{
+  "name": "root",
+  "workspaces": [
+    "libs/ui-shared",
+    "libs/keycloak-admin-client",
+    "libs/keycloak-js",
+    "libs/keycloak-masthead",
+    "apps/account-ui",
+    "apps/admin-ui",
+    "apps/keycloak-server"
+  ],
+  "scripts": {
+    "prepare": "cd .. && husky install js/.husky"
+  },
+  "devDependencies": {
+    "@types/node": "^18.15.11",
+    "@typescript-eslint/eslint-plugin": "^5.57.0",
+    "@typescript-eslint/parser": "^5.57.0",
+    "eslint": "^8.37.0",
+    "eslint-config-prettier": "^8.8.0",
+    "eslint-import-resolver-typescript": "^3.5.4",
+    "eslint-plugin-cypress": "^2.13.2",
+    "eslint-plugin-import": "^2.27.5",
+    "eslint-plugin-lodash": "^7.4.0",
+    "eslint-plugin-mocha": "^10.1.0",
+    "eslint-plugin-prettier": "^4.2.1",
+    "eslint-plugin-react": "^7.32.2",
+    "husky": "^8.0.3",
+    "lint-staged": "^13.2.0",
+    "prettier": "^2.8.7",
+    "typescript": "^5.0.3",
+    "wireit": "^0.9.5"
+  },
+  "lint-staged": {
+    "*.{js,jsx,mjs,ts,tsx}": "eslint --cache --fix"
+  }
+}

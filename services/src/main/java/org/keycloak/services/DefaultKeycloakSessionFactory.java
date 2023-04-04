@@ -18,7 +18,6 @@ package org.keycloak.services;
 
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
-import org.keycloak.common.Profile;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.component.ComponentFactoryProvider;
 import org.keycloak.component.ComponentFactoryProviderFactory;

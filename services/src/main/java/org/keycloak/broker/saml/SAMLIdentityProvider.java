@@ -26,7 +26,6 @@ import org.keycloak.broker.provider.IdentityProviderMapper;
 import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.common.util.PemUtils;
 import org.keycloak.crypto.Algorithm;
-import org.keycloak.crypto.KeyStatus;
 import org.keycloak.crypto.KeyUse;
 import org.keycloak.dom.saml.v2.assertion.AssertionType;
 import org.keycloak.dom.saml.v2.assertion.AuthnStatementType;
@@ -34,6 +33,8 @@ import org.keycloak.dom.saml.v2.assertion.NameIDType;
 import org.keycloak.dom.saml.v2.assertion.SubjectType;
 import org.keycloak.dom.saml.v2.metadata.AttributeConsumingServiceType;
 import org.keycloak.dom.saml.v2.metadata.EntityDescriptorType;
+import org.keycloak.dom.saml.v2.metadata.KeyDescriptorType;
+import org.keycloak.dom.saml.v2.metadata.KeyTypes;
 import org.keycloak.dom.saml.v2.metadata.LocalizedNameType;
 import org.keycloak.dom.saml.v2.protocol.AuthnRequestType;
 import org.keycloak.dom.saml.v2.protocol.LogoutRequestType;
@@ -52,6 +53,7 @@ import org.keycloak.protocol.saml.SamlService;
 import org.keycloak.protocol.saml.SamlSessionUtils;
 import org.keycloak.protocol.saml.mappers.SamlMetadataDescriptorUpdater;
 import org.keycloak.protocol.saml.preprocessor.SamlAuthenticationPreprocessor;
+import org.keycloak.protocol.saml.SAMLEncryptionAlgorithms;
 import org.keycloak.saml.SAML2AuthnRequestBuilder;
 import org.keycloak.saml.SAML2LogoutRequestBuilder;
 import org.keycloak.saml.SAML2NameIDPolicyBuilder;
@@ -87,6 +89,7 @@ import javax.xml.stream.XMLStreamWriter;
 import java.io.StringWriter;
 import java.net.URI;
 import java.security.KeyPair;
+import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
@@ -94,6 +97,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 /**
  * @author Pedro Igor
@@ -360,34 +364,49 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
             String nameIDPolicyFormat = getConfig().getNameIDPolicyFormat();
 
 
-            List<Element> signingKeys = new LinkedList<>();
-            List<Element> encryptionKeys = new LinkedList<>();
-
-            session.keys().getKeysStream(realm, KeyUse.SIG, Algorithm.RS256)
-                    .filter(Objects::nonNull)
+            // We export all keys for algorithm RS256, both active and passive so IDP is able to verify signature even
+            //  if a key rotation happens in the meantime
+            List<KeyDescriptorType> signingKeys = session.keys().getKeysStream(realm, KeyUse.SIG, Algorithm.RS256)
                     .filter(key -> key.getCertificate() != null)
                     .sorted(SamlService::compareKeys)
-                    .forEach(key -> {
+                    .map(key -> {
                         try {
-                            Element element = SPMetadataDescriptor
-                                    .buildKeyInfoElement(key.getKid(), PemUtils.encodeCertificate(key.getCertificate()));
-                            signingKeys.add(element);
-
-                            if (key.getStatus() == KeyStatus.ACTIVE) {
-                                encryptionKeys.add(element);
-                            }
+                            return SPMetadataDescriptor.buildKeyInfoElement(key.getKid(), PemUtils.encodeCertificate(key.getCertificate()));
                         } catch (ParserConfigurationException e) {
                             logger.warn("Failed to export SAML SP Metadata!", e);
                             throw new RuntimeException(e);
                         }
-                    });
+                    })
+                    .map(key -> SPMetadataDescriptor.buildKeyDescriptorType(key, KeyTypes.SIGNING, null))
+                    .collect(Collectors.toList());
+
+            // We export only active ENC keys so IDP uses different key as soon as possible if a key rotation happens
+            String encAlg = getConfig().getEncryptionAlgorithm();
+            List<KeyDescriptorType> encryptionKeys = session.keys().getKeysStream(realm)
+                    .filter(key -> key.getStatus().isActive() && KeyUse.ENC.equals(key.getUse())
+                            && (encAlg == null || Objects.equals(encAlg, key.getAlgorithmOrDefault()))
+                            && SAMLEncryptionAlgorithms.forKeycloakIdentifier(key.getAlgorithm()) != null
+                            && key.getCertificate() != null)
+                    .sorted(SamlService::compareKeys)
+                    .map(key -> {
+                        Element keyInfo;
+                        try {
+                            keyInfo = SPMetadataDescriptor.buildKeyInfoElement(key.getKid(), PemUtils.encodeCertificate(key.getCertificate()));
+                        } catch (ParserConfigurationException e) {
+                            logger.warn("Failed to export SAML SP Metadata!", e);
+                            throw new RuntimeException(e);
+                        }
+
+                        return SPMetadataDescriptor.buildKeyDescriptorType(keyInfo, KeyTypes.ENCRYPTION, SAMLEncryptionAlgorithms.forKeycloakIdentifier(key.getAlgorithm()).getXmlEncIdentifier());
+                    })
+                    .collect(Collectors.toList());
 
             // Prepare the metadata descriptor model
             StringWriter sw = new StringWriter();
             XMLStreamWriter writer = StaxUtil.getXMLStreamWriter(sw);
             SAMLMetadataWriter metadataWriter = new SAMLMetadataWriter(writer);
 
-            EntityDescriptorType entityDescriptor = SPMetadataDescriptor.buildSPdescriptor(
+            EntityDescriptorType entityDescriptor = SPMetadataDescriptor.buildSPDescriptor(
                 authnBinding, authnBinding, endpoint, endpoint,
                 wantAuthnRequestsSigned, wantAssertionsSigned, wantAssertionsEncrypted,
                 entityId, nameIDPolicyFormat, signingKeys, encryptionKeys);
@@ -439,13 +458,15 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
             if (getConfig().isSignSpMetadata())
             {
                 KeyManager.ActiveRsaKey activeKey = session.keys().getActiveRsaKey(realm);
-                String keyName = getConfig().getXmlSigKeyInfoKeyNameTransformer().getKeyName(activeKey.getKid(), activeKey.getCertificate());
+                X509Certificate certificate = activeKey.getCertificate();
+                String keyName = getConfig().getXmlSigKeyInfoKeyNameTransformer().getKeyName(activeKey.getKid(), certificate);
                 KeyPair keyPair = new KeyPair(activeKey.getPublicKey(), activeKey.getPrivateKey());
 
                 Document metadataDocument = DocumentUtil.getDocument(descriptor);
                 SAML2Signature signatureHelper = new SAML2Signature();
                 signatureHelper.setSignatureMethod(getSignatureAlgorithm().getXmlSignatureMethod());
                 signatureHelper.setDigestMethod(getSignatureAlgorithm().getXmlSignatureDigestMethod());
+                signatureHelper.setX509Certificate(certificate);
 
                 Node nextSibling = metadataDocument.getDocumentElement().getFirstChild();
                 signatureHelper.setNextSibling(nextSibling);

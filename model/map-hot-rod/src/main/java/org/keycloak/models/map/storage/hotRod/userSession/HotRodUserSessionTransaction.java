@@ -77,10 +77,23 @@ public class HotRodUserSessionTransaction<K> extends ConcurrentHashMapKeycloakTr
         if (entity == null) return null;
 
         return new MapUserSessionEntityDelegate(new SimpleDelegateProvider<>(entity)) {
+
+            private boolean filterAndRemoveNotExpired(MapAuthenticatedClientSessionEntity clientSession) {
+                if (!clientSessionTransaction.exists(clientSession.getId())) {
+                    // If client session does not exist, remove the reference to it from userSessionEntity loaded in this transaction
+                    entity.removeAuthenticatedClientSession(clientSession.getClientId());
+                    return false;
+                }
+
+                return true;
+            }
+
             @Override
             public Set<MapAuthenticatedClientSessionEntity> getAuthenticatedClientSessions() {
                 Set<MapAuthenticatedClientSessionEntity> clientSessions = super.getAuthenticatedClientSessions();
                 return clientSessions == null ? null : clientSessions.stream()
+                        // Find whether client session still exists in Infinispan and if not, remove the reference from user session
+                        .filter(this::filterAndRemoveNotExpired)
                         .map(HotRodUserSessionTransaction.this::wrapClientSessionEntityToClientSessionAwareDelegate)
                         .collect(Collectors.toSet());
             }
@@ -88,6 +101,8 @@ public class HotRodUserSessionTransaction<K> extends ConcurrentHashMapKeycloakTr
             @Override
             public Optional<MapAuthenticatedClientSessionEntity> getAuthenticatedClientSession(String clientUUID) {
                 return super.getAuthenticatedClientSession(clientUUID)
+                        // Find whether client session still exists in Infinispan and if not, remove the reference from user sessionZ
+                        .filter(this::filterAndRemoveNotExpired)
                         .map(HotRodUserSessionTransaction.this::wrapClientSessionEntityToClientSessionAwareDelegate);
             }
 

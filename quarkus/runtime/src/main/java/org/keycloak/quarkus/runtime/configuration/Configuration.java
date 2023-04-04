@@ -17,7 +17,6 @@
 
 package org.keycloak.quarkus.runtime.configuration;
 
-import static io.smallrye.config.common.utils.StringUtil.replaceNonAlphanumericByUnderscores;
 import static org.keycloak.quarkus.runtime.Environment.getProfileOrDefault;
 import static org.keycloak.quarkus.runtime.cli.Picocli.ARG_PREFIX;
 
@@ -151,6 +150,22 @@ public final class Configuration {
                 l = Character.isLowerCase(c);
             }
             sb.append(c);
+        }
+
+        return sb.toString();
+    }
+
+    public static String replaceNonAlphanumericByUnderscores(String name) {
+        int length = name.length();
+        StringBuilder sb = new StringBuilder(length);
+
+        for(int i = 0; i < length; ++i) {
+            char c = name.charAt(i);
+            if (('a' > c || c > 'z') && ('A' > c || c > 'Z') && ('0' > c || c > '9')) {
+                sb.append('_');
+            } else {
+                sb.append(c);
+            }
         }
 
         return sb.toString();

@@ -40,6 +40,10 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.aMapWithSize;
 import static org.hamcrest.Matchers.anEmptyMap;
 import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.notNullValue;
+import static org.keycloak.protocol.oidc.OIDCConfigAttributes.CLIENT_SESSION_IDLE_TIMEOUT;
+import static org.keycloak.protocol.oidc.OIDCConfigAttributes.CLIENT_SESSION_MAX_LIFESPAN;
 
 @RequireProvider(UserSessionProvider.class)
 @RequireProvider(value = HotRodConnectionProvider.class, only = DefaultHotRodConnectionProviderFactory.PROVIDER_ID)
@@ -114,6 +118,39 @@ public class HotRodUserSessionClientSessionRelationshipTest extends KeycloakMode
         });
     }
 
+    @Test
+    public void testExpiredClientSessionReferenceIsNotPresentInUserSession() {
+        // Set lower client session timeouts
+        withRealm(realmId, (session, realm) -> {
+            ClientModel client = realm.getClientByClientId(CLIENT0_CLIENT_ID);
+            client.setAttribute(CLIENT_SESSION_IDLE_TIMEOUT, "60");
+            client.setAttribute(CLIENT_SESSION_MAX_LIFESPAN, "65");
+            return null;
+        });
+
+        AtomicReference<String> uSessionId = new AtomicReference<>();
+        AtomicReference<String> cSessionId = new AtomicReference<>();
+        prepareSessions(uSessionId, cSessionId);
+
+        // Move in time when client session should be expired but user session not
+        setTimeOffset(70);
+
+        // Try to create a new client session for the same user session
+        withRealm(realmId, (session, realm) -> {
+            ClientModel client = realm.getClientByClientId(CLIENT0_CLIENT_ID);
+            UserSessionModel uSession = session.sessions().getUserSession(realm, uSessionId.get());
+            assertThat(uSession.getAuthenticatedClientSessions(), anEmptyMap());
+            assertThat(session.sessions().createClientSession(realm, client, uSession), notNullValue());
+            return null;
+        });
+
+        // Check session does not contain a reference to expired client session
+        assertCacheContains(remoteCache -> {
+            HotRodUserSessionEntity hotRodUserSessionEntity = remoteCache.get(uSessionId.get());
+            assertThat(hotRodUserSessionEntity.authenticatedClientSessions, hasSize(1));
+        });
+    }
+
     private void assertCacheContains(Consumer<RemoteCache<String, HotRodUserSessionEntity>> checker) {
         withRealm(realmId, (session, realm) -> {
             HotRodConnectionProvider provider = session.getProvider(HotRodConnectionProvider.class);
@@ -125,7 +162,7 @@ public class HotRodUserSessionClientSessionRelationshipTest extends KeycloakMode
 
     private void prepareSessions(AtomicReference<String> uSessionId, AtomicReference<String> cSessionId) {
         withRealm(realmId, (session, realm) -> {
-            UserSessionModel uSession = session.sessions().createUserSession(realm, session.users().getUserByUsername(realm, "user1"), "user1", "127.0.0.1", "form", true, null, null);
+            UserSessionModel uSession = session.sessions().createUserSession(null, realm, session.users().getUserByUsername(realm, "user1"), "user1", "127.0.0.1", "form", true, null, null, UserSessionModel.SessionPersistenceState.PERSISTENT);
             ClientModel client = realm.getClientByClientId(CLIENT0_CLIENT_ID);
 
             AuthenticatedClientSessionModel cSession = session.sessions().createClientSession(realm, client, uSession);

@@ -10,7 +10,7 @@ import org.codehaus.plexus.util.FileUtils;
 
 import java.io.File;
 
-@Mojo(name = "keycloak-guide", defaultPhase = LifecyclePhase.GENERATE_SOURCES)
+@Mojo(name = "keycloak-guide", defaultPhase = LifecyclePhase.GENERATE_SOURCES, threadSafe = true)
 public class GuideMojo extends AbstractMojo {
 
     @Parameter(property = "project.build.sourceDirectory")
@@ -23,9 +23,14 @@ public class GuideMojo extends AbstractMojo {
     public void execute() throws MojoFailureException {
         try {
             Log log = getLog();
-            File topDir = new File(sourceDir).getParentFile();
+            File topDir = new File(sourceDir);
 
             for (File srcDir: topDir.listFiles(d -> d.isDirectory() && !d.getName().equals("templates"))) {
+                if (srcDir.getName().equals("target") || srcDir.getName().equals("src")) {
+                    // those are standard maven folders, ignore them
+                    continue;
+                }
+
                 File targetDir = new File(new File(this.targetDir, "generated-guides"), srcDir.getName());
                 if (!targetDir.isDirectory()) {
                     targetDir.mkdirs();

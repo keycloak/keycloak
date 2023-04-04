@@ -31,52 +31,54 @@ Cache:
 Storage (Experimental):
 
 --storage <type>     Experimental: Sets the default storage mechanism for all areas. Possible
-                       values are: jpa, chm, hotrod.
+                       values are: jpa, chm, hotrod, file.
 --storage-area-auth-session <type>
                      Experimental: Sets a storage mechanism for authentication sessions. Possible
-                       values are: jpa, chm, hotrod.
+                       values are: jpa, chm, hotrod, file.
 --storage-area-authorization <type>
                      Experimental: Sets a storage mechanism for authorizations. Possible values
-                       are: jpa, chm, hotrod.
+                       are: jpa, chm, hotrod, file.
 --storage-area-client <type>
                      Experimental: Sets a storage mechanism for clients. Possible values are: jpa,
-                       chm, hotrod.
+                       chm, hotrod, file.
 --storage-area-client-scope <type>
                      Experimental: Sets a storage mechanism for client scopes. Possible values are:
-                       jpa, chm, hotrod.
+                       jpa, chm, hotrod, file.
 --storage-area-event-admin <type>
                      Experimental: Sets a storage mechanism for admin events. Possible values are:
-                       jpa, chm, hotrod.
+                       jpa, chm, hotrod, file.
 --storage-area-event-auth <type>
                      Experimental: Sets a storage mechanism for authentication and authorization
-                       events. Possible values are: jpa, chm, hotrod.
+                       events. Possible values are: jpa, chm, hotrod, file.
 --storage-area-group <type>
                      Experimental: Sets a storage mechanism for groups. Possible values are: jpa,
-                       chm, hotrod.
+                       chm, hotrod, file.
 --storage-area-login-failure <type>
                      Experimental: Sets a storage mechanism for login failures. Possible values
-                       are: jpa, chm, hotrod.
+                       are: jpa, chm, hotrod, file.
 --storage-area-realm <type>
                      Experimental: Sets a storage mechanism for realms. Possible values are: jpa,
-                       chm, hotrod.
+                       chm, hotrod, file.
 --storage-area-role <type>
                      Experimental: Sets a storage mechanism for roles. Possible values are: jpa,
-                       chm, hotrod.
+                       chm, hotrod, file.
 --storage-area-single-use-object <type>
                      Experimental: Sets a storage mechanism for single use objects. Possible values
                        are: jpa, chm, hotrod.
 --storage-area-user <type>
                      Experimental: Sets a storage mechanism for users. Possible values are: jpa,
-                       chm, hotrod.
+                       chm, hotrod, file.
 --storage-area-user-session <type>
                      Experimental: Sets a storage mechanism for user and client sessions. Possible
-                       values are: jpa, chm, hotrod.
+                       values are: jpa, chm, hotrod, file.
 --storage-deployment-state-version-seed <type>
                      Experimental: Secret that serves as a seed to mask the version number of
                        Keycloak in URLs. Need to be identical across all servers in the cluster.
                        Will default to a random number generated when starting the server which is
                        secure but will lead to problems when a loadbalancer without sticky sessions
                        is used or nodes are restarted.
+--storage-file-dir <dir>
+                     Experimental: Root directory for file map store.
 --storage-hotrod-host <host>
                      Experimental: Sets the host of the Infinispan server.
 --storage-hotrod-password <password>
@@ -85,6 +87,9 @@ Storage (Experimental):
                      Experimental: Sets the port of the Infinispan server.
 --storage-hotrod-username <username>
                      Experimental: Sets the username of the Infinispan user.
+--storage-jpa-db <type>
+                     Experimental: The database vendor for jpa map storage. Possible values are:
+                       postgres, cockroach. Default: postgres.
 
 Database:
 
@@ -124,19 +129,19 @@ Transaction:
 
 Feature:
 
---features <feature> Enables a set of one or more features. Possible values are: authorization,
-                       account2, account-api, admin-fine-grained-authz, admin-api, admin, admin2,
-                       docker, impersonation, openshift-integration, scripts, token-exchange,
-                       web-authn, client-policies, ciba, map-storage, par,
-                       declarative-user-profile, dynamic-scopes, client-secret-rotation,
-                       step-up-authentication, recovery-codes, update-email, js-adapter, preview.
+--features <feature> Enables a set of one or more features. Possible values are: account-api,
+                       account2, admin-api, admin-fine-grained-authz, admin2, authorization, ciba,
+                       client-policies, client-secret-rotation, declarative-user-profile, docker,
+                       dynamic-scopes, fips, impersonation, js-adapter, kerberos, map-storage,
+                       openshift-integration, par, preview, recovery-codes, scripts,
+                       step-up-authentication, token-exchange, update-email, web-authn.
 --features-disabled <feature>
-                     Disables a set of one or more features. Possible values are: authorization,
-                       account2, account-api, admin-fine-grained-authz, admin-api, admin, admin2,
-                       docker, impersonation, openshift-integration, scripts, token-exchange,
-                       web-authn, client-policies, ciba, map-storage, par,
-                       declarative-user-profile, dynamic-scopes, client-secret-rotation,
-                       step-up-authentication, recovery-codes, update-email, js-adapter, preview.
+                     Disables a set of one or more features. Possible values are: account-api,
+                       account2, admin-api, admin-fine-grained-authz, admin2, authorization, ciba,
+                       client-policies, client-secret-rotation, declarative-user-profile, docker,
+                       dynamic-scopes, fips, impersonation, js-adapter, kerberos, map-storage,
+                       openshift-integration, par, preview, recovery-codes, scripts,
+                       step-up-authentication, token-exchange, update-email, web-authn.
 
 Hostname:
 
@@ -189,7 +194,8 @@ HTTP/TLS:
                      The password of the key store file. Default: password.
 --https-key-store-type <type>
                      The type of the key store file. If not given, the type is automatically
-                       detected based on the file name.
+                       detected based on the file name. If 'fips-mode' is set to 'strict' and no
+                       value is set, it defaults to 'BCFKS'.
 --https-port <port>  The used HTTPS port. Default: 8443.
 --https-protocols <protocols>
                      The list of protocols to explicitly enable. Default: TLSv1.3.
@@ -200,7 +206,8 @@ HTTP/TLS:
                      The password of the trust store file.
 --https-trust-store-type <type>
                      The type of the trust store file. If not given, the type is automatically
-                       detected based on the file name.
+                       detected based on the file name. If 'fips-mode' is set to 'strict' and no
+                       value is set, it defaults to 'BCFKS'.
 
 Health:
 
@@ -222,7 +229,7 @@ Proxy:
 
 Vault:
 
---vault <provider>   Enables a vault provider. Possible values are: file, hashicorp.
+--vault <provider>   Enables a vault provider. Possible values are: file.
 --vault-dir <dir>    If set, secrets can be obtained by reading the content of files within the
                        given directory.
 
@@ -276,11 +283,11 @@ Logging:
                        categories and their levels. For the root category, you don't need to
                        specify a category. Default: info.
 
-Security (Experimental):
+Security (Preview):
 
---fips-mode <mode>   Experimental: Sets the FIPS mode. If 'enabled' is set, FIPS is enabled but on
+--fips-mode <mode>   Preview: Sets the FIPS mode. If 'non-strict' is set, FIPS is enabled but on
                        non-approved mode. For full FIPS compliance, set 'strict' to run on approved
-                       mode. Possible values are: enabled, strict, disabled. Default: disabled.
+                       mode. Possible values are: non-strict, strict. Default: disabled.
 
 Do NOT start the server using this command when deploying to production.
 

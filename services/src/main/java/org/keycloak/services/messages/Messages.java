@@ -219,6 +219,8 @@ public class Messages {
 
     public static final String MISSING_IDENTITY_PROVIDER = "missingIdentityProviderMessage";
 
+    public static final String INVALID_TOKEN_REQUIRED_ACTIONS = "invalidTokenRequiredActions";
+
     public static final String INVALID_FEDERATED_IDENTITY_ACTION = "invalidFederatedIdentityActionMessage";
 
     public static final String FEDERATED_IDENTITY_NOT_ACTIVE = "federatedIdentityLinkNotActiveMessage";
@@ -282,6 +284,8 @@ public class Messages {
 
     // Conditions in Conditional Flow
     public static final String ACCESS_DENIED = "access-denied";
+
+    public static final String ACCESS_DENIED_WHEN_IDP_AUTH = "access-denied-when-idp-auth";
 
     public static final String DELETE_ACCOUNT_LACK_PRIVILEDGES = "deletingAccountForbidden";
     public static final String DELETE_ACCOUNT_ERROR = "errorDeletingAccount";

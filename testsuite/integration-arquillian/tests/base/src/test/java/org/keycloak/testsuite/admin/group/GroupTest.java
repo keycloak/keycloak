@@ -33,6 +33,7 @@ import org.keycloak.models.Constants;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
+import org.keycloak.representations.idm.ErrorRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.MappingsRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -167,6 +168,7 @@ public class GroupTest extends AbstractGroupTest {
     }
 
     @Test
+    // KEYCLOAK-16888 Error messages for groups with same name in the same level
     public void doNotAllowSameGroupNameAtSameLevel() throws Exception {
         RealmResource realm = adminClient.realms().realm("test");
 
@@ -177,19 +179,20 @@ public class GroupTest extends AbstractGroupTest {
         GroupRepresentation anotherTopGroup = new GroupRepresentation();
         anotherTopGroup.setName("top");
         Response response = realm.groups().add(anotherTopGroup);
-        assertEquals(409, response.getStatus()); // conflict status 409 - same name not allowed
+        assertSameNameNotAllowed(response,"Top level group named 'top' already exists.");
+        response.close();
 
         GroupRepresentation level2Group = new GroupRepresentation();
         level2Group.setName("level2");
         response = realm.groups().group(topGroup.getId()).subGroup(level2Group);
-        response.close();
         assertEquals(201, response.getStatus()); // created status
+        response.close();
 
         GroupRepresentation anotherlevel2Group = new GroupRepresentation();
         anotherlevel2Group.setName("level2");
         response = realm.groups().group(topGroup.getId()).subGroup(anotherlevel2Group);
+        assertSameNameNotAllowed(response,"Sibling group named 'level2' already exists.");
         response.close();
-        assertEquals(409, response.getStatus()); // conflict status 409 - same name not allowed
     }
 
     @Test
@@ -212,7 +215,7 @@ public class GroupTest extends AbstractGroupTest {
             Assert.fail("Expected ClientErrorException");
         } catch (ClientErrorException e) {
             // conflict status 409 - same name not allowed
-            assertEquals("HTTP 409 Conflict", e.getMessage());
+            assertSameNameNotAllowed(e.getResponse(),"Sibling group named 'top1' already exists.");
         }
 
         GroupRepresentation level2Group = new GroupRepresentation();
@@ -230,7 +233,7 @@ public class GroupTest extends AbstractGroupTest {
             Assert.fail("Expected ClientErrorException");
         } catch (ClientErrorException e) {
             // conflict status 409 - same name not allowed
-            assertEquals("HTTP 409 Conflict", e.getMessage());
+            assertSameNameNotAllowed(e.getResponse(),"Sibling group named 'level2-1' already exists.");
         }
     }
 
@@ -1270,5 +1273,15 @@ public class GroupTest extends AbstractGroupTest {
         assertTrue(searchResultSubGroups.isEmpty());
         searchResultGroups.remove(0);
         assertTrue(searchResultGroups.isEmpty());
+    }
+
+    /**
+     * Assert that when you create/move/update a group name, the response is not Http 409 Conflict and the message does not
+     * correspond to the returned user-friendly message in such cases
+     */
+    private void assertSameNameNotAllowed(Response response, String expectedErrorMessage) {
+        assertEquals(409, response.getStatus());
+        ErrorRepresentation error = response.readEntity(ErrorRepresentation.class);
+        Assert.assertEquals(expectedErrorMessage, error.getErrorMessage());
     }
 }

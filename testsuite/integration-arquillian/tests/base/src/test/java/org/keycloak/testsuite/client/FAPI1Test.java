@@ -32,7 +32,6 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
-import org.keycloak.adapters.authentication.JWTClientSecretCredentialsProvider;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.authentication.authenticators.client.ClientIdAndSecretAuthenticator;
@@ -50,6 +49,7 @@ import org.keycloak.models.Constants;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.oidc.client.authentication.JWTClientSecretCredentialsProvider;
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.IDToken;
@@ -73,6 +73,7 @@ import org.keycloak.testsuite.rest.resource.TestingOIDCEndpointsApplicationResou
 import org.keycloak.testsuite.util.MutualTLSUtils;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.ServerURLs;
+import org.keycloak.testsuite.client.policies.AbstractClientPoliciesTest;
 
 import java.security.KeyPair;
 import java.security.PrivateKey;
@@ -315,7 +316,7 @@ public class FAPI1Test extends AbstractClientPoliciesTest {
         // Register client (default authenticator)
         String clientUUID = createClientByAdmin("foo", (ClientRepresentation clientRep) -> {
             clientRep.setClientAuthenticatorType(JWTClientSecretAuthenticator.PROVIDER_ID);
-            clientRep.setSecret("secret");
+            clientRep.setSecret("atleast-14chars-password");
         });
         ClientRepresentation client = getClientByAdmin(clientUUID);
         Assert.assertFalse(client.isPublicClient());
@@ -335,7 +336,7 @@ public class FAPI1Test extends AbstractClientPoliciesTest {
 
         // Check PKCE with S256, redirectUri and nonce/state set. Login should be successful
         successfulLoginAndLogout("foo", false, (String code) -> {
-            String signedJwt = getClientSecretSignedJWT("secret", Algorithm.HS256);
+            String signedJwt = getClientSecretSignedJWT("atleast-14chars-password", Algorithm.HS256);
             return doAccessTokenRequestWithClientSignedJWT(code, signedJwt, codeVerifier, DefaultHttpClient::new);
         });
     }

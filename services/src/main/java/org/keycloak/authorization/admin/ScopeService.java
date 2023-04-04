@@ -126,7 +126,7 @@ public class ScopeService {
 
         List<Resource> resources = storeFactory.getResourceStore().findByScopes(resourceServer, Collections.singleton(scope));
         if (!resources.isEmpty()) {
-            return ErrorResponse.error("Scopes can not be removed while associated with resources.", Status.BAD_REQUEST);
+            throw ErrorResponse.error("Scopes can not be removed while associated with resources.", Status.BAD_REQUEST);
         }
 
 

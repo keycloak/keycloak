@@ -228,38 +228,6 @@ public class HotRodUserEntity extends AbstractHotRodEntity {
         }
 
         @Override
-        public Optional<MapUserConsentEntity> getUserConsent(String clientId) {
-            Set<HotRodUserConsentEntity> ucs = getHotRodEntity().userConsents;
-            if (ucs == null || ucs.isEmpty()) return Optional.empty();
-
-            return ucs.stream().filter(uc -> Objects.equals(uc.clientId, clientId)).findFirst().map(HotRodUserConsentEntityDelegate::new);
-        }
-
-        @Override
-        public Boolean removeUserConsent(String clientId) {
-            Set<HotRodUserConsentEntity> consents = getHotRodEntity().userConsents;
-            boolean removed = consents != null && consents.removeIf(uc -> Objects.equals(uc.clientId, clientId));
-            getHotRodEntity().updated |= removed;
-            return removed;
-        }
-
-        @Override
-        public Optional<MapUserCredentialEntity> getCredential(String id) {
-            List<HotRodUserCredentialEntity> uce = getHotRodEntity().credentials;
-            if (uce == null || uce.isEmpty()) return Optional.empty();
-
-            return uce.stream().filter(uc -> Objects.equals(uc.id, id)).findFirst().map(HotRodUserCredentialEntityDelegate::new);
-        }
-
-        @Override
-        public Boolean removeCredential(String id) {
-            List<HotRodUserCredentialEntity> credentials = getHotRodEntity().credentials;
-            boolean removed = credentials != null && credentials.removeIf(c -> Objects.equals(c.id, id));
-            getHotRodEntity().updated |= removed;
-            return removed;
-        }
-
-        @Override
         public Boolean moveCredential(String credentialId, String newPreviousCredentialId) {
             // 1 - Get all credentials from the entity.
             List<HotRodUserCredentialEntity> credentialsList = getHotRodEntity().credentials;
@@ -300,22 +268,6 @@ public class HotRodUserEntity extends AbstractHotRodEntity {
 
             getHotRodEntity().updated = true;
             return true;
-        }
-
-        @Override
-        public Optional<MapUserFederatedIdentityEntity> getFederatedIdentity(String identityProviderId) {
-            Set<HotRodUserFederatedIdentityEntity> fes = getHotRodEntity().federatedIdentities;
-            if (fes == null || fes.isEmpty()) return Optional.empty();
-
-            return fes.stream().filter(fi -> Objects.equals(fi.identityProvider, identityProviderId)).findFirst().map(HotRodUserFederatedIdentityEntityDelegate::new);
-        }
-
-        @Override
-        public Boolean removeFederatedIdentity(String identityProviderId) {
-            Set<HotRodUserFederatedIdentityEntity> federatedIdentities = getHotRodEntity().federatedIdentities;
-            boolean removed = federatedIdentities != null && federatedIdentities.removeIf(fi -> Objects.equals(fi.identityProvider, identityProviderId));
-            getHotRodEntity().updated |= removed;
-            return removed;
         }
 
     }

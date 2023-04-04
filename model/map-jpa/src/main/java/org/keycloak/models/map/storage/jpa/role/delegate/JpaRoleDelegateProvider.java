@@ -47,7 +47,6 @@ public class JpaRoleDelegateProvider extends JpaDelegateProvider<JpaRoleEntity> 
                     case ID:
                     case REALM_ID:
                     case CLIENT_ID:
-                    case CLIENT_ROLE:
                     case NAME:
                     case DESCRIPTION:
                         return getDelegate();

@@ -81,6 +81,7 @@ public class JpaGroupModelCriteriaBuilder extends JpaModelCriteriaBuilder<JpaGro
                         Join<JpaGroupEntity, JpaGroupAttributeEntity> join = root.join("attributes", JoinType.LEFT);
                         return cb.and(
                             cb.equal(join.get("name"), value[0]),
+                            hashExpression(cb, join, "value_hash", value[1]),
                             cb.equal(join.get("value"), value[1])
                         );
                     });

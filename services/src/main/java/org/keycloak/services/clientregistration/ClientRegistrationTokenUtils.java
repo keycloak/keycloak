@@ -27,10 +27,10 @@ import org.keycloak.crypto.SignatureVerifierContext;
 import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.models.ClientInitialAccessModel;
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.TokenManager;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.protocol.oidc.TokenManager.TokenRevocationCheck;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.services.Urls;
 import org.keycloak.services.clientregistration.policy.RegistrationAuth;
@@ -94,7 +94,7 @@ public class ClientRegistrationTokenUtils {
         JsonWebToken jwt;
         try {
             TokenVerifier<JsonWebToken> verifier = TokenVerifier.create(token, JsonWebToken.class)
-                    .withChecks(new TokenVerifier.RealmUrlCheck(getIssuer(session, realm)), TokenVerifier.IS_ACTIVE);
+                    .withChecks(new TokenVerifier.RealmUrlCheck(getIssuer(session, realm)), TokenVerifier.IS_ACTIVE, new TokenRevocationCheck(session));
 
             SignatureVerifierContext verifierContext = session.getProvider(SignatureProvider.class, verifier.getHeader().getAlgorithm().name()).verifier(verifier.getHeader().getKeyId());
             verifier.verifierContext(verifierContext);

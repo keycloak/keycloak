@@ -41,8 +41,10 @@ import org.keycloak.common.enums.SslRequired;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.ECDSASignatureProvider;
+import org.keycloak.crypto.KeyUse;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
+import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jws.JWSHeader;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
@@ -95,6 +97,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Stream;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.allOf;
@@ -193,7 +196,10 @@ public class AccessTokenTest extends AbstractKeycloakTest {
 
         assertEquals("Bearer", response.getTokenType());
 
-        String expectedKid = oauth.doCertsRequest("test").getKeys()[0].getKeyId();
+        String expectedKid = Stream.of(oauth.doCertsRequest("test").getKeys())
+                .filter(jwk -> KeyUse.SIG.getSpecName().equals(jwk.getPublicKeyUse()))
+                .map(JWK::getKeyId)
+                .findFirst().orElseThrow(() -> new AssertionError("Was not able to find key with usage SIG in the 'test' realm keys"));
 
         JWSHeader header = new JWSInput(response.getAccessToken()).getHeader();
         assertEquals("RS256", header.getAlgorithm().name());

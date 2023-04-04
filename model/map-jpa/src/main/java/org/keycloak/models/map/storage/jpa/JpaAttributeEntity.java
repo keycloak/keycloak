@@ -27,6 +27,10 @@ import javax.persistence.ManyToOne;
 import javax.persistence.MappedSuperclass;
 import org.hibernate.annotations.Nationalized;
 
+/**
+ * Interface for jpa child entities which are in form of attributes. In other words 
+ * it contains name and value.
+ */
 @MappedSuperclass
 public abstract class JpaAttributeEntity<E> implements JpaChildEntity<E> {
 

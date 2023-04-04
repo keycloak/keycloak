@@ -78,7 +78,6 @@ public class HotRodRootAuthenticationSessionEntity extends AbstractHotRodEntity 
     @ProtoField(number = 4)
     public Long timestamp;
 
-    @Basic(sortable = true)
     @ProtoField(number = 5)
     public Long expiration;
 
@@ -98,26 +97,6 @@ public class HotRodRootAuthenticationSessionEntity extends AbstractHotRodEntity 
             if (entity.id != null) throw new IllegalStateException("Id cannot be changed");
             entity.id = id;
             entity.updated |= id != null;
-        }
-
-        @Override
-        public Optional<MapAuthenticationSessionEntity> getAuthenticationSession(String tabId) {
-            HotRodRootAuthenticationSessionEntity rootAuthSession = getHotRodEntity();
-            if (rootAuthSession.authenticationSessions == null || rootAuthSession.authenticationSessions.isEmpty()) return Optional.empty();
-
-            return rootAuthSession.authenticationSessions.stream()
-                    .filter(as -> Objects.equals(as.tabId, tabId))
-                    .findFirst()
-                    .map(HotRodAuthenticationSessionEntityDelegate::new);
-        }
-
-        @Override
-        public Boolean removeAuthenticationSession(String tabId) {
-            HotRodRootAuthenticationSessionEntity rootAuthSession = getHotRodEntity();
-            boolean removed = rootAuthSession.authenticationSessions != null &&
-                    rootAuthSession.authenticationSessions.removeIf(c -> Objects.equals(c.tabId, tabId));
-            rootAuthSession.updated |= removed;
-            return removed;
         }
 
         @Override

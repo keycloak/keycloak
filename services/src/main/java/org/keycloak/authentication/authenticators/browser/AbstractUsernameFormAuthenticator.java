@@ -207,7 +207,7 @@ public abstract class AbstractUsernameFormAuthenticator extends AbstractFormAuth
             return false;
         }
         String rememberMe = inputData.getFirst("rememberMe");
-        boolean remember = rememberMe != null && rememberMe.equalsIgnoreCase("on");
+        boolean remember = context.getRealm().isRememberMe() && rememberMe != null && rememberMe.equalsIgnoreCase("on");
         if (remember) {
             context.getAuthenticationSession().setAuthNote(Details.REMEMBER_ME, "true");
             context.getEvent().detail(Details.REMEMBER_ME, "true");

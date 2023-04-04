@@ -30,7 +30,6 @@ import org.keycloak.policy.PasswordPolicyProvider;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
-import org.keycloak.testsuite.util.ContainerAssume;
 import org.keycloak.testsuite.util.RealmBuilder;
 
 import java.io.File;

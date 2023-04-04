@@ -491,7 +491,7 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
                 if (error != null) {
                     logger.error(error + " for broker login " + providerConfig.getProviderId());
                     if (error.equals(ACCESS_DENIED)) {
-                        return callback.cancelled();
+                        return callback.cancelled(providerConfig);
                     } else if (error.equals(OAuthErrorException.LOGIN_REQUIRED) || error.equals(OAuthErrorException.INTERACTION_REQUIRED)) {
                         return callback.error(error);
                     } else {
