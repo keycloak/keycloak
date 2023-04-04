@@ -17,7 +17,7 @@
   -->
 <databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
 
-    <changeSet author="keycloak" id="22.0.0-19404">
+    <changeSet author="keycloak" id="21.1.0-19404">
         <modifyDataType tableName="RESOURCE_SERVER_POLICY" columnName="DECISION_STRATEGY" newDataType="TINYINT" />
         <modifyDataType tableName="RESOURCE_SERVER_POLICY" columnName="LOGIC" newDataType="TINYINT" />
         <modifyDataType tableName="RESOURCE_SERVER" columnName="POLICY_ENFORCE_MODE" newDataType="TINYINT" />
