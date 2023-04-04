@@ -19,7 +19,7 @@ package org.keycloak.operator.crds.v2alpha1.realmimport;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 import org.keycloak.representations.idm.RealmRepresentation;
 
-import javax.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotNull;
 
 public class KeycloakRealmImportSpec {
 

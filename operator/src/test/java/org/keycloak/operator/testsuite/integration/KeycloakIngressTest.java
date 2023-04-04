@@ -157,7 +157,7 @@ public class KeycloakIngressTest extends BaseOperatorTest {
                 .withName(ingress.getName());
 
         Log.info("Trying to delete the ingress");
-        assertThat(ingressSelector.delete()).isTrue();
+        assertThat(ingressSelector.delete()).isNotNull();
         Awaitility.await()
                 .untilAsserted(() -> assertThat(ingressSelector.get()).isNotNull());
 
@@ -234,7 +234,7 @@ public class KeycloakIngressTest extends BaseOperatorTest {
         } finally {
             Log.info("Destroying the Custom Ingress created manually to avoid errors in others Tests methods");
             if (customIngressDeployedManuallySelector != null && customIngressDeployedManuallySelector.isReady()) {
-                assertThat(customIngressDeployedManuallySelector.delete()).isTrue();
+                assertThat(customIngressDeployedManuallySelector.delete()).isNotNull();
                 Awaitility.await().untilAsserted(() -> {
                     assertThat(k8sclient.network().v1().ingresses().inNamespace(namespace).list().getItems().size()).isEqualTo(0);
                 });
