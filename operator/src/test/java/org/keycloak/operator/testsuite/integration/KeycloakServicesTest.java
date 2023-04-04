@@ -40,7 +40,7 @@ public class KeycloakServicesTest extends BaseOperatorTest {
         var serviceSelector = k8sclient.services().inNamespace(namespace).withName(service.getName());
 
         Log.info("Trying to delete the service");
-        assertThat(serviceSelector.delete()).isTrue();
+        assertThat(serviceSelector.delete()).isNotNull();
         Awaitility.await()
                 .untilAsserted(() -> assertThat(serviceSelector.get()).isNotNull());
 
@@ -79,7 +79,7 @@ public class KeycloakServicesTest extends BaseOperatorTest {
         var discoveryServiceSelector = k8sclient.services().inNamespace(namespace).withName(discoveryService.getName());
 
         Log.info("Trying to delete the discovery service");
-        assertThat(discoveryServiceSelector.delete()).isTrue();
+        assertThat(discoveryServiceSelector.delete()).isNotNull();
         Awaitility.await()
                 .untilAsserted(() -> assertThat(discoveryServiceSelector.get()).isNotNull());
 

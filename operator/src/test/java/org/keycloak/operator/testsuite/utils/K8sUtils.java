@@ -29,6 +29,7 @@ import io.quarkus.logging.Log;
 import org.awaitility.Awaitility;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusCondition;
+import org.keycloak.operator.testsuite.integration.BaseOperatorTest;
 
 import java.util.Objects;
 import java.util.UUID;
@@ -43,7 +44,9 @@ public final class K8sUtils {
     }
 
     public static Keycloak getDefaultKeycloakDeployment() {
-        return getResourceFromFile("example-keycloak.yaml", Keycloak.class);
+        Keycloak kc = getResourceFromFile("example-keycloak.yaml", Keycloak.class);
+        kc.getMetadata().setNamespace(BaseOperatorTest.getCurrentNamespace());
+        return kc;
     }
 
     public static Secret getDefaultTlsSecret() {
