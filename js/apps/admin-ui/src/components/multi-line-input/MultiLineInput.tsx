@@ -85,7 +85,7 @@ export const MultiLineInput = ({
             <TextInput
               data-testid={name + index}
               onChange={(value) => updateValue(index, value)}
-              name={`${name}[${index}].value`}
+              name={`${name}.${index}.value`}
               value={value}
               isDisabled={isDisabled}
               {...rest}
