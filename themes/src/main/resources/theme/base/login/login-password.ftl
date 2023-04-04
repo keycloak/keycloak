@@ -5,7 +5,7 @@
     <#elseif section = "form">
         <div id="kc-form">
             <div id="kc-form-wrapper">
-                <form id="kc-form-login" onsubmit="login.disabled = true; return true;" action="${url.loginAction}"
+                <form id="kc-form-login" action="${url.loginAction}"
                       method="post">
                     <div class="${properties.kcFormGroupClass!} no-bottom-margin">
                         <hr/>

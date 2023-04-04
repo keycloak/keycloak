@@ -6,7 +6,7 @@
         <div id="kc-form">
             <div id="kc-form-wrapper">
                 <#if realm.password>
-                    <form id="kc-form-login" onsubmit="login.disabled = true; return true;" action="${url.loginAction}"
+                    <form id="kc-form-login" action="${url.loginAction}"
                           method="post">
                         <#if !usernameHidden??>
                             <div class="${properties.kcFormGroupClass!}">

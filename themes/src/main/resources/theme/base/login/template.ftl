@@ -149,6 +149,20 @@
 
     </div>
   </div>
+  <script>
+    var forms = document.getElementsByTagName('form');
+
+    for (var i = 0; i < forms.length; i++) {
+        var form = forms[i];
+        form.addEventListener('submit', preventDoubleClick);
+    }
+
+    function preventDoubleClick(event) {
+        if (event.submitter) {
+            event.submitter.disabled = true;
+        }
+    }
+  </script>
 </body>
 </html>
 </#macro>
