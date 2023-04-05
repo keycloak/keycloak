@@ -18,7 +18,7 @@
 package org.keycloak.models.map.common;
 
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.map.storage.MapKeycloakTransaction;
+import org.keycloak.models.map.storage.MapStorage;
 import org.keycloak.models.map.storage.MapStorageProvider;
 import org.keycloak.provider.Provider;
 
@@ -95,7 +95,7 @@ public class SessionAttributesUtils {
      * @param <M> model type
      * @param <T> transaction type
      */
-    public static <V extends AbstractEntity & UpdatableEntity, M, T extends MapKeycloakTransaction<V, M>> T createTransactionIfAbsent(
+    public static <V extends AbstractEntity & UpdatableEntity, M, T extends MapStorage<V, M>> T createMapStorageIfAbsent(
             KeycloakSession session,
             Class<? extends MapStorageProvider> providerType,
             Class<M> modelType,
@@ -103,7 +103,7 @@ public class SessionAttributesUtils {
             Supplier<T> createNew) {
         String sessionAttributeName = providerType.getName() + "-" + (modelType != null ? modelType.getName() : "") + "-" + factoryId;
 
-        T sessionTransaction = (T) session.getAttribute(sessionAttributeName, MapKeycloakTransaction.class);
+        T sessionTransaction = (T) session.getAttribute(sessionAttributeName, MapStorage.class);
         if (sessionTransaction == null) {
             sessionTransaction = createNew.get();
             session.setAttribute(sessionAttributeName, sessionTransaction);

@@ -21,7 +21,7 @@ import javax.persistence.EntityManager;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakTransaction;
 import org.keycloak.models.map.common.AbstractEntity;
-import org.keycloak.models.map.storage.MapKeycloakTransaction;
+import org.keycloak.models.map.storage.MapStorage;
 import org.keycloak.models.map.storage.MapStorageProvider;
 import org.keycloak.models.map.storage.MapStorageProviderFactory.Flag;
 
@@ -51,9 +51,9 @@ public class JpaMapStorageProvider implements MapStorageProvider {
 
     @Override
     @SuppressWarnings("unchecked")
-    public <V extends AbstractEntity, M> MapKeycloakTransaction<V, M> getEnlistedTransaction(Class<M> modelType, Flag... flags) {
+    public <V extends AbstractEntity, M> MapStorage<V, M> getMapStorage(Class<M> modelType, Flag... flags) {
         // validate and update the schema for the storage.
         this.factory.validateAndUpdateSchema(this.session, modelType);
-        return factory.createTransaction(session, modelType, em);
+        return factory.createMapStorage(session, modelType, em);
     }
 }

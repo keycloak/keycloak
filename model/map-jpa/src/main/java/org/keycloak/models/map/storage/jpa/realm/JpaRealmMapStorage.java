@@ -25,7 +25,8 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.map.realm.MapRealmEntity;
 import org.keycloak.models.map.realm.MapRealmEntityDelegate;
-import org.keycloak.models.map.storage.jpa.JpaMapKeycloakTransaction;
+import org.keycloak.models.map.storage.MapStorage;
+import org.keycloak.models.map.storage.jpa.JpaMapStorage;
 import org.keycloak.models.map.storage.jpa.JpaModelCriteriaBuilder;
 import org.keycloak.models.map.storage.jpa.JpaRootEntity;
 import org.keycloak.models.map.storage.jpa.realm.delegate.JpaRealmDelegateProvider;
@@ -34,13 +35,13 @@ import org.keycloak.models.map.storage.jpa.realm.entity.JpaRealmEntity;
 import static org.keycloak.models.map.storage.jpa.Constants.CURRENT_SCHEMA_VERSION_REALM;
 
 /**
- * A {@link org.keycloak.models.map.storage.MapKeycloakTransaction} implementation for realm entities.
+ * A {@link MapStorage} implementation for realm entities.
  *
  * @author <a href="mailto:sguilhen@redhat.com">Stefan Guilhen</a>
  */
-public class JpaRealmMapKeycloakTransaction extends JpaMapKeycloakTransaction<JpaRealmEntity, MapRealmEntity, RealmModel> {
+public class JpaRealmMapStorage extends JpaMapStorage<JpaRealmEntity, MapRealmEntity, RealmModel> {
 
-    public JpaRealmMapKeycloakTransaction(KeycloakSession session, final EntityManager em) {
+    public JpaRealmMapStorage(KeycloakSession session, final EntityManager em) {
         super(session, JpaRealmEntity.class, RealmModel.class, em);
     }
 

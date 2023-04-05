@@ -25,7 +25,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserLoginFailureModel;
 import org.keycloak.models.map.loginFailure.MapUserLoginFailureEntity;
 import org.keycloak.models.map.loginFailure.MapUserLoginFailureEntityDelegate;
-import org.keycloak.models.map.storage.jpa.JpaMapKeycloakTransaction;
+import org.keycloak.models.map.storage.jpa.JpaMapStorage;
 import org.keycloak.models.map.storage.jpa.JpaModelCriteriaBuilder;
 import org.keycloak.models.map.storage.jpa.JpaRootEntity;
 import org.keycloak.models.map.storage.jpa.loginFailure.delegate.JpaUserLoginFailureDelegateProvider;
@@ -34,14 +34,14 @@ import org.keycloak.models.map.storage.jpa.loginFailure.entity.JpaUserLoginFailu
 import static org.keycloak.models.map.storage.jpa.Constants.CURRENT_SCHEMA_VERSION_USER_LOGIN_FAILURE;
 
 /**
- * A {@link JpaMapKeycloakTransaction} implementation for user login failure entities.
+ * A {@link JpaMapStorage} implementation for user login failure entities.
  *
  * @author <a href="mailto:sguilhen@redhat.com">Stefan Guilhen</a>
  */
-public class JpaUserLoginFailureMapKeycloakTransaction extends JpaMapKeycloakTransaction<JpaUserLoginFailureEntity, MapUserLoginFailureEntity, UserLoginFailureModel> {
+public class JpaUserLoginFailureMapStorage extends JpaMapStorage<JpaUserLoginFailureEntity, MapUserLoginFailureEntity, UserLoginFailureModel> {
 
     @SuppressWarnings("unchecked")
-    public JpaUserLoginFailureMapKeycloakTransaction(KeycloakSession session, EntityManager em) {
+    public JpaUserLoginFailureMapStorage(KeycloakSession session, EntityManager em) {
         super(session, JpaUserLoginFailureEntity.class, UserLoginFailureModel.class, em);
     }
 

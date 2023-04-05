@@ -24,15 +24,15 @@ import java.util.stream.Collectors;
 import org.keycloak.models.KeycloakTransaction;
 import org.keycloak.models.map.common.AbstractEntity;
 import org.keycloak.models.map.common.UpdatableEntity;
-import org.keycloak.models.map.storage.MapKeycloakTransaction;
+import org.keycloak.models.map.storage.MapStorage;
 import org.keycloak.models.map.storage.QueryParameters;
 
-public abstract class LdapMapKeycloakTransaction<RE, E extends AbstractEntity & UpdatableEntity, M> implements MapKeycloakTransaction<E, M>, KeycloakTransaction {
+public abstract class LdapMapStorage<RE, E extends AbstractEntity & UpdatableEntity, M> implements MapStorage<E, M>, KeycloakTransaction {
 
     private boolean active;
     private boolean rollback;
 
-    public LdapMapKeycloakTransaction() {
+    public LdapMapStorage() {
     }
 
     protected abstract static class MapTaskWithValue {

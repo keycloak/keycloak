@@ -29,7 +29,7 @@ import org.keycloak.models.map.common.UpdatableEntity;
 import org.keycloak.models.map.realm.MapRealmEntity;
 import org.keycloak.models.map.storage.ModelEntityUtil;
 import org.keycloak.models.map.storage.QueryParameters;
-import org.keycloak.models.map.storage.chm.CrudOperations;
+import org.keycloak.models.map.storage.CrudOperations;
 import org.keycloak.models.map.storage.chm.MapFieldPredicates;
 import org.keycloak.models.map.storage.chm.MapModelCriteriaBuilder;
 import org.keycloak.models.map.storage.file.common.MapEntityContext;

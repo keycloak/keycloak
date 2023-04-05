@@ -24,7 +24,7 @@ import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.SingleUseObjectProvider;
 import org.keycloak.models.map.common.DeepCloner;
 import org.keycloak.models.map.common.TimeAdapter;
-import org.keycloak.models.map.storage.MapKeycloakTransaction;
+import org.keycloak.models.map.storage.MapStorage;
 import org.keycloak.models.map.storage.ModelCriteriaBuilder;
 import org.keycloak.models.map.storage.criteria.DefaultModelCriteria;
 
@@ -42,9 +42,9 @@ import static org.keycloak.models.map.storage.criteria.DefaultModelCriteria.crit
 public class MapSingleUseObjectProvider implements SingleUseObjectProvider {
 
     private static final Logger LOG = Logger.getLogger(MapSingleUseObjectProvider.class);
-    protected final MapKeycloakTransaction<MapSingleUseObjectEntity, SingleUseObjectValueModel> singleUseObjectTx;
+    protected final MapStorage<MapSingleUseObjectEntity, SingleUseObjectValueModel> singleUseObjectTx;
 
-    public MapSingleUseObjectProvider(MapKeycloakTransaction<MapSingleUseObjectEntity, SingleUseObjectValueModel> storage) {
+    public MapSingleUseObjectProvider(MapStorage<MapSingleUseObjectEntity, SingleUseObjectValueModel> storage) {
         this.singleUseObjectTx = storage;
     }
 

@@ -23,11 +23,11 @@ import org.keycloak.models.map.common.AbstractEntity;
 import org.keycloak.models.map.user.MapCredentialValidationOutput;
 
 /**
- * A map store transaction that can authenticate the credentials provided by a user.
+ * A map store that can authenticate the credentials provided by a user.
  *
  * @author Alexander Schwartz
  */
-public interface MapKeycloakTransactionWithAuth<V extends AbstractEntity, M> extends MapKeycloakTransaction<V, M> {
+public interface MapStorageWithAuth<V extends AbstractEntity, M> extends MapStorage<V, M> {
 
     /**
      * Authenticate a user with the provided input credentials. Use this, for example, for Kerberos SPNEGO

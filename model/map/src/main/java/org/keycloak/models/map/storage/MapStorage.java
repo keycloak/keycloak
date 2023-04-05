@@ -20,7 +20,10 @@ import org.keycloak.models.map.common.AbstractEntity;
 
 import java.util.stream.Stream;
 
-public interface MapKeycloakTransaction<V extends AbstractEntity, M> {
+/**
+ * A storage for entities that is based on a map. Implementations of these methods should be transactional
+ */
+public interface MapStorage<V extends AbstractEntity, M> {
 
     /**
      * Instructs this transaction to add a new value into the underlying store on commit.
@@ -53,8 +56,8 @@ public interface MapKeycloakTransaction<V extends AbstractEntity, M> {
     /**
      * Returns a stream of values from underlying storage that are updated based on the current transaction changes;
      * i.e. the result contains updates and excludes of records that have been created, updated or deleted in this
-     * transaction by methods {@link MapKeycloakTransaction#create}, {@link MapKeycloakTransaction#create},
-     * {@link MapKeycloakTransaction#delete}, etc.
+     * transaction by methods {@link MapStorage#create}, {@link MapStorage#create},
+     * {@link MapStorage#delete}, etc.
      * <p>
      * Updates to the returned instances of {@code V} would be visible in the current transaction
      * and will propagate into the underlying store upon commit.

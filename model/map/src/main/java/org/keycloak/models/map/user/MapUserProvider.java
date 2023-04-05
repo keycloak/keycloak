@@ -50,8 +50,8 @@ import org.keycloak.models.map.common.DeepCloner;
 import org.keycloak.models.map.common.HasRealmId;
 import org.keycloak.models.map.common.TimeAdapter;
 import org.keycloak.models.map.credential.MapUserCredentialManager;
-import org.keycloak.models.map.storage.MapKeycloakTransactionWithAuth;
-import org.keycloak.models.map.storage.MapKeycloakTransaction;
+import org.keycloak.models.map.storage.MapStorageWithAuth;
+import org.keycloak.models.map.storage.MapStorage;
 import org.keycloak.models.map.storage.ModelCriteriaBuilder.Operator;
 import org.keycloak.models.map.storage.criteria.DefaultModelCriteria;
 import org.keycloak.models.utils.KeycloakModelUtils;
@@ -87,10 +87,10 @@ public class MapUserProvider implements UserProvider {
 
     private static final Logger LOG = Logger.getLogger(MapUserProvider.class);
     private final KeycloakSession session;
-    final MapKeycloakTransaction<MapUserEntity, UserModel> tx;
+    final MapStorage<MapUserEntity, UserModel> tx;
     private final boolean txHasRealmId;
 
-    public MapUserProvider(KeycloakSession session, MapKeycloakTransaction<MapUserEntity, UserModel> store) {
+    public MapUserProvider(KeycloakSession session, MapStorage<MapUserEntity, UserModel> store) {
         this.session = session;
         this.tx = store;
         this.txHasRealmId = tx instanceof HasRealmId;
@@ -116,7 +116,7 @@ public class MapUserProvider implements UserProvider {
         };
     }
 
-    private MapKeycloakTransaction<MapUserEntity, UserModel> txInRealm(RealmModel realm) {
+    private MapStorage<MapUserEntity, UserModel> txInRealm(RealmModel realm) {
         if (txHasRealmId) {
             ((HasRealmId) tx).setRealmId(realm == null ? null : realm.getId());
         }
@@ -756,8 +756,8 @@ public class MapUserProvider implements UserProvider {
                 .filter(Objects::nonNull)
                 .findFirst().orElse(null);
 
-        if (r == null && tx instanceof MapKeycloakTransactionWithAuth) {
-            MapCredentialValidationOutput<MapUserEntity> result = ((MapKeycloakTransactionWithAuth<MapUserEntity, UserModel>) tx).authenticate(realm, input);
+        if (r == null && tx instanceof MapStorageWithAuth) {
+            MapCredentialValidationOutput<MapUserEntity> result = ((MapStorageWithAuth<MapUserEntity, UserModel>) tx).authenticate(realm, input);
             if (result != null) {
                 UserModel user = null;
                 if (result.getAuthenticatedUser() != null) {

@@ -25,16 +25,16 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.map.authorization.entity.MapResourceServerEntity;
 import org.keycloak.models.map.authorization.entity.MapResourceServerEntityDelegate;
 import org.keycloak.models.map.storage.jpa.Constants;
-import org.keycloak.models.map.storage.jpa.JpaMapKeycloakTransaction;
+import org.keycloak.models.map.storage.jpa.JpaMapStorage;
 import org.keycloak.models.map.storage.jpa.JpaModelCriteriaBuilder;
 import org.keycloak.models.map.storage.jpa.JpaRootEntity;
 import org.keycloak.models.map.storage.jpa.authorization.resourceServer.delegate.JpaResourceServerDelegateProvider;
 import org.keycloak.models.map.storage.jpa.authorization.resourceServer.entity.JpaResourceServerEntity;
 
-public class JpaResourceServerMapKeycloakTransaction extends JpaMapKeycloakTransaction<JpaResourceServerEntity, MapResourceServerEntity, ResourceServer> {
+public class JpaResourceServerMapStorage extends JpaMapStorage<JpaResourceServerEntity, MapResourceServerEntity, ResourceServer> {
 
     @SuppressWarnings("unchecked")
-    public JpaResourceServerMapKeycloakTransaction(KeycloakSession session, EntityManager em) {
+    public JpaResourceServerMapStorage(KeycloakSession session, EntityManager em) {
         super(session, JpaResourceServerEntity.class, ResourceServer.class, em);
     }
 

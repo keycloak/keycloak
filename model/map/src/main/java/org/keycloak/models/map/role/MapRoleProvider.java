@@ -26,7 +26,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
-import org.keycloak.models.map.storage.MapKeycloakTransaction;
+import org.keycloak.models.map.storage.MapStorage;
 import org.keycloak.models.RoleModel.SearchableFields;
 import org.keycloak.models.RoleProvider;
 import org.keycloak.models.map.common.DeepCloner;
@@ -45,10 +45,10 @@ public class MapRoleProvider implements RoleProvider {
 
     private static final Logger LOG = Logger.getLogger(MapRoleProvider.class);
     private final KeycloakSession session;
-    final MapKeycloakTransaction<MapRoleEntity, RoleModel> tx;
+    final MapStorage<MapRoleEntity, RoleModel> tx;
     private final boolean txHasRealmId;
 
-    public MapRoleProvider(KeycloakSession session, MapKeycloakTransaction<MapRoleEntity, RoleModel> roleStore) {
+    public MapRoleProvider(KeycloakSession session, MapStorage<MapRoleEntity, RoleModel> roleStore) {
         this.session = session;
         this.tx = roleStore;
         this.txHasRealmId = tx instanceof HasRealmId;
@@ -59,7 +59,7 @@ public class MapRoleProvider implements RoleProvider {
         return origEntity -> new MapRoleAdapter(session, realm, origEntity);
     }
 
-    private MapKeycloakTransaction<MapRoleEntity, RoleModel> txInRealm(RealmModel realm) {
+    private MapStorage<MapRoleEntity, RoleModel> txInRealm(RealmModel realm) {
         if (txHasRealmId) {
             ((HasRealmId) tx).setRealmId(realm == null ? null : realm.getId());
         }

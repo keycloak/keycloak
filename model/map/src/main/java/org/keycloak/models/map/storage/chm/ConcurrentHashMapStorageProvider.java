@@ -21,7 +21,8 @@ import org.keycloak.models.SingleUseObjectValueModel;
 import org.keycloak.models.map.common.AbstractEntity;
 import org.keycloak.models.map.common.SessionAttributesUtils;
 import org.keycloak.models.map.common.UpdatableEntity;
-import org.keycloak.models.map.storage.MapKeycloakTransaction;
+import org.keycloak.models.map.storage.CrudOperations;
+import org.keycloak.models.map.storage.MapStorage;
 import org.keycloak.models.map.storage.MapStorageProvider;
 import org.keycloak.models.map.storage.MapStorageProviderFactory.Flag;
 
@@ -49,18 +50,18 @@ public class ConcurrentHashMapStorageProvider implements MapStorageProvider {
 
     @Override
     @SuppressWarnings("unchecked")
-    public <V extends AbstractEntity, M> MapKeycloakTransaction<V, M> getEnlistedTransaction(Class<M> modelType, Flag... flags) {
-        return SessionAttributesUtils.createTransactionIfAbsent(session, getClass(), modelType, factoryId, () -> {
-            ConcurrentHashMapKeycloakTransaction transaction = getTransaction(modelType, factory.getStorage(modelType, flags));
+    public <V extends AbstractEntity, M> MapStorage<V, M> getMapStorage(Class<M> modelType, Flag... flags) {
+        return SessionAttributesUtils.createMapStorageIfAbsent(session, getClass(), modelType, factoryId, () -> {
+            ConcurrentHashMapStorage transaction = getMapStorage(modelType, factory.getStorage(modelType, flags));
             session.getTransactionManager().enlist(transaction);
             return transaction;
         });
     }
 
-    private <V extends AbstractEntity & UpdatableEntity, M> ConcurrentHashMapKeycloakTransaction getTransaction(Class<?> modelType, CrudOperations<V, M> crud) {
+    private <V extends AbstractEntity & UpdatableEntity, M> ConcurrentHashMapStorage getMapStorage(Class<?> modelType, CrudOperations<V, M> crud) {
         if (modelType == SingleUseObjectValueModel.class) {
-            return new SingleUseObjectKeycloakTransaction(crud, factory.getKeyConverter(modelType), CLONER, MapFieldPredicates.getPredicates(modelType));
+            return new SingleUseObjectMapStorage(crud, factory.getKeyConverter(modelType), CLONER, MapFieldPredicates.getPredicates(modelType));
         }
-        return new ConcurrentHashMapKeycloakTransaction(crud, factory.getKeyConverter(modelType), CLONER, MapFieldPredicates.getPredicates(modelType));
+        return new ConcurrentHashMapStorage(crud, factory.getKeyConverter(modelType), CLONER, MapFieldPredicates.getPredicates(modelType));
     }
 }

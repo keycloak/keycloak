@@ -42,7 +42,7 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.models.map.common.DeepCloner;
 import org.keycloak.models.map.common.HasRealmId;
 import org.keycloak.models.map.common.TimeAdapter;
-import org.keycloak.models.map.storage.MapKeycloakTransaction;
+import org.keycloak.models.map.storage.MapStorage;
 import org.keycloak.models.map.storage.ModelCriteriaBuilder.Operator;
 import org.keycloak.models.map.storage.criteria.DefaultModelCriteria;
 
@@ -57,11 +57,11 @@ public class MapClientProvider implements ClientProvider {
 
     private static final Logger LOG = Logger.getLogger(MapClientProvider.class);
     private final KeycloakSession session;
-    final MapKeycloakTransaction<MapClientEntity, ClientModel> tx;
+    final MapStorage<MapClientEntity, ClientModel> tx;
     private final ConcurrentMap<String, ConcurrentMap<String, Long>> clientRegisteredNodesStore;
     private final boolean txHasRealmId;
 
-    public MapClientProvider(KeycloakSession session, MapKeycloakTransaction<MapClientEntity, ClientModel> clientStore, ConcurrentMap<String, ConcurrentMap<String, Long>> clientRegisteredNodesStore) {
+    public MapClientProvider(KeycloakSession session, MapStorage<MapClientEntity, ClientModel> clientStore, ConcurrentMap<String, ConcurrentMap<String, Long>> clientRegisteredNodesStore) {
         this.session = session;
         this.clientRegisteredNodesStore = clientRegisteredNodesStore;
         this.tx = clientStore;
@@ -119,7 +119,7 @@ public class MapClientProvider implements ClientProvider {
         };
     }
 
-    private MapKeycloakTransaction<MapClientEntity, ClientModel> txInRealm(RealmModel realm) {
+    private MapStorage<MapClientEntity, ClientModel> txInRealm(RealmModel realm) {
         if (txHasRealmId) {
             ((HasRealmId) tx).setRealmId(realm == null ? null : realm.getId());
         }

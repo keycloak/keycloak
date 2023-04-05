@@ -14,53 +14,54 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.models.map.storage.jpa.authorization.scope;
+package org.keycloak.models.map.storage.jpa.group;
 
 import javax.persistence.EntityManager;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.Root;
 import javax.persistence.criteria.Selection;
-import org.keycloak.authorization.model.Scope;
+import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.map.authorization.entity.MapScopeEntity;
-import org.keycloak.models.map.authorization.entity.MapScopeEntityDelegate;
-import org.keycloak.models.map.storage.jpa.Constants;
-import org.keycloak.models.map.storage.jpa.JpaMapKeycloakTransaction;
+import org.keycloak.models.map.group.MapGroupEntity;
+import org.keycloak.models.map.group.MapGroupEntityDelegate;
+import static org.keycloak.models.map.storage.jpa.Constants.CURRENT_SCHEMA_VERSION_GROUP;
+import org.keycloak.models.map.storage.jpa.group.delegate.JpaGroupDelegateProvider;
+import org.keycloak.models.map.storage.jpa.group.entity.JpaGroupEntity;
+import org.keycloak.models.map.storage.jpa.JpaMapStorage;
 import org.keycloak.models.map.storage.jpa.JpaModelCriteriaBuilder;
 import org.keycloak.models.map.storage.jpa.JpaRootEntity;
-import org.keycloak.models.map.storage.jpa.authorization.scope.delagate.JpaScopeDelegateProvider;
-import org.keycloak.models.map.storage.jpa.authorization.scope.entity.JpaScopeEntity;
 
-public class JpaScopeMapKeycloakTransaction extends JpaMapKeycloakTransaction<JpaScopeEntity, MapScopeEntity, Scope> {
+public class JpaGroupMapStorage extends JpaMapStorage<JpaGroupEntity, MapGroupEntity, GroupModel> {
 
     @SuppressWarnings("unchecked")
-    public JpaScopeMapKeycloakTransaction(KeycloakSession session, EntityManager em) {
-        super(session, JpaScopeEntity.class, Scope.class, em);
+    public JpaGroupMapStorage(KeycloakSession session, EntityManager em) {
+        super(session, JpaGroupEntity.class, GroupModel.class, em);
     }
 
     @Override
-    protected Selection<JpaScopeEntity> selectCbConstruct(CriteriaBuilder cb, Root<JpaScopeEntity> root) {
-        return cb.construct(JpaScopeEntity.class,
+    public Selection<JpaGroupEntity> selectCbConstruct(CriteriaBuilder cb, Root<JpaGroupEntity> root) {
+        return cb.construct(JpaGroupEntity.class, 
             root.get("id"),
             root.get("version"),
             root.get("entityVersion"),
             root.get("realmId"),
-            root.get("resourceServerId"),
-            root.get("name"));
+            root.get("name"),
+            root.get("parentId")
+        );
     }
 
     @Override
     public void setEntityVersion(JpaRootEntity entity) {
-        entity.setEntityVersion(Constants.CURRENT_SCHEMA_VERSION_AUTHZ_SCOPE);
+        entity.setEntityVersion(CURRENT_SCHEMA_VERSION_GROUP);
     }
 
     @Override
     public JpaModelCriteriaBuilder createJpaModelCriteriaBuilder() {
-        return new JpaScopeModelCriteriaBuilder();
+        return new JpaGroupModelCriteriaBuilder();
     }
 
     @Override
-    protected MapScopeEntity mapToEntityDelegate(JpaScopeEntity original) {
-        return new MapScopeEntityDelegate(new JpaScopeDelegateProvider(original, em));
+    protected MapGroupEntity mapToEntityDelegate(JpaGroupEntity original) {
+        return new MapGroupEntityDelegate(new JpaGroupDelegateProvider(original, em));
     }
 }

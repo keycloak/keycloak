@@ -21,7 +21,7 @@ import org.keycloak.Config.Scope;
 import org.keycloak.common.Profile;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelException;
-import org.keycloak.models.map.storage.MapKeycloakTransaction;
+import org.keycloak.models.map.storage.MapStorage;
 import org.keycloak.models.map.storage.MapStorageProvider;
 import org.keycloak.component.AmphibianProviderFactory;
 import org.keycloak.models.KeycloakSessionFactory;
@@ -102,11 +102,11 @@ public abstract class AbstractMapProviderFactory<T extends Provider, V extends A
         return PROVIDER_ID;
     }
 
-    public MapKeycloakTransaction<V, M> getEnlistedTransaction(KeycloakSession session) {
+    public MapStorage<V, M> getEnlistedTransaction(KeycloakSession session) {
         ProviderFactory<MapStorageProvider> storageProviderFactory = getProviderFactoryOrComponentFactory(session, storageConfigScope);
         final MapStorageProvider factory = storageProviderFactory.create(session);
         session.enlistForClose(factory);
-        return factory.getEnlistedTransaction(modelType);
+        return factory.getMapStorage(modelType);
     }
 
     public static ProviderFactory<MapStorageProvider> getProviderFactoryOrComponentFactory(KeycloakSession session, Scope storageConfigScope) {

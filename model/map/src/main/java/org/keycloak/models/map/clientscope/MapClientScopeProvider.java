@@ -31,7 +31,7 @@ import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.map.common.DeepCloner;
 import org.keycloak.models.map.common.HasRealmId;
-import org.keycloak.models.map.storage.MapKeycloakTransaction;
+import org.keycloak.models.map.storage.MapStorage;
 import org.keycloak.models.map.storage.ModelCriteriaBuilder.Operator;
 import org.keycloak.models.map.storage.criteria.DefaultModelCriteria;
 import org.keycloak.models.utils.KeycloakModelUtils;
@@ -47,10 +47,10 @@ public class MapClientScopeProvider implements ClientScopeProvider {
 
     private static final Logger LOG = Logger.getLogger(MapClientScopeProvider.class);
     private final KeycloakSession session;
-    private final MapKeycloakTransaction<MapClientScopeEntity, ClientScopeModel> tx;
+    private final MapStorage<MapClientScopeEntity, ClientScopeModel> tx;
     private final boolean txHasRealmId;
 
-    public MapClientScopeProvider(KeycloakSession session, MapKeycloakTransaction<MapClientScopeEntity, ClientScopeModel> clientScopeStore) {
+    public MapClientScopeProvider(KeycloakSession session, MapStorage<MapClientScopeEntity, ClientScopeModel> clientScopeStore) {
         this.session = session;
         this.tx = clientScopeStore;
         this.txHasRealmId = tx instanceof HasRealmId;
@@ -62,7 +62,7 @@ public class MapClientScopeProvider implements ClientScopeProvider {
         return origEntity -> new MapClientScopeAdapter(session, realm, origEntity);
     }
 
-    private MapKeycloakTransaction<MapClientScopeEntity, ClientScopeModel> txInRealm(RealmModel realm) {
+    private MapStorage<MapClientScopeEntity, ClientScopeModel> txInRealm(RealmModel realm) {
         if (txHasRealmId) {
             ((HasRealmId) tx).setRealmId(realm == null ? null : realm.getId());
         }

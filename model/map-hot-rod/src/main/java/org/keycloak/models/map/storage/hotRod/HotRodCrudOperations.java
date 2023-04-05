@@ -34,7 +34,7 @@ import org.keycloak.models.map.common.ExpirableEntity;
 import org.keycloak.models.map.common.StringKeyConverter;
 import org.keycloak.models.map.storage.ModelEntityUtil;
 import org.keycloak.models.map.storage.QueryParameters;
-import org.keycloak.models.map.storage.chm.CrudOperations;
+import org.keycloak.models.map.storage.CrudOperations;
 import org.keycloak.models.map.storage.chm.MapFieldPredicates;
 import org.keycloak.models.map.storage.chm.MapModelCriteriaBuilder;
 import org.keycloak.models.map.storage.criteria.DefaultModelCriteria;

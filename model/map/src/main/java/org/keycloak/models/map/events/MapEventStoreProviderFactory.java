@@ -28,7 +28,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.map.common.AbstractMapProviderFactory;
-import org.keycloak.models.map.storage.MapKeycloakTransaction;
+import org.keycloak.models.map.storage.MapStorage;
 import org.keycloak.models.map.storage.MapStorageProvider;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.provider.InvalidationHandler;
@@ -60,10 +60,10 @@ public class MapEventStoreProviderFactory implements AmphibianProviderFactory<Ev
         if (provider != null) return provider;
 
         final MapStorageProvider factoryAe = AbstractMapProviderFactory.getProviderFactoryOrComponentFactory(session, storageConfigScopeAdminEvents).create(session);
-        MapKeycloakTransaction<MapAdminEventEntity, AdminEvent> adminEventsStore = factoryAe.getEnlistedTransaction(AdminEvent.class);
+        MapStorage<MapAdminEventEntity, AdminEvent> adminEventsStore = factoryAe.getMapStorage(AdminEvent.class);
 
         final MapStorageProvider factoryLe = AbstractMapProviderFactory.getProviderFactoryOrComponentFactory(session, storageConfigScopeLoginEvents).create(session);
-        MapKeycloakTransaction<MapAuthEventEntity, Event> loginEventsStore = factoryLe.getEnlistedTransaction(Event.class);
+        MapStorage<MapAuthEventEntity, Event> loginEventsStore = factoryLe.getMapStorage(Event.class);
 
         provider = new MapEventStoreProvider(session, loginEventsStore, adminEventsStore);
         session.setAttribute(uniqueKey, provider);

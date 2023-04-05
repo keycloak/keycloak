@@ -30,7 +30,7 @@ import org.keycloak.models.map.authorization.adapter.MapResourceServerAdapter;
 import org.keycloak.models.map.authorization.entity.MapResourceServerEntity;
 import org.keycloak.models.map.common.DeepCloner;
 import org.keycloak.models.map.common.HasRealmId;
-import org.keycloak.models.map.storage.MapKeycloakTransaction;
+import org.keycloak.models.map.storage.MapStorage;
 import org.keycloak.models.map.storage.ModelCriteriaBuilder.Operator;
 import org.keycloak.models.map.storage.criteria.DefaultModelCriteria;
 import org.keycloak.storage.StorageId;
@@ -48,10 +48,10 @@ public class MapResourceServerStore implements ResourceServerStore {
 
     private static final Logger LOG = Logger.getLogger(MapResourceServerStore.class);
     private final AuthorizationProvider authorizationProvider;
-    final MapKeycloakTransaction<MapResourceServerEntity, ResourceServer> tx;
+    final MapStorage<MapResourceServerEntity, ResourceServer> tx;
     private final boolean txHasRealmId;
 
-    public MapResourceServerStore(MapKeycloakTransaction<MapResourceServerEntity, ResourceServer> resourceServerStore, AuthorizationProvider provider) {
+    public MapResourceServerStore(MapStorage<MapResourceServerEntity, ResourceServer> resourceServerStore, AuthorizationProvider provider) {
         this.authorizationProvider = provider;
         this.tx = resourceServerStore;
         this.txHasRealmId = tx instanceof HasRealmId;
@@ -61,7 +61,7 @@ public class MapResourceServerStore implements ResourceServerStore {
         return origEntity -> new MapResourceServerAdapter(realmModel, origEntity, authorizationProvider.getStoreFactory());
     }
 
-    private MapKeycloakTransaction<MapResourceServerEntity, ResourceServer> txInRealm(RealmModel realm) {
+    private MapStorage<MapResourceServerEntity, ResourceServer> txInRealm(RealmModel realm) {
         if (txHasRealmId) {
             ((HasRealmId) tx).setRealmId(realm == null ? null : realm.getId());
         }

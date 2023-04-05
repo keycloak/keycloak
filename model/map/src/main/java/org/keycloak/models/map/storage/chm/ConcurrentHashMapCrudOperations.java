@@ -22,6 +22,7 @@ import org.keycloak.models.map.common.StringKeyConverter;
 import org.keycloak.models.map.common.AbstractEntity;
 import org.keycloak.models.map.common.DeepCloner;
 import org.keycloak.models.map.common.UpdatableEntity;
+import org.keycloak.models.map.storage.CrudOperations;
 import org.keycloak.models.map.storage.ModelEntityUtil;
 import org.keycloak.models.map.storage.QueryParameters;
 import org.keycloak.models.map.storage.criteria.DefaultModelCriteria;

@@ -31,7 +31,7 @@ import org.keycloak.models.map.authorization.adapter.MapPolicyAdapter;
 import org.keycloak.models.map.authorization.entity.MapPolicyEntity;
 import org.keycloak.models.map.common.DeepCloner;
 import org.keycloak.models.map.common.HasRealmId;
-import org.keycloak.models.map.storage.MapKeycloakTransaction;
+import org.keycloak.models.map.storage.MapStorage;
 import org.keycloak.models.map.storage.ModelCriteriaBuilder.Operator;
 import org.keycloak.models.map.storage.criteria.DefaultModelCriteria;
 import org.keycloak.representations.idm.authorization.AbstractPolicyRepresentation;
@@ -52,10 +52,10 @@ public class MapPolicyStore implements PolicyStore {
 
     private static final Logger LOG = Logger.getLogger(MapPolicyStore.class);
     private final AuthorizationProvider authorizationProvider;
-    final MapKeycloakTransaction<MapPolicyEntity, Policy> tx;
+    final MapStorage<MapPolicyEntity, Policy> tx;
     private final boolean txHasRealmId;
 
-    public MapPolicyStore(MapKeycloakTransaction<MapPolicyEntity, Policy> policyStore, AuthorizationProvider provider) {
+    public MapPolicyStore(MapStorage<MapPolicyEntity, Policy> policyStore, AuthorizationProvider provider) {
         this.authorizationProvider = provider;
         this.tx = policyStore;
         this.txHasRealmId = tx instanceof HasRealmId;
@@ -65,7 +65,7 @@ public class MapPolicyStore implements PolicyStore {
         return origEntity -> new MapPolicyAdapter(realm, resourceServer, origEntity, authorizationProvider.getStoreFactory());
     }
 
-    private MapKeycloakTransaction<MapPolicyEntity, Policy> txInRealm(RealmModel realm) {
+    private MapStorage<MapPolicyEntity, Policy> txInRealm(RealmModel realm) {
         if (txHasRealmId) {
             ((HasRealmId) tx).setRealmId(realm == null ? null : realm.getId());
         }

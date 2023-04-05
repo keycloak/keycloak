@@ -24,8 +24,8 @@ import org.keycloak.models.map.common.DeepCloner;
 import org.keycloak.models.map.common.StringKeyConverter;
 import org.keycloak.models.map.common.delegate.SimpleDelegateProvider;
 import org.keycloak.models.map.storage.QueryParameters;
-import org.keycloak.models.map.storage.chm.CrudOperations;
-import org.keycloak.models.map.storage.chm.ConcurrentHashMapKeycloakTransaction;
+import org.keycloak.models.map.storage.CrudOperations;
+import org.keycloak.models.map.storage.chm.ConcurrentHashMapStorage;
 import org.keycloak.models.map.storage.chm.MapModelCriteriaBuilder;
 import org.keycloak.models.map.storage.criteria.DefaultModelCriteria;
 import org.keycloak.models.map.userSession.MapAuthenticatedClientSessionEntity;
@@ -43,15 +43,15 @@ import java.util.stream.Stream;
 
 import static org.keycloak.models.map.storage.ModelCriteriaBuilder.Operator.IN;
 
-public class HotRodUserSessionTransaction<K> extends ConcurrentHashMapKeycloakTransaction<K, MapUserSessionEntity, UserSessionModel> {
+public class HotRodUserSessionMapStorage<K> extends ConcurrentHashMapStorage<K, MapUserSessionEntity, UserSessionModel> {
 
-    private final ConcurrentHashMapKeycloakTransaction<String, MapAuthenticatedClientSessionEntity, AuthenticatedClientSessionModel> clientSessionTransaction;
+    private final ConcurrentHashMapStorage<String, MapAuthenticatedClientSessionEntity, AuthenticatedClientSessionModel> clientSessionTransaction;
 
-    public HotRodUserSessionTransaction(CrudOperations<MapUserSessionEntity, UserSessionModel> map,
-                                        StringKeyConverter<K> keyConverter,
-                                        DeepCloner cloner,
-                                        Map<SearchableModelField<? super UserSessionModel>, MapModelCriteriaBuilder.UpdatePredicatesFunc<K, MapUserSessionEntity, UserSessionModel>> fieldPredicates,
-                                        ConcurrentHashMapKeycloakTransaction<String, MapAuthenticatedClientSessionEntity, AuthenticatedClientSessionModel> clientSessionTransaction
+    public HotRodUserSessionMapStorage(CrudOperations<MapUserSessionEntity, UserSessionModel> map,
+                                       StringKeyConverter<K> keyConverter,
+                                       DeepCloner cloner,
+                                       Map<SearchableModelField<? super UserSessionModel>, MapModelCriteriaBuilder.UpdatePredicatesFunc<K, MapUserSessionEntity, UserSessionModel>> fieldPredicates,
+                                       ConcurrentHashMapStorage<String, MapAuthenticatedClientSessionEntity, AuthenticatedClientSessionModel> clientSessionTransaction
     ) {
         super(map, keyConverter, cloner, fieldPredicates);
         this.clientSessionTransaction = clientSessionTransaction;
@@ -93,7 +93,7 @@ public class HotRodUserSessionTransaction<K> extends ConcurrentHashMapKeycloakTr
                 return clientSessions == null ? null : clientSessions.stream()
                         // Find whether client session still exists in Infinispan and if not, remove the reference from user session
                         .filter(this::filterAndRemoveNotExpired)
-                        .map(HotRodUserSessionTransaction.this::wrapClientSessionEntityToClientSessionAwareDelegate)
+                        .map(HotRodUserSessionMapStorage.this::wrapClientSessionEntityToClientSessionAwareDelegate)
                         .collect(Collectors.toSet());
             }
 
@@ -102,7 +102,7 @@ public class HotRodUserSessionTransaction<K> extends ConcurrentHashMapKeycloakTr
                 return super.getAuthenticatedClientSession(clientUUID)
                         // Find whether client session still exists in Infinispan and if not, remove the reference from user sessionZ
                         .filter(this::filterAndRemoveNotExpired)
-                        .map(HotRodUserSessionTransaction.this::wrapClientSessionEntityToClientSessionAwareDelegate);
+                        .map(HotRodUserSessionMapStorage.this::wrapClientSessionEntityToClientSessionAwareDelegate);
             }
 
             @Override

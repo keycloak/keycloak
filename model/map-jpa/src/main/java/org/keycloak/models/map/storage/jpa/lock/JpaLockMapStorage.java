@@ -20,7 +20,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.map.lock.MapLockEntity;
 import org.keycloak.models.map.lock.MapLockEntityDelegate;
 import org.keycloak.models.map.storage.jpa.Constants;
-import org.keycloak.models.map.storage.jpa.JpaMapKeycloakTransaction;
+import org.keycloak.models.map.storage.jpa.JpaMapStorage;
 import org.keycloak.models.map.storage.jpa.JpaModelCriteriaBuilder;
 import org.keycloak.models.map.storage.jpa.JpaRootEntity;
 import org.keycloak.models.map.storage.jpa.lock.delegate.JpaLockDelegateProvider;
@@ -31,10 +31,10 @@ import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.Root;
 import javax.persistence.criteria.Selection;
 
-public class JpaLockMapKeycloakTransaction extends JpaMapKeycloakTransaction<JpaLockEntity, MapLockEntity, MapLockEntity> {
+public class JpaLockMapStorage extends JpaMapStorage<JpaLockEntity, MapLockEntity, MapLockEntity> {
 
     @SuppressWarnings("unchecked")
-    public JpaLockMapKeycloakTransaction(KeycloakSession session, EntityManager em) {
+    public JpaLockMapStorage(KeycloakSession session, EntityManager em) {
         super(session, JpaLockEntity.class, MapLockEntity.class, em);
     }
 

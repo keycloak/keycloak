@@ -25,7 +25,7 @@ import org.hibernate.event.spi.AutoFlushEvent;
 import org.hibernate.event.spi.EventSource;
 import org.hibernate.internal.CoreMessageLogger;
 import org.jboss.logging.Logger;
-import org.keycloak.models.map.storage.jpa.JpaMapKeycloakTransaction;
+import org.keycloak.models.map.storage.jpa.JpaMapStorage;
 
 /**
  * Extends Hibernate's {@link DefaultAutoFlushEventListener} to always flush queued inserts to allow correct handling
@@ -35,7 +35,7 @@ import org.keycloak.models.map.storage.jpa.JpaMapKeycloakTransaction;
  * This class copies over all functionality of the base class that can't be overwritten via inheritance.
  * This is being tracked as part of <a href="https://github.com/keycloak/keycloak/issues/11666">keycloak/keycloak#11666</a>.
  * <p />
- * This also clears the JPA map store query level cache for the {@link JpaMapKeycloakTransaction} whenever there is some data written to the database.
+ * This also clears the JPA map store query level cache for the {@link JpaMapStorage} whenever there is some data written to the database.
  */
 public class JpaAutoFlushListener extends DefaultAutoFlushEventListener {
 
@@ -90,7 +90,7 @@ public class JpaAutoFlushListener extends DefaultAutoFlushEventListener {
                 || source.getActionQueue().areTablesToBeUpdated(event.getQuerySpaces());
         if (flushIsReallyNeeded) {
             // clear the per-session query cache, as changing an entity might change any of the cached query results
-            JpaMapKeycloakTransaction.clearQueryCache(source.getSession());
+            JpaMapStorage.clearQueryCache(source.getSession());
         }
         return flushIsReallyNeeded;
     }

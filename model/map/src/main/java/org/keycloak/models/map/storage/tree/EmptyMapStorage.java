@@ -16,9 +16,8 @@
  */
 package org.keycloak.models.map.storage.tree;
 
-import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.map.common.AbstractEntity;
-import org.keycloak.models.map.storage.MapKeycloakTransaction;
+import org.keycloak.models.map.storage.MapStorage;
 import org.keycloak.models.map.storage.QueryParameters;
 import java.util.stream.Stream;
 
@@ -28,8 +27,8 @@ import java.util.stream.Stream;
  */
 public class EmptyMapStorage {
 
-    public static <V extends AbstractEntity, M> MapKeycloakTransaction<V, M> getInstance() {
-        return new MapKeycloakTransaction<>() {
+    public static <V extends AbstractEntity, M> MapStorage<V, M> getInstance() {
+        return new MapStorage<>() {
             @Override
             public V create(V value) {
                 return null;

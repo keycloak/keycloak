@@ -18,7 +18,6 @@ package org.keycloak.models.map.userSession;
 
 import org.jboss.logging.Logger;
 import org.keycloak.common.util.Time;
-import org.keycloak.device.DeviceActivityManager;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
@@ -30,7 +29,7 @@ import org.keycloak.models.UserSessionProvider;
 import org.keycloak.models.map.common.DeepCloner;
 import org.keycloak.models.map.common.HasRealmId;
 import org.keycloak.models.map.common.TimeAdapter;
-import org.keycloak.models.map.storage.MapKeycloakTransaction;
+import org.keycloak.models.map.storage.MapStorage;
 import org.keycloak.models.map.storage.ModelCriteriaBuilder.Operator;
 import org.keycloak.models.map.storage.criteria.DefaultModelCriteria;
 import org.keycloak.models.utils.KeycloakModelUtils;
@@ -63,7 +62,7 @@ public class MapUserSessionProvider implements UserSessionProvider {
 
     private static final Logger LOG = Logger.getLogger(MapUserSessionProvider.class);
     private final KeycloakSession session;
-    protected final MapKeycloakTransaction<MapUserSessionEntity, UserSessionModel> userSessionTx;
+    protected final MapStorage<MapUserSessionEntity, UserSessionModel> userSessionTx;
 
     /**
      * Storage for transient user sessions which lifespan is limited to one request.
@@ -71,7 +70,7 @@ public class MapUserSessionProvider implements UserSessionProvider {
     private final Map<String, MapUserSessionEntity> transientUserSessions = new HashMap<>();
     private final boolean txHasRealmId;
 
-    public MapUserSessionProvider(KeycloakSession session, MapKeycloakTransaction<MapUserSessionEntity, UserSessionModel> userSessionStore) {
+    public MapUserSessionProvider(KeycloakSession session, MapStorage<MapUserSessionEntity, UserSessionModel> userSessionStore) {
         this.session = session;
         this.userSessionTx = userSessionStore;
         this.txHasRealmId = userSessionTx instanceof HasRealmId;
@@ -94,7 +93,7 @@ public class MapUserSessionProvider implements UserSessionProvider {
         };
     }
 
-    private MapKeycloakTransaction<MapUserSessionEntity, UserSessionModel> txInRealm(RealmModel realm) {
+    private MapStorage<MapUserSessionEntity, UserSessionModel> txInRealm(RealmModel realm) {
         if (txHasRealmId) {
             ((HasRealmId) userSessionTx).setRealmId(realm == null ? null : realm.getId());
         }

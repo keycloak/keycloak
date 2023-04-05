@@ -25,7 +25,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.map.common.DeepCloner;
 import org.keycloak.models.map.common.HasRealmId;
 import org.keycloak.models.map.common.TimeAdapter;
-import org.keycloak.models.map.storage.MapKeycloakTransaction;
+import org.keycloak.models.map.storage.MapStorage;
 import org.keycloak.models.map.storage.ModelCriteriaBuilder.Operator;
 import org.keycloak.models.map.storage.criteria.DefaultModelCriteria;
 import org.keycloak.sessions.AuthenticationSessionCompoundId;
@@ -52,12 +52,12 @@ public class MapRootAuthenticationSessionProvider implements AuthenticationSessi
 
     private static final Logger LOG = Logger.getLogger(MapRootAuthenticationSessionProvider.class);
     private final KeycloakSession session;
-    protected final MapKeycloakTransaction<MapRootAuthenticationSessionEntity, RootAuthenticationSessionModel> tx;
+    protected final MapStorage<MapRootAuthenticationSessionEntity, RootAuthenticationSessionModel> tx;
     private int authSessionsLimit;
     private final boolean txHasRealmId;
 
     public MapRootAuthenticationSessionProvider(KeycloakSession session,
-                                                MapKeycloakTransaction<MapRootAuthenticationSessionEntity, RootAuthenticationSessionModel> sessionStore,
+                                                MapStorage<MapRootAuthenticationSessionEntity, RootAuthenticationSessionModel> sessionStore,
                                                 int authSessionsLimit) {
         this.session = session;
         this.tx = sessionStore;
@@ -76,7 +76,7 @@ public class MapRootAuthenticationSessionProvider implements AuthenticationSessi
         };
     }
 
-    private MapKeycloakTransaction<MapRootAuthenticationSessionEntity, RootAuthenticationSessionModel> txInRealm(RealmModel realm) {
+    private MapStorage<MapRootAuthenticationSessionEntity, RootAuthenticationSessionModel> txInRealm(RealmModel realm) {
         if (txHasRealmId) {
             ((HasRealmId) tx).setRealmId(realm == null ? null : realm.getId());
         }

@@ -22,7 +22,7 @@ import org.keycloak.models.UserLoginFailureProvider;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserLoginFailureModel;
 import org.keycloak.models.map.common.DeepCloner;
-import org.keycloak.models.map.storage.MapKeycloakTransaction;
+import org.keycloak.models.map.storage.MapStorage;
 
 import org.keycloak.models.map.storage.ModelCriteriaBuilder.Operator;
 import org.keycloak.models.map.storage.criteria.DefaultModelCriteria;
@@ -39,9 +39,9 @@ public class MapUserLoginFailureProvider implements UserLoginFailureProvider {
 
     private static final Logger LOG = Logger.getLogger(MapUserLoginFailureProvider.class);
     private final KeycloakSession session;
-    protected final MapKeycloakTransaction<MapUserLoginFailureEntity, UserLoginFailureModel> userLoginFailureTx;
+    protected final MapStorage<MapUserLoginFailureEntity, UserLoginFailureModel> userLoginFailureTx;
 
-    public MapUserLoginFailureProvider(KeycloakSession session, MapKeycloakTransaction<MapUserLoginFailureEntity, UserLoginFailureModel> userLoginFailureStore) {
+    public MapUserLoginFailureProvider(KeycloakSession session, MapStorage<MapUserLoginFailureEntity, UserLoginFailureModel> userLoginFailureStore) {
         this.session = session;
         this.userLoginFailureTx = userLoginFailureStore;
     }

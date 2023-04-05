@@ -32,7 +32,7 @@ import org.keycloak.models.RealmModel.SearchableFields;
 import org.keycloak.models.RealmProvider;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.map.common.DeepCloner;
-import org.keycloak.models.map.storage.MapKeycloakTransaction;
+import org.keycloak.models.map.storage.MapStorage;
 import org.keycloak.models.map.storage.ModelCriteriaBuilder.Operator;
 import org.keycloak.models.map.storage.criteria.DefaultModelCriteria;
 import org.keycloak.models.utils.KeycloakModelUtils;
@@ -48,9 +48,9 @@ public class MapRealmProvider implements RealmProvider {
 
     private static final Logger LOG = Logger.getLogger(MapRealmProvider.class);
     private final KeycloakSession session;
-    final MapKeycloakTransaction<MapRealmEntity, RealmModel> tx;
+    final MapStorage<MapRealmEntity, RealmModel> tx;
 
-    public MapRealmProvider(KeycloakSession session, MapKeycloakTransaction<MapRealmEntity, RealmModel> realmStore) {
+    public MapRealmProvider(KeycloakSession session, MapStorage<MapRealmEntity, RealmModel> realmStore) {
         this.session = session;
         this.tx = realmStore;
     }

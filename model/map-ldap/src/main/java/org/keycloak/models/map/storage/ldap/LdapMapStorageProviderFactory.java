@@ -18,7 +18,6 @@ package org.keycloak.models.map.storage.ldap;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import org.keycloak.Config;
 import org.keycloak.common.Profile;
@@ -28,11 +27,11 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.map.common.SessionAttributesUtils;
-import org.keycloak.models.map.storage.MapKeycloakTransaction;
+import org.keycloak.models.map.storage.MapStorage;
 import org.keycloak.models.map.storage.MapStorageProvider;
 import org.keycloak.models.map.storage.MapStorageProviderFactory;
 import org.keycloak.models.map.storage.ldap.config.LdapMapConfig;
-import org.keycloak.models.map.storage.ldap.role.LdapRoleMapKeycloakTransaction;
+import org.keycloak.models.map.storage.ldap.role.LdapRoleMapStorage;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
 
 public class LdapMapStorageProviderFactory implements
@@ -46,12 +45,12 @@ public class LdapMapStorageProviderFactory implements
     private Config.Scope config;
 
     @SuppressWarnings("rawtypes")
-    private static final Map<Class<?>, LdapRoleMapKeycloakTransaction.LdapRoleMapKeycloakTransactionFunction<KeycloakSession, Config.Scope, MapKeycloakTransaction>> MODEL_TO_TX = new HashMap<>();
+    private static final Map<Class<?>, LdapRoleMapStorage.LdapRoleMapKeycloakTransactionFunction<KeycloakSession, Config.Scope, MapStorage>> MODEL_TO_TX = new HashMap<>();
     static {
-        MODEL_TO_TX.put(RoleModel.class,            LdapRoleMapKeycloakTransaction::new);
+        MODEL_TO_TX.put(RoleModel.class,            LdapRoleMapStorage::new);
     }
 
-    public <M, V extends AbstractEntity> MapKeycloakTransaction<V, M> createTransaction(KeycloakSession session, Class<M> modelType) {
+    public <M, V extends AbstractEntity> MapStorage<V, M> createTransaction(KeycloakSession session, Class<M> modelType) {
         return MODEL_TO_TX.get(modelType).apply(session, config);
     }
 

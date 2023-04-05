@@ -19,7 +19,7 @@ package org.keycloak.models.map.storage.ldap;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.map.common.AbstractEntity;
 import org.keycloak.models.map.common.SessionAttributesUtils;
-import org.keycloak.models.map.storage.MapKeycloakTransaction;
+import org.keycloak.models.map.storage.MapStorage;
 import org.keycloak.models.map.storage.MapStorageProvider;
 import org.keycloak.models.map.storage.MapStorageProviderFactory.Flag;
 
@@ -40,9 +40,9 @@ public class LdapMapStorageProvider implements MapStorageProvider {
     }
 
     @Override
-    public <V extends AbstractEntity, M> MapKeycloakTransaction<V, M> getEnlistedTransaction(Class<M> modelType, Flag... flags) {
-        return SessionAttributesUtils.createTransactionIfAbsent(session, getClass(), modelType, factoryId, () -> {
-            LdapMapKeycloakTransaction transaction = (LdapMapKeycloakTransaction) factory.createTransaction(session, modelType);
+    public <V extends AbstractEntity, M> MapStorage<V, M> getMapStorage(Class<M> modelType, Flag... flags) {
+        return SessionAttributesUtils.createMapStorageIfAbsent(session, getClass(), modelType, factoryId, () -> {
+            LdapMapStorage transaction = (LdapMapStorage) factory.createTransaction(session, modelType);
             session.getTransactionManager().enlist(transaction);
             return transaction;
         });

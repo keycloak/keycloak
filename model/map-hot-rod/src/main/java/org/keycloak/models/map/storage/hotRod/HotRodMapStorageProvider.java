@@ -24,20 +24,20 @@ import org.keycloak.models.SingleUseObjectValueModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.map.common.AbstractEntity;
 import org.keycloak.models.map.common.StringKeyConverter;
-import org.keycloak.models.map.storage.MapKeycloakTransaction;
+import org.keycloak.models.map.storage.MapStorage;
 import org.keycloak.models.map.storage.MapStorageProvider;
 import org.keycloak.models.map.storage.MapStorageProviderFactory;
-import org.keycloak.models.map.storage.chm.ConcurrentHashMapKeycloakTransaction;
+import org.keycloak.models.map.storage.chm.ConcurrentHashMapStorage;
 import org.keycloak.models.map.storage.chm.MapFieldPredicates;
 import org.keycloak.models.map.storage.chm.MapModelCriteriaBuilder;
-import org.keycloak.models.map.storage.chm.SingleUseObjectKeycloakTransaction;
+import org.keycloak.models.map.storage.chm.SingleUseObjectMapStorage;
 import org.keycloak.models.map.storage.hotRod.common.AbstractHotRodEntity;
 import org.keycloak.models.map.storage.hotRod.common.HotRodEntityDelegate;
 import org.keycloak.models.map.storage.hotRod.common.HotRodEntityDescriptor;
 import org.keycloak.models.map.storage.hotRod.connections.HotRodConnectionProvider;
 import org.keycloak.models.map.storage.hotRod.transaction.AllAreasHotRodTransactionsWrapper;
 import org.keycloak.models.map.storage.hotRod.transaction.HotRodRemoteTransactionWrapper;
-import org.keycloak.models.map.storage.hotRod.userSession.HotRodUserSessionTransaction;
+import org.keycloak.models.map.storage.hotRod.userSession.HotRodUserSessionMapStorage;
 import org.keycloak.storage.SearchableModelField;
 
 import java.util.Map;
@@ -62,13 +62,13 @@ public class HotRodMapStorageProvider implements MapStorageProvider {
     }
 
     @Override
-    public <V extends AbstractEntity, M> MapKeycloakTransaction<V, M> getEnlistedTransaction(Class<M> modelType, MapStorageProviderFactory.Flag... flags) {
+    public <V extends AbstractEntity, M> MapStorage<V, M> getMapStorage(Class<M> modelType, MapStorageProviderFactory.Flag... flags) {
         if (txWrapper == null) initializeTransactionWrapper(modelType);
 
         // We need to preload client session store before we load user session store to avoid recursive update of storages map
-        if (modelType == UserSessionModel.class) getEnlistedTransaction(AuthenticatedClientSessionModel.class, flags);
+        if (modelType == UserSessionModel.class) getMapStorage(AuthenticatedClientSessionModel.class, flags);
 
-        return (MapKeycloakTransaction<V, M>) txWrapper.getOrCreateTxForModel(modelType, () -> createHotRodTransaction(session, modelType, flags));
+        return (MapStorage<V, M>) txWrapper.getOrCreateTxForModel(modelType, () -> createHotRodMapStorage(session, modelType, flags));
     }
 
     private void initializeTransactionWrapper(Class<?> modelType) {
@@ -88,7 +88,7 @@ public class HotRodMapStorageProvider implements MapStorageProvider {
         }
     }
 
-    private <K, E extends AbstractHotRodEntity, V extends HotRodEntityDelegate<E> & AbstractEntity, M> ConcurrentHashMapKeycloakTransaction<K, V, M> createHotRodTransaction(KeycloakSession session, Class<M> modelType, MapStorageProviderFactory.Flag... flags) {
+    private <K, E extends AbstractHotRodEntity, V extends HotRodEntityDelegate<E> & AbstractEntity, M> ConcurrentHashMapStorage<K, V, M> createHotRodMapStorage(KeycloakSession session, Class<M> modelType, MapStorageProviderFactory.Flag... flags) {
         HotRodConnectionProvider connectionProvider = session.getProvider(HotRodConnectionProvider.class);
         HotRodEntityDescriptor<E, V> entityDescriptor = (HotRodEntityDescriptor<E, V>) factory.getEntityDescriptor(modelType);
         Map<SearchableModelField<? super M>, MapModelCriteriaBuilder.UpdatePredicatesFunc<String, V, M>> fieldPredicates = MapFieldPredicates.getPredicates((Class<M>) entityDescriptor.getModelTypeClass());
@@ -96,19 +96,19 @@ public class HotRodMapStorageProvider implements MapStorageProvider {
 
         // TODO: This is messy, we should refactor this so we don't need to pass kc, entityDescriptor, CLONER to both MapStorage and transaction
         if (modelType == SingleUseObjectValueModel.class) {
-            return new SingleUseObjectKeycloakTransaction(new SingleUseObjectHotRodCrudOperations(session, connectionProvider.getRemoteCache(entityDescriptor.getCacheName()), kc, (HotRodEntityDescriptor) entityDescriptor, CLONER, lockTimeout), kc, CLONER, fieldPredicates);
+            return new SingleUseObjectMapStorage(new SingleUseObjectHotRodCrudOperations(session, connectionProvider.getRemoteCache(entityDescriptor.getCacheName()), kc, (HotRodEntityDescriptor) entityDescriptor, CLONER, lockTimeout), kc, CLONER, fieldPredicates);
         } if (modelType == AuthenticatedClientSessionModel.class) {
-            return new ConcurrentHashMapKeycloakTransaction(new HotRodCrudOperations(session, connectionProvider.getRemoteCache(entityDescriptor.getCacheName()),
+            return new ConcurrentHashMapStorage(new HotRodCrudOperations(session, connectionProvider.getRemoteCache(entityDescriptor.getCacheName()),
                     kc,
                     entityDescriptor,
                     CLONER, lockTimeout), kc, CLONER, CLIENT_SESSION_PREDICATES);
         } if (modelType == UserSessionModel.class) {
-            return new HotRodUserSessionTransaction(new HotRodCrudOperations(session, connectionProvider.getRemoteCache(entityDescriptor.getCacheName()),
+            return new HotRodUserSessionMapStorage(new HotRodCrudOperations(session, connectionProvider.getRemoteCache(entityDescriptor.getCacheName()),
                     kc,
                     entityDescriptor,
-                    CLONER, lockTimeout), kc, CLONER, fieldPredicates, txWrapper.getOrCreateTxForModel(AuthenticatedClientSessionModel.class, () -> createHotRodTransaction(session, AuthenticatedClientSessionModel.class, flags)));
+                    CLONER, lockTimeout), kc, CLONER, fieldPredicates, txWrapper.getOrCreateTxForModel(AuthenticatedClientSessionModel.class, () -> createHotRodMapStorage(session, AuthenticatedClientSessionModel.class, flags)));
         } else {
-            return new ConcurrentHashMapKeycloakTransaction(new HotRodCrudOperations<>(session, connectionProvider.getRemoteCache(entityDescriptor.getCacheName()), kc, entityDescriptor, CLONER, lockTimeout), kc, CLONER, fieldPredicates);
+            return new ConcurrentHashMapStorage(new HotRodCrudOperations<>(session, connectionProvider.getRemoteCache(entityDescriptor.getCacheName()), kc, entityDescriptor, CLONER, lockTimeout), kc, CLONER, fieldPredicates);
         }
     }
 

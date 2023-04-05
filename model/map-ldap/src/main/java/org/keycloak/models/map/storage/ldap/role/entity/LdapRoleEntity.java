@@ -40,13 +40,13 @@ import org.keycloak.models.map.role.MapRoleEntityFields;
 import org.keycloak.models.map.storage.ldap.model.LdapMapDn;
 import org.keycloak.models.map.storage.ldap.model.LdapMapObject;
 import org.keycloak.models.map.storage.ldap.role.config.LdapMapRoleMapperConfig;
-import org.keycloak.models.map.storage.ldap.role.LdapRoleMapKeycloakTransaction;
+import org.keycloak.models.map.storage.ldap.role.LdapRoleMapStorage;
 
 public class LdapRoleEntity extends UpdatableEntity.Impl implements EntityFieldDelegate<MapRoleEntity> {
 
     private final LdapMapObject ldapMapObject;
     private final LdapMapRoleMapperConfig roleMapperConfig;
-    private final LdapRoleMapKeycloakTransaction transaction;
+    private final LdapRoleMapStorage transaction;
     private final String clientId;
 
     private static final EnumMap<MapRoleEntityFields, BiConsumer<LdapRoleEntity, Object>> SETTERS = new EnumMap<>(MapRoleEntityFields.class);
@@ -83,7 +83,7 @@ public class LdapRoleEntity extends UpdatableEntity.Impl implements EntityFieldD
         REMOVERS.put(MapRoleEntityFields.COMPOSITE_ROLES, (e, v) -> { e.removeCompositeRole((String) v); return null; });
     }
 
-    public LdapRoleEntity(DeepCloner cloner, LdapMapRoleMapperConfig roleMapperConfig, LdapRoleMapKeycloakTransaction transaction, String clientId) {
+    public LdapRoleEntity(DeepCloner cloner, LdapMapRoleMapperConfig roleMapperConfig, LdapRoleMapStorage transaction, String clientId) {
         ldapMapObject = new LdapMapObject();
         ldapMapObject.setObjectClasses(Arrays.asList("top", "groupOfNames"));
         ldapMapObject.setRdnAttributeName(roleMapperConfig.getRoleNameLdapAttribute());
@@ -92,7 +92,7 @@ public class LdapRoleEntity extends UpdatableEntity.Impl implements EntityFieldD
         this.clientId = clientId;
     }
 
-    public LdapRoleEntity(LdapMapObject ldapMapObject, LdapMapRoleMapperConfig roleMapperConfig, LdapRoleMapKeycloakTransaction transaction, String clientId) {
+    public LdapRoleEntity(LdapMapObject ldapMapObject, LdapMapRoleMapperConfig roleMapperConfig, LdapRoleMapStorage transaction, String clientId) {
         this.ldapMapObject = ldapMapObject;
         this.roleMapperConfig = roleMapperConfig;
         this.transaction = transaction;

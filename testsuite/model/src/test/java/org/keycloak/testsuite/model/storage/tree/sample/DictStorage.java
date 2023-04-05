@@ -18,7 +18,7 @@ package org.keycloak.testsuite.model.storage.tree.sample;
 
 import org.keycloak.models.map.common.AbstractEntity;
 import org.keycloak.models.map.common.DeepCloner;
-import org.keycloak.models.map.storage.MapKeycloakTransaction;
+import org.keycloak.models.map.storage.MapStorage;
 import org.keycloak.models.map.storage.QueryParameters;
 
 import java.util.List;
@@ -29,7 +29,7 @@ import java.util.stream.Stream;
  *
  * @author hmlnarik
  */
-public class DictStorage<V extends AbstractEntity, M> implements MapKeycloakTransaction<V, M> {
+public class DictStorage<V extends AbstractEntity, M> implements MapStorage<V, M> {
 
     private final DeepCloner cloner;
 

@@ -14,47 +14,52 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.models.map.storage.jpa.userSession;
+package org.keycloak.models.map.storage.jpa.event.admin;
 
 import javax.persistence.EntityManager;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.Root;
 import javax.persistence.criteria.Selection;
 
+import org.keycloak.events.admin.AdminEvent;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.UserSessionModel;
-import org.keycloak.models.map.storage.jpa.JpaMapKeycloakTransaction;
+import org.keycloak.models.map.events.MapAdminEventEntity;
+import org.keycloak.models.map.storage.MapStorage;
+import org.keycloak.models.map.storage.jpa.JpaMapStorage;
 import org.keycloak.models.map.storage.jpa.JpaModelCriteriaBuilder;
 import org.keycloak.models.map.storage.jpa.JpaRootEntity;
-import org.keycloak.models.map.storage.jpa.userSession.entity.JpaUserSessionEntity;
-import org.keycloak.models.map.userSession.MapUserSessionEntity;
+import org.keycloak.models.map.storage.jpa.event.admin.entity.JpaAdminEventEntity;
 
-import static org.keycloak.models.map.storage.jpa.Constants.CURRENT_SCHEMA_VERSION_USER_SESSION;
+import static org.keycloak.models.map.storage.jpa.Constants.CURRENT_SCHEMA_VERSION_ADMIN_EVENT;
 
-public class JpaUserSessionMapKeycloakTransaction extends JpaMapKeycloakTransaction<JpaUserSessionEntity, MapUserSessionEntity, UserSessionModel> {
+/**
+ * A {@link MapStorage} implementation for admin event entities.
+ *
+ * @author <a href="mailto:sguilhen@redhat.com">Stefan Guilhen</a>
+ */
+public class JpaAdminEventMapStorage extends JpaMapStorage<JpaAdminEventEntity, MapAdminEventEntity, AdminEvent> {
 
-    public JpaUserSessionMapKeycloakTransaction(KeycloakSession session, final EntityManager em) {
-        super(session, JpaUserSessionEntity.class, UserSessionModel.class, em);
+    public JpaAdminEventMapStorage(KeycloakSession session, final EntityManager em) {
+        super(session, JpaAdminEventEntity.class, AdminEvent.class, em);
     }
 
     @Override
-    protected Selection<? extends JpaUserSessionEntity> selectCbConstruct(CriteriaBuilder cb, Root<JpaUserSessionEntity> root) {
+    protected Selection<? extends JpaAdminEventEntity> selectCbConstruct(CriteriaBuilder cb, Root<JpaAdminEventEntity> root) {
         return root;
     }
 
     @Override
     protected void setEntityVersion(JpaRootEntity entity) {
-        entity.setEntityVersion(CURRENT_SCHEMA_VERSION_USER_SESSION);
+        entity.setEntityVersion(CURRENT_SCHEMA_VERSION_ADMIN_EVENT);
     }
 
     @Override
     protected JpaModelCriteriaBuilder createJpaModelCriteriaBuilder() {
-        return new JpaUserSessionModelCriteriaBuilder();
+        return new JpaAdminEventModelCriteriaBuilder();
     }
 
     @Override
-    protected MapUserSessionEntity mapToEntityDelegate(JpaUserSessionEntity original) {
+    protected MapAdminEventEntity mapToEntityDelegate(JpaAdminEventEntity original) {
         return original;
     }
-
 }

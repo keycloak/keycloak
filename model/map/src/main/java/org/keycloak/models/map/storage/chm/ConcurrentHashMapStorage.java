@@ -33,7 +33,8 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.jboss.logging.Logger;
-import org.keycloak.models.map.storage.MapKeycloakTransaction;
+import org.keycloak.models.map.storage.CrudOperations;
+import org.keycloak.models.map.storage.MapStorage;
 import org.keycloak.models.map.storage.ModelEntityUtil;
 import org.keycloak.models.map.storage.QueryParameters;
 import org.keycloak.models.map.storage.chm.MapModelCriteriaBuilder.UpdatePredicatesFunc;
@@ -41,9 +42,9 @@ import org.keycloak.models.map.storage.criteria.DefaultModelCriteria;
 import org.keycloak.storage.SearchableModelField;
 import java.util.function.Consumer;
 
-public class ConcurrentHashMapKeycloakTransaction<K, V extends AbstractEntity & UpdatableEntity, M> implements MapKeycloakTransaction<V, M>, KeycloakTransaction, HasRealmId {
+public class ConcurrentHashMapStorage<K, V extends AbstractEntity & UpdatableEntity, M> implements MapStorage<V, M>, KeycloakTransaction, HasRealmId {
 
-    private final static Logger log = Logger.getLogger(ConcurrentHashMapKeycloakTransaction.class);
+    private final static Logger log = Logger.getLogger(ConcurrentHashMapStorage.class);
 
     protected boolean active;
     protected boolean rollback;
@@ -60,11 +61,11 @@ public class ConcurrentHashMapKeycloakTransaction<K, V extends AbstractEntity & 
         CREATE, UPDATE, DELETE,
     }
 
-    public ConcurrentHashMapKeycloakTransaction(CrudOperations<V, M> map, StringKeyConverter<K> keyConverter, DeepCloner cloner, Map<SearchableModelField<? super M>, UpdatePredicatesFunc<K, V, M>> fieldPredicates) {
+    public ConcurrentHashMapStorage(CrudOperations<V, M> map, StringKeyConverter<K> keyConverter, DeepCloner cloner, Map<SearchableModelField<? super M>, UpdatePredicatesFunc<K, V, M>> fieldPredicates) {
         this(map, keyConverter, cloner, fieldPredicates, null);
     }
 
-    public ConcurrentHashMapKeycloakTransaction(CrudOperations<V, M> map, StringKeyConverter<K> keyConverter, DeepCloner cloner, Map<SearchableModelField<? super M>, UpdatePredicatesFunc<K, V, M>> fieldPredicates, EntityField<V> realmIdEntityField) {
+    public ConcurrentHashMapStorage(CrudOperations<V, M> map, StringKeyConverter<K> keyConverter, DeepCloner cloner, Map<SearchableModelField<? super M>, UpdatePredicatesFunc<K, V, M>> fieldPredicates, EntityField<V> realmIdEntityField) {
         this.map = map;
         this.keyConverter = keyConverter;
         this.cloner = cloner;
@@ -174,7 +175,7 @@ public class ConcurrentHashMapKeycloakTransaction<K, V extends AbstractEntity & 
         // could have been removed by some bulk delete in the existing tasks. Check it.
         final V value = defaultValueFunc.apply(key);
         for (MapTaskWithValue val : tasks.values()) {
-            if (val instanceof ConcurrentHashMapKeycloakTransaction.BulkDeleteOperation) {
+            if (val instanceof ConcurrentHashMapStorage.BulkDeleteOperation) {
                 final BulkDeleteOperation delOp = (BulkDeleteOperation) val;
                 if (! delOp.getFilterForNonDeletedObjects().test(value)) {
                     return null;
@@ -317,7 +318,7 @@ public class ConcurrentHashMapKeycloakTransaction<K, V extends AbstractEntity & 
 
         // Check if there is a bulk delete operation in which case read the full entity
         for (MapTaskWithValue val : tasks.values()) {
-            if (val instanceof ConcurrentHashMapKeycloakTransaction.BulkDeleteOperation) {
+            if (val instanceof ConcurrentHashMapStorage.BulkDeleteOperation) {
                 return read(key) != null;
             }
         }
@@ -352,7 +353,7 @@ public class ConcurrentHashMapKeycloakTransaction<K, V extends AbstractEntity & 
 
         public MapTaskWithValue(V value) {
             this.value = value;
-            this.realmId = ConcurrentHashMapKeycloakTransaction.this.realmId;
+            this.realmId = ConcurrentHashMapStorage.this.realmId;
         }
 
         public V getValue() {
@@ -419,7 +420,7 @@ public class ConcurrentHashMapKeycloakTransaction<K, V extends AbstractEntity & 
         @Override
         public boolean isReplace() {
             return (newValue.getOperation() == MapOperation.CREATE && oldValue.containsRemove()) ||
-              (oldValue instanceof ConcurrentHashMapKeycloakTransaction.MapTaskCompose && ((MapTaskCompose) oldValue).isReplace());
+              (oldValue instanceof ConcurrentHashMapStorage.MapTaskCompose && ((MapTaskCompose) oldValue).isReplace());
         }
     }
 

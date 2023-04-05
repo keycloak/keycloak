@@ -36,5 +36,5 @@ public interface MapStorageProvider extends Provider {
      * @return
      * @throws IllegalArgumentException If some of the types is not supported by the underlying implementation.
      */
-    <V extends AbstractEntity, M> MapKeycloakTransaction<V, M> getEnlistedTransaction(Class<M> modelType, Flag... flags);
+    <V extends AbstractEntity, M> MapStorage<V, M> getMapStorage(Class<M> modelType, Flag... flags);
 }

@@ -23,9 +23,9 @@ import org.keycloak.models.map.common.StringKeyConverter;
 import org.keycloak.models.map.common.StringKeyConverter.StringKey;
 import org.keycloak.models.map.common.UpdatableEntity;
 import org.keycloak.models.map.common.delegate.EntityFieldDelegate;
-import org.keycloak.models.map.storage.MapKeycloakTransaction;
+import org.keycloak.models.map.storage.MapStorage;
 import org.keycloak.models.map.storage.ModelEntityUtil;
-import org.keycloak.models.map.storage.chm.ConcurrentHashMapKeycloakTransaction;
+import org.keycloak.models.map.storage.chm.ConcurrentHashMapStorage;
 import org.keycloak.models.map.storage.chm.MapFieldPredicates;
 import org.keycloak.storage.ReadOnlyException;
 import java.io.IOException;
@@ -45,14 +45,14 @@ import java.util.Set;
 import java.util.function.Function;
 
 /**
- * {@link MapKeycloakTransaction} implementation used with the file map storage.
+ * {@link MapStorage} implementation used with the file map storage.
  *
  * @author <a href="mailto:sguilhen@redhat.com">Stefan Guilhen</a>
  */
-public class FileMapKeycloakTransaction<V extends AbstractEntity & UpdatableEntity, M>
-  extends ConcurrentHashMapKeycloakTransaction<String, V, M> {
+public class FileMapStorage<V extends AbstractEntity & UpdatableEntity, M>
+  extends ConcurrentHashMapStorage<String, V, M> {
 
-    private static final Logger LOG = Logger.getLogger(FileMapKeycloakTransaction.class);
+    private static final Logger LOG = Logger.getLogger(FileMapStorage.class);
 
     private final List<Path> createdPaths = new LinkedList<>();
     private final List<Path> pathsToDelete = new LinkedList<>();
@@ -61,16 +61,16 @@ public class FileMapKeycloakTransaction<V extends AbstractEntity & UpdatableEnti
 
     private final String txId = StringKey.INSTANCE.yieldNewUniqueKey();
 
-    public static <V extends AbstractEntity & UpdatableEntity, M> FileMapKeycloakTransaction<V, M> newInstance(Class<V> entityClass,
+    public static <V extends AbstractEntity & UpdatableEntity, M> FileMapStorage<V, M> newInstance(Class<V> entityClass,
       Function<String, Path> dataDirectoryFunc, Function<V, String[]> suggestedPath,
       boolean isExpirableEntity) {
         Crud<V, M> crud = new Crud<>(entityClass, dataDirectoryFunc, suggestedPath, isExpirableEntity);
-        FileMapKeycloakTransaction<V, M> tx = new FileMapKeycloakTransaction<>(entityClass, crud);
+        FileMapStorage<V, M> tx = new FileMapStorage<>(entityClass, crud);
         crud.tx = tx;
         return tx;
     }
 
-    private FileMapKeycloakTransaction(Class<V> entityClass, Crud<V, M> crud) {
+    private FileMapStorage(Class<V> entityClass, Crud<V, M> crud) {
         super(
           crud,
           StringKeyConverter.StringKey.INSTANCE,
@@ -83,8 +83,8 @@ public class FileMapKeycloakTransaction<V extends AbstractEntity & UpdatableEnti
     @Override
     public void rollback() {
         // remove all temporary and empty files that were created.
-        this.renameOnCommit.keySet().forEach(FileMapKeycloakTransaction::silentDelete);
-        this.createdPaths.forEach(FileMapKeycloakTransaction::silentDelete);
+        this.renameOnCommit.keySet().forEach(FileMapStorage::silentDelete);
+        this.createdPaths.forEach(FileMapStorage::silentDelete);
         super.rollback();
     }
 
@@ -97,12 +97,12 @@ public class FileMapKeycloakTransaction<V extends AbstractEntity & UpdatableEnti
         allChangedPaths.addAll(this.pathsToDelete);
         allChangedPaths.forEach(this::checkIsSafeToModify);
         try {
-            this.renameOnCommit.forEach(FileMapKeycloakTransaction::move);
-            this.pathsToDelete.forEach(FileMapKeycloakTransaction::silentDelete);
+            this.renameOnCommit.forEach(FileMapStorage::move);
+            this.pathsToDelete.forEach(FileMapStorage::silentDelete);
             // TODO: catch exception thrown by move and try to restore any previously completed moves.
         } finally {
             // ensure all temp files are removed.
-            this.renameOnCommit.keySet().forEach(FileMapKeycloakTransaction::silentDelete);
+            this.renameOnCommit.keySet().forEach(FileMapStorage::silentDelete);
             // remove any created files that may have been left empty.
             this.createdPaths.forEach(path -> silenteDelete(path, true));
         }
@@ -203,7 +203,7 @@ public class FileMapKeycloakTransaction<V extends AbstractEntity & UpdatableEnti
 
     private static class Crud<V extends AbstractEntity & UpdatableEntity, M> extends FileCrudOperations<V, M> {
 
-        private FileMapKeycloakTransaction tx;
+        private FileMapStorage tx;
 
         public Crud(Class<V> entityClass, Function<String, Path> dataDirectoryFunc, Function<V, String[]> suggestedPath, boolean isExpirableEntity) {
             super(entityClass, dataDirectoryFunc, suggestedPath, isExpirableEntity);

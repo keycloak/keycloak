@@ -80,9 +80,9 @@ public class ConcurrentHashMapStorageTest extends KeycloakModelTest {
 //        String component2Id = createMapStorageComponent("component2", "keyType", "string");
 //
 //        String[] ids = withRealm(realmId, (session, realm) -> {
-//            ConcurrentHashMapStorage<K, MapClientEntity, ClientModel> storageMain = (ConcurrentHashMapStorage<K, MapClientEntity, ClientModel>) (MapStorage) session.getProvider(MapStorageProvider.class, ConcurrentHashMapStorageProviderFactory.PROVIDER_ID).getEnlistedTransaction(ClientModel.class);
-//            ConcurrentHashMapStorage<K1, MapClientEntity, ClientModel> storage1 = (ConcurrentHashMapStorage<K1, MapClientEntity, ClientModel>) (MapStorage) session.getComponentProvider(MapStorageProvider.class, component1Id).getEnlistedTransaction(ClientModel.class);
-//            ConcurrentHashMapStorage<K2, MapClientEntity, ClientModel> storage2 = (ConcurrentHashMapStorage<K2, MapClientEntity, ClientModel>) (MapStorage) session.getComponentProvider(MapStorageProvider.class, component2Id).getEnlistedTransaction(ClientModel.class);
+//            ConcurrentHashMapStorage<K, MapClientEntity, ClientModel> storageMain = (ConcurrentHashMapStorage<K, MapClientEntity, ClientModel>) (MapStorage) session.getProvider(MapStorageProvider.class, ConcurrentHashMapStorageProviderFactory.PROVIDER_ID).getMapStorage(ClientModel.class);
+//            ConcurrentHashMapStorage<K1, MapClientEntity, ClientModel> storage1 = (ConcurrentHashMapStorage<K1, MapClientEntity, ClientModel>) (MapStorage) session.getComponentProvider(MapStorageProvider.class, component1Id).getMapStorage(ClientModel.class);
+//            ConcurrentHashMapStorage<K2, MapClientEntity, ClientModel> storage2 = (ConcurrentHashMapStorage<K2, MapClientEntity, ClientModel>) (MapStorage) session.getComponentProvider(MapStorageProvider.class, component2Id).getMapStorage(ClientModel.class);
 //
 //            // Assert that the map storage can be used both as a standalone store and a component
 //            assertThat(storageMain, notNullValue());
@@ -164,11 +164,11 @@ public class ConcurrentHashMapStorageTest extends KeycloakModelTest {
 //        // Check that in the next transaction, the objects are still there
 //        withRealm(realmId, (session, realm) -> {
 //            @SuppressWarnings("unchecked")
-//            ConcurrentHashMapStorage<K, MapClientEntity, ClientModel> storageMain = (ConcurrentHashMapStorage<K, MapClientEntity, ClientModel>) (MapStorage) session.getProvider(MapStorageProvider.class, ConcurrentHashMapStorageProviderFactory.PROVIDER_ID).getEnlistedTransaction(ClientModel.class);
+//            ConcurrentHashMapStorage<K, MapClientEntity, ClientModel> storageMain = (ConcurrentHashMapStorage<K, MapClientEntity, ClientModel>) (MapStorage) session.getProvider(MapStorageProvider.class, ConcurrentHashMapStorageProviderFactory.PROVIDER_ID).getMapStorage(ClientModel.class);
 //            @SuppressWarnings("unchecked")
-//            ConcurrentHashMapStorage<K1, MapClientEntity, ClientModel> storage1 = (ConcurrentHashMapStorage<K1, MapClientEntity, ClientModel>) (MapStorage) session.getComponentProvider(MapStorageProvider.class, component1Id).getEnlistedTransaction(ClientModel.class);
+//            ConcurrentHashMapStorage<K1, MapClientEntity, ClientModel> storage1 = (ConcurrentHashMapStorage<K1, MapClientEntity, ClientModel>) (MapStorage) session.getComponentProvider(MapStorageProvider.class, component1Id).getMapStorage(ClientModel.class);
 //            @SuppressWarnings("unchecked")
-//            ConcurrentHashMapStorage<K2, MapClientEntity, ClientModel> storage2 = (ConcurrentHashMapStorage<K2, MapClientEntity, ClientModel>) (MapStorage) session.getComponentProvider(MapStorageProvider.class, component2Id).getEnlistedTransaction(ClientModel.class);
+//            ConcurrentHashMapStorage<K2, MapClientEntity, ClientModel> storage2 = (ConcurrentHashMapStorage<K2, MapClientEntity, ClientModel>) (MapStorage) session.getComponentProvider(MapStorageProvider.class, component2Id).getMapStorage(ClientModel.class);
 //
 //            final StringKeyConverter<K> kcMain = storageMain.getKeyConverter();
 //            final StringKeyConverter<K1> kc1 = storage1.getKeyConverter();

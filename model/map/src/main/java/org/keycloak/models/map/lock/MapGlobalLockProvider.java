@@ -24,7 +24,7 @@ import org.keycloak.models.KeycloakSessionTaskWithResult;
 import org.keycloak.models.locking.GlobalLockProvider;
 import org.keycloak.models.locking.LockAcquiringTimeoutException;
 import org.keycloak.models.map.common.DeepCloner;
-import org.keycloak.models.map.storage.MapKeycloakTransaction;
+import org.keycloak.models.map.storage.MapStorage;
 import org.keycloak.models.map.storage.ModelCriteriaBuilder;
 import org.keycloak.models.map.storage.QueryParameters;
 import org.keycloak.models.map.storage.criteria.DefaultModelCriteria;
@@ -52,15 +52,15 @@ public class MapGlobalLockProvider implements GlobalLockProvider {
 
     private final KeycloakSession session;
     private final long defaultTimeoutMilliseconds;
-    private MapKeycloakTransaction<MapLockEntity, MapLockEntity> tx;
+    private MapStorage<MapLockEntity, MapLockEntity> tx;
 
     /**
      * The lockStoreSupplier allows the store to be initialized lazily and only when needed: As this provider is initialized
      * for both the outer and the inner transactions, and the store is needed only for the inner transactions.
      */
-    private final Supplier<MapKeycloakTransaction<MapLockEntity, MapLockEntity>> lockStoreSupplier;
+    private final Supplier<MapStorage<MapLockEntity, MapLockEntity>> lockStoreSupplier;
 
-    public MapGlobalLockProvider(KeycloakSession session, long defaultTimeoutMilliseconds, Supplier<MapKeycloakTransaction<MapLockEntity, MapLockEntity>> lockStoreSupplier) {
+    public MapGlobalLockProvider(KeycloakSession session, long defaultTimeoutMilliseconds, Supplier<MapStorage<MapLockEntity, MapLockEntity>> lockStoreSupplier) {
         this.defaultTimeoutMilliseconds = defaultTimeoutMilliseconds;
         this.session = session;
         this.lockStoreSupplier = lockStoreSupplier;

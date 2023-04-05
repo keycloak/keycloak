@@ -29,7 +29,7 @@ import org.keycloak.models.map.authorization.entity.MapPolicyEntity;
 import org.keycloak.models.map.authorization.entity.MapResourceEntity;
 import org.keycloak.models.map.authorization.entity.MapResourceServerEntity;
 import org.keycloak.models.map.authorization.entity.MapScopeEntity;
-import org.keycloak.models.map.storage.MapKeycloakTransaction;
+import org.keycloak.models.map.storage.MapStorage;
 
 
 /**
@@ -44,11 +44,11 @@ public class MapAuthorizationStore implements StoreFactory {
     private final MapPermissionTicketStore permissionTicketStore;
     private boolean readOnly;
 
-    public MapAuthorizationStore(MapKeycloakTransaction<MapPermissionTicketEntity, PermissionTicket> permissionTicketStore,
-                                 MapKeycloakTransaction<MapPolicyEntity, Policy> policyStore,
-                                 MapKeycloakTransaction<MapResourceServerEntity, ResourceServer> resourceServerStore,
-                                 MapKeycloakTransaction<MapResourceEntity, Resource> resourceStore,
-                                 MapKeycloakTransaction<MapScopeEntity, Scope> scopeStore,
+    public MapAuthorizationStore(MapStorage<MapPermissionTicketEntity, PermissionTicket> permissionTicketStore,
+                                 MapStorage<MapPolicyEntity, Policy> policyStore,
+                                 MapStorage<MapResourceServerEntity, ResourceServer> resourceServerStore,
+                                 MapStorage<MapResourceEntity, Resource> resourceStore,
+                                 MapStorage<MapScopeEntity, Scope> scopeStore,
                                  AuthorizationProvider provider) {
         this.permissionTicketStore = new MapPermissionTicketStore(permissionTicketStore, provider);
         this.policyStore = new MapPolicyStore(policyStore, provider);
