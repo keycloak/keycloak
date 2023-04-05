@@ -351,7 +351,6 @@ export const RealmSettingsTabs = ({
           >
             <RealmSettingsTokensTab save={save} realm={realm} />
           </Tab>
-
           {!useServerInfo().profileInfo?.disabledFeatures?.includes(
             "CLIENT_POLICIES"
           ) && (
