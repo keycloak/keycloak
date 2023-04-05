@@ -353,7 +353,9 @@ export const RealmSettingsTabs = ({
           {isFeatureEnabled(Feature.ClientPolicies) && (
             <Tab
               title={
-                <TabTitleText>{t("realm-settings:clientPolicies")}</TabTitleText>
+                <TabTitleText>
+                  {t("realm-settings:clientPolicies")}
+                </TabTitleText>
               }
               data-testid="rs-clientPolicies-tab"
               {...clientPoliciesTab}
@@ -372,7 +374,9 @@ export const RealmSettingsTabs = ({
                   title={<TabTitleText>{t("profiles")}</TabTitleText>}
                   tooltip={
                     <Tooltip
-                      content={t("realm-settings:clientPoliciesProfilesHelpText")}
+                      content={t(
+                        "realm-settings:clientPoliciesProfilesHelpText"
+                      )}
                     />
                   }
                   {...clientPoliciesProfilesTab}
@@ -387,7 +391,9 @@ export const RealmSettingsTabs = ({
                   title={<TabTitleText>{t("policies")}</TabTitleText>}
                   tooltip={
                     <Tooltip
-                      content={t("realm-settings:clientPoliciesPoliciesHelpText")}
+                      content={t(
+                        "realm-settings:clientPoliciesPoliciesHelpText"
+                      )}
                     />
                   }
                 >
@@ -395,7 +401,7 @@ export const RealmSettingsTabs = ({
                 </Tab>
               </RoutableTabs>
             </Tab>
-            )}
+          )}
           {isFeatureEnabled(Feature.DeclarativeUserProfile) &&
             realm.attributes?.userProfileEnabled === "true" && (
               <Tab
