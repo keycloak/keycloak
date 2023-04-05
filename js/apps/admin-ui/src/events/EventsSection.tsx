@@ -373,14 +373,14 @@ export default function EventsSection() {
                 />
               </FormGroup>
               <FormGroup
-                  label={t("ipAddress")}
-                  fieldId="kc-ipAddress"
-                  className="keycloak__events_search__form_label"
+                label={t("ipAddress")}
+                fieldId="kc-ipAddress"
+                className="keycloak__events_search__form_label"
               >
                 <KeycloakTextInput
-                    id="kc-ipAddress"
-                    data-testid="ipAddress-searchField"
-                    {...register("authIpAddress")}
+                  id="kc-ipAddress"
+                  data-testid="ipAddress-searchField"
+                  {...register("authIpAddress")}
                 />
               </FormGroup>
               <ActionGroup>
