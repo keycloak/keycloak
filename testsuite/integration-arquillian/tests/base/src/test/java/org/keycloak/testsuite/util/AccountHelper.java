@@ -18,6 +18,8 @@ package org.keycloak.testsuite.util;
 
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserResource;
+import java.util.List;
+import java.util.Map;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 
@@ -26,13 +28,7 @@ import java.util.Optional;
 public class AccountHelper {
 
     public static boolean updatePassword(RealmResource realm, String username, String password) {
-        Optional<UserRepresentation> userResult = realm.users().search(username).stream().findFirst();
-        if (userResult.isEmpty()) {
-            throw new RuntimeException("User with username " + username + " not found");
-        }
-
-        UserRepresentation userRepresentation = userResult.get();
-        UserResource user = realm.users().get(userRepresentation.getId());
+        UserResource user = realm.users().get(getUserId(realm, username));
 
         CredentialRepresentation credentialRepresentation = CredentialBuilder.create().password(password).build();
 
@@ -42,6 +38,32 @@ public class AccountHelper {
         } catch (Throwable t) {
             return false;
         }
+    }
+
+    public static List<Map<String, Object>> getUserConsents(RealmResource realm, String username) {
+        UserResource user = realm.users().get(getUserId(realm, username));
+        List<Map<String, Object>> consents = user.getConsents();
+        return consents;
+    }
+
+    public static void revokeConsents(RealmResource realm, String username, String clientId) {
+        UserResource user = realm.users().get(getUserId(realm, username));
+        user.revokeConsent(clientId);
+    }
+
+    public static void logout(RealmResource realm, String username) {
+        UserResource user = realm.users().get(getUserId(realm, username));
+        user.logout();
+    }
+
+    private static String getUserId(RealmResource realm, String username) {
+        Optional<UserRepresentation> userResult = realm.users().search(username).stream().findFirst();
+        if (userResult.isEmpty()) {
+            throw new RuntimeException("User with username " + username + " not found");
+        }
+
+        UserRepresentation userRepresentation = userResult.get();
+        return userRepresentation.getId();
     }
 
 }
