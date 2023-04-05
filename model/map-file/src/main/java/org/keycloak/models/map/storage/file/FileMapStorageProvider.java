@@ -18,11 +18,19 @@ package org.keycloak.models.map.storage.file;
 
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.map.common.AbstractEntity;
+import org.keycloak.models.map.common.ExpirableEntity;
 import org.keycloak.models.map.common.SessionAttributesUtils;
+import org.keycloak.models.map.common.UpdatableEntity;
 import org.keycloak.models.map.storage.MapKeycloakTransaction;
 import org.keycloak.models.map.storage.MapStorageProvider;
 import org.keycloak.models.map.storage.MapStorageProviderFactory;
+import org.keycloak.models.map.storage.ModelEntityUtil;
 import org.keycloak.models.map.storage.chm.ConcurrentHashMapKeycloakTransaction;
+
+import java.util.function.Function;
+
+import static org.keycloak.models.map.storage.ModelEntityUtil.getModelName;
+import static org.keycloak.models.map.storage.file.FileMapStorageProviderFactory.UNIQUE_HUMAN_READABLE_NAME_FIELD;
 
 /**
  * File-based {@link MapStorageProvider} implementation.
@@ -44,12 +52,21 @@ public class FileMapStorageProvider implements MapStorageProvider {
     @Override
     @SuppressWarnings("unchecked")
     public <V extends AbstractEntity, M> MapKeycloakTransaction<V, M> getEnlistedTransaction(Class<M> modelType, MapStorageProviderFactory.Flag... flags) {
-        FileMapStorage storage = factory.getStorage(modelType, flags);
-        return SessionAttributesUtils.createTransactionIfAbsent(session, getClass(), modelType, factoryId, () -> {
-            ConcurrentHashMapKeycloakTransaction transaction = storage.createTransaction();
-            session.getTransactionManager().enlist(transaction);
-            return transaction;
-        });
+        return (MapKeycloakTransaction<V, M>) SessionAttributesUtils.createTransactionIfAbsent(session, getClass(), modelType, factoryId, () -> createTransaction(modelType));
+    }
+
+
+    private <V extends AbstractEntity & UpdatableEntity, M> ConcurrentHashMapKeycloakTransaction<?, V, M> createTransaction(Class<M> modelType) {
+        String areaName = getModelName(modelType, modelType.getSimpleName());
+        final Class<V> et = ModelEntityUtil.getEntityType(modelType);
+        Function<V, String[]> uniqueHumanReadableField = (Function<V, String[]>) UNIQUE_HUMAN_READABLE_NAME_FIELD.get(et);
+
+        ConcurrentHashMapKeycloakTransaction transaction = FileMapKeycloakTransaction.newInstance(et,
+                factory.getDataDirectoryFunc(areaName),
+                ((uniqueHumanReadableField == null) ? v -> v.getId() == null ? null : new String[]{v.getId()} : uniqueHumanReadableField),
+                ExpirableEntity.class.isAssignableFrom(et));
+        session.getTransactionManager().enlist(transaction);
+        return transaction;
     }
 
     @Override

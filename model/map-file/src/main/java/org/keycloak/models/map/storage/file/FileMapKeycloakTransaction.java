@@ -16,7 +16,6 @@
  */
 package org.keycloak.models.map.storage.file;
 
-
 import org.jboss.logging.Logger;
 import org.keycloak.models.map.common.AbstractEntity;
 import org.keycloak.models.map.common.DeepCloner;
@@ -28,9 +27,7 @@ import org.keycloak.models.map.storage.MapKeycloakTransaction;
 import org.keycloak.models.map.storage.ModelEntityUtil;
 import org.keycloak.models.map.storage.chm.ConcurrentHashMapKeycloakTransaction;
 import org.keycloak.models.map.storage.chm.MapFieldPredicates;
-import org.keycloak.models.map.storage.chm.MapModelCriteriaBuilder.UpdatePredicatesFunc;
 import org.keycloak.storage.ReadOnlyException;
-import org.keycloak.storage.SearchableModelField;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
@@ -66,8 +63,8 @@ public class FileMapKeycloakTransaction<V extends AbstractEntity & UpdatableEnti
 
     public static <V extends AbstractEntity & UpdatableEntity, M> FileMapKeycloakTransaction<V, M> newInstance(Class<V> entityClass,
       Function<String, Path> dataDirectoryFunc, Function<V, String[]> suggestedPath,
-      boolean isExpirableEntity, Map<SearchableModelField<? super M>, UpdatePredicatesFunc<String, V, M>> fieldPredicates) {
-        Crud<V, M> crud = new Crud<>(entityClass, dataDirectoryFunc, suggestedPath, isExpirableEntity, fieldPredicates);
+      boolean isExpirableEntity) {
+        Crud<V, M> crud = new Crud<>(entityClass, dataDirectoryFunc, suggestedPath, isExpirableEntity);
         FileMapKeycloakTransaction<V, M> tx = new FileMapKeycloakTransaction<>(entityClass, crud);
         crud.tx = tx;
         return tx;
@@ -204,12 +201,12 @@ public class FileMapKeycloakTransaction<V extends AbstractEntity & UpdatableEnti
         return DeepCloner.DUMB_CLONER.entityFieldDelegate(watchedValue, new IdProtector(watchedValue));
     }
 
-    private static class Crud<V extends AbstractEntity & UpdatableEntity, M> extends FileMapStorage.FileCrudOperations<V, M> {
+    private static class Crud<V extends AbstractEntity & UpdatableEntity, M> extends FileCrudOperations<V, M> {
 
         private FileMapKeycloakTransaction tx;
 
-        public Crud(Class<V> entityClass, Function<String, Path> dataDirectoryFunc, Function<V, String[]> suggestedPath, boolean isExpirableEntity, Map<SearchableModelField<? super M>, UpdatePredicatesFunc<String, V, M>> fieldPredicates) {
-            super(entityClass, dataDirectoryFunc, suggestedPath, isExpirableEntity, fieldPredicates);
+        public Crud(Class<V> entityClass, Function<String, Path> dataDirectoryFunc, Function<V, String[]> suggestedPath, boolean isExpirableEntity) {
+            super(entityClass, dataDirectoryFunc, suggestedPath, isExpirableEntity);
         }
 
         @Override
