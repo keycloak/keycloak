@@ -986,26 +986,27 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
             setTimeOffset(2000000);
             resetPassword("login-test", "password1");
 
-            resetPasswordInvalidPassword("login-test", "password1", "Invalid password: must not be equal to any of last 3 passwords.");
+            resetPasswordInvalidPassword("login-test", "password", "Invalid password: must not be equal to any of last 3 passwords.");
 
             setTimeOffset(4000000);
             resetPassword("login-test", "password2");
 
+            resetPasswordInvalidPassword("login-test", "password", "Invalid password: must not be equal to any of last 3 passwords.");
             resetPasswordInvalidPassword("login-test", "password1", "Invalid password: must not be equal to any of last 3 passwords.");
-            resetPasswordInvalidPassword("login-test", "password2", "Invalid password: must not be equal to any of last 3 passwords.");
 
             setTimeOffset(6000000);
-            resetPassword("login-test", "password3");
-
-            resetPasswordInvalidPassword("login-test", "password1", "Invalid password: must not be equal to any of last 3 passwords.");
-            resetPasswordInvalidPassword("login-test", "password2", "Invalid password: must not be equal to any of last 3 passwords.");
-            resetPasswordInvalidPassword("login-test", "password3", "Invalid password: must not be equal to any of last 3 passwords.");
-
-            setTimeOffset(8000000);
             resetPassword("login-test", "password");
         } finally {
             setTimeOffset(0);
         }
+    }
+
+    @Test
+    public void resetPasswordWithExistingPassword() throws IOException, MessagingException {
+        //Block passwords that are equal to previous passwords. Default value is 3.
+        setPasswordPolicy("passwordHistory");
+
+        resetPassword("login-test", "password");
     }
 
     @Test

@@ -57,17 +57,26 @@ public class PasswordCredentialProvider implements CredentialProvider<PasswordCr
     public boolean createCredential(RealmModel realm, UserModel user, String password) {
         PasswordPolicy policy = realm.getPasswordPolicy();
 
-        PolicyError error = session.getProvider(PasswordPolicyManagerProvider.class).validate(realm, user, password);
-        if (error != null) throw new ModelException(error.getMessage(), error.getParameters());
-
         PasswordHashProvider hash = getHashProvider(policy);
         if (hash == null) {
             return false;
         }
+
+        PasswordCredentialModel oldPassword = getPassword(realm, user);
+        if (oldPassword != null) {
+            boolean unchanged = hash.verify(password, oldPassword);
+            if (unchanged) {
+                return false;
+            }
+        }
+
+        PolicyError error = session.getProvider(PasswordPolicyManagerProvider.class).validate(realm, user, password);
+        if (error != null) throw new ModelException(error.getMessage(), error.getParameters());
+
         try {
-            PasswordCredentialModel credentialModel = hash.encodedCredential(password, policy.getHashIterations());
-            credentialModel.setCreatedDate(Time.currentTimeMillis());
-            createCredential(realm, user, credentialModel);
+            PasswordCredentialModel newPassword = hash.encodedCredential(password, policy.getHashIterations());
+            newPassword.setCreatedDate(Time.currentTimeMillis());
+            createCredential(realm, user, oldPassword, newPassword);
         } catch (Throwable t) {
             throw new ModelException(t.getMessage(), t);
         }
@@ -76,22 +85,26 @@ public class PasswordCredentialProvider implements CredentialProvider<PasswordCr
 
     @Override
     public CredentialModel createCredential(RealmModel realm, UserModel user, PasswordCredentialModel credentialModel) {
+        PasswordCredentialModel oldPassword = getPassword(realm, user);
+        return createCredential(realm, user, oldPassword, credentialModel);
+    }
 
+    public CredentialModel createCredential(RealmModel realm, UserModel user, PasswordCredentialModel oldPassword,
+                                            PasswordCredentialModel newPassword) {
         PasswordPolicy policy = realm.getPasswordPolicy();
         int expiredPasswordsPolicyValue = policy.getExpiredPasswords();
 
         // 1) create new or reset existing password
         CredentialModel createdCredential;
-        CredentialModel oldPassword = getPassword(realm, user);
-        if (credentialModel.getCreatedDate() == null) {
-            credentialModel.setCreatedDate(Time.currentTimeMillis());
+        if (newPassword.getCreatedDate() == null) {
+            newPassword.setCreatedDate(Time.currentTimeMillis());
         }
         if (oldPassword == null) { // no password exists --> create new
-            createdCredential = user.credentialManager().createStoredCredential(credentialModel);
+            createdCredential = user.credentialManager().createStoredCredential(newPassword);
         } else { // password exists --> update existing
-            credentialModel.setId(oldPassword.getId());
-            user.credentialManager().updateStoredCredential(credentialModel);
-            createdCredential = credentialModel;
+            newPassword.setId(oldPassword.getId());
+            user.credentialManager().updateStoredCredential(newPassword);
+            createdCredential = newPassword;
 
             // 2) add a password history item based on the old password
             if (expiredPasswordsPolicyValue > 1) {
