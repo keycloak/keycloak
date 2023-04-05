@@ -194,8 +194,32 @@ Spring Security, when using role-based authentication, requires that role names 
 For example, an administrator role must be declared in Keycloak as `ROLE_ADMIN` or similar, not simply `ADMIN`.
 
 The class `org.keycloak.adapters.springsecurity.authentication.KeycloakAuthenticationProvider`            supports an optional `org.springframework.security.core.authority.mapping.GrantedAuthoritiesMapper`            which can be used to map roles coming from Keycloak to roles recognized by Spring Security.
-Use, for example, `org.springframework.security.core.authority.mapping.SimpleAuthorityMapper` to insert the `ROLE_` prefix and convert the role name to upper case.
-The class is part of Spring Security Core module.
+Use, for example, `org.springframework.security.core.authority.mapping.SimpleAuthorityMapper`, which allows for case conversion and the addition of a prefix (which defaults to `ROLE_`).
+The following code will convert the role names to upper case and, by default, add the `ROLE_` prefix to them:
+
+[source,java]
+----
+@KeycloakConfiguration
+public class SecurityConfig extends KeycloakWebSecurityConfigurerAdapter {
+
+    @Autowired
+    public void configureGlobal(AuthenticationManagerBuilder auth) {
+        auth.authenticationProvider(getKeycloakAuthenticationProvider());
+    }
+
+    private KeycloakAuthenticationProvider getKeycloakAuthenticationProvider() {
+        KeycloakAuthenticationProvider authenticationProvider = keycloakAuthenticationProvider();
+        SimpleAuthorityMapper mapper = new SimpleAuthorityMapper();
+        mapper.setConvertToUpperCase(true);
+        authenticationProvider.setGrantedAuthoritiesMapper(mapper);
+
+        return authenticationProvider;
+    }
+
+    ...
+}
+
+----
 
 ===== Client to Client Support
 

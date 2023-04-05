@@ -22,10 +22,12 @@ import org.keycloak.common.ClientConnection;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 
+import org.keycloak.models.utils.KeycloakModelUtils;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -42,10 +44,12 @@ public class EventBuilder {
 
     private static final Logger log = Logger.getLogger(EventBuilder.class);
 
+    private final KeycloakSessionFactory sessionFactory;
     private EventStoreProvider store;
     private List<EventListenerProvider> listeners;
     private RealmModel realm;
     private Event event;
+    private Boolean storeImmediately;
 
     public EventBuilder(RealmModel realm, KeycloakSession session, ClientConnection clientConnection) {
         this(realm, session);
@@ -53,41 +57,40 @@ public class EventBuilder {
     }
 
     public EventBuilder(RealmModel realm, KeycloakSession session) {
+        this.sessionFactory = session.getKeycloakSessionFactory();
         this.realm = realm;
 
         event = new Event();
 
-        if (realm.isEventsEnabled()) {
-            EventStoreProvider store = session.getProvider(EventStoreProvider.class);
-            if (store != null) {
-                this.store = store;
-            } else {
-                log.error("Events enabled, but no event store provider configured");
-            }
+        this.store = realm.isEventsEnabled() ? session.getProvider(EventStoreProvider.class) : null;
+        if (realm.isEventsEnabled() && this.store == null) {
+            log.error("Events enabled, but no event store provider configured");
         }
 
-
-        this.listeners = realm.getEventsListenersStream()
-                .map(id -> {
-                    EventListenerProvider listener = session.getProvider(EventListenerProvider.class, id);
-                    if (listener != null) {
-                        return listener;
-                    } else {
-                        log.error("Event listener '" + id + "' registered, but provider not found");
-                        return null;
-                    }
-                })
-                .filter(Objects::nonNull)
-                .collect(Collectors.toList());
+        this.listeners = getEventListeners(session, realm);
 
         realm(realm);
     }
 
-    private EventBuilder(EventStoreProvider store, List<EventListenerProvider> listeners, RealmModel realm, Event event) {
-        this.store = store;
+    private static List<EventListenerProvider> getEventListeners(KeycloakSession session, RealmModel realm) {
+        return realm.getEventsListenersStream().map(id -> {
+            EventListenerProvider listener = session.getProvider(EventListenerProvider.class, id);
+            if (listener != null) {
+                return listener;
+            } else {
+                log.error("Event listener '" + id + "' registered, but provider not found");
+                return null;
+            }
+        })
+        .filter(Objects::nonNull)
+        .collect(Collectors.toList());
+    }
+
+    private EventBuilder(KeycloakSessionFactory sessionFactory, List<EventListenerProvider> listeners, RealmModel realm, Event event) {
         this.listeners = listeners;
         this.realm = realm;
         this.event = event;
+        this.sessionFactory = sessionFactory;
     }
 
     public EventBuilder realm(RealmModel realm) {
@@ -179,7 +182,20 @@ public class EventBuilder {
         }
         return detail(key, values.filter(Objects::nonNull).collect(Collectors.joining("::")));
     }
-    
+
+    /**
+     * Sets the time when to store the event.
+     * By default, events marked as success ({@link #success()}) are stored upon commit of the session's transaction
+     * while the failures ({@link #error(java.lang.String)} are stored and propagated to the event listeners
+     * immediately into the event store.
+     * @param forcedValue If {@code true}, the event is stored in the event store immediately. If {@code false},
+     *   the event is stored upon commit.
+     * @return
+     */
+    public EventBuilder storeImmediately(boolean forcedValue) {
+        this.storeImmediately = forcedValue;
+        return this;
+    }
 
     public EventBuilder removeDetail(String key) {
         if (event.getDetails() != null) {
@@ -193,7 +209,7 @@ public class EventBuilder {
     }
 
     public void success() {
-        send();
+        send(this.storeImmediately == null ? false : this.storeImmediately);
     }
 
     public void error(String error) {
@@ -205,31 +221,42 @@ public class EventBuilder {
             event.setType(EventType.valueOf(event.getType().name() + "_ERROR"));
         }
         event.setError(error);
-        send();
+        send(this.storeImmediately == null ? true : this.storeImmediately);
     }
 
     public EventBuilder clone() {
-        return new EventBuilder(store, listeners, realm, event.clone());
+        return new EventBuilder(sessionFactory, listeners, realm, event.clone());
     }
 
-    private void send() {
+    private void send(boolean sendImmediately) {
         event.setTime(Time.currentTimeMillis());
         event.setId(UUID.randomUUID().toString());
 
-        if (store != null) {
-            Set<String> eventTypes = realm.getEnabledEventTypesStream().collect(Collectors.toSet());
-            if (!eventTypes.isEmpty() ? eventTypes.contains(event.getType().name()) : event.getType().isSaveByDefault()) {
-                store.onEvent(event);
+        Set<String> eventTypes = realm.getEnabledEventTypesStream().collect(Collectors.toSet());
+        if (sendImmediately) {
+            KeycloakModelUtils.runJobInTransaction(sessionFactory, session -> {
+                EventStoreProvider store = session.getProvider(EventStoreProvider.class);
+                List<EventListenerProvider> listeners = getEventListeners(session, realm);
+
+                sendNow(store, eventTypes, listeners);
+            });
+        } else {
+            sendNow(this.store, eventTypes, this.listeners);
+        }
+    }
+
+    private void sendNow(EventStoreProvider targetStore, Set<String> eventTypes, List<EventListenerProvider> targetListeners) {
+        if (targetStore != null) {
+            if (eventTypes.isEmpty() && event.getType().isSaveByDefault() || eventTypes.contains(event.getType().name())) {
+                targetStore.onEvent(event);
             }
         }
 
-        if (listeners != null) {
-            for (EventListenerProvider l : listeners) {
-                try {
-                    l.onEvent(event);
-                } catch (Throwable t) {
-                    log.error("Failed to send type to " + l, t);
-                }
+        for (EventListenerProvider l : targetListeners) {
+            try {
+                l.onEvent(event);
+            } catch (Throwable t) {
+                log.error("Failed to send type to " + l, t);
             }
         }
     }

@@ -2,16 +2,20 @@ import {
   ActionList,
   ActionListItem,
   Button,
-  Flex,
-  FlexItem,
+  EmptyState,
+  EmptyStateBody,
+  Grid,
+  GridItem,
+  HelperText,
+  HelperTextItem,
+  InputGroup,
 } from "@patternfly/react-core";
 import { MinusCircleIcon, PlusCircleIcon } from "@patternfly/react-icons";
-import { useEffect } from "react";
-import { useFieldArray, useFormContext, useWatch } from "react-hook-form";
+import { Fragment } from "react";
+import { useFieldArray, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
 import { KeycloakTextInput } from "../keycloak-text-input/KeycloakTextInput";
-import { KeyValueType } from "./key-value-convert";
 
 type KeyValueInputProps = {
   name: string;
@@ -19,83 +23,82 @@ type KeyValueInputProps = {
 
 export const KeyValueInput = ({ name }: KeyValueInputProps) => {
   const { t } = useTranslation("common");
-  const { control, register } = useFormContext();
+  const {
+    control,
+    register,
+    formState: { errors },
+  } = useFormContext();
+
   const { fields, append, remove } = useFieldArray({
     control,
     name,
   });
 
-  const watchFields = useWatch({
-    control,
-    name,
-    defaultValue: [{ key: "", value: "" }],
-  });
+  const appendNew = () => append({ key: "", value: "" });
 
-  const isValid =
-    Array.isArray(watchFields) &&
-    watchFields.every(
-      ({ key, value }: KeyValueType) =>
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-        key?.trim().length !== 0 && value?.trim().length !== 0
-    );
-
-  useEffect(() => {
-    if (!fields.length) {
-      append({ key: "", value: "" }, { shouldFocus: false });
-    }
-  }, [fields]);
-
-  return (
+  return fields.length > 0 ? (
     <>
-      <Flex direction={{ default: "column" }}>
-        <Flex>
-          <FlexItem
-            grow={{ default: "grow" }}
-            spacer={{ default: "spacerNone" }}
-          >
-            <strong>{t("key")}</strong>
-          </FlexItem>
-          <FlexItem grow={{ default: "grow" }}>
-            <strong>{t("value")}</strong>
-          </FlexItem>
-        </Flex>
-        {fields.map((attribute, index) => (
-          <Flex key={attribute.id} data-testid="row">
-            <FlexItem grow={{ default: "grow" }}>
-              <KeycloakTextInput
-                placeholder={t("keyPlaceholder")}
-                aria-label={t("key")}
-                defaultValue=""
-                data-testid={`${name}[${index}].key`}
-                {...register(`${name}[${index}].key`)}
-              />
-            </FlexItem>
-            <FlexItem
-              grow={{ default: "grow" }}
-              spacer={{ default: "spacerNone" }}
-            >
-              <KeycloakTextInput
-                placeholder={t("valuePlaceholder")}
-                aria-label={t("value")}
-                defaultValue=""
-                data-testid={`${name}[${index}].value`}
-                {...register(`${name}[${index}].value`)}
-              />
-            </FlexItem>
-            <FlexItem>
-              <Button
-                variant="link"
-                title={t("removeAttribute")}
-                isDisabled={watchFields.length === 1}
-                onClick={() => remove(index)}
-                data-testid={`${name}[${index}].remove`}
-              >
-                <MinusCircleIcon />
-              </Button>
-            </FlexItem>
-          </Flex>
-        ))}
-      </Flex>
+      <Grid hasGutter>
+        <GridItem className="pf-c-form__label" span={6}>
+          <span className="pf-c-form__label-text">{t("key")}</span>
+        </GridItem>
+        <GridItem className="pf-c-form__label" span={6}>
+          <span className="pf-c-form__label-text">{t("value")}</span>
+        </GridItem>
+        {fields.map((attribute, index) => {
+          const keyError = !!(errors as any)[name]?.[index]?.key;
+          const valueError = !!(errors as any)[name]?.[index]?.value;
+
+          return (
+            <Fragment key={attribute.id}>
+              <GridItem span={6}>
+                <KeycloakTextInput
+                  placeholder={t("keyPlaceholder")}
+                  aria-label={t("key")}
+                  data-testid={`${name}-key`}
+                  {...register(`${name}.${index}.key`, { required: true })}
+                  validated={keyError ? "error" : "default"}
+                  isRequired
+                />
+                {keyError && (
+                  <HelperText>
+                    <HelperTextItem variant="error">
+                      {t("keyError")}
+                    </HelperTextItem>
+                  </HelperText>
+                )}
+              </GridItem>
+              <GridItem span={6}>
+                <InputGroup>
+                  <KeycloakTextInput
+                    placeholder={t("valuePlaceholder")}
+                    aria-label={t("value")}
+                    data-testid={`${name}-value`}
+                    {...register(`${name}.${index}.value`, { required: true })}
+                    validated={valueError ? "error" : "default"}
+                    isRequired
+                  />
+                  <Button
+                    variant="link"
+                    title={t("removeAttribute")}
+                    onClick={() => remove(index)}
+                    data-testid={`${name}-remove`}
+                  >
+                    <MinusCircleIcon />
+                  </Button>
+                </InputGroup>
+                {valueError && (
+                  <HelperText>
+                    <HelperTextItem variant="error">
+                      {t("valueError")}
+                    </HelperTextItem>
+                  </HelperText>
+                )}
+              </GridItem>
+            </Fragment>
+          );
+        })}
+      </Grid>
       <ActionList>
         <ActionListItem>
           <Button
@@ -103,13 +106,29 @@ export const KeyValueInput = ({ name }: KeyValueInputProps) => {
             className="pf-u-px-0 pf-u-mt-sm"
             variant="link"
             icon={<PlusCircleIcon />}
-            isDisabled={!isValid}
-            onClick={() => append({ key: "", value: "" })}
+            onClick={appendNew}
           >
             {t("addAttribute")}
           </Button>
         </ActionListItem>
       </ActionList>
     </>
+  ) : (
+    <EmptyState
+      data-testid={`${name}-empty-state`}
+      className="pf-u-p-0"
+      variant="xs"
+    >
+      <EmptyStateBody>{t("missingAttributes")}</EmptyStateBody>
+      <Button
+        data-testid={`${name}-add-row`}
+        variant="link"
+        icon={<PlusCircleIcon />}
+        isSmall
+        onClick={appendNew}
+      >
+        {t("addAttribute")}
+      </Button>
+    </EmptyState>
   );
 };

@@ -103,14 +103,14 @@ const ValueInput = ({
     <Td>
       {resources || attributeValues?.length ? (
         <Controller
-          name={`${name}[${rowIndex}].value`}
+          name={`${name}.${rowIndex}.value`}
           defaultValue={[]}
           control={control}
           render={({ field }) => (
             <Select
               toggleId={`${attribute.id}-value`}
               className="kc-attribute-value-selectable"
-              name={`${name}[${rowIndex}].value`}
+              name={`${name}.${rowIndex}.value`}
               chipGroupProps={{
                 numChips: 1,
                 expandedText: t("common:hide"),
@@ -171,7 +171,7 @@ export const KeyBasedAttributeInput = ({
     }
   }, [fields]);
 
-  const watchLastValue = watch(`${name}[${fields.length - 1}].value`, "");
+  const watchLastValue = watch(`${name}.${fields.length - 1}.value`, "");
 
   return (
     <TableComposable
@@ -190,14 +190,14 @@ export const KeyBasedAttributeInput = ({
           <Tr key={attribute.id} data-testid="attribute-row">
             <Td>
               <Controller
-                name={`${name}[${rowIndex}].key`}
+                name={`${name}.${rowIndex}.key`}
                 defaultValue=""
                 control={control}
                 render={({ field }) => (
                   <Select
-                    toggleId={`${name}[${rowIndex}].key`}
+                    toggleId={`${name}.${rowIndex}.key`}
                     className="kc-attribute-key-selectable"
-                    name={`${name}[${rowIndex}].key`}
+                    name={`${name}.${rowIndex}.key`}
                     onToggle={(open) => toggleKeySelect(rowIndex, open)}
                     isOpen={isKeyOpenArray[rowIndex]}
                     variant={SelectVariant.typeahead}

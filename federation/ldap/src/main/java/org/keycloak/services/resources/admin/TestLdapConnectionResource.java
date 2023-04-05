@@ -72,8 +72,10 @@ public class TestLdapConnectionResource {
 
         TestLdapConnectionRepresentation config = new TestLdapConnectionRepresentation(action, connectionUrl, bindDn, bindCredential, useTruststoreSpi, connectionTimeout, startTls, LDAPConstants.AUTH_TYPE_SIMPLE);
         config.setComponentId(componentId);
-        boolean result = LDAPServerCapabilitiesManager.testLDAP(config, session, realm);
-        return result ? Response.noContent().build() : ErrorResponse.error("LDAP test error", Response.Status.BAD_REQUEST);
+        if (! LDAPServerCapabilitiesManager.testLDAP(config, session, realm)) {
+            throw ErrorResponse.error("LDAP test error", Response.Status.BAD_REQUEST);
+        }
+        return Response.noContent().build();
     }
 
     /**
@@ -84,8 +86,10 @@ public class TestLdapConnectionResource {
     @NoCache
     @Consumes(MediaType.APPLICATION_JSON)
     public Response testLDAPConnection(TestLdapConnectionRepresentation config) {
-        boolean result = LDAPServerCapabilitiesManager.testLDAP(config, session, realm);
-        return result ? Response.noContent().build() : ErrorResponse.error("LDAP test error", Response.Status.BAD_REQUEST);
+        if (! LDAPServerCapabilitiesManager.testLDAP(config, session, realm)) {
+            throw ErrorResponse.error("LDAP test error", Response.Status.BAD_REQUEST);
+        }
+        return Response.noContent().build();
     }
 
 }

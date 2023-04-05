@@ -34,6 +34,7 @@ final class DatabasePropertyMappers {
                         .mapFrom("db")
                         .to("quarkus.datasource.jdbc.driver")
                         .transformer(DatabasePropertyMappers::getXaOrNonXaDriver)
+                        .paramLabel("driver")
                         .build(),
                 fromOption(DatabaseOptions.DB)
                         .transformer(DatabasePropertyMappers::resolveDatabaseVendor)

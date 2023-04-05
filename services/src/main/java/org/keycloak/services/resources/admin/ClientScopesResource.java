@@ -101,7 +101,7 @@ public class ClientScopesResource {
 
             return Response.created(session.getContext().getUri().getAbsolutePathBuilder().path(clientModel.getId()).build()).build();
         } catch (ModelDuplicateException e) {
-            return ErrorResponse.exists("Client Scope " + rep.getName() + " already exists");
+            throw ErrorResponse.exists("Client Scope " + rep.getName() + " already exists");
         }
     }
 

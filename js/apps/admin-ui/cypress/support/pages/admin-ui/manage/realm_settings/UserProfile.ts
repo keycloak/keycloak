@@ -17,8 +17,9 @@ export default class UserProfile {
   private newAttributeRequiredFor = 'input[name="roles"]';
   private newAttributeRequiredWhen = 'input[name="requiredWhen"]';
   private newAttributeEmptyValidators = ".kc-emptyValidators";
-  private newAttributeAnnotationKey = 'input[name="annotations[0].key"]';
-  private newAttributeAnnotationValue = 'input[name="annotations[0].value"]';
+  private newAttributeAnnotationBtn = "annotations-add-row";
+  private newAttributeAnnotationKey = "annotations-key";
+  private newAttributeAnnotationValue = "annotations-value";
   private validatorRolesList = "#validator";
   private validatorsList = 'tbody [data-label="name"]';
   private saveNewAttributeBtn = "attribute-create";
@@ -106,8 +107,9 @@ export default class UserProfile {
     cy.get(this.newAttributeRequiredFor).first().check({ force: true });
     cy.get(this.newAttributeRequiredWhen).first().check();
     cy.get(this.newAttributeEmptyValidators).contains("No validators.");
-    cy.get(this.newAttributeAnnotationKey).type("test");
-    cy.get(this.newAttributeAnnotationValue).type("123");
+    cy.findByTestId(this.newAttributeAnnotationBtn).click();
+    cy.findByTestId(this.newAttributeAnnotationKey).type("test");
+    cy.findByTestId(this.newAttributeAnnotationValue).type("123");
     return this;
   }
 

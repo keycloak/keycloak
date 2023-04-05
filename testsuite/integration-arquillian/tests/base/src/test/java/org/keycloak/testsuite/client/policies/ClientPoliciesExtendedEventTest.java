@@ -73,6 +73,9 @@ import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientProfilesBuilder;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.RoleBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.empty;
+import static org.junit.Assert.assertNull;
 
 /**
  * This test class is for testing a newly supported event for client policies.
@@ -156,7 +159,7 @@ public class ClientPoliciesExtendedEventTest extends AbstractClientPoliciesTest 
     }
 
     @Test
-    public void testExtendedClientPolicyIntefacesForClientRegistrationPolicyMigration() throws Exception {
+    public void testExtendedClientPolicyIntefacesForClientRegistrationPolicyMigrationCreate() throws Exception {
         // register profiles
         String json = (new ClientProfilesBuilder()).addProfile(
                 (new ClientProfileBuilder()).createProfile(PROFILE_NAME, "Den Forste Profilen")
@@ -177,7 +180,6 @@ public class ClientPoliciesExtendedEventTest extends AbstractClientPoliciesTest 
         updatePolicies(json);
 
         String clientName = "ByAdmin-App" + KeycloakModelUtils.generateId().substring(0, 7);
-        String clientId = null;
 
         try {
             createClientByAdmin(clientName, (ClientRepresentation clientRep) -> {
@@ -187,8 +189,36 @@ public class ClientPoliciesExtendedEventTest extends AbstractClientPoliciesTest 
             assertEquals(ClientPolicyEvent.REGISTERED.toString(), cpe.getError());
         }
 
-        clientId = getClientByAdminWithName(clientName).getId();
+        assertThat(adminClient.realm(REALM_NAME).clients().findByClientId(clientName), empty());
+    }
+
+    @Test
+    public void testExtendedClientPolicyIntefacesForClientRegistrationPolicyMigrationUpdate() throws Exception {
+        String clientName = "ByAdmin-App" + KeycloakModelUtils.generateId().substring(0, 7);
+        String clientId = null;
+
+        clientId = createClientByAdmin(clientName, (ClientRepresentation clientRep) -> {});
         assertEquals(true, getClientByAdmin(clientId).isEnabled());
+
+        // register profiles
+        String json = (new ClientProfilesBuilder()).addProfile(
+                (new ClientProfileBuilder()).createProfile(PROFILE_NAME, "Den Forste Profilen")
+                        .addExecutor(TestRaiseExceptionExecutorFactory.PROVIDER_ID,
+                                createTestRaiseExeptionExecutorConfig(Arrays.asList(
+                                        ClientPolicyEvent.REGISTERED, ClientPolicyEvent.UPDATED, ClientPolicyEvent.UNREGISTER)))
+                        .toRepresentation()
+        ).toString();
+        updateProfiles(json);
+
+        // register policies
+        json = (new ClientPoliciesBuilder()).addPolicy(
+                (new ClientPolicyBuilder()).createPolicy(POLICY_NAME, "La Premiere Politique", Boolean.TRUE)
+                        .addCondition(AnyClientConditionFactory.PROVIDER_ID, createAnyClientConditionConfig())
+                        .addProfile(PROFILE_NAME)
+                        .toRepresentation()
+        ).toString();
+        updatePolicies(json);
+
         try {
             updateClientByAdmin(clientId, (ClientRepresentation clientRep) -> {
                 clientRep.setEnabled(false);
@@ -197,7 +227,8 @@ public class ClientPoliciesExtendedEventTest extends AbstractClientPoliciesTest 
         } catch (ClientPolicyException cpe) {
             assertEquals(ClientPolicyEvent.UPDATED.toString(), cpe.getError());
         }
-        assertEquals(false, getClientByAdmin(clientId).isEnabled());
+
+        assertEquals(true, getClientByAdmin(clientId).isEnabled());
 
         try {
             deleteClientByAdmin(clientId);

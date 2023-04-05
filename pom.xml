@@ -79,7 +79,7 @@
         <jakarta.persistence.version>2.2.3</jakarta.persistence.version>
         <hibernate-orm.version>5.6.14.Final</hibernate-orm.version>
         <hibernate.c3p0.version>${hibernate-orm.version}</hibernate.c3p0.version>
-        <infinispan.version>14.0.4.Final</infinispan.version>
+        <infinispan.version>14.0.7.Final</infinispan.version>
         <infinispan.protostream.processor.version>4.6.0.Final</infinispan.protostream.processor.version>
         <jackson.version>2.13.4</jackson.version>
         <jackson.databind.version>2.13.4.2</jackson.databind.version>
@@ -111,7 +111,7 @@
         <woodstox.version>6.0.3</woodstox.version>
         <xmlsec.version>2.2.3</xmlsec.version>
         <wildfly.common.version>1.6.0.Final</wildfly.common.version>
-        <nashorn.version>15.3</nashorn.version>
+        <nashorn.version>15.4</nashorn.version>
         <ua-parser.version>1.5.4</ua-parser.version>
         <picketbox.version>5.0.3.Final</picketbox.version>
         <google.guava.version>30.1-jre</google.guava.version>

@@ -164,7 +164,7 @@ public class RoleContainerResource extends RoleResource {
                     for (String roleName : compositeRealmRoles) {
                         RoleModel realmRole = realm.getRole(roleName);
                         if (realmRole == null) {
-                            return ErrorResponse.error("Realm Role with name " + roleName + " does not exist", Response.Status.NOT_FOUND);
+                            throw ErrorResponse.error("Realm Role with name " + roleName + " does not exist", Response.Status.NOT_FOUND);
                         }
                         realmRoles.add(realmRole);
                     }
@@ -185,7 +185,7 @@ public class RoleContainerResource extends RoleResource {
                         for (String roleName : clientRoleNames) {
                             RoleModel clientRole = client.getRole(roleName);
                             if (clientRole == null) {
-                                return ErrorResponse.error("Client Role with name " + roleName + " does not exist", Response.Status.NOT_FOUND);
+                                throw ErrorResponse.error("Client Role with name " + roleName + " does not exist", Response.Status.NOT_FOUND);
                             }
                             clientRoles.add(clientRole);
                         }
@@ -198,7 +198,7 @@ public class RoleContainerResource extends RoleResource {
 
             return Response.created(uriInfo.getAbsolutePathBuilder().path(role.getName()).build()).build();
         } catch (ModelDuplicateException e) {
-            return ErrorResponse.exists("Role with name " + rep.getName() + " already exists");
+            throw ErrorResponse.exists("Role with name " + rep.getName() + " already exists");
         }
     }
 
@@ -237,8 +237,8 @@ public class RoleContainerResource extends RoleResource {
         if (role == null) {
             throw new NotFoundException("Could not find role");
         } else if (realm.getDefaultRole().getId().equals(role.getId())) {
-            throw new ErrorResponseException(ErrorResponse.error(roleName + " is default role of the realm and cannot be removed.", 
-                    Response.Status.BAD_REQUEST));
+            throw ErrorResponse.error(roleName + " is default role of the realm and cannot be removed.",
+                    Response.Status.BAD_REQUEST);
         }
         deleteRole(role);
 
@@ -281,7 +281,7 @@ public class RoleContainerResource extends RoleResource {
 
             return Response.noContent().build();
         } catch (ModelDuplicateException e) {
-            return ErrorResponse.exists("Role with name " + rep.getName() + " already exists");
+            throw ErrorResponse.exists("Role with name " + rep.getName() + " already exists");
         }
     }
 

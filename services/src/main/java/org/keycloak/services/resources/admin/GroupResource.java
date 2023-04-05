@@ -104,14 +104,14 @@ public class GroupResource {
 
         String groupName = rep.getName();
         if (ObjectUtil.isBlank(groupName)) {
-            return ErrorResponse.error("Group name is missing", Response.Status.BAD_REQUEST);
+            throw ErrorResponse.error("Group name is missing", Response.Status.BAD_REQUEST);
         }
 
         if (!Objects.equals(groupName, group.getName())) {
             boolean exists = siblings().filter(s -> !Objects.equals(s.getId(), group.getId()))
                     .anyMatch(s -> Objects.equals(s.getName(), groupName));
             if (exists) {
-                return ErrorResponse.exists("Sibling group named '" + groupName + "' already exists.");
+                throw ErrorResponse.exists("Sibling group named '" + groupName + "' already exists.");
             }
         }
         
@@ -154,11 +154,11 @@ public class GroupResource {
 
         String groupName = rep.getName();
         if (ObjectUtil.isBlank(groupName)) {
-            return ErrorResponse.error("Group name is missing", Response.Status.BAD_REQUEST);
+            throw ErrorResponse.error("Group name is missing", Response.Status.BAD_REQUEST);
         }
         boolean childExists = group.getSubGroupsStream().anyMatch(s -> Objects.equals(s.getName(), groupName));
         if (childExists) {
-            return ErrorResponse.exists("Sibling group named '" + groupName + "' already exists.");
+            throw ErrorResponse.exists("Sibling group named '" + groupName + "' already exists.");
         }
 
         Response.ResponseBuilder builder = Response.status(204);

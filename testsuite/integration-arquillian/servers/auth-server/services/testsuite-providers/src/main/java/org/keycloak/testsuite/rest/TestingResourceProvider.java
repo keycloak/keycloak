@@ -324,7 +324,7 @@ public class TestingResourceProvider implements RealmResourceProvider {
         EventStoreProvider eventStore = session.getProvider(EventStoreProvider.class);
         RealmModel realm = session.realms().getRealm(realmId);
 
-        if (realm == null) return ErrorResponse.error("Realm not found", Response.Status.NOT_FOUND);
+        if (realm == null) throw ErrorResponse.error("Realm not found", Response.Status.NOT_FOUND);
 
         eventStore.clear(realm);
         return Response.noContent().build();
@@ -453,7 +453,7 @@ public class TestingResourceProvider implements RealmResourceProvider {
         EventStoreProvider eventStore = session.getProvider(EventStoreProvider.class);
         RealmModel realm = session.realms().getRealm(realmId);
 
-        if (realm == null) return ErrorResponse.error("Realm not found", Response.Status.NOT_FOUND);
+        if (realm == null) throw ErrorResponse.error("Realm not found", Response.Status.NOT_FOUND);
 
         eventStore.clearAdmin(realm);
         return Response.noContent().build();
@@ -466,7 +466,7 @@ public class TestingResourceProvider implements RealmResourceProvider {
         EventStoreProvider eventStore = session.getProvider(EventStoreProvider.class);
         RealmModel realm = session.realms().getRealm(realmId);
 
-        if (realm == null) return ErrorResponse.error("Realm not found", Response.Status.NOT_FOUND);
+        if (realm == null) throw ErrorResponse.error("Realm not found", Response.Status.NOT_FOUND);
 
         eventStore.clearAdmin(realm, olderThan);
         return Response.noContent().build();

@@ -66,8 +66,7 @@ public abstract class AbstractPartialImport<T> implements PartialImport<T> {
     }
 
     protected ErrorResponseException existsError(String message) {
-        Response error = ErrorResponse.exists(message);
-        return new ErrorResponseException(error);
+        throw ErrorResponse.exists(message);
     }
 
     protected PartialImportResult overwritten(String modelId, T resourceRep){

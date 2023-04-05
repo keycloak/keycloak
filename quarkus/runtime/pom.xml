@@ -642,6 +642,11 @@
             <artifactId>jboss-jaxb-api_2.3_spec</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.openjdk.nashorn</groupId>
+            <artifactId>nashorn-core</artifactId>
+            <version>${nashorn.version}</version>
+        </dependency>
+        <dependency>
             <groupId>com.sun.xml.messaging.saaj</groupId>
             <artifactId>saaj-impl</artifactId>
         </dependency>

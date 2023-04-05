@@ -172,10 +172,13 @@
     "years": "Years"
   },
   "attributes": "Attributes",
+  "missingAttributes": "No attributes have been defined yet. Click the below button to add attributes, key and value are required for a key pair.",
   "addAttribute": "Add an attribute",
   "removeAttribute": "Remove attribute",
   "keyPlaceholder": "Type a key",
   "valuePlaceholder": "Type a value",
+  "keyError": "A key must be provided.",
+  "valueError": "A value must be provided.",
   "credentials": "Credentials",
   "clientId": "Client ID",
   "clientName": "Name",

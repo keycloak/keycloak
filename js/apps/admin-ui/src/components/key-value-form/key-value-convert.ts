@@ -22,5 +22,5 @@ export function arrayToKeyValue<T>(attributes: Record<string, string[]> = {}) {
     value.map<KeyValueType>((value) => ({ key, value }))
   );
 
-  return result.concat({ key: "", value: "" }) as PathValue<T, Path<T>>;
+  return result as PathValue<T, Path<T>>;
 }

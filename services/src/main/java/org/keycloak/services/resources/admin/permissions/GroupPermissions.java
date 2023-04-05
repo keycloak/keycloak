@@ -344,6 +344,20 @@ class GroupPermissions implements GroupPermissionEvaluator, GroupPermissionManag
     }
 
     @Override
+    public boolean canViewMembers(GroupModel group) {
+        if (root.users().canView()) return true;
+
+        if (!root.isAdminSameRealm()) {
+            return false;
+        }
+        
+        ResourceServer server = root.realmResourceServer();
+        if (server == null) return false;
+
+        return hasPermission(group, VIEW_MEMBERS_SCOPE);
+    }
+    
+    @Override
     public boolean canManageMembers(GroupModel group) {
         if (root.users().canManage()) return true;
 
@@ -367,7 +381,7 @@ class GroupPermissions implements GroupPermissionEvaluator, GroupPermissionManag
 
         return hasPermission(group, MANAGE_MEMBERSHIP_SCOPE);
     }
-
+    
     @Override
     public void requireManageMembership(GroupModel group) {
         if (!canManageMembership(group)) {
@@ -388,6 +402,8 @@ class GroupPermissions implements GroupPermissionEvaluator, GroupPermissionManag
         map.put("view", canView(group));
         map.put("manage", canManage(group));
         map.put("manageMembership", canManageMembership(group));
+        map.put("viewMembers", canViewMembers(group));
+        map.put("manageMembers", canManageMembers(group));
         return map;
     }
 
