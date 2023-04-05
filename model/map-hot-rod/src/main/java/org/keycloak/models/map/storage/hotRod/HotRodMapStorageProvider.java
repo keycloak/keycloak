@@ -96,19 +96,19 @@ public class HotRodMapStorageProvider implements MapStorageProvider {
 
         // TODO: This is messy, we should refactor this so we don't need to pass kc, entityDescriptor, CLONER to both MapStorage and transaction
         if (modelType == SingleUseObjectValueModel.class) {
-            return new SingleUseObjectKeycloakTransaction(new SingleUseObjectHotRodMapStorage(session, connectionProvider.getRemoteCache(entityDescriptor.getCacheName()), kc, (HotRodEntityDescriptor) entityDescriptor, CLONER, lockTimeout), kc, CLONER, fieldPredicates);
+            return new SingleUseObjectKeycloakTransaction(new SingleUseObjectHotRodCrudOperations(session, connectionProvider.getRemoteCache(entityDescriptor.getCacheName()), kc, (HotRodEntityDescriptor) entityDescriptor, CLONER, lockTimeout), kc, CLONER, fieldPredicates);
         } if (modelType == AuthenticatedClientSessionModel.class) {
-            return new ConcurrentHashMapKeycloakTransaction(new HotRodMapStorage(session, connectionProvider.getRemoteCache(entityDescriptor.getCacheName()),
+            return new ConcurrentHashMapKeycloakTransaction(new HotRodCrudOperations(session, connectionProvider.getRemoteCache(entityDescriptor.getCacheName()),
                     kc,
                     entityDescriptor,
                     CLONER, lockTimeout), kc, CLONER, CLIENT_SESSION_PREDICATES);
         } if (modelType == UserSessionModel.class) {
-            return new HotRodUserSessionTransaction(new HotRodMapStorage(session, connectionProvider.getRemoteCache(entityDescriptor.getCacheName()),
+            return new HotRodUserSessionTransaction(new HotRodCrudOperations(session, connectionProvider.getRemoteCache(entityDescriptor.getCacheName()),
                     kc,
                     entityDescriptor,
                     CLONER, lockTimeout), kc, CLONER, fieldPredicates, txWrapper.getOrCreateTxForModel(AuthenticatedClientSessionModel.class, () -> createHotRodTransaction(session, AuthenticatedClientSessionModel.class, flags)));
         } else {
-            return new ConcurrentHashMapKeycloakTransaction(new HotRodMapStorage<>(session, connectionProvider.getRemoteCache(entityDescriptor.getCacheName()), kc, entityDescriptor, CLONER, lockTimeout), kc, CLONER, fieldPredicates);
+            return new ConcurrentHashMapKeycloakTransaction(new HotRodCrudOperations<>(session, connectionProvider.getRemoteCache(entityDescriptor.getCacheName()), kc, entityDescriptor, CLONER, lockTimeout), kc, CLONER, fieldPredicates);
         }
     }
 

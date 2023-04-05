@@ -15,31 +15,37 @@
  * limitations under the License.
  */
 
-package org.keycloak.models.map.storage.chm;
+package org.keycloak.models.map.storage.hotRod;
 
+import org.infinispan.client.hotrod.RemoteCache;
 import org.keycloak.models.SingleUseObjectValueModel;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.map.common.AbstractEntity;
 import org.keycloak.models.map.common.DeepCloner;
 import org.keycloak.models.map.common.StringKeyConverter;
-import org.keycloak.models.map.singleUseObject.MapSingleUseObjectEntity;
-import org.keycloak.models.map.storage.MapKeycloakTransaction;
 import org.keycloak.models.map.storage.QueryParameters;
+import org.keycloak.models.map.storage.chm.SingleUseObjectModelCriteriaBuilder;
 import org.keycloak.models.map.storage.criteria.DefaultModelCriteria;
+import org.keycloak.models.map.storage.hotRod.common.HotRodEntityDescriptor;
+import org.keycloak.models.map.storage.hotRod.singleUseObject.HotRodSingleUseObjectEntity;
+import org.keycloak.models.map.storage.hotRod.singleUseObject.HotRodSingleUseObjectEntityDelegate;
 
 import java.util.stream.Stream;
+
 
 /**
  * @author <a href="mailto:mkanis@redhat.com">Martin Kanis</a>
  */
-public class SingleUseObjectConcurrentHashMapStorage<K, V extends AbstractEntity, M> extends ConcurrentHashMapStorage<K, MapSingleUseObjectEntity, SingleUseObjectValueModel> {
+public class SingleUseObjectHotRodCrudOperations
+        extends HotRodCrudOperations<String, HotRodSingleUseObjectEntity, HotRodSingleUseObjectEntityDelegate, SingleUseObjectValueModel> {
 
-    public SingleUseObjectConcurrentHashMapStorage(StringKeyConverter<K> keyConverter, DeepCloner cloner) {
-        super(SingleUseObjectValueModel.class, keyConverter, cloner);
+    public SingleUseObjectHotRodCrudOperations(KeycloakSession session, RemoteCache<String, HotRodSingleUseObjectEntity> remoteCache, StringKeyConverter<String> keyConverter,
+                                               HotRodEntityDescriptor<HotRodSingleUseObjectEntity, HotRodSingleUseObjectEntityDelegate> storedEntityDescriptor,
+                                               DeepCloner cloner, Long lockTimeout) {
+        super(session, remoteCache, keyConverter, storedEntityDescriptor, cloner, lockTimeout);
     }
 
     @Override
-    public MapSingleUseObjectEntity create(MapSingleUseObjectEntity value) {
+    public HotRodSingleUseObjectEntityDelegate create(HotRodSingleUseObjectEntityDelegate value) {
         if (value.getId() == null) {
             if (value.getObjectKey() != null) {
                 value.setId(value.getObjectKey());
@@ -49,7 +55,7 @@ public class SingleUseObjectConcurrentHashMapStorage<K, V extends AbstractEntity
     }
 
     @Override
-    public Stream<MapSingleUseObjectEntity> read(QueryParameters<SingleUseObjectValueModel> queryParameters) {
+    public Stream<HotRodSingleUseObjectEntityDelegate> read(QueryParameters<SingleUseObjectValueModel> queryParameters) {
         DefaultModelCriteria<SingleUseObjectValueModel> criteria = queryParameters.getModelCriteriaBuilder();
 
         if (criteria == null) {
@@ -58,7 +64,7 @@ public class SingleUseObjectConcurrentHashMapStorage<K, V extends AbstractEntity
 
         SingleUseObjectModelCriteriaBuilder mcb = criteria.flashToModelCriteriaBuilder(createSingleUseObjectCriteriaBuilder());
         if (mcb.isValid()) {
-            MapSingleUseObjectEntity value = read(mcb.getKey());
+            HotRodSingleUseObjectEntityDelegate value = read(mcb.getKey());
             return value != null ? Stream.of(value) : Stream.empty();
         }
 

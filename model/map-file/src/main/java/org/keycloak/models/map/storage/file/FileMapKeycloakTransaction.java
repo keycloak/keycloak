@@ -204,7 +204,7 @@ public class FileMapKeycloakTransaction<V extends AbstractEntity & UpdatableEnti
         return DeepCloner.DUMB_CLONER.entityFieldDelegate(watchedValue, new IdProtector(watchedValue));
     }
 
-    private static class Crud<V extends AbstractEntity & UpdatableEntity, M> extends FileMapStorage.Crud<V, M> {
+    private static class Crud<V extends AbstractEntity & UpdatableEntity, M> extends FileMapStorage.FileCrudOperations<V, M> {
 
         private FileMapKeycloakTransaction tx;
 

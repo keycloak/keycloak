@@ -31,7 +31,6 @@ import org.keycloak.models.map.client.MapClientProviderFactory;
 import org.keycloak.models.map.common.StringKeyConverter;
 import org.keycloak.models.map.storage.MapStorageProvider;
 import org.keycloak.models.map.storage.MapStorageProviderFactory;
-import org.keycloak.models.map.storage.chm.ConcurrentHashMapStorage;
 import org.keycloak.models.map.storage.chm.ConcurrentHashMapStorageProviderFactory;
 import org.keycloak.models.utils.KeycloakModelUtils;
 

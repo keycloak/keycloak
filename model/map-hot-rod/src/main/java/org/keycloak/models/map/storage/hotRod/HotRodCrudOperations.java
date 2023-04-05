@@ -34,7 +34,7 @@ import org.keycloak.models.map.common.ExpirableEntity;
 import org.keycloak.models.map.common.StringKeyConverter;
 import org.keycloak.models.map.storage.ModelEntityUtil;
 import org.keycloak.models.map.storage.QueryParameters;
-import org.keycloak.models.map.storage.chm.ConcurrentHashMapCrudOperations;
+import org.keycloak.models.map.storage.chm.CrudOperations;
 import org.keycloak.models.map.storage.chm.MapFieldPredicates;
 import org.keycloak.models.map.storage.chm.MapModelCriteriaBuilder;
 import org.keycloak.models.map.storage.criteria.DefaultModelCriteria;
@@ -63,9 +63,9 @@ import static org.keycloak.common.util.StackUtil.getShortStackTrace;
 import static org.keycloak.models.map.storage.hotRod.common.HotRodUtils.paginateQuery;
 import static org.keycloak.utils.StreamsUtil.closing;
 
-public class HotRodMapStorage<K, E extends AbstractHotRodEntity, V extends AbstractEntity & HotRodEntityDelegate<E>, M> implements ConcurrentHashMapCrudOperations<V, M> {
+public class HotRodCrudOperations<K, E extends AbstractHotRodEntity, V extends AbstractEntity & HotRodEntityDelegate<E>, M> implements CrudOperations<V, M> {
 
-    private static final Logger LOG = Logger.getLogger(HotRodMapStorage.class);
+    private static final Logger LOG = Logger.getLogger(HotRodCrudOperations.class);
 
     private final KeycloakSession session;
     private final RemoteCache<K, E> remoteCache;
@@ -79,7 +79,7 @@ public class HotRodMapStorage<K, E extends AbstractHotRodEntity, V extends Abstr
     private final RemoteCache<String, String> locksCache;
     private final Map<K, Long> entityVersionCache = new HashMap<>();
 
-    public HotRodMapStorage(KeycloakSession session, RemoteCache<K, E> remoteCache, StringKeyConverter<K> keyConverter, HotRodEntityDescriptor<E, V> storedEntityDescriptor, DeepCloner cloner, Long lockTimeout) {
+    public HotRodCrudOperations(KeycloakSession session, RemoteCache<K, E> remoteCache, StringKeyConverter<K> keyConverter, HotRodEntityDescriptor<E, V> storedEntityDescriptor, DeepCloner cloner, Long lockTimeout) {
         this.session = session;
         this.remoteCache = remoteCache;
         this.keyConverter = keyConverter;
@@ -266,7 +266,7 @@ public class HotRodMapStorage<K, E extends AbstractHotRodEntity, V extends Abstr
         String queryString = (prefix != null ? prefix : "") + iqmcb.getIckleQuery();
 
         if (!queryParameters.getOrderBy().isEmpty()) {
-            queryString += " ORDER BY " + queryParameters.getOrderBy().stream().map(HotRodMapStorage::toOrderString)
+            queryString += " ORDER BY " + queryParameters.getOrderBy().stream().map(HotRodCrudOperations::toOrderString)
                     .collect(Collectors.joining(", "));
         }
         LOG.tracef("Preparing Ickle query: '%s'%s", queryString, getShortStackTrace());

@@ -23,9 +23,8 @@ import org.keycloak.models.map.common.AbstractEntity;
 import org.keycloak.models.map.common.DeepCloner;
 import org.keycloak.models.map.common.StringKeyConverter;
 import org.keycloak.models.map.common.delegate.SimpleDelegateProvider;
-import org.keycloak.models.map.storage.MapKeycloakTransaction;
 import org.keycloak.models.map.storage.QueryParameters;
-import org.keycloak.models.map.storage.chm.ConcurrentHashMapCrudOperations;
+import org.keycloak.models.map.storage.chm.CrudOperations;
 import org.keycloak.models.map.storage.chm.ConcurrentHashMapKeycloakTransaction;
 import org.keycloak.models.map.storage.chm.MapModelCriteriaBuilder;
 import org.keycloak.models.map.storage.criteria.DefaultModelCriteria;
@@ -48,7 +47,7 @@ public class HotRodUserSessionTransaction<K> extends ConcurrentHashMapKeycloakTr
 
     private final ConcurrentHashMapKeycloakTransaction<String, MapAuthenticatedClientSessionEntity, AuthenticatedClientSessionModel> clientSessionTransaction;
 
-    public HotRodUserSessionTransaction(ConcurrentHashMapCrudOperations<MapUserSessionEntity, UserSessionModel> map,
+    public HotRodUserSessionTransaction(CrudOperations<MapUserSessionEntity, UserSessionModel> map,
                                         StringKeyConverter<K> keyConverter,
                                         DeepCloner cloner,
                                         Map<SearchableModelField<? super UserSessionModel>, MapModelCriteriaBuilder.UpdatePredicatesFunc<K, MapUserSessionEntity, UserSessionModel>> fieldPredicates,

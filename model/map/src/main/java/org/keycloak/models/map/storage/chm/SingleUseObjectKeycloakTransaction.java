@@ -30,7 +30,7 @@ import java.util.Map;
  */
 public class SingleUseObjectKeycloakTransaction<K> extends ConcurrentHashMapKeycloakTransaction<K, MapSingleUseObjectEntity, SingleUseObjectValueModel> {
 
-    public SingleUseObjectKeycloakTransaction(ConcurrentHashMapCrudOperations<MapSingleUseObjectEntity, SingleUseObjectValueModel> map,
+    public SingleUseObjectKeycloakTransaction(CrudOperations<MapSingleUseObjectEntity, SingleUseObjectValueModel> map,
                                               StringKeyConverter<K> keyConverter,
                                               DeepCloner cloner,
                                               Map<SearchableModelField<? super SingleUseObjectValueModel>,

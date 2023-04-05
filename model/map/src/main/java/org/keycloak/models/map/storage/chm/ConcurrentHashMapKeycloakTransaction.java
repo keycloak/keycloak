@@ -48,7 +48,7 @@ public class ConcurrentHashMapKeycloakTransaction<K, V extends AbstractEntity & 
     protected boolean active;
     protected boolean rollback;
     protected final Map<String, MapTaskWithValue> tasks = new LinkedHashMap<>();
-    protected final ConcurrentHashMapCrudOperations<V, M> map;
+    protected final CrudOperations<V, M> map;
     protected final StringKeyConverter<K> keyConverter;
     protected final DeepCloner cloner;
     protected final Map<SearchableModelField<? super M>, UpdatePredicatesFunc<K, V, M>> fieldPredicates;
@@ -60,11 +60,11 @@ public class ConcurrentHashMapKeycloakTransaction<K, V extends AbstractEntity & 
         CREATE, UPDATE, DELETE,
     }
 
-    public ConcurrentHashMapKeycloakTransaction(ConcurrentHashMapCrudOperations<V, M> map, StringKeyConverter<K> keyConverter, DeepCloner cloner, Map<SearchableModelField<? super M>, UpdatePredicatesFunc<K, V, M>> fieldPredicates) {
+    public ConcurrentHashMapKeycloakTransaction(CrudOperations<V, M> map, StringKeyConverter<K> keyConverter, DeepCloner cloner, Map<SearchableModelField<? super M>, UpdatePredicatesFunc<K, V, M>> fieldPredicates) {
         this(map, keyConverter, cloner, fieldPredicates, null);
     }
 
-    public ConcurrentHashMapKeycloakTransaction(ConcurrentHashMapCrudOperations<V, M> map, StringKeyConverter<K> keyConverter, DeepCloner cloner, Map<SearchableModelField<? super M>, UpdatePredicatesFunc<K, V, M>> fieldPredicates, EntityField<V> realmIdEntityField) {
+    public ConcurrentHashMapKeycloakTransaction(CrudOperations<V, M> map, StringKeyConverter<K> keyConverter, DeepCloner cloner, Map<SearchableModelField<? super M>, UpdatePredicatesFunc<K, V, M>> fieldPredicates, EntityField<V> realmIdEntityField) {
         this.map = map;
         this.keyConverter = keyConverter;
         this.cloner = cloner;

@@ -18,7 +18,6 @@ package org.keycloak.models.map.storage.file;
 
 import org.keycloak.common.util.StackUtil;
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.map.common.AbstractEntity;
 import org.keycloak.models.map.common.ExpirableEntity;
@@ -27,10 +26,9 @@ import org.keycloak.models.map.common.HasRealmId;
 import org.keycloak.models.map.common.StringKeyConverter.StringKey;
 import org.keycloak.models.map.realm.MapRealmEntity;
 import org.keycloak.models.map.common.UpdatableEntity;
-import org.keycloak.models.map.storage.MapKeycloakTransaction;
 import org.keycloak.models.map.storage.ModelEntityUtil;
 import org.keycloak.models.map.storage.QueryParameters;
-import org.keycloak.models.map.storage.chm.ConcurrentHashMapCrudOperations;
+import org.keycloak.models.map.storage.chm.CrudOperations;
 import org.keycloak.models.map.storage.chm.ConcurrentHashMapKeycloakTransaction;
 import org.keycloak.models.map.storage.chm.MapFieldPredicates;
 import org.keycloak.models.map.storage.chm.MapModelCriteriaBuilder;
@@ -120,7 +118,7 @@ public class FileMapStorage<V extends AbstractEntity & UpdatableEntity, M> {
         }
     }
 
-    public static abstract class Crud<V extends AbstractEntity & UpdatableEntity, M> implements ConcurrentHashMapCrudOperations<V, M>, HasRealmId {
+    public static abstract class FileCrudOperations<V extends AbstractEntity & UpdatableEntity, M> implements CrudOperations<V, M>, HasRealmId {
 
         private String defaultRealmId;
         private final Class<V> entityClass;
@@ -129,7 +127,7 @@ public class FileMapStorage<V extends AbstractEntity & UpdatableEntity, M> {
         private final boolean isExpirableEntity;
         private final Map<SearchableModelField<? super M>, UpdatePredicatesFunc<String, V, M>> fieldPredicates;
 
-        public Crud(Class<V> entityClass, Function<String, Path> dataDirectoryFunc, Function<V, String[]> suggestedPath, boolean isExpirableEntity, Map<SearchableModelField<? super M>, UpdatePredicatesFunc<String, V, M>> fieldPredicates) {
+        public FileCrudOperations(Class<V> entityClass, Function<String, Path> dataDirectoryFunc, Function<V, String[]> suggestedPath, boolean isExpirableEntity, Map<SearchableModelField<? super M>, UpdatePredicatesFunc<String, V, M>> fieldPredicates) {
             this.entityClass = entityClass;
             this.dataDirectoryFunc = dataDirectoryFunc;
             this.suggestedPath = suggestedPath;
@@ -177,7 +175,7 @@ public class FileMapStorage<V extends AbstractEntity & UpdatableEntity, M> {
                 return null;
             }
             return Stream.of(idArray)
-              .map(Crud::escapeId)
+              .map(FileCrudOperations::escapeId)
               .toArray(String[]::new);
         }
 
