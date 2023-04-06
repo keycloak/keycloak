@@ -21,8 +21,12 @@ import static org.junit.Assert.assertEquals;
 import static org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand.OPTIMIZED_BUILD_OPTION_LONG;
 
 import java.util.List;
+
+import org.approvaltests.Approvals;
+import org.approvaltests.namer.NamedEnvironment;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.OS;
+import org.keycloak.it.approvaltests.KcNamerFactory;
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
 import org.keycloak.it.junit5.extension.RawDistOnly;
@@ -44,42 +48,42 @@ public class HelpCommandDistTest {
     @Launch({})
     void testDefaultToHelp(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
-        cliResult.assertHelp();
+        assertHelp(cliResult);
     }
 
     @Test
     @Launch({ "--help" })
     void testHelp(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
-        cliResult.assertHelp();
+        assertHelp(cliResult);
     }
 
     @Test
     @Launch({ "-h" })
     void testHelpShort(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
-        cliResult.assertHelp();
+        assertHelp(cliResult);
     }
 
     @Test
     @Launch({ Start.NAME, "--help", OPTIMIZED_BUILD_OPTION_LONG})
     void testStartOptimizedHelp(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
-        cliResult.assertHelp();
+        assertHelp(cliResult);
     }
 
     @Test
     @Launch({ Start.NAME, "--help" })
     void testStartHelp(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
-        cliResult.assertHelp();
+        assertHelp(cliResult);
     }
 
     @Test
     @Launch({ Start.NAME, "--optimized", "--help-all" })
     void testStartOptimizedHelpAll(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
-        cliResult.assertHelp();
+        assertHelp(cliResult);
         cliResult.assertNoMessage("--storage ");
     }
 
@@ -87,21 +91,21 @@ public class HelpCommandDistTest {
     @Launch({ StartDev.NAME, "--help" })
     void testStartDevHelp(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
-        cliResult.assertHelp();
+        assertHelp(cliResult);
     }
 
     @Test
     @Launch({ StartDev.NAME, "--help-all" })
     void testStartDevHelpAll(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
-        cliResult.assertHelp();
+        assertHelp(cliResult);
     }
 
     @Test
     @Launch({ Start.NAME, "--help-all" })
     void testStartHelpAll(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
-        cliResult.assertHelp();
+        assertHelp(cliResult);
         cliResult.assertMessage("--storage");
     }
 
@@ -109,35 +113,35 @@ public class HelpCommandDistTest {
     @Launch({ Build.NAME, "--help" })
     void testBuildHelp(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
-        cliResult.assertHelp();
+        assertHelp(cliResult);
     }
 
     @Test
     @Launch({ Export.NAME, "--help" })
     void testExportHelp(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
-        cliResult.assertHelp();
+        assertHelp(cliResult);
     }
 
     @Test
     @Launch({ Export.NAME, "--help-all" })
     void testExportHelpAll(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
-        cliResult.assertHelp();
+        assertHelp(cliResult);
     }
 
     @Test
     @Launch({ Import.NAME, "--help" })
     void testImportHelp(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
-        cliResult.assertHelp();
+        assertHelp(cliResult);
     }
 
     @Test
     @Launch({ Import.NAME, "--help-all" })
     void testImportHelpAll(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
-        cliResult.assertHelp();
+        assertHelp(cliResult);
     }
 
     @Test
@@ -158,5 +162,13 @@ public class HelpCommandDistTest {
 
     private void assertSingleJvmStarted(CLIResult run) {
         assertEquals(1, run.getOutputStream().stream().filter(s -> s.contains("Listening for transport dt_socket")).count());
+    }
+
+    private void assertHelp(CLIResult result) {
+        try (NamedEnvironment env = KcNamerFactory.asWindowsOsSpecificTest()) {
+            Approvals.verify(result.getOutput());
+        } catch (Exception cause) {
+            throw new RuntimeException("Failed to assert help", cause);
+        }
     }
 }

@@ -180,7 +180,7 @@
         <!-- Embedded Distribution -->
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-quarkus-integration-tests</artifactId>
+            <artifactId>keycloak-junit5</artifactId>
             <version>${project.version}</version>
             <exclusions>
                 <exclusion>
@@ -1147,7 +1147,7 @@
             <dependencies>
                 <dependency>
                     <groupId>org.keycloak</groupId>
-                    <artifactId>keycloak-quarkus-integration-tests</artifactId>
+                    <artifactId>keycloak-junit5</artifactId>
                     <version>${project.version}</version>
                     <exclusions>
 

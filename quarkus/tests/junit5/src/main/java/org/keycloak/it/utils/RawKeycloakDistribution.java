@@ -375,11 +375,15 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
             distRootPath.toFile().mkdirs();
 
             File distFile = new File("../../dist/" + File.separator + "target" + File.separator + "keycloak-" + Version.VERSION + ".zip");
-            if (!distFile.exists()) {
-                throw new RuntimeException("Distribution archive " + distFile.getAbsolutePath() +" doesn't exist");
+            String distDirName;
+
+            if (distFile.exists()) {
+                distDirName = distFile.getName();
+            } else {
+                distFile = Maven.resolveArtifact("org.keycloak", "keycloak-quarkus-dist").toFile();
+                distDirName = distFile.getName().replace("-quarkus-dist", "");
             }
             distRootPath.toFile().mkdirs();
-            String distDirName = distFile.getName();
             Path dPath = distRootPath.resolve(distDirName.substring(0, distDirName.lastIndexOf('.')));
 
             if (!inited || (reCreate || !dPath.toFile().exists())) {
