@@ -82,7 +82,25 @@ public class PolicyEnforcer {
 
     protected PolicyEnforcer(Builder builder) {
         enforcerConfig = builder.getEnforcerConfig();
-        authzClient = AuthzClient.create(builder.authzClientConfig);
+        Configuration authzClientConfig = builder.authzClientConfig;
+
+        if (authzClientConfig.getRealm() == null) {
+            authzClientConfig.setRealm(enforcerConfig.getRealm());
+        }
+
+        if (authzClientConfig.getAuthServerUrl() == null) {
+            authzClientConfig.setAuthServerUrl(enforcerConfig.getAuthServerUrl());
+        }
+
+        if (authzClientConfig.getCredentials() == null || authzClientConfig.getCredentials().isEmpty()) {
+            authzClientConfig.setCredentials(enforcerConfig.getCredentials());
+        }
+
+        if (authzClientConfig.getResource() == null) {
+            authzClientConfig.setResource(enforcerConfig.getResource());
+        }
+
+        authzClient = AuthzClient.create(authzClientConfig);
         httpClient = authzClient.getConfiguration().getHttpClient();
         pathMatcher = new PathConfigMatcher(builder.getEnforcerConfig(), authzClient);
         paths = pathMatcher.getPathConfig();

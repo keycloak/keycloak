@@ -29,7 +29,6 @@ import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.pages.AccountApplicationsPage;
 import org.keycloak.testsuite.pages.AccountUpdateProfilePage;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.ErrorPage;
@@ -57,8 +56,6 @@ public abstract class AbstractOIDCScopeTest extends AbstractTestRealmKeycloakTes
     @Page
     protected OAuthGrantPage grantPage;
 
-    @Page
-    protected AccountApplicationsPage accountAppsPage;
 
     @Page
     protected ErrorPage errorPage;

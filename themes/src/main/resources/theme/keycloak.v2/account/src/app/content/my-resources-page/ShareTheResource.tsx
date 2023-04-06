@@ -99,7 +99,7 @@ export class ShareTheResource extends React.Component<ShareTheResourceProps, Sha
 
         this.handleToggleDialog();
 
-        this.context!.doPut(`/resources/${rscId}/permissions`, permissions)
+        this.context!.doPut(`/resources/${encodeURIComponent(rscId)}/permissions`, permissions)
             .then(() => {
                 ContentAlert.success('shareSuccess');
                 this.props.onClose();
@@ -122,7 +122,7 @@ export class ShareTheResource extends React.Component<ShareTheResourceProps, Sha
 
     private handleAddUsername = async () => {
         if ((this.state.usernameInput !== '') && (!this.state.usernames.includes(this.state.usernameInput))) {
-            const response = await this.context!.doGet<{username: string}>(`/resources/${this.props.resource._id}/user`, { params: { value: this.state.usernameInput } });
+            const response = await this.context!.doGet<{username: string}>(`/resources/${encodeURIComponent(this.props.resource._id)}/user`, { params: { value: this.state.usernameInput } });
             if (response.data && response.data.username) {
                 this.setState({ usernameInput: '', usernames: [...this.state.usernames, this.state.usernameInput] });
             } else {
