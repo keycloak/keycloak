@@ -34,7 +34,7 @@ public class MapSingleUseObjectProviderFactory extends AbstractMapProviderFactor
 
     @Override
     public MapSingleUseObjectProvider createNew(KeycloakSession session) {
-        return new MapSingleUseObjectProvider(getEnlistedTransaction(session));
+        return new MapSingleUseObjectProvider(getMapStorage(session));
     }
 
     @Override

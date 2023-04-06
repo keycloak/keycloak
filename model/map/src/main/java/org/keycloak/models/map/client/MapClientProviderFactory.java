@@ -44,7 +44,7 @@ public class MapClientProviderFactory extends AbstractMapProviderFactory<MapClie
 
     @Override
     public MapClientProvider createNew(KeycloakSession session) {
-        return new MapClientProvider(session, getEnlistedTransaction(session), REGISTERED_NODES_STORE);
+        return new MapClientProvider(session, getMapStorage(session), REGISTERED_NODES_STORE);
     }
 
     @Override

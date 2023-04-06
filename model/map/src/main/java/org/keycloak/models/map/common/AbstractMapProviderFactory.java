@@ -102,7 +102,7 @@ public abstract class AbstractMapProviderFactory<T extends Provider, V extends A
         return PROVIDER_ID;
     }
 
-    public MapStorage<V, M> getEnlistedTransaction(KeycloakSession session) {
+    public MapStorage<V, M> getMapStorage(KeycloakSession session) {
         ProviderFactory<MapStorageProvider> storageProviderFactory = getProviderFactoryOrComponentFactory(session, storageConfigScope);
         final MapStorageProvider factory = storageProviderFactory.create(session);
         session.enlistForClose(factory);
