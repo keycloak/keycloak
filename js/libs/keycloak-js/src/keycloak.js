@@ -1321,7 +1321,7 @@ function Keycloak (config) {
         if (!type || type == 'default') {
             return {
                 login: function(options) {
-                    window.location.replace(kc.createLoginUrl(options));
+                    window.location.assign(kc.createLoginUrl(options));
                     return createPromise().promise;
                 },
 
@@ -1331,7 +1331,7 @@ function Keycloak (config) {
                 },
 
                 register: function(options) {
-                    window.location.replace(kc.createRegisterUrl(options));
+                    window.location.assign(kc.createRegisterUrl(options));
                     return createPromise().promise;
                 },
 
