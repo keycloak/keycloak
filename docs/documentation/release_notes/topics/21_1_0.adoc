@@ -1,0 +1,3 @@
+= FIPS 140-2 support
+
+FIPS 140-2 support in Keycloak, which was preview in the previous release, is now promoted to be officially supported.
