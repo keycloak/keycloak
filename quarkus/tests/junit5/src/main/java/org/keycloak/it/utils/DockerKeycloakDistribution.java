@@ -7,10 +7,14 @@ import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.output.OutputFrame;
 import org.testcontainers.containers.output.ToStringConsumer;
 import org.testcontainers.containers.wait.strategy.Wait;
+import org.testcontainers.images.RemoteDockerImage;
 import org.testcontainers.images.builder.ImageFromDockerfile;
+import org.testcontainers.utility.DockerImageName;
+import org.testcontainers.utility.LazyFuture;
 import org.testcontainers.utility.ResourceReaper;
 
 import java.io.File;
+import java.lang.reflect.Field;
 import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.Executor;
@@ -27,9 +31,6 @@ public final class DockerKeycloakDistribution implements KeycloakDistribution {
     private String stdout = "";
     private String stderr = "";
     private ToStringConsumer backupConsumer = new ToStringConsumer();
-
-    private File distributionFile = new File("../../dist/target/keycloak-" + Version.VERSION + ".tar.gz");
-    private File dockerFile = new File("../../container/Dockerfile");
     private File dockerScriptFile = new File("../../container/ubi-null.sh");
 
     private GenericContainer<?> keycloakContainer = null;
@@ -43,16 +44,31 @@ public final class DockerKeycloakDistribution implements KeycloakDistribution {
     }
 
     private GenericContainer getKeycloakContainer() {
+        File distributionFile = new File("../../dist/" + File.separator + "target" + File.separator + "keycloak-" + Version.VERSION + ".tar.gz");
+
+        if (!distributionFile.exists()) {
+            distributionFile = Maven.resolveArtifact("org.keycloak", "keycloak-quarkus-dist").toFile();
+        }
+
         if (!distributionFile.exists()) {
             throw new RuntimeException("Distribution archive " + distributionFile.getAbsolutePath() +" doesn't exist");
         }
-        return new GenericContainer(
-                new ImageFromDockerfile("keycloak-under-test", false)
-                        .withFileFromFile("keycloak.tar.gz", distributionFile)
-                        .withFileFromFile("ubi-null.sh", dockerScriptFile)
-                        .withFileFromFile("Dockerfile", dockerFile)
-                        .withBuildArg("KEYCLOAK_DIST", "keycloak.tar.gz")
-        )
+
+        File dockerFile = new File("../../container/Dockerfile");
+        LazyFuture<String> image;
+
+        if (dockerFile.exists()) {
+            image = new ImageFromDockerfile("keycloak-under-test", false)
+                    .withFileFromFile("keycloak.tar.gz", distributionFile)
+                    .withFileFromFile("ubi-null.sh", dockerScriptFile)
+                    .withFileFromFile("Dockerfile", dockerFile)
+                    .withBuildArg("KEYCLOAK_DIST", "keycloak.tar.gz");
+            toString();
+        } else {
+            image = new RemoteDockerImage(DockerImageName.parse("quay.io/keycloak/keycloak"));
+        }
+
+        return new GenericContainer(image)
                 .withExposedPorts(8080)
                 .withStartupAttempts(1)
                 .withStartupTimeout(Duration.ofSeconds(120))
@@ -78,9 +94,6 @@ public final class DockerKeycloakDistribution implements KeycloakDistribution {
             containerId = keycloakContainer.getContainerId();
 
             waitForStableOutput();
-
-            // TODO: this is based on a lot of assumptions
-            io.restassured.RestAssured.port = keycloakContainer.getMappedPort(8080);
         } catch (Exception cause) {
             this.exitCode = -1;
             this.stdout = backupConsumer.toUtf8String();
@@ -90,7 +103,21 @@ public final class DockerKeycloakDistribution implements KeycloakDistribution {
             LOGGER.warn("Failed to start Keycloak container", cause);
         }
 
+        trySetRestAssuredPort();
+
         return CLIResult.create(getOutputStream(), getErrorStream(), getExitCode());
+    }
+
+    private void trySetRestAssuredPort() {
+        try {
+            ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+            Class<?> restAssured = classLoader.loadClass("io.restassured.RestAssured");
+            Field port = restAssured.getDeclaredField("port");
+            port.set(null, keycloakContainer.getMappedPort(8080));
+        } catch (Exception ignore) {
+            // keeping the workaround to set the container port to restassured
+            // TODO: better way to expose the port to tests
+        }
     }
 
     // After the web server is responding we are still producing some logs that got checked in the tests

@@ -30,10 +30,7 @@ import java.util.regex.Pattern;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.approvaltests.Approvals;
 import io.quarkus.test.junit.main.LaunchResult;
-import org.approvaltests.namer.NamedEnvironment;
-import org.keycloak.it.junit5.extension.approvalTests.KcNamerFactory;
 
 public interface CLIResult extends LaunchResult {
 
@@ -80,14 +77,6 @@ public interface CLIResult extends LaunchResult {
     default void assertError(String msg) {
         assertTrue(getErrorOutput().contains(msg),
                 () -> "The Error Output:\n " + getErrorOutput() + "\ndoesn't contains " + msg);
-    }
-
-    default void assertHelp() {
-        try (NamedEnvironment env = KcNamerFactory.asWindowsOsSpecificTest()) {
-            Approvals.verify(getOutput());
-        } catch (Exception cause) {
-            throw new RuntimeException("Failed to assert help", cause);
-        }
     }
 
     default void assertMessage(String message) {
