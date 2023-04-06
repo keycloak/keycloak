@@ -237,6 +237,8 @@ export const RealmSettingsTabs = ({
   const sessionsTab = useTab("sessions");
   const tokensTab = useTab("tokens");
   const clientPoliciesTab = useTab("client-policies");
+  const clientPoliciesDisabled =
+    useServerInfo().profileInfo?.disabledFeatures?.includes("CLIENT_POLICIES");
   const userProfileTab = useTab("user-profile");
   const userRegistrationTab = useTab("user-registration");
 
@@ -351,9 +353,7 @@ export const RealmSettingsTabs = ({
           >
             <RealmSettingsTokensTab save={save} realm={realm} />
           </Tab>
-          {!useServerInfo().profileInfo?.disabledFeatures?.includes(
-            "CLIENT_POLICIES"
-          ) && (
+          {!clientPoliciesDisabled && (
             <Tab
               title={
                 <TabTitleText>
