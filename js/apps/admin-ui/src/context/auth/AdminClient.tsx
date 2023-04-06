@@ -1,10 +1,10 @@
 import KeycloakAdminClient from "@keycloak/keycloak-admin-client";
 import Keycloak from "keycloak-js";
 import { DependencyList, useEffect } from "react";
-import { useErrorHandler } from "react-error-boundary";
+import { useErrorBoundary } from "react-error-boundary";
+import { createNamedContext, useRequiredContext } from "ui-shared";
 
 import environment from "../../environment";
-import { createNamedContext, useRequiredContext } from "ui-shared";
 
 export type AdminClientProps = {
   keycloak: Keycloak;
@@ -37,7 +37,7 @@ export function useFetch<T>(
   callback: (param: T) => void,
   deps?: DependencyList
 ) {
-  const onError = useErrorHandler();
+  const { showBoundary } = useErrorBoundary();
   const controller = new AbortController();
   const { signal } = controller;
 
@@ -50,7 +50,7 @@ export function useFetch<T>(
       })
       .catch((error) => {
         if (!signal.aborted) {
-          onError(error);
+          showBoundary(error);
         }
       });
 
