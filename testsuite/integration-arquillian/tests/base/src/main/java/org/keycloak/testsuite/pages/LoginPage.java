@@ -77,7 +77,6 @@ public class LoginPage extends LanguageComboboxAwarePage {
     @FindBy(className = "instruction")
     private WebElement instruction;
 
-
     public void login(String username, String password) {
         clearUsernameInputAndWaitIfNecessary();
         usernameInput.sendKeys(username);

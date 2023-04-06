@@ -16,7 +16,6 @@ import static org.junit.Assert.assertEquals;
 import static org.keycloak.testsuite.broker.BrokerTestConstants.REALM_CONS_NAME;
 import static org.keycloak.testsuite.broker.BrokerTestConstants.REALM_PROV_NAME;
 import static org.keycloak.testsuite.broker.BrokerTestTools.getConsumerRoot;
-import static org.keycloak.testsuite.broker.BrokerTestTools.getProviderRoot;
 import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
 
 public class KcOidcBrokerLogoutFrontChannelTest extends AbstractKcOidcBrokerLogoutTest {
@@ -69,8 +68,10 @@ public class KcOidcBrokerLogoutFrontChannelTest extends AbstractKcOidcBrokerLogo
             "broker-app",
             getConsumerRoot() + "/auth/realms/" + REALM_CONS_NAME + "/app");
 
-        // user should be logged out successfully from the IDP even though the id_token_hint is expired
-        driver.navigate().to(getAccountUrl(getProviderRoot(), REALM_PROV_NAME));
+        oauth.clientId("account");
+        oauth.redirectUri(getConsumerRoot() + "/auth/realms/" + REALM_PROV_NAME + "/account");
+        loginPage.open(REALM_PROV_NAME);
+
         waitForPage(driver, "sign in to provider", true);
     }
 }

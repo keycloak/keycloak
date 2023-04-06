@@ -15,14 +15,15 @@ import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.pages.ConsentPage;
+import org.keycloak.testsuite.util.AccountHelper;
 
 import java.util.List;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.keycloak.models.utils.DefaultAuthenticationFlows.IDP_REVIEW_PROFILE_CONFIG_ALIAS;
 import static org.keycloak.testsuite.broker.BrokerTestTools.getConsumerRoot;
-import static org.keycloak.testsuite.broker.BrokerTestTools.getProviderRoot;
 import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
 
 /**
@@ -48,17 +49,25 @@ public abstract class AbstractBrokerTest extends AbstractInitializedBaseBrokerTe
     }
 
     protected void loginUser() {
-        driver.navigate().to(getAccountUrl(getConsumerRoot(), bc.consumerRealmName()));
+        oauth.clientId("broker-app");
+        loginPage.open(bc.consumerRealmName());
 
         logInWithBroker(bc);
 
         waitForPage(driver, "update account information", false);
         updateAccountInformationPage.assertCurrent();
         Assert.assertTrue("We must be on correct realm right now",
-          driver.getCurrentUrl().contains("/auth/realms/" + bc.consumerRealmName() + "/"));
+                driver.getCurrentUrl().contains("/auth/realms/" + bc.consumerRealmName() + "/"));
 
         log.debug("Updating info on updateAccount page");
         updateAccountInformationPage.updateAccountInformation(bc.getUserLogin(), bc.getUserEmail(), "Firstname", "Lastname");
+
+        UserRepresentation userRep = AccountHelper.getUserRepresentation(
+                adminClient.realm(bc.consumerRealmName()), bc.getUserLogin());
+        userRep.setFirstName("Firstname");
+        userRep.setLastName("Lastname");
+
+        AccountHelper.updateUser(adminClient.realm(bc.consumerRealmName()), bc.getUserLogin(), userRep);
 
         UsersResource consumerUsers = adminClient.realm(bc.consumerRealmName()).users();
 
@@ -86,10 +95,12 @@ public abstract class AbstractBrokerTest extends AbstractInitializedBaseBrokerTe
 
         Integer userCount = adminClient.realm(bc.consumerRealmName()).users().count();
 
-        driver.navigate().to(getAccountUrl(getConsumerRoot(), bc.consumerRealmName()));
+        oauth.clientId("broker-app");
+        loginPage.open(bc.consumerRealmName());
+
         logInWithBroker(bc);
 
-        assertEquals(accountPage.buildUri().toASCIIString().replace("master", "consumer") + "/", driver.getCurrentUrl());
+        assertTrue(driver.getCurrentUrl().contains(getConsumerRoot() + "/auth/realms/master/app/"));
         assertEquals(userCount, adminClient.realm(bc.consumerRealmName()).users().count());
     }
 
@@ -97,15 +108,17 @@ public abstract class AbstractBrokerTest extends AbstractInitializedBaseBrokerTe
     protected void testSingleLogout() {
         log.debug("Testing single log out");
 
-        driver.navigate().to(getAccountUrl(getProviderRoot(), bc.providerRealmName()));
+        oauth.realm(bc.consumerRealmName());
+        oauth.clientId("broker-app");
+        oauth.openLoginForm();
 
-        Assert.assertTrue("Should be logged in the account page", driver.getTitle().endsWith("Account Management"));
+        Assert.assertTrue("Should be logged in", driver.getTitle().endsWith("AUTH_RESPONSE"));
 
-        logoutFromRealm(getProviderRoot(), bc.providerRealmName());
+        AccountHelper.logout(adminClient.realm(bc.consumerRealmName()), bc.getUserLogin());
+        AccountHelper.logout(adminClient.realm(bc.providerRealmName()), bc.getUserLogin());
 
-        Assert.assertTrue("Should be on " + bc.providerRealmName() + " realm", driver.getCurrentUrl().contains("/auth/realms/" + bc.providerRealmName()));
-
-        driver.navigate().to(getAccountUrl(getConsumerRoot(), bc.consumerRealmName()));
+        oauth.clientId("broker-app");
+        loginPage.open(bc.consumerRealmName());
 
         Assert.assertTrue("Should be on " + bc.consumerRealmName() + " realm on login page",
                 driver.getCurrentUrl().contains("/auth/realms/" + bc.consumerRealmName() + "/protocol/openid-connect/"));
