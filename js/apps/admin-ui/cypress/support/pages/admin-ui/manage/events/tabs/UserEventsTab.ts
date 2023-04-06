@@ -7,6 +7,7 @@ enum UserEventsTabSearchFormFieldsLabel {
   Client = "Client",
   DateFrom = "Date(from)",
   DateTo = "Date(to)",
+  IpAddress = "IP Address",
 }
 
 export class UserEventSearchData {
@@ -15,6 +16,7 @@ export class UserEventSearchData {
   client?: string;
   dateFrom?: string;
   dateTo?: string;
+  ipAddress?: string;
 }
 
 const emptyStatePage = new EmptyStatePage();
@@ -27,6 +29,7 @@ export default class UserEventsTab extends PageObject {
   private searchClientInput = "#kc-client";
   private searchDateFromInput = "#kc-dateFrom";
   private searchDateToInput = "#kc-dateTo";
+  private searchIpAddress = "#kc-ipAddress";
   private searchEventsBtn = "search-events-btn";
   private refreshBtn = "refresh-btn";
 
@@ -80,6 +83,11 @@ export default class UserEventsTab extends PageObject {
     return this;
   }
 
+  public typeIpAddress(ipAddress: string) {
+    cy.get(this.searchIpAddress).type(ipAddress);
+    return this;
+  }
+
   public searchUserEvent(searchData: UserEventSearchData) {
     this.openSearchUserEventDropdownMenu();
     if (searchData.userId) {
@@ -100,6 +108,9 @@ export default class UserEventsTab extends PageObject {
     }
     if (searchData.dateTo) {
       cy.get(this.searchDateToInput).type(searchData.dateTo);
+    }
+    if (searchData.ipAddress) {
+      cy.get(this.searchIpAddress).type(searchData.ipAddress);
     }
     cy.findByTestId(this.searchEventsBtn).click();
     return this;
@@ -136,6 +147,13 @@ export default class UserEventsTab extends PageObject {
   public searchUserEventByDateTo(dateTo: string) {
     const searchData = new UserEventSearchData();
     searchData.dateTo = dateTo;
+    this.searchUserEvent(searchData);
+    return this;
+  }
+
+  public searchUserEventByIpAddress(ipAddress: string) {
+    const searchData = new UserEventSearchData();
+    searchData.ipAddress = ipAddress;
     this.searchUserEvent(searchData);
     return this;
   }
@@ -192,6 +210,14 @@ export default class UserEventsTab extends PageObject {
   public assertDateToChipGroupExist(exist: boolean) {
     super.assertChipGroupExist(
       UserEventsTabSearchFormFieldsLabel.DateTo,
+      exist
+    );
+    return this;
+  }
+
+  public assertIpAddressChipGroupExist(exist: boolean) {
+    super.assertChipGroupExist(
+      UserEventsTabSearchFormFieldsLabel.IpAddress,
       exist
     );
     return this;
