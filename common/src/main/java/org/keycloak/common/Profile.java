@@ -89,7 +89,7 @@ public class Profile {
 
         JS_ADAPTER("Host keycloak.js and keycloak-authz.js through the Keycloak sever", Type.DEFAULT),
 
-        FIPS("FIPS 140-2 mode", Type.PREVIEW_DISABLED_BY_DEFAULT);
+        FIPS("FIPS 140-2 mode", Type.DISABLED_BY_DEFAULT);
 
         private final Type type;
         private String label;

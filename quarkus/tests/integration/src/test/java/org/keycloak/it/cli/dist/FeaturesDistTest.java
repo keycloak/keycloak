@@ -55,9 +55,7 @@ public class FeaturesDistTest {
     public void testEnablePreviewFeaturesAndFips(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
 
-        String previewFeaturesWithFipsIncluded = PREVIEW_FEATURES_EXPECTED_LOG.replace("declarative-user-profile", "declarative-user-profile, fips");
-        assertThat(result.getOutput(), CoreMatchers.allOf(
-                containsString(previewFeaturesWithFipsIncluded)));
+        assertPreviewFeaturesEnabled(cliResult);
         cliResult.assertError("Failed to configure FIPS.");
     }
 
