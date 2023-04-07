@@ -651,7 +651,7 @@ public class UserResource {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     public Stream<CredentialRepresentation> credentials(){
-        auth.users().requireManage(user);
+        auth.users().requireView(user);
         return user.credentialManager().getStoredCredentialsStream()
                 .map(ModelToRepresentation::toRepresentation)
                 .peek(credentialRepresentation -> credentialRepresentation.setSecretData(null));
