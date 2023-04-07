@@ -233,7 +233,7 @@ const EditUserForm = ({ user, bruteForced, refresh }: EditUserFormProps) => {
               </Tab>
               <Tab
                 data-testid="credentials"
-                isHidden={!user.access?.manage}
+                isHidden={!user.access?.view}
                 title={<TabTitleText>{t("common:credentials")}</TabTitleText>}
                 {...credentialsTab}
               >
