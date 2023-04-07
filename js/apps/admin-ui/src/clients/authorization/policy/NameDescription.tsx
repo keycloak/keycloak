@@ -35,6 +35,7 @@ export const NameDescription = ({ prefix }: NameDescriptionProps) => {
         }
       >
         <KeycloakTextInput
+          isDisabled
           id="kc-name"
           data-testid="name"
           validated={
@@ -58,6 +59,7 @@ export const NameDescription = ({ prefix }: NameDescriptionProps) => {
         helperTextInvalid={t("common:maxLength", { length: 255 })}
       >
         <KeycloakTextArea
+          isDisabled
           id="kc-description"
           data-testid="description"
           validated={

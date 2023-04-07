@@ -39,6 +39,7 @@ export const LogicSelector = () => {
                 onChange={() => field.onChange(type)}
                 label={t(`logicType.${type.toLowerCase()}`)}
                 className="pf-u-mb-md"
+                isDisabled
               />
             ))}
           </>

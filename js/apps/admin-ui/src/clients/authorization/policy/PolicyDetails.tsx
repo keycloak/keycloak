@@ -205,11 +205,11 @@ export default function PolicyDetails() {
           <ActionGroup>
             <div className="pf-u-mt-md">
               <Button
+                isDisabled
                 variant={ButtonVariant.primary}
                 className="pf-u-mr-md"
                 type="submit"
-                data-testid="save"
-              >
+                data-testid="save" >
                 {t("common:save")}
               </Button>
 
@@ -225,8 +225,7 @@ export default function PolicyDetails() {
                       tab: "policies",
                     })}
                   />
-                )}
-              >
+                )} >
                 {t("common:cancel")}
               </Button>
             </div>
