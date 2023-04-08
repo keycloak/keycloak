@@ -29,6 +29,7 @@ import { Client } from "./Client";
 import { ClientScope, RequiredIdValue } from "./ClientScope";
 import { Group, GroupValue } from "./Group";
 import { JavaScript } from "./JavaScript";
+import { JavaScriptDisabled } from "./JavaScriptDisabled";
 import { LogicSelector } from "./LogicSelector";
 import { NameDescription } from "./NameDescription";
 import { Regex } from "./Regex";
@@ -56,6 +57,7 @@ const COMPONENTS: {
   role: Role,
   time: Time,
   js: JavaScript,
+  "js-disabled": JavaScriptDisabled,
 } as const;
 
 export const isValidComponentType = (value: string) => value in COMPONENTS;
@@ -71,6 +73,8 @@ export default function PolicyDetails() {
   const { addAlert, addError } = useAlerts();
 
   const [policy, setPolicy] = useState<PolicyRepresentation>();
+  const [IsDisabled, setIsDisabled] = useState(false);
+
 
   useFetch(
     async () => {
@@ -101,6 +105,11 @@ export default function PolicyDetails() {
     ({ policy, policies }) => {
       reset({ ...policy, policies });
       setPolicy(policy);
+      if(policy!==undefined){
+        if(policy.name==="Default Policy"){
+            setIsDisabled(true);
+        }
+      }
     },
     [id, policyType, policyId]
   );
@@ -164,9 +173,12 @@ export default function PolicyDetails() {
     return <KeycloakSpinner />;
   }
 
-  const ComponentType = isValidComponentType(policyType)
-    ? COMPONENTS[policyType]
-    : COMPONENTS["js"];
+  var ComponentType = COMPONENTS["js-disabled"];
+  if(!IsDisabled){
+    ComponentType = isValidComponentType(policyType)
+      ? COMPONENTS[policyType]
+      : COMPONENTS["js"];
+  }
 
   return (
     <>
@@ -198,14 +210,14 @@ export default function PolicyDetails() {
           role="view-clients"
         >
           <FormProvider {...form}>
-            <NameDescription prefix="policy" />
+            <NameDescription isDisabled={IsDisabled} prefix="policy" />
             <ComponentType />
-            <LogicSelector />
+            <LogicSelector isDisabled={IsDisabled}/>
           </FormProvider>
           <ActionGroup>
             <div className="pf-u-mt-md">
               <Button
-                isDisabled
+                isDisabled={IsDisabled}
                 variant={ButtonVariant.primary}
                 className="pf-u-mr-md"
                 type="submit"

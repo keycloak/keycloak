@@ -33,7 +33,6 @@ export const JavaScript = () => {
             code={field.value}
             height="600px"
             language={Language.javascript}
-            isReadOnly={true}
           />
         )}
       />
