@@ -21,6 +21,7 @@ import javax.ws.rs.core.MultivaluedMap;
 import org.keycloak.models.ClientSessionContext;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.protocol.oidc.utils.OAuth2CodeParser;
+import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyEvent;
 
@@ -33,15 +34,18 @@ public class TokenResponseContext implements ClientPolicyContext {
     private final OAuth2CodeParser.ParseResult parseResult;
     private final ClientSessionContext clientSessionCtx;
     private final TokenManager.AccessTokenResponseBuilder accessTokenResponseBuilder;
+    private AccessTokenResponse accessTokenResponse;
 
     public TokenResponseContext(MultivaluedMap<String, String> params,
             OAuth2CodeParser.ParseResult parseResult,
             ClientSessionContext clientSessionCtx,
-            TokenManager.AccessTokenResponseBuilder accessTokenResponseBuilder) {
+            TokenManager.AccessTokenResponseBuilder accessTokenResponseBuilder,
+            AccessTokenResponse accessTokenResponse) {
         this.params = params;
         this.parseResult = parseResult;
         this.clientSessionCtx = clientSessionCtx;
         this.accessTokenResponseBuilder = accessTokenResponseBuilder;
+        this.accessTokenResponse = accessTokenResponse;
     }
 
     @Override
@@ -59,6 +63,10 @@ public class TokenResponseContext implements ClientPolicyContext {
 
     public TokenManager.AccessTokenResponseBuilder getAccessTokenResponseBuilder() {
         return accessTokenResponseBuilder;
+    }
+
+    public AccessTokenResponse getAccessTokenResponse() {
+        return accessTokenResponse;
     }
 
     public ClientSessionContext getClientSessionContext() {

@@ -59,7 +59,7 @@ import org.keycloak.util.TokenUtil;
  * @author <a href="mailto:yoshiyuki.tabata.jy@hitachi.com">Yoshiyuki Tabata</a>
  */
 public class TokenRevocationEndpoint {
-    private static final String PARAM_TOKEN = "token";
+    public static final String PARAM_TOKEN = "token";
 
     private final KeycloakSession session;
 
@@ -102,8 +102,10 @@ public class TokenRevocationEndpoint {
         try {
             session.clientPolicy().triggerOnEvent(new TokenRevokeContext(formParams));
         } catch (ClientPolicyException cpe) {
-            event.error(cpe.getError());
-            throw new CorsErrorResponseException(cors, cpe.getError(), cpe.getErrorDetail(), cpe.getErrorStatus());
+            if (!OAuthErrorException.INVALID_TOKEN.equals(cpe.getError())) {
+                event.error(cpe.getError());
+                throw new CorsErrorResponseException(cors, cpe.getError(), cpe.getErrorDetail(), cpe.getErrorStatus());
+            }
         }
 
         checkToken();

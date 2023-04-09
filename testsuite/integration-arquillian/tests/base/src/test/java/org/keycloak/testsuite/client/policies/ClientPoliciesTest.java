@@ -24,6 +24,7 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
@@ -34,6 +35,7 @@ import static org.keycloak.testsuite.util.ClientPoliciesUtil.createClientScopesC
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createClientUpdateContextConditionConfig;
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createConsentRequiredExecutorConfig;
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createFullScopeDisabledExecutorConfig;
+import static org.keycloak.testsuite.util.ClientPoliciesUtil.createReferenceTypeTokenExecutorConfig;
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createHolderOfKeyEnforceExecutorConfig;
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createIntentClientBindCheckExecutorConfig;
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createPKCEEnforceExecutorConfig;
@@ -49,8 +51,12 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
+import javax.ws.rs.client.Client;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
 
+import org.apache.commons.io.IOUtils;
+import org.apache.http.client.methods.CloseableHttpResponse;
 import org.hamcrest.Matchers;
 import org.jboss.logging.Logger;
 import org.junit.Assert;
@@ -82,13 +88,18 @@ import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.mappers.ClaimsParameterWithValueIdTokenMapper;
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
+import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.ClaimsRepresentation;
+import org.keycloak.representations.IDToken;
+import org.keycloak.representations.RefreshToken;
+import org.keycloak.representations.UserInfo;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.oidc.OIDCClientRepresentation;
+import org.keycloak.representations.oidc.TokenMetadataRepresentation;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.condition.AnyClientConditionFactory;
 import org.keycloak.services.clientpolicy.condition.ClientAccessTypeConditionFactory;
@@ -100,6 +111,8 @@ import org.keycloak.services.clientpolicy.condition.ClientUpdaterSourceRolesCond
 import org.keycloak.services.clientpolicy.executor.ConfidentialClientAcceptExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.ConsentRequiredExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.FullScopeDisabledExecutorFactory;
+import org.keycloak.services.clientpolicy.executor.ReferenceTypeTokenExecutor.ReferenceTypeTokenBindResponse;
+import org.keycloak.services.clientpolicy.executor.ReferenceTypeTokenExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.HolderOfKeyEnforcerExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.IntentClientBindCheckExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.PKCEEnforcerExecutorFactory;
@@ -112,6 +125,7 @@ import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.client.resources.TestApplicationResourceUrls;
 import org.keycloak.testsuite.services.clientpolicy.condition.TestRaiseExceptionConditionFactory;
 import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
+import org.keycloak.testsuite.util.AdminClientUtil;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientPoliciesBuilder;
 import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientPolicyBuilder;
@@ -121,10 +135,13 @@ import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.RoleBuilder;
 import org.keycloak.testsuite.util.ServerURLs;
 import org.keycloak.testsuite.util.UserBuilder;
+import org.keycloak.testsuite.util.UserInfoClientUtil;
 import org.keycloak.util.JsonSerialization;
+import org.keycloak.utils.MediaType;
 
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.TreeNode;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.TextNode;
 
@@ -1155,5 +1172,232 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
         oauth.openLoginForm();
         assertEquals(OAuthErrorException.INVALID_REQUEST, oauth.getCurrentFragment().get(OAuth2Constants.ERROR));
         assertEquals("no claim for an intent value for ID token" , oauth.getCurrentFragment().get(OAuth2Constants.ERROR_DESCRIPTION));
+    }
+
+    @Test
+    public void testReferenceTypeToken() throws Exception {
+        // register profiles
+        String json = (new ClientProfilesBuilder()).addProfile(
+                (new ClientProfileBuilder()).createProfile(PROFILE_NAME, "Den Eichte profil")
+                        .addExecutor(ReferenceTypeTokenExecutorFactory.PROVIDER_ID, 
+                                createReferenceTypeTokenExecutorConfig(TestApplicationResourceUrls.bindSelfcontainedTypeAccessTokenUri(),
+                                        TestApplicationResourceUrls.getSelfcontainedTypeAccessTokenUri()))
+                        .toRepresentation()
+        ).toString();
+        updateProfiles(json);
+
+        // register policies
+        json = (new ClientPoliciesBuilder()).addPolicy(
+                (new ClientPolicyBuilder()).createPolicy(POLICY_NAME, "Test Policy", Boolean.TRUE)
+                        .addCondition(AnyClientConditionFactory.PROVIDER_ID,
+                                createAnyClientConditionConfig())
+                        .addProfile(PROFILE_NAME)
+                        .toRepresentation()
+        ).toString();
+        updatePolicies(json);
+
+        String clientId = generateSuffixedName(CLIENT_NAME);
+        String clientSecret = "secret";
+        createClientByAdmin(clientId, (ClientRepresentation clientRep) -> {
+            clientRep.setSecret(clientSecret);
+        });
+
+        // token request
+        OAuthClient.AccessTokenResponse accessTokenResponse = successfulLogin(clientId, clientSecret);
+        verifySelfcontainedTypeTokenBinding(clientId, accessTokenResponse);
+
+        // access token introspection
+        doIntrospectAccessToken(accessTokenResponse, TEST_USER_NAME, clientId, clientSecret);
+
+        // userinfo request
+        Client client = AdminClientUtil.createResteasyClient();
+        Response response = UserInfoClientUtil.executeUserInfoRequest_getMethod(client, accessTokenResponse.getAccessToken(), MediaType.APPLICATION_JSON);
+        UserInfo userInfo = UserInfoClientUtil.testSuccessfulUserInfoResponse(response, TEST_USER_NAME, TEST_USER_NAME);
+        logger.infov("userInfo.getName() = {0}, serInfo.getPreferredUsername() = {1}, userInfo.getEmail() = {2}",
+                userInfo.getName(), userInfo.getPreferredUsername(), userInfo.getEmail());
+        events.expect(EventType.USER_INFO_REQUEST).client(clientId).user(userInfo.getSub()).session(accessTokenResponse.getSessionState()).clearDetails().assertEvent();
+
+        // token refresh
+        accessTokenResponse = oauth.doRefreshTokenRequest(accessTokenResponse.getRefreshToken(), clientSecret);
+        assertEquals(Status.OK.getStatusCode(), accessTokenResponse.getStatusCode());
+        verifySelfcontainedTypeTokenBinding(clientId, accessTokenResponse);
+        events.expect(EventType.REFRESH_TOKEN).client(clientId).user(userInfo.getSub()).session(accessTokenResponse.getSessionState()).clearDetails().assertEvent();
+
+        // access token revocation
+        try (CloseableHttpResponse revokeRes = oauth.doTokenRevoke(accessTokenResponse.getAccessToken(), "access_token", clientSecret)) {
+            events.expect(EventType.REVOKE_GRANT).client(clientId).user(userInfo.getSub()).session((String)null).clearDetails().assertEvent();
+            verifyTokenIntrospectionDeactivated(clientId, clientSecret, accessTokenResponse);
+        }
+
+        // refresh token introspection
+        doIntrospectRefreshToken(accessTokenResponse, TEST_USER_NAME, clientId, clientSecret);
+
+        // refresh token revocation
+        try (CloseableHttpResponse revokeRes = oauth.doTokenRevoke(accessTokenResponse.getRefreshToken(), "refresh_token", clientSecret)) {
+            events.expect(EventType.REVOKE_GRANT).client(clientId).user(userInfo.getSub()).session((String)null).clearDetails().assertEvent();
+            verifyTokenIntrospectionDeactivated(clientId, clientSecret, accessTokenResponse);
+        }
+
+        // legacy backchannel logout
+        accessTokenResponse = successfulLogin(clientId, clientSecret);
+        oauth.doLogout(accessTokenResponse.getRefreshToken(), clientSecret);
+        events.expectLogout(accessTokenResponse.getSessionState()).client(clientId).clearDetails().assertEvent();
+    }
+
+    @Test
+    public void testInvalidReferenceTypeToken() throws Exception {
+
+        String clientId = generateSuffixedName(CLIENT_NAME);
+        String clientSecret = "secret";
+        createClientByAdmin(clientId, (ClientRepresentation clientRep) -> {
+            clientRep.setSecret(clientSecret);
+        });
+
+        // ordinary self-contained tokens
+        verifyErrorResponseOnInvalidTokens(clientId, clientSecret);
+
+        // register profiles
+        String json = (new ClientProfilesBuilder()).addProfile(
+                (new ClientProfileBuilder()).createProfile(PROFILE_NAME, "Den Eichte profil")
+                        .addExecutor(ReferenceTypeTokenExecutorFactory.PROVIDER_ID, 
+                                createReferenceTypeTokenExecutorConfig(TestApplicationResourceUrls.bindSelfcontainedTypeAccessTokenUri(),
+                                        TestApplicationResourceUrls.getSelfcontainedTypeAccessTokenUri()))
+                        .toRepresentation()
+        ).toString();
+        updateProfiles(json);
+
+        // create policies but not yet register
+        json = (new ClientPoliciesBuilder()).addPolicy(
+                (new ClientPolicyBuilder()).createPolicy(POLICY_NAME, "Test Policy", Boolean.TRUE)
+                        .addCondition(AnyClientConditionFactory.PROVIDER_ID,
+                                createAnyClientConditionConfig())
+                        .addProfile(PROFILE_NAME)
+                        .toRepresentation()
+        ).toString();
+
+        // reference type tokens
+        updatePolicies(json);
+        verifyErrorResponseOnInvalidTokens(clientId, clientSecret);
+
+        // invoke internal server error in token store outside keycloak
+        // token refresh
+        String invalidAccessToken = "ThrowInternalServerError";
+        OAuthClient.AccessTokenResponse accessTokenResponse = oauth.doRefreshTokenRequest(invalidAccessToken, clientSecret);
+        assertEquals(Status.INTERNAL_SERVER_ERROR.getStatusCode(), accessTokenResponse.getStatusCode());
+        assertEquals(OAuthErrorException.SERVER_ERROR, accessTokenResponse.getError());
+        assertEquals("Internal problem", accessTokenResponse.getErrorDescription());
+        events.expect(EventType.REFRESH_TOKEN_ERROR).client(clientId).user((String)null).session((String)null).clearDetails().error(OAuthErrorException.INVALID_TOKEN).assertEvent();
+
+        // re-register invalid configuration of executor
+        json = (new ClientProfilesBuilder()).addProfile(
+                (new ClientProfileBuilder()).createProfile(PROFILE_NAME, "Den Eichte profil")
+                        .addExecutor(ReferenceTypeTokenExecutorFactory.PROVIDER_ID, 
+                                createReferenceTypeTokenExecutorConfig("ftp://", TestApplicationResourceUrls.getSelfcontainedTypeAccessTokenUri()))
+                        .toRepresentation()
+        ).toString();
+        updateProfiles(json);
+
+        // invoke internal server error in token store outside keycloak
+        // token request
+        oauth.doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
+        EventRepresentation loginEvent = events.expectLogin().client(clientId).assertEvent();
+        String sessionId = loginEvent.getSessionId();
+        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        accessTokenResponse = oauth.doAccessTokenRequest(code, clientSecret);
+        assertEquals(Status.INTERNAL_SERVER_ERROR.getStatusCode(), accessTokenResponse.getStatusCode());
+        assertEquals(OAuthErrorException.SERVER_ERROR, accessTokenResponse.getError());
+        assertEquals("Internal problem", accessTokenResponse.getErrorDescription());
+        events.expect(EventType.CODE_TO_TOKEN_ERROR).client(clientId).session(sessionId).error(OAuthErrorException.SERVER_ERROR).clearDetails().assertEvent();
+    }
+
+    private void verifySelfcontainedTypeTokenBinding(String clientId, OAuthClient.AccessTokenResponse accessTokenResponse) throws Exception {
+        ReferenceTypeTokenBindResponse referenceTypeTokenBindResponse = testingClient.testApp().oidcClientEndpoints().getSelfcontainedTypeToken(accessTokenResponse.getAccessToken());
+        IDToken idToken = oauth.verifyIDToken(accessTokenResponse.getIdToken());
+        AccessToken accessToken = oauth.verifyToken(referenceTypeTokenBindResponse.getSelfcontainedTypeToken());
+        assertEquals(accessToken.getId(), accessTokenResponse.getAccessToken());
+        assertEquals(idToken.getSubject(), accessToken.getSubject());
+        assertEquals(idToken.getSessionId(), accessToken.getSessionId());
+        assertEquals(idToken.getSessionState(), accessToken.getSessionState());
+        assertEquals(clientId, accessToken.getIssuedFor());
+
+        referenceTypeTokenBindResponse = testingClient.testApp().oidcClientEndpoints().getSelfcontainedTypeToken(accessTokenResponse.getRefreshToken());
+        RefreshToken refreshToken = oauth.parseRefreshToken(referenceTypeTokenBindResponse.getSelfcontainedTypeToken());
+        assertEquals(refreshToken.getId(), accessTokenResponse.getRefreshToken());
+        assertEquals(idToken.getSessionId(), refreshToken.getSessionId());
+        assertEquals(idToken.getSessionState(), refreshToken.getSessionState());
+        assertEquals(clientId, refreshToken.getIssuedFor());
+    }
+
+    private void verifyTokenIntrospectionDeactivated(String clientId, String clientSecret, OAuthClient.AccessTokenResponse accessTokenResponse) throws Exception {
+        String introspectionResponse = oauth.introspectAccessTokenWithClientCredential(clientId, clientSecret, accessTokenResponse.getAccessToken());
+        TokenMetadataRepresentation tokenMetadataRepresentation = JsonSerialization.readValue(introspectionResponse, TokenMetadataRepresentation.class);
+        assertFalse(tokenMetadataRepresentation.isActive());
+        events.expect(EventType.INTROSPECT_TOKEN).client(clientId).user((String)null).clearDetails().assertEvent();
+    }
+
+    private void verifyErrorResponseOnInvalidTokens(String clientId, String clientSecret) throws Exception {
+        String invalidAccessToken = "-kclSldVjiiWARAradjvww^-dav[";
+        String invalidRefreshToken = "ghaoeiv-aeli38";
+
+        oauth.clientId(clientId);
+
+        // access token introspection
+        String tokenResponse = oauth.introspectAccessTokenWithClientCredential(clientId, clientSecret, invalidAccessToken);
+        JsonNode jsonNode = objectMapper.readTree(tokenResponse);
+        assertEquals(false, jsonNode.get("active").asBoolean());
+        events.expect(EventType.INTROSPECT_TOKEN).client(clientId).user((String)null).clearDetails().assertEvent();
+
+        // refresh token introspection
+        tokenResponse = oauth.introspectRefreshTokenWithClientCredential(clientId, clientSecret, invalidRefreshToken);
+        jsonNode = objectMapper.readTree(tokenResponse);
+        assertEquals(false, jsonNode.get("active").asBoolean());
+        events.expect(EventType.INTROSPECT_TOKEN).client(clientId).user((String)null).clearDetails().assertEvent();
+
+        // userinfo request
+        Client client = AdminClientUtil.createResteasyClient();
+        Response response = UserInfoClientUtil.executeUserInfoRequest_getMethod(client, invalidAccessToken, MediaType.APPLICATION_JSON);
+        assertEquals(Status.UNAUTHORIZED.getStatusCode(), response.getStatusInfo().getStatusCode());
+        events.expect(EventType.USER_INFO_REQUEST_ERROR).client((String)null).user((String)null).session((String)null).error(OAuthErrorException.INVALID_TOKEN).clearDetails().assertEvent();
+
+        // token refresh
+        OAuthClient.AccessTokenResponse accessTokenResponse = oauth.doRefreshTokenRequest(invalidRefreshToken, clientSecret);
+        assertEquals(Status.BAD_REQUEST.getStatusCode(), accessTokenResponse.getStatusCode());
+        assertEquals(OAuthErrorException.INVALID_GRANT, accessTokenResponse.getError());
+        assertEquals("Invalid refresh token", accessTokenResponse.getErrorDescription());
+        events.expect(EventType.REFRESH_TOKEN_ERROR).client(clientId).user((String)null).session((String)null).clearDetails().error(OAuthErrorException.INVALID_TOKEN).assertEvent();
+
+        // access token revocation
+        try (CloseableHttpResponse closableHttpResponse = oauth.doTokenRevoke(invalidAccessToken, "access_token", clientSecret)) {
+            assertEquals(Status.OK.getStatusCode(), closableHttpResponse.getStatusLine().getStatusCode());
+            jsonNode = objectMapper.readTree(IOUtils.toString(closableHttpResponse.getEntity().getContent(), "UTF-8"));
+            assertEquals(OAuthErrorException.INVALID_TOKEN, jsonNode.get(OAuth2Constants.ERROR).asText());
+            assertEquals("Invalid token", jsonNode.get(OAuth2Constants.ERROR_DESCRIPTION).asText());
+        }
+        events.expect(EventType.REVOKE_GRANT_ERROR).client(clientId).user((String)null).session((String)null).clearDetails().error(OAuthErrorException.INVALID_TOKEN).assertEvent();
+
+        // refresh token revocation
+        try (CloseableHttpResponse closableHttpResponse = oauth.doTokenRevoke(invalidRefreshToken, "refresh_token", clientSecret)) {
+            assertEquals(Status.OK.getStatusCode(), closableHttpResponse.getStatusLine().getStatusCode());
+            jsonNode = objectMapper.readTree(IOUtils.toString(closableHttpResponse.getEntity().getContent(), "UTF-8"));
+            assertEquals(OAuthErrorException.INVALID_TOKEN, jsonNode.get(OAuth2Constants.ERROR).asText());
+            assertEquals("Invalid token", jsonNode.get(OAuth2Constants.ERROR_DESCRIPTION).asText());
+        }
+        events.expect(EventType.REVOKE_GRANT_ERROR).client(clientId).user((String)null).session((String)null).clearDetails().error(OAuthErrorException.INVALID_TOKEN).assertEvent();
+
+        // legacy backchannel logout
+        accessTokenResponse = successfulLogin(clientId, clientSecret);
+        try (CloseableHttpResponse closableHttpResponse = oauth.doLogout(invalidRefreshToken, clientSecret)) {
+            assertEquals(Status.BAD_REQUEST.getStatusCode(), closableHttpResponse.getStatusLine().getStatusCode());
+            jsonNode = objectMapper.readTree(IOUtils.toString(closableHttpResponse.getEntity().getContent(), "UTF-8"));
+            assertEquals(OAuthErrorException.INVALID_GRANT, jsonNode.get(OAuth2Constants.ERROR).asText());
+            assertEquals("Invalid refresh token", jsonNode.get(OAuth2Constants.ERROR_DESCRIPTION).asText());
+        }
+        events.expect(EventType.LOGOUT_ERROR).client(clientId).user((String)null).session((String)null).clearDetails().error(OAuthErrorException.INVALID_TOKEN).assertEvent();
+
+        // for next tests, logout successfully
+        try (CloseableHttpResponse closableHttpResponse = oauth.doLogout(accessTokenResponse.getRefreshToken(), clientSecret)) {
+        }
+        events.expect(EventType.LOGOUT).client(clientId).session(accessTokenResponse.getSessionState()).clearDetails().assertEvent();
+
     }
 }

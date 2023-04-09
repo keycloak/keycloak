@@ -18,6 +18,7 @@ package org.keycloak.protocol.oidc.endpoints;
 
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.keycloak.http.HttpRequest;
+import org.keycloak.OAuthErrorException;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
@@ -31,6 +32,8 @@ import org.keycloak.protocol.oidc.utils.AuthorizeClientUtil;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.context.TokenIntrospectContext;
+
+import java.io.Serializable;
 
 import javax.ws.rs.POST;
 import javax.ws.rs.Produces;
@@ -86,9 +89,10 @@ public class TokenIntrospectionEndpoint {
             tokenTypeHint = AccessTokenIntrospectionProviderFactory.ACCESS_TOKEN_TYPE;
         }
 
-        String token = formParams.getFirst(PARAM_TOKEN);
+        TokenForIntrospection token = new TokenForIntrospection();
+        token.setToken(formParams.getFirst(PARAM_TOKEN));
 
-        if (token == null) {
+        if (token.getToken() == null) {
             throw throwErrorResponseException(Errors.INVALID_REQUEST, "Token not provided.", Status.BAD_REQUEST);
         }
 
@@ -99,14 +103,16 @@ public class TokenIntrospectionEndpoint {
         }
 
         try {
-            session.clientPolicy().triggerOnEvent(new TokenIntrospectContext(formParams));
+            session.clientPolicy().triggerOnEvent(new TokenIntrospectContext(formParams, token));
         } catch (ClientPolicyException cpe) {
-            throw throwErrorResponseException(Errors.INVALID_REQUEST, cpe.getErrorDetail(), Status.BAD_REQUEST);
+            if (!OAuthErrorException.INVALID_TOKEN.equals(cpe.getError())) {
+                throw throwErrorResponseException(Errors.INVALID_REQUEST, cpe.getErrorDetail(), Status.BAD_REQUEST);
+            }
         }
 
         try {
 
-            Response response = provider.introspect(token);
+            Response response = provider.introspect(token.getToken());
 
             this.event.success();
 
@@ -159,5 +165,18 @@ public class TokenIntrospectionEndpoint {
     private ErrorResponseException throwErrorResponseException(String error, String detail, Status status) {
         this.event.detail("detail", detail).error(error);
         return new ErrorResponseException(error, detail, status);
+    }
+
+    public static class TokenForIntrospection implements Serializable {
+
+        private String token;
+
+        public String getToken() {
+            return token;
+        }
+
+        public void setToken(String token) {
+            this.token = token;
+        }
     }
 }

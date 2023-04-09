@@ -20,6 +20,7 @@ package org.keycloak.services.clientpolicy.context;
 import javax.ws.rs.core.MultivaluedMap;
 
 import org.keycloak.protocol.oidc.TokenManager;
+import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyEvent;
 
@@ -30,11 +31,14 @@ public class TokenRefreshResponseContext implements ClientPolicyContext {
 
     private final MultivaluedMap<String, String> params;
     private final TokenManager.AccessTokenResponseBuilder accessTokenResponseBuilder;
+    private AccessTokenResponse accessTokenResponse;
 
     public TokenRefreshResponseContext(MultivaluedMap<String, String> params,
-            TokenManager.AccessTokenResponseBuilder accessTokenResponseBuilder) {
+            TokenManager.AccessTokenResponseBuilder accessTokenResponseBuilder,
+            AccessTokenResponse accessTokenResponse) {
         this.params = params;
         this.accessTokenResponseBuilder = accessTokenResponseBuilder;
+        this.accessTokenResponse = accessTokenResponse;
     }
 
     @Override
@@ -50,4 +54,7 @@ public class TokenRefreshResponseContext implements ClientPolicyContext {
         return accessTokenResponseBuilder;
     }
 
+    public AccessTokenResponse getAccessTokenResponse() {
+        return accessTokenResponse;
+    }
 }

@@ -20,6 +20,8 @@ package org.keycloak.testsuite.client.resources;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.keycloak.jose.jwk.JSONWebKeySet;
 import org.keycloak.protocol.oidc.grants.ciba.endpoints.ClientNotificationEndpointRequest;
+import org.keycloak.services.clientpolicy.executor.ReferenceTypeTokenExecutor;
+import org.keycloak.services.clientpolicy.executor.ReferenceTypeTokenExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.IntentClientBindCheckExecutor;
 import org.keycloak.testsuite.rest.representation.TestAuthenticationChannelRequest;
 
@@ -170,4 +172,17 @@ public interface TestOIDCEndpointsApplicationResource {
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
     IntentClientBindCheckExecutor.IntentBindCheckResponse checkIntentClientBound(IntentClientBindCheckExecutor.IntentBindCheckRequest request);
+
+    @POST
+    @Path("/bind-selfcontained-type-token")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    @NoCache
+    Response bindSelfcontainedTypeToken(ReferenceTypeTokenExecutor.ReferenceTypeTokenBindRequest request);
+
+    @GET
+    @Path("/get-selfcontained-type-token")
+    @Produces(MediaType.APPLICATION_JSON)
+    @NoCache
+    ReferenceTypeTokenExecutor.ReferenceTypeTokenBindResponse getSelfcontainedTypeToken(@QueryParam(ReferenceTypeTokenExecutorFactory.SELFCONTAINED_TYPE_TOKEN_GET_ENDPOINT_QUERY_PARAM) String referenceTypeToken);
 }

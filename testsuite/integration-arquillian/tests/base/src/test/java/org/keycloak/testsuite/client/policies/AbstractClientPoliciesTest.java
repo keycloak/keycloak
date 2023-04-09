@@ -208,7 +208,7 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
 
     protected ClientRegistration reg;
 
-    private static final ObjectMapper objectMapper = new ObjectMapper();
+    protected static final ObjectMapper objectMapper = new ObjectMapper();
 
     protected static final String CLIENT_NAME = "Zahlungs-App";
     protected static final String TEST_USER_NAME = "test-user@localhost";
@@ -646,6 +646,17 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
         assertEquals(true, jsonNode.get("active").asBoolean());
         assertEquals(username, jsonNode.get("username").asText());
         assertEquals(clientId, jsonNode.get("client_id").asText());
+        TokenMetadataRepresentation rep = objectMapper.readValue(tokenResponse, TokenMetadataRepresentation.class);
+        assertEquals(true, rep.isActive());
+        assertEquals(clientId, rep.getClientId());
+        assertEquals(clientId, rep.getIssuedFor());
+        events.expect(EventType.INTROSPECT_TOKEN).client(clientId).user((String)null).clearDetails().assertEvent();
+    }
+
+    protected void doIntrospectRefreshToken(OAuthClient.AccessTokenResponse tokenRes, String username, String clientId, String clientSecret) throws IOException {
+        String tokenResponse = oauth.introspectRefreshTokenWithClientCredential(clientId, clientSecret, tokenRes.getRefreshToken());
+        JsonNode jsonNode = objectMapper.readTree(tokenResponse);
+        assertEquals(true, jsonNode.get("active").asBoolean());
         TokenMetadataRepresentation rep = objectMapper.readValue(tokenResponse, TokenMetadataRepresentation.class);
         assertEquals(true, rep.isActive());
         assertEquals(clientId, rep.getClientId());

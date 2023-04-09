@@ -342,6 +342,6 @@ public class DeviceGrantType {
         // Set nonce as an attribute in the ClientSessionContext. Will be used for the token generation
         clientSessionCtx.setAttribute(OIDCLoginProtocol.NONCE_PARAM, deviceCodeModel.getNonce());
 
-        return tokenEndpoint.createTokenResponse(user, userSession, clientSessionCtx, scopeParam, false, s -> {return new DeviceTokenResponseContext(deviceCodeModel, formParams, clientSession, s);});
+        return tokenEndpoint.createTokenResponse(user, userSession, clientSessionCtx, scopeParam, false, (s, t) -> {return new DeviceTokenResponseContext(deviceCodeModel, formParams, clientSession, s, t);});
     }
 }

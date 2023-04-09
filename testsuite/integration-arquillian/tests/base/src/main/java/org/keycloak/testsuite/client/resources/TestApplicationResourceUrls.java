@@ -65,4 +65,18 @@ public class TestApplicationResourceUrls {
 
         return builder.build().toString();
     }
+
+    public static String bindSelfcontainedTypeAccessTokenUri() {
+        UriBuilder builder = oidcClientEndpoints()
+                .path(TestOIDCEndpointsApplicationResource.class, "bindSelfcontainedTypeToken");
+
+        return builder.build().toString();
+    }
+
+    public static String getSelfcontainedTypeAccessTokenUri() {
+        UriBuilder builder = oidcClientEndpoints()
+                .path(TestOIDCEndpointsApplicationResource.class, "getSelfcontainedTypeToken");
+
+        return builder.build().toString();
+    }
 }

@@ -19,6 +19,7 @@ package org.keycloak.services.clientpolicy.context;
 
 import javax.ws.rs.core.MultivaluedMap;
 
+import org.keycloak.protocol.oidc.endpoints.TokenIntrospectionEndpoint;
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyEvent;
 
@@ -28,9 +29,11 @@ import org.keycloak.services.clientpolicy.ClientPolicyEvent;
 public class TokenIntrospectContext implements ClientPolicyContext {
 
     private final MultivaluedMap<String, String> params;
+    private TokenIntrospectionEndpoint.TokenForIntrospection token;
 
-    public TokenIntrospectContext(MultivaluedMap<String, String> params) {
+    public TokenIntrospectContext(MultivaluedMap<String, String> params, TokenIntrospectionEndpoint.TokenForIntrospection token) {
         this.params = params;
+        this.token = token;
     }
 
     @Override
@@ -42,4 +45,7 @@ public class TokenIntrospectContext implements ClientPolicyContext {
         return params;
     }
 
+    public TokenIntrospectionEndpoint.TokenForIntrospection getTokenForIntrospection() {
+        return token;
+    }
 }

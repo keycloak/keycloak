@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 Red Hat, Inc. and/or its affiliates
+ * Copyright 2023 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,34 +15,30 @@
  * limitations under the License.
  */
 
-package org.keycloak.services.clientpolicy.context;
+package org.keycloak.services.clientpolicy.executor;
 
-import javax.ws.rs.core.MultivaluedMap;
-
-import org.keycloak.services.clientpolicy.ClientPolicyContext;
-import org.keycloak.services.clientpolicy.ClientPolicyEvent;
+import org.keycloak.Config.Scope;
+import org.keycloak.models.KeycloakSessionFactory;
 
 /**
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
  */
-public class LogoutRequestContext implements ClientPolicyContext {
+public abstract class AbstractReferenceTypeTokenExecutorFactory implements ClientPolicyExecutorProviderFactory {
 
-    private final MultivaluedMap<String, String> params;
-
-    public LogoutRequestContext(MultivaluedMap<String, String> params) {
-        this.params = params;
-    }
-
-    public LogoutRequestContext() {
-        this(null);
+    @Override
+    public void init(Scope config) {
     }
 
     @Override
-    public ClientPolicyEvent getEvent() {
-        return ClientPolicyEvent.LOGOUT_REQUEST;
+    public void postInit(KeycloakSessionFactory factory) {
     }
 
-    public MultivaluedMap<String, String> getParams() {
-        return params;
+    @Override
+    public void close() {
+    }
+
+    @Override
+    public boolean isSupported() {
+        return true;
     }
 }

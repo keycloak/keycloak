@@ -54,11 +54,12 @@ public class TestApplicationResourceProviderFactory implements RealmResourceProv
     private ConcurrentMap<String, TestAuthenticationChannelRequest> authenticationChannelRequests = new ConcurrentHashMap<>();
     private ConcurrentMap<String, ClientNotificationEndpointRequest> cibaClientNotifications = new ConcurrentHashMap<>();
     private ConcurrentMap<String, String> intentClientBindings = new ConcurrentHashMap<>();
+    private ConcurrentMap<String, String> referenceTypeTokenConversions = new ConcurrentHashMap<>();
 
     @Override
     public RealmResourceProvider create(KeycloakSession session) {
         return new TestApplicationResourceProvider(session, adminLogoutActions,
-                backChannelLogoutTokens, frontChannelLogoutTokens, pushNotBeforeActions, testAvailabilityActions, oidcClientData, authenticationChannelRequests, cibaClientNotifications, intentClientBindings);
+                backChannelLogoutTokens, frontChannelLogoutTokens, pushNotBeforeActions, testAvailabilityActions, oidcClientData, authenticationChannelRequests, cibaClientNotifications, intentClientBindings, referenceTypeTokenConversions);
     }
 
     @Override

@@ -40,6 +40,7 @@ import org.keycloak.services.clientpolicy.condition.ClientUpdaterSourceHostsCond
 import org.keycloak.services.clientpolicy.condition.ClientUpdaterSourceRolesCondition;
 import org.keycloak.services.clientpolicy.executor.ConsentRequiredExecutor;
 import org.keycloak.services.clientpolicy.executor.FullScopeDisabledExecutor;
+import org.keycloak.services.clientpolicy.executor.ReferenceTypeTokenExecutor;
 import org.keycloak.services.clientpolicy.executor.HolderOfKeyEnforcerExecutor;
 import org.keycloak.services.clientpolicy.executor.IntentClientBindCheckExecutor;
 import org.keycloak.services.clientpolicy.executor.PKCEEnforcerExecutor;
@@ -225,6 +226,13 @@ public final class ClientPoliciesUtil {
         IntentClientBindCheckExecutor.Configuration config = new IntentClientBindCheckExecutor.Configuration();
         config.setIntentName(intentName);
         config.setIntentClientBindCheckEndpoint(endpoint);
+        return config;
+    }
+
+    public static ReferenceTypeTokenExecutor.Configuration createReferenceTypeTokenExecutorConfig(String selfcontainedTypeTokenBindEndpoint, String selfcontainedTypeTokenGetEndpoint) {
+    	ReferenceTypeTokenExecutor.Configuration config = new ReferenceTypeTokenExecutor.Configuration();
+        config.setSelfcontainedTypeTokenBindEndpoint(selfcontainedTypeTokenBindEndpoint);
+        config.setSelfcontainedTypeTokenGetEndpoint(selfcontainedTypeTokenGetEndpoint);
         return config;
     }
 

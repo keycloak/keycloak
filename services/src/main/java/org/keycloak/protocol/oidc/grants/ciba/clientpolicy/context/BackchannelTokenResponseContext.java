@@ -22,6 +22,7 @@ import javax.ws.rs.core.MultivaluedMap;
 import org.keycloak.models.ClientSessionContext;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.protocol.oidc.grants.ciba.channel.CIBAAuthenticationRequest;
+import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyEvent;
 
@@ -34,15 +35,18 @@ public class BackchannelTokenResponseContext implements ClientPolicyContext {
     private final MultivaluedMap<String, String> requestParameters;
     private final ClientSessionContext clientSessionCtx;
     private final TokenManager.AccessTokenResponseBuilder accessTokenResponseBuilder;
+    private AccessTokenResponse accessTokenResponse;
 
     public BackchannelTokenResponseContext(CIBAAuthenticationRequest parsedRequest,
             MultivaluedMap<String, String> requestParameters,
             ClientSessionContext clientSessionCtx,
-            TokenManager.AccessTokenResponseBuilder accessTokenResponseBuilder) {
+            TokenManager.AccessTokenResponseBuilder accessTokenResponseBuilder,
+            AccessTokenResponse accessTokenResponse) {
         this.parsedRequest = parsedRequest;
         this.requestParameters = requestParameters;
         this.clientSessionCtx = clientSessionCtx;
         this.accessTokenResponseBuilder = accessTokenResponseBuilder;
+        this.accessTokenResponse = accessTokenResponse;
     }
 
     @Override
@@ -60,6 +64,10 @@ public class BackchannelTokenResponseContext implements ClientPolicyContext {
 
     public TokenManager.AccessTokenResponseBuilder getAccessTokenResponseBuilder() {
         return accessTokenResponseBuilder;
+    }
+
+    public AccessTokenResponse getAccessTokenResponse() {
+        return accessTokenResponse;
     }
 
     public ClientSessionContext getClientSessionContext() {
