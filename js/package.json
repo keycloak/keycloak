@@ -18,7 +18,7 @@
     "@typescript-eslint/parser": "^5.57.0",
     "eslint": "^8.37.0",
     "eslint-config-prettier": "^8.8.0",
-    "eslint-import-resolver-typescript": "^3.5.4",
+    "eslint-import-resolver-typescript": "^3.5.5",
     "eslint-plugin-cypress": "^2.13.2",
     "eslint-plugin-import": "^2.27.5",
     "eslint-plugin-lodash": "^7.4.0",
