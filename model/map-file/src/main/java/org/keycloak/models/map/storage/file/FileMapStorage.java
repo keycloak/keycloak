@@ -65,9 +65,9 @@ public class FileMapStorage<V extends AbstractEntity & UpdatableEntity, M>
       Function<String, Path> dataDirectoryFunc, Function<V, String[]> suggestedPath,
       boolean isExpirableEntity) {
         Crud<V, M> crud = new Crud<>(entityClass, dataDirectoryFunc, suggestedPath, isExpirableEntity);
-        FileMapStorage<V, M> tx = new FileMapStorage<>(entityClass, crud);
-        crud.tx = tx;
-        return tx;
+        FileMapStorage<V, M> store = new FileMapStorage<>(entityClass, crud);
+        crud.store = store;
+        return store;
     }
 
     private FileMapStorage(Class<V> entityClass, Crud<V, M> crud) {
@@ -203,7 +203,7 @@ public class FileMapStorage<V extends AbstractEntity & UpdatableEntity, M>
 
     private static class Crud<V extends AbstractEntity & UpdatableEntity, M> extends FileCrudOperations<V, M> {
 
-        private FileMapStorage tx;
+        private FileMapStorage store;
 
         public Crud(Class<V> entityClass, Function<String, Path> dataDirectoryFunc, Function<V, String[]> suggestedPath, boolean isExpirableEntity) {
             super(entityClass, dataDirectoryFunc, suggestedPath, isExpirableEntity);
@@ -211,32 +211,32 @@ public class FileMapStorage<V extends AbstractEntity & UpdatableEntity, M>
 
         @Override
         protected void touch(Path sp) throws IOException {
-            tx.touch(sp);
+            store.touch(sp);
         }
 
         @Override
         protected void registerRenameOnCommit(Path from, Path to) {
-            tx.registerRenameOnCommit(from, to);
+            store.registerRenameOnCommit(from, to);
         }
 
         @Override
         protected boolean removeIfExists(Path sp) {
-            return tx.removeIfExists(sp);
+            return store.removeIfExists(sp);
         }
 
         @Override
         protected String getTxId() {
-            return tx.txId;
+            return store.txId;
         }
 
         @Override
         protected FileTime getLastModifiedTime(final Path sp) {
-            return tx.getLastModifiedTime(sp);
+            return store.getLastModifiedTime(sp);
         }
 
         @Override
         protected void checkIsSafeToModify(final Path sp) {
-            tx.checkIsSafeToModify(sp);
+            store.checkIsSafeToModify(sp);
         }
     }
 

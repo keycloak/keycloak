@@ -229,46 +229,46 @@ public class JpaMapStorageProviderFactory implements
         .constructor(JpaLockEntity.class,                       JpaLockEntity::new)
         .build();
 
-    private static final Map<Class<?>, BiFunction<KeycloakSession, EntityManager, MapStorage>> MODEL_TO_TX = new HashMap<>();
+    private static final Map<Class<?>, BiFunction<KeycloakSession, EntityManager, MapStorage>> MODEL_TO_STORE = new HashMap<>();
     static {
         //auth-sessions
-        MODEL_TO_TX.put(RootAuthenticationSessionModel.class,   JpaRootAuthenticationSessionMapStorage::new);
+        MODEL_TO_STORE.put(RootAuthenticationSessionModel.class,   JpaRootAuthenticationSessionMapStorage::new);
         //authorization
-        MODEL_TO_TX.put(ResourceServer.class,                   JpaResourceServerMapStorage::new);
-        MODEL_TO_TX.put(Resource.class,                         JpaResourceMapStorage::new);
-        MODEL_TO_TX.put(Scope.class,                            JpaScopeMapStorage::new);
-        MODEL_TO_TX.put(PermissionTicket.class,                 JpaPermissionMapStorage::new);
-        MODEL_TO_TX.put(Policy.class,                           JpaPolicyMapStorage::new);
+        MODEL_TO_STORE.put(ResourceServer.class,                   JpaResourceServerMapStorage::new);
+        MODEL_TO_STORE.put(Resource.class,                         JpaResourceMapStorage::new);
+        MODEL_TO_STORE.put(Scope.class,                            JpaScopeMapStorage::new);
+        MODEL_TO_STORE.put(PermissionTicket.class,                 JpaPermissionMapStorage::new);
+        MODEL_TO_STORE.put(Policy.class,                           JpaPolicyMapStorage::new);
         //clients
-        MODEL_TO_TX.put(ClientModel.class,                      JpaClientMapStorage::new);
+        MODEL_TO_STORE.put(ClientModel.class,                      JpaClientMapStorage::new);
         //client-scopes
-        MODEL_TO_TX.put(ClientScopeModel.class,                 JpaClientScopeMapStorage::new);
+        MODEL_TO_STORE.put(ClientScopeModel.class,                 JpaClientScopeMapStorage::new);
         //events
-        MODEL_TO_TX.put(AdminEvent.class,                       JpaAdminEventMapStorage::new);
-        MODEL_TO_TX.put(Event.class,                            JpaAuthEventMapStorage::new);
+        MODEL_TO_STORE.put(AdminEvent.class,                       JpaAdminEventMapStorage::new);
+        MODEL_TO_STORE.put(Event.class,                            JpaAuthEventMapStorage::new);
         //groups
-        MODEL_TO_TX.put(GroupModel.class,                       JpaGroupMapStorage::new);
+        MODEL_TO_STORE.put(GroupModel.class,                       JpaGroupMapStorage::new);
         //realms
-        MODEL_TO_TX.put(RealmModel.class,                       JpaRealmMapStorage::new);
+        MODEL_TO_STORE.put(RealmModel.class,                       JpaRealmMapStorage::new);
         //roles
-        MODEL_TO_TX.put(RoleModel.class,                        JpaRoleMapStorage::new);
+        MODEL_TO_STORE.put(RoleModel.class,                        JpaRoleMapStorage::new);
         //single-use-objects
-        MODEL_TO_TX.put(SingleUseObjectValueModel.class,            JpaSingleUseObjectMapStorage::new);
+        MODEL_TO_STORE.put(SingleUseObjectValueModel.class,            JpaSingleUseObjectMapStorage::new);
         //user-login-failures
-        MODEL_TO_TX.put(UserLoginFailureModel.class,            JpaUserLoginFailureMapStorage::new);
+        MODEL_TO_STORE.put(UserLoginFailureModel.class,            JpaUserLoginFailureMapStorage::new);
         //users
-        MODEL_TO_TX.put(UserModel.class,                        JpaUserMapStorage::new);
+        MODEL_TO_STORE.put(UserModel.class,                        JpaUserMapStorage::new);
         //sessions
-        MODEL_TO_TX.put(UserSessionModel.class,                 JpaUserSessionMapStorage::new);
+        MODEL_TO_STORE.put(UserSessionModel.class,                 JpaUserSessionMapStorage::new);
         //locks
-        MODEL_TO_TX.put(MapLockEntity.class,                    JpaLockMapStorage::new);
+        MODEL_TO_STORE.put(MapLockEntity.class,                    JpaLockMapStorage::new);
     }
 
     private boolean jtaEnabled;
     private JtaTransactionManagerLookup jtaLookup;
 
     public MapStorage createMapStorage(KeycloakSession session, Class<?> modelType, EntityManager em) {
-        return MODEL_TO_TX.get(modelType).apply(session, em);
+        return MODEL_TO_STORE.get(modelType).apply(session, em);
     }
 
     @Override

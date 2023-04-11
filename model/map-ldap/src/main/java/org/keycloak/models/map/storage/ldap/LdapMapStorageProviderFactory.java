@@ -45,13 +45,13 @@ public class LdapMapStorageProviderFactory implements
     private Config.Scope config;
 
     @SuppressWarnings("rawtypes")
-    private static final Map<Class<?>, LdapRoleMapStorage.LdapRoleMapKeycloakTransactionFunction<KeycloakSession, Config.Scope, MapStorage>> MODEL_TO_TX = new HashMap<>();
+    private static final Map<Class<?>, LdapRoleMapStorage.LdapRoleMapKeycloakTransactionFunction<KeycloakSession, Config.Scope, MapStorage>> MODEL_TO_STORE = new HashMap<>();
     static {
-        MODEL_TO_TX.put(RoleModel.class,            LdapRoleMapStorage::new);
+        MODEL_TO_STORE.put(RoleModel.class,            LdapRoleMapStorage::new);
     }
 
-    public <M, V extends AbstractEntity> MapStorage<V, M> createTransaction(KeycloakSession session, Class<M> modelType) {
-        return MODEL_TO_TX.get(modelType).apply(session, config);
+    public <M, V extends AbstractEntity> MapStorage<V, M> createMapStorage(KeycloakSession session, Class<M> modelType) {
+        return MODEL_TO_STORE.get(modelType).apply(session, config);
     }
 
     @Override

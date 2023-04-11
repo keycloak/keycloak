@@ -577,23 +577,23 @@ public class MapExportImportManager implements ExportImportManager {
     }
 
     private void copyRealm(String realmId, KeycloakSession sessionChm) {
-        MapRealmEntity realmEntityChm = (MapRealmEntity) getTransaction(sessionChm, RealmProvider.class).read(realmId);
-        getTransaction(session, RealmProvider.class).create(realmEntityChm);
+        MapRealmEntity realmEntityChm = (MapRealmEntity) getMapStorage(sessionChm, RealmProvider.class).read(realmId);
+        getMapStorage(session, RealmProvider.class).create(realmEntityChm);
     }
 
-    private static <P extends Provider, E extends AbstractEntity, M> MapStorage<E, M> getTransaction(KeycloakSession session, Class<P> provider) {
+    private static <P extends Provider, E extends AbstractEntity, M> MapStorage<E, M> getMapStorage(KeycloakSession session, Class<P> provider) {
         ProviderFactory<P> factoryChm = session.getKeycloakSessionFactory().getProviderFactory(provider);
         return ((AbstractMapProviderFactory<P, E, M>) factoryChm).getMapStorage(session);
     }
 
     private <P extends Provider, M> void copyEntities(String realmId, KeycloakSession sessionChm, Class<P> provider, Class<M> model, SearchableModelField<M> field) {
-        MapStorage<AbstractEntity, M> txChm = getTransaction(sessionChm, provider);
-        MapStorage<AbstractEntity, M> txOrig = getTransaction(session, provider);
+        MapStorage<AbstractEntity, M> storeChm = getMapStorage(sessionChm, provider);
+        MapStorage<AbstractEntity, M> storeOrig = getMapStorage(session, provider);
 
         DefaultModelCriteria<M> mcb = criteria();
         mcb = mcb.compare(field, ModelCriteriaBuilder.Operator.EQ, realmId);
 
-        txChm.read(withCriteria(mcb)).forEach(txOrig::create);
+        storeChm.read(withCriteria(mcb)).forEach(storeOrig::create);
     }
 
     private static void fillRealm(KeycloakSession session, String id, RealmRepresentation rep) {

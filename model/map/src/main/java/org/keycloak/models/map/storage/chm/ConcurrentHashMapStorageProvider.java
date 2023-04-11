@@ -52,9 +52,9 @@ public class ConcurrentHashMapStorageProvider implements MapStorageProvider {
     @SuppressWarnings("unchecked")
     public <V extends AbstractEntity, M> MapStorage<V, M> getMapStorage(Class<M> modelType, Flag... flags) {
         return SessionAttributesUtils.createMapStorageIfAbsent(session, getClass(), modelType, factoryId, () -> {
-            ConcurrentHashMapStorage transaction = getMapStorage(modelType, factory.getStorage(modelType, flags));
-            session.getTransactionManager().enlist(transaction);
-            return transaction;
+            ConcurrentHashMapStorage store = getMapStorage(modelType, factory.getStorage(modelType, flags));
+            session.getTransactionManager().enlist(store);
+            return store;
         });
     }
 

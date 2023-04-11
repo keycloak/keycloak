@@ -73,27 +73,27 @@ public class SessionAttributesUtils {
     }
 
     /**
-     * Used for creating a transaction instance only once within one
+     * Used for creating a store instance only once within one
      * KeycloakSession.
      * <p />
-     * Checks whether there already is a transaction within session attributes
+     * Checks whether there already is a store within session attributes
      * for given {@code providerClass}, {@code modelType} and
      * {@code factoryIdentifier}. If exists returns existing provider,
      * otherwise creates a new instance using {@code createNew} supplier.
      *
      * @param session current Keycloak session
      * @param providerType map storage provider class
-     * @param modelType model class. Can be null if the transaction is the same
+     * @param modelType model class. Can be null if the store is the same
      *                  for all models.
      * @param factoryId unique factory identifier.
      *                  {@link SessionAttributesUtils#grabNewFactoryIdentifier()}
      *                  can be used for obtaining new identifiers.
-     * @param createNew supplier that creates a new instance of the transaction
-     * @return an instance of the transaction either from session attributes or
+     * @param createNew supplier that creates a new instance of the store
+     * @return an instance of the store either from session attributes or
      *         freshly created.
      * @param <V> entity type
      * @param <M> model type
-     * @param <T> transaction type
+     * @param <T> store type
      */
     public static <V extends AbstractEntity & UpdatableEntity, M, T extends MapStorage<V, M>> T createMapStorageIfAbsent(
             KeycloakSession session,

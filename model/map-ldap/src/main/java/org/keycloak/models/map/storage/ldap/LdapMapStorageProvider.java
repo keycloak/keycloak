@@ -42,9 +42,9 @@ public class LdapMapStorageProvider implements MapStorageProvider {
     @Override
     public <V extends AbstractEntity, M> MapStorage<V, M> getMapStorage(Class<M> modelType, Flag... flags) {
         return SessionAttributesUtils.createMapStorageIfAbsent(session, getClass(), modelType, factoryId, () -> {
-            LdapMapStorage transaction = (LdapMapStorage) factory.createTransaction(session, modelType);
-            session.getTransactionManager().enlist(transaction);
-            return transaction;
+            LdapMapStorage store = (LdapMapStorage) factory.createMapStorage(session, modelType);
+            session.getTransactionManager().enlist(store);
+            return store;
         });
     }
 

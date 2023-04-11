@@ -25,35 +25,35 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 
 /**
- * This wrapper encapsulates transactions from all areas. This is needed because we need to control when the changes
+ * This wrapper encapsulates stores from all areas. This is needed because we need to control when the changes
  * from each area are applied to make sure it is performed before the HotRod client provided transaction is committed.
  */
-public class AllAreasHotRodTransactionsWrapper extends AbstractKeycloakTransaction {
+public class AllAreasHotRodStoresWrapper extends AbstractKeycloakTransaction {
 
-    private final Map<Class<?>, ConcurrentHashMapStorage<?, ?, ?>> MapKeycloakTransactionsMap = new ConcurrentHashMap<>();
+    private final Map<Class<?>, ConcurrentHashMapStorage<?, ?, ?>> MapKeycloakStoresMap = new ConcurrentHashMap<>();
 
-    public ConcurrentHashMapStorage<?, ?, ?> getOrCreateTxForModel(Class<?> modelType, Supplier<ConcurrentHashMapStorage<?, ?, ?>> supplier) {
-        ConcurrentHashMapStorage<?, ?, ?> tx = MapKeycloakTransactionsMap.computeIfAbsent(modelType, t -> supplier.get());
-        if (!tx.isActive()) {
-            tx.begin();
+    public ConcurrentHashMapStorage<?, ?, ?> getOrCreateStoreForModel(Class<?> modelType, Supplier<ConcurrentHashMapStorage<?, ?, ?>> supplier) {
+        ConcurrentHashMapStorage<?, ?, ?> store = MapKeycloakStoresMap.computeIfAbsent(modelType, t -> supplier.get());
+        if (!store.isActive()) {
+            store.begin();
         }
 
-        return tx;
+        return store;
     }
 
     @Override
     protected void commitImpl() {
-        MapKeycloakTransactionsMap.values().forEach(ConcurrentHashMapStorage::commit);
+        MapKeycloakStoresMap.values().forEach(ConcurrentHashMapStorage::commit);
     }
 
     @Override
     protected void rollbackImpl() {
-        MapKeycloakTransactionsMap.values().forEach(ConcurrentHashMapStorage::rollback);
+        MapKeycloakStoresMap.values().forEach(ConcurrentHashMapStorage::rollback);
     }
 
     @Override
     public void setRollbackOnly() {
         super.setRollbackOnly();
-        MapKeycloakTransactionsMap.values().forEach(ConcurrentHashMapStorage::setRollbackOnly);
+        MapKeycloakStoresMap.values().forEach(ConcurrentHashMapStorage::setRollbackOnly);
     }
 }

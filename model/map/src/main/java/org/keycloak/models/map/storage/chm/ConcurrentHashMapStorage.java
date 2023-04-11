@@ -207,7 +207,7 @@ public class ConcurrentHashMapStorage<K, V extends AbstractEntity & UpdatableEnt
 
         Stream<V> updatedAndNotRemovedObjectsStream = this.map.read(queryParameters)
           .filter(filterOutAllBulkDeletedObjects)
-          .map(this::getUpdated)      // If the object has been removed, tx.get will return null, otherwise it will return me.getValue()
+          .map(this::getUpdated)      // If the object has been removed, store.get will return null, otherwise it will return me.getValue()
           .filter(Objects::nonNull)
           .map(this::registerEntityForChanges);
 

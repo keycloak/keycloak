@@ -52,7 +52,7 @@ public class MapGlobalLockProvider implements GlobalLockProvider {
 
     private final KeycloakSession session;
     private final long defaultTimeoutMilliseconds;
-    private MapStorage<MapLockEntity, MapLockEntity> tx;
+    private MapStorage<MapLockEntity, MapLockEntity> store;
 
     /**
      * The lockStoreSupplier allows the store to be initialized lazily and only when needed: As this provider is initialized
@@ -119,8 +119,8 @@ public class MapGlobalLockProvider implements GlobalLockProvider {
     }
 
     private void prepareTx() {
-        if (tx == null) {
-            this.tx = lockStoreSupplier.get();
+        if (store == null) {
+            this.store = lockStoreSupplier.get();
         }
     }
 
@@ -138,14 +138,14 @@ public class MapGlobalLockProvider implements GlobalLockProvider {
         prepareTx();
         DefaultModelCriteria<MapLockEntity> mcb = criteria();
         mcb = mcb.compare(MapLockEntity.SearchableFields.NAME, ModelCriteriaBuilder.Operator.EQ, lockName);
-        Optional<MapLockEntity> entry = tx.read(QueryParameters.withCriteria(mcb)).findFirst();
+        Optional<MapLockEntity> entry = store.read(QueryParameters.withCriteria(mcb)).findFirst();
 
         if (entry.isEmpty()) {
             MapLockEntity entity = DeepCloner.DUMB_CLONER.newInstance(MapLockEntity.class);
             entity.setName(lockName);
             entity.setKeycloakInstanceIdentifier(getKeycloakInstanceIdentifier());
             entity.setTimeAcquired(Time.currentTimeMillis());
-            return tx.create(entity);
+            return store.create(entity);
         } else {
             throw new LockAcquiringTimeoutException(lockName, entry.get().getKeycloakInstanceIdentifier(), Instant.ofEpochMilli(entry.get().getTimeAcquired()));
         }
@@ -157,7 +157,7 @@ public class MapGlobalLockProvider implements GlobalLockProvider {
      */
     private void unlock(MapLockEntity lockEntity) {
         prepareTx();
-        MapLockEntity readLockEntity = tx.read(lockEntity.getId());
+        MapLockEntity readLockEntity = store.read(lockEntity.getId());
 
         if (readLockEntity == null) {
             throw new RuntimeException("didn't find lock - someone else unlocked it?");
@@ -166,14 +166,14 @@ public class MapGlobalLockProvider implements GlobalLockProvider {
             throw new RuntimeException(String.format("Lock owned by different instance: Lock [%s] acquired by keycloak instance [%s] at the time [%s]",
                     readLockEntity.getName(), readLockEntity.getKeycloakInstanceIdentifier(), readLockEntity.getTimeAcquired()));
         } else {
-            tx.delete(readLockEntity.getId());
+            store.delete(readLockEntity.getId());
         }
     }
 
     private void releaseAllLocks() {
         prepareTx();
         DefaultModelCriteria<MapLockEntity> mcb = criteria();
-        tx.delete(QueryParameters.withCriteria(mcb));
+        store.delete(QueryParameters.withCriteria(mcb));
     }
 
     private static String getKeycloakInstanceIdentifier() {
