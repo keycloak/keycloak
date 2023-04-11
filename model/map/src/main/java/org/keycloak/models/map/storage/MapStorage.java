@@ -21,12 +21,14 @@ import org.keycloak.models.map.common.AbstractEntity;
 import java.util.stream.Stream;
 
 /**
- * A storage for entities that is based on a map. Implementations of these methods should be transactional
+ * A storage for entities that is based on a map and operates in the context of transaction
+ * managed by current {@code KeycloakSession}. Implementations of its methods should respect
+ * transactional boundaries of that transaction.
  */
 public interface MapStorage<V extends AbstractEntity, M> {
 
     /**
-     * Instructs this transaction to add a new value into the underlying store on commit.
+     * Instructs this storage to add a new value into the underlying store on commit in the context of the current transaction.
      * <p>
      * Updates to the returned instances of {@code V} would be visible in the current transaction
      * and will propagate into the underlying store upon commit.
@@ -56,8 +58,7 @@ public interface MapStorage<V extends AbstractEntity, M> {
     /**
      * Returns a stream of values from underlying storage that are updated based on the current transaction changes;
      * i.e. the result contains updates and excludes of records that have been created, updated or deleted in this
-     * transaction by methods {@link MapStorage#create}, {@link MapStorage#create},
-     * {@link MapStorage#delete}, etc.
+     * transaction by respective methods of this interface.
      * <p>
      * Updates to the returned instances of {@code V} would be visible in the current transaction
      * and will propagate into the underlying store upon commit.
@@ -80,8 +81,8 @@ public interface MapStorage<V extends AbstractEntity, M> {
     long getCount(QueryParameters<M> queryParameters);
 
     /**
-     * Instructs this transaction to delete a value associated with the identifier {@code key} from the underlying store
-     * on commit.
+     * Instructs this storage to delete a value associated with the identifier {@code key} from the underlying store
+     * upon commit.
      *
      * @return Returns {@code true} if the object has been deleted or result cannot be determined, {@code false} otherwise.
      * @param key identifier of a value
@@ -89,7 +90,7 @@ public interface MapStorage<V extends AbstractEntity, M> {
     boolean delete(String key);
 
     /**
-     * Instructs this transaction to remove values (identified by {@code mcb} filter) from the underlying store on commit.
+     * Instructs this transaction to remove values (identified by {@code mcb} filter) from the underlying store upon commit.
      *
      * @param queryParameters parameters for the query like firstResult, maxResult, requested ordering, etc.
      * @return number of removed objects (might return {@code -1} if not supported)
@@ -98,7 +99,7 @@ public interface MapStorage<V extends AbstractEntity, M> {
 
     /**
      * Returns {@code true} if the object with the given {@code key} exists in the underlying storage with respect to changes done
-     * in current transaction. {@code false} otherwise.
+     * in the current transaction. {@code false} otherwise.
      *
      * @param key Key of the object. Must not be {@code null}.
      * @return See description
@@ -110,7 +111,7 @@ public interface MapStorage<V extends AbstractEntity, M> {
 
     /**
      * Returns {@code true} if at least one object is satisfying given {@code criteria} from the underlying storage with respect to changes done
-     * in current transaction. {@code false} otherwise.
+     * in the current transaction. {@code false} otherwise.
      * The criteria are specified in the given criteria builder based on model properties.
      *
      * @param queryParameters parameters for the query

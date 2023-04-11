@@ -24,11 +24,22 @@ import org.keycloak.models.map.storage.QueryParameters;
 
 import java.util.stream.Stream;
 
+/**
+ * Interface for CRUD operations on the storage. The operations may not respect transactional boundaries
+ * if the underlying storage does not support it.
+ *
+ * @param <V> Type of the value stored in the storage
+ * @param <M> Type of the model object
+ */
 public interface CrudOperations<V extends AbstractEntity & UpdatableEntity, M> {
+
     /**
-     * Creates an object in the store. ID of the {@code value} may be prescribed in id of the {@code value}.
+     * Creates an object in the storage.
+     * <br />
+     * ID of the {@code value} may be prescribed in id of the {@code value}.
      * If the id is {@code null} or its format is not matching the store internal format for ID, then
      * the {@code value}'s ID will be generated and returned in the id of the return value.
+     *
      * @param value Entity to create in the store
      * @throws NullPointerException if {@code value} is {@code null}
      * @see AbstractEntity#getId()
@@ -38,7 +49,7 @@ public interface CrudOperations<V extends AbstractEntity & UpdatableEntity, M> {
 
     /**
      * Returns object with the given {@code key} from the storage or {@code null} if object does not exist.
-     * <br>
+     * <br />
      * If {@code V} implements {@link org.keycloak.models.map.common.ExpirableEntity} this method should not return
      * entities that are expired. See {@link org.keycloak.models.map.common.ExpirableEntity} JavaDoc for more details.
      *
@@ -47,7 +58,7 @@ public interface CrudOperations<V extends AbstractEntity & UpdatableEntity, M> {
      * @return See description
      * @throws NullPointerException if the {@code key} is {@code null}
      */
-    public V read(String key);
+    V read(String key);
 
     /**
      * Updates the object with the key of the {@code value}'s ID in the storage if it already exists.
@@ -78,7 +89,7 @@ public interface CrudOperations<V extends AbstractEntity & UpdatableEntity, M> {
     /**
      * Returns stream of objects satisfying given {@code criteria} from the storage.
      * The criteria are specified in the given criteria builder based on model properties.
-     *
+     * <br />
      * If {@code V} implements {@link org.keycloak.models.map.common.ExpirableEntity} this method should not return
      * entities that are expired. See {@link org.keycloak.models.map.common.ExpirableEntity} JavaDoc for more details.
      *
