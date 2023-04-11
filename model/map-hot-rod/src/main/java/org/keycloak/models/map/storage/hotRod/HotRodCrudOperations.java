@@ -148,7 +148,7 @@ public class HotRodCrudOperations<K, E extends AbstractHotRodEntity, V extends A
         if (entityWithMetadata == null) return null;
 
         // store entity version
-        LOG.tracef("Entity %s read in version %s", key, entityWithMetadata.getVersion(), getShortStackTrace());
+        LOG.tracef("Entity %s read in version %s.%s", key, entityWithMetadata.getVersion(), getShortStackTrace());
         entityVersionCache.put(k, entityWithMetadata.getVersion());
 
         // Create delegate that implements Map*Entity
@@ -167,10 +167,10 @@ public class HotRodCrudOperations<K, E extends AbstractHotRodEntity, V extends A
                         throw new OptimisticLockException("Entity " + key + " with version " + entityVersionCache.get(key) + " already changed by a different transaction.");
                     }
                 } else {
+                    LOG.warnf("Removing entity %s from storage due to negative/zero lifespan.%s", key, getShortStackTrace());
                     if (!remoteCache.removeWithVersion(key, entityVersionCache.get(key))) {
                         throw new OptimisticLockException("Entity " + key + " with version " + entityVersionCache.get(key) + " already changed by a different transaction.");
                     }
-                    LOG.warnf("Removing entity %s from storage due to negative/zero lifespan.", key);
                 }
 
                 return delegateProducer.apply(value.getHotRodEntity());

@@ -57,12 +57,6 @@ public class HotRodUserSessionMapStorage<K> extends ConcurrentHashMapStorage<K, 
         this.clientSessionStore = clientSessionStore;
     }
 
-    @Override
-    public void commit() {
-        super.commit();
-        clientSessionStore.commit();
-    }
-
     private MapAuthenticatedClientSessionEntity wrapClientSessionEntityToClientSessionAwareDelegate(MapAuthenticatedClientSessionEntity d) {
         return new MapAuthenticatedClientSessionEntityDelegate(new HotRodAuthenticatedClientSessionEntityDelegateProvider(d) {
             @Override
