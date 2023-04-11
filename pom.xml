@@ -224,7 +224,7 @@
         <server.output.dir.version>${project.version}</server.output.dir.version>
 
         <!-- Frontend -->
-        <node.version>v18.14.2</node.version>
+        <node.version>v18.15.0</node.version>
     </properties>
 
     <url>http://keycloak.org</url>
@@ -1467,6 +1467,11 @@
             <dependency>
                 <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-junit5</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.keycloak</groupId>
+                <artifactId>keycloak-account-ui</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>

@@ -315,8 +315,4 @@ public class DefaultThemeManager implements ThemeManager {
         return providers;
     }
 
-    private static boolean isAccount2Enabled() {
-        return Profile.isFeatureEnabled(Profile.Feature.ACCOUNT2);
-    }
-
 }
