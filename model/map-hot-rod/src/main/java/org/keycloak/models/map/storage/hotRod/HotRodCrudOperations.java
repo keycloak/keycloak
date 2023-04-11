@@ -47,7 +47,7 @@ import org.keycloak.models.map.storage.hotRod.locking.HotRodLocksUtils;
 import org.keycloak.storage.SearchableModelField;
 import org.keycloak.utils.LockObjectsForModification;
 
-import javax.persistence.OptimisticLockException;
+import jakarta.persistence.OptimisticLockException;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
