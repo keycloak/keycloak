@@ -21,6 +21,7 @@ import javax.persistence.EntityManager;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakTransaction;
 import org.keycloak.models.map.common.AbstractEntity;
+import org.keycloak.models.map.common.SessionAttributesUtils;
 import org.keycloak.models.map.storage.MapStorage;
 import org.keycloak.models.map.storage.MapStorageProvider;
 import org.keycloak.models.map.storage.MapStorageProviderFactory.Flag;
@@ -31,10 +32,13 @@ public class JpaMapStorageProvider implements MapStorageProvider {
     private final KeycloakSession session;
     private final EntityManager em;
 
-    public JpaMapStorageProvider(JpaMapStorageProviderFactory factory, KeycloakSession session, EntityManager em, boolean jtaEnabled) {
+    private final int factoryId;
+
+    public JpaMapStorageProvider(JpaMapStorageProviderFactory factory, KeycloakSession session, EntityManager em, boolean jtaEnabled, int factoryId) {
         this.factory = factory;
         this.session = session;
         this.em = em;
+        this.factoryId = factoryId;
 
         // Create the JPA transaction and enlist it if needed.
         // Don't enlist if JTA is enabled as it has been enlisted with JTA automatically.
@@ -54,6 +58,7 @@ public class JpaMapStorageProvider implements MapStorageProvider {
     public <V extends AbstractEntity, M> MapStorage<V, M> getMapStorage(Class<M> modelType, Flag... flags) {
         // validate and update the schema for the storage.
         this.factory.validateAndUpdateSchema(this.session, modelType);
-        return factory.createMapStorage(session, modelType, em);
+
+        return SessionAttributesUtils.createMapStorageIfAbsent(session, JpaMapStorageProvider.class, modelType, factoryId, () -> factory.createMapStorage(session, modelType, em));
     }
 }

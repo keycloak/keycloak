@@ -276,7 +276,7 @@ public class JpaMapStorageProviderFactory implements
         lazyInit();
 
         return SessionAttributesUtils.createProviderIfAbsent(session, factoryId, JpaMapStorageProvider.class,
-                session1 -> new JpaMapStorageProvider(this, session, PersistenceExceptionConverter.create(session, getEntityManager()), this.jtaEnabled));
+                session1 -> new JpaMapStorageProvider(this, session, PersistenceExceptionConverter.create(session, getEntityManager()), this.jtaEnabled, factoryId));
     }
 
     protected EntityManager getEntityManager() {
