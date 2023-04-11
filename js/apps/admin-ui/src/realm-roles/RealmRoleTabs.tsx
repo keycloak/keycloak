@@ -27,9 +27,9 @@ import {
   AttributesForm,
 } from "../components/key-value-form/AttributeForm";
 import {
-  KeyValueType,
   arrayToKeyValue,
   keyValueToArray,
+  KeyValueType,
 } from "../components/key-value-form/key-value-convert";
 import { KeycloakSpinner } from "../components/keycloak-spinner/KeycloakSpinner";
 import { PermissionsTab } from "../components/permission-tab/PermissionTab";
@@ -43,14 +43,13 @@ import {
 import { ViewHeader } from "../components/view-header/ViewHeader";
 import { useAdminClient, useFetch } from "../context/auth/AdminClient";
 import { useRealm } from "../context/realm-context/RealmContext";
-import useIsFeatureEnabled, { Feature } from "../utils/useIsFeatureEnabled";
+import { useServerInfo } from "../context/server-info/ServerInfoProvider";
 import { useParams } from "../utils/useParams";
-import { UsersInRoleTab } from "./UsersInRoleTab";
 import { RealmRoleRoute, RealmRoleTab, toRealmRole } from "./routes/RealmRole";
 import { toRealmRoles } from "./routes/RealmRoles";
+import { UsersInRoleTab } from "./UsersInRoleTab";
 
 export default function RealmRoleTabs() {
-  const isFeatureEnabled = useIsFeatureEnabled();
   const { t } = useTranslation("roles");
   const form = useForm<AttributeForm>({
     mode: "onChange",
@@ -67,6 +66,8 @@ export default function RealmRoleTabs() {
 
   const [key, setKey] = useState(0);
   const [attributes, setAttributes] = useState<KeyValueType[] | undefined>();
+
+  const { profileInfo } = useServerInfo();
 
   const refresh = () => setKey(key + 1);
 
@@ -390,7 +391,9 @@ export default function RealmRoleTabs() {
               <UsersInRoleTab data-cy="users-in-role-tab" />
             </Tab>
           )}
-          {isFeatureEnabled(Feature.AdminFineGrainedAuthz) && (
+          {!profileInfo?.disabledFeatures?.includes(
+            "ADMIN_FINE_GRAINED_AUTHZ"
+          ) && (
             <Tab
               title={<TabTitleText>{t("common:permissions")}</TabTitleText>}
               {...permissionsTab}

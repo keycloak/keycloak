@@ -1,46 +1,49 @@
-import type GroupRepresentation from "@keycloak/keycloak-admin-client/lib/defs/groupRepresentation";
+import { useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import {
-  Drawer,
-  DrawerContent,
-  DrawerContentBody,
-  DrawerHead,
-  DrawerPanelContent,
   DropdownItem,
   PageSection,
   PageSectionVariants,
   Tab,
   TabTitleText,
   Tabs,
+  Drawer,
+  DrawerContent,
+  DrawerContentBody,
+  DrawerPanelContent,
+  DrawerHead,
 } from "@patternfly/react-core";
-import { useState } from "react";
-import { useTranslation } from "react-i18next";
-import { useLocation, useNavigate } from "react-router-dom";
+import type GroupRepresentation from "@keycloak/keycloak-admin-client/lib/defs/groupRepresentation";
 
-import { GroupBreadCrumbs } from "../components/bread-crumb/GroupBreadCrumbs";
-import { PermissionsTab } from "../components/permission-tab/PermissionTab";
 import { ViewHeader } from "../components/view-header/ViewHeader";
-import { useAccess } from "../context/access/Access";
-import { useAdminClient, useFetch } from "../context/auth/AdminClient";
+import { useFetch, useAdminClient } from "../context/auth/AdminClient";
 import { useRealm } from "../context/realm-context/RealmContext";
-import helpUrls from "../help-urls";
-import useIsFeatureEnabled, { Feature } from "../utils/useIsFeatureEnabled";
-import useToggle from "../utils/useToggle";
-import { GroupAttributes } from "./GroupAttributes";
-import { GroupRoleMapping } from "./GroupRoleMapping";
-import { GroupTable } from "./GroupTable";
-import { GroupsModal } from "./GroupsModal";
-import { Members } from "./Members";
+
 import { useSubGroups } from "./SubGroupsContext";
-import { DeleteGroup } from "./components/DeleteGroup";
-import { GroupTree } from "./components/GroupTree";
+import { GroupTable } from "./GroupTable";
 import { getId, getLastId } from "./groupIdUtils";
+import { Members } from "./Members";
+import { GroupAttributes } from "./GroupAttributes";
+import { GroupsModal } from "./GroupsModal";
 import { toGroups } from "./routes/Groups";
+import { GroupRoleMapping } from "./GroupRoleMapping";
+import helpUrls from "../help-urls";
+import { PermissionsTab } from "../components/permission-tab/PermissionTab";
+import { useAccess } from "../context/access/Access";
+import { useServerInfo } from "../context/server-info/ServerInfoProvider";
+import { GroupTree } from "./components/GroupTree";
+import { DeleteGroup } from "./components/DeleteGroup";
+import useToggle from "../utils/useToggle";
+import { GroupBreadCrumbs } from "../components/bread-crumb/GroupBreadCrumbs";
 
 import "./GroupsSection.css";
 
 export default function GroupsSection() {
   const { t } = useTranslation("groups");
   const [activeTab, setActiveTab] = useState(0);
+
+  const { profileInfo } = useServerInfo();
 
   const { adminClient } = useAdminClient();
   const { subGroups, setSubGroups, currentGroup } = useSubGroups();
@@ -57,9 +60,8 @@ export default function GroupsSection() {
   const refresh = () => setKey(key + 1);
 
   const { hasAccess } = useAccess();
-  const isFeatureEnabled = useIsFeatureEnabled();
   const canViewPermissions =
-    isFeatureEnabled(Feature.AdminFineGrainedAuthz) &&
+    !profileInfo?.disabledFeatures?.includes("ADMIN_FINE_GRAINED_AUTHZ") &&
     hasAccess("manage-authorization", "manage-users", "manage-clients");
   const canManageGroup =
     hasAccess("manage-users") || currentGroup()?.access?.manage;

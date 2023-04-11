@@ -6,7 +6,6 @@ import { useNavigate } from "react-router-dom";
 
 import { ScrollForm } from "../components/scroll-form/ScrollForm";
 import { useRealm } from "../context/realm-context/RealmContext";
-import useIsFeatureEnabled, { Feature } from "../utils/useIsFeatureEnabled";
 import { LdapSettingsAdvanced } from "./ldap/LdapSettingsAdvanced";
 import { LdapSettingsConnection } from "./ldap/LdapSettingsConnection";
 import { LdapSettingsGeneral } from "./ldap/LdapSettingsGeneral";
@@ -15,6 +14,7 @@ import { LdapSettingsSearching } from "./ldap/LdapSettingsSearching";
 import { LdapSettingsSynchronization } from "./ldap/LdapSettingsSynchronization";
 import { toUserFederation } from "./routes/UserFederation";
 import { SettingsCache } from "./shared/SettingsCache";
+import { useServerInfo } from "../context/server-info/ServerInfoProvider";
 
 export type LdapComponentRepresentation = ComponentRepresentation & {
   config?: {
@@ -36,7 +36,8 @@ export const UserFederationLdapForm = ({
   const form = useFormContext<LdapComponentRepresentation>();
   const navigate = useNavigate();
   const { realm } = useRealm();
-  const isFeatureEnabled = useIsFeatureEnabled();
+  const kerberosDisabled =
+    useServerInfo().profileInfo?.disabledFeatures?.includes("KERBEROS");
 
   return (
     <>
@@ -61,7 +62,7 @@ export const UserFederationLdapForm = ({
           {
             title: t("kerberosIntegration"),
             panel: <LdapSettingsKerberosIntegration form={form} />,
-            isHidden: !isFeatureEnabled(Feature.Kerberos),
+            isHidden: kerberosDisabled,
           },
           { title: t("cacheSettings"), panel: <SettingsCache form={form} /> },
           {

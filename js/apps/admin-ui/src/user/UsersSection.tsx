@@ -1,3 +1,6 @@
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import {
   AlertVariant,
   Button,
@@ -26,34 +29,31 @@ import {
   WarningTriangleIcon,
 } from "@patternfly/react-icons";
 import type { IRowData } from "@patternfly/react-table";
-import { useState } from "react";
-import { useTranslation } from "react-i18next";
-import { Link, useNavigate } from "react-router-dom";
 
 import type ComponentRepresentation from "@keycloak/keycloak-admin-client/lib/defs/componentRepresentation";
-import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
 import type UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
+import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
+import { useServerInfo } from "../context/server-info/ServerInfoProvider";
 import { useAlerts } from "../components/alert/Alerts";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
-import { KeycloakSpinner } from "../components/keycloak-spinner/KeycloakSpinner";
 import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
+import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
+import { ViewHeader } from "../components/view-header/ViewHeader";
+import { useAdminClient, useFetch } from "../context/auth/AdminClient";
+import { useRealm } from "../context/realm-context/RealmContext";
+import { emptyFormatter } from "../util";
+import { toUser } from "./routes/User";
+import { toAddUser } from "./routes/AddUser";
+import helpUrls from "../help-urls";
+import { KeycloakSpinner } from "../components/keycloak-spinner/KeycloakSpinner";
 import { PermissionsTab } from "../components/permission-tab/PermissionTab";
-import { BruteUser, findUsers } from "../components/role-mapping/resource";
+import { toUsers, UserTab } from "./routes/Users";
 import {
   RoutableTabs,
   useRoutableTab,
 } from "../components/routable-tabs/RoutableTabs";
-import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
-import { ViewHeader } from "../components/view-header/ViewHeader";
 import { useAccess } from "../context/access/Access";
-import { useAdminClient, useFetch } from "../context/auth/AdminClient";
-import { useRealm } from "../context/realm-context/RealmContext";
-import helpUrls from "../help-urls";
-import { emptyFormatter } from "../util";
-import useIsFeatureEnabled, { Feature } from "../utils/useIsFeatureEnabled";
-import { toAddUser } from "./routes/AddUser";
-import { toUser } from "./routes/User";
-import { UserTab, toUsers } from "./routes/Users";
+import { BruteUser, findUsers } from "../components/role-mapping/resource";
 
 import "./user-section.css";
 
@@ -68,7 +68,7 @@ export default function UsersSection() {
   const [realm, setRealm] = useState<RealmRepresentation | undefined>();
   const [kebabOpen, setKebabOpen] = useState(false);
   const [selectedRows, setSelectedRows] = useState<UserRepresentation[]>([]);
-  const isFeatureEnabled = useIsFeatureEnabled();
+  const { profileInfo } = useServerInfo();
 
   const [key, setKey] = useState(0);
   const refresh = () => setKey(key + 1);
@@ -420,7 +420,9 @@ export default function UsersSection() {
               ]}
             />
           </Tab>
-          {isFeatureEnabled(Feature.AdminFineGrainedAuthz) && (
+          {!profileInfo?.disabledFeatures?.includes(
+            "ADMIN_FINE_GRAINED_AUTHZ"
+          ) && (
             <Tab
               id="permissions"
               data-testid="permissionsTab"

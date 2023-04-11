@@ -38,18 +38,16 @@ import {
 import { useAccess } from "../context/access/Access";
 import { useAdminClient, useFetch } from "../context/auth/AdminClient";
 import { useRealm } from "../context/realm-context/RealmContext";
+import { useServerInfo } from "../context/server-info/ServerInfoProvider";
 import {
   convertAttributeNameToForm,
   convertFormValuesToObject,
   convertToFormValues,
   exportClient,
 } from "../util";
-import useIsFeatureEnabled, { Feature } from "../utils/useIsFeatureEnabled";
 import { useParams } from "../utils/useParams";
 import useToggle from "../utils/useToggle";
 import { AdvancedTab } from "./AdvancedTab";
-import { ClientSessions } from "./ClientSessions";
-import { ClientSettings } from "./ClientSettings";
 import { AuthorizationEvaluate } from "./authorization/AuthorizationEvaluate";
 import { AuthorizationExport } from "./authorization/AuthorizationExport";
 import { AuthorizationPermissions } from "./authorization/Permissions";
@@ -57,6 +55,8 @@ import { AuthorizationPolicies } from "./authorization/Policies";
 import { AuthorizationResources } from "./authorization/Resources";
 import { AuthorizationScopes } from "./authorization/Scopes";
 import { AuthorizationSettings } from "./authorization/Settings";
+import { ClientSessions } from "./ClientSessions";
+import { ClientSettings } from "./ClientSettings";
 import { Credentials } from "./credentials/Credentials";
 import { Keys } from "./keys/Keys";
 import { SamlKeys } from "./keys/SamlKeys";
@@ -66,8 +66,8 @@ import {
 } from "./routes/AuthenticationTab";
 import { ClientParams, ClientTab, toClient } from "./routes/Client";
 import { toClientRole } from "./routes/ClientRole";
-import { ClientScopesTab, toClientScopesTab } from "./routes/ClientScopeTab";
 import { toClients } from "./routes/Clients";
+import { ClientScopesTab, toClientScopesTab } from "./routes/ClientScopeTab";
 import { toCreateRole } from "./routes/NewRole";
 import { ClientScopes } from "./scopes/ClientScopes";
 import { EvaluateScopes } from "./scopes/EvaluateScopes";
@@ -191,16 +191,17 @@ export default function ClientDetails() {
   const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
   const { realm } = useRealm();
-  const { hasAccess } = useAccess();
-  const isFeatureEnabled = useIsFeatureEnabled();
+  const { profileInfo } = useServerInfo();
 
+  const { hasAccess } = useAccess();
   const hasManageAuthorization = hasAccess("manage-authorization");
+  const permissionsEnabled =
+    !profileInfo?.disabledFeatures?.includes("ADMIN_FINE_GRAINED_AUTHZ") &&
+    hasManageAuthorization;
   const hasManageClients = hasAccess("manage-clients");
   const hasViewClients = hasAccess("view-clients");
   const hasViewUsers = hasAccess("view-users");
   const hasQueryUsers = hasAccess("query-users");
-  const permissionsEnabled =
-    isFeatureEnabled(Feature.AdminFineGrainedAuthz) && hasManageAuthorization;
 
   const navigate = useNavigate();
 
