@@ -36,8 +36,8 @@ import {
 import { ViewHeader } from "../../components/view-header/ViewHeader";
 import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
 import { useRealm } from "../../context/realm-context/RealmContext";
-import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
 import { toUpperCase } from "../../util";
+import useIsFeatureEnabled, { Feature } from "../../utils/useIsFeatureEnabled";
 import { useParams } from "../../utils/useParams";
 import { ExtendedFieldsForm } from "../component/ExtendedFieldsForm";
 import { toIdentityProviderAddMapper } from "../routes/AddMapper";
@@ -156,7 +156,7 @@ const MapperLink = ({ name, mapperId, provider }: MapperLinkProps) => {
 export default function DetailSettings() {
   const { t } = useTranslation("identity-providers");
   const { alias, providerId } = useParams<IdentityProviderParams>();
-
+  const isFeatureEnabled = useIsFeatureEnabled();
   const form = useForm<IdentityProviderRepresentation>();
   const { handleSubmit, getValues, reset } = form;
   const [provider, setProvider] = useState<IdentityProviderRepresentation>();
@@ -168,7 +168,6 @@ export default function DetailSettings() {
   const navigate = useNavigate();
   const { realm } = useRealm();
   const [key, setKey] = useState(0);
-  const { profileInfo } = useServerInfo();
   const refresh = () => setKey(key + 1);
 
   useFetch(
@@ -496,9 +495,7 @@ export default function DetailSettings() {
               ]}
             />
           </Tab>
-          {!profileInfo?.disabledFeatures?.includes(
-            "ADMIN_FINE_GRAINED_AUTHZ"
-          ) && (
+          {isFeatureEnabled(Feature.AdminFineGrainedAuthz) && (
             <Tab
               id="permissions"
               data-testid="permissionsTab"
