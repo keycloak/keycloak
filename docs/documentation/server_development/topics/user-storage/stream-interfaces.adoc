@@ -1,4 +1,4 @@
-
+[[_stream_based_interfaces]]
 === Stream-based interfaces
 
 Many of the user storage interfaces in {project_name} contain query methods that can return potentially large sets of objects,

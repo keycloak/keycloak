@@ -76,7 +76,9 @@ The next thing we want to do is to verify that this file exists on disk. We do n
     }
 ----
 
-In the `validateConfiguration()` method we get the configuration variable from the `ComponentModel` and we check to see if that file exists on disk. Notice that we use the `org.keycloak.common.util.EnvUtil.replace()` method. With this method any string that has `${}` within it will replace that with a system property value. The `${jboss.server.config.dir}` string corresponds to the `configuration/` directory of our server and is really useful for this example.
+The `validateConfiguration()` method provides the configuration variable from the `ComponentModel` to verify if that file exists on disk.
+Notice that the use of the `org.keycloak.common.util.EnvUtil.replace()` method. With this method any string that includes `${}` will replace that value with a system property value.
+The `${jboss.server.config.dir}` string corresponds to the `conf/` directory of our server and is really useful for this example.
 
 Next thing we have to do is remove the old `init()` method. We do this because user property files are going to be unique per provider instance. We move this logic to the `create()` method.
 
@@ -107,5 +109,5 @@ Now that the configuration is enabled, you can set the `path` variable when you 
 
 ifeval::[{project_community}==true]
 .Configured Provider
-image:images/storage-provider-with-config.png[]
+image:images/readonly-user-storage-provider-with-config.png[]
 endif::[]
