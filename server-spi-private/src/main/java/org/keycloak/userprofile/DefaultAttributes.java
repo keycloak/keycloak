@@ -271,6 +271,8 @@ public class DefaultAttributes extends HashMap<String, List<String>> implements 
                     values = (List<String>) value;
                 }
 
+                values = values.stream().map(String::trim).collect(Collectors.toList());
+
                 newAttributes.put(key, Collections.unmodifiableList(values));
             }
         }
