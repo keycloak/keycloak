@@ -21,6 +21,7 @@ import static org.keycloak.quarkus.runtime.Environment.isRebuildCheck;
 import static org.keycloak.quarkus.runtime.Environment.isRebuilt;
 import static org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand.*;
 import static org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand.AUTO_BUILD_OPTION_LONG;
+import static org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand.OPTIMIZED_BUILD_OPTION_LONG;
 import static org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource.parseConfigArgs;
 import static org.keycloak.quarkus.runtime.configuration.Configuration.OPTION_PART_SEPARATOR;
 import static org.keycloak.quarkus.runtime.configuration.Configuration.getBuildTimeProperty;
@@ -53,11 +54,9 @@ import org.keycloak.config.OptionCategory;
 import org.keycloak.quarkus.runtime.cli.command.AbstractCommand;
 import org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand;
 import org.keycloak.quarkus.runtime.cli.command.Build;
-import org.keycloak.quarkus.runtime.cli.command.Export;
-import org.keycloak.quarkus.runtime.cli.command.Import;
 import org.keycloak.quarkus.runtime.cli.command.ImportRealmMixin;
 import org.keycloak.quarkus.runtime.cli.command.Main;
-import org.keycloak.quarkus.runtime.cli.command.Start;
+import org.keycloak.quarkus.runtime.cli.command.ShowConfig;
 import org.keycloak.quarkus.runtime.cli.command.StartDev;
 import org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource;
 import org.keycloak.quarkus.runtime.configuration.PersistedConfigSource;
@@ -117,7 +116,7 @@ public final class Picocli {
                 Environment.forceDevProfile();
             }
         }
-        if (requiresReAugmentation(cmd)) {
+        if (requiresReAugmentation(getCurrentCommandSpec(cliArgs, cmd.getCommandSpec()))) {
             exitCode = runReAugmentation(cliArgs, cmd);
         }
 
@@ -128,12 +127,11 @@ public final class Picocli {
         return cliArgs.contains("--help")
                 || cliArgs.contains("-h")
                 || cliArgs.contains("--help-all")
-                || cliArgs.contains(Export.NAME)
-                || cliArgs.contains(Import.NAME);
+                || cliArgs.contains(ShowConfig.NAME);
     }
 
-    public static boolean requiresReAugmentation(CommandLine cmd) {
-        if (hasConfigChanges()) {
+    public static boolean requiresReAugmentation(CommandLine cmdCommand) {
+        if (hasConfigChanges(cmdCommand)) {
             if (!ConfigArgsConfigSource.getAllCliArgs().contains(StartDev.NAME) && "dev".equals(getConfig().getOptionalValue("kc.profile", String.class).orElse(null))) {
                 return false;
             }
@@ -174,17 +172,17 @@ public final class Picocli {
             cmd.getOut().println("Changes detected in configuration. Updating the server image.");
         }
 
-        int exitCode = 0;
+        int exitCode;
 
         List<String> configArgsList = new ArrayList<>(cliArgs);
 
-        configArgsList.replaceAll(Picocli::replaceStartWithBuild);
+        configArgsList.replaceAll(arg -> replaceCommandWithBuild(getCurrentCommandSpec(cliArgs, cmd.getCommandSpec()).getCommandName(), arg));
         configArgsList.removeIf(Picocli::isRuntimeOption);
 
         exitCode = cmd.execute(configArgsList.toArray(new String[0]));
 
         if(!isDevMode() && exitCode == cmd.getCommandSpec().exitCodeOnSuccess()) {
-            cmd.getOut().printf("Next time you run the server, just run:%n%n\t%s %s %s %s%n%n", Environment.getCommand(), Start.NAME, OPTIMIZED_BUILD_OPTION_LONG, String.join(" ", getSanitizedRuntimeCliOptions()));
+            cmd.getOut().printf("Next time you run the server, just run:%n%n\t%s %s %s %s%n%n", Environment.getCommand(), getCurrentCommandSpec(cliArgs, cmd.getCommandSpec()).getCommandName(), OPTIMIZED_BUILD_OPTION_LONG, String.join(" ", getSanitizedRuntimeCliOptions()));
         }
 
         return exitCode;
@@ -222,7 +220,7 @@ public final class Picocli {
         return false;
     }
 
-    private static boolean hasConfigChanges() {
+    private static boolean hasConfigChanges(CommandLine cmdCommand) {
         Optional<String> currentProfile = Optional.ofNullable(Environment.getProfile());
         Optional<String> persistedProfile = getBuildTimeProperty("kc.profile");
 
@@ -249,6 +247,17 @@ public final class Picocli {
 
             String persistedValue = getBuildTimeProperty(propertyName).orElse("");
             String runtimeValue = getRuntimeProperty(propertyName).orElse(null);
+
+            // compare only the relevant options for this command, as not all options might be set for this command
+            if (cmdCommand.getCommand() instanceof AbstractCommand) {
+                AbstractCommand abstractCommand = cmdCommand.getCommand();
+                PropertyMapper mapper = PropertyMappers.getMapper(propertyName);
+                if (mapper != null) {
+                    if (!abstractCommand.getOptionCategories().contains(mapper.getCategory())) {
+                        continue;
+                    }
+                }
+            }
 
             if (runtimeValue == null && isNotBlank(persistedValue)) {
                 PropertyMapper mapper = PropertyMappers.getMapper(propertyName);
@@ -375,7 +384,7 @@ public final class Picocli {
 
             if (!includeBuildTime && !includeRuntime) {
                 return;
-            } else if (includeRuntime && !includeBuildTime && (Start.NAME.equals(command.getCommandName())) || StartDev.NAME.equals(command.getCommandName())) {
+            } else if (includeRuntime && !includeBuildTime && !ShowConfig.NAME.equals(command.getCommandName())) {
                 includeBuildTime = isRebuilt() || !cliArgs.contains(OPTIMIZED_BUILD_OPTION_LONG);
             } else if (includeBuildTime && !includeRuntime) {
                 includeRuntime = isRebuildCheck();
@@ -519,8 +528,8 @@ public final class Picocli {
         return args;
     }
 
-    private static String replaceStartWithBuild(String arg) {
-        if (arg.equals(Start.NAME) || arg.equals(StartDev.NAME)) {
+    private static String replaceCommandWithBuild(String commandName, String arg) {
+        if (arg.equals(commandName)) {
             return Build.NAME;
         }
         return arg;

@@ -29,6 +29,9 @@ public abstract class AbstractExportImportCommand extends AbstractStartCommand i
     private final String action;
 
     @CommandLine.Mixin
+    OptimizedMixin optimizedMixin;
+
+    @CommandLine.Mixin
     HelpAllMixin helpAllMixin;
 
     protected AbstractExportImportCommand(String action) {
@@ -51,6 +54,9 @@ public abstract class AbstractExportImportCommand extends AbstractStartCommand i
                         optionCategory != OptionCategory.PROXY &&
                         optionCategory != OptionCategory.HOSTNAME &&
                         optionCategory != OptionCategory.METRICS &&
+                        optionCategory != OptionCategory.VAULT &&
+                        optionCategory != OptionCategory.SECURITY &&
+                        optionCategory != OptionCategory.CACHE &&
                         optionCategory != OptionCategory.HEALTH).collect(Collectors.toList());
     }
 

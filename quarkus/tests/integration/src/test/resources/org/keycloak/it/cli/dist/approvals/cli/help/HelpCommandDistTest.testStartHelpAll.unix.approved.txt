@@ -17,7 +17,7 @@ Options:
 --help-all           This same help message but with additional options.
 --import-realm       Import realms during startup by reading any realm configuration file from the
                        'data/import' directory.
---optimized          Use this option to achieve an optional startup time if you have previously
+--optimized          Use this option to achieve an optimal startup time if you have previously
                        built a server image using the 'build' command.
 
 Cache:

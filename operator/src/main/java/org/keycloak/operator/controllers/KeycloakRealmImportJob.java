@@ -165,7 +165,7 @@ public class KeycloakRealmImportJob extends OperatorManagedResource {
         var runBuild = (keycloak.getSpec().getImage() == null) ? "/opt/keycloak/bin/kc.sh build && " : "";
 
         var commandArgs = List.of("-c",
-                runBuild + "/opt/keycloak/bin/kc.sh import --file='" + importMntPath + getRealmName() + "-realm.json' " + override);
+                runBuild + "/opt/keycloak/bin/kc.sh import --optimized --file='" + importMntPath + getRealmName() + "-realm.json' " + override);
 
         keycloakContainer
                 .setCommand(command);

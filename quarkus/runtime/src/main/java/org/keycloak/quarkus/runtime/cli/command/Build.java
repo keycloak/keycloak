@@ -34,7 +34,6 @@ import picocli.CommandLine;
 import picocli.CommandLine.Command;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Command(name = Build.NAME,
         header = "Creates a new and optimized server image.",
@@ -91,7 +90,8 @@ public final class Build extends AbstractCommand implements Runnable {
     }
 
     public List<OptionCategory> getOptionCategories() {
-        return super.getOptionCategories().stream().filter(optionCategory -> optionCategory != OptionCategory.EXPORT && optionCategory != OptionCategory.IMPORT).collect(Collectors.toList());
+        // all options should work for the build command, otherwise re-augmentation might fail due to unknown options
+        return super.getOptionCategories();
     }
 
     private void exitWithErrorIfDevProfileIsSetAndNotStartDev() {
