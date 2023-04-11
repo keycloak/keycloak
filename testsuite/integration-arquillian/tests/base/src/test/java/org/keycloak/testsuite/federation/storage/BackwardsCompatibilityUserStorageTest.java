@@ -18,7 +18,6 @@
 
 package org.keycloak.testsuite.federation.storage;
 
-import jakarta.ws.rs.core.Response;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -48,7 +47,7 @@ import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginTotpPage;
 import org.keycloak.testsuite.util.TestAppHelper;
 
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.Arrays;
