@@ -48,6 +48,11 @@
         <org.jvnet.staxex.version>1.8.3</org.jvnet.staxex.version>
         <io.agroal.version>1.17</io.agroal.version>
 
+        <!--
+            Quarkiverse dependency versions
+         -->
+        <io.quarkiverse.systemd.notify.version>0.2.0</io.quarkiverse.systemd.notify.version>
+
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.plugin.version>3.8.1</maven.compiler.plugin.version>
         <maven.compiler.release>11</maven.compiler.release>

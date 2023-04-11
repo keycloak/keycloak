@@ -93,6 +93,12 @@
         </dependency>
 
         <dependency>
+            <groupId>io.quarkiverse.systemd.notify</groupId>
+            <artifactId>quarkus-systemd-notify</artifactId>
+            <version>${io.quarkiverse.systemd.notify.version}</version>
+        </dependency>
+
+        <dependency>
             <groupId>org.wildfly.security</groupId>
             <artifactId>wildfly-elytron</artifactId>
         </dependency>
