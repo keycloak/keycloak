@@ -3,7 +3,6 @@
 === Authentication flows
 
 An _authentication flow_ is a container of authentications, screens, and actions, during log in, registration, and other {project_name} workflows.
-To view all the flows, actions, and checks, each flow requires:
 
 ==== Built-in flows
 
