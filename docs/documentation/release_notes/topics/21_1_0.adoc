@@ -1,0 +1,3 @@
+= Old Account Console deprecated
+
+The old AngularJS based Account Console has not been the default since Keycloak 12, therefore we are finally officially deprecating it now. We expect this functionality to be fully removed in the next major version of Keycloak.
