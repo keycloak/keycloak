@@ -18,7 +18,6 @@
 package org.keycloak.services.managers;
 
 import org.jboss.logging.Logger;
-import org.keycloak.common.ClientConnection;
 import org.keycloak.common.util.ServerCookie.SameSiteAttributeValue;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
@@ -60,12 +59,26 @@ public class AuthenticationSessionManager {
     /**
      * Creates a fresh authentication session for the given realm . Optionally sets the browser
      * authentication session cookie {@link #AUTH_SESSION_ID} with the ID of the new session.
-     * @param realm
-     * @param browserCookie Set the cookie in the browser for the
+     * @param realm The realm
+     * @param browserCookie Set the cookie in the browser for the new session
      * @return
      */
     public RootAuthenticationSessionModel createAuthenticationSession(RealmModel realm, boolean browserCookie) {
-        RootAuthenticationSessionModel rootAuthSession = session.authenticationSessions().createRootAuthenticationSession(realm);
+        return createAuthenticationSession(realm, null, browserCookie);
+    }
+
+    /**
+     * Creates a fresh authentication session for the given realm . Optionally sets the browser
+     * authentication session cookie {@link #AUTH_SESSION_ID} with the ID of the new session.
+     * @param realm The realm
+     * @param id The id of the session, if null a new id is generated
+     * @param browserCookie Set the cookie in the browser for the new session
+     * @return
+     */
+    public RootAuthenticationSessionModel createAuthenticationSession(RealmModel realm, String id, boolean browserCookie) {
+        RootAuthenticationSessionModel rootAuthSession = id == null
+                ? session.authenticationSessions().createRootAuthenticationSession(realm)
+                : session.authenticationSessions().createRootAuthenticationSession(realm, id);
 
         if (browserCookie) {
             setAuthSessionCookie(rootAuthSession.getId(), realm);

@@ -17,6 +17,7 @@
 
 package org.keycloak.testsuite.admin;
 
+import org.apache.http.Header;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.client.methods.RequestBuilder;
@@ -51,7 +52,10 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.idm.*;
+import org.keycloak.sessions.RootAuthenticationSessionModel;
+import org.keycloak.sessions.StickySessionEncoderProvider;
 import org.keycloak.services.managers.AuthenticationManager;
+import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.auth.page.AuthRealm;
@@ -64,6 +68,7 @@ import javax.ws.rs.ClientErrorException;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
 import java.io.IOException;
+import java.net.HttpCookie;
 import java.net.URL;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -289,6 +294,24 @@ public class ImpersonationTest extends AbstractKeycloakTest {
         }
     }
 
+    private Map<String, List<HttpCookie>> parseCookies(HttpResponse res) {
+        Header[] cookieHeaders = res.getHeaders("Set-Cookie");
+        Map<String, List<HttpCookie>> cookies = new HashMap<>();
+        if (cookieHeaders != null) {
+            for (Header cookieHeader : cookieHeaders) {
+                for (HttpCookie httpCookie : HttpCookie.parse(cookieHeader.getValue())) {
+                    List<HttpCookie> list = cookies.get(httpCookie.getName());
+                    if (list == null) {
+                        list = new ArrayList<>();
+                        cookies.put(httpCookie.getName(), list);
+                    }
+                    list.add(httpCookie);
+                }
+            }
+        }
+        return cookies;
+   }
+
     private Set<Cookie> impersonate(Keycloak adminClient, String admin, String adminRealm) {
         BasicCookieStore cookieStore = new BasicCookieStore();
         try (CloseableHttpClient httpClient = HttpClientBuilder.create().setDefaultCookieStore(cookieStore).build()) {
@@ -300,6 +323,12 @@ public class ImpersonationTest extends AbstractKeycloakTest {
 
             HttpResponse res = httpClient.execute(req);
             String resBody = EntityUtils.toString(res.getEntity());
+            Map<String, List<HttpCookie>> cookieMap = parseCookies(res);
+            List<HttpCookie> authSessionIdCookies = cookieMap.get(AuthenticationSessionManager.AUTH_SESSION_ID);
+            Assert.assertNotNull("Cookie AUTH_SESSION_ID not returned after impersonation", authSessionIdCookies);
+            Assert.assertFalse("Cookie AUTH_SESSION_ID not returned after impersonation", authSessionIdCookies.isEmpty());
+            final String newAuthSessionId = authSessionIdCookies.stream().filter(c -> !c.hasExpired()).map(HttpCookie::getValue).findFirst().orElse(null);
+            Assert.assertNotNull("Cookie AUTH_SESSION_ID not returned after impersonation", newAuthSessionId);
 
             Assert.assertNotNull(resBody);
             Assert.assertTrue(resBody.contains("redirect"));
@@ -315,13 +344,22 @@ public class ImpersonationTest extends AbstractKeycloakTest {
             final String userId = impersonatedUserId;
             final UserSessionNotesHolder notesHolder = testingClient.server("test").fetch(session -> {
                 final RealmModel realm = session.realms().getRealmByName("test");
-                final UserModel user = session.users().getUserById(realm, userId);
-                final UserSessionModel userSession = session.sessions().getUserSessionsStream(realm, user).findFirst().get();
-                return new UserSessionNotesHolder(userSession.getNotes());
+                final StickySessionEncoderProvider encoder = session.getProvider(StickySessionEncoderProvider.class);
+                final String id = encoder.decodeSessionId(newAuthSessionId);
+                final UserSessionModel userSession = session.sessions().getUserSession(realm, id);
+                if (userSession != null) {
+                    final UserModel user = userSession.getUser();
+                    final RootAuthenticationSessionModel rootAuthSession = session.authenticationSessions().getRootAuthenticationSession(realm, id);
+                    if (rootAuthSession != null && user != null && userId.equals(user.getId())) {
+                        return new UserSessionNotesHolder(userSession.getNotes());
+                    }
+                }
+                return null;
             }, UserSessionNotesHolder.class);
 
             // Check impersonation details
             final Map<String, String> notes = notesHolder.getNotes();
+            Assert.assertNotNull(notes);
             Assert.assertNotNull(notes.get(ImpersonationSessionNote.IMPERSONATOR_ID.toString()));
             Assert.assertEquals(admin, notes.get(ImpersonationSessionNote.IMPERSONATOR_USERNAME.toString()));
 
