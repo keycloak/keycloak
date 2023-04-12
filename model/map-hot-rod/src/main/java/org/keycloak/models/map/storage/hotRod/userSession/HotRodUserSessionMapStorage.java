@@ -23,10 +23,9 @@ import org.keycloak.models.map.common.AbstractEntity;
 import org.keycloak.models.map.common.DeepCloner;
 import org.keycloak.models.map.common.StringKeyConverter;
 import org.keycloak.models.map.common.delegate.SimpleDelegateProvider;
-import org.keycloak.models.map.storage.MapKeycloakTransaction;
 import org.keycloak.models.map.storage.QueryParameters;
-import org.keycloak.models.map.storage.chm.ConcurrentHashMapCrudOperations;
-import org.keycloak.models.map.storage.chm.ConcurrentHashMapKeycloakTransaction;
+import org.keycloak.models.map.storage.CrudOperations;
+import org.keycloak.models.map.storage.chm.ConcurrentHashMapStorage;
 import org.keycloak.models.map.storage.chm.MapModelCriteriaBuilder;
 import org.keycloak.models.map.storage.criteria.DefaultModelCriteria;
 import org.keycloak.models.map.userSession.MapAuthenticatedClientSessionEntity;
@@ -44,31 +43,25 @@ import java.util.stream.Stream;
 
 import static org.keycloak.models.map.storage.ModelCriteriaBuilder.Operator.IN;
 
-public class HotRodUserSessionTransaction<K> extends ConcurrentHashMapKeycloakTransaction<K, MapUserSessionEntity, UserSessionModel> {
+public class HotRodUserSessionMapStorage<K> extends ConcurrentHashMapStorage<K, MapUserSessionEntity, UserSessionModel> {
 
-    private final MapKeycloakTransaction<MapAuthenticatedClientSessionEntity, AuthenticatedClientSessionModel> clientSessionTransaction;
+    private final ConcurrentHashMapStorage<String, MapAuthenticatedClientSessionEntity, AuthenticatedClientSessionModel> clientSessionStore;
 
-    public HotRodUserSessionTransaction(ConcurrentHashMapCrudOperations<MapUserSessionEntity, UserSessionModel> map,
-                                        StringKeyConverter<K> keyConverter,
-                                        DeepCloner cloner,
-                                        Map<SearchableModelField<? super UserSessionModel>, MapModelCriteriaBuilder.UpdatePredicatesFunc<K, MapUserSessionEntity, UserSessionModel>> fieldPredicates,
-                                        MapKeycloakTransaction<MapAuthenticatedClientSessionEntity, AuthenticatedClientSessionModel> clientSessionTransaction
+    public HotRodUserSessionMapStorage(CrudOperations<MapUserSessionEntity, UserSessionModel> map,
+                                       StringKeyConverter<K> keyConverter,
+                                       DeepCloner cloner,
+                                       Map<SearchableModelField<? super UserSessionModel>, MapModelCriteriaBuilder.UpdatePredicatesFunc<K, MapUserSessionEntity, UserSessionModel>> fieldPredicates,
+                                       ConcurrentHashMapStorage<String, MapAuthenticatedClientSessionEntity, AuthenticatedClientSessionModel> clientSessionStore
     ) {
         super(map, keyConverter, cloner, fieldPredicates);
-        this.clientSessionTransaction = clientSessionTransaction;
-    }
-
-    @Override
-    public void commit() {
-        super.commit();
-        clientSessionTransaction.commit();
+        this.clientSessionStore = clientSessionStore;
     }
 
     private MapAuthenticatedClientSessionEntity wrapClientSessionEntityToClientSessionAwareDelegate(MapAuthenticatedClientSessionEntity d) {
         return new MapAuthenticatedClientSessionEntityDelegate(new HotRodAuthenticatedClientSessionEntityDelegateProvider(d) {
             @Override
             public MapAuthenticatedClientSessionEntity loadClientSessionFromDatabase() {
-                return clientSessionTransaction.read(d.getId());
+                return clientSessionStore.read(d.getId());
             }
         });
     }
@@ -79,7 +72,7 @@ public class HotRodUserSessionTransaction<K> extends ConcurrentHashMapKeycloakTr
         return new MapUserSessionEntityDelegate(new SimpleDelegateProvider<>(entity)) {
 
             private boolean filterAndRemoveNotExpired(MapAuthenticatedClientSessionEntity clientSession) {
-                if (!clientSessionTransaction.exists(clientSession.getId())) {
+                if (!clientSessionStore.exists(clientSession.getId())) {
                     // If client session does not exist, remove the reference to it from userSessionEntity loaded in this transaction
                     entity.removeAuthenticatedClientSession(clientSession.getClientId());
                     return false;
@@ -94,7 +87,7 @@ public class HotRodUserSessionTransaction<K> extends ConcurrentHashMapKeycloakTr
                 return clientSessions == null ? null : clientSessions.stream()
                         // Find whether client session still exists in Infinispan and if not, remove the reference from user session
                         .filter(this::filterAndRemoveNotExpired)
-                        .map(HotRodUserSessionTransaction.this::wrapClientSessionEntityToClientSessionAwareDelegate)
+                        .map(HotRodUserSessionMapStorage.this::wrapClientSessionEntityToClientSessionAwareDelegate)
                         .collect(Collectors.toSet());
             }
 
@@ -103,13 +96,13 @@ public class HotRodUserSessionTransaction<K> extends ConcurrentHashMapKeycloakTr
                 return super.getAuthenticatedClientSession(clientUUID)
                         // Find whether client session still exists in Infinispan and if not, remove the reference from user sessionZ
                         .filter(this::filterAndRemoveNotExpired)
-                        .map(HotRodUserSessionTransaction.this::wrapClientSessionEntityToClientSessionAwareDelegate);
+                        .map(HotRodUserSessionMapStorage.this::wrapClientSessionEntityToClientSessionAwareDelegate);
             }
 
             @Override
             public void addAuthenticatedClientSession(MapAuthenticatedClientSessionEntity clientSession) {
                 super.addAuthenticatedClientSession(clientSession);
-                clientSessionTransaction.create(clientSession);
+                clientSessionStore.create(clientSession);
             }
 
             @Override
@@ -118,14 +111,14 @@ public class HotRodUserSessionTransaction<K> extends ConcurrentHashMapKeycloakTr
                 if (!clientSession.isPresent()) {
                     return false;
                 }
-                return super.removeAuthenticatedClientSession(clientUUID) && clientSessionTransaction.delete(clientSession.get().getId());
+                return super.removeAuthenticatedClientSession(clientUUID) && clientSessionStore.delete(clientSession.get().getId());
             }
 
             @Override
             public void clearAuthenticatedClientSessions() {
                 Set<MapAuthenticatedClientSessionEntity> clientSessions = super.getAuthenticatedClientSessions();
                 if (clientSessions != null) {
-                    clientSessionTransaction.delete(QueryParameters.withCriteria(
+                    clientSessionStore.delete(QueryParameters.withCriteria(
                             DefaultModelCriteria.<AuthenticatedClientSessionModel>criteria()
                                     .compare(HotRodAuthenticatedClientSessionEntity.ID, IN, clientSessions.stream()
                                             .map(MapAuthenticatedClientSessionEntity::getId))
@@ -157,7 +150,7 @@ public class HotRodUserSessionTransaction<K> extends ConcurrentHashMapKeycloakTr
         MapUserSessionEntity uSession = read(key);
         Set<MapAuthenticatedClientSessionEntity> clientSessions = uSession.getAuthenticatedClientSessions();
         if (clientSessions != null) {
-            clientSessionTransaction.delete(QueryParameters.withCriteria(
+            clientSessionStore.delete(QueryParameters.withCriteria(
                     DefaultModelCriteria.<AuthenticatedClientSessionModel>criteria()
                             .compare(HotRodAuthenticatedClientSessionEntity.ID, IN, clientSessions.stream()
                                     .map(MapAuthenticatedClientSessionEntity::getId))
@@ -169,7 +162,7 @@ public class HotRodUserSessionTransaction<K> extends ConcurrentHashMapKeycloakTr
 
     @Override
     public long delete(QueryParameters<UserSessionModel> queryParameters) {
-        clientSessionTransaction.delete(QueryParameters.withCriteria(
+        clientSessionStore.delete(QueryParameters.withCriteria(
                 DefaultModelCriteria.<AuthenticatedClientSessionModel>criteria()
                         .compare(HotRodAuthenticatedClientSessionEntity.ID, IN, read(queryParameters)
                                 .flatMap(userSession -> Optional.ofNullable(userSession.getAuthenticatedClientSessions()).orElse(Collections.emptySet()).stream().map(AbstractEntity::getId)))

@@ -27,7 +27,6 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.map.common.DeepCloner;
 import org.keycloak.models.map.common.HasRealmId;
-import org.keycloak.models.map.storage.MapKeycloakTransaction;
 import org.keycloak.models.map.storage.MapStorage;
 
 import org.keycloak.models.map.storage.ModelCriteriaBuilder.Operator;
@@ -53,21 +52,20 @@ public class MapGroupProvider implements GroupProvider {
 
     private static final Logger LOG = Logger.getLogger(MapGroupProvider.class);
     private final KeycloakSession session;
-    final MapKeycloakTransaction<MapGroupEntity, GroupModel> tx;
-    private final boolean txHasRealmId;
+    final MapStorage<MapGroupEntity, GroupModel> store;
+    private final boolean storeHasRealmId;
 
     public MapGroupProvider(KeycloakSession session, MapStorage<MapGroupEntity, GroupModel> groupStore) {
         this.session = session;
-        this.tx = groupStore.createTransaction(session);
-        session.getTransactionManager().enlist(tx);
-        this.txHasRealmId = tx instanceof HasRealmId;
+        this.store = groupStore;
+        this.storeHasRealmId = store instanceof HasRealmId;
     }
 
-    private MapKeycloakTransaction<MapGroupEntity, GroupModel> txInRealm(RealmModel realm) {
-        if (txHasRealmId) {
-            ((HasRealmId) tx).setRealmId(realm == null ? null : realm.getId());
+    private MapStorage<MapGroupEntity, GroupModel> storeWithRealm(RealmModel realm) {
+        if (storeHasRealmId) {
+            ((HasRealmId) store).setRealmId(realm == null ? null : realm.getId());
         }
-        return tx;
+        return store;
     }
 
     private Function<MapGroupEntity, GroupModel> entityToAdapterFunc(RealmModel realm) {
@@ -89,7 +87,7 @@ public class MapGroupProvider implements GroupProvider {
         LOG.tracef("getGroupById(%s, %s)%s", realm, id, getShortStackTrace());
 
         String realmId = realm.getId();
-        MapGroupEntity entity = txInRealm(realm).read(id);
+        MapGroupEntity entity = storeWithRealm(realm).read(id);
         return (entity == null || ! Objects.equals(realmId, entity.getRealmId()))
                 ? null
                 : entityToAdapterFunc(realm).apply(entity);
@@ -114,7 +112,7 @@ public class MapGroupProvider implements GroupProvider {
             queryParameters = queryParametersModifier.apply(queryParameters);
         }
 
-        return txInRealm(realm).read(queryParameters)
+        return storeWithRealm(realm).read(queryParameters)
                 .map(entityToAdapterFunc(realm))
                 ;
     }
@@ -129,7 +127,7 @@ public class MapGroupProvider implements GroupProvider {
             mcb = mcb.compare(SearchableFields.NAME, Operator.ILIKE, "%" + search + "%");
         }
 
-        return txInRealm(realm).read(withCriteria(mcb).pagination(first, max, SearchableFields.NAME))
+        return storeWithRealm(realm).read(withCriteria(mcb).pagination(first, max, SearchableFields.NAME))
                 .map(entityToAdapterFunc(realm));
     }
 
@@ -143,7 +141,7 @@ public class MapGroupProvider implements GroupProvider {
             mcb = mcb.compare(SearchableFields.PARENT_ID, Operator.NOT_EXISTS);
         }
 
-        return txInRealm(realm).getCount(withCriteria(mcb));
+        return storeWithRealm(realm).getCount(withCriteria(mcb));
     }
 
     @Override
@@ -193,7 +191,7 @@ public class MapGroupProvider implements GroupProvider {
         }
 
 
-        return txInRealm(realm).read(withCriteria(mcb).pagination(firstResult, maxResults, SearchableFields.NAME))
+        return storeWithRealm(realm).read(withCriteria(mcb).pagination(firstResult, maxResults, SearchableFields.NAME))
                 .map(MapGroupEntity::getId)
                 .map(id -> {
                     GroupModel groupById = session.groups().getGroupById(realm, id);
@@ -212,7 +210,7 @@ public class MapGroupProvider implements GroupProvider {
             mcb = mcb.compare(GroupModel.SearchableFields.ATTRIBUTE, Operator.EQ, entry.getKey(), entry.getValue());
         }
 
-        return txInRealm(realm).read(withCriteria(mcb).pagination(firstResult, maxResults, SearchableFields.NAME))
+        return storeWithRealm(realm).read(withCriteria(mcb).pagination(firstResult, maxResults, SearchableFields.NAME))
                 .map(entityToAdapterFunc(realm));
     }
 
@@ -228,7 +226,7 @@ public class MapGroupProvider implements GroupProvider {
                 mcb.compare(SearchableFields.PARENT_ID, Operator.NOT_EXISTS) : 
                 mcb.compare(SearchableFields.PARENT_ID, Operator.EQ, toParent.getId());
 
-        if (txInRealm(realm).exists(withCriteria(mcb))) {
+        if (storeWithRealm(realm).exists(withCriteria(mcb))) {
             throw new ModelDuplicateException("Group with name '" + name + "' in realm " + realm.getName() + " already exists for requested parent" );
         }
 
@@ -237,10 +235,10 @@ public class MapGroupProvider implements GroupProvider {
         entity.setRealmId(realm.getId());
         entity.setName(name);
         entity.setParentId(toParent == null ? null : toParent.getId());
-        if (id != null && txInRealm(realm).exists(id)) {
+        if (id != null && storeWithRealm(realm).exists(id)) {
             throw new ModelDuplicateException("Group exists: " + id);
         }
-        entity = txInRealm(realm).create(entity);
+        entity = storeWithRealm(realm).create(entity);
 
         return entityToAdapterFunc(realm).apply(entity);
     }
@@ -252,7 +250,7 @@ public class MapGroupProvider implements GroupProvider {
 
         session.invalidate(GROUP_BEFORE_REMOVE, realm, group);
 
-        txInRealm(realm).delete(group.getId());
+        storeWithRealm(realm).delete(group.getId());
         
         session.invalidate(GROUP_AFTER_REMOVE, realm, group);
 
@@ -279,7 +277,7 @@ public class MapGroupProvider implements GroupProvider {
                 mcb.compare(SearchableFields.PARENT_ID, Operator.NOT_EXISTS) : 
                 mcb.compare(SearchableFields.PARENT_ID, Operator.EQ, toParent.getId());
 
-        try (Stream<MapGroupEntity> possibleSiblings = txInRealm(realm).read(withCriteria(mcb))) {
+        try (Stream<MapGroupEntity> possibleSiblings = storeWithRealm(realm).read(withCriteria(mcb))) {
             if (possibleSiblings.findAny().isPresent()) {
                 throw new ModelDuplicateException("Parent already contains subgroup named '" + group.getName() + "'");
             }
@@ -328,7 +326,7 @@ public class MapGroupProvider implements GroupProvider {
           .compare(SearchableFields.PARENT_ID, Operator.EQ, (Object) null)
           .compare(SearchableFields.NAME, Operator.EQ, subGroup.getName());
 
-        try (Stream<MapGroupEntity> possibleSiblings = txInRealm(realm).read(withCriteria(mcb))) {
+        try (Stream<MapGroupEntity> possibleSiblings = storeWithRealm(realm).read(withCriteria(mcb))) {
             if (possibleSiblings.findAny().isPresent()) {
                 throw new ModelDuplicateException("There is already a top level group named '" + subGroup.getName() + "'");
             }
@@ -342,7 +340,7 @@ public class MapGroupProvider implements GroupProvider {
         DefaultModelCriteria<GroupModel> mcb = criteria();
         mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
           .compare(SearchableFields.ASSIGNED_ROLE, Operator.EQ, role.getId());
-        try (Stream<MapGroupEntity> toRemove = txInRealm(realm).read(withCriteria(mcb))) {
+        try (Stream<MapGroupEntity> toRemove = storeWithRealm(realm).read(withCriteria(mcb))) {
             toRemove
                 .map(groupEntity -> session.groups().getGroupById(realm, groupEntity.getId()))
                 .forEach(groupModel -> groupModel.deleteRoleMapping(role));
@@ -354,7 +352,7 @@ public class MapGroupProvider implements GroupProvider {
         DefaultModelCriteria<GroupModel> mcb = criteria();
         mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId());
 
-        txInRealm(realm).delete(withCriteria(mcb));
+        storeWithRealm(realm).delete(withCriteria(mcb));
     }
 
     @Override
@@ -368,6 +366,6 @@ public class MapGroupProvider implements GroupProvider {
                 .compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
                 .compare(SearchableFields.PARENT_ID, Operator.EQ, parentId);
 
-        return txInRealm(realm).read(withCriteria(mcb)).map(entityToAdapterFunc(realm));
+        return storeWithRealm(realm).read(withCriteria(mcb)).map(entityToAdapterFunc(realm));
     }
 }

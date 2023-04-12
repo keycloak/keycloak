@@ -23,7 +23,8 @@ import javax.persistence.criteria.Selection;
 
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserModel;
-import org.keycloak.models.map.storage.jpa.JpaMapKeycloakTransaction;
+import org.keycloak.models.map.storage.MapStorage;
+import org.keycloak.models.map.storage.jpa.JpaMapStorage;
 import org.keycloak.models.map.storage.jpa.JpaModelCriteriaBuilder;
 import org.keycloak.models.map.storage.jpa.JpaRootEntity;
 import org.keycloak.models.map.storage.jpa.user.delegate.JpaUserDelegateProvider;
@@ -34,13 +35,13 @@ import org.keycloak.models.map.user.MapUserEntityDelegate;
 import static org.keycloak.models.map.storage.jpa.Constants.CURRENT_SCHEMA_VERSION_USER;
 
 /**
- * A {@link org.keycloak.models.map.storage.MapKeycloakTransaction} implementation for user entities.
+ * A {@link MapStorage} implementation for user entities.
  *
  * @author <a href="mailto:sguilhen@redhat.com">Stefan Guilhen</a>
  */
-public class JpaUserMapKeycloakTransaction extends JpaMapKeycloakTransaction<JpaUserEntity, MapUserEntity, UserModel> {
+public class JpaUserMapStorage extends JpaMapStorage<JpaUserEntity, MapUserEntity, UserModel> {
 
-    public JpaUserMapKeycloakTransaction(KeycloakSession session,final EntityManager em) {
+    public JpaUserMapStorage(KeycloakSession session, final EntityManager em) {
         super(session, JpaUserEntity.class, UserModel.class, em);
     }
 

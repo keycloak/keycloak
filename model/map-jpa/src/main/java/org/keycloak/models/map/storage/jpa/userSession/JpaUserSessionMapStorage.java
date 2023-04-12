@@ -14,51 +14,47 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.models.map.storage.jpa.event.auth;
+package org.keycloak.models.map.storage.jpa.userSession;
 
 import javax.persistence.EntityManager;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.Root;
 import javax.persistence.criteria.Selection;
 
-import org.keycloak.events.Event;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.map.events.MapAuthEventEntity;
-import org.keycloak.models.map.storage.jpa.JpaMapKeycloakTransaction;
+import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.map.storage.jpa.JpaMapStorage;
 import org.keycloak.models.map.storage.jpa.JpaModelCriteriaBuilder;
 import org.keycloak.models.map.storage.jpa.JpaRootEntity;
-import org.keycloak.models.map.storage.jpa.event.auth.entity.JpaAuthEventEntity;
+import org.keycloak.models.map.storage.jpa.userSession.entity.JpaUserSessionEntity;
+import org.keycloak.models.map.userSession.MapUserSessionEntity;
 
-import static org.keycloak.models.map.storage.jpa.Constants.CURRENT_SCHEMA_VERSION_AUTH_EVENT;
+import static org.keycloak.models.map.storage.jpa.Constants.CURRENT_SCHEMA_VERSION_USER_SESSION;
 
-/**
- * A {@link org.keycloak.models.map.storage.MapKeycloakTransaction} implementation for auth event entities.
- *
- * @author <a href="mailto:sguilhen@redhat.com">Stefan Guilhen</a>
- */
-public class JpaAuthEventMapKeycloakTransaction extends JpaMapKeycloakTransaction<JpaAuthEventEntity, MapAuthEventEntity, Event>  {
+public class JpaUserSessionMapStorage extends JpaMapStorage<JpaUserSessionEntity, MapUserSessionEntity, UserSessionModel> {
 
-    public JpaAuthEventMapKeycloakTransaction(KeycloakSession session, final EntityManager em) {
-        super(session, JpaAuthEventEntity.class, Event.class, em);
+    public JpaUserSessionMapStorage(KeycloakSession session, final EntityManager em) {
+        super(session, JpaUserSessionEntity.class, UserSessionModel.class, em);
     }
 
     @Override
-    protected Selection<? extends JpaAuthEventEntity> selectCbConstruct(CriteriaBuilder cb, Root<JpaAuthEventEntity> root) {
+    protected Selection<? extends JpaUserSessionEntity> selectCbConstruct(CriteriaBuilder cb, Root<JpaUserSessionEntity> root) {
         return root;
     }
 
     @Override
     protected void setEntityVersion(JpaRootEntity entity) {
-        entity.setEntityVersion(CURRENT_SCHEMA_VERSION_AUTH_EVENT);
+        entity.setEntityVersion(CURRENT_SCHEMA_VERSION_USER_SESSION);
     }
 
     @Override
     protected JpaModelCriteriaBuilder createJpaModelCriteriaBuilder() {
-        return new JpaAuthEventModelCriteriaBuilder();
+        return new JpaUserSessionModelCriteriaBuilder();
     }
 
     @Override
-    protected MapAuthEventEntity mapToEntityDelegate(JpaAuthEventEntity original) {
+    protected MapUserSessionEntity mapToEntityDelegate(JpaUserSessionEntity original) {
         return original;
     }
+
 }

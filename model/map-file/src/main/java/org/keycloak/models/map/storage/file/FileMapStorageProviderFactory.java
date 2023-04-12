@@ -22,7 +22,6 @@ import org.keycloak.component.AmphibianProviderFactory;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.SingleUseObjectValueModel;
 import org.keycloak.models.map.authorization.entity.MapPermissionTicketEntity;
 import org.keycloak.models.map.authorization.entity.MapPolicyEntity;
 import org.keycloak.models.map.authorization.entity.MapResourceEntity;
@@ -30,20 +29,17 @@ import org.keycloak.models.map.authorization.entity.MapResourceServerEntity;
 import org.keycloak.models.map.authorization.entity.MapScopeEntity;
 import org.keycloak.models.map.client.MapClientEntity;
 import org.keycloak.models.map.clientscope.MapClientScopeEntity;
-import org.keycloak.models.map.common.AbstractEntity;
-import org.keycloak.models.map.common.UpdatableEntity;
+import org.keycloak.models.map.common.SessionAttributesUtils;
 import org.keycloak.models.map.group.MapGroupEntity;
 import org.keycloak.models.map.realm.MapRealmEntity;
 import org.keycloak.models.map.role.MapRoleEntity;
 import org.keycloak.models.map.storage.MapStorageProvider;
 import org.keycloak.models.map.storage.MapStorageProviderFactory;
-import org.keycloak.models.map.storage.ModelEntityUtil;
 import org.keycloak.models.map.user.MapUserEntity;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
+
 import java.io.File;
-import java.nio.file.FileSystem;
 import java.nio.file.Path;
-import java.util.ConcurrentModificationException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -65,9 +61,9 @@ public class FileMapStorageProviderFactory implements AmphibianProviderFactory<M
     public static final String PROVIDER_ID = "file";
     private Path rootRealmsDirectory;
     private final Map<String, Function<String, Path>> rootAreaDirectories = new HashMap<>();    // Function: (realmId) -> path
-    private final Map<Class<?>, FileMapStorage<?, ?>> storages = new HashMap<>();
+    private final int factoryId = SessionAttributesUtils.grabNewFactoryIdentifier();
 
-    private static final Map<Class<?>, Function<?, String[]>> UNIQUE_HUMAN_READABLE_NAME_FIELD = Map.ofEntries(
+    protected static final Map<Class<?>, Function<?, String[]>> UNIQUE_HUMAN_READABLE_NAME_FIELD = Map.ofEntries(
       entry(MapClientEntity.class,          ((Function<MapClientEntity, String[]>) v -> new String[] { v.getClientId() })),
       entry(MapClientScopeEntity.class,     ((Function<MapClientScopeEntity, String[]>) v -> new String[] { v.getName() })),
       entry(MapGroupEntity.class,           ((Function<MapGroupEntity, String[]>) v -> v.getParentId() == null 
@@ -89,7 +85,7 @@ public class FileMapStorageProviderFactory implements AmphibianProviderFactory<M
 
     @Override
     public MapStorageProvider create(KeycloakSession session) {
-        return new FileMapStorageProvider(this);
+        return SessionAttributesUtils.createProviderIfAbsent(session, factoryId, FileMapStorageProvider.class, session1 -> new FileMapStorageProvider(session1, this, factoryId));
     }
 
     @Override
@@ -151,22 +147,8 @@ public class FileMapStorageProviderFactory implements AmphibianProviderFactory<M
         return PROVIDER_ID;
     }
 
-    public <V extends AbstractEntity & UpdatableEntity, M> FileMapStorage<V, M> initFileStorage(Class<M> modelType) {
-        String name = getModelName(modelType, modelType.getSimpleName());
-        final Class<V> et = ModelEntityUtil.getEntityType(modelType);
-        @SuppressWarnings("unchecked")
-        FileMapStorage<V, M> res = new FileMapStorage<>(et, (Function<V, String[]>) UNIQUE_HUMAN_READABLE_NAME_FIELD.get(et), rootAreaDirectories.get(name));
-        return res;
+    public Function<String, Path> getDataDirectoryFunc(String areaName) {
+        return rootAreaDirectories.get(areaName);
     }
 
-    <M> FileMapStorage getStorage(Class<M> modelType, Flag[] flags) {
-        try {
-            if (modelType == SingleUseObjectValueModel.class) {
-                throw new IllegalArgumentException("Unsupported file storage: " + ModelEntityUtil.getModelName(modelType));
-            }
-            return storages.computeIfAbsent(modelType, n -> initFileStorage(modelType));
-        } catch (ConcurrentModificationException ex) {
-            return storages.get(modelType);
-        }
-    }
 }

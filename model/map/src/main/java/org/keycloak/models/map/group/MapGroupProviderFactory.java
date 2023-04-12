@@ -42,7 +42,7 @@ public class MapGroupProviderFactory extends AbstractMapProviderFactory<MapGroup
 
     @Override
     public MapGroupProvider createNew(KeycloakSession session) {
-        return new MapGroupProvider(session, getStorage(session));
+        return new MapGroupProvider(session, getMapStorage(session));
     }
 
     @Override

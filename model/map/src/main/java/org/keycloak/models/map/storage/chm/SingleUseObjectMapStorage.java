@@ -21,6 +21,7 @@ import org.keycloak.models.SingleUseObjectValueModel;
 import org.keycloak.models.map.common.DeepCloner;
 import org.keycloak.models.map.common.StringKeyConverter;
 import org.keycloak.models.map.singleUseObject.MapSingleUseObjectEntity;
+import org.keycloak.models.map.storage.CrudOperations;
 import org.keycloak.storage.SearchableModelField;
 
 import java.util.Map;
@@ -28,12 +29,12 @@ import java.util.Map;
 /**
  * @author <a href="mailto:mkanis@redhat.com">Martin Kanis</a>
  */
-public class SingleUseObjectKeycloakTransaction<K> extends ConcurrentHashMapKeycloakTransaction<K, MapSingleUseObjectEntity, SingleUseObjectValueModel> {
+public class SingleUseObjectMapStorage<K> extends ConcurrentHashMapStorage<K, MapSingleUseObjectEntity, SingleUseObjectValueModel> {
 
-    public SingleUseObjectKeycloakTransaction(ConcurrentHashMapCrudOperations<MapSingleUseObjectEntity, SingleUseObjectValueModel> map,
-                                              StringKeyConverter<K> keyConverter,
-                                              DeepCloner cloner,
-                                              Map<SearchableModelField<? super SingleUseObjectValueModel>,
+    public SingleUseObjectMapStorage(CrudOperations<MapSingleUseObjectEntity, SingleUseObjectValueModel> map,
+                                     StringKeyConverter<K> keyConverter,
+                                     DeepCloner cloner,
+                                     Map<SearchableModelField<? super SingleUseObjectValueModel>,
                                                     MapModelCriteriaBuilder.UpdatePredicatesFunc<K, MapSingleUseObjectEntity, SingleUseObjectValueModel>> fieldPredicates) {
         super(map, keyConverter, cloner, fieldPredicates);
     }

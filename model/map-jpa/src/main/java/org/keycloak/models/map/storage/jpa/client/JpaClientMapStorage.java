@@ -26,15 +26,15 @@ import org.keycloak.models.map.client.MapClientEntity;
 import org.keycloak.models.map.client.MapClientEntityDelegate;
 import org.keycloak.models.map.storage.jpa.client.entity.JpaClientEntity;
 import static org.keycloak.models.map.storage.jpa.Constants.CURRENT_SCHEMA_VERSION_CLIENT;
-import org.keycloak.models.map.storage.jpa.JpaMapKeycloakTransaction;
+import org.keycloak.models.map.storage.jpa.JpaMapStorage;
 import org.keycloak.models.map.storage.jpa.JpaModelCriteriaBuilder;
 import org.keycloak.models.map.storage.jpa.JpaRootEntity;
 import org.keycloak.models.map.storage.jpa.client.delegate.JpaClientDelegateProvider;
 
-public class JpaClientMapKeycloakTransaction extends JpaMapKeycloakTransaction<JpaClientEntity, MapClientEntity, ClientModel> {
+public class JpaClientMapStorage extends JpaMapStorage<JpaClientEntity, MapClientEntity, ClientModel> {
 
     @SuppressWarnings("unchecked")
-    public JpaClientMapKeycloakTransaction(KeycloakSession session, EntityManager em) {
+    public JpaClientMapStorage(KeycloakSession session, EntityManager em) {
         super(session, JpaClientEntity.class, ClientModel.class, em);
     }
 

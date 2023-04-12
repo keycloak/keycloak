@@ -14,51 +14,52 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.models.map.storage.jpa.singleUseObject;
+package org.keycloak.models.map.storage.jpa.event.auth;
 
 import javax.persistence.EntityManager;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.Root;
 import javax.persistence.criteria.Selection;
 
-import org.keycloak.models.SingleUseObjectValueModel;
+import org.keycloak.events.Event;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.map.singleUseObject.MapSingleUseObjectEntity;
-import org.keycloak.models.map.storage.jpa.JpaMapKeycloakTransaction;
+import org.keycloak.models.map.events.MapAuthEventEntity;
+import org.keycloak.models.map.storage.MapStorage;
+import org.keycloak.models.map.storage.jpa.JpaMapStorage;
 import org.keycloak.models.map.storage.jpa.JpaModelCriteriaBuilder;
 import org.keycloak.models.map.storage.jpa.JpaRootEntity;
-import org.keycloak.models.map.storage.jpa.singleUseObject.entity.JpaSingleUseObjectEntity;
+import org.keycloak.models.map.storage.jpa.event.auth.entity.JpaAuthEventEntity;
 
-import static org.keycloak.models.map.storage.jpa.Constants.CURRENT_SCHEMA_VERSION_SINGLE_USE_OBJECT;
+import static org.keycloak.models.map.storage.jpa.Constants.CURRENT_SCHEMA_VERSION_AUTH_EVENT;
 
 /**
- * A {@link org.keycloak.models.map.storage.MapKeycloakTransaction} implementation for single-use object entities.
+ * A {@link MapStorage} implementation for auth event entities.
  *
  * @author <a href="mailto:sguilhen@redhat.com">Stefan Guilhen</a>
  */
-public class JpaSingleUseObjectMapKeycloakTransaction extends JpaMapKeycloakTransaction<JpaSingleUseObjectEntity, MapSingleUseObjectEntity, SingleUseObjectValueModel> {
+public class JpaAuthEventMapStorage extends JpaMapStorage<JpaAuthEventEntity, MapAuthEventEntity, Event> {
 
-    public JpaSingleUseObjectMapKeycloakTransaction(KeycloakSession session, final EntityManager em) {
-        super(session, JpaSingleUseObjectEntity.class, SingleUseObjectValueModel.class, em);
+    public JpaAuthEventMapStorage(KeycloakSession session, final EntityManager em) {
+        super(session, JpaAuthEventEntity.class, Event.class, em);
     }
 
     @Override
-    protected Selection<? extends JpaSingleUseObjectEntity> selectCbConstruct(CriteriaBuilder cb, Root<JpaSingleUseObjectEntity> root) {
+    protected Selection<? extends JpaAuthEventEntity> selectCbConstruct(CriteriaBuilder cb, Root<JpaAuthEventEntity> root) {
         return root;
     }
 
     @Override
     protected void setEntityVersion(JpaRootEntity entity) {
-        entity.setEntityVersion(CURRENT_SCHEMA_VERSION_SINGLE_USE_OBJECT);
+        entity.setEntityVersion(CURRENT_SCHEMA_VERSION_AUTH_EVENT);
     }
 
     @Override
     protected JpaModelCriteriaBuilder createJpaModelCriteriaBuilder() {
-        return new JpaSingleUseObjectModelCriteriaBuilder();
+        return new JpaAuthEventModelCriteriaBuilder();
     }
 
     @Override
-    protected MapSingleUseObjectEntity mapToEntityDelegate(JpaSingleUseObjectEntity original) {
+    protected MapAuthEventEntity mapToEntityDelegate(JpaAuthEventEntity original) {
         return original;
     }
 }

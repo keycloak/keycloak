@@ -30,7 +30,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiFunction;
 
 import javax.naming.InitialContext;
@@ -82,6 +81,7 @@ import org.keycloak.models.map.client.MapProtocolMapperEntity;
 import org.keycloak.models.map.client.MapProtocolMapperEntityImpl;
 import org.keycloak.models.map.common.DeepCloner;
 import org.keycloak.models.map.lock.MapLockEntity;
+import org.keycloak.models.map.common.SessionAttributesUtils;
 import org.keycloak.models.map.realm.entity.MapAuthenticationExecutionEntity;
 import org.keycloak.models.map.realm.entity.MapAuthenticationExecutionEntityImpl;
 import org.keycloak.models.map.realm.entity.MapAuthenticationFlowEntity;
@@ -102,48 +102,48 @@ import org.keycloak.models.map.realm.entity.MapRequiredCredentialEntity;
 import org.keycloak.models.map.realm.entity.MapRequiredCredentialEntityImpl;
 import org.keycloak.models.map.realm.entity.MapWebAuthnPolicyEntity;
 import org.keycloak.models.map.realm.entity.MapWebAuthnPolicyEntityImpl;
-import org.keycloak.models.map.storage.MapKeycloakTransaction;
+import org.keycloak.models.map.storage.MapStorage;
 import org.keycloak.models.map.storage.MapStorageProvider;
 import org.keycloak.models.map.storage.MapStorageProviderFactory;
-import org.keycloak.models.map.storage.jpa.authSession.JpaRootAuthenticationSessionMapKeycloakTransaction;
+import org.keycloak.models.map.storage.jpa.authSession.JpaRootAuthenticationSessionMapStorage;
 import org.keycloak.models.map.storage.jpa.authSession.entity.JpaAuthenticationSessionEntity;
 import org.keycloak.models.map.storage.jpa.authSession.entity.JpaRootAuthenticationSessionEntity;
-import org.keycloak.models.map.storage.jpa.authorization.permission.JpaPermissionMapKeycloakTransaction;
+import org.keycloak.models.map.storage.jpa.authorization.permission.JpaPermissionMapStorage;
 import org.keycloak.models.map.storage.jpa.authorization.permission.entity.JpaPermissionEntity;
-import org.keycloak.models.map.storage.jpa.authorization.policy.JpaPolicyMapKeycloakTransaction;
+import org.keycloak.models.map.storage.jpa.authorization.policy.JpaPolicyMapStorage;
 import org.keycloak.models.map.storage.jpa.authorization.policy.entity.JpaPolicyEntity;
-import org.keycloak.models.map.storage.jpa.authorization.resource.JpaResourceMapKeycloakTransaction;
+import org.keycloak.models.map.storage.jpa.authorization.resource.JpaResourceMapStorage;
 import org.keycloak.models.map.storage.jpa.authorization.resource.entity.JpaResourceEntity;
-import org.keycloak.models.map.storage.jpa.authorization.resourceServer.JpaResourceServerMapKeycloakTransaction;
+import org.keycloak.models.map.storage.jpa.authorization.resourceServer.JpaResourceServerMapStorage;
 import org.keycloak.models.map.storage.jpa.authorization.resourceServer.entity.JpaResourceServerEntity;
-import org.keycloak.models.map.storage.jpa.authorization.scope.JpaScopeMapKeycloakTransaction;
+import org.keycloak.models.map.storage.jpa.authorization.scope.JpaScopeMapStorage;
 import org.keycloak.models.map.storage.jpa.authorization.scope.entity.JpaScopeEntity;
-import org.keycloak.models.map.storage.jpa.client.JpaClientMapKeycloakTransaction;
+import org.keycloak.models.map.storage.jpa.client.JpaClientMapStorage;
 import org.keycloak.models.map.storage.jpa.client.entity.JpaClientEntity;
-import org.keycloak.models.map.storage.jpa.clientScope.JpaClientScopeMapKeycloakTransaction;
+import org.keycloak.models.map.storage.jpa.clientScope.JpaClientScopeMapStorage;
 import org.keycloak.models.map.storage.jpa.clientScope.entity.JpaClientScopeEntity;
-import org.keycloak.models.map.storage.jpa.event.admin.JpaAdminEventMapKeycloakTransaction;
+import org.keycloak.models.map.storage.jpa.event.admin.JpaAdminEventMapStorage;
 import org.keycloak.models.map.storage.jpa.event.admin.entity.JpaAdminEventEntity;
-import org.keycloak.models.map.storage.jpa.event.auth.JpaAuthEventMapKeycloakTransaction;
+import org.keycloak.models.map.storage.jpa.event.auth.JpaAuthEventMapStorage;
 import org.keycloak.models.map.storage.jpa.event.auth.entity.JpaAuthEventEntity;
-import org.keycloak.models.map.storage.jpa.group.JpaGroupMapKeycloakTransaction;
+import org.keycloak.models.map.storage.jpa.group.JpaGroupMapStorage;
 import org.keycloak.models.map.storage.jpa.group.entity.JpaGroupEntity;
-import org.keycloak.models.map.storage.jpa.lock.JpaLockMapKeycloakTransaction;
+import org.keycloak.models.map.storage.jpa.lock.JpaLockMapStorage;
 import org.keycloak.models.map.storage.jpa.lock.entity.JpaLockEntity;
-import org.keycloak.models.map.storage.jpa.loginFailure.JpaUserLoginFailureMapKeycloakTransaction;
+import org.keycloak.models.map.storage.jpa.loginFailure.JpaUserLoginFailureMapStorage;
 import org.keycloak.models.map.storage.jpa.loginFailure.entity.JpaUserLoginFailureEntity;
-import org.keycloak.models.map.storage.jpa.realm.JpaRealmMapKeycloakTransaction;
+import org.keycloak.models.map.storage.jpa.realm.JpaRealmMapStorage;
 import org.keycloak.models.map.storage.jpa.realm.entity.JpaComponentEntity;
 import org.keycloak.models.map.storage.jpa.realm.entity.JpaRealmEntity;
-import org.keycloak.models.map.storage.jpa.role.JpaRoleMapKeycloakTransaction;
+import org.keycloak.models.map.storage.jpa.role.JpaRoleMapStorage;
 import org.keycloak.models.map.storage.jpa.role.entity.JpaRoleEntity;
-import org.keycloak.models.map.storage.jpa.singleUseObject.JpaSingleUseObjectMapKeycloakTransaction;
+import org.keycloak.models.map.storage.jpa.singleUseObject.JpaSingleUseObjectMapStorage;
 import org.keycloak.models.map.storage.jpa.singleUseObject.entity.JpaSingleUseObjectEntity;
 import org.keycloak.models.map.storage.jpa.updater.MapJpaUpdaterProvider;
-import org.keycloak.models.map.storage.jpa.userSession.JpaUserSessionMapKeycloakTransaction;
+import org.keycloak.models.map.storage.jpa.userSession.JpaUserSessionMapStorage;
 import org.keycloak.models.map.storage.jpa.userSession.entity.JpaClientSessionEntity;
 import org.keycloak.models.map.storage.jpa.userSession.entity.JpaUserSessionEntity;
-import org.keycloak.models.map.storage.jpa.user.JpaUserMapKeycloakTransaction;
+import org.keycloak.models.map.storage.jpa.user.JpaUserMapStorage;
 import org.keycloak.models.map.storage.jpa.user.entity.JpaUserConsentEntity;
 import org.keycloak.models.map.storage.jpa.user.entity.JpaUserEntity;
 import org.keycloak.models.map.storage.jpa.user.entity.JpaUserFederatedIdentityEntity;
@@ -161,8 +161,6 @@ public class JpaMapStorageProviderFactory implements
         EnvironmentDependentProviderFactory {
 
     public static final String PROVIDER_ID = "jpa";
-    private static final String SESSION_TX_PREFIX = "jpa-map-tx-";
-    private static final AtomicInteger ENUMERATOR = new AtomicInteger(0);
     private static final Logger logger = Logger.getLogger(JpaMapStorageProviderFactory.class);
 
     public static final String HIBERNATE_DEFAULT_SCHEMA = "hibernate.default_schema";
@@ -172,8 +170,8 @@ public class JpaMapStorageProviderFactory implements
     private volatile EntityManagerFactory emf;
     private final Set<Class<?>> validatedModels = ConcurrentHashMap.newKeySet();
     private Config.Scope config;
-    private final String sessionProviderKey;
-    private final String sessionTxKey;
+
+    private final int factoryId = SessionAttributesUtils.grabNewFactoryIdentifier();
     private String databaseShortName;
 
     // Object instances for each single JpaMapStorageProviderFactory instance per model type.
@@ -231,71 +229,54 @@ public class JpaMapStorageProviderFactory implements
         .constructor(JpaLockEntity.class,                       JpaLockEntity::new)
         .build();
 
-    private static final Map<Class<?>, BiFunction<KeycloakSession, EntityManager, MapKeycloakTransaction>> MODEL_TO_TX = new HashMap<>();
+    private static final Map<Class<?>, BiFunction<KeycloakSession, EntityManager, MapStorage>> MODEL_TO_STORE = new HashMap<>();
     static {
         //auth-sessions
-        MODEL_TO_TX.put(RootAuthenticationSessionModel.class,   JpaRootAuthenticationSessionMapKeycloakTransaction::new);
+        MODEL_TO_STORE.put(RootAuthenticationSessionModel.class,   JpaRootAuthenticationSessionMapStorage::new);
         //authorization
-        MODEL_TO_TX.put(ResourceServer.class,                   JpaResourceServerMapKeycloakTransaction::new);
-        MODEL_TO_TX.put(Resource.class,                         JpaResourceMapKeycloakTransaction::new);
-        MODEL_TO_TX.put(Scope.class,                            JpaScopeMapKeycloakTransaction::new);
-        MODEL_TO_TX.put(PermissionTicket.class,                 JpaPermissionMapKeycloakTransaction::new);
-        MODEL_TO_TX.put(Policy.class,                           JpaPolicyMapKeycloakTransaction::new);
+        MODEL_TO_STORE.put(ResourceServer.class,                   JpaResourceServerMapStorage::new);
+        MODEL_TO_STORE.put(Resource.class,                         JpaResourceMapStorage::new);
+        MODEL_TO_STORE.put(Scope.class,                            JpaScopeMapStorage::new);
+        MODEL_TO_STORE.put(PermissionTicket.class,                 JpaPermissionMapStorage::new);
+        MODEL_TO_STORE.put(Policy.class,                           JpaPolicyMapStorage::new);
         //clients
-        MODEL_TO_TX.put(ClientModel.class,                      JpaClientMapKeycloakTransaction::new);
+        MODEL_TO_STORE.put(ClientModel.class,                      JpaClientMapStorage::new);
         //client-scopes
-        MODEL_TO_TX.put(ClientScopeModel.class,                 JpaClientScopeMapKeycloakTransaction::new);
+        MODEL_TO_STORE.put(ClientScopeModel.class,                 JpaClientScopeMapStorage::new);
         //events
-        MODEL_TO_TX.put(AdminEvent.class,                       JpaAdminEventMapKeycloakTransaction::new);
-        MODEL_TO_TX.put(Event.class,                            JpaAuthEventMapKeycloakTransaction::new);
+        MODEL_TO_STORE.put(AdminEvent.class,                       JpaAdminEventMapStorage::new);
+        MODEL_TO_STORE.put(Event.class,                            JpaAuthEventMapStorage::new);
         //groups
-        MODEL_TO_TX.put(GroupModel.class,                       JpaGroupMapKeycloakTransaction::new);
+        MODEL_TO_STORE.put(GroupModel.class,                       JpaGroupMapStorage::new);
         //realms
-        MODEL_TO_TX.put(RealmModel.class,                       JpaRealmMapKeycloakTransaction::new);
+        MODEL_TO_STORE.put(RealmModel.class,                       JpaRealmMapStorage::new);
         //roles
-        MODEL_TO_TX.put(RoleModel.class,                        JpaRoleMapKeycloakTransaction::new);
+        MODEL_TO_STORE.put(RoleModel.class,                        JpaRoleMapStorage::new);
         //single-use-objects
-        MODEL_TO_TX.put(SingleUseObjectValueModel.class,            JpaSingleUseObjectMapKeycloakTransaction::new);
+        MODEL_TO_STORE.put(SingleUseObjectValueModel.class,            JpaSingleUseObjectMapStorage::new);
         //user-login-failures
-        MODEL_TO_TX.put(UserLoginFailureModel.class,            JpaUserLoginFailureMapKeycloakTransaction::new);
+        MODEL_TO_STORE.put(UserLoginFailureModel.class,            JpaUserLoginFailureMapStorage::new);
         //users
-        MODEL_TO_TX.put(UserModel.class,                        JpaUserMapKeycloakTransaction::new);
+        MODEL_TO_STORE.put(UserModel.class,                        JpaUserMapStorage::new);
         //sessions
-        MODEL_TO_TX.put(UserSessionModel.class,                 JpaUserSessionMapKeycloakTransaction::new);
+        MODEL_TO_STORE.put(UserSessionModel.class,                 JpaUserSessionMapStorage::new);
         //locks
-        MODEL_TO_TX.put(MapLockEntity.class,                    JpaLockMapKeycloakTransaction::new);
+        MODEL_TO_STORE.put(MapLockEntity.class,                    JpaLockMapStorage::new);
     }
 
     private boolean jtaEnabled;
     private JtaTransactionManagerLookup jtaLookup;
 
-    public JpaMapStorageProviderFactory() {
-        int index = ENUMERATOR.getAndIncrement();
-        // this identifier is used to create HotRodMapProvider only once per session per factory instance
-        this.sessionProviderKey = PROVIDER_ID + "-" + index;
-
-        // When there are more JPA configurations available in Keycloak (for example, global/realm1/realm2 etc.)
-        // there will be more instances of this factory created where each holds one configuration.
-        // The following identifier can be used to uniquely identify instance of this factory.
-        // This can be later used, for example, to store provider/transaction instances inside session
-        // attributes without collisions between several configurations
-        this.sessionTxKey = SESSION_TX_PREFIX + index;
-    }
-
-    public MapKeycloakTransaction createTransaction(KeycloakSession session, Class<?> modelType, EntityManager em) {
-        return MODEL_TO_TX.get(modelType).apply(session, em);
+    public MapStorage createMapStorage(KeycloakSession session, Class<?> modelType, EntityManager em) {
+        return MODEL_TO_STORE.get(modelType).apply(session, em);
     }
 
     @Override
     public MapStorageProvider create(KeycloakSession session) {
         lazyInit();
-        // check the session for a cached provider before creating a new one.
-        JpaMapStorageProvider provider = session.getAttribute(this.sessionProviderKey, JpaMapStorageProvider.class);
-        if (provider == null) {
-            provider = new JpaMapStorageProvider(this, session, PersistenceExceptionConverter.create(session, getEntityManager()), this.sessionTxKey, this.jtaEnabled);
-            session.setAttribute(this.sessionProviderKey, provider);
-        }
-        return provider;
+
+        return SessionAttributesUtils.createProviderIfAbsent(session, factoryId, JpaMapStorageProvider.class,
+                session1 -> new JpaMapStorageProvider(this, session, PersistenceExceptionConverter.create(session, getEntityManager()), this.jtaEnabled, factoryId));
     }
 
     protected EntityManager getEntityManager() {

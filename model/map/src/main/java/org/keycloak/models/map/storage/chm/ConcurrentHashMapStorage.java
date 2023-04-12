@@ -1,13 +1,13 @@
 /*
  * Copyright 2020 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -16,177 +16,501 @@
  */
 package org.keycloak.models.map.storage.chm;
 
-import org.keycloak.models.map.common.ExpirableEntity;
-import org.keycloak.models.map.common.ExpirationUtils;
+import org.keycloak.models.KeycloakTransaction;
 import org.keycloak.models.map.common.StringKeyConverter;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.map.storage.MapKeycloakTransaction;
 import org.keycloak.models.map.common.AbstractEntity;
 import org.keycloak.models.map.common.DeepCloner;
+import org.keycloak.models.map.common.EntityField;
+import org.keycloak.models.map.common.HasRealmId;
 import org.keycloak.models.map.common.UpdatableEntity;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Objects;
+import java.util.function.Function;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import org.jboss.logging.Logger;
+import org.keycloak.models.map.storage.CrudOperations;
 import org.keycloak.models.map.storage.MapStorage;
 import org.keycloak.models.map.storage.ModelEntityUtil;
 import org.keycloak.models.map.storage.QueryParameters;
+import org.keycloak.models.map.storage.chm.MapModelCriteriaBuilder.UpdatePredicatesFunc;
 import org.keycloak.models.map.storage.criteria.DefaultModelCriteria;
 import org.keycloak.storage.SearchableModelField;
+import java.util.function.Consumer;
 
-import java.util.Comparator;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.atomic.AtomicLong;
-import java.util.stream.Stream;
-import org.keycloak.models.map.storage.chm.MapModelCriteriaBuilder.UpdatePredicatesFunc;
-import java.util.Objects;
-import java.util.function.Predicate;
+public class ConcurrentHashMapStorage<K, V extends AbstractEntity & UpdatableEntity, M> implements MapStorage<V, M>, KeycloakTransaction, HasRealmId {
 
-import static org.keycloak.models.map.common.ExpirationUtils.isExpired;
-import static org.keycloak.utils.StreamsUtil.paginatedStream;
+    private final static Logger log = Logger.getLogger(ConcurrentHashMapStorage.class);
 
-/**
- *
- * It contains basic object CRUD operations as well as bulk {@link #read(org.keycloak.models.map.storage.QueryParameters)}
- * and bulk {@link #delete(org.keycloak.models.map.storage.QueryParameters)} operations,
- * and operation for determining the number of the objects satisfying given criteria
- * ({@link #getCount(org.keycloak.models.map.storage.QueryParameters)}).
- *
- * @author hmlnarik
- */
-public class ConcurrentHashMapStorage<K, V extends AbstractEntity & UpdatableEntity, M> implements MapStorage<V, M>, ConcurrentHashMapCrudOperations<V, M> {
-
-    protected final ConcurrentMap<K, V> store = new ConcurrentHashMap<>();
-
-    protected final Map<SearchableModelField<? super M>, UpdatePredicatesFunc<K, V, M>> fieldPredicates;
+    protected boolean active;
+    protected boolean rollback;
+    protected final Map<String, MapTaskWithValue> tasks = new LinkedHashMap<>();
+    protected final CrudOperations<V, M> map;
     protected final StringKeyConverter<K> keyConverter;
     protected final DeepCloner cloner;
-    private final boolean isExpirableEntity;
+    protected final Map<SearchableModelField<? super M>, UpdatePredicatesFunc<K, V, M>> fieldPredicates;
+    protected final EntityField<V> realmIdEntityField;
+    private String realmId;
+    private final boolean mapHasRealmId;
 
-    @SuppressWarnings("unchecked")
-    public ConcurrentHashMapStorage(Class<M> modelClass, StringKeyConverter<K> keyConverter, DeepCloner cloner) {
-        this.fieldPredicates = MapFieldPredicates.getPredicates(modelClass);
+    enum MapOperation {
+        CREATE, UPDATE, DELETE,
+    }
+
+    public ConcurrentHashMapStorage(CrudOperations<V, M> map, StringKeyConverter<K> keyConverter, DeepCloner cloner, Map<SearchableModelField<? super M>, UpdatePredicatesFunc<K, V, M>> fieldPredicates) {
+        this(map, keyConverter, cloner, fieldPredicates, null);
+    }
+
+    public ConcurrentHashMapStorage(CrudOperations<V, M> map, StringKeyConverter<K> keyConverter, DeepCloner cloner, Map<SearchableModelField<? super M>, UpdatePredicatesFunc<K, V, M>> fieldPredicates, EntityField<V> realmIdEntityField) {
+        this.map = map;
         this.keyConverter = keyConverter;
         this.cloner = cloner;
-        this.isExpirableEntity = ExpirableEntity.class.isAssignableFrom(ModelEntityUtil.getEntityType(modelClass));
+        this.fieldPredicates = fieldPredicates;
+        this.realmIdEntityField = realmIdEntityField;
+        this.mapHasRealmId = map instanceof HasRealmId;
     }
 
     @Override
-    public V create(V value) {
-        K key = keyConverter.fromStringSafe(value.getId());
-        if (key == null) {
-            key = keyConverter.yieldNewUniqueKey();
-            value = cloner.from(keyConverter.keyToString(key), value);
-        }
-        store.putIfAbsent(key, value);
-        return value;
+    public void begin() {
+        active = true;
     }
 
     @Override
-    public V read(String key) {
-        Objects.requireNonNull(key, "Key must be non-null");
-        K k = keyConverter.fromStringSafe(key);
-
-        V v = store.get(k);
-        if (v == null) return null;
-        return isExpirableEntity && isExpired((ExpirableEntity) v, true) ? null : v;
-    }
-
-    @Override
-    public V update(V value) {
-        K key = getKeyConverter().fromStringSafe(value.getId());
-        return store.replace(key, value);
-    }
-
-    @Override
-    public boolean delete(String key) {
-        K k = getKeyConverter().fromStringSafe(key);
-        return store.remove(k) != null;
-    }
-
-    @Override
-    public long delete(QueryParameters<M> queryParameters) {
-        DefaultModelCriteria<M> criteria = queryParameters.getModelCriteriaBuilder();
-
-        if (criteria == null) {
-            long res = store.size();
-            store.clear();
-            return res;
+    public void commit() {
+        if (rollback) {
+            throw new RuntimeException("Rollback only!");
         }
 
-        @SuppressWarnings("unchecked")
-        MapModelCriteriaBuilder<K,V,M> mcb = criteria.flashToModelCriteriaBuilder(createCriteriaBuilder());
-        Predicate<? super K> keyFilter = mcb.getKeyFilter();
-        Predicate<? super V> entityFilter = mcb.getEntityFilter();
-        Stream<Entry<K, V>> storeStream = store.entrySet().stream();
-        final AtomicLong res = new AtomicLong(0);
-
-        if (!queryParameters.getOrderBy().isEmpty()) {
-            Comparator<V> comparator = MapFieldPredicates.getComparator(queryParameters.getOrderBy().stream());
-            storeStream = storeStream.sorted((entry1, entry2) -> comparator.compare(entry1.getValue(), entry2.getValue()));
+        final Consumer<String> setRealmId = mapHasRealmId ? ((HasRealmId) map)::setRealmId : a -> {};
+        if (! tasks.isEmpty()) {
+            log.tracef("Commit - %s", map);
+            for (MapTaskWithValue value : tasks.values()) {
+                setRealmId.accept(value.getRealmId());
+                value.execute();
+            }
         }
-
-        paginatedStream(storeStream.filter(next -> keyFilter.test(next.getKey()) && entityFilter.test(next.getValue()))
-                , queryParameters.getOffset(), queryParameters.getLimit())
-                .peek(item -> {res.incrementAndGet();})
-                .map(Entry::getKey)
-                .forEach(store::remove);
-
-        return res.get();
     }
 
     @Override
-    @SuppressWarnings("unchecked")
-    public MapKeycloakTransaction<V, M> createTransaction(KeycloakSession session) {
-        MapKeycloakTransaction<V, M> sessionTransaction = session.getAttribute("map-transaction-" + hashCode(), MapKeycloakTransaction.class);
-
-        if (sessionTransaction == null) {
-            sessionTransaction = new ConcurrentHashMapKeycloakTransaction<>(this, keyConverter, cloner, fieldPredicates);
-            session.setAttribute("map-transaction-" + hashCode(), sessionTransaction);
-        }
-        return sessionTransaction;
+    public void rollback() {
+        tasks.clear();
     }
 
-    public MapModelCriteriaBuilder<K, V, M> createCriteriaBuilder() {
+    @Override
+    public void setRollbackOnly() {
+        rollback = true;
+    }
+
+    @Override
+    public boolean getRollbackOnly() {
+        return rollback;
+    }
+
+    @Override
+    public boolean isActive() {
+        return active;
+    }
+
+    private MapModelCriteriaBuilder<K, V, M> createCriteriaBuilder() {
         return new MapModelCriteriaBuilder<>(keyConverter, fieldPredicates);
     }
 
-    public StringKeyConverter<K> getKeyConverter() {
-        return keyConverter;
+    /**
+     * Adds a given task if not exists for the given key
+     */
+    protected void addTask(String key, MapTaskWithValue task) {
+        log.tracef("Adding operation %s for %s @ %08x", task.getOperation(), key, System.identityHashCode(task.getValue()));
+
+        tasks.merge(key, task, MapTaskCompose::new);
+    }
+
+    /**
+     * Returns a deep clone of an entity. If the clone is already in the transaction, returns this one.
+     * <p>
+     * Usually used before giving an entity from a source back to the caller,
+     * to prevent changing it directly in the data store, but to keep transactional properties.
+     * @param origEntity Original entity
+     * @return
+     */
+    public V registerEntityForChanges(V origEntity) {
+        final String key = origEntity.getId();
+        // If the entity is listed in the transaction already, return it directly
+        if (tasks.containsKey(key)) {
+            MapTaskWithValue current = tasks.get(key);
+            return current.getValue();
+        }
+        // Else enlist its copy in the transaction. Never return direct reference to the underlying map
+        final V res = cloner.from(origEntity);
+        return updateIfChanged(res, e -> e.isUpdated());
     }
 
     @Override
+    public V read(String sKey) {
+        try { 
+            // TODO: Consider using Optional rather than handling NPE
+            final V entity = read(sKey, map::read);
+            if (entity == null) {
+                log.debugf("Could not read object for key %s", sKey);
+                return null;
+            }
+            return postProcess(registerEntityForChanges(entity));
+        } catch (NullPointerException ex) {
+            return null;
+        }
+    }
+
+    private V read(String key, Function<String, V> defaultValueFunc) {
+        MapTaskWithValue current = tasks.get(key);
+        // If the key exists, then it has entered the "tasks" after bulk delete that could have 
+        // removed it, so looking through bulk deletes is irrelevant
+        if (tasks.containsKey(key)) {
+            return current.getValue();
+        }
+
+        // If the key does not exist, then it would be read fresh from the storage, but then it
+        // could have been removed by some bulk delete in the existing tasks. Check it.
+        final V value = defaultValueFunc.apply(key);
+        for (MapTaskWithValue val : tasks.values()) {
+            if (val instanceof ConcurrentHashMapStorage.BulkDeleteOperation) {
+                final BulkDeleteOperation delOp = (BulkDeleteOperation) val;
+                if (! delOp.getFilterForNonDeletedObjects().test(value)) {
+                    return null;
+                }
+            }
+        }
+
+        return value;
+    }
+
+    /**
+     * Returns the stream of records that match given criteria and includes changes made in this transaction, i.e.
+     * the result contains updates and excludes records that have been deleted in this transaction.
+     *
+     * @param queryParameters
+     * @return
+     */
+    @Override
     public Stream<V> read(QueryParameters<M> queryParameters) {
-        DefaultModelCriteria<M> criteria = queryParameters.getModelCriteriaBuilder();
+        DefaultModelCriteria<M> mcb = queryParameters.getModelCriteriaBuilder();
+        MapModelCriteriaBuilder<K,V,M> mapMcb = mcb.flashToModelCriteriaBuilder(createCriteriaBuilder());
 
-        if (criteria == null) {
-            return Stream.empty();
+        Predicate<? super V> filterOutAllBulkDeletedObjects = tasks.values().stream()
+          .filter(BulkDeleteOperation.class::isInstance)
+          .map(BulkDeleteOperation.class::cast)
+          .map(BulkDeleteOperation::getFilterForNonDeletedObjects)
+          .reduce(Predicate::and)
+          .orElse(v -> true);
+
+        Stream<V> updatedAndNotRemovedObjectsStream = this.map.read(queryParameters)
+          .filter(filterOutAllBulkDeletedObjects)
+          .map(this::getUpdated)      // If the object has been removed, store.get will return null, otherwise it will return me.getValue()
+          .filter(Objects::nonNull)
+          .map(this::registerEntityForChanges);
+
+        updatedAndNotRemovedObjectsStream = postProcess(updatedAndNotRemovedObjectsStream);
+
+        if (mapMcb != null) {
+            // Add explicit filtering for the case when the map returns raw stream of untested values (ie. realize sequential scan)
+            updatedAndNotRemovedObjectsStream = updatedAndNotRemovedObjectsStream
+              .filter(e -> mapMcb.getKeyFilter().test(keyConverter.fromStringSafe(e.getId())))
+              .filter(mapMcb.getEntityFilter());
         }
 
-        MapModelCriteriaBuilder<K,V,M> mcb = criteria.flashToModelCriteriaBuilder(createCriteriaBuilder());
-        Stream<Entry<K, V>> stream = store.entrySet().stream();
-
-        Predicate<? super K> keyFilter = mcb.getKeyFilter();
-        Predicate<? super V> entityFilter;
-
-        if (isExpirableEntity) {
-            entityFilter = mcb.getEntityFilter().and(ExpirationUtils::isNotExpired);
-        } else {
-            entityFilter = mcb.getEntityFilter();
-        }
-
-        Stream<V> valueStream = stream.filter(me -> keyFilter.test(me.getKey()) && entityFilter.test(me.getValue()))
-                .map(Map.Entry::getValue);
+        // In case of created values stored in MapKeycloakTransaction, we need filter those according to the filter
+        Stream<V> res = mapMcb == null
+          ? updatedAndNotRemovedObjectsStream
+          : Stream.concat(
+              createdValuesStream(mapMcb.getKeyFilter(), mapMcb.getEntityFilter()),
+              updatedAndNotRemovedObjectsStream
+            );
 
         if (!queryParameters.getOrderBy().isEmpty()) {
-            valueStream = valueStream.sorted(MapFieldPredicates.getComparator(queryParameters.getOrderBy().stream()));
+            res = res.sorted(MapFieldPredicates.getComparator(queryParameters.getOrderBy().stream()));
         }
 
-        return paginatedStream(valueStream, queryParameters.getOffset(), queryParameters.getLimit());
+
+        return res;
     }
 
     @Override
     public long getCount(QueryParameters<M> queryParameters) {
         return read(queryParameters).count();
+    }
+
+    private V getUpdated(V orig) {
+        MapTaskWithValue current = orig == null ? null : tasks.get(orig.getId());
+        return current == null ? orig : current.getValue();
+    }
+
+    @Override
+    public V create(V value) {
+        String key = map.determineKeyFromValue(value, true);
+        if (key == null) {
+            K newKey = keyConverter.yieldNewUniqueKey();
+            key = keyConverter.keyToString(newKey);
+            value = cloner.from(key, value);
+        } else if (! key.equals(value.getId())) {
+            value = cloner.from(key, value);
+        } else {
+            value = cloner.from(value);
+        }
+        addTask(key, new CreateOperation(value));
+        return postProcess(value);
+    }
+
+    public V updateIfChanged(V value, Predicate<V> shouldPut) {
+        String key = value.getId();
+        log.tracef("Adding operation UPDATE_IF_CHANGED for %s @ %08x", key, System.identityHashCode(value));
+
+        String taskKey = key;
+        MapTaskWithValue op = new MapTaskWithValue(value) {
+            @Override
+            public void execute() {
+                if (shouldPut.test(getValue())) {
+                    map.update(getValue());
+                }
+            }
+            @Override public MapOperation getOperation() { return MapOperation.UPDATE; }
+        };
+        return tasks.merge(taskKey, op, this::merge).getValue();
+    }
+
+    @Override
+    public boolean delete(String key) {
+        tasks.merge(key, new DeleteOperation(key), this::merge);
+        return true;
+    }
+
+    @Override
+    public long delete(QueryParameters<M> queryParameters) {
+        log.tracef("Adding operation DELETE_BULK");
+
+        K artificialKey = keyConverter.yieldNewUniqueKey();
+
+        // Remove all tasks that create / update / delete objects deleted by the bulk removal.
+        final BulkDeleteOperation bdo = new BulkDeleteOperation(queryParameters);
+        Predicate<V> filterForNonDeletedObjects = bdo.getFilterForNonDeletedObjects();
+        long res = 0;
+        for (Iterator<Entry<String, MapTaskWithValue>> it = tasks.entrySet().iterator(); it.hasNext();) {
+            Entry<String, MapTaskWithValue> me = it.next();
+            if (! filterForNonDeletedObjects.test(me.getValue().getValue())) {
+                log.tracef(" [DELETE_BULK] removing %s", me.getKey());
+                it.remove();
+                res++;
+            }
+        }
+
+        tasks.put(keyConverter.keyToString(artificialKey), bdo);
+
+        return res + bdo.getCount();
+    }
+
+    @Override
+    public boolean exists(String key) {
+        if (tasks.containsKey(key)) {
+            MapTaskWithValue o = tasks.get(key);
+            return o.getValue() != null;
+        }
+
+        // Check if there is a bulk delete operation in which case read the full entity
+        for (MapTaskWithValue val : tasks.values()) {
+            if (val instanceof ConcurrentHashMapStorage.BulkDeleteOperation) {
+                return read(key) != null;
+            }
+        }
+
+        return map.exists(key);
+    }
+
+    private Stream<V> createdValuesStream(Predicate<? super K> keyFilter, Predicate<? super V> entityFilter) {
+        return this.tasks.entrySet().stream()
+          .filter(me -> keyFilter.test(keyConverter.fromStringSafe(me.getKey())))
+          .map(Map.Entry::getValue)
+          .filter(v -> v.containsCreate() && ! v.isReplace())
+          .map(MapTaskWithValue::getValue)
+          .filter(Objects::nonNull)
+          .filter(entityFilter)
+          // make a snapshot
+          .collect(Collectors.toList()).stream();
+    }
+
+    private MapTaskWithValue merge(MapTaskWithValue oldValue, MapTaskWithValue newValue) {
+        switch (newValue.getOperation()) {
+            case DELETE:
+                return newValue;
+            default:
+                return new MapTaskCompose(oldValue, newValue);
+        }
+    }
+
+    protected abstract class MapTaskWithValue {
+        protected final V value;
+        private final String realmId;
+
+        public MapTaskWithValue(V value) {
+            this.value = value;
+            this.realmId = ConcurrentHashMapStorage.this.realmId;
+        }
+
+        public V getValue() {
+            return value;
+        }
+
+        public boolean containsCreate() {
+            return MapOperation.CREATE == getOperation();
+        }
+
+        public boolean containsRemove() {
+            return MapOperation.DELETE == getOperation();
+        }
+
+        public boolean isReplace() {
+            return false;
+        }
+
+        public String getRealmId() {
+            return realmId;
+        }
+
+        public abstract MapOperation getOperation();
+        public abstract void execute();
+   }
+
+    private class MapTaskCompose extends MapTaskWithValue {
+
+        private final MapTaskWithValue oldValue;
+        private final MapTaskWithValue newValue;
+
+        public MapTaskCompose(MapTaskWithValue oldValue, MapTaskWithValue newValue) {
+            super(null);
+            this.oldValue = oldValue;
+            this.newValue = newValue;
+        }
+
+        @Override
+        public void execute() {
+            oldValue.execute();
+            newValue.execute();
+        }
+
+        @Override
+        public V getValue() {
+            return newValue.getValue();
+        }
+
+        @Override
+        public MapOperation getOperation() {
+            return null;
+        }
+
+        @Override
+        public boolean containsCreate() {
+            return oldValue.containsCreate() || newValue.containsCreate();
+        }
+
+        @Override
+        public boolean containsRemove() {
+            return oldValue.containsRemove() || newValue.containsRemove();
+        }
+
+        @Override
+        public boolean isReplace() {
+            return (newValue.getOperation() == MapOperation.CREATE && oldValue.containsRemove()) ||
+              (oldValue instanceof ConcurrentHashMapStorage.MapTaskCompose && ((MapTaskCompose) oldValue).isReplace());
+        }
+    }
+
+    private class CreateOperation extends MapTaskWithValue {
+        public CreateOperation(V value) {
+            super(value);
+        }
+
+        @Override public void execute() { map.create(getValue()); }
+        @Override public MapOperation getOperation() { return MapOperation.CREATE; }
+    }
+
+    private class DeleteOperation extends MapTaskWithValue {
+        private final String key;
+
+        public DeleteOperation(String key) {
+            super(null);
+            this.key = key;
+        }
+
+        @Override public void execute() { map.delete(key); }
+        @Override public MapOperation getOperation() { return MapOperation.DELETE; }
+    }
+
+    private class BulkDeleteOperation extends MapTaskWithValue {
+
+        private final QueryParameters<M> queryParameters;
+
+        public BulkDeleteOperation(QueryParameters<M> queryParameters) {
+            super(null);
+            this.queryParameters = queryParameters;
+        }
+
+        @Override
+        @SuppressWarnings("unchecked")
+        public void execute() {
+            map.delete(queryParameters);
+        }
+
+        public Predicate<V> getFilterForNonDeletedObjects() {
+            DefaultModelCriteria<M> mcb = queryParameters.getModelCriteriaBuilder();
+            MapModelCriteriaBuilder<K,V,M> mmcb = mcb.flashToModelCriteriaBuilder(createCriteriaBuilder());
+            
+            Predicate<? super V> entityFilter = mmcb.getEntityFilter();
+            Predicate<? super K> keyFilter = mmcb.getKeyFilter();
+            return v -> v == null || ! (keyFilter.test(keyConverter.fromStringSafe(v.getId())) && entityFilter.test(v));
+        }
+
+        @Override
+        public MapOperation getOperation() {
+            return MapOperation.DELETE;
+        }
+
+        private long getCount() {
+            return map.getCount(queryParameters);
+        }
+    }
+
+    @Override
+    public String getRealmId() {
+        if (mapHasRealmId) {
+            return ((HasRealmId) map).getRealmId();
+        }
+        return null;
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public void setRealmId(String realmId) {
+        if (mapHasRealmId) {
+            ((HasRealmId) map).setRealmId(realmId);
+            this.realmId = realmId;
+        } else {
+            this.realmId = null;
+        }
+    }
+
+    private V postProcess(V value) {
+        return (realmId == null || value == null)
+          ? value
+          : ModelEntityUtil.supplyReadOnlyFieldValueIfUnset(value, realmIdEntityField, realmId);
+    }
+
+    private Stream<V> postProcess(Stream<V> stream) {
+        if (this.realmId == null) {
+            return stream;
+        }
+
+        String localRealmId = this.realmId;
+        return stream.map((V value) -> ModelEntityUtil.supplyReadOnlyFieldValueIfUnset(value, realmIdEntityField, localRealmId));
     }
 
 }

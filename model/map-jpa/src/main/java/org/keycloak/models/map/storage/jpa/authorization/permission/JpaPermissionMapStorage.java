@@ -14,55 +14,57 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.models.map.storage.jpa.authorization.policy;
+package org.keycloak.models.map.storage.jpa.authorization.permission;
 
 import javax.persistence.EntityManager;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.Root;
 import javax.persistence.criteria.Selection;
-import org.keycloak.authorization.model.Policy;
+import org.keycloak.authorization.model.PermissionTicket;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.map.authorization.entity.MapPolicyEntity;
-import org.keycloak.models.map.authorization.entity.MapPolicyEntityDelegate;
+import org.keycloak.models.map.authorization.entity.MapPermissionTicketEntity;
+import org.keycloak.models.map.authorization.entity.MapPermissionTicketEntityDelegate;
 import org.keycloak.models.map.storage.jpa.Constants;
-import org.keycloak.models.map.storage.jpa.JpaMapKeycloakTransaction;
+import org.keycloak.models.map.storage.jpa.JpaMapStorage;
 import org.keycloak.models.map.storage.jpa.JpaModelCriteriaBuilder;
 import org.keycloak.models.map.storage.jpa.JpaRootEntity;
-import org.keycloak.models.map.storage.jpa.authorization.policy.delegate.JpaPolicyDelegateProvider;
-import org.keycloak.models.map.storage.jpa.authorization.policy.entity.JpaPolicyEntity;
+import org.keycloak.models.map.storage.jpa.authorization.permission.delegate.JpaPermissionDelegateProvider;
+import org.keycloak.models.map.storage.jpa.authorization.permission.entity.JpaPermissionEntity;
 
-public class JpaPolicyMapKeycloakTransaction extends JpaMapKeycloakTransaction<JpaPolicyEntity, MapPolicyEntity, Policy> {
+public class JpaPermissionMapStorage extends JpaMapStorage<JpaPermissionEntity, MapPermissionTicketEntity, PermissionTicket> {
 
     @SuppressWarnings("unchecked")
-    public JpaPolicyMapKeycloakTransaction(KeycloakSession session, EntityManager em) {
-        super(session, JpaPolicyEntity.class, Policy.class, em);
+    public JpaPermissionMapStorage(KeycloakSession session, EntityManager em) {
+        super(session, JpaPermissionEntity.class, PermissionTicket.class, em);
     }
 
     @Override
-    protected Selection<JpaPolicyEntity> selectCbConstruct(CriteriaBuilder cb, Root<JpaPolicyEntity> root) {
-        return cb.construct(JpaPolicyEntity.class,
+    protected Selection<JpaPermissionEntity> selectCbConstruct(CriteriaBuilder cb, Root<JpaPermissionEntity> root) {
+        return cb.construct(JpaPermissionEntity.class,
             root.get("id"),
             root.get("version"),
             root.get("entityVersion"),
             root.get("realmId"),
             root.get("resourceServerId"),
-            root.get("name"),
             root.get("owner"),
-            root.get("type"));
+            root.get("scopeId"),
+            root.get("policyId"),
+            root.get("requester"),
+            root.get("resourceId"));
     }
 
     @Override
     public void setEntityVersion(JpaRootEntity entity) {
-        entity.setEntityVersion(Constants.CURRENT_SCHEMA_VERSION_AUTHZ_POLICY);
+        entity.setEntityVersion(Constants.CURRENT_SCHEMA_VERSION_AUTHZ_PERMISSION);
     }
 
     @Override
     public JpaModelCriteriaBuilder createJpaModelCriteriaBuilder() {
-        return new JpaPolicyModelCriteriaBuilder();
+        return new JpaPermissionModelCriteriaBuilder();
     }
 
     @Override
-    protected MapPolicyEntity mapToEntityDelegate(JpaPolicyEntity original) {
-        return new MapPolicyEntityDelegate(new JpaPolicyDelegateProvider(original, em));
+    protected MapPermissionTicketEntity mapToEntityDelegate(JpaPermissionEntity original) {
+        return new MapPermissionTicketEntityDelegate(new JpaPermissionDelegateProvider(original, em));
     }
 }

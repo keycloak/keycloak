@@ -31,7 +31,7 @@ import org.keycloak.models.map.authSession.MapRootAuthenticationSessionEntityDel
 import static org.keycloak.models.map.storage.jpa.Constants.CURRENT_SCHEMA_VERSION_AUTH_SESSION;
 
 import org.keycloak.models.map.common.StringKeyConverter;
-import org.keycloak.models.map.storage.jpa.JpaMapKeycloakTransaction;
+import org.keycloak.models.map.storage.jpa.JpaMapStorage;
 import org.keycloak.models.map.storage.jpa.JpaModelCriteriaBuilder;
 import org.keycloak.models.map.storage.jpa.JpaRootEntity;
 import org.keycloak.models.map.storage.jpa.authSession.delegate.JpaRootAuthenticationSessionDelegateProvider;
@@ -42,9 +42,9 @@ import org.keycloak.sessions.RootAuthenticationSessionModel;
 import java.sql.Connection;
 import java.util.UUID;
 
-public class JpaRootAuthenticationSessionMapKeycloakTransaction extends JpaMapKeycloakTransaction<JpaRootAuthenticationSessionEntity, MapRootAuthenticationSessionEntity, RootAuthenticationSessionModel> {
+public class JpaRootAuthenticationSessionMapStorage extends JpaMapStorage<JpaRootAuthenticationSessionEntity, MapRootAuthenticationSessionEntity, RootAuthenticationSessionModel> {
 
-    public JpaRootAuthenticationSessionMapKeycloakTransaction(KeycloakSession session, EntityManager em) {
+    public JpaRootAuthenticationSessionMapStorage(KeycloakSession session, EntityManager em) {
         super(session, JpaRootAuthenticationSessionEntity.class, RootAuthenticationSessionModel.class, em);
     }
 

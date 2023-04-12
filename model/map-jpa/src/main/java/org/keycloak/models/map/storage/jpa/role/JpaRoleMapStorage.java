@@ -28,18 +28,18 @@ import org.keycloak.models.map.role.MapRoleEntity;
 import static org.keycloak.models.map.storage.jpa.Constants.CURRENT_SCHEMA_VERSION_ROLE;
 import static org.keycloak.models.map.storage.jpa.JpaMapStorageProviderFactory.CLONER;
 
-import org.keycloak.models.map.storage.jpa.JpaMapKeycloakTransaction;
+import org.keycloak.models.map.storage.jpa.JpaMapStorage;
 import org.keycloak.models.map.storage.jpa.JpaModelCriteriaBuilder;
 import org.keycloak.models.map.storage.jpa.JpaRootEntity;
 import org.keycloak.models.map.storage.jpa.role.delegate.JpaMapRoleEntityDelegate;
 import org.keycloak.models.map.storage.jpa.role.entity.JpaRoleEntity;
 
-public class JpaRoleMapKeycloakTransaction extends JpaMapKeycloakTransaction<JpaRoleEntity, MapRoleEntity, RoleModel> {
+public class JpaRoleMapStorage extends JpaMapStorage<JpaRoleEntity, MapRoleEntity, RoleModel> {
 
-    private static final Logger logger = Logger.getLogger(JpaRoleMapKeycloakTransaction.class);
+    private static final Logger logger = Logger.getLogger(JpaRoleMapStorage.class);
 
     @SuppressWarnings("unchecked")
-    public JpaRoleMapKeycloakTransaction(KeycloakSession session, EntityManager em) {
+    public JpaRoleMapStorage(KeycloakSession session, EntityManager em) {
         super(session, JpaRoleEntity.class, RoleModel.class, em);
     }
 

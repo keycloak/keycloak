@@ -45,7 +45,7 @@ import org.keycloak.models.map.common.AbstractEntity;
 import org.keycloak.models.map.common.ExpirableEntity;
 import org.keycloak.models.map.common.StringKeyConverter;
 import org.keycloak.models.map.common.StringKeyConverter.UUIDKey;
-import org.keycloak.models.map.storage.MapKeycloakTransaction;
+import org.keycloak.models.map.storage.MapStorage;
 import org.keycloak.models.map.storage.QueryParameters;
 import org.keycloak.models.map.storage.chm.MapFieldPredicates;
 import org.keycloak.models.map.storage.chm.MapModelCriteriaBuilder;
@@ -57,16 +57,16 @@ import static org.keycloak.models.map.storage.jpa.JpaMapStorageProviderFactory.C
 import static org.keycloak.models.map.storage.jpa.PaginationUtils.paginateQuery;
 import static org.keycloak.utils.StreamsUtil.closing;
 
-public abstract class JpaMapKeycloakTransaction<RE extends JpaRootEntity, E extends AbstractEntity, M> implements MapKeycloakTransaction<E, M> {
+public abstract class JpaMapStorage<RE extends JpaRootEntity, E extends AbstractEntity, M> implements MapStorage<E, M> {
 
-    private static final Logger logger = Logger.getLogger(JpaMapKeycloakTransaction.class);
+    private static final Logger logger = Logger.getLogger(JpaMapStorage.class);
     private final KeycloakSession session;
     private final Class<RE> entityType;
     private final Class<M> modelType;
     private final boolean isExpirableEntity;
     protected EntityManager em;
 
-    public JpaMapKeycloakTransaction(KeycloakSession session, Class<RE> entityType, Class<M> modelType, EntityManager em) {
+    public JpaMapStorage(KeycloakSession session, Class<RE> entityType, Class<M> modelType, EntityManager em) {
         this.session = session;
         this.em = em;
         this.entityType = entityType;
@@ -302,36 +302,6 @@ public abstract class JpaMapKeycloakTransaction<RE extends JpaRootEntity, E exte
 
     private MapModelCriteriaBuilder<String, E, M> createCriteriaBuilderMap() {
         return new MapModelCriteriaBuilder<>(StringKeyConverter.StringKey.INSTANCE, MapFieldPredicates.getPredicates(modelType));
-    }
-
-    @Override
-    public void begin() {
-        // no-op: rely on JPA transaction enlisted by the JPA storage provider.
-    }
-
-    @Override
-    public void commit() {
-        // no-op: rely on JPA transaction enlisted by the JPA storage provider.
-    }
-
-    @Override
-    public void rollback() {
-        // no-op: rely on JPA transaction enlisted by the JPA storage provider.
-    }
-
-    @Override
-    public void setRollbackOnly() {
-        em.getTransaction().setRollbackOnly();
-    }
-
-    @Override
-    public boolean getRollbackOnly() {
-        return  em.getTransaction().getRollbackOnly();
-    }
-
-    @Override
-    public boolean isActive() {
-        return em.getTransaction().isActive();
     }
 
     private Predicate notExpired(final CriteriaBuilder cb, final JpaSubqueryProvider query, final Root<RE> root) {

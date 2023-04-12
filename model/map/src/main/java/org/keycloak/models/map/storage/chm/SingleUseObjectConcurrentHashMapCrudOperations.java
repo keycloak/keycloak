@@ -18,12 +18,10 @@
 package org.keycloak.models.map.storage.chm;
 
 import org.keycloak.models.SingleUseObjectValueModel;
-import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.map.common.AbstractEntity;
 import org.keycloak.models.map.common.DeepCloner;
 import org.keycloak.models.map.common.StringKeyConverter;
 import org.keycloak.models.map.singleUseObject.MapSingleUseObjectEntity;
-import org.keycloak.models.map.storage.MapKeycloakTransaction;
 import org.keycloak.models.map.storage.QueryParameters;
 import org.keycloak.models.map.storage.criteria.DefaultModelCriteria;
 
@@ -32,23 +30,10 @@ import java.util.stream.Stream;
 /**
  * @author <a href="mailto:mkanis@redhat.com">Martin Kanis</a>
  */
-public class SingleUseObjectConcurrentHashMapStorage<K, V extends AbstractEntity, M> extends ConcurrentHashMapStorage<K, MapSingleUseObjectEntity, SingleUseObjectValueModel> {
+public class SingleUseObjectConcurrentHashMapCrudOperations<K, V extends AbstractEntity, M> extends ConcurrentHashMapCrudOperations<K, MapSingleUseObjectEntity, SingleUseObjectValueModel> {
 
-    public SingleUseObjectConcurrentHashMapStorage(StringKeyConverter<K> keyConverter, DeepCloner cloner) {
+    public SingleUseObjectConcurrentHashMapCrudOperations(StringKeyConverter<K> keyConverter, DeepCloner cloner) {
         super(SingleUseObjectValueModel.class, keyConverter, cloner);
-    }
-
-    @Override
-    @SuppressWarnings("unchecked")
-    public MapKeycloakTransaction<MapSingleUseObjectEntity, SingleUseObjectValueModel> createTransaction(KeycloakSession session) {
-        MapKeycloakTransaction<MapSingleUseObjectEntity, SingleUseObjectValueModel> singleUseObjectTransaction = session.getAttribute("map-transaction-" + hashCode(), MapKeycloakTransaction.class);
-
-        if (singleUseObjectTransaction == null) {
-            singleUseObjectTransaction = new SingleUseObjectKeycloakTransaction(this, keyConverter, cloner, fieldPredicates);
-            session.setAttribute("map-transaction-" + hashCode(), singleUseObjectTransaction);
-        }
-
-        return singleUseObjectTransaction;
     }
 
     @Override

@@ -14,51 +14,52 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.models.map.storage.jpa.event.admin;
+package org.keycloak.models.map.storage.jpa.singleUseObject;
 
 import javax.persistence.EntityManager;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.Root;
 import javax.persistence.criteria.Selection;
 
-import org.keycloak.events.admin.AdminEvent;
+import org.keycloak.models.SingleUseObjectValueModel;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.map.events.MapAdminEventEntity;
-import org.keycloak.models.map.storage.jpa.JpaMapKeycloakTransaction;
+import org.keycloak.models.map.singleUseObject.MapSingleUseObjectEntity;
+import org.keycloak.models.map.storage.MapStorage;
+import org.keycloak.models.map.storage.jpa.JpaMapStorage;
 import org.keycloak.models.map.storage.jpa.JpaModelCriteriaBuilder;
 import org.keycloak.models.map.storage.jpa.JpaRootEntity;
-import org.keycloak.models.map.storage.jpa.event.admin.entity.JpaAdminEventEntity;
+import org.keycloak.models.map.storage.jpa.singleUseObject.entity.JpaSingleUseObjectEntity;
 
-import static org.keycloak.models.map.storage.jpa.Constants.CURRENT_SCHEMA_VERSION_ADMIN_EVENT;
+import static org.keycloak.models.map.storage.jpa.Constants.CURRENT_SCHEMA_VERSION_SINGLE_USE_OBJECT;
 
 /**
- * A {@link org.keycloak.models.map.storage.MapKeycloakTransaction} implementation for admin event entities.
+ * A {@link MapStorage} implementation for single-use object entities.
  *
  * @author <a href="mailto:sguilhen@redhat.com">Stefan Guilhen</a>
  */
-public class JpaAdminEventMapKeycloakTransaction extends JpaMapKeycloakTransaction<JpaAdminEventEntity, MapAdminEventEntity, AdminEvent>  {
+public class JpaSingleUseObjectMapStorage extends JpaMapStorage<JpaSingleUseObjectEntity, MapSingleUseObjectEntity, SingleUseObjectValueModel> {
 
-    public JpaAdminEventMapKeycloakTransaction(KeycloakSession session, final EntityManager em) {
-        super(session, JpaAdminEventEntity.class, AdminEvent.class, em);
+    public JpaSingleUseObjectMapStorage(KeycloakSession session, final EntityManager em) {
+        super(session, JpaSingleUseObjectEntity.class, SingleUseObjectValueModel.class, em);
     }
 
     @Override
-    protected Selection<? extends JpaAdminEventEntity> selectCbConstruct(CriteriaBuilder cb, Root<JpaAdminEventEntity> root) {
+    protected Selection<? extends JpaSingleUseObjectEntity> selectCbConstruct(CriteriaBuilder cb, Root<JpaSingleUseObjectEntity> root) {
         return root;
     }
 
     @Override
     protected void setEntityVersion(JpaRootEntity entity) {
-        entity.setEntityVersion(CURRENT_SCHEMA_VERSION_ADMIN_EVENT);
+        entity.setEntityVersion(CURRENT_SCHEMA_VERSION_SINGLE_USE_OBJECT);
     }
 
     @Override
     protected JpaModelCriteriaBuilder createJpaModelCriteriaBuilder() {
-        return new JpaAdminEventModelCriteriaBuilder();
+        return new JpaSingleUseObjectModelCriteriaBuilder();
     }
 
     @Override
-    protected MapAdminEventEntity mapToEntityDelegate(JpaAdminEventEntity original) {
+    protected MapSingleUseObjectEntity mapToEntityDelegate(JpaSingleUseObjectEntity original) {
         return original;
     }
 }

@@ -33,7 +33,7 @@ import org.keycloak.models.map.storage.ldap.MapModelCriteriaBuilderAssumingEqual
 import org.keycloak.models.map.storage.ldap.role.entity.LdapMapRoleEntityFieldDelegate;
 import org.keycloak.models.map.storage.ldap.store.LdapMapIdentityStore;
 import org.keycloak.models.map.storage.ldap.config.LdapMapConfig;
-import org.keycloak.models.map.storage.ldap.LdapMapKeycloakTransaction;
+import org.keycloak.models.map.storage.ldap.LdapMapStorage;
 import org.keycloak.models.map.storage.ldap.model.LdapMapDn;
 import org.keycloak.models.map.storage.ldap.model.LdapMapObject;
 import org.keycloak.models.map.storage.ldap.model.LdapMapQuery;
@@ -53,9 +53,8 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import static org.keycloak.models.map.storage.ldap.role.config.LdapMapRoleMapperConfig.COMMON_ROLES_DN;
 
-public class LdapRoleMapKeycloakTransaction extends LdapMapKeycloakTransaction<LdapMapRoleEntityFieldDelegate, MapRoleEntity, RoleModel> implements Provider {
+public class LdapRoleMapStorage extends LdapMapStorage<LdapMapRoleEntityFieldDelegate, MapRoleEntity, RoleModel> implements Provider {
 
     private final StringKeyConverter<String> keyConverter = new StringKeyConverter.StringKey();
     private final Set<String> deletedKeys = new HashSet<>();
@@ -63,7 +62,7 @@ public class LdapRoleMapKeycloakTransaction extends LdapMapKeycloakTransaction<L
     private final LdapMapConfig ldapMapConfig;
     private final LdapMapIdentityStore identityStore;
 
-    public LdapRoleMapKeycloakTransaction(KeycloakSession session, Config.Scope config) {
+    public LdapRoleMapStorage(KeycloakSession session, Config.Scope config) {
         this.roleMapperConfig = new LdapMapRoleMapperConfig(config);
         this.ldapMapConfig = new LdapMapConfig(config);
         this.identityStore = new LdapMapIdentityStore(session, ldapMapConfig);
