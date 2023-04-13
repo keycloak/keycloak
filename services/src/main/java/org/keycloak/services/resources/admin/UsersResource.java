@@ -148,7 +148,7 @@ public class UsersResource {
         UserProfile profile = profileProvider.create(USER_API, rep.toAttributes());
 
         try {
-            Response response = UserResource.validateUserProfile(profile, null, session);
+            Response response = UserResource.validateUserProfile(profile, session, auth.adminAuth());
             if (response != null) {
                 return response;
             }
