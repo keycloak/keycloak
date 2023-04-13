@@ -42,7 +42,7 @@ describe("Group test", () => {
             enabled: true,
           })
           .then((user) => {
-            return { id: user.id, username: username + index };
+            return { id: user.id!, username: username + index };
           });
         return user;
       })

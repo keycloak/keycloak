@@ -69,4 +69,30 @@ export default class UserDetailsPage extends PageObject {
     cy.findByTestId(this.sessionsTab).click();
     return this;
   }
+
+  toggleEnabled(userName: string) {
+    this.#getEnabledSwitch(userName).click({ force: true });
+  }
+
+  assertEnabled(userName: string) {
+    this.#getEnabledSwitchLabel(userName)
+      .scrollIntoView()
+      .contains("Enabled")
+      .should("be.visible");
+  }
+
+  assertDisabled(userName: string) {
+    this.#getEnabledSwitchLabel(userName)
+      .scrollIntoView()
+      .contains("Disabled")
+      .should("be.visible");
+  }
+
+  #getEnabledSwitch(userName: string) {
+    return cy.findByTestId(`${userName}-switch`);
+  }
+
+  #getEnabledSwitchLabel(userName: string) {
+    return this.#getEnabledSwitch(userName).closest("label");
+  }
 }
