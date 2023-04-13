@@ -25,8 +25,7 @@ import { useAdminClient, useFetch } from "../context/auth/AdminClient";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { UserProfileProvider } from "../realm-settings/user-profile/UserProfileContext";
 import { useParams } from "../utils/useParams";
-import { toUser, UserParams, UserTab } from "./routes/User";
-import { toUsers } from "./routes/Users";
+import { useUpdateEffect } from "../utils/useUpdateEffect";
 import { UserAttributes } from "./UserAttributes";
 import { UserConsents } from "./UserConsents";
 import { UserCredentials } from "./UserCredentials";
@@ -39,6 +38,8 @@ import {
 } from "./UserProfileFields";
 import { UserRoleMapping } from "./UserRoleMapping";
 import { UserSessions } from "./UserSessions";
+import { UserParams, UserTab, toUser } from "./routes/User";
+import { toUsers } from "./routes/Users";
 
 import "./user-section.css";
 
@@ -120,6 +121,9 @@ const EditUserForm = ({ user, bruteForced, refresh }: EditUserFormProps) => {
   const consentsTab = useTab("consents");
   const identityProviderLinksTab = useTab("identity-provider-links");
   const sessionsTab = useTab("sessions");
+
+  // Ensure the form remains up-to-date when the user is updated.
+  useUpdateEffect(() => userForm.reset(user), [user]);
 
   const save = async (formUser: UserRepresentation) => {
     try {

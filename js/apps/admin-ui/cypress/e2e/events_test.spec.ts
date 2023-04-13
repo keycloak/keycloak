@@ -44,7 +44,7 @@ describe.skip("Events tests", () => {
     const result = await adminClient.createUser(
       eventsTestUser.userRepresentation
     );
-    eventsTestUser.eventsTestUserId = result.id;
+    eventsTestUser.eventsTestUserId = result.id!;
   });
 
   after(() =>

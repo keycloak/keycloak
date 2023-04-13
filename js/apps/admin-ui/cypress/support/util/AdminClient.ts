@@ -95,7 +95,17 @@ class AdminClient {
 
   async createUser(user: UserRepresentation) {
     await this.login();
-    return await this.client.users.create(user);
+
+    const { id } = await this.client.users.create(user);
+    const createdUser = await this.client.users.findOne({ id });
+
+    if (!createdUser) {
+      throw new Error(
+        "Unable to create user, created user could not be found."
+      );
+    }
+
+    return createdUser;
   }
 
   async updateUser(id: string, payload: UserRepresentation) {
