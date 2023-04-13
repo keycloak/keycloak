@@ -3,7 +3,7 @@ import "@patternfly/patternfly/patternfly-addons.css";
 
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
-import { createBrowserRouter, RouterProvider } from "react-router-dom";
+import { createHashRouter, RouterProvider } from "react-router-dom";
 
 import { i18n } from "./i18n";
 import { keycloak } from "./keycloak";
@@ -18,7 +18,7 @@ await Promise.all([
   i18n.init(),
 ]);
 
-const router = createBrowserRouter(routes);
+const router = createHashRouter(routes);
 const container = document.getElementById("app");
 const root = createRoot(container!);
 
