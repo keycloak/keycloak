@@ -17,16 +17,31 @@
   ~ limitations under the License.
   -->
 
-<module xmlns="urn:jboss:module:1.1" name="org.keycloak.keycloak-saml-adapter-subsystem">
+<module xmlns="urn:jboss:module:1.1" name="org.keycloak.keycloak-saml-wildfly-jakarta-subsystem">
+
     <properties>
         <property name="jboss.api" value="private"/>
     </properties>
-
     <resources>
         <resource-root path="."/>
+        <!-- Insert resources here -->
     </resources>
 
     <dependencies>
-        <module name="org.keycloak.keycloak-saml-wildfly-jakarta-subsystem" export="true" services="export"/>
+        <module name="javax.api"/>
+        <module name="org.jboss.staxmapper"/>
+        <module name="org.jboss.as.controller"/>
+        <module name="org.jboss.as.ee"/>
+        <module name="org.jboss.as.server"/>
+        <module name="org.jboss.modules"/>
+        <module name="org.jboss.msc"/>
+        <module name="org.jboss.logging"/>
+        <module name="org.jboss.vfs"/>
+        <module name="org.jboss.as.web-common"/>
+        <module name="org.jboss.metadata.common"/>
+        <module name="org.jboss.metadata.web"/>
+        <module name="org.apache.httpcomponents"/>
+        <module name="org.infinispan.cachestore.remote"/>
+        <module name="org.keycloak.keycloak-saml-wildfly-elytron-jakarta-adapter"/>
     </dependencies>
 </module>

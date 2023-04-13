@@ -25,15 +25,15 @@
         <relativePath>../../../../pom.xml</relativePath>
     </parent>
 
-    <artifactId>keycloak-saml-wildfly-adapter-dist</artifactId>
+    <artifactId>keycloak-saml-wildfly-adapter-jakarta-dist</artifactId>
     <packaging>pom</packaging>
-    <name>Keycloak SAML Wildfly Adapter Distro</name>
+    <name>Keycloak SAML Wildfly Adapter Jakarta Distro</name>
     <description/>
 
     <dependencies>
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-saml-wildfly-modules</artifactId>
+            <artifactId>keycloak-saml-wildfly-jakarta-modules</artifactId>
             <type>zip</type>
         </dependency>
     </dependencies>
@@ -54,14 +54,39 @@
                             <artifactItems>
                                 <artifactItem>
                                     <groupId>org.keycloak</groupId>
-                                    <artifactId>keycloak-saml-wildfly-modules</artifactId>
+                                    <artifactId>keycloak-saml-wildfly-jakarta-modules</artifactId>
                                     <type>zip</type>
                                     <outputDirectory>${project.build.directory}/unpacked</outputDirectory>
                                 </artifactItem>
                             </artifactItems>
                         </configuration>
                     </execution>
-
+                </executions>
+            </plugin>
+            <plugin>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>generate-jakarta-cli</id>
+                        <phase>prepare-package</phase>
+                        <configuration>
+                            <target>
+                                <!-- copy shared-cli elytron scripts and make them to use *jakarta* adapter modules -->
+                                <mkdir dir="target/shared-cli"/>
+                                <copy file="../../shared-cli/adapter-elytron-install-saml.cli" todir="target/shared-cli"/>
+                                <copy file="../../shared-cli/adapter-elytron-install-saml-offline.cli" todir="target/shared-cli"/>
+                                <replace
+                                    token="org.keycloak.keycloak-saml-wildfly-elytron-adapter"
+                                    value="org.keycloak.keycloak-saml-wildfly-elytron-jakarta-adapter"
+                                    dir="target/shared-cli">
+                                    <include name="adapter-elytron-install-saml*.cli"/>
+                                </replace>
+                            </target>
+                        </configuration>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                    </execution>
                 </executions>
             </plugin>
             <plugin>

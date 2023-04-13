@@ -24,6 +24,7 @@
 
     <resources>
         <resource-root path="."/>
+        <!-- Insert resources here -->
     </resources>
 
     <dependencies>

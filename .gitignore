@@ -79,6 +79,10 @@ quarkus/data/*.db
 # Jakarta transformed sources #
 ###############################
 /integration/admin-client-jakarta/src/
+/adapters/saml/jakarta-servlet-filter/src/
+/adapters/oidc/jakarta-servlet-filter/src/
+/adapters/saml/wildfly-elytron-jakarta/src/
+/adapters/saml/wildfly/wildfly-jakarta-subsystem/src/
 /.metadata/
 
 # Git ephemeral files
@@ -86,3 +90,6 @@ quarkus/data/*.db
 
 # Node.js for frontend-maven-plugin #
 node
+
+# SDKMAM environment file
+.sdkmanrc

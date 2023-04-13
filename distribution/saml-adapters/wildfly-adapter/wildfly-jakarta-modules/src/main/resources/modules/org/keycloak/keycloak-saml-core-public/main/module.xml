@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+
+
 <!--
   ~ Copyright 2016 Red Hat, Inc. and/or its affiliates
   ~ and other contributors as indicated by the @author tags.
@@ -17,16 +19,23 @@
   ~ limitations under the License.
   -->
 
-<module xmlns="urn:jboss:module:1.1" name="org.keycloak.keycloak-saml-adapter-subsystem">
+<module xmlns="urn:jboss:module:1.1" name="org.keycloak.keycloak-saml-core-public">
     <properties>
         <property name="jboss.api" value="private"/>
     </properties>
-
     <resources>
-        <resource-root path="."/>
+        <!-- Insert resources here -->
     </resources>
-
     <dependencies>
-        <module name="org.keycloak.keycloak-saml-wildfly-jakarta-subsystem" export="true" services="export"/>
+        <module name="org.jboss.logging"/>
+        <module name="org.keycloak.keycloak-common"/>
+        <module name="org.apache.santuario.xmlsec">
+            <imports>
+                <exclude path="javax/*"/>
+            </imports>
+        </module>
+        <module name="javax.api"/>
+        <module name="org.apache.httpcomponents"/>
     </dependencies>
+
 </module>

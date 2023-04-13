@@ -35,7 +35,7 @@
         <wildfly.build-tools.version>1.2.13.Final</wildfly.build-tools.version>
         <wildfly.core.version>19.0.0.Final</wildfly.core.version>
 
-        <feature-pack.resources.directory>${basedir}/../../saml-adapters/wildfly-adapter/wildfly-modules/src/main/resources</feature-pack.resources.directory>
+        <feature-pack.resources.directory>${basedir}/../../saml-adapters/wildfly-adapter/wildfly-jakarta-modules/src/main/resources</feature-pack.resources.directory>
         <version.org.wildfly.galleon-plugins>6.2.0.Final</version.org.wildfly.galleon-plugins>
         <xmlFileSource>${basedir}/src/main/resources/licenses/keycloak/licenses.xml</xmlFileSource>
         <outputDirectory>${basedir}/target/resources/packages/licenses/content/docs/licenses-keycloak</outputDirectory>
@@ -153,7 +153,7 @@
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-saml-wildfly-elytron-adapter</artifactId>
+            <artifactId>keycloak-saml-wildfly-elytron-jakarta-adapter</artifactId>
             <exclusions>
                 <exclusion>
                     <groupId>*</groupId>
@@ -164,7 +164,7 @@
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-saml-wildfly-subsystem</artifactId>
+            <artifactId>keycloak-saml-wildfly-jakarta-subsystem</artifactId>
             <exclusions>
                 <exclusion>
                     <groupId>*</groupId>
