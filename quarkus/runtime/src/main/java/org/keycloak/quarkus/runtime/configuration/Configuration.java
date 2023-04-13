@@ -74,13 +74,7 @@ public final class Configuration {
     }
 
     public static String getRawValue(String propertyName) {
-        try {
-            return getConfig().getRawValue(propertyName);
-        } catch (NullPointerException ignore) {
-            // Tracker issue: https://github.com/keycloak/keycloak/issues/19084
-            // Try-catch block can be removed once https://github.com/smallrye/smallrye-config/issues/906 is resolved
-            return null;
-        }
+        return getConfig().getRawValue(propertyName);
     }
 
     public static Iterable<String> getPropertyNames() {
@@ -88,13 +82,7 @@ public final class Configuration {
     }
 
     public static ConfigValue getConfigValue(String propertyName) {
-        try {
-            return getConfig().getConfigValue(propertyName);
-        } catch (NullPointerException ignore) {
-            // Tracker issue: https://github.com/keycloak/keycloak/issues/19084
-            // Try-catch block can be removed once https://github.com/smallrye/smallrye-config/issues/906 is resolved
-            return null;
-        }
+        return getConfig().getConfigValue(propertyName);
     }
 
     public static ConfigValue getKcConfigValue(String propertyName) {
@@ -102,13 +90,7 @@ public final class Configuration {
     }
 
     public static Optional<String> getOptionalValue(String name) {
-        try {
-            return getConfig().getOptionalValue(name, String.class);
-        } catch (NullPointerException ignore) {
-            // Tracker issue: https://github.com/keycloak/keycloak/issues/19084
-            // Try-catch block can be removed once https://github.com/smallrye/smallrye-config/issues/906 is resolved
-            return Optional.empty();
-        }
+        return getConfig().getOptionalValue(name, String.class);
     }
 
     public static Optional<String> getOptionalKcValue(String propertyName) {
