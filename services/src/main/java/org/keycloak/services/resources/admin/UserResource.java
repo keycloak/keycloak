@@ -92,7 +92,6 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
-import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -186,7 +185,7 @@ public class UserResource {
 
             UserProfile profile = session.getProvider(UserProfileProvider.class).create(USER_API, attributes, user);
 
-            Response response = validateUserProfile(profile, user, session);
+            Response response = validateUserProfile(profile, session, auth.adminAuth());
             if (response != null) {
                 return response;
             }
@@ -215,9 +214,9 @@ public class UserResource {
             logger.warn("Could not update user!", me);
             session.getTransactionManager().setRollbackOnly();
             throw ErrorResponse.error("Could not update user!", Status.BAD_REQUEST);
-        } catch (ForbiddenException fe) {
+        } catch (ForbiddenException | ErrorResponseException e) {
             session.getTransactionManager().setRollbackOnly();
-            throw fe;
+            throw e;
         } catch (Exception me) { // JPA
             session.getTransactionManager().setRollbackOnly();
             logger.warn("Could not update user!", me);// may be committed by JTA which can't
@@ -225,20 +224,28 @@ public class UserResource {
         }
     }
 
-    public static Response validateUserProfile(UserProfile profile, UserModel user, KeycloakSession session) {
+    public static Response validateUserProfile(UserProfile profile, KeycloakSession session, AdminAuth adminAuth) {
         try {
             profile.validate();
         } catch (ValidationException pve) {
             List<ErrorRepresentation> errors = new ArrayList<>();
+            AdminMessageFormatter adminMessageFormatter = createAdminMessageFormatter(session, adminAuth);
 
             for (ValidationException.Error error : pve.getErrors()) {
-                errors.add(new ErrorRepresentation(error.getFormattedMessage(new AdminMessageFormatter(session, user))));
+                errors.add(new ErrorRepresentation(error.getFormattedMessage(adminMessageFormatter)));
             }
 
             throw ErrorResponse.errors(errors, Status.BAD_REQUEST);
         }
 
         return null;
+    }
+
+    private static AdminMessageFormatter createAdminMessageFormatter(KeycloakSession session, AdminAuth adminAuth) {
+        // the authenticated user is used to resolve the locale for the messages. It can be null.
+        UserModel authenticatedUser = adminAuth == null ? null : adminAuth.getUser();
+
+        return new AdminMessageFormatter(session, authenticatedUser);
     }
 
     public static void updateUserFromRep(UserProfile profile, UserModel user, UserRepresentation rep, KeycloakSession session, boolean isUpdateExistingUser) {
