@@ -25,8 +25,9 @@ const keycloak = Keycloak();
 
 To align this with modern conventions in the JavaScript world it has been possible to use the https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/new[`new` operator] to create an instance instead:
 
-```js
+[source,javascript]
+----
 const keycloak = new Keycloak();
-```
+----
 
 The function-style constructor has been deprecated for a while, but starting this version we will actively log a deprecation message when it used. This style of constructor will be removed in a future version so make sure to migrate your code to use the `new` operator.
