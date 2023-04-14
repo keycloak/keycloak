@@ -184,7 +184,7 @@ public class UncaughtErrorPageTest extends AbstractKeycloakTest {
         oauth.openLoginForm();
 
         assertTrue(errorPage.isCurrent());
-        assertEquals("Invalid parameter: redirect_uri", errorPage.getError());
+        assertEquals("Client not found.", errorPage.getError());
     }
 
     @Test
