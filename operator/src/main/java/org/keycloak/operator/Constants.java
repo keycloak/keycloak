@@ -16,6 +16,7 @@
  */
 package org.keycloak.operator;
 
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -39,12 +40,18 @@ public final class Constants {
             .map(e -> e.getKey() + "=" + e.getValue())
             .collect(Collectors.joining(","));
 
-    public static final Map<String, String> DEFAULT_DIST_CONFIG = Map.of(
-        "health-enabled","true",
-        "cache", "ispn",
-        "cache-stack", "kubernetes",
-        "proxy", "passthrough"
-    );
+    // DEFAULT_DIST_CONFIG is of type LinkedHashMap to maintain order of the entries
+    public static final LinkedHashMap<String, String> DEFAULT_DIST_CONFIG;
+    static {
+        var defaultDistConfig = new LinkedHashMap<String, String>();
+        defaultDistConfig.put("health-enabled","true");
+        defaultDistConfig.put("cache", "ispn");
+        defaultDistConfig.put("cache-stack", "kubernetes");
+        defaultDistConfig.put("proxy", "passthrough");
+
+        DEFAULT_DIST_CONFIG = defaultDistConfig;
+    }
+
 
     public static final Integer KEYCLOAK_HTTP_PORT = 8080;
     public static final Integer KEYCLOAK_HTTPS_PORT = 8443;

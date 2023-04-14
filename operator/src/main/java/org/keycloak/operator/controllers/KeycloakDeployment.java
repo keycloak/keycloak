@@ -29,6 +29,8 @@ import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.api.model.apps.StatefulSetBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.quarkus.logging.Log;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
 import org.keycloak.common.util.CollectionUtil;
 import org.keycloak.operator.Config;
 import org.keycloak.operator.Constants;
@@ -428,8 +430,12 @@ public class KeycloakDeployment extends OperatorManagedResource implements Statu
     }
 
     private List<EnvVar> getEnvVars() {
-        // default config values
-        List<ValueOrSecret> serverConfig = Constants.DEFAULT_DIST_CONFIG.entrySet().stream()
+        // make sure defaultDistConfig is of type LinkedHashMap<String, String>
+        // to maintain order of resulting environment variables
+        LinkedHashMap<String, String> defaultDistConfig = Constants.DEFAULT_DIST_CONFIG;
+
+        // convert default config to server config of type List<ValueOrSecret>
+        List<ValueOrSecret> serverConfig = defaultDistConfig.entrySet().stream()
                 .map(e -> new ValueOrSecret(e.getKey(), e.getValue()))
                 .collect(Collectors.toList());
 
