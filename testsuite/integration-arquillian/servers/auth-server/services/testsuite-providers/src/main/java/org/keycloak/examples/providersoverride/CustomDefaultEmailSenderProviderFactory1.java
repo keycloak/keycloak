@@ -19,15 +19,22 @@
 
 package org.keycloak.examples.providersoverride;
 
-import org.keycloak.forms.account.freemarker.FreeMarkerAccountProvider;
+import org.keycloak.email.DefaultEmailSenderProviderFactory;
+import org.keycloak.email.EmailSenderProvider;
 import org.keycloak.models.KeycloakSession;
 
 /**
- * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
+ * Won't be used due lower order than CustomFreemarkerAccountProviderFactory2
  */
-public class CustomFreemarkerAccountProvider1 extends FreeMarkerAccountProvider {
+public class CustomDefaultEmailSenderProviderFactory1 extends DefaultEmailSenderProviderFactory {
 
-    public CustomFreemarkerAccountProvider1(KeycloakSession session) {
-        super(session);
+    @Override
+    public int order() {
+        return 1;
+    }
+
+    @Override
+    public EmailSenderProvider create(KeycloakSession session) {
+        return new CustomDefaultEmailSenderProvider1(session);
     }
 }

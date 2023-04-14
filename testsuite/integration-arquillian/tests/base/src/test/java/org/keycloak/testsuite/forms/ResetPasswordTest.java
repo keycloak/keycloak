@@ -1127,7 +1127,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
     @Test
     public void resetPasswordLinkNewTabAndProperRedirectAccount() throws IOException {
         final String REQUIRED_URI = getAuthServerRoot() + "realms/test/account/login-redirect?path=applications";
-        final String REDIRECT_URI = getAccountRedirectUrl() + "?path=applications";
+        final String REDIRECT_URI = getAuthServerRoot() + "realms/test/account/login-redirect?path=applications";
         final String CLIENT_ID = "account";
         final String ACCOUNT_MANAGEMENT_TITLE = "Keycloak Account Management";
 

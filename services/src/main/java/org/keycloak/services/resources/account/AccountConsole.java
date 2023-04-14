@@ -51,6 +51,9 @@ import org.keycloak.utils.MediaType;
  */
 public class AccountConsole {
 
+    // Used when some other context (ie. IdentityBrokerService) wants to forward error to account management and display it here
+    public static final String ACCOUNT_MGMT_FORWARDED_ERROR_NOTE = "ACCOUNT_MGMT_FORWARDED_ERROR";
+
     private final Pattern bundleParamPattern = Pattern.compile("(\\{\\s*(\\d+)\\s*\\})");
 
     protected final KeycloakSession session;
