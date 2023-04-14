@@ -25,7 +25,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.representations.idm.PublishedRealmRepresentation;
-import org.keycloak.services.resources.account.AccountFormService;
+import org.keycloak.services.Urls;
 
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.OPTIONS;
@@ -87,7 +87,7 @@ public class PublicRealmResource {
         PublishedRealmRepresentation rep = new PublishedRealmRepresentation();
         rep.setRealm(realm.getName());
         rep.setTokenServiceUrl(OIDCLoginProtocolService.tokenServiceBaseUrl(uriInfo).build(realm.getName()).toString());
-        rep.setAccountServiceUrl(AccountFormService.accountServiceBaseUrl(uriInfo).build(realm.getName()).toString());
+        rep.setAccountServiceUrl(Urls.accountBase(uriInfo.getBaseUri()).build(realm.getName()).toString());
         rep.setPublicKeyPem(PemUtils.encodeKey(session.keys().getActiveRsaKey(realm).getPublicKey()));
         rep.setNotBefore(realm.getNotBefore());
         return rep;

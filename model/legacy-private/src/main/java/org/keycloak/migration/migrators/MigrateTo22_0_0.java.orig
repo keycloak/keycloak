@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 /*
  * Copyright 2023 Red Hat, Inc. and/or its affiliates
  *  and other contributors as indicated by the @author tags.
@@ -31,10 +32,24 @@ import org.keycloak.representations.idm.RealmRepresentation;
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
+=======
+package org.keycloak.migration.migrators;
+
+import org.keycloak.migration.ModelVersion;
+import org.keycloak.models.AccountRoles;
+import org.keycloak.models.ClientModel;
+import org.keycloak.models.Constants;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.RoleModel;
+import org.keycloak.representations.idm.RealmRepresentation;
+
+>>>>>>> db6ed3b65e (Remove old account console theme)
 public class MigrateTo22_0_0 implements Migration {
 
     public static final ModelVersion VERSION = new ModelVersion("22.0.0");
 
+<<<<<<< HEAD
     public static final String HTTP_CHALLENGE_FLOW = "http challenge";
 
     private static final Logger LOG = Logger.getLogger(MigrateTo22_0_0.class);
@@ -42,13 +57,17 @@ public class MigrateTo22_0_0 implements Migration {
     @Override
     public void migrate(KeycloakSession session) {
         session.realms().getRealmsStream().forEach(this::removeHttpChallengeFlow);
+=======
+    @Override
+    public void migrate(KeycloakSession session) {
         session.realms().getRealmsStream().forEach(this::updateAccountTheme);
+>>>>>>> db6ed3b65e (Remove old account console theme)
     }
 
     @Override
     public void migrateImport(KeycloakSession session, RealmModel realm, RealmRepresentation rep, boolean skipUserDependent) {
+<<<<<<< HEAD
         removeHttpChallengeFlow(realm);
-        updateAccountTheme(realm);
     }
 
     private void removeHttpChallengeFlow(RealmModel realm) {
@@ -62,14 +81,15 @@ public class MigrateTo22_0_0 implements Migration {
             LOG.errorf("Authentication flow '%s' is in use in realm '%s' and cannot be removed. Please update your deployment to avoid using this flow before migration to latest Keycloak",
                     HTTP_CHALLENGE_FLOW, realm.getName());
             throw me;
-        }
+=======
+        updateAccountTheme(realm);
     }
-
 
     private void updateAccountTheme(RealmModel realm) {
         String accountTheme = realm.getAccountTheme();
         if ("keycloak".equals(accountTheme) || "rh-sso".equals(accountTheme)) {
             realm.setAccountTheme("keycloak.v2");
+>>>>>>> db6ed3b65e (Remove old account console theme)
         }
     }
 
