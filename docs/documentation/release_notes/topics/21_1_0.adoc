@@ -2,9 +2,9 @@
 
 FIPS 140-2 support in Keycloak, which was preview in the previous release, is now promoted to be officially supported.
 
-= Experimental new Account Console 
+= Experimental Account Console version 3
 
-The Account Console Version 3 is now available as an experimental feature in Keycloak. This version supports custom fields created with User Profile. If you are looking to try it out and provide us with some early feedback you can enable it as follows:
+The Account Console version 3 is now available as an experimental feature in Keycloak. This version supports custom fields created with the 'User Profile' feature. If you are looking to try it out and provide us with some early feedback you can enable it as follows:
 
 ```
 bin/kc.sh start-dev --features=account3

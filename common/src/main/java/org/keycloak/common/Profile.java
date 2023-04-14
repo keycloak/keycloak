@@ -44,8 +44,8 @@ public class Profile {
         AUTHORIZATION("Authorization Service", Type.DEFAULT),
 
         ACCOUNT_API("Account Management REST API", Type.DEFAULT),
-        ACCOUNT2("Account Management Console", Type.DEFAULT, Feature.ACCOUNT_API),
-        ACCOUNT3("New Account Management Console", Type.EXPERIMENTAL, Feature.ACCOUNT_API),
+        ACCOUNT2("Account Management Console version 2", Type.DEFAULT, Feature.ACCOUNT_API),
+        ACCOUNT3("Account Management Console version 3", Type.EXPERIMENTAL, Feature.ACCOUNT_API),
 
         ADMIN_FINE_GRAINED_AUTHZ("Fine-Grained Admin Permissions", Type.PREVIEW),
 
