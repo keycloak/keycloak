@@ -27,11 +27,14 @@ bin/kc.sh start-dev --features=account3
 As part of the removal of the https://www.keycloak.org/2023/03/adapter-deprecation-update[deprecated] adapters, the Keycloak Policy Enforcer was extracted from the adapters code base
 into a separate dependency:
 
+[source,xml]
+----
 <dependency>
     <groupId>org.keycloak</groupId>
     <artifactId>keycloak-policy-enforcer</artifactId>
     <version>${version.keycloak}</version>
 </dependency>
+----
 
 By providing this dependency, we expect making it possible to integrate the policy enforcer with the Java stack of your preference.
 
