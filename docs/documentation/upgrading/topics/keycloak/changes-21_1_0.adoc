@@ -19,9 +19,10 @@ Default `Client ID` mapper of `Service Account Client` has been changed. `Token 
 
 Historically it has been possible to create an instance of the Keycloak JS adapter by calling the `Keycloak()` function directly:
 
-```js
+[source,javascript]
+----
 const keycloak = Keycloak();
-```
+----
 
 To align this with modern conventions in the JavaScript world it has been possible to use the https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/new[`new` operator] to create an instance instead:
 
