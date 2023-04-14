@@ -1105,6 +1105,8 @@ public class UserStorageTest extends AbstractAuthTest {
             driver.navigate().back();
             driver.navigate().back();
             driver.navigate().back();
+            
+            int greenMailMessageCountBeforeRegistrer = greenMail.getReceivedMessages().length;
             registerPage.assertCurrent();
 
             registerPage.registerWithEmailAsUsername(
@@ -1127,11 +1129,14 @@ public class UserStorageTest extends AbstractAuthTest {
                     assertFalse("The user is created even when an error page was shown, yet the user has no password", userByUsername.getCredentials().isEmpty());
                 }
             } else {
-                throw new UnsupportedOperationException("If someone ever refactors the reset password flow, and the previous steps no more cause an error, " +
-                    "then we should check the following: \n" +
-                    " - the newly created user exists\n" +
-                    " - the registration flow is executed until the last step (eg.: the user has a password)\n" +
-                    " - no error page was shown");
+                verifyEmailPage.assertCurrent();
+
+                Assert.assertEquals(1+greenMailMessageCountBeforeRegistrer, greenMail.getReceivedMessages().length);
+                MimeMessage message = greenMail.getReceivedMessages()[greenMailMessageCountBeforeRegistrer];
+                String verificationUrl = getPasswordResetEmailLink(message);
+                
+                driver.navigate().to(verificationUrl.trim());
+                appPage.assertCurrent();
             }
         }
     }
