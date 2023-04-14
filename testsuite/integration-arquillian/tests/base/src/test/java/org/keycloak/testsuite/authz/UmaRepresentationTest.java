@@ -22,8 +22,6 @@ import org.junit.Test;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.client.resource.PermissionResource;
-import org.keycloak.forms.account.freemarker.model.AuthorizationBean;
-import org.keycloak.forms.account.freemarker.model.AuthorizationBean.ResourceBean;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -152,21 +150,22 @@ public class UmaRepresentationTest extends AbstractResourceServerTest {
         session.getContext().setRealm(realm);
         AuthorizationProvider authorization = session.getProvider(AuthorizationProvider.class);
 
-        AuthorizationBean authorizationBean  = new AuthorizationBean(session, realm, null, session.getContext().getUri());
-        ClientModel client = session.getContext().getRealm().getClientByClientId("resource-server-test");
-        UserModel user = session.users().getUserByUsername(session.getContext().getRealm(), "marta");
-        ResourceServer resourceServer = authorization.getStoreFactory().getResourceServerStore().findByClient(client);
-        ResourceBean resourceBean = authorizationBean.new ResourceBean(
-            authorization.getStoreFactory().getResourceStore().findByName(
-                    resourceServer, "Resource A", user.getId()
-            )
-        );
-
-        Assert.assertEquals("Resource A", resourceBean.getName());
-        Assert.assertEquals("marta", resourceBean.getOwnerName());
-        Assert.assertNotNull(resourceBean.getUserOwner());
-        Assert.assertEquals("marta", resourceBean.getUserOwner().getUsername());
-        Assert.assertNull(resourceBean.getClientOwner());
+        throw new RuntimeException("Account console is gone!");
+//        AuthorizationBean authorizationBean  = new AuthorizationBean(session, realm, null, session.getContext().getUri());
+//        ClientModel client = session.getContext().getRealm().getClientByClientId("resource-server-test");
+//        UserModel user = session.users().getUserByUsername(session.getContext().getRealm(), "marta");
+//        ResourceServer resourceServer = authorization.getStoreFactory().getResourceServerStore().findByClient(client);
+//        ResourceBean resourceBean = authorizationBean.new ResourceBean(
+//            authorization.getStoreFactory().getResourceStore().findByName(
+//                    resourceServer, "Resource A", user.getId()
+//            )
+//        );
+//
+//        Assert.assertEquals("Resource A", resourceBean.getName());
+//        Assert.assertEquals("marta", resourceBean.getOwnerName());
+//        Assert.assertNotNull(resourceBean.getUserOwner());
+//        Assert.assertEquals("marta", resourceBean.getUserOwner().getUsername());
+//        Assert.assertNull(resourceBean.getClientOwner());
     }
 
     @Test
@@ -179,20 +178,20 @@ public class UmaRepresentationTest extends AbstractResourceServerTest {
         RealmModel realm = session.realms().getRealmByName("authz-test");
         session.getContext().setRealm(realm);
         AuthorizationProvider authorization = session.getProvider(AuthorizationProvider.class);
-
-        AuthorizationBean authorizationBean  = new AuthorizationBean(session, realm, null, session.getContext().getUri());
-        ClientModel client = session.getContext().getRealm().getClientByClientId("resource-server-test");
-        ResourceServer resourceServer = authorization.getStoreFactory().getResourceServerStore().findByClient(client);
-        ResourceBean resourceBean = authorizationBean.new ResourceBean(
-            authorization.getStoreFactory().getResourceStore().findByName(
-                    resourceServer, "Resource A", client.getId()
-            )
-        );
-
-        Assert.assertEquals("Resource A", resourceBean.getName());
-        Assert.assertEquals("resource-server-test", resourceBean.getOwnerName());
-        Assert.assertNotNull(resourceBean.getClientOwner());
-        Assert.assertEquals("resource-server-test", resourceBean.getClientOwner().getClientId());
-        Assert.assertNull(resourceBean.getUserOwner());
+        throw new RuntimeException("Account console is gone!");
+//        AuthorizationBean authorizationBean  = new AuthorizationBean(session, realm, null, session.getContext().getUri());
+//        ClientModel client = session.getContext().getRealm().getClientByClientId("resource-server-test");
+//        ResourceServer resourceServer = authorization.getStoreFactory().getResourceServerStore().findByClient(client);
+//        ResourceBean resourceBean = authorizationBean.new ResourceBean(
+//            authorization.getStoreFactory().getResourceStore().findByName(
+//                    resourceServer, "Resource A", client.getId()
+//            )
+//        );
+//
+//        Assert.assertEquals("Resource A", resourceBean.getName());
+//        Assert.assertEquals("resource-server-test", resourceBean.getOwnerName());
+//        Assert.assertNotNull(resourceBean.getClientOwner());
+//        Assert.assertEquals("resource-server-test", resourceBean.getClientOwner().getClientId());
+//        Assert.assertNull(resourceBean.getUserOwner());
     }
 }

@@ -47,7 +47,6 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.services.resources.account.AccountFormService;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
 import org.keycloak.testsuite.arquillian.KcArquillian;
@@ -724,10 +723,7 @@ public abstract class AbstractKeycloakTest {
     }
 
     protected String getAccountRedirectUrl(String realm) {
-        return AccountFormService
-              .loginRedirectUrl(UriBuilder.fromUri(oauth.AUTH_SERVER_ROOT))
-              .build(realm)
-              .toString();
+        throw new RuntimeException("Hey you are not allowed to test with the account console ;)");
     }
 
     protected String getAccountRedirectUrl() {
