@@ -1,3 +1,16 @@
+= Monorepo
+
+In the past Keycloak was maintained across multiple GitHub repositories:
+
+* https://github.com/keycloak/keycloak-documentation[Documentation repository]
+* https://github.com/keycloak/keycloak-ui[UI repository]
+* https://github.com/keycloak/keycloak-nodejs-admin-client[Node.js admin client repository]
+
+Having multiple repositories introduced a lot of complexity and toil. For example frequently multiple pull requests had to be sent
+to different repositories for a single change.
+
+To simplify things we have now migrated everything into the https://github.com/keycloak/keycloak[main repository].
+
 = FIPS 140-2 support
 
 FIPS 140-2 support in Keycloak, which was preview in the previous release, is now promoted to be officially supported.
@@ -9,3 +22,8 @@ The Account Console version 3 is now available as an experimental feature in Key
 ```
 bin/kc.sh start-dev --features=account3
 ```
+
+= Javascript engine available by default
+
+In the previous version, when Keycloak was used on Java 17 with Javascript providers it was needed to add the Nashorn
+javascript engine to the distribution. This is no longer needed as Nashorn javascript engine is available in Keycloak server by default.

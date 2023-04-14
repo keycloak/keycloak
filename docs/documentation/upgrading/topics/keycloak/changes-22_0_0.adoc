@@ -38,19 +38,3 @@ try {
   alert('failed to initialize');
 }
 ```
-
-= Keycloak JS adapter must be instanciated with the `new` operator
-
-Historically it has been possible to create an instance of the Keycloak JS adapter by calling the `Keycloak()` function directly:
-
-```js
-const keycloak = Keycloak();
-```
-
-To align this with modern conventions in the JavaScript world it has been possible to use the https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/new[`new` operator] to create an instance instead:
-
-```js
-const keycloak = new Keycloak();
-```
-
-The function-style constructor has been deprecated for a while, but starting this version we will actively log a deprecation message when it used. This style of constructor will be removed in a future version so make sure to migrate your code to use the `new` operator.
