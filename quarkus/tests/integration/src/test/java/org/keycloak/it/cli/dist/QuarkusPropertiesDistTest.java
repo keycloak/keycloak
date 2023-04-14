@@ -45,7 +45,7 @@ import io.quarkus.test.junit.main.LaunchResult;
 @LegacyStore
 public class QuarkusPropertiesDistTest {
 
-    private static final String QUARKUS_BUILDTIME_HIBERNATE_METRICS_KEY = "quarkus.hibernate-orm.metrics.enabled";
+    private static final String QUARKUS_BUILDTIME_HIBERNATE_METRICS_KEY = "quarkus.datasource.metrics.enabled";
     private static final String QUARKUS_RUNTIME_CONSOLE_LOGLVL_KEY = "quarkus.log.console.level";
 
     @Test
