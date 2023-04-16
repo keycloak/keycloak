@@ -55,6 +55,7 @@ import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.KeycloakDeploymentBuilder;
 import org.keycloak.adapters.OIDCHttpFacade;
 import org.keycloak.adapters.RefreshableKeycloakSecurityContext;
+import org.keycloak.adapters.authorization.PathConfigMatcher;
 import org.keycloak.adapters.authorization.PolicyEnforcer;
 import org.keycloak.adapters.spi.AuthenticationError;
 import org.keycloak.adapters.spi.HttpFacade.Cookie;
@@ -307,16 +308,20 @@ public class PolicyEnforcerTest extends AbstractKeycloakTest {
     public void testMappedPathEnforcementModeDisabled() {
         KeycloakDeployment deployment = KeycloakDeploymentBuilder.build(getAdapterConfiguration("enforcer-disabled-enforce-mode-path.json"));
         PolicyEnforcer policyEnforcer = deployment.getPolicyEnforcer();
+        PathConfigMatcher matcher = policyEnforcer.getPathMatcher();
 
         OIDCHttpFacade httpFacade = createHttpFacade("/api/resource/public");
         AuthorizationContext context = policyEnforcer.enforce(new HttpAuthzRequest(httpFacade), new HttpAuthzResponse(httpFacade));
         assertTrue(context.isGranted());
+        assertTrue(matcher.isEnforcementDisabled("/api/resource/public"));
+        assertTrue(matcher.isEnforcementDisabled("/api/resource/public-b/endpoint"));
 
         httpFacade = createHttpFacade("/api/resourceb");
         context = policyEnforcer.enforce(new HttpAuthzRequest(httpFacade), new HttpAuthzResponse(httpFacade));
         assertFalse(context.isGranted());
         TestResponse response = TestResponse.class.cast(httpFacade.getResponse());
         assertEquals(403, response.getStatus());
+        assertFalse(matcher.isEnforcementDisabled("/api/resourceb"));
 
         oauth.realm(REALM_NAME);
         oauth.clientId("public-client-test");
@@ -326,6 +331,7 @@ public class PolicyEnforcerTest extends AbstractKeycloakTest {
         httpFacade = createHttpFacade("/api/resourcea", token);
         context = policyEnforcer.enforce(new HttpAuthzRequest(httpFacade), new HttpAuthzResponse(httpFacade));
         assertTrue(context.isGranted());
+        assertFalse(matcher.isEnforcementDisabled("/api/resourcea"));
 
         httpFacade = createHttpFacade("/api/resourceb", token);
         context = policyEnforcer.enforce(new HttpAuthzRequest(httpFacade), new HttpAuthzResponse(httpFacade));

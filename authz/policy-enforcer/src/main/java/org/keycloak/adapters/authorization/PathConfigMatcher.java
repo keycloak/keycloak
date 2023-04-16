@@ -65,6 +65,20 @@ public class PathConfigMatcher extends PathMatcher<PathConfig> {
         }
     }
 
+    public boolean isEnforcementDisabled(String targetUri) {
+        PathConfig pathConfig = pathCache.get(targetUri);
+
+        if (pathConfig == null && !pathCache.containsKey(targetUri)) {
+            pathConfig = super.matches(targetUri);
+        }
+
+        if (pathConfig == null) {
+            return false;
+        }
+
+        return pathConfig.getEnforcementMode() == PolicyEnforcerConfig.EnforcementMode.DISABLED;
+    }
+
     @Override
     public PathConfig matches(String targetUri) {
         PathConfig pathConfig = pathCache.get(targetUri);

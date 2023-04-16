@@ -13,6 +13,11 @@
         "name": "Resource B",
         "path": "/api/resource/public",
         "enforcement-mode": "DISABLED"
+      },
+      {
+        "name": "Resource B",
+        "path": "/api/resource/public-b/*",
+        "enforcement-mode": "DISABLED"
       }
     ]
   }
