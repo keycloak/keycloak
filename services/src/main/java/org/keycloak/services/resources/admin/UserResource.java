@@ -340,6 +340,7 @@ public class UserResource {
             UserSessionModel userSession = lockUserSessionsForModification(session, () -> session.sessions().getUserSession(authenticatedRealm, sessionState));
             AuthenticationManager.expireIdentityCookie(realm, session.getContext().getUri(), session);
             AuthenticationManager.expireRememberMeCookie(realm, session.getContext().getUri(), session);
+            AuthenticationManager.expireAuthSessionCookie(realm, session.getContext().getUri(), session);
             AuthenticationManager.backchannelLogout(session, authenticatedRealm, userSession, session.getContext().getUri(), clientConnection, headers, true);
         }
         EventBuilder event = new EventBuilder(realm, session, clientConnection);
