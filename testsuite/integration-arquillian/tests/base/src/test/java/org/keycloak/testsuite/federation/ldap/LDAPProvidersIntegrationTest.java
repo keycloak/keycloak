@@ -512,7 +512,6 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
     }
 
     @Test
-    @DisableFeature(value = Profile.Feature.ACCOUNT2, skipRestart = true) // TODO remove this (KEYCLOAK-16228)
     public void ldapPasswordChangeWithAccountConsole() throws Exception {
         Assert.assertTrue(AccountHelper.updatePassword(testRealm(), "johnkeycloak", "New-password1"));
 
