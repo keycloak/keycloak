@@ -126,6 +126,7 @@ export const GroupTree = ({
   const [search, setSearch] = useState("");
   const [max, setMax] = useState(20);
   const [first, setFirst] = useState(0);
+  const [count, setCount] = useState(0);
   const [exact, setExact] = useState(false);
   const [activeItem, setActiveItem] = useState<TreeViewDataItem>();
 
@@ -160,8 +161,8 @@ export const GroupTree = ({
   };
 
   useFetch(
-    () =>
-      fetchAdminUI<GroupRepresentation[]>(
+    async () => {
+      const groups = await fetchAdminUI<GroupRepresentation[]>(
         adminClient,
         "ui-ext/groups",
         Object.assign(
@@ -172,10 +173,15 @@ export const GroupTree = ({
           },
           search === "" ? null : { search }
         )
-      ),
-    (groups) => {
+      );
+      const count = (await adminClient.groups.count({ search, top: true }))
+        .count;
+      return { groups, count };
+    },
+    ({ groups, count }) => {
       setGroups(groups);
       setData(groups.map((g) => mapGroup(g, [], refresh)));
+      setCount(count);
     },
     [key, first, max, search, exact]
   );
@@ -200,7 +206,7 @@ export const GroupTree = ({
 
   return data ? (
     <PaginatingTableToolbar
-      count={data.length || 0}
+      count={count - first}
       first={first}
       max={max}
       onNextClick={setFirst}
@@ -229,7 +235,7 @@ export const GroupTree = ({
     >
       {data.length > 0 && (
         <TreeView
-          data={data}
+          data={data.slice(0, max)}
           allExpanded={search.length > 0}
           activeItems={activeItem ? [activeItem] : undefined}
           hasGuides
