@@ -8,6 +8,7 @@ summary="Complete list of all build options and configuration for Keycloak">
 <#list ctx.options.categories as category>
 <#assign categoryOptions=ctx.options.getValues(category)>
 <#if categoryOptions?has_content>
+[#category-${category.name()?lower_case}]
 == ${category.heading}
 
 <@opts.list options=categoryOptions></@opts.list>

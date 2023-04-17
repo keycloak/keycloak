@@ -8,7 +8,7 @@
     summary="An overview about how to configure relational databases"
     includedOptions="db db-* transaction-xa-enabled">
 
-This guide explains how to configure the Keycloak server to store data in a relational database.
+This {section} explains how to configure the Keycloak server to store data in a relational database.
 
 == Supported databases
 
