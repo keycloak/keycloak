@@ -36,7 +36,7 @@
         <wildfly.core.version>19.0.0.Final</wildfly.core.version>
 
         <feature-pack.resources.directory>${basedir}/../../saml-adapters/wildfly-adapter/wildfly-jakarta-modules/src/main/resources</feature-pack.resources.directory>
-        <version.org.wildfly.galleon-plugins>6.2.0.Final</version.org.wildfly.galleon-plugins>
+        <version.org.wildfly.galleon-plugins>6.4.0.Final</version.org.wildfly.galleon-plugins>
         <xmlFileSource>${basedir}/src/main/resources/licenses/keycloak/licenses.xml</xmlFileSource>
         <outputDirectory>${basedir}/target/resources/packages/licenses/content/docs/licenses-keycloak</outputDirectory>
     </properties>
@@ -247,6 +247,9 @@
                         </goals>
                         <phase>compile</phase>
                         <configuration>
+                            <wildfly-channel-resolution-mode>REQUIRED</wildfly-channel-resolution-mode>
+                            <generate-channel-manifest>true</generate-channel-manifest>
+                     git        <add-feature-packs-as-required-manifests>false</add-feature-packs-as-required-manifests>
                             <fork-embedded>false</fork-embedded>
                         </configuration>
                     </execution>
