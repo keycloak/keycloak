@@ -15,9 +15,6 @@
     <packaging>jar</packaging>
 
     <properties>
-        <maven.compiler.source>11</maven.compiler.source>
-        <maven.compiler.target>11</maven.compiler.target>
-
         <jakarta-transformer-sources>${project.basedir}/../../../../../adapters/saml/undertow</jakarta-transformer-sources>
         <jakarta-transformer-target>${project.basedir}</jakarta-transformer-target>
     </properties>
@@ -99,7 +96,8 @@
                         <configuration>
                             <target>
                                 <property name="plugin_classpath" refid="maven.plugin.classpath" />
-                                <java classname="org.eclipse.transformer.jakarta.JakartaTransformer">
+                                <java classname="org.eclipse.transformer.jakarta.JakartaTransformer" fork="true">
+                                    <jvmarg value="${ant.jvm.args}"/>
                                     <arg value="-o" />
                                     <arg value="${jakarta-transformer-sources}" />
                                     <arg value="${jakarta-transformer-target}/tmp" />

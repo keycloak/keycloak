@@ -15,9 +15,6 @@
     <packaging>jar</packaging>
 
     <properties>
-        <maven.compiler.source>11</maven.compiler.source>
-        <maven.compiler.target>11</maven.compiler.target>
-
         <keycloak.osgi.export>
             org.keycloak.adapters.undertow.*
         </keycloak.osgi.export>
@@ -109,7 +106,8 @@
                         <configuration>
                             <target>
                                 <property name="plugin_classpath" refid="maven.plugin.classpath" />
-                                <java classname="org.eclipse.transformer.jakarta.JakartaTransformer">
+                                <java classname="org.eclipse.transformer.jakarta.JakartaTransformer" fork="true">
+                                    <jvmarg value="${ant.jvm.args}"/>
                                     <arg value="-o" />
                                     <arg value="${jakarta-transformer-sources}" />
                                     <arg value="${jakarta-transformer-target}/tmp" />
