@@ -22,33 +22,32 @@ import {
   useRoutableTab,
 } from "../components/routable-tabs/RoutableTabs";
 import { ViewHeader } from "../components/view-header/ViewHeader";
+import { useRealms } from "../context/RealmsContext";
 import { useAdminClient } from "../context/auth/AdminClient";
 import { useRealm } from "../context/realm-context/RealmContext";
-import { useRealms } from "../context/RealmsContext";
 import { toDashboard } from "../dashboard/routes/Dashboard";
 import environment from "../environment";
 import helpUrls from "../help-urls";
 import { convertFormValuesToObject, convertToFormValues } from "../util";
 import useIsFeatureEnabled, { Feature } from "../utils/useIsFeatureEnabled";
 import { RealmSettingsEmailTab } from "./EmailTab";
-import { EventsTab } from "./event-config/EventsTab";
 import { RealmSettingsGeneralTab } from "./GeneralTab";
-import { KeysTab } from "./keys/KeysTab";
 import { LocalizationTab } from "./LocalizationTab";
 import { RealmSettingsLoginTab } from "./LoginTab";
 import { PartialExportDialog } from "./PartialExport";
 import { PartialImportDialog } from "./PartialImport";
 import { PoliciesTab } from "./PoliciesTab";
 import ProfilesTab from "./ProfilesTab";
-import { ClientPoliciesTab, toClientPolicies } from "./routes/ClientPolicies";
-import { RealmSettingsTab, toRealmSettings } from "./routes/RealmSettings";
-import { SecurityDefenses } from "./security-defences/SecurityDefenses";
 import { RealmSettingsSessionsTab } from "./SessionsTab";
 import { RealmSettingsThemesTab } from "./ThemesTab";
 import { RealmSettingsTokensTab } from "./TokensTab";
-import { UserProfileTab } from "./user-profile/UserProfileTab";
 import { UserRegistration } from "./UserRegistration";
-import { useServerInfo } from "../context/server-info/ServerInfoProvider";
+import { EventsTab } from "./event-config/EventsTab";
+import { KeysTab } from "./keys/KeysTab";
+import { ClientPoliciesTab, toClientPolicies } from "./routes/ClientPolicies";
+import { RealmSettingsTab, toRealmSettings } from "./routes/RealmSettings";
+import { SecurityDefenses } from "./security-defences/SecurityDefenses";
+import { UserProfileTab } from "./user-profile/UserProfileTab";
 
 type RealmSettingsHeaderProps = {
   onChange: (value: boolean) => void;
@@ -237,8 +236,6 @@ export const RealmSettingsTabs = ({
   const sessionsTab = useTab("sessions");
   const tokensTab = useTab("tokens");
   const clientPoliciesTab = useTab("client-policies");
-  const clientPoliciesDisabled =
-    useServerInfo().profileInfo?.disabledFeatures?.includes("CLIENT_POLICIES");
   const userProfileTab = useTab("user-profile");
   const userRegistrationTab = useTab("user-registration");
 
@@ -353,7 +350,7 @@ export const RealmSettingsTabs = ({
           >
             <RealmSettingsTokensTab save={save} realm={realm} />
           </Tab>
-          {!clientPoliciesDisabled && (
+          {isFeatureEnabled(Feature.ClientPolicies) && (
             <Tab
               title={
                 <TabTitleText>
