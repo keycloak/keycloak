@@ -1,3 +1,0 @@
-= Legacy Promise API removed from Keycloak JS adapter
-
-With this release, we have removed the legacy Promise API methods from the Keycloak JS adapter. This means that calling `.success()` and `.error()` on promises returned from the adapter is no longer possible.
