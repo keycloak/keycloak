@@ -1,3 +1,3 @@
 [sidebar,role="page-links"]
-link:https://github.com/keycloak/keycloak-documentation/blob/master/{include_filename}[Edit this section, window="_blank"]
+link:https://github.com/keycloak/keycloak/tree/main/docs/documentation/{include_filename}[Edit this section, window="_blank"]
 link:https://issues.redhat.com/secure/CreateIssueDetails!init.jspa?pid=12313920&components=12323375&issuetype=1&priority=3&description=File:%20{include_filename}[Report an issue, window="_blank"]
