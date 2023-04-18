@@ -15,7 +15,7 @@
     "build": "wireit",
     "lint": "wireit",
     "test": "wireit",
-    "prepublishOnly": "npm run build"
+    "prepublishOnly": "pnpm run build"
   },
   "wireit": {
     "build": {
