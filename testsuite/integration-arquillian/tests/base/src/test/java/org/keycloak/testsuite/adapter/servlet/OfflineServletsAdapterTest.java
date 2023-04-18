@@ -13,6 +13,7 @@ import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
+import org.keycloak.representations.RefreshToken;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.adapter.AbstractServletsAdapterTest;
@@ -91,7 +92,8 @@ public class OfflineServletsAdapterTest extends AbstractServletsAdapterTest {
 
     @Override
     protected boolean isImportAfterEachMethod() {
-        return false;
+        // For proper cleanup of test methods
+        return true;
     }
 
     @Test
@@ -111,12 +113,13 @@ public class OfflineServletsAdapterTest extends AbstractServletsAdapterTest {
 
             assertCurrentUrlStartsWith(offlineTokenPage);
 
-            assertThat(offlineTokenPage.getRefreshToken(), notNullValue());
-            assertThat(TokenUtil.TOKEN_TYPE_OFFLINE, is(offlineTokenPage.getRefreshToken().getType()));
-            assertThat(offlineTokenPage.getRefreshToken().getExp(), nullValue());
+            RefreshToken refreshToken = offlineTokenPage.getRefreshToken();
+            assertThat(refreshToken, notNullValue());
+            assertThat(TokenUtil.TOKEN_TYPE_OFFLINE, is(refreshToken.getType()));
+            assertThat(refreshToken.getExp(), nullValue());
 
             String accessTokenId = offlineTokenPage.getAccessToken().getId();
-            String refreshTokenId = offlineTokenPage.getRefreshToken().getId();
+            String refreshTokenId = refreshToken.getId();
 
             // online user session will be expired and removed
             setAdapterAndServerTimeOffset(9999);
@@ -166,8 +169,9 @@ public class OfflineServletsAdapterTest extends AbstractServletsAdapterTest {
             loginPage.login(DEFAULT_USERNAME, DEFAULT_PASSWORD);
             assertCurrentUrlStartsWith(offlineTokenPage);
 
-            assertThat(offlineTokenPage.getRefreshToken(), notNullValue());
-            assertThat(offlineTokenPage.getRefreshToken().getType(), is(TokenUtil.TOKEN_TYPE_OFFLINE));
+            final RefreshToken refreshToken = offlineTokenPage.getRefreshToken();
+            assertThat(refreshToken, notNullValue());
+            assertThat(refreshToken.getType(), is(TokenUtil.TOKEN_TYPE_OFFLINE));
 
             // Assert refresh works with increased time
             setAdapterAndServerTimeOffset(9999);
