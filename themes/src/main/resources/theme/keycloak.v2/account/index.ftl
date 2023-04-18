@@ -124,7 +124,7 @@
     <body>
 
         <script>
-            var keycloak = new Keycloak({
+            var keycloak = Keycloak({
                 authServerUrl: authUrl,
                 realm: realm,
                 clientId: 'account-console'
