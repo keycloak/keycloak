@@ -410,6 +410,9 @@ public class AuthenticationManagementResource {
         if (parentFlow == null) {
             throw ErrorResponse.error("Parent flow doesn't exist", Response.Status.BAD_REQUEST);
         }
+        if (parentFlow.isBuiltIn()) {
+            throw new BadRequestException("It is illegal to add sub-flow to a built in flow");
+        }
         String alias = data.get("alias");
         String type = data.get("type");
         String provider = data.get("provider");
