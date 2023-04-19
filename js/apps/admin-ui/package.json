@@ -60,7 +60,7 @@
     }
   },
   "dependencies": {
-    "@keycloak/keycloak-admin-client": "999.0.0-SNAPSHOT",
+    "@keycloak/keycloak-admin-client": "21.1.0",
     "@patternfly/patternfly": "^4.224.2",
     "@patternfly/react-code-editor": "^4.82.115",
     "@patternfly/react-core": "^4.276.8",
@@ -72,7 +72,8 @@
     "flat": "^5.0.2",
     "i18next": "^22.4.14",
     "i18next-http-backend": "^2.2.0",
-    "keycloak-js": "999.0.0-SNAPSHOT",
+    "keycloak-js": "21.1.0",
+    "keycloak-masthead": "21.1.0",
     "lodash-es": "^4.17.21",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
@@ -82,7 +83,7 @@
     "react-i18next": "^12.2.0",
     "react-router-dom": "6.10.0",
     "reactflow": "^11.7.0",
-    "ui-shared": "999.0.0-SNAPSHOT",
+    "ui-shared": "21.1.0",
     "use-react-router-breadcrumbs": "^4.0.1"
   },
   "devDependencies": {
@@ -105,5 +106,6 @@
     "vite": "^4.2.1",
     "vite-plugin-checker": "^0.5.6",
     "vitest": "^0.30.1"
-  }
+  },
+  "version": "21.1.0"
 }

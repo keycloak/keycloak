@@ -1,6 +1,6 @@
 {
   "name": "keycloak-masthead",
-  "version": "999.0.0-SNAPSHOT",
+  "version": "21.1.0",
   "type": "module",
   "main": "./dist/keycloak-masthead.js",
   "types": "./dist/keycloak-masthead.d.ts",
@@ -41,10 +41,13 @@
     }
   },
   "dependencies": {
+    "@keycloak/keycloak-admin-client": "21.1.0",
     "@patternfly/react-core": "^4.276.8",
-    "keycloak-js": "999.0.0-SNAPSHOT",
+    "keycloak-js": "21.1.0",
+    "keycloak-masthead": "21.1.0",
     "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "react-dom": "^18.2.0",
+    "ui-shared": "21.1.0"
   },
   "devDependencies": {
     "@types/react": "^18.0.35",

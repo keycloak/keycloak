@@ -1,6 +1,6 @@
 {
   "name": "@keycloak/keycloak-admin-client",
-  "version": "999.0.0-SNAPSHOT",
+  "version": "21.1.0",
   "description": "A client to interact with Keycloak's Administration API",
   "type": "module",
   "main": "lib/index.js",
@@ -37,8 +37,12 @@
     }
   },
   "dependencies": {
+    "@keycloak/keycloak-admin-client": "21.1.0",
     "camelize-ts": "^2.5.0",
+    "keycloak-js": "21.1.0",
+    "keycloak-masthead": "21.1.0",
     "lodash-es": "^4.17.21",
+    "ui-shared": "21.1.0",
     "url-join": "^5.0.0",
     "url-template": "^3.1.0"
   },

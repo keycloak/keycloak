@@ -14,10 +14,15 @@
     }
   },
   "dependencies": {
+    "@keycloak/keycloak-admin-client": "21.1.0",
     "@octokit/rest": "^19.0.7",
     "@types/gunzip-maybe": "^1.4.0",
     "@types/tar-fs": "^2.0.1",
     "gunzip-maybe": "^1.4.2",
-    "tar-fs": "^2.1.1"
-  }
+    "keycloak-js": "21.1.0",
+    "keycloak-masthead": "21.1.0",
+    "tar-fs": "^2.1.1",
+    "ui-shared": "21.1.0"
+  },
+  "version": "21.1.0"
 }
