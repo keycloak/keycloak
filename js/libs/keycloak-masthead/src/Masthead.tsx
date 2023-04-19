@@ -12,6 +12,7 @@ import {
 } from "@patternfly/react-core";
 import Keycloak from "keycloak-js";
 import { ReactNode } from "react";
+import imgAvatar from "@patternfly/react-core/src/components/Avatar/examples/avatarImg.svg";
 
 import { KeycloakDropdown } from "./KeycloakDropdown";
 import { useTranslation } from "./translation/useTranslation";
@@ -110,7 +111,7 @@ const KeycloakMasthead = ({
             </PageHeaderToolsItem>
           </PageHeaderToolsGroup>
           <Avatar
-            {...{ src: picture || "/avatar.svg", alt: t("avatar"), ...avatar }}
+            {...{ src: picture || imgAvatar, alt: t("avatar"), ...avatar }}
           />
         </PageHeaderTools>
       }
