@@ -37,7 +37,7 @@
         <containers.home>${project.build.directory}/containers</containers.home>
         <auth.server.java.home>${java.home}</auth.server.java.home>
         <app.server.java.home>${java.home}</app.server.java.home>
-        <app.server>undertow</app.server>
+        <app.server>wildfly</app.server>
         <cache.server.java.home>${java.home}</cache.server.java.home>
 
         <!--component versions-->
