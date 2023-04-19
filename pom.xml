@@ -226,7 +226,7 @@
         <server.output.dir.version>${project.version}</server.output.dir.version>
 
         <!-- Frontend -->
-        <node.version>v18.15.0</node.version>
+        <node.version>v18.16.0</node.version>
     </properties>
 
     <url>http://keycloak.org</url>
