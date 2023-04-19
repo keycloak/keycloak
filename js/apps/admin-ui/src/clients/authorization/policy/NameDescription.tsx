@@ -11,7 +11,10 @@ type NameDescriptionProps = {
   isDisabled: boolean;
 };
 
-export const NameDescription = ({ prefix,isDisabled }: NameDescriptionProps) => {
+export const NameDescription = ({
+  prefix,
+  isDisabled,
+}: NameDescriptionProps) => {
   const { t } = useTranslation("clients");
   const {
     register,

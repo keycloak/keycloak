@@ -75,7 +75,6 @@ export default function PolicyDetails() {
   const [policy, setPolicy] = useState<PolicyRepresentation>();
   const [IsDisabled, setIsDisabled] = useState(false);
 
-
   useFetch(
     async () => {
       if (policyId) {
@@ -105,9 +104,9 @@ export default function PolicyDetails() {
     ({ policy, policies }) => {
       reset({ ...policy, policies });
       setPolicy(policy);
-      if(policy!==undefined){
-        if(policy.name==="Default Policy"){
-            setIsDisabled(true);
+      if (policy !== undefined) {
+        if (policy.name === "Default Policy") {
+          setIsDisabled(true);
         }
       }
     },
@@ -173,8 +172,8 @@ export default function PolicyDetails() {
     return <KeycloakSpinner />;
   }
 
-  var ComponentType = COMPONENTS["js-disabled"];
-  if(!IsDisabled){
+  let ComponentType = COMPONENTS["js-disabled"];
+  if (!IsDisabled) {
     ComponentType = isValidComponentType(policyType)
       ? COMPONENTS[policyType]
       : COMPONENTS["js"];
@@ -212,7 +211,7 @@ export default function PolicyDetails() {
           <FormProvider {...form}>
             <NameDescription isDisabled={IsDisabled} prefix="policy" />
             <ComponentType />
-            <LogicSelector isDisabled={IsDisabled}/>
+            <LogicSelector isDisabled={IsDisabled} />
           </FormProvider>
           <ActionGroup>
             <div className="pf-u-mt-md">
@@ -221,7 +220,8 @@ export default function PolicyDetails() {
                 variant={ButtonVariant.primary}
                 className="pf-u-mr-md"
                 type="submit"
-                data-testid="save" >
+                data-testid="save"
+              >
                 {t("common:save")}
               </Button>
 
@@ -237,7 +237,8 @@ export default function PolicyDetails() {
                       tab: "policies",
                     })}
                   />
-                )} >
+                )}
+              >
                 {t("common:cancel")}
               </Button>
             </div>
