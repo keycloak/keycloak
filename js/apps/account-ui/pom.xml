@@ -84,7 +84,7 @@
 <![CDATA[
   <script id="environment" type="application/json">
     {
-      "loginRealm": "${loginRealm!"master"}",
+      "loginRealm": "${realm.name!"master"}",
       "authServerUrl": "${authUrl}",
       "resourceUrl": "${resourceUrl}",
       "isRunningAsTheme": true
