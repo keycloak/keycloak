@@ -33,10 +33,12 @@ import "./realm-settings-section.css";
 
 type RealmSettingsEmailTabProps = {
   realm: RealmRepresentation;
+  save: (realm: RealmRepresentation) => void;
 };
 
 export const RealmSettingsEmailTab = ({
   realm: initialRealm,
+  save
 }: RealmSettingsEmailTabProps) => {
   const { t } = useTranslation("realm-settings");
   const { adminClient } = useAdminClient();
@@ -65,21 +67,6 @@ export const RealmSettingsEmailTab = ({
     name: "smtpServer.auth",
     defaultValue: "",
   });
-
-  const save = async (form: RealmRepresentation) => {
-    try {
-      const savedRealm = { ...realm, ...form };
-
-      // For default value, back end is expecting null instead of empty string
-      if (savedRealm.smtpServer?.port === "") savedRealm.smtpServer.port = null;
-
-      await adminClient.realms.update({ realm: realmName }, savedRealm);
-      setRealm(savedRealm);
-      addAlert(t("saveSuccess"), AlertVariant.success);
-    } catch (error) {
-      addError("realm-settings:saveError", error);
-    }
-  };
 
   const testConnection = async () => {
     const toNumber = (value: string) => Number(value);

@@ -294,7 +294,7 @@ export const RealmSettingsTabs = ({
             data-testid="rs-email-tab"
             {...emailTab}
           >
-            <RealmSettingsEmailTab realm={realm} />
+            <RealmSettingsEmailTab realm={realm} save={save} />
           </Tab>
           <Tab
             title={<TabTitleText>{t("themes")}</TabTitleText>}
