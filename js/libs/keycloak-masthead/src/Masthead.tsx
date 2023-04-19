@@ -31,7 +31,8 @@ type KeycloakMastheadProps = PageHeaderProps & {
   };
   keycloak?: Keycloak;
   kebabDropdownItems?: ReactNode[];
-  dropdownItems: ReactNode[];
+  dropdownItems?: ReactNode[];
+  toolbarItems?: ReactNode[];
 };
 
 const KeycloakMasthead = ({
@@ -44,7 +45,8 @@ const KeycloakMasthead = ({
   } = {},
   keycloak,
   kebabDropdownItems,
-  dropdownItems,
+  dropdownItems = [],
+  toolbarItems,
   ...rest
 }: KeycloakMastheadProps) => {
   const { t } = useTranslation();
@@ -93,6 +95,7 @@ const KeycloakMasthead = ({
                 ]}
               />
             </PageHeaderToolsItem>
+            <PageHeaderToolsItem>{toolbarItems}</PageHeaderToolsItem>
             <PageHeaderToolsItem
               visibility={{
                 default: "hidden",

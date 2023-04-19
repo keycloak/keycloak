@@ -13,11 +13,28 @@ import { environment } from "../environment";
 import { keycloak } from "../keycloak";
 import { joinPath } from "../utils/joinPath";
 import { PageNav } from "./PageNav";
+import { ExternalLinkAltIcon } from "@patternfly/react-icons";
 
 import style from "./Root.module.css";
 
+const ReferrerLink = () => {
+  const { t } = useTranslation();
+  const searchParams = new URLSearchParams(location.search);
+
+  return searchParams.has("referrer_uri") ? (
+    <a
+      href={searchParams.get("referrer_uri")!.replace("_hash_", "#")}
+      className="pf-m-link pf-m-inline"
+    >
+      <ExternalLinkAltIcon />{" "}
+      {t("backTo", { app: searchParams.get("referrer") })}
+    </a>
+  ) : null;
+};
+
 export const Root = () => {
   const { t } = useTranslation();
+
   const translations = useMemo<Translations>(
     () => ({
       avatar: t("avatar"),
@@ -41,7 +58,7 @@ export const Root = () => {
               alt: t("logo"),
               className: style.brand,
             }}
-            dropdownItems={[]}
+            toolbarItems={[<ReferrerLink key="link" />]}
             keycloak={keycloak}
           />
         </TranslationsProvider>

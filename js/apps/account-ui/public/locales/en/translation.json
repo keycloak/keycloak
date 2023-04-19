@@ -11,6 +11,7 @@
   "applicationsIntroMessage": "Track and manage your app permission to access your account",
   "applicationType": "Application type",
   "avatar": "Avatar",
+  "backTo": "Back to {{app}}",
   "basic-authentication": "Basic authentication",
   "cancel": "Cancel",
   "choose": "Choose...",
