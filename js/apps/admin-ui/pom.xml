@@ -16,6 +16,47 @@
     <name>Keycloak Admin UI</name>
     <description>The user inferface to administrate the Keycloak server.</description>
 
+    <profiles>
+        <profile>
+            <id>withoutTranslations</id>
+            <activation>
+                <property>
+                    <name>skipCommunityTranslations</name>
+                </property>
+            </activation>
+            <build>
+                <resources>
+                    <resource>
+                        <directory>dist</directory>
+                        <targetPath>theme/keycloak.v2/admin/resources</targetPath>
+                        <includes>
+                            <include>resources/en/**</include>
+                        </includes>
+                    </resource>
+                </resources>
+            </build>
+        </profile>
+        <profile>
+            <id>withTranslations</id>
+            <activation>
+                <property>
+                    <name>!skipCommunityTranslations</name>
+                </property>
+            </activation>
+            <build>
+                <resources>
+                    <resource>
+                        <directory>dist</directory>
+                        <targetPath>theme/keycloak.v2/admin/resources</targetPath>
+                        <includes>
+                            <include>resources/**</include>
+                        </includes>
+                    </resource>
+                </resources>
+            </build>
+        </profile>
+    </profiles>
+
     <build>
         <resources>
             <resource>
@@ -26,6 +67,7 @@
                 <targetPath>theme/keycloak.v2/admin/resources</targetPath>
                 <excludes>
                     <exclude>index.html</exclude>
+                    <exclude>resources/**</exclude>
                 </excludes>
             </resource>
         </resources>
