@@ -4,11 +4,11 @@
 The authentication protocols that are used by {project_name} require cryptographic signatures and sometimes
 encryption.  {project_name} uses asymmetric key pairs, a private and public key, to accomplish this.
 
-{project_name} has a single active keypair at a time, but can have several passive keys as well. The active keypair
-is used to create new signatures, while the passive keypair can be used to verify previous signatures. This makes it
+{project_name} has a single active key pair at a time, but can have several passive keys as well. The active key pair
+is used to create new signatures, while the passive key pair can be used to verify previous signatures. This makes it
 possible to regularly rotate the keys without any downtime or interruption to users.
 
-When a realm is created, a KeyPair and a self-signed certificate is automatically generated.
+When a realm is created, a key pair and a self-signed certificate is automatically generated.
 
 .Procedure
 . Click *Realm settings* in the menu.
@@ -16,9 +16,9 @@ When a realm is created, a KeyPair and a self-signed certificate is automaticall
 . Select *Passive keys* from the filter dropdown to view passive keys.
 . Select *Disabled keys* from the filter dropdown to view disabled keys.
 
-A keypair can have the status `Active`, but still not be selected as the currently active keypair for the realm.
+A key pair can have the status `Active`, but still not be selected as the currently active key pair for the realm.
 The selected active pair which is used for signatures is selected based on the first key provider sorted by priority
-that is able to provide an active keypair.
+that is able to provide an active key pair.
 
 ==== Rotating keys
 
@@ -32,9 +32,9 @@ The frequency of deleting old keys is a tradeoff between security and making sur
 
 Rotating keys also applies to offline tokens. To make sure they are updated, the applications need to refresh the tokens before the old keys are removed.
 
-==== Adding a generated keypair
+==== Adding a generated key pair
 
-Use this procedure to generate a KeyPair including a self-signed certificate.
+Use this procedure to generate a key pair including a self-signed certificate.
 
 .Procedure
 . Select the realm in the Admin Console.
@@ -42,7 +42,7 @@ Use this procedure to generate a KeyPair including a self-signed certificate.
 . Click the *Keys* tab.
 . Click the *Providers* tab.
 . Click *Add provider* and select *rsa-generated*.
-. Enter a number in the *Priority* field. This number determines if the new  KeyPair becomes the active KeyPair. The highest number makes the KeyPair active.
+. Enter a number in the *Priority* field. This number determines if the new key pair becomes the active key pair. The highest number makes the key pair active.
 . Select a value for *AES Key size*.
 . Click *Save*.
 
@@ -51,10 +51,10 @@ you can edit the provider and new keys will be generated.
 
 ==== Rotating keys by extracting a certificate
 
-You can rotate keys by extracting a certificate from an RSA generated KeyPair and using that certificate in a new keystore.
+You can rotate keys by extracting a certificate from an RSA generated key pair and using that certificate in a new keystore.
 
 .Prerequisites
-* A generated KeyPair 
+* A generated key pair 
 
 .Procedure
 . Select the realm in the Admin Console.
@@ -94,10 +94,10 @@ keytool -importcert -file domain.crt -keystore <keystore>.jks -storepass <passwo
 mvn clean install wildfly:deploy
 ----
 
-==== Adding an existing keypair and certificate
+==== Adding an existing key pair and certificate
 
-To add a keypair and certificate obtained elsewhere select `Providers` and choose `rsa` from the dropdown. You can change
-the priority to make sure the new keypair becomes the active keypair.
+To add a key pair and certificate obtained elsewhere select `Providers` and choose `rsa` from the dropdown. You can change
+the priority to make sure the new key pair becomes the active key pair.
 
 .Prerequisites
 * A private key file. The file must be PEM formatted.
@@ -115,10 +115,10 @@ the priority to make sure the new keypair becomes the active keypair.
 
 ==== Loading keys from a Java Keystore
 
-To add a keypair and certificate stored in a Java Keystore file on the host select `Providers` and choose `java-keystore`
-from the dropdown. You can change the priority to make sure the new keypair becomes the active keypair.
+To add a key pair and certificate stored in a Java Keystore file on the host select `Providers` and choose `java-keystore`
+from the dropdown. You can change the priority to make sure the new key pair becomes the active key pair.
 
-For the associated certificate chain to be loaded it must be imported to the Java Keystore file with the same `Key Alias` used to load the keypair.
+For the associated certificate chain to be loaded it must be imported to the Java Keystore file with the same `Key Alias` used to load the key pair.
 
 .Procedure
 . Select the realm in the Admin Console.
@@ -158,8 +158,8 @@ For the associated certificate chain to be loaded it must be imported to the Jav
 ==== Compromised keys
 
 {project_name} has the signing keys stored just locally and they are never shared with the client applications, users or other
-entities. However, if you think that your realm signing key was compromised, you should first generate new keypair as described above and
-then immediately remove the compromised keypair.
+entities. However, if you think that your realm signing key was compromised, you should first generate new key pair as described above and
+then immediately remove the compromised key pair.
 
 Alternatively, you can delete the provider from the `Providers` table.
 
