@@ -141,6 +141,7 @@ and add packages manually.
 ### Undertow
     mvn -f testsuite/integration-arquillian/tests/base/pom.xml \
         -Dtest=org.keycloak.testsuite.adapter.**.*Test
+        -Papp-server-undertow
 
 ### Jetty
 
