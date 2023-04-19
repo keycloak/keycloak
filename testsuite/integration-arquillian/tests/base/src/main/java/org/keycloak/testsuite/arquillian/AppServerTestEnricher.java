@@ -268,12 +268,18 @@ public class AppServerTestEnricher {
      * For Fuse: precedence = 2 - app server has to be stopped 
      * before AuthServerTestEnricher.afterClass is executed
      */
-    public void stopAppServer(@Observes(precedence = 2) AfterClass event) {
+    public void stopAppServer(@Observes(precedence = 2) AfterClass event) throws IOException {
         if (testContext.getAppServerInfo() == null) {
             return; // no adapter test
         }
 
         ContainerController controller = containerConrollerInstance.get();
+
+        // remove tmp folder for JBoss based app servers for proper clean-up
+        if (isJBossBased()) {
+            final File tmpFolder = Paths.get(System.getProperty("app.server.home"), "standalone-test", "tmp").toFile();
+            FileUtils.deleteDirectory(tmpFolder);
+        }
 
         if (controller.isStarted(testContext.getAppServerInfo().getQualifier())) {
             log.info("Stopping app server: " + testContext.getAppServerInfo().getQualifier());
