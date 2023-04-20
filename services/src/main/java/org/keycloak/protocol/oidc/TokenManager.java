@@ -498,7 +498,7 @@ public class TokenManager {
             }
 
             // KEYCLOAK-15169 OAuth 2.0 Demonstrating Proof-of-Possession at the Application Layer (DPoP)
-            if (OIDCAdvancedConfigWrapper.fromClientModel(client).isDPoPEnabled() && (client.isPublicClient() || client.isBearerOnly())) {
+            if (OIDCAdvancedConfigWrapper.fromClientModel(client).isUseDPoP() && (client.isPublicClient() || client.isBearerOnly())) {
                 DPoP dPoP = (DPoP) session.getAttribute("dpop");
                 try {
                     DPoPUtil.validateBinding(refreshToken, dPoP);
