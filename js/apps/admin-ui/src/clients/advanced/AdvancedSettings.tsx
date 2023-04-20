@@ -161,6 +161,35 @@ export const AdvancedSettings = ({
             />
           </FormGroup>
           <FormGroup
+            label={t("oAuthDPoP")}
+            fieldId="oAuthDPoP"
+            hasNoPaddingTop
+            labelIcon={
+              <HelpItem
+                helpText={t("clients-help:oAuthDPoP")}
+                fieldLabelId="clients:oAuthDPoP"
+              />
+            }
+          >
+            <Controller
+              name={convertAttributeNameToForm<FormFields>(
+                "attributes.dpop.bound.access.tokens"
+              )}
+              defaultValue={false}
+              control={control}
+              render={({ field }) => (
+                <Switch
+                  id="oAuthDPoP-switch"
+                  label={t("common:on")}
+                  labelOff={t("common:off")}
+                  isChecked={field.value === "true"}
+                  onChange={(value) => field.onChange("" + value)}
+                  aria-label={t("oAuthDPoP")}
+                />
+              )}
+            />
+          </FormGroup>
+          <FormGroup
             label={t("keyForCodeExchange")}
             fieldId="keyForCodeExchange"
             hasNoPaddingTop

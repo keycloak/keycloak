@@ -332,7 +332,7 @@ public class TokenEndpoint {
     }
 
     private void checkDPoP() {
-        if (clientConfig.isDPoPEnabled()) {
+        if (clientConfig.isUseDPoP()) {
             try {
                 dPoP = new DPoPUtil.Validator(session).client(client).request(request).uriInfo(session.getContext().getUri()).validate();
                 session.setAttribute(DPoPUtil.DPOP_SESSION_ATTRIBUTE, dPoP);
@@ -519,7 +519,7 @@ public class TokenEndpoint {
             res = responseBuilder.build();
         }
 
-        if (clientConfig.isDPoPEnabled()) {
+        if (clientConfig.isUseDPoP()) {
             res.setTokenType(DPoPUtil.DPOP_TOKEN_TYPE);
         }
 
@@ -549,7 +549,7 @@ public class TokenEndpoint {
     private void checkDPoPToken(TokenManager.AccessTokenResponseBuilder responseBuilder, boolean useRefreshToken) {
         // KEYCLOAK-15169 OAuth 2.0 Demonstrating Proof-of-Possession at the Application Layer (DPoP)
         // https://tools.ietf.org/id/draft-ietf-oauth-dpop-04.html#section-6
-        if (clientConfig.isDPoPEnabled()) {
+        if (clientConfig.isUseDPoP()) {
             DPoPUtil.bindToken(responseBuilder.getAccessToken(), dPoP);
             // TODO do not bind refresh tokens issued to confidential clients, see 5. DPoP Access Token Request
             if (useRefreshToken) {
@@ -593,7 +593,7 @@ public class TokenEndpoint {
             }
 
             // KEYCLOAK-15169 OAuth 2.0 Demonstrating Proof-of-Possession at the Application Layer (DPoP)
-            if (clientConfig.isDPoPEnabled()) {
+            if (clientConfig.isUseDPoP()) {
                 res.setTokenType(DPoPUtil.DPOP_TOKEN_TYPE);
             }
         } catch (OAuthErrorException e) {
@@ -737,7 +737,7 @@ public class TokenEndpoint {
         checkDPoPToken(responseBuilder, useRefreshToken && (client.isPublicClient() || client.isBearerOnly()));
         AccessTokenResponse res = responseBuilder.build();
 
-        if (clientConfig.isDPoPEnabled()) {
+        if (clientConfig.isUseDPoP()) {
             res.setTokenType(DPoPUtil.DPOP_TOKEN_TYPE);
         }
 

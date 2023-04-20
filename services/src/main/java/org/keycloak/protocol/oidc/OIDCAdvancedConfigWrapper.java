@@ -165,14 +165,14 @@ public class OIDCAdvancedConfigWrapper extends AbstractClientConfigWrapper {
     }
 
     // KEYCLOAK-15169 OAuth 2.0 Demonstrating Proof-of-Possession at the Application Layer (DPoP)
-    public boolean isDPoPEnabled() {
-        String mode = getAttribute(OIDCConfigAttributes.DPOP_ENABLED);
+    public boolean isUseDPoP() {
+        String mode = getAttribute(OIDCConfigAttributes.DPOP_BOUND_ACCESS_TOKENS);
         return Boolean.parseBoolean(mode);
     }
 
-    public void setDPoPEnabled(boolean dpopEnabled) {
-        String val = String.valueOf(dpopEnabled);
-        setAttribute(OIDCConfigAttributes.DPOP_ENABLED, val);
+    public void setUseDPoP(boolean useDPoP) {
+        String val = String.valueOf(useDPoP);
+        setAttribute(OIDCConfigAttributes.DPOP_BOUND_ACCESS_TOKENS, val);
     }
 
     public int getDPoPProofLifetime() {

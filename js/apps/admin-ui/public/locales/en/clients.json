@@ -511,6 +511,7 @@
   "clientOfflineSessionIdle": "Client Offline Session Idle",
   "clientOfflineSessionMax": "Client Offline Session Max",
   "oAuthMutual": "OAuth 2.0 Mutual TLS Certificate Bound Access Tokens Enabled",
+  "oAuthDPoP": "OAuth 2.0 DPoP Bound Access Tokens Enabled",
   "keyForCodeExchange": "Proof Key for Code Exchange Code Challenge Method",
   "pushedAuthorizationRequestRequired": "Pushed authorization request required",
   "acrToLoAMapping": "ACR to LoA Mapping",
