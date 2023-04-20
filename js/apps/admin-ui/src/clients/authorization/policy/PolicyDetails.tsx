@@ -73,7 +73,7 @@ export default function PolicyDetails() {
   const { addAlert, addError } = useAlerts();
 
   const [policy, setPolicy] = useState<PolicyRepresentation>();
-  const [isDisabled, setIsDisabled] = useState(false);
+  const isDisabled = policy?.name === "Default Policy";
 
   useFetch(
     async () => {
@@ -104,11 +104,6 @@ export default function PolicyDetails() {
     ({ policy, policies }) => {
       reset({ ...policy, policies });
       setPolicy(policy);
-      if (policy !== undefined) {
-        if (policy.name === "Default Policy") {
-          setIsDisabled(true);
-        }
-      }
     },
     [id, policyType, policyId]
   );
@@ -172,12 +167,17 @@ export default function PolicyDetails() {
     return <KeycloakSpinner />;
   }
 
-  let ComponentType = COMPONENTS["js-disabled"];
-  if (!IsDisabled) {
-    ComponentType = isValidComponentType(policyType)
+  function getComponentType() {
+    if (isDisabled) {
+      return COMPONENTS["js-disabled"];
+    }
+
+    return isValidComponentType(policyType)
       ? COMPONENTS[policyType]
       : COMPONENTS["js"];
   }
+
+  let ComponentType = getComponentType();
 
   return (
     <>
@@ -191,14 +191,14 @@ export default function PolicyDetails() {
         dropdownItems={
           policyId
             ? [
-                <DropdownItem
-                  key="delete"
-                  data-testid="delete-policy"
-                  onClick={() => toggleDeleteDialog()}
-                >
-                  {t("common:delete")}
-                </DropdownItem>,
-              ]
+              <DropdownItem
+                key="delete"
+                data-testid="delete-policy"
+                onClick={() => toggleDeleteDialog()}
+              >
+                {t("common:delete")}
+              </DropdownItem>,
+            ]
             : undefined
         }
       />
@@ -209,14 +209,14 @@ export default function PolicyDetails() {
           role="view-clients"
         >
           <FormProvider {...form}>
-            <NameDescription isDisabled={IsDisabled} prefix="policy" />
+            <NameDescription isDisabled={isDisabled} prefix="policy" />
             <ComponentType />
-            <LogicSelector isDisabled={IsDisabled} />
+            <LogicSelector isDisabled={isDisabled} />
           </FormProvider>
           <ActionGroup>
             <div className="pf-u-mt-md">
               <Button
-                isDisabled={IsDisabled}
+                isDisabled={isDisabled}
                 variant={ButtonVariant.primary}
                 className="pf-u-mr-md"
                 type="submit"
