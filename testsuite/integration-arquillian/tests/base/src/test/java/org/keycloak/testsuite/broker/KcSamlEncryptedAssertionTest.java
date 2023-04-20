@@ -39,7 +39,7 @@ import static org.keycloak.testsuite.utils.io.IOUtil.setDocElementAttributeValue
 public class KcSamlEncryptedAssertionTest extends AbstractKcSamlEncryptedElementsTest {
 
     @Override
-    protected SamlDocumentStepBuilder.Saml2DocumentTransformer encryptDocument(PublicKey publicKey, String keyEncryptionAlgorithm) {
+    protected SamlDocumentStepBuilder.Saml2DocumentTransformer encryptDocument(PublicKey publicKey, String keyEncryptionAlgorithm, String keyEncryptionDigestMethod, String keyEncryptionMgfAlgorithm) {
         return document -> { // Replace Assertion with EncryptedAssertion
             Node assertionElement = document.getDocumentElement()
                     .getElementsByTagNameNS(ASSERTION_NSURI.get(), JBossSAMLConstants.ASSERTION.get()).item(0);
@@ -69,7 +69,7 @@ public class KcSamlEncryptedAssertionTest extends AbstractKcSamlEncryptedElement
                 // encrypt the Assertion element and replace it with a EncryptedAssertion element.
                 XMLEncryptionUtil.encryptElement(new QName(JBossSAMLURIConstants.ASSERTION_NSURI.get(),
                                 JBossSAMLConstants.ASSERTION.get(), samlNSPrefix), document, publicKey,
-                        secretKey, encryptionKeySize, encryptedAssertionElementQName, true, keyEncryptionAlgorithm);
+                        secretKey, encryptionKeySize, encryptedAssertionElementQName, true, keyEncryptionAlgorithm, keyEncryptionDigestMethod, keyEncryptionMgfAlgorithm);
             } catch (Exception e) {
                 throw new ProcessingException("failed to encrypt", e);
             }
