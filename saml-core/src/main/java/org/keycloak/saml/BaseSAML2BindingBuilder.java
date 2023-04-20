@@ -73,6 +73,9 @@ public class BaseSAML2BindingBuilder<T extends BaseSAML2BindingBuilder> {
     protected String encryptionAlgorithm = "AES";
     protected boolean encrypt;
     protected String canonicalizationMethodType = CanonicalizationMethod.EXCLUSIVE;
+    protected String keyEncryptionAlgorithm;
+    protected String keyEncryptionDigestMethod;
+    protected String keyEncryptionMgfAlgorithm;
 
     public T canonicalizationMethod(String method) {
         this.canonicalizationMethodType = method;
@@ -133,6 +136,21 @@ public class BaseSAML2BindingBuilder<T extends BaseSAML2BindingBuilder> {
 
     public T encryptionKeySize(int size) {
         this.encryptionKeySize = size;
+        return (T)this;
+    }
+
+    public T keyEncryptionAlgorithm(String keyEncryptionAlgorithm) {
+        this.keyEncryptionAlgorithm = keyEncryptionAlgorithm;
+        return (T)this;
+    }
+
+    public T  keyEncryptionDigestMethod(String keyEncryptionDigestMethod) {
+        this.keyEncryptionDigestMethod = keyEncryptionDigestMethod;
+        return (T)this;
+    }
+
+    public T  keyEncryptionMgfAlgorithm(String keyEncryptionMgfAlgorithm) {
+        this.keyEncryptionMgfAlgorithm = keyEncryptionMgfAlgorithm;
         return (T)this;
     }
 
@@ -271,8 +289,8 @@ public class BaseSAML2BindingBuilder<T extends BaseSAML2BindingBuilder> {
 
             // encrypt the Assertion element and replace it with a EncryptedAssertion element.
             XMLEncryptionUtil.encryptElement(new QName(JBossSAMLURIConstants.ASSERTION_NSURI.get(),
-                            JBossSAMLConstants.ASSERTION.get(), samlNSPrefix), samlDocument, encryptionPublicKey,
-                    secretKey, encryptionKeySize, encryptedAssertionElementQName, true);
+                            JBossSAMLConstants.ASSERTION.get(), samlNSPrefix), samlDocument, encryptionPublicKey, secretKey, encryptionKeySize,
+                            encryptedAssertionElementQName, true, keyEncryptionAlgorithm, keyEncryptionDigestMethod, keyEncryptionMgfAlgorithm);
         } catch (Exception e) {
             throw new ProcessingException("failed to encrypt", e);
         }
