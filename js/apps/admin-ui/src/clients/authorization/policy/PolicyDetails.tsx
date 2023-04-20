@@ -73,7 +73,7 @@ export default function PolicyDetails() {
   const { addAlert, addError } = useAlerts();
 
   const [policy, setPolicy] = useState<PolicyRepresentation>();
-  const [IsDisabled, setIsDisabled] = useState(false);
+  const [isDisabled, setIsDisabled] = useState(false);
 
   useFetch(
     async () => {
