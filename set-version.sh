@@ -10,11 +10,9 @@ sed -i "s/ENV KEYCLOAK_VERSION .*/ENV KEYCLOAK_VERSION $NEW_VERSION/" quarkus/co
 
 # NPM
 cd js
-npm --workspaces pkg set "dependencies.keycloak-js=$NEW_VERSION"
-npm --workspaces pkg set "dependencies.@keycloak/keycloak-admin-client=$NEW_VERSION"
-npm --workspaces pkg set "dependencies.keycloak-masthead=$NEW_VERSION"
-npm --workspaces pkg set "dependencies.ui-shared=$NEW_VERSION"
-npm version $NEW_VERSION --allow-same-version --no-git-tag-version --workspaces
+npm --workspace=admin-ui --workspace=account-ui --workspace=keycloak-masthead pkg set "dependencies.keycloak-js=$NEW_VERSION"
+npm --workspace=admin-ui pkg set "dependencies.@keycloak/keycloak-admin-client=$NEW_VERSION"
+npm --workspace=keycloak-js --workspace=@keycloak/keycloak-admin-client version $NEW_VERSION --allow-same-version --no-git-tag-version
 cd -
 
 # Documentation
