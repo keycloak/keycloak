@@ -790,6 +790,4 @@ public abstract class AbstractKeycloakTest {
                 .fetchString(s -> s.getKeycloakSessionFactory().getProviderFactory(UserCache.class));
         return Objects.nonNull(userCache);
     }
-
-
 }
