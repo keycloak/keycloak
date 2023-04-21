@@ -160,6 +160,7 @@ export const ExecutionConfigModal = ({
             </FormGroup>
             <FormProvider {...form}>
               <DynamicComponents
+                stringify
                 properties={configDescription.properties || []}
               />
             </FormProvider>

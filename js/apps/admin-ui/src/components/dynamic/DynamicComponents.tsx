@@ -5,8 +5,7 @@ import { convertAttributeNameToForm } from "../../util";
 
 type DynamicComponentProps = {
   properties: ConfigPropertyRepresentation[];
-  selectedValues?: string[];
-  parentCallback?: (data: string[]) => void;
+  stringify?: boolean;
 };
 
 export const DynamicComponents = ({
