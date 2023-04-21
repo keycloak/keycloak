@@ -98,6 +98,13 @@
         <property name="downloadBinaries">${webdriverDownloadBinaries}</property>
     </extension>
 
+    <extension qualifier="webdriver-chromejavascriptbrowser">
+        <property name="browser">chrome</property>
+        <property name="chromeBinary">${chromeBinary}</property>
+        <property name="chromeArguments">${js.chromeArguments}</property>
+        <property name="chromeDriverVersion">${chromeDriverVersion}</property>
+    </extension>
+
     <extension qualifier="graphene-secondbrowser">
         <property name="browser">${browser}</property>
         <property name="firefoxBinary">${firefox_binary}</property>
