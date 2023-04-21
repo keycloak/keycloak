@@ -38,7 +38,7 @@ public class MapRoleProviderFactory extends AbstractMapProviderFactory<MapRolePr
 
     @Override
     public MapRoleProvider createNew(KeycloakSession session) {
-        return new MapRoleProvider(session, getStorage(session));
+        return new MapRoleProvider(session, getMapStorage(session));
     }
 
     @Override

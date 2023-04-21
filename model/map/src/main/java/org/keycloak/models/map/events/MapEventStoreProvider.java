@@ -29,7 +29,6 @@ import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.map.common.ExpirableEntity;
 import org.keycloak.models.map.common.HasRealmId;
-import org.keycloak.models.map.storage.MapKeycloakTransaction;
 import org.keycloak.models.map.storage.MapStorage;
 import org.keycloak.models.map.storage.ModelCriteriaBuilder;
 import org.keycloak.models.map.storage.QueryParameters;
@@ -45,41 +44,38 @@ public class MapEventStoreProvider implements EventStoreProvider {
 
     private static final Logger LOG = Logger.getLogger(MapEventStoreProvider.class);
     private final KeycloakSession session;
-    private final MapKeycloakTransaction<MapAuthEventEntity, Event> authEventsTX;
-    private final MapKeycloakTransaction<MapAdminEventEntity, AdminEvent> adminEventsTX;
+    private final MapStorage<MapAuthEventEntity, Event> authEventsTX;
+    private final MapStorage<MapAdminEventEntity, AdminEvent> adminEventsTX;
     private final boolean adminTxHasRealmId;
     private final boolean authTxHasRealmId;
 
     public MapEventStoreProvider(KeycloakSession session, MapStorage<MapAuthEventEntity, Event> loginEventsStore, MapStorage<MapAdminEventEntity, AdminEvent> adminEventsStore) {
         this.session = session;
-        this.authEventsTX = loginEventsStore.createTransaction(session);
-        this.adminEventsTX = adminEventsStore.createTransaction(session);
-
-        session.getTransactionManager().enlistAfterCompletion(this.authEventsTX);
-        session.getTransactionManager().enlistAfterCompletion(this.adminEventsTX);
+        this.authEventsTX = loginEventsStore;
+        this.adminEventsTX = adminEventsStore;
         this.authTxHasRealmId = this.authEventsTX instanceof HasRealmId;
         this.adminTxHasRealmId = this.adminEventsTX instanceof HasRealmId;
     }
 
-    private MapKeycloakTransaction<MapAdminEventEntity, AdminEvent> adminTxInRealm(String realmId) {
+    private MapStorage<MapAdminEventEntity, AdminEvent> adminTxInRealm(String realmId) {
         if (adminTxHasRealmId) {
             ((HasRealmId) adminEventsTX).setRealmId(realmId);
         }
         return adminEventsTX;
     }
 
-    private MapKeycloakTransaction<MapAdminEventEntity, AdminEvent> adminTxInRealm(RealmModel realm) {
+    private MapStorage<MapAdminEventEntity, AdminEvent> adminTxInRealm(RealmModel realm) {
         return adminTxInRealm(realm == null ? null : realm.getId());
     }
 
-    private MapKeycloakTransaction<MapAuthEventEntity, Event> authTxInRealm(String realmId) {
+    private MapStorage<MapAuthEventEntity, Event> authTxInRealm(String realmId) {
         if (authTxHasRealmId) {
             ((HasRealmId) authEventsTX).setRealmId(realmId);
         }
         return authEventsTX;
     }
 
-    private MapKeycloakTransaction<MapAuthEventEntity, Event> authTxInRealm(RealmModel realm) {
+    private MapStorage<MapAuthEventEntity, Event> authTxInRealm(RealmModel realm) {
         return authTxInRealm(realm == null ? null : realm.getId());
     }
 

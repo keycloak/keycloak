@@ -19,6 +19,7 @@ package org.keycloak.models.map.storage.jpa.role.delegate;
 
 import org.keycloak.models.map.common.StringKeyConverter;
 import org.keycloak.models.map.role.MapRoleEntityDelegate;
+import org.keycloak.models.map.storage.jpa.JpaMapStorage;
 import org.keycloak.models.map.storage.jpa.role.entity.JpaRoleCompositeEntity;
 import org.keycloak.models.map.storage.jpa.role.entity.JpaRoleCompositeEntityKey;
 import org.keycloak.models.map.storage.jpa.role.entity.JpaRoleEntity;
@@ -34,7 +35,7 @@ import java.util.stream.Collectors;
  * It will delegate all access to the composite roles to a separate table.
  *
  * For performance reasons, it caches the composite roles within the session if they have already been retrieved.
- * This relies on the behavior of {@link org.keycloak.models.map.storage.jpa.JpaMapKeycloakTransaction} that
+ * This relies on the behavior of {@link JpaMapStorage} that
  * each entity is created only once within each session.
  *
  * @author Alexander Schwartz

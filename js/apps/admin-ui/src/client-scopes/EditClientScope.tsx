@@ -271,6 +271,7 @@ export default function EditClientScope() {
                   variant="info"
                   isInline
                   title={t("client-scopes-help:rolesScope")}
+                  component="h2"
                 />
               </PageSection>
             )}

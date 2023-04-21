@@ -15,7 +15,7 @@ Keycloak uses the JBoss Logging framework. The following is a high-level overvie
 ** GELF
 
 == Logging configuration
-Logging is done on a per-category basis in Keycloak. You can configure logging for the root log level or for more specific categories such as `org.hibernate` or `org.keycloak`. This guide describes how to configure logging.
+Logging is done on a per-category basis in Keycloak. You can configure logging for the root log level or for more specific categories such as `org.hibernate` or `org.keycloak`. This {section} describes how to configure logging.
 
 === Log levels
 
@@ -97,7 +97,7 @@ The format string supports the symbols in the following table:
 |%r|Relative time|Render the time in milliseconds since the start of the application log.
 |%s|Simple message|Renders only the log message without exception trace.
 |%t|Thread name|Renders the thread name.
-|%t{id}|Thread ID|Render the thread ID.
+|%t++{id}++|Thread ID|Render the thread ID.
 |%z{<zone name>}|Timezone|Set the time zone of log output to <zone name>.
 |%L|Line number|Render the line number of the log message.
 |====

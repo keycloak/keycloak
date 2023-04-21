@@ -28,6 +28,8 @@ import org.keycloak.testsuite.auth.page.account.Account;
 import org.keycloak.testsuite.auth.page.login.OIDCLogin;
 import org.keycloak.testsuite.auth.page.login.SAMLPostLogin;
 import org.keycloak.testsuite.auth.page.login.SAMLRedirectLogin;
+import org.keycloak.testsuite.util.ClientBuilder;
+import org.keycloak.testsuite.util.RealmBuilder;
 import org.openqa.selenium.Cookie;
 
 import java.text.MessageFormat;

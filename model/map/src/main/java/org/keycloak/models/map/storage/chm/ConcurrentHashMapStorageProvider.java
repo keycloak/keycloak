@@ -16,10 +16,17 @@
  */
 package org.keycloak.models.map.storage.chm;
 
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.SingleUseObjectValueModel;
 import org.keycloak.models.map.common.AbstractEntity;
+import org.keycloak.models.map.common.SessionAttributesUtils;
+import org.keycloak.models.map.common.UpdatableEntity;
+import org.keycloak.models.map.storage.CrudOperations;
 import org.keycloak.models.map.storage.MapStorage;
 import org.keycloak.models.map.storage.MapStorageProvider;
 import org.keycloak.models.map.storage.MapStorageProviderFactory.Flag;
+
+import static org.keycloak.models.map.storage.chm.ConcurrentHashMapStorageProviderFactory.CLONER;
 
 /**
  *
@@ -27,10 +34,14 @@ import org.keycloak.models.map.storage.MapStorageProviderFactory.Flag;
  */
 public class ConcurrentHashMapStorageProvider implements MapStorageProvider {
 
+    private final KeycloakSession session;
     private final ConcurrentHashMapStorageProviderFactory factory;
+    private final int factoryId;
 
-    public ConcurrentHashMapStorageProvider(ConcurrentHashMapStorageProviderFactory factory) {
+    public ConcurrentHashMapStorageProvider(KeycloakSession session, ConcurrentHashMapStorageProviderFactory factory, int factoryId) {
+        this.session = session;
         this.factory = factory;
+        this.factoryId = factoryId;
     }
 
     @Override
@@ -39,8 +50,18 @@ public class ConcurrentHashMapStorageProvider implements MapStorageProvider {
 
     @Override
     @SuppressWarnings("unchecked")
-    public <V extends AbstractEntity, M> MapStorage<V, M> getStorage(Class<M> modelType, Flag... flags) {
-        ConcurrentHashMapStorage storage = factory.getStorage(modelType, flags);
-        return (MapStorage<V, M>) storage;
+    public <V extends AbstractEntity, M> MapStorage<V, M> getMapStorage(Class<M> modelType, Flag... flags) {
+        return SessionAttributesUtils.createMapStorageIfAbsent(session, getClass(), modelType, factoryId, () -> {
+            ConcurrentHashMapStorage store = getMapStorage(modelType, factory.getStorage(modelType, flags));
+            session.getTransactionManager().enlist(store);
+            return store;
+        });
+    }
+
+    private <V extends AbstractEntity & UpdatableEntity, M> ConcurrentHashMapStorage getMapStorage(Class<?> modelType, CrudOperations<V, M> crud) {
+        if (modelType == SingleUseObjectValueModel.class) {
+            return new SingleUseObjectMapStorage(crud, factory.getKeyConverter(modelType), CLONER, MapFieldPredicates.getPredicates(modelType));
+        }
+        return new ConcurrentHashMapStorage(crud, factory.getKeyConverter(modelType), CLONER, MapFieldPredicates.getPredicates(modelType));
     }
 }

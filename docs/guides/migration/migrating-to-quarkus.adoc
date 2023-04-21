@@ -57,7 +57,7 @@ Once the first user with administrative rights exists, use the command line tool
 
 By default, the new Quarkus distribution removes `/auth` from the context-path. To re-introduce the `/auth` use the https://www.keycloak.org/server/all-config?q=http-relative-path&f=build[`http-relative-path`] build option. For example:
 
-[code,bash]
+[source,bash]
 ----
 bin/kc.[sh|bat] start-dev --http-relative-path /auth
 ----

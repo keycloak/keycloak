@@ -8,7 +8,8 @@
             <arg value="--http-relative-path=/auth"/>
             <arg value="--cache=local"/>
         </exec>
-        <exec osfamily="windows" executable="${auth.server.home}/bin/kc.bat" failonerror="true">
+        <exec osfamily="windows" executable="cmd" dir="${auth.server.home}/bin" failonerror="true">
+            <arg value="kc.bat" />
             <arg value="build"/>
             <arg value="--http-relative-path=/auth"/>
             <arg value="--cache=local"/>

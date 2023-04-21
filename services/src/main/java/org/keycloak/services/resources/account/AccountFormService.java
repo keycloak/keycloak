@@ -774,11 +774,11 @@ public class AccountFormService extends AbstractSecuredLocalService {
         Resource resource = authorization.getStoreFactory().getResourceStore().findById(realm, null, resourceId);
 
         if (resource == null) {
-            return ErrorResponse.error("Invalid resource", Response.Status.BAD_REQUEST);
+            throw ErrorResponse.error("Invalid resource", Response.Status.BAD_REQUEST);
         }
 
         if (action == null) {
-            return ErrorResponse.error("Invalid action", Response.Status.BAD_REQUEST);
+            throw ErrorResponse.error("Invalid action", Response.Status.BAD_REQUEST);
         }
 
         boolean isGrant = "grant".equals(action);
@@ -901,7 +901,7 @@ public class AccountFormService extends AbstractSecuredLocalService {
         ResourceServer resourceServer = resource.getResourceServer();
 
         if (resource == null) {
-            return ErrorResponse.error("Invalid resource", Response.Status.BAD_REQUEST);
+            throw ErrorResponse.error("Invalid resource", Response.Status.BAD_REQUEST);
         }
 
         if (userIds == null || userIds.length == 0) {
@@ -988,14 +988,14 @@ public class AccountFormService extends AbstractSecuredLocalService {
         PermissionTicketStore ticketStore = authorization.getStoreFactory().getPermissionTicketStore();
 
         if (action == null) {
-            return ErrorResponse.error("Invalid action", Response.Status.BAD_REQUEST);
+            throw ErrorResponse.error("Invalid action", Response.Status.BAD_REQUEST);
         }
 
         for (String resourceId : resourceIds) {
             Resource resource = authorization.getStoreFactory().getResourceStore().findById(realm, null, resourceId);
 
             if (resource == null) {
-                return ErrorResponse.error("Invalid resource", Response.Status.BAD_REQUEST);
+                throw ErrorResponse.error("Invalid resource", Response.Status.BAD_REQUEST);
             }
 
             Map<PermissionTicket.FilterOption, String> filters = new EnumMap<>(PermissionTicket.FilterOption.class);

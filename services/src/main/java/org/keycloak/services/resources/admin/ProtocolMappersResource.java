@@ -127,7 +127,7 @@ public class ProtocolMappersResource {
             adminEvent.operation(OperationType.CREATE).resourcePath(session.getContext().getUri(), model.getId()).representation(rep).success();
 
         } catch (ModelDuplicateException e) {
-            return ErrorResponse.exists("Protocol mapper exists with same name");
+            throw ErrorResponse.exists("Protocol mapper exists with same name");
         }
 
         return Response.created(session.getContext().getUri().getAbsolutePathBuilder().path(model.getId()).build()).build();

@@ -1448,7 +1448,7 @@
      "required-action":{
         "internal":true,
         "providers":{
-           "terms_and_conditions":{
+           "TERMS_AND_CONDITIONS":{
               "order":0
            },
            "update_user_locale":{

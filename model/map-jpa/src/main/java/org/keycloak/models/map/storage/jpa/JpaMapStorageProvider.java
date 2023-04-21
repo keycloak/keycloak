@@ -21,7 +21,7 @@ import javax.persistence.EntityManager;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakTransaction;
 import org.keycloak.models.map.common.AbstractEntity;
-import org.keycloak.models.map.storage.MapKeycloakTransaction;
+import org.keycloak.models.map.common.SessionAttributesUtils;
 import org.keycloak.models.map.storage.MapStorage;
 import org.keycloak.models.map.storage.MapStorageProvider;
 import org.keycloak.models.map.storage.MapStorageProviderFactory.Flag;
@@ -31,15 +31,21 @@ public class JpaMapStorageProvider implements MapStorageProvider {
     private final JpaMapStorageProviderFactory factory;
     private final KeycloakSession session;
     private final EntityManager em;
-    private final String sessionTxKey;
-    private final boolean jtaEnabled;
 
-    public JpaMapStorageProvider(JpaMapStorageProviderFactory factory, KeycloakSession session, EntityManager em, String sessionTxKey, boolean jtaEnabled) {
+    private final int factoryId;
+
+    public JpaMapStorageProvider(JpaMapStorageProviderFactory factory, KeycloakSession session, EntityManager em, boolean jtaEnabled, int factoryId) {
         this.factory = factory;
         this.session = session;
         this.em = em;
-        this.sessionTxKey = sessionTxKey;
-        this.jtaEnabled = jtaEnabled;
+        this.factoryId = factoryId;
+
+        // Create the JPA transaction and enlist it if needed.
+        // Don't enlist if JTA is enabled as it has been enlisted with JTA automatically.
+        if (!jtaEnabled) {
+            KeycloakTransaction jpaTransaction = new JpaTransactionWrapper(em.getTransaction());
+            session.getTransactionManager().enlist(jpaTransaction);
+        }
     }
 
     @Override
@@ -49,21 +55,10 @@ public class JpaMapStorageProvider implements MapStorageProvider {
 
     @Override
     @SuppressWarnings("unchecked")
-    public <V extends AbstractEntity, M> MapStorage<V, M> getStorage(Class<M> modelType, Flag... flags) {
+    public <V extends AbstractEntity, M> MapStorage<V, M> getMapStorage(Class<M> modelType, Flag... flags) {
         // validate and update the schema for the storage.
         this.factory.validateAndUpdateSchema(this.session, modelType);
-        // Create the JPA transaction and enlist it if needed.
-        // Don't enlist if JTA is enabled as it has been enlisted with JTA automatically.
-        if (!jtaEnabled && session.getAttribute(this.sessionTxKey) == null) {
-            KeycloakTransaction jpaTransaction = new JpaTransactionWrapper(em.getTransaction());
-            session.getTransactionManager().enlist(jpaTransaction);
-            session.setAttribute(this.sessionTxKey, jpaTransaction);
-        }
-        return new MapStorage<V, M>() {
-            @Override
-            public MapKeycloakTransaction<V, M> createTransaction(KeycloakSession session) {
-                return factory.createTransaction(session, modelType, em);
-            }
-        };
+
+        return SessionAttributesUtils.createMapStorageIfAbsent(session, JpaMapStorageProvider.class, modelType, factoryId, () -> factory.createMapStorage(session, modelType, em));
     }
 }

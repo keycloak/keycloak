@@ -8,7 +8,7 @@ import {
   TextVariants,
 } from "@patternfly/react-core";
 import { useTranslation } from "react-i18next";
-import { useRouteError } from "react-router-dom";
+import { isRouteErrorResponse, useRouteError } from "react-router-dom";
 
 export const ErrorPage = () => {
   const { t } = useTranslation();
@@ -44,9 +44,13 @@ export const ErrorPage = () => {
   );
 };
 
-function getErrorMessage(error: unknown) {
+function getErrorMessage(error: unknown): string | null {
   if (typeof error === "string") {
     return error;
+  }
+
+  if (isRouteErrorResponse(error)) {
+    return error.error ? getErrorMessage(error.error) : null;
   }
 
   if (error instanceof Error) {

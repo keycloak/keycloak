@@ -1,28 +1,26 @@
+import type ComponentRepresentation from "@keycloak/keycloak-admin-client/lib/defs/componentRepresentation";
 import {
   Button,
   Wizard,
   WizardContextConsumer,
   WizardFooter,
 } from "@patternfly/react-core";
+import { useForm } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 
-import { LdapSettingsGeneral } from "./ldap/LdapSettingsGeneral";
+import useIsFeatureEnabled, { Feature } from "../utils/useIsFeatureEnabled";
+import { LdapSettingsAdvanced } from "./ldap/LdapSettingsAdvanced";
 import { LdapSettingsConnection } from "./ldap/LdapSettingsConnection";
+import { LdapSettingsGeneral } from "./ldap/LdapSettingsGeneral";
+import { LdapSettingsKerberosIntegration } from "./ldap/LdapSettingsKerberosIntegration";
 import { LdapSettingsSearching } from "./ldap/LdapSettingsSearching";
 import { LdapSettingsSynchronization } from "./ldap/LdapSettingsSynchronization";
-import { LdapSettingsKerberosIntegration } from "./ldap/LdapSettingsKerberosIntegration";
 import { SettingsCache } from "./shared/SettingsCache";
-import { LdapSettingsAdvanced } from "./ldap/LdapSettingsAdvanced";
-import { useTranslation } from "react-i18next";
-import type ComponentRepresentation from "@keycloak/keycloak-admin-client/lib/defs/componentRepresentation";
-
-import { useForm } from "react-hook-form";
-import { useServerInfo } from "../context/server-info/ServerInfoProvider";
 
 export const UserFederationLdapWizard = () => {
   const form = useForm<ComponentRepresentation>();
   const { t } = useTranslation("user-federation");
-  const kerberosDisabled =
-    useServerInfo().profileInfo?.disabledFeatures?.includes("KERBEROS");
+  const isFeatureEnabled = useIsFeatureEnabled();
 
   const steps = [
     {
@@ -79,7 +77,7 @@ export const UserFederationLdapWizard = () => {
           showSectionDescription
         />
       ),
-      isDisabled: kerberosDisabled,
+      isDisabled: !isFeatureEnabled(Feature.Kerberos),
     },
     {
       name: t("cacheSettings"),

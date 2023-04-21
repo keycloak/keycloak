@@ -18,6 +18,7 @@ package org.keycloak.testsuite.arquillian;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -57,6 +58,8 @@ public final class TestContext {
 
     // Key is realmName, value are objects to clean after the test method
     private final Map<String, TestCleanup> cleanups = new ConcurrentHashMap<>();
+
+    private final Set<Runnable> afterClassActions = new HashSet<>();
 
     public TestContext(SuiteContext suiteContext, Class testClass) {
         this.suiteContext = suiteContext;
@@ -201,6 +204,14 @@ public final class TestContext {
         return cleanups;
     }
 
+    public void registerAfterClassAction(Runnable afterClassAction) {
+        afterClassActions.add(afterClassAction);
+    }
+
+    public void runAfterClassActions() {
+        afterClassActions.forEach(Runnable::run);
+        afterClassActions.clear();
+    }
 
     public String getAppServerContainerName() {
         if (isAdapterContainerEnabled()) { //standalone app server

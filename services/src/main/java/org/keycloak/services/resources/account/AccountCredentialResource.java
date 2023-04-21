@@ -304,7 +304,7 @@ public class AccountCredentialResource {
             String label = JsonSerialization.readValue(userLabel, String.class);
             user.credentialManager().updateCredentialLabel(credentialId, label);
         } catch (IOException ioe) {
-            throw new ErrorResponseException(ErrorResponse.error(Messages.INVALID_REQUEST, Response.Status.BAD_REQUEST));
+            throw ErrorResponse.error(Messages.INVALID_REQUEST, Response.Status.BAD_REQUEST);
         }
     }
 

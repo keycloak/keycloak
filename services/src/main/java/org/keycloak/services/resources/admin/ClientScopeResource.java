@@ -111,7 +111,7 @@ public class ClientScopeResource {
             }
             return Response.noContent().build();
         } catch (ModelDuplicateException e) {
-            return ErrorResponse.exists("Client Scope " + rep.getName() + " already exists");
+            throw ErrorResponse.exists("Client Scope " + rep.getName() + " already exists");
         }
     }
 
@@ -144,7 +144,7 @@ public class ClientScopeResource {
             adminEvent.operation(OperationType.DELETE).resourcePath(session.getContext().getUri()).success();
             return Response.noContent().build();
         } catch (ModelException me) {
-            return ErrorResponse.error(me.getMessage(), Response.Status.BAD_REQUEST);
+            throw ErrorResponse.error(me.getMessage(), Response.Status.BAD_REQUEST);
         }
     }
 
@@ -163,24 +163,24 @@ public class ClientScopeResource {
         if (Profile.isFeatureEnabled(Profile.Feature.DYNAMIC_SCOPES)) {
             // if the scope is dynamic but the regexp is empty, it's not considered valid
             if (isDynamic && StringUtil.isNullOrEmpty(regexp)) {
-                throw new ErrorResponseException(ErrorResponse.error("Dynamic scope regexp must not be null or empty", Response.Status.BAD_REQUEST));
+                throw ErrorResponse.error("Dynamic scope regexp must not be null or empty", Response.Status.BAD_REQUEST);
             }
             // Always validate the dynamic scope regexp to avoid inserting a wrong value even when the feature is disabled
             if (!StringUtil.isNullOrEmpty(regexp) && !dynamicScreenPattern.matcher(regexp).matches()) {
-                throw new ErrorResponseException(ErrorResponse.error(String.format("Invalid format for the Dynamic Scope regexp %1s", regexp), Response.Status.BAD_REQUEST));
+                throw ErrorResponse.error(String.format("Invalid format for the Dynamic Scope regexp %1s", regexp), Response.Status.BAD_REQUEST);
             }
         } else {
             // if the value is not null or empty we won't accept the request as the feature is disabled
             Optional.ofNullable(regexp).ifPresent(s -> {
                 if (!s.isEmpty()) {
-                    throw new ErrorResponseException(ErrorResponse.error(String.format("Unexpected value \"%1s\" for attribute %2s in ClientScope",
-                            regexp, ClientScopeModel.DYNAMIC_SCOPE_REGEXP), Response.Status.BAD_REQUEST));
+                    throw ErrorResponse.error(String.format("Unexpected value \"%1s\" for attribute %2s in ClientScope",
+                            regexp, ClientScopeModel.DYNAMIC_SCOPE_REGEXP), Response.Status.BAD_REQUEST);
                 }
             });
             // If isDynamic is true, we won't accept the request as the feature is disabled
             if (isDynamic) {
-                throw new ErrorResponseException(ErrorResponse.error(String.format("Unexpected value \"%1s\" for attribute %2s in ClientScope",
-                        isDynamic, ClientScopeModel.IS_DYNAMIC_SCOPE), Response.Status.BAD_REQUEST));
+                throw ErrorResponse.error(String.format("Unexpected value \"%1s\" for attribute %2s in ClientScope",
+                        isDynamic, ClientScopeModel.IS_DYNAMIC_SCOPE), Response.Status.BAD_REQUEST);
             }
         }
     }
@@ -188,7 +188,7 @@ public class ClientScopeResource {
     public static void validateClientScopeName(String name) throws ErrorResponseException {
         if (!scopeNamePattern.matcher(name).matches()) {
             String message = String.format("Unexpected name \"%s\" for ClientScope", name);
-            throw new ErrorResponseException(ErrorResponse.error(message, Response.Status.BAD_REQUEST));
+            throw ErrorResponse.error(message, Response.Status.BAD_REQUEST);
         }
     }
 
@@ -209,8 +209,8 @@ public class ClientScopeResource {
                     .findAny();
             // if it's present, it means that a client has this scope assigned as a default scope, so this scope can't be made dynamic
             if (scopeModelOpt.isPresent()) {
-                throw new ErrorResponseException(ErrorResponse.error("This Client Scope can't be made dynamic as it's assigned to a Client as a Default Scope",
-                        Response.Status.BAD_REQUEST));
+                throw ErrorResponse.error("This Client Scope can't be made dynamic as it's assigned to a Client as a Default Scope",
+                        Response.Status.BAD_REQUEST);
             }
         }
         // after the previous validation, run the usual Dynamic Scope validations.

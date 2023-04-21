@@ -614,6 +614,21 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
     }
 
     @Test
+    public void testEmailAsUsernameWhenEditUserNameDisabled() throws IOException {
+        try (RealmAttributeUpdater rau = configureRealmRegistrationEmailAsUsername(true)
+                .setEditUserNameAllowed(false)
+                .update()) {
+            loginPage.open();
+            loginPage.clickRegister();
+            registerPage.assertCurrent();
+
+            registerPage.registerWithEmailAsUsername("firstName", "lastName", "alice@email", "password", "password");
+
+            assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        }
+    }
+
+    @Test
     public void registerWithLoginHint() throws IOException {
 
         registerPage.openWithLoginHint("username_test");

@@ -26,10 +26,7 @@ describe("Tests the form convert util functions", () => {
     expect(values).toEqual({
       name: "client",
       other: { one: "1", two: "2" },
-      attributes: [
-        { key: "one", value: "1" },
-        { key: "", value: "" },
-      ],
+      attributes: [{ key: "one", value: "1" }],
     });
   });
 

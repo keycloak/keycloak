@@ -39,7 +39,7 @@ export const GroupTable = ({
   const [showDelete, toggleShowDelete] = useToggle();
   const [move, setMove] = useState<GroupRepresentation>();
 
-  const { subGroups, currentGroup, setSubGroups } = useSubGroups();
+  const { currentGroup } = useSubGroups();
 
   const [key, setKey] = useState(0);
   const refresh = () => setKey(key + 1);
@@ -212,7 +212,7 @@ export const GroupTable = ({
                 <Link
                   key={group.id}
                   to={`${location.pathname}/${group.id}`}
-                  onClick={() => setSubGroups([...subGroups, group])}
+                  onClick={() => navigate(toGroups({ realm, id: group.id }))}
                 >
                   {group.name}
                 </Link>

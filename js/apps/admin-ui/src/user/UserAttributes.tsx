@@ -43,7 +43,7 @@ export const UserAttributes = ({ user: defaultUser }: UserAttributesProps) => {
 
   useEffect(() => {
     form.setValue("attributes", convertAttributes());
-  }, [user]);
+  }, [user, config]);
 
   const save = async (attributeForm: AttributeForm) => {
     try {

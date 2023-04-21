@@ -8,7 +8,6 @@
     "test": "wireit",
     "cy:open": "cypress open --e2e --browser chrome",
     "cy:run": "cypress run --browser chrome",
-    "cy:run-component": "wireit",
     "cy:check-types": "wireit",
     "cy:ldap-server": "ldap-server-mock --conf=./cypress/fixtures/ldap/server.json --database=./cypress/fixtures/ldap/users.json"
   },
@@ -53,12 +52,6 @@
         "../../libs/keycloak-admin-client:build"
       ]
     },
-    "cy:run-component": {
-      "command": "cypress run --browser chrome --component",
-      "dependencies": [
-        "../../libs/keycloak-admin-client:build"
-      ]
-    },
     "cy:check-types": {
       "command": "tsc --project cypress/tsconfig.json",
       "dependencies": [
@@ -77,7 +70,7 @@
     "dagre": "^0.8.5",
     "file-saver": "^2.0.5",
     "flat": "^5.0.2",
-    "i18next": "^22.4.13",
+    "i18next": "^22.4.14",
     "i18next-http-backend": "^2.2.0",
     "keycloak-js": "999.0.0-SNAPSHOT",
     "lodash-es": "^4.17.21",
@@ -85,10 +78,10 @@
     "react-dom": "^18.2.0",
     "react-dropzone": "^14.2.3",
     "react-error-boundary": "^3.1.4",
-    "react-hook-form": "^7.43.8",
+    "react-hook-form": "^7.43.9",
     "react-i18next": "^12.2.0",
-    "react-router-dom": "6.9.0",
-    "reactflow": "^11.6.1",
+    "react-router-dom": "6.10.0",
+    "reactflow": "^11.7.0",
     "ui-shared": "999.0.0-SNAPSHOT",
     "use-react-router-breadcrumbs": "^4.0.1"
   },
@@ -101,16 +94,16 @@
     "@types/file-saver": "^2.0.5",
     "@types/flat": "^5.0.2",
     "@types/lodash-es": "^4.17.7",
-    "@types/react": "^18.0.30",
+    "@types/react": "^18.0.37",
     "@types/react-dom": "^18.0.11",
-    "@vitejs/plugin-react-swc": "^3.2.0",
-    "cypress": "^12.8.1",
+    "@vitejs/plugin-react-swc": "^3.3.0",
+    "cypress": "^12.10.0",
     "cypress-axe": "^1.4.0",
     "jsdom": "^21.1.1",
     "ldap-server-mock": "^6.0.1",
     "ts-node": "^10.9.1",
-    "vite": "^4.1.4",
+    "vite": "^4.2.2",
     "vite-plugin-checker": "^0.5.6",
-    "vitest": "^0.29.7"
+    "vitest": "^0.30.1"
   }
 }

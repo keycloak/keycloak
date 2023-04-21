@@ -17,4 +17,33 @@ const defaultEnvironment: Environment = {
   isRunningAsTheme: false,
 };
 
-export { defaultEnvironment as environment };
+// Merge the default and injected environment variables together.
+const environment: Environment = {
+  ...defaultEnvironment,
+  ...getInjectedEnvironment(),
+};
+
+export { environment };
+
+/**
+ * Extracts the environment variables that are passed if the application is running as a Keycloak theme.
+ * These variables are injected by Keycloak into the `index.ftl` as a script tag, the contents of which can be parsed as JSON.
+ */
+function getInjectedEnvironment(): Record<string, string | number | boolean> {
+  const element = document.getElementById("environment");
+
+  // If the element cannot be found, return an empty record.
+  if (!element?.textContent) {
+    return {};
+  }
+
+  // Attempt to parse the contents as JSON and return its value.
+  try {
+    return JSON.parse(element.textContent);
+  } catch (error) {
+    console.error("Unable to parse environment variables.");
+  }
+
+  // Otherwise, return an empty record.
+  return {};
+}

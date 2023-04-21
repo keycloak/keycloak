@@ -344,9 +344,14 @@ public abstract class KeycloakModelTest {
                 return "KeycloakSessionFactory " + factoryIndex + " (from " + threadName + " thread)";
             }
         };
-        res.init();
-        res.publish(new PostMigrationEvent(res));
-        return res;
+        try {
+            res.init();
+            res.publish(new PostMigrationEvent(res));
+            return res;
+        } catch (RuntimeException ex) {
+            res.close();
+            throw ex;
+        }
     }
 
     /**

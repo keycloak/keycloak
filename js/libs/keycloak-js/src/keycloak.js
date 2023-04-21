@@ -21,17 +21,18 @@ if (typeof Promise === 'undefined') {
     throw Error('Keycloak requires an environment that supports Promises. Make sure that you include the appropriate polyfill.');
 }
 
-var loggedPromiseDeprecation = false;
+var loggedConstructorDeprecation = false;
 
-function logPromiseDeprecation() {
-    if (!loggedPromiseDeprecation) {
-        loggedPromiseDeprecation = true;
-        console.warn('[KEYCLOAK] Usage of legacy style promise methods such as `.error()` and `.success()` has been deprecated and support will be removed in future versions. Use standard style promise methods such as `.then() and `.catch()` instead.');
+function logConstructorDeprecation() {
+    if (!loggedConstructorDeprecation) {
+        loggedConstructorDeprecation = true;
+        console.warn('[KEYCLOAK] Instantiation using the `Keycloak` function has been deprecated and support will be removed in future versions. Use the `new` operator to create an instance instead.');
     }
 }
 
 function Keycloak (config) {
     if (!(this instanceof Keycloak)) {
+        logConstructorDeprecation();
         return new Keycloak(config);
     }
 
@@ -1166,26 +1167,6 @@ function Keycloak (config) {
             p.reject = reject;
         });
 
-        p.promise.success = function(callback) {
-            logPromiseDeprecation();
-
-            this.then(function handleSuccess(value) {
-                callback(value);
-            });
-
-            return this;
-        }
-
-        p.promise.error = function(callback) {
-            logPromiseDeprecation();
-
-            this.catch(function handleError(error) {
-                callback(error);
-            });
-
-            return this;
-        }
-
         return p;
     }
 
@@ -1340,7 +1321,7 @@ function Keycloak (config) {
         if (!type || type == 'default') {
             return {
                 login: function(options) {
-                    window.location.replace(kc.createLoginUrl(options));
+                    window.location.assign(kc.createLoginUrl(options));
                     return createPromise().promise;
                 },
 
@@ -1350,7 +1331,7 @@ function Keycloak (config) {
                 },
 
                 register: function(options) {
-                    window.location.replace(kc.createRegisterUrl(options));
+                    window.location.assign(kc.createRegisterUrl(options));
                     return createPromise().promise;
                 },
 

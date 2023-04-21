@@ -50,8 +50,7 @@ import org.keycloak.models.map.common.DeepCloner;
 import org.keycloak.models.map.common.HasRealmId;
 import org.keycloak.models.map.common.TimeAdapter;
 import org.keycloak.models.map.credential.MapUserCredentialManager;
-import org.keycloak.models.map.storage.MapKeycloakTransactionWithAuth;
-import org.keycloak.models.map.storage.MapKeycloakTransaction;
+import org.keycloak.models.map.storage.MapStorageWithAuth;
 import org.keycloak.models.map.storage.MapStorage;
 import org.keycloak.models.map.storage.ModelCriteriaBuilder.Operator;
 import org.keycloak.models.map.storage.criteria.DefaultModelCriteria;
@@ -88,14 +87,13 @@ public class MapUserProvider implements UserProvider {
 
     private static final Logger LOG = Logger.getLogger(MapUserProvider.class);
     private final KeycloakSession session;
-    final MapKeycloakTransaction<MapUserEntity, UserModel> tx;
-    private final boolean txHasRealmId;
+    final MapStorage<MapUserEntity, UserModel> store;
+    private final boolean storeHasRealmId;
 
     public MapUserProvider(KeycloakSession session, MapStorage<MapUserEntity, UserModel> store) {
         this.session = session;
-        this.tx = store.createTransaction(session);
-        session.getTransactionManager().enlist(tx);
-        this.txHasRealmId = tx instanceof HasRealmId;
+        this.store = store;
+        this.storeHasRealmId = store instanceof HasRealmId;
     }
 
     private Function<MapUserEntity, UserModel> entityToAdapterFunc(RealmModel realm) {
@@ -118,11 +116,11 @@ public class MapUserProvider implements UserProvider {
         };
     }
 
-    private MapKeycloakTransaction<MapUserEntity, UserModel> txInRealm(RealmModel realm) {
-        if (txHasRealmId) {
-            ((HasRealmId) tx).setRealmId(realm == null ? null : realm.getId());
+    private MapStorage<MapUserEntity, UserModel> storeWithRealm(RealmModel realm) {
+        if (storeHasRealmId) {
+            ((HasRealmId) store).setRealmId(realm == null ? null : realm.getId());
         }
-        return tx;
+        return store;
     }
 
     private Predicate<MapUserEntity> entityRealmFilter(RealmModel realm) {
@@ -139,7 +137,7 @@ public class MapUserProvider implements UserProvider {
 
     private Optional<MapUserEntity> getEntityById(RealmModel realm, String id) {
         try {
-            MapUserEntity mapUserEntity = txInRealm(realm).read(id);
+            MapUserEntity mapUserEntity = storeWithRealm(realm).read(id);
             if (mapUserEntity != null && entityRealmFilter(realm).test(mapUserEntity)) {
                 return Optional.of(mapUserEntity);
             }
@@ -186,7 +184,7 @@ public class MapUserProvider implements UserProvider {
         mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
           .compare(SearchableFields.IDP_AND_USER, Operator.EQ, socialProvider);
 
-        txInRealm(realm).read(withCriteria(mcb))
+        storeWithRealm(realm).read(withCriteria(mcb))
                 .forEach(userEntity -> userEntity.removeFederatedIdentity(socialProvider));
     }
 
@@ -228,7 +226,7 @@ public class MapUserProvider implements UserProvider {
         mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
           .compare(SearchableFields.IDP_AND_USER, Operator.EQ, socialLink.getIdentityProvider(), socialLink.getUserId());
 
-        return txInRealm(realm).read(withCriteria(mcb))
+        return storeWithRealm(realm).read(withCriteria(mcb))
                 .collect(Collectors.collectingAndThen(
                         Collectors.toList(),
                         list -> {
@@ -322,7 +320,7 @@ public class MapUserProvider implements UserProvider {
         mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
           .compare(SearchableFields.SERVICE_ACCOUNT_CLIENT, Operator.EQ, client.getId());
 
-        return txInRealm(realm).read(withCriteria(mcb))
+        return storeWithRealm(realm).read(withCriteria(mcb))
                 .collect(Collectors.collectingAndThen(Collectors.toList(),
                         list -> {
                             if (list.isEmpty()) {
@@ -346,11 +344,11 @@ public class MapUserProvider implements UserProvider {
                          SearchableFields.USERNAME : 
                          SearchableFields.USERNAME_CASE_INSENSITIVE, Operator.EQ, username);
         
-        if (txInRealm(realm).exists(withCriteria(mcb))) {
+        if (storeWithRealm(realm).exists(withCriteria(mcb))) {
             throw new ModelDuplicateException("User with username '" + username + "' in realm " + realm.getName() + " already exists" );
         }
 
-        if (id != null && txInRealm(realm).exists(id)) {
+        if (id != null && storeWithRealm(realm).exists(id)) {
             throw new ModelDuplicateException("User exists: " + id);
         }
 
@@ -361,7 +359,7 @@ public class MapUserProvider implements UserProvider {
         entity.setUsername(username);
         entity.setCreatedTimestamp(Time.currentTimeMillis());
 
-        entity = txInRealm(realm).create(entity);
+        entity = storeWithRealm(realm).create(entity);
         final UserModel userModel = entityToAdapterFunc(realm).apply(entity);
 
         if (addDefaultRoles) {
@@ -388,7 +386,7 @@ public class MapUserProvider implements UserProvider {
         DefaultModelCriteria<UserModel> mcb = criteria();
         mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId());
 
-        txInRealm(realm).delete(withCriteria(mcb));
+        storeWithRealm(realm).delete(withCriteria(mcb));
     }
 
     @Override
@@ -398,7 +396,7 @@ public class MapUserProvider implements UserProvider {
         mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
           .compare(SearchableFields.FEDERATION_LINK, Operator.EQ, storageProviderId);
 
-        txInRealm(realm).delete(withCriteria(mcb));
+        storeWithRealm(realm).delete(withCriteria(mcb));
     }
 
     @Override
@@ -408,7 +406,7 @@ public class MapUserProvider implements UserProvider {
         mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
           .compare(SearchableFields.FEDERATION_LINK, Operator.EQ, storageProviderId);
 
-        try (Stream<MapUserEntity> s = txInRealm(realm).read(withCriteria(mcb))) {
+        try (Stream<MapUserEntity> s = storeWithRealm(realm).read(withCriteria(mcb))) {
             s.forEach(userEntity -> userEntity.setFederationLink(null));
         }
     }
@@ -421,7 +419,7 @@ public class MapUserProvider implements UserProvider {
         mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
           .compare(SearchableFields.ASSIGNED_ROLE, Operator.EQ, roleId);
 
-        try (Stream<MapUserEntity> s = txInRealm(realm).read(withCriteria(mcb))) {
+        try (Stream<MapUserEntity> s = storeWithRealm(realm).read(withCriteria(mcb))) {
             s.forEach(userEntity -> userEntity.removeRolesMembership(roleId));
         }
     }
@@ -434,7 +432,7 @@ public class MapUserProvider implements UserProvider {
         mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
           .compare(SearchableFields.ASSIGNED_GROUP, Operator.EQ, groupId);
 
-        try (Stream<MapUserEntity> s = txInRealm(realm).read(withCriteria(mcb))) {
+        try (Stream<MapUserEntity> s = storeWithRealm(realm).read(withCriteria(mcb))) {
             s.forEach(userEntity -> userEntity.removeGroupsMembership(groupId));
         }
     }
@@ -447,7 +445,7 @@ public class MapUserProvider implements UserProvider {
         mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
           .compare(SearchableFields.CONSENT_FOR_CLIENT, Operator.EQ, clientId);
 
-        try (Stream<MapUserEntity> s = txInRealm(realm).read(withCriteria(mcb))) {
+        try (Stream<MapUserEntity> s = storeWithRealm(realm).read(withCriteria(mcb))) {
             s.forEach(userEntity -> userEntity.removeUserConsent(clientId));
         }
     }
@@ -467,7 +465,7 @@ public class MapUserProvider implements UserProvider {
         mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
           .compare(SearchableFields.CONSENT_WITH_CLIENT_SCOPE, Operator.EQ, clientScopeId);
 
-        try (Stream<MapUserEntity> s = txInRealm(realm).read(withCriteria(mcb))) {
+        try (Stream<MapUserEntity> s = storeWithRealm(realm).read(withCriteria(mcb))) {
             s.map(MapUserEntity::getUserConsents)
                 .filter(Objects::nonNull)
                 .flatMap(Collection::stream)
@@ -486,7 +484,7 @@ public class MapUserProvider implements UserProvider {
         DefaultModelCriteria<UserModel> mcb = criteria();
         mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId());
 
-        try (Stream<MapUserEntity> s = txInRealm(realm).read(withCriteria(mcb))) {
+        try (Stream<MapUserEntity> s = storeWithRealm(realm).read(withCriteria(mcb))) {
             s.forEach(entity -> entity.addRolesMembership(roleId));
         }
     }
@@ -508,7 +506,7 @@ public class MapUserProvider implements UserProvider {
                          SearchableFields.USERNAME_CASE_INSENSITIVE, Operator.EQ, username);
 
         // there is orderBy used to always return the same user in case multiple users are returned from the store
-        try (Stream<MapUserEntity> s = txInRealm(realm).read(withCriteria(mcb).orderBy(SearchableFields.USERNAME, ASCENDING))) {
+        try (Stream<MapUserEntity> s = storeWithRealm(realm).read(withCriteria(mcb).orderBy(SearchableFields.USERNAME, ASCENDING))) {
             List<MapUserEntity> users = s.collect(Collectors.toList());
             if (users.isEmpty()) return null;
             if (users.size() != 1) {
@@ -526,7 +524,7 @@ public class MapUserProvider implements UserProvider {
         mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
           .compare(SearchableFields.EMAIL, Operator.EQ, email);
 
-        List<MapUserEntity> usersWithEmail = txInRealm(realm).read(withCriteria(mcb)).collect(Collectors.toList());
+        List<MapUserEntity> usersWithEmail = storeWithRealm(realm).read(withCriteria(mcb)).collect(Collectors.toList());
 
         if (usersWithEmail.isEmpty()) return null;
         if (usersWithEmail.size() > 1) {
@@ -558,7 +556,7 @@ public class MapUserProvider implements UserProvider {
             mcb = mcb.compare(SearchableFields.SERVICE_ACCOUNT_CLIENT, Operator.NOT_EXISTS);
         }
 
-        return (int) txInRealm(realm).getCount(withCriteria(mcb));
+        return (int) storeWithRealm(realm).getCount(withCriteria(mcb));
     }
 
     @Override
@@ -676,7 +674,7 @@ public class MapUserProvider implements UserProvider {
             criteria = criteria.compare(SearchableFields.ASSIGNED_GROUP, Operator.IN, authorizedGroups);
         }
 
-        return txInRealm(realm).read(withCriteria(criteria).pagination(firstResult, maxResults, SearchableFields.USERNAME))
+        return storeWithRealm(realm).read(withCriteria(criteria).pagination(firstResult, maxResults, SearchableFields.USERNAME))
                 .map(entityToAdapterFunc(realm))
                 .filter(Objects::nonNull);
     }
@@ -688,7 +686,7 @@ public class MapUserProvider implements UserProvider {
         mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
           .compare(SearchableFields.ASSIGNED_GROUP, Operator.EQ, group.getId());
 
-        return txInRealm(realm).read(withCriteria(mcb).pagination(firstResult, maxResults, SearchableFields.USERNAME))
+        return storeWithRealm(realm).read(withCriteria(mcb).pagination(firstResult, maxResults, SearchableFields.USERNAME))
                 .map(entityToAdapterFunc(realm));
     }
 
@@ -699,7 +697,7 @@ public class MapUserProvider implements UserProvider {
         mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
           .compare(SearchableFields.ATTRIBUTE, Operator.EQ, attrName, attrValue);
 
-        return txInRealm(realm).read(withCriteria(mcb).orderBy(SearchableFields.USERNAME, ASCENDING))
+        return storeWithRealm(realm).read(withCriteria(mcb).orderBy(SearchableFields.USERNAME, ASCENDING))
           .map(entityToAdapterFunc(realm));
     }
 
@@ -716,7 +714,7 @@ public class MapUserProvider implements UserProvider {
         if (userById.isPresent()) {
             session.invalidate(USER_BEFORE_REMOVE, realm, user);
 
-            txInRealm(realm).delete(userId);
+            storeWithRealm(realm).delete(userId);
 
             session.invalidate(USER_AFTER_REMOVE, realm, user);
             return true;
@@ -732,7 +730,7 @@ public class MapUserProvider implements UserProvider {
         mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
           .compare(SearchableFields.ASSIGNED_ROLE, Operator.EQ, role.getId());
 
-        return txInRealm(realm).read(withCriteria(mcb).pagination(firstResult, maxResults, SearchableFields.USERNAME))
+        return storeWithRealm(realm).read(withCriteria(mcb).pagination(firstResult, maxResults, SearchableFields.USERNAME))
                 .map(entityToAdapterFunc(realm));
     }
 
@@ -758,8 +756,8 @@ public class MapUserProvider implements UserProvider {
                 .filter(Objects::nonNull)
                 .findFirst().orElse(null);
 
-        if (r == null && tx instanceof MapKeycloakTransactionWithAuth) {
-            MapCredentialValidationOutput<MapUserEntity> result = ((MapKeycloakTransactionWithAuth<MapUserEntity, UserModel>) tx).authenticate(realm, input);
+        if (r == null && store instanceof MapStorageWithAuth) {
+            MapCredentialValidationOutput<MapUserEntity> result = ((MapStorageWithAuth<MapUserEntity, UserModel>) store).authenticate(realm, input);
             if (result != null) {
                 UserModel user = null;
                 if (result.getAuthenticatedUser() != null) {

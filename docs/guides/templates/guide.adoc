@@ -15,6 +15,6 @@
 <#if includedOptions?has_content>
 == Relevant options
 
-<@opts.list options=ctx.options.getOptions(includedOptions)></@opts.list>
+<@opts.list options=ctx.options.getOptions(includedOptions) anchor=false></@opts.list>
 </#if>
 </#macro>

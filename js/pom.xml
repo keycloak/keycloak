@@ -16,6 +16,7 @@
     <description>Parent of all JavaScript related code, sets up Node.js and NPM and installs dependencies for all projects in the workspace.</description>
 
     <modules>
+        <module>apps/account-ui</module>
         <module>apps/admin-ui</module>
         <module>libs/keycloak-admin-client</module>
         <module>libs/keycloak-js</module>

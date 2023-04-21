@@ -14,7 +14,7 @@ public enum OptionCategory {
     PROXY("Proxy", 90, ConfigSupportLevel.SUPPORTED),
     VAULT("Vault", 100, ConfigSupportLevel.SUPPORTED),
     LOGGING("Logging", 110, ConfigSupportLevel.SUPPORTED),
-    SECURITY("Security", 120, ConfigSupportLevel.PREVIEW),
+    SECURITY("Security", 120, ConfigSupportLevel.SUPPORTED),
     EXPORT("Export", 130, ConfigSupportLevel.SUPPORTED),
     IMPORT("Import", 140, ConfigSupportLevel.SUPPORTED),
     GENERAL("General", 999, ConfigSupportLevel.SUPPORTED);

@@ -90,6 +90,7 @@ module.exports = {
       // TODO: Set these rules to "error" when issues have been resolved.
       rules: {
         "cypress/no-unnecessary-waiting": "warn",
+        "cypress/unsafe-to-chain-command": "warn",
         "mocha/max-top-level-suites": "off",
         "mocha/no-exclusive-tests": "error",
         "mocha/no-identical-title": "off",

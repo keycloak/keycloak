@@ -76,7 +76,7 @@ export class PermissionRequest extends React.Component<PermissionRequestProps, P
         const id = this.props.resource._id
         this.handleToggleDialog();
 
-        const permissionsRequest: HttpResponse<Permission[]> = await this.context!.doGet(`/resources/${id}/permissions`);
+        const permissionsRequest: HttpResponse<Permission[]> = await this.context!.doGet(`/resources/${encodeURIComponent(id)}/permissions`);
         const permissions = permissionsRequest.data || [];
         const foundPermission = permissions.find(p => p.username === username);
         const userScopes = foundPermission ? (foundPermission.scopes as Scope[]): [];
@@ -84,7 +84,7 @@ export class PermissionRequest extends React.Component<PermissionRequestProps, P
             userScopes.push(...scopes);
         }
         try {
-            await this.context!.doPut(`/resources/${id}/permissions`, [{ username: username, scopes: userScopes }] )
+            await this.context!.doPut(`/resources/${encodeURIComponent(id)}/permissions`, [{ username: username, scopes: userScopes }] )
             ContentAlert.success(Msg.localize('shareSuccess'));
             this.props.onClose();
         } catch (e) {

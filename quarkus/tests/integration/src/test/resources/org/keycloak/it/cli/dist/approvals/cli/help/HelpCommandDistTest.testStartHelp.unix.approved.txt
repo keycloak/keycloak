@@ -38,6 +38,8 @@ Database:
 
 --db <vendor>        The database vendor. Possible values are: dev-file, dev-mem, mariadb, mssql,
                        mysql, oracle, postgres. Default: dev-file.
+--db-driver <driver> The fully qualified class name of the JDBC driver. If not set, a default
+                       driver is set accordingly to the chosen database.
 --db-password <password>
                      The password of the database user.
 --db-pool-initial-size <size>
@@ -73,18 +75,20 @@ Transaction:
 Feature:
 
 --features <feature> Enables a set of one or more features. Possible values are: account-api,
-                       account2, admin-api, admin-fine-grained-authz, admin2, authorization, ciba,
-                       client-policies, client-secret-rotation, declarative-user-profile, docker,
-                       dynamic-scopes, fips, impersonation, js-adapter, kerberos, map-storage,
-                       openshift-integration, par, preview, recovery-codes, scripts,
-                       step-up-authentication, token-exchange, update-email, web-authn.
+                       account2, account3, admin-api, admin-fine-grained-authz, admin2,
+                       authorization, ciba, client-policies, client-secret-rotation,
+                       declarative-user-profile, docker, dynamic-scopes, fips, impersonation,
+                       js-adapter, kerberos, map-storage, openshift-integration, par, preview,
+                       recovery-codes, scripts, step-up-authentication, token-exchange,
+                       update-email, web-authn.
 --features-disabled <feature>
                      Disables a set of one or more features. Possible values are: account-api,
-                       account2, admin-api, admin-fine-grained-authz, admin2, authorization, ciba,
-                       client-policies, client-secret-rotation, declarative-user-profile, docker,
-                       dynamic-scopes, fips, impersonation, js-adapter, kerberos, map-storage,
-                       openshift-integration, par, preview, recovery-codes, scripts,
-                       step-up-authentication, token-exchange, update-email, web-authn.
+                       account2, account3, admin-api, admin-fine-grained-authz, admin2,
+                       authorization, ciba, client-policies, client-secret-rotation,
+                       declarative-user-profile, docker, dynamic-scopes, fips, impersonation,
+                       js-adapter, kerberos, map-storage, openshift-integration, par, preview,
+                       recovery-codes, scripts, step-up-authentication, token-exchange,
+                       update-email, web-authn.
 
 Hostname:
 
@@ -225,6 +229,15 @@ Logging:
                      The log level of the root category or a comma-separated list of individual
                        categories and their levels. For the root category, you don't need to
                        specify a category. Default: info.
+
+Security:
+
+--fips-mode <mode>   Sets the FIPS mode. If 'non-strict' is set, FIPS is enabled but on
+                       non-approved mode. For full FIPS compliance, set 'strict' to run on approved
+                       mode. This option defaults to 'disabled' when 'fips' feature is disabled,
+                       which is by default. This option defaults to 'non-strict' when 'fips'
+                       feature is enabled. Possible values are: non-strict, strict. Default:
+                       disabled.
 
 By default, this command tries to update the server configuration by running a
 'build' before starting the server. You can disable this behavior by using the

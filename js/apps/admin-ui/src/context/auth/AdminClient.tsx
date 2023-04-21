@@ -38,10 +38,11 @@ export function useFetch<T>(
   deps?: DependencyList
 ) {
   const onError = useErrorHandler();
-  const controller = new AbortController();
-  const { signal } = controller;
 
   useEffect(() => {
+    const controller = new AbortController();
+    const { signal } = controller;
+
     adminClientCall()
       .then((result) => {
         if (!signal.aborted) {

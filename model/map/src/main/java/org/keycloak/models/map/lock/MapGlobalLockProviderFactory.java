@@ -47,7 +47,7 @@ public class MapGlobalLockProviderFactory extends AbstractMapProviderFactory<Glo
 
     @Override
     public MapGlobalLockProvider createNew(KeycloakSession session) {
-        return new MapGlobalLockProvider(session, defaultTimeoutMilliseconds, () -> getStorage(session));
+        return new MapGlobalLockProvider(session, defaultTimeoutMilliseconds, () -> getMapStorage(session));
     }
 
     @Override

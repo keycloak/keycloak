@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import {
+  AlertVariant,
   Checkbox,
   Dropdown,
   DropdownItem,
@@ -27,6 +28,8 @@ import { fetchAdminUI } from "../../context/auth/admin-ui-endpoint";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { joinPath } from "../../utils/joinPath";
 import { toGroups } from "../routes/Groups";
+import { useAlerts } from "../../components/alert/Alerts";
+import { useAccess } from "../../context/access/Access";
 
 import "./group-tree.css";
 
@@ -113,6 +116,8 @@ export const GroupTree = ({
   const { adminClient } = useAdminClient();
   const { realm } = useRealm();
   const navigate = useNavigate();
+  const { addAlert } = useAlerts();
+  const { hasAccess } = useAccess();
 
   const [data, setData] = useState<TreeViewDataItem[]>();
   const [groups, setGroups] = useState<GroupRepresentation[]>([]);
@@ -147,7 +152,7 @@ export const GroupTree = ({
         group.subGroups && group.subGroups.length > 0
           ? group.subGroups.map((g) => mapGroup(g, groups, refresh))
           : undefined,
-      action: canViewDetails && (
+      action: (hasAccess("manage-users") || group.access?.manage) && (
         <GroupTreeContextMenu group={group} refresh={refresh} />
       ),
       defaultExpanded: subGroups.map((g) => g.id).includes(group.id),
@@ -232,12 +237,16 @@ export const GroupTree = ({
           className="keycloak_groups_treeview"
           onSelect={(_, item) => {
             setActiveItem(item);
-            if (canViewDetails) {
-              const id = item.id?.substring(item.id.lastIndexOf("/") + 1);
-              const subGroups: GroupRepresentation[] = [];
-              findGroup(groups, id!, [], subGroups);
-              setSubGroups(subGroups);
+            const id = item.id?.substring(item.id.lastIndexOf("/") + 1);
+            const subGroups: GroupRepresentation[] = [];
+            findGroup(groups, id!, [], subGroups);
+            setSubGroups(subGroups);
+
+            if (canViewDetails || subGroups.at(-1)?.access?.view) {
               navigate(toGroups({ realm, id: item.id }));
+            } else {
+              addAlert(t("noViewRights"), AlertVariant.warning);
+              navigate(toGroups({ realm }));
             }
           }}
         />

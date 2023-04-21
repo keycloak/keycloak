@@ -23,6 +23,7 @@ export default class GroupDetailPage extends GroupPage {
   private renameGroupModalGroupNameInput = "groupNameInput";
   private renameGroupModalRenameBtn = "renameGroup";
   private permissionSwitch = "permissionSwitch";
+
   public goToChildGroupsTab() {
     cy.findByTestId(this.childGroupsTab).click();
     return this;

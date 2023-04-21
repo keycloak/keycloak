@@ -199,9 +199,9 @@ public class IdentityProvidersResource {
                 message = "Invalid request";
             }
             
-            return ErrorResponse.error(message, BAD_REQUEST);
+            throw ErrorResponse.error(message, BAD_REQUEST);
         } catch (ModelDuplicateException e) {
-            return ErrorResponse.exists("Identity Provider " + representation.getAlias() + " already exists");
+            throw ErrorResponse.exists("Identity Provider " + representation.getAlias() + " already exists");
         }
     }
 

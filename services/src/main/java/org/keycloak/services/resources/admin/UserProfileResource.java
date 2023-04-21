@@ -63,7 +63,7 @@ public class UserProfileResource {
             t.setConfiguration(text);
         } catch (ComponentValidationException e) {
             //show validation result containing details about error
-            return ErrorResponse.error(e.getMessage(), Response.Status.BAD_REQUEST);
+            throw ErrorResponse.error(e.getMessage(), Response.Status.BAD_REQUEST);
         }
 
         return Response.ok(t.getConfiguration()).type(MediaType.APPLICATION_JSON).build();

@@ -18,7 +18,6 @@
 package org.keycloak.testsuite.admin.authentication;
 
 import org.junit.Assert;
-import org.junit.Assume;
 import org.junit.Test;
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.StreamUtil;
@@ -27,7 +26,7 @@ import org.keycloak.events.admin.ResourceType;
 import org.keycloak.representations.idm.AuthenticationExecutionExportRepresentation;
 import org.keycloak.representations.idm.AuthenticationExecutionInfoRepresentation;
 import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
-import org.keycloak.representations.idm.ComponentRepresentation;
+import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
 import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.util.AdminEventPaths;
 import org.keycloak.testsuite.util.ContainerAssume;
@@ -38,7 +37,6 @@ import javax.ws.rs.InternalServerErrorException;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
@@ -51,8 +49,6 @@ import static org.hamcrest.Matchers.containsString;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.keycloak.testsuite.util.Matchers.body;
 import static org.keycloak.testsuite.util.Matchers.statusCodeIs;
@@ -479,5 +475,33 @@ public class FlowTest extends AbstractAuthenticationTest {
         } catch (Exception e) {
             fail("Unexpected exception");
         }
+    }
+
+    @Test
+    public void testAddRemoveExecutionsFailInBuiltinFlow() throws IOException {
+        // get a built in flow
+        List<AuthenticationFlowRepresentation> flows = authMgmtResource.getFlows();
+        AuthenticationFlowRepresentation flow = flows.stream().filter(AuthenticationFlowRepresentation::isBuiltIn).findFirst().orElse(null);
+        Assert.assertNotNull("There is no builtin flow", flow);
+
+        // adding an execution should fail
+        Map<String, String> data = new HashMap<>();
+        data.put("provider", "allow-access-authenticator");
+        BadRequestException e = Assert.assertThrows(BadRequestException.class, () -> authMgmtResource.addExecution(flow.getAlias(), data));
+        OAuth2ErrorRepresentation error = e.getResponse().readEntity(OAuth2ErrorRepresentation.class);
+        Assert.assertEquals("It is illegal to add execution to a built in flow", error.getError());
+
+        // adding a sub-flow should fail as well
+        e = Assert.assertThrows(BadRequestException.class, () -> addFlowToParent(flow.getAlias(), "child"));
+        error = e.getResponse().readEntity(OAuth2ErrorRepresentation.class);
+        Assert.assertEquals("It is illegal to add sub-flow to a built in flow", error.getError());
+
+        // removing any execution (execution or flow) should fail too
+        List<AuthenticationExecutionInfoRepresentation> executions = authMgmtResource.getExecutions(flow.getAlias());
+        Assert.assertNotNull("The builtin flow has no executions", executions);
+        Assert.assertFalse("The builtin flow has no executions", executions.isEmpty());
+        e = Assert.assertThrows(BadRequestException.class, () -> authMgmtResource.removeExecution(executions.get(0).getId()));
+        error = e.getResponse().readEntity(OAuth2ErrorRepresentation.class);
+        Assert.assertEquals("It is illegal to remove execution from a built in flow", error.getError());
     }
 }
