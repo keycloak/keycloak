@@ -11,6 +11,7 @@ export const MultiValuedStringComponent = ({
   label,
   defaultValue,
   helpText,
+  stringify,
   isDisabled = false,
 }: ComponentProps) => {
   const { t } = useTranslation("dynamic");
@@ -32,7 +33,7 @@ export const MultiValuedStringComponent = ({
         addButtonLabel={t("addMultivaluedLabel", {
           fieldLabel: t(label!).toLowerCase(),
         })}
-        stringify
+        stringify={stringify}
       />
     </FormGroup>
   );
