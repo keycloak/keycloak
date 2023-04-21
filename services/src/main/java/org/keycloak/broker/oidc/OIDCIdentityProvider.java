@@ -74,6 +74,7 @@ import javax.ws.rs.core.UriInfo;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 
 import static org.keycloak.utils.LockObjectsForModification.lockUserSessionsForModification;
 
@@ -434,7 +435,16 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
         String givenName = (String)idToken.getOtherClaims().get(IDToken.GIVEN_NAME);
         String familyName = (String)idToken.getOtherClaims().get(IDToken.FAMILY_NAME);
         String preferredUsername = (String) idToken.getOtherClaims().get(getusernameClaimNameForIdToken());
-        String email = (String) idToken.getOtherClaims().get(IDToken.EMAIL);
+        String email = null;
+        //Some AzureID-systems return even a single email as an array in JSON.
+        if ( idToken.getOtherClaims().get(IDToken.EMAIL) instanceof String ) {
+            email = (String) idToken.getOtherClaims().get(IDToken.EMAIL);
+        } else if ( idToken.getOtherClaims().get(IDToken.EMAIL) instanceof List ) {
+            List emailList = (List) idToken.getOtherClaims().get(IDToken.EMAIL);
+            if ( emailList.size() > 0 && ( emailList.get(0) instanceof String ) ) {
+                email = (String) emailList.get(0);
+            }
+        }
 
         if (!getConfig().isDisableUserInfoService()) {
             String userInfoUrl = getUserInfoUrl();
