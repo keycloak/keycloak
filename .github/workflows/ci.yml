@@ -101,11 +101,10 @@ jobs:
         uses: ./.github/actions/integration-test-setup
 
       - name: Run base tests
-        # Temporarily use app-server-wildfly instead of Undertow
         run: |
           TESTS=`testsuite/integration-arquillian/tests/base/testsuites/base-suite.sh ${{ matrix.group }}`
           echo "Tests: $TESTS"
-          ./mvnw test -Dsurefire.rerunFailingTestsCount=${{ env.SUREFIRE_RERUN_FAILING_COUNT }} -nsu -B -Pauth-server-quarkus,app-server-wildfly -Dtest=$TESTS -pl testsuite/integration-arquillian/tests/base | misc/log/trimmer.sh
+          ./mvnw test -Dsurefire.rerunFailingTestsCount=${{ env.SUREFIRE_RERUN_FAILING_COUNT }} -nsu -B -Pauth-server-quarkus "-Dwebdriver.chrome.driver=$CHROMEWEBDRIVER/chromedriver" -Dtest=$TESTS -pl testsuite/integration-arquillian/tests/base | misc/log/trimmer.sh
 
       - name: Upload JVM Heapdumps
         if: always()
