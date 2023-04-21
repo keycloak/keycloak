@@ -10,9 +10,52 @@ Options:
 
 -h, --help           This help message.
 --help-all           This same help message but with additional options.
+--optimized          Use this option to achieve an optimal startup time if you have previously
+                       built a server image using the 'build' command.
 
 Storage (Experimental):
 
+--storage <type>     Experimental: Sets the default storage mechanism for all areas. Possible
+                       values are: jpa, chm, hotrod, file.
+--storage-area-auth-session <type>
+                     Experimental: Sets a storage mechanism for authentication sessions. Possible
+                       values are: jpa, chm, hotrod, file.
+--storage-area-authorization <type>
+                     Experimental: Sets a storage mechanism for authorizations. Possible values
+                       are: jpa, chm, hotrod, file.
+--storage-area-client <type>
+                     Experimental: Sets a storage mechanism for clients. Possible values are: jpa,
+                       chm, hotrod, file.
+--storage-area-client-scope <type>
+                     Experimental: Sets a storage mechanism for client scopes. Possible values are:
+                       jpa, chm, hotrod, file.
+--storage-area-event-admin <type>
+                     Experimental: Sets a storage mechanism for admin events. Possible values are:
+                       jpa, chm, hotrod, file.
+--storage-area-event-auth <type>
+                     Experimental: Sets a storage mechanism for authentication and authorization
+                       events. Possible values are: jpa, chm, hotrod, file.
+--storage-area-group <type>
+                     Experimental: Sets a storage mechanism for groups. Possible values are: jpa,
+                       chm, hotrod, file.
+--storage-area-login-failure <type>
+                     Experimental: Sets a storage mechanism for login failures. Possible values
+                       are: jpa, chm, hotrod, file.
+--storage-area-realm <type>
+                     Experimental: Sets a storage mechanism for realms. Possible values are: jpa,
+                       chm, hotrod, file.
+--storage-area-role <type>
+                     Experimental: Sets a storage mechanism for roles. Possible values are: jpa,
+                       chm, hotrod, file.
+--storage-area-single-use-object <type>
+                     Experimental: Sets a storage mechanism for single use objects. Possible values
+                       are: jpa, chm, hotrod.
+--storage-area-user <type>
+                     Experimental: Sets a storage mechanism for users. Possible values are: jpa,
+                       chm, hotrod, file.
+--storage-area-user-session <type>
+                     Experimental: Sets a storage mechanism for user and client sessions. Possible
+                       values are: jpa, chm, hotrod, file.
 --storage-deployment-state-version-seed <type>
                      Experimental: Secret that serves as a seed to mask the version number of
                        Keycloak in URLs. Need to be identical across all servers in the cluster.
@@ -29,9 +72,14 @@ Storage (Experimental):
                      Experimental: Sets the port of the Infinispan server.
 --storage-hotrod-username <username>
                      Experimental: Sets the username of the Infinispan user.
+--storage-jpa-db <type>
+                     Experimental: The database vendor for jpa map storage. Possible values are:
+                       postgres, cockroach. Default: postgres.
 
 Database:
 
+--db <vendor>        The database vendor. Possible values are: dev-file, dev-mem, mariadb, mssql,
+                       mysql, oracle, postgres. Default: dev-file.
 --db-driver <driver> The fully qualified class name of the JDBC driver. If not set, a default
                        driver is set accordingly to the chosen database.
 --db-password <password>
@@ -60,10 +108,29 @@ Database:
 --db-username <username>
                      The username of the database user.
 
-Vault:
+Transaction:
 
---vault-dir <dir>    If set, secrets can be obtained by reading the content of files within the
-                       given directory.
+--transaction-xa-enabled <true|false>
+                     If set to false, Keycloak uses a non-XA datasource in case the database does
+                       not support XA transactions. Default: true.
+
+Feature:
+
+--features <feature> Enables a set of one or more features. Possible values are: account-api,
+                       account2, account3, admin-api, admin-fine-grained-authz, admin2,
+                       authorization, ciba, client-policies, client-secret-rotation,
+                       declarative-user-profile, docker, dynamic-scopes, fips, impersonation,
+                       js-adapter, kerberos, map-storage, openshift-integration, par, preview,
+                       recovery-codes, scripts, step-up-authentication, token-exchange,
+                       update-email, web-authn.
+--features-disabled <feature>
+                     Disables a set of one or more features. Possible values are: account-api,
+                       account2, account3, admin-api, admin-fine-grained-authz, admin2,
+                       authorization, ciba, client-policies, client-secret-rotation,
+                       declarative-user-profile, docker, dynamic-scopes, fips, impersonation,
+                       js-adapter, kerberos, map-storage, openshift-integration, par, preview,
+                       recovery-codes, scripts, step-up-authentication, token-exchange,
+                       update-email, web-authn.
 
 Logging:
 

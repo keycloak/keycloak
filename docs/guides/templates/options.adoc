@@ -4,7 +4,7 @@
 </#list>
 </#macro>
 
-<#macro list options buildIcon=true>
+<#macro list options buildIcon=true anchor=true>
 [cols="12a,4",role="options"]
 |===
 | |Value
@@ -15,7 +15,7 @@
 
 [.options-description]#${option.description}#
 
-[#option-extended-${option.key},role="options-extended"]
+[<#if anchor>#option-extended-${option.key},</#if>role="options-extended"]
 --
 <#if option.descriptionExtended?has_content>[.options-description-extended]#${option.descriptionExtended!}#</#if>
 

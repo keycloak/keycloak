@@ -17,17 +17,17 @@
 
 package org.keycloak.it.cli.dist;
 
-import static io.restassured.RestAssured.when;
-
+import io.quarkus.test.junit.main.Launch;
+import io.restassured.RestAssured;
 import org.junit.Assert;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.keycloak.it.junit5.extension.DistributionTest;
 import org.keycloak.it.junit5.extension.RawDistOnly;
 import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
+import org.keycloak.quarkus.runtime.services.resources.DebugHostnameSettingsResource;
 
-import io.quarkus.test.junit.main.Launch;
-import io.restassured.RestAssured;
+import static io.restassured.RestAssured.when;
 
 @DistributionTest(keepAlive = true, enableTls = true, defaultOptions = { "--http-enabled=true" })
 @RawDistOnly(reason = "Containers are immutable")
@@ -113,6 +113,43 @@ public class HostnameDistTest {
         Assert.assertTrue(when().get("https://mykeycloak.org:8443").asString().contains("https://mykeycloak.org:8443/admin/"));
         Assert.assertTrue(when().get("http://localhost:8080").asString().contains("http://localhost:8080/admin/"));
         Assert.assertTrue(when().get("https://localhost:8443").asString().contains("https://localhost:8443/admin/"));
+    }
+
+    @Test
+    @Launch({ "start", "--hostname=mykeycloak.org", "--hostname-debug=true" })
+    public void testDebugHostnameSettingsEnabled() {
+        Assert.assertTrue(when().get("http://localhost:8080/realms/master/"  + DebugHostnameSettingsResource.DEFAULT_PATH_SUFFIX).getStatusCode() == 200);
+        Assert.assertTrue(when().get("http://localhost:8080/realms/master/"  + DebugHostnameSettingsResource.DEFAULT_PATH_SUFFIX).asString().contains("Configuration property"));
+        Assert.assertTrue(when().get("http://localhost:8080/realms/master/"  + DebugHostnameSettingsResource.DEFAULT_PATH_SUFFIX).asString().contains("Server mode"));
+        Assert.assertTrue(when().get("http://localhost:8080/realms/master/"  + DebugHostnameSettingsResource.DEFAULT_PATH_SUFFIX).asString().contains("production [start]"));
+
+        Assert.assertTrue(
+                when().get("http://mykeycloak.org:8080/realms/master/" +
+                                    DebugHostnameSettingsResource.DEFAULT_PATH_SUFFIX  +
+                                    "/" + DebugHostnameSettingsResource.PATH_FOR_TEST_CORS_IN_HEADERS)
+                               .getStatusCode() == 200
+        );
+        Assert.assertTrue(
+                when().get("http://localhost:8080/realms/master/" +
+                           DebugHostnameSettingsResource.DEFAULT_PATH_SUFFIX +
+                           "/" + DebugHostnameSettingsResource.PATH_FOR_TEST_CORS_IN_HEADERS)
+                      .asString()
+                      .contains(DebugHostnameSettingsResource.PATH_FOR_TEST_CORS_IN_HEADERS + "-OK")
+        );
+    }
+
+    @Test
+    @Launch({ "start", "--hostname=mykeycloak.org", "--hostname-debug=false" })
+    public void testDebugHostnameSettingsDisabledBySetting() {
+        Assert.assertTrue(when().get("http://localhost:8080/realms/master/"  + DebugHostnameSettingsResource.DEFAULT_PATH_SUFFIX).getStatusCode() == 404);
+        Assert.assertTrue(when().get("http://localhost:8080/realms/master/"  + DebugHostnameSettingsResource.DEFAULT_PATH_SUFFIX).asString().contains("404"));
+    }
+
+    @Test
+    @Launch({ "start", "--hostname=mykeycloak.org"})
+    public void testDebugHostnameSettingsDisabledByDefault() {
+        Assert.assertTrue(when().get("http://localhost:8080/realms/master/"  + DebugHostnameSettingsResource.DEFAULT_PATH_SUFFIX).getStatusCode() == 404);
+        Assert.assertTrue(when().get("http://localhost:8080/realms/master/"  + DebugHostnameSettingsResource.DEFAULT_PATH_SUFFIX).asString().contains("404"));
     }
 
     @Test

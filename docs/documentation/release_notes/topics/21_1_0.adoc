@@ -32,7 +32,7 @@ into a separate dependency:
 <dependency>
     <groupId>org.keycloak</groupId>
     <artifactId>keycloak-policy-enforcer</artifactId>
-    <version>${version.keycloak}</version>
+    <version>21.1.0</version>
 </dependency>
 ----
 

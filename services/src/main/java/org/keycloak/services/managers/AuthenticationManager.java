@@ -867,6 +867,13 @@ public class AuthenticationManager {
         expireCookie(realm, AuthenticationSessionManager.AUTH_SESSION_ID, oldPath, true, connection, SameSiteAttributeValue.NONE, session);
     }
 
+    public static void expireAuthSessionCookie(RealmModel realm, UriInfo uriInfo, KeycloakSession session) {
+        logger.debugv("Expire {1} cookie .", AuthenticationSessionManager.AUTH_SESSION_ID);
+        ClientConnection connection = session.getContext().getConnection();
+        String oldPath = getRealmCookiePath(realm, uriInfo);
+        expireCookie(realm, AuthenticationSessionManager.AUTH_SESSION_ID, oldPath, true, connection, SameSiteAttributeValue.NONE, session);
+    }
+
     protected static String getIdentityCookiePath(RealmModel realm, UriInfo uriInfo) {
         return getRealmCookiePath(realm, uriInfo);
     }

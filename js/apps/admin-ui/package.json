@@ -94,16 +94,16 @@
     "@types/file-saver": "^2.0.5",
     "@types/flat": "^5.0.2",
     "@types/lodash-es": "^4.17.7",
-    "@types/react": "^18.0.34",
+    "@types/react": "^18.0.37",
     "@types/react-dom": "^18.0.11",
     "@vitejs/plugin-react-swc": "^3.3.0",
-    "cypress": "^12.9.0",
+    "cypress": "^12.10.0",
     "cypress-axe": "^1.4.0",
     "jsdom": "^21.1.1",
     "ldap-server-mock": "^6.0.1",
     "ts-node": "^10.9.1",
-    "vite": "^4.2.1",
+    "vite": "^4.2.2",
     "vite-plugin-checker": "^0.5.6",
-    "vitest": "^0.30.0"
+    "vitest": "^0.30.1"
   }
 }

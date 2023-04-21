@@ -18,7 +18,6 @@
 package org.keycloak.services.resources;
 
 import static org.keycloak.services.managers.AuthenticationManager.authenticateIdentityCookie;
-import static org.keycloak.services.managers.AuthenticationSessionManager.AUTH_SESSION_ID;
 import static org.keycloak.utils.LockObjectsForModification.lockUserSessionsForModification;
 
 import java.net.URI;
@@ -52,7 +51,6 @@ import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.util.BrowserHistoryHelper;
 import org.keycloak.services.util.AuthenticationFlowURLHelper;
-import org.keycloak.services.util.CookieHelper;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
 
@@ -181,35 +179,26 @@ public class SessionCodeChecks {
 
         }
 
-        // See if we are already authenticated and userSession with same ID exists.
-        UserSessionModel userSession = authSessionManager.getUserSessionFromAuthCookie(realm);
-
-        boolean authenticating = !CookieHelper.getCookieValue(session, AUTH_SESSION_ID).isEmpty();
-
-        if (authenticating) {
-            // if there is an auth session, make sure the user is not yet authenticated
-            AuthenticationManager.AuthResult authResult = lockUserSessionsForModification(session, () -> authenticateIdentityCookie(session, realm, false));
-
-            if (authResult != null) {
-                userSession = authResult.getSession();
-            }
-        }
-
-        if (userSession != null) {
-            LoginFormsProvider loginForm = session.getProvider(LoginFormsProvider.class).setAuthenticationSession(authSession)
-                    .setSuccess(Messages.ALREADY_LOGGED_IN);
-
-            if (client == null) {
-                loginForm.setAttribute(Constants.SKIP_LINK, true);
-            }
-
-            response = loginForm.createInfoPage();
-            return null;
-        }
-
         // Otherwise just try to restart from the cookie
         RootAuthenticationSessionModel existingRootAuthSession = authSessionManager.getCurrentRootAuthenticationSession(realm);
         response = restartAuthenticationSessionFromCookie(existingRootAuthSession);
+
+        // if restart from cookie was not found check if the user is already authenticated
+        if (response.getStatus() != Response.Status.FOUND.getStatusCode()) {
+            AuthenticationManager.AuthResult authResult = lockUserSessionsForModification(session, () -> authenticateIdentityCookie(session, realm, false));
+
+            if (authResult != null && authResult.getSession() != null) {
+                LoginFormsProvider loginForm = session.getProvider(LoginFormsProvider.class).setAuthenticationSession(authSession)
+                        .setSuccess(Messages.ALREADY_LOGGED_IN);
+
+                if (client == null) {
+                    loginForm.setAttribute(Constants.SKIP_LINK, true);
+                }
+
+                response = loginForm.createInfoPage();
+            }
+        }
+
         return null;
     }
 

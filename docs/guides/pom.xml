@@ -96,6 +96,9 @@
                         <idseparator>-</idseparator>
                         <docinfo1>true</docinfo1>
                         <imagesdir>../images</imagesdir>
+                        <section>guide</section>
+                        <sections>guides</sections>
+                        <attribute-missing>warn</attribute-missing>
                     </attributes>
                 </configuration>
                 <executions>

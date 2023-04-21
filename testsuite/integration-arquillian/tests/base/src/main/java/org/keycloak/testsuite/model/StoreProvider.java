@@ -33,6 +33,12 @@ public enum StoreProvider {
             commands.add("--storage=" + getAlias());
         }
     },
+    FILE("file") {
+        @Override
+        public void addStoreOptions(List<String> commands) {
+            commands.add("--storage=" + getAlias());
+        }
+    },
     JPA("jpa") {
         @Override
         public void addStoreOptions(List<String> commands) {

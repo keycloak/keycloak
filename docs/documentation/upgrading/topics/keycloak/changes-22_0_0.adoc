@@ -38,3 +38,39 @@ try {
   alert('failed to initialize');
 }
 ```
+
+= Export and Import perform an automatic build
+
+In previous releases, the `export` and `import` commands required a `build` command to be run first.
+Starting with this release, the `export` and `import` commands perform an automatic rebuild of Keycloak if a build time configuration has changed.
+
+When migrating existing scripts that run a `build` command first, migrate by adding the `--optimized` command line option to the `export` and `import` command to avoid Keycloak automatically re-building the image.
+Not adding the `--optimized` option in this might make Keycloak trigger a rebuild and revert to the default values, and then connecting to the database for export and import will not work.
+
+The following examples assume that runtime parameters like a database password are provided via a configuration file or an environment variable.
+
+.Before migration: Running the build command before running the export command
+[source,bash]
+----
+bin/kc.[sh|bat] build --db=postgres ...
+bin/kc.[sh|bat] export --dir <dir>
+----
+
+.After migration: Adding `--optimized` to the export command
+[source,bash,subs="+quotes"]
+----
+bin/kc.[sh|bat] build --db=postgres ...
+bin/kc.[sh|bat] export ##--optimized## --dir <dir>
+----
+
+.After migration: Leveraging the auto-build functionality
+[source,bash]
+----
+bin/kc.[sh|bat] export --dir <dir> --db=postgres ...
+----
+
+NOTE:: When the auto-build runs, the build time options will be in effect for all subsequent commands that are started with the `--optimized` flag, including the `start` command.
+
+In previous releases the `export` and `import` commands allowed runtime parameters like, for example, a database URL only in configuration files or environment variables.
+Starting with this release, those runtime parameters are now available on the command line as well.
+Use the `--help` option to find out about the supported parameters.

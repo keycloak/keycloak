@@ -99,6 +99,19 @@
                 "phone": "617"
             },
             "realmRoles": ["manager", "user"]
+        },
+        {
+            "username" : "admindemo",
+            "enabled": true,
+            "email" : "admindemo@redhat.com",
+            "credentials" : [
+                { "type" : "password",
+                    "value" : "password" }
+            ],
+            "realmRoles": ["manager", "user"],
+            "clientRoles" : {
+                "realm-management" : [ "impersonation", "view-users" ]
+            }
         }
     ],
     "clients": [

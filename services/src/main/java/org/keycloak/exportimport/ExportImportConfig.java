@@ -17,6 +17,8 @@
 
 package org.keycloak.exportimport;
 
+import java.io.Closeable;
+
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
@@ -58,8 +60,9 @@ public class ExportImportConfig {
         return System.getProperty(ACTION);
     }
 
-    public static void setAction(String exportImportAction) {
+    public static Closeable setAction(String exportImportAction) {
         System.setProperty(ACTION, exportImportAction);
+        return () -> System.getProperties().remove(ACTION);
     }
 
     public static void setProvider(String exportImportProvider) {

@@ -1,3 +1,10 @@
 = Legacy Promise API removed from Keycloak JS adapter
 
 With this release, we have removed the legacy Promise API methods from the Keycloak JS adapter. This means that calling `.success()` and `.error()` on promises returned from the adapter is no longer possible.
+
+= Export and Import perform an automatic build
+
+In previous releases, the `export` and `import` commands required a `build` command to be run first.
+Starting with this release, the `export` and `import` commands perform an automatic rebuild of Keycloak if a build time configuration has changed.
+
+See the migration guide for details.

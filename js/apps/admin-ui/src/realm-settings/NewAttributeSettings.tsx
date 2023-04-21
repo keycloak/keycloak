@@ -217,6 +217,7 @@ export default function NewAttributeSettings() {
             selector: profileConfig.selector,
             permissions: profileConfig.permissions!,
             annotations,
+            validations,
           },
           profileConfig.isRequired
             ? { required: profileConfig.required }

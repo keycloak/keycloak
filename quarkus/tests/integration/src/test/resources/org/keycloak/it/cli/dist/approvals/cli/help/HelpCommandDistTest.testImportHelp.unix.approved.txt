@@ -10,9 +10,13 @@ Options:
 
 -h, --help           This help message.
 --help-all           This same help message but with additional options.
+--optimized          Use this option to achieve an optimal startup time if you have previously
+                       built a server image using the 'build' command.
 
 Database:
 
+--db <vendor>        The database vendor. Possible values are: dev-file, dev-mem, mariadb, mssql,
+                       mysql, oracle, postgres. Default: dev-file.
 --db-driver <driver> The fully qualified class name of the JDBC driver. If not set, a default
                        driver is set accordingly to the chosen database.
 --db-password <password>
@@ -41,10 +45,29 @@ Database:
 --db-username <username>
                      The username of the database user.
 
-Vault:
+Transaction:
 
---vault-dir <dir>    If set, secrets can be obtained by reading the content of files within the
-                       given directory.
+--transaction-xa-enabled <true|false>
+                     If set to false, Keycloak uses a non-XA datasource in case the database does
+                       not support XA transactions. Default: true.
+
+Feature:
+
+--features <feature> Enables a set of one or more features. Possible values are: account-api,
+                       account2, account3, admin-api, admin-fine-grained-authz, admin2,
+                       authorization, ciba, client-policies, client-secret-rotation,
+                       declarative-user-profile, docker, dynamic-scopes, fips, impersonation,
+                       js-adapter, kerberos, map-storage, openshift-integration, par, preview,
+                       recovery-codes, scripts, step-up-authentication, token-exchange,
+                       update-email, web-authn.
+--features-disabled <feature>
+                     Disables a set of one or more features. Possible values are: account-api,
+                       account2, account3, admin-api, admin-fine-grained-authz, admin2,
+                       authorization, ciba, client-policies, client-secret-rotation,
+                       declarative-user-profile, docker, dynamic-scopes, fips, impersonation,
+                       js-adapter, kerberos, map-storage, openshift-integration, par, preview,
+                       recovery-codes, scripts, step-up-authentication, token-exchange,
+                       update-email, web-authn.
 
 Logging:
 
