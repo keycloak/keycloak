@@ -177,7 +177,7 @@ export default function PolicyDetails() {
       : COMPONENTS["js"];
   }
 
-  let ComponentType = getComponentType();
+  const ComponentType = getComponentType();
 
   return (
     <>
@@ -191,14 +191,14 @@ export default function PolicyDetails() {
         dropdownItems={
           policyId
             ? [
-              <DropdownItem
-                key="delete"
-                data-testid="delete-policy"
-                onClick={() => toggleDeleteDialog()}
-              >
-                {t("common:delete")}
-              </DropdownItem>,
-            ]
+                <DropdownItem
+                  key="delete"
+                  data-testid="delete-policy"
+                  onClick={() => toggleDeleteDialog()}
+                >
+                  {t("common:delete")}
+                </DropdownItem>,
+              ]
             : undefined
         }
       />
