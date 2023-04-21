@@ -18,9 +18,49 @@
 <databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
 
     <changeSet author="keycloak" id="21.1.0-19404">
+        <preConditions onFail="MARK_RAN" onSqlOutput="TEST">
+            <not>
+                <dbms type="oracle"/>
+            </not>
+        </preConditions>
+
         <modifyDataType tableName="RESOURCE_SERVER_POLICY" columnName="DECISION_STRATEGY" newDataType="TINYINT" />
         <modifyDataType tableName="RESOURCE_SERVER_POLICY" columnName="LOGIC" newDataType="TINYINT" />
         <modifyDataType tableName="RESOURCE_SERVER" columnName="POLICY_ENFORCE_MODE" newDataType="TINYINT" />
+
+    </changeSet>
+
+    <changeSet author="keycloak" id="21.1.0-19404-2">
+        <preConditions onFail="MARK_RAN" onSqlOutput="TEST">
+            <dbms type="oracle"/>
+        </preConditions>
+
+        <addColumn tableName="RESOURCE_SERVER_POLICY">
+            <column name="DECISION_STRATEGY_NEW" type="TINYINT" />
+        </addColumn>
+        <update tableName="RESOURCE_SERVER_POLICY">
+            <column name="DECISION_STRATEGY_NEW" valueComputed="CAST (DECISION_STRATEGY AS DECIMAL)"/>
+        </update>
+        <dropColumn tableName="RESOURCE_SERVER_POLICY" columnName="DECISION_STRATEGY"/>
+        <renameColumn tableName="RESOURCE_SERVER_POLICY" oldColumnName="DECISION_STRATEGY_NEW" newColumnName="DECISION_STRATEGY" columnDataType="TINYINT"/>
+
+        <addColumn tableName="RESOURCE_SERVER_POLICY">
+            <column name="LOGIC_NEW" type="TINYINT" />
+        </addColumn>
+        <update tableName="RESOURCE_SERVER_POLICY">
+            <column name="LOGIC_NEW" valueComputed="CAST (LOGIC AS DECIMAL)"/>
+        </update>
+        <dropColumn tableName="RESOURCE_SERVER_POLICY" columnName="LOGIC"/>
+        <renameColumn tableName="RESOURCE_SERVER_POLICY" oldColumnName="LOGIC_NEW" newColumnName="LOGIC" columnDataType="TINYINT"/>
+
+        <addColumn tableName="RESOURCE_SERVER">
+            <column name="POLICY_ENFORCE_MODE_NEW" type="TINYINT" />
+        </addColumn>
+        <update tableName="RESOURCE_SERVER">
+            <column name="POLICY_ENFORCE_MODE_NEW" valueComputed="CAST (POLICY_ENFORCE_MODE AS DECIMAL)"/>
+        </update>
+        <dropColumn tableName="RESOURCE_SERVER" columnName="POLICY_ENFORCE_MODE"/>
+        <renameColumn tableName="RESOURCE_SERVER" oldColumnName="POLICY_ENFORCE_MODE_NEW" newColumnName="POLICY_ENFORCE_MODE" columnDataType="TINYINT"/>
     </changeSet>
 
 </databaseChangeLog>
