@@ -154,7 +154,7 @@ export const LdapSettingsAdvanced = ({
           label={t("trustEmail")}
           labelIcon={
             <HelpItem
-              helpText="user-federation-help:trustEmailHelp"
+              helpText={t("user-federation-help:trustEmailHelp")}
               fieldLabelId="user-federation:trustEmail"
             />
           }
