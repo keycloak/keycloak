@@ -207,7 +207,7 @@ public class SamlProtocol implements LoginProtocol {
 
     private SingleUseObjectProvider getSingleUseStore() {
         if (singleUseStore == null) {
-            singleUseStore = session.getProvider(SingleUseObjectProvider.class);
+            singleUseStore = session.singleUseObjects();
         }
         return singleUseStore;
     }
