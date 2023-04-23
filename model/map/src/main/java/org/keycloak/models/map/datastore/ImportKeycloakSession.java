@@ -36,6 +36,7 @@ import org.keycloak.models.RealmProvider;
 import org.keycloak.models.RealmSpi;
 import org.keycloak.models.RoleProvider;
 import org.keycloak.models.RoleSpi;
+import org.keycloak.models.SingleUseObjectProvider;
 import org.keycloak.models.ThemeManager;
 import org.keycloak.models.TokenManager;
 import org.keycloak.models.UserCredentialManager;
@@ -261,6 +262,11 @@ public class ImportKeycloakSession implements KeycloakSession {
 
     @Override
     public AuthenticationSessionProvider authenticationSessions() {
+        throw new ModelException("not supported yet");
+    }
+
+    @Override
+    public SingleUseObjectProvider singleUseObjects() {
         throw new ModelException("not supported yet");
     }
 
