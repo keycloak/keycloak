@@ -47,6 +47,9 @@ public class MyThemeSelectorProviderFactory implements ThemeSelectorProviderFact
 }
 ----
 
+It is recommended that your provider factory implementation returns unique id by method `getId()`. However
+there can be some exceptions to this rule as mentioned below in the <<_override_builtin_providers,Overriding providers>> section.
+
 NOTE: {project_name} creates a single instance of provider factories which makes it possible to store state for multiple requests.
 Provider instances are created by calling create on the factory for each request so these should be light-weight object.
 
@@ -118,6 +121,34 @@ public class MyThemeSelectorProvider implements ThemeSelectorProvider {
     }
 }
 ----
+
+[[_override_builtin_providers]]
+==== Override built-in providers
+
+As mentioned above, it is recommended that your `ProviderFactory` implementations use unique ID. However at the same time, it can be useful to override one of the {project_name} built-in providers.
+The recommended way for this is still ProviderFactory implementation with unique ID and then for instance set the default provider as
+specified in the link:https://www.keycloak.org/server/configuration-provider[Configuring Providers] guide. On the other hand, this may not be always possible.
+
+For instance when you need some customizations to default OpenID Connect protocol behaviour and you want to override
+default {project_name} implementation of `OIDCLoginProtocolFactory` you need to preserve same providerId. As for example admin console, OIDC protocol well-known endpoint and various other things rely on
+the ID of the protocol factory being `openid-connect`.
+
+For this case, it is highly recommended to implement method `order()` of your custom implementation and make sure that it has higher order than the built-in implementation.
+
+[source,java]
+----
+public class CustomOIDCLoginProtocolFactory extends OIDCLoginProtocolFactory {
+
+    // Some customizations here
+
+    @Override
+    public int order() {
+        return 1;
+    }
+}
+----
+
+In case of multiple implementations with same provider ID, only the one with highest order will be used by {project_name} runtime.
 
 [[_providers_admin_console]]
 ==== Show info from your SPI implementation in the Admin Console
