@@ -10,7 +10,7 @@
     "@patternfly/patternfly": "^4.224.2",
     "@patternfly/react-core": "^4.276.8",
     "@patternfly/react-icons": "^4.93.6",
-    "i18next": "^22.4.14",
+    "i18next": "^22.4.15",
     "i18next-http-backend": "^2.2.0",
     "keycloak-js": "999.0.0-SNAPSHOT",
     "keycloak-masthead": "999.0.0-SNAPSHOT",
