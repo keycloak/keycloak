@@ -149,9 +149,7 @@ public class UserFederationProviderEntity {
 
         UserFederationProviderEntity that = (UserFederationProviderEntity) o;
 
-        if (!id.equals(that.getId())) return false;
-
-        return true;
+        return id.equals(that.getId());
     }
 
     @Override

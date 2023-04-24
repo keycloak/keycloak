@@ -156,9 +156,7 @@ public class UserConsentEntity {
 
         UserConsentEntity that = (UserConsentEntity) o;
 
-        if (!id.equals(that.getId())) return false;
-
-        return true;
+        return id.equals(that.getId());
     }
 
     @Override

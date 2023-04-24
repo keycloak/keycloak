@@ -97,9 +97,7 @@ public class UserRequiredActionEntity {
             Key key = (Key) o;
 
             if (action != key.action) return false;
-            if (user != null ? !user.getId().equals(key.user != null ? key.user.getId() : null) : key.user != null) return false;
-
-            return true;
+            return user != null ? user.getId().equals(key.user != null ? key.user.getId() : null) : key.user == null;
         }
 
         @Override
@@ -119,9 +117,7 @@ public class UserRequiredActionEntity {
         UserRequiredActionEntity key = (UserRequiredActionEntity) o;
 
         if (action != key.action) return false;
-        if (user != null ? !user.getId().equals(key.user != null ? key.user.getId() : null) : key.user != null) return false;
-
-        return true;
+        return user != null ? user.getId().equals(key.user != null ? key.user.getId() : null) : key.user == null;
     }
 
     @Override

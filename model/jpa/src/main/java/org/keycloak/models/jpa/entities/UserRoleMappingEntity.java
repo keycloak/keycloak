@@ -106,9 +106,7 @@ public class UserRoleMappingEntity  {
             Key key = (Key) o;
 
             if (!roleId.equals(key.roleId)) return false;
-            if (!user.equals(key.user)) return false;
-
-            return true;
+            return user.equals(key.user);
         }
 
         @Override
@@ -128,9 +126,7 @@ public class UserRoleMappingEntity  {
         UserRoleMappingEntity key = (UserRoleMappingEntity) o;
 
         if (!roleId.equals(key.roleId)) return false;
-        if (!user.equals(key.user)) return false;
-
-        return true;
+        return user.equals(key.user);
     }
 
     @Override

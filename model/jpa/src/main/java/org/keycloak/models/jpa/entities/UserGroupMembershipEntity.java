@@ -103,9 +103,7 @@ public class UserGroupMembershipEntity {
             Key key = (Key) o;
 
             if (!groupId.equals(key.groupId)) return false;
-            if (!user.equals(key.user)) return false;
-
-            return true;
+            return user.equals(key.user);
         }
 
         @Override
@@ -125,9 +123,7 @@ public class UserGroupMembershipEntity {
         UserGroupMembershipEntity key = (UserGroupMembershipEntity) o;
 
         if (!groupId.equals(key.groupId)) return false;
-        if (!user.equals(key.user)) return false;
-
-        return true;
+        return user.equals(key.user);
     }
 
     @Override

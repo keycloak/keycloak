@@ -69,9 +69,7 @@ public class UserFederationProviderFactoryRepresentation {
 
         UserFederationProviderFactoryRepresentation that = (UserFederationProviderFactoryRepresentation) o;
 
-        if (!id.equals(that.id)) return false;
-
-        return true;
+        return id.equals(that.id);
     }
 
     @Override
