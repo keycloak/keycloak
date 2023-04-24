@@ -156,10 +156,7 @@ public class KeycloakMain implements QuarkusApplication {
         try {
             KeycloakModelUtils.runJobInTransaction(sessionFactory, session -> {
                 new ApplianceBootstrap(session).createMasterRealmUser(adminUserName, adminPassword);
-                ServicesLogger.LOGGER.addUserSuccess(adminUserName, Config.getAdminRealm());
             });
-        } catch (IllegalStateException e) {
-            ServicesLogger.LOGGER.addUserFailedUserExists(adminUserName, Config.getAdminRealm());
         } catch (Throwable t) {
             ServicesLogger.LOGGER.addUserFailed(t, adminUserName, Config.getAdminRealm());
         }
