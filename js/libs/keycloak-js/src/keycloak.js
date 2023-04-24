@@ -287,9 +287,11 @@ function Keycloak (config) {
                                     initPromise.setError(error);
                                 }
                             });
-                        } else {
+                        } else if (kc.tokenParsed && !kc.isTokenExpired(-1)) {
                             kc.onAuthSuccess && kc.onAuthSuccess();
                             initPromise.setSuccess();
+                        } else {
+                            logInfo('[KEYCLOAK] Token expired');
                         }
                     }
                 } else if (initOptions.onLoad) {
