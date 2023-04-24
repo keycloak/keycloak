@@ -63,6 +63,10 @@ export const HeadersForm = ({ realm, save }: HeadersFormProps) => {
           fieldName="browserSecurityHeaders.strictTransportSecurity"
           url="https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Strict-Transport-Security"
         />
+        <HelpLinkTextInput
+            fieldName="browserSecurityHeaders.referrerPolicy"
+            url="https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Referrer-Policy"
+        />
 
         <ActionGroup>
           <Button
