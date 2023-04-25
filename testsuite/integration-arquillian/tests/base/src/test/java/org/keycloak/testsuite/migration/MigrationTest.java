@@ -20,13 +20,11 @@ import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.arquillian.migration.Migration;
 
 import jakarta.ws.rs.NotFoundException;
 import java.util.List;
 
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 import static org.keycloak.testsuite.auth.page.AuthRealm.MASTER;
 
 /**
@@ -59,10 +57,9 @@ public class MigrationTest extends AbstractMigrationTest {
     }
 
     @Test
-    @Migration(versionPrefix = "17.")
-    public void migration17_xTest() throws Exception{
+    @Migration(versionPrefix = "19.")
+    public void migration19_xTest() throws Exception{
         testMigratedData(false);
-        testMigrationTo18_x();
 
         // Always test offline-token login during migration test
         testOfflineTokenLogin();
@@ -70,5 +67,6 @@ public class MigrationTest extends AbstractMigrationTest {
 
         testMigrationTo20_x();
         testMigrationTo21_x();
+        testMigrationTo22_x();
     }
 }

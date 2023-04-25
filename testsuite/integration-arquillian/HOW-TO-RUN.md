@@ -181,33 +181,35 @@ mvn -f testsuite/integration-arquillian/pom.xml \
 
 ### DB migration test
 
-This test will:
-- start MariaDB on docker container. Docker/Podman on your laptop is a requirement for this test.
-- start Keycloak 17.0.0 (replace with the other version if needed)
-- import realm and add some data to MariaDB
-- stop Keycloak 17.0.0
-- start latest Keycloak, which automatically updates DB from 17.0.0
-- Perform a couple of tests to verify data after the update are correct
+The `MigrationTest` test will:
+- Start database on docker container. Docker/Podman on your laptop is a requirement for this test.
+- Start Keycloak old version 19.0.3.
+- Import realm and add some data to the database.
+- Stop Keycloak 19.0.3.
+- Start latest Keycloak, which automatically updates DB from 19.0.3.
+- Perform a couple of tests to verify data after the update are correct.
 - Stop MariaDB docker container. In case of a test failure, the MariaDB container is not stopped, so you can manually inspect the database.
 
-The first version of Keycloak on Quarkus is version `17.0.0`.
-Therefore, it is not possible to define the older version.
+The first version of Keycloak on Quarkus is version `17.0.0`, but the initial versions have a complete different set of boot options that make co-existance impossible.
+Therefore the first version that can be tested is `19.0.3`.
 You can execute those tests as follows:
 ```
-export OLD_KEYCLOAK_VERSION=17.0.0
+export OLD_KEYCLOAK_VERSION=19.0.3
+export DATABASE=mariadb
 
 mvn -B -f testsuite/integration-arquillian/pom.xml \
   clean install \
-  -Pjpa,auth-server-quarkus,db-mariadb,auth-server-migration \
+  -Pjpa,auth-server-quarkus,db-$DATABASE,auth-server-migration \
   -Dtest=MigrationTest \
   -Dmigration.mode=auto \
   -Dmigrated.auth.server.version=$OLD_KEYCLOAK_VERSION \
-  -Dprevious.product.unpacked.folder.name=keycloak-$OLD_KEYCLOAK_VERSION \
   -Dmigration.import.file.name=migration-realm-$OLD_KEYCLOAK_VERSION.json \
   -Dauth.server.ssl.required=false \
-  -Djdbc.mvn.version=2.2.4 \
-  -Dsurefire.failIfNoSpecifiedTests=false
+  -Dauth.server.db.host=localhost
 ```
+
+The `DATABASE` variable can be: `mariadb`, `mysql`, `postgres`, `mssql` or `oracle`.
+As commented `OLD_KEYCLOAK_VERSION` can only be `19.0.3` right now.
 
 For the available versions of old keycloak server, you can take a look to [this directory](tests/base/src/test/resources/migration-test) .
 
