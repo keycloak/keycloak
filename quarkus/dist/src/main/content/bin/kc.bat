@@ -128,7 +128,7 @@ if "x%JAVA_HOME%" == "x" (
        echo "%JAVA_HOME%\bin\java.exe" does not exist
        goto END
      )
-    set JAVA=%JAVA_HOME%\bin\java
+    set "JAVA=%JAVA_HOME%\bin\java"
   )
 )
 
@@ -159,7 +159,7 @@ set START_SERVER=true
 if "!CONFIG_ARGS:%OPTIMIZED_OPTION%=!"=="!CONFIG_ARGS!" if "!CONFIG_ARGS:%BUILD_OPTION%=!"=="!CONFIG_ARGS!" if "!CONFIG_ARGS:%HELP_LONG_OPTION%=!"=="!CONFIG_ARGS!" if "%IS_HELP_SHORT%" == "false" (
     setlocal enabledelayedexpansion
 
-    %JAVA% -Dkc.config.build-and-exit=true %JAVA_RUN_OPTS%
+    "%JAVA%" -Dkc.config.build-and-exit=true %JAVA_RUN_OPTS%
 
     if not !errorlevel! == 0 (
         set START_SERVER=false
@@ -169,7 +169,7 @@ if "!CONFIG_ARGS:%OPTIMIZED_OPTION%=!"=="!CONFIG_ARGS!" if "!CONFIG_ARGS:%BUILD_
 )
 
 if "%START_SERVER%" == "true" (
-    %JAVA% %JAVA_RUN_OPTS%
+    "%JAVA%" %JAVA_RUN_OPTS%
 )
 
 :END
