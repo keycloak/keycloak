@@ -7,7 +7,7 @@
   "save-admin-events": "如果已启用的管理事件保存到数据库，使事件可用于管理控制台。",
   "expiration": "设置事件的到期时间。过期事件将定期从数据库中删除。",
   "admin-clearEvents": "删除数据库中的所有管理事件。",
-  "includeRepresentation": "包含用于创建和更新请求的JSON表示。",
+  "includeRepresentation": "包含用于创建和更新请求的JSON表述。",
   "failureFactor": "触发等待之前的失败次数。",
   "waitIncrementSeconds": "当满足故障阈值时，用户应该锁定多长时间？",
   "maxFailureWaitSeconds": "用户将被锁定的最长时间。",
@@ -17,7 +17,7 @@
   "ssoSessionIdle": "设置会话在过期之前可以空闲的时间长度，当会话过期时 Token 和浏览器会话都会被设置为无效。",
   "ssoSessionMax": "会话的最大时间长度，当会话过期时 Token 和浏览器会话都会被设置为无效。",
   "offlineSessionIdle": "离线会话允许的空闲时间。你需要使用离线Token在这段时间内至少刷新一次否则会话就会过期",
-  "revokeRefreshToken": "如果开启 refresh tokens只能使用一次，否则refresh token不会被收回并且可以使用多次",
+  "revokeRefreshToken": "如果开启刷新令牌，则刷新的令牌只能使用一次，否则刷新的令牌不会被收回并且可以使用多次",
   "clientLoginTimeout": "客户端必须完成访问令牌协议的最大时间。这通常是1分钟。",
   "editUsername": "如果开启，用户名域是可以编辑的。否则用户名域是只读的。"
 }

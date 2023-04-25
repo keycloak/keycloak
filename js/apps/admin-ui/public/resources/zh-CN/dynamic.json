@@ -16,13 +16,13 @@
       },
       "rolePrefix": {
         "label": "客户端角色前缀",
-        "tooltip": "每个客户端角色的前缀（可选）。"
+        "tooltip": "每个客户端角色的前缀（选填）。"
       }
     },
     "realmRoleMapping": {
       "rolePrefix": {
         "label": "Realm角色前缀",
-        "tooltip": "每个领域角色的前缀（可选）。"
+        "tooltip": "每个领域角色的前缀（选填）。"
       }
     }
   },
@@ -33,8 +33,8 @@
     }
   },
   "multivalued": {
-    "label": "多值的",
-    "tooltip": "表示此值是否支持多值.如果为真，所有值会设置为已知。如果为假，只有第一个值是已知。"
+    "label": "多元数值的",
+    "tooltip": "表示此值是否支持多元数值.如果为真，所有值会设置为已知。如果为假，只有第一个值是已知。"
   },
   "selectRole": {
     "label": "选择角色",
@@ -46,7 +46,7 @@
   },
   "jsonType": {
     "label": "申请 JSON 的类型",
-    "tooltip": "用来展现申请的JSON 类型 long, int, boolean, 和 String 是有效值"
+    "tooltip": "用来展现申请的JSON类型, long, int, boolean, 和 String 都是有效的"
   },
   "includeInIdToken": {
     "label": "添加到ID令牌",
@@ -61,7 +61,7 @@
     "tooltip": "是否应该将声明添加到userinfo？"
   },
   "sectorIdentifierUri": {
-    "label": "扇区标识符URI",
+    "label": "区域标识符URI",
     "tooltip": "使用成对子值和支持的提供程序动态客户端注册应使用sector_identifier_uri参数。它为一组在共同管理控制下的网站提供了一种独立于各个域名的具有一致的成对子值的方法。它还为客户端更改redirect_uri域而不必重新注册其所有用户提供了一种方法。"
   },
   "pairwiseSubAlgorithmSalt": {

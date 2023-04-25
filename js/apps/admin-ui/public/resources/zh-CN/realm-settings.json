@@ -1,7 +1,7 @@
 {
   "partialImport": "部分导入",
   "general": "通用",
-  "login": "login",
+  "login": "登录",
   "themes": "主题",
   "events": "事件",
   "eventListeners": "事件监听器",
@@ -10,7 +10,7 @@
   "saveEvents": "保存事件",
   "expiration": "到期",
   "clearAdminEvents": "清除管理事件",
-  "includeRepresentation": "包含表示",
+  "includeRepresentation": "包含表述",
   "email": "电子邮件",
   "from": "来自",
   "host": "主机",
@@ -21,15 +21,15 @@
   "username": "用户名",
   "password": "密码",
   "keys": "秘钥",
-  "keystore": "钥匙链",
+  "keystore": "密钥库",
   "keyAlias": "密钥别名",
   "keyPassword": "密钥密码",
   "providers": "提供者",
-  "uiDisplayName": "控制台显示名称",
+  "uiDisplayName": "管理台显示名称",
   "active": "活跃",
   "type": "类型",
   "providerId": "ID",
-  "kid": "孩子",
+  "kid": "附属",
   "provider": "提供程序",
   "certificate": "证书",
   "userRegistration": "用户注册",
@@ -39,7 +39,7 @@
   "emailAsUsername": "Email当做用户名",
   "loginWithEmail": "使用电子邮件登录",
   "duplicateEmails": "重复的邮件",
-  "verifyEmail": "验证email",
+  "verifyEmail": "邮箱验证",
   "editUsername": "编辑用户名",
   "testConnection": "测试连接",
   "htmlDisplayName": "HTML 显示名称",
@@ -47,9 +47,9 @@
   "sslType": {
     "all": "所有请求",
     "external": "外部请求",
-    "none": "none"
+    "none": "无"
   },
-  "endpoints": "服务路径",
+  "endpoints": "服务终端",
   "loginTheme": "登录主题",
   "accountTheme": "账户主题",
   "adminTheme": "管理员控制台主题",
@@ -80,7 +80,7 @@
     "colName": "角色名称"
   },
   "validatorColNames": {
-    "colConfig": "Config"
+    "colConfig": "配置"
   },
   "eventTypes": {
     "IMPERSONATE": {
@@ -103,11 +103,11 @@
   "headers": "标题",
   "bruteForceDetection": "强力检测",
   "xFrameOptions": "X-Frame-Options",
-  "contentSecurityPolicy": "Content-Security-Policy",
+  "contentSecurityPolicy": "内容安全协议",
   "xContentTypeOptions": "X-Content-Type-Options",
   "failureFactor": "最大登录失败",
   "waitIncrementSeconds": "等待增量",
-  "maxFailureWaitSeconds": "Max Wait",
+  "maxFailureWaitSeconds": "最长等待时间",
   "maxDeltaTimeSeconds": "故障复位时间",
   "minimumQuickLoginWaitSeconds": "最小快速登录等待"
 }

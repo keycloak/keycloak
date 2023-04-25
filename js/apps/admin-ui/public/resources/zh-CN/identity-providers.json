@@ -3,7 +3,7 @@
   "redirectURI": "重定向URI",
   "clientId": "客户端 ID",
   "clientSecret": "客户端密钥",
-  "endpoints": "服务路径",
+  "endpoints": "服务终端",
   "alias": "别名",
   "ssoServiceUrl": "单点登录服务URL",
   "singleLogoutServiceUrl": "单一注销服务URL",
@@ -18,16 +18,16 @@
   "authorizationUrl": "授权URL",
   "tokenUrl": "令牌URL",
   "logoutUrl": "注销URL",
-  "backchannelLogout": "Backchannel注销",
+  "backchannelLogout": "反向信道注销",
   "disableUserInfo": "禁用用户信息",
   "userInfoUrl": "用户信息URL",
   "issuer": "发行人",
   "scopes": "范围",
   "prompt": "提示",
   "prompts": {
-    "none": "none",
+    "none": "无",
     "consent": "同意",
-    "login": "login"
+    "login": "登录"
   },
   "clientAuthentication": "客户端验证",
   "validateSignature": "验证签名",

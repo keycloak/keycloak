@@ -7,16 +7,16 @@
   "otpPolicy": "OTP策略",
   "otpType": "OTP类型",
   "policyType": {
-    "totp": "基于时间的",
+    "totp": "基于时间",
     "hotp": "基于计数器"
   },
   "otpHashAlgorithm": "OTP哈希算法",
   "otpPolicyDigits": "位数",
-  "lookAhead": "向前看窗口",
+  "lookAhead": "展望窗口",
   "otpPolicyPeriod": "OTP令牌周期",
   "initialCounter": "初始计数器",
   "attestationPreference": {
-    "none": "none"
+    "none": "无"
   },
   "flow": {
     "browserFlow": "浏览器流",
@@ -26,10 +26,10 @@
   "edit": "编辑",
   "flowType": "流类型",
   "flow-type": {
-    "basic-flow": "generic",
-    "form-flow": "form"
+    "basic-flow": "通用",
+    "form-flow": "表单"
   },
-  "addExecution": "添加执行",
+  "addExecution": "添加执行器",
   "requirement": "需求",
   "alias": "别名"
 }
