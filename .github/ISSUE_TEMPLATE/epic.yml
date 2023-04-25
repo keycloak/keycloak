@@ -3,12 +3,14 @@ description: A large feature that is broken down into multiple linked issues.
 labels: ["kind/epic", "status/triage"]
 body:
   - type: textarea
+    id: description
     attributes:
       label: Description
       description: Describe the feature at a high-level.
     validations:
       required: true
   - type: input
+    id: discussion
     attributes:
       label: Discussion
       description: |
@@ -16,6 +18,7 @@ body:
     validations:
       required: true
   - type: textarea
+    id: issues
     attributes:
       label: Issues
       description: List the issues related to this epic.
@@ -25,6 +28,7 @@ body:
     validations:
       required: false
   - type: textarea
+    id: motivation
     attributes:
       label: Motivation
       description: Provide a brief explanation of why the feature should be added.
