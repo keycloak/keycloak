@@ -67,9 +67,9 @@ function checkResponse<T>(response: T) {
 
 async function get(path: string, params: RequestInit): Promise<Response> {
   const url = joinPath(
-    environment.authServerUrl,
+    environment.authUrl,
     "realms",
-    environment.loginRealm,
+    environment.realm,
     "account",
     path
   );

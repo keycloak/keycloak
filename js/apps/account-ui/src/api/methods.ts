@@ -103,12 +103,7 @@ export async function unLinkAccount(account: LinkedAccountRepresentation) {
 
 export async function linkAccount(account: LinkedAccountRepresentation) {
   const redirectUri = encodeURIComponent(
-    joinPath(
-      environment.authServerUrl,
-      "realms",
-      environment.loginRealm,
-      "account"
-    )
+    joinPath(environment.authUrl, "realms", environment.realm, "account")
   );
   const response = await request("/linked-accounts/" + account.providerName, {
     searchParams: { providerId: account.providerName, redirectUri },
