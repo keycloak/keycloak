@@ -278,4 +278,24 @@ public class JpaRoleEntity extends AbstractRoleEntity implements JpaRootVersione
         return Objects.equals(getId(), ((JpaRoleEntity) obj).getId());
     }
 
+    @Override
+    public Set<String> getParentRoles() {
+        return metadata.getParentRoles();
+    }
+
+    @Override
+    public void setParentRoles(Set<String> parentRoles) {
+        metadata.setParentRoles(parentRoles);
+    }
+
+    @Override
+    public void addParentRole(String roleId) {
+        metadata.addParentRole(roleId);
+    }
+
+    @Override
+    public void removeParentRole(String roleId) {
+        metadata.removeParentRole(roleId);
+    }
+
 }
