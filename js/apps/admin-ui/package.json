@@ -60,7 +60,7 @@
     }
   },
   "dependencies": {
-    "@keycloak/keycloak-admin-client": "999.0.0-SNAPSHOT",
+    "@keycloak/keycloak-admin-client": "21.1.1",
     "@patternfly/patternfly": "^4.224.2",
     "@patternfly/react-code-editor": "^4.82.115",
     "@patternfly/react-core": "^4.276.8",
@@ -72,7 +72,7 @@
     "flat": "^5.0.2",
     "i18next": "^22.4.14",
     "i18next-http-backend": "^2.2.0",
-    "keycloak-js": "999.0.0-SNAPSHOT",
+    "keycloak-js": "21.1.1",
     "lodash-es": "^4.17.21",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
