@@ -17,16 +17,6 @@
 
 package org.keycloak.models.jpa;
 
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.RoleContainerModel;
-import org.keycloak.models.RoleModel;
-import org.keycloak.models.jpa.entities.RoleAttributeEntity;
-import org.keycloak.models.jpa.entities.RoleEntity;
-import org.keycloak.models.utils.KeycloakModelUtils;
-
-import javax.persistence.EntityManager;
-import javax.persistence.Query;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -35,6 +25,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Stream;
+
+import javax.persistence.EntityManager;
+import javax.persistence.Query;
+
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.RoleContainerModel;
+import org.keycloak.models.RoleModel;
+import org.keycloak.models.jpa.entities.RoleAttributeEntity;
+import org.keycloak.models.jpa.entities.RoleEntity;
+import org.keycloak.models.utils.KeycloakModelUtils;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -118,6 +119,21 @@ public class RoleAdapter implements RoleModel, JpaModel<RoleEntity> {
         return session.roles().getRolesStream(realm,
                 getEntity().getCompositeRoles().stream().map(RoleEntity::getId),
                 search, first, max);
+    }
+    
+    @Override
+    public void addParentRole(RoleModel role) {
+        RoleEntity entity = toRoleEntity(role);
+        for (RoleEntity parent : getEntity().getParentRoles()) {
+            if (parent.equals(entity)) return;
+        }
+        getEntity().getParentRoles().add(entity);
+    }
+    
+    @Override
+    public Stream<RoleModel> getParentsStream() {
+        Stream<RoleModel> composites = getEntity().getParentRoles().stream().map(c -> new RoleAdapter(session, realm, em, c));
+        return composites.filter(Objects::nonNull);
     }
 
     @Override

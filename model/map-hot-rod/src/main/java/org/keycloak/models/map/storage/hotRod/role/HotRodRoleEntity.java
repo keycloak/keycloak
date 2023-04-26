@@ -117,9 +117,14 @@ public class HotRodRoleEntity extends AbstractHotRodEntity {
     @Basic(sortable = true)
     @ProtoField(number = 8)
     public Set<String> compositeRoles;
-
+    
     @ProtoField(number = 9)
     public Set<HotRodAttributeEntityNonIndexed> attributes;
+    
+    @Basic(sortable = true)
+    @ProtoField(number = 10)
+    public Set<String> parentRoles;
+
 
     @Override
     public boolean equals(Object o) {
