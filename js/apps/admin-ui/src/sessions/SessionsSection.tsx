@@ -1,4 +1,3 @@
-import { ClientSessionStat } from "@keycloak/keycloak-admin-client/lib/defs/clientSessionStat";
 import {
   DropdownItem,
   PageSection,
@@ -8,11 +7,13 @@ import {
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
+import UserSessionRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userSessionRepresentation";
 import { FilterIcon } from "@patternfly/react-icons";
 import { useAlerts } from "../components/alert/Alerts";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import { ViewHeader } from "../components/view-header/ViewHeader";
 import { useAdminClient } from "../context/auth/AdminClient";
+import { fetchAdminUI } from "../context/auth/admin-ui-endpoint";
 import { useRealm } from "../context/realm-context/RealmContext";
 import helpUrls from "../help-urls";
 import { RevocationModal } from "./RevocationModal";
@@ -20,7 +21,7 @@ import SessionsTable from "./SessionsTable";
 
 import "./SessionsSection.css";
 
-type FilterType = "all" | "regular" | "offline";
+type FilterType = "ALL" | "REGULAR" | "OFFLINE";
 
 export default function SessionsSection() {
   const { t } = useTranslation("sessions");
@@ -33,55 +34,26 @@ export default function SessionsSection() {
 
   const [revocationModalOpen, setRevocationModalOpen] = useState(false);
   const [filterDropdownOpen, setFilterDropdownOpen] = useState(false);
-  const [filterType, setFilterType] = useState<FilterType>("all");
+  const [filterType, setFilterType] = useState<FilterType>("ALL");
   const [noSessions, setNoSessions] = useState(false);
 
   const handleRevocationModalToggle = () => {
     setRevocationModalOpen(!revocationModalOpen);
   };
 
-  async function getClientSessions(clientSessionStats: ClientSessionStat[]) {
-    const sessions = await Promise.all(
-      clientSessionStats.map((client) =>
-        adminClient.clients.listSessions({ id: client.id })
-      )
+  const loader = async (first?: number, max?: number, search?: string) => {
+    const data = await fetchAdminUI<UserSessionRepresentation[]>(
+      adminClient,
+      "ui-ext/sessions",
+      {
+        first: `${first}`,
+        max: `${max}`,
+        type: filterType,
+        search: search || "",
+      }
     );
-
-    return sessions.flat();
-  }
-
-  async function getOfflineSessions(clientSessionStats: ClientSessionStat[]) {
-    const sessions = await Promise.all(
-      clientSessionStats.map((client) =>
-        adminClient.clients.listOfflineSessions({ id: client.id })
-      )
-    );
-
-    return sessions.flat();
-  }
-
-  const loader = async () => {
-    const clientSessionStats = await adminClient.realms.getClientSessionStats({
-      realm,
-    });
-
-    const [clientSessions, offlineSessions] = await Promise.all([
-      filterType !== "offline" ? getClientSessions(clientSessionStats) : [],
-      filterType !== "regular" ? getOfflineSessions(clientSessionStats) : [],
-    ]);
-
-    setNoSessions(clientSessions.length === 0 && offlineSessions.length === 0);
-
-    return [
-      ...clientSessions.map((s) => ({
-        type: t("sessionsType.regularSSO"),
-        ...s,
-      })),
-      ...offlineSessions.map((s) => ({
-        type: t("sessionsType.offline"),
-        ...s,
-      })),
-    ];
+    setNoSessions(data.length === 0);
+    return data;
   };
 
   const [toggleLogoutDialog, LogoutConfirm] = useConfirmDialog({
@@ -139,6 +111,7 @@ export default function SessionsSection() {
         <SessionsTable
           key={key}
           loader={loader}
+          isSearching={filterType !== "ALL"}
           filter={
             <Select
               data-testid="filter-session-type-select"
@@ -147,18 +120,18 @@ export default function SessionsSection() {
               toggleIcon={<FilterIcon />}
               onSelect={(_, value) => {
                 setFilterType(value as FilterType);
-                refresh();
                 setFilterDropdownOpen(false);
+                refresh();
               }}
               selections={filterType}
             >
-              <SelectOption data-testid="all-sessions-option" value="all">
+              <SelectOption data-testid="all-sessions-option" value="ALL">
                 {t("sessionsType.allSessions")}
               </SelectOption>
-              <SelectOption data-testid="regular-sso-option" value="regular">
+              <SelectOption data-testid="regular-sso-option" value="REGULAR">
                 {t("sessionsType.regularSSO")}
               </SelectOption>
-              <SelectOption data-testid="offline-option" value="offline">
+              <SelectOption data-testid="offline-option" value="OFFLINE">
                 {t("sessionsType.offline")}
               </SelectOption>
             </Select>
