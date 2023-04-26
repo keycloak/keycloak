@@ -83,12 +83,12 @@ public class SessionsResource {
             switch (sessionId.getType()) {
                 case REGULAR:
                     result = Stream.concat(result, session.sessions().getUserSessionsStream(realm, clientModel)
-                            .map(s -> toUserSessionRepresentation(s, sessionId.getClientId(), REGULAR)));
+                            .map(s -> toUserSessionRepresentation(s, sessionId.getClientId(), REGULAR))).distinct();
                     break;
                 case OFFLINE:
                     result = Stream.concat(result, session.sessions()
                             .getOfflineUserSessionsStream(realm, clientModel, Math.max((int) (first - clientSessionsCount), 0), max)
-                            .map(s -> toUserSessionRepresentation(s, sessionId.getClientId(), OFFLINE)));
+                            .map(s -> toUserSessionRepresentation(s, sessionId.getClientId(), OFFLINE))).distinct();
                     break;
             }
         }
