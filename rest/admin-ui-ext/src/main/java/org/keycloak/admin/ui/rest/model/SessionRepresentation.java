@@ -84,7 +84,7 @@ public class SessionRepresentation {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (!(o instanceof SessionRepresentation)) return false;
         SessionRepresentation that = (SessionRepresentation) o;
         return start == that.start && userId.equals(that.userId) && type == that.type;
     }
