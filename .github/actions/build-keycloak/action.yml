@@ -43,13 +43,27 @@ runs:
       name: NPM cache
       uses: ./.github/actions/npm-cache
 
+    # Remove once https://github.com/keycloak/keycloak/issues/19299 is solved
+    ########################################################################################################
+    - id: check-wf-adapters
+      name: Check whether HEAD^ contains WildFly adapters relevant changes
+      shell: bash
+      run: echo "GIT_WF_ADAPTERS_DIFF=$( git diff origin/${{ github.base_ref }} --name-only | egrep -ic -e '^adapters/oidc/wildfly|^adapters/saml/wildfly' )" >> $GITHUB_ENV
+
+    - id: set-wf-adapters-profile
+      if: ${{ github.event_name != 'pull_request' || env.GIT_WF_ADAPTERS_DIFF != 0 }}
+      name: Set profile for building WildFly adapters
+      shell: bash
+      run: MVN_PROFILES="-Pbuild-wildfly-adapters"
+    ########################################################################################################
+
     - id: build-keycloak
       name: Build Keycloak
       shell: bash
       # By using "dependency:resolve", it will download all dependencies used in later stages for running the tests
       run: |
         MVN_HTTP_CONFIG="-Dhttp.keepAlive=false -Dmaven.wagon.http.pool=false -Dmaven.wagon.http.retryHandler.class=standard -Dmaven.wagon.http.retryHandler.count=3 -Dmaven.wagon.httpconnectionManager.ttlSeconds=120"
-        ./mvnw install dependency:resolve -nsu -B -e -DskipTests -DskipExamples $MVN_HTTP_CONFIG
+        ./mvnw install dependency:resolve -nsu -B -e -DskipTests -DskipExamples $MVN_PROFILES $MVN_HTTP_CONFIG
 
     - id: compress-keycloak-maven-repository
       name: Compress Keycloak Maven artifacts

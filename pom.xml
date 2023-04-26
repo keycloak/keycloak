@@ -78,7 +78,6 @@
         <dom4j.version>2.1.3</dom4j.version>
         <h2.version>2.1.214</h2.version>
         <jakarta.persistence.version>2.2.3</jakarta.persistence.version>
-        <jakarta.servlet.jakarta-servlet-api.version>6.0.0</jakarta.servlet.jakarta-servlet-api.version>
         <hibernate-orm.version>6.2.0.Final</hibernate-orm.version>
         <hibernate.c3p0.version>${hibernate-orm.version}</hibernate.c3p0.version>
         <infinispan.version>14.0.7.Final</infinispan.version>
@@ -635,11 +634,6 @@
                 <groupId>jakarta.persistence</groupId>
                 <artifactId>jakarta.persistence-api</artifactId>
                 <version>${jakarta.persistence.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>jakarta.servlet</groupId>
-                <artifactId>jakarta.servlet-api</artifactId>
-                <version>${jakarta.servlet.jakarta-servlet-api.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.h2database</groupId>
@@ -2154,6 +2148,18 @@
             <id>distribution</id>
             <modules>
                 <module>distribution</module>
+            </modules>
+        </profile>
+
+        <!-- Remove once https://github.com/keycloak/keycloak/issues/19299 is solved -->
+        <profile>
+            <id>build-wildfly-adapters</id>
+            <modules>
+                <module>distribution/licenses-common</module>
+                <module>distribution/maven-plugins/licenses-processor</module>
+                <module>distribution/feature-packs/adapter-feature-pack</module>
+                <module>distribution/adapters/wildfly-adapter</module>
+                <module>distribution/saml-adapters/wildfly-adapter</module>
             </modules>
         </profile>
 

@@ -70,6 +70,13 @@
                     <exists>src</exists>
                 </file>
             </activation>
+            <dependencies>
+                <dependency>
+                    <groupId>org.keycloak</groupId>
+                    <artifactId>${app.server.oidc.adapter.artifactId}</artifactId>
+                    <version>${oidc-adapter.version}</version>
+                </dependency>
+            </dependencies>
             <build>
                 <plugins>
 
