@@ -46,10 +46,8 @@ import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
 import org.keycloak.models.UserSessionModel;
-import org.keycloak.models.UserSessionProvider;
 import org.keycloak.models.UserSessionSpi;
 import org.keycloak.models.map.common.AbstractMapProviderFactory;
-import org.keycloak.models.map.storage.MapStorageProvider;
 import org.keycloak.models.map.storage.hotRod.connections.DefaultHotRodConnectionProviderFactory;
 import org.keycloak.models.map.storage.hotRod.connections.HotRodConnectionProvider;
 import org.keycloak.models.map.userSession.MapUserSessionProviderFactory;
@@ -1060,6 +1058,19 @@ public class TestingResourceProvider implements RealmResourceProvider {
     @Path("/display-error-message")
     public Response displayErrorMessage(@QueryParam("message") String message) {
         return ErrorPage.error(session, session.getContext().getAuthenticationSession(), Response.Status.BAD_REQUEST, message == null ? "" : message);
+    }
+
+    @GET
+    @Path("/get-provider-implementation-class")
+    @Produces(MediaType.APPLICATION_JSON)
+    public String getProviderClassName(@QueryParam("providerClass") String providerClass, @QueryParam("providerId") String providerId) {
+        try {
+            Class<? extends Provider> providerClazz = (Class<? extends Provider>) Class.forName(providerClass);
+            Provider provider = (providerId == null) ? session.getProvider(providerClazz) : session.getProvider(providerClazz, providerId);
+            return provider.getClass().getName();
+        } catch (ClassNotFoundException cnfe) {
+            throw new RuntimeException("Cannot find provider class: " + providerClass, cnfe);
+        }
     }
 
     private RealmModel getRealmByName(String realmName) {
