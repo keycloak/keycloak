@@ -71,6 +71,7 @@ export default function PolicyDetails() {
   const { addAlert, addError } = useAlerts();
 
   const [policy, setPolicy] = useState<PolicyRepresentation>();
+  const isDisabled = policyType === "js";
 
   useFetch(
     async () => {
@@ -164,9 +165,13 @@ export default function PolicyDetails() {
     return <KeycloakSpinner />;
   }
 
-  const ComponentType = isValidComponentType(policyType)
-    ? COMPONENTS[policyType]
-    : COMPONENTS["js"];
+  function getComponentType() {
+    return isValidComponentType(policyType)
+      ? COMPONENTS[policyType]
+      : COMPONENTS["js"];
+  }
+
+  const ComponentType = getComponentType();
 
   return (
     <>
@@ -198,13 +203,14 @@ export default function PolicyDetails() {
           role="view-clients"
         >
           <FormProvider {...form}>
-            <NameDescription prefix="policy" />
+            <NameDescription isDisabled={isDisabled} prefix="policy" />
             <ComponentType />
-            <LogicSelector />
+            <LogicSelector isDisabled={isDisabled} />
           </FormProvider>
           <ActionGroup>
             <div className="pf-u-mt-md">
               <Button
+                isDisabled={isDisabled}
                 variant={ButtonVariant.primary}
                 className="pf-u-mr-md"
                 type="submit"
