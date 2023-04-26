@@ -89,6 +89,9 @@ import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 
 import static org.junit.Assert.assertEquals;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.not;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -654,7 +657,7 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
             LDAPTestUtils.removeLDAPUserByUsername(ctx.getLdapProvider(), ctx.getRealm(), config, "maryjane");
 
             // Make sure the deletion took place.
-            Assert.assertEquals(0, session.users().searchForUserStream(ctx.getRealm(), "mary yram").count());
+            assertThat(session.users().searchForUserStream(ctx.getRealm(), "mary yram").map(UserModel::getUsername).collect(Collectors.toList()), not(contains("maryjane")));
         });
     }
 

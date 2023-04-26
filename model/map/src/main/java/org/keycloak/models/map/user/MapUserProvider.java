@@ -569,6 +569,7 @@ public class MapUserProvider implements UserProvider {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public Stream<UserModel> searchForUserStream(RealmModel realm, Map<String, String> attributes, Integer firstResult, Integer maxResults) {
         LOG.tracef("searchForUserStream(%s, %s, %d, %d)%s", realm, attributes, firstResult, maxResults, getShortStackTrace());
 
@@ -594,7 +595,7 @@ public class MapUserProvider implements UserProvider {
                         if (searchCriteria == null) {
                             searchCriteria = addSearchToModelCriteria(realm, stringToSearch, mcb);
                         } else {
-                            searchCriteria = mcb.and(searchCriteria, addSearchToModelCriteria(realm, stringToSearch, mcb));
+                            searchCriteria = mcb.or(searchCriteria, addSearchToModelCriteria(realm, stringToSearch, mcb));
                         }
                     }
 

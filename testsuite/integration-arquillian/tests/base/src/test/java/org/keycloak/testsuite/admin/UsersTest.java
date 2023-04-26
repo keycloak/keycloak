@@ -69,6 +69,17 @@ public class UsersTest extends AbstractAdminTest {
     }
 
     @Test
+    public void searchForUsers() throws Exception {
+        createUser(REALM_NAME, "user1", "password", "Some", "Some", "user1@example.com");
+        createUser(REALM_NAME, "user2", "password", "firstName", "lastName", "user2@example.com");
+        createUser(REALM_NAME, "user3", "password", "Some", "Other", "user3@example.com");
+        createUser(REALM_NAME, "user4", "password", "user1", "random", "user4@example.com");
+        createUser(REALM_NAME, "user5", "password", "asdfasg", "adgasf", "user5@example.com");
+
+        assertThat(realm.users().search("Other user1 lastName", null, null), hasSize(4));
+    }
+
+    @Test
     public void searchUserDefaultSettings() throws Exception {
         createUser(REALM_NAME, "User", "password", "firstName", "lastName", "user@example.com");
 

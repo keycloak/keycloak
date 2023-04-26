@@ -805,9 +805,15 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
 
             switch (key) {
                 case UserModel.SEARCH:
+                    Predicate searchPredicate = null;
                     for (String stringToSearch : value.trim().split("\\s+")) {
-                        predicates.add(builder.or(getSearchOptionPredicateArray(stringToSearch, builder, root)));
+                        if (searchPredicate == null) {
+                            searchPredicate = builder.or(getSearchOptionPredicateArray(stringToSearch, builder, root));
+                        } else {
+                            searchPredicate = builder.or(searchPredicate, builder.or(getSearchOptionPredicateArray(stringToSearch, builder, root)));
+                        }
                     }
+                    predicates.add(searchPredicate);
                     break;
                 case FIRST_NAME:
                 case LAST_NAME:
