@@ -33,6 +33,8 @@ import org.jboss.dmr.ModelNode;
  */
 abstract class AbstractAdapterConfigurationAddHandler extends AbstractAddStepHandler {
 
+    // FOR TESTING PURPOSES: WildFly adapters should be built in our CI
+
     private final boolean elytronEnabled;
 
     AbstractAdapterConfigurationAddHandler(RuntimeCapability<Void> runtimeCapability, List<SimpleAttributeDefinition> attributes) {
