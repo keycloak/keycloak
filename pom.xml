@@ -2157,6 +2157,18 @@
             </modules>
         </profile>
 
+        <!-- Remove once https://github.com/keycloak/keycloak/issues/19299 is solved -->
+        <profile>
+            <id>build-wildfly-adapters</id>
+            <modules>
+                <module>distribution/licenses-common</module>
+                <module>distribution/maven-plugins/licenses-processor</module>
+                <module>distribution/feature-packs/adapter-feature-pack</module>
+                <module>distribution/adapters/wildfly-adapter</module>
+                <module>distribution/saml-adapters/wildfly-adapter</module>
+            </modules>
+        </profile>
+
         <profile>
             <id>jboss-release</id>
             <modules>
