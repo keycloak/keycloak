@@ -4,6 +4,7 @@ import org.keycloak.admin.ui.rest.model.SessionId.SessionType;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 public class SessionRepresentation {
     private String id;
@@ -78,6 +79,19 @@ public class SessionRepresentation {
 
     public void setClients(Map<String, String> clients) {
         this.clients = clients;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof SessionRepresentation)) return false;
+        SessionRepresentation that = (SessionRepresentation) o;
+        return start == that.start && userId.equals(that.userId) && type == that.type;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(userId, start, type);
     }
 }
 

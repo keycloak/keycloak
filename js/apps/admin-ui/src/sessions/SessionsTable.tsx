@@ -40,6 +40,7 @@ export type SessionsTableProps = {
   emptyInstructions?: string;
   logoutUser?: string;
   filter?: ReactNode;
+  isSearching?: boolean;
 };
 
 const UsernameCell = (row: UserSessionRepresentation) => {
@@ -72,6 +73,7 @@ export default function SessionsTable({
   emptyInstructions,
   logoutUser,
   filter,
+  isSearching,
 }: SessionsTableProps) {
   const { realm } = useRealm();
   const { whoAmI } = useWhoAmI();
@@ -151,6 +153,7 @@ export default function SessionsTable({
         loader={loader}
         ariaLabelKey="sessions:title"
         searchPlaceholderKey="sessions:searchForSession"
+        isSearching={isSearching}
         searchTypeComponent={filter}
         toolbarItem={
           logoutUser && (
