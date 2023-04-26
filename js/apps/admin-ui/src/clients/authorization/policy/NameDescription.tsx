@@ -8,9 +8,13 @@ import { KeycloakTextArea } from "../../../components/keycloak-text-area/Keycloa
 
 type NameDescriptionProps = {
   prefix: string;
+  isDisabled: boolean;
 };
 
-export const NameDescription = ({ prefix }: NameDescriptionProps) => {
+export const NameDescription = ({
+  prefix,
+  isDisabled,
+}: NameDescriptionProps) => {
   const { t } = useTranslation("clients");
   const {
     register,
@@ -35,6 +39,7 @@ export const NameDescription = ({ prefix }: NameDescriptionProps) => {
         }
       >
         <KeycloakTextInput
+          isDisabled={isDisabled}
           id="kc-name"
           data-testid="name"
           validated={
@@ -58,6 +63,7 @@ export const NameDescription = ({ prefix }: NameDescriptionProps) => {
         helperTextInvalid={t("common:maxLength", { length: 255 })}
       >
         <KeycloakTextArea
+          isDisabled={isDisabled}
           id="kc-description"
           data-testid="description"
           validated={
