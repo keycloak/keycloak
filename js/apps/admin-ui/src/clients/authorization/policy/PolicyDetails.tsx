@@ -29,7 +29,6 @@ import { Client } from "./Client";
 import { ClientScope, RequiredIdValue } from "./ClientScope";
 import { Group, GroupValue } from "./Group";
 import { JavaScript } from "./JavaScript";
-import { JavaScriptDisabled } from "./JavaScriptDisabled";
 import { LogicSelector } from "./LogicSelector";
 import { NameDescription } from "./NameDescription";
 import { Regex } from "./Regex";
@@ -57,7 +56,6 @@ const COMPONENTS: {
   role: Role,
   time: Time,
   js: JavaScript,
-  "js-disabled": JavaScriptDisabled,
 } as const;
 
 export const isValidComponentType = (value: string) => value in COMPONENTS;
@@ -73,7 +71,7 @@ export default function PolicyDetails() {
   const { addAlert, addError } = useAlerts();
 
   const [policy, setPolicy] = useState<PolicyRepresentation>();
-  const isDisabled = policy?.name === "Default Policy";
+  const isDisabled = policyType === "js";
 
   useFetch(
     async () => {
@@ -168,10 +166,6 @@ export default function PolicyDetails() {
   }
 
   function getComponentType() {
-    if (isDisabled) {
-      return COMPONENTS["js-disabled"];
-    }
-
     return isValidComponentType(policyType)
       ? COMPONENTS[policyType]
       : COMPONENTS["js"];
