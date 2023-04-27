@@ -4,7 +4,6 @@ import peerDepsExternal from "rollup-plugin-peer-deps-external";
 import { defineConfig } from "vite";
 import { checker } from "vite-plugin-checker";
 import dts from "vite-plugin-dts";
-import svgr from "vite-plugin-svgr";
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -29,8 +28,5 @@ export default defineConfig({
     react(),
     checker({ typescript: true }),
     dts({ insertTypesEntry: true }),
-    svgr({
-      exportAsDefault: true,
-    }),
   ],
 });
