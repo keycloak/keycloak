@@ -16,7 +16,7 @@
  */
 package org.keycloak.admin.client.resource;
 
-import jakarta.ws.rs.Path;
+import javax.ws.rs.Path;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>

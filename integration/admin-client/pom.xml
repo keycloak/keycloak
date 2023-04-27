@@ -30,6 +30,10 @@
     <name>Keycloak Admin REST Client</name>
     <description/>
 
+    <properties>
+        <resteasy.version>${resteasy-legacy.version}</resteasy.version>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>org.keycloak</groupId>
