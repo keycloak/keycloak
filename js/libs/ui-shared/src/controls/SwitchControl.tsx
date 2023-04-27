@@ -19,6 +19,7 @@ export type SwitchControlProps<
     labelIcon?: string;
     labelOn: string;
     labelOff: string;
+    stringify?: boolean;
   };
 
 export const SwitchControl = <
@@ -46,8 +47,12 @@ export const SwitchControl = <
             data-testid={props.name}
             label={props.labelOn}
             labelOff={props.labelOff}
-            isChecked={value}
-            onChange={(checked) => onChange(checked)}
+            isChecked={props.stringify ? value === "true" : value}
+            onChange={(checked, e) => {
+              const value = props.stringify ? checked.toString() : checked;
+              props.onChange?.(checked, e);
+              onChange(value);
+            }}
           />
         )}
       />

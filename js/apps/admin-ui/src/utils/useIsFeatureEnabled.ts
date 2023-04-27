@@ -2,6 +2,8 @@ import { useServerInfo } from "../context/server-info/ServerInfoProvider";
 
 export enum Feature {
   DeclarativeUserProfile = "DECLARATIVE_USER_PROFILE",
+  Kerberos = "KERBEROS",
+  DynamicScopes = "DYNAMIC_SCOPES",
 }
 
 export default function useIsFeatureEnabled() {
