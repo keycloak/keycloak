@@ -1,8 +1,8 @@
-package org.keycloak.adapters.authorization.integration.elytron;
+package org.keycloak.adapters.authorization.integration.jakarta;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.Collections;
+import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
@@ -21,6 +21,8 @@ import org.jboss.logging.Logger;
 import org.keycloak.AuthorizationContext;
 import org.keycloak.adapters.authorization.PolicyEnforcer;
 import org.keycloak.adapters.authorization.TokenPrincipal;
+import org.keycloak.adapters.authorization.integration.elytron.ServletHttpRequest;
+import org.keycloak.adapters.authorization.integration.elytron.ServletHttpResponse;
 import org.keycloak.adapters.authorization.spi.ConfigurationResolver;
 import org.keycloak.adapters.authorization.spi.HttpRequest;
 import org.keycloak.representations.adapters.config.PolicyEnforcerConfig;
@@ -29,7 +31,7 @@ import org.wildfly.security.http.oidc.OidcPrincipal;
 import org.wildfly.security.http.oidc.RefreshableOidcSecurityContext;
 
 /**
- * A {@link Filter} acting as a policy enforcer. This filter does not enforce access for anonymous subjects.</p>
+ * A Jakarta Servlet {@link Filter} acting as a policy enforcer. This filter does not enforce access for anonymous subjects.</p>
  *
  * For authenticated subjects, this filter delegates the access decision to the {@link PolicyEnforcer} and decide if
  * the request should continue.</p>
@@ -39,13 +41,13 @@ import org.wildfly.security.http.oidc.RefreshableOidcSecurityContext;
  *
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
-public class PolicyEnforcerFilter implements Filter, ServletContextAttributeListener {
+public class ServletPolicyEnforcerFilter implements Filter, ServletContextAttributeListener {
 
     private final Logger logger = Logger.getLogger(getClass());
     private final Map<PolicyEnforcerConfig, PolicyEnforcer> policyEnforcer;
     private final ConfigurationResolver configResolver;
 
-    public PolicyEnforcerFilter(ConfigurationResolver configResolver) {
+    public ServletPolicyEnforcerFilter(ConfigurationResolver configResolver) {
         this.configResolver = configResolver;
         this.policyEnforcer = Collections.synchronizedMap(new HashMap<>());
     }
@@ -58,25 +60,15 @@ public class PolicyEnforcerFilter implements Filter, ServletContextAttributeList
     @Override
     public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain) throws IOException, ServletException {
         HttpServletRequest request = (HttpServletRequest) servletRequest;
-        HttpSession session = request.getSession(false);
-
-        if (session == null) {
-            logger.debug("Anonymous request, continuing the filter chain");
-            filterChain.doFilter(servletRequest, servletResponse);
-            return;
-        }
-
-        RefreshableOidcSecurityContext securityContext = (RefreshableOidcSecurityContext) ((OidcPrincipal) request.getUserPrincipal()).getOidcSecurityContext();
         HttpServletResponse response = (HttpServletResponse) servletResponse;
-        String accessToken = securityContext.getTokenString();
         ServletHttpRequest httpRequest = new ServletHttpRequest(request, new TokenPrincipal() {
             @Override
             public String getRawToken() {
-                return accessToken;
+                return extractBearerToken(request);
             }
         });
 
-        PolicyEnforcer policyEnforcer = getOrCreatePolicyEnforcer(httpRequest, securityContext);
+        PolicyEnforcer policyEnforcer = getOrCreatePolicyEnforcer(request, httpRequest);
         AuthorizationContext authzContext = policyEnforcer.enforce(httpRequest, new ServletHttpResponse(response));
 
         request.setAttribute(AuthorizationContext.class.getName(), authzContext);
@@ -89,22 +81,45 @@ public class PolicyEnforcerFilter implements Filter, ServletContextAttributeList
         }
     }
 
-    private PolicyEnforcer getOrCreatePolicyEnforcer(HttpRequest request, RefreshableOidcSecurityContext securityContext) {
+    protected String extractBearerToken(HttpServletRequest request) {
+        Enumeration<String> authorizationHeaderValues = request.getHeaders("Authorization");
+
+        while (authorizationHeaderValues.hasMoreElements()) {
+            String value = authorizationHeaderValues.nextElement();
+            String[] parts = value.trim().split("\\s+");
+
+            if (parts.length != 2) {
+                continue;
+            }
+
+            String bearer = parts[0];
+
+            if (bearer.equalsIgnoreCase("Bearer")) {
+                return parts[1];
+            }
+        }
+
+        return null;
+    }
+
+    private PolicyEnforcer getOrCreatePolicyEnforcer(HttpServletRequest servletRequest, HttpRequest request) {
         return policyEnforcer.computeIfAbsent(configResolver.resolve(request), new Function<PolicyEnforcerConfig, PolicyEnforcer>() {
             @Override
             public PolicyEnforcer apply(PolicyEnforcerConfig enforcerConfig) {
-                OidcClientConfiguration configuration = securityContext.getOidcClientConfiguration();
-                String authServerUrl = configuration.getAuthServerBaseUrl();
-
-                return PolicyEnforcer.builder()
-                        .authServerUrl(authServerUrl)
-                        .realm(configuration.getRealm())
-                        .clientId(configuration.getClientId())
-                        .credentials(configuration.getResourceCredentials())
-                        .bearerOnly(false)
-                        .enforcerConfig(enforcerConfig)
-                        .httpClient(configuration.getClient()).build();
+                return createPolicyEnforcer(servletRequest, enforcerConfig);
             }
         });
+    }
+
+    protected PolicyEnforcer createPolicyEnforcer(HttpServletRequest servletRequest, PolicyEnforcerConfig enforcerConfig) {
+        String authServerUrl = enforcerConfig.getAuthServerUrl();
+
+        return PolicyEnforcer.builder()
+                .authServerUrl(authServerUrl)
+                .realm(enforcerConfig.getRealm())
+                .clientId(enforcerConfig.getResource())
+                .credentials(enforcerConfig.getCredentials())
+                .bearerOnly(false)
+                .enforcerConfig(enforcerConfig).build();
     }
 }
