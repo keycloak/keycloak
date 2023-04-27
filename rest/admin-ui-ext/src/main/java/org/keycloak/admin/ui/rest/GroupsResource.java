@@ -1,6 +1,5 @@
 package org.keycloak.admin.ui.rest;
 
-import java.util.List;
 import static org.keycloak.models.utils.ModelToRepresentation.toRepresentation;
 
 import java.util.stream.Collectors;
@@ -16,6 +15,7 @@ import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.keycloak.common.Profile;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -80,7 +80,9 @@ public class GroupsResource {
 
         ).collect(Collectors.toList()));
 
-        setAccess(group, rep);
+        if (Profile.isFeatureEnabled(Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ)) {
+            setAccess(group, rep);
+        }
 
         return rep;
     }
