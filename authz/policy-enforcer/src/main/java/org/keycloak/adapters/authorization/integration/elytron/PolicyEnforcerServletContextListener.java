@@ -66,7 +66,7 @@ public class PolicyEnforcerServletContextListener implements ServletContextListe
 
         logger.debug("Policy enforcement filter is enabled.");
 
-        servletContext.addFilter("keycloak-policy-enforcer", new PolicyEnforcerFilter(configResolver))
+        servletContext.addFilter("keycloak-policy-enforcer", new ElytronPolicyEnforcerFilter(configResolver))
                 .addMappingForUrlPatterns(EnumSet.of(DispatcherType.REQUEST), false, "/*");
     }
 
