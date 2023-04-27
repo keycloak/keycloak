@@ -11,6 +11,12 @@ import { SaveReset } from "../advanced/SaveReset";
 import type { ClientSettingsProps } from "../ClientSettings";
 import { FormFields } from "../ClientDetails";
 
+const validateUrl = (uri: string | undefined, error: string) =>
+  ((uri?.startsWith("https://") || uri?.startsWith("http://")) &&
+    !uri.includes("*")) ||
+  uri === "" ||
+  error;
+
 export const LogoutPanel = ({
   save,
   reset,
@@ -92,10 +98,7 @@ export const LogoutPanel = ({
               ),
               {
                 validate: (uri) =>
-                  ((uri.startsWith("https://") || uri.startsWith("http://")) &&
-                    !uri.includes("*")) ||
-                  uri === "" ||
-                  t("frontchannelUrlInvalid").toString(),
+                  validateUrl(uri, t("frontchannelUrlInvalid").toString()),
               }
             )}
             validated={
@@ -136,11 +139,7 @@ export const LogoutPanel = ({
                 ),
                 {
                   validate: (uri) =>
-                    ((uri.startsWith("https://") ||
-                      uri.startsWith("http://")) &&
-                      !uri.includes("*")) ||
-                    uri === "" ||
-                    t("backchannelUrlInvalid").toString(),
+                    validateUrl(uri, t("backchannelUrlInvalid").toString()),
                 }
               )}
               validated={
