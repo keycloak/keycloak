@@ -41,7 +41,7 @@
         <jboss.snapshots.repo.id>jboss-snapshots-repository</jboss.snapshots.repo.id>
         <jboss.snapshots.repo.url>https://s01.oss.sonatype.org/content/repositories/snapshots/</jboss.snapshots.repo.url>
 
-        <quarkus.version>3.0.0.Final</quarkus.version>
+        <quarkus.version>3.0.1.Final</quarkus.version>
 
         <project.build-time>${timestamp}</project.build-time>
 
@@ -64,12 +64,13 @@
         <apache.httpcomponents.httpcore.version>4.4.16</apache.httpcomponents.httpcore.version>
         <apache.mime4j.version>0.6</apache.mime4j.version>
         <jboss.dmr.version>1.5.1.Final</jboss.dmr.version>
-        <bouncycastle.version>1.70</bouncycastle.version>
+        <bouncycastle.version>1.72</bouncycastle.version>
+        <bouncycastle-bcprov-jdk15on.version>1.70</bouncycastle-bcprov-jdk15on.version>
 
         <!-- TODO Are these correct versions? -->
         <bouncycastle.fips.version>1.0.2.3</bouncycastle.fips.version>
         <bouncycastle.pkixfips.version>1.0.7</bouncycastle.pkixfips.version>
-        <bouncycastle.tlsfips.version>1.0.14</bouncycastle.tlsfips.version>
+        <bouncycastle.tlsfips.version>1.0.14.1</bouncycastle.tlsfips.version>
 
         <cxf.version>3.3.10</cxf.version>
         <cxf.jetty.version>3.3.10</cxf.jetty.version>
@@ -78,12 +79,12 @@
         <dom4j.version>2.1.3</dom4j.version>
         <h2.version>2.1.214</h2.version>
         <jakarta.persistence.version>2.2.3</jakarta.persistence.version>
-        <hibernate-orm.version>6.2.0.Final</hibernate-orm.version>
+        <hibernate-orm.version>6.2.1.Final</hibernate-orm.version>
         <hibernate.c3p0.version>${hibernate-orm.version}</hibernate.c3p0.version>
         <infinispan.version>14.0.7.Final</infinispan.version>
         <infinispan.protostream.processor.version>4.6.0.Final</infinispan.protostream.processor.version>
-        <jackson.version>2.13.4</jackson.version>
-        <jackson.databind.version>2.13.4.2</jackson.databind.version>
+        <jackson.version>2.14.2</jackson.version>
+        <jackson.databind.version>2.14.2</jackson.databind.version>
         <jackson.annotations.version>${jackson.version}</jackson.annotations.version>
 
         <!--JAKARTA-->
@@ -134,10 +135,6 @@
         <google.guava.version>30.1-jre</google.guava.version>
         <xstream.version>1.4.20</xstream.version>
         <okhttp.version>4.10.0</okhttp.version>
-        <!-- Override of SnakeYAML to fix multiple CVEs -->
-        <org.yaml.snakeyaml.version>1.33</org.yaml.snakeyaml.version>
-        <!-- Override sshd-common to fix CVE-2022-45047 -->
-        <org.apache.sshd.version>2.9.2</org.apache.sshd.version>
         <org.snakeyaml.snakeyaml-engine.version>2.6</org.snakeyaml.snakeyaml-engine.version>
 
         <!-- Openshift -->
@@ -154,7 +151,7 @@
         <javaparser.version>3.24.2</javaparser.version>
 
         <jetty9.version>${jetty94.version}</jetty9.version>
-        <liquibase.version>4.16.1</liquibase.version>
+        <liquibase.version>4.20.0</liquibase.version>
         <osgi.version>4.2.0</osgi.version>
         <pax.web.version>7.1.0</pax.web.version>
         <servlet.api.30.version>1.0.2.Final</servlet.api.30.version>
@@ -166,9 +163,9 @@
         <mysql.version>8.0.23</mysql.version>
         <mysql-jdbc.version>8.0.30</mysql-jdbc.version>
         <postgresql.version>13.2</postgresql.version>
-        <postgresql-jdbc.version>42.5.1</postgresql-jdbc.version>
+        <postgresql-jdbc.version>42.6.0</postgresql-jdbc.version>
         <mariadb.version>10.6</mariadb.version>
-        <mariadb-jdbc.version>2.7.2</mariadb-jdbc.version>
+        <mariadb-jdbc.version>3.1.3</mariadb-jdbc.version>
         <mssql.version>2019-latest</mssql.version>
         <mssql-jdbc.version>9.2.0.jre8</mssql-jdbc.version>
         <!-- this is the oracle driver version also used in the Quarkus BOM -->
@@ -316,16 +313,6 @@
                 <version>${xstream.version}</version>
             </dependency>
             <dependency>
-                <groupId>org.yaml</groupId>
-                <artifactId>snakeyaml</artifactId>
-                <version>${org.yaml.snakeyaml.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.sshd</groupId>
-                <artifactId>sshd-common</artifactId>
-                <version>${org.apache.sshd.version}</version>
-            </dependency>
-            <dependency>
                 <groupId>org.snakeyaml</groupId>
                 <artifactId>snakeyaml-engine</artifactId>
                 <version>${org.snakeyaml.snakeyaml-engine.version}</version>
@@ -396,12 +383,12 @@
             <dependency>
                 <groupId>org.bouncycastle</groupId>
                 <artifactId>bcprov-jdk15on</artifactId>
-                <version>${bouncycastle.version}</version>
+                <version>${bouncycastle-bcprov-jdk15on.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.bouncycastle</groupId>
                 <artifactId>bcpkix-jdk15on</artifactId>
-                <version>${bouncycastle.version}</version>
+                <version>${bouncycastle-bcprov-jdk15on.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.bouncycastle</groupId>
