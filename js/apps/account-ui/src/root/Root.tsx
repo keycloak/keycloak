@@ -1,4 +1,4 @@
-import { Page, Spinner } from "@patternfly/react-core";
+import { Button, Page, Spinner } from "@patternfly/react-core";
 import {
   KeycloakMasthead,
   Translations,
@@ -13,7 +13,7 @@ import { environment } from "../environment";
 import { keycloak } from "../keycloak";
 import { joinPath } from "../utils/joinPath";
 import { PageNav } from "./PageNav";
-import { ExternalLinkAltIcon } from "@patternfly/react-icons";
+import { ExternalLinkSquareAltIcon } from "@patternfly/react-icons";
 
 import style from "./Root.module.css";
 
@@ -22,13 +22,16 @@ const ReferrerLink = () => {
   const searchParams = new URLSearchParams(location.search);
 
   return searchParams.has("referrer_uri") ? (
-    <a
+    <Button
+      component="a"
       href={searchParams.get("referrer_uri")!.replace("_hash_", "#")}
-      className="pf-m-link pf-m-inline"
+      variant="link"
+      icon={<ExternalLinkSquareAltIcon />}
+      iconPosition="right"
+      isInline
     >
-      <ExternalLinkAltIcon />{" "}
       {t("backTo", { app: searchParams.get("referrer") })}
-    </a>
+    </Button>
   ) : null;
 };
 

@@ -80,10 +80,7 @@ export const FormField = ({ attribute }: FormFieldProps) => {
       ) : (
         <KeycloakTextInput
           id={attribute.name}
-          isDisabled={attribute.readOnly}
-          {...register(fieldName(attribute.name), {
-            required: { value: attribute.required, message: t("required") },
-          })}
+          {...register(fieldName(attribute.name))}
         />
       )}
     </FormGroup>
