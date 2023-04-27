@@ -5,6 +5,7 @@ export enum Feature {
   ClientPolicies = "CLIENT_POLICIES",
   DeclarativeUserProfile = "DECLARATIVE_USER_PROFILE",
   Kerberos = "KERBEROS",
+  DynamicScopes = "DYNAMIC_SCOPES",
 }
 
 export default function useIsFeatureEnabled() {

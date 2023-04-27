@@ -5,6 +5,8 @@
   "clientScopeDetails": "Client scope details",
   "clientScopeExplain": "Client scopes are a common set of protocol mappers and roles that are shared between multiple clients.",
   "searchFor": "Search for client scope",
+  "dynamicScope": "Dynamic scope",
+  "dynamicScopeFormat": "Dynamic scope format",
   "protocol": "Protocol",
   "assignedType": "Assigned type",
   "displayOrder": "Display order",
