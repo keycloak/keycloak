@@ -31,17 +31,21 @@ The following example shows how to initialize the JavaScript adapter:
 ----
 <html>
 <head>
-    <script src="keycloak.js"></script>
-    <script>
-        function initKeycloak() {
-            const keycloak = new Keycloak();
-            keycloak.init().then(function(authenticated) {
-                alert(authenticated ? 'authenticated' : 'not authenticated');
-            }).catch(function() {
-                alert('failed to initialize');
-            });
-        }
-    </script>
+  <script src="keycloak.js"></script>
+  <script>
+    function initKeycloak() {
+      const options = {};
+      const keycloak = new Keycloak();
+      keycloak.init(options)
+        .then(function(authenticated) {
+          console.log('keycloak:' + (authenticated ? 'authenticated' : 'not authenticated'));
+        }).catch(function(error) {
+          for (const property in error) {
+            console.error(`${property}: ${error[property]}`);
+          }
+        });        
+    }
+  </script>
 </head>
 <body onload="initKeycloak()">
     <!-- your page content goes here -->
