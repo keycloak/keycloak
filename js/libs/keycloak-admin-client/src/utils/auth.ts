@@ -79,7 +79,7 @@ export const getToken = async (settings: Settings): Promise<TokenResponse> => {
   if (credentials.clientSecret) {
     headers.set(
       "Authorization",
-      atob(credentials.clientId + ":" + credentials.clientSecret)
+      "Basic " + btoa(credentials.clientId + ":" + credentials.clientSecret)
     );
   }
 
