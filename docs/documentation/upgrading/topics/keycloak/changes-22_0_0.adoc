@@ -74,3 +74,21 @@ NOTE:: When the auto-build runs, the build time options will be in effect for al
 In previous releases the `export` and `import` commands allowed runtime parameters like, for example, a database URL only in configuration files or environment variables.
 Starting with this release, those runtime parameters are now available on the command line as well.
 Use the `--help` option to find out about the supported parameters.
+
+= Upgrade to Hibernate 6
+
+This release of Keycloak was upgraded to Quarkus 3 and Hibernate 6.
+Due to this change, some defaults have changed.
+
+== Database access runs with XA and JTA
+
+As part of the Quarkus 3 upgrade, Hibernate now runs with JTA (Java Transaction API) instead of resource local transactions, and will default to use the XA database drivers.
+
+It uses the Narayana transaction manager which runs with a default transaction timeout of 300 seconds and is configured with the property `quarkus.transaction-manager.default-transaction-timeout`.
+Any transaction that takes a longer time will be rolled back by the transaction manager.
+
+The Narayana transaction manager will not use prepared transactions as long as one database participates in a transaction, which should make it as fast as the resource local transactions in standard situations.
+The Narayana transaction manager issues a `PREPARE` on the transactions once more than one datasource participates in a transaction.
+Two participating databases will occur if, for example, a custom user store uses a second database connection.
+The databases might need additional configuration parameters to support `PREPARE`.
+As an example, PostgreSQL's default configuration has `max_prepared_transactions` set to `0`, which would need to be increased to match the number of database connections Keycloak would use concurrently.

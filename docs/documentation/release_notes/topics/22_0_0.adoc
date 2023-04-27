@@ -12,3 +12,10 @@ In previous releases, the `export` and `import` commands required a `build` comm
 Starting with this release, the `export` and `import` commands perform an automatic rebuild of Keycloak if a build time configuration has changed.
 
 See the migration guide for details.
+
+= Upgrade to Hibernate 6
+
+This release of Keycloak was upgraded to Quarkus 3 and Hibernate 6.
+Due to this change, some defaults have been changed.
+
+See the migration guide for details.
