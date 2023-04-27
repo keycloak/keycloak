@@ -26,3 +26,5 @@ $evaluation.grant()
 {&quot;\n&quot;
 {end
 {$v
+location.origin
+keycloak.token
