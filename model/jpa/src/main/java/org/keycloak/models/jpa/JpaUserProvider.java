@@ -927,16 +927,7 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
         query.setParameter("identityProvider", identityProvider);
         query.setLockMode(lockMode);
         List<FederatedIdentityEntity> results = query.getResultList();
-        FederatedIdentityEntity federatedIdentityEntity = results.size() > 0 ? results.get(0) : null;
-        if (federatedIdentityEntity != null) {
-            // When upgrading from Hibernate 5 to Hibernate 6.2.0.CR3, the `user` wasn't filled in the returned row any more.
-            // This serves as a workaround until the cause has been found and the upstream project can provide a fix
-            // https://github.com/keycloak/keycloak/issues/19323
-            if (federatedIdentityEntity.getUser() == null) {
-                federatedIdentityEntity.setUser(userEntity);
-            }
-        }
-        return federatedIdentityEntity;
+        return results.size() > 0 ? results.get(0) : null;
     }
 
 
