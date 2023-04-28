@@ -211,6 +211,11 @@ public class AuthenticationManagementResource {
             throw ErrorResponse.exists("Flow " + flow.getAlias() + " already exists");
         }
         
+        //adding an empty string to avoid NPE
+        if(Objects.isNull(flow.getDescription())) {
+            flow.setDescription("");
+        }
+        
         ReservedCharValidator.validate(flow.getAlias());
 
         AuthenticationFlowModel createdModel = realm.addAuthenticationFlow(RepresentationToModel.toModel(flow));
@@ -416,7 +421,9 @@ public class AuthenticationManagementResource {
         String alias = data.get("alias");
         String type = data.get("type");
         String provider = data.get("provider");
-        String description = data.get("description");
+        
+        //Make sure that the description to avoid NullPointerException
+        String description = Objects.isNull(data.get("description")) ? "" : data.get("description");
 
 
         AuthenticationFlowModel newFlow = realm.getFlowByAlias(alias);
@@ -673,12 +680,17 @@ public class AuthenticationManagementResource {
         if (!checkFlow.getAlias().equals(rep.getDisplayName())) {
             checkFlow.setAlias(rep.getDisplayName());
         }
-
-        //check if the description changed
+        
+        // check if description is null and set an empty String to avoid NPE
+        if (Objects.isNull(checkFlow.getDescription())) {
+            checkFlow.setDescription("");
+        }
+        
+        // check if the description changed
         if (!checkFlow.getDescription().equals(rep.getDescription())) {
             checkFlow.setDescription(rep.getDescription());
         }
-
+        
         //update the flow
         realm.updateAuthenticationFlow(checkFlow);
         adminEvent.operation(OperationType.UPDATE).resource(ResourceType.AUTH_EXECUTION).resourcePath(session.getContext().getUri()).representation(rep).success();
