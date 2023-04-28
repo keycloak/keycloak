@@ -1249,12 +1249,12 @@
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-admin-client</artifactId>
+                <artifactId>keycloak-admin-client-jee</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-admin-client-jakarta</artifactId>
+                <artifactId>keycloak-admin-client</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
