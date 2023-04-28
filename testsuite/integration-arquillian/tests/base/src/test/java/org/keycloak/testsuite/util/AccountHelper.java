@@ -31,7 +31,7 @@ import java.util.Optional;
 public class AccountHelper {
 
     private static UserResource getUserResource(RealmResource realm, String username) {
-        Optional<UserRepresentation> userResult = realm.users().search(username).stream().findFirst();
+        Optional<UserRepresentation> userResult = realm.users().search(username, true).stream().findFirst();
         if (userResult.isEmpty()) {
             throw new RuntimeException("User with username " + username + " not found");
         }
