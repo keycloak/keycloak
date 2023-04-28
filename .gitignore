@@ -78,7 +78,7 @@ quarkus/data/*.db
 
 # Jakarta transformed sources #
 ###############################
-/integration/admin-client-jakarta/src/
+/integration/admin-client/src/
 /adapters/saml/jakarta-servlet-filter/src/
 /adapters/oidc/jakarta-servlet-filter/src/
 /adapters/saml/wildfly-elytron-jakarta/src/
