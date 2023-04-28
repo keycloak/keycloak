@@ -51,6 +51,7 @@ import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.keycloak.operator.Utils.isOpenShift;
 import static org.keycloak.operator.testsuite.utils.K8sUtils.getResourceFromFile;
 
 public abstract class BaseOperatorTest {
@@ -75,6 +76,7 @@ public abstract class BaseOperatorTest {
   protected static String kubernetesIp;
   protected static String customImage;
   private static Operator operator;
+  protected static boolean isOpenShift;
 
 
   @BeforeAll
@@ -91,6 +93,7 @@ public abstract class BaseOperatorTest {
     createK8sClient();
     createCRDs();
     createNamespace();
+    isOpenShift = isOpenShift(k8sclient);
 
     if (operatorDeployment == OperatorDeployment.remote) {
       createRBACresourcesAndOperatorDeployment();
