@@ -32,7 +32,10 @@ import org.keycloak.jose.jws.JWSHeader;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.oidc.mappers.HardcodedClaim;
+import org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
@@ -41,7 +44,10 @@ import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.pages.LoginPage;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.Response.Status;
 import jakarta.ws.rs.core.UriBuilder;
@@ -297,6 +303,55 @@ public class LogoutTest extends AbstractKeycloakTest {
 
         assertNotNull(testingClient.testApp().getAdminLogoutAction());
     }
+
+    @Test
+    public void clientWithAddressClaimMapperCanLogoutUsingIDToken() throws Exception {
+        ClientsResource clients = adminClient.realm(oauth.getRealm()).clients();
+        ClientRepresentation rep = clients.findByClientId(oauth.getClientId()).get(0);
+
+        ProtocolMapperRepresentation pmr = new ProtocolMapperRepresentation();
+        pmr.setProtocolMapper(HardcodedClaim.PROVIDER_ID);
+        pmr.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
+        pmr.setName("address-hardcoded-mapper");
+        Map<String, String> config = new HashMap<>();
+        config.put(OIDCAttributeMapperHelper.TOKEN_CLAIM_NAME, "address.custom_hardcoded_claim");
+        config.put(HardcodedClaim.CLAIM_VALUE, "custom_claim");
+        config.put(OIDCAttributeMapperHelper.INCLUDE_IN_ID_TOKEN, "true");
+        pmr.setConfig(config);
+
+        rep.setProtocolMappers(List.of(pmr));
+
+        ClientResource clientResource = clients.get(rep.getId());
+        clientResource.update(rep);
+
+        try {
+            oauth.doLogin("test-user@localhost", "password");
+
+            String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+
+            oauth.clientSessionState("client-session");
+
+            OAuthClient.AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, "password");
+            String idTokenString = tokenResponse.getIdToken();
+
+            String logoutUrl = oauth.getLogoutUrl()
+                    .idTokenHint(idTokenString)
+                    .postLogoutRedirectUri(oauth.APP_AUTH_ROOT)
+                    .build();
+
+            try (CloseableHttpClient c = HttpClientBuilder.create().disableRedirectHandling().build();
+                 CloseableHttpResponse response = c.execute(new HttpGet(logoutUrl))) {
+                assertThat(response, Matchers.statusCodeIsHC(Status.FOUND));
+                assertThat(response.getFirstHeader(HttpHeaders.LOCATION).getValue(), is(oauth.APP_AUTH_ROOT));
+            }
+
+        } finally {
+            rep.setProtocolMappers(null);
+            clientResource.update(rep);
+        }
+    }
+
+
 
     @Test
     public void backChannelPreferenceOverKLogout() throws Exception {

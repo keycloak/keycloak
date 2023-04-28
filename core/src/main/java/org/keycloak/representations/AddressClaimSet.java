@@ -17,7 +17,12 @@
 
 package org.keycloak.representations;
 
+import com.fasterxml.jackson.annotation.JsonAnyGetter;
+import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonProperty;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /**
 * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -48,6 +53,25 @@ public class AddressClaimSet {
 
     @JsonProperty(COUNTRY)
     protected String country;
+
+    protected Map<String, Object> otherClaims = new HashMap<>();
+
+    /**
+     * This is a map of any other claims and data that might be set in the address claim.
+     * Generally these are custom claims set up by the auth server
+     *
+     * @return otherClaims
+     */
+    @JsonAnyGetter
+    public Map<String, Object> getOtherClaims() {
+        return otherClaims;
+    }
+
+    @JsonAnySetter
+    public void setOtherClaims(String name, Object value) {
+        otherClaims.put(name, value);
+    }
+
 
     public String getFormattedAddress() {
         return this.formattedAddress;
