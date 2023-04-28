@@ -11,7 +11,7 @@ import { useTranslation } from "react-i18next";
 import { HelpItem } from "ui-shared";
 
 import { adminClient } from "../../admin-client";
-import { FormAccess } from "../../components/form-access/FormAccess";
+import { FormAccess } from "../../components/form/FormAccess";
 import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 import { WizardSectionHeader } from "../../components/wizard-section-header/WizardSectionHeader";
 import { useRealm } from "../../context/realm-context/RealmContext";

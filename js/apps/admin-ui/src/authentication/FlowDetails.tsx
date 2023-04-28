@@ -1,6 +1,4 @@
-import type AuthenticationExecutionInfoRepresentation from "@keycloak/keycloak-admin-client/lib/defs/authenticationExecutionInfoRepresentation";
-import type AuthenticationFlowRepresentation from "@keycloak/keycloak-admin-client/lib/defs/authenticationFlowRepresentation";
-import type { AuthenticationProviderRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/authenticatorConfigRepresentation";
+
 import {
   AlertVariant,
   Button,
@@ -15,16 +13,18 @@ import {
   ToolbarContent,
   ToolbarItem,
 } from "@patternfly/react-core";
-import {
-  CheckCircleIcon,
-  DomainIcon,
+import { DomainIcon, TableIcon } from "@patternfly/react-icons";
+import { useState } from "react";
+import { Trans, useTranslation } from "react-i18next";
+import { useNavigate, useParams } from "react-router-dom";
   TableIcon,
-} from "@patternfly/react-icons";
 import { useState } from "react";
 import { Trans, useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router-dom";
 
 import { adminClient } from "../admin-client";
+import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
+import type { AuthenticationProviderRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/authenticatorConfigRepresentation";
 import { useAlerts } from "../components/alert/Alerts";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import { ViewHeader } from "../components/view-header/ViewHeader";
@@ -32,6 +32,7 @@ import { useFetch } from "../utils/useFetch";
 import { useRealm } from "../context/realm-context/RealmContext";
 import useToggle from "../utils/useToggle";
 import { BindFlowDialog } from "./BindFlowDialog";
+import { BuildInLabel } from "./BuildInLabel";
 import { DuplicateFlowModal } from "./DuplicateFlowModal";
 import { EditFlowModal } from "./EditFlowModal";
 import { EmptyExecutionState } from "./EmptyExecutionState";
@@ -305,14 +306,7 @@ export default function FlowDetails() {
           { text: <Label>{t(`used.${usedBy}`)}</Label> },
           builtIn
             ? {
-                text: (
-                  <Label
-                    className="keycloak_authentication-section__usedby_label"
-                    icon={<CheckCircleIcon />}
-                  >
-                    {t("buildIn")}
-                  </Label>
-                ),
+                text: <BuildInLabel />,
                 id: "builtIn",
               }
             : {},

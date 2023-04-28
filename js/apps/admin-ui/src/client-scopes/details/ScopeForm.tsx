@@ -20,8 +20,8 @@ import {
   ClientScopeDefaultOptionalType,
   clientScopeTypesSelectOptions,
 } from "../../components/client-scope/ClientScopeTypes";
-import { FormAccess } from "../../components/form-access/FormAccess";
-import { HelpItem, TextControl } from "ui-shared";
+import { FormAccess } from "../../components/form/FormAccess";
+import { HelpItem } from "ui-shared";
 import { KeycloakTextArea } from "../../components/keycloak-text-area/KeycloakTextArea";
 import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 import { useRealm } from "../../context/realm-context/RealmContext";
