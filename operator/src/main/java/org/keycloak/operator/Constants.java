@@ -50,8 +50,10 @@ public final class Constants {
     public static final Integer KEYCLOAK_HTTPS_PORT = 8443;
     public static final String KEYCLOAK_SERVICE_PROTOCOL = "TCP";
     public static final String KEYCLOAK_SERVICE_SUFFIX = "-service";
+    public static final String KEYCLOAK_SERVICE_APP_PROTOCOL = "http";
     public static final Integer KEYCLOAK_DISCOVERY_SERVICE_PORT = 7800;
     public static final String KEYCLOAK_DISCOVERY_SERVICE_SUFFIX = "-discovery";
+    public static final String KEYCLOAK_DISCOVERY_APP_PROTOCOL = "tcp";
 
     public static final String KEYCLOAK_INGRESS_SUFFIX = "-ingress";
 
