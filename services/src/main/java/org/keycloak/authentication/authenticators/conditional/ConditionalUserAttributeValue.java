@@ -45,6 +45,9 @@ public class ConditionalUserAttributeValue implements ConditionalAuthenticator {
         }
 
         boolean result = user.getAttributeStream(attributeName).anyMatch(attr -> Objects.equals(attr, attributeValue));
+        if (!result) {
+            result = user.getGroupsStream().anyMatch(group -> group.getAttributeStream(attributeName).anyMatch(attr -> Objects.equals(attr, attributeValue)));
+        }
         return negateOutput != result;
     }
 
