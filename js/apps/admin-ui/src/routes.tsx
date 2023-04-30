@@ -18,6 +18,7 @@ import realmRoutes from "./realm/routes";
 import sessionRoutes from "./sessions/routes";
 import userFederationRoutes from "./user-federation/routes";
 import userRoutes from "./user/routes";
+import { ErrorPage } from "./components/error/ErrorPage";
 
 export type AppRouteObjectHandle = {
   access: AccessType | AccessType[];
@@ -58,4 +59,5 @@ export const RootRoute: RouteObject = {
   path: "/",
   element: <App />,
   children: routes,
+  errorElement: <ErrorPage />,
 };

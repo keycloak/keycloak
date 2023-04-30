@@ -1,6 +1,5 @@
 import { Page } from "@patternfly/react-core";
 import { PropsWithChildren, Suspense } from "react";
-import { ErrorBoundary } from "react-error-boundary";
 import { Outlet } from "react-router-dom";
 import { Help } from "ui-shared";
 
@@ -8,7 +7,6 @@ import { Header } from "./PageHeader";
 import { PageNav } from "./PageNav";
 import { AlertProvider } from "./components/alert/Alerts";
 import { PageBreadCrumbs } from "./components/bread-crumb/PageBreadCrumbs";
-import { ErrorRenderer } from "./components/error/ErrorRenderer";
 import { KeycloakSpinner } from "./components/keycloak-spinner/KeycloakSpinner";
 import { RealmsProvider } from "./context/RealmsContext";
 import { RecentRealmsProvider } from "./context/RecentRealms";
@@ -49,21 +47,13 @@ export const App = () => {
         breadcrumb={<PageBreadCrumbs />}
         mainContainerId={mainPageContentId}
       >
-        <ErrorBoundary
-          FallbackComponent={ErrorRenderer}
-          onReset={() =>
-            (window.location.href =
-              window.location.origin + window.location.pathname)
-          }
-        >
-          <ServerInfoProvider>
-            <Suspense fallback={<KeycloakSpinner />}>
-              <AuthWall>
-                <Outlet />
-              </AuthWall>
-            </Suspense>
-          </ServerInfoProvider>
-        </ErrorBoundary>
+        <ServerInfoProvider>
+          <Suspense fallback={<KeycloakSpinner />}>
+            <AuthWall>
+              <Outlet />
+            </AuthWall>
+          </Suspense>
+        </ServerInfoProvider>
       </Page>
     </AppContexts>
   );
