@@ -39,7 +39,6 @@ import { KeycloakSpinner } from "../components/keycloak-spinner/KeycloakSpinner"
 import { FederatedUserLink } from "./FederatedUserLink";
 
 import "./user-credentials.css";
-//import { FederatedCredentials } from "./user-credentials/FederatedCredentials";
 
 type UserCredentialsProps = {
   user: UserRepresentation;
@@ -334,16 +333,14 @@ export const UserCredentials = ({ user }: UserCredentialsProps) => {
   const useFederatedCredentials = user.federationLink || user.origin;
   const [credentialTypes, setCredentialTypes] = useState<string[]>([]);
 
-  if (useFederatedCredentials) {
-    useFetch(
-      () => adminClient.users.getUserStorageCredentialTypes({ id: user.id! }),
-      setCredentialTypes,
-      []
-    );
+  useFetch(
+    () => adminClient.users.getUserStorageCredentialTypes({ id: user.id! }),
+    setCredentialTypes,
+    []
+  );
 
-    if (!credentialTypes) {
-      return <KeycloakSpinner />;
-    }
+  if (!credentialTypes) {
+    return <KeycloakSpinner />;
   }
 
   const hasCredentialTypes = credentialTypes.length > 0;
@@ -511,7 +508,7 @@ export const UserCredentials = ({ user }: UserCredentialsProps) => {
       )}
       {useFederatedCredentials && hasCredentialTypes && (
         <PageSection variant={PageSectionVariants.light}>
-          <TableComposable variant={"compact"}>
+          <TableComposable variant="compact">
             <Thead>
               <Tr>
                 <Th>{t("type")}</Th>
