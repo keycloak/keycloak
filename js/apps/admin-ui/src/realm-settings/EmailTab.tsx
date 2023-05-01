@@ -38,15 +38,15 @@ type RealmSettingsEmailTabProps = {
 
 export const RealmSettingsEmailTab = ({
   realm: initialRealm,
-  save
+  save,
 }: RealmSettingsEmailTabProps) => {
   const { t } = useTranslation("realm-settings");
   const { adminClient } = useAdminClient();
   const { realm: realmName } = useRealm();
   const { addAlert, addError } = useAlerts();
   const currentUser = useCurrentUser();
+  const [realm] = useState(initialRealm);
 
-  const [realm, setRealm] = useState(initialRealm);
   const {
     register,
     control,
@@ -100,6 +100,18 @@ export const RealmSettingsEmailTab = ({
     toggleTest();
   };
 
+  const saveForm = async (form: RealmRepresentation) => {
+    try {
+      const savedRealm = { ...realm, ...form };
+      // For default value, back end is expecting null instead of empty string
+      if (savedRealm.smtpServer?.port === "") savedRealm.smtpServer.port = null;
+      save(savedRealm);
+      addAlert(t("saveSuccess"), AlertVariant.success);
+    } catch (error) {
+      addError("realm-settings:saveError", error);
+    }
+  };
+
   return (
     <PageSection variant="light">
       <FormPanel title={t("template")} className="kc-email-template">
@@ -107,7 +119,7 @@ export const RealmSettingsEmailTab = ({
           isHorizontal
           role="manage-realm"
           className="pf-u-mt-lg"
-          onSubmit={handleSubmit(save)}
+          onSubmit={handleSubmit(saveForm)}
         >
           <FormGroup
             label={t("from")}
