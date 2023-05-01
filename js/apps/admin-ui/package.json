@@ -99,7 +99,7 @@
     "@vitejs/plugin-react-swc": "^3.3.0",
     "cypress": "^12.10.0",
     "cypress-axe": "^1.4.0",
-    "jsdom": "^21.1.1",
+    "jsdom": "^21.1.2",
     "ldap-server-mock": "^6.0.1",
     "ts-node": "^10.9.1",
     "vite": "^4.3.1",
