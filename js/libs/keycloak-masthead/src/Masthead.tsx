@@ -16,6 +16,7 @@ import { ReactNode } from "react";
 import { KeycloakDropdown } from "./KeycloakDropdown";
 import { useTranslation } from "./translation/useTranslation";
 import { loggedInUserName } from "./util";
+import { DefaultAvatar } from "./DefaultAvatar";
 
 type BrandLogo = BrandProps & {
   onClick?: () => void;
@@ -109,9 +110,11 @@ const KeycloakMasthead = ({
               />
             </PageHeaderToolsItem>
           </PageHeaderToolsGroup>
-          <Avatar
-            {...{ src: picture || "/avatar.svg", alt: t("avatar"), ...avatar }}
-          />
+          {picture || avatar?.src ? (
+            <Avatar {...{ src: picture, alt: t("avatar"), ...avatar }} />
+          ) : (
+            <DefaultAvatar {...avatar} />
+          )}
         </PageHeaderTools>
       }
     />
