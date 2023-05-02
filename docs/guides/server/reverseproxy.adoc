@@ -21,9 +21,8 @@ reencrypt:: Requires communication through HTTPS between the proxy and Keycloak.
 This mode is suitable for deployments where internal communication between the reverse proxy and Keycloak should also be protected.
 Different keys and certificates are used on the reverse proxy as well as on Keycloak.
 
-passthrough:: Enables communication through HTTP or HTTPS between the proxy and Keycloak.
-This mode is suitable for deployments where the reverse proxy is not terminating TLS.
-The proxy instead is forwarding requests to the Keycloak server so that secure connections between the server and clients are based on the keys and certificates used by the Keycloak server.
+passthrough:: The proxy forwards the HTTPS connection to Keycloak without terminating TLS.
+The secure connections between the server and clients are based on the keys and certificates used by the Keycloak server.
 
 == Configure the proxy mode in Keycloak
 To select the proxy mode, enter this command:
@@ -31,9 +30,10 @@ To select the proxy mode, enter this command:
 <@kc.start parameters="--proxy <mode>"/>
 
 == Configure the reverse proxy
+
 Some Keycloak features rely on the assumption that the remote address of the HTTP request connecting to Keycloak is the real IP address of the clients machine.
 
-When you have a reverse proxy or a load balancer in front of Keycloak, please make sure your reverse proxy is overriding the following headers:
+When in **edge** or **reencrypt** proxy mode, Keycloak will parse the following headers and expects the reverse proxy to set them:
 
 * `Forwarded` as per https://www.rfc-editor.org/rfc/rfc7239.html[RFC7239]
 * Non-standard `X-Forwarded`
