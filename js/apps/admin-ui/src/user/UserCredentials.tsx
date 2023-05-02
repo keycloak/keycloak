@@ -336,7 +336,7 @@ export const UserCredentials = ({ user }: UserCredentialsProps) => {
   useFetch(
     () => adminClient.users.getUserStorageCredentialTypes({ id: user.id! }),
     setCredentialTypes,
-    [user.id]
+    []
   );
 
   if (!credentialTypes) {
