@@ -31,12 +31,7 @@
     <packaging>pom</packaging>
 
     <properties>
-        <wildfly.version>27.0.0.Final</wildfly.version>
-        <wildfly.build-tools.version>1.2.13.Final</wildfly.build-tools.version>
-        <wildfly.core.version>19.0.0.Final</wildfly.core.version>
-
         <feature-pack.resources.directory>${basedir}/../../saml-adapters/wildfly-adapter/wildfly-jakarta-modules/src/main/resources</feature-pack.resources.directory>
-        <version.org.wildfly.galleon-plugins>6.4.0.Final</version.org.wildfly.galleon-plugins>
         <xmlFileSource>${basedir}/src/main/resources/licenses/keycloak/licenses.xml</xmlFileSource>
         <outputDirectory>${basedir}/target/resources/packages/licenses/content/docs/licenses-keycloak</outputDirectory>
     </properties>
@@ -221,24 +216,6 @@
             <plugin>
                 <groupId>org.wildfly.galleon-plugins</groupId>
                 <artifactId>wildfly-galleon-maven-plugin</artifactId>
-                <version>${version.org.wildfly.galleon-plugins}</version>
-                <dependencies>
-                    <!--
-                        feature-spec-gen uses wildfly-embedded to generate the feature specs, hence the designated
-                        wildfly-embedded version must match the pack one
-                    -->
-                    <dependency>
-                        <groupId>org.wildfly.core</groupId>
-                        <artifactId>wildfly-embedded</artifactId>
-                        <version>${wildfly.core.version}</version>
-                    </dependency>
-                    <!-- If you add a dependency on wildfly-embedded you need to bring your own transitives -->
-                    <dependency>
-                        <groupId>org.wildfly.common</groupId>
-                        <artifactId>wildfly-common</artifactId>
-                        <version>${wildfly.common.version}</version>
-                    </dependency>
-                </dependencies>
                 <executions>
                     <execution>
                         <id>keycloak-saml-adapter-galleon-pack-build</id>
@@ -249,7 +226,7 @@
                         <configuration>
                             <wildfly-channel-resolution-mode>REQUIRED</wildfly-channel-resolution-mode>
                             <generate-channel-manifest>true</generate-channel-manifest>
-                     git        <add-feature-packs-as-required-manifests>false</add-feature-packs-as-required-manifests>
+                            <add-feature-packs-as-required-manifests>false</add-feature-packs-as-required-manifests>
                             <fork-embedded>false</fork-embedded>
                         </configuration>
                     </execution>
