@@ -30,7 +30,7 @@
                         <directory>dist</directory>
                         <targetPath>theme/keycloak.v2/admin/resources</targetPath>
                         <includes>
-                            <include>resources/en/**</include>
+                            <include>locales/en/**</include>
                         </includes>
                     </resource>
                 </resources>
@@ -49,7 +49,7 @@
                         <directory>dist</directory>
                         <targetPath>theme/keycloak.v2/admin/resources</targetPath>
                         <includes>
-                            <include>resources/**</include>
+                            <include>locales/**</include>
                         </includes>
                     </resource>
                 </resources>
@@ -67,7 +67,7 @@
                 <targetPath>theme/keycloak.v2/admin/resources</targetPath>
                 <excludes>
                     <exclude>index.html</exclude>
-                    <exclude>resources/**</exclude>
+                    <exclude>locales/**</exclude>
                 </excludes>
             </resource>
         </resources>
