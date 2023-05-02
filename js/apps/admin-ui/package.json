@@ -102,7 +102,7 @@
     "jsdom": "^21.1.2",
     "ldap-server-mock": "^6.0.1",
     "ts-node": "^10.9.1",
-    "vite": "^4.3.3",
+    "vite": "^4.3.4",
     "vite-plugin-checker": "^0.6.0",
     "vitest": "^0.30.1"
   }
