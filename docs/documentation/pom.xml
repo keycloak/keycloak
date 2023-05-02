@@ -20,7 +20,6 @@
         <imagesDir>keycloak-images</imagesDir>
 
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <version.plugin.asciidoctor>1.5.5</version.plugin.asciidoctor>
         <version.plugin.assembly>3.0.0</version.plugin.assembly>
         <version.plugin.resources>3.0.2</version.plugin.resources>
         <version.plugin.dependency>3.0.1</version.plugin.dependency>
@@ -132,7 +131,6 @@
                 <plugin>
                     <groupId>org.asciidoctor</groupId>
                     <artifactId>asciidoctor-maven-plugin</artifactId>
-                    <version>${version.plugin.asciidoctor}</version>
                     <executions>
                         <execution>
                             <id>asciidoc-to-html</id>

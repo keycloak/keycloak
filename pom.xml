@@ -35,6 +35,8 @@
     <packaging>pom</packaging>
 
     <properties>
+        <asciidoctor.plugin.version>1.5.8</asciidoctor.plugin.version>
+
         <jboss.repo.nexusUrl>https://s01.oss.sonatype.org/</jboss.repo.nexusUrl>
         <jboss.releases.repo.id>jboss-releases-repository</jboss.releases.repo.id>
         <jboss.releases.repo.url>https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/</jboss.releases.repo.url>
@@ -2088,7 +2090,7 @@
                 <plugin>
                     <groupId>org.asciidoctor</groupId>
                     <artifactId>asciidoctor-maven-plugin</artifactId>
-                    <version>1.5.8</version>
+                    <version>${asciidoctor.plugin.version}</version>
                 </plugin>
             </plugins>
         </pluginManagement>
