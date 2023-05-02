@@ -33,6 +33,8 @@ import org.jboss.dmr.ModelNode;
  */
 abstract class AbstractAdapterConfigurationAddHandler extends AbstractAddStepHandler {
 
+    // Initiate action
+
     private final boolean elytronEnabled;
 
     AbstractAdapterConfigurationAddHandler(RuntimeCapability<Void> runtimeCapability, List<SimpleAttributeDefinition> attributes) {
