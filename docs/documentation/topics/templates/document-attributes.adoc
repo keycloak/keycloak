@@ -15,7 +15,7 @@ ifeval::["{project_buildType}" == "latest"]
 :project_versionLinks: latest
 endif::[]
 ifeval::["{project_buildType}" == "archive"]
-:project_versionLinks: {project_versionDoc}
+:project_versionLinks: {project_version}
 endif::[]
 
 :project_images: keycloak-images
@@ -61,7 +61,7 @@ endif::[]
 :adminguide_clearcache_name: Clearing Server Caches
 :adminguide_clearcache_link: {adminguide_link}#_clear-cache
 :apidocs_name: API Documentation
-:apidocs_link: https://www.keycloak.org/docs/{project_versionDoc}/api_documentation/
+:apidocs_link: https://www.keycloak.org/docs/{project_version}/api_documentation/
 :developerguide_name: Server Developer Guide
 :developerguide_name_short: Server Developer
 :developerguide_link: {project_doc_base_url}/server_development/
@@ -85,9 +85,9 @@ endif::[]
 :releasenotes_link_latest: {project_doc_base_url_latest}/release_notes/
 
 :apidocs_javadocs_name: JavaDocs Documentation
-:apidocs_javadocs_link: https://www.keycloak.org/docs-api/{project_versionDoc}/javadocs/
+:apidocs_javadocs_link: https://www.keycloak.org/docs-api/{project_version}/javadocs/
 :apidocs_adminrest_name: Administration REST API
-:apidocs_adminrest_link: https://www.keycloak.org/docs-api/{project_versionDoc}/rest-api/
+:apidocs_adminrest_link: https://www.keycloak.org/docs-api/{project_version}/rest-api/
 
 :appserver_name: WildFly
 :appserver_dirref: WILDFLY_HOME
