@@ -32,8 +32,6 @@
 
         <maven.compiler.target>1.8</maven.compiler.target>
         <maven.compiler.source>1.8</maven.compiler.source>
-
-        <buildType>archive</buildType>
     </properties>
 
     <modules>
@@ -60,17 +58,6 @@
             <modules>
                 <module>tests</module>
             </modules>
-        </profile>
-        <profile>
-            <id>latest</id>
-            <activation>
-                <property>
-                    <name>latest</name>
-                </property>
-            </activation>
-            <properties>
-                <buildType>latest</buildType>
-            </properties>
         </profile>
     </profiles>
 
@@ -169,7 +156,6 @@
                                     <idseparator>-</idseparator>
                                     <docinfo1>true</docinfo1>
                                     <masterFile>${masterFile}</masterFile>
-                                    <project_buildType>${buildType}</project_buildType>
                                 </attributes>
                                 <resources>
                                     <resource>
