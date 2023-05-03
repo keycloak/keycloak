@@ -19,9 +19,9 @@ import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog"
 import { KeycloakSpinner } from "../../components/keycloak-spinner/KeycloakSpinner";
 import { ListEmptyState } from "../../components/list-empty-state/ListEmptyState";
 import { KeycloakDataTable } from "../../components/table-toolbar/KeycloakDataTable";
-import { useFetch } from "../../context/auth/AdminClient";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { emptyFormatter } from "../../util";
+import { useFetch } from "../../utils/useFetch";
 import useToggle from "../../utils/useToggle";
 import { toKeysTab } from "../routes/KeysTab";
 

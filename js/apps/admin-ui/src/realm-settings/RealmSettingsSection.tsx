@@ -3,7 +3,7 @@ import { useState } from "react";
 
 import { adminClient } from "../admin-client";
 import { KeycloakSpinner } from "../components/keycloak-spinner/KeycloakSpinner";
-import { useFetch } from "../context/auth/AdminClient";
+import { useFetch } from "../utils/useFetch";
 import { useParams } from "../utils/useParams";
 import { RealmSettingsTabs } from "./RealmSettingsTabs";
 import type { RealmSettingsParams } from "./routes/RealmSettings";

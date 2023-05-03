@@ -13,7 +13,7 @@ import { useTranslation } from "react-i18next";
 import { HelpItem } from "ui-shared";
 
 import { adminClient } from "../../admin-client";
-import { useFetch } from "../../context/auth/AdminClient";
+import { useFetch } from "../../utils/useFetch";
 import useToggle from "../../utils/useToggle";
 import type { ComponentProps } from "../dynamic/components";
 

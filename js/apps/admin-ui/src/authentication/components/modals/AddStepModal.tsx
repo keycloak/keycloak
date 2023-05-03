@@ -13,7 +13,7 @@ import { useTranslation } from "react-i18next";
 
 import { adminClient } from "../../../admin-client";
 import { PaginatingTableToolbar } from "../../../components/table-toolbar/PaginatingTableToolbar";
-import { useFetch } from "../../../context/auth/AdminClient";
+import { useFetch } from "../../../utils/useFetch";
 import useLocaleSort, { mapByKey } from "../../../utils/useLocaleSort";
 import { providerConditionFilter } from "../../FlowDetails";
 

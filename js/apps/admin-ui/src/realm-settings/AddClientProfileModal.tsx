@@ -8,7 +8,7 @@ import { adminClient } from "../admin-client";
 import { KeycloakSpinner } from "../components/keycloak-spinner/KeycloakSpinner";
 import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
 import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
-import { useFetch } from "../context/auth/AdminClient";
+import { useFetch } from "../utils/useFetch";
 
 type ClientProfile = ClientProfileRepresentation & {
   global: boolean;

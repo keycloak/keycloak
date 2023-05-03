@@ -25,9 +25,9 @@ import type { AttributeForm } from "../../components/key-value-form/AttributeFor
 import { KeycloakSpinner } from "../../components/keycloak-spinner/KeycloakSpinner";
 import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 import { ViewHeader } from "../../components/view-header/ViewHeader";
-import { useFetch } from "../../context/auth/AdminClient";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { convertFormValuesToObject, convertToFormValues } from "../../util";
+import { useFetch } from "../../utils/useFetch";
 import useLocaleSort, { mapByKey } from "../../utils/useLocaleSort";
 import { useParams } from "../../utils/useParams";
 import {

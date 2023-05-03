@@ -6,9 +6,9 @@ import { Link } from "react-router-dom";
 
 import { adminClient } from "../admin-client";
 import { useAccess } from "../context/access/Access";
-import { useFetch } from "../context/auth/AdminClient";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { toUserFederationLdap } from "../user-federation/routes/UserFederationLdap";
+import { useFetch } from "../utils/useFetch";
 
 type FederatedUserLinkProps = {
   user: UserRepresentation;

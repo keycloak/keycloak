@@ -22,7 +22,7 @@ import { adminClient } from "../../admin-client";
 import { useAlerts } from "../../components/alert/Alerts";
 import { DynamicComponents } from "../../components/dynamic/DynamicComponents";
 import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
-import { useFetch } from "../../context/auth/AdminClient";
+import { useFetch } from "../../utils/useFetch";
 import { convertFormValuesToObject, convertToFormValues } from "../../util";
 import type { ExpandableExecution } from "../execution-model";
 

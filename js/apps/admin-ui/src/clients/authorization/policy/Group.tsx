@@ -17,7 +17,7 @@ import { HelpItem } from "ui-shared";
 import { adminClient } from "../../../admin-client";
 import { GroupPickerDialog } from "../../../components/group/GroupPickerDialog";
 import { KeycloakTextInput } from "../../../components/keycloak-text-input/KeycloakTextInput";
-import { useFetch } from "../../../context/auth/AdminClient";
+import { useFetch } from "../../../utils/useFetch";
 
 type GroupForm = {
   groups?: GroupValue[];

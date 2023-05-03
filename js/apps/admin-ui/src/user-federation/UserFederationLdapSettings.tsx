@@ -17,8 +17,8 @@ import {
   RoutableTabs,
   useRoutableTab,
 } from "../components/routable-tabs/RoutableTabs";
-import { useFetch } from "../context/auth/AdminClient";
 import { useRealm } from "../context/realm-context/RealmContext";
+import { useFetch } from "../utils/useFetch";
 import {
   LdapComponentRepresentation,
   UserFederationLdapForm,

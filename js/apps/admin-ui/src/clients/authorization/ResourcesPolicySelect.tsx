@@ -10,7 +10,7 @@ import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
 import { adminClient } from "../../admin-client";
-import { useFetch } from "../../context/auth/AdminClient";
+import { useFetch } from "../../utils/useFetch";
 
 type Type = "resources" | "policies";
 

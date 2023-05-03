@@ -2,8 +2,8 @@ import UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRep
 import { useState } from "react";
 
 import { adminClient } from "../admin-client";
-import { useFetch } from "../context/auth/AdminClient";
 import { useWhoAmI } from "../context/whoami/WhoAmI";
+import { useFetch } from "./useFetch";
 
 export function useCurrentUser() {
   const { whoAmI } = useWhoAmI();

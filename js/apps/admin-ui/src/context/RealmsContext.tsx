@@ -6,7 +6,7 @@ import { createNamedContext, useRequiredContext } from "ui-shared";
 
 import { adminClient } from "../admin-client";
 import { keycloak } from "../keycloak";
-import { useFetch } from "./auth/AdminClient";
+import { useFetch } from "../utils/useFetch";
 
 type RealmsContextProps = {
   /** A list of all the realms. */

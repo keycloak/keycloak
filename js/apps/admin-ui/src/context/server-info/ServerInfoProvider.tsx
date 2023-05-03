@@ -4,7 +4,7 @@ import { createNamedContext, useRequiredContext } from "ui-shared";
 
 import { adminClient } from "../../admin-client";
 import { sortProviders } from "../../util";
-import { useFetch } from "../auth/AdminClient";
+import { useFetch } from "../../utils/useFetch";
 
 export const ServerInfoContext = createNamedContext<
   ServerInfoRepresentation | undefined

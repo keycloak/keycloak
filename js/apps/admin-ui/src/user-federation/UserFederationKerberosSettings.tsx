@@ -12,8 +12,8 @@ import { useNavigate } from "react-router-dom";
 
 import { adminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
-import { useFetch } from "../context/auth/AdminClient";
 import { useRealm } from "../context/realm-context/RealmContext";
+import { useFetch } from "../utils/useFetch";
 import { useParams } from "../utils/useParams";
 import { KerberosSettingsRequired } from "./kerberos/KerberosSettingsRequired";
 import { toUserFederation } from "./routes/UserFederation";

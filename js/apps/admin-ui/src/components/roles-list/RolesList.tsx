@@ -7,10 +7,10 @@ import { Link, To, useNavigate } from "react-router-dom";
 import { HelpItem } from "ui-shared";
 
 import { adminClient } from "../../admin-client";
-import { useFetch } from "../../context/auth/AdminClient";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { toRealmSettings } from "../../realm-settings/routes/RealmSettings";
 import { emptyFormatter, upperCaseFormatter } from "../../util";
+import { useFetch } from "../../utils/useFetch";
 import { useAlerts } from "../alert/Alerts";
 import { useConfirmDialog } from "../confirm-dialog/ConfirmDialog";
 import { KeycloakSpinner } from "../keycloak-spinner/KeycloakSpinner";

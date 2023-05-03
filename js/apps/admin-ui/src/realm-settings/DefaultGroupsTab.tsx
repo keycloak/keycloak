@@ -27,9 +27,9 @@ import {
   Action,
   KeycloakDataTable,
 } from "../components/table-toolbar/KeycloakDataTable";
-import { useFetch } from "../context/auth/AdminClient";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { toUserFederation } from "../user-federation/routes/UserFederation";
+import { useFetch } from "../utils/useFetch";
 import useToggle from "../utils/useToggle";
 
 export const DefaultsGroupsTab = () => {
