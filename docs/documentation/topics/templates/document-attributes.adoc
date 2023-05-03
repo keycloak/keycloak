@@ -11,15 +11,8 @@
 :api-management!:
 :on-prem:
 
-ifeval::["{project_buildType}" == "latest"]
-:project_versionLinks: latest
-endif::[]
-ifeval::["{project_buildType}" == "archive"]
-:project_versionLinks: {project_version}
-endif::[]
-
 :project_images: keycloak-images
-:project_doc_base_url: https://www.keycloak.org/docs/{project_versionLinks}
+:project_doc_base_url: https://www.keycloak.org/docs/{project_version}
 :project_doc_base_url_latest: https://www.keycloak.org/docs/latest
 :project_dirref: KEYCLOAK_HOME
 :project_openshift_product_name: Keycloak for OpenShift
