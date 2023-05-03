@@ -1,6 +1,5 @@
-import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { useTranslation } from "react-i18next";
+import type PolicyRepresentation from "@keycloak/keycloak-admin-client/lib/defs/policyRepresentation";
+import type ScopeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/scopeRepresentation";
 import {
   Button,
   DescriptionList,
@@ -16,23 +15,24 @@ import {
   Thead,
   Tr,
 } from "@patternfly/react-table";
+import { useState } from "react";
+import { useTranslation } from "react-i18next";
+import { Link, useNavigate } from "react-router-dom";
 
-import type ScopeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/scopeRepresentation";
-import type PolicyRepresentation from "@keycloak/keycloak-admin-client/lib/defs/policyRepresentation";
-
+import { adminClient } from "../../admin-client";
 import { KeycloakSpinner } from "../../components/keycloak-spinner/KeycloakSpinner";
-import { PaginatingTableToolbar } from "../../components/table-toolbar/PaginatingTableToolbar";
-import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
-import { useRealm } from "../../context/realm-context/RealmContext";
-import { toScopeDetails } from "../routes/Scope";
-import { toNewScope } from "../routes/NewScope";
 import { ListEmptyState } from "../../components/list-empty-state/ListEmptyState";
+import { PaginatingTableToolbar } from "../../components/table-toolbar/PaginatingTableToolbar";
+import { useFetch } from "../../context/auth/AdminClient";
+import { useRealm } from "../../context/realm-context/RealmContext";
 import useToggle from "../../utils/useToggle";
+import { toNewPermission } from "../routes/NewPermission";
+import { toNewScope } from "../routes/NewScope";
+import { toPermissionDetails } from "../routes/PermissionDetails";
+import { toResourceDetails } from "../routes/Resource";
+import { toScopeDetails } from "../routes/Scope";
 import { DeleteScopeDialog } from "./DeleteScopeDialog";
 import { DetailDescriptionLink } from "./DetailDescription";
-import { toNewPermission } from "../routes/NewPermission";
-import { toResourceDetails } from "../routes/Resource";
-import { toPermissionDetails } from "../routes/PermissionDetails";
 
 type ScopesProps = {
   clientId: string;
@@ -51,7 +51,6 @@ type ExpandableRow = {
 export const AuthorizationScopes = ({ clientId }: ScopesProps) => {
   const { t } = useTranslation("clients");
   const navigate = useNavigate();
-  const { adminClient } = useAdminClient();
   const { realm } = useRealm();
 
   const [deleteDialog, toggleDeleteDialog] = useToggle();

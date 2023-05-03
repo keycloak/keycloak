@@ -1,6 +1,5 @@
-import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { useTranslation } from "react-i18next";
+import type PolicyProviderRepresentation from "@keycloak/keycloak-admin-client/lib/defs/policyProviderRepresentation";
+import type PolicyRepresentation from "@keycloak/keycloak-admin-client/lib/defs/policyRepresentation";
 import {
   Alert,
   AlertVariant,
@@ -18,25 +17,27 @@ import {
   Thead,
   Tr,
 } from "@patternfly/react-table";
+import { useState } from "react";
+import { useTranslation } from "react-i18next";
+import { Link, useNavigate } from "react-router-dom";
 
-import type PolicyRepresentation from "@keycloak/keycloak-admin-client/lib/defs/policyRepresentation";
-import type PolicyProviderRepresentation from "@keycloak/keycloak-admin-client/lib/defs/policyProviderRepresentation";
-import { KeycloakSpinner } from "../../components/keycloak-spinner/KeycloakSpinner";
-import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
-import { PaginatingTableToolbar } from "../../components/table-toolbar/PaginatingTableToolbar";
-import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
+import { adminClient } from "../../admin-client";
 import { useAlerts } from "../../components/alert/Alerts";
-import { useRealm } from "../../context/realm-context/RealmContext";
-import { toPolicyDetails } from "../routes/PolicyDetails";
-import { MoreLabel } from "./MoreLabel";
-import { toUpperCase } from "../../util";
+import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
+import { KeycloakSpinner } from "../../components/keycloak-spinner/KeycloakSpinner";
 import { ListEmptyState } from "../../components/list-empty-state/ListEmptyState";
+import { PaginatingTableToolbar } from "../../components/table-toolbar/PaginatingTableToolbar";
+import { useFetch } from "../../context/auth/AdminClient";
+import { useRealm } from "../../context/realm-context/RealmContext";
+import { toUpperCase } from "../../util";
 import useToggle from "../../utils/useToggle";
-import { NewPolicyDialog } from "./NewPolicyDialog";
 import { toCreatePolicy } from "../routes/NewPolicy";
 import { toPermissionDetails } from "../routes/PermissionDetails";
-import { SearchDropdown, SearchForm } from "./SearchDropdown";
+import { toPolicyDetails } from "../routes/PolicyDetails";
 import { DetailDescriptionLink } from "./DetailDescription";
+import { MoreLabel } from "./MoreLabel";
+import { NewPolicyDialog } from "./NewPolicyDialog";
+import { SearchDropdown, SearchForm } from "./SearchDropdown";
 
 type PoliciesProps = {
   clientId: string;
@@ -62,7 +63,6 @@ const DependentPoliciesRenderer = ({
 
 export const AuthorizationPolicies = ({ clientId }: PoliciesProps) => {
   const { t } = useTranslation("clients");
-  const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
   const { realm } = useRealm();
   const navigate = useNavigate();

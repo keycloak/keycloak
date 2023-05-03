@@ -12,12 +12,13 @@ import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
 
+import { adminClient } from "../../../admin-client";
 import { useAlerts } from "../../../components/alert/Alerts";
 import { useConfirmDialog } from "../../../components/confirm-dialog/ConfirmDialog";
 import { FormAccess } from "../../../components/form-access/FormAccess";
 import { KeycloakSpinner } from "../../../components/keycloak-spinner/KeycloakSpinner";
 import { ViewHeader } from "../../../components/view-header/ViewHeader";
-import { useAdminClient, useFetch } from "../../../context/auth/AdminClient";
+import { useFetch } from "../../../context/auth/AdminClient";
 import { useParams } from "../../../utils/useParams";
 import { toAuthorizationTab } from "../../routes/AuthenticationTab";
 import {
@@ -67,7 +68,6 @@ export default function PolicyDetails() {
   const form = useForm();
   const { reset, handleSubmit } = form;
 
-  const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
 
   const [policy, setPolicy] = useState<PolicyRepresentation>();

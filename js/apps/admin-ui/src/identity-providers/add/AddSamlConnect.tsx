@@ -1,3 +1,4 @@
+import type IdentityProviderRepresentation from "@keycloak/keycloak-admin-client/lib/defs/identityProviderRepresentation";
 import {
   ActionGroup,
   AlertVariant,
@@ -8,11 +9,10 @@ import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
 
-import type IdentityProviderRepresentation from "@keycloak/keycloak-admin-client/lib/defs/identityProviderRepresentation";
+import { adminClient } from "../../admin-client";
 import { useAlerts } from "../../components/alert/Alerts";
 import { FormAccess } from "../../components/form-access/FormAccess";
 import { ViewHeader } from "../../components/view-header/ViewHeader";
-import { useAdminClient } from "../../context/auth/AdminClient";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { toIdentityProvider } from "../routes/IdentityProvider";
 import { toIdentityProviders } from "../routes/IdentityProviders";
@@ -36,7 +36,6 @@ export default function AddSamlConnect() {
     formState: { isDirty },
   } = form;
 
-  const { adminClient } = useAdminClient();
   const { addAlert } = useAlerts();
   const { realm } = useRealm();
 

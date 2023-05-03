@@ -18,6 +18,7 @@ import { Controller, FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
 
+import { adminClient } from "../../admin-client";
 import { useAlerts } from "../../components/alert/Alerts";
 import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
 import { FormAccess } from "../../components/form-access/FormAccess";
@@ -34,7 +35,7 @@ import {
   KeycloakDataTable,
 } from "../../components/table-toolbar/KeycloakDataTable";
 import { ViewHeader } from "../../components/view-header/ViewHeader";
-import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
+import { useFetch } from "../../context/auth/AdminClient";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { toUpperCase } from "../../util";
 import useIsFeatureEnabled, { Feature } from "../../utils/useIsFeatureEnabled";
@@ -76,7 +77,6 @@ type IdPWithMapperAttributes = IdentityProviderMapperRepresentation & {
 const Header = ({ onChange, value, save, toggleDeleteDialog }: HeaderProps) => {
   const { t } = useTranslation("identity-providers");
   const { alias: displayName } = useParams<{ alias: string }>();
-  const { adminClient } = useAdminClient();
   const [provider, setProvider] = useState<IdentityProviderRepresentation>();
 
   useFetch(
@@ -163,7 +163,6 @@ export default function DetailSettings() {
   const [selectedMapper, setSelectedMapper] =
     useState<IdPWithMapperAttributes>();
 
-  const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
   const navigate = useNavigate();
   const { realm } = useRealm();

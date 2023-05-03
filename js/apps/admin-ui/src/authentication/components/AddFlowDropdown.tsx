@@ -1,5 +1,4 @@
-import { useState } from "react";
-import { useTranslation } from "react-i18next";
+import type { AuthenticationProviderRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/authenticatorConfigRepresentation";
 import {
   Dropdown,
   DropdownItem,
@@ -7,11 +6,13 @@ import {
   Tooltip,
 } from "@patternfly/react-core";
 import { PlusIcon } from "@patternfly/react-icons";
+import { useState } from "react";
+import { useTranslation } from "react-i18next";
 
-import type { AuthenticationProviderRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/authenticatorConfigRepresentation";
+import { adminClient } from "../../admin-client";
+import { useFetch } from "../../context/auth/AdminClient";
 import type { ExpandableExecution } from "../execution-model";
 import { AddStepModal, FlowType } from "./modals/AddStepModal";
-import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
 import { AddSubFlowModal, Flow } from "./modals/AddSubFlowModal";
 
 type AddFlowDropdownProps = {
@@ -29,7 +30,6 @@ export const AddFlowDropdown = ({
   onAddFlow,
 }: AddFlowDropdownProps) => {
   const { t } = useTranslation("authentication");
-  const { adminClient } = useAdminClient();
 
   const [open, setOpen] = useState(false);
   const [type, setType] = useState<FlowType>();

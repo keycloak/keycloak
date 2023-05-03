@@ -1,4 +1,3 @@
-// @ts-nocheck
 import {
   FormGroup,
   Select,
@@ -55,10 +54,12 @@ export const LdapSettingsSearching = ({
           fieldId="kc-edit-mode"
           isRequired
           validated={
-            form.formState.errors.config?.editMode?.[0] ? "error" : "default"
+            (form.formState.errors.config as any)?.editMode?.[0]
+              ? "error"
+              : "default"
           }
           helperTextInvalid={
-            form.formState.errors.config?.editMode?.[0].message
+            (form.formState.errors.config as any)?.editMode?.[0].message
           }
         >
           <Controller
@@ -83,7 +84,7 @@ export const LdapSettingsSearching = ({
                 selections={field.value}
                 variant={SelectVariant.single}
                 validated={
-                  form.formState.errors.config?.editMode?.[0]
+                  (form.formState.errors.config as any)?.editMode?.[0]
                     ? "error"
                     : "default"
                 }
@@ -107,9 +108,13 @@ export const LdapSettingsSearching = ({
           fieldId="kc-ui-users-dn"
           isRequired
           validated={
-            form.formState.errors.config?.usersDn?.[0] ? "error" : "default"
+            (form.formState.errors.config as any)?.usersDn?.[0]
+              ? "error"
+              : "default"
           }
-          helperTextInvalid={form.formState.errors.config?.usersDn?.[0].message}
+          helperTextInvalid={
+            (form.formState.errors.config as any)?.usersDn?.[0].message
+          }
         >
           <KeycloakTextInput
             isRequired
@@ -117,7 +122,9 @@ export const LdapSettingsSearching = ({
             id="kc-ui-users-dn"
             data-testid="ldap-users-dn"
             validated={
-              form.formState.errors.config?.usersDn?.[0] ? "error" : "default"
+              (form.formState.errors.config as any)?.usersDn?.[0]
+                ? "error"
+                : "default"
             }
             {...form.register("config.usersDn.0", {
               required: {
@@ -138,12 +145,13 @@ export const LdapSettingsSearching = ({
           fieldId="kc-username-ldap-attribute"
           isRequired
           validated={
-            form.formState.errors.config?.usernameLDAPAttribute?.[0]
+            (form.formState.errors.config as any)?.usernameLDAPAttribute?.[0]
               ? "error"
               : "default"
           }
           helperTextInvalid={
-            form.formState.errors.config?.usernameLDAPAttribute?.[0].message
+            (form.formState.errors.config as any)?.usernameLDAPAttribute?.[0]
+              .message
           }
         >
           <KeycloakTextInput
@@ -152,7 +160,7 @@ export const LdapSettingsSearching = ({
             id="kc-username-ldap-attribute"
             data-testid="ldap-username-attribute"
             validated={
-              form.formState.errors.config?.usernameLDAPAttribute?.[0]
+              (form.formState.errors.config as any)?.usernameLDAPAttribute?.[0]
                 ? "error"
                 : "default"
             }
@@ -175,12 +183,12 @@ export const LdapSettingsSearching = ({
           fieldId="kc-rdn-ldap-attribute"
           isRequired
           validated={
-            form.formState.errors.config?.rdnLDAPAttribute?.[0]
+            (form.formState.errors.config as any)?.rdnLDAPAttribute?.[0]
               ? "error"
               : "default"
           }
           helperTextInvalid={
-            form.formState.errors.config?.rdnLDAPAttribute?.[0].message
+            (form.formState.errors.config as any)?.rdnLDAPAttribute?.[0].message
           }
         >
           <KeycloakTextInput
@@ -189,7 +197,7 @@ export const LdapSettingsSearching = ({
             id="kc-rdn-ldap-attribute"
             data-testid="ldap-rdn-attribute"
             validated={
-              form.formState.errors.config?.rdnLDAPAttribute?.[0]
+              (form.formState.errors.config as any)?.rdnLDAPAttribute?.[0]
                 ? "error"
                 : "default"
             }
@@ -212,12 +220,13 @@ export const LdapSettingsSearching = ({
           fieldId="kc-uuid-ldap-attribute"
           isRequired
           validated={
-            form.formState.errors.config?.uuidLDAPAttribute?.[0]
+            (form.formState.errors.config as any)?.uuidLDAPAttribute?.[0]
               ? "error"
               : "default"
           }
           helperTextInvalid={
-            form.formState.errors.config?.uuidLDAPAttribute?.[0].message
+            (form.formState.errors.config as any)?.uuidLDAPAttribute?.[0]
+              .message
           }
         >
           <KeycloakTextInput
@@ -226,7 +235,7 @@ export const LdapSettingsSearching = ({
             id="kc-uuid-ldap-attribute"
             data-testid="ldap-uuid-attribute"
             validated={
-              form.formState.errors.config?.uuidLDAPAttribute?.[0]
+              (form.formState.errors.config as any)?.uuidLDAPAttribute?.[0]
                 ? "error"
                 : "default"
             }
@@ -249,12 +258,13 @@ export const LdapSettingsSearching = ({
           fieldId="kc-user-object-classes"
           isRequired
           validated={
-            form.formState.errors.config?.userObjectClasses?.[0]
+            (form.formState.errors.config as any)?.userObjectClasses?.[0]
               ? "error"
               : "default"
           }
           helperTextInvalid={
-            form.formState.errors.config?.userObjectClasses?.[0].message
+            (form.formState.errors.config as any)?.userObjectClasses?.[0]
+              .message
           }
         >
           <KeycloakTextInput
@@ -263,7 +273,7 @@ export const LdapSettingsSearching = ({
             id="kc-user-object-classes"
             data-testid="ldap-user-object-classes"
             validated={
-              form.formState.errors.config?.userObjectClasses?.[0]
+              (form.formState.errors.config as any)?.userObjectClasses?.[0]
                 ? "error"
                 : "default"
             }
@@ -285,19 +295,20 @@ export const LdapSettingsSearching = ({
           }
           fieldId="kc-user-ldap-filter"
           validated={
-            form.formState.errors.config?.customUserSearchFilter?.[0]
+            (form.formState.errors.config as any)?.customUserSearchFilter?.[0]
               ? "error"
               : "default"
           }
           helperTextInvalid={
-            form.formState.errors.config?.customUserSearchFilter?.[0].message
+            (form.formState.errors.config as any)?.customUserSearchFilter?.[0]
+              .message
           }
         >
           <KeycloakTextInput
             id="kc-user-ldap-filter"
             data-testid="user-ldap-filter"
             validated={
-              form.formState.errors.config?.customUserSearchFilter?.[0]
+              (form.formState.errors.config as any)?.customUserSearchFilter?.[0]
                 ? "error"
                 : "default"
             }

@@ -4,8 +4,9 @@ import { sortBy } from "lodash-es";
 import { PropsWithChildren, useCallback, useMemo, useState } from "react";
 import { createNamedContext, useRequiredContext } from "ui-shared";
 
+import { adminClient } from "../admin-client";
 import { keycloak } from "../keycloak";
-import { useAdminClient, useFetch } from "./auth/AdminClient";
+import { useFetch } from "./auth/AdminClient";
 
 type RealmsContextProps = {
   /** A list of all the realms. */
@@ -20,7 +21,6 @@ export const RealmsContext = createNamedContext<RealmsContextProps | undefined>(
 );
 
 export const RealmsProvider = ({ children }: PropsWithChildren) => {
-  const { adminClient } = useAdminClient();
   const [realms, setRealms] = useState<RealmRepresentation[]>([]);
   const [refreshCount, setRefreshCount] = useState(0);
 

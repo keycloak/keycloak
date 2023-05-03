@@ -14,6 +14,7 @@ import { Controller, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 
+import { adminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import type { KeyValueType } from "../components/key-value-form/key-value-convert";
@@ -23,7 +24,6 @@ import {
 } from "../components/routable-tabs/RoutableTabs";
 import { ViewHeader } from "../components/view-header/ViewHeader";
 import { useRealms } from "../context/RealmsContext";
-import { useAdminClient } from "../context/auth/AdminClient";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { toDashboard } from "../dashboard/routes/Dashboard";
 import environment from "../environment";
@@ -65,7 +65,6 @@ const RealmSettingsHeader = ({
   refresh,
 }: RealmSettingsHeaderProps) => {
   const { t } = useTranslation("realm-settings");
-  const { adminClient } = useAdminClient();
   const { refresh: refreshRealms } = useRealms();
   const { addAlert, addError } = useAlerts();
   const navigate = useNavigate();
@@ -163,7 +162,6 @@ export const RealmSettingsTabs = ({
   refresh,
 }: RealmSettingsTabsProps) => {
   const { t } = useTranslation("realm-settings");
-  const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
   const { realm: realmName } = useRealm();
   const { refresh: refreshRealms } = useRealms();

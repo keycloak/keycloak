@@ -13,9 +13,9 @@ import { capitalize } from "lodash-es";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
+import { adminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
 import { KeycloakTextInput } from "../components/keycloak-text-input/KeycloakTextInput";
-import { useAdminClient } from "../context/auth/AdminClient";
 
 type UserIdpModalProps = {
   userId: string;
@@ -31,7 +31,6 @@ export const UserIdpModal = ({
   onRefresh,
 }: UserIdpModalProps) => {
   const { t } = useTranslation("users");
-  const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
   const {
     register,

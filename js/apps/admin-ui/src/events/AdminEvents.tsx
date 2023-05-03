@@ -19,24 +19,24 @@ import {
   SelectVariant,
 } from "@patternfly/react-core";
 import {
-  cellWidth,
   Table,
   TableBody,
   TableHeader,
   TableVariant,
+  cellWidth,
 } from "@patternfly/react-table";
 import { pickBy } from "lodash-es";
 import { PropsWithChildren, useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
+import { adminClient } from "../admin-client";
 import { KeycloakTextInput } from "../components/keycloak-text-input/KeycloakTextInput";
 import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
 import {
   Action,
   KeycloakDataTable,
 } from "../components/table-toolbar/KeycloakDataTable";
-import { useAdminClient } from "../context/auth/AdminClient";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { useServerInfo } from "../context/server-info/ServerInfoProvider";
 import { prettyPrintJSON } from "../util";
@@ -94,7 +94,6 @@ const DisplayDialog = ({
 
 export const AdminEvents = () => {
   const { t } = useTranslation("events");
-  const { adminClient } = useAdminClient();
   const { realm } = useRealm();
   const serverInfo = useServerInfo();
   const formatDate = useFormatDate();

@@ -11,7 +11,7 @@ import { useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
-
+import { adminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import { KeycloakSpinner } from "../components/keycloak-spinner/KeycloakSpinner";
@@ -21,7 +21,7 @@ import {
 } from "../components/routable-tabs/RoutableTabs";
 import { ViewHeader } from "../components/view-header/ViewHeader";
 import { useAccess } from "../context/access/Access";
-import { useAdminClient, useFetch } from "../context/auth/AdminClient";
+import { useFetch } from "../context/auth/AdminClient";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { UserProfileProvider } from "../realm-settings/user-profile/UserProfileContext";
 import { useParams } from "../utils/useParams";
@@ -44,7 +44,6 @@ import { toUsers } from "./routes/Users";
 import "./user-section.css";
 
 export default function EditUser() {
-  const { adminClient } = useAdminClient();
   const { realm } = useRealm();
   const { id } = useParams<UserParams>();
   const { t } = useTranslation("users");
@@ -95,7 +94,6 @@ type EditUserFormProps = {
 const EditUserForm = ({ user, bruteForced, refresh }: EditUserFormProps) => {
   const { t } = useTranslation("users");
   const { realm } = useRealm();
-  const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
   const navigate = useNavigate();
   const { hasAccess } = useAccess();

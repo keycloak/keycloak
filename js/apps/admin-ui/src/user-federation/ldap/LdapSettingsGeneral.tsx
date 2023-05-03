@@ -8,12 +8,13 @@ import {
 import { useState } from "react";
 import { Controller, UseFormReturn } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-
-import { FormAccess } from "../../components/form-access/FormAccess";
 import { HelpItem } from "ui-shared";
+
+import { adminClient } from "../../admin-client";
+import { FormAccess } from "../../components/form-access/FormAccess";
 import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 import { WizardSectionHeader } from "../../components/wizard-section-header/WizardSectionHeader";
-import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
+import { useFetch } from "../../context/auth/AdminClient";
 import { useRealm } from "../../context/realm-context/RealmContext";
 
 export type LdapSettingsGeneralProps = {
@@ -31,8 +32,6 @@ export const LdapSettingsGeneral = ({
 }: LdapSettingsGeneralProps) => {
   const { t } = useTranslation("user-federation");
   const { t: helpText } = useTranslation("user-federation-help");
-
-  const { adminClient } = useAdminClient();
   const { realm } = useRealm();
 
   useFetch(

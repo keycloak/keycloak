@@ -17,10 +17,10 @@ import { KeyboardEvent, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 
+import { adminClient } from "../../admin-client";
 import { DraggableTable } from "../../authentication/components/DraggableTable";
 import { useAlerts } from "../../components/alert/Alerts";
 import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
-import { useAdminClient } from "../../context/auth/AdminClient";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
 import { KEY_PROVIDER_TYPE } from "../../util";
@@ -51,7 +51,6 @@ export const KeysProvidersTab = ({
 }: KeysProvidersTabProps) => {
   const { t } = useTranslation("realm-settings");
   const { addAlert, addError } = useAlerts();
-  const { adminClient } = useAdminClient();
   const { realm } = useRealm();
 
   const [searchVal, setSearchVal] = useState("");

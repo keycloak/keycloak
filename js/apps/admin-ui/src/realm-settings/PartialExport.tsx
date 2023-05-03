@@ -14,8 +14,9 @@ import {
 import { saveAs } from "file-saver";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+
+import { adminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
-import { useAdminClient } from "../context/auth/AdminClient";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { prettyPrintJSON } from "../util";
 
@@ -32,7 +33,6 @@ export const PartialExportDialog = ({
 }: PartialExportDialogProps) => {
   const { t } = useTranslation("realm-settings");
   const { realm } = useRealm();
-  const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
 
   const [exportGroupsAndRoles, setExportGroupsAndRoles] = useState(false);

@@ -11,10 +11,10 @@ import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 
+import { adminClient } from "../../admin-client";
 import { useAlerts } from "../../components/alert/Alerts";
 import { FormAccess } from "../../components/form-access/FormAccess";
 import { ViewHeader } from "../../components/view-header/ViewHeader";
-import { useAdminClient } from "../../context/auth/AdminClient";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { convertFormValuesToObject } from "../../util";
 import { FormFields } from "../ClientDetails";
@@ -27,7 +27,6 @@ import { LoginSettings } from "./LoginSettings";
 export default function NewClientForm() {
   const { t } = useTranslation("clients");
   const { realm } = useRealm();
-  const { adminClient } = useAdminClient();
   const navigate = useNavigate();
 
   const [step, setStep] = useState(0);

@@ -15,14 +15,15 @@ import { useState } from "react";
 import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
+import { HelpItem } from "ui-shared";
 
+import { adminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
 import { FormAccess } from "../components/form-access/FormAccess";
 import { GroupPickerDialog } from "../components/group/GroupPickerDialog";
-import { HelpItem } from "ui-shared";
 import { KeycloakTextInput } from "../components/keycloak-text-input/KeycloakTextInput";
 import { useAccess } from "../context/access/Access";
-import { useAdminClient, useFetch } from "../context/auth/AdminClient";
+import { useFetch } from "../context/auth/AdminClient";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { emailRegexPattern } from "../util";
 import useFormatDate from "../utils/useFormatDate";
@@ -92,7 +93,6 @@ export const UserForm = ({
   const isFeatureEnabled = useIsFeatureEnabled();
 
   const navigate = useNavigate();
-  const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
   const { hasAccess } = useAccess();
   const isManager = hasAccess("manage-users");

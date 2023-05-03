@@ -1,6 +1,4 @@
-import { useState } from "react";
-import { useTranslation } from "react-i18next";
-import { Controller, FormProvider, useForm } from "react-hook-form";
+import type ResourceServerRepresentation from "@keycloak/keycloak-admin-client/lib/defs/resourceServerRepresentation";
 import {
   AlertVariant,
   Button,
@@ -10,17 +8,20 @@ import {
   Radio,
   Switch,
 } from "@patternfly/react-core";
-
-import type ResourceServerRepresentation from "@keycloak/keycloak-admin-client/lib/defs/resourceServerRepresentation";
-import { KeycloakSpinner } from "../../components/keycloak-spinner/KeycloakSpinner";
-import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
-import { FormAccess } from "../../components/form-access/FormAccess";
+import { useState } from "react";
+import { Controller, FormProvider, useForm } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 import { HelpItem } from "ui-shared";
-import { SaveReset } from "../advanced/SaveReset";
-import { ImportDialog } from "./ImportDialog";
-import useToggle from "../../utils/useToggle";
+
+import { adminClient } from "../../admin-client";
 import { useAlerts } from "../../components/alert/Alerts";
+import { FormAccess } from "../../components/form-access/FormAccess";
+import { KeycloakSpinner } from "../../components/keycloak-spinner/KeycloakSpinner";
+import { useFetch } from "../../context/auth/AdminClient";
+import useToggle from "../../utils/useToggle";
+import { SaveReset } from "../advanced/SaveReset";
 import { DecisionStrategySelect } from "./DecisionStrategySelect";
+import { ImportDialog } from "./ImportDialog";
 
 const POLICY_ENFORCEMENT_MODES = [
   "ENFORCING",
@@ -41,7 +42,6 @@ export const AuthorizationSettings = ({ clientId }: { clientId: string }) => {
   const form = useForm<FormFields>({});
   const { control, reset, handleSubmit } = form;
 
-  const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
 
   useFetch(

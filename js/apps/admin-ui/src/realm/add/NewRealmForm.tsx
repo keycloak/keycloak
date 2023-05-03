@@ -11,12 +11,12 @@ import { Controller, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 
+import { adminClient } from "../../admin-client";
 import { useAlerts } from "../../components/alert/Alerts";
 import { FormAccess } from "../../components/form-access/FormAccess";
 import { JsonFileUpload } from "../../components/json-file-upload/JsonFileUpload";
 import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 import { ViewHeader } from "../../components/view-header/ViewHeader";
-import { useAdminClient } from "../../context/auth/AdminClient";
 import { useRealms } from "../../context/RealmsContext";
 import { useWhoAmI } from "../../context/whoami/WhoAmI";
 import { toDashboard } from "../../dashboard/routes/Dashboard";
@@ -27,7 +27,6 @@ export default function NewRealmForm() {
   const navigate = useNavigate();
   const { refresh, whoAmI } = useWhoAmI();
   const { refresh: refreshRealms } = useRealms();
-  const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
   const [realm, setRealm] = useState<RealmRepresentation>();
 

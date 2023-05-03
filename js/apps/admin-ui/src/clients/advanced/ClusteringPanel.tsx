@@ -11,18 +11,18 @@ import {
 import { useState } from "react";
 import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
+import { HelpItem } from "ui-shared";
 
+import { adminClient } from "../../admin-client";
 import { useAlerts } from "../../components/alert/Alerts";
 import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
 import { FormAccess } from "../../components/form-access/FormAccess";
-import { HelpItem } from "ui-shared";
 import { ListEmptyState } from "../../components/list-empty-state/ListEmptyState";
 import {
   Action,
   KeycloakDataTable,
 } from "../../components/table-toolbar/KeycloakDataTable";
 import { TimeSelector } from "../../components/time-selector/TimeSelector";
-import { useAdminClient } from "../../context/auth/AdminClient";
 import useFormatDate, { FORMAT_DATE_AND_TIME } from "../../utils/useFormatDate";
 import { AddHostDialog } from ".././advanced/AddHostDialog";
 import { AdvancedProps, parseResult } from "../AdvancedTab";
@@ -38,7 +38,6 @@ export const ClusteringPanel = ({
 }: AdvancedProps) => {
   const { t } = useTranslation("clients");
   const { control } = useFormContext();
-  const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
   const formatDate = useFormatDate();
 

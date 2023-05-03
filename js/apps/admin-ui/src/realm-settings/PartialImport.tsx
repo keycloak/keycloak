@@ -1,11 +1,10 @@
-import {
-  useState,
-  useEffect,
-  FormEvent,
-  ChangeEvent,
-  MouseEvent as ReactMouseEvent,
-} from "react";
-import { useTranslation } from "react-i18next";
+import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
+import type {
+  PartialImportRealmRepresentation,
+  PartialImportResponse,
+  PartialImportResult,
+} from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
+import type RoleRepresentation from "@keycloak/keycloak-admin-client/lib/defs/roleRepresentation";
 import {
   Alert,
   Button,
@@ -28,21 +27,20 @@ import {
   Text,
   TextContent,
 } from "@patternfly/react-core";
+import {
+  ChangeEvent,
+  FormEvent,
+  MouseEvent as ReactMouseEvent,
+  useEffect,
+  useState,
+} from "react";
+import { useTranslation } from "react-i18next";
 
+import { adminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
 import { JsonFileUpload } from "../components/json-file-upload/JsonFileUpload";
 import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
-
-import { useAdminClient } from "../context/auth/AdminClient";
 import { useRealm } from "../context/realm-context/RealmContext";
-
-import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
-import type {
-  PartialImportRealmRepresentation,
-  PartialImportResponse,
-  PartialImportResult,
-} from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
-import type RoleRepresentation from "@keycloak/keycloak-admin-client/lib/defs/roleRepresentation";
 
 export type PartialImportProps = {
   open: boolean;
@@ -72,7 +70,6 @@ const INITIAL_RESOURCES: Readonly<ResourceChecked> = {
 
 export const PartialImportDialog = (props: PartialImportProps) => {
   const { t } = useTranslation("realm-settings");
-  const { adminClient } = useAdminClient();
   const { realm } = useRealm();
 
   const [importedFile, setImportedFile] = useState<ImportedMultiRealm>();

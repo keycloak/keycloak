@@ -1,15 +1,16 @@
-import { useState } from "react";
-import { useTranslation } from "react-i18next";
-import { Controller, useFormContext } from "react-hook-form";
-import { Select, SelectOption, SelectVariant } from "@patternfly/react-core";
-
-import type ResourceRepresentation from "@keycloak/keycloak-admin-client/lib/defs/resourceRepresentation";
 import type PolicyRepresentation from "@keycloak/keycloak-admin-client/lib/defs/policyRepresentation";
+import type ResourceRepresentation from "@keycloak/keycloak-admin-client/lib/defs/resourceRepresentation";
 import type {
   Clients,
   PolicyQuery,
 } from "@keycloak/keycloak-admin-client/lib/resources/clients";
-import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
+import { Select, SelectOption, SelectVariant } from "@patternfly/react-core";
+import { useState } from "react";
+import { Controller, useFormContext } from "react-hook-form";
+import { useTranslation } from "react-i18next";
+
+import { adminClient } from "../../admin-client";
+import { useFetch } from "../../context/auth/AdminClient";
 
 type Type = "resources" | "policies";
 
@@ -57,7 +58,6 @@ export const ResourcesPolicySelect = ({
   isRequired = false,
 }: ResourcesPolicySelectProps) => {
   const { t } = useTranslation("clients");
-  const { adminClient } = useAdminClient();
 
   const {
     control,

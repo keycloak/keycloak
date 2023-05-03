@@ -1,10 +1,8 @@
-import KeycloakAdminClient from "@keycloak/keycloak-admin-client";
-
+import { adminClient } from "../../admin-client";
 import { getAuthorizationHeaders } from "../../utils/getAuthorizationHeaders";
 import { joinPath } from "../../utils/joinPath";
 
 export async function fetchAdminUI<T>(
-  adminClient: KeycloakAdminClient,
   endpoint: string,
   query?: Record<string, string>
 ): Promise<T> {

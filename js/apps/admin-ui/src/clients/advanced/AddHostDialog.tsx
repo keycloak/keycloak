@@ -9,9 +9,9 @@ import {
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
+import { adminClient } from "../../admin-client";
 import { useAlerts } from "../../components/alert/Alerts";
 import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
-import { useAdminClient } from "../../context/auth/AdminClient";
 
 type FormFields = {
   node: string;
@@ -36,7 +36,6 @@ export const AddHostDialog = ({
     handleSubmit,
     formState: { isDirty, isValid },
   } = useForm<FormFields>();
-  const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
 
   async function onSubmit({ node }: FormFields) {

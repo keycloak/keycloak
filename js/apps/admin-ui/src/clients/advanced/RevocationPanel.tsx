@@ -10,12 +10,12 @@ import { useEffect, useRef } from "react";
 import { useFormContext } from "react-hook-form";
 import { Trans, useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
+import { HelpItem } from "ui-shared";
 
+import { adminClient } from "../../admin-client";
 import { useAlerts } from "../../components/alert/Alerts";
 import { FormAccess } from "../../components/form-access/FormAccess";
-import { HelpItem } from "ui-shared";
 import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
-import { useAdminClient } from "../../context/auth/AdminClient";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import useFormatDate, { FORMAT_DATE_AND_TIME } from "../../utils/useFormatDate";
 import { AdvancedProps, parseResult } from "../AdvancedTab";
@@ -29,7 +29,6 @@ export const RevocationPanel = ({
   const pushRevocationButtonRef = useRef<HTMLElement>();
 
   const { t } = useTranslation("clients");
-  const { adminClient } = useAdminClient();
   const { realm } = useRealm();
   const { addAlert } = useAlerts();
   const formatDate = useFormatDate();

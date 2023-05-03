@@ -13,7 +13,6 @@ import { KeycloakSpinner } from "./components/keycloak-spinner/KeycloakSpinner";
 import { RealmsProvider } from "./context/RealmsContext";
 import { RecentRealmsProvider } from "./context/RecentRealms";
 import { AccessContextProvider } from "./context/access/Access";
-import { AdminClientProvider } from "./context/auth/AdminClient";
 import { RealmContextProvider } from "./context/realm-context/RealmContext";
 import { ServerInfoProvider } from "./context/server-info/ServerInfoProvider";
 import { WhoAmIContextProvider } from "./context/whoami/WhoAmI";
@@ -23,23 +22,21 @@ import { AuthWall } from "./root/AuthWall";
 export const mainPageContentId = "kc-main-content-page-container";
 
 const AppContexts = ({ children }: PropsWithChildren) => (
-  <AdminClientProvider>
-    <WhoAmIContextProvider>
-      <RealmsProvider>
-        <RealmContextProvider>
-          <RecentRealmsProvider>
-            <AccessContextProvider>
-              <Help>
-                <AlertProvider>
-                  <SubGroups>{children}</SubGroups>
-                </AlertProvider>
-              </Help>
-            </AccessContextProvider>
-          </RecentRealmsProvider>
-        </RealmContextProvider>
-      </RealmsProvider>
-    </WhoAmIContextProvider>
-  </AdminClientProvider>
+  <WhoAmIContextProvider>
+    <RealmsProvider>
+      <RealmContextProvider>
+        <RecentRealmsProvider>
+          <AccessContextProvider>
+            <Help>
+              <AlertProvider>
+                <SubGroups>{children}</SubGroups>
+              </AlertProvider>
+            </Help>
+          </AccessContextProvider>
+        </RecentRealmsProvider>
+      </RealmContextProvider>
+    </RealmsProvider>
+  </WhoAmIContextProvider>
 );
 
 export const App = () => {

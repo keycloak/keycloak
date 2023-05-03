@@ -18,12 +18,13 @@ import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 
+import { adminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import { ClickableCard } from "../components/keycloak-card/ClickableCard";
 import { KeycloakCard } from "../components/keycloak-card/KeycloakCard";
 import { ViewHeader } from "../components/view-header/ViewHeader";
-import { useAdminClient, useFetch } from "../context/auth/AdminClient";
+import { useFetch } from "../context/auth/AdminClient";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { useServerInfo } from "../context/server-info/ServerInfoProvider";
 import helpUrls from "../help-urls";
@@ -42,7 +43,6 @@ export default function UserFederationSection() {
   const { addAlert, addError } = useAlerts();
   const { t } = useTranslation("user-federation");
   const { realm } = useRealm();
-  const { adminClient } = useAdminClient();
   const [key, setKey] = useState(0);
   const refresh = () => setKey(new Date().getTime());
 

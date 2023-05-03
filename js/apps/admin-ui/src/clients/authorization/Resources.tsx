@@ -1,6 +1,5 @@
-import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { useTranslation } from "react-i18next";
+import type ResourceRepresentation from "@keycloak/keycloak-admin-client/lib/defs/resourceRepresentation";
+import type ResourceServerRepresentation from "@keycloak/keycloak-admin-client/lib/defs/resourceServerRepresentation";
 import {
   Alert,
   AlertVariant,
@@ -17,21 +16,23 @@ import {
   Thead,
   Tr,
 } from "@patternfly/react-table";
+import { useState } from "react";
+import { useTranslation } from "react-i18next";
+import { Link, useNavigate } from "react-router-dom";
 
-import type ResourceServerRepresentation from "@keycloak/keycloak-admin-client/lib/defs/resourceServerRepresentation";
-import type ResourceRepresentation from "@keycloak/keycloak-admin-client/lib/defs/resourceRepresentation";
-import { KeycloakSpinner } from "../../components/keycloak-spinner/KeycloakSpinner";
-import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
-import { PaginatingTableToolbar } from "../../components/table-toolbar/PaginatingTableToolbar";
-import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
+import { adminClient } from "../../admin-client";
 import { useAlerts } from "../../components/alert/Alerts";
-import { DetailCell } from "./DetailCell";
-import { toCreateResource } from "../routes/NewResource";
-import { useRealm } from "../../context/realm-context/RealmContext";
-import { toResourceDetails } from "../routes/Resource";
-import { MoreLabel } from "./MoreLabel";
-import { toNewPermission } from "../routes/NewPermission";
+import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
+import { KeycloakSpinner } from "../../components/keycloak-spinner/KeycloakSpinner";
 import { ListEmptyState } from "../../components/list-empty-state/ListEmptyState";
+import { PaginatingTableToolbar } from "../../components/table-toolbar/PaginatingTableToolbar";
+import { useFetch } from "../../context/auth/AdminClient";
+import { useRealm } from "../../context/realm-context/RealmContext";
+import { toNewPermission } from "../routes/NewPermission";
+import { toCreateResource } from "../routes/NewResource";
+import { toResourceDetails } from "../routes/Resource";
+import { DetailCell } from "./DetailCell";
+import { MoreLabel } from "./MoreLabel";
 import { SearchDropdown, SearchForm } from "./SearchDropdown";
 
 type ResourcesProps = {
@@ -51,7 +52,6 @@ const UriRenderer = ({ row }: { row: ResourceRepresentation }) => (
 export const AuthorizationResources = ({ clientId }: ResourcesProps) => {
   const { t } = useTranslation("clients");
   const navigate = useNavigate();
-  const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
   const { realm } = useRealm();
 
