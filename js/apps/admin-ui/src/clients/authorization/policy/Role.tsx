@@ -16,7 +16,7 @@ import { HelpItem } from "ui-shared";
 import { adminClient } from "../../../admin-client";
 import { AddRoleMappingModal } from "../../../components/role-mapping/AddRoleMappingModal";
 import { Row, ServiceRole } from "../../../components/role-mapping/RoleMapping";
-import { useFetch } from "../../../context/auth/AdminClient";
+import { useFetch } from "../../../utils/useFetch";
 import type { RequiredIdValue } from "./ClientScope";
 
 export const Role = () => {

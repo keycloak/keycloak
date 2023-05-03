@@ -19,9 +19,9 @@ import { DynamicComponents } from "../../../components/dynamic/DynamicComponents
 import { FormAccess } from "../../../components/form-access/FormAccess";
 import { KeycloakTextInput } from "../../../components/keycloak-text-input/KeycloakTextInput";
 import { ViewHeader } from "../../../components/view-header/ViewHeader";
-import { useFetch } from "../../../context/auth/AdminClient";
 import { useServerInfo } from "../../../context/server-info/ServerInfoProvider";
 import { KEY_PROVIDER_TYPE } from "../../../util";
+import { useFetch } from "../../../utils/useFetch";
 import { useParams } from "../../../utils/useParams";
 import { KeyProviderParams, ProviderType } from "../../routes/KeyProvider";
 import { toKeysTab } from "../../routes/KeysTab";

@@ -27,9 +27,9 @@ import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog"
 import { KeycloakSpinner } from "../../components/keycloak-spinner/KeycloakSpinner";
 import { ListEmptyState } from "../../components/list-empty-state/ListEmptyState";
 import { PaginatingTableToolbar } from "../../components/table-toolbar/PaginatingTableToolbar";
-import { useFetch } from "../../context/auth/AdminClient";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { toUpperCase } from "../../util";
+import { useFetch } from "../../utils/useFetch";
 import useToggle from "../../utils/useToggle";
 import { toCreatePolicy } from "../routes/NewPolicy";
 import { toPermissionDetails } from "../routes/PermissionDetails";

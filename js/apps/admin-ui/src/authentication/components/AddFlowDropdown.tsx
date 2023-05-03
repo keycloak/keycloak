@@ -10,7 +10,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { adminClient } from "../../admin-client";
-import { useFetch } from "../../context/auth/AdminClient";
+import { useFetch } from "../../utils/useFetch";
 import type { ExpandableExecution } from "../execution-model";
 import { AddStepModal, FlowType } from "./modals/AddStepModal";
 import { AddSubFlowModal, Flow } from "./modals/AddSubFlowModal";

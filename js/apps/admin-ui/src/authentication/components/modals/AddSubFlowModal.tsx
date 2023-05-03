@@ -18,7 +18,7 @@ import { HelpItem } from "ui-shared";
 
 import { adminClient } from "../../../admin-client";
 import { KeycloakTextInput } from "../../../components/keycloak-text-input/KeycloakTextInput";
-import { useFetch } from "../../../context/auth/AdminClient";
+import { useFetch } from "../../../utils/useFetch";
 
 type AddSubFlowProps = {
   name: string;

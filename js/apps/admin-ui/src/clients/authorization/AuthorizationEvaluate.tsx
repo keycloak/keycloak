@@ -34,8 +34,8 @@ import { KeycloakTextInput } from "../../components/keycloak-text-input/Keycloak
 import { FormPanel } from "../../components/scroll-form/FormPanel";
 import { UserSelect } from "../../components/users/UserSelect";
 import { useAccess } from "../../context/access/Access";
-import { useFetch } from "../../context/auth/AdminClient";
 import { useRealm } from "../../context/realm-context/RealmContext";
+import { useFetch } from "../../utils/useFetch";
 import { FormFields } from "../ClientDetails";
 import { defaultContextAttributes } from "../utils";
 import { KeyBasedAttributeInput } from "./KeyBasedAttributeInput";

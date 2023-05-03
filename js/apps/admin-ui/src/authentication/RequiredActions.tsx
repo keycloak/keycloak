@@ -7,8 +7,8 @@ import { useTranslation } from "react-i18next";
 import { adminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
 import { KeycloakSpinner } from "../components/keycloak-spinner/KeycloakSpinner";
-import { useFetch } from "../context/auth/AdminClient";
 import { toKey } from "../util";
+import { useFetch } from "../utils/useFetch";
 import { DraggableTable } from "./components/DraggableTable";
 
 type DataType = RequiredActionProviderRepresentation &

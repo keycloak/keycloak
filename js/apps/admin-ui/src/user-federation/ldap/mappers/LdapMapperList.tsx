@@ -17,7 +17,7 @@ import {
   Action,
   KeycloakDataTable,
 } from "../../../components/table-toolbar/KeycloakDataTable";
-import { useFetch } from "../../../context/auth/AdminClient";
+import { useFetch } from "../../../utils/useFetch";
 import useLocaleSort, { mapByKey } from "../../../utils/useLocaleSort";
 
 export type LdapMapperListProps = {

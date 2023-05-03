@@ -14,11 +14,11 @@ import { useTranslation } from "react-i18next";
 
 import { HelpItem, useHelp } from "ui-shared";
 import { adminClient } from "../../admin-client";
-import { useFetch } from "../../context/auth/AdminClient";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
 import { addTrailingSlash, prettyPrintJSON } from "../../util";
 import { getAuthorizationHeaders } from "../../utils/getAuthorizationHeaders";
+import { useFetch } from "../../utils/useFetch";
 import { ConfirmDialogModal } from "../confirm-dialog/ConfirmDialog";
 import { KeycloakTextArea } from "../keycloak-text-area/KeycloakTextArea";
 

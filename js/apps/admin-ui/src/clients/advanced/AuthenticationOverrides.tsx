@@ -14,7 +14,7 @@ import { HelpItem } from "ui-shared";
 
 import { adminClient } from "../../admin-client";
 import { FormAccess } from "../../components/form-access/FormAccess";
-import { useFetch } from "../../context/auth/AdminClient";
+import { useFetch } from "../../utils/useFetch";
 
 type AuthenticationOverridesProps = {
   save: () => void;

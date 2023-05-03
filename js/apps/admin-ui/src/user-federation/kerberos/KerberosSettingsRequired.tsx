@@ -15,8 +15,8 @@ import { adminClient } from "../../admin-client";
 import { FormAccess } from "../../components/form-access/FormAccess";
 import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 import { WizardSectionHeader } from "../../components/wizard-section-header/WizardSectionHeader";
-import { useFetch } from "../../context/auth/AdminClient";
 import { useRealm } from "../../context/realm-context/RealmContext";
+import { useFetch } from "../../utils/useFetch";
 
 export type KerberosSettingsRequiredProps = {
   form: UseFormReturn;

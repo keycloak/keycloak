@@ -20,7 +20,7 @@ import { useAlerts } from "../../components/alert/Alerts";
 import { FormAccess } from "../../components/form-access/FormAccess";
 import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 import { ViewHeader } from "../../components/view-header/ViewHeader";
-import { useFetch } from "../../context/auth/AdminClient";
+import { useFetch } from "../../utils/useFetch";
 import { useParams } from "../../utils/useParams";
 import useToggle from "../../utils/useToggle";
 import { toAuthorizationTab } from "../routes/AuthenticationTab";

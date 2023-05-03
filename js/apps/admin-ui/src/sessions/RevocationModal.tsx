@@ -18,9 +18,9 @@ import { useTranslation } from "react-i18next";
 import { adminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
 import { KeycloakTextInput } from "../components/keycloak-text-input/KeycloakTextInput";
-import { useFetch } from "../context/auth/AdminClient";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { emailRegexPattern } from "../util";
+import { useFetch } from "../utils/useFetch";
 
 type RevocationModalProps = {
   handleModalToggle: () => void;

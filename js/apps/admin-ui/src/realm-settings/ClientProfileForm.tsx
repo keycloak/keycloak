@@ -36,8 +36,8 @@ import { KeycloakSpinner } from "../components/keycloak-spinner/KeycloakSpinner"
 import { KeycloakTextArea } from "../components/keycloak-text-area/KeycloakTextArea";
 import { KeycloakTextInput } from "../components/keycloak-text-input/KeycloakTextInput";
 import { ViewHeader } from "../components/view-header/ViewHeader";
-import { useFetch } from "../context/auth/AdminClient";
 import { useServerInfo } from "../context/server-info/ServerInfoProvider";
+import { useFetch } from "../utils/useFetch";
 import { useParams } from "../utils/useParams";
 import { toAddExecutor } from "./routes/AddExecutor";
 import { toClientPolicies } from "./routes/ClientPolicies";

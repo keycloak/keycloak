@@ -6,7 +6,7 @@ import { createNamedContext, useRequiredContext } from "ui-shared";
 import { adminClient } from "../../admin-client";
 import environment from "../../environment";
 import i18n, { DEFAULT_LOCALE } from "../../i18n";
-import { useFetch } from "../auth/AdminClient";
+import { useFetch } from "../../utils/useFetch";
 
 export class WhoAmI {
   constructor(private me?: WhoAmIRepresentation) {

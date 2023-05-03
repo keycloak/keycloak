@@ -17,7 +17,7 @@ import { adminClient } from "../../admin-client";
 import { useAlerts } from "../../components/alert/Alerts";
 import { FormAccess } from "../../components/form-access/FormAccess";
 import { KeycloakSpinner } from "../../components/keycloak-spinner/KeycloakSpinner";
-import { useFetch } from "../../context/auth/AdminClient";
+import { useFetch } from "../../utils/useFetch";
 import useToggle from "../../utils/useToggle";
 import { SaveReset } from "../advanced/SaveReset";
 import { DecisionStrategySelect } from "./DecisionStrategySelect";

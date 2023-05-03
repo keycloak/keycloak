@@ -18,9 +18,9 @@ import { FormAccess } from "../../components/form-access/FormAccess";
 import { KeyValueInput } from "../../components/key-value-form/KeyValueInput";
 import { MultiLineInput } from "../../components/multi-line-input/MultiLineInput";
 import { TimeSelector } from "../../components/time-selector/TimeSelector";
-import { useFetch } from "../../context/auth/AdminClient";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { convertAttributeNameToForm } from "../../util";
+import { useFetch } from "../../utils/useFetch";
 import { FormFields } from "../ClientDetails";
 import { TokenLifespan } from "./TokenLifespan";
 

@@ -6,8 +6,8 @@ import { createNamedContext, useRequiredContext } from "ui-shared";
 
 import { adminClient } from "../../admin-client";
 import { useAlerts } from "../../components/alert/Alerts";
-import { useFetch } from "../../context/auth/AdminClient";
 import { useRealm } from "../../context/realm-context/RealmContext";
+import { useFetch } from "../../utils/useFetch";
 
 type UserProfileProps = {
   config: UserProfileConfig | null;
