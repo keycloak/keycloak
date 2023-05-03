@@ -1,22 +1,20 @@
-import { init, use, InitOptions, TOptions } from "i18next";
+import { InitOptions, TOptions, init, use } from "i18next";
 import HttpBackend, { LoadPathOption } from "i18next-http-backend";
 import { initReactI18next } from "react-i18next";
-import type KeycloakAdminClient from "@keycloak/keycloak-admin-client";
 
+import { adminClient } from "./admin-client";
 import environment from "./environment";
-import { getAuthorizationHeaders } from "./utils/getAuthorizationHeaders";
 import { addTrailingSlash } from "./util";
+import { getAuthorizationHeaders } from "./utils/getAuthorizationHeaders";
 
 export const DEFAULT_LOCALE = "en";
 
-export async function initI18n(adminClient: KeycloakAdminClient) {
-  const options = await initOptions(adminClient);
+export async function initI18n() {
+  const options = await initOptions();
   await init(options);
 }
 
-const initOptions = async (
-  adminClient: KeycloakAdminClient
-): Promise<InitOptions> => {
+const initOptions = async (): Promise<InitOptions> => {
   const constructLoadPath: LoadPathOption = (_, namespaces) => {
     if (namespaces[0] === "overrides") {
       return `${addTrailingSlash(adminClient.baseUrl)}admin/realms/${
