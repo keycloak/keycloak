@@ -23,7 +23,7 @@ const initOptions = async (
         adminClient.realmName
       }/localization/{{lng}}?useRealmDefaultLocaleFallback=true`;
     } else {
-      return `${environment.resourceUrl}/resources/{{lng}}/{{ns}}.json`;
+      return `${environment.resourceUrl}/locales/{{lng}}/{{ns}}.json`;
     }
   };
 
