@@ -1,6 +1,5 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { useTranslation } from "react-i18next";
+import type ComponentRepresentation from "@keycloak/keycloak-admin-client/lib/defs/componentRepresentation";
+import type { KeyMetadataRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/keyMetadataRepresentation";
 import {
   Button,
   ButtonVariant,
@@ -9,20 +8,22 @@ import {
   SelectOption,
   SelectVariant,
 } from "@patternfly/react-core";
-import { cellWidth } from "@patternfly/react-table";
 import { FilterIcon } from "@patternfly/react-icons";
+import { cellWidth } from "@patternfly/react-table";
+import { useState } from "react";
+import { useTranslation } from "react-i18next";
+import { useNavigate } from "react-router-dom";
 
-import type { KeyMetadataRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/keyMetadataRepresentation";
-import type ComponentRepresentation from "@keycloak/keycloak-admin-client/lib/defs/componentRepresentation";
+import { adminClient } from "../../admin-client";
+import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
+import { KeycloakSpinner } from "../../components/keycloak-spinner/KeycloakSpinner";
 import { ListEmptyState } from "../../components/list-empty-state/ListEmptyState";
 import { KeycloakDataTable } from "../../components/table-toolbar/KeycloakDataTable";
-import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
-import { emptyFormatter } from "../../util";
-import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
-import { toKeysTab } from "../routes/KeysTab";
-import { KeycloakSpinner } from "../../components/keycloak-spinner/KeycloakSpinner";
+import { useFetch } from "../../context/auth/AdminClient";
 import { useRealm } from "../../context/realm-context/RealmContext";
+import { emptyFormatter } from "../../util";
 import useToggle from "../../utils/useToggle";
+import { toKeysTab } from "../routes/KeysTab";
 
 import "../realm-settings-section.css";
 
@@ -85,7 +86,6 @@ export const KeysListTab = ({ realmComponents }: KeysListTabProps) => {
   const [publicKey, setPublicKey] = useState("");
   const [certificate, setCertificate] = useState("");
 
-  const { adminClient } = useAdminClient();
   const { realm } = useRealm();
 
   const [keyData, setKeyData] = useState<KeyData[]>();

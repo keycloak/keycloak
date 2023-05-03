@@ -1,18 +1,14 @@
-import {
-  DragEvent as ReactDragEvent,
-  Fragment,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import type CredentialRepresentation from "@keycloak/keycloak-admin-client/lib/defs/credentialRepresentation";
+import type UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
 import {
   AlertVariant,
-  PageSection,
-  PageSectionVariants,
   Button,
   ButtonVariant,
   Divider,
+  PageSection,
+  PageSectionVariants,
 } from "@patternfly/react-core";
+import styles from "@patternfly/react-styles/css/components/Table/table";
 import {
   TableComposable,
   Tbody,
@@ -21,22 +17,28 @@ import {
   Thead,
   Tr,
 } from "@patternfly/react-table";
-import type UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
+import {
+  Fragment,
+  DragEvent as ReactDragEvent,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { useTranslation } from "react-i18next";
-import { useAlerts } from "../components/alert/Alerts";
-import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
-import { useAdminClient, useFetch } from "../context/auth/AdminClient";
 import { HelpItem } from "ui-shared";
+
+import { adminClient } from "../admin-client";
+import { useAlerts } from "../components/alert/Alerts";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
-import type CredentialRepresentation from "@keycloak/keycloak-admin-client/lib/defs/credentialRepresentation";
-import { ResetPasswordDialog } from "./user-credentials/ResetPasswordDialog";
-import { ResetCredentialDialog } from "./user-credentials/ResetCredentialDialog";
-import { InlineLabelEdit } from "./user-credentials/InlineLabelEdit";
-import styles from "@patternfly/react-styles/css/components/Table/table";
-import { CredentialRow } from "./user-credentials/CredentialRow";
-import { toUpperCase } from "../util";
 import { KeycloakSpinner } from "../components/keycloak-spinner/KeycloakSpinner";
+import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
+import { useFetch } from "../context/auth/AdminClient";
+import { toUpperCase } from "../util";
 import { FederatedUserLink } from "./FederatedUserLink";
+import { CredentialRow } from "./user-credentials/CredentialRow";
+import { InlineLabelEdit } from "./user-credentials/InlineLabelEdit";
+import { ResetCredentialDialog } from "./user-credentials/ResetCredentialDialog";
+import { ResetPasswordDialog } from "./user-credentials/ResetPasswordDialog";
 
 import "./user-credentials.css";
 
@@ -57,7 +59,6 @@ export const UserCredentials = ({ user }: UserCredentialsProps) => {
   const refresh = () => setKey(key + 1);
   const [isOpen, setIsOpen] = useState(false);
   const [openCredentialReset, setOpenCredentialReset] = useState(false);
-  const { adminClient } = useAdminClient();
   const [userCredentials, setUserCredentials] = useState<
     CredentialRepresentation[]
   >([]);

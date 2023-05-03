@@ -11,14 +11,15 @@ import {
 import { Controller, FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
+import { HelpItem } from "ui-shared";
 
+import { adminClient } from "../../../admin-client";
 import { useAlerts } from "../../../components/alert/Alerts";
 import { DynamicComponents } from "../../../components/dynamic/DynamicComponents";
 import { FormAccess } from "../../../components/form-access/FormAccess";
-import { HelpItem } from "ui-shared";
 import { KeycloakTextInput } from "../../../components/keycloak-text-input/KeycloakTextInput";
 import { ViewHeader } from "../../../components/view-header/ViewHeader";
-import { useAdminClient, useFetch } from "../../../context/auth/AdminClient";
+import { useFetch } from "../../../context/auth/AdminClient";
 import { useServerInfo } from "../../../context/server-info/ServerInfoProvider";
 import { KEY_PROVIDER_TYPE } from "../../../util";
 import { useParams } from "../../../utils/useParams";
@@ -37,7 +38,6 @@ export const KeyProviderForm = ({
 }: KeyProviderFormProps) => {
   const { t } = useTranslation("realm-settings");
   const { id } = useParams<{ id: string }>();
-  const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
 
   const serverInfo = useServerInfo();

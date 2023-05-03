@@ -1,6 +1,4 @@
-import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { Trans, useTranslation } from "react-i18next";
+import type { ManagementPermissionReference } from "@keycloak/keycloak-admin-client/lib/defs/managementPermissionReference";
 import {
   Card,
   CardBody,
@@ -19,13 +17,16 @@ import {
   Thead,
   Tr,
 } from "@patternfly/react-table";
+import { useState } from "react";
+import { Trans, useTranslation } from "react-i18next";
+import { Link, useNavigate } from "react-router-dom";
+import { HelpItem } from "ui-shared";
 
-import type { ManagementPermissionReference } from "@keycloak/keycloak-admin-client/lib/defs/managementPermissionReference";
-import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
-import { useRealm } from "../../context/realm-context/RealmContext";
+import { adminClient } from "../../admin-client";
 import { toPermissionDetails } from "../../clients/routes/PermissionDetails";
 import { KeycloakSpinner } from "../../components/keycloak-spinner/KeycloakSpinner";
-import { HelpItem } from "ui-shared";
+import { useFetch } from "../../context/auth/AdminClient";
+import { useRealm } from "../../context/realm-context/RealmContext";
 import useLocaleSort from "../../utils/useLocaleSort";
 import { useConfirmDialog } from "../confirm-dialog/ConfirmDialog";
 
@@ -46,7 +47,6 @@ type PermissionsTabProps = {
 export const PermissionsTab = ({ id, type }: PermissionsTabProps) => {
   const { t } = useTranslation("common");
   const navigate = useNavigate();
-  const { adminClient } = useAdminClient();
   const { realm } = useRealm();
   const [realmId, setRealmId] = useState("");
   const [permission, setPermission] = useState<ManagementPermissionReference>();

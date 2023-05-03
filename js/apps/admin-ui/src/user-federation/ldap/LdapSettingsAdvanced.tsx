@@ -1,12 +1,12 @@
 import { Button, FormGroup, Switch } from "@patternfly/react-core";
 import { Controller, UseFormReturn } from "react-hook-form";
 import { useTranslation } from "react-i18next";
+import { HelpItem } from "ui-shared";
 
+import { adminClient } from "../../admin-client";
 import { useAlerts } from "../../components/alert/Alerts";
 import { FormAccess } from "../../components/form-access/FormAccess";
-import { HelpItem } from "ui-shared";
 import { WizardSectionHeader } from "../../components/wizard-section-header/WizardSectionHeader";
-import { useAdminClient } from "../../context/auth/AdminClient";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { convertFormToSettings } from "./LdapSettingsConnection";
 
@@ -28,7 +28,6 @@ export const LdapSettingsAdvanced = ({
   const { t } = useTranslation("user-federation");
   const { t: helpText } = useTranslation("user-federation-help");
 
-  const { adminClient } = useAdminClient();
   const { realm } = useRealm();
   const { addAlert, addError } = useAlerts();
 

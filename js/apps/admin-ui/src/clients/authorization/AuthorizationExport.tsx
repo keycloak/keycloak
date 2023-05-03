@@ -9,13 +9,14 @@ import {
 import { saveAs } from "file-saver";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { HelpItem } from "ui-shared";
 
+import { adminClient } from "../../admin-client";
 import { useAlerts } from "../../components/alert/Alerts";
 import { FormAccess } from "../../components/form-access/FormAccess";
-import { HelpItem } from "ui-shared";
 import { KeycloakSpinner } from "../../components/keycloak-spinner/KeycloakSpinner";
 import { KeycloakTextArea } from "../../components/keycloak-text-area/KeycloakTextArea";
-import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
+import { useFetch } from "../../context/auth/AdminClient";
 import { prettyPrintJSON } from "../../util";
 import { useParams } from "../../utils/useParams";
 import type { ClientParams } from "../routes/Client";
@@ -24,7 +25,6 @@ import "./authorization-details.css";
 
 export const AuthorizationExport = () => {
   const { t } = useTranslation("clients");
-  const { adminClient } = useAdminClient();
   const { clientId } = useParams<ClientParams>();
   const { addAlert, addError } = useAlerts();
 

@@ -11,6 +11,7 @@ import { ReactNode, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 
+import { adminClient } from "../admin-client";
 import { toClient } from "../clients/routes/Client";
 import { useAlerts } from "../components/alert/Alerts";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
@@ -21,7 +22,6 @@ import {
   KeycloakDataTable,
   LoaderFunction,
 } from "../components/table-toolbar/KeycloakDataTable";
-import { useAdminClient } from "../context/auth/AdminClient";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { useWhoAmI } from "../context/whoami/WhoAmI";
 import { keycloak } from "../keycloak";
@@ -79,7 +79,6 @@ export default function SessionsTable({
   const { realm } = useRealm();
   const { whoAmI } = useWhoAmI();
   const { t } = useTranslation("sessions");
-  const { adminClient } = useAdminClient();
   const { addError } = useAlerts();
   const formatDate = useFormatDate();
   const [key, setKey] = useState(0);

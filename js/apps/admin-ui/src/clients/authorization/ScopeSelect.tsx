@@ -1,10 +1,11 @@
-import { useRef, useState } from "react";
-import { useTranslation } from "react-i18next";
-import { Controller, useFormContext } from "react-hook-form";
-import { Select, SelectOption, SelectVariant } from "@patternfly/react-core";
-
 import type ScopeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/scopeRepresentation";
-import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
+import { Select, SelectOption, SelectVariant } from "@patternfly/react-core";
+import { useRef, useState } from "react";
+import { Controller, useFormContext } from "react-hook-form";
+import { useTranslation } from "react-i18next";
+
+import { adminClient } from "../../admin-client";
+import { useFetch } from "../../context/auth/AdminClient";
 
 type ScopeSelectProps = {
   clientId: string;
@@ -18,7 +19,6 @@ export const ScopeSelect = ({
   preSelected,
 }: ScopeSelectProps) => {
   const { t } = useTranslation("clients");
-  const { adminClient } = useAdminClient();
 
   const {
     control,

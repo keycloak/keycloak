@@ -13,7 +13,6 @@ import { useTranslation } from "react-i18next";
 
 import { fetchUsedBy } from "../../components/role-mapping/resource";
 import { KeycloakDataTable } from "../../components/table-toolbar/KeycloakDataTable";
-import { useAdminClient } from "../../context/auth/AdminClient";
 import useToggle from "../../utils/useToggle";
 import { AuthenticationType, REALM_FLOWS } from "../AuthenticationSection";
 
@@ -39,7 +38,6 @@ type UsedByModalProps = {
 
 const UsedByModal = ({ id, isSpecificClient, onClose }: UsedByModalProps) => {
   const { t } = useTranslation("authentication");
-  const { adminClient } = useAdminClient();
 
   const loader = async (
     first?: number,
@@ -47,7 +45,6 @@ const UsedByModal = ({ id, isSpecificClient, onClose }: UsedByModalProps) => {
     search?: string
   ): Promise<{ name: string }[]> => {
     const result = await fetchUsedBy({
-      adminClient,
       id,
       type: isSpecificClient ? "clients" : "idp",
       first: first || 0,

@@ -13,10 +13,11 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
+import { adminClient } from "../../admin-client";
 import { useAlerts } from "../../components/alert/Alerts";
 import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
 import { FormAccess } from "../../components/form-access/FormAccess";
-import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
+import { useFetch } from "../../context/auth/AdminClient";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { convertToFormValues } from "../../util";
 import { AddEventTypesDialog } from "./AddEventTypesDialog";
@@ -47,7 +48,6 @@ export const EventsTab = ({ realm }: EventsTabProps) => {
   const [type, setType] = useState<EventsType>();
   const [addEventType, setAddEventType] = useState(false);
 
-  const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
   const { realm: realmName } = useRealm();
 

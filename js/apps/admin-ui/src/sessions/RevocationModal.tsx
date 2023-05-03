@@ -1,4 +1,5 @@
-import { useState } from "react";
+import type GlobalRequestResult from "@keycloak/keycloak-admin-client/lib/defs/globalRequestResult";
+import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
 import {
   AlertVariant,
   Button,
@@ -10,16 +11,16 @@ import {
   TextContent,
   ValidatedOptions,
 } from "@patternfly/react-core";
-import { useTranslation } from "react-i18next";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 
-import { emailRegexPattern } from "../util";
-import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
-import { useAdminClient, useFetch } from "../context/auth/AdminClient";
-import { useRealm } from "../context/realm-context/RealmContext";
+import { adminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
 import { KeycloakTextInput } from "../components/keycloak-text-input/KeycloakTextInput";
-import type GlobalRequestResult from "@keycloak/keycloak-admin-client/lib/defs/globalRequestResult";
+import { useFetch } from "../context/auth/AdminClient";
+import { useRealm } from "../context/realm-context/RealmContext";
+import { emailRegexPattern } from "../util";
 
 type RevocationModalProps = {
   handleModalToggle: () => void;
@@ -34,7 +35,6 @@ export const RevocationModal = ({
   const { addAlert } = useAlerts();
 
   const { realm: realmName } = useRealm();
-  const { adminClient } = useAdminClient();
   const {
     register,
     handleSubmit,

@@ -1,25 +1,24 @@
-import { useEffect, useState } from "react";
-import { useTranslation } from "react-i18next";
-import { useForm } from "react-hook-form";
+import type UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
 import {
   AlertVariant,
   PageSection,
   PageSectionVariants,
 } from "@patternfly/react-core";
+import { useEffect, useState } from "react";
+import { useForm } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 
-import type UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
-
+import { adminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
 import {
   AttributeForm,
   AttributesForm,
 } from "../components/key-value-form/AttributeForm";
 import {
+  KeyValueType,
   arrayToKeyValue,
   keyValueToArray,
-  KeyValueType,
 } from "../components/key-value-form/key-value-convert";
-import { useAdminClient } from "../context/auth/AdminClient";
 import { useUserProfile } from "../realm-settings/user-profile/UserProfileContext";
 
 type UserAttributesProps = {
@@ -28,7 +27,6 @@ type UserAttributesProps = {
 
 export const UserAttributes = ({ user: defaultUser }: UserAttributesProps) => {
   const { t } = useTranslation("users");
-  const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
   const [user, setUser] = useState<UserRepresentation>(defaultUser);
   const form = useForm<AttributeForm>({ mode: "onChange" });

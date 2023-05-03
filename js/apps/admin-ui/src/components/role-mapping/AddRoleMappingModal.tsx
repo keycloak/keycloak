@@ -1,5 +1,3 @@
-import { useState } from "react";
-import { useTranslation } from "react-i18next";
 import {
   Button,
   Dropdown,
@@ -10,14 +8,15 @@ import {
   ToolbarItem,
 } from "@patternfly/react-core";
 import { FilterIcon } from "@patternfly/react-icons";
+import { useState } from "react";
+import { useTranslation } from "react-i18next";
 
-import { KeycloakDataTable } from "../table-toolbar/KeycloakDataTable";
-import { useAdminClient } from "../../context/auth/AdminClient";
 import useLocaleSort from "../../utils/useLocaleSort";
+import { ListEmptyState } from "../list-empty-state/ListEmptyState";
+import { KeycloakDataTable } from "../table-toolbar/KeycloakDataTable";
 import { ResourcesKey, Row, ServiceRole } from "./RoleMapping";
 import { getAvailableRoles } from "./queries";
 import { getAvailableClientRoles } from "./resource";
-import { ListEmptyState } from "../list-empty-state/ListEmptyState";
 
 type AddRoleMappingModalProps = {
   id: string;
@@ -41,7 +40,6 @@ export const AddRoleMappingModal = ({
   onClose,
 }: AddRoleMappingModalProps) => {
   const { t } = useTranslation(type);
-  const { adminClient } = useAdminClient();
 
   const [searchToggle, setSearchToggle] = useState(false);
 
@@ -67,7 +65,7 @@ export const AddRoleMappingModal = ({
       params.search = search;
     }
 
-    const roles = await getAvailableRoles(adminClient, type, { ...params, id });
+    const roles = await getAvailableRoles(type, { ...params, id });
     const sorted = localeSort(roles, compareRow);
     return sorted.map((row) => {
       return {
@@ -83,7 +81,6 @@ export const AddRoleMappingModal = ({
     search?: string
   ): Promise<Row[]> => {
     const roles = await getAvailableClientRoles({
-      adminClient,
       id,
       type,
       first: first || 0,

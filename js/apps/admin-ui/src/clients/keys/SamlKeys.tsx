@@ -1,3 +1,4 @@
+import type CertificateRepresentation from "@keycloak/keycloak-admin-client/lib/defs/certificateRepresentation";
 import {
   ActionGroup,
   AlertVariant,
@@ -15,14 +16,14 @@ import { saveAs } from "file-saver";
 import { Fragment, useState } from "react";
 import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
+import { HelpItem } from "ui-shared";
 
-import type CertificateRepresentation from "@keycloak/keycloak-admin-client/lib/defs/certificateRepresentation";
+import { adminClient } from "../../admin-client";
 import { useAlerts } from "../../components/alert/Alerts";
 import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
 import { FormAccess } from "../../components/form-access/FormAccess";
-import { HelpItem } from "ui-shared";
 import { FormPanel } from "../../components/scroll-form/FormPanel";
-import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
+import { useFetch } from "../../context/auth/AdminClient";
 import { convertAttributeNameToForm } from "../../util";
 import useToggle from "../../utils/useToggle";
 import { FormFields } from "../ClientDetails";
@@ -162,8 +163,6 @@ export const SamlKeys = ({ clientId, save }: SamlKeysProps) => {
   const [refresh, setRefresh] = useState(0);
 
   const { setValue } = useFormContext();
-
-  const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
 
   useFetch(

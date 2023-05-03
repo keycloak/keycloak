@@ -4,16 +4,16 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate, useParams } from "react-router-dom";
 
+import { adminClient } from "../../admin-client";
 import { useAlerts } from "../../components/alert/Alerts";
 import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
 import {
   Action,
   KeycloakDataTable,
 } from "../../components/table-toolbar/KeycloakDataTable";
-import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
+import { useFetch } from "../../context/auth/AdminClient";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import useToggle from "../../utils/useToggle";
-
 import { toRegistrationProvider } from "../routes/AddRegistrationProvider";
 import { ClientRegistrationParams } from "../routes/ClientRegistration";
 import { AddProviderDialog } from "./AddProviderDialog";
@@ -48,7 +48,6 @@ export const ClientRegistrationList = ({
   const { subTab } = useParams<ClientRegistrationParams>();
   const navigate = useNavigate();
 
-  const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
   const { realm } = useRealm();
   const [policies, setPolicies] = useState<ComponentRepresentation[]>([]);

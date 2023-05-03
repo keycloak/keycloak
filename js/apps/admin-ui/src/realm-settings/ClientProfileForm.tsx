@@ -26,16 +26,17 @@ import { Fragment, useMemo, useState } from "react";
 import { useFieldArray, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
+import { HelpItem } from "ui-shared";
 
+import { adminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import { FormAccess } from "../components/form-access/FormAccess";
-import { HelpItem } from "ui-shared";
 import { KeycloakSpinner } from "../components/keycloak-spinner/KeycloakSpinner";
 import { KeycloakTextArea } from "../components/keycloak-text-area/KeycloakTextArea";
 import { KeycloakTextInput } from "../components/keycloak-text-input/KeycloakTextInput";
 import { ViewHeader } from "../components/view-header/ViewHeader";
-import { useAdminClient, useFetch } from "../context/auth/AdminClient";
+import { useFetch } from "../context/auth/AdminClient";
 import { useServerInfo } from "../context/server-info/ServerInfoProvider";
 import { useParams } from "../utils/useParams";
 import { toAddExecutor } from "./routes/AddExecutor";
@@ -74,7 +75,6 @@ export default function ClientProfileForm() {
   });
 
   const { addAlert, addError } = useAlerts();
-  const { adminClient } = useAdminClient();
   const [profiles, setProfiles] = useState<ClientProfilesRepresentation>();
   const [isGlobalProfile, setIsGlobalProfile] = useState(false);
   const { realm, profileName } = useParams<ClientProfileParams>();

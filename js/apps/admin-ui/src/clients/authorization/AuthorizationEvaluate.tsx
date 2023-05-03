@@ -1,3 +1,10 @@
+import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
+import type EvaluationResultRepresentation from "@keycloak/keycloak-admin-client/lib/defs/evaluationResultRepresentation";
+import type PolicyEvaluationResponse from "@keycloak/keycloak-admin-client/lib/defs/policyEvaluationResponse";
+import type ResourceEvaluation from "@keycloak/keycloak-admin-client/lib/defs/resourceEvaluation";
+import type ResourceRepresentation from "@keycloak/keycloak-admin-client/lib/defs/resourceRepresentation";
+import type RoleRepresentation from "@keycloak/keycloak-admin-client/lib/defs/roleRepresentation";
+import type ScopeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/scopeRepresentation";
 import {
   ActionGroup,
   Button,
@@ -12,34 +19,27 @@ import {
 import { useState } from "react";
 import { Controller, FormProvider, useForm, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
+import { HelpItem } from "ui-shared";
 
-import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
-import type EvaluationResultRepresentation from "@keycloak/keycloak-admin-client/lib/defs/evaluationResultRepresentation";
-import type PolicyEvaluationResponse from "@keycloak/keycloak-admin-client/lib/defs/policyEvaluationResponse";
-import type ResourceEvaluation from "@keycloak/keycloak-admin-client/lib/defs/resourceEvaluation";
-import type ResourceRepresentation from "@keycloak/keycloak-admin-client/lib/defs/resourceRepresentation";
-import type RoleRepresentation from "@keycloak/keycloak-admin-client/lib/defs/roleRepresentation";
-import type ScopeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/scopeRepresentation";
-
+import { ForbiddenSection } from "../../ForbiddenSection";
+import { adminClient } from "../../admin-client";
+import { useAlerts } from "../../components/alert/Alerts";
 import { ClientSelect } from "../../components/client/ClientSelect";
 import { FormAccess } from "../../components/form-access/FormAccess";
-import { HelpItem } from "ui-shared";
 import {
-  keyValueToArray,
   KeyValueType,
+  keyValueToArray,
 } from "../../components/key-value-form/key-value-convert";
 import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 import { FormPanel } from "../../components/scroll-form/FormPanel";
 import { UserSelect } from "../../components/users/UserSelect";
 import { useAccess } from "../../context/access/Access";
-import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
+import { useFetch } from "../../context/auth/AdminClient";
 import { useRealm } from "../../context/realm-context/RealmContext";
-import { ForbiddenSection } from "../../ForbiddenSection";
 import { FormFields } from "../ClientDetails";
 import { defaultContextAttributes } from "../utils";
-import { Results } from "./evaluate/Results";
 import { KeyBasedAttributeInput } from "./KeyBasedAttributeInput";
-import { useAlerts } from "../../components/alert/Alerts";
+import { Results } from "./evaluate/Results";
 
 import "./auth-evaluate.css";
 
@@ -91,7 +91,6 @@ export const AuthorizationEvaluate = ({ client }: Props) => {
     formState: { isValid, errors },
   } = form;
   const { t } = useTranslation("clients");
-  const { adminClient } = useAdminClient();
   const { addError } = useAlerts();
   const realm = useRealm();
 

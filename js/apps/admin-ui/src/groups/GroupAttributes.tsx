@@ -1,30 +1,28 @@
-import { useEffect } from "react";
-import { useTranslation } from "react-i18next";
-import { useForm } from "react-hook-form";
 import {
   AlertVariant,
   PageSection,
   PageSectionVariants,
 } from "@patternfly/react-core";
+import { useEffect } from "react";
+import { useForm } from "react-hook-form";
+import { useTranslation } from "react-i18next";
+import { useLocation } from "react-router-dom";
 
+import { adminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
 import {
   AttributeForm,
   AttributesForm,
 } from "../components/key-value-form/AttributeForm";
 import {
-  keyValueToArray,
   arrayToKeyValue,
+  keyValueToArray,
 } from "../components/key-value-form/key-value-convert";
-import { useAdminClient } from "../context/auth/AdminClient";
-
-import { getLastId } from "./groupIdUtils";
 import { useSubGroups } from "./SubGroupsContext";
-import { useLocation } from "react-router-dom";
+import { getLastId } from "./groupIdUtils";
 
 export const GroupAttributes = () => {
   const { t } = useTranslation("groups");
-  const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
   const form = useForm<AttributeForm>({
     mode: "onChange",

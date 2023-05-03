@@ -1,16 +1,15 @@
 import { PageSection } from "@patternfly/react-core";
 
+import { adminClient } from "../admin-client";
 import { RolesList } from "../components/roles-list/RolesList";
 import { ViewHeader } from "../components/view-header/ViewHeader";
 import { useAccess } from "../context/access/Access";
-import { useAdminClient } from "../context/auth/AdminClient";
 import { useRealm } from "../context/realm-context/RealmContext";
 import helpUrls from "../help-urls";
 import { toAddRole } from "./routes/AddRole";
 import { toRealmRole } from "./routes/RealmRole";
 
 export default function RealmRolesSection() {
-  const { adminClient } = useAdminClient();
   const { realm } = useRealm();
   const { hasAccess } = useAccess();
   const isManager = hasAccess("manage-realm");

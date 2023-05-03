@@ -1,7 +1,5 @@
-import { useState } from "react";
-import { useTranslation } from "react-i18next";
-import { useFormContext, Controller } from "react-hook-form";
-import { FormGroup, Button, Checkbox } from "@patternfly/react-core";
+import type ClientScopeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientScopeRepresentation";
+import { Button, Checkbox, FormGroup } from "@patternfly/react-core";
 import { MinusCircleIcon } from "@patternfly/react-icons";
 import {
   TableComposable,
@@ -11,12 +9,15 @@ import {
   Thead,
   Tr,
 } from "@patternfly/react-table";
-
-import type ClientScopeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientScopeRepresentation";
-import { useAdminClient, useFetch } from "../../../context/auth/AdminClient";
+import { useState } from "react";
+import { Controller, useFormContext } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 import { HelpItem } from "ui-shared";
-import { AddScopeDialog } from "../../scopes/AddScopeDialog";
+
+import { adminClient } from "../../../admin-client";
+import { useFetch } from "../../../context/auth/AdminClient";
 import useLocaleSort, { mapByKey } from "../../../utils/useLocaleSort";
+import { AddScopeDialog } from "../../scopes/AddScopeDialog";
 
 export type RequiredIdValue = {
   id: string;
@@ -40,7 +41,6 @@ export const ClientScope = () => {
     ClientScopeRepresentation[]
   >([]);
 
-  const { adminClient } = useAdminClient();
   const localeSort = useLocaleSort();
 
   useFetch(

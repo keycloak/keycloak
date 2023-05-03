@@ -1,6 +1,4 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { useTranslation } from "react-i18next";
+import type GroupRepresentation from "@keycloak/keycloak-admin-client/lib/defs/groupRepresentation";
 import {
   AlertVariant,
   Checkbox,
@@ -14,22 +12,25 @@ import {
   TreeView,
   TreeViewDataItem,
 } from "@patternfly/react-core";
+import { useState } from "react";
+import { useTranslation } from "react-i18next";
+import { useNavigate } from "react-router-dom";
 
-import type GroupRepresentation from "@keycloak/keycloak-admin-client/lib/defs/groupRepresentation";
-import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
+import { adminClient } from "../../admin-client";
+import { useAlerts } from "../../components/alert/Alerts";
 import { KeycloakSpinner } from "../../components/keycloak-spinner/KeycloakSpinner";
-import useToggle from "../../utils/useToggle";
-import { DeleteGroup } from "./DeleteGroup";
-import { GroupsModal } from "../GroupsModal";
-import { MoveDialog } from "./MoveDialog";
 import { PaginatingTableToolbar } from "../../components/table-toolbar/PaginatingTableToolbar";
-import { useSubGroups } from "../SubGroupsContext";
+import { useAccess } from "../../context/access/Access";
+import { useFetch } from "../../context/auth/AdminClient";
 import { fetchAdminUI } from "../../context/auth/admin-ui-endpoint";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { joinPath } from "../../utils/joinPath";
+import useToggle from "../../utils/useToggle";
+import { GroupsModal } from "../GroupsModal";
+import { useSubGroups } from "../SubGroupsContext";
 import { toGroups } from "../routes/Groups";
-import { useAlerts } from "../../components/alert/Alerts";
-import { useAccess } from "../../context/access/Access";
+import { DeleteGroup } from "./DeleteGroup";
+import { MoveDialog } from "./MoveDialog";
 
 import "./group-tree.css";
 
@@ -113,7 +114,6 @@ export const GroupTree = ({
   canViewDetails,
 }: GroupTreeProps) => {
   const { t } = useTranslation("groups");
-  const { adminClient } = useAdminClient();
   const { realm } = useRealm();
   const navigate = useNavigate();
   const { addAlert } = useAlerts();
@@ -163,7 +163,6 @@ export const GroupTree = ({
   useFetch(
     async () => {
       const groups = await fetchAdminUI<GroupRepresentation[]>(
-        adminClient,
         "ui-ext/groups",
         Object.assign(
           {

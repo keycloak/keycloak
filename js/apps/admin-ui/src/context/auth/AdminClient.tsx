@@ -1,26 +1,5 @@
-import KeycloakAdminClient from "@keycloak/keycloak-admin-client";
-import { DependencyList, PropsWithChildren, useEffect } from "react";
+import { DependencyList, useEffect } from "react";
 import { useErrorHandler } from "react-error-boundary";
-import { createNamedContext, useRequiredContext } from "ui-shared";
-
-import { adminClient } from "../../admin-client";
-
-export type AdminClientProps = {
-  adminClient: KeycloakAdminClient;
-};
-
-const AdminClientContext = createNamedContext<AdminClientProps | undefined>(
-  "AdminClientContext",
-  undefined
-);
-
-export const AdminClientProvider = ({ children }: PropsWithChildren) => (
-  <AdminClientContext.Provider value={{ adminClient }}>
-    {children}
-  </AdminClientContext.Provider>
-);
-
-export const useAdminClient = () => useRequiredContext(AdminClientContext);
 
 /**
  * Util function to only set the state when the component is still mounted.

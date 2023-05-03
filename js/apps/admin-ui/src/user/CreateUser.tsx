@@ -6,17 +6,17 @@ import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 
+import { adminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
 import { ViewHeader } from "../components/view-header/ViewHeader";
-import { useAdminClient } from "../context/auth/AdminClient";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { UserProfileProvider } from "../realm-settings/user-profile/UserProfileContext";
-import { toUser } from "./routes/User";
 import { UserForm } from "./UserForm";
 import {
   isUserProfileError,
   userProfileErrorToString,
 } from "./UserProfileFields";
+import { toUser } from "./routes/User";
 
 import "./user-section.css";
 
@@ -24,7 +24,6 @@ export default function CreateUser() {
   const { t } = useTranslation("users");
   const { addAlert, addError } = useAlerts();
   const navigate = useNavigate();
-  const { adminClient } = useAdminClient();
   const { realm } = useRealm();
   const userForm = useForm<UserRepresentation>({ mode: "onChange" });
   const [addedGroups, setAddedGroups] = useState<GroupRepresentation[]>([]);

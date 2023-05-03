@@ -1,13 +1,13 @@
-import { useTranslation } from "react-i18next";
-import { FormProvider, useForm } from "react-hook-form";
-import { Button, Modal, Form } from "@patternfly/react-core";
-import { saveAs } from "file-saver";
-
 import KeyStoreConfig from "@keycloak/keycloak-admin-client/lib/defs/keystoreConfig";
-import { KeyForm, getFileExtension } from "./GenerateKeyDialog";
-import { useRealm } from "../../context/realm-context/RealmContext";
-import { useAdminClient } from "../../context/auth/AdminClient";
+import { Button, Form, Modal } from "@patternfly/react-core";
+import { saveAs } from "file-saver";
+import { FormProvider, useForm } from "react-hook-form";
+import { useTranslation } from "react-i18next";
+
+import { adminClient } from "../../admin-client";
 import { useAlerts } from "../../components/alert/Alerts";
+import { useRealm } from "../../context/realm-context/RealmContext";
+import { KeyForm, getFileExtension } from "./GenerateKeyDialog";
 
 type ExportSamlKeyDialogProps = {
   clientId: string;
@@ -21,7 +21,6 @@ export const ExportSamlKeyDialog = ({
   const { t } = useTranslation("clients");
   const { realm } = useRealm();
 
-  const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
 
   const form = useForm<KeyStoreConfig>({
