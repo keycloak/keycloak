@@ -17,22 +17,25 @@
 
 package org.keycloak.testsuite.account.custom;
 
+import jakarta.ws.rs.core.Response;
 import org.junit.Before;
 import org.keycloak.admin.client.resource.AuthenticationManagementResource;
-import org.keycloak.common.Profile;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.representations.idm.AuthenticationExecutionInfoRepresentation;
-import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
+import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.testsuite.admin.ApiUtil;
 
+import java.util.Arrays;
 import java.util.List;
-import java.util.Optional;
 import java.util.function.Function;
+
+import static org.junit.Assert.assertEquals;
+import static org.keycloak.testsuite.util.OAuthClient.APP_ROOT;
 
 /**
  *
  * @author <a href="mailto:vramik@redhat.com">Vlastislav Ramik</a>
  */
-@DisableFeature(value = Profile.Feature.ACCOUNT2, skipRestart = true) // TODO remove this (KEYCLOAK-16228)
 public abstract class AbstractCustomAccountManagementTest extends AbstractAccountManagementTest {
 
     private AuthenticationManagementResource authMgmtResource;
@@ -45,6 +48,18 @@ public abstract class AbstractCustomAccountManagementTest extends AbstractAccoun
     @Before
     public void beforeTest() {
         authMgmtResource = testRealmResource().flows();
+
+        ClientRepresentation testApp = new ClientRepresentation();
+        testApp.setClientId("test-app");
+        testApp.setEnabled(true);
+        testApp.setBaseUrl(APP_ROOT);
+        testApp.setRedirectUris(Arrays.asList(new String[]{APP_ROOT + "/*"}));
+        testApp.setAdminUrl(APP_ROOT + "/logout");
+        testApp.setSecret("password");
+        Response response = testRealmResource().clients().create(testApp);
+        assertEquals(201, response.getStatus());
+        getCleanup().addClientUuid(ApiUtil.getCreatedId(response));
+        response.close();
     }
     
     protected AuthenticationManagementResource getAuthMgmtResource() {
