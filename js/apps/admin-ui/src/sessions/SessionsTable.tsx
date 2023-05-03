@@ -24,6 +24,7 @@ import {
 import { useAdminClient } from "../context/auth/AdminClient";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { useWhoAmI } from "../context/whoami/WhoAmI";
+import { keycloak } from "../keycloak";
 import { toUser } from "../user/routes/User";
 import useFormatDate from "../utils/useFormatDate";
 
@@ -78,7 +79,7 @@ export default function SessionsTable({
   const { realm } = useRealm();
   const { whoAmI } = useWhoAmI();
   const { t } = useTranslation("sessions");
-  const { keycloak, adminClient } = useAdminClient();
+  const { adminClient } = useAdminClient();
   const { addError } = useAlerts();
   const formatDate = useFormatDate();
   const [key, setKey] = useState(0);

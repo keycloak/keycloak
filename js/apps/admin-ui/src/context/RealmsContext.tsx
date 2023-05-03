@@ -2,8 +2,9 @@ import { NetworkError } from "@keycloak/keycloak-admin-client";
 import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
 import { sortBy } from "lodash-es";
 import { PropsWithChildren, useCallback, useMemo, useState } from "react";
-
 import { createNamedContext, useRequiredContext } from "ui-shared";
+
+import { keycloak } from "../keycloak";
 import { useAdminClient, useFetch } from "./auth/AdminClient";
 
 type RealmsContextProps = {
@@ -19,7 +20,7 @@ export const RealmsContext = createNamedContext<RealmsContextProps | undefined>(
 );
 
 export const RealmsProvider = ({ children }: PropsWithChildren) => {
-  const { keycloak, adminClient } = useAdminClient();
+  const { adminClient } = useAdminClient();
   const [realms, setRealms] = useState<RealmRepresentation[]>([]);
   const [refreshCount, setRefreshCount] = useState(0);
 
