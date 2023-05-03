@@ -1,5 +1,4 @@
 import { DependencyList, useEffect } from "react";
-import { useErrorHandler } from "react-error-boundary";
 
 /**
  * Util function to only set the state when the component is still mounted.
@@ -21,7 +20,6 @@ export function useFetch<T>(
   callback: (param: T) => void,
   deps?: DependencyList
 ) {
-  const onError = useErrorHandler();
 
   useEffect(() => {
     const controller = new AbortController();
@@ -35,7 +33,7 @@ export function useFetch<T>(
       })
       .catch((error) => {
         if (!signal.aborted) {
-          onError(error);
+          throw error;
         }
       });
 
