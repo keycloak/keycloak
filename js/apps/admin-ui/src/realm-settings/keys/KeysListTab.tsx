@@ -235,6 +235,19 @@ export const KeysListTab = ({ realmComponents }: KeysListTabProps) => {
                     </Button>
                   </div>
                 );
+              } else if (type === "OKP") {
+                return (
+                  <Button
+                    onClick={() => {
+                      togglePublicKeyDialog();
+                      setPublicKey(publicKey!);
+                    }}
+                    variant="secondary"
+                    id="kc-public-key"
+                  >
+                    {t("publicKeys").slice(0, -1)}
+                  </Button>
+                );
               } else return "";
             },
             cellFormatters: [],

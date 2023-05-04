@@ -585,12 +585,13 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
                 logger.debugf("Failed to verify token, key not found for algorithm %s", jws.getHeader().getRawAlgorithm());
                 return false;
             }
+            String algorithm = jws.getHeader().getRawAlgorithm();
             if (key.getAlgorithm() == null) {
-                key.setAlgorithm(jws.getHeader().getRawAlgorithm());
+                key.setAlgorithm(algorithm);
             }
-            SignatureProvider signatureProvider = session.getProvider(SignatureProvider.class, jws.getHeader().getRawAlgorithm());
+            SignatureProvider signatureProvider = session.getProvider(SignatureProvider.class, algorithm);
             if (signatureProvider == null) {
-                logger.debugf("Failed to verify token, signature provider not found for algorithm %s", jws.getHeader().getRawAlgorithm());
+                logger.debugf("Failed to verify token, signature provider not found for algorithm %s", algorithm);
                 return false;
             }
 

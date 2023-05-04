@@ -997,6 +997,10 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
     }
 
     private void requestUriParamSignedIn(String expectedAlgorithm, String actualAlgorithm) {
+        requestUriParamSignedIn(expectedAlgorithm, actualAlgorithm, null);
+    }
+
+    private void requestUriParamSignedIn(String expectedAlgorithm, String actualAlgorithm, String curve) {
         ClientResource clientResource = null;
         ClientRepresentation clientRep = null;
         try {
@@ -1010,7 +1014,7 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
             clientResource.update(clientRep);
 
             // generate and register client keypair
-            if ("none" != actualAlgorithm) oidcClientEndpointsResource.generateKeys(actualAlgorithm);
+            if (!"none".equals(actualAlgorithm)) oidcClientEndpointsResource.generateKeys(actualAlgorithm, curve);
 
             // register request object
             oidcClientEndpointsResource.setOIDCRequest("test", "test-app", validRedirectUri, "10", "mystate3", actualAlgorithm);
@@ -1119,7 +1123,19 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
     }
 
     @Test
-    public void requestUriParamSignedExpectedAnyActualES256() {
+    public void requestUriParamSignedExpectedEd25519ActualEd25519() throws Exception {
+        // will success
+        requestUriParamSignedIn(Algorithm.EdDSA, Algorithm.EdDSA, Algorithm.Ed25519);
+    }
+
+    @Test
+    public void requestUriParamSignedExpectedES256ActualEd448() throws Exception {
+        // will fail
+        requestUriParamSignedIn(Algorithm.ES256, Algorithm.EdDSA, Algorithm.Ed448);
+    }
+
+    @Test
+    public void requestUriParamSignedExpectedAnyActualES256() throws Exception {
         // Algorithm is null if 'any'
         // will success
         requestUriParamSignedIn(null, Algorithm.ES256);
