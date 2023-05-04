@@ -443,12 +443,6 @@ public class ConfigurationTest {
 
         assertEquals("com.microsoft.sqlserver.jdbc.SQLServerXADataSource", xaConfig.getConfigValue("quarkus.datasource.jdbc.driver").getValue());
         assertEquals("xa", xaConfig.getConfigValue("quarkus.datasource.jdbc.transactions").getValue());
-
-        System.setProperty(CLI_ARGS, "--db=mssql" + ARG_SEPARATOR + "--transaction-jta-enabled=false");
-        SmallRyeConfig jtaDisabledConfig = createConfig();
-
-        assertEquals("com.microsoft.sqlserver.jdbc.SQLServerDriver", jtaDisabledConfig.getConfigValue("quarkus.datasource.jdbc.driver").getValue());
-        assertEquals("disabled", jtaDisabledConfig.getConfigValue("quarkus.datasource.jdbc.transactions").getValue());
     }
 
     @Test
