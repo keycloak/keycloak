@@ -6,7 +6,7 @@
 title="Configuring Keycloak"
 summary="Understand how to configure and start Keycloak">
 
-This guide explains the configuration methods for Keycloak and how to start and apply the preferred configuration. It includes configuration guidelines for optimizing Keycloak for faster startup and low memory footprint.
+This {section} explains the configuration methods for Keycloak and how to start and apply the preferred configuration. It includes configuration guidelines for optimizing Keycloak for faster startup and low memory footprint.
 
 == Configuring sources for Keycloak
 Keycloak loads the configuration from four sources, which are listed here in order of application. 
@@ -48,7 +48,7 @@ Environment variable format:: Values for environment variables use the uppercase
 
 Configuration file format:: Values that go into the configuration file use the `_<key-with-dashes>_=_<value>_` format.
 
-At the end of each configuration guide, look for the _Relevant
+At the end of each configuration {section}, look for the _Relevant
 options_ heading, which defines the applicable configuration
 formats. For all configuration options, see <@links.server
 id="all-config"/>.  Choose the configuration source and format that applies to your use case.
