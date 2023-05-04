@@ -19,7 +19,7 @@
     "react-dom": "^18.2.0",
     "react-hook-form": "^7.43.9",
     "react-i18next": "^12.2.2",
-    "react-router-dom": "6.11.0",
+    "react-router-dom": "6.11.1",
     "ui-shared": "999.0.0-SNAPSHOT"
   },
   "devDependencies": {
