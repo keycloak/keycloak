@@ -229,6 +229,7 @@ public class ConsentsTest extends AbstractKeycloakTest {
                 providerRealm.clients().create(client);
             }
         }
+        createAppClientInRealm(consumerRealmName());
     }
 
     protected String getAuthRoot() {
@@ -267,7 +268,6 @@ public class ConsentsTest extends AbstractKeycloakTest {
     public void testConsents() {
         oauth.realm(consumerRealmName());
         oauth.redirectUri(oauth.SERVER_ROOT + "/auth/realms/" + consumerRealmName() + "/app/auth");
-        createAppClientInRealm(consumerRealmName());
         driver.navigate().to(oauth.getLoginFormUrl());
 
         log.debug("Clicking social " + getIDPAlias());
