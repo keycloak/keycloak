@@ -114,14 +114,7 @@ final class DatabasePropertyMappers {
         }
 
         ConfigValue xaEnabledConfigValue = context.proceed("kc.transaction-xa-enabled");
-        ConfigValue jtaEnabledConfiguration = context.proceed("kc.transaction-jta-enabled");
-
         boolean isXaEnabled = xaEnabledConfigValue == null || Boolean.parseBoolean(xaEnabledConfigValue.getValue());
-        boolean isJtaEnabled = jtaEnabledConfiguration == null || Boolean.parseBoolean(jtaEnabledConfiguration.getValue());
-
-        if (!isJtaEnabled) {
-            isXaEnabled = false;
-        }
 
         Optional<String> driver = Database.getDriver(value.get(), isXaEnabled);
 

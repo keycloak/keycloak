@@ -22,10 +22,10 @@ import java.time.Duration;
 import org.keycloak.it.utils.KeycloakDistribution;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.JdbcDatabaseContainer;
+import org.testcontainers.containers.MSSQLServerContainer;
 import org.testcontainers.containers.MariaDBContainer;
 import org.testcontainers.containers.MySQLContainer;
 import org.testcontainers.containers.PostgreSQLContainer;
-import org.testcontainers.utility.DockerImageName;
 import org.testcontainers.utility.DockerImageName;
 
 public class DatabaseContainer {
@@ -59,7 +59,6 @@ public class DatabaseContainer {
             dist.setProperty("db-password", getPassword());
             dist.setProperty("db-url", getJdbcUrl());
         }
-
     }
 
     private String getJdbcUrl() {
@@ -67,10 +66,16 @@ public class DatabaseContainer {
     }
 
     String getUsername() {
+        if (container instanceof MSSQLServerContainer) {
+            return ((JdbcDatabaseContainer) container).getUsername();
+        }
         return "keycloak";
     }
 
     String getPassword() {
+        if (container instanceof MSSQLServerContainer) {
+            return ((JdbcDatabaseContainer) container).getPassword();
+        }
         return DEFAULT_PASSWORD;
     }
 
@@ -79,7 +84,11 @@ public class DatabaseContainer {
         container = null;
     }
 
-    private GenericContainer<?> configureJdbcContainer(JdbcDatabaseContainer jdbcDatabaseContainer) {
+    private JdbcDatabaseContainer configureJdbcContainer(JdbcDatabaseContainer jdbcDatabaseContainer) {
+        if (jdbcDatabaseContainer instanceof MSSQLServerContainer) {
+            return jdbcDatabaseContainer;
+        }
+
         return jdbcDatabaseContainer
                 .withDatabaseName("keycloak")
                 .withUsername(getUsername())
@@ -98,10 +107,12 @@ public class DatabaseContainer {
         String MARIADB_IMAGE = System.getProperty("kc.db.mariadb.container.image", "mariadb:10.5.9");
         String MYSQL_IMAGE = System.getProperty("kc.db.mysql.container.image", "mysql:latest");
         String INFINISPAN_IMAGE = System.getProperty("kc.infinispan.container.image");
+        String MSSQL_IMAGE = System.getProperty("kc.db.mssql.container.image", "mcr.microsoft.com/mssql/server:2019-latest");
 
         DockerImageName POSTGRES = DockerImageName.parse(POSTGRES_IMAGE).asCompatibleSubstituteFor("postgres");
         DockerImageName MARIADB = DockerImageName.parse(MARIADB_IMAGE).asCompatibleSubstituteFor("mariadb");
         DockerImageName MYSQL = DockerImageName.parse(MYSQL_IMAGE).asCompatibleSubstituteFor("mysql");
+        DockerImageName MSSQL = DockerImageName.parse(MSSQL_IMAGE).asCompatibleSubstituteFor("sqlserver");
 
         switch (alias) {
             case "postgres":
@@ -110,6 +121,8 @@ public class DatabaseContainer {
                 return configureJdbcContainer(new MariaDBContainer(MARIADB));
             case "mysql":
                 return configureJdbcContainer(new MySQLContainer(MYSQL));
+            case "mssql":
+                return configureJdbcContainer(new MSSQLServerContainer(MSSQL));
             case "infinispan":
                 return configureInfinispanUser(new GenericContainer(INFINISPAN_IMAGE))
                         .withExposedPorts(11222);
