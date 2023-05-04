@@ -76,14 +76,6 @@ jobs:
         if: always()
         uses: ./.github/actions/upload-heapdumps
 
-      - id: upload-surefire-reports
-        name: Upload Surefire reports
-        uses: ./.github/actions/upload-surefire-reports
-        if: always()
-        with:
-          api-key: ${{ secrets.FORESIGHT_API_KEY }}
-          surefire-reports-path: '**/target/surefire-reports/*.xml'
-
   base-integration-tests:
     name: Base IT
     needs: build
@@ -109,14 +101,6 @@ jobs:
       - name: Upload JVM Heapdumps
         if: always()
         uses: ./.github/actions/upload-heapdumps
-
-      - id: upload-surefire-reports
-        name: Upload Surefire reports
-        uses: ./.github/actions/upload-surefire-reports
-        if: always()
-        with:
-          api-key: ${{ secrets.FORESIGHT_API_KEY }}
-          surefire-reports-path: 'testsuite/integration-arquillian/tests/base/target/surefire-reports/*.xml'
 
       - uses: ./.github/actions/upload-flaky-tests
         name: Upload flaky tests
@@ -158,14 +142,6 @@ jobs:
         if: always()
         uses: ./.github/actions/upload-heapdumps
 
-      - id: upload-surefire-reports
-        name: Upload Surefire reports
-        uses: ./.github/actions/upload-surefire-reports
-        if: always()
-        with:
-          api-key: ${{ secrets.FORESIGHT_API_KEY }}
-          surefire-reports-path: 'quarkus/tests/integration/target/surefire-reports/*.xml'
-
   jdk-integration-tests:
     name: Java Distribution IT
     needs: build
@@ -202,14 +178,6 @@ jobs:
       - name: Upload JVM Heapdumps
         if: always()
         uses: ./.github/actions/upload-heapdumps
-
-      - id: upload-surefire-reports
-        name: Upload Surefire reports
-        uses: ./.github/actions/upload-surefire-reports
-        if: always()
-        with:
-          api-key: ${{ secrets.FORESIGHT_API_KEY }}
-          surefire-reports-path: 'testsuite/integration-arquillian/tests/base/target/surefire-reports/*.xml'
 
       - uses: ./.github/actions/upload-flaky-tests
         name: Upload flaky tests
@@ -267,14 +235,6 @@ jobs:
         if: always()
         uses: ./.github/actions/upload-heapdumps
 
-      - id: upload-surefire-reports
-        name: Upload Surefire reports
-        uses: ./.github/actions/upload-surefire-reports
-        if: always()
-        with:
-          api-key: ${{ secrets.FORESIGHT_API_KEY }}
-          surefire-reports-path: 'testsuite/integration-arquillian/tests/base/target/surefire-reports/*.xml'
-
       - uses: ./.github/actions/upload-flaky-tests
         name: Upload flaky tests
         env:
@@ -307,14 +267,6 @@ jobs:
       - name: Upload JVM Heapdumps
         if: always()
         uses: ./.github/actions/upload-heapdumps
-
-      - id: upload-surefire-reports
-        name: Upload Surefire reports
-        uses: ./.github/actions/upload-surefire-reports
-        if: always()
-        with:
-          api-key: ${{ secrets.FORESIGHT_API_KEY }}
-          surefire-reports-path: 'testsuite/integration-arquillian/tests/base/target/surefire-reports/*.xml'
 
       - uses: ./.github/actions/upload-flaky-tests
         name: Upload flaky tests
@@ -371,14 +323,6 @@ jobs:
         if: always()
         uses: ./.github/actions/upload-heapdumps
 
-      - id: upload-surefire-reports
-        name: Upload Surefire reports
-        uses: ./.github/actions/upload-surefire-reports
-        if: always()
-        with:
-          api-key: ${{ secrets.FORESIGHT_API_KEY }}
-          surefire-reports-path: 'testsuite/integration-arquillian/tests/base/target/surefire-reports/*.xml'
-
       - uses: ./.github/actions/upload-flaky-tests
         name: Upload flaky tests
         env:
@@ -413,14 +357,6 @@ jobs:
         if: always()
         uses: ./.github/actions/upload-heapdumps
 
-      - id: upload-surefire-reports
-        name: Upload Surefire reports
-        uses: ./.github/actions/upload-surefire-reports
-        if: always()
-        with:
-          api-key: ${{ secrets.FORESIGHT_API_KEY }}
-          surefire-reports-path: '**/target/surefire-reports/*.xml'
-
   fips-integration-tests:
     name: FIPS IT
     needs: build
@@ -454,14 +390,6 @@ jobs:
       - name: Upload JVM Heapdumps
         if: always()
         uses: ./.github/actions/upload-heapdumps
-
-      - id: upload-surefire-reports
-        name: Upload Surefire reports
-        uses: ./.github/actions/upload-surefire-reports
-        if: always()
-        with:
-          api-key: ${{ secrets.FORESIGHT_API_KEY }}
-          surefire-reports-path: 'testsuite/integration-arquillian/tests/base/target/surefire-reports/*.xml'
 
       - uses: ./.github/actions/upload-flaky-tests
         name: Upload flaky tests
