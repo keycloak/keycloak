@@ -17,6 +17,7 @@
 package org.keycloak.testsuite;
 
 import io.appium.java_client.AppiumDriver;
+import jakarta.ws.rs.core.Response;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.PropertiesConfiguration;
 import org.jboss.arquillian.container.test.api.RunAsClient;
@@ -40,6 +41,7 @@ import org.keycloak.models.RealmProvider;
 import org.keycloak.models.cache.CacheRealmProvider;
 import org.keycloak.models.cache.UserCache;
 import org.keycloak.models.utils.TimeBasedOTP;
+import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.provider.Provider;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -194,7 +196,7 @@ public abstract class AbstractKeycloakTest {
         }
 
         oauth.init(driver);
-
+        createAppClientInRealm("test");
     }
 
     public void reconnectAdminClient() throws Exception {
@@ -586,6 +588,23 @@ public abstract class AbstractKeycloakTest {
         return user;
     }
 
+    protected void createAppClientInRealm(String realm) {
+        ClientRepresentation client = new ClientRepresentation();
+        client.setClientId("test-app");
+        client.setName("test-app");
+        client.setSecret("password");
+        client.setEnabled(true);
+        client.setDirectAccessGrantsEnabled(true);
+
+        client.setRedirectUris(Collections.singletonList(oauth.SERVER_ROOT + "/auth/*"));
+        client.setBaseUrl(oauth.SERVER_ROOT + "/auth/realms/" + realm + "/app");
+
+        OIDCAdvancedConfigWrapper.fromClientRepresentation(client).setPostLogoutRedirectUris(Collections.singletonList("+"));
+
+        Response response = adminClient.realm(realm).clients().create(client);
+        response.close();
+    }
+
     public void setRequiredActionEnabled(String realm, String requiredAction, boolean enabled, boolean defaultAction) {
         AuthenticationManagementResource managementResource = adminClient.realm(realm).flows();
 
@@ -771,4 +790,6 @@ public abstract class AbstractKeycloakTest {
                 .fetchString(s -> s.getKeycloakSessionFactory().getProviderFactory(UserCache.class));
         return Objects.nonNull(userCache);
     }
+
+
 }
