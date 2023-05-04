@@ -220,9 +220,7 @@ export const GroupTable = ({
           <ListEmptyState
             hasIcon={true}
             message={t(`noGroupsInThis${id ? "SubGroup" : "Realm"}`)}
-            instructions={t(
-              `noGroupsInThis${id ? "SubGroup" : "Realm"}Instructions`
-            )}
+            instructions=""
             primaryActionText={t("createGroup")}
             onPrimaryAction={toggleCreateOpen}
           />
