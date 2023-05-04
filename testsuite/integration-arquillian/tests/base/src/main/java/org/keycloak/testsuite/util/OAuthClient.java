@@ -53,6 +53,7 @@ import org.keycloak.jose.jwk.JSONWebKeySet;
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jwk.JWKParser;
 import org.keycloak.jose.jws.JWSInput;
+import org.keycloak.jose.jwk.OKPPublicJWK;
 import org.keycloak.models.Constants;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
@@ -1376,10 +1377,15 @@ public class OAuthClient {
     }
 
     public SignatureSignerContext createSigner(PrivateKey privateKey, String kid, String algorithm) {
+        return createSigner(privateKey, kid, algorithm, null);
+    }
+
+    public SignatureSignerContext createSigner(PrivateKey privateKey, String kid, String algorithm, String curve) {
         KeyWrapper keyWrapper = new KeyWrapper();
         keyWrapper.setAlgorithm(algorithm);
         keyWrapper.setKid(kid);
         keyWrapper.setPrivateKey(privateKey);
+        keyWrapper.setCurve(curve);
         SignatureSignerContext signer;
         switch (algorithm) {
             case Algorithm.ES256:
@@ -2199,6 +2205,9 @@ public class OAuthClient {
                 KeyWrapper key = new KeyWrapper();
                 key.setKid(k.getKeyId());
                 key.setAlgorithm(k.getAlgorithm());
+                if (k.getOtherClaims().get(OKPPublicJWK.CRV) != null) {
+                    key.setCurve((String) k.getOtherClaims().get(OKPPublicJWK.CRV));
+                }
                 key.setPublicKey(publicKey);
                 key.setUse(KeyUse.SIG);
 

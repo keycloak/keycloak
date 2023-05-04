@@ -327,13 +327,27 @@ public class UserInfoTest extends AbstractKeycloakTest {
         testUserInfoSignatureAndEncryption(null, JWEConstants.RSA1_5, null);
     }
 
+    @Test
+    public void testSuccessEncryptedResponseSigAlgEd25519AlgRSA_OAEPEncA256GCM() throws Exception {
+        testUserInfoSignatureAndEncryption(Algorithm.EdDSA, Algorithm.Ed25519, JWEConstants.RSA_OAEP, JWEConstants.A256GCM);
+    }
+
+    @Test
+    public void testSuccessEncryptedResponseSigAlgEd448AlgRSA_OAEP256EncA256CBC_HS512() throws Exception {
+        testUserInfoSignatureAndEncryption(Algorithm.EdDSA, Algorithm.Ed448, JWEConstants.RSA_OAEP_256, JWEConstants.A256CBC_HS512);
+    }
+
     private void testUserInfoSignatureAndEncryption(String sigAlgorithm, String algAlgorithm, String encAlgorithm) {
+        testUserInfoSignatureAndEncryption(sigAlgorithm, null, algAlgorithm, encAlgorithm);
+    }
+
+    private void testUserInfoSignatureAndEncryption(String sigAlgorithm, String curve, String algAlgorithm, String encAlgorithm) {
         ClientResource clientResource = null;
         ClientRepresentation clientRep = null;
         try {
             // generate and register encryption key onto client
             TestOIDCEndpointsApplicationResource oidcClientEndpointsResource = testingClient.testApp().oidcClientEndpoints();
-            oidcClientEndpointsResource.generateKeys(algAlgorithm);
+            oidcClientEndpointsResource.generateKeys(algAlgorithm, curve);
 
             clientResource = ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app");
             clientRep = clientResource.toRepresentation();
