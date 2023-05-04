@@ -457,7 +457,7 @@ log-gelf-port=12201
 With this configuration applied, start keycloak using `start-dev` or `start`.
 
 ==== Kibana: See the results
-Open http://localhost:5601 to reach the Kibana dashboard. The exact configuration of a good monitoring dashboard is out of scope for this guide. To find out if logs sent by Keycloak are delivered to Kibana, open the http://localhost:5601/app/kibana#/dev_tools/console?_g=()[Dev Tools] and execute the default `match_all` query. The logs should appear in the result field.
+Open http://localhost:5601 to reach the Kibana dashboard. The exact configuration of a good monitoring dashboard is out of scope for this {section}. To find out if logs sent by Keycloak are delivered to Kibana, open the http://localhost:5601/app/kibana#/dev_tools/console?_g=()[Dev Tools] and execute the default `match_all` query. The logs should appear in the result field.
 
 === Configure a different log level for the GELF logger
 To keep log storage costs and verbosity low, it is often wanted to only store a subset of the verbose application logs inside a centralized log management system. To configure Keycloak to use a different log level for the logs you want to ingest, use the following configuration:

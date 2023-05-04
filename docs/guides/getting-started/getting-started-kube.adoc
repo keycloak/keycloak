@@ -86,7 +86,7 @@ echo "Keycloak Account Console: $KEYCLOAK_URL/realms/myrealm/account" &&
 echo ""
 ----
 
-Remember these URLs. You need them as you follow the instructions in this guide. The URL for the Account Console does not work yet as you need to create the realm first.
+Remember these URLs. You need them as you follow the instructions in this {section}. The URL for the Account Console does not work yet as you need to create the realm first.
 
 include::templates/realm-config.adoc[]
 
