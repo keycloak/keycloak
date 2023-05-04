@@ -19,6 +19,7 @@ package org.keycloak.services.resources.admin;
 import static org.keycloak.utils.LockObjectsForModification.lockUserSessionsForModification;
 import static org.keycloak.util.JsonSerialization.readValue;
 
+import jakarta.ws.rs.DefaultValue;
 import java.io.InputStream;
 import java.security.cert.X509Certificate;
 import java.text.ParseException;
@@ -351,9 +352,9 @@ public class RealmAdminResource {
     @GET
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
-    public RealmRepresentation getRealm() {
+    public RealmRepresentation getRealm(@DefaultValue("false") @QueryParam("briefRepresentation") boolean briefRepresentation) {
         if (auth.realm().canViewRealm()) {
-            return ModelToRepresentation.toRepresentation(session, realm, false);
+            return briefRepresentation ? ModelToRepresentation.toBriefRepresentation(realm) : ModelToRepresentation.toRepresentation(session, realm, false);
         } else {
             auth.realm().requireViewRealmNameList();
 
@@ -364,7 +365,7 @@ public class RealmAdminResource {
                 rep.setRegistrationEmailAsUsername(realm.isRegistrationEmailAsUsername());
             }
 
-            if (auth.realm().canViewIdentityProviders()) {
+            if (auth.realm().canViewIdentityProviders() && !briefRepresentation) {
                 RealmRepresentation r = ModelToRepresentation.toRepresentation(session, realm, false);
                 rep.setIdentityProviders(r.getIdentityProviders());
                 rep.setIdentityProviderMappers(r.getIdentityProviderMappers());
