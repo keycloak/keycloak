@@ -19,8 +19,6 @@ import org.hamcrest.Matchers;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Assert;
 import org.junit.Test;
-import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
-import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.testsuite.AbstractKeycloakTest;
@@ -37,15 +35,14 @@ import java.util.Arrays;
 import java.util.Set;
 import java.util.Calendar;
 import java.util.LinkedList;
-import java.util.Collections;
 import java.util.stream.Collectors;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_HOST;
 
 import org.junit.After;
+import org.junit.Before;
 
-import jakarta.ws.rs.core.Response;
 
 /**
  * @author <a href="mailto:mkanis@redhat.com">Martin Kanis</a>
@@ -66,13 +63,18 @@ public class CookiesPathTest extends AbstractKeycloakTest {
 
     private static final List<String> KEYCLOAK_COOKIE_NAMES = Arrays.asList("KC_RESTART", "AUTH_SESSION_ID", "KEYCLOAK_IDENTITY", "KEYCLOAK_SESSION");
 
+    @Before
+    public void beforeCookiesPathTest() {
+        createAppClientInRealm("foo");
+        createAppClientInRealm("foobar");
+    }
+
     @After
     public void afterCookiesPathTest() throws IOException {
         if (httpClient != null) httpClient.close();
 
         // Setting back default oauth values
         oauth.realm("test");
-        oauth.clientId("test-app");
         oauth.redirectUri(oauth.APP_AUTH_ROOT);
     }
 
@@ -326,26 +328,7 @@ public class CookiesPathTest extends AbstractKeycloakTest {
     }
 
     private void setOAuthUri(String realm) {
-        createClientInRealm(realm);
         oauth.realm(realm);
-        oauth.clientId("app");
         oauth.redirectUri(oauth.AUTH_SERVER_ROOT + "/realms/" + realm + "/app/auth");
-    }
-
-    private void createClientInRealm(String realm) {
-        ClientRepresentation client = new ClientRepresentation();
-        client.setClientId("app");
-        client.setName("app");
-        client.setSecret("password");
-        client.setEnabled(true);
-        client.setDirectAccessGrantsEnabled(true);
-
-        client.setRedirectUris(Collections.singletonList(oauth.SERVER_ROOT + "/auth/*"));
-        client.setBaseUrl(oauth.SERVER_ROOT + "/auth/realms/" + realm + "/app");
-
-        OIDCAdvancedConfigWrapper.fromClientRepresentation(client).setPostLogoutRedirectUris(Collections.singletonList("+"));
-
-        Response response = adminClient.realm(realm).clients().create(client);
-        response.close();
     }
 }
