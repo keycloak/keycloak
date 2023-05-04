@@ -28,7 +28,6 @@ import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.admin.client.resource.UsersResource;
-import org.keycloak.common.Profile;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.models.ClientModel;
@@ -42,7 +41,6 @@ import org.keycloak.representations.idm.UserSessionRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.ConsentPage;
 import org.keycloak.testsuite.pages.ErrorPage;
@@ -69,7 +67,6 @@ import org.openqa.selenium.By;
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
  */
-@DisableFeature(value = Profile.Feature.ACCOUNT2, skipRestart = true) // TODO remove this (KEYCLOAK-16228)
 public class ConsentsTest extends AbstractKeycloakTest {
 
     final static String REALM_PROV_NAME = "provider";
@@ -268,7 +265,10 @@ public class ConsentsTest extends AbstractKeycloakTest {
 
     @Test
     public void testConsents() {
-        driver.navigate().to(getAccountUrl(consumerRealmName()));
+        oauth.realm(consumerRealmName());
+        oauth.redirectUri(oauth.SERVER_ROOT + "/auth/realms/" + consumerRealmName() + "/app/auth");
+        createAppClientInRealm(consumerRealmName());
+        driver.navigate().to(oauth.getLoginFormUrl());
 
         log.debug("Clicking social " + getIDPAlias());
         accountLoginPage.clickSocial(getIDPAlias());
@@ -338,6 +338,10 @@ public class ConsentsTest extends AbstractKeycloakTest {
         sessions = userResource.getUserSessions();
         Assert.assertEquals("There should be one active session", 1, sessions.size());
         Assert.assertEquals("There should be no client in user session", 0, sessions.get(0).getClients().size());
+
+        // oauth clean up
+        oauth.realm("test");
+        oauth.redirectUri(oauth.SERVER_ROOT + "/auth/realms/master/app/auth");
     }
 
     /**
