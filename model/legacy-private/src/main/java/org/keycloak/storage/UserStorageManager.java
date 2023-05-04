@@ -375,7 +375,7 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
         if (user != null) {
             user = importValidation(realm, user);
             // Case when email was changed directly in the userStorage and doesn't correspond anymore to the email from local DB
-            if (email.equalsIgnoreCase(user.getEmail())) {
+            if (user != null && email.equalsIgnoreCase(user.getEmail())) {
                 return user;
             }
         }
