@@ -1311,6 +1311,16 @@ public class AccessTokenTest extends AbstractKeycloakTest {
     }
 
     @Test
+    public void accessTokenRequest_ClientEdDSA_RealmES256() throws Exception {
+        conductAccessTokenRequest(Algorithm.HS256, Algorithm.EdDSA, Algorithm.ES256);
+    }
+
+    @Test
+    public void accessTokenRequest_ClientEdDSA_RealmEdDSA() throws Exception {
+        conductAccessTokenRequest(Algorithm.HS256, Algorithm.EdDSA, Algorithm.EdDSA);
+    }
+    
+    @Test
     public void validateECDSASignatures() {
         validateTokenECDSASignature(Algorithm.ES256);
         validateTokenECDSASignature(Algorithm.ES384);
@@ -1354,7 +1364,6 @@ public class AccessTokenTest extends AbstractKeycloakTest {
             TokenSignatureUtil.changeRealmTokenSignatureProvider(adminClient, Algorithm.RS256);
             TokenSignatureUtil.changeClientAccessTokenSignatureProvider(ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app"), Algorithm.RS256);
         }
-        return;
     }
 
     private void tokenRequest(String expectedRefreshAlg, String expectedAccessAlg, String expectedIdTokenAlg) throws Exception {
@@ -1373,17 +1382,17 @@ public class AccessTokenTest extends AbstractKeycloakTest {
         assertEquals("Bearer", response.getTokenType());
 
         JWSHeader header = new JWSInput(response.getAccessToken()).getHeader();
-        assertEquals(expectedAccessAlg, header.getAlgorithm().name());
+        verifySignatureAlgorithm(header, expectedAccessAlg);
         assertEquals("JWT", header.getType());
         assertNull(header.getContentType());
 
         header = new JWSInput(response.getIdToken()).getHeader();
-        assertEquals(expectedIdTokenAlg, header.getAlgorithm().name());
+        verifySignatureAlgorithm(header, expectedIdTokenAlg);
         assertEquals("JWT", header.getType());
         assertNull(header.getContentType());
 
         header = new JWSInput(response.getRefreshToken()).getHeader();
-        assertEquals(expectedRefreshAlg, header.getAlgorithm().name());
+        verifySignatureAlgorithm(header, expectedRefreshAlg);
         assertEquals("JWT", header.getType());
         assertNull(header.getContentType());
 
@@ -1399,6 +1408,10 @@ public class AccessTokenTest extends AbstractKeycloakTest {
         assertEquals(token.getId(), event.getDetails().get(Details.TOKEN_ID));
         assertEquals(oauth.parseRefreshToken(response.getRefreshToken()).getId(), event.getDetails().get(Details.REFRESH_TOKEN_ID));
         assertEquals(sessionId, token.getSessionState());
+    }
+
+    private void verifySignatureAlgorithm(JWSHeader header, String expectedAlgorithm) {
+        assertEquals(expectedAlgorithm, header.getAlgorithm().name());
     }
 
     // KEYCLOAK-16009

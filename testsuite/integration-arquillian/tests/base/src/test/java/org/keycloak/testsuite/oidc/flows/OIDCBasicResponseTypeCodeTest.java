@@ -19,6 +19,7 @@ package org.keycloak.testsuite.oidc.flows;
 
 import org.junit.Before;
 import org.junit.Test;
+import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.events.Details;
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
 import org.keycloak.representations.IDToken;
