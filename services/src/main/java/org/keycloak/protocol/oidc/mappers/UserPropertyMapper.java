@@ -17,9 +17,13 @@
 
 package org.keycloak.protocol.oidc.mappers;
 
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ProtocolMapperContainerModel;
 import org.keycloak.models.ProtocolMapperModel;
+import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.protocol.ProtocolMapperConfigException;
 import org.keycloak.protocol.ProtocolMapperUtils;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.IDToken;
@@ -74,6 +78,17 @@ public class UserPropertyMapper extends AbstractOIDCProtocolMapper implements OI
     @Override
     public String getHelpText() {
         return "Map a built in user property (email, firstName, lastName) to a token claim.";
+    }
+
+    @Override
+    public void validateConfig(KeycloakSession session, RealmModel realm, ProtocolMapperContainerModel client, ProtocolMapperModel mappingModel) throws ProtocolMapperConfigException {
+        String propertyName = mappingModel.getConfig().get(ProtocolMapperUtils.USER_ATTRIBUTE);
+
+        if (propertyName == null || propertyName.trim().isEmpty()) return;
+
+        ProtocolMapperUtils.validateUserModelProperty(propertyName);
+
+        super.validateConfig(session, realm, client, mappingModel);
     }
 
     protected void setClaim(IDToken token, ProtocolMapperModel mappingModel, UserSessionModel userSession) {

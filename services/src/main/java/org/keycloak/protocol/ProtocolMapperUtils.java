@@ -17,6 +17,7 @@
 
 package org.keycloak.protocol;
 
+import org.jboss.logging.Logger;
 import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
@@ -25,9 +26,12 @@ import org.keycloak.models.UserModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
 
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.AbstractMap;
 import java.util.Comparator;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.stream.Stream;
@@ -37,6 +41,7 @@ import java.util.stream.Stream;
  * @version $Revision: 1 $
  */
 public class ProtocolMapperUtils {
+    private static final Logger log = Logger.getLogger(ProtocolMapperUtils.class);
 
     public static final String USER_ROLE = "user.role";
     public static final String USER_ATTRIBUTE = "user.attribute";
@@ -82,25 +87,61 @@ public class ProtocolMapperUtils {
     // Script mapper goes last, so it can access the roles in the token
     public static final int PRIORITY_SCRIPT_MAPPER = 50;
 
+    public static final String USER_PROPERTY_MAPPER_WRONG_PROPERTY = "userPropertyMapperWrongProperty";
+
+    private static final Map<String, Method> USER_MODEL_METHODS = new HashMap<>();
+    private static final Map<String, Method> DEPRECATED_USER_MODEL_METHODS = new HashMap<>();
+    static {
+        for (Method declaredMethod : UserModel.class.getDeclaredMethods()) {
+            if (declaredMethod.getParameterCount() == 0 && !(declaredMethod.getReturnType().isAssignableFrom(Stream.class)) && !(declaredMethod.getReturnType().isAssignableFrom(Map.class))) {
+                if (declaredMethod.getName().startsWith("is")) {
+                    memorizedMethod(declaredMethod.getName().substring(2), declaredMethod);
+                } else if (declaredMethod.getName().startsWith("get")) {
+                    memorizedMethod(declaredMethod.getName().substring(3), declaredMethod);
+                }
+            }
+        }
+    }
+
+    private static void memorizedMethod(String property, Method method) {
+        Method existingMethod = DEPRECATED_USER_MODEL_METHODS.put(property, method);
+        if (existingMethod != null) {
+            throw new IllegalStateException("found methods with colliding names: " + method.getName() + " and " + existingMethod.getName());
+        }
+        property = property.substring(0, 1).toLowerCase() + property.substring(1);
+        existingMethod = USER_MODEL_METHODS.put(property, method);
+        if (existingMethod != null) {
+            throw new IllegalStateException("found methods with colliding names: " + method.getName() + " and " + existingMethod.getName());
+        }
+    }
+
+    public static void validateUserModelProperty(String propertyName) throws ProtocolMapperConfigException {
+        if (!USER_MODEL_METHODS.containsKey(propertyName)) {
+            throw new ProtocolMapperConfigException(USER_PROPERTY_MAPPER_WRONG_PROPERTY, "User property '" + propertyName + "' does not exist, try one of these property names: " + USER_MODEL_METHODS.keySet(),
+                    propertyName, USER_MODEL_METHODS.keySet().toString());
+        }
+    }
+
     public static String getUserModelValue(UserModel user, String propertyName) {
-
-        String methodName = "get" + Character.toUpperCase(propertyName.charAt(0)) + propertyName.substring(1);
-        try {
-            Method method = UserModel.class.getMethod(methodName);
-            Object val = method.invoke(user);
-            if (val != null) return val.toString();
-        } catch (Exception ignore) {
-
+        Method method = USER_MODEL_METHODS.get(propertyName);
+        if (method == null) {
+            method = DEPRECATED_USER_MODEL_METHODS.get(propertyName);
+            if (method != null) {
+                log.warn("Using user properties starting with a capital letter like '" + propertyName + "' is deprecated since Keycloak 22, update your configurations");
+            } else {
+                // For KC22, log a warning. Future versions should throw an exception as this is probably an error and wouldn't work as the user expects it to work
+                log.warn("User property '" + propertyName + "' doesn't exist, try one of these property values: " + USER_MODEL_METHODS.keySet());
+                return null;
+            }
         }
-        methodName = "is" + Character.toUpperCase(propertyName.charAt(0)) + propertyName.substring(1);
-        try {
-            Method method = UserModel.class.getMethod(methodName);
-            Object val = method.invoke(user);
-            if (val != null) return val.toString();
-        } catch (Exception ignore) {
 
+        try {
+            Object val = method.invoke(user);
+            return val != null ? val.toString() : null;
+        } catch (IllegalAccessException | InvocationTargetException e) {
+            log.warn("unable to retrieve property '" + propertyName + "'", e);
+            return null;
         }
-        return null;
     }
 
     /**

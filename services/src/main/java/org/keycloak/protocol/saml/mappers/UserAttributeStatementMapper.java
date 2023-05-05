@@ -80,7 +80,7 @@ public class UserAttributeStatementMapper extends AbstractSAMLProtocolMapper imp
 
     @Override
     public String getHelpText() {
-        return "Map a custom user attribute to a to a SAML attribute.";
+        return "Map a custom user attribute to a SAML attribute.";
     }
 
     @Override

@@ -77,3 +77,10 @@ If you are extending one of the following SPIs:
 
 See the link:{upgradingguide_link}[{upgradingguide_name}] for more details about how to
 update your custom providers.
+
+= SAML and OpenID Connect User Property mapper validation
+
+The SAML and OpenID Connect User Property now enforces the correct capitalization of the property names.
+Valid property names are: `firstName`, `lastName`, `emailVerified`, `groupsCount`, `createdTimestamp`, `federationLink`, `id`, `serviceAccountClientLink`, `enabled`, `email`, `username`.
+
+See the migration guide for more details.

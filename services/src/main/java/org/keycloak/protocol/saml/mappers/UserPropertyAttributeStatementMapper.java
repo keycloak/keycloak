@@ -20,9 +20,12 @@ package org.keycloak.protocol.saml.mappers;
 import org.keycloak.dom.saml.v2.assertion.AttributeStatementType;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ProtocolMapperContainerModel;
 import org.keycloak.models.ProtocolMapperModel;
+import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.protocol.ProtocolMapperConfigException;
 import org.keycloak.protocol.ProtocolMapperUtils;
 import org.keycloak.provider.ProviderConfigProperty;
 
@@ -73,6 +76,17 @@ public class UserPropertyAttributeStatementMapper extends AbstractSAMLProtocolMa
     @Override
     public String getHelpText() {
         return "Map a built in user property (email, firstName, lastName) to a SAML attribute type.";
+    }
+
+    @Override
+    public void validateConfig(KeycloakSession session, RealmModel realm, ProtocolMapperContainerModel client, ProtocolMapperModel mappingModel) throws ProtocolMapperConfigException {
+        String propertyName = mappingModel.getConfig().get(ProtocolMapperUtils.USER_ATTRIBUTE);
+
+        if (propertyName == null || propertyName.trim().isEmpty()) return;
+
+        ProtocolMapperUtils.validateUserModelProperty(propertyName);
+
+        super.validateConfig(session, realm, client, mappingModel);
     }
 
     @Override

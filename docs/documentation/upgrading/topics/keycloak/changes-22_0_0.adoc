@@ -323,3 +323,18 @@ You need to add an empty `META-INF/beans.xml` to the JAR file where your custom 
 at runtime.
 
 You should also make sure your JAX-RS methods are declaring the expected media types for input and output by marking them with the `@Consumes` and `@Produces` annotations, respectively.
+
+= SAML and OpenID Connect User Property mapper validation
+
+Previous versions of the User Property mappers did not validate the name of the property when creating or updating it.
+They also supported case-insensitivity for the first letter as, for example, both `email` and `Email` accessed the email property.
+
+The User Property mappers now validate that the property named in the configuration is a valid user property of the `UserModel` interface.
+The validation is case-sensitive.
+Valid property names are: `firstName`, `lastName`, `emailVerified`, `groupsCount`, `createdTimestamp`, `federationLink`, `id`, `serviceAccountClientLink`, `enabled`, `email`, `username`.
+
+When executing the mapper, invalid property names map to the value `null` (as before) and log a warning in the log file (new in this version).
+Starting with this version, when modifying the mapper via the API or the UI with an invalid property name, Keycloak returns a validation error and the changes are not persisted.
+
+For the legacy configurations, Keycloak still supports property names starting with a capital letter, but will log a warning when such a mapping is executed.
+To avoid these logs and the runtime overhead, review and update existing configurations.
