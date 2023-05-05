@@ -29,7 +29,8 @@ export function EventsTypeTable({
   const { t } = useTranslation("realm-settings");
 
   const data = eventTypes.map((type) => ({
-    id: t(`eventTypes.${type}.name`),
+    id: type,
+    name: t(`eventTypes.${type}.name`),
     description: t(`eventTypes.${type}.description`),
   }));
   return (
@@ -60,7 +61,7 @@ export function EventsTypeTable({
       }
       columns={[
         {
-          name: "id",
+          name: "name",
           displayKey: "realm-settings:eventType",
         },
         {
