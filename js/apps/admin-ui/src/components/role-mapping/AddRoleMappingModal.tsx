@@ -138,7 +138,7 @@ export const AddRoleMappingModal = ({
         key={key}
         onSelect={(rows) => setSelectedRows([...rows])}
         searchPlaceholderKey="clients:searchByRoleName"
-        isPaginated={!(filterType === "roles" && type === "users")}
+        isPaginated={!(filterType === "roles" && type !== "roles")}
         searchTypeComponent={
           <ToolbarItem>
             <Dropdown
