@@ -289,8 +289,6 @@ public class JavascriptAdapterTest extends AbstractJavascriptTest {
 
     @Test
     public void grantBrowserBasedApp() {
-        Assume.assumeTrue("This test doesn't work with phantomjs", !"phantomjs".equals(System.getProperty("js.browser")));
-
         ClientResource clientResource = ApiUtil.findClientResourceByClientId(adminClient.realm(REALM_NAME), CLIENT_ID);
         ClientRepresentation client = clientResource.toRepresentation();
         try {
@@ -427,13 +425,10 @@ public class JavascriptAdapterTest extends AbstractJavascriptTest {
                 // Possibility of 0 and 401 is caused by this issue: https://issues.redhat.com/browse/KEYCLOAK-12686
                 .sendXMLHttpRequest(request, response -> assertThat(response, hasEntry(is("status"), anyOf(is(0L), is(401L)))))
                 .refresh();
-        if (!"phantomjs".equals(System.getProperty("js.browser"))) {
-            // I have no idea why, but this request doesn't work with phantomjs, it works in chrome
-            testExecutor.logInAndInit(defaultArguments(), unauthorizedUser, this::assertInitAuth)
-                    .sendXMLHttpRequest(request, output -> Assert.assertThat(output, hasEntry("status", 403L)))
-                    .logout(this::assertOnTestAppUrl)
-                    .refresh();
-        }
+        testExecutor.logInAndInit(defaultArguments(), unauthorizedUser, this::assertInitAuth)
+                .sendXMLHttpRequest(request, output -> Assert.assertThat(output, hasEntry("status", 403L)))
+                .logout(this::assertOnTestAppUrl)
+                .refresh();
         testExecutor.logInAndInit(defaultArguments(), testUser, this::assertInitAuth)
                 .sendXMLHttpRequest(request, assertResponseStatus(200));
     }
@@ -644,10 +639,6 @@ public class JavascriptAdapterTest extends AbstractJavascriptTest {
 
     @Test
     public void spaceInRealmNameTest() {
-        // Unfortunately this test doesn't work on phantomjs
-        // it looks like phantomjs double encode %20 => %25%20
-        Assume.assumeTrue("This test doesn't work with phantomjs", !"phantomjs".equals(System.getProperty("js.browser")));
-
         try {
             adminClient.realm(REALM_NAME).update(RealmBuilder.edit(adminClient.realm(REALM_NAME).toRepresentation()).name(SPACE_REALM_NAME).build());
 

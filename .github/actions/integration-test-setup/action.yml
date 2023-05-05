@@ -25,10 +25,6 @@ runs:
       name: Maven cache
       uses: ./.github/actions/maven-cache
 
-    - id: phantomjs-cache
-      name: PhantomJS cache
-      uses: ./.github/actions/phantomjs-cache
-
     - id: download-keycloak
       name: Download Keycloak Maven artifacts
       uses: actions/download-artifact@v3

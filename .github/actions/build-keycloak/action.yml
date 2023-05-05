@@ -35,10 +35,6 @@ runs:
       with:
         create-cache-if-it-doesnt-exist: true
 
-    - id: phantomjs-cache
-      name: PhantomJS cache
-      uses: ./.github/actions/phantomjs-cache
-
     # Remove once https://github.com/keycloak/keycloak/issues/19299 is solved
     ########################################################################################################
     - id: check-adapter-changes
