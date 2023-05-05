@@ -16,6 +16,9 @@
  */
 package org.keycloak.operator;
 
+import org.keycloak.operator.crds.v2alpha1.deployment.ValueOrSecret;
+
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -39,12 +42,13 @@ public final class Constants {
             .map(e -> e.getKey() + "=" + e.getValue())
             .collect(Collectors.joining(","));
 
-    public static final Map<String, String> DEFAULT_DIST_CONFIG = Map.of(
-        "health-enabled","true",
-        "cache", "ispn",
-        "cache-stack", "kubernetes",
-        "proxy", "passthrough"
+    public static final List<ValueOrSecret> DEFAULT_DIST_CONFIG_LIST = List.of(
+            new ValueOrSecret("health-enabled", "true"),
+            new ValueOrSecret("cache", "ispn"),
+            new ValueOrSecret("cache-stack", "kubernetes"),
+            new ValueOrSecret("proxy", "passthrough")
     );
+
 
     public static final Integer KEYCLOAK_HTTP_PORT = 8080;
     public static final Integer KEYCLOAK_HTTPS_PORT = 8443;
