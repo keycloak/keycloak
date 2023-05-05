@@ -143,6 +143,8 @@
   "details": "详细",
   "required": "必填字段",
   "maxLength": "最大长度{{length}}",
+  "lessThan": "必须小于 {{value}}",
+  "greaterThan": "必须大于 {{value}}",
   "createRealm": "创建领域",
   "recent": "最近",
   "jumpToSection": "跳转到",
@@ -170,10 +172,13 @@
     "years": "年"
   },
   "attributes": "属性",
+  "missingAttributes": "尚未定义任何属性。单击下面的按钮添加属性，密钥和值是密钥对所必需的。",
   "addAttribute": "添加属性",
   "removeAttribute": "移除属性",
   "keyPlaceholder": "请输入键",
   "valuePlaceholder": "请输入值",
+  "keyError": "必须至少提供一个键。",
+  "valueError": "必须至少提供一个值。",
   "credentials": "证书",
   "clientId": "客户端 ID",
   "clientName": "客户端名称",
@@ -207,5 +212,6 @@
   "temporaryPasswordHelpText": "如果启用，用户需要在下次登录时更改密码",
   "forbidden_one": "禁止, needed: 权限",
   "forbidden_other": "禁止, needed: 权限",
-  "noRealmRolesToAssign": "没有要分配的领域角色"
+  "noRealmRolesToAssign": "没有要分配的领域角色",
+  "loadingRealms": "领域加载中..."
 }
