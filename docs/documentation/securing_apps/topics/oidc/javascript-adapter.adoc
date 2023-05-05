@@ -24,7 +24,7 @@ You also need to configure `Valid Redirect URIs` and `Web Origins`. Be as specif
 
 ==== Using the adapter
 
-The following example shows how to initialize the adapter, make sure to replace the options passed to the `Keycloak` constructor with those of the client you have configured.
+The following example shows how to initialize the adapter. Make sure that you replace the options passed to the `Keycloak` constructor with those of the client you have configured.
 
 [source,javascript]
 ----
@@ -46,8 +46,8 @@ try {
 
 To authenticate, you call the `login` function. Two options exist to make the adapter automatically authenticate. You can pass `login-required` or `check-sso` to the `init()` function. 
 
-* `login-required` authenticates the client if the user is logged in to {project_name} or displays the login page if the user is not logged-in. 
-* `check-sso` only authenticates the client if the user is already logged-in. If the user is not logged in, the browser is redirected back to the application and remains unauthenticated.
+* `login-required` authenticates the client if the user is logged in to {project_name} or displays the login page if the user is not logged in. 
+* `check-sso` only authenticates the client if the user is already logged in. If the user is not logged in, the browser is redirected back to the application and remains unauthenticated.
 
 You can configure a _silent_ `check-sso` option. With this feature enabled, your browser will not perform a full redirect to the {project_name} server and back to your application, but this action will be performed in a hidden iframe. Therefore, your application resources are only loaded and parsed once by the browser, namely when the application is initialized and not again after the redirect back from {project_name} to your application. This approach is particularly useful in case of SPAs (Single Page Applications).
 
@@ -106,7 +106,7 @@ async function fetchUsers() {
 }
 ----
 
-One thing to keep in mind is that the access token by default has a short life expiration so you may need to refresh the access token prior to sending the request. You refresh this token by calling the `updateToken()` method. This method returns a Promise, which makes it easy to invoke the service only if the token was successfully refreshed and display an error to the user if it was not refreshed. For example:
+One thing to keep in mind is that the access token by default has a short life expiration so you may need to refresh the access token prior to sending the request. You refresh this token by calling the `updateToken()` method. This method returns a Promise, which makes it easy to invoke the service only if the token was successfully refreshed and displays an error to the user if it was not refreshed. For example:
 
 [source,javascript]
 ----
@@ -170,7 +170,7 @@ keycloak.init({
 [#hybrid-apps-with-cordova]
 ==== Hybrid Apps with Cordova
 
-Keycloak support hybrid mobile apps developed with https://cordova.apache.org/[Apache Cordova]. The adapter has two modes for this: `cordova` and `cordova-native`:
+{project_name} supports hybrid mobile apps developed with https://cordova.apache.org/[Apache Cordova]. The adapter has two modes for this: `cordova` and `cordova-native`:
 
 The default is `cordova`, which the adapter automatically selects if no adapter type has been explicitly configured and `window.cordova` is present. When logging in, it opens an https://cordova.apache.org/docs/en/latest/reference/cordova-plugin-inappbrowser/[InApp Browser] that lets the user interact with {project_name} and afterwards returns to the app by redirecting to `http://localhost`. Because of this behavior, you whitelist this URL as a valid redirect-uri in the client configuration section of the Admin Console.
 
@@ -182,7 +182,7 @@ While this mode is easy to set up, it also has some disadvantages:
 
 Use this example app to help you get started: https://github.com/keycloak/keycloak/tree/master/examples/cordova
 
-The alternative mode `cordova-native` takes a different approach as it opens the login page using the system's browser. After the user has authenticated, the browser redirects back into the app using a special URL. From there, the {project_name} adapter can finish the login by reading the code or token from the URL.
+The alternative mode  is`cordova-native`, which takes a different approach. It opens the login page using the system's browser. After the user has authenticated, the browser redirects back into the application using a special URL. From there, the {project_name} adapter can finish the login by reading the code or token from the URL.
 
 You can activate the native mode by passing the adapter type `cordova-native` to the `init()` method:
 
@@ -265,10 +265,10 @@ Naturally you can also do this without TypeScript by omitting the type informati
 ==== Modern Browsers with Tracking Protection
 In the latest versions of some browsers, various cookies policies are applied to prevent tracking of the users by third parties, such as SameSite in Chrome or completely blocked third-party cookies. Those policies are likely to become more restrictive and adopted by other browsers over time. Eventually cookies in third-party contexts may become completely unsupported and blocked by the browsers. As a result, the affected adapter features might ultimately be deprecated.
 
-The adapter relies on third-party cookies for Session Status iframe, _silent_ `check-sso` and partially also for regular (non-silent) `check-sso`. Those features have limited functionality or are completely disabled based on how the browser is restrictive regarding cookies. The adapter tries to detect this setting and reacts accordingly.
+The adapter relies on third-party cookies for Session Status iframe, _silent_ `check-sso` and partially also for regular (non-silent) `check-sso`. Those features have limited functionality or are completely disabled based on how restrictive the browser is regarding cookies. The adapter tries to detect this setting and reacts accordingly.
 
 ===== Browsers with "SameSite=Lax by Default" Policy
-All features are supported if SSL / TLS connection is configured on the {project_name} side as well as on the application side. Affected is for example Chrome starting with version 84.
+All features are supported if SSL / TLS connection is configured on the {project_name} side as well as on the application side.  For example, Chrome is affected starting with version 84.
 
 ===== Browsers with Blocked Third-Party Cookies
 Session Status iframe is not supported and is automatically disabled if such browser behavior is detected by the adapter. This means the adapter cannot use a session cookie for Single Sign-Out detection and must rely purely on tokens. As a result, when a user logs out in another window, the application using the adapter will not be logged out until the application tries to refresh the Access Token. Therefore, consider setting the Access Token Lifespan to a relatively short time, so that the logout is detected as soon as possible. For more details, see link:{adminguide_link}#_timeouts[Session and Token Timeouts].
