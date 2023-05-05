@@ -36,6 +36,7 @@ public class UrlBean {
     private URI baseURI;
     private Theme theme;
     private String realm;
+    private URI themeRootUri;
 
     public UrlBean(RealmModel realm, Theme theme, URI baseURI, URI actionUri) {
         this.realm = realm != null ? realm.getName() : null;
@@ -103,7 +104,7 @@ public class UrlBean {
     }
 
     public String getResourcesUrl() {
-        return Urls.themeRoot(baseURI).toString() + "/" + theme.getType().toString().toLowerCase() +"/" + theme.getName();
+        return getThemeRootUri().toString() + "/" + theme.getType().toString().toLowerCase() +"/" + theme.getName();
     }
 
     public String getOauthAction() {
@@ -123,12 +124,12 @@ public class UrlBean {
     }
 
     public String getResourcesPath() {
-        URI uri = Urls.themeRoot(baseURI);
+        URI uri = getThemeRootUri();
         return uri.getPath() + "/" + theme.getType().toString().toLowerCase() +"/" + theme.getName();
     }
 
     public String getResourcesCommonPath() {
-        URI uri = Urls.themeRoot(baseURI);
+        URI uri = getThemeRootUri();
         String commonPath = "";
         try {
             commonPath = theme.getProperties().getProperty("import");
@@ -139,5 +140,12 @@ public class UrlBean {
             commonPath = "/common/keycloak";
         }
         return uri.getPath() + "/" + commonPath;
+    }
+
+    private URI getThemeRootUri() {
+        if (themeRootUri == null) {
+            themeRootUri = Urls.themeRoot(baseURI);
+        }
+        return themeRootUri;
     }
 }
