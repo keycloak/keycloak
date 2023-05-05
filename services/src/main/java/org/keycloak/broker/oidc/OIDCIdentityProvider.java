@@ -389,6 +389,37 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
                 throw new IdentityBrokerException("Mismatch between the subject in the id_token and the subject from the user_info endpoint");
             }
 
+            if (getConfig().isFilteredByClaims()) {
+                String filterName = getConfig().getClaimFilterName();
+                String filterValue = getConfig().getClaimFilterValue();
+
+                logger.infof("Filtering user %s by %s=%s", idToken.getOtherClaims().get(getusernameClaimNameForIdToken()), filterName, filterValue);
+                boolean hasKey = false;
+                for (String claim : idToken.getOtherClaims().keySet()) {
+                    if (claim.equalsIgnoreCase(filterName)) {
+                        hasKey = true;
+                        Object claimValue = idToken.getOtherClaims().get(claim);
+                        logger.infof("Found claim %s with value %s", claim, claimValue);
+                        if  (!(claimValue instanceof String)) {
+                            // TODO what about numbers?
+                            logger.warnf("Claim value must be of type String, instead it's %s", claimValue.getClass());
+                            throw new IdentityBrokerException(String.format("Unmanaged claim %s of type %s (expected String).", claim, claimValue.getClass()));
+                        }
+                        logger.infof("Found claim %s with value %s", claim, claimValue);
+                        if (!String.valueOf(claimValue).matches(filterValue)) {
+                            logger.warnf("Claim %s has value \"%s\" that does not match the expected filter \"%s\"", claim, claimValue, filterValue);
+                            throw new IdentityBrokerException(String.format("Unmatched claim value for %s.", claim));
+                        }
+                    } else {
+                        logger.infof("Discarding claim %s", claim);
+                    }
+                }
+                if (!hasKey){
+                    logger.warnf("Claim %s was not found", filterName);
+                    throw new IdentityBrokerException(String.format("Claim %s not found", filterName));
+                }
+            }
+
             identity.getContextData().put(BROKER_NONCE_PARAM, idToken.getOtherClaims().get(OIDCLoginProtocol.NONCE_PARAM));
             
             if (getConfig().isStoreToken()) {
