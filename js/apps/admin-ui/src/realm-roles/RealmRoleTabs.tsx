@@ -13,6 +13,7 @@ import { SubmitHandler, useForm, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useLocation, useMatch, useNavigate } from "react-router-dom";
 
+import { adminClient } from "../admin-client";
 import { toClient } from "../clients/routes/Client";
 import {
   ClientRoleParams,
@@ -27,9 +28,9 @@ import {
   AttributesForm,
 } from "../components/key-value-form/AttributeForm";
 import {
+  KeyValueType,
   arrayToKeyValue,
   keyValueToArray,
-  KeyValueType,
 } from "../components/key-value-form/key-value-convert";
 import { KeycloakSpinner } from "../components/keycloak-spinner/KeycloakSpinner";
 import { PermissionsTab } from "../components/permission-tab/PermissionTab";
@@ -41,23 +42,22 @@ import {
   useRoutableTab,
 } from "../components/routable-tabs/RoutableTabs";
 import { ViewHeader } from "../components/view-header/ViewHeader";
-import { useAdminClient, useFetch } from "../context/auth/AdminClient";
 import { useRealm } from "../context/realm-context/RealmContext";
-import { useServerInfo } from "../context/server-info/ServerInfoProvider";
+import { useFetch } from "../utils/useFetch";
+import useIsFeatureEnabled, { Feature } from "../utils/useIsFeatureEnabled";
 import { useParams } from "../utils/useParams";
+import { UsersInRoleTab } from "./UsersInRoleTab";
 import { RealmRoleRoute, RealmRoleTab, toRealmRole } from "./routes/RealmRole";
 import { toRealmRoles } from "./routes/RealmRoles";
-import { UsersInRoleTab } from "./UsersInRoleTab";
 
 export default function RealmRoleTabs() {
+  const isFeatureEnabled = useIsFeatureEnabled();
   const { t } = useTranslation("roles");
   const form = useForm<AttributeForm>({
     mode: "onChange",
   });
   const { control, reset, setValue } = form;
   const navigate = useNavigate();
-
-  const { adminClient } = useAdminClient();
 
   const { id, clientId } = useParams<ClientRoleParams>();
   const { pathname } = useLocation();
@@ -66,8 +66,6 @@ export default function RealmRoleTabs() {
 
   const [key, setKey] = useState(0);
   const [attributes, setAttributes] = useState<KeyValueType[] | undefined>();
-
-  const { profileInfo } = useServerInfo();
 
   const refresh = () => setKey(key + 1);
 
@@ -391,9 +389,7 @@ export default function RealmRoleTabs() {
               <UsersInRoleTab data-cy="users-in-role-tab" />
             </Tab>
           )}
-          {!profileInfo?.disabledFeatures?.includes(
-            "ADMIN_FINE_GRAINED_AUTHZ"
-          ) && (
+          {isFeatureEnabled(Feature.AdminFineGrainedAuthz) && (
             <Tab
               title={<TabTitleText>{t("common:permissions")}</TabTitleText>}
               {...permissionsTab}

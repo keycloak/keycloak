@@ -4,14 +4,15 @@ import { AlertVariant, Button, ButtonVariant } from "@patternfly/react-core";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, To, useNavigate } from "react-router-dom";
+import { HelpItem } from "ui-shared";
 
-import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
+import { adminClient } from "../../admin-client";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { toRealmSettings } from "../../realm-settings/routes/RealmSettings";
 import { emptyFormatter, upperCaseFormatter } from "../../util";
+import { useFetch } from "../../utils/useFetch";
 import { useAlerts } from "../alert/Alerts";
 import { useConfirmDialog } from "../confirm-dialog/ConfirmDialog";
-import { HelpItem } from "ui-shared";
 import { KeycloakSpinner } from "../keycloak-spinner/KeycloakSpinner";
 import { ListEmptyState } from "../list-empty-state/ListEmptyState";
 import { Action, KeycloakDataTable } from "../table-toolbar/KeycloakDataTable";
@@ -73,7 +74,6 @@ export const RolesList = ({
 }: RolesListProps) => {
   const { t } = useTranslation(messageBundle);
   const navigate = useNavigate();
-  const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
   const { realm: realmName } = useRealm();
   const [realm, setRealm] = useState<RealmRepresentation>();

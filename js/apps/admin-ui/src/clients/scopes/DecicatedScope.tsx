@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useTranslation } from "react-i18next";
+import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
+import type { RoleMappingPayload } from "@keycloak/keycloak-admin-client/lib/defs/roleRepresentation";
 import {
   AlertVariant,
   Divider,
@@ -7,14 +7,14 @@ import {
   PageSection,
   Switch,
 } from "@patternfly/react-core";
-
-import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
-import { FormAccess } from "../../components/form-access/FormAccess";
+import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { HelpItem } from "ui-shared";
-import { useAdminClient } from "../../context/auth/AdminClient";
+
+import { adminClient } from "../../admin-client";
 import { useAlerts } from "../../components/alert/Alerts";
+import { FormAccess } from "../../components/form-access/FormAccess";
 import { RoleMapping, Row } from "../../components/role-mapping/RoleMapping";
-import type { RoleMappingPayload } from "@keycloak/keycloak-admin-client/lib/defs/roleRepresentation";
 import { useAccess } from "../../context/access/Access";
 
 type DedicatedScopeProps = {
@@ -25,7 +25,6 @@ export const DedicatedScope = ({
   client: initialClient,
 }: DedicatedScopeProps) => {
   const { t } = useTranslation("clients");
-  const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
 
   const [client, setClient] = useState<ClientRepresentation>(initialClient);

@@ -21,7 +21,7 @@ import org.keycloak.models.map.storage.jpa.PersistenceExceptionConverter;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.provider.ExceptionConverter;
 
-import javax.persistence.PersistenceException;
+import jakarta.persistence.PersistenceException;
 
 /**
  * This is needed for example by <code>org.keycloak.transaction.JtaTransactionWrapper</code> to map an exception
@@ -34,7 +34,7 @@ public class JpaMapExceptionConverter implements ExceptionConverter, Environment
     @Override
     public Throwable convert(Throwable e) {
         if (!(e instanceof PersistenceException)) return null;
-        return PersistenceExceptionConverter.convert(e.getCause() != null ? e.getCause() : e);
+        return PersistenceExceptionConverter.convert(e);
     }
 
     @Override

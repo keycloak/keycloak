@@ -1,24 +1,26 @@
-import "@patternfly/patternfly/patternfly-addons.css";
 import "@patternfly/react-core/dist/styles/base.css";
+import "@patternfly/patternfly/patternfly-addons.css";
 
 import { StrictMode } from "react";
 import { render } from "react-dom";
+import { createHashRouter, RouterProvider } from "react-router-dom";
 
-import { App } from "./App";
-import { initAdminClient } from "./context/auth/AdminClient";
 import { initI18n } from "./i18n";
+import { keycloak } from "./keycloak";
+import { RootRoute } from "./routes";
 
 import "./index.css";
 
-const { keycloak, adminClient } = await initAdminClient();
+// Initialize required components before rendering app.
+await keycloak.init({ onLoad: "check-sso", pkceMethod: "S256" });
+await initI18n();
 
-await initI18n(adminClient);
-
+const router = createHashRouter([RootRoute]);
 const container = document.getElementById("app");
 
 render(
   <StrictMode>
-    <App keycloak={keycloak} adminClient={adminClient} />
+    <RouterProvider router={router} />
   </StrictMode>,
   container
 );

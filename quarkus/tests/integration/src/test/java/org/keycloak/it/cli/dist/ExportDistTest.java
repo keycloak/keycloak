@@ -35,9 +35,9 @@ public class ExportDistTest {
         cliResult.assertMessage("Export of realm 'master' requested.");
         cliResult.assertMessage("Export finished successfully");
         cliResult.assertNoMessage("Changes detected in configuration");
-        cliResult.assertNoMessage("Listening on:");
+        cliResult.assertNoMessage("Listening on: http");
 
         cliResult = dist.run("export", "--realm=master");
-        cliResult.assertError("Must specify either --dir or --file options.");
+        cliResult.assertMessage("Must specify either --dir or --file options.");
     }
 }

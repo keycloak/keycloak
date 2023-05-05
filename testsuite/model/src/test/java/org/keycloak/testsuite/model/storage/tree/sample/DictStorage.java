@@ -16,12 +16,11 @@
  */
 package org.keycloak.testsuite.model.storage.tree.sample;
 
-import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.map.common.AbstractEntity;
 import org.keycloak.models.map.common.DeepCloner;
-import org.keycloak.models.map.storage.MapKeycloakTransaction;
 import org.keycloak.models.map.storage.MapStorage;
 import org.keycloak.models.map.storage.QueryParameters;
+
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Stream;
@@ -45,76 +44,38 @@ public class DictStorage<V extends AbstractEntity, M> implements MapStorage<V, M
         return store;
     }
 
-    private final class Transaction implements MapKeycloakTransaction<V, M> {
-
-        @Override
-        public V create(V value) {
-            V res = cloner.from(value);
-            store.add(res);
-            return res;
-        }
-
-        @Override
-        public V read(String key) {
-            return store.stream()
-              .filter(e -> Objects.equals(e.getId(), key))
-              .findFirst()
-              .orElse(null);
-        }
-
-        @Override
-        public Stream<V> read(QueryParameters<M> queryParameters) {
-            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-        }
-
-        @Override
-        public long getCount(QueryParameters<M> queryParameters) {
-            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-        }
-
-        @Override
-        public boolean delete(String key) {
-            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-        }
-
-        @Override
-        public long delete(QueryParameters<M> queryParameters) {
-            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-        }
-
-        @Override
-        public void begin() {
-        }
-
-        @Override
-        public void commit() {
-        }
-
-        @Override
-        public void rollback() {
-            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-        }
-
-        @Override
-        public void setRollbackOnly() {
-            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-        }
-
-        @Override
-        public boolean getRollbackOnly() {
-            return false;
-        }
-
-        @Override
-        public boolean isActive() {
-            return true;
-        }
-
+    @Override
+    public V create(V value) {
+        V res = cloner.from(value);
+        store.add(res);
+        return res;
     }
 
     @Override
-    public MapKeycloakTransaction<V, M> createTransaction(KeycloakSession session) {
-        return new Transaction();
+    public V read(String key) {
+        return store.stream()
+          .filter(e -> Objects.equals(e.getId(), key))
+          .findFirst()
+          .orElse(null);
     }
 
+    @Override
+    public Stream<V> read(QueryParameters<M> queryParameters) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public long getCount(QueryParameters<M> queryParameters) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public boolean delete(String key) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public long delete(QueryParameters<M> queryParameters) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
 }

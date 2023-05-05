@@ -9,15 +9,15 @@ import {
 } from "@patternfly/react-core";
 import { Controller, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
+import { HelpItem } from "ui-shared";
 
+import { adminClient } from "../../admin-client";
 import { useAlerts } from "../../components/alert/Alerts";
 import {
   ConfirmDialogModal,
   useConfirmDialog,
 } from "../../components/confirm-dialog/ConfirmDialog";
-import { HelpItem } from "ui-shared";
 import { PasswordInput } from "../../components/password-input/PasswordInput";
-import { useAdminClient } from "../../context/auth/AdminClient";
 import useToggle from "../../utils/useToggle";
 
 type ResetPasswordDialogProps = {
@@ -60,7 +60,6 @@ export const ResetPasswordDialog = ({
   const [confirm, toggle] = useToggle(true);
   const password = watch("password", "");
 
-  const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
 
   const [toggleConfirmSaveModal, ConfirmSaveModal] = useConfirmDialog({

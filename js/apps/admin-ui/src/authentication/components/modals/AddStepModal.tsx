@@ -1,5 +1,4 @@
-import { useMemo, useState } from "react";
-import { useTranslation } from "react-i18next";
+import type { AuthenticationProviderRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/authenticatorConfigRepresentation";
 import {
   Button,
   ButtonVariant,
@@ -9,10 +8,12 @@ import {
   PageSection,
   Radio,
 } from "@patternfly/react-core";
-import type { AuthenticationProviderRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/authenticatorConfigRepresentation";
+import { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 
+import { adminClient } from "../../../admin-client";
 import { PaginatingTableToolbar } from "../../../components/table-toolbar/PaginatingTableToolbar";
-import { useAdminClient, useFetch } from "../../../context/auth/AdminClient";
+import { useFetch } from "../../../utils/useFetch";
 import useLocaleSort, { mapByKey } from "../../../utils/useLocaleSort";
 import { providerConditionFilter } from "../../FlowDetails";
 
@@ -56,7 +57,6 @@ type AddStepModalProps = {
 
 export const AddStepModal = ({ name, type, onSelect }: AddStepModalProps) => {
   const { t } = useTranslation("authentication");
-  const { adminClient } = useAdminClient();
 
   const [value, setValue] = useState<AuthenticationProviderRepresentation>();
   const [providers, setProviders] =

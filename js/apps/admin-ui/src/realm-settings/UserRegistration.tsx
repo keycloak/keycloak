@@ -1,14 +1,15 @@
-import { useState } from "react";
-import { useTranslation } from "react-i18next";
-import { AlertVariant, Tab, Tabs, TabTitleText } from "@patternfly/react-core";
-
 import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
 import type RoleRepresentation from "@keycloak/keycloak-admin-client/lib/defs/roleRepresentation";
-import { useAdminClient, useFetch } from "../context/auth/AdminClient";
-import { useRealm } from "../context/realm-context/RealmContext";
-import { KeycloakSpinner } from "../components/keycloak-spinner/KeycloakSpinner";
+import { AlertVariant, Tab, Tabs, TabTitleText } from "@patternfly/react-core";
+import { useState } from "react";
+import { useTranslation } from "react-i18next";
+
+import { adminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
+import { KeycloakSpinner } from "../components/keycloak-spinner/KeycloakSpinner";
 import { RoleMapping } from "../components/role-mapping/RoleMapping";
+import { useRealm } from "../context/realm-context/RealmContext";
+import { useFetch } from "../utils/useFetch";
 import { DefaultsGroupsTab } from "./DefaultGroupsTab";
 
 export const UserRegistration = () => {
@@ -17,7 +18,6 @@ export const UserRegistration = () => {
   const [activeTab, setActiveTab] = useState(10);
   const [key, setKey] = useState(0);
 
-  const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
   const { realm: realmName } = useRealm();
 

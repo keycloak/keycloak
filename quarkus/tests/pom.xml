@@ -32,6 +32,10 @@
     <artifactId>keycloak-quarkus-test-parent</artifactId>
     <packaging>pom</packaging>
 
+    <modules>
+        <module>junit5</module>
+    </modules>
+
     <profiles>
         <profile>
             <id>noIntegrations</id>

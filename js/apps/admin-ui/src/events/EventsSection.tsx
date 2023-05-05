@@ -33,6 +33,7 @@ import { Controller, useForm } from "react-hook-form";
 import { Trans, useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 
+import { adminClient } from "../admin-client";
 import { KeycloakTextInput } from "../components/keycloak-text-input/KeycloakTextInput";
 import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
 import {
@@ -41,11 +42,11 @@ import {
 } from "../components/routable-tabs/RoutableTabs";
 import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
 import { ViewHeader } from "../components/view-header/ViewHeader";
-import { useAdminClient, useFetch } from "../context/auth/AdminClient";
 import { useRealm } from "../context/realm-context/RealmContext";
 import helpUrls from "../help-urls";
 import { toRealmSettings } from "../realm-settings/routes/RealmSettings";
 import { toUser } from "../user/routes/User";
+import { useFetch } from "../utils/useFetch";
 import useFormatDate, { FORMAT_DATE_AND_TIME } from "../utils/useFormatDate";
 import { AdminEvents } from "./AdminEvents";
 import { EventsTab, toEvents } from "./routes/Events";
@@ -58,6 +59,7 @@ type UserEventSearchForm = {
   dateTo: string;
   user: string;
   type: EventType[];
+  authIpAddress: string;
 };
 
 const defaultValues: UserEventSearchForm = {
@@ -66,6 +68,7 @@ const defaultValues: UserEventSearchForm = {
   dateTo: "",
   user: "",
   type: [],
+  authIpAddress: "",
 };
 
 const StatusRow = (event: EventRepresentation) =>
@@ -124,7 +127,6 @@ const UserDetailLink = (event: EventRepresentation) => {
 
 export default function EventsSection() {
   const { t } = useTranslation("events");
-  const { adminClient } = useAdminClient();
   const { realm } = useRealm();
   const formatDate = useFormatDate();
   const [key, setKey] = useState(0);
@@ -141,6 +143,7 @@ export default function EventsSection() {
     dateTo: t("dateTo"),
     user: t("userId"),
     type: t("eventType"),
+    authIpAddress: t("ipAddress"),
   };
 
   const {
@@ -309,14 +312,16 @@ export default function EventsSection() {
                                 );
                               }}
                             >
-                              {chip}
+                              {t(`realm-settings:eventTypes.${chip}.name`)}
                             </Chip>
                           ))}
                         </ChipGroup>
                       }
                     >
                       {events?.enabledEventTypes?.map((option) => (
-                        <SelectOption key={option} value={option} />
+                        <SelectOption key={option} value={option}>
+                          {t(`realm-settings:eventTypes.${option}.name`)}
+                        </SelectOption>
                       ))}
                     </Select>
                   )}
@@ -367,6 +372,17 @@ export default function EventsSection() {
                       inputProps={{ id: "kc-dateTo" }}
                     />
                   )}
+                />
+              </FormGroup>
+              <FormGroup
+                label={t("ipAddress")}
+                fieldId="kc-ipAddress"
+                className="keycloak__events_search__form_label"
+              >
+                <KeycloakTextInput
+                  id="kc-ipAddress"
+                  data-testid="ipAddress-searchField"
+                  {...register("authIpAddress")}
                 />
               </FormGroup>
               <ActionGroup>
@@ -421,7 +437,7 @@ export default function EventsSection() {
                           key={entry}
                           onClick={() => removeFilterValue(key, entry)}
                         >
-                          {entry}
+                          {t(`realm-settings:eventTypes.${entry}.name`)}
                         </Chip>
                       ))
                     )}

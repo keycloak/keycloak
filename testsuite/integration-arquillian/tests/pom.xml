@@ -1616,6 +1616,12 @@
                 </dependency>
 
                 <dependency>
+                    <groupId>net.bytebuddy</groupId>
+                    <artifactId>byte-buddy</artifactId>
+                    <version>1.12.18</version>
+                </dependency>
+
+                <dependency>
                     <groupId>org.jboss.arquillian.junit</groupId>
                     <artifactId>arquillian-junit-container</artifactId>
                 </dependency>
@@ -1706,7 +1712,7 @@
                 </dependency>
                 <dependency>
                     <groupId>org.slf4j</groupId>
-                    <artifactId>slf4j-log4j12</artifactId>
+                    <artifactId>slf4j-reload4j</artifactId>
                 </dependency>
 
                 <dependency>
@@ -1828,7 +1834,7 @@
                 </dependency>
                 <dependency>
                     <groupId>org.infinispan</groupId>
-                    <artifactId>infinispan-core</artifactId>
+                    <artifactId>infinispan-core-jakarta</artifactId>
                 </dependency>
 
                 <dependency>

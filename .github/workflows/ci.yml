@@ -76,14 +76,6 @@ jobs:
         if: always()
         uses: ./.github/actions/upload-heapdumps
 
-      - id: upload-surefire-reports
-        name: Upload Surefire reports
-        uses: ./.github/actions/upload-surefire-reports
-        if: always()
-        with:
-          api-key: ${{ secrets.FORESIGHT_API_KEY }}
-          surefire-reports-path: '**/target/surefire-reports/*.xml'
-
   base-integration-tests:
     name: Base IT
     needs: build
@@ -104,19 +96,11 @@ jobs:
         run: |
           TESTS=`testsuite/integration-arquillian/tests/base/testsuites/base-suite.sh ${{ matrix.group }}`
           echo "Tests: $TESTS"
-          ./mvnw test -Dsurefire.rerunFailingTestsCount=${{ env.SUREFIRE_RERUN_FAILING_COUNT }} -nsu -B -Pauth-server-quarkus -Dtest=$TESTS -pl testsuite/integration-arquillian/tests/base | misc/log/trimmer.sh
+          ./mvnw test -Dsurefire.rerunFailingTestsCount=${{ env.SUREFIRE_RERUN_FAILING_COUNT }} -nsu -B -Pauth-server-quarkus "-Dwebdriver.chrome.driver=$CHROMEWEBDRIVER/chromedriver" -Dtest=$TESTS -pl testsuite/integration-arquillian/tests/base | misc/log/trimmer.sh
 
       - name: Upload JVM Heapdumps
         if: always()
         uses: ./.github/actions/upload-heapdumps
-
-      - id: upload-surefire-reports
-        name: Upload Surefire reports
-        uses: ./.github/actions/upload-surefire-reports
-        if: always()
-        with:
-          api-key: ${{ secrets.FORESIGHT_API_KEY }}
-          surefire-reports-path: 'testsuite/integration-arquillian/tests/base/target/surefire-reports/*.xml'
 
       - uses: ./.github/actions/upload-flaky-tests
         name: Upload flaky tests
@@ -149,7 +133,7 @@ jobs:
           declare -A PARAMS
           PARAMS["zip"]=""
           PARAMS["container"]="-Dkc.quarkus.tests.dist=docker"
-          PARAMS["storage"]="-Ptest-database -Dtest=PostgreSQLDistTest,MariaDBDistTest#testSuccessful,MySQLDistTest#testSuccessful,DatabaseOptionsDistTest,JPAStoreDistTest,HotRodStoreDistTest,MixedStoreDistTest"
+          PARAMS["storage"]="-Ptest-database -Dtest=PostgreSQLDistTest,MariaDBDistTest#testSuccessful,MySQLDistTest#testSuccessful,DatabaseOptionsDistTest,JPAStoreDistTest,HotRodStoreDistTest,MixedStoreDistTest,TransactionConfigurationDistTest"
 
           ./mvnw install -nsu -B -pl quarkus/tests/integration -am -DskipTests
           ./mvnw test -nsu -B -pl quarkus/tests/integration ${PARAMS["${{ matrix.server }}"]} | misc/log/trimmer.sh
@@ -157,14 +141,6 @@ jobs:
       - name: Upload JVM Heapdumps
         if: always()
         uses: ./.github/actions/upload-heapdumps
-
-      - id: upload-surefire-reports
-        name: Upload Surefire reports
-        uses: ./.github/actions/upload-surefire-reports
-        if: always()
-        with:
-          api-key: ${{ secrets.FORESIGHT_API_KEY }}
-          surefire-reports-path: 'quarkus/tests/integration/target/surefire-reports/*.xml'
 
   jdk-integration-tests:
     name: Java Distribution IT
@@ -202,14 +178,6 @@ jobs:
       - name: Upload JVM Heapdumps
         if: always()
         uses: ./.github/actions/upload-heapdumps
-
-      - id: upload-surefire-reports
-        name: Upload Surefire reports
-        uses: ./.github/actions/upload-surefire-reports
-        if: always()
-        with:
-          api-key: ${{ secrets.FORESIGHT_API_KEY }}
-          surefire-reports-path: 'testsuite/integration-arquillian/tests/base/target/surefire-reports/*.xml'
 
       - uses: ./.github/actions/upload-flaky-tests
         name: Upload flaky tests
@@ -267,14 +235,6 @@ jobs:
         if: always()
         uses: ./.github/actions/upload-heapdumps
 
-      - id: upload-surefire-reports
-        name: Upload Surefire reports
-        uses: ./.github/actions/upload-surefire-reports
-        if: always()
-        with:
-          api-key: ${{ secrets.FORESIGHT_API_KEY }}
-          surefire-reports-path: 'testsuite/integration-arquillian/tests/base/target/surefire-reports/*.xml'
-
       - uses: ./.github/actions/upload-flaky-tests
         name: Upload flaky tests
         env:
@@ -307,14 +267,6 @@ jobs:
       - name: Upload JVM Heapdumps
         if: always()
         uses: ./.github/actions/upload-heapdumps
-
-      - id: upload-surefire-reports
-        name: Upload Surefire reports
-        uses: ./.github/actions/upload-surefire-reports
-        if: always()
-        with:
-          api-key: ${{ secrets.FORESIGHT_API_KEY }}
-          surefire-reports-path: 'testsuite/integration-arquillian/tests/base/target/surefire-reports/*.xml'
 
       - uses: ./.github/actions/upload-flaky-tests
         name: Upload flaky tests
@@ -371,14 +323,6 @@ jobs:
         if: always()
         uses: ./.github/actions/upload-heapdumps
 
-      - id: upload-surefire-reports
-        name: Upload Surefire reports
-        uses: ./.github/actions/upload-surefire-reports
-        if: always()
-        with:
-          api-key: ${{ secrets.FORESIGHT_API_KEY }}
-          surefire-reports-path: 'testsuite/integration-arquillian/tests/base/target/surefire-reports/*.xml'
-
       - uses: ./.github/actions/upload-flaky-tests
         name: Upload flaky tests
         env:
@@ -407,19 +351,11 @@ jobs:
           jdk-version: 17
 
       - name: Run crypto tests
-        run: docker run --rm --workdir /github/workspace -v "${{ github.workspace }}":"/github/workspace" -v "$HOME/.m2":"/root/.m2" registry.access.redhat.com/ubi9/ubi:latest .github/scripts/run-fips-ut.sh
+        run: docker run --rm --workdir /github/workspace -v "${{ github.workspace }}":"/github/workspace" -v "$HOME/.m2":"/root/.m2" registry.access.redhat.com/ubi8/ubi:latest .github/scripts/run-fips-ut.sh
 
       - name: Upload JVM Heapdumps
         if: always()
         uses: ./.github/actions/upload-heapdumps
-
-      - id: upload-surefire-reports
-        name: Upload Surefire reports
-        uses: ./.github/actions/upload-surefire-reports
-        if: always()
-        with:
-          api-key: ${{ secrets.FORESIGHT_API_KEY }}
-          surefire-reports-path: '**/target/surefire-reports/*.xml'
 
   fips-integration-tests:
     name: FIPS IT
@@ -449,19 +385,11 @@ jobs:
         run: ./mvnw install -nsu -B -e -pl testsuite/integration-arquillian/servers/auth-server/quarkus -Pauth-server-quarkus,auth-server-fips140-2
 
       - name: Run base tests
-        run: docker run --rm --workdir /github/workspace -e "SUREFIRE_RERUN_FAILING_COUNT" -v "${{ github.workspace }}":"/github/workspace" -v "$HOME/.m2":"/root/.m2" registry.access.redhat.com/ubi9/ubi:latest .github/scripts/run-fips-it.sh ${{ matrix.mode }}
+        run: docker run --rm --workdir /github/workspace -e "SUREFIRE_RERUN_FAILING_COUNT" -v "${{ github.workspace }}":"/github/workspace" -v "$HOME/.m2":"/root/.m2" registry.access.redhat.com/ubi8/ubi:latest .github/scripts/run-fips-it.sh ${{ matrix.mode }}
 
       - name: Upload JVM Heapdumps
         if: always()
         uses: ./.github/actions/upload-heapdumps
-
-      - id: upload-surefire-reports
-        name: Upload Surefire reports
-        uses: ./.github/actions/upload-surefire-reports
-        if: always()
-        with:
-          api-key: ${{ secrets.FORESIGHT_API_KEY }}
-          surefire-reports-path: 'testsuite/integration-arquillian/tests/base/target/surefire-reports/*.xml'
 
       - uses: ./.github/actions/upload-flaky-tests
         name: Upload flaky tests

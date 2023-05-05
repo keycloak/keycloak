@@ -41,18 +41,6 @@ describe("Tests the convert functions for attribute input", () => {
     expect(result).toEqual({ theKey: ["theValue"] });
   });
 
-  it("convert empty object to attributes", () => {
-    const given: {
-      [key: string]: string[];
-    } = {};
-
-    //when
-    const result = arrayToKeyValue(given);
-
-    //then
-    expect(result).toEqual([{ key: "", value: "" }]);
-  });
-
   it("convert object to attributes", () => {
     const given = { one: ["1"], two: ["2"] };
 
@@ -63,7 +51,6 @@ describe("Tests the convert functions for attribute input", () => {
     expect(result).toEqual([
       { key: "one", value: "1" },
       { key: "two", value: "2" },
-      { key: "", value: "" },
     ]);
   });
 

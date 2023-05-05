@@ -12,7 +12,13 @@ export default class RealmSettingsPage extends CommonPage {
   generalRevertBtn = "general-tab-revert";
   themesSaveBtn = "themes-tab-save";
   loginTab = "rs-login-tab";
+  emailTab = "rs-email-tab";
+  themesTab = "rs-themes-tab";
+  localizationTab = "rs-localization-tab";
+  securityDefensesTab = "rs-security-defenses-tab";
+  sessionsTab = "rs-sessions-tab";
   userProfileTab = "rs-user-profile-tab";
+  tokensTab = "rs-tokens-tab";
   selectLoginTheme = "#kc-login-theme";
   loginThemeList = "#kc-login-theme + ul";
   selectAccountTheme = "#kc-account-theme";
@@ -1219,5 +1225,40 @@ export default class RealmSettingsPage extends CommonPage {
     cy.findByTestId(this.jsonEditorReloadBtn).contains("Reload").click();
     cy.findByTestId(this.jsonEditorSavePoliciesBtn).contains("Save");
     cy.findByTestId(this.jsonEditorReloadBtn).contains("Reload");
+  }
+
+  goToLoginTab() {
+    cy.findByTestId(this.loginTab).click();
+    return this;
+  }
+
+  goToEmailTab() {
+    cy.findByTestId(this.emailTab).click();
+    return this;
+  }
+
+  goToThemesTab() {
+    cy.findByTestId(this.themesTab).click();
+    return this;
+  }
+
+  goToLocalizationTab() {
+    cy.findByTestId(this.localizationTab).click();
+    return this;
+  }
+
+  goToSecurityDefensesTab() {
+    cy.findByTestId(this.securityDefensesTab).click();
+    return this;
+  }
+
+  goToSessionsTab() {
+    cy.findByTestId(this.sessionsTab).click();
+    return this;
+  }
+
+  goToTokensTab() {
+    cy.findByTestId(this.tokensTab).click();
+    return this;
   }
 }

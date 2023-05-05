@@ -1,6 +1,3 @@
-import { useState } from "react";
-import { useTranslation } from "react-i18next";
-import { Link } from "react-router-dom";
 import {
   AlertVariant,
   Button,
@@ -12,43 +9,45 @@ import {
   ToolbarItem,
 } from "@patternfly/react-core";
 import { cellWidth } from "@patternfly/react-table";
+import { useState } from "react";
+import { useTranslation } from "react-i18next";
+import { Link } from "react-router-dom";
 
-import { useAdminClient } from "../context/auth/AdminClient";
-import { ViewHeader } from "../components/view-header/ViewHeader";
+import { adminClient } from "../admin-client";
+import type { Row } from "../clients/scopes/ClientScopes";
+import { getProtocolName } from "../clients/utils";
 import { useAlerts } from "../components/alert/Alerts";
+import {
+  AllClientScopeType,
+  AllClientScopes,
+  CellDropdown,
+  ClientScope,
+  ClientScopeDefaultOptionalType,
+  changeScope,
+  removeScope,
+} from "../components/client-scope/ClientScopeTypes";
+import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import {
   Action,
   KeycloakDataTable,
 } from "../components/table-toolbar/KeycloakDataTable";
-import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
+import { ViewHeader } from "../components/view-header/ViewHeader";
 import { useRealm } from "../context/realm-context/RealmContext";
+import helpUrls from "../help-urls";
 import { emptyFormatter } from "../util";
 import useLocaleSort, { mapByKey } from "../utils/useLocaleSort";
-import {
-  CellDropdown,
-  ClientScope,
-  AllClientScopes,
-  ClientScopeDefaultOptionalType,
-  changeScope,
-  removeScope,
-  AllClientScopeType,
-} from "../components/client-scope/ClientScopeTypes";
 import { ChangeTypeDropdown } from "./ChangeTypeDropdown";
-import { toNewClientScope } from "./routes/NewClientScope";
-
-import { toClientScope } from "./routes/ClientScope";
 import {
-  nameFilter,
-  protocolFilter,
   ProtocolType,
   SearchDropdown,
   SearchToolbar,
   SearchType,
+  nameFilter,
+  protocolFilter,
   typeFilter,
 } from "./details/SearchFilter";
-import type { Row } from "../clients/scopes/ClientScopes";
-import { getProtocolName } from "../clients/utils";
-import helpUrls from "../help-urls";
+import { toClientScope } from "./routes/ClientScope";
+import { toNewClientScope } from "./routes/NewClientScope";
 
 import "./client-scope.css";
 
@@ -58,8 +57,8 @@ type TypeSelectorProps = ClientScopeDefaultOptionalType & {
 
 const TypeSelector = (scope: TypeSelectorProps) => {
   const { t } = useTranslation("client-scopes");
-  const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
+
   return (
     <CellDropdown
       clientScope={scope}
@@ -67,7 +66,7 @@ const TypeSelector = (scope: TypeSelectorProps) => {
       all
       onSelect={async (value) => {
         try {
-          await changeScope(adminClient, scope, value as AllClientScopeType);
+          await changeScope(scope, value as AllClientScopeType);
           addAlert(t("clientScopeSuccess"), AlertVariant.success);
           scope.refresh();
         } catch (error) {
@@ -93,8 +92,6 @@ const ClientScopeDetailLink = ({
 export default function ClientScopesSection() {
   const { realm } = useRealm();
   const { t } = useTranslation("client-scopes");
-
-  const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
 
   const [kebabOpen, setKebabOpen] = useState(false);
@@ -165,7 +162,7 @@ export default function ClientScopesSection() {
       try {
         for (const scope of selectedScopes) {
           try {
-            await removeScope(adminClient, scope);
+            await removeScope(scope);
           } catch (error: any) {
             console.warn(
               "could not remove scope",

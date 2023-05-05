@@ -17,12 +17,16 @@
 
 package org.keycloak.quarkus.runtime.cli.command;
 
+import org.keycloak.config.OptionCategory;
 import org.keycloak.quarkus.runtime.Environment;
 
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Mixin;
 import picocli.CommandLine.Option;
+
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Command(name = StartDev.NAME,
         header = "Start the server in development mode.",
@@ -47,5 +51,15 @@ public final class StartDev extends AbstractStartCommand implements Runnable {
     @Override
     protected void doBeforeRun() {
         Environment.forceDevProfile();
+    }
+
+    @Override
+    public List<OptionCategory> getOptionCategories() {
+        return super.getOptionCategories().stream().filter(optionCategory -> optionCategory != OptionCategory.EXPORT && optionCategory != OptionCategory.IMPORT).collect(Collectors.toList());
+    }
+
+    @Override
+    public boolean includeRuntime() {
+        return true;
     }
 }

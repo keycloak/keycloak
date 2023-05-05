@@ -39,6 +39,7 @@ public final class PropertyMappers {
         MAPPERS.addAll(ClassLoaderPropertyMappers.getMappers());
         MAPPERS.addAll(SecurityPropertyMappers.getMappers());
         MAPPERS.addAll(ExportPropertyMappers.getMappers());
+        MAPPERS.addAll(ImportPropertyMappers.getMappers());
     }
 
     public static ConfigValue getValue(ConfigSourceInterceptorContext context, String name) {

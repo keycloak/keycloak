@@ -437,7 +437,7 @@ describe("Clients test", () => {
     it("Should fail to create imported client with empty ID", () => {
       commonPage.sidebar().goToClients();
       cy.findByTestId("importClient").click();
-      cy.findByTestId("kc-client-id").click();
+      cy.findByTestId("clientId").click();
       cy.findByText("Save").click();
       cy.findByText("Required field");
     });
@@ -463,7 +463,7 @@ describe("Clients test", () => {
 
       cy.wait(1000);
       //cy.findByTestId("realm-file").contains('"clientId": "identical"')
-      cy.findByTestId("kc-client-id").click();
+      cy.findByTestId("clientId").click();
       cy.findByText("Save").click();
       commonPage
         .masthead()
@@ -542,7 +542,8 @@ describe("Clients test", () => {
     it("Should delete attribute from client role", () => {
       commonPage.tableUtils().clickRowItemLink(itemId);
       rolesTab.goToAttributesTab();
-      attributesTab.deleteAttribute(1);
+      attributesTab.deleteAttribute(0);
+      attributesTab.assertEmpty();
       commonPage
         .masthead()
         .checkNotificationMessage("The role has been saved", true);

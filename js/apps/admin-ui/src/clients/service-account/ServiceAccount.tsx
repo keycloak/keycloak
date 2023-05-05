@@ -1,19 +1,20 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
-import { Trans, useTranslation } from "react-i18next";
+import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
+import type { RoleMappingPayload } from "@keycloak/keycloak-admin-client/lib/defs/roleRepresentation";
+import type UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
 import { AlertVariant, PageSection } from "@patternfly/react-core";
 import { InfoCircleIcon } from "@patternfly/react-icons";
+import { useState } from "react";
+import { Trans, useTranslation } from "react-i18next";
+import { Link } from "react-router-dom";
 
-import type UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
-import type { RoleMappingPayload } from "@keycloak/keycloak-admin-client/lib/defs/roleRepresentation";
-import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
-import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
+import { adminClient } from "../../admin-client";
 import { useAlerts } from "../../components/alert/Alerts";
-import { RoleMapping, Row } from "../../components/role-mapping/RoleMapping";
 import { KeycloakSpinner } from "../../components/keycloak-spinner/KeycloakSpinner";
-import { toUser } from "../../user/routes/User";
-import { useRealm } from "../../context/realm-context/RealmContext";
+import { RoleMapping, Row } from "../../components/role-mapping/RoleMapping";
 import { useAccess } from "../../context/access/Access";
+import { useRealm } from "../../context/realm-context/RealmContext";
+import { toUser } from "../../user/routes/User";
+import { useFetch } from "../../utils/useFetch";
 
 import "./service-account.css";
 
@@ -23,7 +24,6 @@ type ServiceAccountProps = {
 
 export const ServiceAccount = ({ client }: ServiceAccountProps) => {
   const { t } = useTranslation("clients");
-  const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
   const { realm } = useRealm();
 

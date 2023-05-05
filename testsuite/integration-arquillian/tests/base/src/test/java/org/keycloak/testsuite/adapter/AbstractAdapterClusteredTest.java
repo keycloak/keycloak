@@ -83,6 +83,9 @@ public abstract class AbstractAdapterClusteredTest extends AbstractServletsAdapt
 
     @BeforeClass
     public static void checkPropertiesSet() {
+        // Remove once https://github.com/keycloak/keycloak/issues/19834 is resolved
+        ContainerAssume.assumeNotAuthServerQuarkusCluster();
+
         Assume.assumeThat(PORT_OFFSET_NODE_1, not(is(-1)));
         Assume.assumeThat(PORT_OFFSET_NODE_2, not(is(-1)));
         Assume.assumeThat(PORT_OFFSET_NODE_REVPROXY, not(is(-1)));

@@ -41,7 +41,7 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
-import javax.xml.bind.JAXBException;
+import jakarta.xml.bind.JAXBException;
 import javax.xml.crypto.XMLStructure;
 import javax.xml.crypto.MarshalException;
 import javax.xml.crypto.dsig.CanonicalizationMethod;
@@ -723,9 +723,7 @@ public class XMLSignatureUtil {
 
         if (x509Certificate != null) {
             items.add(keyInfoFactory.newX509Data(Collections.singletonList(x509Certificate)));
-        }
-
-        if (publicKey != null) {
+        } else if (publicKey != null) {
             items.add(keyInfoFactory.newKeyValue(publicKey));
         }
 

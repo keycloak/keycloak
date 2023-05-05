@@ -1,10 +1,9 @@
+import type GroupRepresentation from "@keycloak/keycloak-admin-client/lib/defs/groupRepresentation";
 import { useTranslation } from "react-i18next";
 
-import type GroupRepresentation from "@keycloak/keycloak-admin-client/lib/defs/groupRepresentation";
-import type KeycloakAdminClient from "@keycloak/keycloak-admin-client";
+import { adminClient } from "../../admin-client";
 import { useAlerts } from "../../components/alert/Alerts";
 import { GroupPickerDialog } from "../../components/group/GroupPickerDialog";
-import { useAdminClient } from "../../context/auth/AdminClient";
 
 type MoveDialogProps = {
   source: GroupRepresentation;
@@ -12,10 +11,7 @@ type MoveDialogProps = {
   refresh: () => void;
 };
 
-const moveToRoot = async (
-  adminClient: KeycloakAdminClient,
-  source: GroupRepresentation
-) => {
+const moveToRoot = async (source: GroupRepresentation) => {
   await adminClient.groups.del({ id: source.id! });
   const { id } = await adminClient.groups.create({
     ...source,
@@ -37,7 +33,6 @@ const moveToRoot = async (
 };
 
 const moveToGroup = async (
-  adminClient: KeycloakAdminClient,
   source: GroupRepresentation,
   dest: GroupRepresentation
 ) => {
@@ -52,15 +47,11 @@ const moveToGroup = async (
 
 export const MoveDialog = ({ source, onClose, refresh }: MoveDialogProps) => {
   const { t } = useTranslation("groups");
-
-  const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
 
   const moveGroup = async (group?: GroupRepresentation[]) => {
     try {
-      await (group
-        ? moveToGroup(adminClient, source, group[0])
-        : moveToRoot(adminClient, source));
+      await (group ? moveToGroup(source, group[0]) : moveToRoot(source));
       refresh();
       addAlert(t("moveGroupSuccess"));
     } catch (error) {

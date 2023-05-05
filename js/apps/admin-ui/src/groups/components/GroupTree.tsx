@@ -1,7 +1,6 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { useTranslation } from "react-i18next";
+import type GroupRepresentation from "@keycloak/keycloak-admin-client/lib/defs/groupRepresentation";
 import {
+  AlertVariant,
   Checkbox,
   Dropdown,
   DropdownItem,
@@ -13,20 +12,25 @@ import {
   TreeView,
   TreeViewDataItem,
 } from "@patternfly/react-core";
+import { useState } from "react";
+import { useTranslation } from "react-i18next";
+import { useNavigate } from "react-router-dom";
 
-import type GroupRepresentation from "@keycloak/keycloak-admin-client/lib/defs/groupRepresentation";
-import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
+import { adminClient } from "../../admin-client";
+import { useAlerts } from "../../components/alert/Alerts";
 import { KeycloakSpinner } from "../../components/keycloak-spinner/KeycloakSpinner";
-import useToggle from "../../utils/useToggle";
-import { DeleteGroup } from "./DeleteGroup";
-import { GroupsModal } from "../GroupsModal";
-import { MoveDialog } from "./MoveDialog";
 import { PaginatingTableToolbar } from "../../components/table-toolbar/PaginatingTableToolbar";
-import { useSubGroups } from "../SubGroupsContext";
+import { useAccess } from "../../context/access/Access";
 import { fetchAdminUI } from "../../context/auth/admin-ui-endpoint";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { joinPath } from "../../utils/joinPath";
+import { useFetch } from "../../utils/useFetch";
+import useToggle from "../../utils/useToggle";
+import { GroupsModal } from "../GroupsModal";
+import { useSubGroups } from "../SubGroupsContext";
 import { toGroups } from "../routes/Groups";
+import { DeleteGroup } from "./DeleteGroup";
+import { MoveDialog } from "./MoveDialog";
 
 import "./group-tree.css";
 
@@ -110,9 +114,10 @@ export const GroupTree = ({
   canViewDetails,
 }: GroupTreeProps) => {
   const { t } = useTranslation("groups");
-  const { adminClient } = useAdminClient();
   const { realm } = useRealm();
   const navigate = useNavigate();
+  const { addAlert } = useAlerts();
+  const { hasAccess } = useAccess();
 
   const [data, setData] = useState<TreeViewDataItem[]>();
   const [groups, setGroups] = useState<GroupRepresentation[]>([]);
@@ -121,6 +126,7 @@ export const GroupTree = ({
   const [search, setSearch] = useState("");
   const [max, setMax] = useState(20);
   const [first, setFirst] = useState(0);
+  const [count, setCount] = useState(0);
   const [exact, setExact] = useState(false);
   const [activeItem, setActiveItem] = useState<TreeViewDataItem>();
 
@@ -147,7 +153,7 @@ export const GroupTree = ({
         group.subGroups && group.subGroups.length > 0
           ? group.subGroups.map((g) => mapGroup(g, groups, refresh))
           : undefined,
-      action: canViewDetails && (
+      action: (hasAccess("manage-users") || group.access?.manage) && (
         <GroupTreeContextMenu group={group} refresh={refresh} />
       ),
       defaultExpanded: subGroups.map((g) => g.id).includes(group.id),
@@ -155,9 +161,8 @@ export const GroupTree = ({
   };
 
   useFetch(
-    () =>
-      fetchAdminUI<GroupRepresentation[]>(
-        adminClient,
+    async () => {
+      const groups = await fetchAdminUI<GroupRepresentation[]>(
         "ui-ext/groups",
         Object.assign(
           {
@@ -167,10 +172,15 @@ export const GroupTree = ({
           },
           search === "" ? null : { search }
         )
-      ),
-    (groups) => {
+      );
+      const count = (await adminClient.groups.count({ search, top: true }))
+        .count;
+      return { groups, count };
+    },
+    ({ groups, count }) => {
       setGroups(groups);
       setData(groups.map((g) => mapGroup(g, [], refresh)));
+      setCount(count);
     },
     [key, first, max, search, exact]
   );
@@ -195,7 +205,7 @@ export const GroupTree = ({
 
   return data ? (
     <PaginatingTableToolbar
-      count={data.length || 0}
+      count={count - first}
       first={first}
       max={max}
       onNextClick={setFirst}
@@ -224,7 +234,7 @@ export const GroupTree = ({
     >
       {data.length > 0 && (
         <TreeView
-          data={data}
+          data={data.slice(0, max)}
           allExpanded={search.length > 0}
           activeItems={activeItem ? [activeItem] : undefined}
           hasGuides
@@ -232,12 +242,16 @@ export const GroupTree = ({
           className="keycloak_groups_treeview"
           onSelect={(_, item) => {
             setActiveItem(item);
-            if (canViewDetails) {
-              const id = item.id?.substring(item.id.lastIndexOf("/") + 1);
-              const subGroups: GroupRepresentation[] = [];
-              findGroup(groups, id!, [], subGroups);
-              setSubGroups(subGroups);
+            const id = item.id?.substring(item.id.lastIndexOf("/") + 1);
+            const subGroups: GroupRepresentation[] = [];
+            findGroup(groups, id!, [], subGroups);
+            setSubGroups(subGroups);
+
+            if (canViewDetails || subGroups.at(-1)?.access?.view) {
               navigate(toGroups({ realm, id: item.id }));
+            } else {
+              addAlert(t("noViewRights"), AlertVariant.warning);
+              navigate(toGroups({ realm }));
             }
           }}
         />

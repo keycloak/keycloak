@@ -2,13 +2,13 @@ import { AlertVariant, PageSection } from "@patternfly/react-core";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 
+import { adminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
 import {
-  changeScope,
   ClientScopeDefaultOptionalType,
+  changeScope,
 } from "../components/client-scope/ClientScopeTypes";
 import { ViewHeader } from "../components/view-header/ViewHeader";
-import { useAdminClient } from "../context/auth/AdminClient";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { convertFormValuesToObject } from "../util";
 import { ScopeForm } from "./details/ScopeForm";
@@ -18,7 +18,6 @@ export default function CreateClientScope() {
   const { t } = useTranslation("client-scopes");
   const navigate = useNavigate();
   const { realm } = useRealm();
-  const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
 
   const onSubmit = async (formData: ClientScopeDefaultOptionalType) => {
@@ -38,11 +37,7 @@ export default function CreateClientScope() {
         throw new Error(t("common:notFound"));
       }
 
-      await changeScope(
-        adminClient,
-        { ...clientScope, id: scope.id },
-        clientScope.type
-      );
+      await changeScope({ ...clientScope, id: scope.id }, clientScope.type);
 
       addAlert(t("createSuccess", AlertVariant.success));
 

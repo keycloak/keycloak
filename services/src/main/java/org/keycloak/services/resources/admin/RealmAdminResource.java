@@ -31,23 +31,23 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import javax.ws.rs.BadRequestException;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.FormParam;
-import javax.ws.rs.GET;
-import javax.ws.rs.NotFoundException;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.Status;
-import javax.ws.rs.core.StreamingOutput;
+import jakarta.ws.rs.BadRequestException;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.FormParam;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.PUT;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response.Status;
+import jakarta.ws.rs.core.StreamingOutput;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 
@@ -360,6 +360,10 @@ public class RealmAdminResource {
             RealmRepresentation rep = new RealmRepresentation();
             rep.setRealm(realm.getName());
 
+            if (auth.users().canView()) {
+                rep.setRegistrationEmailAsUsername(realm.isRegistrationEmailAsUsername());
+            }
+
             if (auth.realm().canViewIdentityProviders()) {
                 RealmRepresentation r = ModelToRepresentation.toRepresentation(session, realm, false);
                 rep.setIdentityProviders(r.getIdentityProviders());
@@ -387,7 +391,7 @@ public class RealmAdminResource {
         logger.debug("updating realm: " + realm.getName());
 
         if (Config.getAdminRealm().equals(realm.getName()) && (rep.getRealm() != null && !rep.getRealm().equals(Config.getAdminRealm()))) {
-            return ErrorResponse.error("Can't rename master realm", Status.BAD_REQUEST);
+            throw ErrorResponse.error("Can't rename master realm", Status.BAD_REQUEST);
         }
         
         ReservedCharValidator.validate(rep.getRealm());
@@ -398,7 +402,7 @@ public class RealmAdminResource {
                 try {
                     KeyPairVerifier.verify(rep.getPrivateKey(), rep.getPublicKey());
                 } catch (VerificationException e) {
-                    return ErrorResponse.error(e.getMessage(), Status.BAD_REQUEST);
+                    throw ErrorResponse.error(e.getMessage(), Status.BAD_REQUEST);
                 }
             }
 
@@ -406,10 +410,10 @@ public class RealmAdminResource {
                 try {
                     X509Certificate cert = PemUtils.decodeCertificate(rep.getCertificate());
                     if (cert == null) {
-                        return ErrorResponse.error("Failed to decode certificate", Status.BAD_REQUEST);
+                        throw ErrorResponse.error("Failed to decode certificate", Status.BAD_REQUEST);
                     }
                 } catch (Exception e)  {
-                    return ErrorResponse.error("Failed to decode certificate", Status.BAD_REQUEST);
+                    throw ErrorResponse.error("Failed to decode certificate", Status.BAD_REQUEST);
                 }
             }
 
@@ -430,12 +434,12 @@ public class RealmAdminResource {
             
             return Response.noContent().build();
         } catch (ModelDuplicateException e) {
-            return ErrorResponse.exists("Realm with same name exists");
+            throw ErrorResponse.exists("Realm with same name exists");
         } catch (ModelException e) {
-            return ErrorResponse.error(e.getMessage(), Status.BAD_REQUEST);
+            throw ErrorResponse.error(e.getMessage(), Status.BAD_REQUEST);
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
-            return ErrorResponse.error("Failed to update realm", Response.Status.INTERNAL_SERVER_ERROR);
+            throw ErrorResponse.error("Failed to update realm", Response.Status.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -926,7 +930,7 @@ public class RealmAdminResource {
         try {
             UserModel user = auth.adminAuth().getUser();
             if (user.getEmail() == null) {
-                return ErrorResponse.error("Logged in user does not have an e-mail.", Response.Status.INTERNAL_SERVER_ERROR);
+                throw ErrorResponse.error("Logged in user does not have an e-mail.", Response.Status.INTERNAL_SERVER_ERROR);
             }
             if (ComponentRepresentation.SECRET_VALUE.equals(settings.get("password"))) {
                 settings.put("password", realm.getSmtpConfig().get("password"));
@@ -935,7 +939,7 @@ public class RealmAdminResource {
         } catch (Exception e) {
             e.printStackTrace();
             logger.errorf("Failed to send email \n %s", e.getCause());
-            return ErrorResponse.error("Failed to send email", Response.Status.INTERNAL_SERVER_ERROR);
+            throw ErrorResponse.error("Failed to send email", Response.Status.INTERNAL_SERVER_ERROR);
         }
 
         return Response.noContent().build();
@@ -1031,11 +1035,11 @@ public class RealmAdminResource {
                     })
             ).build();
         } catch (ModelDuplicateException e) {
-            return ErrorResponse.exists(e.getLocalizedMessage());
+            throw ErrorResponse.exists(e.getLocalizedMessage());
         } catch (ErrorResponseException error) {
             return error.getResponse();
         } catch (Exception e) {
-            return ErrorResponse.error(e.getMessage(), Response.Status.INTERNAL_SERVER_ERROR);
+            throw ErrorResponse.error(e.getMessage(), Response.Status.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -1119,7 +1123,7 @@ public class RealmAdminResource {
     @GET
     @Path("credential-registrators")
     @NoCache
-    @Produces(javax.ws.rs.core.MediaType.APPLICATION_JSON)
+    @Produces(jakarta.ws.rs.core.MediaType.APPLICATION_JSON)
     public Stream<String> getCredentialRegistrators(){
         auth.realm().requireViewRealm();
         return session.getContext().getRealm().getRequiredActionProvidersStream()

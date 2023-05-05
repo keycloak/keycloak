@@ -8,7 +8,7 @@ title="Enabling Keycloak Metrics"
 summary="Learn how to enable and expose metrics from the server"
 includedOptions="metrics-enabled">
 
-Keycloak has built in support for metrics. This guide describes how to enable and configure server metrics.
+Keycloak has built in support for metrics. This {section} describes how to enable and configure server metrics.
 
 == Enabling Metrics
 

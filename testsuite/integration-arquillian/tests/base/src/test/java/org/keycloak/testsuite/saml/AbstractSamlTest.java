@@ -15,8 +15,8 @@ import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.testsuite.AbstractAuthTest;
 import org.keycloak.testsuite.util.SamlClient;
 
-import javax.ws.rs.core.UriBuilder;
-import javax.ws.rs.core.UriBuilderException;
+import jakarta.ws.rs.core.UriBuilder;
+import jakarta.ws.rs.core.UriBuilderException;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import java.net.URI;
 import java.security.KeyFactory;

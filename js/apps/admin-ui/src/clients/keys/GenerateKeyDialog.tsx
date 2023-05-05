@@ -68,7 +68,7 @@ export const KeyForm = ({
   const { cryptoInfo } = useServerInfo();
   const supportedKeystoreTypes = [
     ...(cryptoInfo?.supportedKeystoreTypes ?? []),
-    ...(hasPem ? CERT_PEM : []),
+    ...(hasPem ? [CERT_PEM] : []),
   ];
 
   return (
@@ -99,6 +99,7 @@ export const KeyForm = ({
               variant={SelectVariant.single}
               aria-label={t("archiveFormat")}
               isOpen={openArchiveFormat}
+              menuAppendTo="parent"
             >
               {supportedKeystoreTypes.map((option) => (
                 <SelectOption

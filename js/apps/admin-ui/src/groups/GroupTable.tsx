@@ -1,23 +1,23 @@
-import { useState } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
-import { useTranslation } from "react-i18next";
-import { SearchInput, ToolbarItem } from "@patternfly/react-core";
-
 import type GroupRepresentation from "@keycloak/keycloak-admin-client/lib/defs/groupRepresentation";
-import { useAdminClient } from "../context/auth/AdminClient";
+import { SearchInput, ToolbarItem } from "@patternfly/react-core";
+import { useState } from "react";
+import { useTranslation } from "react-i18next";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+
+import { adminClient } from "../admin-client";
+import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
+import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
+import { useAccess } from "../context/access/Access";
 import { fetchAdminUI } from "../context/auth/admin-ui-endpoint";
 import { useRealm } from "../context/realm-context/RealmContext";
-import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
-import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
-import { GroupsModal } from "./GroupsModal";
-import { getLastId } from "./groupIdUtils";
-import { useSubGroups } from "./SubGroupsContext";
-import { toGroups } from "./routes/Groups";
-import { useAccess } from "../context/access/Access";
 import useToggle from "../utils/useToggle";
+import { GroupsModal } from "./GroupsModal";
+import { useSubGroups } from "./SubGroupsContext";
 import { DeleteGroup } from "./components/DeleteGroup";
 import { GroupToolbar } from "./components/GroupToolbar";
 import { MoveDialog } from "./components/MoveDialog";
+import { getLastId } from "./groupIdUtils";
+import { toGroups } from "./routes/Groups";
 
 type GroupTableProps = {
   refresh: () => void;
@@ -30,7 +30,6 @@ export const GroupTable = ({
 }: GroupTableProps) => {
   const { t } = useTranslation("groups");
 
-  const { adminClient } = useAdminClient();
   const { realm } = useRealm();
   const [selectedRows, setSelectedRows] = useState<GroupRepresentation[]>([]);
 
@@ -39,7 +38,7 @@ export const GroupTable = ({
   const [showDelete, toggleShowDelete] = useToggle();
   const [move, setMove] = useState<GroupRepresentation>();
 
-  const { subGroups, currentGroup, setSubGroups } = useSubGroups();
+  const { currentGroup } = useSubGroups();
 
   const [key, setKey] = useState(0);
   const refresh = () => setKey(key + 1);
@@ -70,14 +69,10 @@ export const GroupTable = ({
         ? group.subGroups
         : group.subGroups?.filter((g) => g.name?.includes(search));
     } else {
-      groupsData = await fetchAdminUI<GroupRepresentation[]>(
-        adminClient,
-        "ui-ext/groups",
-        {
-          ...params,
-          global: "false",
-        }
-      );
+      groupsData = await fetchAdminUI<GroupRepresentation[]>("ui-ext/groups", {
+        ...params,
+        global: "false",
+      });
     }
 
     if (!groupsData) {
@@ -212,7 +207,7 @@ export const GroupTable = ({
                 <Link
                   key={group.id}
                   to={`${location.pathname}/${group.id}`}
-                  onClick={() => setSubGroups([...subGroups, group])}
+                  onClick={() => navigate(toGroups({ realm, id: group.id }))}
                 >
                   {group.name}
                 </Link>

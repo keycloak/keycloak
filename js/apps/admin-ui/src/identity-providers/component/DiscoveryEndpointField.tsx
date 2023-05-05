@@ -2,10 +2,10 @@ import { FormGroup, Switch } from "@patternfly/react-core";
 import { ReactNode, useEffect, useState } from "react";
 import { useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-
 import { HelpItem } from "ui-shared";
+
+import { adminClient } from "../../admin-client";
 import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
-import { useAdminClient } from "../../context/auth/AdminClient";
 import environment from "../../environment";
 
 type DiscoveryEndpointFieldProps = {
@@ -20,9 +20,6 @@ export const DiscoveryEndpointField = ({
   children,
 }: DiscoveryEndpointFieldProps) => {
   const { t } = useTranslation("identity-providers");
-
-  const { adminClient } = useAdminClient();
-
   const {
     setValue,
     register,

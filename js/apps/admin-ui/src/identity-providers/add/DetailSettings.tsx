@@ -18,6 +18,7 @@ import { Controller, FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
 
+import { adminClient } from "../../admin-client";
 import { useAlerts } from "../../components/alert/Alerts";
 import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
 import { FormAccess } from "../../components/form-access/FormAccess";
@@ -34,10 +35,10 @@ import {
   KeycloakDataTable,
 } from "../../components/table-toolbar/KeycloakDataTable";
 import { ViewHeader } from "../../components/view-header/ViewHeader";
-import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
 import { useRealm } from "../../context/realm-context/RealmContext";
-import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
 import { toUpperCase } from "../../util";
+import { useFetch } from "../../utils/useFetch";
+import useIsFeatureEnabled, { Feature } from "../../utils/useIsFeatureEnabled";
 import { useParams } from "../../utils/useParams";
 import { ExtendedFieldsForm } from "../component/ExtendedFieldsForm";
 import { toIdentityProviderAddMapper } from "../routes/AddMapper";
@@ -76,7 +77,6 @@ type IdPWithMapperAttributes = IdentityProviderMapperRepresentation & {
 const Header = ({ onChange, value, save, toggleDeleteDialog }: HeaderProps) => {
   const { t } = useTranslation("identity-providers");
   const { alias: displayName } = useParams<{ alias: string }>();
-  const { adminClient } = useAdminClient();
   const [provider, setProvider] = useState<IdentityProviderRepresentation>();
 
   useFetch(
@@ -156,19 +156,17 @@ const MapperLink = ({ name, mapperId, provider }: MapperLinkProps) => {
 export default function DetailSettings() {
   const { t } = useTranslation("identity-providers");
   const { alias, providerId } = useParams<IdentityProviderParams>();
-
+  const isFeatureEnabled = useIsFeatureEnabled();
   const form = useForm<IdentityProviderRepresentation>();
   const { handleSubmit, getValues, reset } = form;
   const [provider, setProvider] = useState<IdentityProviderRepresentation>();
   const [selectedMapper, setSelectedMapper] =
     useState<IdPWithMapperAttributes>();
 
-  const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
   const navigate = useNavigate();
   const { realm } = useRealm();
   const [key, setKey] = useState(0);
-  const { profileInfo } = useServerInfo();
   const refresh = () => setKey(key + 1);
 
   useFetch(
@@ -496,9 +494,7 @@ export default function DetailSettings() {
               ]}
             />
           </Tab>
-          {!profileInfo?.disabledFeatures?.includes(
-            "ADMIN_FINE_GRAINED_AUTHZ"
-          ) && (
+          {isFeatureEnabled(Feature.AdminFineGrainedAuthz) && (
             <Tab
               id="permissions"
               data-testid="permissionsTab"

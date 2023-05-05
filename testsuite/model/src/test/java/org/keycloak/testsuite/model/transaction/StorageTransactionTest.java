@@ -34,9 +34,11 @@ import org.keycloak.testsuite.model.RequireProvider;
 import org.keycloak.testsuite.model.util.TransactionController;
 import org.keycloak.utils.LockObjectsForModification;
 
-import javax.persistence.OptimisticLockException;
-import javax.persistence.PessimisticLockException;
+import jakarta.persistence.OptimisticLockException;
+import jakarta.persistence.PessimisticLockException;
+import jakarta.transaction.RollbackException;
 
+import java.util.UUID;
 import java.util.function.Function;
 
 import static org.hamcrest.CoreMatchers.allOf;
@@ -62,7 +64,6 @@ public class StorageTransactionTest extends KeycloakModelTest {
         RealmModel r = s.realms().createRealm("1");
         r.setDefaultRole(s.roles().addRealmRole(r, Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + r.getName()));
         r.setAttribute("k1", "v1");
-
         r.setSsoSessionIdleTimeout(1000);
         r.setSsoSessionMaxLifespan(2000);
 
@@ -137,14 +138,14 @@ public class StorageTransactionTest extends KeycloakModelTest {
 
     @Test
     // LockObjectForModification currently works only in map-jpa and map-hotrod
-    @RequireProvider(value = MapStorageProvider.class, only = { JpaMapStorageProviderFactory.PROVIDER_ID, HotRodMapStorageProviderFactory.PROVIDER_ID})
+    @RequireProvider(value = MapStorageProvider.class, only = {JpaMapStorageProviderFactory.PROVIDER_ID, HotRodMapStorageProviderFactory.PROVIDER_ID})
     public void testLockObjectForModificationById() throws Exception {
         testLockObjectForModification(session -> LockObjectsForModification.lockRealmsForModification(session, () -> session.realms().getRealm(realmId)));
     }
 
     @Test
     // LockObjectForModification currently works only in map-jpa and map-hotrod
-    @RequireProvider(value = MapStorageProvider.class, only = { JpaMapStorageProviderFactory.PROVIDER_ID, HotRodMapStorageProviderFactory.PROVIDER_ID})
+    @RequireProvider(value = MapStorageProvider.class, only = {JpaMapStorageProviderFactory.PROVIDER_ID, HotRodMapStorageProviderFactory.PROVIDER_ID})
     public void testLockUserSessionForModificationByQuery() throws Exception {
         // Create user session
         final String sessionId = withRealm(realmId, (session, realm) -> {
@@ -200,9 +201,10 @@ public class StorageTransactionTest extends KeycloakModelTest {
     }
 
     @Test
-    // Optimistic locking works only with map-jpa
-    @RequireProvider(value = MapStorageProvider.class, only = JpaMapStorageProviderFactory.PROVIDER_ID)
-    public void testOptimisticLockingException() throws Exception {
+    // Optimistic locking works only with map-jpa and map-hotrod
+    @RequireProvider(value = MapStorageProvider.class, only = {JpaMapStorageProviderFactory.PROVIDER_ID,
+            HotRodMapStorageProviderFactory.PROVIDER_ID})
+    public void testOptimisticLockingExceptionReadById() throws Exception {
         withRealm(realmId, (session, realm) -> {
             realm.setDisplayName("displayName1");
             return null;
@@ -230,8 +232,138 @@ public class StorageTransactionTest extends KeycloakModelTest {
 
             // tx2 should fail as tx1 already changed the value
             assertException(tx2::commit,
-                    allOf(instanceOf(ModelException.class),
-                            hasCause(instanceOf(OptimisticLockException.class))));
+                    anyOf(
+                            allOf(instanceOf(RuntimeException.class), hasCause(instanceOf(RollbackException.class))),
+                            allOf(instanceOf(ModelException.class), hasCause(instanceOf(OptimisticLockException.class))),
+                            allOf(instanceOf(OptimisticLockException.class))
+                    ));
+        }
+    }
+
+    @Test
+    // Optimistic locking works only with map-jpa and map-hotrod
+    @RequireProvider(value = MapStorageProvider.class, only = {JpaMapStorageProviderFactory.PROVIDER_ID,
+            HotRodMapStorageProviderFactory.PROVIDER_ID})
+    public void testOptimisticLockingExceptionReadByQuery() throws Exception {
+        withRealm(realmId, (session, realm) -> {
+            realm.setDisplayName("displayName1");
+            return null;
+        });
+
+        try (TransactionController tx1 = new TransactionController(getFactory());
+             TransactionController tx2 = new TransactionController(getFactory())) {
+
+            // tx1 acquires lock
+            tx1.begin();
+            tx2.begin();
+
+            // both transactions touch the same entity
+            tx1.runStep(session -> {
+                session.realms().getRealmByName("1").setDisplayName("displayName2");
+                return null;
+            });
+            tx2.runStep(session -> {
+                session.realms().getRealmByName("1").setDisplayName("displayName3");
+                return null;
+            });
+
+            // tx1 transaction should be successful
+            tx1.commit();
+
+            // tx2 should fail as tx1 already changed the value
+            assertException(tx2::commit,
+                    anyOf(
+                            allOf(instanceOf(RuntimeException.class), hasCause(instanceOf(RollbackException.class))),
+                            allOf(instanceOf(ModelException.class), hasCause(instanceOf(OptimisticLockException.class))),
+                            allOf(instanceOf(OptimisticLockException.class))
+                    ));
+        }
+    }
+
+    @Test
+    // Optimistic locking works only with map-jpa and map-hotrod
+    @RequireProvider(value = MapStorageProvider.class, only = {JpaMapStorageProviderFactory.PROVIDER_ID,
+            HotRodMapStorageProviderFactory.PROVIDER_ID})
+    public void testOptimisticLockingDeleteWhenReadingByQuery() throws Exception {
+        withRealm(realmId, (session, realm) -> {
+            session.users().addUser(realm, "user", "user", false, false);
+            return null;
+        });
+
+        try (TransactionController tx1 = new TransactionController(getFactory());
+             TransactionController tx2 = new TransactionController(getFactory())) {
+
+            tx1.begin();
+            tx2.begin();
+
+            // both transactions touch the same entity
+            tx1.runStep(session -> {
+                // read by criteria
+                session.users().getUserByUsername(session.realms().getRealm(realmId), "user").setFirstName("firstName");
+                return null;
+            });
+            tx2.runStep(session -> {
+                RealmModel realm = session.realms().getRealm(realmId);
+
+                // remove by id
+                session.users().removeUser(realm, session.users().getUserByUsername(realm, "user"));
+                return null;
+            });
+
+            // tx1 transaction should be successful
+            tx1.commit();
+
+            // tx2 should fail as tx1 already changed the value
+            assertException(tx2::commit,
+                    anyOf(
+                            allOf(instanceOf(RuntimeException.class), hasCause(instanceOf(RollbackException.class))),
+                            allOf(instanceOf(ModelException.class), hasCause(instanceOf(OptimisticLockException.class))),
+                            allOf(instanceOf(OptimisticLockException.class))
+                    ));
+        }
+    }
+
+    @Test
+    // Optimistic locking works only with map-jpa and map-hotrod
+    @RequireProvider(value = MapStorageProvider.class, only = {JpaMapStorageProviderFactory.PROVIDER_ID,
+            HotRodMapStorageProviderFactory.PROVIDER_ID})
+    public void testOptimisticLockingDeleteWhenReadingById() throws Exception {
+        String userId = UUID.randomUUID().toString();
+        withRealm(realmId, (session, realm) -> {
+            session.users().addUser(realm, userId, "user", false, false);
+            return null;
+        });
+
+        try (TransactionController tx1 = new TransactionController(getFactory());
+             TransactionController tx2 = new TransactionController(getFactory())) {
+
+            tx1.begin();
+            tx2.begin();
+
+            // both transactions touch the same entity
+            tx1.runStep(session -> {
+                // read by id
+                session.users().getUserById(session.realms().getRealm(realmId), userId).setFirstName("firstName");
+                return null;
+            });
+            tx2.runStep(session -> {
+                RealmModel realm = session.realms().getRealm(realmId);
+
+                // remove by id after read by id
+                session.users().removeUser(realm, session.users().getUserById(realm, userId));
+                return null;
+            });
+
+            // tx1 transaction should be successful
+            tx1.commit();
+
+            // tx2 should fail as tx1 already changed the value
+            assertException(tx2::commit,
+                    anyOf(
+                            allOf(instanceOf(RuntimeException.class), hasCause(instanceOf(RollbackException.class))),
+                            allOf(instanceOf(ModelException.class), hasCause(instanceOf(OptimisticLockException.class))),
+                            allOf(instanceOf(OptimisticLockException.class))
+                    ));
         }
     }
 }

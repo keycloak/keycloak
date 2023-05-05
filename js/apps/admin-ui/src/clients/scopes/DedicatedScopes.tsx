@@ -11,6 +11,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 
+import { adminClient } from "../../admin-client";
 import { MapperList } from "../../client-scopes/details/MapperList";
 import { useAlerts } from "../../components/alert/Alerts";
 import { KeycloakSpinner } from "../../components/keycloak-spinner/KeycloakSpinner";
@@ -19,7 +20,7 @@ import {
   useRoutableTab,
 } from "../../components/routable-tabs/RoutableTabs";
 import { ViewHeader } from "../../components/view-header/ViewHeader";
-import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
+import { useFetch } from "../../utils/useFetch";
 import { useParams } from "../../utils/useParams";
 import {
   DedicatedScopeDetailsParams,
@@ -33,8 +34,6 @@ export default function DedicatedScopes() {
   const { t } = useTranslation("clients");
   const navigate = useNavigate();
   const { realm, clientId } = useParams<DedicatedScopeDetailsParams>();
-
-  const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
 
   const [client, setClient] = useState<ClientRepresentation>();

@@ -69,6 +69,15 @@
                 <app.server.jboss.unpacked.folder.name>jboss-eap-7.1</app.server.jboss.unpacked.folder.name>
             </properties>
         </profile>
+        <profile>
+            <id>app-server-eap-java17</id>
+            <activation>
+                <jdk>[17,)</jdk>
+            </activation>
+            <properties>
+                <skip.java17.enablement>false</skip.java17.enablement>
+            </properties>
+        </profile>
     </profiles>
 
 </project>

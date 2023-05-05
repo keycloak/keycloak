@@ -1,3 +1,4 @@
+import type AuthenticationFlowRepresentation from "@keycloak/keycloak-admin-client/lib/defs/authenticationFlowRepresentation";
 import {
   FormGroup,
   Select,
@@ -7,10 +8,10 @@ import {
 import { useState } from "react";
 import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-
-import type AuthenticationFlowRepresentation from "@keycloak/keycloak-admin-client/lib/defs/authenticationFlowRepresentation";
 import { HelpItem } from "ui-shared";
-import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
+
+import { adminClient } from "../../admin-client";
+import { useFetch } from "../../utils/useFetch";
 import type { FieldProps } from "../component/FormGroupField";
 import { SwitchField } from "../component/SwitchField";
 import { TextField } from "../component/TextField";
@@ -23,7 +24,6 @@ const LoginFlow = ({
   const { t } = useTranslation("identity-providers");
   const { control } = useFormContext();
 
-  const { adminClient } = useAdminClient();
   const [flows, setFlows] = useState<AuthenticationFlowRepresentation[]>();
   const [open, setOpen] = useState(false);
 

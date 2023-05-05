@@ -68,8 +68,8 @@ import org.keycloak.testsuite.util.IdentityProviderBuilder;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
 
-import javax.ws.rs.ClientErrorException;
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.ClientErrorException;
+import jakarta.ws.rs.core.Response;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.Collections;
@@ -297,7 +297,22 @@ public class PermissionsTest extends AbstractKeycloakTest {
                 realm.toRepresentation();
             }
         }, Resource.REALM, false, true);
-        assertGettersEmpty(clients.get(AdminRoles.QUERY_REALMS).realm(REALM_NAME).toRepresentation());
+
+        {
+            RealmRepresentation realm = clients.get(AdminRoles.QUERY_REALMS).realm(REALM_NAME).toRepresentation();
+            assertGettersEmpty(realm);
+            assertNull(realm.isRegistrationEmailAsUsername());
+
+            realm = clients.get(AdminRoles.VIEW_USERS).realm(REALM_NAME).toRepresentation();
+            assertNotNull(realm.isRegistrationEmailAsUsername());
+
+            realm = clients.get(AdminRoles.MANAGE_USERS).realm(REALM_NAME).toRepresentation();
+            assertNotNull(realm.isRegistrationEmailAsUsername());
+
+            // query users only if granted through fine-grained admin
+            realm = clients.get(AdminRoles.QUERY_USERS).realm(REALM_NAME).toRepresentation();
+            assertNull(realm.isRegistrationEmailAsUsername());
+        }
 
         // this should pass given that users granted with "query" roles are allowed to access the realm with limited access
         for (String role : AdminRoles.ALL_QUERY_ROLES) {

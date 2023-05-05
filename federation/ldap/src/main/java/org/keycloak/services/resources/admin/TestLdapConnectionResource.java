@@ -27,11 +27,11 @@ import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.managers.LDAPServerCapabilitiesManager;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 
-import javax.ws.rs.Consumes;
-import javax.ws.rs.FormParam;
-import javax.ws.rs.POST;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.FormParam;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 
 /**
  * @resource User Storage Provider
@@ -72,8 +72,10 @@ public class TestLdapConnectionResource {
 
         TestLdapConnectionRepresentation config = new TestLdapConnectionRepresentation(action, connectionUrl, bindDn, bindCredential, useTruststoreSpi, connectionTimeout, startTls, LDAPConstants.AUTH_TYPE_SIMPLE);
         config.setComponentId(componentId);
-        boolean result = LDAPServerCapabilitiesManager.testLDAP(config, session, realm);
-        return result ? Response.noContent().build() : ErrorResponse.error("LDAP test error", Response.Status.BAD_REQUEST);
+        if (! LDAPServerCapabilitiesManager.testLDAP(config, session, realm)) {
+            throw ErrorResponse.error("LDAP test error", Response.Status.BAD_REQUEST);
+        }
+        return Response.noContent().build();
     }
 
     /**
@@ -84,8 +86,10 @@ public class TestLdapConnectionResource {
     @NoCache
     @Consumes(MediaType.APPLICATION_JSON)
     public Response testLDAPConnection(TestLdapConnectionRepresentation config) {
-        boolean result = LDAPServerCapabilitiesManager.testLDAP(config, session, realm);
-        return result ? Response.noContent().build() : ErrorResponse.error("LDAP test error", Response.Status.BAD_REQUEST);
+        if (! LDAPServerCapabilitiesManager.testLDAP(config, session, realm)) {
+            throw ErrorResponse.error("LDAP test error", Response.Status.BAD_REQUEST);
+        }
+        return Response.noContent().build();
     }
 
 }

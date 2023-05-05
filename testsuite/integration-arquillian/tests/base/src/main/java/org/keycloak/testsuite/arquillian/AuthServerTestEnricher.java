@@ -72,7 +72,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import javax.ws.rs.NotFoundException;
+import jakarta.ws.rs.NotFoundException;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -374,6 +374,12 @@ public class AuthServerTestEnricher {
     }
 
     public void startAuthContainer(@Observes(precedence = 0) StartSuiteContainers event) {
+        // this property can be used to skip start of auth-server before suite
+        // it might be useful for running some specific tests locally, e.g. when running standalone ZeroDowtime*Test 
+        if (Boolean.getBoolean("keycloak.testsuite.skip.start.auth.server")) {
+            log.debug("Skipping the start of auth server before suite");
+            return;
+        }
         //frontend-only (either load-balancer or auth-server)
         log.debug("Starting auth server before suite");
 
@@ -734,6 +740,7 @@ public class AuthServerTestEnricher {
         }
 
         TestContext testContext = testContextProducer.get();
+        testContext.runAfterClassActions();
 
         Keycloak adminClient = testContext.getAdminClient();
         KeycloakTestingClient testingClient = testContext.getTestingClient();

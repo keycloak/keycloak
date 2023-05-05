@@ -1,11 +1,11 @@
-import type { RouteDef } from "../route-config";
+import type { AppRouteObject } from "../routes";
 import {
   DashboardRoute,
   DashboardRouteWithRealm,
   DashboardRouteWithTab,
 } from "./routes/Dashboard";
 
-const routes: RouteDef[] = [
+const routes: AppRouteObject[] = [
   DashboardRoute,
   DashboardRouteWithRealm,
   DashboardRouteWithTab,

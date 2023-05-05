@@ -22,7 +22,7 @@ import org.infinispan.commons.tx.lookup.TransactionManagerLookup;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.transaction.JtaTransactionManagerLookup;
 
-import javax.transaction.TransactionManager;
+import jakarta.transaction.TransactionManager;
 
 /**
  * HotRod client provides its own {@link org.infinispan.client.hotrod.transaction.lookup.GenericTransactionManagerLookup}

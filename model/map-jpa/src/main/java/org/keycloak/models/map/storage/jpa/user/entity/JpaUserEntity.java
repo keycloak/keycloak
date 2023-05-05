@@ -26,23 +26,21 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-import javax.persistence.Basic;
-import javax.persistence.CascadeType;
-import javax.persistence.CollectionTable;
-import javax.persistence.Column;
-import javax.persistence.ElementCollection;
-import javax.persistence.Entity;
-import javax.persistence.FetchType;
-import javax.persistence.Id;
-import javax.persistence.JoinColumn;
-import javax.persistence.OneToMany;
-import javax.persistence.Table;
-import javax.persistence.UniqueConstraint;
-import javax.persistence.Version;
+import jakarta.persistence.Basic;
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.CollectionTable;
+import jakarta.persistence.Column;
+import jakarta.persistence.ElementCollection;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
+import jakarta.persistence.Version;
 
 import org.hibernate.annotations.Type;
-import org.hibernate.annotations.TypeDef;
-import org.hibernate.annotations.TypeDefs;
 import org.keycloak.models.map.common.DeepCloner;
 import org.keycloak.models.map.common.UuidValidator;
 import org.keycloak.models.map.storage.jpa.Constants;
@@ -70,7 +68,6 @@ import static org.keycloak.models.map.storage.jpa.JpaMapStorageProviderFactory.C
                 @UniqueConstraint(columnNames = {"realmId", "username", "usernameWithCase"}),
                 @UniqueConstraint(columnNames = {"realmId", "emailConstraint"})
         })
-@TypeDefs({@TypeDef(name = "jsonb", typeClass = JsonbType.class)})
 @SuppressWarnings("ConstantConditions")
 public class JpaUserEntity extends MapUserEntity.AbstractUserEntity implements JpaRootVersionedEntity {
 
@@ -83,7 +80,7 @@ public class JpaUserEntity extends MapUserEntity.AbstractUserEntity implements J
     @Column
     private int version;
 
-    @Type(type = "jsonb")
+    @Type(JsonbType.class)
     @Column(columnDefinition = "jsonb")
     private final JpaUserMetadata metadata;
 

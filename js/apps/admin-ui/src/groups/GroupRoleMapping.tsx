@@ -1,8 +1,8 @@
-import { useTranslation } from "react-i18next";
-import { AlertVariant } from "@patternfly/react-core";
-
 import type { RoleMappingPayload } from "@keycloak/keycloak-admin-client/lib/defs/roleRepresentation";
-import { useAdminClient } from "../context/auth/AdminClient";
+import { AlertVariant } from "@patternfly/react-core";
+import { useTranslation } from "react-i18next";
+
+import { adminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
 import { RoleMapping, Row } from "../components/role-mapping/RoleMapping";
 
@@ -13,7 +13,6 @@ type GroupRoleMappingProps = {
 
 export const GroupRoleMapping = ({ id, name }: GroupRoleMappingProps) => {
   const { t } = useTranslation("clients");
-  const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
 
   const assignRoles = async (rows: Row[]) => {

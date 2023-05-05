@@ -123,7 +123,7 @@ public final class Database {
                 Enabled.LEGACY_ONLY, 
                 "org.h2.jdbcx.JdbcDataSource",
                 "org.h2.Driver",
-                "io.quarkus.hibernate.orm.runtime.dialect.QuarkusH2Dialect",
+                "org.hibernate.dialect.H2Dialect",
                 new Function<String, String>() {
                     @Override
                     public String apply(String alias) {
@@ -170,7 +170,7 @@ public final class Database {
                 Enabled.LEGACY_ONLY,
                 "com.mysql.cj.jdbc.MysqlXADataSource",
                 "com.mysql.cj.jdbc.Driver",
-                "org.hibernate.dialect.MySQL8Dialect",
+                "org.hibernate.dialect.MySQLDialect",
                 "jdbc:mysql://${kc.db-url-host:localhost}:${kc.db-url-port:3306}/${kc.db-url-database:keycloak}${kc.db-url-properties:}",
                 asList("org.keycloak.connections.jpa.updater.liquibase.UpdatedMySqlDatabase")
         ),
@@ -186,7 +186,7 @@ public final class Database {
                 Enabled.ENABLED,
                 "org.postgresql.xa.PGXADataSource",
                 "org.postgresql.Driver",
-                "io.quarkus.hibernate.orm.runtime.dialect.QuarkusPostgreSQL10Dialect",
+                "org.hibernate.dialect.PostgreSQLDialect",
                 "jdbc:postgresql://${kc.db-url-host:localhost}:${kc.db-url-port:5432}/${kc.db-url-database:keycloak}${kc.db-url-properties:}",
                 asList("liquibase.database.core.PostgresDatabase", "org.keycloak.connections.jpa.updater.liquibase.PostgresPlusDatabase"),
                 "postgres"
@@ -195,7 +195,7 @@ public final class Database {
                 Enabled.MAP_STORE_ONLY,
                 POSTGRES.xaDriver,
                 POSTGRES.nonXaDriver,
-                "org.hibernate.dialect.CockroachDB201Dialect",
+                "org.hibernate.dialect.CockroachDialect",
                 "jdbc:postgresql://${kc.db-url-host:localhost}:${kc.db-url-port:26257}/${kc.db-url-database:keycloak}${kc.db-url-properties:}",
                 List.of("liquibase.database.core.CockroachDatabase"),
                 "cockroach"
@@ -204,7 +204,7 @@ public final class Database {
                 Enabled.LEGACY_ONLY,
                 "com.microsoft.sqlserver.jdbc.SQLServerXADataSource",
                 "com.microsoft.sqlserver.jdbc.SQLServerDriver",
-                "org.hibernate.dialect.SQLServer2016Dialect",
+                "org.hibernate.dialect.SQLServerDialect",
                 "jdbc:sqlserver://${kc.db-url-host:localhost}:${kc.db-url-port:1433};databaseName=${kc.db-url-database:keycloak}${kc.db-url-properties:}",
                 asList("org.keycloak.quarkus.runtime.storage.database.liquibase.database.CustomMSSQLDatabase"),
                 "mssql"
@@ -213,7 +213,7 @@ public final class Database {
                 Enabled.LEGACY_ONLY,
                 "oracle.jdbc.xa.client.OracleXADataSource",
                 "oracle.jdbc.driver.OracleDriver",
-                "org.hibernate.dialect.Oracle12cDialect",
+                "org.hibernate.dialect.OracleDialect",
                 "jdbc:oracle:thin:@//${kc.db-url-host:localhost}:${kc.db-url-port:1521}/${kc.db-url-database:keycloak}",
                 asList("liquibase.database.core.OracleDatabase")
         );

@@ -7,10 +7,10 @@ title="Configuring providers"
 summary="Understand how to configure providers">
 
 The server is built with extensibility in mind and for that it provides a number of Service Provider Interfaces or SPIs, each one
-responsible for providing a specific capability to the server. In this guide, you are going to understand the core concepts around
+responsible for providing a specific capability to the server. In this {section}, you are going to understand the core concepts around
 the configuration of SPIs and their respective providers.
 
-After reading this guide, you should be able to use the concepts and the steps herein explained to install, uninstall, enable, disable, and configure
+After reading this {section}, you should be able to use the concepts and the steps herein explained to install, uninstall, enable, disable, and configure
 any provider, including those you have implemented to extend the server capabilities in order to better fulfill your requirements.
 
 == Configuration option format

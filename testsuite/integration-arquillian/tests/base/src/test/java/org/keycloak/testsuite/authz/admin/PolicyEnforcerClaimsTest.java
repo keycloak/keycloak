@@ -384,7 +384,7 @@ public class PolicyEnforcerClaimsTest extends AbstractKeycloakTest {
         representation.setUri(uri);
         representation.setScopes(Arrays.asList(scopes).stream().map(ScopeRepresentation::new).collect(Collectors.toSet()));
 
-        try (javax.ws.rs.core.Response response = clientResource.authorization().resources().create(representation)) {
+        try (jakarta.ws.rs.core.Response response = clientResource.authorization().resources().create(representation)) {
 
             representation.setId(response.readEntity(ResourceRepresentation.class).getId());
 

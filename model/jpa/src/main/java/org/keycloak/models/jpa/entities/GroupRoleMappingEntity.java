@@ -17,16 +17,16 @@
 
 package org.keycloak.models.jpa.entities;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.FetchType;
-import javax.persistence.Id;
-import javax.persistence.IdClass;
-import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
-import javax.persistence.NamedQueries;
-import javax.persistence.NamedQuery;
-import javax.persistence.Table;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.Id;
+import jakarta.persistence.IdClass;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.NamedQueries;
+import jakarta.persistence.NamedQuery;
+import jakarta.persistence.Table;
 import java.io.Serializable;
 
 /**
@@ -34,7 +34,7 @@ import java.io.Serializable;
  * @version $Revision: 1 $
  */
 @NamedQueries({
-    @NamedQuery(name="groupsInRole", query="select g from GroupRoleMappingEntity m, GroupEntity g where m.roleId=:roleId and g.id=m.group"),
+    @NamedQuery(name="groupsInRole", query="select g from GroupRoleMappingEntity m, GroupEntity g where m.roleId=:roleId and g=m.group"),
         @NamedQuery(name="groupHasRole", query="select m from GroupRoleMappingEntity m where m.group = :group and m.roleId = :roleId"),
         @NamedQuery(name="groupRoleMappings", query="select m from GroupRoleMappingEntity m where m.group = :group"),
         @NamedQuery(name="groupRoleMappingIds", query="select m.roleId from GroupRoleMappingEntity m where m.group = :group"),

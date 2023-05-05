@@ -23,10 +23,14 @@ import org.keycloak.representations.idm.ClientScopeRepresentation;
  */
 public class ClientScopeBuilder {
 
-    private ClientScopeRepresentation rep;
+    private final ClientScopeRepresentation rep;
 
     public static ClientScopeBuilder create() {
         ClientScopeRepresentation rep = new ClientScopeRepresentation();
+        return new ClientScopeBuilder(rep);
+    }
+
+    public static ClientScopeBuilder edit(ClientScopeRepresentation rep) {
         return new ClientScopeBuilder(rep);
     }
 
@@ -40,6 +44,11 @@ public class ClientScopeBuilder {
 
     public ClientScopeBuilder name(String name) {
         rep.setName(name);
+        return this;
+    }
+
+    public ClientScopeBuilder description(String description) {
+        rep.setDescription(description);
         return this;
     }
 

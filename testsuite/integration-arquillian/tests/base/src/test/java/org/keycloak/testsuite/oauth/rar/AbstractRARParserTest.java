@@ -65,10 +65,15 @@ public abstract class AbstractRARParserTest extends AbstractTestRealmKeycloakTes
                 .enabled(true)
                 .password("password")
                 .build();
-        userId = user.getId();
 
         RealmBuilder.edit(testRealm)
                 .user(user);
+    }
+
+    @Override
+    public void importTestRealms() {
+        super.importTestRealms();
+        userId = adminClient.realm("test").users().search("rar-test", true).get(0).getId();
     }
 
     @Before

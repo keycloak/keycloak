@@ -16,8 +16,8 @@ import {
 import { cloneDeep, differenceBy, get } from "lodash-es";
 import {
   ComponentClass,
-  isValidElement,
   ReactNode,
+  isValidElement,
   useEffect,
   useMemo,
   useRef,
@@ -25,8 +25,8 @@ import {
 } from "react";
 import { useTranslation } from "react-i18next";
 
-import { useFetch } from "../../context/auth/AdminClient";
 import { useStoredState } from "ui-shared";
+import { useFetch } from "../../utils/useFetch";
 import { KeycloakSpinner } from "../keycloak-spinner/KeycloakSpinner";
 import { ListEmptyState } from "../list-empty-state/ListEmptyState";
 import { PaginatingTableToolbar } from "./PaginatingTableToolbar";

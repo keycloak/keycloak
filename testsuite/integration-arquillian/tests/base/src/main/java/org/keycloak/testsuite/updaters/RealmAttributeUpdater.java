@@ -84,6 +84,11 @@ public class RealmAttributeUpdater extends ServerResourceUpdater<RealmAttributeU
         return this;
     }
 
+    public RealmAttributeUpdater setEditUserNameAllowed(Boolean value) {
+        rep.setEditUsernameAllowed(value);
+        return this;
+    }
+
     public RealmAttributeUpdater setDuplicateEmailsAllowed(Boolean value) {
         rep.setDuplicateEmailsAllowed(value);
         return this;

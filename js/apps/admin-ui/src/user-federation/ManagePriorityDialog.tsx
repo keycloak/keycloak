@@ -1,6 +1,4 @@
-import { useState } from "react";
-import { useTranslation } from "react-i18next";
-import { sortBy } from "lodash-es";
+import type ComponentRepresentation from "@keycloak/keycloak-admin-client/lib/defs/componentRepresentation";
 import {
   Button,
   ButtonVariant,
@@ -13,11 +11,14 @@ import {
   DataListItemRow,
   Modal,
   ModalVariant,
-  TextContent,
   Text,
+  TextContent,
 } from "@patternfly/react-core";
-import type ComponentRepresentation from "@keycloak/keycloak-admin-client/lib/defs/componentRepresentation";
-import { useAdminClient } from "../context/auth/AdminClient";
+import { sortBy } from "lodash-es";
+import { useState } from "react";
+import { useTranslation } from "react-i18next";
+
+import { adminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
 
 type ManagePriorityDialogProps = {
@@ -30,7 +31,6 @@ export const ManagePriorityDialog = ({
   onClose,
 }: ManagePriorityDialogProps) => {
   const { t } = useTranslation("user-federation");
-  const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
 
   const [id, setId] = useState("");

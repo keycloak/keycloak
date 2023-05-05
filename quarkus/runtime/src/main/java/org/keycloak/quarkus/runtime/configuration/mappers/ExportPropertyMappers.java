@@ -20,9 +20,11 @@ package org.keycloak.quarkus.runtime.configuration.mappers;
 import io.smallrye.config.ConfigSourceInterceptorContext;
 import io.smallrye.config.ConfigValue;
 import org.keycloak.config.ExportOptions;
+import picocli.CommandLine;
 
 import java.util.Optional;
 
+import static org.keycloak.exportimport.ExportImportConfig.PROVIDER;
 import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromOption;
 
 final class ExportPropertyMappers {
@@ -65,12 +67,23 @@ final class ExportPropertyMappers {
     }
 
     private static Optional<String> transformExporter(Optional<String> option, ConfigSourceInterceptorContext context) {
+        ConfigValue exporter = context.proceed("kc.spi-export-exporter");
+        if (exporter != null) {
+            return Optional.of(exporter.getValue());
+        }
         if (option.isPresent()) {
             return Optional.of("singleFile");
         }
         ConfigValue dirConfigValue = context.proceed("kc.spi-export-dir-dir");
         if (dirConfigValue != null && dirConfigValue.getValue() != null) {
             return Optional.of("dir");
+        }
+        ConfigValue dirValue = context.proceed("kc.dir");
+        if (dirValue != null && dirValue.getValue() != null) {
+            return Optional.of("dir");
+        }
+        if (System.getProperty(PROVIDER) == null) {
+            throw new CommandLine.PicocliException("Must specify either --dir or --file options.");
         }
         return Optional.empty();
     }

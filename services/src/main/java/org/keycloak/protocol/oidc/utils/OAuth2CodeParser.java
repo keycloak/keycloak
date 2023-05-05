@@ -121,15 +121,22 @@ public class OAuth2CodeParser {
             return result.illegalCode();
         }
 
-        logger.tracef("Successfully verified code '%s'. User session: '%s', client: '%s'", codeUUID, userSessionId, clientUUID);
-
         result.codeData = OAuth2Code.deserializeCode(codeData);
+
+        String persistedUserSessionId = result.codeData.getUserSessionId();
+
+        if (!userSessionId.equals(persistedUserSessionId)) {
+            logger.warnf("Code '%s' is bound to a different session", codeUUID);
+            return result.illegalCode();
+        }
 
         // Finally doublecheck if code is not expired
         int currentTime = Time.currentTime();
         if (currentTime > result.codeData.getExpiration()) {
             return result.expiredCode();
         }
+
+        logger.tracef("Successfully verified code '%s'. User session: '%s', client: '%s'", codeUUID, userSessionId, clientUUID);
 
         return result;
     }

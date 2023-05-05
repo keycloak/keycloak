@@ -107,11 +107,10 @@ public class ServiceAccountUserProfileTest extends AbstractKeycloakTest {
                 .username("test-user@localhost");
         realm.user(defaultUser);
 
-        userId = KeycloakModelUtils.generateId();
         userName = ServiceAccountConstants.SERVICE_ACCOUNT_USER_PREFIX + enabledApp.getClientId();
 
         UserBuilder serviceAccountUser = UserBuilder.create()
-                .id(userId)
+                .id(KeycloakModelUtils.generateId())
                 .username(userName)
                 .serviceAccountId(enabledApp.getClientId());
         realm.user(serviceAccountUser);
@@ -119,6 +118,12 @@ public class ServiceAccountUserProfileTest extends AbstractKeycloakTest {
         RealmRepresentation realmRep = realm.build();
         VerifyProfileTest.enableDynamicUserProfile(realmRep);
         testRealms.add(realmRep);
+    }
+
+    @Override
+    public void importTestRealms() {
+        super.importTestRealms();
+        userId = adminClient.realm("test").users().search(userName, true).get(0).getId();
     }
 
     @Test

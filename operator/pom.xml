@@ -21,9 +21,8 @@
             See https://github.com/quarkusio/quarkus/blob/<versionTag>/bom/application/pom.xml
             for reference
         -->
-        <resteasy.version>4.7.7.Final</resteasy.version>
+        <kubernetes-client.version>6.5.1</kubernetes-client.version>
         <wildfly.common.version>1.5.4.Final-format-001</wildfly.common.version>
-        <kubernetes-client.version>5.12.4</kubernetes-client.version>
 
         <compiler-plugin.version>3.8.1</compiler-plugin.version>
         <maven.compiler.parameters>true</maven.compiler.parameters>
@@ -32,10 +31,9 @@
         <maven.compiler.target>11</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-        <quarkus.operator.sdk.version>4.0.7</quarkus.operator.sdk.version>
-        <quarkus.version>2.13.7.Final</quarkus.version>
+        <quarkus.operator.sdk.version>6.0.1</quarkus.operator.sdk.version>
+        <quarkus.version>3.0.0.Final</quarkus.version>
         <quarkus.container-image.group>keycloak</quarkus.container-image.group>
-        <quarkus.jib.base-jvm-image>registry.access.redhat.com/ubi9/openjdk-11-runtime</quarkus.jib.base-jvm-image>
     </properties>
     
     <dependencyManagement>
@@ -92,6 +90,16 @@
         <dependency>
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-kubernetes-client</artifactId>
+        </dependency>
+        <dependency>
+          <groupId>io.quarkus</groupId>
+          <artifactId>quarkus-container-image-docker</artifactId>
+        </dependency>
+        <!-- FIXME: We should not need OKHttp Client, see HttpClientFactory class -->
+        <dependency>
+            <groupId>io.fabric8</groupId>
+            <artifactId>kubernetes-httpclient-okhttp</artifactId>
+            <version>${kubernetes-client.version}</version>
         </dependency>
 
         <!-- Keycloak -->
@@ -202,6 +210,24 @@
                             </resources>
                         </configuration>
                     </execution>
+                    <execution>
+                        <id>copy-ubi-null</id>
+                        <phase>validate</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${project.build.directory}</outputDirectory>
+                            <resources>
+                                <resource>
+                                    <directory>${basedir}/../quarkus/container/</directory>
+                                    <includes>
+                                        <include>**/ubi-null.sh</include>
+                                    </includes>
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
                 </executions>
             </plugin>
 
@@ -255,6 +281,27 @@
                         <goals>
                             <goal>test</goal>
                         </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>assemble</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                        <configuration>
+                            <descriptors>
+                                <descriptor>assembly.xml</descriptor>
+                            </descriptors>
+                            <appendAssemblyId>false</appendAssemblyId>
+                            <workDirectory>${project.build.directory}/assembly/work</workDirectory>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>

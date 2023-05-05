@@ -1,10 +1,10 @@
-import type { RouteDef } from "../route-config";
+import type { AppRouteObject } from "../routes";
 import { ClientScopeRoute } from "./routes/ClientScope";
 import { ClientScopesRoute } from "./routes/ClientScopes";
 import { MapperRoute } from "./routes/Mapper";
 import { NewClientScopeRoute } from "./routes/NewClientScope";
 
-const routes: RouteDef[] = [
+const routes: AppRouteObject[] = [
   NewClientScopeRoute,
   MapperRoute,
   ClientScopeRoute,

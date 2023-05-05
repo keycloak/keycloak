@@ -16,8 +16,6 @@ import {
 } from "@patternfly/react-core";
 import { SearchIcon } from "@patternfly/react-icons";
 import {
-  applyCellEdits,
-  cancelCellEdits,
   EditableTextCell,
   IEditableTextCell,
   IRow,
@@ -28,26 +26,29 @@ import {
   TableBody,
   TableHeader,
   TableVariant,
+  applyCellEdits,
+  cancelCellEdits,
   validateCellEdits,
 } from "@patternfly/react-table";
 import { cloneDeep, isEqual, uniqWith } from "lodash-es";
 import { useEffect, useMemo, useState } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
+import { HelpItem } from "ui-shared";
 
+import { adminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
 import { FormAccess } from "../components/form-access/FormAccess";
-import { HelpItem } from "ui-shared";
 import type { KeyValueType } from "../components/key-value-form/key-value-convert";
 import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
 import { FormPanel } from "../components/scroll-form/FormPanel";
 import { PaginatingTableToolbar } from "../components/table-toolbar/PaginatingTableToolbar";
-import { useAdminClient, useFetch } from "../context/auth/AdminClient";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { useServerInfo } from "../context/server-info/ServerInfoProvider";
 import { useWhoAmI } from "../context/whoami/WhoAmI";
 import { DEFAULT_LOCALE } from "../i18n";
 import { convertToFormValues } from "../util";
+import { useFetch } from "../utils/useFetch";
 import { AddMessageBundleModal } from "./AddMessageBundleModal";
 
 type LocalizationTabProps = {
@@ -64,6 +65,8 @@ export enum RowEditAction {
 }
 
 export type BundleForm = {
+  key: string;
+  value: string;
   messageBundle: KeyValueType;
 };
 
@@ -77,7 +80,6 @@ const localeToDisplayName = (locale: string) => {
 
 export const LocalizationTab = ({ save, realm }: LocalizationTabProps) => {
   const { t } = useTranslation("realm-settings");
-  const { adminClient } = useAdminClient();
   const [addMessageBundleModalOpen, setAddMessageBundleModalOpen] =
     useState(false);
 

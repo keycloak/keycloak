@@ -1,11 +1,12 @@
 import type WhoAmIRepresentation from "@keycloak/keycloak-admin-client/lib/defs/whoAmIRepresentation";
 import type { AccessType } from "@keycloak/keycloak-admin-client/lib/defs/whoAmIRepresentation";
 import { PropsWithChildren, useState } from "react";
+import { createNamedContext, useRequiredContext } from "ui-shared";
 
+import { adminClient } from "../../admin-client";
 import environment from "../../environment";
 import i18n, { DEFAULT_LOCALE } from "../../i18n";
-import { createNamedContext, useRequiredContext } from "ui-shared";
-import { useAdminClient, useFetch } from "../auth/AdminClient";
+import { useFetch } from "../../utils/useFetch";
 
 export class WhoAmI {
   constructor(private me?: WhoAmIRepresentation) {
@@ -62,7 +63,6 @@ export const WhoAmIContext = createNamedContext<WhoAmIProps | undefined>(
 export const useWhoAmI = () => useRequiredContext(WhoAmIContext);
 
 export const WhoAmIContextProvider = ({ children }: PropsWithChildren) => {
-  const { adminClient } = useAdminClient();
   const [whoAmI, setWhoAmI] = useState<WhoAmI>(new WhoAmI());
   const [key, setKey] = useState(0);
 

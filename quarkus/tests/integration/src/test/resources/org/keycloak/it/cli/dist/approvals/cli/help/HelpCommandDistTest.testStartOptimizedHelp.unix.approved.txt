@@ -17,11 +17,13 @@ Options:
 --help-all           This same help message but with additional options.
 --import-realm       Import realms during startup by reading any realm configuration file from the
                        'data/import' directory.
---optimized          Use this option to achieve an optional startup time if you have previously
+--optimized          Use this option to achieve an optimal startup time if you have previously
                        built a server image using the 'build' command.
 
 Database:
 
+--db-driver <driver> The fully qualified class name of the JDBC driver. If not set, a default
+                       driver is set accordingly to the chosen database.
 --db-password <password>
                      The password of the database user.
 --db-pool-initial-size <size>
@@ -59,6 +61,9 @@ Hostname:
 --hostname-admin-url <url>
                      Set the base URL for accessing the administration console, including scheme,
                        host, port and path
+--hostname-debug <true|false>
+                     Toggle the hostname debug page that is accessible at
+                       /realms/master/hostname-debug Default: false.
 --hostname-path <path>
                      This should be set if proxy uses a different context-path for Keycloak.
 --hostname-port <port>

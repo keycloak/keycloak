@@ -11,13 +11,15 @@ import {
 import { saveAs } from "file-saver";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
+
+import { HelpItem, useHelp } from "ui-shared";
+import { adminClient } from "../../admin-client";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
 import { addTrailingSlash, prettyPrintJSON } from "../../util";
 import { getAuthorizationHeaders } from "../../utils/getAuthorizationHeaders";
+import { useFetch } from "../../utils/useFetch";
 import { ConfirmDialogModal } from "../confirm-dialog/ConfirmDialog";
-import { useHelp, HelpItem } from "ui-shared";
 import { KeycloakTextArea } from "../keycloak-text-area/KeycloakTextArea";
 
 type DownloadDialogProps = {
@@ -33,7 +35,6 @@ export const DownloadDialog = ({
   toggleDialog,
   protocol = "openid-connect",
 }: DownloadDialogProps) => {
-  const { adminClient } = useAdminClient();
   const { realm } = useRealm();
   const { t } = useTranslation("common");
   const { enabled } = useHelp();

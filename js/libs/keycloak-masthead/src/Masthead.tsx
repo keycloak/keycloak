@@ -16,6 +16,7 @@ import { ReactNode } from "react";
 import { KeycloakDropdown } from "./KeycloakDropdown";
 import { useTranslation } from "./translation/useTranslation";
 import { loggedInUserName } from "./util";
+import { DefaultAvatar } from "./DefaultAvatar";
 
 type BrandLogo = BrandProps & {
   onClick?: () => void;
@@ -31,7 +32,8 @@ type KeycloakMastheadProps = PageHeaderProps & {
   };
   keycloak?: Keycloak;
   kebabDropdownItems?: ReactNode[];
-  dropdownItems: ReactNode[];
+  dropdownItems?: ReactNode[];
+  toolbarItems?: ReactNode[];
 };
 
 const KeycloakMasthead = ({
@@ -44,7 +46,8 @@ const KeycloakMasthead = ({
   } = {},
   keycloak,
   kebabDropdownItems,
-  dropdownItems,
+  dropdownItems = [],
+  toolbarItems,
   ...rest
 }: KeycloakMastheadProps) => {
   const { t } = useTranslation();
@@ -93,6 +96,7 @@ const KeycloakMasthead = ({
                 ]}
               />
             </PageHeaderToolsItem>
+            <PageHeaderToolsItem>{toolbarItems}</PageHeaderToolsItem>
             <PageHeaderToolsItem
               visibility={{
                 default: "hidden",
@@ -109,9 +113,11 @@ const KeycloakMasthead = ({
               />
             </PageHeaderToolsItem>
           </PageHeaderToolsGroup>
-          <Avatar
-            {...{ src: picture || "/avatar.svg", alt: t("avatar"), ...avatar }}
-          />
+          {picture || avatar?.src ? (
+            <Avatar {...{ src: picture, alt: t("avatar"), ...avatar }} />
+          ) : (
+            <DefaultAvatar {...avatar} />
+          )}
         </PageHeaderTools>
       }
     />

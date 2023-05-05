@@ -62,8 +62,8 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import javax.ws.rs.BadRequestException;
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.BadRequestException;
+import jakarta.ws.rs.core.Response;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
@@ -1502,7 +1502,8 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
         AccessToken token = oauth.verifyToken(res.getAccessToken());
         String userId = findUserByUsername(adminClient.realm(REALM_NAME), userName).getId();
         assertEquals(userId, token.getSubject());
-        Assert.assertNotEquals(userName, token.getSubject());
+        // The following check is not valid anymore since file store does have the same ID, and is redundant due to the previous line
+        // Assert.assertNotEquals(userName, token.getSubject());
         assertEquals(sessionId, token.getSessionState());
         assertEquals(clientId, token.getIssuedFor());
 

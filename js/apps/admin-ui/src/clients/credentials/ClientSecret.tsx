@@ -1,6 +1,4 @@
-import { useState } from "react";
-import { useTranslation } from "react-i18next";
-import { useFormContext } from "react-hook-form";
+import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
 import {
   Alert,
   Button,
@@ -9,14 +7,17 @@ import {
   Split,
   SplitItem,
 } from "@patternfly/react-core";
+import { useState } from "react";
+import { useFormContext } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 
-import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
-import { PasswordInput } from "../../components/password-input/PasswordInput";
-import { CopyToClipboardButton } from "../scopes/CopyToClipboardButton";
-import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
-import { useAdminClient } from "../../context/auth/AdminClient";
+import { adminClient } from "../../admin-client";
 import { useAlerts } from "../../components/alert/Alerts";
+import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
+import { PasswordInput } from "../../components/password-input/PasswordInput";
+import { useAccess } from "../../context/access/Access";
 import useFormatDate from "../../utils/useFormatDate";
+import { CopyToClipboardButton } from "../scopes/CopyToClipboardButton";
 
 export type ClientSecretProps = {
   client: ClientRepresentation;
@@ -24,14 +25,22 @@ export type ClientSecretProps = {
   toggle: () => void;
 };
 
-type SecretInputProps = Omit<ClientSecretProps, "client"> & {
+type SecretInputProps = ClientSecretProps & {
   id: string;
   buttonLabel: string;
 };
 
-const SecretInput = ({ id, buttonLabel, secret, toggle }: SecretInputProps) => {
+const SecretInput = ({
+  id,
+  buttonLabel,
+  client,
+  secret,
+  toggle,
+}: SecretInputProps) => {
   const { t } = useTranslation("clients");
   const form = useFormContext<ClientRepresentation>();
+  const { hasAccess } = useAccess();
+  const isManager = hasAccess("manage-clients") || client.access?.configure;
 
   return (
     <Split hasGutter>
@@ -49,7 +58,7 @@ const SecretInput = ({ id, buttonLabel, secret, toggle }: SecretInputProps) => {
       <SplitItem>
         <Button
           variant="secondary"
-          isDisabled={form.formState.isDirty}
+          isDisabled={form.formState.isDirty || !isManager}
           onClick={toggle}
         >
           {t(buttonLabel)}
@@ -77,7 +86,6 @@ const ExpireDateFormatter = ({ time }: { time: number }) => {
 
 export const ClientSecret = ({ client, secret, toggle }: ClientSecretProps) => {
   const { t } = useTranslation("clients");
-  const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
 
   const [secretRotated, setSecretRotated] = useState<string | undefined>(
@@ -117,6 +125,7 @@ export const ClientSecret = ({ client, secret, toggle }: ClientSecretProps) => {
       >
         <SecretInput
           id="kc-client-secret"
+          client={client}
           secret={secret}
           toggle={toggle}
           buttonLabel="regenerate"
@@ -130,6 +139,7 @@ export const ClientSecret = ({ client, secret, toggle }: ClientSecretProps) => {
         <FormGroup label={t("secretRotated")} fieldId="secretRotated">
           <SecretInput
             id="secretRotated"
+            client={client}
             secret={secretRotated}
             toggle={toggleInvalidateConfirm}
             buttonLabel="invalidateSecret"

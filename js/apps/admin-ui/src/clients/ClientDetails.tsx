@@ -17,6 +17,7 @@ import { Controller, FormProvider, useForm, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 
+import { adminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
 import {
   ConfirmDialogModal,
@@ -36,18 +37,20 @@ import {
   ViewHeaderBadge,
 } from "../components/view-header/ViewHeader";
 import { useAccess } from "../context/access/Access";
-import { useAdminClient, useFetch } from "../context/auth/AdminClient";
 import { useRealm } from "../context/realm-context/RealmContext";
-import { useServerInfo } from "../context/server-info/ServerInfoProvider";
 import {
   convertAttributeNameToForm,
   convertFormValuesToObject,
   convertToFormValues,
   exportClient,
 } from "../util";
+import { useFetch } from "../utils/useFetch";
+import useIsFeatureEnabled, { Feature } from "../utils/useIsFeatureEnabled";
 import { useParams } from "../utils/useParams";
 import useToggle from "../utils/useToggle";
 import { AdvancedTab } from "./AdvancedTab";
+import { ClientSessions } from "./ClientSessions";
+import { ClientSettings } from "./ClientSettings";
 import { AuthorizationEvaluate } from "./authorization/AuthorizationEvaluate";
 import { AuthorizationExport } from "./authorization/AuthorizationExport";
 import { AuthorizationPermissions } from "./authorization/Permissions";
@@ -55,8 +58,6 @@ import { AuthorizationPolicies } from "./authorization/Policies";
 import { AuthorizationResources } from "./authorization/Resources";
 import { AuthorizationScopes } from "./authorization/Scopes";
 import { AuthorizationSettings } from "./authorization/Settings";
-import { ClientSessions } from "./ClientSessions";
-import { ClientSettings } from "./ClientSettings";
 import { Credentials } from "./credentials/Credentials";
 import { Keys } from "./keys/Keys";
 import { SamlKeys } from "./keys/SamlKeys";
@@ -66,8 +67,8 @@ import {
 } from "./routes/AuthenticationTab";
 import { ClientParams, ClientTab, toClient } from "./routes/Client";
 import { toClientRole } from "./routes/ClientRole";
-import { toClients } from "./routes/Clients";
 import { ClientScopesTab, toClientScopesTab } from "./routes/ClientScopeTab";
+import { toClients } from "./routes/Clients";
 import { toCreateRole } from "./routes/NewRole";
 import { ClientScopes } from "./scopes/ClientScopes";
 import { EvaluateScopes } from "./scopes/EvaluateScopes";
@@ -188,17 +189,18 @@ export type FormFields = Omit<
 
 export default function ClientDetails() {
   const { t } = useTranslation("clients");
-  const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
   const { realm } = useRealm();
-  const { profileInfo } = useServerInfo();
-
   const { hasAccess } = useAccess();
-  const permissionsEnabled =
-    !profileInfo?.disabledFeatures?.includes("ADMIN_FINE_GRAINED_AUTHZ") &&
-    hasAccess("manage-authorization");
+  const isFeatureEnabled = useIsFeatureEnabled();
+
+  const hasManageAuthorization = hasAccess("manage-authorization");
   const hasManageClients = hasAccess("manage-clients");
+  const hasViewClients = hasAccess("view-clients");
   const hasViewUsers = hasAccess("view-users");
+  const hasQueryUsers = hasAccess("query-users");
+  const permissionsEnabled =
+    isFeatureEnabled(Feature.AdminFineGrainedAuthz) && hasManageAuthorization;
 
   const navigate = useNavigate();
 
@@ -452,7 +454,7 @@ export default function ClientDetails() {
             )}
             {!client.publicClient &&
               !isRealmClient(client) &&
-              (hasManageClients || client.access?.configure) && (
+              (hasViewClients || client.access?.configure) && (
                 <Tab
                   id="credentials"
                   title={<TabTitleText>{t("credentials")}</TabTitleText>}
@@ -488,7 +490,7 @@ export default function ClientDetails() {
                 isReadOnly={!(hasManageClients || client.access?.configure)}
               />
             </Tab>
-            {!isRealmClient(client) && !client.bearerOnly && (
+            {!isRealmClient(client) && !client.bearerOnly && hasQueryUsers && (
               <Tab
                 id="clientScopes"
                 data-testid="clientScopesTab"
@@ -527,7 +529,7 @@ export default function ClientDetails() {
                 </RoutableTabs>
               </Tab>
             )}
-            {client!.authorizationServicesEnabled && (
+            {client!.authorizationServicesEnabled && hasManageAuthorization && (
               <Tab
                 id="authorization"
                 data-testid="authorizationTab"

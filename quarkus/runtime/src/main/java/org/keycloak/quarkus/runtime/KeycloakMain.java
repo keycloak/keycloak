@@ -31,7 +31,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import javax.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.context.ApplicationScoped;
 
 import io.quarkus.runtime.ApplicationLifecycleManager;
 import io.quarkus.runtime.Quarkus;
@@ -94,11 +94,7 @@ public class KeycloakMain implements QuarkusApplication {
     }
 
     public static void start(ExecutionExceptionHandler errorHandler, PrintWriter errStream, String[] args) {
-        ClassLoader originalCl = Thread.currentThread().getContextClassLoader();
-
         try {
-            Thread.currentThread().setContextClassLoader(new KeycloakClassLoader());
-
             Quarkus.run(KeycloakMain.class, (exitCode, cause) -> {
                 if (cause != null) {
                     errorHandler.error(errStream,
@@ -117,8 +113,6 @@ public class KeycloakMain implements QuarkusApplication {
                     String.format("Unexpected error when starting the server in (%s) mode", getKeycloakModeFromProfile(getProfileOrDefault("prod"))),
                     cause.getCause());
             System.exit(1);
-        } finally {
-            Thread.currentThread().setContextClassLoader(originalCl);
         }
     }
 
@@ -162,10 +156,7 @@ public class KeycloakMain implements QuarkusApplication {
         try {
             KeycloakModelUtils.runJobInTransaction(sessionFactory, session -> {
                 new ApplianceBootstrap(session).createMasterRealmUser(adminUserName, adminPassword);
-                ServicesLogger.LOGGER.addUserSuccess(adminUserName, Config.getAdminRealm());
             });
-        } catch (IllegalStateException e) {
-            ServicesLogger.LOGGER.addUserFailedUserExists(adminUserName, Config.getAdminRealm());
         } catch (Throwable t) {
             ServicesLogger.LOGGER.addUserFailed(t, adminUserName, Config.getAdminRealm());
         }

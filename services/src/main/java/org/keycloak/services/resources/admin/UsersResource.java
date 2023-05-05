@@ -43,18 +43,18 @@ import org.keycloak.userprofile.UserProfile;
 import org.keycloak.userprofile.UserProfileProvider;
 import org.keycloak.utils.SearchQueryUtils;
 
-import javax.ws.rs.Consumes;
-import javax.ws.rs.GET;
-import javax.ws.rs.NotFoundException;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -126,20 +126,20 @@ public class UsersResource {
             username = rep.getEmail();
         }
         if (ObjectUtil.isBlank(username)) {
-            return ErrorResponse.error("User name is missing", Response.Status.BAD_REQUEST);
+            throw ErrorResponse.error("User name is missing", Response.Status.BAD_REQUEST);
         }
 
         // Double-check duplicated username and email here due to federation
         if (session.users().getUserByUsername(realm, username) != null) {
-            return ErrorResponse.exists("User exists with same username");
+            throw ErrorResponse.exists("User exists with same username");
         }
         if (rep.getEmail() != null && !realm.isDuplicateEmailsAllowed()) {
             try {
                 if(session.users().getUserByEmail(realm, rep.getEmail()) != null) {
-                    return ErrorResponse.exists("User exists with same email");
+                    throw ErrorResponse.exists("User exists with same email");
                 }
             } catch (ModelDuplicateException e) {
-                return ErrorResponse.exists("User exists with same email");
+                throw ErrorResponse.exists("User exists with same email");
             }
         }
 
@@ -148,7 +148,7 @@ public class UsersResource {
         UserProfile profile = profileProvider.create(USER_API, rep.toAttributes());
 
         try {
-            Response response = UserResource.validateUserProfile(profile, null, session);
+            Response response = UserResource.validateUserProfile(profile, session, auth.adminAuth());
             if (response != null) {
                 return response;
             }
@@ -171,18 +171,18 @@ public class UsersResource {
             if (session.getTransactionManager().isActive()) {
                 session.getTransactionManager().setRollbackOnly();
             }
-            return ErrorResponse.exists("User exists with same username or email");
+            throw ErrorResponse.exists("User exists with same username or email");
         } catch (PasswordPolicyNotMetException e) {
             if (session.getTransactionManager().isActive()) {
                 session.getTransactionManager().setRollbackOnly();
             }
-            return ErrorResponse.error("Password policy not met", Response.Status.BAD_REQUEST);
+            throw ErrorResponse.error("Password policy not met", Response.Status.BAD_REQUEST);
         } catch (ModelException me){
             if (session.getTransactionManager().isActive()) {
                 session.getTransactionManager().setRollbackOnly();
             }
             logger.warn("Could not create user", me);
-            return ErrorResponse.error("Could not create user", Response.Status.BAD_REQUEST);
+            throw ErrorResponse.error("Could not create user", Response.Status.BAD_REQUEST);
         }
     }
 

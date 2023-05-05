@@ -1,3 +1,5 @@
+import type CertificateRepresentation from "@keycloak/keycloak-admin-client/lib/defs/certificateRepresentation";
+import type KeyStoreConfig from "@keycloak/keycloak-admin-client/lib/defs/keystoreConfig";
 import {
   ActionGroup,
   AlertVariant,
@@ -14,17 +16,16 @@ import {
 } from "@patternfly/react-core";
 import { saveAs } from "file-saver";
 import { useState } from "react";
-import { useTranslation } from "react-i18next";
-
-import type CertificateRepresentation from "@keycloak/keycloak-admin-client/lib/defs/certificateRepresentation";
-import type KeyStoreConfig from "@keycloak/keycloak-admin-client/lib/defs/keystoreConfig";
 import { Controller, useFormContext, useWatch } from "react-hook-form";
+import { useTranslation } from "react-i18next";
+import { HelpItem } from "ui-shared";
+
+import { adminClient } from "../../admin-client";
 import { useAlerts } from "../../components/alert/Alerts";
 import { FormAccess } from "../../components/form-access/FormAccess";
-import { HelpItem } from "ui-shared";
 import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
-import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
 import { convertAttributeNameToForm } from "../../util";
+import { useFetch } from "../../utils/useFetch";
 import useToggle from "../../utils/useToggle";
 import { FormFields } from "../ClientDetails";
 import { Certificate } from "./Certificate";
@@ -47,7 +48,6 @@ export const Keys = ({ clientId, save, hasConfigureAccess }: KeysProps) => {
     getValues,
     formState: { isDirty },
   } = useFormContext<FormFields>();
-  const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
 
   const [keyInfo, setKeyInfo] = useState<CertificateRepresentation>();

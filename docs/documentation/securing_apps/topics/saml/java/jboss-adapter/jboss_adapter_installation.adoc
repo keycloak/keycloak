@@ -70,6 +70,8 @@ ifeval::[{project_product}==true]
 $ cd $JBOSS_HOME
 $ ./bin/jboss-cli.sh -c --file=bin/adapter-elytron-install-saml.cli
 ----
++
+NOTE: https://access.redhat.com/articles/2026253#EAP_74[EAP supports OpenJDK 17 and Oracle JDK 17] since 7.4.CP7 and 7.4.CP8 respectively. Note that the new java version makes the elytron variant compulsory, so do not use the legacy adapter with JDK 17. Also, after running the adapter CLI file, execute the `enable-elytron-se17.cli` script provided by EAP. Both scripts are necessary to configure the elytron adapter and remove the incompatible EAP subsystems. For more details, see this https://access.redhat.com/articles/6956863[Security Configuration Changes] article.
 
 * Use this command for JBoss EAP 7.0 and EAP 6.4
 +

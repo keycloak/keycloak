@@ -25,18 +25,19 @@ import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
+import { HelpItem } from "ui-shared";
 
+import { adminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import { FormAccess } from "../components/form-access/FormAccess";
-import { HelpItem } from "ui-shared";
 import { KeycloakSpinner } from "../components/keycloak-spinner/KeycloakSpinner";
 import { KeycloakTextArea } from "../components/keycloak-text-area/KeycloakTextArea";
 import { KeycloakTextInput } from "../components/keycloak-text-input/KeycloakTextInput";
 import { ViewHeader } from "../components/view-header/ViewHeader";
-import { useAdminClient, useFetch } from "../context/auth/AdminClient";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { useServerInfo } from "../context/server-info/ServerInfoProvider";
+import { useFetch } from "../utils/useFetch";
 import { useParams } from "../utils/useParams";
 import { AddClientProfileModal } from "./AddClientProfileModal";
 import { toNewClientPolicyCondition } from "./routes/AddCondition";
@@ -69,7 +70,6 @@ export default function NewClientPolicyForm() {
   const { t } = useTranslation("realm-settings");
   const { realm } = useRealm();
   const { addAlert, addError } = useAlerts();
-  const { adminClient } = useAdminClient();
   const [policies, setPolicies] = useState<ClientPolicyRepresentation[]>();
   const [clientProfiles, setClientProfiles] = useState<
     ClientProfileRepresentation[]

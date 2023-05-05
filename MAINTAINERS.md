@@ -8,6 +8,7 @@ Maintainers
 * [Michal Hajas](https://github.com/mhajas)
 * [Pavel Drozd](https://github.com/pdrozd)
 * [Pedro Igor](https://github.com/pedroigor)
+* [Sebastian Schuster](https://github.com/sschu)
 * [Stan Silvert](https://github.com/ssilvert)
 * [Takashi Norimatsu](https://github.com/tnorimat)
 * [Thomas Darimont](https://github.com/thomasdarimont)

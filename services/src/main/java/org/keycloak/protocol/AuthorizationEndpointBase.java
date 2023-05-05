@@ -42,8 +42,8 @@ import org.keycloak.services.resources.LoginActionsService;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
 
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.Response;
 
 /**
  * Common base class for Authorization REST endpoints implementation, which have to be implemented by each protocol.
@@ -198,7 +198,11 @@ public abstract class AuthorizationEndpointBase {
                     AuthenticationManager.backchannelLogout(session, userSession, true);
                 } else {
                     String userSessionId = userSession.getId();
-                    rootAuthSession = session.authenticationSessions().createRootAuthenticationSession(realm, userSessionId);
+                    rootAuthSession = session.authenticationSessions().getRootAuthenticationSession(realm, userSessionId);
+                    if (rootAuthSession == null) {
+                        // depending on the storage layer we don't want to re-create the root authentication session
+                        rootAuthSession = session.authenticationSessions().createRootAuthenticationSession(realm, userSessionId);
+                    }
                     authSession = rootAuthSession.createAuthenticationSession(client);
                     logger.debugf("Sent request to authz endpoint. We don't have root authentication session with ID '%s' but we have userSession." +
                             "Re-created root authentication session with same ID. Client is: %s . New authentication session tab ID: %s", userSessionId, client.getClientId(), authSession.getTabId());

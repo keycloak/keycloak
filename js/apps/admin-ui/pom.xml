@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
@@ -14,6 +16,47 @@
     <name>Keycloak Admin UI</name>
     <description>The user inferface to administrate the Keycloak server.</description>
 
+    <profiles>
+        <profile>
+            <id>withoutTranslations</id>
+            <activation>
+                <property>
+                    <name>skipCommunityTranslations</name>
+                </property>
+            </activation>
+            <build>
+                <resources>
+                    <resource>
+                        <directory>dist</directory>
+                        <targetPath>theme/keycloak.v2/admin/resources</targetPath>
+                        <includes>
+                            <include>locales/en/**</include>
+                        </includes>
+                    </resource>
+                </resources>
+            </build>
+        </profile>
+        <profile>
+            <id>withTranslations</id>
+            <activation>
+                <property>
+                    <name>!skipCommunityTranslations</name>
+                </property>
+            </activation>
+            <build>
+                <resources>
+                    <resource>
+                        <directory>dist</directory>
+                        <targetPath>theme/keycloak.v2/admin/resources</targetPath>
+                        <includes>
+                            <include>locales/**</include>
+                        </includes>
+                    </resource>
+                </resources>
+            </build>
+        </profile>
+    </profiles>
+
     <build>
         <resources>
             <resource>
@@ -24,18 +67,12 @@
                 <targetPath>theme/keycloak.v2/admin/resources</targetPath>
                 <excludes>
                     <exclude>index.html</exclude>
+                    <exclude>locales/**</exclude>
                 </excludes>
             </resource>
         </resources>
 
         <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-deploy-plugin</artifactId>
-                <configuration>
-                    <skip>true</skip>
-                </configuration>
-            </plugin>
             <plugin>
                 <groupId>com.github.eirslett</groupId>
                 <artifactId>frontend-maven-plugin</artifactId>
@@ -79,6 +116,14 @@
                             <value>href="${resourceUrl}/</value>
                         </replacement>
                         <replacement>
+                            <token><![CDATA[<title>Keycloak Administration UI</title>]]></token>
+                            <value xml:space="preserve">
+<![CDATA[
+    <title>${properties.title!"Keycloak Administration UI"}</title>
+]]>
+</value>
+                        </replacement>
+                        <replacement>
                             <token><![CDATA[</body>]]></token>
                             <value xml:space="preserve">
 <![CDATA[
@@ -108,7 +153,7 @@
       </#list>
     </#if>
   </head>
-]]>	
+]]>
 </value>
                         </replacement>
                     </replacements>

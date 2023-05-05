@@ -405,7 +405,7 @@ public class DefaultKeycloakSessionFactory implements KeycloakSessionFactory, Pr
         }
     }
 
-    protected boolean isInternal(ProviderFactory<?> factory) {
+    public static boolean isInternal(ProviderFactory<?> factory) {
         String packageName = factory.getClass().getPackage().getName();
         return packageName.startsWith("org.keycloak") && !packageName.startsWith("org.keycloak.examples");
     }

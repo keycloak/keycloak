@@ -17,14 +17,14 @@
 
 package org.keycloak.services.resources.admin;
 
-import javax.ws.rs.BadRequestException;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.GET;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.BadRequestException;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.PUT;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
@@ -66,7 +66,7 @@ public class ClientProfilesResource {
         try {
             return session.clientPolicy().getClientProfiles(realm, includeGlobalProfiles);
         } catch (ClientPolicyException e) {
-            throw new BadRequestException(ErrorResponse.error(e.getError(), Response.Status.BAD_REQUEST));
+            throw ErrorResponse.error(e.getError(), Response.Status.BAD_REQUEST);
         }
     }
 
@@ -78,7 +78,7 @@ public class ClientProfilesResource {
         try {
             session.clientPolicy().updateClientProfiles(realm, clientProfiles);
         } catch (ClientPolicyException e) {
-            return ErrorResponse.error(e.getError(), Response.Status.BAD_REQUEST);
+            throw ErrorResponse.error(e.getError(), Response.Status.BAD_REQUEST);
         }
         return Response.noContent().build();
     }

@@ -20,15 +20,14 @@ package org.keycloak.testsuite.federation.kerberos;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.Response;
 
 import org.ietf.jgss.GSSCredential;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Assume;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.ClientResource;
-import org.keycloak.common.Profile;
 import org.keycloak.common.constants.KerberosConstants;
 import org.keycloak.common.util.KerberosSerializationUtils;
 import org.keycloak.events.Details;
@@ -43,7 +42,6 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.OAuthClient;
@@ -56,7 +54,6 @@ import static org.keycloak.testsuite.admin.ApiUtil.findClientByClientId;
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-@DisableFeature(value = Profile.Feature.ACCOUNT2, skipRestart = true) // TODO remove this (KEYCLOAK-16228)
 public abstract class AbstractKerberosSingleRealmTest extends AbstractKerberosTest {
 
     @Page

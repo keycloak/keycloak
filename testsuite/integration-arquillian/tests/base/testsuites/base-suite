@@ -30,6 +30,7 @@ oauth,6
 oidc,6
 openshift,6
 policy,6
+providers,4
 runonserver,6
 saml,6
 script,6
@@ -45,3 +46,4 @@ validation,6
 vault,4
 welcomepage,6
 x509,4
+zerodowntime,1

@@ -1,4 +1,3 @@
-// @ts-nocheck
 import {
   Button,
   ButtonVariant,
@@ -22,6 +21,8 @@ type AddMessageBundleModalProps = {
 };
 
 export type BundleForm = {
+  key: string;
+  value: string;
   messageBundle: KeyValueType;
 };
 

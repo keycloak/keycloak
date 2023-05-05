@@ -1,9 +1,11 @@
+import type ClientInitialAccessPresentation from "@keycloak/keycloak-admin-client/lib/defs/clientInitialAccessPresentation";
 import { AlertVariant, Button, ButtonVariant } from "@patternfly/react-core";
 import { wrappable } from "@patternfly/react-table";
-import type ClientInitialAccessPresentation from "@keycloak/keycloak-admin-client/lib/defs/clientInitialAccessPresentation";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
+
+import { adminClient } from "../../admin-client";
 import { useAlerts } from "../../components/alert/Alerts";
 import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
 import { ListEmptyState } from "../../components/list-empty-state/ListEmptyState";
@@ -11,15 +13,13 @@ import {
   Action,
   KeycloakDataTable,
 } from "../../components/table-toolbar/KeycloakDataTable";
-import { useAdminClient } from "../../context/auth/AdminClient";
 import { useRealm } from "../../context/realm-context/RealmContext";
-import { toCreateInitialAccessToken } from "../routes/CreateInitialAccessToken";
 import useFormatDate, { FORMAT_DATE_AND_TIME } from "../../utils/useFormatDate";
+import { toCreateInitialAccessToken } from "../routes/CreateInitialAccessToken";
 
 export const InitialAccessTokenList = () => {
   const { t } = useTranslation("clients");
 
-  const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
   const { realm } = useRealm();
   const formatDate = useFormatDate();

@@ -28,12 +28,13 @@ public interface MapStorageProvider extends Provider {
     
     /**
      * Returns a key-value storage implementation for the given types.
-     * @param <V> type of the value
-     * @param <M> type of the corresponding model (e.g. {@code UserModel})
+     *
+     * @param <V>       type of the value
+     * @param <M>       type of the corresponding model (e.g. {@code UserModel})
      * @param modelType Model type
-     * @param flags Flags of the returned storage. Best effort, flags may be not honored by underlying implementation
+     * @param flags     Flags of the returned storage. Best effort, flags may be not honored by underlying implementation
      * @return
      * @throws IllegalArgumentException If some of the types is not supported by the underlying implementation.
      */
-    <V extends AbstractEntity, M> MapStorage<V, M> getStorage(Class<M> modelType, Flag... flags);
+    <V extends AbstractEntity, M> MapStorage<V, M> getMapStorage(Class<M> modelType, Flag... flags);
 }

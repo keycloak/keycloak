@@ -90,12 +90,12 @@ import org.keycloak.sessions.CommonClientSessionModel;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
 import org.keycloak.util.TokenUtil;
 
-import javax.ws.rs.core.Cookie;
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.NewCookie;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriBuilder;
-import javax.ws.rs.core.UriInfo;
+import jakarta.ws.rs.core.Cookie;
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.NewCookie;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.UriBuilder;
+import jakarta.ws.rs.core.UriInfo;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URLDecoder;
@@ -112,7 +112,6 @@ import java.util.stream.Stream;
 
 import static org.keycloak.common.util.ServerCookie.SameSiteAttributeValue;
 import static org.keycloak.models.UserSessionModel.CORRESPONDING_SESSION_ID;
-import static org.keycloak.models.utils.DefaultRequiredActions.getDefaultRequiredActionCaseInsensitively;
 import static org.keycloak.protocol.oidc.grants.device.DeviceGrantType.isOAuth2DeviceVerificationFlow;
 import static org.keycloak.services.util.CookieHelper.getCookie;
 import static org.keycloak.utils.LockObjectsForModification.lockUserSessionsForModification;
@@ -868,6 +867,13 @@ public class AuthenticationManager {
         expireCookie(realm, AuthenticationSessionManager.AUTH_SESSION_ID, oldPath, true, connection, SameSiteAttributeValue.NONE, session);
     }
 
+    public static void expireAuthSessionCookie(RealmModel realm, UriInfo uriInfo, KeycloakSession session) {
+        logger.debugv("Expire {1} cookie .", AuthenticationSessionManager.AUTH_SESSION_ID);
+        ClientConnection connection = session.getContext().getConnection();
+        String oldPath = getRealmCookiePath(realm, uriInfo);
+        expireCookie(realm, AuthenticationSessionManager.AUTH_SESSION_ID, oldPath, true, connection, SameSiteAttributeValue.NONE, session);
+    }
+
     protected static String getIdentityCookiePath(RealmModel realm, UriInfo uriInfo) {
         return getRealmCookiePath(realm, uriInfo);
     }
@@ -1292,7 +1298,7 @@ public class AuthenticationManager {
     private static Response executeAction(KeycloakSession session, AuthenticationSessionModel authSession, RequiredActionProviderModel model,
                                           HttpRequest request, EventBuilder event, RealmModel realm, UserModel user, boolean kcActionExecution) {
         RequiredActionFactory factory = (RequiredActionFactory) session.getKeycloakSessionFactory()
-                .getProviderFactory(RequiredActionProvider.class, getDefaultRequiredActionCaseInsensitively(model.getProviderId()));
+                .getProviderFactory(RequiredActionProvider.class, model.getProviderId());
         if (factory == null) {
             throw new RuntimeException("Unable to find factory for Required Action: " + model.getProviderId() + " did you forget to declare it in a META-INF/services file?");
         }
@@ -1403,7 +1409,7 @@ public class AuthenticationManager {
 
     private static RequiredActionFactory toRequiredActionFactory(KeycloakSession session, RequiredActionProviderModel model, RealmModel realm) {
         RequiredActionFactory factory = (RequiredActionFactory) session.getKeycloakSessionFactory()
-                .getProviderFactory(RequiredActionProvider.class, getDefaultRequiredActionCaseInsensitively(model.getProviderId()));
+                .getProviderFactory(RequiredActionProvider.class, model.getProviderId());
         if (factory == null) {
             if (!DefaultRequiredActions.isActionAvailable(model)) {
                 logger.warnf("Required action provider factory '%s' configured in the realm '%s' is not available. " +

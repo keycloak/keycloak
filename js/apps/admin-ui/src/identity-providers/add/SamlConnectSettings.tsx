@@ -1,11 +1,10 @@
+import type IdentityProviderRepresentation from "@keycloak/keycloak-admin-client/lib/defs/identityProviderRepresentation";
 import { FormGroup, Title } from "@patternfly/react-core";
 import { useFormContext } from "react-hook-form";
-
-import type IdentityProviderRepresentation from "@keycloak/keycloak-admin-client/lib/defs/identityProviderRepresentation";
 import { useTranslation } from "react-i18next";
 import { HelpItem } from "ui-shared";
-import { useAdminClient } from "../../context/auth/AdminClient";
 
+import { adminClient } from "../../admin-client";
 import { FileUploadForm } from "../../components/json-file-upload/FileUploadForm";
 import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 import { useRealm } from "../../context/realm-context/RealmContext";
@@ -23,7 +22,6 @@ export const SamlConnectSettings = () => {
   const { t } = useTranslation("identity-providers");
   const id = "saml";
 
-  const { adminClient } = useAdminClient();
   const { realm } = useRealm();
   const {
     setValue,

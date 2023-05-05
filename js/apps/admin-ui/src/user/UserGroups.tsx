@@ -1,3 +1,5 @@
+import type GroupRepresentation from "@keycloak/keycloak-admin-client/lib/defs/groupRepresentation";
+import type UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
 import {
   AlertVariant,
   Button,
@@ -7,21 +9,20 @@ import {
 } from "@patternfly/react-core";
 import { QuestionCircleIcon } from "@patternfly/react-icons";
 import { cellWidth } from "@patternfly/react-table";
-import type GroupRepresentation from "@keycloak/keycloak-admin-client/lib/defs/groupRepresentation";
-import type UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
 import { intersectionBy, sortBy } from "lodash-es";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useHelp } from "ui-shared";
+
+import { adminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import { GroupPath } from "../components/group/GroupPath";
 import { GroupPickerDialog } from "../components/group/GroupPickerDialog";
-import { useHelp } from "ui-shared";
 import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
 import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
-import { useAdminClient } from "../context/auth/AdminClient";
-import { emptyFormatter } from "../util";
 import { useAccess } from "../context/access/Access";
+import { emptyFormatter } from "../util";
 
 type UserGroupsProps = {
   user: UserRepresentation;
@@ -49,7 +50,6 @@ export const UserGroups = ({ user }: UserGroupsProps) => {
   const { hasAccess } = useAccess();
   const isManager = hasAccess("manage-users");
 
-  const { adminClient } = useAdminClient();
   const alphabetize = (groupsList: GroupRepresentation[]) => {
     return sortBy(groupsList, (group) => group.path?.toUpperCase());
   };

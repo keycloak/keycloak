@@ -1,14 +1,15 @@
-import { useState } from "react";
-import { useTranslation } from "react-i18next";
-import { AlertVariant, Switch } from "@patternfly/react-core";
-
 import type RequiredActionProviderRepresentation from "@keycloak/keycloak-admin-client/lib/defs/requiredActionProviderRepresentation";
 import type RequiredActionProviderSimpleRepresentation from "@keycloak/keycloak-admin-client/lib/defs/requiredActionProviderSimpleRepresentation";
-import { useAdminClient, useFetch } from "../context/auth/AdminClient";
-import { DraggableTable } from "./components/DraggableTable";
+import { AlertVariant, Switch } from "@patternfly/react-core";
+import { useState } from "react";
+import { useTranslation } from "react-i18next";
+
+import { adminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
 import { KeycloakSpinner } from "../components/keycloak-spinner/KeycloakSpinner";
 import { toKey } from "../util";
+import { useFetch } from "../utils/useFetch";
+import { DraggableTable } from "./components/DraggableTable";
 
 type DataType = RequiredActionProviderRepresentation &
   RequiredActionProviderSimpleRepresentation;
@@ -22,7 +23,6 @@ type Row = {
 
 export const RequiredActions = () => {
   const { t } = useTranslation("authentication");
-  const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
 
   const [actions, setActions] = useState<Row[]>();

@@ -36,6 +36,10 @@
     <description>Test modules that depend on the Base TestSuite.
         This POM contains common configuration for submodules.</description>
 
+    <properties>
+        <app.server>undertow</app.server>
+    </properties>
+
     <build>
         <pluginManagement>
             <plugins>

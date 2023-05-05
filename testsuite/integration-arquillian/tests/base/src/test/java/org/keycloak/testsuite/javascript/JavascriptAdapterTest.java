@@ -812,23 +812,6 @@ public class JavascriptAdapterTest extends AbstractJavascriptTest {
     }
 
     @Test
-    public void testRefreshTokenWithDeprecatedPromiseHandles() {
-        String refreshWithDeprecatedHandles = "var callback = arguments[arguments.length - 1];" +
-                "   window.keycloak.updateToken(9999).success(function (refreshed) {" +
-            "            callback('Success handle');" +
-                "   }).error(function () {" +
-                "       callback('Error handle');" +
-                "   });";
-
-        testExecutor.init(defaultArguments(), this::assertInitNotAuth)
-                .executeAsyncScript(refreshWithDeprecatedHandles, assertOutputContains("Error handle"))
-                .login(this::assertOnLoginPage)
-                .loginForm(testUser, this::assertOnTestAppUrl)
-                .init(defaultArguments(), this::assertInitAuth)
-                .executeAsyncScript(refreshWithDeprecatedHandles, assertOutputContains("Success handle"));
-    }
-
-    @Test
     public void testAIAFromJavascriptAdapterSuccess() {
         testExecutor.init(defaultArguments(), this::assertInitNotAuth)
                 .login(JSObjectBuilder.create()

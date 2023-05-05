@@ -1,4 +1,4 @@
-import type { RouteDef } from "../route-config";
+import type { AppRouteObject } from "../routes";
 import { IdentityProviderRoute } from "./routes/IdentityProvider";
 import { IdentityProviderKeycloakOidcRoute } from "./routes/IdentityProviderKeycloakOidc";
 import { IdentityProviderOidcRoute } from "./routes/IdentityProviderOidc";
@@ -8,7 +8,7 @@ import { IdentityProviderAddMapperRoute } from "./routes/AddMapper";
 import { IdentityProviderEditMapperRoute } from "./routes/EditMapper";
 import { IdentityProviderCreateRoute } from "./routes/IdentityProviderCreate";
 
-const routes: RouteDef[] = [
+const routes: AppRouteObject[] = [
   IdentityProviderAddMapperRoute,
   IdentityProviderEditMapperRoute,
   IdentityProvidersRoute,

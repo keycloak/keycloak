@@ -100,7 +100,7 @@ import org.keycloak.userprofile.UserProfileProvider;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.validation.ValidationUtil;
 
-import javax.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.MediaType;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -1271,9 +1271,7 @@ public class LegacyExportImportManager implements ExportImportManager {
             if (rep.getAuthenticationFlows() != null) {
                 for (AuthenticationFlowRepresentation flowRep : rep.getAuthenticationFlows()) {
                     AuthenticationFlowModel model = RepresentationToModel.toModel(flowRep);
-                    // make sure new id is generated for new AuthenticationFlowModel instance
                     String previousId = model.getId();
-                    model.setId(null);
                     model = newRealm.addAuthenticationFlow(model);
                     // store the mapped ids so that clients can reference the correct flow when importing the authenticationFlowBindingOverrides
                     mappedFlows.put(previousId, model.getId());
@@ -1428,9 +1426,9 @@ public class LegacyExportImportManager implements ExportImportManager {
         model.setPriority(rep.getPriority());
         model.setDefaultAction(rep.isDefaultAction());
         model.setEnabled(rep.isEnabled());
-        model.setProviderId(rep.getProviderId());
+        model.setProviderId(getDefaultRequiredActionCaseInsensitively(rep.getProviderId()));
         model.setName(rep.getName());
-        model.setAlias(rep.getAlias());
+        model.setAlias(getDefaultRequiredActionCaseInsensitively(rep.getAlias()));
         return model;
     }
 

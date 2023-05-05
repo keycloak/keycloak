@@ -27,13 +27,13 @@ final class DatabasePropertyMappers {
         return new PropertyMapper[] {
                 fromOption(DatabaseOptions.DB_DIALECT)
                         .mapFrom("db")
-                        .to("quarkus.hibernate-orm.dialect")
                         .transformer(DatabasePropertyMappers::transformDialect)
                         .build(),
                 fromOption(DatabaseOptions.DB_DRIVER)
                         .mapFrom("db")
                         .to("quarkus.datasource.jdbc.driver")
                         .transformer(DatabasePropertyMappers::getXaOrNonXaDriver)
+                        .paramLabel("driver")
                         .build(),
                 fromOption(DatabaseOptions.DB)
                         .transformer(DatabasePropertyMappers::resolveDatabaseVendor)
@@ -77,7 +77,6 @@ final class DatabasePropertyMappers {
                         .isMasked(true)
                         .build(),
                 fromOption(DatabaseOptions.DB_SCHEMA)
-                        .to("quarkus.hibernate-orm.database.default-schema")
                         .paramLabel("schema")
                         .build(),
                 fromOption(DatabaseOptions.DB_POOL_INITIAL_SIZE)
@@ -115,14 +114,7 @@ final class DatabasePropertyMappers {
         }
 
         ConfigValue xaEnabledConfigValue = context.proceed("kc.transaction-xa-enabled");
-        ConfigValue jtaEnabledConfiguration = context.proceed("kc.transaction-jta-enabled");
-
         boolean isXaEnabled = xaEnabledConfigValue == null || Boolean.parseBoolean(xaEnabledConfigValue.getValue());
-        boolean isJtaEnabled = jtaEnabledConfiguration == null || Boolean.parseBoolean(jtaEnabledConfiguration.getValue());
-
-        if (!isJtaEnabled) {
-            isXaEnabled = false;
-        }
 
         Optional<String> driver = Database.getDriver(value.get(), isXaEnabled);
 
@@ -188,7 +180,7 @@ final class DatabasePropertyMappers {
 
     private static Optional<String> transformDialect(Optional<String> db, ConfigSourceInterceptorContext context) {
         if (isJpaStore()) {
-            return of("org.keycloak.models.map.storage.jpa.hibernate.dialect.JsonbPostgreSQL95Dialect");
+            return Database.getDialect(getJpaStoreDbVendor().name().toLowerCase());
         }
 
         Optional<String> databaseKind = Database.getDatabaseKind(db.get());

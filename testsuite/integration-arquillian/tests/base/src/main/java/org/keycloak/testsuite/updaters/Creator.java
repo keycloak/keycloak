@@ -41,7 +41,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response;
 import org.hamcrest.Matchers;
 import org.jboss.logging.Logger;
 import org.junit.Assert;
@@ -146,7 +146,7 @@ public class Creator<T> implements AutoCloseable {
             LOG.debugf("Removing resource ID %s", id);
             try {
                 closer.run();
-            } catch (javax.ws.rs.NotFoundException ex) {
+            } catch (jakarta.ws.rs.NotFoundException ex) {
                 LOG.debugf("Resource with ID %s perhaps removed in meantime.", id);
             }
         } else {
