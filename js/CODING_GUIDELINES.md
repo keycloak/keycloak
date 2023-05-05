@@ -2,13 +2,15 @@
 
 ## Package managers
 
-The default package manager for the Keycloak UI projects is NPM. There are several reasons why NPM is used over other package managers (such as Yarn and PNPM):
+The default package manager for the Keycloak UI projects is PNPM, we recommend installing it with [Corepack](https://nodejs.org/api/corepack.html) for the best compatibility.
 
-- It comes included with NodeJS by default, meaning it does not have to be installed manually.
-- Most contributors are familiar with the NPM ecosystem and tooling.
-- We do not use any of the 'advanced' features of other package managers (such as [Yarn's PNP](https://yarnpkg.com/features/pnp)).
+There are several reasons why PNPM is used over other package managers (such as NPM and Yarn):
 
-If you submit a pull request that changes the dependencies, make sure that you also update the `package-lock.json` as well.
+- The reasons mentioned in [pnpm vs npm](https://pnpm.io/pnpm-vs-npm), mostly it avoids [silly bugs](https://www.kochan.io/nodejs/pnpms-strictness-helps-to-avoid-silly-bugs.html).
+- Unlike [`npm ci`](https://docs.npmjs.com/cli/v9/commands/npm-ci) it preserves the `node_modules` directory between installs, allowing for faster install times (especially in Maven builds).
+- Unlike NPM it does not require workspace dependencies to be [explicitly versioned](https://pnpm.io/workspaces#publishing-workspace-packages), simplifying release versioning.
+
+If you submit a pull request that changes the dependencies, make sure that you also update the `pnpm-lock.yaml` as well.
 
 ## Typescript
 
