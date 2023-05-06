@@ -1,4 +1,17 @@
 {
+  "enableDisable": "禁用的客户端无法启动登录或已获得访问令牌。",
+  "clientType": "'OpenID Connect' 允许客户端根据授权服务器执行的身份验证来验证最终用户的身份。'SAML' 启用基于 Web 的身份验证和授权方案，包括跨域单点登录（ SSO) 并使用包含断言的安全令牌来传递信息。",
+  "serviceAccount": "允许您向 Keycloak 验证此客户端并检索专用于此客户端的访问令牌。根据 OAuth2 规范，这可以支持此客户端的'客户端凭据授予'。",
+  "manageServiceAccountUser": "要管理详细信息和组映射，请单击用户名 <1>{{link}}</1>",
+  "authentication": "这定义了 OIDC 客户端的类型。当它打开时，OIDC 类型设置为机密访问类型。当它关闭时，它设置为公共访问类型",
+  "authorization": "为客户端启用/禁用细粒度授权支持",
+  "authDetails": "导出并下载此资源服务器的所有资源设置。",
+  "directAccess": "这启用了对直接访问授权的支持，这意味着客户端可以访问用户的用户名/密码，并直接与 Keycloak 服务器交换它以获得访问令牌。就 OAuth2 规范而言，这启用了对“资源所有者密码”的支持授予此客户的凭证。",
+  "standardFlow": "这启用了基于标准 OpenID Connect 重定向的身份验证和授权代码。根据 OpenID Connect 或 OAuth2 规范，这启用了对此客户端的'授权代码流'的支持。",
+
+
+
+{
   "clientType": "'OpenID connect'允许客户端基于授权服务器执行的认证来验证最终用户的身份。'SAML'启用基于Web的身份验证和授权方案，包括跨域单点登录（SSO），并使用包含断言的安全令牌传递信息。",
   "serviceAccount": "允许您向Keycloak验证此客户端并检索专用于此客户端的访问令牌。在OAuth2规范方面，这将支持此客户端的“客户端凭据授予”。",
   "authorization": "启用/禁用客户端的细粒度授权支持",
