@@ -191,8 +191,6 @@ public class OIDCWellKnownProvider implements WellKnownProvider {
         // https://tools.ietf.org/html/draft-ietf-oauth-mtls-08#section-6.2
         config.setTlsClientCertificateBoundAccessTokens(true);
 
-        // KEYCLOAK-15169 OAuth 2.0 Demonstrating Proof-of-Possession at the Application Layer (DPoP)
-        // https://tools.ietf.org/id/draft-ietf-oauth-dpop-07.html#section-5.1
         config.setDpopSigningAlgValuesSupported(new ArrayList<>(DPoPUtil.DPOP_SUPPORTED_ALGS));
 
         URI revocationEndpoint = frontendUriBuilder.clone().path(OIDCLoginProtocolService.class, "revoke")

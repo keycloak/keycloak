@@ -129,6 +129,8 @@ public class JWKSUtils {
         return computeThumbprint(key, JWK_THUMBPRINT_DEFAULT_HASH_ALGORITHM);
     }
 
+    // TreeMap uses the natural ordering of the keys.
+    // Therefore, it follows the way of hash value calculation for a public key defined by RFC 7678
     public static String computeThumbprint(JWK key, String hashAlg)  {
         Map<String, String> members = new TreeMap<>();
         members.put(JWK.KEY_TYPE, key.getKeyType());

@@ -218,6 +218,9 @@ public class OIDCWellKnownProviderTest extends AbstractKeycloakTest {
             assertTrue(oidcConfig.getFrontChannelLogoutSessionSupported());
             assertTrue(oidcConfig.getFrontChannelLogoutSupported());
 
+            // DPoP
+            Assert.assertNames(oidcConfig.getDpopSigningAlgValuesSupported(), Algorithm.PS256, Algorithm.PS384, Algorithm.PS512,
+                    Algorithm.RS256, Algorithm.RS384, Algorithm.RS512, Algorithm.ES256, Algorithm.ES384, Algorithm.ES512);
         } finally {
             client.close();
         }
