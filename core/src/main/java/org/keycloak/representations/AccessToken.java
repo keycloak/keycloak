@@ -120,7 +120,7 @@ public class AccessToken extends IDToken {
             return keyThumbprint;
     }
 
-        public void setKeyThumbprint(String keyThumbprint) {
+    public void setKeyThumbprint(String keyThumbprint) {
             this.keyThumbprint = keyThumbprint;
         }
     }

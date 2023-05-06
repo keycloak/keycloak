@@ -194,6 +194,7 @@ public class OAuthClient {
     private String codeChallenge;
     private String codeChallengeMethod;
     private String origin;
+    private String dpopProof;
 
     private Map<String, String> customParameters;
 
@@ -297,6 +298,7 @@ public class OAuthClient {
         codeChallenge = null;
         codeChallengeMethod = null;
         origin = null;
+        dpopProof = null;
         customParameters = null;
         openid = true;
     }
@@ -512,6 +514,10 @@ public class OAuthClient {
         // https://tools.ietf.org/html/rfc7636#section-4.5
         if (codeVerifier != null) {
             parameters.add(new BasicNameValuePair(OAuth2Constants.CODE_VERIFIER, codeVerifier));
+        }
+
+        if (dpopProof != null) {
+            post.addHeader("DPoP", dpopProof);
         }
 
         UrlEncodedFormEntity formEntity = new UrlEncodedFormEntity(parameters, Charsets.UTF_8);
@@ -1009,6 +1015,10 @@ public class OAuthClient {
         }
         if (clientSessionHost != null) {
             parameters.add(new BasicNameValuePair(AdapterConstants.CLIENT_SESSION_HOST, clientSessionHost));
+        }
+
+        if (dpopProof != null) {
+            post.addHeader("DPoP", dpopProof);
         }
 
         UrlEncodedFormEntity formEntity;
@@ -1756,6 +1766,11 @@ public class OAuthClient {
     }
     public OAuthClient origin(String origin) {
         this.origin = origin;
+        return this;
+    }
+
+    public OAuthClient dpopProof(String dpopProof) {
+        this.dpopProof = dpopProof;
         return this;
     }
 

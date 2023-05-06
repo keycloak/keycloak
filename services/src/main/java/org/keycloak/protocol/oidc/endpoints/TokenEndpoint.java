@@ -331,10 +331,12 @@ public class TokenEndpoint {
         }
     }
 
-    private void checkDPoP() {
+    private void checkAndRetrieveDPoPProof(boolean isDPoPSupported) {
+        if (!isDPoPSupported) return;
+
         if (clientConfig.isUseDPoP()) {
             try {
-                dPoP = new DPoPUtil.Validator(session).client(client).request(request).uriInfo(session.getContext().getUri()).validate();
+                dPoP = new DPoPUtil.Validator(session).request(request).uriInfo(session.getContext().getUri()).validate();
                 session.setAttribute(DPoPUtil.DPOP_SESSION_ATTRIBUTE, dPoP);
             } catch (VerificationException ex) {
                 event.error(Errors.INVALID_DPOP_PROOF);
@@ -344,7 +346,7 @@ public class TokenEndpoint {
     }
 
     public Response codeToToken() {
-        checkDPoP();
+        checkAndRetrieveDPoPProof(Profile.isFeatureEnabled(Profile.Feature.DPOP));
 
         String code = formParams.getFirst(OAuth2Constants.CODE);
         if (code == null) {
@@ -487,8 +489,8 @@ public class TokenEndpoint {
             responseBuilder.generateRefreshToken();
         }
 
-        checkMtlsHoKToken(responseBuilder, useRefreshToken);
-        checkDPoPToken(responseBuilder, useRefreshToken && (client.isPublicClient() || client.isBearerOnly()));
+        checkAndBindMtlsHoKToken(responseBuilder, useRefreshToken);
+        checkAndBindDPoPToken(responseBuilder, useRefreshToken && (client.isPublicClient() || client.isBearerOnly()), Profile.isFeatureEnabled(Profile.Feature.DPOP));
 
         if (TokenUtil.isOIDCRequest(scopeParam)) {
             responseBuilder.generateIDToken().generateAccessTokenHash();
@@ -528,7 +530,7 @@ public class TokenEndpoint {
         return cors.builder(Response.ok(res).type(MediaType.APPLICATION_JSON_TYPE)).build();
     }
 
-    private void checkMtlsHoKToken(TokenManager.AccessTokenResponseBuilder responseBuilder, boolean useRefreshToken) {
+    private void checkAndBindMtlsHoKToken(TokenManager.AccessTokenResponseBuilder responseBuilder, boolean useRefreshToken) {
         // KEYCLOAK-6771 Certificate Bound Token
         // https://tools.ietf.org/html/draft-ietf-oauth-mtls-08#section-3
         if (clientConfig.isUseMtlsHokToken()) {
@@ -546,9 +548,9 @@ public class TokenEndpoint {
         }
     }
 
-    private void checkDPoPToken(TokenManager.AccessTokenResponseBuilder responseBuilder, boolean useRefreshToken) {
-        // KEYCLOAK-15169 OAuth 2.0 Demonstrating Proof-of-Possession at the Application Layer (DPoP)
-        // https://tools.ietf.org/id/draft-ietf-oauth-dpop-04.html#section-6
+    private void checkAndBindDPoPToken(TokenManager.AccessTokenResponseBuilder responseBuilder, boolean useRefreshToken, boolean isDPoPSupported) {
+        if (!isDPoPSupported) return;
+
         if (clientConfig.isUseDPoP()) {
             DPoPUtil.bindToken(responseBuilder.getAccessToken(), dPoP);
             // TODO do not bind refresh tokens issued to confidential clients, see 5. DPoP Access Token Request
@@ -559,7 +561,7 @@ public class TokenEndpoint {
     }
 
     public Response refreshTokenGrant() {
-        checkDPoP();
+        checkAndRetrieveDPoPProof(Profile.isFeatureEnabled(Profile.Feature.DPOP));
 
         String refreshToken = formParams.getFirst(OAuth2Constants.REFRESH_TOKEN);
         if (refreshToken == null) {
@@ -580,8 +582,8 @@ public class TokenEndpoint {
 
             session.clientPolicy().triggerOnEvent(new TokenRefreshResponseContext(formParams, responseBuilder));
 
-            checkMtlsHoKToken(responseBuilder, clientConfig.isUseRefreshToken());
-            checkDPoPToken(responseBuilder, clientConfig.isUseRefreshToken() && (client.isPublicClient() || client.isBearerOnly()));
+            checkAndBindMtlsHoKToken(responseBuilder, clientConfig.isUseRefreshToken());
+            checkAndBindDPoPToken(responseBuilder, clientConfig.isUseRefreshToken() && (client.isPublicClient() || client.isBearerOnly()), Profile.isFeatureEnabled(Profile.Feature.DPOP));
 
             res = responseBuilder.build();
 
@@ -648,8 +650,6 @@ public class TokenEndpoint {
 
     public Response resourceOwnerPasswordCredentialsGrant() {
         event.detail(Details.AUTH_METHOD, "oauth_credentials");
-
-        checkDPoP();
 
         if (!client.isDirectAccessGrantsEnabled()) {
             event.error(Errors.NOT_ALLOWED);
@@ -724,7 +724,7 @@ public class TokenEndpoint {
             responseBuilder.generateIDToken().generateAccessTokenHash();
         }
 
-        checkMtlsHoKToken(responseBuilder, useRefreshToken);
+        checkAndBindMtlsHoKToken(responseBuilder, useRefreshToken);
 
         try {
             session.clientPolicy().triggerOnEvent(new ResourceOwnerPasswordCredentialsResponseContext(formParams, clientSessionCtx, responseBuilder));
@@ -733,13 +733,7 @@ public class TokenEndpoint {
             throw new CorsErrorResponseException(cors, cpe.getError(), cpe.getErrorDetail(), cpe.getErrorStatus());
         }
 
-        // TODO : do the same as codeToToken()
-        checkDPoPToken(responseBuilder, useRefreshToken && (client.isPublicClient() || client.isBearerOnly()));
         AccessTokenResponse res = responseBuilder.build();
-
-        if (clientConfig.isUseDPoP()) {
-            res.setTokenType(DPoPUtil.DPOP_TOKEN_TYPE);
-        }
 
         event.success();
         AuthenticationManager.logSuccess(session, authSession);
@@ -830,7 +824,7 @@ public class TokenEndpoint {
             responseBuilder.getAccessToken().setSessionState(null);
         }
 
-        checkMtlsHoKToken(responseBuilder, useRefreshToken);
+        checkAndBindMtlsHoKToken(responseBuilder, useRefreshToken);
 
         String scopeParam = clientSessionCtx.getClientSession().getNote(OAuth2Constants.SCOPE);
         if (TokenUtil.isOIDCRequest(scopeParam)) {

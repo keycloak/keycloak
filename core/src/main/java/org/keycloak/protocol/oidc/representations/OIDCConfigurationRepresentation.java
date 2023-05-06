@@ -157,8 +157,6 @@ public class OIDCConfigurationRepresentation {
     @JsonProperty("tls_client_certificate_bound_access_tokens")
     private Boolean tlsClientCertificateBoundAccessTokens;
 
-    // KEYCLOAK-15169 OAuth 2.0 Demonstrating Proof-of-Possession at the Application Layer (DPoP)
-    // https://tools.ietf.org/id/draft-ietf-oauth-dpop-07.html#section-5.1
     @JsonProperty("dpop_signing_alg_values_supported")
     private List<String> dpopSigningAlgValuesSupported;
 
@@ -492,8 +490,6 @@ public class OIDCConfigurationRepresentation {
         this.tlsClientCertificateBoundAccessTokens = tlsClientCertificateBoundAccessTokens;
     }
 
-    // KEYCLOAK-15169 OAuth 2.0 Demonstrating Proof-of-Possession at the Application Layer (DPoP)
-    // https://tools.ietf.org/id/draft-ietf-oauth-dpop-07.html#section-5.1
     public List<String> getDpopSigningAlgValuesSupported() {
         return dpopSigningAlgValuesSupported;
     }

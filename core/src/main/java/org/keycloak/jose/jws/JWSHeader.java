@@ -63,6 +63,13 @@ public class JWSHeader implements JOSEHeader {
         this.keyId = keyId;
     }
 
+    public JWSHeader(Algorithm algorithm, String type, String keyId, JWK key) {
+        this.algorithm = algorithm;
+        this.type = type;
+        this.keyId = keyId;
+        this.key = key;
+    }
+
     public Algorithm getAlgorithm() {
         return algorithm;
     }

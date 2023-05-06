@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Red Hat, Inc. and/or its affiliates
+ * Copyright 2023 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -23,8 +23,8 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import javax.ws.rs.core.UriBuilder;
-import javax.ws.rs.core.UriInfo;
+import jakarta.ws.rs.core.UriBuilder;
+import jakarta.ws.rs.core.UriInfo;
 
 import org.apache.commons.codec.binary.Hex;
 
@@ -244,7 +244,7 @@ public class DPoPUtil {
 
         @Override
         public boolean test(DPoP t) throws DPoPVerificationException {
-            SingleUseObjectProvider singleUseCache = session.getProvider(SingleUseObjectProvider.class);
+            SingleUseObjectProvider singleUseCache = session.singleUseObjects();
             byte[] hash = HashUtils.hash("SHA1", (t.getId() + "\n" + t.getHttpUri()).getBytes());
             String hashString = Hex.encodeHexString(hash);
             if (!singleUseCache.putIfAbsent(hashString, (int)(t.getIat() + lifetime - Time.currentTime()))) {
@@ -353,17 +353,6 @@ public class DPoPUtil {
             this.uri = request.getUri().getAbsolutePath();
             this.method = request.getHttpMethod();
             this.dPoP = request.getHttpHeaders().getHeaderString(DPOP_HTTP_HEADER);
-            return this;
-        }
-
-        public Validator client(ClientModel client) {
-            OIDCAdvancedConfigWrapper config = OIDCAdvancedConfigWrapper.fromClientModel(client);
-            return clientConfig(config);
-        }
-
-        public Validator clientConfig(OIDCAdvancedConfigWrapper config) {
-            this.clockSkew = config.getDPoPAllowedClockSkew();
-            this.lifetime = config.getDPoPProofLifetime();
             return this;
         }
 

@@ -164,7 +164,6 @@ public class OIDCAdvancedConfigWrapper extends AbstractClientConfigWrapper {
         setAttribute(OIDCConfigAttributes.EXCLUDE_SESSION_STATE_FROM_AUTH_RESPONSE, val);
     }
 
-    // KEYCLOAK-15169 OAuth 2.0 Demonstrating Proof-of-Possession at the Application Layer (DPoP)
     public boolean isUseDPoP() {
         String mode = getAttribute(OIDCConfigAttributes.DPOP_BOUND_ACCESS_TOKENS);
         return Boolean.parseBoolean(mode);
@@ -173,26 +172,6 @@ public class OIDCAdvancedConfigWrapper extends AbstractClientConfigWrapper {
     public void setUseDPoP(boolean useDPoP) {
         String val = String.valueOf(useDPoP);
         setAttribute(OIDCConfigAttributes.DPOP_BOUND_ACCESS_TOKENS, val);
-    }
-
-    public int getDPoPProofLifetime() {
-        String lifetime = getAttribute(OIDCConfigAttributes.DPOP_PROOF_LIFETIME);
-        return lifetime == null ? DPoPUtil.DEFAULT_PROOF_LIFETIME : Integer.parseInt(lifetime);
-    }
-
-    public void setDPoPProofLifetime(int lifetime) {
-        String val = String.valueOf(lifetime);
-        setAttribute(OIDCConfigAttributes.DPOP_PROOF_LIFETIME, val);
-    }
-
-    public int getDPoPAllowedClockSkew() {
-        String clockSkew = getAttribute(OIDCConfigAttributes.DPOP_ALLOWED_CLOCK_SKEW);
-        return clockSkew == null ? DPoPUtil.DEFAULT_ALLOWED_CLOCK_SKEW : Integer.parseInt(clockSkew);
-    }
-
-    public void setDPoPAllowedClockSkew(int clockSkew) {
-        String val = String.valueOf(clockSkew);
-        setAttribute(OIDCConfigAttributes.DPOP_ALLOWED_CLOCK_SKEW, val);
     }
 
     // KEYCLOAK-6771 Certificate Bound Token
