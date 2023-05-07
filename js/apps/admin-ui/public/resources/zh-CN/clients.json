@@ -153,7 +153,7 @@
   "emptyResourcesInstructions": "如果您想创建资源，请点击下面的按钮。",
   "allTypes": "所有类型",
   "scope": "范围",
-  "所有者": "所有者",
+  "owner": "所有者",
   "uris": "URIs",
   "scopes": "范围",
   "policies": "策略",
