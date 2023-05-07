@@ -521,7 +521,7 @@
   "keysIntro": "如果 \"Use JWKS URL switch\" 被打开，你需要填写一个有效的 JWKS URL。保存后，管理员可以从 JWKS URL 下载密钥，或者密钥将在看到这些东西时由 Keycloak 服务器自动下载匿名的 KID 签名",
   "useJwksUrl": "使用 JWKS URL",
   "certificate": "证书",
-  "jwksUrl": "JWKS 网址",
+  "jwksUrl": "JWKS URL",
   "generateNewKeys": "生成新密钥",
   "generateKeys": "生成密钥？",
   "generate": "生成",
