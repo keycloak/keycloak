@@ -138,9 +138,9 @@ if "x%JAVA%" == "x" (
   )
 )
 
-set "CLASSPATH_OPTS=%DIRNAME%..\lib\quarkus-run.jar"
+set CLASSPATH_OPTS="%DIRNAME%..\lib\quarkus-run.jar"
 
-set JAVA_RUN_OPTS=%JAVA_OPTS% -Dkc.home.dir=%DIRNAME%.. -Djboss.server.config.dir=%DIRNAME%..\conf -Dkeycloak.theme.dir=%DIRNAME%..\themes %SERVER_OPTS% -cp %CLASSPATH_OPTS% io.quarkus.bootstrap.runner.QuarkusEntryPoint %CONFIG_ARGS%
+set JAVA_RUN_OPTS=%JAVA_OPTS% -Dkc.home.dir="%DIRNAME%.." -Djboss.server.config.dir="%DIRNAME%..\conf" -Dkeycloak.theme.dir="%DIRNAME%..\themes" %SERVER_OPTS% -cp %CLASSPATH_OPTS% io.quarkus.bootstrap.runner.QuarkusEntryPoint %CONFIG_ARGS%
 
 SetLocal EnableDelayedExpansion
 
@@ -156,14 +156,13 @@ if not errorlevel == 1 (
 )
 
 if "%PRINT_ENV%" == "true" (
-  echo "Using JAVA_OPTS: %JAVA_OPTS%"
+  echo "Using JAVA_OPTS: !JAVA_OPTS!"
   echo "Using JAVA_RUN_OPTS: !JAVA_RUN_OPTS!"
 )
 
 set START_SERVER=true
 
 if "!CONFIG_ARGS:%OPTIMIZED_OPTION%=!"=="!CONFIG_ARGS!" if "!CONFIG_ARGS:%BUILD_OPTION%=!"=="!CONFIG_ARGS!" if "!CONFIG_ARGS:%HELP_LONG_OPTION%=!"=="!CONFIG_ARGS!" if "%IS_HELP_SHORT%" == "false" (
-    setlocal enabledelayedexpansion
 
     "%JAVA%" -Dkc.config.build-and-exit=true !JAVA_RUN_OPTS!
 
