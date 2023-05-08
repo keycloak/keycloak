@@ -14,3 +14,4 @@ Custom implementations can extend the `DefaultLocaleSelectorProvider` in order t
 [role="_additional-resources"]
 === Additional resources
 * For more details on creating and deploying a custom provider, see <<_providers,Service Provider Interfaces>>.
+
