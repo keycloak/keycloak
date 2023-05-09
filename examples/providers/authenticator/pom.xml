@@ -27,10 +27,10 @@
 
     <properties>
         <java.version>11</java.version>
+        <keycloak.version>21.1.1</keycloak.version>
         <maven.compiler.source>${java.version}</maven.compiler.source>
         <maven.compiler.target>${java.version}</maven.compiler.target>
         <maven.compiler.release>${java.version}</maven.compiler.release>
-        <keycloak.version>21.1.1</keycloak.version>
     </properties>
 
     <dependencies>
