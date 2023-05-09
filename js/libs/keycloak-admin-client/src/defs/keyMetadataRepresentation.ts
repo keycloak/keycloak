@@ -15,4 +15,7 @@ export interface KeyMetadataRepresentation {
   algorithm?: string;
   publicKey?: string;
   certificate?: string;
+  notBefore?: number;
+  notAfter?: number;
+  thumbprint?: string;
 }

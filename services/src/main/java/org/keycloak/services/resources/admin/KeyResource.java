@@ -21,6 +21,7 @@ import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.jboss.resteasy.annotations.cache.NoCache;
+import org.keycloak.common.util.Encode;
 import org.keycloak.common.util.PemUtils;
 import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.models.KeycloakSession;
@@ -32,6 +33,8 @@ import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluato
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
+
+import java.security.cert.X509Certificate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -88,8 +91,18 @@ public class KeyResource {
         r.setType(key.getType());
         r.setAlgorithm(key.getAlgorithmOrDefault());
         r.setPublicKey(key.getPublicKey() != null ? PemUtils.encodeKey(key.getPublicKey()) : null);
-        r.setCertificate(key.getCertificate() != null ? PemUtils.encodeCertificate(key.getCertificate()) : null);
         r.setUse(key.getUse());
+
+        X509Certificate cert = key.getCertificate();
+        if (cert != null) {
+            byte[] thumbprint = key.getSHA1Thumbprint();
+            if (thumbprint != null) {
+                r.setThumbprint(Encode.hexString(thumbprint));
+            }
+            r.setCertificate(PemUtils.encodeCertificate(cert));
+            r.setNotBefore(cert.getNotBefore() != null ? cert.getNotBefore().getTime() : null);
+            r.setNotAfter(cert.getNotAfter() != null ? cert.getNotAfter().getTime() : null);
+        }
         return r;
     }
 }

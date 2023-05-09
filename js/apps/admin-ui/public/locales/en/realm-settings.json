@@ -122,6 +122,9 @@
   "providerDescription": "Provider description",
   "addProvider": "Add provider",
   "publicKeys": "Public keys",
+  "notBefore": "Not before",
+  "notAfter": "Not after",
+  "thumbprint": "Thumbprint",
   "keysFilter": {
     "ACTIVE": "Active keys",
     "PASSIVE": "Passive keys",

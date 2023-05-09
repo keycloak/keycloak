@@ -38,6 +38,8 @@ public class JWSBuilder {
     String contentType;
     byte[] contentBytes;
 
+    String thumbprint;
+
     public JWSBuilder type(String type) {
         this.type = type;
         return this;
@@ -74,6 +76,7 @@ public class JWSBuilder {
 
         if (type != null) builder.append(",\"typ\" : \"").append(type).append("\"");
         if (kid != null) builder.append(",\"kid\" : \"").append(kid).append("\"");
+        if (thumbprint != null) builder.append(",\"x5t\" : \"").append(thumbprint).append("\"");
         if (contentType != null) builder.append(",\"cty\":\"").append(contentType).append("\"");
         builder.append("}");
         return Base64Url.encode(builder.toString().getBytes(StandardCharsets.UTF_8));
@@ -105,7 +108,8 @@ public class JWSBuilder {
 
         public String sign(SignatureSignerContext signer) {
             kid = signer.getKid();
-
+            byte[] thumb = signer.getSHA1Thumbprint();
+            thumbprint = thumb != null ? Base64Url.encode(thumb) : null;
             StringBuilder buffer = new StringBuilder();
             byte[] data = marshalContent();
             encode(signer.getAlgorithm(), data, buffer);

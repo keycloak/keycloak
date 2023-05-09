@@ -16,6 +16,9 @@
  */
 package org.keycloak.crypto;
 
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.security.cert.CertificateEncodingException;
 import java.util.HashMap;
 import java.util.List;
 import javax.crypto.SecretKey;
@@ -194,5 +197,17 @@ public class KeyWrapper {
         }
         key.isDefaultClientCertificate = this.isDefaultClientCertificate;
         return key;
+    }
+
+    public byte[] getSHA1Thumbprint() {
+        if (certificate == null) {
+            return null;
+        }
+        try {
+            // using SHA1 for certificate thumbprint should be fine
+            return MessageDigest.getInstance("SHA1").digest(certificate.getEncoded());
+        } catch (NoSuchAlgorithmException | CertificateEncodingException e) {
+            throw new RuntimeException("Could not get SHA1 hash of key", e);
+        }
     }
 }

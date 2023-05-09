@@ -591,4 +591,16 @@ public class Encode
       return decode(string);
    }
 
+   public static String hexString(byte[] bytes) {
+
+      // this is not the fastest way to do it, but does not require dependencies and works with Java 11
+      // once the codebase is on Java 17, we can use HexFormat.of().formatHex(bytes) instead.
+      // As an alternative bouncycastle Hex.toHexString(bytes); is also an option, but I don't know if BC is always available.
+      StringBuilder sb = new StringBuilder(bytes.length * 2);
+      for (byte b: bytes) {
+         sb.append(String.format("%02x", b));
+      }
+      return sb.toString();
+   }
+
 }

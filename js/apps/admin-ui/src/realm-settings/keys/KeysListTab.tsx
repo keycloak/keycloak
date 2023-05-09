@@ -26,6 +26,7 @@ import useToggle from "../../utils/useToggle";
 import { toKeysTab } from "../routes/KeysTab";
 
 import "../realm-settings-section.css";
+import useFormatDate from "../../utils/useFormatDate";
 
 const FILTER_OPTIONS = ["ACTIVE", "PASSIVE", "DISABLED"] as const;
 type FilterType = (typeof FILTER_OPTIONS)[number];
@@ -82,9 +83,11 @@ const SelectFilter = ({ onFilter }: SelectFilterProps) => {
 export const KeysListTab = ({ realmComponents }: KeysListTabProps) => {
   const { t } = useTranslation("realm-settings");
   const navigate = useNavigate();
+  const formatDate = useFormatDate();
 
   const [publicKey, setPublicKey] = useState("");
   const [certificate, setCertificate] = useState("");
+  const [thumbprint, setThumbprint] = useState("");
 
   const { realm } = useRealm();
 
@@ -122,6 +125,14 @@ export const KeysListTab = ({ realmComponents }: KeysListTabProps) => {
     onConfirm: () => Promise.resolve(),
   });
 
+  const [toggleThumbprintDialog, ThumbprintDialog] = useConfirmDialog({
+    titleKey: t("thumbprint"),
+    messageKey: thumbprint,
+    continueButtonLabel: "common:close",
+    continueButtonVariant: ButtonVariant.primary,
+    onConfirm: () => Promise.resolve(),
+  });
+
   if (!keyData) {
     return <KeycloakSpinner />;
   }
@@ -130,6 +141,7 @@ export const KeysListTab = ({ realmComponents }: KeysListTabProps) => {
     <PageSection variant="light" padding={{ default: "noPadding" }}>
       <PublicKeyDialog />
       <CertificateDialog />
+      <ThumbprintDialog />
       <KeycloakDataTable
         isNotCompact
         className="kc-keys-list"
@@ -181,9 +193,22 @@ export const KeysListTab = ({ realmComponents }: KeysListTabProps) => {
             transforms: [cellWidth(10)],
           },
           {
+            name: "notAfter",
+            displayKey: "realm-settings:notAfter",
+            cellRenderer: ({ notAfter }: KeyData) =>
+              notAfter ? formatDate(new Date(notAfter)) : "",
+            cellFormatters: [emptyFormatter()],
+            transforms: [cellWidth(10)],
+          },
+          {
             name: "publicKeys",
             displayKey: "realm-settings:publicKeys",
-            cellRenderer: ({ type, publicKey, certificate }: KeyData) => {
+            cellRenderer: ({
+              type,
+              publicKey,
+              certificate,
+              thumbprint,
+            }: KeyData) => {
               if (type === "EC") {
                 return (
                   <Button
@@ -220,6 +245,17 @@ export const KeysListTab = ({ realmComponents }: KeysListTabProps) => {
                       className="kc-certificate"
                     >
                       {t("certificate")}
+                    </Button>
+                    <Button
+                      onClick={() => {
+                        toggleThumbprintDialog();
+                        setThumbprint(thumbprint!);
+                      }}
+                      variant="secondary"
+                      id={thumbprint}
+                      className="kc-thumbprint"
+                    >
+                      {t("thumbprint")}
                     </Button>
                   </div>
                 );

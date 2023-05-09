@@ -62,6 +62,12 @@ public class KeysMetadataRepresentation {
         private String certificate;
         private KeyUse use;
 
+        private Long notAfter;
+
+        private Long notBefore;
+
+        private String thumbprint;
+
         public String getProviderId() {
             return providerId;
         }
@@ -132,6 +138,30 @@ public class KeysMetadataRepresentation {
 
         public void setUse(KeyUse use) {
             this.use = use;
+        }
+
+        public Long getNotAfter() {
+            return notAfter;
+        }
+
+        public void setNotAfter(Long notAfter) {
+            this.notAfter = notAfter;
+        }
+
+        public Long getNotBefore() {
+            return notBefore;
+        }
+
+        public void setNotBefore(Long notBefore) {
+            this.notBefore = notBefore;
+        }
+
+        public String getThumbprint() {
+            return thumbprint;
+        }
+
+        public void setThumbprint(String thumbprint) {
+            this.thumbprint = thumbprint;
         }
     }
 }
