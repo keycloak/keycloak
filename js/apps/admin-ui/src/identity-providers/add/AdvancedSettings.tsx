@@ -9,7 +9,7 @@ import {
   ValidatedOptions,
 } from "@patternfly/react-core";
 import { useState } from "react";
-import { Controller, useFormContext } from "react-hook-form";
+import { Controller, useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { HelpItem } from "ui-shared";
 
@@ -104,7 +104,7 @@ export const AdvancedSettings = ({ isOIDC, isSAML }: AdvancedSettingsProps) => {
     formState: { errors },
   } = useFormContext<IdentityProviderRepresentation>();
   const [syncModeOpen, setSyncModeOpen] = useState(false);
-  const [filteredByClaim, setFilteredByClaim] = useState(control._formValues["config"]["filteredByClaim"]);
+  const filteredByClaim = useWatch({ control, name: "config.filteredByClaim", defaultValue: false});
   const [claimFilterRequired, setClaimFilterRequired] = useState(filteredByClaim == 'true');
   return (
     <>
@@ -150,12 +150,9 @@ export const AdvancedSettings = ({ isOIDC, isSAML }: AdvancedSettingsProps) => {
               onChange={(value) => {
                   const v=""+value
                   field.onChange(v)
-                  setFilteredByClaim(v)
                   setClaimFilterRequired(value)
-                  console.debug('setFilteredByClaim ' + v)
                 }
               }
-              isDisabled={false}
               aria-label="filteredByClaim"
             />
           )}
@@ -172,7 +169,7 @@ export const AdvancedSettings = ({ isOIDC, isSAML }: AdvancedSettingsProps) => {
               />
             }
             fieldId="kc-claim-filter-name"
-            isRequired={claimFilterRequired}
+            isRequired
             validated={
               errors.config?.claimFilterName
                 ? ValidatedOptions.error
@@ -181,12 +178,15 @@ export const AdvancedSettings = ({ isOIDC, isSAML }: AdvancedSettingsProps) => {
             helperTextInvalid={t("common:required")}
           >
             <KeycloakTextInput
-              isRequired={claimFilterRequired}
-              isReadOnly={!claimFilterRequired}
-              type="text"
+              isRequired
               id="kc-claim-filter-name"
               data-testid="claimFilterName"
-              {...register("config.claimFilterName", { required: claimFilterRequired })}
+              validated={
+                errors.config?.claimFilterName
+                ? ValidatedOptions.error
+                : ValidatedOptions.default
+              }
+              {...register("config.claimFilterName", { required: true })}
             />
           </FormGroup>
           <FormGroup
@@ -198,20 +198,23 @@ export const AdvancedSettings = ({ isOIDC, isSAML }: AdvancedSettingsProps) => {
               />
             }
             fieldId="kc-claim-filter-value"
-            isRequired={claimFilterRequired}
+            isRequired
             validated={
-              errors.config?. claimFilterValue
+              errors.config?.claimFilterValue
                 ? ValidatedOptions.error
                 : ValidatedOptions.default
             }
             helperTextInvalid={t("common:required")}
           >
             <KeycloakTextInput
-              isRequired={claimFilterRequired}
-              isReadOnly={!claimFilterRequired}
-              type="text"
+              isRequired
               id="kc-claim-filter-value"
               data-testid="claimFilterValue"
+              validated={
+                errors.config?.claimFilterValue
+                ? ValidatedOptions.error
+                : ValidatedOptions.default
+              }
               {...register("config.claimFilterValue", { required: claimFilterRequired })}
             />
           </FormGroup>
