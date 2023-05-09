@@ -960,17 +960,9 @@ public class TokenEndpoint {
 
         if (permissions != null) {
             event.detail(Details.PERMISSION, String.join("|", permissions));
-            for (String permission : permissions) {
-                String[] parts = permission.split("#");
-                String resource = parts[0];
-
-                if (parts.length == 1) {
-                    authorizationRequest.addPermission(resource);
-                } else {
-                    String[] scopes = parts[1].split(",");
-                    authorizationRequest.addPermission(parts[0], scopes);
-                }
-            }
+            String permissionResourceFormat = formParams.getFirst("permission_resource_format");
+            boolean permissionResourceMatchingUri = Boolean.parseBoolean(formParams.getFirst("permission_resource_matching_uri"));
+            authorizationRequest.addPermissions(permissions, permissionResourceFormat, permissionResourceMatchingUri);
         }
 
         Metadata metadata = new Metadata();
