@@ -60,11 +60,6 @@ export const TimeSelector = ({
 }: TimeSelectorProps) => {
   const { t } = useTranslation("common");
 
-  const times = useMemo(
-    () => units.map((unit) => allTimes.find((time) => time.unit === unit)!),
-    [units]
-  );
-
   const defaultMultiplier = useMemo(
     () => allTimes.find((time) => time.unit === units[0])?.multiplier,
     [units]
@@ -73,6 +68,16 @@ export const TimeSelector = ({
   const [timeValue, setTimeValue] = useState<"" | number>("");
   const [multiplier, setMultiplier] = useState(defaultMultiplier);
   const [open, setOpen] = useState(false);
+
+  const times = useMemo(() => {
+    const filteredUnits = units.map(
+      (unit) => allTimes.find((time) => time.unit === unit)!
+    );
+    if (!filteredUnits.every((u) => u.multiplier === multiplier)) {
+      filteredUnits.unshift(allTimes[0]);
+    }
+    return filteredUnits;
+  }, [units, multiplier]);
 
   useEffect(() => {
     const multiplier = getTimeUnit(value).multiplier;
