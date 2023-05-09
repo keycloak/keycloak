@@ -939,6 +939,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
 
 
         if (federatedUser != null) {
+            updateFederatedIdentity(context, federatedUser);
             if (context.getIdpConfig().isStoreToken()) {
                 FederatedIdentityModel oldModel = this.session.users().getFederatedIdentity(this.realmModel, federatedUser, context.getIdpConfig().getAlias());
                 if (!ObjectUtil.isEqualOrBothNull(context.getToken(), oldModel.getToken())) {

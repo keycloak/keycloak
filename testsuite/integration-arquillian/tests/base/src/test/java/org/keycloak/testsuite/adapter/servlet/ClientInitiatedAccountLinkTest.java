@@ -16,6 +16,8 @@
  */
 package org.keycloak.testsuite.adapter.servlet;
 
+import com.google.common.collect.ImmutableMap;
+import jakarta.ws.rs.core.Response;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.container.test.api.OperateOnDeployment;
 import org.jboss.arquillian.graphene.page.Page;
@@ -24,15 +26,22 @@ import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.keycloak.admin.client.CreatedResponseUtil;
 import org.keycloak.admin.client.resource.ClientResource;
+import org.keycloak.admin.client.resource.IdentityProviderResource;
 import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.admin.client.resource.UsersResource;
+import org.keycloak.broker.provider.HardcodedAttributeMapper;
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.models.Constants;
+import org.keycloak.models.IdentityProviderMapperModel;
+import org.keycloak.models.IdentityProviderMapperSyncMode;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.FederatedIdentityRepresentation;
+import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
@@ -44,6 +53,7 @@ import org.keycloak.testsuite.adapter.AbstractServletsAdapterTest;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
 import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
+import org.keycloak.testsuite.forms.VerifyProfileTest;
 import org.keycloak.testsuite.utils.arquillian.ContainerConstants;
 import org.keycloak.testsuite.broker.BrokerTestTools;
 import org.keycloak.testsuite.page.AbstractPageWithInjectedUrl;
@@ -57,12 +67,18 @@ import org.keycloak.util.JsonSerialization;
 
 import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.core.UriBuilder;
+
 import java.net.URL;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.keycloak.models.AccountRoles.MANAGE_ACCOUNT;
 import static org.keycloak.models.AccountRoles.MANAGE_ACCOUNT_LINKS;
 import static org.keycloak.models.Constants.ACCOUNT_MANAGEMENT_CLIENT_ID;
@@ -82,6 +98,12 @@ public class ClientInitiatedAccountLinkTest extends AbstractServletsAdapterTest 
     public static final String CHILD_IDP = "child";
     public static final String PARENT_IDP = "parent-idp";
     public static final String PARENT_USERNAME = "parent";
+
+    private static final String HARDCODED_ATTRIBUTE_MAPPER_NAME = "my_hardcoded_mapper";
+    private static final String USER_ATTRIBUTE = "hardcoded_attribute";
+    private static final String USER_ATTRIBUTE_VALUE = "hardcoded_value";
+
+
 
     @Page
     protected LoginUpdateProfilePage loginUpdateProfilePage;
@@ -583,6 +605,53 @@ public class ClientInitiatedAccountLinkTest extends AbstractServletsAdapterTest 
         Assert.assertEquals("Requested broker account linking, but current session is no longer valid.", errorPage.getError());
 
         logoutAll();
+    }
+
+    @Test
+    public void testAccountLinkWithHardcodedMapper() throws Exception {
+        addHardcodedAttributeMapper();
+        testAccountLink();
+        assertHardcodedAttributeHasBeenAssigned();
+        removeHardcodedAttribute();
+        removeHardcodedAttributeMapper();
+    }
+
+    private void addHardcodedAttributeMapper() {
+        IdentityProviderResource provider = adminClient.realms().realm(CHILD_IDP).identityProviders().get(PARENT_IDP);
+
+        IdentityProviderMapperRepresentation mapper = new IdentityProviderMapperRepresentation();
+        mapper.setIdentityProviderAlias(PARENT_IDP);
+        mapper.setName(HARDCODED_ATTRIBUTE_MAPPER_NAME);
+        mapper.setIdentityProviderMapper("hardcoded-attribute-idp-mapper");
+        mapper.setConfig(ImmutableMap.<String, String>builder()
+                .put(IdentityProviderMapperModel.SYNC_MODE, IdentityProviderMapperSyncMode.FORCE.toString())
+                .put(HardcodedAttributeMapper.ATTRIBUTE, USER_ATTRIBUTE)
+                .put(HardcodedAttributeMapper.ATTRIBUTE_VALUE, USER_ATTRIBUTE_VALUE)
+                .build());
+
+        mapper.setIdentityProviderAlias(PARENT_IDP);
+        provider.addMapper(mapper).close();
+    }
+
+    private void removeHardcodedAttributeMapper() {
+        IdentityProviderResource provider = adminClient.realms().realm(CHILD_IDP).identityProviders().get(PARENT_IDP);
+        Optional<IdentityProviderMapperRepresentation> mapper = provider.getMappers().stream()
+                .filter(m -> m.getName().equals(HARDCODED_ATTRIBUTE_MAPPER_NAME)).findFirst();
+
+        assertFalse(mapper.isEmpty());
+
+        provider.delete(mapper.get().getId());
+    }
+
+    private void assertHardcodedAttributeHasBeenAssigned() {
+        UserRepresentation user = adminClient.realm(CHILD_IDP).users().get(childUserId).toRepresentation();
+        assertEquals(USER_ATTRIBUTE_VALUE, user.firstAttribute(USER_ATTRIBUTE));
+    }
+
+    private void removeHardcodedAttribute() {
+        UserRepresentation user = adminClient.realm(CHILD_IDP).users().get(childUserId).toRepresentation();
+        user.getAttributes().remove(USER_ATTRIBUTE);
+        adminClient.realm(CHILD_IDP).users().get(user.getId()).update(user);
     }
 
     private void navigateTo(String uri) {
