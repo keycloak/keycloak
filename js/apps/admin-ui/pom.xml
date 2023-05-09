@@ -136,9 +136,9 @@
       "resourceUrl": "${resourceUrl}",
       "masterRealm": "${masterRealm}",
       "resourceVersion": "${resourceVersion}",
-      "isRunningAsTheme": true,
       "logo": "${properties.logo!""}",
-      "logoUrl": "${properties.logoUrl!""}"
+      "logoUrl": "${properties.logoUrl!""}",
+      "isRunningAsTheme": true
     }
   </script>
 </body>
