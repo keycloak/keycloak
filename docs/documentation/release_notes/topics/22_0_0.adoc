@@ -11,4 +11,11 @@ In a previous release we started to actively log deprecation warnings when the K
 In previous releases, the `export` and `import` commands required a `build` command to be run first.
 Starting with this release, the `export` and `import` commands perform an automatic rebuild of Keycloak if a build time configuration has changed.
 
-See the migration guide for details.
+See the migration guide for more details.
+
+= Renamed Keycloak Admin client artifacts
+
+After the upgrade to Jakarta EE, artifacts for Keycloak Admin clients were renamed to more descriptive names with consideration for long-term maintainability.
+We still provide two separate Keycloak Admin clients, one with Jakarta EE and the other with Java EE support.
+
+See the migration guide for more details.
