@@ -47,27 +47,27 @@
                 <artifactId>frontend-maven-plugin</artifactId>
                 <executions>
                     <execution>
-                        <id>npm-prepublish</id>
+                        <id>run-build</id>
                         <goals>
-                            <goal>npm</goal>
+                            <goal>pnpm</goal>
                         </goals>
                         <configuration>
-                            <arguments>run prepublishOnly --workspace=keycloak-js</arguments>
+                            <arguments>run build</arguments>
                         </configuration>
                     </execution>
                     <execution>
-                        <id>npm-pack</id>
+                        <id>pack</id>
                         <phase>package</phase>
                         <goals>
-                            <goal>npm</goal>
+                            <goal>pnpm</goal>
                         </goals>
                         <configuration>
-                            <arguments>pack --workspace=keycloak-js --pack-destination=libs/keycloak-js/target</arguments>
+                            <arguments>pack --pack-destination=target</arguments>
                         </configuration>
                     </execution>
                 </executions>
                 <configuration>
-                    <workingDirectory>../..</workingDirectory>
+                    <installDirectory>../..</installDirectory>
                 </configuration>
             </plugin>
         </plugins>

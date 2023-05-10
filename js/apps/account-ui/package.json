@@ -11,16 +11,17 @@
     "@patternfly/react-core": "^4.276.8",
     "@patternfly/react-icons": "^4.93.6",
     "i18next": "^22.4.15",
+    "@patternfly/react-table": "^4.113.0",
     "i18next-http-backend": "^2.2.0",
-    "keycloak-js": "999.0.0-SNAPSHOT",
-    "keycloak-masthead": "999.0.0-SNAPSHOT",
+    "keycloak-js": "workspace:*",
+    "keycloak-masthead": "workspace:*",
     "lodash-es": "^4.17.21",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-hook-form": "^7.43.9",
     "react-i18next": "^12.2.2",
     "react-router-dom": "6.11.1",
-    "ui-shared": "999.0.0-SNAPSHOT"
+    "ui-shared": "workspace:*"
   },
   "devDependencies": {
     "@types/lodash-es": "^4.17.7",

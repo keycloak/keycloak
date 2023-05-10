@@ -2,8 +2,9 @@
 
 The legacy Promise API methods have been removed from the Keycloak JS adapter. This means that calling `.success()` and `.error()` on promises returned from the adapter is no longer possible. Instead standardized Promise methods such as https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise/then[`.then()`] and https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise/catch[`.catch()`] should be used.
 
-*Before:*
-```javascript
+[source, javascript]
+.Before migration:
+----
 const keycloak = new Keycloak();
 
 keycloak.init()
@@ -12,10 +13,11 @@ keycloak.init()
   }).error(function() {
     alert('failed to initialize');
   });
-```
+----
 
-*After:*
-```javascript
+[source,javascript]
+.After migration:
+----
 const keycloak = new Keycloak();
 
 keycloak.init()
@@ -24,11 +26,12 @@ keycloak.init()
   }).catch(function() {
     alert('failed to initialize');
   });
-```
+----
 
-Or alternatively, when using the https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/await[`await`] keyword to unwrap these promises:
 
-```javascript
+[source,javascript]
+.Or alternatively, when using the https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/await[`await`] keyword to unwrap these promises:
+----
 const keycloak = new Keycloak();
 
 try {
@@ -37,7 +40,7 @@ try {
 } catch (error) {
   alert('failed to initialize');
 }
-```
+----
 
 = Export and Import perform an automatic build
 
@@ -71,6 +74,59 @@ bin/kc.[sh|bat] export --dir <dir> --db=postgres ...
 
 NOTE:: When the auto-build runs, the build time options will be in effect for all subsequent commands that are started with the `--optimized` flag, including the `start` command.
 
-In previous releases the `export` and `import` commands allowed runtime parameters like, for example, a database URL only in configuration files or environment variables.
+In previous releases the `export` and `import` commands allowed runtime parameters such as a database URL only in configuration files or environment variables.
 Starting with this release, those runtime parameters are now available on the command line as well.
 Use the `--help` option to find out about the supported parameters.
+
+= Renamed Keycloak Admin client artifacts
+
+After the upgrade to Jakarta EE, artifacts for Keycloak Admin clients were renamed to more descriptive names with consideration for long-term maintainability.
+We still provide two separate Keycloak Admin clients, one with Jakarta EE and the other with Java EE support.
+
+We stopped releasing the `org.keycloak:keycloak-admin-client-jakarta` artifact.
+The default one for the Keycloak Admin client with Jakarta EE support is `org.keycloak:keycloak-admin-client` (since version 22.0.0).
+
+We will continue to release the Keycloak Admin client with Java EE support for some time, but we recommend that you migrate to Jakarta EE as soon as possible.
+The new artifact with Java EE support is `org.keycloak:keycloak-admin-client-jee`.
+
+=== Jakarta EE support
+[source,xml]
+.Before migration:
+----
+<dependency>
+    <groupId>org.keycloak</groupId>
+    <artifactId>keycloak-admin-client-jakarta</artifactId>
+    <version>21.0.0</version>
+</dependency>
+----
+
+[source,xml]
+.After migration:
+----
+<dependency>
+    <groupId>org.keycloak</groupId>
+    <artifactId>keycloak-admin-client</artifactId>
+    <version>22.0.0</version>
+</dependency>
+----
+
+=== Java EE support _(only temporary support)_
+[source,xml]
+.Before migration:
+----
+<dependency>
+    <groupId>org.keycloak</groupId>
+    <artifactId>keycloak-admin-client</artifactId>
+    <version>21.0.0</version>
+</dependency>
+----
+
+[source,xml]
+.After migration:
+----
+<dependency>
+    <groupId>org.keycloak</groupId>
+    <artifactId>keycloak-admin-client-jee</artifactId>
+    <version>22.0.0</version>
+</dependency>
+----

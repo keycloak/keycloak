@@ -21,8 +21,12 @@
             See https://github.com/quarkusio/quarkus/blob/<versionTag>/bom/application/pom.xml
             for reference
         -->
-        <kubernetes-client.version>6.5.1</kubernetes-client.version>
         <wildfly.common.version>1.5.4.Final-format-001</wildfly.common.version>
+        <!--
+            FIXME: This is currently NOT aligned with Quarkus and QOSDK. We need to use a newer Fabric8 version to resolve issues in Vert.x HTTP Client.
+            Tracked by: https://github.com/keycloak/keycloak/issues/20130
+        -->
+        <kubernetes-client.version>6.6.0</kubernetes-client.version>
 
         <compiler-plugin.version>3.8.1</compiler-plugin.version>
         <maven.compiler.parameters>true</maven.compiler.parameters>
@@ -37,14 +41,22 @@
     </properties>
     
     <dependencyManagement>
+        <!-- FIXME: Fabric8 dependency override needs to be removed as part of https://github.com/keycloak/keycloak/issues/20130 -->
         <dependencies>
-        <dependency>
-            <groupId>io.quarkiverse.operatorsdk</groupId>
-            <artifactId>quarkus-operator-sdk-bom</artifactId>
-            <version>${quarkus.operator.sdk.version}</version>
-            <type>pom</type>
-            <scope>import</scope>
-        </dependency>
+            <dependency>
+                <groupId>io.fabric8</groupId>
+                <artifactId>kubernetes-client-bom</artifactId>
+                <version>${kubernetes-client.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>io.quarkiverse.operatorsdk</groupId>
+                <artifactId>quarkus-operator-sdk-bom</artifactId>
+                <version>${quarkus.operator.sdk.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -94,12 +106,6 @@
         <dependency>
           <groupId>io.quarkus</groupId>
           <artifactId>quarkus-container-image-docker</artifactId>
-        </dependency>
-        <!-- FIXME: We should not need OKHttp Client, see HttpClientFactory class -->
-        <dependency>
-            <groupId>io.fabric8</groupId>
-            <artifactId>kubernetes-httpclient-okhttp</artifactId>
-            <version>${kubernetes-client.version}</version>
         </dependency>
 
         <!-- Keycloak -->
