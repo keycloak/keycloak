@@ -77,8 +77,7 @@ export const getToken = async (settings: Settings): Promise<TokenResponse> => {
   const headers = new Headers(options.headers);
 
   if (credentials.clientSecret) {
-    const authHeaderValue = `Basic ${btoa(`${credentials.clientId}:${credentials.clientSecret}`)}`;
-    headers.set("Authorization", authHeaderValue);
+    headers.set("Authorization", `Basic ${btoa(`${credentials.clientId}:${credentials.clientSecret}`)}`);
   }
 
   headers.set("content-type", "application/x-www-form-urlencoded");
