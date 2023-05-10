@@ -6,13 +6,13 @@ import { render } from "react-dom";
 import { createHashRouter, RouterProvider } from "react-router-dom";
 
 import { initI18n } from "./i18n";
-import { keycloak } from "./keycloak";
+import { initKeycloak } from "./keycloak";
 import { RootRoute } from "./routes";
 
 import "./index.css";
 
 // Initialize required components before rendering app.
-await keycloak.init({ onLoad: "check-sso", pkceMethod: "S256" });
+await initKeycloak();
 await initI18n();
 
 const router = createHashRouter([RootRoute]);
