@@ -12,6 +12,16 @@ There are several reasons why PNPM is used over other package managers (such as 
 
 If you submit a pull request that changes the dependencies, make sure that you also update the `pnpm-lock.yaml` as well.
 
+### Running
+
+In order to develop the frontend you need 2 servers one backend and one frontend you can start them both from this directory:
+```bash
+$> pnpm --filter keycloak-server start
+$> pnpm --filter admin-ui run dev
+```
+Instead of the admin ui, you could also start the account ui in simular fashion. 
+Be sure that when keycloak is started the client is added with `pnpm --filter keycloak-server run import-client`.
+
 ## Typescript
 
 The Keycloak UI projects uses best practices based off the official [React TypeScript Cheat sheet](https://react-typescript-cheatsheet.netlify.app/), with modifications for this project. The React TypeScript Cheat sheet is maintained and used by developers through out the world, and is a place where developers can bring together lessons learned using TypeScript and React.
