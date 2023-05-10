@@ -175,6 +175,7 @@ public class SocialLoginTest extends AbstractKeycloakTest {
     @Before
     public void beforeSocialLoginTest() {
         oauth.realm(REALM);
+        createAppClientInRealm(REALM);
     }
 
     @After

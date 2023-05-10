@@ -17,7 +17,6 @@
 package org.keycloak.testsuite.account.custom;
 
 import org.jboss.arquillian.graphene.page.Page;
-import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.models.AuthenticationExecutionModel.Requirement;
 import org.keycloak.models.utils.DefaultAuthenticationFlows;
@@ -85,12 +84,6 @@ public class CustomAuthFlowOTPTest extends AbstractCustomAccountManagementTest {
     public void setDefaultPageUriParameters() {
         super.setDefaultPageUriParameters();
         testLoginOneTimeCodePage.setAuthRealm(testRealmPage);
-    }
-    
-    @Before
-    @Override
-    public void beforeTest() {
-        super.beforeTest();
     }
 
     private void configureRequiredActions() {

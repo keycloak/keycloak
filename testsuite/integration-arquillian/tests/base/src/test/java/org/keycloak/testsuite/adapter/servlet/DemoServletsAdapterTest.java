@@ -309,6 +309,7 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
 
         // set demo realm name for all tests
         oauth.realm(testRealmResource().toRepresentation().getRealm());
+        createAppClientInRealm(testRealmResource().toRepresentation().getRealm());
     }
 
     @After

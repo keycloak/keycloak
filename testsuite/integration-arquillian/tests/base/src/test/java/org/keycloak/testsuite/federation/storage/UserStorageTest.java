@@ -159,6 +159,7 @@ public class UserStorageTest extends AbstractAuthTest {
 
         propProviderRWId = addComponent(newPropProviderRW());
 
+        createAppClientInRealm(testRealmResource().toRepresentation().getRealm());
     }
 
     @After
