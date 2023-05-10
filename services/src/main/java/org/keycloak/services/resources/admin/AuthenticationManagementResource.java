@@ -870,6 +870,7 @@ public class AuthenticationManagementResource {
         auth.realm().requireManageRealm();
         
         ReservedCharValidator.validate(json.getAlias());
+    	json.setId(null);
 
         AuthenticationExecutionModel model = realm.getAuthenticationExecutionById(execution);
         if (model == null) {
