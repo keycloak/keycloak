@@ -196,7 +196,6 @@ public abstract class AbstractKeycloakTest {
         }
 
         oauth.init(driver);
-        createAppClientInRealm("test");
     }
 
     public void reconnectAdminClient() throws Exception {

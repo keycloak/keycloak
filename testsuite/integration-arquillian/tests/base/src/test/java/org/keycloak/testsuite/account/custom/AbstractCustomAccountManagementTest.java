@@ -40,6 +40,7 @@ public abstract class AbstractCustomAccountManagementTest extends AbstractAccoun
     @Before
     public void beforeTest() {
         authMgmtResource = testRealmResource().flows();
+        createAppClientInRealm(testRealmResource().toRepresentation().getRealm());
     }
     
     protected AuthenticationManagementResource getAuthMgmtResource() {

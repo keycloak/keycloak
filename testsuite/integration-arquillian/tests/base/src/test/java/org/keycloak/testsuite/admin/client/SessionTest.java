@@ -50,6 +50,8 @@ public class SessionTest extends AbstractClientTest {
 
         assertAdminEvents.assertEvent(getRealmId(), OperationType.CREATE, AdminEventPaths.userResourcePath(testUser.getId()), ResourceType.USER);
         assertAdminEvents.assertEvent(getRealmId(), OperationType.ACTION, AdminEventPaths.userResetPasswordPath(testUser.getId()), ResourceType.USER);
+
+        createAppClientInRealm(testRealmResource().toRepresentation().getRealm());
     }
 
     @Override
