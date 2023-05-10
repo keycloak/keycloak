@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env sh
 case "`uname`" in
     CYGWIN*)
         CFILE = `cygpath "$0"`
