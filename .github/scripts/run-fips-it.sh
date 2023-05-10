@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 dnf install -y java-17-openjdk-devel
 fips-mode-setup --enable --no-bootcfg

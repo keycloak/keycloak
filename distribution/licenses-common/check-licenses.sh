@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 MODULES=`readlink -f $1`
 LICENSES=`readlink -f $2`

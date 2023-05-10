@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 ##
 ## To include test coverage data, use -Djacoco.skip=false parameter.
