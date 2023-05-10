@@ -12,6 +12,8 @@ There are several reasons why PNPM is used over other package managers (such as 
 
 If you submit a pull request that changes the dependencies, make sure that you also update the `pnpm-lock.yaml` as well.
 
+Since this project relies greatly on [PNPM workspaces](https://pnpm.io/workspaces) it is recommended you familiarize yourself with features such as [`--filter`](https://pnpm.io/filtering).
+
 ## Typescript
 
 The Keycloak UI projects uses best practices based off the official [React TypeScript Cheat sheet](https://react-typescript-cheatsheet.netlify.app/), with modifications for this project. The React TypeScript Cheat sheet is maintained and used by developers through out the world, and is a place where developers can bring together lessons learned using TypeScript and React.
