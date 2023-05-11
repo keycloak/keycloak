@@ -5,7 +5,7 @@ import { StrictMode } from "react";
 import { render } from "react-dom";
 import { createHashRouter, RouterProvider } from "react-router-dom";
 
-import { initI18n } from "./i18n";
+import { i18n } from "./i18n/i18n";
 import { initKeycloak } from "./keycloak";
 import { RootRoute } from "./routes";
 
@@ -13,7 +13,7 @@ import "./index.css";
 
 // Initialize required components before rendering app.
 await initKeycloak();
-await initI18n();
+await i18n.init();
 
 const router = createHashRouter([RootRoute]);
 const container = document.getElementById("app");

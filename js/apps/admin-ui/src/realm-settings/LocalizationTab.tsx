@@ -46,7 +46,7 @@ import { PaginatingTableToolbar } from "../components/table-toolbar/PaginatingTa
 import { useRealm } from "../context/realm-context/RealmContext";
 import { useServerInfo } from "../context/server-info/ServerInfoProvider";
 import { useWhoAmI } from "../context/whoami/WhoAmI";
-import { DEFAULT_LOCALE } from "../i18n";
+import { DEFAULT_LOCALE } from "../i18n/i18n";
 import { convertToFormValues } from "../util";
 import { useFetch } from "../utils/useFetch";
 import { AddMessageBundleModal } from "./AddMessageBundleModal";
