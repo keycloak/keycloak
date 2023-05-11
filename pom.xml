@@ -41,7 +41,7 @@
         <jboss.snapshots.repo.id>jboss-snapshots-repository</jboss.snapshots.repo.id>
         <jboss.snapshots.repo.url>https://s01.oss.sonatype.org/content/repositories/snapshots/</jboss.snapshots.repo.url>
 
-        <quarkus.version>3.0.2.Final</quarkus.version>
+        <quarkus.version>3.0.3.Final</quarkus.version>
 
         <project.build-time>${timestamp}</project.build-time>
 
@@ -81,7 +81,7 @@
         <jakarta.persistence.version>2.2.3</jakarta.persistence.version>
         <hibernate-orm.version>6.2.1.Final</hibernate-orm.version>
         <hibernate.c3p0.version>${hibernate-orm.version}</hibernate.c3p0.version>
-        <infinispan.version>14.0.8.Final</infinispan.version>
+        <infinispan.version>14.0.9.Final</infinispan.version>
         <infinispan.protostream.processor.version>4.6.2.Final</infinispan.protostream.processor.version>
         <jackson.version>2.14.2</jackson.version>
         <jackson.databind.version>2.14.2</jackson.databind.version>
