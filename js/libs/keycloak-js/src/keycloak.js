@@ -39,7 +39,7 @@ function Keycloak (config) {
 
     var scripts = document.getElementsByTagName('script');
     for (var i = 0; i < scripts.length; i++) {
-        if ((scripts[i].src.indexOf('keycloak.js') !== -1 || scripts[i].src.indexOf('keycloak.min.js') !== -1) && scripts[i].src.indexOf('version=') !== -1) {
+        if (scripts[i].src !== null && (scripts[i].src.indexOf('keycloak.js') !== -1 || scripts[i].src.indexOf('keycloak.min.js') !== -1) && scripts[i].src.indexOf('version=') !== -1) {
             kc.iframeVersion = scripts[i].src.substring(scripts[i].src.indexOf('version=') + 8).split('&')[0];
         }
     }
@@ -898,7 +898,7 @@ function Keycloak (config) {
                 if (!config['url']) {
                     var scripts = document.getElementsByTagName('script');
                     for (var i = 0; i < scripts.length; i++) {
-                        if (scripts[i].src.match(/.*keycloak\.js/)) {
+                        if (scripts[i].src !== null && scripts[i].src.match(/.*keycloak\.js/)) {
                             config.url = scripts[i].src.substr(0, scripts[i].src.indexOf('/js/keycloak.js'));
                             break;
                         }
