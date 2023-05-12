@@ -184,7 +184,7 @@ public class ProvidersTest extends AbstractAuthenticationTest {
                 "Just press the button to login.");
         addProviderInfo(result, "reset-credential-email", "Send Reset Email", "Send email to user and wait for response.");
         addProviderInfo(result, "reset-credentials-choose-user", "Choose User", "Choose a user to reset credentials for");
-        addProviderInfo(result, "reset-otp", "Reset OTP", "Sets the Configure OTP required action.");
+        addProviderInfo(result, "reset-otp", "Reset OTP", "Removes existing OTP configurations (if chosen) and sets the 'Configure OTP' required action.");
         addProviderInfo(result, "reset-password", "Reset Password", "Sets the Update Password required action if execution is REQUIRED.  " +
                 "Will also set it if execution is OPTIONAL and the password is currently configured for it.");
         addProviderInfo(result, "testsuite-dummy-click-through", "Testsuite Dummy Click Thru",
