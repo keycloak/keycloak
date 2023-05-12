@@ -7,7 +7,7 @@
 .idea
 *.iml
 
-# Eclipse #
+# Eclipse 
 ###########
 .project
 .settings
@@ -18,18 +18,18 @@
 .factorypath
 
 
-# NetBeans #
+# NetBeans 
 ############
 nbactions.xml
 nb-configuration.xml
 catalog.xml
 nbproject
 
-# VS Code #
+# VS Code 
 ###########
 *.code-workspace
 
-# Compiled source #
+# Compiled source 
 ###################
 *.com
 *.class
@@ -38,7 +38,7 @@ nbproject
 *.o
 *.so
 
-# Packages #
+# Packages 
 ############
 # it's better to unpack these files and commit the raw source
 # git has its own built in compression methods
@@ -51,16 +51,16 @@ nbproject
 *.tar
 *.zip
 
-# Python byte-compiled files #
+# Python byte-compiled files 
 ##############################
 *.pyc
 
-# Logs and databases #
+# Logs and databases 
 ######################
 *.log
 .attach_pid*
 
-# Maven #
+# Maven 
 #########
 target
 
@@ -68,15 +68,15 @@ target
 #############
 *dependency-reduced-pom.xml
 
-# testsuite #
+# testsuite 
 #############
 *offline-token.txt
 
-# Quarkus ephemeral data #
+# Quarkus ephemeral data 
 ##########################
 quarkus/data/*.db
 
-# Jakarta transformed sources #
+# Jakarta transformed sources 
 ###############################
 /integration/admin-client/src/
 /adapters/saml/jakarta-servlet-filter/src/
@@ -88,7 +88,7 @@ quarkus/data/*.db
 # Git ephemeral files
 *.versionsBackup
 
-# Node.js for frontend-maven-plugin #
+# Node.js for frontend-maven-plugin 
 node
 
 # SDKMAM environment file
