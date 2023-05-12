@@ -382,7 +382,8 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
         // and then mapped locally to avoid serialization issues when trying to manipulate the cache stream directly.
         return StreamSupport.stream(cache.entrySet().stream().filter(predicate).spliterator(), false)
                 .map(Mappers.userSessionEntity())
-                .map(entity -> this.wrap(realm, entity, offline));
+                .map(entity -> this.wrap(realm, entity, offline))
+                .filter(Objects::nonNull).map(Function.identity());
     }
 
     @Override
