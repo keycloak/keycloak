@@ -281,13 +281,16 @@ public class AuthenticationManager {
             backchannelLogoutResponse.setLocalLogoutSucceeded(true);
             return backchannelLogoutResponse;
         }
-        UserModel user = userSession.getUser();
         if (userSession.getState() != UserSessionModel.State.LOGGING_OUT) {
             userSession.setState(UserSessionModel.State.LOGGING_OUT);
         }
 
-        logger.debugv("Logging out: {0} ({1}) offline: {2}", user.getUsername(), userSession.getId(),
-                userSession.isOffline());
+        if (logger.isDebugEnabled()) {
+            UserModel user = userSession.getUser();
+            logger.debugv("Logging out: {0} ({1}) offline: {2}", user.getUsername(), userSession.getId(),
+                    userSession.isOffline());
+        }
+
         boolean expireUserSessionCookieSucceeded =
                 expireUserSessionCookie(session, userSession, realm, uriInfo, headers, connection);
 
