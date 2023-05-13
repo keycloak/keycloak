@@ -358,10 +358,11 @@ Options is an Object, where:
 * token - Set an initial value for the token.
 * refreshToken - Set an initial value for the refresh token.
 * idToken - Set an initial value for the id token (only together with token or refreshToken).
-* scope - Set the default scope parameter to the {project_name} login endpoint. Use a space-delimited list of scopes. Those typically
-reference link:{adminguide_link}#_client_scopes[Client scopes] defined on a particular client. Note that the scope `openid` will
-always be added to the list of scopes by the adapter. For example, if you enter the scope options `address phone`, then the request
-to {project_name} will contain the scope parameter `scope=openid address phone`. Note that the default scope specified here is overwritten if the `login()` options specify scope explicitly.
+* scope - Set the default scope parameter to the Keycloak login endpoint. Use a space-delimited list of scopes. 
+Those typically reference Client scopes defined on a particular client. Note that the scope openid will always be added to the list of scopes by the adapter. 
+For example, if you enter the scope options address phone, then the request to Keycloak will contain the scope parameter scope=openid address phone. 
+Note that the default scope specified here is overwritten if the login() options specify scope explicitly. 
+If `initOptions.scope` is a string, it will set the `scope` value for Keycloak to the value of `initOptions.scope`.
 * timeSkew - Set an initial value for skew between local time and {project_name} server in seconds (only together with token or refreshToken).
 * checkLoginIframe - Set to enable/disable monitoring login state (default is `true`).
 * checkLoginIframeInterval - Set the interval to check login state (default is 5 seconds).
