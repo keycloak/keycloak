@@ -1,0 +1,77 @@
+name: Build and upload
+
+on: [ push ]
+
+env:
+  JDK_VERSION: 11
+
+concurrency:
+  # Only run once for latest commit per ref and cancel other (previous) runs.
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  maven-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - run: mkdir -p ~/.m2 ; cp .github/settings.xml ~/.m2/
+
+      - uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: ${{ env.JDK_VERSION }}
+          cache: 'maven'
+
+      - name: Build Keycloak
+        run: mvn clean install -Pdistribution -DskipTests -DskipExamples -DskipTestsuite
+
+      - name: Upload Keycloak artifact
+        id: store-keycloak
+        uses: actions/upload-artifact@v3
+        with:
+          name: keycloak-distribution
+          retention-days: 1
+          path: quarkus/dist/target/keycloak*.tar.gz
+
+  image-build:
+    runs-on: ubuntu-latest
+    needs: [maven-build]
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Download Keycloak distribution
+        uses: actions/download-artifact@v3
+        with:
+          name: keycloak-distribution
+          path: quarkus/container
+
+      - uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ vars.ECR_PUBLIC_REGION }}
+
+      - id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+        with:
+          registry-type: public
+
+      - name: Build and upload image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        run: |
+          export KEYCLOAK_REPOSITORY=$ECR_REGISTRY/moneymeets/keycloak
+
+          if [[ "${{ github.ref }}" == "refs/heads/moneymeets/20.0.5" ]]; then
+            export IMAGE_TAG=$KEYCLOAK_REPOSITORY:${GITHUB_REF_NAME##moneymeets/}-${GITHUB_SHA}
+          else
+            # Replace / with - because of allowed charactes in docker image tags ('feature/test-1' to 'feature-test-1')
+            export IMAGE_TAG=$KEYCLOAK_REPOSITORY:$(echo ${GITHUB_REF_NAME} | awk '{print tolower($0)}' | sed -e 's|/|-|')
+          fi
+
+          cd quarkus/container
+          docker build --build-arg KEYCLOAK_DIST=$(ls keycloak-*.tar.gz) . -t ${IMAGE_TAG}
+
+          docker push ${IMAGE_TAG}
