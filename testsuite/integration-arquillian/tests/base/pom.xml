@@ -145,12 +145,6 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>org.keycloak.testsuite</groupId>
-            <artifactId>photoz-restful-api</artifactId>
-            <version>${project.version}</version>
-            <classifier>classes</classifier>
-        </dependency>
-        <dependency>
             <groupId>org.mvel</groupId>
             <artifactId>mvel2</artifactId>
             <version>${mvel.version}</version>
