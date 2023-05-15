@@ -20,7 +20,6 @@ export function useFetch<T>(
   callback: (param: T) => void,
   deps?: DependencyList
 ) {
-
   useEffect(() => {
     const controller = new AbortController();
     const { signal } = controller;
