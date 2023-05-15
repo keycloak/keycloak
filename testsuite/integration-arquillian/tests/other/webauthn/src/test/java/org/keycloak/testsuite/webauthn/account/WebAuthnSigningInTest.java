@@ -19,6 +19,7 @@ package org.keycloak.testsuite.webauthn.account;
 
 import org.hamcrest.Matchers;
 import org.jboss.arquillian.graphene.page.Page;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.authentication.requiredactions.WebAuthnPasswordlessRegisterFactory;
@@ -260,6 +261,7 @@ public class WebAuthnSigningInTest extends AbstractWebAuthnAccountTest {
     }
 
     @Test
+    @Ignore // TODO: Enable once chromedriver version 113.0.5672.92 is available in https://chromedriver.storage.googleapis.com/
     public void checkAuthenticatorTimeLocale() throws ParseException, IOException {
         addWebAuthnCredential("authenticator#1");
 
