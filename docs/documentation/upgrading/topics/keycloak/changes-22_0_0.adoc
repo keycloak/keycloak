@@ -177,3 +177,11 @@ The new artifact with Java EE support is `org.keycloak:keycloak-admin-client-jee
     <version>22.0.0</version>
 </dependency>
 ----
+
+= Passthrough proxy mode changes
+
+Keycloak's proxy configuration setting for mode *passthrough* no longer parses HTTP forwarding headers in the request, as when a proxy forwards an HTTPS connection in passthrough mode, a proxy is unable to add, remove or update HTTP headers.
+
+Installations that want the HTTP headers in the client's request to be parsed should use the **edge** or **reencrypt** setting.
+
+See https://www.keycloak.org/server/reverseproxy[Using a reverse proxy] for details.
