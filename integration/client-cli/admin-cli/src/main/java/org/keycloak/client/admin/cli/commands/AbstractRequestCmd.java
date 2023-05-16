@@ -385,8 +385,7 @@ public abstract class AbstractRequestCmd extends AbstractAuthOptionsCmd {
         }
 
         if (outputResult) {
-
-            if (isCreateOrUpdate() && (response.getStatusCode() == 204 || id != null)) {
+            if (isCreateOrUpdate() && (response.getStatusCode() == 204 || id != null) && isGetByID(url)) {
                 // get object for id
                 headers = new Headers();
                 if (auth != null) {
@@ -446,5 +445,9 @@ public abstract class AbstractRequestCmd extends AbstractAuthOptionsCmd {
 
     private boolean isCreateOrUpdate() {
         return "post".equals(httpVerb) || "put".equals(httpVerb);
+    }
+
+    private boolean isGetByID(String url) {
+        return !"clients-initial-access".equals(url);
     }
 }
