@@ -23,6 +23,9 @@ outputs:
   documentation:
     description: Should "documentation.yml" execute
     value: ${{ steps.changes.outputs.documentation }}
+  sssd:
+    description: Should "sssd.yml" execute
+    value: ${{ steps.changes.outputs.sssd }}
 
 runs:
   using: composite

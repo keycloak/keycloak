@@ -20,6 +20,7 @@ package org.keycloak.protocol.oidc.endpoints;
 import org.jboss.logging.Logger;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.authentication.AuthenticationProcessor;
+import org.keycloak.common.Profile;
 import org.keycloak.common.util.ResponseSessionTask;
 import org.keycloak.constants.AdapterConstants;
 import org.keycloak.events.Details;
@@ -129,16 +130,21 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
      * Process the request in a retriable transaction.
      */
     private Response processInRetriableTransaction(final MultivaluedMap<String, String> formParameters) {
-        return KeycloakModelUtils.runJobInRetriableTransaction(session.getKeycloakSessionFactory(), new ResponseSessionTask(session) {
-            @Override
-            public Response runInternal(KeycloakSession session) {
-                session.getContext().getHttpResponse().setWriteCookiesOnTransactionComplete();
-                // create another instance of the endpoint to isolate each run.
-                AuthorizationEndpoint other = new AuthorizationEndpoint(session,
-                        new EventBuilder(session.getContext().getRealm(), session, clientConnection), action);
-                // process the request in the created instance.
-                return other.process(formParameters);            }
-        }, 10, 100);
+        if (Profile.isFeatureEnabled(Profile.Feature.MAP_STORAGE)) {
+            return KeycloakModelUtils.runJobInRetriableTransaction(session.getKeycloakSessionFactory(), new ResponseSessionTask(session) {
+                @Override
+                public Response runInternal(KeycloakSession session) {
+                    session.getContext().getHttpResponse().setWriteCookiesOnTransactionComplete();
+                    // create another instance of the endpoint to isolate each run.
+                    AuthorizationEndpoint other = new AuthorizationEndpoint(session,
+                            new EventBuilder(session.getContext().getRealm(), session, clientConnection), action);
+                    // process the request in the created instance.
+                    return other.process(formParameters);
+                }
+            }, 10, 100);
+        } else {
+            return process(formParameters);
+        }
     }
 
     private Response process(MultivaluedMap<String, String> params) {

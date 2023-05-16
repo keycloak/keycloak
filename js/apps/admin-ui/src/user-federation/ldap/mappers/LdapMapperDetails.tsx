@@ -182,24 +182,28 @@ export default function LdapMapperDetails() {
                 <DropdownItem key="delete" onClick={toggleDeleteDialog}>
                   {t("common:delete")}
                 </DropdownItem>,
-                mapper?.metadata.fedToKeycloakSyncSupported && (
-                  <DropdownItem
-                    key="fedSync"
-                    onClick={() => sync("fedToKeycloak")}
-                  >
-                    {t("syncLDAPGroupsToKeycloak")}
-                  </DropdownItem>
-                ),
-                mapper?.metadata.keycloakToFedSyncSupported && (
-                  <DropdownItem
-                    key="ldapSync"
-                    onClick={() => {
-                      sync("keycloakToFed");
-                    }}
-                  >
-                    {t("syncKeycloakGroupsToLDAP")}
-                  </DropdownItem>
-                ),
+                ...(mapper?.metadata.fedToKeycloakSyncSupported
+                  ? [
+                      <DropdownItem
+                        key="fedSync"
+                        onClick={() => sync("fedToKeycloak")}
+                      >
+                        {t("syncLDAPGroupsToKeycloak")}
+                      </DropdownItem>,
+                    ]
+                  : []),
+                ...(mapper?.metadata.keycloakToFedSyncSupported
+                  ? [
+                      <DropdownItem
+                        key="ldapSync"
+                        onClick={() => {
+                          sync("keycloakToFed");
+                        }}
+                      >
+                        {t("syncKeycloakGroupsToLDAP")}
+                      </DropdownItem>,
+                    ]
+                  : []),
               ]
         }
       />

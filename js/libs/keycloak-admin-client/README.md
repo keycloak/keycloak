@@ -107,20 +107,20 @@ setInterval(() => kcAdminClient.auth(credentials), 58 * 1000); // 58 seconds
 To build the source do a build:
 
 ```bash
-npm run build
+pnpm run build
 ```
 
 Start the Keycloak server:
 
 ```bash
-npm run server:start
+pnpm run server:start
 ```
 
 If you started your container manually make sure there is an admin user named 'admin' with password 'admin'.
 Then start the tests with:
 
 ```bash
-npm test
+pnpm test
 ```
 
 ## Supported APIs

@@ -471,9 +471,11 @@ public class DefaultKeycloakSession implements KeycloakSession {
         try {
             Consumer<? super Provider> safeClose = p -> {
                 try {
-                    p.close();
+                    if (p != null) {
+                        p.close();
+                    }
                 } catch (Exception e) {
-                    // Ignore exception
+                    LOG.warnf(e, "Unable to close provider %s", p.getClass().getName());
                 }
             };
             providers.values().forEach(safeClose);
