@@ -82,7 +82,7 @@ The `Use Truststore SPI` configuration property, in the LDAP federation provider
 
 ==== Synchronizing LDAP users to {project_name}
 
-If you set the *Import Users* option, the LDAP Provider handles importing LDAP users into the {project_name} local database. The first time a user logs in, the LDAP provider imports the LDAP user into the {project_name} database and validates the LDAP password. This first time a user logs in is the only time {project_name} imports the user. If you click the *Users*  menu in the Admin Console and click the *View all users* button, you only see the LDAP users authenticated at least once by {project_name}. {project_name} imports users this way, so this operation does not trigger an import of the entire LDAP user database.
+If you set the *Import Users* option, the LDAP Provider handles importing LDAP users into the {project_name} local database. The first time a user logs in or is returned as part of a user query (e.g. using the search field in the admin console), the LDAP provider imports the LDAP user into the {project_name} database. During authentication, the LDAP password is validated.
 
 If you want to sync all LDAP users into the {project_name} database, configure and enable the *Sync Settings* on the LDAP provider configuration page.
 
