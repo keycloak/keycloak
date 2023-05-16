@@ -1555,38 +1555,6 @@ public class MapRealmAdapter extends AbstractRealmModel<MapRealmEntity> implemen
     }
 
     @Override
-    @Deprecated
-    public Stream<String> getDefaultRolesStream() {
-        return getDefaultRole().getCompositesStream().filter(this::isRealmRole).map(RoleModel::getName);
-    }
-
-    private boolean isRealmRole(RoleModel role) {
-        return ! role.isClientRole();
-    }
-
-    @Override
-    @Deprecated
-    public void addDefaultRole(String name) {
-        getDefaultRole().addCompositeRole(getOrAddRoleId(name));
-    }
-
-    private RoleModel getOrAddRoleId(String name) {
-        RoleModel role = getRole(name);
-        if (role == null) {
-            role = addRole(name);
-        }
-        return role;
-    }
-
-    @Override
-    @Deprecated
-    public void removeDefaultRoles(String... defaultRoles) {
-        for (String defaultRole : defaultRoles) {
-            getDefaultRole().removeCompositeRole(getRole(defaultRole));
-        }
-    }
-
-    @Override
     public boolean isBruteForceProtected() {
         return getAttribute(BRUTE_FORCE_PROTECTED, false);
     }
