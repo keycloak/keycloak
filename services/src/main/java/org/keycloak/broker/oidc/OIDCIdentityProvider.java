@@ -393,29 +393,16 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
                 String filterName = getConfig().getClaimFilterName();
                 String filterValue = getConfig().getClaimFilterValue();
 
-                logger.infof("Filtering user %s by %s=%s", idToken.getOtherClaims().get(getusernameClaimNameForIdToken()), filterName, filterValue);
-                boolean hasKey = false;
-                for (String claim : idToken.getOtherClaims().keySet()) {
-                    if (claim.equalsIgnoreCase(filterName)) {
-                        hasKey = true;
-                        Object claimValue = idToken.getOtherClaims().get(claim);
-                        logger.infof("Found claim %s with value %s", claim, claimValue);
-                        if  (!(claimValue instanceof String)) {
-                            // TODO what about numbers?
-                            logger.warnf("Claim value must be of type String, instead it's %s", claimValue.getClass());
-                            throw new IdentityBrokerException(String.format("Unmanaged claim %s of type %s (expected String).", claim, claimValue.getClass()));
-                        }
-                        logger.infof("Found claim %s with value %s", claim, claimValue);
-                        if (!String.valueOf(claimValue).matches(filterValue)) {
-                            logger.warnf("Claim %s has value \"%s\" that does not match the expected filter \"%s\"", claim, claimValue, filterValue);
-                            throw new IdentityBrokerException(String.format("Unmatched claim value for %s.", claim));
-                        }
-                    } else {
-                        logger.infof("Discarding claim %s", claim);
+                logger.tracef("Filtering user %s by %s=%s", idToken.getOtherClaims().get(getusernameClaimNameForIdToken()), filterName, filterValue);
+                if (idToken.getOtherClaims().containsKey(filterName)) { 
+                    String claimValue = idToken.getOtherClaims().get(filterName).toString();
+                    logger.tracef("Found claim %s with value %s", filterName, claimValue);
+                    if (!String.valueOf(claimValue).matches(filterValue)) {
+                        logger.warnf("Claim %s has value \"%s\" that does not match the expected filter \"%s\"", filterName, claimValue, filterValue);
+                        throw new IdentityBrokerException(String.format("Unmatched claim value for %s.", filterName));
                     }
-                }
-                if (!hasKey){
-                    logger.warnf("Claim %s was not found", filterName);
+                } else {
+                    logger.debugf("Claim %s was not found", filterName);
                     throw new IdentityBrokerException(String.format("Claim %s not found", filterName));
                 }
             }

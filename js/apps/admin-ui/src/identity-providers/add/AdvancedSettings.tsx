@@ -136,29 +136,31 @@ export const AdvancedSettings = ({ isOIDC, isSAML }: AdvancedSettingsProps) => {
       />
       <SwitchField field="config.hideOnLoginPage" label="hideOnLoginPage" />
 
-      <FormGroupField label="filteredByClaim">
-        <Controller
-          name="config.filteredByClaim"
-          defaultValue="false"
-          control={control}
-          render={({ field }) => (
-            <Switch
-              id="filteredByClaim"
-              label={t("common:on")}
-              labelOff={t("common:off")}
-              isChecked={field.value === 'true'}
-              onChange={(value) => {
-                  const v=""+value
-                  field.onChange(v)
-                  setClaimFilterRequired(value)
+      {(!isSAML || isOIDC) && (
+        <FormGroupField label="filteredByClaim">
+          <Controller
+            name="config.filteredByClaim"
+            defaultValue="false"
+            control={control}
+            render={({ field }) => (
+              <Switch
+                id="filteredByClaim"
+                label={t("common:on")}
+                labelOff={t("common:off")}
+                isChecked={field.value === 'true'}
+                onChange={(value) => {
+                    const v=""+value
+                    field.onChange(v)
+                    setClaimFilterRequired(value)
+                  }
                 }
-              }
-              aria-label="filteredByClaim"
-            />
-          )}
-        />
-      </FormGroupField>
-      { claimFilterRequired && (
+                aria-label="filteredByClaim"
+              />
+            )}
+          />
+        </FormGroupField>
+      )}
+      {(!isSAML || isOIDC) && claimFilterRequired && (
         <>
           <FormGroup
             label={t("identity-providers:claimFilterName")}

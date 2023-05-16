@@ -62,7 +62,7 @@ Although each type of identity provider has its configuration options, all share
 |When *ON*, {project_name} activates an additional authentication filter to reject authenticated users whose JWT claims do not match the configured filter. Only the claims of the *ID* token are evaluated.
 
 |Claim name
-|When *Filter by claim* is *ON*, the name of the JWT token claim to filter (match is case insensitive).
+|When *Filter by claim* is *ON*, the name of the JWT token claim to filter (match is case sensitive).
 
 |Claim value
 |When *Filter by claim* is *ON*, the value of the JWT token claim to match (supports regular expression format).

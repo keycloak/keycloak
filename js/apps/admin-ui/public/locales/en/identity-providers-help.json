@@ -38,7 +38,7 @@
   "trustEmail": "If enabled, email provided by this provider is not verified even if verification is enabled for the realm.",
   "accountLinkingOnly": "If true, users cannot log in through this provider.  They can only link to this provider.  This is useful if you don't want to allow login from the provider, but want to integrate with a provider",
   "hideOnLoginPage": "If hidden, login with this provider is possible only if requested explicitly, for example using the 'kc_idp_hint' parameter.",
-  "filteredByClaim": "If true, enables filter by claim, to reject authenticated users whose JWT claims do not include the configured claim filter",
+  "filteredByClaim": "If true, enables filter by claim, to reject authenticated users whose JWT claims do not include the configured claim filter. Only the claims of the ID token are evaluated.",
   "claimFilterName": "Name of claim to filter",
   "claimFilterValue": "Value of filtered claim (with regex support)",
   "firstBrokerLoginFlowAlias": "Alias of authentication flow, which is triggered after first login with this identity provider. Term 'First Login' means that no Keycloak account is currently linked to the authenticated identity provider account.",
