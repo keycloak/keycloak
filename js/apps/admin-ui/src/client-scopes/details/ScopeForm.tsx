@@ -13,23 +13,23 @@ import { useEffect, useState } from "react";
 import { Controller, FormProvider, useForm, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
+import { HelpItem, TextControl } from "ui-shared";
 
 import { getProtocolName } from "../../clients/utils";
+import { DefaultSwitchControl } from "../../components/SwitchControl";
 import {
-  allClientScopeTypes,
   ClientScopeDefaultOptionalType,
+  allClientScopeTypes,
   clientScopeTypesSelectOptions,
 } from "../../components/client-scope/ClientScopeTypes";
 import { FormAccess } from "../../components/form/FormAccess";
-import { HelpItem } from "ui-shared";
 import { KeycloakTextArea } from "../../components/keycloak-text-area/KeycloakTextArea";
 import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { useLoginProviders } from "../../context/server-info/ServerInfoProvider";
 import { convertAttributeNameToForm, convertToFormValues } from "../../util";
-import { toClientScopes } from "../routes/ClientScopes";
 import useIsFeatureEnabled, { Feature } from "../../utils/useIsFeatureEnabled";
-import { DefaultSwitchControl } from "../../components/SwitchControl";
+import { toClientScopes } from "../routes/ClientScopes";
 
 type ScopeFormProps = {
   clientScope?: ClientScopeRepresentation;
