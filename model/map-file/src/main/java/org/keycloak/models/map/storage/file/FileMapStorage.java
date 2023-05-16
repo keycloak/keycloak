@@ -37,12 +37,16 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileTime;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
+
+import static org.keycloak.models.map.storage.file.FileCrudOperations.ID_COMPONENT_SEPARATOR;
 
 /**
  * {@link MapStorage} implementation used with the file map storage.
@@ -50,13 +54,13 @@ import java.util.function.Function;
  * @author <a href="mailto:sguilhen@redhat.com">Stefan Guilhen</a>
  */
 public class FileMapStorage<V extends AbstractEntity & UpdatableEntity, M>
-  extends ConcurrentHashMapStorage<String, V, M> {
+  extends ConcurrentHashMapStorage<String, V, M, FileCrudOperations<V, M>> {
 
     private static final Logger LOG = Logger.getLogger(FileMapStorage.class);
 
     private final List<Path> createdPaths = new LinkedList<>();
     private final List<Path> pathsToDelete = new LinkedList<>();
-    private final Map<Path, Path> renameOnCommit = new HashMap<>();
+    private final Map<Path, Path> renameOnCommit = new LinkedHashMap<>();
     private final Map<Path, FileTime> lastModified = new HashMap<>();
 
     private final String txId = StringKey.INSTANCE.yieldNewUniqueKey();
@@ -132,7 +136,11 @@ public class FileMapStorage<V extends AbstractEntity & UpdatableEntity, M>
         }
     }
 
-    public void touch(Path path) throws IOException {
+    public void touch(String proposedId, Path path) throws IOException {
+        if (Optional.ofNullable(tasks.get(proposedId)).map(MapTaskWithValue::getOperation).orElse(null) == MapOperation.DELETE) {
+            // If deleted in the current transaction before this operation, then do not touch
+            return;
+        }
         Files.createFile(path);
         createdPaths.add(path);
     }
@@ -144,6 +152,7 @@ public class FileMapStorage<V extends AbstractEntity & UpdatableEntity, M>
     }
 
     void registerRenameOnCommit(Path from, Path to) {
+        pathsToDelete.remove(to);
         this.renameOnCommit.put(from, to);
     }
 
@@ -203,15 +212,15 @@ public class FileMapStorage<V extends AbstractEntity & UpdatableEntity, M>
 
     private static class Crud<V extends AbstractEntity & UpdatableEntity, M> extends FileCrudOperations<V, M> {
 
-        private FileMapStorage store;
+        private FileMapStorage<V, M> store;
 
         public Crud(Class<V> entityClass, Function<String, Path> dataDirectoryFunc, Function<V, String[]> suggestedPath, boolean isExpirableEntity) {
             super(entityClass, dataDirectoryFunc, suggestedPath, isExpirableEntity);
         }
 
         @Override
-        protected void touch(Path sp) throws IOException {
-            store.touch(sp);
+        protected void touch(String proposedId, Path sp) throws IOException {
+            store.touch(proposedId, sp);
         }
 
         @Override
@@ -250,7 +259,46 @@ public class FileMapStorage<V extends AbstractEntity & UpdatableEntity, M>
         public <T, EF extends java.lang.Enum<? extends org.keycloak.models.map.common.EntityField<V>> & org.keycloak.models.map.common.EntityField<V>> void set(EF field, T value) {
             String id = entity.getId();
             super.set(field, value);
-            if (! Objects.equals(id, map.determineKeyFromValue(entity, false))) {
+            checkIdMatches(id, field);
+        }
+
+        @Override
+        public <T, EF extends java.lang.Enum<? extends org.keycloak.models.map.common.EntityField<V>> & org.keycloak.models.map.common.EntityField<V>> void collectionAdd(EF field, T value) {
+            String id = entity.getId();
+            super.collectionAdd(field, value);
+            checkIdMatches(id, field);
+        }
+
+        @Override
+        public <T, EF extends java.lang.Enum<? extends org.keycloak.models.map.common.EntityField<V>> & org.keycloak.models.map.common.EntityField<V>> Object collectionRemove(EF field, T value) {
+            String id = entity.getId();
+            final Object res = super.collectionRemove(field, value);
+            checkIdMatches(id, field);
+            return res;
+        }
+
+        @Override
+        public <K, T, EF extends java.lang.Enum<? extends org.keycloak.models.map.common.EntityField<V>> & org.keycloak.models.map.common.EntityField<V>> void mapPut(EF field, K key, T value) {
+            String id = entity.getId();
+            super.mapPut(field, key, value);
+            checkIdMatches(id, field);
+        }
+
+        @Override
+        public <K, EF extends java.lang.Enum<? extends org.keycloak.models.map.common.EntityField<V>> & org.keycloak.models.map.common.EntityField<V>> Object mapRemove(EF field, K key) {
+            String id = entity.getId();
+            final Object res = super.mapRemove(field, key);
+            checkIdMatches(id, field);
+            return res;
+        }
+
+        private <EF extends java.lang.Enum<? extends org.keycloak.models.map.common.EntityField<V>> & org.keycloak.models.map.common.EntityField<V>> void checkIdMatches(String id, EF field) throws ReadOnlyException {
+            final String idNow = map.determineKeyFromValue(entity, "");
+            if (! Objects.equals(id, idNow)) {
+                if (idNow.endsWith(ID_COMPONENT_SEPARATOR) && id.startsWith(idNow)) {
+                    return;
+                }
+
                 throw new ReadOnlyException("Cannot change " + field + " as that would change primary key");
             }
         }
