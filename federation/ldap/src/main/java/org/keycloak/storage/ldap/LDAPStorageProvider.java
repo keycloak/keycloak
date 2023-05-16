@@ -497,15 +497,23 @@ public class LDAPStorageProvider implements UserStorageProvider,
         try (LDAPQuery ldapQuery = LDAPUtils.createQueryForUserSearch(this, realm)) {
             LDAPQueryConditionsBuilder conditionsBuilder = new LDAPQueryConditionsBuilder();
 
-            List<Condition> conditions = new LinkedList<>();
             for (String s : search.split("\\s+")) {
+                List<Condition> conditions = new LinkedList<>();
+                if (s.startsWith("\"") && s.endsWith("\"")) {
+                    // exact search
+                    s = s.substring(1, s.length() - 1);
+                } else if (!s.endsWith("*")) {
+                    // default to prefix search
+                    s += "*";
+                }
+
                 conditions.add(conditionsBuilder.equal(UserModel.USERNAME, s.trim().toLowerCase(), EscapeStrategy.NON_ASCII_CHARS_ONLY));
                 conditions.add(conditionsBuilder.equal(UserModel.EMAIL, s.trim().toLowerCase(), EscapeStrategy.NON_ASCII_CHARS_ONLY));
                 conditions.add(conditionsBuilder.equal(UserModel.FIRST_NAME, s, EscapeStrategy.NON_ASCII_CHARS_ONLY));
                 conditions.add(conditionsBuilder.equal(UserModel.LAST_NAME, s, EscapeStrategy.NON_ASCII_CHARS_ONLY));
-            }
 
-            ldapQuery.addWhereCondition(conditionsBuilder.orCondition(conditions.toArray(Condition[]::new)));
+                ldapQuery.addWhereCondition(conditionsBuilder.orCondition(conditions.toArray(Condition[]::new)));
+            }
 
             return paginatedSearchLDAP(ldapQuery, firstResult, maxResults);
         }

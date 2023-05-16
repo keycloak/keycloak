@@ -25,6 +25,7 @@ import java.util.TreeSet;
 import java.util.stream.Collectors;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.not;
@@ -95,5 +96,41 @@ public class LDAPSearchForUsersPaginationTest extends AbstractLDAPTest {
         assertThat(search, not(contains(importedUsers.get(1))));
         assertThat(search, not(contains(importedUsers.get(2))));
         assertThat(search, hasItems(importedUsers.get(3), importedUsers.get(4)));
+    }
+
+    @Test
+    public void testSearchLDAPMatchesLocalDBTwoKeywords() {
+        assertLDAPSearchMatchesLocalDB("Some Some");
+    }
+
+    @Test
+    public void testSearchLDAPMatchesLocalDBExactSearch() {
+        assertLDAPSearchMatchesLocalDB("\"Some\"");
+    }
+
+    @Test
+    public void testSearchLDAPMatchesLocalDBInfixSearch() {
+        assertLDAPSearchMatchesLocalDB("*ohn*");
+    }
+
+    @Test
+    public void testSearchLDAPMatchesLocalDBPrefixSearch() {
+        assertLDAPSearchMatchesLocalDB("john*");
+    }
+
+    @Test
+    public void testSearchLDAPMatchesLocalDBDefaultPrefixSearch() {
+        // default search is prefix search
+        assertLDAPSearchMatchesLocalDB("john");
+    }
+
+    private void assertLDAPSearchMatchesLocalDB(String searchString) {
+        //this call should import some users into local database
+        List<String> importedUsers = adminClient.realm(TEST_REALM_NAME).users().search(searchString, null, null).stream().map(UserRepresentation::getUsername).collect(Collectors.toList());
+
+        //this should query local db
+        List<String> search = adminClient.realm(TEST_REALM_NAME).users().search(searchString, null, null).stream().map(UserRepresentation::getUsername).collect(Collectors.toList());
+
+        assertThat(search, containsInAnyOrder(importedUsers.toArray()));
     }
 }
