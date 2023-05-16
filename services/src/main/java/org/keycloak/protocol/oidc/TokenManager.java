@@ -1342,7 +1342,7 @@ public class TokenManager {
 
         @Override
         public boolean test(JsonWebToken token) {
-            SingleUseObjectProvider singleUseStore = session.getProvider(SingleUseObjectProvider.class);
+            SingleUseObjectProvider singleUseStore = session.singleUseObjects();
             return !singleUseStore.contains(token.getId() + SingleUseObjectProvider.REVOKED_KEY);
         }
     }

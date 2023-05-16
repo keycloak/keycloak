@@ -201,6 +201,8 @@ public interface KeycloakSession extends AutoCloseable {
 
     AuthenticationSessionProvider authenticationSessions();
 
+    SingleUseObjectProvider singleUseObjects();
+
 
 
     void close();

@@ -1,3 +1,50 @@
+= Transition from Java EE to Jakarta EE
+
+Keycloak migrated its codebase from Java EE (Enterprise Edition) to its successor Jakarta EE, which brings various changes into Keycloak.
+
+We have upgraded all Jakarta EE specifications in order to support Jakarta EE 10, such as:
+
+* Jakarta Persistence 3.1
+* Jakarta RESTful Web Services 3.1
+* Jakarta Mail API 2.1
+* Jakarta Servlet 6.0
+* Jakarta Activation 2.1
+
+Jakarta EE 10 provides a modernized, simplified, lightweight approach to building cloud-native Java applications.
+The main changes provided within this initiative are changing the namespace from `+javax.*+` to `+jakarta.*+`.
+It does not apply for `+javax.*+` packages provided directly in the JDK, such as `javax.security`, `javax.net`, `javax.crypto`, etc.
+
+You can be affected by these changes in your custom extensions, providers or JPA entities.
+
+== Deprecated Adapters stay on Java EE
+
+As most of our OIDC and SAML client adapters are already deprecated, we will not upgrade them to support Jakarta EE.
+However, client adapters with Java EE support can still communicate with the Keycloak server.
+
+= Upgrade to Quarkus 3
+
+Keycloak upgraded to version 3 of the Quarkus Java framework.
+Quarkus 3 continues the tradition of propelling Java development by moving fast and providing a cutting-edge user experience with the latest technologies.
+It continues to improve overall performance and efficiency.
+
+Quarkus 3 is based on Jakarta EE 10, the same as Keycloak, creating smooth interoperability between them.
+In addition, it contains Eclipse MicroProfile 6, which aligns with Jakarta EE 10 Core Profile.
+The central part of the Quarkus 3 upgrade is built-in support for JPA 3.1 and Hibernate ORM 6.
+
+== `quarkus.hibernate-orm.*` properties no longer working
+
+For Quarkus 3, Hibernate ORM configurations must be specified in either the `persistence.xml` file or in Quarkus properties, but not in both places.
+Keycloak uses a `persistence.xml` file, therefore, it is no longer possible to override Keycloak's JPA store configurations via Quarkus`' configuration properties for the default persistence unit whose names start with `quarkus.hibernate-orm`.
+
+= Upgrade to Hibernate ORM 6
+
+Keycloak now benefits from the upgrade to Hibernate ORM 6.2, which includes improved performance, better SQL, modern JDK support, and support for modern RDBMS features.
+The performance improvements primarily affect JDBC, HQL Translation, and Criteria Translation.
+
+If you have custom providers or JPA entities, these changes may affect you.
+
+We recommend reviewing the link:https://github.com/quarkusio/quarkus/wiki/Migration-Guide-3.0:-Hibernate-ORM-5-to-6-migration[Quarkus migration guide] or the link:https://hibernate.org/orm/releases/[Hibernate release notes] for more information.
+
 = Legacy Promise API removed from Keycloak JS adapter
 
 The legacy Promise API methods have been removed from the Keycloak JS adapter. This means that calling `.success()` and `.error()` on promises returned from the adapter is no longer possible. Instead standardized Promise methods such as https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise/then[`.then()`] and https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise/catch[`.catch()`] should be used.
@@ -130,3 +177,11 @@ The new artifact with Java EE support is `org.keycloak:keycloak-admin-client-jee
     <version>22.0.0</version>
 </dependency>
 ----
+
+= Passthrough proxy mode changes
+
+Keycloak's proxy configuration setting for mode *passthrough* no longer parses HTTP forwarding headers in the request, as when a proxy forwards an HTTPS connection in passthrough mode, a proxy is unable to add, remove or update HTTP headers.
+
+Installations that want the HTTP headers in the client's request to be parsed should use the **edge** or **reencrypt** setting.
+
+See https://www.keycloak.org/server/reverseproxy[Using a reverse proxy] for details.

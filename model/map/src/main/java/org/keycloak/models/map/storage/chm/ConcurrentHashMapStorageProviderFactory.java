@@ -236,14 +236,14 @@ public class ConcurrentHashMapStorageProviderFactory implements AmphibianProvide
     }
 
     @SuppressWarnings("unchecked")
-    private <V extends AbstractEntity & UpdatableEntity, M> CrudOperations<V, M> loadMap(String mapName,
+    private <K, V extends AbstractEntity & UpdatableEntity, M> ConcurrentHashMapCrudOperations<K, V, M> loadMap(String mapName,
                                                                                             Class<M> modelType,
                                                                                             EnumSet<Flag> flags) {
-        final StringKeyConverter kc = keyConverters.getOrDefault(mapName, defaultKeyConverter);
+        final StringKeyConverter<K> kc = keyConverters.getOrDefault(mapName, defaultKeyConverter);
         Class<?> valueType = ModelEntityUtil.getEntityType(modelType);
         LOG.debugf("Initializing new map storage: %s", mapName);
 
-        CrudOperations<V, M> store;
+        ConcurrentHashMapCrudOperations<K, V, M> store;
         if(modelType == SingleUseObjectValueModel.class) {
             store = new SingleUseObjectConcurrentHashMapCrudOperations(kc, CLONER) {
                 @Override
@@ -252,7 +252,7 @@ public class ConcurrentHashMapStorageProviderFactory implements AmphibianProvide
                 }
             };
         } else {
-            store = new ConcurrentHashMapCrudOperations(modelType, kc, CLONER) {
+            store = new ConcurrentHashMapCrudOperations<>(modelType, kc, CLONER) {
                 @Override
                 public String toString() {
                     return "ConcurrentHashMapStorage(" + mapName + suffix + ")";
@@ -288,7 +288,7 @@ public class ConcurrentHashMapStorageProviderFactory implements AmphibianProvide
     }
 
     @SuppressWarnings("unchecked")
-    public <K, V extends AbstractEntity & UpdatableEntity, M> CrudOperations<V, M> getStorage(
+    public <K, V extends AbstractEntity & UpdatableEntity, M> ConcurrentHashMapCrudOperations<K, V, M> getStorage(
       Class<M> modelType, Flag... flags) {
         EnumSet<Flag> f = flags == null || flags.length == 0 ? EnumSet.noneOf(Flag.class) : EnumSet.of(flags[0], flags);
         String name = getModelName(modelType, modelType.getSimpleName());
@@ -297,7 +297,7 @@ public class ConcurrentHashMapStorageProviderFactory implements AmphibianProvide
          *   "... the computation [...] must not attempt to update any other mappings of this map."
          */
 
-        return (CrudOperations<V, M>) storages.computeIfAbsent(name, n -> loadMap(name, modelType, f));
+        return (ConcurrentHashMapCrudOperations<K, V, M>) storages.computeIfAbsent(name, n -> loadMap(name, modelType, f));
     }
 
     public StringKeyConverter<?> getKeyConverter(Class<?> modelType) {

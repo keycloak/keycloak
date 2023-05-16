@@ -32,6 +32,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       ci: ${{ steps.conditional.outputs.ci }}
+      sssd: ${{ steps.conditional.outputs.sssd }}
     steps:
       - uses: actions/checkout@v3
 
@@ -246,7 +247,7 @@ jobs:
     name: Legacy Store IT
     needs: build
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 60
     strategy:
       matrix:
         db: [postgres, mysql, oracle, mssql, mariadb]
@@ -458,6 +459,40 @@ jobs:
         with:
           job-name: WebAuthn IT
 
+  sssd-unit-tests:
+    name: SSSD
+    runs-on: ubuntu-latest
+    needs:
+      - conditional
+      - build
+    timeout-minutes: 30
+    steps:
+      - name: checkout
+        if: ${{ needs.conditional.outputs.sssd == 'true' }}
+        uses: actions/checkout@v3
+
+      - id: integration-test-setup
+        if: ${{ needs.conditional.outputs.sssd == 'true' }}
+        name: Integration test setup
+        uses: ./.github/actions/integration-test-setup
+
+      - id: weekly-cache-key
+        if: ${{ needs.conditional.outputs.sssd == 'true' }}
+        name: Key for weekly rotation of cache
+        shell: bash
+        run: echo "key=ipa-data-`date -u "+%Y-%U"`" >> $GITHUB_OUTPUT
+
+      - id: cache-maven-repository
+        if: ${{ needs.conditional.outputs.sssd == 'true' }}
+        name: ipa-data cache
+        uses: actions/cache@v3
+        with:
+          path: ~/ipa-data.tar
+          key: ${{ steps.weekly-cache-key.outputs.key }}
+
+      - name: Run tests
+        if: ${{ needs.conditional.outputs.sssd == 'true' }}
+        run: .github/scripts/run-ipa.sh "${{ github.workspace }}"
 
   check-set-status:
     name: Set check conclusion
@@ -474,6 +509,7 @@ jobs:
       - fips-integration-tests
       - account-console-integration-tests
       - webauthn-integration-tests
+      - sssd-unit-tests
     runs-on: ubuntu-latest
     outputs:
       conclusion: ${{ steps.check.outputs.conclusion }}

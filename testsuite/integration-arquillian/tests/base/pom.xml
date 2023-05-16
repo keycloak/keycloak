@@ -413,13 +413,13 @@
 
                                             <!-- Oracle -->
                                             <ORACLE_SID>${keycloak.connectionsJpa.database}</ORACLE_SID>
-                                            <ORACLE_PASSWORD>sa</ORACLE_PASSWORD>
+                                            <ORACLE_PWD>sa</ORACLE_PWD>
                                         </env>
                                         <cmd>${docker.database.cmd}</cmd>
                                         <wait>
                                             <!-- Do not use waiting for port since that is unreliable, sometimes port is listening before DB is ready to serve -->
                                             <log>${docker.database.wait-for-log-regex}</log>
-                                            <time>300000</time>
+                                            <time>2000000</time>
                                             <kill>10000</kill>
                                             <exec>
                                               <postStart>${docker.database.postStart}</postStart>
