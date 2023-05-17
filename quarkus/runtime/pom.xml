@@ -656,12 +656,6 @@
             <scope>test</scope>
         </dependency>
 
-        <!-- logging wrapper for log4j-->
-        <dependency>
-            <groupId>org.jboss.logmanager</groupId>
-            <artifactId>log4j-jboss-logmanager</artifactId>
-        </dependency>
-
         <!-- twitter api -->
         <dependency>
             <groupId>org.twitter4j</groupId>
