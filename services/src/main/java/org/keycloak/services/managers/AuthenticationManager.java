@@ -1052,7 +1052,7 @@ public class AuthenticationManager {
         if (actionTokenKeyToInvalidate != null) {
             SingleUseObjectKeyModel actionTokenKey = DefaultActionTokenKey.from(actionTokenKeyToInvalidate);
             if (actionTokenKey != null) {
-                SingleUseObjectProvider singleUseObjectProvider = session.getProvider(SingleUseObjectProvider.class);
+                SingleUseObjectProvider singleUseObjectProvider = session.singleUseObjects();
                 singleUseObjectProvider.put(actionTokenKeyToInvalidate, actionTokenKey.getExpiration() - Time.currentTime(), null); // Token is invalidated
             }
         }

@@ -29,7 +29,7 @@ import java.util.Map;
 /**
  * @author <a href="mailto:mkanis@redhat.com">Martin Kanis</a>
  */
-public class SingleUseObjectMapStorage<K> extends ConcurrentHashMapStorage<K, MapSingleUseObjectEntity, SingleUseObjectValueModel> {
+public class SingleUseObjectMapStorage<K> extends ConcurrentHashMapStorage<K, MapSingleUseObjectEntity, SingleUseObjectValueModel, CrudOperations<MapSingleUseObjectEntity, SingleUseObjectValueModel>> {
 
     public SingleUseObjectMapStorage(CrudOperations<MapSingleUseObjectEntity, SingleUseObjectValueModel> map,
                                      StringKeyConverter<K> keyConverter,

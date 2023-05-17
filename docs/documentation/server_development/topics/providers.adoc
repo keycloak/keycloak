@@ -85,7 +85,7 @@ Example service configuration file (`META-INF/services/org.keycloak.theme.ThemeS
 org.acme.provider.MyThemeSelectorProviderFactory
 ----
 
-To configure your provider, see the link:https://www.keycloak.org/server/configuration-provider[Configuring Providers] guide.
+To configure your provider, see the link:https://www.keycloak.org/server/configuration-provider[Configuring Providers] {section}.
 
 For example, to configure a provider you can set options as follows:
 
@@ -127,7 +127,7 @@ public class MyThemeSelectorProvider implements ThemeSelectorProvider {
 
 As mentioned above, it is recommended that your `ProviderFactory` implementations use unique ID. However at the same time, it can be useful to override one of the {project_name} built-in providers.
 The recommended way for this is still ProviderFactory implementation with unique ID and then for instance set the default provider as
-specified in the link:https://www.keycloak.org/server/configuration-provider[Configuring Providers] guide. On the other hand, this may not be always possible.
+specified in the link:https://www.keycloak.org/server/configuration-provider[Configuring Providers] {section}. On the other hand, this may not be always possible.
 
 For instance when you need some customizations to default OpenID Connect protocol behaviour and you want to override
 default {project_name} implementation of `OIDCLoginProtocolFactory` you need to preserve same providerId. As for example admin console, OIDC protocol well-known endpoint and various other things rely on

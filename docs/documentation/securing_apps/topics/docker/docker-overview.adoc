@@ -1,7 +1,7 @@
 
 == Configuring a Docker registry to use {project_name}
 
-NOTE: Docker authentication is disabled by default. To enable see the https://www.keycloak.org/server/features[Enabling and disabling features] guide.
+NOTE: Docker authentication is disabled by default. To enable see the https://www.keycloak.org/server/features[Enabling and disabling features] {section}.
 
 This section describes how you can configure a Docker registry to use {project_name} as its authentication server.
 

@@ -92,4 +92,4 @@ See also the https://kubernetes.io/docs/tasks/run-application/configure-pdb/[Kub
 
 Starting with version 19, Keycloak supports sending logs using GELF to centralized logging solutions like ELK, EFK or Graylog out of the box.
 
-You can find the documentation and examples to get you up and running quickly in the https://www.keycloak.org/server/logging#_centralized_logging_using_gelf[logging guide]
+You can find the documentation and examples to get you up and running quickly in the https://www.keycloak.org/server/logging#_centralized_logging_using_gelf[logging] {section}.

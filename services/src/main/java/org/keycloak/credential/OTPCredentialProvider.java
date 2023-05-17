@@ -117,7 +117,7 @@ public class OTPCredentialProvider implements CredentialProvider<OTPCredentialMo
             if (isValid) {
                 if (policy.isCodeReusable()) return true;
 
-                SingleUseObjectProvider singleUseStore = session.getProvider(SingleUseObjectProvider.class);
+                SingleUseObjectProvider singleUseStore = session.singleUseObjects();
                 final long validLifespan = (long) credentialData.getPeriod() * (2L * policy.getLookAheadWindow() + 1);
                 final String searchKey = credential.getId() + "." + challengeResponse;
 

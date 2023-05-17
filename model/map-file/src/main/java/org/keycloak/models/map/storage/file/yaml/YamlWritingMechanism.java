@@ -141,8 +141,15 @@ public class YamlWritingMechanism implements WritingMechanism, Closeable {
     }
 
     private ScalarStyle determineStyle(Object value) {
-        if (value instanceof String && ((String) value).lastIndexOf('\n') > 0) {
-            return ScalarStyle.FOLDED;
+        if (value instanceof String) {
+            String sValue = (String) value;
+            // TODO: Check numeric values and quote those as well
+            if ("null".equals(sValue)) {
+                return ScalarStyle.DOUBLE_QUOTED;
+            }
+            if (sValue.length() > 120 || sValue.lastIndexOf('\n') > 0) {
+                return ScalarStyle.FOLDED;
+            }
         }
         return ScalarStyle.PLAIN;
     }
