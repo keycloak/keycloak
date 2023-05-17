@@ -242,7 +242,10 @@ export default function MappingDetails() {
             />
           </FormGroup>
           <FormProvider {...form}>
-            <DynamicComponents properties={mapping?.properties || []} />
+            <DynamicComponents
+              properties={mapping?.properties || []}
+              isNew={!isUpdating}
+            />
           </FormProvider>
           <ActionGroup>
             <Button variant="primary" type="submit">

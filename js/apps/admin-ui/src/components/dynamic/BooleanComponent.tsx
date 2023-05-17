@@ -11,6 +11,8 @@ export const BooleanComponent = ({
   label,
   helpText,
   isDisabled = false,
+  defaultValue,
+  isNew = true,
 }: ComponentProps) => {
   const { t } = useTranslation("dynamic");
   const { control } = useFormContext();
@@ -27,7 +29,7 @@ export const BooleanComponent = ({
       <Controller
         name={convertToName(name!)}
         data-testid={name}
-        defaultValue={false}
+        defaultValue={isNew ? defaultValue : false}
         control={control}
         render={({ field }) => (
           <Switch
@@ -38,7 +40,7 @@ export const BooleanComponent = ({
             isChecked={
               field.value === "true" ||
               field.value === true ||
-              field.value[0] === "true"
+              field.value?.[0] === "true"
             }
             onChange={(value) => field.onChange("" + value)}
             data-testid={name}
