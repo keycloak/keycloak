@@ -172,13 +172,18 @@ export const Header = () => {
     );
   };
 
+  const logo = environment.logo ? environment.logo : "/logo.svg";
+  const logoUrl = environment.logoUrl
+    ? environment.logoUrl
+    : toDashboard({ realm });
+
   return (
     <PageHeader
       showNavToggle
       logo={
-        <Link to={toDashboard({ realm })}>
+        <Link to={logoUrl}>
           <Brand
-            src={environment.resourceUrl + "/logo.svg"}
+            src={environment.resourceUrl + logo}
             id="masthead-logo"
             alt="Logo"
             className="keycloak__pageheader_brand"
