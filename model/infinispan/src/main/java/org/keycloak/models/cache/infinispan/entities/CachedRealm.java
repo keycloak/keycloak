@@ -159,7 +159,6 @@ public class CachedRealm extends AbstractExtendableRevisioned {
     }
 
     protected List<String> defaultGroups;
-    protected List<String> clientScopes = new LinkedList<>();
     protected List<String> defaultDefaultClientScopes = new LinkedList<>();
     protected List<String> optionalDefaultClientScopes = new LinkedList<>();
     protected boolean internationalizationEnabled;
@@ -319,7 +318,6 @@ public class CachedRealm extends AbstractExtendableRevisioned {
     }
 
     protected void cacheClientScopes(RealmModel model) {
-        clientScopes = model.getClientScopesStream().map(ClientScopeModel::getId).collect(Collectors.toList());
         defaultDefaultClientScopes = model.getDefaultClientScopesStream(true).map(ClientScopeModel::getId)
                 .collect(Collectors.toList());
         optionalDefaultClientScopes = model.getDefaultClientScopesStream(false).map(ClientScopeModel::getId)
@@ -685,10 +683,6 @@ public class CachedRealm extends AbstractExtendableRevisioned {
 
     public List<String> getDefaultGroups() {
         return defaultGroups;
-    }
-
-    public List<String> getClientScopes() {
-        return clientScopes;
     }
 
     public List<String> getDefaultDefaultClientScopes() {
