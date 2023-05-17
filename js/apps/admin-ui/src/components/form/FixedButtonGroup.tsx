@@ -28,7 +28,7 @@ export const FixedButtonsGroup = ({
         <Button
           isDisabled={!isActive}
           data-testid={`${name}-save`}
-          onClick={save}
+          onClick={() => save?.()}
           type={isSubmit ? "submit" : "button"}
         >
           {t("save")}
@@ -39,7 +39,7 @@ export const FixedButtonsGroup = ({
           isDisabled={!isActive}
           data-testid={`${name}-revert`}
           variant="link"
-          onClick={reset}
+          onClick={() => reset()}
         >
           {t("revert")}
         </Button>
