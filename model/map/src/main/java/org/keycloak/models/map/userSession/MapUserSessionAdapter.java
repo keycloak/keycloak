@@ -43,10 +43,11 @@ import static org.keycloak.models.map.userSession.SessionExpiration.setUserSessi
  */
 public class MapUserSessionAdapter extends AbstractUserSessionModel {
 
-    private UserModel user;
+    private final UserModel user;
 
-    public MapUserSessionAdapter(KeycloakSession session, RealmModel realm, MapUserSessionEntity entity) {
+    public MapUserSessionAdapter(KeycloakSession session, RealmModel realm, UserModel userModel, MapUserSessionEntity entity) {
         super(session, realm, entity);
+        this.user = userModel;
     }
 
     @Override
@@ -71,9 +72,6 @@ public class MapUserSessionAdapter extends AbstractUserSessionModel {
 
     @Override
     public UserModel getUser() {
-        if (this.user == null) {
-            this.user = session.users().getUserById(getRealm(), entity.getUserId());
-        }
         return this.user;
     }
 
