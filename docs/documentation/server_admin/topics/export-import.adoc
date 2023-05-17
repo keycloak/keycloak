@@ -98,6 +98,9 @@ You cannot use the `keycloak.import` parameter with `keycloak.migration.X` param
 
 {project_name} imports most resources from the Admin Console as well as exporting most resources. {project_name} does not support the export of users.
 
+Admin console import does not preserve IDs. When you import a resource, {project_name} generates a new ID for the resource.
+This behavior is different from the export/import the full database mechanism described above.
+
 [NOTE]
 ====
 {project_name} masks attributes containing secrets or private information in the export file. Export files from the Admin Console are not suitable for backups or data transfer between servers. Only boot-time exports are suitable for backups or data transfer between servers.
