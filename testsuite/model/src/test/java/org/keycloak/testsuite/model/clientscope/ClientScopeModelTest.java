@@ -16,6 +16,7 @@
  */
 package org.keycloak.testsuite.model.clientscope;
 
+import org.hamcrest.Matchers;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientProvider;
 import org.keycloak.models.ClientScopeModel;
@@ -25,6 +26,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RealmProvider;
 import org.keycloak.models.RoleProvider;
+import org.keycloak.models.cache.CacheRealmProvider;
 import org.keycloak.testsuite.model.KeycloakModelTest;
 import org.keycloak.testsuite.model.RequireProvider;
 import java.util.LinkedList;
@@ -97,4 +99,33 @@ public class ClientScopeModelTest extends KeycloakModelTest {
             return null;
         });
     }
+
+    @Test
+    @RequireProvider(value=ClientScopeProvider.class, only="jpa")
+    @RequireProvider(value=CacheRealmProvider.class)
+    public void testClientScopesCaching() {
+        List<String> clientScopes = new LinkedList<>();
+        withRealm(realmId, (session, realm) -> {
+            ClientScopeModel clientScope = session.clientScopes().addClientScope(realm, "myClientScopeForCaching");
+            clientScopes.add(clientScope.getId());
+
+            assertionsForClientScopesCaching(clientScopes, session, realm);
+            return null;
+        });
+
+        withRealm(realmId, (session, realm) -> {
+            assertionsForClientScopesCaching(clientScopes, session, realm);
+            return null;
+        });
+
+    }
+
+    private static void assertionsForClientScopesCaching(List<String> clientScopes, KeycloakSession session, RealmModel realm) {
+        assertThat(clientScopes, Matchers.containsInAnyOrder(realm.getClientScopesStream()
+                .map(ClientScopeModel::getId).toArray(String[]::new)));
+
+        assertThat(clientScopes, Matchers.containsInAnyOrder(session.clientScopes().getClientScopesStream(realm)
+                .map(ClientScopeModel::getId).toArray(String[]::new)));
+    }
+
 }
