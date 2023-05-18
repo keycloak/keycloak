@@ -293,8 +293,8 @@ function authenticate(context) {
 
 A possible use of script authenticator is to do some checks at the end of the authentication. Note that if you want
 your script authenticator to be always triggered (even for instance during SSO re-authentication with the identity cookie), you may need to add it as REQUIRED at the end
-of the authentication flow and encapsulate the existing authenticators into a separate REQUIRED authenticator. This need is because the REQUIRED and ALTERNATIVE executions
-should not be at the same level. So for example the authentication flow configuration like this:
+of the authentication flow and encapsulate the existing authenticators into a separate REQUIRED authentication subflow. This need is because the REQUIRED and ALTERNATIVE executions
+should not be at the same level. For example, the authentication flow configuration should appear as follows:
 [source]
 ----
 - User-authentication-subflow REQUIRED
