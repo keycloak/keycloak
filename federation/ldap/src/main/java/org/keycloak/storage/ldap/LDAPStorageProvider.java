@@ -18,7 +18,6 @@
 package org.keycloak.storage.ldap;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -84,7 +83,7 @@ import org.keycloak.storage.ldap.mappers.LDAPStorageMapperManager;
 import org.keycloak.storage.ldap.mappers.PasswordUpdateCallback;
 import org.keycloak.storage.user.ImportedUserValidation;
 import org.keycloak.storage.user.UserLookupProvider;
-import org.keycloak.storage.user.UserQueryProvider;
+import org.keycloak.storage.user.UserQueryMethodsProvider;
 import org.keycloak.storage.user.UserRegistrationProvider;
 
 import static org.keycloak.utils.StreamsUtil.paginatedStream;
@@ -100,7 +99,7 @@ public class LDAPStorageProvider implements UserStorageProvider,
         CredentialAuthentication,
         UserLookupProvider,
         UserRegistrationProvider,
-        UserQueryProvider,
+        UserQueryMethodsProvider,
         ImportedUserValidation {
     private static final Logger logger = Logger.getLogger(LDAPStorageProvider.class);
     private static final int DEFAULT_MAX_RESULTS = Integer.MAX_VALUE >> 1;
@@ -342,36 +341,6 @@ public class LDAPStorageProvider implements UserStorageProvider,
 
         StorageId storageId = new StorageId(id);
         return getUserByUsername(realm, storageId.getExternalId());
-    }
-
-    @Override
-    public int getUsersCount(RealmModel realm) {
-        return getUsersCount(realm, Collections.emptyMap());
-    }
-
-    @Override
-    public int getUsersCount(RealmModel realm, String search) {
-        return (int) searchLDAP(realm, search, null, null).filter(filterLocalUsers(realm)).count();
-    }
-
-    @Override
-    public int getUsersCount(RealmModel realm, Map<String, String> params) {
-        return (int) searchLDAPByAttributes(realm, params, null, null).filter(filterLocalUsers(realm)).count();
-    }
-
-    @Override
-    public int getUsersCount(RealmModel realm, Set<String> groupIds) {
-        throw new UnsupportedOperationException("Not implemented");
-    }
-
-    @Override
-    public int getUsersCount(RealmModel realm, String search, Set<String> groupIds) {
-        throw new UnsupportedOperationException("Not implemented");
-    }
-
-    @Override
-    public int getUsersCount(RealmModel realm, Map<String, String> params, Set<String> groupIds) {
-        throw new UnsupportedOperationException("Not implemented");
     }
 
     @Override
