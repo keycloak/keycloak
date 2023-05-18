@@ -50,6 +50,10 @@ export const Root = () => {
     [t]
   );
 
+  const brandImage = environment.logo ? environment.logo : "logo.svg";
+  const brandOnClickHandler = () =>
+    window.location.replace(environment.logoUrl);
+
   return (
     <Page
       header={
@@ -62,6 +66,7 @@ export const Root = () => {
               src: joinPath(environment.resourceUrl, "logo.svg"),
               alt: t("logo"),
               className: style.brand,
+              onClick: environment.logoUrl ? brandOnClickHandler : undefined,
             }}
             toolbarItems={[<ReferrerLink key="link" />]}
             keycloak={keycloak}
