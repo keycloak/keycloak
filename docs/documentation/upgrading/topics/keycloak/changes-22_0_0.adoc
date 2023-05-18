@@ -16,11 +16,6 @@ It does not apply for `+javax.*+` packages provided directly in the JDK, such as
 
 You can be affected by these changes in your custom extensions, providers or JPA entities.
 
-== Deprecated Adapters stay on Java EE
-
-As most of our OIDC and SAML client adapters are already deprecated, we will not upgrade them to support Jakarta EE.
-However, client adapters with Java EE support can still communicate with the Keycloak server.
-
 = Upgrade to Quarkus 3
 
 Keycloak upgraded to version 3 of the Quarkus Java framework.
@@ -198,5 +193,36 @@ Probably this can be better explained with an example: When the variant `de-CH-1
 
 = LDAPStorageProvider search changes
 
-Starting with this release Keycloak uses a pagination mechanism when querying federated LDAP database. 
+Starting with this release Keycloak uses a pagination mechanism when querying federated LDAP database.
 Searching for users should be consistent with search in local database.
+
+= Deprecation of Keycloak OpenID Connect Adapters
+
+Starting with this release, we no longer will invest our time on the following Keycloak OpenID Connect Adapters:
+
+* Keycloak Wildfly OpenID Connect Adapter
+* Keycloak JEE Servlet OpenID Connect Adapter
+* Keycloak Spring Boot and Spring Security OpenID Connect Adapter
+
+This move is already reflected in our documentation and in our quickstart repository. Please, consider looking at the following
+references for more information:
+
+* link:https://github.com/keycloak/keycloak-quickstarts[Keycloak Quickstart GitHub Repository]
+* link:https://www.keycloak.org/docs/latest/securing_apps/[Keycloak Securing Applications Documentation]
+
+We recommend starting to look into moving your applications to the alternatives from the references above. Those adapters should not be available anymore in future releases.
+
+= Deprecation of Keycloak JEE SAML Adapter
+
+The Keycloak JEE SAML Adapter has been discontinued, and we will no longer invest our time on its development following this release.
+
+The official adapter is now based on Jakarta and should be used as soon as you switch your applications to this technology.
+
+This change is already in our documentation and in our quickstart repository. For more information, please consider looking at the following references:
+
+* link:https://github.com/keycloak/keycloak-quickstarts[Keycloak Quickstart GitHub Repository]
+* link:https://www.keycloak.org/docs/latest/securing_apps/[Keycloak Securing Applications Documentation]
+
+If you cannot migrate your applications to Jakarta, you can still use the "legacy" SAML JEE adapter and still
+be able to integrate with future releases of the server. However, consider upgrading your applications as soon as possible
+because we are no longer providing support to JEE.
