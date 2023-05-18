@@ -3,7 +3,7 @@
 
 One thing we have not done with our example is allow it to add and remove users or change passwords. Users defined in our example are
 also not queryable or viewable in the Admin Console. To add these enhancements, our example provider must implement
-the `UserQueryProvider` and `UserRegistrationProvider` interfaces.
+the `UserQueryMethodsProvider` (or `UserQueryProvider`) and `UserRegistrationProvider` interfaces.
 
 ==== Implementing UserRegistrationProvider
 
@@ -124,7 +124,7 @@ With these methods implemented, you'll now be able to change and disable the pas
 
 ==== Implementing UserQueryProvider
 
-Without implementing `UserQueryProvider` the Admin Console would not be able to view and manage users that were loaded
+`UserQueryProvider` is combination of `UserQueryMethodsProvider` and `UserCountMethodsProvider`. Without implementing `UserQueryMethodsProvider` the Admin Console would not be able to view and manage users that were loaded
 by our example provider. Let's look at implementing this interface.
 
 .PropertyFileUserStorageProvider
