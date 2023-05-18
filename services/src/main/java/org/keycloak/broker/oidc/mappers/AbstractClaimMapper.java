@@ -82,7 +82,7 @@ public abstract class AbstractClaimMapper extends AbstractIdentityProviderMapper
 
         }
         {  // search ID Token
-            Object rawIdToken = context.getContextData().get(KeycloakOIDCIdentityProvider.VALIDATED_ID_TOKEN);
+            Object rawIdToken = context.getContextData().get(OIDCIdentityProvider.VALIDATED_ID_TOKEN);
             JsonWebToken idToken;
 
             if (rawIdToken instanceof String) {
