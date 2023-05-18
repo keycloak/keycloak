@@ -53,7 +53,7 @@ public class TestsHelper {
 
     public static String baseUrl;
 
-    public static String keycloakBaseUrl = "http://localhost:8180/auth";
+    public static String keycloakBaseUrl = "http://localhost:8180";
 
     public static String testRealm = "test-realm";
 
