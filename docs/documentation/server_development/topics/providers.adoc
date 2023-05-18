@@ -256,8 +256,8 @@ the `ScriptModel` to access script metadata
 `realm`::
 the `RealmModel`
 `user`::
-the current `UserModel`. Note that `user` is available just when your script authenticator is configured in the authentication flow in a way, that it is triggered after
-other authenticator, which already successfully established user identity and did set user into the authentication session.
+the current `UserModel`. Note that `user` is available when your script authenticator is configured in the authentication flow in a way that is triggered after
+another authenticator succeeded in establishing user identity and set the user into the authentication session.
 `session`::
 the active `KeycloakSession`
 `authenticationSession`::
