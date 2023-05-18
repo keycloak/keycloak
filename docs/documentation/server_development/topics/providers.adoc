@@ -256,7 +256,8 @@ the `ScriptModel` to access script metadata
 `realm`::
 the `RealmModel`
 `user`::
-the current `UserModel`
+the current `UserModel`. Note that `user` is available just when your script authenticator is configured in the authentication flow in a way, that it is triggered after
+other authenticator, which already successfully established user identity and did set user into the authentication session.
 `session`::
 the active `KeycloakSession`
 `authenticationSession`::
@@ -286,6 +287,21 @@ function authenticate(context) {
 
   context.success();
 }
+----
+
+===== Where to add script authenticator
+
+One of the possible use of script authenticator is to do some checks at the end of the authentication. Note that if you want
+your script authenticator to be always triggered (even for instance during SSO re-authentication with the identity cookie), it may be needed to add it as REQUIRED at the end
+of the authentication flow and encapsulate the existing authenticators into separate REQUIRED authenticator. This is due the REQUIRED and ALTERNATIVE executions
+should not be at the same level. So for example the authentication flow configuration like this:
+[source]
+----
+- User-authentication-subflow REQUIRED
+-- Cookie ALTERNATIVE
+-- Identity-provider-redirect ALTERNATIVE
+...
+- Your-Script-Authenticator REQUIRED
 ----
 
 ==== Create a JAR with the scripts to deploy
