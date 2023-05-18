@@ -36,7 +36,7 @@ export default function AddSamlConnect() {
     formState: { isDirty },
   } = form;
 
-  const { addAlert } = useAlerts();
+  const { addAlert, addError } = useAlerts();
   const { realm } = useRealm();
 
   const onSubmit = async (provider: DiscoveryIdentityProvider) => {
@@ -56,12 +56,7 @@ export default function AddSamlConnect() {
         })
       );
     } catch (error: any) {
-      addAlert(
-        t("createError", {
-          error: error.response?.data?.errorMessage || error,
-        }),
-        AlertVariant.danger
-      );
+      addError("identity-providers:createError", error);
     }
   };
 
