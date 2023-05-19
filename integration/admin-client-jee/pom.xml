@@ -30,9 +30,6 @@
     <name>Keycloak Admin REST Client JavaEE</name>
     <description/>
 
-    <properties>
-        <resteasy.version>${resteasy-legacy.version}</resteasy.version>
-    </properties>
 
     <dependencies>
         <dependency>
