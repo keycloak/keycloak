@@ -119,7 +119,7 @@ public interface MapUserEntity extends UpdatableEntity, AbstractEntity, EntityWi
             int indexToRemove = toMoveIndex < ourCredentialIndex ? ourCredentialIndex + 1 : ourCredentialIndex;
             credentialsList.remove(indexToRemove);
 
-            this.updated = true;
+            markUpdatedFlag();
             return true;
         }
     }

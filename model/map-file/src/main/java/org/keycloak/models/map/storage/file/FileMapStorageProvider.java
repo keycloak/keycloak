@@ -55,7 +55,7 @@ public class FileMapStorageProvider implements MapStorageProvider {
         return (MapStorage<V, M>) SessionAttributesUtils.createMapStorageIfAbsent(session, getClass(), modelType, factoryId, () -> createFileMapStorage(modelType));
     }
 
-    private <V extends AbstractEntity & UpdatableEntity, M> ConcurrentHashMapStorage<?, V, M> createFileMapStorage(Class<M> modelType) {
+    private <V extends AbstractEntity & UpdatableEntity, M> ConcurrentHashMapStorage<?, V, M, FileCrudOperations<V, M>> createFileMapStorage(Class<M> modelType) {
         String areaName = getModelName(modelType, modelType.getSimpleName());
         final Class<V> et = ModelEntityUtil.getEntityType(modelType);
         Function<V, String[]> uniqueHumanReadableField = (Function<V, String[]>) UNIQUE_HUMAN_READABLE_NAME_FIELD.get(et);

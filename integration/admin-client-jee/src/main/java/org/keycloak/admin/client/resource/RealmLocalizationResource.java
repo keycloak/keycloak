@@ -37,10 +37,35 @@ public interface RealmLocalizationResource {
     @Produces(MediaType.APPLICATION_JSON)
     List<String> getRealmSpecificLocales();
 
+    /**
+     * Get the localization texts for the given locale.
+     *
+     * @param locale the locale
+     * @return the localization texts
+     */
     @Path("{locale}")
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    Map<String, String> getRealmLocalizationTexts(final @PathParam("locale") String locale,  @QueryParam("useRealmDefaultLocaleFallback") Boolean useRealmDefaultLocaleFallback);
+    Map<String, String> getRealmLocalizationTexts(final @PathParam("locale") String locale);
+
+
+    /**
+     * DEPRECATED - Get the localization texts for the given locale.
+     *
+     * @param locale the locale
+     * @param useRealmDefaultLocaleFallback whether the localization texts for the realm default locale should be used
+     *        as fallbacks in the result
+     * @return the localization texts
+     * @deprecated use {@link #getRealmLocalizationTexts(String)}, in order to retrieve localization texts without
+     *             fallbacks. If you need fallbacks, call the endpoint multiple time with all the relevant locales (e.g.
+     *             "de" in case of "de-CH") - the realm default locale is NOT the only fallback to be considered.
+     */
+    @Deprecated
+    @Path("{locale}")
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    Map<String, String> getRealmLocalizationTexts(final @PathParam("locale") String locale,
+            @QueryParam("useRealmDefaultLocaleFallback") Boolean useRealmDefaultLocaleFallback);
 
 
     @Path("{locale}/{key}")

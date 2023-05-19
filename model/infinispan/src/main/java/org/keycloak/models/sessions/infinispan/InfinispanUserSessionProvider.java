@@ -382,7 +382,8 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
         // and then mapped locally to avoid serialization issues when trying to manipulate the cache stream directly.
         return StreamSupport.stream(cache.entrySet().stream().filter(predicate).spliterator(), false)
                 .map(Mappers.userSessionEntity())
-                .map(entity -> this.wrap(realm, entity, offline));
+                .map(entity -> this.wrap(realm, entity, offline))
+                .filter(Objects::nonNull).map(Function.identity());
     }
 
     @Override
@@ -739,7 +740,17 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
     UserSessionAdapter wrap(RealmModel realm, UserSessionEntity entity, boolean offline) {
         InfinispanChangelogBasedTransaction<String, UserSessionEntity> userSessionUpdateTx = getTransaction(offline);
         InfinispanChangelogBasedTransaction<UUID, AuthenticatedClientSessionEntity> clientSessionUpdateTx = getClientSessionTransaction(offline);
-        return entity != null ? new UserSessionAdapter(session, this, userSessionUpdateTx, clientSessionUpdateTx, realm, entity, offline) : null;
+
+        if (entity == null) {
+            return null;
+        }
+
+        UserModel user =  session.users().getUserById(realm, entity.getUser());
+        if (user == null) {
+            return null;
+        }
+
+        return new UserSessionAdapter(session, user, this, userSessionUpdateTx, clientSessionUpdateTx, realm, entity, offline);
     }
 
     AuthenticatedClientSessionAdapter wrap(UserSessionModel userSession, ClientModel client, AuthenticatedClientSessionEntity entity, boolean offline) {

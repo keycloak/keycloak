@@ -243,6 +243,11 @@ public class MapEntityContext<T> implements BlockContext<T> {
         });
     }
 
+    @Override
+    public String toString() {
+        return "MapEntityContext[" + objectClass.getCanonicalName() + ']';
+    }
+
     public static class MapEntitySequenceYamlContext<T> extends DefaultListContext<T> {
 
         public MapEntitySequenceYamlContext(Class<T> itemClass) {

@@ -30,10 +30,10 @@ import java.util.function.Supplier;
  */
 public class AllAreasHotRodStoresWrapper extends AbstractKeycloakTransaction {
 
-    private final Map<Class<?>, ConcurrentHashMapStorage<?, ?, ?>> MapKeycloakStoresMap = new ConcurrentHashMap<>();
+    private final Map<Class<?>, ConcurrentHashMapStorage<?, ?, ?, ?>> MapKeycloakStoresMap = new ConcurrentHashMap<>();
 
-    public ConcurrentHashMapStorage<?, ?, ?> getOrCreateStoreForModel(Class<?> modelType, Supplier<ConcurrentHashMapStorage<?, ?, ?>> supplier) {
-        ConcurrentHashMapStorage<?, ?, ?> store = MapKeycloakStoresMap.computeIfAbsent(modelType, t -> supplier.get());
+    public ConcurrentHashMapStorage<?, ?, ?, ?> getOrCreateStoreForModel(Class<?> modelType, Supplier<ConcurrentHashMapStorage<?, ?, ?, ?>> supplier) {
+        ConcurrentHashMapStorage<?, ?, ?, ?> store = MapKeycloakStoresMap.computeIfAbsent(modelType, t -> supplier.get());
         if (!store.isActive()) {
             store.begin();
         }

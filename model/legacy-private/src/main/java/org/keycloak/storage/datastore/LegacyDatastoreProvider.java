@@ -23,9 +23,13 @@ import org.keycloak.models.GroupProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmProvider;
 import org.keycloak.models.RoleProvider;
+import org.keycloak.models.SingleUseObjectProvider;
+import org.keycloak.models.UserLoginFailureProvider;
 import org.keycloak.models.UserProvider;
+import org.keycloak.models.UserSessionProvider;
 import org.keycloak.models.cache.CacheRealmProvider;
 import org.keycloak.models.cache.UserCache;
+import org.keycloak.sessions.AuthenticationSessionProvider;
 import org.keycloak.storage.ClientScopeStorageManager;
 import org.keycloak.storage.ClientStorageManager;
 import org.keycloak.storage.DatastoreProvider;
@@ -41,12 +45,16 @@ public class LegacyDatastoreProvider implements DatastoreProvider, LegacyStoreMa
     private final LegacyDatastoreProviderFactory factory;
     private final KeycloakSession session;
 
+    private AuthenticationSessionProvider authenticationSessionProvider;
     private ClientProvider clientProvider;
     private ClientScopeProvider clientScopeProvider;
     private GroupProvider groupProvider;
+    private UserLoginFailureProvider userLoginFailureProvider;
     private RealmProvider realmProvider;
     private RoleProvider roleProvider;
+    private SingleUseObjectProvider singleUseObjectProvider;
     private UserProvider userProvider;
+    private UserSessionProvider userSessionProvider;
 
     private ClientScopeStorageManager clientScopeStorageManager;
     private RoleStorageManager roleStorageManager;
@@ -171,6 +179,14 @@ public class LegacyDatastoreProvider implements DatastoreProvider, LegacyStoreMa
     }
 
     @Override
+    public AuthenticationSessionProvider authSessions() {
+        if (authenticationSessionProvider == null) {
+            authenticationSessionProvider = session.getProvider(AuthenticationSessionProvider.class);
+        }
+        return authenticationSessionProvider;
+    }
+
+    @Override
     public ClientProvider clients() {
         if (clientProvider == null) {
             clientProvider = getClientProvider();
@@ -195,6 +211,14 @@ public class LegacyDatastoreProvider implements DatastoreProvider, LegacyStoreMa
     }
 
     @Override
+    public UserLoginFailureProvider loginFailures() {
+        if (userLoginFailureProvider == null) {
+            userLoginFailureProvider = session.getProvider(UserLoginFailureProvider.class);
+        }
+        return userLoginFailureProvider;
+    }
+
+    @Override
     public RealmProvider realms() {
         if (realmProvider == null) {
             realmProvider = getRealmProvider();
@@ -211,11 +235,27 @@ public class LegacyDatastoreProvider implements DatastoreProvider, LegacyStoreMa
     }
 
     @Override
+    public SingleUseObjectProvider singleUseObjects() {
+        if (singleUseObjectProvider == null) {
+            singleUseObjectProvider = session.getProvider(SingleUseObjectProvider.class);
+        }
+        return singleUseObjectProvider;
+    }
+
+    @Override
     public UserProvider users() {
         if (userProvider == null) {
             userProvider = getUserProvider();
         }
         return userProvider;
+    }
+
+    @Override
+    public UserSessionProvider userSessions() {
+        if (userSessionProvider == null) {
+            userSessionProvider = session.getProvider(UserSessionProvider.class);
+        }
+        return userSessionProvider;
     }
 
     @Override

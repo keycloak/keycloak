@@ -35,7 +35,7 @@ Console:
 * `hostname-url`
 * `hostname-admin-url`
 
-More details can be found at the https://www.keycloak.org/server/hostname[Configuring the Hostname Guide].
+More details can be found at the https://www.keycloak.org/server/hostname[Configuring the Hostname] {section}.
 
 = Improvements to `kc.bat` when running Keycloak on Windows
 

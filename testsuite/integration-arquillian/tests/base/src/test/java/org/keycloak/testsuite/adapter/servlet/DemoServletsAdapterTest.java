@@ -27,22 +27,20 @@ import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.cookie.BasicClientCookie;
 import org.apache.http.util.EntityUtils;
 import org.jboss.arquillian.container.test.api.Deployment;
-import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Rule;
+import org.junit.Before;
+import org.junit.After;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.adapters.OIDCAuthenticationError;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.RealmResource;
-import org.keycloak.common.Profile;
 import org.keycloak.common.util.Time;
 import org.keycloak.constants.AdapterConstants;
 import org.keycloak.events.Details;
-import org.keycloak.events.EventType;
 import org.keycloak.models.utils.SessionTimeoutHelper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
@@ -52,7 +50,6 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.adapter.AbstractServletsAdapterTest;
 import org.keycloak.testsuite.adapter.filter.AdapterActionsFilter;
 import org.keycloak.testsuite.adapter.page.BasicAuth;
@@ -76,26 +73,21 @@ import org.keycloak.testsuite.adapter.page.TokenMinTTLPage;
 import org.keycloak.testsuite.adapter.page.TokenRefreshPage;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
-import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
 import org.keycloak.testsuite.pages.InfoPage;
 import org.keycloak.testsuite.pages.LogoutConfirmPage;
-import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.ServerURLs;
 import org.keycloak.testsuite.utils.arquillian.ContainerConstants;
-import org.keycloak.testsuite.auth.page.account.Applications;
 import org.keycloak.testsuite.auth.page.login.OAuthGrant;
-import org.keycloak.testsuite.auth.page.login.OIDCLogin;
 import org.keycloak.testsuite.console.page.events.Config;
 import org.keycloak.testsuite.console.page.events.LoginEvents;
 import org.keycloak.testsuite.page.AbstractPageWithInjectedUrl;
-import org.keycloak.testsuite.util.JavascriptBrowser;
 import org.keycloak.testsuite.util.Matchers;
 import org.keycloak.testsuite.util.URLUtils;
 import org.keycloak.testsuite.util.WaitUtils;
+import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.util.BasicAuthHelper;
 import org.openqa.selenium.By;
 import org.openqa.selenium.Cookie;
-import org.openqa.selenium.WebDriver;
 
 import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.client.Entity;
@@ -151,17 +143,7 @@ import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
 @AppServerContainer(ContainerConstants.APP_SERVER_EAP71)
 @AppServerContainer(ContainerConstants.APP_SERVER_TOMCAT8)
 @AppServerContainer(ContainerConstants.APP_SERVER_TOMCAT9)
-@DisableFeature(value = Profile.Feature.ACCOUNT2, skipRestart = true) // TODO remove this (KEYCLOAK-16228)
 public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
-
-    // Javascript browser needed KEYCLOAK-4703
-    @Drone
-    @JavascriptBrowser
-    protected WebDriver jsDriver;
-
-    @Page
-    @JavascriptBrowser
-    protected OIDCLogin jsDriverTestRealmLoginPage;
 
     @Page
     protected LogoutConfirmPage logoutConfirmPage;
@@ -197,8 +179,6 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
     private TokenRefreshPage tokenRefreshPage;
     @Page
     private OAuthGrant oAuthGrantPage;
-    @Page
-    protected Applications applicationsPage;
     @Page
     protected LoginEvents loginEventsPage;
     @Page
@@ -317,7 +297,6 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
         super.setDefaultPageUriParameters();
         configPage.setConsoleRealm(DEMO);
         loginEventsPage.setConsoleRealm(DEMO);
-        applicationsPage.setAuthRealm(DEMO);
         loginEventsPage.setConsoleRealm(DEMO);
         oAuthGrantPage.setAuthRealm(DEMO);
     }
@@ -327,6 +306,16 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
         // Delete all cookies from token-min-ttl page to be sure we are logged out
         tokenMinTTLPage.navigateTo();
         driver.manage().deleteAllCookies();
+
+        // set demo realm name for all tests
+        oauth.realm(testRealmResource().toRepresentation().getRealm());
+        createAppClientInRealm(testRealmResource().toRepresentation().getRealm());
+    }
+
+    @After
+    public void afterDemoServletsAdapterTest() {
+        // restore test realm
+        oauth.realm("test");
     }
     
     //KEYCLOAK-702
@@ -469,8 +458,9 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
         waitForPageToLoad();
         assertPageContains("parameter=hello");
 
-        testRealmAccountPage.navigateTo();
-        testRealmAccountPage.logOut();
+        AccountHelper.logout(testRealmResource(), "bburke@redhat.com");
+        driver.navigate().to(oauth.getLoginFormUrl());
+
         assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
         productPortal.navigateTo();
         assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
@@ -523,8 +513,9 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
         assertEquals(1, Integer.parseInt(productPortalStats.get("active")));
 
         // test logout
-        testRealmAccountPage.navigateTo();
-        testRealmAccountPage.logOut();
+        AccountHelper.logout(testRealmResource(), "bburke@redhat.com");
+        driver.navigate().to(oauth.getLoginFormUrl());
+
         assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
         productPortal.navigateTo();
         assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
@@ -716,8 +707,8 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
         assertCurrentUrlEquals(securePortal);
         assertLogged();
         // test logout
-        testRealmAccountPage.navigateTo();
-        testRealmAccountPage.logOut();
+        AccountHelper.logout(testRealmResource(), "bburke@redhat.com");
+        driver.navigate().to(oauth.getLoginFormUrl());
         assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
         securePortal.navigateTo();
         assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
@@ -735,8 +726,8 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
 
         assertLogged();
         // test logout
-        testRealmAccountPage.navigateTo();
-        testRealmAccountPage.logOut();
+        AccountHelper.logout(testRealmResource(), "bburke@redhat.com");
+        driver.navigate().to(oauth.getLoginFormUrl());
         assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
         securePortalWithCustomSessionConfig.navigateTo();
         assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
@@ -910,8 +901,9 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
             assertCurrentUrlEquals(portalUri);
             assertLogged();
             // logout
-            testRealmAccountPage.navigateTo();
-            testRealmAccountPage.logOut();
+            AccountHelper.logout(testRealmResource(), "bburke@redhat.com");
+            driver.navigate().to(oauth.getLoginFormUrl());
+
             assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
             securePortal.navigateTo();
             assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
@@ -943,9 +935,9 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
         Assert.assertTrue(pageSource.contains("Service returned: 401"));
         Assert.assertFalse(pageSource.contains("Stian Thorgersen"));
 
-        // Logout TODO: will be good to not request logout to force adapter to use additional scope (and other request parameters)
-        driver.navigate().to(customerPortal.logout().toURL());
-        waitForPageToLoad();
+        // Logout
+        AccountHelper.logout(testRealmResource(), "bburke@redhat.com");
+        driver.navigate().to(oauth.getLoginFormUrl());
 
         // Login with requested audience
         driver.navigate().to(customerPortal.callCustomerDbAudienceRequiredUrl(true).toURL());
@@ -959,8 +951,8 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
         assertLogged();
 
         // logout
-        testRealmAccountPage.navigateTo();
-        testRealmAccountPage.logOut();
+        AccountHelper.logout(testRealmResource(), "bburke@redhat.com");
+        driver.navigate().to(oauth.getLoginFormUrl());
         assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
     }
 
@@ -1038,19 +1030,13 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
                 .removeDetail(Details.CODE_ID)
                 .assertEvent();
 
-        applicationsPage.navigateTo();
-        applicationsPage.revokeGrantForApplication("customer-portal");
+        AccountHelper.revokeConsents(testRealmResource(), "bburke@redhat.com", "customer-portal");
 
         customerPortal.navigateTo();
 
         assertTrue(oAuthGrantPage.isCurrent());
 
-        assertEvents.expect(EventType.REVOKE_GRANT)
-                .realm(realm.getId())
-                .client("account")
-                .user(userId)
-                .detail(Details.REVOKED_CLIENT, "customer-portal")
-                .assertEvent();
+        Assert.assertTrue(AccountHelper.getUserConsents(testRealmResource(), "bburke@redhat.com").isEmpty());
 
         assertEvents.assertEmpty();
 
@@ -1167,8 +1153,8 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
         assertPageContains("uriEncodeTest=false");
         
         // test logout
-        testRealmAccountPage.navigateTo();
-        testRealmAccountPage.logOut();
+        AccountHelper.logout(testRealmResource(), "bburke@redhat.com");
+        driver.navigate().to(oauth.getLoginFormUrl());
         assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
         productPortal.navigateTo();
         assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
@@ -1325,8 +1311,7 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
         expectResultOfClientAuthenticatedInClientSecretJwt(targetClientId, clientSecretJwtSecurePortal);
 
         // test logout
-        testRealmAccountPage.navigateTo();
-        testRealmAccountPage.logOut();
+        AccountHelper.logout(testRealmResource(), "bburke@redhat.com");
     }
 
     @Test
@@ -1366,8 +1351,7 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
         expectResultOfClientAuthenticatedInClientSecretJwt(targetClientId, clientSecretJwtSecurePortalValidAlg);
 
         // test logout
-        testRealmAccountPage.navigateTo();
-        testRealmAccountPage.logOut();
+        AccountHelper.logout(testRealmResource(), "bburke@redhat.com");
     }
 
     @Test

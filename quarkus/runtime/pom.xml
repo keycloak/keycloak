@@ -656,12 +656,6 @@
             <scope>test</scope>
         </dependency>
 
-        <!-- logging wrapper for log4j-->
-        <dependency>
-            <groupId>org.jboss.logmanager</groupId>
-            <artifactId>log4j-jboss-logmanager</artifactId>
-        </dependency>
-
         <!-- twitter api -->
         <dependency>
             <groupId>org.twitter4j</groupId>
@@ -691,7 +685,7 @@
             <plugin>
                 <groupId>io.quarkus</groupId>
                 <artifactId>quarkus-extension-maven-plugin</artifactId>
-                <version>${quarkus.version}</version>
+                <version>${quarkus.build.version}</version>
                 <executions>
                     <execution>
                         <goals>
@@ -712,7 +706,7 @@
                         <path>
                             <groupId>io.quarkus</groupId>
                             <artifactId>quarkus-extension-processor</artifactId>
-                            <version>${quarkus.version}</version>
+                            <version>${quarkus.build.version}</version>
                         </path>
                     </annotationProcessorPaths>
                 </configuration>

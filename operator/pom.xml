@@ -36,7 +36,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <quarkus.operator.sdk.version>6.0.1</quarkus.operator.sdk.version>
-        <quarkus.version>3.0.0.Final</quarkus.version>
+        <quarkus.operator.build.version>3.0.0.Final</quarkus.operator.build.version>
         <quarkus.container-image.group>keycloak</quarkus.container-image.group>
     </properties>
     
@@ -160,7 +160,7 @@
             <plugin>
                 <groupId>io.quarkus</groupId>
                 <artifactId>quarkus-maven-plugin</artifactId>
-                <version>${quarkus.version}</version>
+                <version>${quarkus.operator.build.version}</version>
             </plugin>
             <plugin>
                 <artifactId>maven-compiler-plugin</artifactId>
@@ -172,7 +172,7 @@
             <plugin>
                 <groupId>io.quarkus</groupId>
                 <artifactId>quarkus-maven-plugin</artifactId>
-                <version>${quarkus.version}</version>
+                <version>${quarkus.operator.build.version}</version>
                 <executions>
                     <execution>
                     <goals>
