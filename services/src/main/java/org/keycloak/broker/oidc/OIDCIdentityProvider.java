@@ -74,6 +74,9 @@ import jakarta.ws.rs.core.UriInfo;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
 
 import static org.keycloak.utils.LockObjectsForModification.lockUserSessionsForModification;
 
@@ -394,11 +397,17 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
                 String filterValue = getConfig().getClaimFilterValue();
 
                 logger.tracef("Filtering user %s by %s=%s", idToken.getOtherClaims().get(getusernameClaimNameForIdToken()), filterName, filterValue);
-                if (idToken.getOtherClaims().containsKey(filterName)) { 
-                    String claimValue = idToken.getOtherClaims().get(filterName).toString();
-                    logger.tracef("Found claim %s with value %s", filterName, claimValue);
-                    if (!String.valueOf(claimValue).matches(filterValue)) {
-                        logger.warnf("Claim %s has value \"%s\" that does not match the expected filter \"%s\"", filterName, claimValue, filterValue);
+                if (idToken.getOtherClaims().containsKey(filterName)) {
+                    Object claimObject = idToken.getOtherClaims().get(filterName);
+                    List<String> claimValues = new ArrayList<>();
+                    if (claimObject instanceof List) {
+                        ((List<?>)claimObject).forEach(v->claimValues.add(Objects.toString(v)));
+                    } else {
+                        claimValues.add(Objects.toString(claimObject));
+                    }
+                    logger.tracef("Found claim %s with values %s", filterName, claimValues);
+                    if (!claimValues.stream().anyMatch(v->v.matches(filterValue))) {
+                        logger.warnf("Claim %s has values \"%s\" that does not match the expected filter \"%s\"", filterName, claimValues, filterValue);
                         throw new IdentityBrokerException(String.format("Unmatched claim value for %s.", filterName));
                     }
                 } else {
