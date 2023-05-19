@@ -24,14 +24,14 @@ import java.util.Objects;
 import java.util.function.BiFunction;
 import java.util.stream.Stream;
 
-import javax.ws.rs.GET;
-import javax.ws.rs.NotFoundException;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.UriInfo;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.UriInfo;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.jboss.logging.Logger;
@@ -53,6 +53,7 @@ import org.keycloak.representations.IDToken;
 import org.keycloak.services.Urls;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.AuthenticationSessionManager;
+import org.keycloak.services.managers.UserSessionManager;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
@@ -233,7 +234,7 @@ public class ClientScopeEvaluateResource {
             authSession.setClientNote(OIDCLoginProtocol.ISSUER, Urls.realmIssuer(uriInfo.getBaseUri(), realm.getName()));
             authSession.setClientNote(OIDCLoginProtocol.SCOPE_PARAM, scopeParam);
 
-            UserSessionModel userSession = session.sessions().createUserSession(authSession.getParentSession().getId(), realm, user, user.getUsername(),
+            UserSessionModel userSession = new UserSessionManager(session).createUserSession(authSession.getParentSession().getId(), realm, user, user.getUsername(),
                     clientConnection.getRemoteAddr(), "example-auth", false, null, null, UserSessionModel.SessionPersistenceState.TRANSIENT);
 
             AuthenticationManager.setClientScopesInSession(authSession);

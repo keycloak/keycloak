@@ -36,7 +36,7 @@ import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.util.ProtocolMapperUtil;
 import org.keycloak.testsuite.util.UserBuilder;
 
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -48,7 +48,7 @@ import java.util.Collections;
  */
 public class AudienceTest extends AbstractOIDCScopeTest {
 
-    private static final String userId = KeycloakModelUtils.generateId();
+    private static String userId;
 
 
     @Override
@@ -74,7 +74,7 @@ public class AudienceTest extends AbstractOIDCScopeTest {
 
         // Create sample user
         UserRepresentation user = UserBuilder.create()
-                .id(userId)
+                .id(KeycloakModelUtils.generateId())
                 .username("john")
                 .enabled(true)
                 .email("john@email.cz")
@@ -86,6 +86,12 @@ public class AudienceTest extends AbstractOIDCScopeTest {
                 .role("service-client", "role1")
                 .build();
         testRealm.getUsers().add(user);
+    }
+
+    @Override
+    public void importTestRealms() {
+        super.importTestRealms();
+        userId = adminClient.realm("test").users().search("john", true).get(0).getId();
     }
 
     @Before

@@ -1,0 +1,8 @@
+{
+  "protocol": "Protokoll",
+  "type": "Type",
+  "realmRolePrefix": "Prefiks for sikkerhetsdomenerolle",
+  "realmRoles": "Sikkerhetsdomeneroller",
+  "clients": "Klienter",
+  "scope": "Scope"
+}

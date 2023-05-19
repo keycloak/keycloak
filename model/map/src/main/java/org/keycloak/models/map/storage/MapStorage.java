@@ -16,30 +16,108 @@
  */
 package org.keycloak.models.map.storage;
 
-import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.map.common.AbstractEntity;
 
+import java.util.stream.Stream;
+
 /**
- * Implementation of this interface interacts with a persistence storage storing various entities, e.g. users, realms.
- *
- * @author hmlnarik
- * @param <V> Type of the stored values that contains all the data stripped of session state. In other words, in the entities
- *            there are only IDs and mostly primitive types / {@code String}, never references to {@code *Model} instances.
- *            See the {@code Abstract*Entity} classes in this module.
- * @param <M> Type of the {@code *Model} corresponding to the stored value, e.g. {@code UserModel}. This is used for
- *            filtering via model fields in {@link ModelCriteriaBuilder} which is necessary to abstract from physical
- *            layout and thus to support no-downtime upgrade.
+ * A storage for entities that is based on a map and operates in the context of transaction
+ * managed by current {@code KeycloakSession}. Implementations of its methods should respect
+ * transactional boundaries of that transaction.
  */
 public interface MapStorage<V extends AbstractEntity, M> {
-    
-    /**
-     * Creates a {@code MapKeycloakTransaction} object that tracks a new transaction related to this storage.
-     * In case of JPA or similar, the transaction object might be supplied by the container (via JTA) or
-     * shared same across storages accessing the same database within the same session; in other cases
-     * (e.g. plain map) a separate transaction handler might be created per each storage.
-     *
-     * @return See description. Never returns {@code null}
-     */
-    MapKeycloakTransaction<V, M> createTransaction(KeycloakSession session);
 
+    /**
+     * Instructs this storage to add a new value into the underlying store on commit in the context of the current transaction.
+     * <p>
+     * Updates to the returned instances of {@code V} would be visible in the current transaction
+     * and will propagate into the underlying store upon commit.
+     *
+     * The ID of the entity passed in the parameter might change to a different value in the returned value
+     * if the underlying storage decided this was necessary.
+     * If the ID of the entity was null before, it will be set on the returned value.
+     *
+     * @param value the value
+     * @return Entity representing the {@code value} in the store. It may or may not be the same instance as {@code value}.
+     */
+    V create(V value);
+
+    /**
+     * Provides possibility to lookup for values by a {@code key} in the underlying store with respect to changes done
+     * in current transaction. Updates to the returned instance would be visible in the current transaction
+     * and will propagate into the underlying store upon commit.
+     *
+     * If {@code V} implements {@link org.keycloak.models.map.common.ExpirableEntity} this method should not return
+     * entities that are expired. See {@link org.keycloak.models.map.common.ExpirableEntity} JavaDoc for more details.
+     *
+     * @param key identifier of a value
+     * @return a value associated with the given {@code key}
+     */
+    V read(String key);
+
+    /**
+     * Returns a stream of values from underlying storage that are updated based on the current transaction changes;
+     * i.e. the result contains updates and excludes of records that have been created, updated or deleted in this
+     * transaction by respective methods of this interface.
+     * <p>
+     * Updates to the returned instances of {@code V} would be visible in the current transaction
+     * and will propagate into the underlying store upon commit.
+     *
+     * If {@code V} implements {@link org.keycloak.models.map.common.ExpirableEntity} this method should not return
+     * entities that are expired. See {@link org.keycloak.models.map.common.ExpirableEntity} JavaDoc for more details.
+     *
+     * @param queryParameters parameters for the query like firstResult, maxResult, requested ordering, etc.
+     * @return values that fulfill the given criteria, that are updated based on changes in the current transaction
+     */
+    Stream<V> read(QueryParameters<M> queryParameters);
+
+    /**
+     * Returns a number of values present in the underlying storage that fulfill the given criteria with respect to
+     * changes done in the current transaction.
+     *
+     * @param queryParameters parameters for the query like firstResult, maxResult, requested ordering, etc.
+     * @return number of values present in the storage that fulfill the given criteria
+     */
+    long getCount(QueryParameters<M> queryParameters);
+
+    /**
+     * Instructs this storage to delete a value associated with the identifier {@code key} from the underlying store
+     * upon commit.
+     *
+     * @return Returns {@code true} if the object has been deleted or result cannot be determined, {@code false} otherwise.
+     * @param key identifier of a value
+     */
+    boolean delete(String key);
+
+    /**
+     * Instructs this transaction to remove values (identified by {@code mcb} filter) from the underlying store upon commit.
+     *
+     * @param queryParameters parameters for the query like firstResult, maxResult, requested ordering, etc.
+     * @return number of removed objects (might return {@code -1} if not supported)
+     */
+    long delete(QueryParameters<M> queryParameters);
+
+    /**
+     * Returns {@code true} if the object with the given {@code key} exists in the underlying storage with respect to changes done
+     * in the current transaction. {@code false} otherwise.
+     *
+     * @param key Key of the object. Must not be {@code null}.
+     * @return See description
+     * @throws NullPointerException if the {@code key} is {@code null}
+     */
+    default boolean exists(String key) {
+        return read(key) != null;
+    }
+
+    /**
+     * Returns {@code true} if at least one object is satisfying given {@code criteria} from the underlying storage with respect to changes done
+     * in the current transaction. {@code false} otherwise.
+     * The criteria are specified in the given criteria builder based on model properties.
+     *
+     * @param queryParameters parameters for the query
+     * @return See description
+     */
+    default boolean exists(QueryParameters<M> queryParameters) {
+        return getCount(queryParameters) > 0;
+    }
 }

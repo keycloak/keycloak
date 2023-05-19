@@ -1,0 +1,118 @@
+= New Operator preview
+
+With this release, we're introducing a brand new {project_operator} as a preview. Apart from being rewritten from
+scratch, the main user-facing change from the legacy Operator is the used {project_name} distribution – the new Operator
+uses the Quarkus distribution of {project_name}. With that, the API (in form of Custom Resource Definitions) has changed.
+For details, incl. installation and migration instructions, see the https://www.keycloak.org/guides#operator[Operator related guides].
+
+The link:{operatorRepo_link}[legacy Operator] will receive updates until Keycloak 20 when the {project_name} WildFly
+distribution reaches EOL.
+
+== OperatorHub versioning scheme
+To avoid version conflicts with the legacy Operator, the 18.0.0 version of the new Operator is released as version
+`20.0.0-alpha.1` on OperatorHub. The legacy Operator versioning scheme remains the same, i.e. it is released as 18.0.0.
+
+The same pattern will apply for future {project_name} 18 and 19 releases, until version 20 where the legacy Operator
+reaches EOL.
+
+= New Admin Console preview
+
+The new Admin Console is now graduated to preview, with the plan for it to become the default admin console in Keycloak 19.
+
+If you find any issues with the new console, or have some suggestions for improvements, please let us know through https://github.com/keycloak/keycloak/discussions/categories/new-admin-console[GitHub Discussions].
+
+= Step-up authentication
+
+{project_name} now supports Step-up authentication. This feature was added in Keycloak 17, and was further polished in this version.
+
+For more details, see link:{adminguide_link}#_step-up-flow[{adminguide_name}].
+
+Thanks to https://github.com/CorneliaLahnsteiner[Cornelia Lahnsteiner] and https://github.com/romge[Georg Romstorfer] for the contribution.
+
+= Client secret rotation
+
+{project_name} now supports Client Secret Rotation through customer policies. This feature is now available as a preview feature and allows that confidential clients can be provided with realm policies allowing the use up to two secrets simultaneously.
+
+For more details, see link:{adminguide_link}#_secret_rotation[{adminguide_name}].
+
+= Recovery Codes
+
+Recovery Codes as another way to do two-factor authentication is now available as a preview feature.
+
+= OpenID Connect Logout Improvements
+
+Some fixes and improvements were made to make sure that {project_name} is now fully compliant with all the OpenID Connect logout specifications:
+
+* OpenID Connect RP-Initiated Logout 1.0
+* OpenID Connect Front-Channel Logout 1.0
+* OpenID Connect Back-Channel Logout 1.0
+* OpenID Connect Session Management 1.0
+
+For more details, see link:{adminguide_link}#_oidc-logout[{adminguide_name}].
+
+= WebAuthn improvements
+
+{project_name} now supports WebAuthn id-less authentication. This feature allows that WebAuthn Security Key will identify the user during authentication as long as the
+security key supports Resident Keys. For more details, see link:{adminguide_link}#_webauthn_loginless[{adminguide_name}].
+Thanks to https://github.com/vanrar68[Joaquim Fellmann] for the contribution.
+
+There are more WebAuthn improvements and fixes in addition to that.
+
+= The deprecated `upload-script` feature was removed
+
+The `upload-script` feature has been marked as deprecated for a very long time. In this release, it was completely removed, and it is no longer supported.
+
+If you are using any of these capabilities:
+
+* OpenID Connect Script Mapper
+* Script Authenticator (Authentication Execution)
+* JavaScript Policies
+
+You should consider reading this https://www.keycloak.org/docs/latest/server_development/#_script_providers[documentation] in order to understand how to still rely
+on these capabilities but deploying your scripts to the server rather than managing them through the management interfaces.
+
+= Session limits
+
+{project_name} now supports limits on the number of sessions a user can have. Limits can be placed at the realm level or at the client level.
+
+For more details, see link:{adminguide_link}#_user_session_limits[{adminguide_name}].
+Thanks to https://github.com/mfdewit[Mauro de Wit] for the contribution.
+
+= SAML ECP Profile is disabled by default
+
+To mitigate the risk of abusing SAML ECP Profile, {project_name} now blocks
+this flow for all SAML clients that do not allow it explicitly. The profile
+can be enabled using _Allow ECP Flow_ flag within client configuration,
+see  link:{adminguide_link}#_client-saml-configuration[{adminguide_name}].
+
+= Quarkus distribution
+
+== Import realms at startup
+
+The {project_name} Quarkus distribution now supports importing your realms directly at start-up. For more information, check the corresponding https://www.keycloak.org/server/importExport[guide].
+
+== JSON and File Logging improvements
+
+The {project_name} Quarkus distribution now initially supports logging to a File and logging structured data using JSON.
+
+For more information on the improvements, check the corresponding https://www.keycloak.org/server/logging[Logging] {section}.
+
+=== Environment variable expansion for values in keycloak.conf
+
+The {project_name} Quarkus distribution now supports expanding values in keycloak.conf from environment variables.
+
+For more information, check the corresponding https://www.keycloak.org/server/configuration[guide].
+
+== New Option db-url-port
+
+You can now change the port of your jdbc connection string explicitly by setting the new `db-url-port` configuration option. As for the other convenience options, this option will be overridden by the value of a full `db-url`, if set.
+
+== Split metrics-enabled option into health-enabled and metrics-enabled
+The `metrics-enabled` option now only enables the metrics for {project_name}. To enable the readiness and liveness probe, there's the new build option `health-enabled`. This allows more fine-grained usage of these options.
+
+= Other improvements
+
+* Account console alignments with latest PatternFly release.
+* Support for encrypted User Info endpoint response. Thanks to https://github.com/giacomoa[Giacomo Altiero]
+* Support for the algorithm RSA-OAEP with A256GCM used for encryption keys. Thanks to https://github.com/fbrissi[Filipe Bojikian Rissi]
+* Support for login with GitHub Enterprise server. Thanks to https://github.com/nngo[Neon Ngo]

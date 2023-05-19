@@ -9,6 +9,7 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.Writer;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -40,7 +41,7 @@ public class FreeMarker {
         HashMap<String, Object> attrs = new HashMap<>(attributes);
         attrs.put("id", template.split("/")[1].replace(".adoc", ""));
 
-        Writer w = new FileWriter(out);
+        Writer w = new FileWriter(out, StandardCharsets.UTF_8);
         t.process(attrs, w);
     }
 

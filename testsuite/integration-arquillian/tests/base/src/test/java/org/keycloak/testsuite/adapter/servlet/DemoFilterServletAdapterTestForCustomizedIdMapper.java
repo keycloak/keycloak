@@ -34,10 +34,12 @@ import org.jboss.shrinkwrap.api.spec.WebArchive;
 import static org.junit.Assert.assertTrue;
 
 @AppServerContainer(ContainerConstants.APP_SERVER_UNDERTOW)
+/* Execute with JBoss-based app servers after resolving this issue: https://github.com/keycloak/keycloak/issues/19809
 @AppServerContainer(ContainerConstants.APP_SERVER_WILDFLY)
 @AppServerContainer(ContainerConstants.APP_SERVER_EAP)
 @AppServerContainer(ContainerConstants.APP_SERVER_EAP6)
 @AppServerContainer(ContainerConstants.APP_SERVER_EAP71)
+*/
 @UseServletFilter(filterName = "oidc-filter", filterClass = "org.keycloak.adapters.servlet.KeycloakOIDCFilter",
         filterDependency = "org.keycloak:keycloak-servlet-filter-adapter", skipPattern = "/error.html",
         idMapper = "org.keycloak.testsuite.adapter.spi.TestSessionIdMapper")

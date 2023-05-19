@@ -21,21 +21,20 @@ import org.keycloak.authorization.jpa.entities.ResourceEntity;
 import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.model.Scope;
-import org.keycloak.authorization.store.PermissionTicketStore;
 import org.keycloak.authorization.store.ResourceStore;
 import org.keycloak.authorization.store.StoreFactory;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
-import javax.persistence.EntityManager;
-import javax.persistence.FlushModeType;
-import javax.persistence.NoResultException;
-import javax.persistence.TypedQuery;
-import javax.persistence.criteria.CriteriaBuilder;
-import javax.persistence.criteria.CriteriaQuery;
-import javax.persistence.criteria.Expression;
-import javax.persistence.criteria.Predicate;
-import javax.persistence.criteria.Root;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.FlushModeType;
+import jakarta.persistence.NoResultException;
+import jakarta.persistence.TypedQuery;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.Expression;
+import jakarta.persistence.criteria.Predicate;
+import jakarta.persistence.criteria.Root;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
@@ -155,10 +154,10 @@ public class JPAResourceStore implements ResourceStore {
     @Override
     public List<Resource> find(RealmModel realm, ResourceServer resourceServer, Map<Resource.FilterOption, String[]> attributes, Integer firstResult, Integer maxResults) {
         CriteriaBuilder builder = entityManager.getCriteriaBuilder();
-        CriteriaQuery<ResourceEntity> querybuilder = builder.createQuery(ResourceEntity.class);
+        CriteriaQuery<String> querybuilder = builder.createQuery(String.class);
         Root<ResourceEntity> root = querybuilder.from(ResourceEntity.class);
         querybuilder.select(root.get("id"));
-        List<Predicate> predicates = new ArrayList();
+        List<Predicate> predicates = new ArrayList<>();
 
         if (resourceServer != null) {
             predicates.add(builder.equal(root.get("resourceServer"), resourceServer.getId()));
@@ -197,9 +196,9 @@ public class JPAResourceStore implements ResourceStore {
             }
         });
 
-        querybuilder.where(predicates.toArray(new Predicate[predicates.size()])).orderBy(builder.asc(root.get("name")));
+        querybuilder.where(predicates.toArray(new Predicate[0])).orderBy(builder.asc(root.get("name")));
 
-        TypedQuery query = entityManager.createQuery(querybuilder);
+        TypedQuery<String> query = entityManager.createQuery(querybuilder);
 
         List<String> result = paginateQuery(query, firstResult, maxResults).getResultList();
         List<Resource> list = new LinkedList<>();

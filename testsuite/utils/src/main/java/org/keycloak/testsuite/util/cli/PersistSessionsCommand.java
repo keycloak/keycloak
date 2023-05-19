@@ -30,6 +30,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.session.UserSessionPersisterProvider;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.services.managers.UserSessionManager;
 
 
 /**
@@ -81,6 +82,7 @@ public class PersistSessionsCommand extends AbstractCommand {
 
                 ClientModel testApp = realm.getClientByClientId("security-admin-console");
                 UserSessionPersisterProvider persister = session.getProvider(UserSessionPersisterProvider.class);
+                UserSessionManager userSessionManager = new UserSessionManager(session);
 
                 for (int i = 0; i < countInThisBatch; i++) {
                     String username = "john-" + userCounter.incrementAndGet();
@@ -89,7 +91,7 @@ public class PersistSessionsCommand extends AbstractCommand {
                         john = session.users().addUser(realm, username);
                     }
 
-                    UserSessionModel userSession = session.sessions().createUserSession(realm, john, username, "127.0.0.2", "form", true, null, null);
+                    UserSessionModel userSession = userSessionManager.createUserSession(realm, john, username, "127.0.0.2", "form", true, null, null);
                     AuthenticatedClientSessionModel clientSession = session.sessions().createClientSession(realm, testApp, userSession);
                     clientSession.setRedirectUri("http://redirect");
                     clientSession.setNote("foo", "bar-" + i);

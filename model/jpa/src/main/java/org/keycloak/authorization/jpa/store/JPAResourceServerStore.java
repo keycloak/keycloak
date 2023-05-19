@@ -23,14 +23,13 @@ import org.keycloak.authorization.jpa.entities.ResourceEntity;
 import org.keycloak.authorization.jpa.entities.ResourceServerEntity;
 import org.keycloak.authorization.jpa.entities.ScopeEntity;
 import org.keycloak.authorization.model.ResourceServer;
-import org.keycloak.authorization.store.PermissionTicketStore;
 import org.keycloak.authorization.store.ResourceServerStore;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.storage.StorageId;
 
-import javax.persistence.EntityManager;
-import javax.persistence.TypedQuery;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.TypedQuery;
 import java.util.List;
 import org.keycloak.models.ClientModel;
 

@@ -22,7 +22,7 @@
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
         <artifactId>integration-arquillian-servers-app-server</artifactId>
-        <version>999-SNAPSHOT</version>
+        <version>999.0.0-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -38,6 +38,7 @@
         <saml-adapter.version>${project.version}</saml-adapter.version>
         <skip.elytron.adapter.installation>true</skip.elytron.adapter.installation>
         <skip.adapter.offline.installation>true</skip.adapter.offline.installation>
+        <skip.java17.enablement>true</skip.java17.enablement>
         <!-- Workaround for WFCORE-5335 issue -->
         <cli.executable>bash</cli.executable>
         <cli.jboss-cli.arg>jboss-cli.${script.suffix}</cli.jboss-cli.arg>
@@ -69,6 +70,20 @@
                     <exists>src</exists>
                 </file>
             </activation>
+            <dependencies>
+                <dependency>
+                    <groupId>org.keycloak</groupId>
+                    <artifactId>${app.server.oidc.adapter.artifactId}</artifactId>
+                    <version>${oidc-adapter.version}</version>
+                    <type>zip</type>
+                </dependency>
+                <dependency>
+                    <groupId>org.keycloak</groupId>
+                    <artifactId>${app.server.saml.adapter.artifactId}</artifactId>
+                    <version>${saml-adapter.version}</version>
+                    <type>zip</type>
+                </dependency>
+            </dependencies>
             <build>
                 <plugins>
 
@@ -525,6 +540,49 @@
                                     </arguments>
                                 </configuration>
                             </execution>
+
+                            <execution>
+                                <!-- needed for eap with java 17 -->
+                                <id>enable-java-17</id>
+                                <phase>process-resources</phase>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                                <configuration>
+                                    <skip>${skip.java17.enablement}</skip>
+                                    <executable>${cli.executable}</executable>
+                                    <workingDirectory>${cli.working.dir}</workingDirectory>
+                                    <environmentVariables>
+                                        <JAVA_HOME>${app.server.java.home}</JAVA_HOME>
+                                    </environmentVariables>
+                                    <arguments>
+                                        <argument>${cli.jboss-cli.arg}</argument>
+                                        <argument>--file=${app.server.jboss.home}/docs/examples/enable-elytron-se17.cli</argument>
+                                    </arguments>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <!-- needed for eap with java 17 -->
+                                <id>enable-java-17-ha</id>
+                                <phase>process-resources</phase>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                                <configuration>
+                                    <skip>${skip.java17.enablement}</skip>
+                                    <executable>${cli.executable}</executable>
+                                    <workingDirectory>${cli.working.dir}</workingDirectory>
+                                    <environmentVariables>
+                                        <JAVA_HOME>${app.server.java.home}</JAVA_HOME>
+                                    </environmentVariables>
+                                    <arguments>
+                                        <argument>${cli.jboss-cli.arg}</argument>
+                                        <argument>--file=${app.server.jboss.home}/docs/examples/enable-elytron-se17.cli</argument>
+                                        <argument>-Dconfig=standalone-ha.xml</argument>
+                                    </arguments>
+                                </configuration>
+                            </execution>
+
                             <execution>
                                 <id>add-secured-deployments</id>
                                 <phase>generate-test-sources</phase>
@@ -750,6 +808,7 @@
         <profile>
             <id>app-server-wildfly</id>
             <activation>
+                <activeByDefault>true</activeByDefault>
                 <property>
                     <name>app.server</name>
                     <value>wildfly</value>

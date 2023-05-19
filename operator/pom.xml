@@ -7,7 +7,7 @@
     <parent>
         <artifactId>keycloak-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>999-SNAPSHOT</version>
+        <version>999.0.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     
@@ -21,9 +21,12 @@
             See https://github.com/quarkusio/quarkus/blob/<versionTag>/bom/application/pom.xml
             for reference
         -->
-        <resteasy.version>4.7.7.Final</resteasy.version>
         <wildfly.common.version>1.5.4.Final-format-001</wildfly.common.version>
-        <kubernetes-client.version>5.12.4</kubernetes-client.version>
+        <!--
+            FIXME: This is currently NOT aligned with Quarkus and QOSDK. We need to use a newer Fabric8 version to resolve issues in Vert.x HTTP Client.
+            Tracked by: https://github.com/keycloak/keycloak/issues/20130
+        -->
+        <kubernetes-client.version>6.6.0</kubernetes-client.version>
 
         <compiler-plugin.version>3.8.1</compiler-plugin.version>
         <maven.compiler.parameters>true</maven.compiler.parameters>
@@ -32,21 +35,28 @@
         <maven.compiler.target>11</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-        <quarkus.operator.sdk.version>4.0.7</quarkus.operator.sdk.version>
-        <quarkus.version>2.13.7.Final</quarkus.version>
+        <quarkus.operator.sdk.version>6.0.1</quarkus.operator.sdk.version>
+        <quarkus.operator.build.version>3.0.0.Final</quarkus.operator.build.version>
         <quarkus.container-image.group>keycloak</quarkus.container-image.group>
-        <quarkus.jib.base-jvm-image>registry.access.redhat.com/ubi9/openjdk-11-runtime</quarkus.jib.base-jvm-image>
     </properties>
     
     <dependencyManagement>
+        <!-- FIXME: Fabric8 dependency override needs to be removed as part of https://github.com/keycloak/keycloak/issues/20130 -->
         <dependencies>
-        <dependency>
-            <groupId>io.quarkiverse.operatorsdk</groupId>
-            <artifactId>quarkus-operator-sdk-bom</artifactId>
-            <version>${quarkus.operator.sdk.version}</version>
-            <type>pom</type>
-            <scope>import</scope>
-        </dependency>
+            <dependency>
+                <groupId>io.fabric8</groupId>
+                <artifactId>kubernetes-client-bom</artifactId>
+                <version>${kubernetes-client.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>io.quarkiverse.operatorsdk</groupId>
+                <artifactId>quarkus-operator-sdk-bom</artifactId>
+                <version>${quarkus.operator.sdk.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -92,6 +102,10 @@
         <dependency>
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-kubernetes-client</artifactId>
+        </dependency>
+        <dependency>
+          <groupId>io.quarkus</groupId>
+          <artifactId>quarkus-container-image-docker</artifactId>
         </dependency>
 
         <!-- Keycloak -->
@@ -146,7 +160,7 @@
             <plugin>
                 <groupId>io.quarkus</groupId>
                 <artifactId>quarkus-maven-plugin</artifactId>
-                <version>${quarkus.version}</version>
+                <version>${quarkus.operator.build.version}</version>
             </plugin>
             <plugin>
                 <artifactId>maven-compiler-plugin</artifactId>
@@ -158,7 +172,7 @@
             <plugin>
                 <groupId>io.quarkus</groupId>
                 <artifactId>quarkus-maven-plugin</artifactId>
-                <version>${quarkus.version}</version>
+                <version>${quarkus.operator.build.version}</version>
                 <executions>
                     <execution>
                     <goals>
@@ -199,6 +213,24 @@
                                 <directory>${basedir}/../core/src/main/java</directory>
                                 <filtering>true</filtering>
                             </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>copy-ubi-null</id>
+                        <phase>validate</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${project.build.directory}</outputDirectory>
+                            <resources>
+                                <resource>
+                                    <directory>${basedir}/../quarkus/container/</directory>
+                                    <includes>
+                                        <include>**/ubi-null.sh</include>
+                                    </includes>
+                                </resource>
                             </resources>
                         </configuration>
                     </execution>
@@ -255,6 +287,27 @@
                         <goals>
                             <goal>test</goal>
                         </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>assemble</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                        <configuration>
+                            <descriptors>
+                                <descriptor>assembly.xml</descriptor>
+                            </descriptors>
+                            <appendAssemblyId>false</appendAssemblyId>
+                            <workDirectory>${project.build.directory}/assembly/work</workDirectory>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>

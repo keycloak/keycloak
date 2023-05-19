@@ -25,10 +25,13 @@ import io.fabric8.kubernetes.client.ConfigBuilder;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.Operator;
+import io.javaoperatorsdk.operator.api.config.ConfigurationServiceProvider;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
-import io.quarkiverse.operatorsdk.runtime.OperatorProducer;
 import io.quarkiverse.operatorsdk.runtime.QuarkusConfigurationService;
 import io.quarkus.logging.Log;
+import jakarta.enterprise.inject.Instance;
+import jakarta.enterprise.inject.spi.CDI;
+import jakarta.enterprise.util.TypeLiteral;
 import org.awaitility.Awaitility;
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.junit.jupiter.api.AfterAll;
@@ -39,9 +42,6 @@ import org.junit.jupiter.api.TestInfo;
 import org.keycloak.operator.Constants;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 
-import javax.enterprise.inject.Instance;
-import javax.enterprise.inject.spi.CDI;
-import javax.enterprise.util.TypeLiteral;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -51,6 +51,7 @@ import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.keycloak.operator.Utils.isOpenShift;
 import static org.keycloak.operator.testsuite.utils.K8sUtils.getResourceFromFile;
 
 public abstract class BaseOperatorTest {
@@ -75,6 +76,7 @@ public abstract class BaseOperatorTest {
   protected static String kubernetesIp;
   protected static String customImage;
   private static Operator operator;
+  protected static boolean isOpenShift;
 
 
   @BeforeAll
@@ -91,6 +93,7 @@ public abstract class BaseOperatorTest {
     createK8sClient();
     createCRDs();
     createNamespace();
+    isOpenShift = isOpenShift(k8sclient);
 
     if (operatorDeployment == OperatorDeployment.remote) {
       createRBACresourcesAndOperatorDeployment();
@@ -147,12 +150,13 @@ public abstract class BaseOperatorTest {
 
     for (Reconciler<?> reconciler : reconcilers) {
       Log.info("Register and apply : " + reconciler.getClass().getName());
-      OperatorProducer.applyCRDAndRegister(operator, reconciler, configuration);
+      operator.register(reconciler);
     }
   }
 
   private static void createOperator() {
     configuration.getClientConfiguration().setNamespace(namespace);
+    ConfigurationServiceProvider.reset();
     operator = new Operator(k8sclient, configuration);
   }
 
@@ -254,7 +258,11 @@ public abstract class BaseOperatorTest {
     }
 
     Log.info("Deleting namespace : " + namespace);
-    assertThat(k8sclient.namespaces().withName(namespace).delete()).isTrue();
+    assertThat(k8sclient.namespaces().withName(namespace).delete()).isNotNull();
     k8sclient.close();
+  }
+
+  public static String getCurrentNamespace() {
+    return namespace;
   }
 }

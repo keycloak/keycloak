@@ -42,6 +42,9 @@ final class HostnamePropertyMappers {
                 fromOption(HostnameOptions.HOSTNAME_PORT)
                         .to("kc.spi-hostname-default-hostname-port")
                         .paramLabel("port")
+                        .build(),
+                fromOption(HostnameOptions.HOSTNAME_DEBUG)
+                        .to("kc.spi-hostname-default-hostname-debug")
                         .build()
         };
     }

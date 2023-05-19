@@ -17,6 +17,8 @@
 
 package org.keycloak.testsuite.broker;
 
+import org.apache.xml.security.encryption.XMLCipher;
+import org.apache.xml.security.utils.EncryptionConstants;
 import org.hamcrest.Matchers;
 import org.junit.Before;
 import org.junit.Test;
@@ -25,7 +27,6 @@ import org.keycloak.common.util.PemUtils;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.KeyUse;
 import org.keycloak.dom.saml.v2.protocol.AuthnRequestType;
-import org.keycloak.protocol.saml.SAMLEncryptionAlgorithms;
 import org.keycloak.representations.idm.KeysMetadataRepresentation;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.saml.common.exceptions.ConfigurationException;
@@ -39,7 +40,7 @@ import org.keycloak.testsuite.util.SamlClientBuilder;
 import org.keycloak.testsuite.util.saml.SamlDocumentStepBuilder;
 import org.w3c.dom.Document;
 
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response;
 import java.security.PublicKey;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -75,14 +76,14 @@ public abstract class AbstractKcSamlEncryptedElementsTest extends AbstractBroker
         public void testEncryptedElementIsReadable() throws ConfigurationException, ParsingException, ProcessingException {
             KeysMetadataRepresentation.KeyMetadataRepresentation activeEncryptingKey = KeyUtils.findActiveEncryptingKey(adminClient.realm(bc.consumerRealmName()), Algorithm.RSA_OAEP);
             assertThat(activeEncryptingKey.getProviderId(), equalTo(encProviderId));
-            sendDocumentWithEncryptedElement(PemUtils.decodePublicKey(activeEncryptingKey.getPublicKey()), SAMLEncryptionAlgorithms.RSA_OAEP.getXmlEncIdentifier(), true);
+            sendDocumentWithEncryptedElement(PemUtils.decodePublicKey(activeEncryptingKey.getPublicKey()), XMLCipher.RSA_OAEP, null, null, true);
         }
 
         @Test
         public void testSignatureKeyEncryptedElementIsNotReadableWithoutDeprecatedMode() throws ConfigurationException, ParsingException, ProcessingException {
             KeysMetadataRepresentation.KeyMetadataRepresentation activeSignatureKey = KeyUtils.findActiveSigningKey(adminClient.realm(bc.consumerRealmName()));
             assertThat(activeSignatureKey.getProviderId(), equalTo(sigProviderId));
-            sendDocumentWithEncryptedElement(PemUtils.decodePublicKey(activeSignatureKey.getPublicKey()), SAMLEncryptionAlgorithms.RSA_OAEP.getXmlEncIdentifier(), false);
+            sendDocumentWithEncryptedElement(PemUtils.decodePublicKey(activeSignatureKey.getPublicKey()), XMLCipher.RSA_OAEP, null, null, false);
         }
 
         @Test
@@ -94,7 +95,7 @@ public abstract class AbstractKcSamlEncryptedElementsTest extends AbstractBroker
                 });
                 KeysMetadataRepresentation.KeyMetadataRepresentation activeSignatureKey = KeyUtils.findActiveSigningKey(adminClient.realm(bc.consumerRealmName()));
                 assertThat(activeSignatureKey.getProviderId(), equalTo(sigProviderId));
-                sendDocumentWithEncryptedElement(PemUtils.decodePublicKey(activeSignatureKey.getPublicKey()), SAMLEncryptionAlgorithms.RSA_OAEP.getXmlEncIdentifier(), true);
+                sendDocumentWithEncryptedElement(PemUtils.decodePublicKey(activeSignatureKey.getPublicKey()), XMLCipher.RSA_OAEP, null, null, true);
             } finally {
                 // Clear flag
                 testingClient.server().run(session -> {
@@ -111,13 +112,21 @@ public abstract class AbstractKcSamlEncryptedElementsTest extends AbstractBroker
                         .findFirst()
                         .orElseThrow(() -> new RuntimeException("Cannot find key created on the previous line"));
 
-                sendDocumentWithEncryptedElement(PemUtils.decodePublicKey(key.getPublicKey()), SAMLEncryptionAlgorithms.RSA1_5.getXmlEncIdentifier(), true);
+                sendDocumentWithEncryptedElement(PemUtils.decodePublicKey(key.getPublicKey()), XMLCipher.RSA_v1dot5, null, null, true);
             }
         }
 
-        protected abstract SamlDocumentStepBuilder.Saml2DocumentTransformer encryptDocument(PublicKey publicKey, String keyEncryptionAlgorithm);
+        @Test
+        public void testRsaOaepAlgorithm() throws Exception {
+            RealmResource realm = adminClient.realm(bc.consumerRealmName());
+            KeysMetadataRepresentation.KeyMetadataRepresentation key = KeyUtils.findActiveEncryptingKey(realm, Algorithm.RSA_OAEP);
+            assertThat(key.getProviderId(), equalTo(encProviderId));
+            sendDocumentWithEncryptedElement(PemUtils.decodePublicKey(key.getPublicKey()), XMLCipher.RSA_OAEP_11, XMLCipher.SHA256, EncryptionConstants.MGF1_SHA256, true);
+        }
 
-        private void sendDocumentWithEncryptedElement(PublicKey publicKey, String keyEncryptionAlgorithm, boolean shouldPass) throws ConfigurationException, ParsingException, ProcessingException {
+        protected abstract SamlDocumentStepBuilder.Saml2DocumentTransformer encryptDocument(PublicKey publicKey, String keyEncryptionAlgorithm, String keyEncryptionDigestMethod, String keyEncryptionMgfAlgorithm);
+
+        private void sendDocumentWithEncryptedElement(PublicKey publicKey, String keyEncryptionAlgorithm, String keyEncryptionDigestMethod, String keyEncryptionMgfAlgorithm, boolean shouldPass) throws ConfigurationException, ParsingException, ProcessingException {
             createRolesForRealm(bc.consumerRealmName());
 
             AuthnRequestType loginRep = SamlClient.createLoginRequestDocument(SAML_CLIENT_ID_SALES_POST + ".dot/ted", getConsumerRoot() + "/sales-post/saml", null);
@@ -138,7 +147,7 @@ public abstract class AbstractKcSamlEncryptedElementsTest extends AbstractBroker
                     .login().user(bc.getUserLogin(), bc.getUserPassword()).build()
 
                     .processSamlResponse(SamlClient.Binding.POST)    // Response from producer IdP
-                    .transformDocument(encryptDocument(publicKey, keyEncryptionAlgorithm))
+                    .transformDocument(encryptDocument(publicKey, keyEncryptionAlgorithm, keyEncryptionDigestMethod, keyEncryptionMgfAlgorithm))
                     .build();
 
             if (shouldPass) {

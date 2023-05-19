@@ -60,10 +60,10 @@ public class MapEventStoreProviderFactory implements AmphibianProviderFactory<Ev
         if (provider != null) return provider;
 
         final MapStorageProvider factoryAe = AbstractMapProviderFactory.getProviderFactoryOrComponentFactory(session, storageConfigScopeAdminEvents).create(session);
-        MapStorage<MapAdminEventEntity, AdminEvent> adminEventsStore = factoryAe.getStorage(AdminEvent.class);
+        MapStorage<MapAdminEventEntity, AdminEvent> adminEventsStore = factoryAe.getMapStorage(AdminEvent.class);
 
         final MapStorageProvider factoryLe = AbstractMapProviderFactory.getProviderFactoryOrComponentFactory(session, storageConfigScopeLoginEvents).create(session);
-        MapStorage<MapAuthEventEntity, Event> loginEventsStore = factoryLe.getStorage(Event.class);
+        MapStorage<MapAuthEventEntity, Event> loginEventsStore = factoryLe.getMapStorage(Event.class);
 
         provider = new MapEventStoreProvider(session, loginEventsStore, adminEventsStore);
         session.setAttribute(uniqueKey, provider);

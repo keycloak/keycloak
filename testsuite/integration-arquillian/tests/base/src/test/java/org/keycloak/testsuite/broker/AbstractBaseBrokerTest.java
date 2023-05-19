@@ -33,7 +33,6 @@ import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
-import org.keycloak.testsuite.pages.AccountApplicationsPage;
 import org.keycloak.testsuite.pages.AccountFederatedIdentityPage;
 import org.keycloak.testsuite.pages.AccountUpdateProfilePage;
 import org.keycloak.testsuite.pages.ErrorPage;
@@ -55,9 +54,9 @@ import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.UserBuilder;
 import org.openqa.selenium.TimeoutException;
 
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriBuilder;
-import javax.ws.rs.core.UriBuilderException;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.UriBuilder;
+import jakarta.ws.rs.core.UriBuilderException;
 import java.net.URI;
 import java.util.Collections;
 import java.util.List;
@@ -128,9 +127,6 @@ public abstract class AbstractBaseBrokerTest extends AbstractKeycloakTest {
 
     @Page
     protected AccountFederatedIdentityPage accountFederatedIdentityPage;
-
-    @Page
-    protected AccountApplicationsPage accountApplicationsPage;
 
     @Page
     protected OAuthGrantPage grantPage;

@@ -72,9 +72,9 @@ import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.testsuite.utils.tls.TLSUtils;
 import org.keycloak.util.JsonSerialization;
 
-import javax.ws.rs.BadRequestException;
-import javax.ws.rs.NotFoundException;
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.BadRequestException;
+import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.core.Response;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -627,9 +627,6 @@ public class RealmTest extends AbstractAdminTest {
     }
 
     public static void assertRealm(RealmRepresentation realm, RealmRepresentation storedRealm) {
-        if (realm.getId() != null) {
-            assertEquals(realm.getId(), storedRealm.getId());
-        }
         if (realm.getRealm() != null) {
             assertEquals(realm.getRealm(), storedRealm.getRealm());
         }

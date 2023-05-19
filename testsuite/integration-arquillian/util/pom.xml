@@ -21,7 +21,7 @@
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
         <artifactId>integration-arquillian</artifactId>
-        <version>999-SNAPSHOT</version>
+        <version>999.0.0-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -57,10 +57,18 @@
         </dependency>
 
         <dependency>
+            <groupId>org.jboss.arquillian</groupId>
+            <artifactId>arquillian-bom</artifactId>
+            <version>${arquillian-core.version}</version>
+            <type>pom</type>
+            <scope>import</scope>
+        </dependency>
+
+        <dependency>
             <!-- Ability to compile/run jsp on undertow -->
             <groupId>io.undertow.jastow</groupId>
             <artifactId>jastow</artifactId>
-            <version>2.1.0.Final</version>
+            <version>2.2.5.Final</version>
         </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>
@@ -69,13 +77,13 @@
         <dependency>
             <groupId>commons-io</groupId>
             <artifactId>commons-io</artifactId>
-            <version>2.7</version>
+            <version>${commons-io.version}</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
-            <groupId>org.jboss.spec.javax.ws.rs</groupId>
-            <artifactId>jboss-jaxrs-api_2.1_spec</artifactId>
-            <version>1.0.1.Final</version>
+            <groupId>jakarta.ws.rs</groupId>
+            <artifactId>jakarta.ws.rs-api</artifactId>
+            <version>${jakarta.ws.rs.version}</version>
         </dependency>
         <dependency>
             <groupId>junit</groupId>
@@ -91,6 +99,11 @@
             <groupId>org.apache.sshd</groupId>
             <artifactId>sshd-core</artifactId>
             <version>2.7.0</version>
+        </dependency>
+        <dependency>
+            <groupId>jakarta.servlet</groupId>
+            <artifactId>jakarta.servlet-api</artifactId>
+            <version>${jakarta.servlet.version}</version>
         </dependency>
     </dependencies>
 </project>

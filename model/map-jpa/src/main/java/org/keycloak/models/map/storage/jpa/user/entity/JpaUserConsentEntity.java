@@ -20,20 +20,18 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 
-import javax.persistence.Basic;
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.FetchType;
-import javax.persistence.GeneratedValue;
-import javax.persistence.Id;
-import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
-import javax.persistence.Table;
-import javax.persistence.UniqueConstraint;
+import jakarta.persistence.Basic;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 
 import org.hibernate.annotations.Type;
-import org.hibernate.annotations.TypeDef;
-import org.hibernate.annotations.TypeDefs;
 import org.keycloak.models.map.common.DeepCloner;
 import org.keycloak.models.map.common.UpdatableEntity;
 import org.keycloak.models.map.storage.jpa.Constants;
@@ -53,7 +51,6 @@ import org.keycloak.models.map.user.MapUserConsentEntity;
         uniqueConstraints = {
                 @UniqueConstraint(columnNames = {"clientId"})
         })
-@TypeDefs({@TypeDef(name = "jsonb", typeClass = JsonbType.class)})
 public class JpaUserConsentEntity extends UpdatableEntity.Impl implements MapUserConsentEntity, JpaRootEntity, JpaChildEntity<JpaUserEntity> {
 
     @Id
@@ -69,7 +66,7 @@ public class JpaUserConsentEntity extends UpdatableEntity.Impl implements MapUse
     @Basic(fetch = FetchType.LAZY)
     private Integer entityVersion;
 
-    @Type(type = "jsonb")
+    @Type(JsonbType.class)
     @Column(columnDefinition = "jsonb")
     private final JpaUserConsentMetadata metadata;
 

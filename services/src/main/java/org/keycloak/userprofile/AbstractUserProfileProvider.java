@@ -44,6 +44,8 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.provider.ProviderConfigProperty;
+import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.userprofile.validator.BlankAttributeValidator;
 import org.keycloak.userprofile.validator.BrokeringFederatedUsernameHasValueValidator;
@@ -55,7 +57,6 @@ import org.keycloak.userprofile.validator.RegistrationEmailAsUsernameEmailValueV
 import org.keycloak.userprofile.validator.RegistrationEmailAsUsernameUsernameValueValidator;
 import org.keycloak.userprofile.validator.RegistrationUsernameExistsValidator;
 import org.keycloak.userprofile.validator.UsernameHasValueValidator;
-import org.keycloak.userprofile.validator.UsernameIDNHomographValidator;
 import org.keycloak.userprofile.validator.UsernameMutationValidator;
 import org.keycloak.validate.ValidatorConfig;
 import org.keycloak.validate.validators.EmailValidator;
@@ -66,6 +67,9 @@ import org.keycloak.validate.validators.EmailValidator;
  * @author <a href="mailto:markus.till@bosch.io">Markus Till</a>
  */
 public abstract class AbstractUserProfileProvider<U extends UserProfileProvider> implements UserProfileProvider, UserProfileProviderFactory<U> {
+
+    public static final String CONFIG_ADMIN_READ_ONLY_ATTRIBUTES = "admin-read-only-attributes";
+    public static final String CONFIG_READ_ONLY_ATTRIBUTES = "read-only-attributes";
 
     private static boolean editUsernameCondition(AttributeContext c) {
         KeycloakSession session = c.getSession();
@@ -121,7 +125,7 @@ public abstract class AbstractUserProfileProvider<U extends UserProfileProvider>
         RealmModel realm = c.getSession().getContext().getRealm();
 
         if (realm.isRegistrationEmailAsUsername() && !realm.isEditUsernameAllowed()) {
-            return false;
+            return REGISTRATION_PROFILE.equals(c.getContext());
         }
 
         return !Profile.isFeatureEnabled(Profile.Feature.UPDATE_EMAIL) || c.getContext() != UPDATE_PROFILE;
@@ -148,10 +152,10 @@ public abstract class AbstractUserProfileProvider<U extends UserProfileProvider>
      * There are the declarations for creating the built-in validations for read-only attributes. Regardless of the context where
      * user profiles are used. They are related to internal attributes with hard conditions on them in terms of management.
      */
-    private static String[] DEFAULT_READ_ONLY_ATTRIBUTES = { "KERBEROS_PRINCIPAL", "LDAP_ID", "LDAP_ENTRY_DN", "CREATED_TIMESTAMP", "createTimestamp", "modifyTimestamp", "userCertificate", "saml.persistent.name.id.for.*", "ENABLED", "EMAIL_VERIFIED", "disabledReason" };
-    private static String[] DEFAULT_ADMIN_READ_ONLY_ATTRIBUTES = { "KERBEROS_PRINCIPAL", "LDAP_ID", "LDAP_ENTRY_DN", "CREATED_TIMESTAMP", "createTimestamp", "modifyTimestamp" };
-    private static Pattern readOnlyAttributesPattern = getRegexPatternString(DEFAULT_READ_ONLY_ATTRIBUTES);
-    private static Pattern adminReadOnlyAttributesPattern = getRegexPatternString(DEFAULT_ADMIN_READ_ONLY_ATTRIBUTES);
+    private static final String[] DEFAULT_READ_ONLY_ATTRIBUTES = { "KERBEROS_PRINCIPAL", "LDAP_ID", "LDAP_ENTRY_DN", "CREATED_TIMESTAMP", "createTimestamp", "modifyTimestamp", "userCertificate", "saml.persistent.name.id.for.*", "ENABLED", "EMAIL_VERIFIED", "disabledReason" };
+    private static final String[] DEFAULT_ADMIN_READ_ONLY_ATTRIBUTES = { "KERBEROS_PRINCIPAL", "LDAP_ID", "LDAP_ENTRY_DN", "CREATED_TIMESTAMP", "createTimestamp", "modifyTimestamp" };
+    private static final Pattern readOnlyAttributesPattern = getRegexPatternString(DEFAULT_READ_ONLY_ATTRIBUTES);
+    private static final Pattern adminReadOnlyAttributesPattern = getRegexPatternString(DEFAULT_ADMIN_READ_ONLY_ATTRIBUTES);
 
     protected final Map<UserProfileContext, UserProfileMetadata> contextualMetadataRegistry;
     protected final KeycloakSession session;
@@ -190,7 +194,7 @@ public abstract class AbstractUserProfileProvider<U extends UserProfileProvider>
     public void init(Config.Scope config) {
         // make sure registry is clear in case of re-deploy
         contextualMetadataRegistry.clear();
-        Pattern pattern = getRegexPatternString(config.getArray("read-only-attributes"));
+        Pattern pattern = getRegexPatternString(config.getArray(CONFIG_READ_ONLY_ATTRIBUTES));
         AttributeValidatorMetadata readOnlyValidator = null;
 
         if (pattern != null) {
@@ -377,7 +381,7 @@ public abstract class AbstractUserProfileProvider<U extends UserProfileProvider>
     }
 
     private UserProfileMetadata createUserResourceValidation(Config.Scope config) {
-        Pattern p = getRegexPatternString(config.getArray("admin-read-only-attributes"));
+        Pattern p = getRegexPatternString(config.getArray(CONFIG_ADMIN_READ_ONLY_ATTRIBUTES));
         UserProfileMetadata metadata = new UserProfileMetadata(USER_API);
 
 
@@ -395,5 +399,23 @@ public abstract class AbstractUserProfileProvider<U extends UserProfileProvider>
         metadata.addAttribute(READ_ONLY_ATTRIBUTE_KEY, 1000, readonlyValidators);
 
         return metadata;
+    }
+
+    @Override
+    public List<ProviderConfigProperty> getConfigMetadata() {
+        return ProviderConfigurationBuilder.create()
+                .property()
+                .name(CONFIG_READ_ONLY_ATTRIBUTES)
+                .type(ProviderConfigProperty.MULTIVALUED_STRING_TYPE)
+                .helpText("Array of regular expressions to identify fields that should be treated read-only so users can't change them.")
+                .add()
+
+                .property()
+                .name(CONFIG_ADMIN_READ_ONLY_ATTRIBUTES)
+                .type(ProviderConfigProperty.MULTIVALUED_STRING_TYPE)
+                .helpText("Array of regular expressions to identify fields that should be treated read-only so administrators can't change them.")
+                .add()
+
+                .build();
     }
 }

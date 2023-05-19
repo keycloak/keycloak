@@ -18,7 +18,6 @@
 package org.keycloak.models.sessions.infinispan.initializer;
 
 import org.infinispan.Cache;
-import org.infinispan.commons.CacheConfigurationException;
 import org.infinispan.commons.CacheException;
 import org.infinispan.factories.ComponentRegistry;
 import org.infinispan.manager.ClusterExecutor;
@@ -63,12 +62,12 @@ public class InfinispanCacheInitializer extends BaseCacheInitializer {
 
     @Override
     public void initCache() {
-        final ComponentRegistry cr = this.workCache.getAdvancedCache().getComponentRegistry();
-        try {
-            cr.registerComponent(sessionFactory, KeycloakSessionFactory.class);
-        } catch (UnsupportedOperationException | CacheConfigurationException ex) {
+        // due to lazy initialization, this might be called from multiple threads simultaneously, therefore, synchronize
+        synchronized (workCache) {
+            final ComponentRegistry cr = this.workCache.getAdvancedCache().getComponentRegistry();
+            // first check if already set, as Infinispan would otherwise throw a RuntimeException
             if (cr.getComponent(KeycloakSessionFactory.class) != sessionFactory) {
-                throw ex;
+                cr.registerComponent(sessionFactory, KeycloakSessionFactory.class);
             }
         }
     }

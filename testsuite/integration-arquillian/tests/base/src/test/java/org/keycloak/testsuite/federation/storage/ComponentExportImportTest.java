@@ -19,7 +19,8 @@ import org.keycloak.testsuite.client.KeycloakTestingClient;
 import org.keycloak.testsuite.federation.UserMapStorageFactory;
 import org.keycloak.testsuite.util.RealmBuilder;
 
-import javax.ws.rs.NotFoundException;
+import java.io.Closeable;
+import jakarta.ws.rs.NotFoundException;
 import java.io.File;
 import java.util.HashSet;
 import java.util.Properties;
@@ -123,8 +124,9 @@ public class ComponentExportImportTest extends AbstractAuthTest {
             ExportImportConfig.setProvider(SingleFileExportProviderFactory.PROVIDER_ID);
             ExportImportConfig.setFile(exportFilePath);
             ExportImportConfig.setRealmName(REALM_NAME);
-            ExportImportConfig.setAction(ExportImportConfig.ACTION_EXPORT);
-            new ExportImportManager(session).runExport();
+            try (Closeable c = ExportImportConfig.setAction(ExportImportConfig.ACTION_EXPORT)) {
+                new ExportImportManager(session).runExport();
+            }
         });
 
         testRealmResource().remove();
@@ -139,8 +141,9 @@ public class ComponentExportImportTest extends AbstractAuthTest {
         // import 
         testingClient.server().run(session -> {
             Assert.assertNull(session.realms().getRealmByName(REALM_NAME));
-            ExportImportConfig.setAction(ExportImportConfig.ACTION_IMPORT);
-            new ExportImportManager(session).runImport();
+            try (Closeable c = ExportImportConfig.setAction(ExportImportConfig.ACTION_IMPORT)) {
+                new ExportImportManager(session).runImport();
+            }
         });
 
         // Assert realm was imported

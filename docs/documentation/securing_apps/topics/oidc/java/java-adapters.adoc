@@ -1,0 +1,5 @@
+=== Java adapters
+
+{project_name} comes with a range of different adapters for Java application. Selecting the correct adapter depends on the target platform.
+
+All Java adapters share a set of common configuration options described in the <<_java_adapter_config,Java Adapters Config>> chapter.

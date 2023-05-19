@@ -19,12 +19,14 @@ package org.keycloak.adapters.saml.rotation;
 
 import java.security.Key;
 import java.security.KeyManagementException;
-import java.security.PublicKey;
+import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import javax.security.auth.x500.X500Principal;
 import javax.xml.crypto.dsig.keyinfo.KeyInfo;
 import javax.xml.crypto.dsig.keyinfo.KeyName;
 import org.apache.http.client.HttpClient;
@@ -36,9 +38,6 @@ import org.keycloak.common.util.Time;
 import org.keycloak.dom.saml.v2.metadata.KeyTypes;
 import org.keycloak.rotation.KeyLocator;
 import org.keycloak.saml.processing.api.util.KeyInfoTools;
-import java.security.cert.CertificateException;
-import java.util.UUID;
-import javax.security.auth.x500.X500Principal;
 
 /**
  * This class defines a {@link KeyLocator} that looks up public keys and certificates in IdP's
@@ -48,7 +47,7 @@ import javax.security.auth.x500.X500Principal;
  *
  * @author hmlnarik
  */
-public class SamlDescriptorPublicKeyLocator implements KeyLocator, Iterable<PublicKey> {
+public class SamlDescriptorPublicKeyLocator implements KeyLocator {
 
     private static final Logger LOG = Logger.getLogger(SamlDescriptorPublicKeyLocator.class);
 
@@ -67,7 +66,8 @@ public class SamlDescriptorPublicKeyLocator implements KeyLocator, Iterable<Publ
      */
     private final String descriptorUrl;
 
-    private final Map<String, PublicKey> publicKeyCache = new ConcurrentHashMap<>();
+    private final Map<String, Key> publicKeyCacheByName = new ConcurrentHashMap<>();
+    private final Map<KeyHash, Key> publicKeyCacheByKey = new ConcurrentHashMap<>();
 
     private final HttpClient client;
 
@@ -90,21 +90,32 @@ public class SamlDescriptorPublicKeyLocator implements KeyLocator, Iterable<Publ
             LOG.debugf("Invalid key id: %s", kid);
             return null;
         }
+        return getKey(kid, publicKeyCacheByName);
+    }
 
-        LOG.tracef("Requested key id: %s", kid);
+    @Override
+    public Key getKey(Key key) throws KeyManagementException {
+        if (key == null) {
+            return null;
+        }
+        return getKey(new KeyHash(key), publicKeyCacheByKey);
+    }
+
+    private <T> Key getKey(T key, Map<T, Key> cache) throws KeyManagementException {
+        LOG.tracef("Requested key: %s", key);
 
         int currentTime = Time.currentTime();
 
-        PublicKey res;
+        Key res;
         if (currentTime > this.lastRequestTime + this.cacheEntryTtl) {
             LOG.debugf("Performing regular cache cleanup.");
-            res = refreshCertificateCacheAndGet(kid);
+            res = refreshCertificateCacheAndGet(key, cache, currentTime);
         } else {
-            res = publicKeyCache.get(kid);
+            res = cache.get(key);
 
             if (res == null) {
                 if (currentTime > this.lastRequestTime + this.minTimeBetweenDescriptorRequests) {
-                    res = refreshCertificateCacheAndGet(kid);
+                    res = refreshCertificateCacheAndGet(key, cache, currentTime);
                 } else {
                     LOG.debugf("Won't send request to realm SAML descriptor url, timeout not expired. Last request time was %d", lastRequestTime);
                 }
@@ -117,13 +128,15 @@ public class SamlDescriptorPublicKeyLocator implements KeyLocator, Iterable<Publ
     @Override
     public synchronized void refreshKeyCache() {
         LOG.info("Forcing key cache cleanup and refresh.");
-        this.publicKeyCache.clear();
-        refreshCertificateCacheAndGet(null);
+        this.publicKeyCacheByName.clear();
+        this.publicKeyCacheByKey.clear();
+        refreshCertificateCacheAndGet(null, this.publicKeyCacheByKey, Time.currentTime());
     }
 
-    private synchronized PublicKey refreshCertificateCacheAndGet(String kid) {
-        if (this.descriptorUrl == null) {
-            return null;
+    private synchronized <T> Key refreshCertificateCacheAndGet(T key, Map<T, Key> cache, int currentTime) {
+        if (this.descriptorUrl == null || currentTime <= this.lastRequestTime + this.minTimeBetweenDescriptorRequests) {
+            // no descriptor or updated time too short
+            return key == null ? null : cache.get(key);
         }
 
         this.lastRequestTime = Time.currentTime();
@@ -145,7 +158,8 @@ public class SamlDescriptorPublicKeyLocator implements KeyLocator, Iterable<Publ
         LOG.debugf("Certificates retrieved from server, filling public key cache");
 
         // Only clear cache after it is certain that the SAML descriptor has been read successfully
-        this.publicKeyCache.clear();
+        this.publicKeyCacheByName.clear();
+        this.publicKeyCacheByKey.clear();
 
         for (KeyInfo ki : signingCerts) {
             KeyName keyName = KeyInfoTools.getKeyName(ki);
@@ -161,17 +175,18 @@ public class SamlDescriptorPublicKeyLocator implements KeyLocator, Iterable<Publ
 
             if (keyName != null) {
                 LOG.tracef("Registering signing certificate %s", keyName.getName());
-                this.publicKeyCache.put(keyName.getName(), x509certificate.getPublicKey());
+                this.publicKeyCacheByName.put(keyName.getName(), x509certificate.getPublicKey());
+                this.publicKeyCacheByKey.put(new KeyHash(x509certificate.getPublicKey()), x509certificate.getPublicKey());
             } else {
                 final X500Principal principal = x509certificate.getSubjectX500Principal();
-                String name = (principal == null ? "unnamed" : principal.getName())
-                  + "@" + x509certificate.getSerialNumber() + "$" + UUID.randomUUID();
-                this.publicKeyCache.put(name, x509certificate.getPublicKey());
+                String name = (principal == null ? "unnamed" : principal.getName()) + "@" + x509certificate.getSerialNumber() + "$" + UUID.randomUUID();
+                this.publicKeyCacheByName.put(name, x509certificate.getPublicKey());
+                this.publicKeyCacheByKey.put(new KeyHash(x509certificate.getPublicKey()), x509certificate.getPublicKey());
                 LOG.tracef("Adding certificate %s without a specific key name: %s", name, x509certificate);
             }
         }
 
-        return (kid == null ? null : this.publicKeyCache.get(kid));
+        return key == null ? null : cache.get(key);
     }
 
     @Override
@@ -180,11 +195,13 @@ public class SamlDescriptorPublicKeyLocator implements KeyLocator, Iterable<Publ
     }
 
     @Override
-    public Iterator<PublicKey> iterator() {
-        if (this.publicKeyCache.isEmpty()) {
-            refreshCertificateCacheAndGet(null);
+    public Iterator<Key> iterator() {
+        int currentTime = Time.currentTime();
+        if (currentTime > this.lastRequestTime + this.cacheEntryTtl) {
+            LOG.debugf("Performing regular cache cleanup.");
+            refreshCertificateCacheAndGet(null, publicKeyCacheByName, currentTime);
         }
 
-        return this.publicKeyCache.values().iterator();
+        return this.publicKeyCacheByKey.values().iterator();
     }
 }

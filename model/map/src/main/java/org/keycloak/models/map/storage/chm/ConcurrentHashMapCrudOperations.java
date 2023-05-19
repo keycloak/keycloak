@@ -1,112 +1,178 @@
+/*
+ * Copyright 2020 Red Hat, Inc. and/or its affiliates
+ * and other contributors as indicated by the @author tags.
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.keycloak.models.map.storage.chm;
 
+import org.keycloak.models.map.common.ExpirableEntity;
+import org.keycloak.models.map.common.ExpirationUtils;
+import org.keycloak.models.map.common.StringKeyConverter;
 import org.keycloak.models.map.common.AbstractEntity;
+import org.keycloak.models.map.common.DeepCloner;
 import org.keycloak.models.map.common.UpdatableEntity;
+import org.keycloak.models.map.storage.CrudOperations;
+import org.keycloak.models.map.storage.ModelEntityUtil;
 import org.keycloak.models.map.storage.QueryParameters;
+import org.keycloak.models.map.storage.criteria.DefaultModelCriteria;
+import org.keycloak.storage.SearchableModelField;
 
-
+import java.util.Comparator;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Stream;
+import org.keycloak.models.map.storage.chm.MapModelCriteriaBuilder.UpdatePredicatesFunc;
+import java.util.Objects;
+import java.util.function.Predicate;
 
-public interface ConcurrentHashMapCrudOperations<V extends AbstractEntity & UpdatableEntity, M> {
-    /**
-     * Creates an object in the store. ID of the {@code value} may be prescribed in id of the {@code value}.
-     * If the id is {@code null} or its format is not matching the store internal format for ID, then
-     * the {@code value}'s ID will be generated and returned in the id of the return value.
-     * @param value Entity to create in the store
-     * @throws NullPointerException if {@code value} is {@code null}
-     * @see AbstractEntity#getId()
-     * @return Entity representing the {@code value} in the store. It may or may not be the same instance as {@code value}
-     */
-    V create(V value);
+import static org.keycloak.models.map.common.ExpirationUtils.isExpired;
+import static org.keycloak.utils.StreamsUtil.paginatedStream;
 
-    /**
-     * Returns object with the given {@code key} from the storage or {@code null} if object does not exist.
-     * <br>
-     * If {@code V} implements {@link org.keycloak.models.map.common.ExpirableEntity} this method should not return
-     * entities that are expired. See {@link org.keycloak.models.map.common.ExpirableEntity} JavaDoc for more details.
-     *
-     * TODO: Consider returning {@code Optional<V>} instead.
-     * @param key Key of the object. Must not be {@code null}.
-     * @return See description
-     * @throws NullPointerException if the {@code key} is {@code null}
-     */
-    public V read(String key);
+/**
+ *
+ * It contains basic object CRUD operations as well as bulk {@link #read(org.keycloak.models.map.storage.QueryParameters)}
+ * and bulk {@link #delete(org.keycloak.models.map.storage.QueryParameters)} operations,
+ * and operation for determining the number of the objects satisfying given criteria
+ * ({@link #getCount(org.keycloak.models.map.storage.QueryParameters)}).
+ *
+ * @author hmlnarik
+ */
+public class ConcurrentHashMapCrudOperations<K, V extends AbstractEntity & UpdatableEntity, M> implements CrudOperations<V, M> {
 
-    /**
-     * Updates the object with the key of the {@code value}'s ID in the storage if it already exists.
-     *
-     * @param value Updated value
-     * @return the previous value associated with the specified key, or null if there was no mapping for the key.
-     *         (A null return can also indicate that the map previously associated null with the key,
-     *         if the implementation supports null values.)
-     * @throws NullPointerException if the object or its {@code id} is {@code null}
-     * @see AbstractEntity#getId()
-     */
-    V update(V value);
+    protected final ConcurrentMap<K, V> store = new ConcurrentHashMap<>();
 
-    /**
-     * Deletes object with the given {@code key} from the storage, if exists, no-op otherwise.
-     * @param key
-     * @return Returns {@code true} if the object has been deleted or result cannot be determined, {@code false} otherwise.
-     */
-    boolean delete(String key);
+    protected final Map<SearchableModelField<? super M>, UpdatePredicatesFunc<K, V, M>> fieldPredicates;
+    protected final StringKeyConverter<K> keyConverter;
+    protected final DeepCloner cloner;
+    private final boolean isExpirableEntity;
 
-    /**
-     * Deletes objects that match the given criteria.
-     * @param queryParameters parameters for the query like firstResult, maxResult, requested ordering, etc.
-     * @return Number of removed objects (might return {@code -1} if not supported)
-     */
-    long delete(QueryParameters<M> queryParameters);
-
-    /**
-     * Returns stream of objects satisfying given {@code criteria} from the storage.
-     * The criteria are specified in the given criteria builder based on model properties.
-     *
-     * If {@code V} implements {@link org.keycloak.models.map.common.ExpirableEntity} this method should not return
-     * entities that are expired. See {@link org.keycloak.models.map.common.ExpirableEntity} JavaDoc for more details.
-     *
-     * @param queryParameters parameters for the query like firstResult, maxResult, requested ordering, etc.
-     * @return Stream of objects. Never returns {@code null}.
-     */
-    Stream<V> read(QueryParameters<M> queryParameters);
-
-    /**
-     * Returns the number of objects satisfying given {@code criteria} from the storage.
-     * The criteria are specified in the given criteria builder based on model properties.
-     *
-     * @param queryParameters parameters for the query like firstResult, maxResult, requested ordering, etc.
-     * @return Number of objects. Never returns {@code null}.
-     */
-    long getCount(QueryParameters<M> queryParameters);
-
-    /**
-     * Returns {@code true} if the object with the given {@code key} exists in the storage. {@code false} otherwise.
-     *
-     * @param key Key of the object. Must not be {@code null}.
-     * @return See description
-     * @throws NullPointerException if the {@code key} is {@code null}
-     */
-    default boolean exists(String key) {
-        return read(key) != null;
+    @SuppressWarnings("unchecked")
+    public ConcurrentHashMapCrudOperations(Class<M> modelClass, StringKeyConverter<K> keyConverter, DeepCloner cloner) {
+        this.fieldPredicates = MapFieldPredicates.getPredicates(modelClass);
+        this.keyConverter = keyConverter;
+        this.cloner = cloner;
+        this.isExpirableEntity = ExpirableEntity.class.isAssignableFrom(ModelEntityUtil.getEntityType(modelClass));
     }
 
-    /**
-     * Returns {@code true} if at least one object is satisfying given {@code criteria} from the storage. {@code false} otherwise.
-     * The criteria are specified in the given criteria builder based on model properties.
-     *
-     * @param queryParameters parameters for the query
-     * @return See description
-     */
-    default boolean exists(QueryParameters<M> queryParameters) {
-        return getCount(queryParameters) > 0;
+    @Override
+    public V create(V value) {
+        K key = keyConverter.fromStringSafe(value.getId());
+        if (key == null) {
+            key = keyConverter.yieldNewUniqueKey();
+            value = cloner.from(keyConverter.keyToString(key), value);
+        }
+        store.putIfAbsent(key, value);
+        return value;
     }
 
-    /**
-     * Determines first available key from the value upon creation.
-     * @param value
-     * @return
-     */
-    default String determineKeyFromValue(V value, boolean forCreate) {
-        return value == null ? null : value.getId();
+    @Override
+    public V read(String key) {
+        Objects.requireNonNull(key, "Key must be non-null");
+        K k = keyConverter.fromStringSafe(key);
+
+        V v = store.get(k);
+        if (v == null) return null;
+        return isExpirableEntity && isExpired((ExpirableEntity) v, true) ? null : v;
     }
+
+    @Override
+    public V update(V value) {
+        K key = getKeyConverter().fromStringSafe(value.getId());
+        return store.replace(key, value);
+    }
+
+    @Override
+    public boolean delete(String key) {
+        K k = getKeyConverter().fromStringSafe(key);
+        return store.remove(k) != null;
+    }
+
+    @Override
+    public long delete(QueryParameters<M> queryParameters) {
+        DefaultModelCriteria<M> criteria = queryParameters.getModelCriteriaBuilder();
+
+        if (criteria == null) {
+            long res = store.size();
+            store.clear();
+            return res;
+        }
+
+        @SuppressWarnings("unchecked")
+        MapModelCriteriaBuilder<K,V,M> mcb = criteria.flashToModelCriteriaBuilder(createCriteriaBuilder());
+        Predicate<? super K> keyFilter = mcb.getKeyFilter();
+        Predicate<? super V> entityFilter = mcb.getEntityFilter();
+        Stream<Entry<K, V>> storeStream = store.entrySet().stream();
+        final AtomicLong res = new AtomicLong(0);
+
+        if (!queryParameters.getOrderBy().isEmpty()) {
+            Comparator<V> comparator = MapFieldPredicates.getComparator(queryParameters.getOrderBy().stream());
+            storeStream = storeStream.sorted((entry1, entry2) -> comparator.compare(entry1.getValue(), entry2.getValue()));
+        }
+
+        paginatedStream(storeStream.filter(next -> keyFilter.test(next.getKey()) && entityFilter.test(next.getValue()))
+                , queryParameters.getOffset(), queryParameters.getLimit())
+                .peek(item -> {res.incrementAndGet();})
+                .map(Entry::getKey)
+                .forEach(store::remove);
+
+        return res.get();
+    }
+
+    public MapModelCriteriaBuilder<K, V, M> createCriteriaBuilder() {
+        return new MapModelCriteriaBuilder<>(keyConverter, fieldPredicates);
+    }
+
+    public StringKeyConverter<K> getKeyConverter() {
+        return keyConverter;
+    }
+
+    @Override
+    public Stream<V> read(QueryParameters<M> queryParameters) {
+        DefaultModelCriteria<M> criteria = queryParameters.getModelCriteriaBuilder();
+
+        if (criteria == null) {
+            return Stream.empty();
+        }
+
+        MapModelCriteriaBuilder<K,V,M> mcb = criteria.flashToModelCriteriaBuilder(createCriteriaBuilder());
+        Stream<Entry<K, V>> stream = store.entrySet().stream();
+
+        Predicate<? super K> keyFilter = mcb.getKeyFilter();
+        Predicate<? super V> entityFilter;
+
+        if (isExpirableEntity) {
+            entityFilter = mcb.getEntityFilter().and(ExpirationUtils::isNotExpired);
+        } else {
+            entityFilter = mcb.getEntityFilter();
+        }
+
+        Stream<V> valueStream = stream.filter(me -> keyFilter.test(me.getKey()) && entityFilter.test(me.getValue()))
+                .map(Map.Entry::getValue);
+
+        if (!queryParameters.getOrderBy().isEmpty()) {
+            valueStream = valueStream.sorted(MapFieldPredicates.getComparator(queryParameters.getOrderBy().stream()));
+        }
+
+        return paginatedStream(valueStream, queryParameters.getOffset(), queryParameters.getLimit());
+    }
+
+    @Override
+    public long getCount(QueryParameters<M> queryParameters) {
+        return read(queryParameters).count();
+    }
+
 }

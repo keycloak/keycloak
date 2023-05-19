@@ -19,7 +19,7 @@
 # Testsuite
 ###################################################################################################
 
-/testsuite/                                                 @keycloak/core-maintainers @keycloak/cloud-native-maintainers @keycloak/store-maintainers
+/testsuite/                                                 @keycloak/core-maintainers @keycloak/cloud-native-maintainers @keycloak/store-maintainers @keycloak/maintainers
 
 ###################################################################################################
 # Core (@keycloak/core-maintainers)
@@ -30,17 +30,17 @@
 # Cloud Native (@keycloak/cloud-native-maintainers)
 ###################################################################################################
 
-/operator/                                                  @keycloak/cloud-native-maintainers
-/quarkus/                                                   @keycloak/cloud-native-maintainers
-/docs/guides/src/main/server/                               @keycloak/cloud-native-maintainers
-/docs/guides/src/main/operator/                             @keycloak/cloud-native-maintainers
+/operator/                                                  @keycloak/cloud-native-maintainers @keycloak/maintainers
+/quarkus/                                                   @keycloak/cloud-native-maintainers @keycloak/maintainers
+/docs/guides/server/                                        @keycloak/cloud-native-maintainers @keycloak/maintainers
+/docs/guides/operator/                                      @keycloak/cloud-native-maintainers @keycloak/maintainers
 
 ###################################################################################################
 # Store (@keycloak/store-maintainers)
 ###################################################################################################
 
-/model/                                                     @keycloak/store-maintainers
-/testsuite/model/                                           @keycloak/store-maintainers
+/model/                                                     @keycloak/store-maintainers @keycloak/maintainers
+/testsuite/model/                                           @keycloak/store-maintainers @keycloak/maintainers
 
 ###################################################################################################
 # UI (@keycloak/ui-maintainers)

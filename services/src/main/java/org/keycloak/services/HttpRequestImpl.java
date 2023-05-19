@@ -17,21 +17,21 @@
 
 package org.keycloak.services;
 
-import static javax.ws.rs.core.MediaType.MULTIPART_FORM_DATA_TYPE;
-import static javax.ws.rs.core.MediaType.TEXT_PLAIN_TYPE;
+import static jakarta.ws.rs.core.MediaType.MULTIPART_FORM_DATA_TYPE;
+import static jakarta.ws.rs.core.MediaType.TEXT_PLAIN_TYPE;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.cert.X509Certificate;
 import java.util.List;
 import java.util.Map;
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.MultivaluedHashMap;
-import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.UriInfo;
-import javax.ws.rs.ext.MessageBodyReader;
-import javax.ws.rs.ext.Providers;
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.MultivaluedHashMap;
+import jakarta.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.core.UriInfo;
+import jakarta.ws.rs.ext.MessageBodyReader;
+import jakarta.ws.rs.ext.Providers;
 import org.jboss.resteasy.core.ResteasyContext;
 import org.jboss.resteasy.plugins.providers.multipart.InputPart;
 import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataInput;
@@ -58,6 +58,10 @@ public class HttpRequestImpl implements HttpRequest {
     public MultivaluedMap<String, String> getDecodedFormParameters() {
         if (delegate == null) {
             return null;
+        }
+        MediaType mediaType = getHttpHeaders().getMediaType();
+        if (mediaType == null || !mediaType.isCompatible(MediaType.valueOf("application/x-www-form-urlencoded"))) {
+            return new MultivaluedHashMap<>();
         }
         return delegate.getDecodedFormParameters();
     }
@@ -110,7 +114,7 @@ public class HttpRequestImpl implements HttpRequest {
         if (delegate == null) {
             return null;
         }
-        return (X509Certificate[]) delegate.getAttribute("javax.servlet.request.X509Certificate");
+        return (X509Certificate[]) delegate.getAttribute("jakarta.servlet.request.X509Certificate");
     }
 
     @Override

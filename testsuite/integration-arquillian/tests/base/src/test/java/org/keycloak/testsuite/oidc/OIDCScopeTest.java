@@ -23,10 +23,8 @@ import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ClientScopeResource;
-import org.keycloak.common.Profile;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.events.Details;
-import org.keycloak.events.EventType;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
@@ -44,20 +42,22 @@ import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
 import org.keycloak.testsuite.pages.OAuthGrantPage;
 import org.keycloak.testsuite.util.ClientManager;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.RoleBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
+import org.keycloak.testsuite.util.AccountHelper;
 
-import javax.ws.rs.NotFoundException;
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.core.Response;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
+import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
 
 /**
  * Test for OAuth2 'scope' parameter and for some other aspects of client scopes
@@ -66,12 +66,12 @@ import static org.junit.Assert.assertEquals;
  */
 public class OIDCScopeTest extends AbstractOIDCScopeTest {
 
-    private static String userId = KeycloakModelUtils.generateId();
+    private static String userId;
 
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
         UserRepresentation user = UserBuilder.create()
-                .id(userId)
+                .id(KeycloakModelUtils.generateId())
                 .username("john")
                 .enabled(true)
                 .email("john@email.cz")
@@ -148,6 +148,12 @@ public class OIDCScopeTest extends AbstractOIDCScopeTest {
         testRealm.getUsers().add(user);
     }
 
+    @Override
+    public void importTestRealms() {
+        super.importTestRealms();
+        userId = adminClient.realm("test").users().search("john", true).get(0).getId();
+    }
+
     @Before
     public void clientConfiguration() {
         ClientManager.realm(adminClient.realm("test")).clientId("test-app").directAccessGrant(true);
@@ -165,7 +171,7 @@ public class OIDCScopeTest extends AbstractOIDCScopeTest {
         }
     }
 
-
+    
     @Test
     public void testBuiltinOptionalScopes() throws Exception {
         // Login. Assert that just 'profile' and 'email' data are there. 'Address' and 'phone' not
@@ -461,7 +467,6 @@ public class OIDCScopeTest extends AbstractOIDCScopeTest {
 
 
     @Test
-    @DisableFeature(value = Profile.Feature.ACCOUNT2, skipRestart = true) // TODO remove this (KEYCLOAK-16228)
     public void testRefreshTokenWithConsentRequired() {
         // Login with consentRequired
         oauth.clientId("third-party");
@@ -502,14 +507,10 @@ public class OIDCScopeTest extends AbstractOIDCScopeTest {
                 .assertEvent();
 
         // Go to applications in account mgmt and revoke consent
-        accountAppsPage.open();
         events.clear();
-        accountAppsPage.revokeGrant("third-party");
-        events.expect(EventType.REVOKE_GRANT)
-                .client("account")
-                .user(userId)
-                .detail(Details.REVOKED_CLIENT, "third-party")
-                .assertEvent();
+        AccountHelper.revokeConsents(adminClient.realm(TEST), "john", "third-party");
+        List<Map<String, Object>> userConsents = AccountHelper.getUserConsents(adminClient.realm(TEST), "john");
+        Assert.assertEquals(userConsents.size(), 0);
 
         // Ensure I can't refresh anymore
         refreshResponse = oauth.doRefreshTokenRequest(refreshResponse.getRefreshToken(), "password");

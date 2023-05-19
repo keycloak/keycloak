@@ -21,7 +21,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response;
 
 import org.junit.Assert;
 import org.junit.Before;
@@ -40,7 +40,6 @@ import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.ldap.LDAPStorageProviderFactory;
 import org.keycloak.storage.ldap.kerberos.LDAPProviderKerberosConfig;
 import org.keycloak.testsuite.ProfileAssume;
-import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
 import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.KerberosRule;
 import org.keycloak.testsuite.KerberosEmbeddedServer;
@@ -51,7 +50,6 @@ import org.keycloak.testsuite.util.TestAppHelper;
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-@DisableFeature(value = Profile.Feature.ACCOUNT2, skipRestart = true) // TODO remove this (KEYCLOAK-16228)
 public class KerberosLdapTest extends AbstractKerberosSingleRealmTest {
     private static final String PROVIDER_CONFIG_LOCATION = "classpath:kerberos/kerberos-ldap-connection.properties";
 

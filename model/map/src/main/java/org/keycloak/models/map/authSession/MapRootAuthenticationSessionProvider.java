@@ -25,7 +25,6 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.map.common.DeepCloner;
 import org.keycloak.models.map.common.HasRealmId;
 import org.keycloak.models.map.common.TimeAdapter;
-import org.keycloak.models.map.storage.MapKeycloakTransaction;
 import org.keycloak.models.map.storage.MapStorage;
 import org.keycloak.models.map.storage.ModelCriteriaBuilder.Operator;
 import org.keycloak.models.map.storage.criteria.DefaultModelCriteria;
@@ -53,25 +52,23 @@ public class MapRootAuthenticationSessionProvider implements AuthenticationSessi
 
     private static final Logger LOG = Logger.getLogger(MapRootAuthenticationSessionProvider.class);
     private final KeycloakSession session;
-    protected final MapKeycloakTransaction<MapRootAuthenticationSessionEntity, RootAuthenticationSessionModel> tx;
+    protected final MapStorage<MapRootAuthenticationSessionEntity, RootAuthenticationSessionModel> store;
     private int authSessionsLimit;
-    private final boolean txHasRealmId;
+    private final boolean storeHasRealmId;
 
     public MapRootAuthenticationSessionProvider(KeycloakSession session,
                                                 MapStorage<MapRootAuthenticationSessionEntity, RootAuthenticationSessionModel> sessionStore,
                                                 int authSessionsLimit) {
         this.session = session;
-        this.tx = sessionStore.createTransaction(session);
+        this.store = sessionStore;
         this.authSessionsLimit = authSessionsLimit;
-
-        session.getTransactionManager().enlistAfterCompletion(tx);
-        this.txHasRealmId = tx instanceof HasRealmId;
+        this.storeHasRealmId = store instanceof HasRealmId;
     }
 
     private Function<MapRootAuthenticationSessionEntity, RootAuthenticationSessionModel> entityToAdapterFunc(RealmModel realm) {
         return origEntity -> {
             if (isExpired(origEntity, true)) {
-                txInRealm(realm).delete(origEntity.getId());
+                storeWithRealm(realm).delete(origEntity.getId());
                 return null;
             } else {
                 return new MapRootAuthenticationSessionAdapter(session, realm, origEntity, authSessionsLimit);
@@ -79,11 +76,11 @@ public class MapRootAuthenticationSessionProvider implements AuthenticationSessi
         };
     }
 
-    private MapKeycloakTransaction<MapRootAuthenticationSessionEntity, RootAuthenticationSessionModel> txInRealm(RealmModel realm) {
-        if (txHasRealmId) {
-            ((HasRealmId) tx).setRealmId(realm == null ? null : realm.getId());
+    private MapStorage<MapRootAuthenticationSessionEntity, RootAuthenticationSessionModel> storeWithRealm(RealmModel realm) {
+        if (storeHasRealmId) {
+            ((HasRealmId) store).setRealmId(realm == null ? null : realm.getId());
         }
-        return tx;
+        return store;
     }
 
     private Predicate<MapRootAuthenticationSessionEntity> entityRealmFilter(String realmId) {
@@ -115,11 +112,11 @@ public class MapRootAuthenticationSessionProvider implements AuthenticationSessi
         int authSessionLifespanSeconds = getAuthSessionLifespan(realm);
         entity.setExpiration(timestamp + TimeAdapter.fromSecondsToMilliseconds(authSessionLifespanSeconds));
 
-        if (id != null && txInRealm(realm).exists(id)) {
+        if (id != null && storeWithRealm(realm).exists(id)) {
             throw new ModelDuplicateException("Root authentication session exists: " + entity.getId());
         }
 
-        entity = txInRealm(realm).create(entity);
+        entity = storeWithRealm(realm).create(entity);
 
         return entityToAdapterFunc(realm).apply(entity);
     }
@@ -133,7 +130,7 @@ public class MapRootAuthenticationSessionProvider implements AuthenticationSessi
 
         LOG.tracef("getRootAuthenticationSession(%s, %s)%s", realm.getName(), authenticationSessionId, getShortStackTrace());
 
-        MapRootAuthenticationSessionEntity entity = txInRealm(realm).read(authenticationSessionId);
+        MapRootAuthenticationSessionEntity entity = storeWithRealm(realm).read(authenticationSessionId);
         return (entity == null || !entityRealmFilter(realm.getId()).test(entity))
                 ? null
                 : entityToAdapterFunc(realm).apply(entity);
@@ -142,7 +139,7 @@ public class MapRootAuthenticationSessionProvider implements AuthenticationSessi
     @Override
     public void removeRootAuthenticationSession(RealmModel realm, RootAuthenticationSessionModel authenticationSession) {
         Objects.requireNonNull(authenticationSession, "The provided root authentication session can't be null!");
-        txInRealm(realm).delete(authenticationSession.getId());
+        storeWithRealm(realm).delete(authenticationSession.getId());
     }
 
     @Override
@@ -163,7 +160,7 @@ public class MapRootAuthenticationSessionProvider implements AuthenticationSessi
         DefaultModelCriteria<RootAuthenticationSessionModel> mcb = criteria();
         mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId());
 
-        txInRealm(realm).delete(withCriteria(mcb));
+        storeWithRealm(realm).delete(withCriteria(mcb));
     }
 
     @Override

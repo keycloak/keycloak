@@ -18,7 +18,6 @@ package org.keycloak.testsuite.model.session;
 
 import org.infinispan.client.hotrod.RemoteCache;
 import org.infinispan.commons.CacheException;
-import org.keycloak.device.DeviceRepresentationProvider;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
@@ -66,7 +65,6 @@ import static org.hamcrest.Matchers.containsInAnyOrder;
 @RequireProvider(UserProvider.class)
 @RequireProvider(RealmProvider.class)
 @RequireProvider(UserSessionProvider.class)
-@RequireProvider(DeviceRepresentationProvider.class)
 public class OfflineSessionPersistenceTest extends KeycloakModelTest {
 
     private static final int USER_COUNT = 50;
@@ -421,7 +419,7 @@ public class OfflineSessionPersistenceTest extends KeycloakModelTest {
 
     private UserSessionModel createOfflineSession(KeycloakSession session, RealmModel realm, String userId, int sessionIndex) {
         final UserModel user = session.users().getUserById(realm, userId);
-        UserSessionModel us = session.sessions().createUserSession(realm, user, "un" + sessionIndex, "ip1", "auth", false, null, null);
+        UserSessionModel us = session.sessions().createUserSession(null, realm, user, "un" + sessionIndex, "ip1", "auth", false, null, null, UserSessionModel.SessionPersistenceState.PERSISTENT);
         return session.sessions().createOfflineUserSession(us);
     }
 

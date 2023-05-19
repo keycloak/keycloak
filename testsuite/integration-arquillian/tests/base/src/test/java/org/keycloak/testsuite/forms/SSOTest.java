@@ -16,6 +16,7 @@
  */
 package org.keycloak.testsuite.forms;
 
+import org.apache.http.impl.client.CloseableHttpClient;
 import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Assert;
@@ -39,12 +40,16 @@ import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginPasswordUpdatePage;
+import org.keycloak.testsuite.util.MutualTLSUtils;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.openqa.selenium.WebDriver;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
+
+import java.io.IOException;
+import javax.ws.rs.core.Response;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -209,4 +214,29 @@ public class SSOTest extends AbstractTestRealmKeycloakTest {
 
     }
 
+    @Test
+    public void failIfUsingCodeFromADifferentSession() throws IOException {
+        // first client user login
+        oauth.openLoginForm();
+        oauth.doLogin("test-user@localhost", "password");
+        String firstCode = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+
+        // second client user login
+        OAuthClient oauth2 = new OAuthClient();
+        oauth2.init(driver2);
+        oauth2.doLogin("john-doh@localhost", "password");
+        String secondCode = oauth2.getCurrentQuery().get(OAuth2Constants.CODE);
+        String[] firstCodeParts = firstCode.split("\\.");
+        String[] secondCodeParts = secondCode.split("\\.");
+        secondCodeParts[1] = firstCodeParts[1];
+        secondCode = String.join(".", secondCodeParts);
+
+        OAuthClient.AccessTokenResponse tokenResponse;
+
+        try (CloseableHttpClient client = MutualTLSUtils.newCloseableHttpClientWithOtherKeyStoreAndTrustStore()) {
+            tokenResponse = oauth2.doAccessTokenRequest(secondCode, "password", client);
+        }
+
+        assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), tokenResponse.getStatusCode());
+    }
 }

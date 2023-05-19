@@ -48,18 +48,18 @@ import org.keycloak.services.util.CacheControlUtil;
 
 import java.util.Objects;
 
-import javax.ws.rs.GET;
-import javax.ws.rs.NotFoundException;
-import javax.ws.rs.OPTIONS;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriBuilder;
-import javax.ws.rs.core.UriInfo;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.OPTIONS;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.UriBuilder;
+import jakarta.ws.rs.core.UriInfo;
 
 /**
  * Resource class for the oauth/openid connect token service
@@ -219,7 +219,7 @@ public class OIDCLoginProtocolService {
                     if (k.getType().equals(KeyType.RSA)) {
                         return b.rsa(k.getPublicKey(), certificates, k.getUse());
                     } else if (k.getType().equals(KeyType.EC)) {
-                        return b.ec(k.getPublicKey());
+                        return b.ec(k.getPublicKey(), k.getUse());
                     }
                     return null;
                 })

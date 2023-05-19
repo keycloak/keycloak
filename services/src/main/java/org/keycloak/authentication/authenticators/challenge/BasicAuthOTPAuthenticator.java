@@ -32,7 +32,7 @@ import org.keycloak.models.credential.OTPCredentialModel;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.validation.Validation;
 
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

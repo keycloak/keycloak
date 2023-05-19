@@ -24,7 +24,7 @@
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
         <artifactId>integration-arquillian</artifactId>
-        <version>999-SNAPSHOT</version>
+        <version>999.0.0-SNAPSHOT</version>
     </parent>
 
     <packaging>pom</packaging>
@@ -215,7 +215,7 @@
         <github.secretToken/>
         <ieDriverArch>Win32</ieDriverArch>
         <ieDriverVersion/>
-        <js.browser>phantomjs</js.browser>
+        <js.browser>chrome</js.browser>
         <js.chromeArguments>--headless</js.chromeArguments>
         <htmlUnitBrowserVersion>chrome</htmlUnitBrowserVersion>
         <firefox_binary/> <!-- the path is set automatically based on the OS -->
@@ -224,7 +224,7 @@
         <firefoxUserPreferences/>
         <firefoxHeadless>true</firefoxHeadless>
         <chromeBinary/>
-        <chromeArguments>--headless</chromeArguments>
+        <chromeArguments>--headless --window-size=1920,1080 --remote-allow-origins=*</chromeArguments>
         <chromeDriverVersion/>
 
         <appium.platformName/>
@@ -345,18 +345,6 @@
                                     <artifactItem>
                                         <groupId>org.keycloak.testsuite</groupId>
                                         <artifactId>hello-world-authz-service</artifactId>
-                                        <version>${project.version}</version>
-                                        <type>war</type>
-                                    </artifactItem>
-                                    <artifactItem>
-                                        <groupId>org.keycloak.testsuite</groupId>
-                                        <artifactId>photoz-html5-client</artifactId>
-                                        <version>${project.version}</version>
-                                        <type>war</type>
-                                    </artifactItem>
-                                    <artifactItem>
-                                        <groupId>org.keycloak.testsuite</groupId>
-                                        <artifactId>photoz-restful-api</artifactId>
                                         <version>${project.version}</version>
                                         <type>war</type>
                                     </artifactItem>
@@ -1616,6 +1604,12 @@
                 </dependency>
 
                 <dependency>
+                    <groupId>net.bytebuddy</groupId>
+                    <artifactId>byte-buddy</artifactId>
+                    <version>1.12.18</version>
+                </dependency>
+
+                <dependency>
                     <groupId>org.jboss.arquillian.junit</groupId>
                     <artifactId>arquillian-junit-container</artifactId>
                 </dependency>
@@ -1706,7 +1700,7 @@
                 </dependency>
                 <dependency>
                     <groupId>org.slf4j</groupId>
-                    <artifactId>slf4j-log4j12</artifactId>
+                    <artifactId>slf4j-reload4j</artifactId>
                 </dependency>
 
                 <dependency>
@@ -1828,7 +1822,7 @@
                 </dependency>
                 <dependency>
                     <groupId>org.infinispan</groupId>
-                    <artifactId>infinispan-core</artifactId>
+                    <artifactId>infinispan-core-jakarta</artifactId>
                 </dependency>
 
                 <dependency>
@@ -1836,6 +1830,13 @@
                     <artifactId>${jdbc.mvn.artifactId}</artifactId>
                     <version>${jdbc.mvn.version}</version>
                     <scope>compile</scope>
+                </dependency>
+
+                <!-- OpenJDK 17 and further versions doesn't provide Nashorn library out of the box. -->
+                <dependency>
+                    <groupId>org.openjdk.nashorn</groupId>
+                    <artifactId>nashorn-core</artifactId>
+                    <version>${nashorn.version}</version>
                 </dependency>
 
                 <!-- CLI -->

@@ -51,20 +51,19 @@ public class LDAPQuery implements AutoCloseable {
 
     private final LDAPStorageProvider ldapFedProvider;
 
-    private int offset;
     private int limit;
     private PaginationContext paginationContext;
     private LDAPContextManager ldapContextManager;
     private String searchDn;
-    private final Set<Condition> conditions = new LinkedHashSet<Condition>();
-    private final Set<Sort> ordering = new LinkedHashSet<Sort>();
+    private final Set<Condition> conditions = new LinkedHashSet<>();
+    private final Set<Sort> ordering = new LinkedHashSet<>();
 
-    private final Set<String> returningLdapAttributes = new LinkedHashSet<String>();
+    private final Set<String> returningLdapAttributes = new LinkedHashSet<>();
 
     // Contains just those returningLdapAttributes, which are read-only. They will be marked as read-only in returned LDAPObject instances as well
     // NOTE: names of attributes are lower-cased to avoid case sensitivity issues (LDAP searching is usually case-insensitive, so we want to be as well)
-    private final Set<String> returningReadOnlyLdapAttributes = new LinkedHashSet<String>();
-    private final Set<String> objectClasses = new LinkedHashSet<String>();
+    private final Set<String> returningReadOnlyLdapAttributes = new LinkedHashSet<>();
+    private final Set<String> objectClasses = new LinkedHashSet<>();
 
     private final List<ComponentModel> mappers = new ArrayList<>();
 
@@ -146,10 +145,6 @@ public class LDAPQuery implements AutoCloseable {
         return limit;
     }
 
-    public int getOffset() {
-        return offset;
-    }
-
     public PaginationContext getPaginationContext() {
         return paginationContext;
     }
@@ -166,7 +161,7 @@ public class LDAPQuery implements AutoCloseable {
             fedMapper.beforeLDAPQuery(this);
         }
 
-        List<LDAPObject> result = new ArrayList<LDAPObject>();
+        List<LDAPObject> result = new ArrayList<>();
 
         try {
             for (LDAPObject ldapObject : ldapFedProvider.getLdapIdentityStore().fetchQueryResults(this)) {
@@ -193,11 +188,6 @@ public class LDAPQuery implements AutoCloseable {
 
     public int getResultCount() {
         return ldapFedProvider.getLdapIdentityStore().countQueryResults(this);
-    }
-
-    public LDAPQuery setOffset(int offset) {
-        this.offset = offset;
-        return this;
     }
 
     public LDAPQuery setLimit(int limit) {

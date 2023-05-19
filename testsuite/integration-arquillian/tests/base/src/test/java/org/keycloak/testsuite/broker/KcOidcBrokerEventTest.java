@@ -27,6 +27,10 @@ import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AssertEvents;
+import org.keycloak.userprofile.UserProfileContext;
+
+import static org.keycloak.testsuite.AssertEvents.DEFAULT_USERNAME;
+import static org.keycloak.testsuite.broker.BrokerTestConstants.IDP_OIDC_ALIAS;
 
 /**
  * Simple test to check the events after a broker login using OIDC. It also
@@ -68,6 +72,21 @@ public final class KcOidcBrokerEventTest extends AbstractBrokerTest {
                 .client(bc.getIDPClientIdInProviderRealm())
                 .assertEvent();
 
+        events.expect(EventType.IDENTITY_PROVIDER_FIRST_LOGIN)
+                .realm(consumerRealm.toRepresentation().getId())
+                .client("account")
+                .user((String)null)
+                .detail(Details.IDENTITY_PROVIDER, IDP_OIDC_ALIAS)
+                .detail(Details.IDENTITY_PROVIDER_USERNAME, bc.getUserLogin())
+                .assertEvent();
+
+        events.expect(EventType.UPDATE_PROFILE)
+                .realm(consumerRealm.toRepresentation().getId())
+                .client("account")
+                .user((String)null)
+                .detail(Details.CONTEXT, UserProfileContext.IDP_REVIEW.name())
+                .assertEvent();
+
         events.expect(EventType.REGISTER)
                 .realm(consumerRealm.toRepresentation().getId())
                 .client("account")
@@ -87,7 +106,7 @@ public final class KcOidcBrokerEventTest extends AbstractBrokerTest {
                 .detail(Details.IDENTITY_PROVIDER_USERNAME, bc.getUserLogin())
                 .detail(Details.IDENTITY_PROVIDER, bc.getIDPAlias())
                 .assertEvent();
-
+        
         events.clear();
     }
 

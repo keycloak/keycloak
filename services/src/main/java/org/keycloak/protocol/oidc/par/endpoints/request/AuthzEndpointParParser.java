@@ -49,7 +49,7 @@ public class AuthzEndpointParParser extends AuthzEndpointRequestParser {
     public AuthzEndpointParParser(KeycloakSession session, ClientModel client, String requestUri) {
         this.session = session;
         this.client = client;
-        SingleUseObjectProvider singleUseStore = session.getProvider(SingleUseObjectProvider.class);
+        SingleUseObjectProvider singleUseStore = session.singleUseObjects();
         String key;
         try {
             key = requestUri.substring(ParEndpoint.REQUEST_URI_PREFIX_LENGTH);

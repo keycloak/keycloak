@@ -23,11 +23,11 @@ import org.keycloak.protocol.saml.EntityDescriptorDescriptionConverter;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.services.clientregistration.AbstractClientRegistrationProvider;
 
-import javax.ws.rs.Consumes;
-import javax.ws.rs.POST;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 import java.net.URI;
 
 /**

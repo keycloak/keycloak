@@ -45,4 +45,5 @@ public class JpaUserFederatedIdentityMetadata extends MapUserFederatedIdentityEn
     public void setEntityVersion(Integer entityVersion) {
         this.entityVersion = entityVersion;
     }
+
 }

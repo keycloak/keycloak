@@ -24,7 +24,7 @@
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
         <artifactId>integration-arquillian-tests</artifactId>
-        <version>999-SNAPSHOT</version>
+        <version>999.0.0-SNAPSHOT</version>
     </parent>
 
     <artifactId>integration-arquillian-tests-other</artifactId>
@@ -35,6 +35,10 @@
 
     <description>Test modules that depend on the Base TestSuite.
         This POM contains common configuration for submodules.</description>
+
+    <properties>
+        <app.server>undertow</app.server>
+    </properties>
 
     <build>
         <pluginManagement>

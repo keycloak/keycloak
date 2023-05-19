@@ -16,8 +16,8 @@
  */
 package org.keycloak.models.map.storage.jpa;
 
-import javax.persistence.Column;
-import javax.persistence.MappedSuperclass;
+import jakarta.persistence.Column;
+import jakarta.persistence.MappedSuperclass;
 
 /**
  * Enhances {@link JpaAttributeEntity} with value_hash column.

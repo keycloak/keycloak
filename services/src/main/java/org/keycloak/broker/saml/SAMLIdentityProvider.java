@@ -78,10 +78,10 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriBuilder;
-import javax.ws.rs.core.UriInfo;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.UriBuilder;
+import jakarta.ws.rs.core.UriInfo;
 import javax.xml.crypto.dsig.CanonicalizationMethod;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.stream.XMLStreamWriter;
@@ -89,6 +89,7 @@ import javax.xml.stream.XMLStreamWriter;
 import java.io.StringWriter;
 import java.net.URI;
 import java.security.KeyPair;
+import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
@@ -396,7 +397,7 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
                             throw new RuntimeException(e);
                         }
 
-                        return SPMetadataDescriptor.buildKeyDescriptorType(keyInfo, KeyTypes.ENCRYPTION, SAMLEncryptionAlgorithms.forKeycloakIdentifier(key.getAlgorithm()).getXmlEncIdentifier());
+                        return SPMetadataDescriptor.buildKeyDescriptorType(keyInfo, KeyTypes.ENCRYPTION, SAMLEncryptionAlgorithms.forKeycloakIdentifier(key.getAlgorithm()).getXmlEncIdentifiers());
                     })
                     .collect(Collectors.toList());
 
@@ -457,13 +458,15 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
             if (getConfig().isSignSpMetadata())
             {
                 KeyManager.ActiveRsaKey activeKey = session.keys().getActiveRsaKey(realm);
-                String keyName = getConfig().getXmlSigKeyInfoKeyNameTransformer().getKeyName(activeKey.getKid(), activeKey.getCertificate());
+                X509Certificate certificate = activeKey.getCertificate();
+                String keyName = getConfig().getXmlSigKeyInfoKeyNameTransformer().getKeyName(activeKey.getKid(), certificate);
                 KeyPair keyPair = new KeyPair(activeKey.getPublicKey(), activeKey.getPrivateKey());
 
                 Document metadataDocument = DocumentUtil.getDocument(descriptor);
                 SAML2Signature signatureHelper = new SAML2Signature();
                 signatureHelper.setSignatureMethod(getSignatureAlgorithm().getXmlSignatureMethod());
                 signatureHelper.setDigestMethod(getSignatureAlgorithm().getXmlSignatureDigestMethod());
+                signatureHelper.setX509Certificate(certificate);
 
                 Node nextSibling = metadataDocument.getDocumentElement().getFirstChild();
                 signatureHelper.setNextSibling(nextSibling);

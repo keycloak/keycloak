@@ -18,16 +18,15 @@
 package org.keycloak.exportimport.util;
 
 import org.jboss.logging.Logger;
-import org.keycloak.exportimport.ExportImportConfig;
 import org.keycloak.exportimport.ExportProvider;
 import org.keycloak.exportimport.UsersExportStrategy;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.models.KeycloakSessionTask;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.services.ServicesLogger;
 import org.keycloak.storage.UserStorageUtil;
 
 import java.io.IOException;
@@ -38,37 +37,55 @@ import java.util.stream.Collectors;
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public abstract class MultipleStepsExportProvider implements ExportProvider {
+public abstract class MultipleStepsExportProvider<T extends MultipleStepsExportProvider<?>> implements ExportProvider {
 
     protected final Logger logger = Logger.getLogger(getClass());
 
+    protected final KeycloakSessionFactory factory;
+
+    private String realmId;
+    private int usersPerFile;
+    private UsersExportStrategy usersExportStrategy;
+
+    public MultipleStepsExportProvider(KeycloakSessionFactory factory) {
+        this.factory = factory;
+    }
+
     @Override
-    public void exportModel(KeycloakSessionFactory factory) throws IOException {
-        final RealmsHolder holder = new RealmsHolder();
-
-        KeycloakModelUtils.runJobInTransaction(factory, new KeycloakSessionTask() {
-
-            @Override
-            public void run(KeycloakSession session) {
-                List<RealmModel> realms = session.realms().getRealmsStream().collect(Collectors.toList());
-                holder.realms = realms;
+    public void exportModel() {
+        if (realmId != null) {
+            ServicesLogger.LOGGER.realmExportRequested(realmId);
+            exportRealm(realmId);
+        } else {
+            ServicesLogger.LOGGER.fullModelExportRequested();
+            List<RealmModel> realms = KeycloakModelUtils.runJobInTransactionWithResult(factory, session -> session.realms().getRealmsStream().collect(Collectors.toList()));
+            for (RealmModel realm : realms) {
+                exportRealmImpl(realm.getName());
             }
-
-        });
-
-        for (RealmModel realm : holder.realms) {
-            exportRealmImpl(factory, realm.getName());
         }
+        ServicesLogger.LOGGER.exportSuccess();
     }
 
-    @Override
-    public void exportRealm(KeycloakSessionFactory factory, String realmName) throws IOException {
-        exportRealmImpl(factory, realmName);
+    public T withRealmName(String realmName) {
+        this.realmId = realmName;
+        return (T) this;
     }
 
-    protected void exportRealmImpl(KeycloakSessionFactory factory, final String realmName) throws IOException {
-        final UsersExportStrategy usersExportStrategy = ExportImportConfig.getUsersExportStrategy();
-        final int usersPerFile = ExportImportConfig.getUsersPerFile();
+    public T withUsersPerFile(int usersPerFile) {
+        this.usersPerFile = usersPerFile;
+        return (T) this;
+    }
+
+    public T withUsersExportStrategy(UsersExportStrategy usersExportStrategy) {
+        this.usersExportStrategy = usersExportStrategy;
+        return (T) this;
+    }
+
+    public void exportRealm(String realmName) {
+        exportRealmImpl(realmName);
+    }
+
+    protected void exportRealmImpl(final String realmName) {
         final UsersHolder usersHolder = new UsersHolder();
         final boolean exportUsersIntoRealmFile = usersExportStrategy == UsersExportStrategy.REALM_FILE;
         FederatedUsersHolder federatedUsersHolder = new FederatedUsersHolder();
@@ -167,11 +184,6 @@ public abstract class MultipleStepsExportProvider implements ExportProvider {
 
     protected abstract void writeUsers(String fileName, KeycloakSession session, RealmModel realm, List<UserModel> users) throws IOException;
     protected abstract void writeFederatedUsers(String fileName, KeycloakSession session, RealmModel realm, List<String> users) throws IOException;
-
-    public static class RealmsHolder {
-        List<RealmModel> realms;
-
-    }
 
     public static class UsersHolder {
         List<UserModel> users;

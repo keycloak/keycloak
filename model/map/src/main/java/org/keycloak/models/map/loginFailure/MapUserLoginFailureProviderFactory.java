@@ -39,7 +39,7 @@ public class MapUserLoginFailureProviderFactory extends AbstractMapProviderFacto
 
     @Override
     public MapUserLoginFailureProvider createNew(KeycloakSession session) {
-        return new MapUserLoginFailureProvider(session, getStorage(session));
+        return new MapUserLoginFailureProvider(session, getMapStorage(session));
     }
 
     @Override

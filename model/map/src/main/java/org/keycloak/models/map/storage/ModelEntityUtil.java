@@ -32,6 +32,7 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserLoginFailureModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.map.lock.MapLockEntity;
 import org.keycloak.models.map.singleUseObject.MapSingleUseObjectEntity;
 import org.keycloak.models.map.authSession.MapRootAuthenticationSessionEntity;
 import org.keycloak.models.map.authorization.entity.MapPermissionTicketEntity;
@@ -96,6 +97,9 @@ public class ModelEntityUtil {
         // events
         MODEL_TO_NAME.put(AdminEvent.class, "admin-events");
         MODEL_TO_NAME.put(Event.class, "auth-events");
+
+        // locks
+        MODEL_TO_NAME.put(MapLockEntity.class, "locks");
     }
     private static final Map<String, Class<?>> NAME_TO_MODEL = MODEL_TO_NAME.entrySet().stream().collect(Collectors.toUnmodifiableMap(Entry::getValue, Entry::getKey));
 
@@ -223,6 +227,11 @@ public class ModelEntityUtil {
                 if (field != entityField) {
                     super.set(field, value);
                 }
+            }
+
+            @Override
+            public String toString() {
+                return super.toString() + " [fixed " + entityField + "=" + value + "]";
             }
         });
     }

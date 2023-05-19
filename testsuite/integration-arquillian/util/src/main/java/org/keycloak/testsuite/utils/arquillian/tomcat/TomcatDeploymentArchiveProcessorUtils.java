@@ -11,7 +11,7 @@ import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.keycloak.testsuite.utils.arquillian.DeploymentArchiveProcessorUtils;
 import org.w3c.dom.Document;
 
-import javax.ws.rs.ApplicationPath;
+import jakarta.ws.rs.ApplicationPath;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -114,7 +114,7 @@ public class TomcatDeploymentArchiveProcessorUtils {
         ).values().stream()
                 .filter(node -> node.getAsset() instanceof ClassAsset)
                 .map(node -> ((ClassAsset)node.getAsset()).getSource())
-                .filter(clazz -> clazz.isAnnotationPresent(javax.ws.rs.Path.class))
+                .filter(clazz -> clazz.isAnnotationPresent(jakarta.ws.rs.Path.class))
                 .collect(Collectors.toSet());
 
         return !classes.isEmpty();

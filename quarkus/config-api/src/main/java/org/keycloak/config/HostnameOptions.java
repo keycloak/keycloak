@@ -50,4 +50,11 @@ public class HostnameOptions {
             .description("The port used by the proxy when exposing the hostname. Set this option if the proxy uses a port other than the default HTTP and HTTPS ports.")
             .defaultValue(-1)
             .build();
+
+    public static final Option HOSTNAME_DEBUG = new OptionBuilder<>("hostname-debug", Boolean.class)
+            .category(OptionCategory.HOSTNAME)
+            .description("Toggle the hostname debug page that is accessible at /realms/master/hostname-debug")
+            .defaultValue(Boolean.FALSE)
+            .build();
+
 }

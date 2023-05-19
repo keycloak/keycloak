@@ -20,12 +20,10 @@ package org.keycloak.models.map.singleUseObject;
 import org.jboss.logging.Logger;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.SingleUseObjectValueModel;
-import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.SingleUseObjectProvider;
 import org.keycloak.models.map.common.DeepCloner;
 import org.keycloak.models.map.common.TimeAdapter;
-import org.keycloak.models.map.storage.MapKeycloakTransaction;
 import org.keycloak.models.map.storage.MapStorage;
 import org.keycloak.models.map.storage.ModelCriteriaBuilder;
 import org.keycloak.models.map.storage.criteria.DefaultModelCriteria;
@@ -44,14 +42,10 @@ import static org.keycloak.models.map.storage.criteria.DefaultModelCriteria.crit
 public class MapSingleUseObjectProvider implements SingleUseObjectProvider {
 
     private static final Logger LOG = Logger.getLogger(MapSingleUseObjectProvider.class);
-    private final KeycloakSession session;
-    protected final MapKeycloakTransaction<MapSingleUseObjectEntity, SingleUseObjectValueModel> singleUseObjectTx;
+    protected final MapStorage<MapSingleUseObjectEntity, SingleUseObjectValueModel> singleUseObjectTx;
 
-    public MapSingleUseObjectProvider(KeycloakSession session, MapStorage<MapSingleUseObjectEntity, SingleUseObjectValueModel> storage) {
-        this.session = session;
-        singleUseObjectTx = storage.createTransaction(session);
-
-        session.getTransactionManager().enlistAfterCompletion(singleUseObjectTx);
+    public MapSingleUseObjectProvider(MapStorage<MapSingleUseObjectEntity, SingleUseObjectValueModel> storage) {
+        this.singleUseObjectTx = storage;
     }
 
     @Override

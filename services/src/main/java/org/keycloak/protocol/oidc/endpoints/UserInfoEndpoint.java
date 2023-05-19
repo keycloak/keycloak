@@ -59,6 +59,7 @@ import org.keycloak.services.clientpolicy.context.UserInfoRequestContext;
 import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.UserSessionCrossDCManager;
+import org.keycloak.services.managers.UserSessionManager;
 import org.keycloak.services.resources.Cors;
 import org.keycloak.services.util.DefaultClientSessionContext;
 import org.keycloak.services.util.MtlsHoKTokenUtil;
@@ -69,14 +70,14 @@ import org.keycloak.util.TokenUtil;
 import org.keycloak.utils.MediaType;
 import org.keycloak.utils.OAuth2Error;
 
-import javax.ws.rs.GET;
-import javax.ws.rs.OPTIONS;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.OPTIONS;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.MultivaluedMap;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -120,7 +121,7 @@ public class UserInfoEndpoint {
     @Path("/")
     @GET
     @NoCache
-    @Produces(javax.ws.rs.core.MediaType.APPLICATION_JSON)
+    @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_JWT})
     public Response issueUserInfoGet() {
         setupCors();
         String accessToken = this.appAuthManager.extractAuthorizationHeaderTokenOrReturnNull(session.getContext().getRequestHeaders());
@@ -131,7 +132,7 @@ public class UserInfoEndpoint {
     @Path("/")
     @POST
     @NoCache
-    @Produces(javax.ws.rs.core.MediaType.APPLICATION_JSON)
+    @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_JWT})
     public Response issueUserInfoPost() {
         setupCors();
 
@@ -336,7 +337,7 @@ public class UserInfoEndpoint {
         if (user == null) {
             throw error.invalidToken("User not found");
         }
-        UserSessionModel userSession = session.sessions().createUserSession(KeycloakModelUtils.generateId(), realm, user, user.getUsername(), clientConnection.getRemoteAddr(),
+        UserSessionModel userSession = new UserSessionManager(session).createUserSession(KeycloakModelUtils.generateId(), realm, user, user.getUsername(), clientConnection.getRemoteAddr(),
                 ServiceAccountConstants.CLIENT_AUTH, false, null, null, UserSessionModel.SessionPersistenceState.TRANSIENT);
         // attach an auth session for the client
         RootAuthenticationSessionModel rootAuthSession = session.authenticationSessions().createRootAuthenticationSession(realm);

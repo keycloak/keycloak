@@ -228,8 +228,8 @@ export class Realms extends Resource {
     void
   >({
     method: "DELETE",
-    path: "/{realm}/sessions/{session}",
-    urlParamKeys: ["realm", "session"],
+    path: "/{realm}/sessions/{sessionId}",
+    urlParamKeys: ["realm", "sessionId"],
     catchNotFound: true,
   });
 

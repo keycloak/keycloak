@@ -51,8 +51,8 @@ import org.keycloak.testsuite.util.MailUtils;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.UserBuilder;
 
-import javax.mail.internet.MimeMessage;
-import javax.ws.rs.core.Response;
+import jakarta.mail.internet.MimeMessage;
+import jakarta.ws.rs.core.Response;
 import java.io.IOException;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -610,6 +610,21 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
             Assert.assertNotNull(user.getCreatedTimestamp());
             // test that timestamp is current with 10s tollerance
             assertTrue((System.currentTimeMillis() - user.getCreatedTimestamp()) < 10000);
+        }
+    }
+
+    @Test
+    public void testEmailAsUsernameWhenEditUserNameDisabled() throws IOException {
+        try (RealmAttributeUpdater rau = configureRealmRegistrationEmailAsUsername(true)
+                .setEditUserNameAllowed(false)
+                .update()) {
+            loginPage.open();
+            loginPage.clickRegister();
+            registerPage.assertCurrent();
+
+            registerPage.registerWithEmailAsUsername("firstName", "lastName", "alice@email", "password", "password");
+
+            assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
         }
     }
 

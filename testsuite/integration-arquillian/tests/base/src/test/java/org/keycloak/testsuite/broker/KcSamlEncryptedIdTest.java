@@ -23,7 +23,7 @@ import static org.keycloak.saml.common.constants.JBossSAMLURIConstants.ASSERTION
 public class KcSamlEncryptedIdTest extends AbstractKcSamlEncryptedElementsTest {
 
     @Override
-    protected SamlDocumentStepBuilder.Saml2DocumentTransformer encryptDocument(PublicKey publicKey, String keyEncryptionAlgorithm) {
+    protected SamlDocumentStepBuilder.Saml2DocumentTransformer encryptDocument(PublicKey publicKey, String keyEncryptionAlgorithm, String keyEncryptionDigestMethod, String keyEncryptionMgfAlgorithm) {
         return document -> { // Replace Subject -> NameID with EncryptedId
             Node assertionElement = document.getDocumentElement()
                     .getElementsByTagNameNS(ASSERTION_NSURI.get(), JBossSAMLConstants.ASSERTION.get()).item(0);
@@ -54,7 +54,7 @@ public class KcSamlEncryptedIdTest extends AbstractKcSamlEncryptedElementsTest {
 
                 // encrypt the Assertion element and replace it with a EncryptedAssertion element.
                 XMLEncryptionUtil.encryptElement(nameIdQName, document, publicKey,
-                        secretKey, 128, encryptedIdElementQName, true, keyEncryptionAlgorithm);
+                        secretKey, 128, encryptedIdElementQName, true, keyEncryptionAlgorithm, keyEncryptionDigestMethod, keyEncryptionMgfAlgorithm);
             } catch (Exception e) {
                 throw new ProcessingException("failed to encrypt", e);
             }

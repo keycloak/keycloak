@@ -1,0 +1,34 @@
+{
+  "title": "Autentifikavimas",
+  "flows": "Sekos",
+  "requiredActions": "Privalomi veiksmai",
+  "policies": "Taisyklės",
+  "passwordPolicy": "Slaptažodžių taisyklės",
+  "otpPolicy": "OTP taisyklės",
+  "otpType": "OTP tipas",
+  "policyType": {
+    "totp": "Paremtas laiku",
+    "hotp": "Paremtas skaitliuku"
+  },
+  "otpHashAlgorithm": "OTP maišos algoritmas",
+  "otpPolicyDigits": "Skaitmenų skaičius",
+  "lookAhead": "Neatitikimo langas",
+  "otpPolicyPeriod": "OTP rakto galiojimo intervalas",
+  "initialCounter": "Pradinė skaitliuko reikšmė",
+  "attestationPreference": {
+    "none": "jokio"
+  },
+  "flow": {
+    "browserFlow": "Autentifikacijos seka",
+    "registrationFlow": "Registracijos seka",
+    "directGrantFlow": "Tiesioginių teisių seka"
+  },
+  "edit": "Redaguoti",
+  "flowType": "Sekos tipas",
+  "flow-type": {
+    "form-flow": "form"
+  },
+  "addExecution": "Pridėti išimtį",
+  "requirement": "Privalomumas",
+  "alias": "Pseudonimas"
+}
