@@ -328,7 +328,7 @@ public class MapUserSessionProvider implements UserSessionProvider {
         // on concurrent transactions. This change has been done in the assumption that delete-by-id would be faster than
         // delete-by-criteria for all stores.
         if (Objects.equals(session.getRealm(), realm) && !session.isOffline()) {
-            userSessionTx.delete(session.getId());
+            storeWithRealm(realm).delete(session.getId());
         }
     }
 
