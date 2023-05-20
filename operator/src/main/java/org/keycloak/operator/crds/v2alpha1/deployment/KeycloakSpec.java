@@ -20,13 +20,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
-import org.keycloak.operator.crds.v2alpha1.deployment.spec.DatabaseSpec;
-import org.keycloak.operator.crds.v2alpha1.deployment.spec.FeatureSpec;
-import org.keycloak.operator.crds.v2alpha1.deployment.spec.HttpSpec;
-import org.keycloak.operator.crds.v2alpha1.deployment.spec.UnsupportedSpec;
-import org.keycloak.operator.crds.v2alpha1.deployment.spec.IngressSpec;
-import org.keycloak.operator.crds.v2alpha1.deployment.spec.TransactionsSpec;
-import org.keycloak.operator.crds.v2alpha1.deployment.spec.HostnameSpec;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -75,6 +69,10 @@ public class KeycloakSpec {
     @JsonProperty("hostname")
     @JsonPropertyDescription("In this section you can configure Keycloak hostname and related properties.")
     private HostnameSpec hostnameSpec;
+
+    @JsonProperty("appProtocal")
+    @JsonPropertyDescription("In this section you can configure service AppProtocol")
+    private AppProtocolSpec appProtocolSpec;
 
     public HttpSpec getHttpSpec() {
         return httpSpec;
@@ -166,4 +164,8 @@ public class KeycloakSpec {
     public void setAdditionalOptions(List<ValueOrSecret> additionalOptions) {
         this.additionalOptions = additionalOptions;
     }
+
+    public AppProtocolSpec getAppProtocolSpec() { return appProtocolSpec; }
+
+    public void setAppProtocolSpec(AppProtocolSpec appProtocolSpec) { this.appProtocolSpec = appProtocolSpec; }
 }

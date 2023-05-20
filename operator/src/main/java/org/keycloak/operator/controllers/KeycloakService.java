@@ -34,73 +34,76 @@ import static org.keycloak.operator.crds.v2alpha1.CRDUtils.isTlsConfigured;
 
 public class KeycloakService extends OperatorManagedResource implements StatusUpdater<KeycloakStatusBuilder> {
 
-    private Service existingService;
-    private final Keycloak keycloak;
+  private Service existingService;
+  private final Keycloak keycloak;
 
-    public KeycloakService(KubernetesClient client, Keycloak keycloakCR) {
-        super(client, keycloakCR);
-        this.keycloak = keycloakCR;
-        this.existingService = fetchExistingService();
+  public KeycloakService(KubernetesClient client, Keycloak keycloakCR) {
+    super(client, keycloakCR);
+    this.keycloak = keycloakCR;
+    this.existingService = fetchExistingService();
+  }
+
+  private ServiceSpec getServiceSpec() {
+    String appProtocol = this.keycloak.getSpec().getAppProtocolSpec().getAppProtocalKS();
+    appProtocol = (appProtocol.equals("tcp") || appProtocol.equals("http") )? appProtocol : Constants.KEYCLOAK_SERVICE_APP_PROTOCOL;
+    return new ServiceSpecBuilder()
+            .addNewPort()
+            .withPort(getServicePort(keycloak))
+            .withAppProtocol(appProtocol)
+            .withProtocol(Constants.KEYCLOAK_SERVICE_PROTOCOL)
+            .endPort()
+            .withSelector(Constants.DEFAULT_LABELS)
+            .build();
+  }
+
+  @Override
+  protected Optional<HasMetadata> getReconciledResource() {
+    var service = fetchExistingService();
+    if (service == null) {
+      service = newService();
+    } else {
+      service.setSpec(getServiceSpec());
     }
 
-    private ServiceSpec getServiceSpec() {
-        return new ServiceSpecBuilder()
-              .addNewPort()
-              .withPort(getServicePort(keycloak))
-              .withProtocol(Constants.KEYCLOAK_SERVICE_PROTOCOL)
-              .endPort()
-              .withSelector(Constants.DEFAULT_LABELS)
-              .build();
-    }
+    return Optional.of(service);
+  }
 
-    @Override
-    protected Optional<HasMetadata> getReconciledResource() {
-        var service = fetchExistingService();
-        if (service == null) {
-            service = newService();
-        } else {
-            service.setSpec(getServiceSpec());
-        }
+  private Service newService() {
+    Service service = new ServiceBuilder()
+            .withNewMetadata()
+            .withName(getName())
+            .withNamespace(getNamespace())
+            .endMetadata()
+            .withSpec(getServiceSpec())
+            .build();
+    return service;
+  }
 
-        return Optional.of(service);
-    }
+  private Service fetchExistingService() {
+    return client
+            .services()
+            .inNamespace(getNamespace())
+            .withName(getName())
+            .get();
+  }
 
-    private Service newService() {
-        Service service = new ServiceBuilder()
-                .withNewMetadata()
-                .withName(getName())
-                .withNamespace(getNamespace())
-                .endMetadata()
-                .withSpec(getServiceSpec())
-                .build();
-        return service;
+  public void updateStatus(KeycloakStatusBuilder status) {
+    if (existingService == null) {
+      status.addNotReadyMessage("No existing Keycloak Service found, waiting for creating a new one");
+      return;
     }
+  }
 
-    private Service fetchExistingService() {
-        return client
-                .services()
-                .inNamespace(getNamespace())
-                .withName(getName())
-                .get();
-    }
+  public String getName() {
+    return cr.getMetadata().getName() + Constants.KEYCLOAK_SERVICE_SUFFIX;
+  }
 
-    public void updateStatus(KeycloakStatusBuilder status) {
-        if (existingService == null) {
-            status.addNotReadyMessage("No existing Keycloak Service found, waiting for creating a new one");
-            return;
-        }
+  public static int getServicePort(Keycloak keycloak) {
+    // we assume HTTP when TLS is not configureed
+    if (!isTlsConfigured(keycloak)) {
+      return getValueFromSubSpec(keycloak.getSpec().getHttpSpec(), HttpSpec::getHttpPort).orElse(Constants.KEYCLOAK_HTTP_PORT);
+    } else {
+      return getValueFromSubSpec(keycloak.getSpec().getHttpSpec(), HttpSpec::getHttpsPort).orElse(Constants.KEYCLOAK_HTTPS_PORT);
     }
-
-    public String getName() {
-        return cr.getMetadata().getName() + Constants.KEYCLOAK_SERVICE_SUFFIX;
-    }
-
-    public static int getServicePort(Keycloak keycloak) {
-        // we assume HTTP when TLS is not configureed
-        if (!isTlsConfigured(keycloak)) {
-            return getValueFromSubSpec(keycloak.getSpec().getHttpSpec(), HttpSpec::getHttpPort).orElse(Constants.KEYCLOAK_HTTP_PORT);
-        } else {
-            return getValueFromSubSpec(keycloak.getSpec().getHttpSpec(), HttpSpec::getHttpsPort).orElse(Constants.KEYCLOAK_HTTPS_PORT);
-        }
-    }
+  }
 }

@@ -31,16 +31,22 @@ import java.util.Optional;
 public class KeycloakDiscoveryService extends OperatorManagedResource implements StatusUpdater<KeycloakStatusBuilder> {
 
     private Service existingService;
+    private final Keycloak keycloak;
 
     public KeycloakDiscoveryService(KubernetesClient client, Keycloak keycloakCR) {
         super(client, keycloakCR);
+        this.keycloak = keycloakCR;
         this.existingService = fetchExistingService();
     }
 
     private ServiceSpec getServiceSpec() {
+
+      String appProtocol = this.keycloak.getSpec().getAppProtocolSpec().getAppProtocalKD();
+      appProtocol = (appProtocol.equals("tcp") || appProtocol.equals("http") )? appProtocol : Constants.KEYCLOAK_DISCOVERY_SERVICE_APP_PROTOCOL;
       return new ServiceSpecBuilder()
               .addNewPort()
               .withPort(Constants.KEYCLOAK_DISCOVERY_SERVICE_PORT)
+              .withAppProtocol(appProtocol)
               .endPort()
               .withSelector(Constants.DEFAULT_LABELS)
               .withClusterIP("None")
