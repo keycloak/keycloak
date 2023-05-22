@@ -17,17 +17,22 @@
 
 package org.keycloak.it.cli.dist;
 
-import static org.junit.Assert.assertEquals;
-
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
-import org.keycloak.it.junit5.extension.DistributionTest;
-
 import io.quarkus.test.junit.main.Launch;
 import io.quarkus.test.junit.main.LaunchResult;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+import org.keycloak.it.junit5.extension.CLIResult;
+import org.keycloak.it.junit5.extension.DistributionTest;
+import org.keycloak.it.junit5.extension.RawDistOnly;
+import org.keycloak.it.utils.KeycloakDistribution;
+
+import java.nio.file.Paths;
+
+import static org.junit.Assert.assertEquals;
+import static org.keycloak.quarkus.runtime.cli.command.Main.CONFIG_FILE_LONG_NAME;
 
 @DistributionTest
-public class OptionValidationDistTest {
+public class OptionsDistTest {
 
     @Test
     @Launch({"build", "--db=invalid"})
@@ -45,5 +50,13 @@ public class OptionValidationDistTest {
     @Launch({"start", "--test=invalid"})
     public void testServerDoesNotStartIfValidationFailDuringReAugStart(LaunchResult result) {
         assertEquals(1, result.getErrorStream().stream().filter(s -> s.contains("Unknown option: '--test'")).count());
+    }
+
+    @Test
+    @RawDistOnly(reason = "Raw is enough and we avoid issues with including custom conf file in the container")
+    public void testExpressionsInConfigFile(KeycloakDistribution distribution) {
+        distribution.setEnvVar("MY_LOG_LEVEL", "debug");
+        CLIResult result = distribution.run(CONFIG_FILE_LONG_NAME + "=" + Paths.get("src/test/resources/OptionsDistTest/keycloak.conf").toAbsolutePath().normalize(), "start-dev");
+        result.assertMessage("DEBUG [org.keycloak");
     }
 }
