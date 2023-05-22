@@ -232,4 +232,9 @@ public class LoginPage extends LanguageComboboxAwarePage {
         assertCurrent();
     }
 
+    public void open(String realm){
+        oauth.realm(realm);
+        oauth.openLoginForm();
+        assertCurrent(realm);
+    }
 }
