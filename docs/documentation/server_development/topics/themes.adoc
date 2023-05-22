@@ -41,10 +41,12 @@ NOTE: To set the theme for the `master` Admin Console you need to set the Admin 
 bin/kc.[sh|bat] start --spi-theme-welcome-theme=custom-theme
 ----
 
+[[_default-themes]]
 === Default themes
 
-{project_name} comes bundled with default themes in the server's root `themes` directory. To simplify upgrading you should not edit the bundled themes
-directly. Instead create your own theme that extends one of the bundled themes.
+{project_name} comes bundled with default themes in the JAR file `keycloak-themes-{project_versionMvn}.jar` inside the server distribution.
+The server's root `themes` directory does not contain any themes by default, but it contains README file with some additional details about the default themes.
+To simplify upgrading you should not edit the bundled themes directly. Instead create your own theme that extends one of the bundled themes.
 
 === Creating a theme
 
@@ -407,3 +409,8 @@ A single archive can contain multiple themes and each theme can support one or m
 
 To deploy the archive to {project_name}, add it to the `providers/` directory of
 {project_name} and restart the server if it is already running.
+
+[role="_additional-resources"]
+=== Additional resources for Themes
+* For the inspiration, see <<_default-themes,Default Themes>> bundled inside {project_name}.
+* {quickstartRepo_link}[{quickstartRepo_name}] - Directory `extension` of the quickstarts repository contains some theme examples, which can be also used as an inspiration
