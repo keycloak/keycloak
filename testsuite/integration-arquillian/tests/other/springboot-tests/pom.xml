@@ -16,11 +16,11 @@
 
         <maven.settings.file/>
         <springboot.version.option>2.4</springboot.version.option>
+        <spring.boot.adapter.version>${project.version}</spring.boot.adapter.version>
 
         <app.server.debug.port>5006</app.server.debug.port>
         <app.server.debug.suspend>n</app.server.debug.suspend>
         <maven.binary.path>mvn</maven.binary.path>
-
         <!-- For now springboot doesn't work with auth server ssl enabled -->
         <auth.server.ssl.required>false</auth.server.ssl.required>
     </properties>
@@ -36,6 +36,19 @@
             <artifactId>hamcrest</artifactId>
             <scope>compile</scope>
         </dependency>
+
+        <dependency>
+            <groupId>org.glassfish.jersey.core</groupId>
+            <artifactId>jersey-common</artifactId>
+            <version>2.26</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.glassfish.jersey.core</groupId>
+            <artifactId>jersey-client</artifactId>
+            <version>2.26</version>
+        </dependency>
+
     </dependencies>
 
     <profiles>
@@ -74,6 +87,7 @@
                                         <argument>-Pspring-boot-adapter-${adapter.container}</argument>
                                         <argument>-Dmaven.repo.local=${settings.localRepository}</argument>
                                         <argument>-Dspringboot-version=${springboot.version.option}</argument>
+                                        <argument>-Dspring.boot.adapter.version=${spring.boot.adapter.version}</argument>
                                         <argument>-Dinsecure.repositories=WARN</argument>
                                     </arguments>
                                 </configuration>
@@ -96,6 +110,7 @@
                                         <argument>-Pspring-boot-adapter-${adapter.container}</argument>
                                         <argument>-Dmaven.repo.local=${settings.localRepository}</argument>
                                         <argument>-Dspringboot-version=${springboot.version.option}</argument>
+                                        <argument>-Dspring.boot.adapter.version=${spring.boot.adapter.version}</argument>
                                         <argument>-Dapp.server.debug.port=${app.server.debug.port}</argument>
                                         <argument>-Dapp.server.debug.suspend=${app.server.debug.suspend}</argument>
                                         <argument>-Dinsecure.repositories=WARN</argument>
@@ -156,6 +171,7 @@
                                         <argument>-Pspring-boot-adapter-${adapter.container}</argument>
                                         <argument>-Dmaven.repo.local=${settings.localRepository}</argument>
                                         <argument>-Dspringboot-version=${springboot.version.option}</argument>
+                                        <argument>-Dspring.boot.adapter.version=${spring.boot.adapter.version}</argument>
                                         <argument>-Dinsecure.repositories=WARN</argument>
                                         <argument>${repo.argument}</argument>
                                     </arguments>
@@ -181,6 +197,7 @@
                                         <argument>-Pspring-boot-adapter-${adapter.container}</argument>
                                         <argument>-Dmaven.repo.local=${settings.localRepository}</argument>
                                         <argument>-Dspringboot-version=${springboot.version.option}</argument>
+                                        <argument>-Dspring.boot.adapter.version=${spring.boot.adapter.version}</argument>
                                         <argument>-Dapp.server.debug.port=${app.server.debug.port}</argument>
                                         <argument>-Dapp.server.debug.suspend=${app.server.debug.suspend}</argument>
                                         <argument>-Dinsecure.repositories=WARN</argument>
