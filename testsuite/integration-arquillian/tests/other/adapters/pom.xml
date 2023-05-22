@@ -273,18 +273,6 @@
                                             </artifactItem>
                                             <artifactItem>
                                                 <groupId>org.keycloak.testsuite</groupId>
-                                                <artifactId>photoz-html5-client</artifactId>
-                                                <version>${project.version}</version>
-                                                <type>war</type>
-                                            </artifactItem>
-                                            <artifactItem>
-                                                <groupId>org.keycloak.testsuite</groupId>
-                                                <artifactId>photoz-restful-api</artifactId>
-                                                <version>${project.version}</version>
-                                                <type>war</type>
-                                            </artifactItem>
-                                            <artifactItem>
-                                                <groupId>org.keycloak.testsuite</groupId>
                                                 <artifactId>servlet-authz-app</artifactId>
                                                 <version>${project.version}</version>
                                                 <type>war</type>

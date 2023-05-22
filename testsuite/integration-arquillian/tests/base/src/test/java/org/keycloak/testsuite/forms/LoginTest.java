@@ -20,11 +20,9 @@ import java.io.Closeable;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
-import java.util.UUID;
 import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriBuilder;
-
 import org.apache.commons.lang3.RandomStringUtils;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Assert;
@@ -910,7 +908,6 @@ public class LoginTest extends AbstractTestRealmKeycloakTest {
     }
 
     @Test
-    @DisableFeature(value = Profile.Feature.ACCOUNT2, skipRestart = true) // TODO remove this (KEYCLOAK-16228)
     public void loginRememberMeExpiredIdle() throws Exception {
         try (Closeable c = new RealmAttributeUpdater(adminClient.realm("test"))
           .setSsoSessionIdleTimeoutRememberMe(1)
@@ -933,13 +930,12 @@ public class LoginTest extends AbstractTestRealmKeycloakTest {
             setTimeOffset(2 + SessionTimeoutHelper.IDLE_TIMEOUT_WINDOW_SECONDS);
 
             // trying to open the account page with an expired idle timeout should redirect back to the login page.
-            appPage.openAccount();
+            loginPage.open();
             loginPage.assertCurrent();
         }
     }
 
     @Test
-    @DisableFeature(value = Profile.Feature.ACCOUNT2, skipRestart = true) // TODO remove this (KEYCLOAK-16228)
     public void loginRememberMeExpiredMaxLifespan() throws Exception {
         try (Closeable c = new RealmAttributeUpdater(adminClient.realm("test"))
           .setSsoSessionMaxLifespanRememberMe(1)
@@ -962,7 +958,7 @@ public class LoginTest extends AbstractTestRealmKeycloakTest {
             setTimeOffset(2);
 
             // trying to open the account page with an expired lifespan should redirect back to the login page.
-            appPage.openAccount();
+            loginPage.open();
             loginPage.assertCurrent();
         }
     }

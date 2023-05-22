@@ -394,7 +394,7 @@ export const UserCredentials = ({ user }: UserCredentialsProps) => {
           <Divider />
         </>
       )}
-      {groupedUserCredentials.length !== 0 && !hasCredentialTypes && (
+      {groupedUserCredentials.length !== 0 && (
         <PageSection variant={PageSectionVariants.light}>
           <TableComposable variant={"compact"}>
             <Thead>

@@ -185,3 +185,18 @@ Keycloak's proxy configuration setting for mode *passthrough* no longer parses H
 Installations that want the HTTP headers in the client's request to be parsed should use the **edge** or **reencrypt** setting.
 
 See https://www.keycloak.org/server/reverseproxy[Using a reverse proxy] for details.
+
+= Consistent fallback message resolving for all themes
+
+This change only may affect you when you are using realm localization messages.
+
+Up to this version, the resolving of fallback messages was inconsistent across themes, when realm localization messages were used. More information can be found in the following https://github.com/keycloak/keycloak/issues/15845[issue].
+
+The implementation has now been unified for all themes. In general, the message for the most specific matching language tag has the highest priority. If there are both a realm localization message and a Theme 18n message, the realm localization message has the higher priority. Summarized, the priority of the messages is as follows  (RL = realm localization, T = Theme i18n files): `RL <variant> > T <variant> > RL <region> > T <region> > RL <language> > T <language> > RL en > T en`.
+
+Probably this can be better explained with an example: When the variant `de-CH-1996` is requested and there is a realm localization message for the variant, this message will be used. If such a realm localization message does not exist, the Theme i18n files are searched for a corresponding message for that variant. If such a message does not exist, a realm localization message for the region (`de-CH`) will be searched. If such a realm localization message does not exist, the Theme i18n files are searched for a message for that region. If still no message is found, a realm localization message for the language (`de`) will be searched. If there is no matching realm localization message, the Theme i18n files are be searched for a message for that language. As last fallback, the English (`en`) translation is used: First, an English realm localization will be searched - if not found, the Theme 18n files are searched for an English message.
+
+= LDAPStorageProvider search changes
+
+Starting with this release Keycloak uses a pagination mechanism when querying federated LDAP database. 
+Searching for users should be consistent with search in local database.

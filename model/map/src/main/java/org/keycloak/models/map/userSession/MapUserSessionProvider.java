@@ -88,7 +88,11 @@ public class MapUserSessionProvider implements UserSessionProvider {
                 }
                 return null;
             } else {
-                return new MapUserSessionAdapter(session, realm, origEntity);
+                UserModel userModel = session.users().getUserById(realm, origEntity.getUserId());
+                if (userModel != null) {
+                    return new MapUserSessionAdapter(session, realm, userModel, origEntity);
+                }
+                return null;
             }
         };
     }
