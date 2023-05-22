@@ -14,7 +14,6 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
-import org.keycloak.testsuite.auth.page.account.Sessions;
 import org.keycloak.testsuite.auth.page.login.OIDCLogin;
 import org.keycloak.testsuite.pages.InfoPage;
 import org.keycloak.testsuite.pages.LogoutConfirmPage;
@@ -64,13 +63,10 @@ public class SessionSpringBootTest extends AbstractSpringBootTest {
     @SecondBrowser
     protected InfoPage secondBrowserInfoPage;
 
-    @Page
-    private Sessions realmSessions;
 
     @Override
     public void setDefaultPageUriParameters() {
         super.setDefaultPageUriParameters();
-        realmSessions.setAuthRealm(REALM_NAME);
         testRealmLoginPage.setAuthRealm(REALM_NAME);
         secondTestRealmLoginPage.setAuthRealm(REALM_NAME);
     }
@@ -222,20 +218,6 @@ public class SessionSpringBootTest extends AbstractSpringBootTest {
 
         sessionPage.assertIsCurrent();
         assertThat(sessionPage.getCounter(), is(equalTo(2)));
-
-        logout(SERVLET_URL);
-        waitForPageToLoad();
-    }
-
-    @Test
-    public void testAccountManagementSessionsLogout() {
-        loginAndCheckSession();
-
-        realmSessions.navigateTo();
-        realmSessions.logoutAll();
-
-        // Assert I need to login again (logout was propagated to the app)
-        loginAndCheckSession();
 
         logout(SERVLET_URL);
         waitForPageToLoad();
