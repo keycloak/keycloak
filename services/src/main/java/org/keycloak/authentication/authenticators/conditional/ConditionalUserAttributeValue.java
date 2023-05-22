@@ -23,6 +23,7 @@ import org.keycloak.authentication.AuthenticationFlowException;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.utils.KeycloakModelUtils;
 
 import java.util.Map;
 import java.util.Objects;
@@ -37,6 +38,7 @@ public class ConditionalUserAttributeValue implements ConditionalAuthenticator {
         Map<String, String> config = context.getAuthenticatorConfig().getConfig();
         String attributeName = config.get(ConditionalUserAttributeValueFactory.CONF_ATTRIBUTE_NAME);
         String attributeValue = config.get(ConditionalUserAttributeValueFactory.CONF_ATTRIBUTE_EXPECTED_VALUE);
+        boolean includeGroupAttributes = Boolean.parseBoolean(config.get(ConditionalUserAttributeValueFactory.CONF_INCLUDE_GROUP_ATTRIBUTES));
         boolean negateOutput = Boolean.parseBoolean(config.get(ConditionalUserAttributeValueFactory.CONF_NOT));
 
         UserModel user = context.getUser();
@@ -45,8 +47,8 @@ public class ConditionalUserAttributeValue implements ConditionalAuthenticator {
         }
 
         boolean result = user.getAttributeStream(attributeName).anyMatch(attr -> Objects.equals(attr, attributeValue));
-        if (!result) {
-            result = user.getGroupsStream().anyMatch(group -> group.getAttributeStream(attributeName).anyMatch(attr -> Objects.equals(attr, attributeValue)));
+        if (!result && includeGroupAttributes) {
+            result = KeycloakModelUtils.resolveAttribute(user, attributeName, true).stream().anyMatch(attr -> Objects.equals(attr, attributeValue));
         }
         return negateOutput != result;
     }
