@@ -1,7 +1,6 @@
 package org.keycloak.testsuite.springboot;
 
 import org.eclipse.persistence.annotations.BatchFetch;
-import org.hibernate.annotations.SelectBeforeUpdate;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Assert;
 import org.junit.Before;
