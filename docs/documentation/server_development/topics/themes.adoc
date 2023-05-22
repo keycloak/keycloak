@@ -45,8 +45,8 @@ bin/kc.[sh|bat] start --spi-theme-welcome-theme=custom-theme
 === Default themes
 
 {project_name} comes bundled with default themes in the JAR file `keycloak-themes-{project_versionMvn}.jar` inside the server distribution.
-The server's root `themes` directory does not contain any themes by default, but it contains README file with some additional details about the default themes.
-To simplify upgrading you should not edit the bundled themes directly. Instead create your own theme that extends one of the bundled themes.
+The server's root `themes` directory does not contain any themes by default, but it contains a README file with some additional details about the default themes.
+To simplify upgrading, do not edit the bundled themes directly. Instead create your own theme that extends one of the bundled themes.
 
 === Creating a theme
 
