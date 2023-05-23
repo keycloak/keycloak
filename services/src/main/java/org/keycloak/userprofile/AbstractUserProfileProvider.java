@@ -83,9 +83,6 @@ public abstract class AbstractUserProfileProvider<U extends UserProfileProvider>
             case ACCOUNT_OLD:
             case ACCOUNT:
             case UPDATE_PROFILE:
-                if (realm.isRegistrationEmailAsUsername()) {
-                    return false;
-                }
                 return realm.isEditUsernameAllowed();
             case UPDATE_EMAIL:
                 return realm.isRegistrationEmailAsUsername();
