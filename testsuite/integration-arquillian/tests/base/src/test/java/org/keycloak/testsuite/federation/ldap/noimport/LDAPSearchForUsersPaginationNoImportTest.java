@@ -32,8 +32,6 @@ import org.keycloak.testsuite.federation.ldap.LDAPTestContext;
 import org.keycloak.testsuite.util.LDAPRule;
 import org.keycloak.testsuite.util.LDAPTestUtils;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.contains;
-import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.not;
@@ -89,8 +87,8 @@ public class LDAPSearchForUsersPaginationNoImportTest extends AbstractLDAPTest {
     @Test
     public void testPagination() {
         //tests LDAPStorageProvider.searchLDAP(...
-        assertThat(adminClient.realm(TEST_REALM_NAME).users().search("John Some Doe", 0, 15), hasSize(15));
-        assertThat(adminClient.realm(TEST_REALM_NAME).users().search("John Some Doe", 7, 10), hasSize(8));
+        assertThat(adminClient.realm(TEST_REALM_NAME).users().search("jo*", 0, 15), hasSize(15));
+        assertThat(adminClient.realm(TEST_REALM_NAME).users().search("John Some Doe", 0, 15), hasSize(0));
         assertThat(adminClient.realm(TEST_REALM_NAME).users().search("*", null, null), hasSize(15));
         assertThat(adminClient.realm(TEST_REALM_NAME).users().search("*", null, null), hasSize(15));
         assertThat(adminClient.realm(TEST_REALM_NAME).users().search("*", 10, 8), hasSize(5));
@@ -100,14 +98,16 @@ public class LDAPSearchForUsersPaginationNoImportTest extends AbstractLDAPTest {
         assertThat(adminClient.realm(TEST_REALM_NAME).users().search("*", 14, 2), hasSize(1));
 
         //tests LDAPStorageProvider.searchLDAP(...
-        assertThat(adminClient.realm(TEST_REALM_NAME).users().search("John", null, null), hasSize(11));
-        assertThat(adminClient.realm(TEST_REALM_NAME).users().search("John", 10, 8), hasSize(1));
-        assertThat(adminClient.realm(TEST_REALM_NAME).users().search("John", 0, 10), hasSize(10));
-        assertThat(adminClient.realm(TEST_REALM_NAME).users().search("John", 0, 5), hasSize(5));
-        assertThat(adminClient.realm(TEST_REALM_NAME).users().search("John", 2, 10), hasSize(9));
-        assertThat(adminClient.realm(TEST_REALM_NAME).users().search("John", 0, 8), hasSize(8));
-        assertThat(adminClient.realm(TEST_REALM_NAME).users().search("Some", 0, 20), hasSize(10));
-        assertThat(adminClient.realm(TEST_REALM_NAME).users().search("Some", 10, 20), hasSize(0));
+        assertThat(adminClient.realm(TEST_REALM_NAME).users().search("John", null, null), hasSize(15));
+        assertThat(adminClient.realm(TEST_REALM_NAME).users().search("John*", null, null), hasSize(15));
+        assertThat(adminClient.realm(TEST_REALM_NAME).users().search("\"John\"", null, null), hasSize(11));
+        assertThat(adminClient.realm(TEST_REALM_NAME).users().search("\"John\"", 10, 8), hasSize(1));
+        assertThat(adminClient.realm(TEST_REALM_NAME).users().search("\"John\"", 0, 10), hasSize(10));
+        assertThat(adminClient.realm(TEST_REALM_NAME).users().search("\"John\"", 0, 5), hasSize(5));
+        assertThat(adminClient.realm(TEST_REALM_NAME).users().search("\"John\"", 2, 10), hasSize(9));
+        assertThat(adminClient.realm(TEST_REALM_NAME).users().search("\"John\"", 0, 8), hasSize(8));
+        assertThat(adminClient.realm(TEST_REALM_NAME).users().search("\"Some\"", 0, 20), hasSize(10));
+        assertThat(adminClient.realm(TEST_REALM_NAME).users().search("\"Some\"", 10, 20), hasSize(0));
 
         //tests LDAPStorageProvider.searchLDAPByAttributes(...
         assertThat(adminClient.realm(TEST_REALM_NAME).users().list(), hasSize(15));
