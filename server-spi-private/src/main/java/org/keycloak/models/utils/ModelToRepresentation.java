@@ -174,7 +174,7 @@ public class ModelToRepresentation {
             .map(g -> toGroupHierarchy(g, full, search));
     }
 
-    public static Stream<GroupRepresentation> searchForGroupByName(KeycloakSession session, RealmModel realm, boolean full, String search, Boolean exact, Integer first, Integer max) {
+    public static Stream<GroupRepresentation> searchForGroupByName(KeycloakSession session, RealmModel realm, boolean full, String search, boolean exact, Integer first, Integer max) {
         return session.groups().searchForGroupByNameStream(realm, search, exact, first, max)
                 .map(g -> toGroupHierarchy(g, full, search, exact));
     }
@@ -213,7 +213,7 @@ public class ModelToRepresentation {
         return toGroupHierarchy(group, full, search, false);
     }
 
-    public static GroupRepresentation toGroupHierarchy(GroupModel group, boolean full, String search, Boolean exact) {
+    public static GroupRepresentation toGroupHierarchy(GroupModel group, boolean full, String search, boolean exact) {
         GroupRepresentation rep = toRepresentation(group, full);
         List<GroupRepresentation> subGroups = group.getSubGroupsStream()
                 .filter(g -> groupMatchesSearchOrIsPathElement(g, search, exact))
@@ -230,7 +230,7 @@ public class ModelToRepresentation {
         return rep;
     }
 
-    public static boolean groupMatchesSearchOrIsPathElement(GroupModel group, String search, Boolean exact) {
+    public static boolean groupMatchesSearchOrIsPathElement(GroupModel group, String search, boolean exact) {
         if (StringUtil.isBlank(search)) {
             return true;
         }
@@ -239,7 +239,7 @@ public class ModelToRepresentation {
         }
 
         String groupName = group.getName();
-        if (Boolean.TRUE.equals(exact)) {
+        if (exact) {
             // exact matching applies to the group name only
             if (groupName.equals(search)){
                 return true;
