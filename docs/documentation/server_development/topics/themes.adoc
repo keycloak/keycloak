@@ -114,6 +114,11 @@ You can do this either by logging in through your application or by opening the 
 ====
 Be sure to re-enable caching in production as it will significantly impact performance.
 ====
+[NOTE]
+====
+If you want to manually delete the content of the themes cache, you can do so by deleting the `data/tmp/kc-gzip-cache` directory of the server distribution.
+It can be useful for instance if you redeployed custom providers or custom themes without disabling themes caching in the previous server executions.
+====
 
 ==== Theme properties
 
