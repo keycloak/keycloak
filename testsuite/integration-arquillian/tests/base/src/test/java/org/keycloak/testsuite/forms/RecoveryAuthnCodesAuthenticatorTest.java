@@ -18,6 +18,7 @@ import org.keycloak.representations.idm.RequiredActionProviderSimpleRepresentati
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
+import org.keycloak.testsuite.arquillian.annotation.IgnoreBrowserDriver;
 import org.keycloak.testsuite.client.KeycloakTestingClient;
 import org.keycloak.testsuite.pages.EnterRecoveryAuthnCodePage;
 import org.keycloak.testsuite.pages.LoginPage;
@@ -28,6 +29,8 @@ import org.keycloak.testsuite.pages.SetupRecoveryAuthnCodesPage;
 import org.keycloak.testsuite.util.FlowUtil;
 import org.openqa.selenium.WebDriver;
 import org.junit.Assert;
+import org.openqa.selenium.chrome.ChromeDriver;
+import org.openqa.selenium.firefox.FirefoxDriver;
 
 import java.util.Arrays;
 import java.util.List;
@@ -141,6 +144,8 @@ public class RecoveryAuthnCodesAuthenticatorTest extends AbstractTestRealmKeyclo
 
     //// In a sub-flow with alternative credential executors, test whether setup Recovery Authentication Codes flow is working
     @Test
+    @IgnoreBrowserDriver(FirefoxDriver.class)
+    @IgnoreBrowserDriver(ChromeDriver.class)
     public void testSetupRecoveryAuthnCodes() {
         try {
             configureBrowserFlowWithRecoveryAuthnCodes(testingClient);
@@ -171,6 +176,8 @@ public class RecoveryAuthnCodesAuthenticatorTest extends AbstractTestRealmKeyclo
 
 
     @Test
+    @IgnoreBrowserDriver(FirefoxDriver.class) // TODO: https://github.com/keycloak/keycloak/issues/13543
+    @IgnoreBrowserDriver(ChromeDriver.class)
     public void testBruteforceProtectionRecoveryAuthnCodes() {
         try {
             configureBrowserFlowWithRecoveryAuthnCodes(testingClient);
