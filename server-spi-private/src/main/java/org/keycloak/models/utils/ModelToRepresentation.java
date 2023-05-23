@@ -230,16 +230,28 @@ public class ModelToRepresentation {
         return rep;
     }
 
-    private static boolean groupMatchesSearchOrIsPathElement(GroupModel group, String search, Boolean exact) {
+    public static boolean groupMatchesSearchOrIsPathElement(GroupModel group, String search, Boolean exact) {
         if (StringUtil.isBlank(search)) {
             return true;
         }
-        if(exact !=null && exact.equals(true)){
-            if (group.getName().equals(search)){
+        if (group == null) {
+            return false;
+        }
+
+        String groupName = group.getName();
+        if (Boolean.TRUE.equals(exact)) {
+            // exact matching applies to the group name only
+            if (groupName.equals(search)){
                 return true;
             }
         } else {
-            if (group.getName().contains(search)) {
+            // fuzzy matching applies to the group name and the group path
+            if (groupName.contains(search)) {
+                return true;
+            }
+
+            String groupPath = ModelToRepresentation.buildGroupPath(group);
+            if (groupPath.contains(search)) {
                 return true;
             }
         }

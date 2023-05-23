@@ -957,6 +957,62 @@ public class GroupTest extends AbstractGroupTest {
     }
 
     /**
+     * Groups search with query returns unwanted groups
+     * @link https://github.com/keycloak/keycloak/issues/20445
+     */
+    @Test
+    public void searchForGroupsShouldOnlyReturnMatchingElementsOrIntermediatePaths2() {
+
+        /*
+         * /Test/SubGroup
+         * /Test1/SubGroup2/SubGroup3
+         * /Dummy
+         */
+        String needle = "Test";
+        GroupRepresentation gTest = GroupBuilder.create().name("Test").build();
+        GroupRepresentation gTestSubGroup = GroupBuilder.create().name("SubGroup").build();
+        GroupRepresentation gTest1 = GroupBuilder.create().name("Test1").build();
+        GroupRepresentation gTest1SubGroup2 = GroupBuilder.create().name("SubGroup2").build();
+        GroupRepresentation gTest1SubGroup2SubGroup3 = GroupBuilder.create().name("SubGroup3").build();
+        GroupRepresentation gDummy = GroupBuilder.create().name("Dummy").build();
+
+        String realmName = AuthRealm.TEST;
+        RealmResource realm = adminClient.realms().realm(realmName);
+
+        createGroup(realm, gTest);
+        createGroup(realm, gTest1);
+        createGroup(realm, gDummy);
+        addSubGroup(realm, gTest, gTestSubGroup);
+        addSubGroup(realm, gTest1, gTest1SubGroup2);
+        addSubGroup(realm, gTest1SubGroup2, gTest1SubGroup2SubGroup3);
+
+        try {
+            List<GroupRepresentation> result = realm.groups().groups(needle, 0, 100);
+
+            assertEquals(2, result.size());
+            assertEquals("Test", result.get(0).getName());
+            assertEquals(1, result.get(0).getSubGroups().size());
+            assertEquals("SubGroup", result.get(0).getSubGroups().get(0).getName());
+            assertEquals("Test1", result.get(1).getName());
+            assertEquals(1, result.get(1).getSubGroups().size());
+            assertEquals("SubGroup2", result.get(1).getSubGroups().get(0).getName());
+            assertEquals("SubGroup3", result.get(1).getSubGroups().get(0).getSubGroups().get(0).getName());
+        } finally {
+            if (gTest.getId() != null) {
+                realm.groups().group(gTest.getId()).remove();
+            }
+
+            if (gDummy.getId() != null) {
+                realm.groups().group(gDummy.getId()).remove();
+            }
+
+            if (gTest1.getId() != null) {
+                realm.groups().group(gTest1.getId()).remove();
+            }
+        }
+    }
+
+    /**
      * Verifies that the role assigned to a user's group is correctly handled by Keycloak Admin endpoint.
      * @link https://issues.jboss.org/browse/KEYCLOAK-2964
      */

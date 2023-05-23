@@ -22,7 +22,6 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
-import org.keycloak.utils.StringUtil;
 
 public class GroupsResource {
     private final KeycloakSession session;
@@ -70,9 +69,7 @@ public class GroupsResource {
     private GroupRepresentation toGroupHierarchy(GroupModel group, final String search, boolean exact) {
         GroupRepresentation rep = toRepresentation(group, true);
         rep.setSubGroups(group.getSubGroupsStream().filter(g ->
-                groupMatchesSearchOrIsPathElement(
-                        g, search
-                )
+                ModelToRepresentation.groupMatchesSearchOrIsPathElement(g, search, false)
         ).map(subGroup ->
             ModelToRepresentation.toGroupHierarchy(
                     subGroup, true, search, exact
@@ -100,13 +97,4 @@ public class GroupsResource {
 
     }
 
-    private static boolean groupMatchesSearchOrIsPathElement(GroupModel group, String search) {
-        if (StringUtil.isBlank(search)) {
-            return true;
-        }
-        if (group.getName().contains(search)) {
-            return true;
-        }
-        return group.getSubGroupsStream().findAny().isPresent();
-    }
 }
