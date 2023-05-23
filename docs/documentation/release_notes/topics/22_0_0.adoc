@@ -77,3 +77,11 @@ If you are extending one of the following SPIs:
 
 See the link:{upgradingguide_link}[{upgradingguide_name}] for more details about how to
 update your custom providers.
+
+= Elytron credential store replacement
+
+The previous and now removed WildFly distribution provided a built-in vault provider that reads secrets from a keystore-backed Elytron credential store. As this is no longer available, we have added a new implementation of the Keycloak Vault SPI called Keycloak KeyStore Vault. As the name suggests, this implementation reads secrets from a Java keystore file. Such secrets can be then used within multiple places of the Administration Console. For further details, see https://www.keycloak.org/server/vault[our guide] and the latest https://www.keycloak.org/docs/latest/server_admin/index.html#_vault-administration[documentation].
+
+= KeyStore Config Source added
+
+In relation to the KeyStore Vault news, we also integrated Quarkus's recently released feature called KeyStore Config Source. This means that among the already existing configuration sources (CLI parameters, environment variables and files), you can now configure your Keycloak server via configuration properties stored in a Java keystore file. You can learn more about this feature in the https://www.keycloak.org/server/configuration[Configuration guide].
