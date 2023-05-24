@@ -236,9 +236,12 @@ Proxy:
 
 Vault:
 
---vault <provider>   Enables a vault provider. Possible values are: file.
+--vault <provider>   Enables a vault provider. Possible values are: file, keystore.
 --vault-dir <dir>    If set, secrets can be obtained by reading the content of files within the
                        given directory.
+--vault-file <file>  Path to the keystore file.
+--vault-pass <pass>  Password for the vault keystore.
+--vault-type <type>  Specifies the type of the keystore file. Default: PKCS12.
 
 Logging:
 

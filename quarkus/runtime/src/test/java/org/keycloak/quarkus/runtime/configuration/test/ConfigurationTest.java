@@ -28,10 +28,11 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 
+import io.smallrye.config.SmallRyeConfig;
+import io.smallrye.config.SmallRyeConfigProviderResolver;
 import org.hibernate.dialect.H2Dialect;
 import org.hibernate.dialect.PostgreSQLDialect;
 import io.quarkus.runtime.LaunchMode;
-import io.smallrye.config.SmallRyeConfig;
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 import org.hibernate.dialect.MariaDBDialect;
@@ -44,8 +45,8 @@ import org.keycloak.quarkus.runtime.configuration.KeycloakConfigSourceProvider;
 import org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider;
 
 import io.quarkus.runtime.configuration.ConfigUtils;
-import io.smallrye.config.SmallRyeConfigProviderResolver;
 import org.keycloak.quarkus.runtime.Environment;
+import org.keycloak.quarkus.runtime.vault.FilesKeystoreVaultProviderFactory;
 import org.keycloak.quarkus.runtime.vault.FilesPlainTextVaultProviderFactory;
 import org.mariadb.jdbc.MariaDbDataSource;
 import org.postgresql.xa.PGXADataSource;
@@ -142,6 +143,12 @@ public class ConfigurationTest {
         assertEquals("/foo/bar", config.get("dir"));
         assertTrue(config.getPropertyNames()
                 .contains("kc.spi-vault-".concat(FilesPlainTextVaultProviderFactory.ID).concat("-dir")));
+
+        putEnvVar("KC_VAULT_TYPE", "JKS");
+        config = initConfig("vault", FilesKeystoreVaultProviderFactory.ID);
+        assertEquals("JKS", config.get("type"));
+        assertTrue(config.getPropertyNames()
+                .contains("kc.spi-vault-".concat(FilesKeystoreVaultProviderFactory.ID).concat("-type")));
     }
 
     @Test
@@ -214,6 +221,11 @@ public class ConfigurationTest {
         config = initConfig("vault", FilesPlainTextVaultProviderFactory.ID);
         assertEquals(1, config.getPropertyNames().size());
         assertEquals("secrets", config.get("dir"));
+
+        System.setProperty(CLI_ARGS, "--vault-type=JKS");
+        config = initConfig("vault", FilesKeystoreVaultProviderFactory.ID);
+        assertEquals(1, config.getPropertyNames().size());
+        assertEquals("JKS", config.get("type"));
 
         System.getProperties().remove(CLI_ARGS);
         System.setProperty("kc.spi-client-registration-openid-connect-static-jwk-url", "http://c.jwk.url");

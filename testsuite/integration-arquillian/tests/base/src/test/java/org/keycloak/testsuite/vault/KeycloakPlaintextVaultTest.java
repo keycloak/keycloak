@@ -17,6 +17,7 @@
 
 package org.keycloak.testsuite.vault;
 
+import org.junit.Test;
 import org.keycloak.testsuite.arquillian.annotation.EnableVault;
 import org.keycloak.vault.VaultTranscriber;
 
@@ -24,11 +25,18 @@ import org.keycloak.vault.VaultTranscriber;
  * Tests the usage of the {@link VaultTranscriber} on the server side. The tests attempt to obtain the transcriber from
  * the session and then use it to obtain secrets from the configured provider.
  * <p/>
- * This test differs from the superclass in that it uses the {@code elytron-cs-keystore} provider to obtain secrets.
+ * This test differs from the abstract class in that it uses the {@code files-plaintext} provider to obtain secrets.
  *
- * @author <a href="mailto:sguilhen@redhat.com">Stefan Guilhen</a>
+ * @author <a href="mailto:pzaoral@redhat.com">Peter Zaoral</a>
  */
-@EnableVault(providerId = EnableVault.PROVIDER_ID.ELYTRON_CS_KEYSTORE)
-public class KeycloakElytronCSVaultTest extends KeycloakVaultTest {
-    // run the same tests of the superclass using the elytron credential store provider.
+@EnableVault(providerId = EnableVault.PROVIDER_ID.PLAINTEXT)
+public class KeycloakPlaintextVaultTest extends AbstractKeycloakVaultTest {
+
+    @Test
+    public void testKeycloakPlaintextVault() {
+        // run the test in two different realms to test the provider's ability to retrieve secrets with the same key in different realms.
+        testingClient.server().run(new KeycloakVaultServerTest("${vault.smtp_key}", "secure_master_smtp_secret"));
+        testingClient.server("test").run(new KeycloakVaultServerTest("${vault.smtp_key}", "secure_test_smtp_secret"));
+    }
+
 }

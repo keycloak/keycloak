@@ -80,7 +80,7 @@ Metrics:
 
 Vault:
 
---vault <provider>   Enables a vault provider. Possible values are: file.
+--vault <provider>   Enables a vault provider. Possible values are: file, keystore.
 
 Security:
 
