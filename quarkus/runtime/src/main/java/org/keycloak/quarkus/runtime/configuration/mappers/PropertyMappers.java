@@ -31,8 +31,7 @@ public final class PropertyMappers {
         MAPPERS.addAll(HealthPropertyMappers.getHealthPropertyMappers());
         MAPPERS.addAll(MetricsPropertyMappers.getMetricsPropertyMappers());
         MAPPERS.addAll(ProxyPropertyMappers.getProxyPropertyMappers());
-        MAPPERS.addAll(VaultKeystorePropertyMappers.getVaultPropertyMappers());
-        MAPPERS.addAll(VaultPlainTextPropertyMappers.getVaultPropertyMappers());
+        MAPPERS.addAll(VaultPropertyMappers.getVaultPropertyMappers());
         MAPPERS.addAll(FeaturePropertyMappers.getMappers());
         MAPPERS.addAll(LoggingPropertyMappers.getMappers());
         MAPPERS.addAll(TransactionPropertyMappers.getTransactionPropertyMappers());

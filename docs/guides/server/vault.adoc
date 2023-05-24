@@ -61,9 +61,10 @@ Note the doubled underscores between __sso__ and __realm__ and also between __ld
 In order to use the Java KeyStore-based vault, you need to create a KeyStore file first. You can use the following command for doing so:
 [source, bash]
 ----
-keytool -importpass -alias test_alias -keystore keystore.p12 -storepass keystorepassword
+keytool -importpass -alias <realm-name>_<alias> -keystore keystore.p12 -storepass keystorepassword
 ----
-and then enter a value you want to store in the vault.
+and then enter a value you want to store in the vault. Note that the format of the `-alias` parameter depends on the key resolver used. The default key resolver is `REALM_UNDERSCORE_KEY`.
+
 This by default results to storing the value in a form of generic PBEKey (password based encryption) within SecretKeyEntry.
 
 You can then start Keycloak using the following runtime options:
