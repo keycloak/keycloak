@@ -110,6 +110,7 @@ import org.keycloak.url.DefaultHostnameProviderFactory;
 import org.keycloak.url.FixedHostnameProviderFactory;
 import org.keycloak.url.RequestHostnameProviderFactory;
 import org.keycloak.util.JsonSerialization;
+import org.keycloak.vault.FilesKeystoreVaultProviderFactory;
 import org.keycloak.vault.FilesPlainTextVaultProviderFactory;
 
 import jakarta.persistence.Entity;
@@ -176,6 +177,7 @@ class KeycloakProcessor {
             DefaultHostnameProviderFactory.class,
             FixedHostnameProviderFactory.class,
             RequestHostnameProviderFactory.class,
+            FilesKeystoreVaultProviderFactory.class,
             FilesPlainTextVaultProviderFactory.class,
             BlacklistPasswordPolicyProviderFactory.class,
             ClasspathThemeResourceProviderFactory.class,

@@ -1,4 +1,3 @@
-import type ResourceServerRepresentation from "@keycloak/keycloak-admin-client/lib/defs/resourceServerRepresentation";
 import {
   AlertVariant,
   Button,
@@ -14,14 +13,15 @@ import { useTranslation } from "react-i18next";
 import { HelpItem } from "ui-shared";
 
 import { adminClient } from "../../admin-client";
+import type ResourceServerRepresentation from "@keycloak/keycloak-admin-client/lib/defs/resourceServerRepresentation";
 import { useAlerts } from "../../components/alert/Alerts";
-import { FormAccess } from "../../components/form-access/FormAccess";
+import { FixedButtonsGroup } from "../../components/form/FixedButtonGroup";
+import { FormAccess } from "../../components/form/FormAccess";
 import { KeycloakSpinner } from "../../components/keycloak-spinner/KeycloakSpinner";
-import { useFetch } from "../../utils/useFetch";
 import useToggle from "../../utils/useToggle";
-import { SaveReset } from "../advanced/SaveReset";
 import { DecisionStrategySelect } from "./DecisionStrategySelect";
 import { ImportDialog } from "./ImportDialog";
+import { useFetch } from "../../utils/useFetch";
 
 const POLICY_ENFORCEMENT_MODES = [
   "ENFORCING",
@@ -172,10 +172,11 @@ export const AuthorizationSettings = ({ clientId }: { clientId: string }) => {
             )}
           />
         </FormGroup>
-        <SaveReset
+        <FixedButtonsGroup
           name="authenticationSettings"
           reset={() => reset(resource)}
           isActive
+          isSubmit
         />
       </FormAccess>
     </PageSection>

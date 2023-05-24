@@ -3,18 +3,23 @@ import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/r
 import type UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
 import {
   AlertVariant,
+  Button,
   ButtonVariant,
   EmptyState,
+  InputGroup,
   Label,
   Text,
   TextContent,
+  TextInput,
   Toolbar,
   ToolbarContent,
+  ToolbarItem,
   Tooltip,
 } from "@patternfly/react-core";
 import {
   ExclamationCircleIcon,
   InfoCircleIcon,
+  SearchIcon,
   WarningTriangleIcon,
 } from "@patternfly/react-icons";
 import type { IRowData } from "@patternfly/react-table";
@@ -42,6 +47,7 @@ export function UserDataTable() {
   const { realm: realmName } = useRealm();
   const navigate = useNavigate();
   const [userStorage, setUserStorage] = useState<ComponentRepresentation[]>();
+  const [searchUser, setSearchUser] = useState<string>();
   const [realm, setRealm] = useState<RealmRepresentation | undefined>();
   const [selectedRows, setSelectedRows] = useState<UserRepresentation[]>([]);
 
@@ -90,7 +96,7 @@ export function UserDataTable() {
       max: max!,
     };
 
-    const searchParam = search || "";
+    const searchParam = search || searchUser || "";
     if (searchParam) {
       params.search = searchParam;
     }
@@ -208,6 +214,31 @@ export function UserDataTable() {
             <>
               <Toolbar>
                 <ToolbarContent>
+                  <ToolbarItem>
+                    <InputGroup>
+                      <TextInput
+                        name="search-input"
+                        type="search"
+                        aria-label={t("search")}
+                        placeholder={t("users:searchForUser")}
+                        onChange={(value) => {
+                          setSearchUser(value);
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            refresh();
+                          }
+                        }}
+                      />
+                      <Button
+                        variant={ButtonVariant.control}
+                        aria-label={t("common:search")}
+                        onClick={refresh}
+                      >
+                        <SearchIcon />
+                      </Button>
+                    </InputGroup>
+                  </ToolbarItem>
                   <UserDataTableToolbarItems
                     realm={realm}
                     hasSelectedRows={selectedRows.length === 0}

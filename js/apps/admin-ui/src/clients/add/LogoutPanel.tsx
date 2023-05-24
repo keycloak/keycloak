@@ -1,15 +1,15 @@
 import { FormGroup, Switch, ValidatedOptions } from "@patternfly/react-core";
 import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-
-import { FormAccess } from "../../components/form-access/FormAccess";
 import { HelpItem } from "ui-shared";
+
+import { FixedButtonsGroup } from "../../components/form/FixedButtonGroup";
+import { FormAccess } from "../../components/form/FormAccess";
 import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 import { useAccess } from "../../context/access/Access";
 import { beerify, convertAttributeNameToForm } from "../../util";
-import { SaveReset } from "../advanced/SaveReset";
-import type { ClientSettingsProps } from "../ClientSettings";
 import { FormFields } from "../ClientDetails";
+import type { ClientSettingsProps } from "../ClientSettings";
 
 const validateUrl = (uri: string | undefined, error: string) =>
   ((uri?.startsWith("https://") || uri?.startsWith("http://")) &&
@@ -211,8 +211,7 @@ export const LogoutPanel = ({
           </FormGroup>
         </>
       )}
-      <SaveReset
-        className="keycloak__form_actions"
+      <FixedButtonsGroup
         name="settings"
         save={save}
         reset={reset}
