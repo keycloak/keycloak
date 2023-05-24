@@ -127,7 +127,6 @@ public class InternationalizationTest extends AbstractAccountTest {
     }
 
     @Test
-    @Ignore // TODO: Enable once chromedriver version 113.0.5672.92 is available in https://chromedriver.storage.googleapis.com/
     public void userAttributeTest() {
         testUser.setAttributes(singletonMap(UserModel.LOCALE, singletonList(CUSTOM_LOCALE)));
         testUserResource().update(testUser);

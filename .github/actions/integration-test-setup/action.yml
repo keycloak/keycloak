@@ -21,6 +21,23 @@ runs:
         distribution: ${{ inputs.jdk-dist }}
         java-version: ${{ inputs.jdk-version }}
 
+    - id: determine-chromedriver
+      name: Determine latest ChromeDriver version
+      shell: bash
+      run: echo '::set-output name=version::$(curl --location --fail --retry 10 http://chromedriver.storage.googleapis.com/LATEST_RELEASE)'
+
+    - id: setup-chrome
+      name: Setup Chrome
+      uses: browser-actions/setup-chrome@v1
+      with:
+        chrome-version: ${{ steps.determine-chromedriver.outputs.version }}
+
+    - id: setup-chromedriver
+      name: Setup ChromeDriver
+      uses: nanasess/setup-chromedriver@v2
+      with:
+        chromedriver-version: ${{ steps.determine-chromedriver.outputs.version }}
+
     - id: maven-cache
       name: Maven cache
       uses: ./.github/actions/maven-cache
