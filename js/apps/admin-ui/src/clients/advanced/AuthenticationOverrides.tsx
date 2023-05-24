@@ -10,10 +10,11 @@ import { sortBy } from "lodash-es";
 import { useState } from "react";
 import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
+
+import { FormAccess } from "../../components/form/FormAccess";
 import { HelpItem } from "ui-shared";
 
 import { adminClient } from "../../admin-client";
-import { FormAccess } from "../../components/form-access/FormAccess";
 import { useFetch } from "../../utils/useFetch";
 
 type AuthenticationOverridesProps = {

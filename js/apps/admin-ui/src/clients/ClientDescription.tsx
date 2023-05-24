@@ -1,7 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { TextControl, TextAreaControl } from "ui-shared";
 
-import { FormAccess } from "../components/form-access/FormAccess";
+import { FormAccess } from "../components/form/FormAccess";
 import { DefaultSwitchControl } from "../components/SwitchControl";
 
 type ClientDescriptionProps = {

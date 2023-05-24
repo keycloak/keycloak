@@ -42,8 +42,6 @@ import { AuthenticationTab, toAuthentication } from "./routes/Authentication";
 import { toCreateFlow } from "./routes/CreateFlow";
 import { toFlow } from "./routes/Flow";
 
-import "./authentication-section.css";
-
 type UsedBy = "SPECIFIC_CLIENTS" | "SPECIFIC_PROVIDERS" | "DEFAULT";
 
 export type AuthenticationType = AuthenticationFlowRepresentation & {

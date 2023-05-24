@@ -2,7 +2,7 @@ import { ActionGroup, Button, FormGroup, Switch } from "@patternfly/react-core";
 import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
-import { FormAccess } from "../../components/form-access/FormAccess";
+import { FormAccess } from "../../components/form/FormAccess";
 import { HelpItem } from "ui-shared";
 import { convertAttributeNameToForm } from "../../util";
 import { FormFields } from "../ClientDetails";

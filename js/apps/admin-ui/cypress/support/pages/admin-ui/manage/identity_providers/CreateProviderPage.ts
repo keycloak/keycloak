@@ -7,7 +7,7 @@ export default class CreateProviderPage {
   private discoveryEndpoint = "discoveryEndpoint";
   private authorizationUrl = "authorizationUrl";
   private addButton = "createProvider";
-  private saveButton = "save";
+  private saveButton = "idp-details-save";
   private ssoServiceUrl = "sso-service-url";
   private authnContextClassRefs = "classref-field";
   private authnContextDeclRefs = "declref-field";
