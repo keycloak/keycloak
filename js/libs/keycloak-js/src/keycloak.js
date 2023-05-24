@@ -187,6 +187,7 @@ function Keycloak (config) {
                 var ifrm = document.createElement("iframe");
                 var src = kc.createLoginUrl({prompt: 'none', redirectUri: kc.silentCheckSsoRedirectUri});
                 ifrm.setAttribute("src", src);
+                ifrm.setAttribute("sandbox", "allow-scripts allow-same-origin");
                 ifrm.setAttribute("title", "keycloak-silent-check-sso");
                 ifrm.style.display = "none";
                 document.body.appendChild(ifrm);
@@ -1202,6 +1203,7 @@ function Keycloak (config) {
 
         var src = kc.endpoints.checkSessionIframe();
         iframe.setAttribute('src', src );
+        iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin');
         iframe.setAttribute('title', 'keycloak-session-iframe' );
         iframe.style.display = 'none';
         document.body.appendChild(iframe);
@@ -1274,6 +1276,7 @@ function Keycloak (config) {
         if (loginIframe.enable || kc.silentCheckSsoRedirectUri) {
             var iframe = document.createElement('iframe');
             iframe.setAttribute('src', kc.endpoints.thirdPartyCookiesIframe());
+            iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin');
             iframe.setAttribute('title', 'keycloak-3p-check-iframe' );
             iframe.style.display = 'none';
             document.body.appendChild(iframe);
