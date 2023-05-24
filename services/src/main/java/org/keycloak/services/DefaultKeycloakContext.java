@@ -31,8 +31,8 @@ import org.keycloak.models.UserModel;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.urls.UrlType;
 
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.UriInfo;
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.UriInfo;
 import java.net.URI;
 import java.util.HashMap;
 import java.util.Locale;
@@ -176,6 +176,6 @@ public class DefaultKeycloakContext implements KeycloakContext {
     }
 
     protected HttpResponse createHttpResponse() {
-        return new HttpResponseImpl(getContextObject(org.jboss.resteasy.spi.HttpResponse.class));
+        return new HttpResponseImpl(session, getContextObject(org.jboss.resteasy.spi.HttpResponse.class));
     }
 }

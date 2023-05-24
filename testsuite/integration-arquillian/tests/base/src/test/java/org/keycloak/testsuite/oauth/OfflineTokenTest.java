@@ -29,7 +29,6 @@ import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.RoleResource;
 import org.keycloak.admin.client.resource.UserResource;
-import org.keycloak.common.Profile;
 import org.keycloak.common.constants.ServiceAccountConstants;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.events.Details;
@@ -53,9 +52,7 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
 import org.keycloak.testsuite.auth.page.AuthRealm;
-import org.keycloak.testsuite.pages.AccountApplicationsPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.util.ClientBuilder;
@@ -66,13 +63,16 @@ import org.keycloak.testsuite.util.RealmManager;
 import org.keycloak.testsuite.util.RoleBuilder;
 import org.keycloak.testsuite.util.TokenSignatureUtil;
 import org.keycloak.testsuite.util.UserBuilder;
+import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.utils.tls.TLSUtils;
 import org.keycloak.util.TokenUtil;
 
-import javax.ws.rs.NotFoundException;
+import jakarta.ws.rs.NotFoundException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.LinkedHashMap;
+import java.util.ArrayList;
 
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
@@ -87,6 +87,7 @@ import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
 import static org.keycloak.testsuite.admin.ApiUtil.findRealmRoleByName;
 import static org.keycloak.testsuite.admin.ApiUtil.findUserByUsername;
 import static org.keycloak.testsuite.admin.ApiUtil.findUserByUsernameId;
+import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
 import static org.keycloak.testsuite.util.OAuthClient.APP_ROOT;
 import static org.keycloak.testsuite.util.ServerURLs.getAuthServerContextRoot;
 
@@ -104,9 +105,6 @@ public class OfflineTokenTest extends AbstractKeycloakTest {
 
     @Page
     protected LoginPage loginPage;
-
-    @Page
-    protected AccountApplicationsPage applicationsPage;
 
     @Rule
     public AssertEvents events = new AssertEvents(this);
@@ -145,7 +143,6 @@ public class OfflineTokenTest extends AbstractKeycloakTest {
 
         realm.client(app);
 
-        serviceAccountUserId = KeycloakModelUtils.generateId();
         UserRepresentation serviceAccountUser = UserBuilder.create()
                 .id(serviceAccountUserId)
                 .addRoles("user", "offline_access")
@@ -157,6 +154,12 @@ public class OfflineTokenTest extends AbstractKeycloakTest {
 
         testRealms.add(realm.build());
 
+    }
+
+    @Override
+    public void importTestRealms() {
+        super.importTestRealms();
+        serviceAccountUserId = adminClient.realm("test").users().search(ServiceAccountConstants.SERVICE_ACCOUNT_USER_PREFIX + "offline-client", true).get(0).getId();
     }
 
     @Test
@@ -521,7 +524,6 @@ public class OfflineTokenTest extends AbstractKeycloakTest {
 
     // KEYCLOAK-4525
     @Test
-    @DisableFeature(value = Profile.Feature.ACCOUNT2, skipRestart = true) // TODO remove this (KEYCLOAK-16228)
     public void offlineTokenRemoveClientWithTokens() throws Exception {
         // Create new client
         RealmResource appRealm = adminClient.realm("test");
@@ -556,23 +558,26 @@ public class OfflineTokenTest extends AbstractKeycloakTest {
                 .removeDetail(Details.CONSENT)
                 .assertEvent();
 
-        // Go to account mgmt applications page
-        applicationsPage.open();
-        loginPage.login("test-user@localhost", "password");
-        events.expectLogin().client("account").detail(Details.REDIRECT_URI, getAccountRedirectUrl() + "?path=applications").assertEvent();
-        assertTrue(applicationsPage.isCurrent());
-        Map<String, AccountApplicationsPage.AppEntry> apps = applicationsPage.getApplications();
-        assertTrue(apps.containsKey("offline-client-2"));
-        Assert.assertEquals("Offline Token", apps.get("offline-client-2").getAdditionalGrants().get(0));
+        // Confirm that offline-client-2 token was granted
+        List<Map<String, Object>> userConsents = AccountHelper.getUserConsents(adminClient.realm(TEST), "test-user@localhost");
+
+        String clientId2 = "", offlineAdditionalGrant = "";
+        for (Map<String, Object> consent : userConsents) {
+            if (consent.get("clientId").equals("offline-client-2")) {
+                clientId2 = String.valueOf(consent.get("clientId"));
+                offlineAdditionalGrant = String.valueOf(((LinkedHashMap) ((ArrayList) consent.get("additionalGrants")).get(0)).get("key"));
+            }
+        }
+
+        assertEquals("offline-client-2", clientId2);
+        assertEquals("Offline Token", offlineAdditionalGrant);
 
         // Now remove the client
         ClientResource offlineTokenClient2 = ApiUtil.findClientByClientId(appRealm, "offline-client-2" );
         offlineTokenClient2.remove();
 
-        // Go to applications page and see offline-client not anymore
-        applicationsPage.open();
-        apps = applicationsPage.getApplications();
-        assertFalse(apps.containsKey("offline-client-2"));
+        // Confirm that offline-client-2 token was deleted
+        assertNull(ApiUtil.findClientByClientId(appRealm, "offline-client-2"));
 
         // Login as admin and see consents of user
         UserResource user = ApiUtil.findUserByUsernameId(appRealm, "test-user@localhost");

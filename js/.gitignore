@@ -29,6 +29,9 @@ assets
 # Optional eslint cache
 .eslintcache
 
+# Keycloak server
+server
+
 # Wireit
 .wireit
 
@@ -36,3 +39,7 @@ assets
 dist
 dist-ssr
 *.local
+
+# Distribution
+*.tgz
+npm-dist

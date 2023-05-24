@@ -43,8 +43,6 @@ import org.junit.BeforeClass;
  */
 public abstract class AbstractLDAPTest extends AbstractTestRealmKeycloakTest {
 
-    static final String TEST_REALM_NAME = "test";
-
     protected static String ldapModelId;
 
     @Rule

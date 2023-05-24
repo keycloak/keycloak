@@ -9,6 +9,7 @@ KcOidcBrokerTest
 LDAPUserLoginTest
 LoginTest
 PasswordPolicyTest
+RefreshTokenTest
 RequiredActionUpdateProfileTest
 SSOTest
 SamlClientTest
@@ -16,3 +17,4 @@ TransactionsTest
 UserProfileTest
 org.keycloak.testsuite.admin.**
 org.keycloak.testsuite.authz.**ManagementTest
+org.keycloak.testsuite.zerodowntime.**

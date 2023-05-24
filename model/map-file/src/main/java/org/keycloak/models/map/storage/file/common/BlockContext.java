@@ -135,7 +135,7 @@ public interface BlockContext<V> {
 
         @Override
         public void writeValue(Object value, WritingMechanism mech) {
-            if (UndefinedValuesUtils.isUndefined(value)) return;
+            if (value == null || (value.getClass() != String.class && UndefinedValuesUtils.isUndefined(value))) return;
             mech.writeObject(value);
         }
 

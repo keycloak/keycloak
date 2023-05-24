@@ -47,13 +47,17 @@ public class JpaEntityVersionListener implements PreInsertEventListener, PreDele
      */
     public void updateEntityVersion(Object entity) throws HibernateException {
         Object root = entity;
-        while(root instanceof JpaChildEntity) {
-            root = ((JpaChildEntity<?>) entity).getParent();
-            if (root instanceof JpaRootEntity) {
-                if (!((JpaRootEntity) root).updateEntityVersion()) {
-                    return;
-                }
-            }   
+        if (root instanceof JpaChildEntity) {
+            while (root instanceof JpaChildEntity) {
+                root = ((JpaChildEntity<?>) entity).getParent();
+                if (root instanceof JpaRootEntity) {
+                    if (!((JpaRootEntity) root).updateEntityVersion()) {
+                        return;
+                    }
+                }   
+            }
+        } else if (root instanceof JpaRootEntity) {
+            ((JpaRootEntity) root).updateEntityVersion();
         }
     }
 

@@ -1,22 +1,14 @@
 package org.keycloak.testsuite.broker;
 
 import org.keycloak.broker.saml.SAMLIdentityProviderConfig;
-import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.crypto.Algorithm;
-import org.keycloak.crypto.KeyUse;
 import org.keycloak.dom.saml.v2.protocol.AuthnRequestType;
 import org.keycloak.jose.jwe.JWEConstants;
-import org.keycloak.keys.Attributes;
-import org.keycloak.keys.GeneratedRsaEncKeyProviderFactory;
-import org.keycloak.keys.KeyProvider;
 import org.keycloak.models.IdentityProviderSyncMode;
-import org.keycloak.models.utils.DefaultKeyProviders;
 import org.keycloak.protocol.saml.SamlConfigAttributes;
 import org.keycloak.representations.idm.ClientRepresentation;
-import org.keycloak.representations.idm.ComponentExportRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.KeysMetadataRepresentation;
-import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.saml.common.util.DocumentUtil;
 import org.keycloak.saml.processing.api.saml.v2.request.SAML2Request;
@@ -44,7 +36,7 @@ import java.util.Map;
 
 import java.util.Map.Entry;
 import java.util.Set;
-import javax.ws.rs.core.Response.Status;
+import jakarta.ws.rs.core.Response.Status;
 import javax.xml.crypto.dsig.XMLSignature;
 import javax.xml.namespace.QName;
 import org.apache.http.HttpResponse;
@@ -58,6 +50,7 @@ import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
+
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.assertThat;
@@ -498,6 +491,86 @@ public class KcSamlSignedBrokerTest extends AbstractBrokerTest {
                   })
                   .build()
                 .execute();
+        }
+    }
+
+    @Test
+    public void testSignatureDataTwoCertificatesPostBinding() throws Exception {
+        // Check two certifcates work with POST binding
+        String badCert = KeyUtils.findActiveSigningKey(adminClient.realm(bc.consumerRealmName()), Algorithm.RS256).getCertificate();
+        String goodCert = KeyUtils.findActiveSigningKey(adminClient.realm(bc.providerRealmName()), Algorithm.RS256).getCertificate();
+
+        try (Closeable clientUpdater = ClientAttributeUpdater.forClient(adminClient, bc.providerRealmName(), bc.getIDPClientIdInProviderRealm())
+                .setAttribute(SamlConfigAttributes.SAML_ENCRYPT, "false")
+                .setAttribute(SamlConfigAttributes.SAML_SERVER_SIGNATURE, "true")
+                .setAttribute(SamlConfigAttributes.SAML_ASSERTION_SIGNATURE, "false")
+                .setAttribute(SamlConfigAttributes.SAML_CLIENT_SIGNATURE_ATTRIBUTE, "false")
+                .update();
+             Closeable idpUpdater = new IdentityProviderAttributeUpdater(identityProviderResource)
+                .setAttribute(SAMLIdentityProviderConfig.VALIDATE_SIGNATURE, "true")
+                .setAttribute(SAMLIdentityProviderConfig.WANT_ASSERTIONS_SIGNED, "false")
+                .setAttribute(SAMLIdentityProviderConfig.WANT_ASSERTIONS_ENCRYPTED, "false")
+                .setAttribute(SAMLIdentityProviderConfig.WANT_AUTHN_REQUESTS_SIGNED, "true")
+                .setAttribute(SAMLIdentityProviderConfig.SIGNING_CERTIFICATE_KEY, badCert + "," + goodCert)
+                .update();
+          )
+        {
+            // Build the login request document
+            AuthnRequestType loginRep = SamlClient.createLoginRequestDocument(AbstractSamlTest.SAML_CLIENT_ID_SALES_POST, getConsumerRoot() + "/sales-post/saml", null);
+            Document doc = SAML2Request.convert(loginRep);
+            new SamlClientBuilder()
+                    .authnRequest(getConsumerSamlEndpoint(bc.consumerRealmName()), doc, Binding.POST)
+                    .build() // Request to consumer IdP
+                    .login().idp(bc.getIDPAlias()).build()
+                    .processSamlResponse(Binding.POST).build() // AuthnRequest to producer IdP
+                    .login().user(bc.getUserLogin(), bc.getUserPassword()).build()
+                    .processSamlResponse(Binding.POST) // Response from producer IdP
+                    .build()
+                    // first-broker flow: if valid request, it displays an update profile page on consumer realm
+                    .execute(currentResponse -> assertThat(currentResponse, bodyHC(containsString("Update Account Information"))));
+        }
+    }
+
+    @Test
+    public void testSignatureDataTwoCertificatesRedirectBinding() throws Exception {
+        // Check two certifcates work with REDIRECT binding
+        String badCert = KeyUtils.findActiveSigningKey(adminClient.realm(bc.consumerRealmName()), Algorithm.RS256).getCertificate();
+        String goodCert = KeyUtils.findActiveSigningKey(adminClient.realm(bc.providerRealmName()), Algorithm.RS256).getCertificate();
+
+        try (Closeable clientProviderUpdater = ClientAttributeUpdater.forClient(adminClient, bc.providerRealmName(), bc.getIDPClientIdInProviderRealm())
+                .setAttribute(SamlConfigAttributes.SAML_ENCRYPT, "false")
+                .setAttribute(SamlConfigAttributes.SAML_SERVER_SIGNATURE, "true")
+                .setAttribute(SamlConfigAttributes.SAML_ASSERTION_SIGNATURE, "false")
+                .setAttribute(SamlConfigAttributes.SAML_CLIENT_SIGNATURE_ATTRIBUTE, "false")
+                .setAttribute(SamlConfigAttributes.SAML_FORCE_POST_BINDING, "false")
+                .update();
+             Closeable clientConsumerUpdater = ClientAttributeUpdater.forClient(adminClient, bc.providerRealmName(), bc.getIDPClientIdInProviderRealm())
+                .setAttribute(SamlConfigAttributes.SAML_FORCE_POST_BINDING, "false")
+                .update();
+             Closeable idpUpdater = new IdentityProviderAttributeUpdater(identityProviderResource)
+                .setAttribute(SAMLIdentityProviderConfig.VALIDATE_SIGNATURE, "true")
+                .setAttribute(SAMLIdentityProviderConfig.WANT_ASSERTIONS_SIGNED, "false")
+                .setAttribute(SAMLIdentityProviderConfig.WANT_ASSERTIONS_ENCRYPTED, "false")
+                .setAttribute(SAMLIdentityProviderConfig.WANT_AUTHN_REQUESTS_SIGNED, "true")
+                .setAttribute(SAMLIdentityProviderConfig.POST_BINDING_AUTHN_REQUEST, "false")
+                 .setAttribute(SAMLIdentityProviderConfig.POST_BINDING_RESPONSE, "false")
+                .setAttribute(SAMLIdentityProviderConfig.SIGNING_CERTIFICATE_KEY, badCert + "," + goodCert)
+                .update();
+          )
+        {
+            // Build the login request document
+            AuthnRequestType loginRep = SamlClient.createLoginRequestDocument(AbstractSamlTest.SAML_CLIENT_ID_SALES_POST, getConsumerRoot() + "/sales-post/saml", null);
+            Document doc = SAML2Request.convert(loginRep);
+            new SamlClientBuilder()
+                    .authnRequest(getConsumerSamlEndpoint(bc.consumerRealmName()), doc, Binding.REDIRECT)
+                    .build() // Request to consumer IdP
+                    .login().idp(bc.getIDPAlias()).build()
+                    .processSamlResponse(Binding.REDIRECT).build() // AuthnRequest to producer IdP
+                    .login().user(bc.getUserLogin(), bc.getUserPassword()).build()
+                    .processSamlResponse(Binding.REDIRECT) // Response from producer IdP
+                    .build()
+                    // first-broker flow: if valid request, it displays an update profile page on consumer realm
+                    .execute(currentResponse -> assertThat(currentResponse, bodyHC(containsString("Update Account Information"))));
         }
     }
 }

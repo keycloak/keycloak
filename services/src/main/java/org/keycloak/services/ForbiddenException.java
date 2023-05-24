@@ -19,7 +19,7 @@ package org.keycloak.services;
 
 import org.jboss.resteasy.spi.LoggableFailure;
 
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response;
 
 /**
  * To provide a typed exception for Forbidden (This doesn't exist in Resteasy 2.3.7)

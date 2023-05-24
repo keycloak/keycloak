@@ -60,6 +60,8 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static org.keycloak.testsuite.model.transaction.StorageTransactionTest.LOCK_TIMEOUT_SYSTEM_PROPERTY;
+
 /**
  *
  * @author hmlnarik
@@ -109,7 +111,8 @@ public class HotRodMapStorage extends KeycloakModelParameters {
                 .config("port", hotRodContainer.getPort())
                 .config("username", hotRodContainer.getUsername())
                 .config("password", hotRodContainer.getPassword())
-                .config("configureRemoteCaches", "true");
+                .config("configureRemoteCaches", "true")
+                .config("lockTimeout", "${" + LOCK_TIMEOUT_SYSTEM_PROPERTY + ":}");
     }
 
     @Override

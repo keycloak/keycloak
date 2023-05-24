@@ -71,7 +71,7 @@ public class AppServerTestEnricher {
 
     private static final Logger log = Logger.getLogger(AppServerTestEnricher.class);
 
-    public static final String CURRENT_APP_SERVER = System.getProperty("app.server", "undertow");
+    public static final String CURRENT_APP_SERVER = System.getProperty("app.server", "wildfly");
     public static final boolean APP_SERVER_SSL_REQUIRED = Boolean.parseBoolean(System.getProperty("app.server.ssl.required", "false"));
 
     @Inject private Instance<ContainerController> containerConrollerInstance;
@@ -268,12 +268,18 @@ public class AppServerTestEnricher {
      * For Fuse: precedence = 2 - app server has to be stopped 
      * before AuthServerTestEnricher.afterClass is executed
      */
-    public void stopAppServer(@Observes(precedence = 2) AfterClass event) {
+    public void stopAppServer(@Observes(precedence = 2) AfterClass event) throws IOException {
         if (testContext.getAppServerInfo() == null) {
             return; // no adapter test
         }
 
         ContainerController controller = containerConrollerInstance.get();
+
+        // remove tmp folder for JBoss based app servers for proper clean-up
+        if (isJBossBased()) {
+            final File tmpFolder = Paths.get(System.getProperty("app.server.home"), "standalone-test", "tmp").toFile();
+            FileUtils.deleteDirectory(tmpFolder);
+        }
 
         if (controller.isStarted(testContext.getAppServerInfo().getQualifier())) {
             log.info("Stopping app server: " + testContext.getAppServerInfo().getQualifier());

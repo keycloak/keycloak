@@ -18,7 +18,6 @@ concurrency:
 defaults:
   run:
     shell: bash
-    working-directory: js
 
 jobs:
   conditional:
@@ -33,6 +32,33 @@ jobs:
       - id: conditional
         uses: ./.github/actions/conditional
 
+  build-keycloak:
+    name: Build Keycloak
+    needs: conditional
+    if: needs.conditional.outputs.js-ci == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup Java
+        uses: actions/setup-java@v3
+        with:
+          distribution: temurin
+          java-version: 17
+          check-latest: true
+          cache: maven
+
+      - name: Build Keycloak
+        run: |
+          mvn clean install --batch-mode --errors -DskipTests -DskipTestsuite -DskipExamples -DskipAccount2 -DskipCommon -Pdistribution
+          mv ./quarkus/dist/target/keycloak-999.0.0-SNAPSHOT.tar.gz ./keycloak-999.0.0-SNAPSHOT.tar.gz
+
+      - name: Upload Keycloak dist
+        uses: actions/upload-artifact@v3
+        with:
+          name: keycloak
+          path: keycloak-999.0.0-SNAPSHOT.tar.gz
+
   admin-client:
     name: Admin Client
     needs: conditional
@@ -43,17 +69,195 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - uses: ./.github/actions/npm-setup
+      - uses: ./.github/actions/pnpm-setup
         with:
           working-directory: js
 
-      - run: npm run lint --workspace=${{ env.WORKSPACE }}
-      - run: npm run build --workspace=${{ env.WORKSPACE }}
+      - run: pnpm --filter=${{ env.WORKSPACE }} run lint
+        working-directory: js
+
+      - run: pnpm --filter=${{ env.WORKSPACE }} run build
+        working-directory: js
+
+  keycloak-js:
+    name: Keycloak JS
+    needs: conditional
+    if: needs.conditional.outputs.js-ci == 'true'
+    runs-on: ubuntu-latest
+    env:
+      WORKSPACE: keycloak-js
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: ./.github/actions/pnpm-setup
+        with:
+          working-directory: js
+
+      - run: pnpm --filter=${{ env.WORKSPACE }} run build
+        working-directory: js
+
+  keycloak-masthead:
+    name: Keycloak Masthead
+    needs: conditional
+    if: needs.conditional.outputs.js-ci == 'true'
+    runs-on: ubuntu-latest
+    env:
+      WORKSPACE: keycloak-masthead
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: ./.github/actions/pnpm-setup
+        with:
+          working-directory: js
+
+      - run: pnpm --filter=${{ env.WORKSPACE }} run lint
+        working-directory: js
+
+      - run: pnpm --filter=${{ env.WORKSPACE }} run build
+        working-directory: js
+
+  ui-shared:
+    name: UI Shared
+    needs: conditional
+    if: needs.conditional.outputs.js-ci == 'true'
+    runs-on: ubuntu-latest
+    env:
+      WORKSPACE: ui-shared
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: ./.github/actions/pnpm-setup
+        with:
+          working-directory: js
+
+      - run: pnpm --filter=${{ env.WORKSPACE }} run lint
+        working-directory: js
+
+      - run: pnpm --filter=${{ env.WORKSPACE }} run build
+        working-directory: js
+
+  account-ui:
+    name: Account UI
+    needs: conditional
+    if: needs.conditional.outputs.js-ci == 'true'
+    runs-on: ubuntu-latest
+    env:
+      WORKSPACE: account-ui
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: ./.github/actions/pnpm-setup
+        with:
+          working-directory: js
+
+      - run: pnpm --filter=${{ env.WORKSPACE }} run lint
+        working-directory: js
+
+      - run: pnpm --filter=${{ env.WORKSPACE }} run build
+        working-directory: js
+
+  admin-ui:
+    name: Admin UI
+    needs: conditional
+    if: needs.conditional.outputs.js-ci == 'true'
+    runs-on: ubuntu-latest
+    env:
+      WORKSPACE: admin-ui
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: ./.github/actions/pnpm-setup
+        with:
+          working-directory: js
+
+      - run: pnpm --filter=${{ env.WORKSPACE }} run lint
+        working-directory: js
+
+      - run: pnpm --filter=${{ env.WORKSPACE }} run test
+        working-directory: js
+
+      - run: pnpm --filter=${{ env.WORKSPACE }} run build
+        working-directory: js
+
+      - run: pnpm --filter=${{ env.WORKSPACE }} run cy:check-types
+        working-directory: js
+
+  admin-ui-e2e:
+    name: Admin UI E2E
+    needs:
+      - conditional
+      - build-keycloak
+    if: needs.conditional.outputs.js-ci == 'true' && github.repository == 'keycloak/keycloak'
+    runs-on: ubuntu-latest
+    env:
+      WORKSPACE: admin-ui
+    strategy:
+      matrix:
+        container: [1, 2, 3, 4, 5]
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Install Google Chrome
+        uses: browser-actions/setup-chrome@v1
+        with:
+          chrome-version: stable
+
+      - uses: ./.github/actions/pnpm-setup
+        with:
+          working-directory: js
+
+      - name: Compile Admin Client
+        run: pnpm --filter=@keycloak/keycloak-admin-client run build
+        working-directory: js
+
+      - name: Download Keycloak server
+        uses: actions/download-artifact@v3
+        with:
+          name: keycloak
+
+      - name: Start Keycloak Server
+        run: |
+          tar xfvz keycloak-999.0.0-SNAPSHOT.tar.gz
+          keycloak-999.0.0-SNAPSHOT/bin/kc.sh start-dev --features=admin-fine-grained-authz,declarative-user-profile &> ~/server.log &
+        env:
+          KEYCLOAK_ADMIN: admin
+          KEYCLOAK_ADMIN_PASSWORD: admin
+
+      - name: Start LDAP server
+        run: pnpm --filter=${{ env.WORKSPACE }} run cy:ldap-server &
+        working-directory: js
+
+      - name: Run Cypress
+        uses: cypress-io/github-action@v5
+        with:
+          install: false
+          record: true
+          parallel: true
+          browser: chrome
+          wait-on: http://localhost:8080
+          working-directory: js/apps/admin-ui
+        env:
+          CYPRESS_BASE_URL: http://localhost:8080/admin/
+          CYPRESS_KEYCLOAK_SERVER: http://localhost:8080
+          CYPRESS_RECORD_KEY: b8f1d15e-eab8-4ee7-8e44-c6d7cd8fc0eb
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload server logs
+        uses: actions/upload-artifact@v3
+        with:
+          name: server-log-${{ matrix.container }}
+          path: ~/server.log
 
   check-set-status:
     name: Set check conclusion
     needs:
       - admin-client
+      - keycloak-js
+      - keycloak-masthead
+      - ui-shared
+      - account-ui
+      - admin-ui
+      - admin-ui-e2e
     runs-on: ubuntu-latest
     outputs:
       conclusion: ${{ steps.check.outputs.conclusion }}

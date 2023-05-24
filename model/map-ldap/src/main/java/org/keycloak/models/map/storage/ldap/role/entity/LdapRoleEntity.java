@@ -40,13 +40,13 @@ import org.keycloak.models.map.role.MapRoleEntityFields;
 import org.keycloak.models.map.storage.ldap.model.LdapMapDn;
 import org.keycloak.models.map.storage.ldap.model.LdapMapObject;
 import org.keycloak.models.map.storage.ldap.role.config.LdapMapRoleMapperConfig;
-import org.keycloak.models.map.storage.ldap.role.LdapRoleMapKeycloakTransaction;
+import org.keycloak.models.map.storage.ldap.role.LdapRoleMapStorage;
 
 public class LdapRoleEntity extends UpdatableEntity.Impl implements EntityFieldDelegate<MapRoleEntity> {
 
     private final LdapMapObject ldapMapObject;
     private final LdapMapRoleMapperConfig roleMapperConfig;
-    private final LdapRoleMapKeycloakTransaction transaction;
+    private final LdapRoleMapStorage store;
     private final String clientId;
 
     private static final EnumMap<MapRoleEntityFields, BiConsumer<LdapRoleEntity, Object>> SETTERS = new EnumMap<>(MapRoleEntityFields.class);
@@ -83,19 +83,19 @@ public class LdapRoleEntity extends UpdatableEntity.Impl implements EntityFieldD
         REMOVERS.put(MapRoleEntityFields.COMPOSITE_ROLES, (e, v) -> { e.removeCompositeRole((String) v); return null; });
     }
 
-    public LdapRoleEntity(DeepCloner cloner, LdapMapRoleMapperConfig roleMapperConfig, LdapRoleMapKeycloakTransaction transaction, String clientId) {
+    public LdapRoleEntity(DeepCloner cloner, LdapMapRoleMapperConfig roleMapperConfig, LdapRoleMapStorage store, String clientId) {
         ldapMapObject = new LdapMapObject();
         ldapMapObject.setObjectClasses(Arrays.asList("top", "groupOfNames"));
         ldapMapObject.setRdnAttributeName(roleMapperConfig.getRoleNameLdapAttribute());
         this.roleMapperConfig = roleMapperConfig;
-        this.transaction = transaction;
+        this.store = store;
         this.clientId = clientId;
     }
 
-    public LdapRoleEntity(LdapMapObject ldapMapObject, LdapMapRoleMapperConfig roleMapperConfig, LdapRoleMapKeycloakTransaction transaction, String clientId) {
+    public LdapRoleEntity(LdapMapObject ldapMapObject, LdapMapRoleMapperConfig roleMapperConfig, LdapRoleMapStorage store, String clientId) {
         this.ldapMapObject = ldapMapObject;
         this.roleMapperConfig = roleMapperConfig;
-        this.transaction = transaction;
+        this.store = store;
         this.clientId = clientId;
     }
 
@@ -224,7 +224,7 @@ public class LdapRoleEntity extends UpdatableEntity.Impl implements EntityFieldD
                 // TODO: this will not work if users and role use the same!
                 continue;
             }
-            String roleId = transaction.readIdByDn(member);
+            String roleId = store.readIdByDn(member);
             if (roleId == null) {
                 throw new NotImplementedException();
             }
@@ -237,7 +237,7 @@ public class LdapRoleEntity extends UpdatableEntity.Impl implements EntityFieldD
         HashSet<String> translatedCompositeRoles = new HashSet<>();
         if (compositeRoles != null) {
             for (String compositeRole : compositeRoles) {
-                LdapRoleEntity ldapRole = transaction.readLdap(compositeRole);
+                LdapRoleEntity ldapRole = store.readLdap(compositeRole);
                 translatedCompositeRoles.add(ldapRole.getLdapMapObject().getDn().toString());
             }
         }
@@ -259,7 +259,7 @@ public class LdapRoleEntity extends UpdatableEntity.Impl implements EntityFieldD
     }
 
     public void addCompositeRole(String roleId) {
-        LdapRoleEntity ldapRole = transaction.readLdap(roleId);
+        LdapRoleEntity ldapRole = store.readLdap(roleId);
         Set<String> members = ldapMapObject.getAttributeAsSet(roleMapperConfig.getMembershipLdapAttribute());
         if (members == null) {
             members = new HashSet<>();
@@ -270,7 +270,7 @@ public class LdapRoleEntity extends UpdatableEntity.Impl implements EntityFieldD
     }
 
     public void removeCompositeRole(String roleId) {
-        LdapRoleEntity ldapRole = transaction.readLdap(roleId);
+        LdapRoleEntity ldapRole = store.readLdap(roleId);
         Set<String> members = ldapMapObject.getAttributeAsSet(roleMapperConfig.getMembershipLdapAttribute());
         if (members == null) {
             members = new HashSet<>();

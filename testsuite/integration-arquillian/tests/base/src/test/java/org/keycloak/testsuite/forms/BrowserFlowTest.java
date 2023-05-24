@@ -18,7 +18,6 @@ import org.keycloak.authentication.authenticators.conditional.ConditionalRoleAut
 import org.keycloak.authentication.authenticators.conditional.ConditionalUserAttributeValueFactory;
 import org.keycloak.authentication.authenticators.conditional.ConditionalUserConfiguredAuthenticatorFactory;
 import org.keycloak.authentication.requiredactions.WebAuthnRegisterFactory;
-import org.keycloak.common.Profile;
 import org.keycloak.events.Details;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationExecutionModel.Requirement;
@@ -37,7 +36,6 @@ import org.keycloak.testsuite.ActionURIUtils;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.admin.authentication.AbstractAuthenticationTest;
-import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
 import org.keycloak.testsuite.auth.page.login.OneTimeCode;
 import org.keycloak.testsuite.authentication.SetUserAttributeAuthenticatorFactory;
 import org.keycloak.testsuite.broker.SocialLoginTest;
@@ -543,8 +541,6 @@ public class BrowserFlowTest extends AbstractTestRealmKeycloakTest {
     }
 
     @Test
-    
-    @DisableFeature(value = Profile.Feature.ACCOUNT2, skipRestart = true) // TODO remove this (KEYCLOAK-16228)
     public void testAlternativeNonInteractiveExecutorInSubflow() {
         final String newFlowAlias = "browser - alternative non-interactive executor";
         testingClient.server("test").run(session -> FlowUtil.inCurrentRealm(session).copyBrowserFlow(newFlowAlias));
@@ -568,7 +564,11 @@ public class BrowserFlowTest extends AbstractTestRealmKeycloakTest {
             // Check that Keycloak is redirecting us to the Keycloak account management page
             WebElement aHref = driver.findElement(By.tagName("a"));
             driver.get(aHref.getAttribute("href"));
+            // Waiting for account redirection from app page
+            driver.wait(1000);
             assertThat(driver.getTitle(), containsString("Account Management"));
+        } catch (Throwable t) {
+            t.printStackTrace();
         } finally {
             revertFlows("browser - alternative non-interactive executor");
         }

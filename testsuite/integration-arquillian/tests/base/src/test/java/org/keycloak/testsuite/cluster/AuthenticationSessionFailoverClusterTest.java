@@ -21,7 +21,7 @@ import static org.junit.Assert.assertEquals;
 import static org.keycloak.testsuite.util.WaitUtils.pause;
 
 import java.io.IOException;
-import javax.mail.MessagingException;
+import jakarta.mail.MessagingException;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Test;
 import org.keycloak.services.managers.AuthenticationSessionManager;

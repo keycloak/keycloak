@@ -1,0 +1,129 @@
+[[_getting_started_hello_world_deploy]]
+= Build, deploy, and test your application
+
+Now that the *app-authz-vanilla* resource server (or client) is properly configured and authorization services are enabled, it can be deployed to the server.
+
+The project and code for the application you are going to deploy is available in link:{quickstartRepo_link}[{quickstartRepo_name}].  You will need the following
+installed on your machine and available in your PATH before you can continue:
+
+* Java JDK 8
+* Apache Maven 3.1.1 or higher
+* Git
+
+ifeval::[{project_community}==true]
+You can obtain the code by cloning the repository at {quickstartRepo_link}. The quickstarts are designed to work with the most recent Keycloak release.
+endif::[]
+
+ifeval::[{project_product}==true]
+You can obtain the code by cloning the repository at {quickstartRepo_link}. Use the branch matching the version of {project_name} in use.
+endif::[]
+
+Follow these steps to download the code.
+
+.Clone Project
+[source, subs="attributes"]
+----
+$ git clone {quickstartRepo_link}
+----
+
+The application we are about to build and deploy is located at
+
+[source, subs="attributes"]
+----
+$ cd {quickstartRepo_dir}/app-authz-jee-vanilla
+----
+
+== Obtaining the adapter configuration
+
+You must first obtain the adapter configuration before building and deploying the application.
+
+.Procedure
+
+. Log into the Admin Console.
+
+. Click *Clients* in the menu.
+
+. In the client listing, click the *app-authz-vanilla* client application. The Client Settings page opens.
++
+.Client Settings
+image:images/getting-started/hello-world/enable-authz.png[alt="Client Settings"]
+
+. From the *Action* list, select *Download adapter config*.
+. From the Format Option list, select *Keycloak OIDC JSON*.
++
+The adapter configuration is displayed in JSON format.
+
+. Click *Download*.
++
+.Adapter configuration
+image:images/getting-started/hello-world/adapter-config.png[alt="Adapter configuration"]
+
+. Move the file `keycloak.json` to the `app-authz-jee-vanilla/config` directory.
+
+. Optionally, specify a redirection URL.
++
+By default, the policy enforcer responds with a `403` status code when the user lacks permission to access protected resources on the resource server. However, you can also specify a redirection URL for unauthorized users. To specify a redirection URL, edit the *keycloak.json* file that you updated and replace the `policy-enforcer` configuration with the following:
++
+```json
+"policy-enforcer": {
+    "on-deny-redirect-to" : "/app-authz-vanilla/error.jsp"
+}
+```
++
+This change specifies to the policy enforcer to redirect users to a `/app-authz-vanilla/error.jsp` page if a user does not have the necessary permissions to access a protected resource, rather than an unhelpful `403 Unauthorized` message.
+
+== Building and deploying the application
+
+To build and deploy the application execute the following command:
+
+[source, subs="attributes"]
+----
+$ cd {quickstartRepo_dir}/app-authz-jee-vanilla
+$ mvn clean package wildfly:deploy
+----
+
+== Testing the application
+
+If your application was successfully deployed, you can access it at http://localhost:8080/app-authz-vanilla[http://localhost:8080/app-authz-vanilla]. The {project_name} Login page opens.
+
+.Login page
+image:images/getting-started/hello-world/login-page.png[alt="Login page"]
+
+.Procedure
+
+. Log in as *alice* using the password you specified for that user. The following page is displayed:
++
+.Hello World Authz main page
+image:images/getting-started/hello-world/main-page.png[alt="Hello World Authz main page"]
++
+The <<_resource_server_default_config, default settings>> defined by {project_name} when you enable authorization services for a client application provide a simple
+policy that always grants access to the resources protected by this policy.
+
+You can start by changing the default permissions and policies and test how your application responds, or even create new policies using the different
+<<_policy_overview, policy types>> provided by {project_name}.
+
+There are a plenty of things you can do now to test this application. For example, you can change the default policy by clicking
+the `Authorization` tab for the client, then client on the `Policies` tab, then click on the `Default Policy` in the list.
+Now we are going to change the `Logic` to `Negative` using the dropdown list in this page.
+
+. Log out of the demo application and log in again.
++
+You can no longer access the application.
++
+image:images/getting-started/hello-world/access-denied-page.png[alt="Access Denied page"]
+
+[role="_additional-resources"]
+.Additional resources
+* <<_policy_overview, Policy types>>
+
+== Next steps
+
+There are additional things you can do, such as:
+
+* Create a scope, define a policy and permission for it, and test it on the application side. Can the user perform an action (or anything else represented by the scope you created)?
+* Create different types of policies and associate these policies with the `Default Permission`.
+* Apply multiple policies to the `Default Permission` and test the behavior. For example, combine multiple policies and change the `Decision Strategy` accordingly.
+
+[role="_additional-resources"]
+.Additional resources
+* For more information about how to view and test permissions inside your application see <<_enforcer_authorization_context, Obtaining the authorization context>>.

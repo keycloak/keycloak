@@ -45,4 +45,5 @@ public class JpaRealmMetadata extends MapRealmEntityImpl implements Serializable
     public void setEntityVersion(Integer entityVersion) {
         this.entityVersion = entityVersion;
     }
+
 }

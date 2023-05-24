@@ -100,7 +100,7 @@ export class ApplicationsPage extends React.Component<ApplicationsPageProps, App
   }
 
   private removeConsent = (clientId: string) => {
-    this.context!.doDelete("/applications/" + clientId + "/consent")
+    this.context!.doDelete("/applications/" + encodeURIComponent(clientId) + "/consent")
       .then(() => {
         this.fetchApplications();
       });

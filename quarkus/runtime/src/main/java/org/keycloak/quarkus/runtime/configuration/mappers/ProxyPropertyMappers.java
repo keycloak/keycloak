@@ -45,10 +45,10 @@ final class ProxyPropertyMappers {
 
         switch (mode) {
             case "none":
+            case "passthrough":
                 return of(Boolean.FALSE.toString());
             case "edge":
             case "reencrypt":
-            case "passthrough":
                 return of(Boolean.TRUE.toString());
             default:
                 addInitializationException(Messages.invalidProxyMode(mode));

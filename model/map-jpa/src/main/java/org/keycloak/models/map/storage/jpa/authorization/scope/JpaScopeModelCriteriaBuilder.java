@@ -19,7 +19,7 @@ package org.keycloak.models.map.storage.jpa.authorization.scope;
 import java.util.Collection;
 import java.util.Objects;
 import java.util.UUID;
-import javax.persistence.criteria.CriteriaBuilder.In;
+import jakarta.persistence.criteria.CriteriaBuilder.In;
 
 import org.keycloak.authorization.model.Scope;
 import org.keycloak.authorization.model.Scope.SearchableFields;

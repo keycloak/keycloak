@@ -35,7 +35,7 @@ public class MapClientScopeProviderFactory extends AbstractMapProviderFactory<Ma
 
     @Override
     public MapClientScopeProvider createNew(KeycloakSession session) {
-        return new MapClientScopeProvider(session, getStorage(session));
+        return new MapClientScopeProvider(session, getMapStorage(session));
     }
 
     @Override

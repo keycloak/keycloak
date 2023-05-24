@@ -17,28 +17,25 @@
 
 package org.keycloak.models.map.storage;
 
-import org.keycloak.credential.CredentialModel;
-import org.keycloak.models.KeycloakSession;
+import org.keycloak.credential.CredentialInput;
+import org.keycloak.models.RealmModel;
 import org.keycloak.models.map.common.AbstractEntity;
-import org.keycloak.models.map.common.UpdatableEntity;
+import org.keycloak.models.map.user.MapCredentialValidationOutput;
 
 /**
- * Implementing this interface signals that the store can validate credentials.
- * This will be implemented, for example, by a store that supports SPNEGO for Kerberos authentication.
+ * A map store that can authenticate the credentials provided by a user.
  *
  * @author Alexander Schwartz
  */
-public interface MapStorageWithAuth<V extends AbstractEntity & UpdatableEntity, M> extends MapStorage<V, M> {
+public interface MapStorageWithAuth<V extends AbstractEntity, M> extends MapStorage<V, M> {
 
     /**
-     * Determine which credential types a store supports.
-     * This method should be a cheap way to query the store before creating a more expensive transaction and performing an authentication.
-     *
-     * @param type supported credential type by this store, for example {@link CredentialModel#KERBEROS}.
-     * @return <code>true</code> if the credential type is supported by this storage
+     * Authenticate a user with the provided input credentials. Use this, for example, for Kerberos SPNEGO
+     * authentication, where the user will be determined at the end of the interaction with the client.
+     * @param realm realm against which to authenticate against
+     * @param input information provided by the user
+     * @return Information on how to continue the conversion with the client, or a terminal result. For a successful
+     * authentication, will also contain information about the user.
      */
-    boolean supportsCredentialType(String type);
-
-    @Override
-    MapKeycloakTransactionWithAuth<V, M> createTransaction(KeycloakSession session);
+    MapCredentialValidationOutput<V> authenticate(RealmModel realm, CredentialInput input);
 }

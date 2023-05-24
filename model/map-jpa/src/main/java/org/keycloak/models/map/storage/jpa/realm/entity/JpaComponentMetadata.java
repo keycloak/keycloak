@@ -45,4 +45,5 @@ public class JpaComponentMetadata extends MapComponentEntityImpl implements Seri
     public void setEntityVersion(Integer entityVersion) {
         this.entityVersion = entityVersion;
     }
+
 }

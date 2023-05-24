@@ -16,7 +16,7 @@
  */
 package org.keycloak.userprofile.validator;
 
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response;
 import java.util.List;
 
 import org.keycloak.models.KeycloakSession;

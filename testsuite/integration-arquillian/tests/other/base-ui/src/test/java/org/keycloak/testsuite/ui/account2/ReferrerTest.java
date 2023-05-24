@@ -25,6 +25,7 @@ import org.keycloak.testsuite.ui.account2.page.PersonalInfoPage;
 import org.keycloak.testsuite.ui.account2.page.WelcomeScreen;
 import org.keycloak.testsuite.ui.account2.page.fragment.AbstractHeader;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -61,7 +62,14 @@ public class ReferrerTest extends AbstractAccountTest {
 
         testClient.setEnabled(true);
 
-        testRealm.setClients(Collections.singletonList(testClient));
+        ClientRepresentation rootUrlClient = new ClientRepresentation();
+        rootUrlClient.setClientId("test-client-with-root-url");
+        rootUrlClient.setRootUrl(getFakeClientUrl("foo"));
+        rootUrlClient.setBaseUrl("/bar");
+        testClient.setRedirectUris(Collections.singletonList(getFakeClientUrl("*")));
+        rootUrlClient.setEnabled(true);
+
+        testRealm.setClients(Arrays.asList(testClient, rootUrlClient));
         testRealm.setAccountTheme(LOCALIZED_THEME_PREVIEW); // using localized custom theme for the fake client localized name
     }
 
@@ -139,6 +147,22 @@ public class ReferrerTest extends AbstractAccountTest {
         welcomeScreen.clickPersonalInfoLink();
         loginToAccount();
         testReferrer(personalInfoPage.header(), false);
+    }
+
+    // Issue 16484
+    @Test
+    public void loggedInWithoutProvidedReferrerUrl() {
+        welcomeScreen.header().clickLoginBtn();
+        loginToAccount();
+
+        welcomeScreen.navigateTo("test-client-with-root-url", null);
+        welcomeScreen.header().assertLoginBtnVisible(false);
+        welcomeScreen.header().assertLogoutBtnVisible(true);
+
+        // referrer_uri parameter was not provided. So it should be set by Keycloak based on the client rootUrl and baseUrl
+        assertEquals("Back to test-client-with-root-url", welcomeScreen.header().getReferrerLinkText());
+        welcomeScreen.header().clickReferrerLink();
+        assertCurrentUrlEquals(getFakeClientUrl("foo/bar"));
     }
 
     private void testReferrer(AbstractHeader header, boolean expectReferrerVisible) {

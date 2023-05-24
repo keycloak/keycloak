@@ -44,18 +44,20 @@ Transaction:
 Feature:
 
 --features <feature> Enables a set of one or more features. Possible values are: account-api,
-                       account2, admin-api, admin-fine-grained-authz, admin2, authorization, ciba,
-                       client-policies, client-secret-rotation, declarative-user-profile, docker,
-                       dynamic-scopes, fips, impersonation, js-adapter, kerberos, map-storage,
-                       openshift-integration, par, preview, recovery-codes, scripts,
-                       step-up-authentication, token-exchange, update-email, web-authn.
+                       account2, account3, admin-api, admin-fine-grained-authz, admin2,
+                       authorization, ciba, client-policies, client-secret-rotation,
+                       declarative-user-profile, docker, dynamic-scopes, fips, impersonation,
+                       js-adapter, kerberos, map-storage, openshift-integration, par, preview,
+                       recovery-codes, scripts, step-up-authentication, token-exchange,
+                       update-email, web-authn.
 --features-disabled <feature>
                      Disables a set of one or more features. Possible values are: account-api,
-                       account2, admin-api, admin-fine-grained-authz, admin2, authorization, ciba,
-                       client-policies, client-secret-rotation, declarative-user-profile, docker,
-                       dynamic-scopes, fips, impersonation, js-adapter, kerberos, map-storage,
-                       openshift-integration, par, preview, recovery-codes, scripts,
-                       step-up-authentication, token-exchange, update-email, web-authn.
+                       account2, account3, admin-api, admin-fine-grained-authz, admin2,
+                       authorization, ciba, client-policies, client-secret-rotation,
+                       declarative-user-profile, docker, dynamic-scopes, fips, impersonation,
+                       js-adapter, kerberos, map-storage, openshift-integration, par, preview,
+                       recovery-codes, scripts, step-up-authentication, token-exchange,
+                       update-email, web-authn.
 
 HTTP/TLS:
 
@@ -79,6 +81,15 @@ Metrics:
 Vault:
 
 --vault <provider>   Enables a vault provider. Possible values are: file.
+
+Security:
+
+--fips-mode <mode>   Sets the FIPS mode. If 'non-strict' is set, FIPS is enabled but on
+                       non-approved mode. For full FIPS compliance, set 'strict' to run on approved
+                       mode. This option defaults to 'disabled' when 'fips' feature is disabled,
+                       which is by default. This option defaults to 'non-strict' when 'fips'
+                       feature is enabled. Possible values are: non-strict, strict. Default:
+                       disabled.
 
 Examples:
 

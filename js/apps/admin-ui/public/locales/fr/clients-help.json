@@ -1,0 +1,4 @@
+{
+  "loginTheme": "Sélectionnez le thème pour les pages de connexion, de mot de passe à usage unique basé sur le temps, des droits, de l''enregistrement, et du mot passe oublié.",
+  "accessTokenLifespan": "Durée maximale avant que le jeton d''accès n''expire. Cette valeur devrait être relativement plus petite que la durée d''inactivité (timeout) du SSO."
+}

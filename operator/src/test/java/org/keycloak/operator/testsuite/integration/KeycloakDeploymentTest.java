@@ -145,11 +145,19 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
             deployKeycloak(k8sclient, defaultKCDeploy, false);
 
             assertThat(
-                    Constants.DEFAULT_DIST_CONFIG.get(valueSecretHealthProp.getName())
+                    Constants.DEFAULT_DIST_CONFIG_LIST.stream()
+                                                      .filter(oneValueOrSecret -> oneValueOrSecret.getName().equalsIgnoreCase(valueSecretHealthProp.getName()))
+                                                      .findFirst()
+                                                      .get()
+                                                      .getValue()
             ).isEqualTo("true"); // just a sanity check default values did not change
 
             assertThat(
-                    Constants.DEFAULT_DIST_CONFIG.get(valueSecretProxyProp.getName())
+                    Constants.DEFAULT_DIST_CONFIG_LIST.stream()
+                                                      .filter(oneValueOrSecret -> oneValueOrSecret.getName().equalsIgnoreCase(valueSecretProxyProp.getName()))
+                                                      .findFirst()
+                                                      .get()
+                                                      .getValue()
             ).isEqualTo("passthrough"); // just a sanity check default values did not change
 
             Awaitility.await()
@@ -193,7 +201,7 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
             deployKeycloak(k8sclient, kc, true);
 
             Log.info("Trying to delete deployment");
-            assertThat(k8sclient.apps().statefulSets().withName(deploymentName).delete()).isTrue();
+            assertThat(k8sclient.apps().statefulSets().withName(deploymentName).delete()).isNotNull();
             Awaitility.await()
                     .untilAsserted(() -> assertThat(k8sclient.apps().statefulSets().withName(deploymentName).get()).isNotNull());
 

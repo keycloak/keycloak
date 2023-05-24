@@ -47,8 +47,29 @@ public interface UserSessionProvider extends Provider {
     }
     AuthenticatedClientSessionModel getClientSession(UserSessionModel userSession, ClientModel client, String clientSessionId, boolean offline);
 
-    UserSessionModel createUserSession(RealmModel realm, UserModel user, String loginUsername, String ipAddress, String authMethod, boolean rememberMe, String brokerSessionId, String brokerUserId);
+    /**
+     * @deprecated Use {@link #createUserSession(String, RealmModel, UserModel, String, String, String, boolean, String, String, UserSessionModel.SessionPersistenceState)} instead.
+     */
+    default UserSessionModel createUserSession(RealmModel realm, UserModel user, String loginUsername, String ipAddress, String authMethod, boolean rememberMe, String brokerSessionId, String brokerUserId) {
+        return createUserSession(null, realm, user, loginUsername, ipAddress, authMethod, rememberMe, brokerSessionId,
+                brokerUserId, UserSessionModel.SessionPersistenceState.PERSISTENT);
+    }
 
+    /**
+     * Creates a new user session with the given parameters.
+     *
+     * @param id identifier. Is generated if {@code null}
+     * @param realm the realm
+     * @param user user associated with the created user session
+     * @param loginUsername
+     * @param ipAddress
+     * @param authMethod
+     * @param rememberMe
+     * @param brokerSessionId
+     * @param brokerUserId
+     * @param persistenceState
+     * @return Model of the created user session
+     */
     UserSessionModel createUserSession(String id, RealmModel realm, UserModel user, String loginUsername, String ipAddress,
                                        String authMethod, boolean rememberMe, String brokerSessionId, String brokerUserId, UserSessionModel.SessionPersistenceState persistenceState);
 
@@ -76,7 +97,7 @@ public interface UserSessionProvider extends Provider {
      * Obtains the online user sessions associated with the specified client, starting from the {@code firstResult} and containing
      * at most {@code maxResults}.
      *
-     * @param realm a reference tot he realm.
+     * @param realm a reference to the realm.
      * @param client the client whose user sessions are being searched.
      * @param firstResult first result to return. Ignored if negative or {@code null}.
      * @param maxResults maximum number of results to return. Ignored if negative or {@code null}.
@@ -96,8 +117,8 @@ public interface UserSessionProvider extends Provider {
     UserSessionModel getUserSessionByBrokerSessionId(RealmModel realm, String brokerSessionId);
 
     /**
-     * Return userSession of specified ID as long as the predicate passes. Otherwise returns {@code null}.
-     * If predicate doesn't pass, implementation can do some best-effort actions to try have predicate passing (eg. download userSession from other DC)
+     * Return userSession of specified ID as long as the predicate passes. Otherwise, returns {@code null}.
+     * If predicate doesn't pass, implementation can do some best-effort actions to try to have predicate passing (e.g. download userSession from other DC)
      */
     UserSessionModel getUserSessionWithPredicate(RealmModel realm, String id, boolean offline, Predicate<UserSessionModel> predicate);
 
@@ -171,7 +192,7 @@ public interface UserSessionProvider extends Provider {
      * Obtains the offline user sessions associated with the specified client, starting from the {@code firstResult} and
      * containing at most {@code maxResults}.
      *
-     * @param realm a reference tot he realm.
+     * @param realm a reference to the realm.
      * @param client the client whose user sessions are being searched.
      * @param firstResult first result to return. Ignored if negative or {@code null}.
      * @param maxResults maximum number of results to return. Ignored if negative or {@code null}.

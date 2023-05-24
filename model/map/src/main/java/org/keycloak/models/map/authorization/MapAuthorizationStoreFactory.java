@@ -64,13 +64,13 @@ public class MapAuthorizationStoreFactory implements AmphibianProviderFactory<St
         final MapStorageProvider mapStorageProvider = AbstractMapProviderFactory.getProviderFactoryOrComponentFactory(session, storageConfigScope).create(session);
         AuthorizationProvider provider = session.getProvider(AuthorizationProvider.class);
 
-        MapStorage<MapPermissionTicketEntity, PermissionTicket> permissionTicketStore = mapStorageProvider.getStorage(PermissionTicket.class);
-        MapStorage<MapPolicyEntity, Policy> policyStore = mapStorageProvider.getStorage(Policy.class);
-        MapStorage<MapResourceServerEntity, ResourceServer> resourceServerStore = mapStorageProvider.getStorage(ResourceServer.class);
-        MapStorage<MapResourceEntity, Resource> resourceStore = mapStorageProvider.getStorage(Resource.class);
-        MapStorage<MapScopeEntity, Scope> scopeStore = mapStorageProvider.getStorage(Scope.class);
+        MapStorage<MapPermissionTicketEntity, PermissionTicket> permissionTicketStore = mapStorageProvider.getMapStorage(PermissionTicket.class);
+        MapStorage<MapPolicyEntity, Policy> policyStore = mapStorageProvider.getMapStorage(Policy.class);
+        MapStorage<MapResourceServerEntity, ResourceServer> resourceServerStore = mapStorageProvider.getMapStorage(ResourceServer.class);
+        MapStorage<MapResourceEntity, Resource> resourceStore = mapStorageProvider.getMapStorage(Resource.class);
+        MapStorage<MapScopeEntity, Scope> scopeStore = mapStorageProvider.getMapStorage(Scope.class);
 
-        authzStore = new MapAuthorizationStore(session,
+        authzStore = new MapAuthorizationStore(
             permissionTicketStore,
             policyStore,
             resourceServerStore,

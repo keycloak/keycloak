@@ -22,7 +22,6 @@ import org.infinispan.client.hotrod.RemoteCache;
 import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
-import org.keycloak.device.DeviceRepresentationProvider;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
@@ -39,7 +38,6 @@ import org.keycloak.models.sessions.infinispan.InfinispanUserSessionProviderFact
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
@@ -62,7 +60,6 @@ import static org.keycloak.connections.infinispan.InfinispanConnectionProvider.U
 @RequireProvider(UserSessionProvider.class)
 @RequireProvider(UserProvider.class)
 @RequireProvider(RealmProvider.class)
-@RequireProvider(DeviceRepresentationProvider.class)
 public class UserSessionInitializerTest extends KeycloakModelTest {
 
     private String realmId;
@@ -174,7 +171,7 @@ public class UserSessionInitializerTest extends KeycloakModelTest {
                     // create a user session in the first node
                     UserSessionModel userSessionModel = withRealm(realmId, (session, realm) -> {
                         final UserModel user = session.users().getUserByUsername(realm, "user1");
-                        return session.sessions().createUserSession(realm, user, "un1", "ip1", "auth", false, null, null);
+                        return session.sessions().createUserSession(null, realm, user, "un1", "ip1", "auth", false, null, null, UserSessionModel.SessionPersistenceState.PERSISTENT);
                     });
                     userSessionId.set(userSessionModel.getId());
                 } else {

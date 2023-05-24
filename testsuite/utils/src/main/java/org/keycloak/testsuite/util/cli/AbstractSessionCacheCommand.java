@@ -31,6 +31,8 @@ import org.keycloak.models.sessions.infinispan.changes.SessionEntityWrapper;
 import org.keycloak.models.sessions.infinispan.entities.SessionEntity;
 import org.keycloak.models.sessions.infinispan.entities.UserSessionEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.services.managers.UserSessionManager;
+
 import java.util.Arrays;
 import java.util.Set;
 import java.util.TreeSet;
@@ -337,8 +339,9 @@ public abstract class AbstractSessionCacheCommand extends AbstractCommand {
                 ClientModel client = realm.getClientByClientId(clientId);
                 UserModel user = batchSession.users().getUserByUsername(realm, username);
 
+                UserSessionManager userSessionManager = new UserSessionManager(session);
                 for (int i=0 ; i<countInIteration ; i++) {
-                    UserSessionModel userSession = session.sessions().createUserSession(realm, user, username, "127.0.0.1", "form", false, null, null);
+                    UserSessionModel userSession = userSessionManager.createUserSession(realm, user, username, "127.0.0.1", "form", false, null, null);
 
                     session.sessions().createClientSession(userSession.getRealm(), client, userSession);
                 }

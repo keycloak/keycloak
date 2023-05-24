@@ -4,17 +4,18 @@ import static org.keycloak.models.utils.ModelToRepresentation.toRepresentation;
 
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DefaultValue;
-import javax.ws.rs.GET;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DefaultValue;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
 
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.keycloak.common.Profile;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -68,21 +69,35 @@ public class GroupsResource {
 
     private GroupRepresentation toGroupHierarchy(GroupModel group, final String search, boolean exact) {
         GroupRepresentation rep = toRepresentation(group, true);
-        rep.setAccess(auth.groups().getAccess(group));
         rep.setSubGroups(group.getSubGroupsStream().filter(g ->
                 groupMatchesSearchOrIsPathElement(
                         g, search
                 )
-        ).map(subGroup -> {
-                    final GroupRepresentation subRep = ModelToRepresentation.toGroupHierarchy(
-                            subGroup, true, search, exact
-                    );
-                    subRep.setAccess(auth.groups().getAccess(subGroup));
-                    return subRep;
-                }
+        ).map(subGroup ->
+            ModelToRepresentation.toGroupHierarchy(
+                    subGroup, true, search, exact
+            )
+
         ).collect(Collectors.toList()));
 
+        if (Profile.isFeatureEnabled(Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ)) {
+            setAccess(group, rep);
+        }
+
         return rep;
+    }
+
+    // set fine-grained access for each group in the tree
+    private void setAccess(GroupModel groupTree, GroupRepresentation rootGroup) {
+        if (rootGroup == null) return;
+
+        rootGroup.setAccess(auth.groups().getAccess(groupTree));
+
+        rootGroup.getSubGroups().stream().forEach(subGroup -> {
+            GroupModel foundGroupModel = groupTree.getSubGroupsStream().filter(g -> g.getId().equals(subGroup.getId())).findFirst().get();
+            setAccess(foundGroupModel, subGroup);
+        });
+
     }
 
     private static boolean groupMatchesSearchOrIsPathElement(GroupModel group, String search) {

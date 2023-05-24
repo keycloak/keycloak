@@ -18,7 +18,7 @@
 
 package org.keycloak.authorization;
 
-import javax.ws.rs.Path;
+import jakarta.ws.rs.Path;
 
 import org.keycloak.authorization.protection.ProtectionService;
 

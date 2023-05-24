@@ -28,6 +28,7 @@ public interface ThemeSelectorProvider extends Provider {
 
     String DEFAULT = "keycloak";
     String DEFAULT_V2 = "keycloak.v2";
+    String DEFAULT_V3 = "keycloak.v3";
 
     /**
      * Return the theme name to use for the specified type
@@ -41,6 +42,10 @@ public interface ThemeSelectorProvider extends Provider {
         String name = Config.scope("theme").get("default");
         if (name != null && !name.isEmpty()) {
             return name;
+        }
+
+        if ((type == Theme.Type.ACCOUNT) && Profile.isFeatureEnabled(Profile.Feature.ACCOUNT3)) {
+            return DEFAULT_V3;
         }
 
         if ((type == Theme.Type.ACCOUNT) && Profile.isFeatureEnabled(Profile.Feature.ACCOUNT2)) {

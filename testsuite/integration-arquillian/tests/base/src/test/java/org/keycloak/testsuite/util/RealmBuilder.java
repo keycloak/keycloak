@@ -59,6 +59,11 @@ public class RealmBuilder {
         return this;
     }
 
+    public RealmBuilder displayName(String displayName) {
+        rep.setDisplayName(displayName);
+        return this;
+    }
+
     public RealmBuilder publicKey(String publicKey) {
         rep.setPublicKey(publicKey);
         return this;

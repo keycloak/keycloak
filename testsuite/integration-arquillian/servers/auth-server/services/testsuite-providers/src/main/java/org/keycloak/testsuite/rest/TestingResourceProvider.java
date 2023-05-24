@@ -46,10 +46,8 @@ import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
 import org.keycloak.models.UserSessionModel;
-import org.keycloak.models.UserSessionProvider;
 import org.keycloak.models.UserSessionSpi;
 import org.keycloak.models.map.common.AbstractMapProviderFactory;
-import org.keycloak.models.map.storage.MapStorageProvider;
 import org.keycloak.models.map.storage.hotRod.connections.DefaultHotRodConnectionProviderFactory;
 import org.keycloak.models.map.storage.hotRod.connections.HotRodConnectionProvider;
 import org.keycloak.models.map.userSession.MapUserSessionProviderFactory;
@@ -93,18 +91,18 @@ import org.keycloak.timer.TimerProvider;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.utils.MediaType;
 
-import javax.ws.rs.BadRequestException;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.GET;
-import javax.ws.rs.NotFoundException;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.Cookie;
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.BadRequestException;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.PUT;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.Cookie;
+import jakarta.ws.rs.core.Response;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -309,22 +307,13 @@ public class TestingResourceProvider implements RealmResourceProvider {
     }
 
     @GET
-    @Path("/clear-event-store")
-    @Produces(MediaType.APPLICATION_JSON)
-    public Response clearEventStore() {
-        EventStoreProvider eventStore = session.getProvider(EventStoreProvider.class);
-        eventStore.clear();
-        return Response.noContent().build();
-    }
-
-    @GET
     @Path("/clear-event-store-for-realm")
     @Produces(MediaType.APPLICATION_JSON)
     public Response clearEventStore(@QueryParam("realmId") String realmId) {
         EventStoreProvider eventStore = session.getProvider(EventStoreProvider.class);
         RealmModel realm = session.realms().getRealm(realmId);
 
-        if (realm == null) return ErrorResponse.error("Realm not found", Response.Status.NOT_FOUND);
+        if (realm == null) throw ErrorResponse.error("Realm not found", Response.Status.NOT_FOUND);
 
         eventStore.clear(realm);
         return Response.noContent().build();
@@ -438,22 +427,13 @@ public class TestingResourceProvider implements RealmResourceProvider {
     }
 
     @GET
-    @Path("/clear-admin-event-store")
-    @Produces(MediaType.APPLICATION_JSON)
-    public Response clearAdminEventStore() {
-        EventStoreProvider eventStore = session.getProvider(EventStoreProvider.class);
-        eventStore.clearAdmin();
-        return Response.noContent().build();
-    }
-
-    @GET
     @Path("/clear-admin-event-store-for-realm")
     @Produces(MediaType.APPLICATION_JSON)
     public Response clearAdminEventStore(@QueryParam("realmId") String realmId) {
         EventStoreProvider eventStore = session.getProvider(EventStoreProvider.class);
         RealmModel realm = session.realms().getRealm(realmId);
 
-        if (realm == null) return ErrorResponse.error("Realm not found", Response.Status.NOT_FOUND);
+        if (realm == null) throw ErrorResponse.error("Realm not found", Response.Status.NOT_FOUND);
 
         eventStore.clearAdmin(realm);
         return Response.noContent().build();
@@ -466,7 +446,7 @@ public class TestingResourceProvider implements RealmResourceProvider {
         EventStoreProvider eventStore = session.getProvider(EventStoreProvider.class);
         RealmModel realm = session.realms().getRealm(realmId);
 
-        if (realm == null) return ErrorResponse.error("Realm not found", Response.Status.NOT_FOUND);
+        if (realm == null) throw ErrorResponse.error("Realm not found", Response.Status.NOT_FOUND);
 
         eventStore.clearAdmin(realm, olderThan);
         return Response.noContent().build();
@@ -1045,7 +1025,7 @@ public class TestingResourceProvider implements RealmResourceProvider {
         builder.append("</HTML>");
 
         return Response.status(Response.Status.OK)
-                .type(javax.ws.rs.core.MediaType.TEXT_HTML_TYPE)
+                .type(jakarta.ws.rs.core.MediaType.TEXT_HTML_TYPE)
                 .entity(builder.toString()).build();
 
     }
@@ -1060,6 +1040,19 @@ public class TestingResourceProvider implements RealmResourceProvider {
     @Path("/display-error-message")
     public Response displayErrorMessage(@QueryParam("message") String message) {
         return ErrorPage.error(session, session.getContext().getAuthenticationSession(), Response.Status.BAD_REQUEST, message == null ? "" : message);
+    }
+
+    @GET
+    @Path("/get-provider-implementation-class")
+    @Produces(MediaType.APPLICATION_JSON)
+    public String getProviderClassName(@QueryParam("providerClass") String providerClass, @QueryParam("providerId") String providerId) {
+        try {
+            Class<? extends Provider> providerClazz = (Class<? extends Provider>) Class.forName(providerClass);
+            Provider provider = (providerId == null) ? session.getProvider(providerClazz) : session.getProvider(providerClazz, providerId);
+            return provider.getClass().getName();
+        } catch (ClassNotFoundException cnfe) {
+            throw new RuntimeException("Cannot find provider class: " + providerClass, cnfe);
+        }
     }
 
     private RealmModel getRealmByName(String realmName) {

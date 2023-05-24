@@ -31,7 +31,7 @@ if [ "$1" == "--revert" ]; then
   exit
 fi
 
-DEFAULT_QUARKUS_VERSION="999-SNAPSHOT"
+DEFAULT_QUARKUS_VERSION="999.0.0-SNAPSHOT"
 QUARKUS_VERSION=${1:-"$DEFAULT_QUARKUS_VERSION"}
 QUARKUS_BRANCH="$QUARKUS_VERSION"
 
@@ -49,7 +49,7 @@ fi
 QUARKUS_BOM=$(curl -s "$QUARKUS_BOM_URL")
 
 echo "Setting Quarkus version: $QUARKUS_VERSION"
-$(mvn versions:set-property -f ../pom.xml -Dproperty=quarkus.version -DnewVersion="$QUARKUS_VERSION" 1> /dev/null)
+$(mvn versions:set-property -f ../pom.xml -Dproperty=quarkus.version,quarkus.build.version -DnewVersion="$QUARKUS_VERSION" 1> /dev/null)
 
 DEPENDENCIES_LIST="resteasy jackson-bom hibernate-orm mysql-jdbc postgresql-jdbc microprofile-metrics-api wildfly-common wildfly-elytron"
 

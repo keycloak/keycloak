@@ -30,11 +30,13 @@ import org.keycloak.testsuite.updaters.IdentityProviderAttributeUpdater;
 import java.io.Closeable;
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import javax.xml.crypto.dsig.XMLSignature;
 
@@ -234,7 +236,7 @@ public class KcSamlSpDescriptorTest extends AbstractBrokerTest {
             Assert.assertNotNull(signingCert);
             Assert.assertNotNull(encCert);
             Assert.assertNotEquals(signingCert, encCert);
-            hasEncAlgorithms(spDescriptor, SAMLEncryptionAlgorithms.RSA_OAEP.getXmlEncIdentifier());
+            hasEncAlgorithms(spDescriptor, SAMLEncryptionAlgorithms.RSA_OAEP.getXmlEncIdentifiers());
         }
 
         // Enable signing and encryption and set encryption algorithm. Both keys are present and mapped to different realm key (signing to "rsa-generated"m encryption to "rsa-enc-generated")
@@ -253,7 +255,7 @@ public class KcSamlSpDescriptorTest extends AbstractBrokerTest {
             Assert.assertNotNull(signingCert);
             Assert.assertNotNull(encCert);
             Assert.assertNotEquals(signingCert, encCert);
-            hasEncAlgorithms(spDescriptor, SAMLEncryptionAlgorithms.RSA_OAEP.getXmlEncIdentifier());
+            hasEncAlgorithms(spDescriptor, SAMLEncryptionAlgorithms.RSA_OAEP.getXmlEncIdentifiers());
         }
     }
 
@@ -270,8 +272,8 @@ public class KcSamlSpDescriptorTest extends AbstractBrokerTest {
                     .update()) {
                 spDescriptor = getExportedSamlProvider();
                 hasEncAlgorithms(spDescriptor,
-                        SAMLEncryptionAlgorithms.RSA1_5.getXmlEncIdentifier(),
-                        SAMLEncryptionAlgorithms.RSA_OAEP.getXmlEncIdentifier()
+                        Stream.concat(Arrays.stream(SAMLEncryptionAlgorithms.RSA1_5.getXmlEncIdentifiers()),
+                                Arrays.stream(SAMLEncryptionAlgorithms.RSA_OAEP.getXmlEncIdentifiers())).toArray(String[]::new)
                 );
             }
 
@@ -282,7 +284,7 @@ public class KcSamlSpDescriptorTest extends AbstractBrokerTest {
                     .update()) {
                 spDescriptor = getExportedSamlProvider();
                 hasEncAlgorithms(spDescriptor,
-                        SAMLEncryptionAlgorithms.RSA_OAEP.getXmlEncIdentifier()
+                        SAMLEncryptionAlgorithms.RSA_OAEP.getXmlEncIdentifiers()
                 );
             }
 
@@ -292,7 +294,7 @@ public class KcSamlSpDescriptorTest extends AbstractBrokerTest {
                     .update()) {
                 spDescriptor = getExportedSamlProvider();
                 hasEncAlgorithms(spDescriptor,
-                        SAMLEncryptionAlgorithms.RSA1_5.getXmlEncIdentifier()
+                        SAMLEncryptionAlgorithms.RSA1_5.getXmlEncIdentifiers()
                 );
             }
         }
@@ -378,4 +380,66 @@ public class KcSamlSpDescriptorTest extends AbstractBrokerTest {
         }
     }
 
+    @Test
+    public void testMetadataBindingEqualsKeycloakPOSTBindingSettingsOn()
+            throws IOException, ParsingException, URISyntaxException {
+    try (Closeable idpUpdater = new IdentityProviderAttributeUpdater(identityProviderResource)
+            .setAttribute(SAMLIdentityProviderConfig.POST_BINDING_AUTHN_REQUEST, "true")
+            .setAttribute(SAMLIdentityProviderConfig.POST_BINDING_LOGOUT, "true")
+            //To ensure that backward compatibility is maintained, the value is intentionally reversed from isPostBindingAuthnRequest.
+            .setAttribute(SAMLIdentityProviderConfig.POST_BINDING_RESPONSE, "false")
+            .update())
+        {
+
+            String spDescriptorString = identityProviderResource.export(null).readEntity(String.class);
+            SAMLParser parser = SAMLParser.getInstance();
+            EntityDescriptorType o = (EntityDescriptorType) parser.parse(new StringInputStream(spDescriptorString));
+            SPSSODescriptorType spDescriptor = o.getChoiceType().get(0).getDescriptors().get(0).getSpDescriptor();
+
+            assertThat(spDescriptor.getSingleLogoutService().get(0).getBinding().toString(),
+                    is(JBossSAMLURIConstants.SAML_HTTP_POST_BINDING.get()));
+            assertThat(spDescriptor.getAssertionConsumerService().get(0).getBinding().toString(),
+                    is(JBossSAMLURIConstants.SAML_HTTP_POST_BINDING.get()));
+
+        }
+    }
+
+    @Test
+    public void testMetadataBindingEqualsKeycloakPOSTBindingSettingsOff()
+            throws IOException, ParsingException, URISyntaxException {
+        try (Closeable idpUpdater = new IdentityProviderAttributeUpdater(identityProviderResource)
+                .setAttribute(SAMLIdentityProviderConfig.POST_BINDING_AUTHN_REQUEST, "false")
+                .setAttribute(SAMLIdentityProviderConfig.POST_BINDING_LOGOUT, "false")
+                //To ensure that backward compatibility is maintained, the value is intentionally reversed from isPostBindingAuthnRequest.
+                .setAttribute(SAMLIdentityProviderConfig.POST_BINDING_RESPONSE, "true")
+                .update()) {
+
+            String spDescriptorString = identityProviderResource.export(null).readEntity(String.class);
+            SAMLParser parser = SAMLParser.getInstance();
+            EntityDescriptorType o = (EntityDescriptorType) parser.parse(new StringInputStream(spDescriptorString));
+            SPSSODescriptorType spDescriptor = o.getChoiceType().get(0).getDescriptors().get(0).getSpDescriptor();
+
+            assertThat(spDescriptor.getSingleLogoutService().get(0).getBinding().toString(),
+                    is(JBossSAMLURIConstants.SAML_HTTP_REDIRECT_BINDING.get()));
+            assertThat(spDescriptor.getAssertionConsumerService().get(0).getBinding().toString(),
+                    is(JBossSAMLURIConstants.SAML_HTTP_REDIRECT_BINDING.get()));
+
+        }
+    }
+
+    @Test
+    public void testMetadataBindingEqualsKeycloakSLOBindingSettingsIsDefault()
+            throws IOException, ParsingException, URISyntaxException {
+        try (Closeable idpUpdater = new IdentityProviderAttributeUpdater(identityProviderResource).update()){
+
+            String spDescriptorString = identityProviderResource.export(null).readEntity(String.class);
+            SAMLParser parser = SAMLParser.getInstance();
+            EntityDescriptorType o = (EntityDescriptorType) parser.parse(new StringInputStream(spDescriptorString));
+            SPSSODescriptorType spDescriptor = o.getChoiceType().get(0).getDescriptors().get(0).getSpDescriptor();
+
+            assertThat(spDescriptor.getSingleLogoutService().get(0).getBinding().toString(),
+                    is(spDescriptor.getAssertionConsumerService().get(0).getBinding().toString()));
+
+        }
+    }
 }
