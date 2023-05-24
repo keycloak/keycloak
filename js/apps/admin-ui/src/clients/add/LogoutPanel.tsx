@@ -216,7 +216,6 @@ export const LogoutPanel = ({
         save={save}
         reset={reset}
         isActive={isManager}
-        isSubmit
       />
     </FormAccess>
   );
