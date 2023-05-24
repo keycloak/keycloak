@@ -3,7 +3,7 @@
 
 [WARNING]
 ====
-This functionality depends on APIs bundled in the `keycloak-model-legacy` module.
+This functionality depends on APIs bundled in the `keycloak-model-legacy` and `keycloak-model-legacy-private` modules.
 It will soon be replaced with the new map storage API which provides a uniform way to access both local and external information about users and other entities, and the old APIs will be removed eventually.
 ====
 
