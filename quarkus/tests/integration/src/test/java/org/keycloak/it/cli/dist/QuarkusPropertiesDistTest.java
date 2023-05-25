@@ -132,6 +132,45 @@ public class QuarkusPropertiesDistTest {
                 .body(containsString("jvm_gc_"));
     }
 
+    @Test
+    @Launch({ "start", "--http-enabled=true", "--hostname-strict=false", "--config-keystore=keystore" })
+    @Order(10)
+    void testMissingSmallRyeKeyStorePasswordProperty(LaunchResult result) {
+        CLIResult cliResult = (CLIResult) result;
+        cliResult.assertError("config-keystore-password must be specified");
+        cliResult.assertNoBuild();
+    }
+
+    @Test
+    @Launch({ "start", "--http-enabled=true", "--hostname-strict=false", "--config-keystore-password=secret" })
+    @Order(11)
+    void testMissingSmallRyeKeyStorePathProperty(LaunchResult result) {
+        CLIResult cliResult = (CLIResult) result;
+        cliResult.assertError("config-keystore must be specified");
+        cliResult.assertNoBuild();
+    }
+
+    @Test
+    @Launch({ "start", "--http-enabled=true", "--hostname-strict=false", "--config-keystore=/invalid/path",
+            "--config-keystore-password=secret" })
+    @Order(12)
+    void testInvalidSmallRyeKeyStorePathProperty(LaunchResult result) {
+        CLIResult cliResult = (CLIResult) result;
+        cliResult.assertError("java.lang.IllegalArgumentException: config-keystore path does not exist: /invalid/path");
+        cliResult.assertNoBuild();
+    }
+
+    @Test
+    @Launch({ "start", "--http-enabled=true", "--hostname-strict=false",
+            "--config-keystore=../../../../src/test/resources/keystore", "--config-keystore-password=secret" })
+    @Order(13)
+    void testSmallRyeKeyStoreConfigSource(LaunchResult result) {
+        // keytool -importpass -alias kc.log-level -keystore keystore -storepass secret -storetype PKCS12 -v (with "debug" as the stored password)
+        CLIResult cliResult = (CLIResult) result;
+        assertTrue(cliResult.getOutput().contains("DEBUG"));
+        cliResult.assertBuild();
+    }
+
     public static class UpdateConsoleLogLevelToWarnFromQuarkusProps implements Consumer<KeycloakDistribution> {
         @Override
         public void accept(KeycloakDistribution distribution) {
