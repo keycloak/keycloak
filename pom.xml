@@ -41,7 +41,7 @@
         <jboss.snapshots.repo.id>jboss-snapshots-repository</jboss.snapshots.repo.id>
         <jboss.snapshots.repo.url>https://s01.oss.sonatype.org/content/repositories/snapshots/</jboss.snapshots.repo.url>
 
-        <quarkus.version>2.13.7.Final</quarkus.version>
+        <quarkus.version>2.13.8.Final</quarkus.version>
 
         <project.build-time>${timestamp}</project.build-time>
 
@@ -62,7 +62,7 @@
         <aesh.version>2.4</aesh.version>
         <apache.httpcomponents.version>4.5.13</apache.httpcomponents.version>
         <apache.httpcomponents.httpcore.version>4.4.14</apache.httpcomponents.httpcore.version>
-        <apache.mime4j.version>0.6</apache.mime4j.version>
+        <apache.mime4j.version>0.8.9</apache.mime4j.version>
         <jboss.dmr.version>1.5.1.Final</jboss.dmr.version>
         <bouncycastle.version>1.70</bouncycastle.version>
 
@@ -79,10 +79,10 @@
         <h2.version>2.1.214</h2.version>
         <jakarta.persistence.version>2.2.3</jakarta.persistence.version>
         <jakarta.servlet.jakarta-servlet-api.version>6.0.0</jakarta.servlet.jakarta-servlet-api.version>
-        <hibernate-orm.version>5.6.14.Final</hibernate-orm.version>
+        <hibernate-orm.version>5.6.15.Final</hibernate-orm.version>
         <hibernate.c3p0.version>${hibernate-orm.version}</hibernate.c3p0.version>
-        <infinispan.version>14.0.8.Final</infinispan.version>
-        <infinispan.protostream.processor.version>4.6.0.Final</infinispan.protostream.processor.version>
+        <infinispan.version>14.0.9.Final</infinispan.version>
+        <infinispan.protostream.processor.version>4.6.2.Final</infinispan.protostream.processor.version>
         <jackson.version>2.13.4</jackson.version>
         <jackson.databind.version>2.13.4.2</jackson.databind.version>
         <jackson.annotations.version>${jackson.version}</jackson.annotations.version>
@@ -95,7 +95,7 @@
         <jboss.spec.javax.xml.bind.jboss-jaxb-api_2.3_spec.version>2.0.1.Final</jboss.spec.javax.xml.bind.jboss-jaxb-api_2.3_spec.version>
         <jboss.spec.javax.servlet.jsp.jboss-jsp-api_2.3_spec.version>2.0.0.Final</jboss.spec.javax.servlet.jsp.jboss-jsp-api_2.3_spec.version>
         <log4j.version>1.2.17</log4j.version>
-        <resteasy.version>4.7.7.Final</resteasy.version>
+        <resteasy.version>4.7.9.Final</resteasy.version>
         <resteasy.undertow.version>${resteasy.version}</resteasy.undertow.version>
         <owasp.html.sanitizer.version>20211018.2</owasp.html.sanitizer.version>
         <slf4j-api.version>1.7.30</slf4j-api.version>
