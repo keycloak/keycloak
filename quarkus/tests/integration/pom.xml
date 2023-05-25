@@ -58,7 +58,6 @@
         <dependency>
             <groupId>org.bouncycastle</groupId>
             <artifactId>bc-fips</artifactId>
-            <version>${bouncycastle.fips.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -70,7 +69,6 @@
         <dependency>
             <groupId>org.bouncycastle</groupId>
             <artifactId>bctls-fips</artifactId>
-            <version>${bouncycastle.tlsfips.version}</version>
             <scope>test</scope>
         </dependency>
 
