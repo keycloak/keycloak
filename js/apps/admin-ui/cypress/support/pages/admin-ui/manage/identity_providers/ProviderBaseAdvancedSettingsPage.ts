@@ -70,8 +70,8 @@ export default class ProviderBaseGeneralSettingsPage extends PageObject {
   private postLoginFlowSelect = "#postBrokerLoginFlowAlias";
   private syncModeSelect = "#syncMode";
   private addBtn = "createProvider";
-  private saveBtn = "save";
-  private revertBtn = "revert";
+  private saveBtn = "idp-details-save";
+  private revertBtn = "idp-details-revert";
 
   private validateSignature = "#validateSignature";
   private JwksSwitch = "#useJwksUrl";

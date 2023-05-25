@@ -590,26 +590,6 @@ public class ClientModelLazyDelegate implements ClientModel {
     }
 
     @Override
-    public Stream<String> getDefaultRolesStream() {
-        return getDelegate().getDefaultRolesStream();
-    }
-
-    @Override
-    public void addDefaultRole(String name) {
-        getDelegate().addDefaultRole(name);
-    }
-
-    @Override
-    public void updateDefaultRoles(String... defaultRoles) {
-        getDelegate().updateDefaultRoles(defaultRoles);
-    }
-
-    @Override
-    public void removeDefaultRoles(String... defaultRoles) {
-        getDelegate().removeDefaultRoles(defaultRoles);
-    }
-
-    @Override
     public Stream<ProtocolMapperModel> getProtocolMappersStream() {
         return getDelegate().getProtocolMappersStream();
     }

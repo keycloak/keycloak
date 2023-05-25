@@ -25,7 +25,7 @@ import { adminClient } from "../../../admin-client";
 import { useAlerts } from "../../../components/alert/Alerts";
 import { useConfirmDialog } from "../../../components/confirm-dialog/ConfirmDialog";
 import { DynamicComponents } from "../../../components/dynamic/DynamicComponents";
-import { FormAccess } from "../../../components/form-access/FormAccess";
+import { FormAccess } from "../../../components/form/FormAccess";
 import { KeycloakSpinner } from "../../../components/keycloak-spinner/KeycloakSpinner";
 import { KeycloakTextInput } from "../../../components/keycloak-text-input/KeycloakTextInput";
 import { ViewHeader } from "../../../components/view-header/ViewHeader";

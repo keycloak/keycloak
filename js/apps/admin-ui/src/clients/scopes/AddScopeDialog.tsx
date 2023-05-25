@@ -1,34 +1,33 @@
-import { useMemo, useState } from "react";
-import { useTranslation } from "react-i18next";
+import type ClientScopeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientScopeRepresentation";
 import {
   Button,
   ButtonVariant,
   Dropdown,
+  DropdownDirection,
+  DropdownItem,
   DropdownToggle,
   Modal,
   ModalVariant,
-  DropdownDirection,
-  DropdownItem,
   Select,
   SelectOption,
   SelectVariant,
-  SelectDirection,
 } from "@patternfly/react-core";
 import {
   CaretDownIcon,
   CaretUpIcon,
   FilterIcon,
 } from "@patternfly/react-icons";
-import type ClientScopeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientScopeRepresentation";
+import { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 import {
   ClientScopeType,
   clientScopeTypesDropdown,
 } from "../../components/client-scope/ClientScopeTypes";
-import { KeycloakDataTable } from "../../components/table-toolbar/KeycloakDataTable";
 import { ListEmptyState } from "../../components/list-empty-state/ListEmptyState";
-import { getProtocolName } from "../utils";
+import { KeycloakDataTable } from "../../components/table-toolbar/KeycloakDataTable";
 import useToggle from "../../utils/useToggle";
+import { getProtocolName } from "../utils";
 
 import "./client-scopes.css";
 
@@ -268,14 +267,13 @@ export const AddScopeDialog = ({
               <Select
                 variant={SelectVariant.single}
                 className="kc-protocolType-select"
-                aria-label="Select Input"
+                aria-label={t("common:selectOne")}
                 onToggle={toggleIsProtocolTypeDropdownOpen}
                 onSelect={(_, value) =>
                   onProtocolTypeDropdownSelect(value.toString())
                 }
                 selections={protocolType}
                 isOpen={isProtocolTypeDropdownOpen}
-                direction={SelectDirection.down}
               >
                 {protocolTypeOptions}
               </Select>

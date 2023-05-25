@@ -20,7 +20,7 @@ import { HelpItem } from "ui-shared";
 import { adminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
 import { DynamicComponents } from "../components/dynamic/DynamicComponents";
-import { FormAccess } from "../components/form-access/FormAccess";
+import { FormAccess } from "../components/form/FormAccess";
 import { ViewHeader } from "../components/view-header/ViewHeader";
 import { useServerInfo } from "../context/server-info/ServerInfoProvider";
 import { useFetch } from "../utils/useFetch";

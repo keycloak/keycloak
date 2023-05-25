@@ -1,5 +1,5 @@
 import type ComponentRepresentation from "@keycloak/keycloak-admin-client/lib/defs/componentRepresentation";
-import { ActionGroup, Button, Form } from "@patternfly/react-core";
+import { Button, Form } from "@patternfly/react-core";
 import { useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
@@ -15,6 +15,7 @@ import { LdapSettingsSearching } from "./ldap/LdapSettingsSearching";
 import { LdapSettingsSynchronization } from "./ldap/LdapSettingsSynchronization";
 import { toUserFederation } from "./routes/UserFederation";
 import { SettingsCache } from "./shared/SettingsCache";
+import { FixedButtonsGroup } from "../components/form/FixedButtonGroup";
 
 export type LdapComponentRepresentation = ComponentRepresentation & {
   config?: {
@@ -71,15 +72,11 @@ export const UserFederationLdapForm = ({
         ]}
       />
       <Form onSubmit={form.handleSubmit(onSubmit)}>
-        <ActionGroup className="keycloak__form_actions">
-          <Button
-            isDisabled={!form.formState.isDirty}
-            variant="primary"
-            type="submit"
-            data-testid="ldap-save"
-          >
-            {t("common:save")}
-          </Button>
+        <FixedButtonsGroup
+          name="ldap"
+          isActive={form.formState.isDirty}
+          isSubmit
+        >
           <Button
             variant="link"
             onClick={() => navigate(toUserFederation({ realm }))}
@@ -87,7 +84,7 @@ export const UserFederationLdapForm = ({
           >
             {t("common:cancel")}
           </Button>
-        </ActionGroup>
+        </FixedButtonsGroup>
       </Form>
     </>
   );

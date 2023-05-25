@@ -2202,6 +2202,8 @@ public class UserTest extends AbstractAdminTest {
     @Test
     public void updateUserWithNewUsername() {
         switchEditUsernameAllowedOn(true);
+        getCleanup().addCleanup(() -> switchEditUsernameAllowedOn(false));
+
         String id = createUser();
 
         UserResource user = realm.users().get(id);
@@ -2211,14 +2213,12 @@ public class UserTest extends AbstractAdminTest {
 
         userRep = realm.users().get(id).toRepresentation();
         assertEquals("user11", userRep.getUsername());
-
-        // Revert
-        switchEditUsernameAllowedOn(false);
     }
 
     @Test
     public void updateUserWithoutUsername() {
         switchEditUsernameAllowedOn(true);
+        getCleanup().addCleanup(() -> switchEditUsernameAllowedOn(false));
 
         String id = createUser();
 
@@ -2242,14 +2242,12 @@ public class UserTest extends AbstractAdminTest {
         assertEquals("user1@localhost", rep.getEmail());
         assertEquals("Firstname", rep.getFirstName());
         assertEquals("Lastname", rep.getLastName());
-
-        // Revert
-        switchEditUsernameAllowedOn(false);
     }
 
     @Test
     public void updateUserWithEmailAsUsername() {
         switchRegistrationEmailAsUsername(true);
+        getCleanup().addCleanup(() -> switchRegistrationEmailAsUsername(false));
 
         String id = createUser();
 
@@ -2262,8 +2260,6 @@ public class UserTest extends AbstractAdminTest {
 
         userRep = realm.users().get(id).toRepresentation();
         assertEquals("user11@localhost", userRep.getUsername());
-
-        switchRegistrationEmailAsUsername(false);
     }
 
     @Test
