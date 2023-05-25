@@ -43,7 +43,7 @@
         <jboss.snapshots.repo.id>jboss-snapshots-repository</jboss.snapshots.repo.id>
         <jboss.snapshots.repo.url>https://s01.oss.sonatype.org/content/repositories/snapshots/</jboss.snapshots.repo.url>
 
-        <quarkus.version>3.0.3.Final</quarkus.version>
+        <quarkus.version>3.0.4.Final</quarkus.version>
         <quarkus.build.version>3.0.3.Final</quarkus.build.version>
 
         <project.build-time>${timestamp}</project.build-time>
@@ -113,7 +113,7 @@
         <jboss.spec.javax.servlet.jsp.jboss-jsp-api_2.3_spec.version>2.0.0.Final</jboss.spec.javax.servlet.jsp.jboss-jsp-api_2.3_spec.version>
         <log4j.version>1.2.17</log4j.version>
         <resteasy-legacy.version>4.7.7.Final</resteasy-legacy.version>
-        <resteasy.version>6.2.3.Final</resteasy.version>
+        <resteasy.version>6.2.4.Final</resteasy.version>
         <resteasy.undertow.version>${resteasy.version}</resteasy.undertow.version>
         <owasp.html.sanitizer.version>20220608.1</owasp.html.sanitizer.version>
         <slf4j-api.version>2.0.6</slf4j-api.version>
