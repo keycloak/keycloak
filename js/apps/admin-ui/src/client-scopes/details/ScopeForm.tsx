@@ -10,7 +10,7 @@ import {
   ValidatedOptions,
 } from "@patternfly/react-core";
 import { useEffect, useState } from "react";
-import { Controller, useForm, useWatch } from "react-hook-form";
+import { Controller, FormProvider, useForm, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 
@@ -21,13 +21,15 @@ import {
   clientScopeTypesSelectOptions,
 } from "../../components/client-scope/ClientScopeTypes";
 import { FormAccess } from "../../components/form-access/FormAccess";
-import { HelpItem } from "ui-shared";
+import { HelpItem, TextControl } from "ui-shared";
 import { KeycloakTextArea } from "../../components/keycloak-text-area/KeycloakTextArea";
 import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { useLoginProviders } from "../../context/server-info/ServerInfoProvider";
 import { convertAttributeNameToForm, convertToFormValues } from "../../util";
 import { toClientScopes } from "../routes/ClientScopes";
+import useIsFeatureEnabled, { Feature } from "../../utils/useIsFeatureEnabled";
+import { DefaultSwitchControl } from "../../components/SwitchControl";
 
 type ScopeFormProps = {
   clientScope?: ClientScopeRepresentation;
@@ -37,16 +39,19 @@ type ScopeFormProps = {
 export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
   const { t } = useTranslation("client-scopes");
   const { t: tc } = useTranslation("clients");
+  const form = useForm<ClientScopeDefaultOptionalType>({ mode: "onChange" });
   const {
     register,
     control,
     handleSubmit,
     setValue,
     formState: { errors, isDirty, isValid },
-  } = useForm<ClientScopeDefaultOptionalType>({ mode: "onChange" });
+  } = form;
   const { realm } = useRealm();
 
   const providers = useLoginProviders();
+  const isFeatureEnabled = useIsFeatureEnabled();
+  const isDynamicScopesEnabled = isFeatureEnabled(Feature.DynamicScopes);
   const [open, isOpen] = useState(false);
   const [openType, setOpenType] = useState(false);
 
@@ -56,6 +61,22 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
     defaultValue:
       clientScope?.attributes?.["display.on.consent.screen"] ?? "true",
   });
+
+  const dynamicScope = useWatch({
+    control,
+    name: convertAttributeNameToForm<ClientScopeDefaultOptionalType>(
+      "attributes.is.dynamic.scope"
+    ),
+    defaultValue: "false",
+  });
+
+  const setDynamicRegex = (value: string, append: boolean) =>
+    setValue(
+      convertAttributeNameToForm<ClientScopeDefaultOptionalType>(
+        "attributes.dynamic.scope.regexp"
+      ),
+      append ? `${value}:*` : value
+    );
 
   useEffect(() => {
     convertToFormValues(clientScope ?? {}, setValue);
@@ -88,9 +109,41 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
             errors.name ? ValidatedOptions.error : ValidatedOptions.default
           }
           isRequired
-          {...register("name", { required: true })}
+          {...register("name", {
+            required: true,
+            onChange: (e) => {
+              if (isDynamicScopesEnabled) {
+                setDynamicRegex(e.target.value, true);
+              }
+            },
+          })}
         />
       </FormGroup>
+      {isDynamicScopesEnabled && (
+        <FormProvider {...form}>
+          <DefaultSwitchControl
+            name={convertAttributeNameToForm<ClientScopeDefaultOptionalType>(
+              "attributes.is.dynamic.scope"
+            )}
+            label={t("dynamicScope")}
+            labelIcon={t("client-scopes-help:dynamicScope")}
+            onChange={(value) => {
+              setDynamicRegex(value ? form.getValues("name") || "" : "", value);
+            }}
+            stringify
+          />
+          {dynamicScope === "true" && (
+            <TextControl
+              name={convertAttributeNameToForm<ClientScopeDefaultOptionalType>(
+                "attributes.dynamic.scope.regexp"
+              )}
+              label={t("dynamicScopeFormat")}
+              labelIcon={t("client-scopes-help:dynamicScopeFormat")}
+              isDisabled
+            />
+          )}
+        </FormProvider>
+      )}
       <FormGroup
         label={t("common:description")}
         labelIcon={

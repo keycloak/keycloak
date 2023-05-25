@@ -1,5 +1,7 @@
 {
   "name": "Name of the client scope. Must be unique in the realm. Name should not contain space characters as it is used as value of scope parameter",
+  "dynamicScope": "If on, this scope will be considered a Dynamic Scope, which will be comprised of a static and a variable portion.",
+  "dynamicScopeFormat": "This is the regular expression that the system will use to extract the scope name and variable.",
   "description": "Description of the client scope",
   "protocol": "Which SSO protocol configuration is being supplied by this client scope",
   "type": "Client scopes, which will be added as default scopes to each created client",
