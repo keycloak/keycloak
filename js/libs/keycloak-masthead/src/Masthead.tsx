@@ -75,7 +75,10 @@ const KeycloakMasthead = ({
     <PageHeader
       {...rest}
       logo={
-        <div onClick={onBrandLogoClick}>
+        <div
+          onClick={onBrandLogoClick}
+          style={onBrandLogoClick ? { cursor: "pointer" } : {}}
+        >
           <Brand {...brandProps} />
         </div>
       }
