@@ -136,18 +136,23 @@ public class RealmLocalizationResource {
     @Path("{locale}")
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    public Map<String, String> getRealmLocalizationTexts(@PathParam("locale") String locale,  @QueryParam("useRealmDefaultLocaleFallback") Boolean useFallback) {
+    public Map<String, String> getRealmLocalizationTexts(@PathParam("locale") String locale,
+            @Deprecated @QueryParam("useRealmDefaultLocaleFallback") Boolean useFallback) {
         auth.requireAnyAdminRole();
 
-        Map<String, String> realmLocalizationTexts = new HashMap<>();
-        if(useFallback != null && useFallback && StringUtil.isNotBlank(realm.getDefaultLocale())) {
-            realmLocalizationTexts.putAll(realm.getRealmLocalizationTextsByLocale(realm.getDefaultLocale()));
+        // this fallback is no longer needed since the fix for #15845, don't forget to remove it from the API
+        if (useFallback != null && useFallback) {
+            Map<String, String> realmLocalizationTexts = new HashMap<>();
+            if (StringUtil.isNotBlank(realm.getDefaultLocale())) {
+                realmLocalizationTexts.putAll(realm.getRealmLocalizationTextsByLocale(realm.getDefaultLocale()));
+            }
+
+            realmLocalizationTexts.putAll(realm.getRealmLocalizationTextsByLocale(locale));
+
+            return realmLocalizationTexts;
         }
 
-        realmLocalizationTexts.putAll(realm.getRealmLocalizationTextsByLocale(locale));
-
-        return realmLocalizationTexts;
-
+        return realm.getRealmLocalizationTextsByLocale(locale);
     }
 
     @Path("{locale}/{key}")

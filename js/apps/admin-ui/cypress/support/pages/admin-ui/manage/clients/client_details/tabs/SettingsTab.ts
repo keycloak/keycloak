@@ -30,7 +30,7 @@ export default class SettingsTab extends PageObject {
   private displayClientSwitch = "#kc-display-on-client-switch";
   private consentScreenText = "#kc-consent-screen-text";
 
-  private saveBtn = "settingsSave";
+  private saveBtn = "settings-save";
   private revertBtn = "settingsRevert";
 
   private redirectUris = "redirectUris";

@@ -157,7 +157,7 @@ public class ParEndpoint extends AbstractParEndpoint {
             });
         params.put(PAR_CREATED_TIME, String.valueOf(System.currentTimeMillis()));
 
-        SingleUseObjectProvider singleUseStore = session.getProvider(SingleUseObjectProvider.class);
+        SingleUseObjectProvider singleUseStore = session.singleUseObjects();
         singleUseStore.put(key, expiresIn, params);
 
         ParResponse parResponse = new ParResponse(requestUri, expiresIn);

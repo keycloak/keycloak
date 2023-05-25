@@ -222,9 +222,6 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
                 .type(ProviderConfigProperty.BOOLEAN_TYPE)
                 .defaultValue("false")
                 .add()
-                .property().name(KerberosConstants.SERVER_PRINCIPAL)
-                .type(ProviderConfigProperty.STRING_TYPE)
-                .add()
                 .build();
     }
 

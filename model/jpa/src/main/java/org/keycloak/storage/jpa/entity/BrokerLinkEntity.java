@@ -34,7 +34,7 @@ import java.io.Serializable;
  */
 @NamedQueries({
         @NamedQuery(name= "findBrokerLinkByUser", query="select link from BrokerLinkEntity link where link.userId = :userId"),
-        @NamedQuery(name= "findBrokerLinkByUserAndProvider", query="select link from BrokerLinkEntity link where link.userId = :userId and link.identityProvider = :identityProvider and link.realmId = :realmId"),
+        @NamedQuery(name= "findBrokerLinkByUserAndProvider", query="select link from BrokerLinkEntity link where link.identityProvider = :identityProvider and link.userId = :userId and link.realmId = :realmId"),
         @NamedQuery(name= "findUserByBrokerLinkAndRealm", query="select link.userId from BrokerLinkEntity link where link.realmId = :realmId and link.identityProvider = :identityProvider and link.brokerUserId = :brokerUserId"),
         @NamedQuery(name= "deleteBrokerLinkByStorageProvider", query="delete from BrokerLinkEntity social where social.storageProviderId = :storageProviderId"),
         @NamedQuery(name= "deleteBrokerLinkByRealm", query="delete from BrokerLinkEntity social where social.realmId = :realmId"),

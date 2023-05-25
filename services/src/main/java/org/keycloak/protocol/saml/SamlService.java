@@ -1126,7 +1126,7 @@ public class SamlService extends AuthorizationEndpointBase {
 
 
     private SingleUseObjectProvider getSingleUseStore() {
-        return session.getProvider(SingleUseObjectProvider.class);
+        return session.singleUseObjects();
     }
 
     /**

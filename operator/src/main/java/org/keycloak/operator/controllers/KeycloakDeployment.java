@@ -429,19 +429,17 @@ public class KeycloakDeployment extends OperatorManagedResource implements Statu
 
     private List<EnvVar> getEnvVars() {
         // default config values
-        List<ValueOrSecret> serverConfig = Constants.DEFAULT_DIST_CONFIG.entrySet().stream()
-                .map(e -> new ValueOrSecret(e.getKey(), e.getValue()))
-                .collect(Collectors.toList());
+        List<ValueOrSecret> serverConfigsList = new ArrayList<>(Constants.DEFAULT_DIST_CONFIG_LIST);
 
         // merge with the CR; the values in CR take precedence
         if (keycloakCR.getSpec().getAdditionalOptions() != null) {
-            serverConfig.removeAll(keycloakCR.getSpec().getAdditionalOptions());
-            serverConfig.addAll(keycloakCR.getSpec().getAdditionalOptions());
+            serverConfigsList.removeAll(keycloakCR.getSpec().getAdditionalOptions());
+            serverConfigsList.addAll(keycloakCR.getSpec().getAdditionalOptions());
         }
 
         // set env vars
         serverConfigSecretsNames = new HashSet<>();
-        List<EnvVar> envVars = serverConfig.stream()
+        List<EnvVar> envVars = serverConfigsList.stream()
                 .map(v -> {
                     var envBuilder = new EnvVarBuilder().withName(KeycloakDistConfigurator.getKeycloakOptionEnvVarName(v.getName()));
                     var secret = v.getSecret();

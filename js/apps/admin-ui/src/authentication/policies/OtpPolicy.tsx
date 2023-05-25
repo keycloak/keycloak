@@ -23,7 +23,7 @@ import { HelpItem } from "ui-shared";
 
 import { adminClient } from "../../admin-client";
 import { useAlerts } from "../../components/alert/Alerts";
-import { FormAccess } from "../../components/form-access/FormAccess";
+import { FormAccess } from "../../components/form/FormAccess";
 import { TimeSelector } from "../../components/time-selector/TimeSelector";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import useLocaleSort from "../../utils/useLocaleSort";

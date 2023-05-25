@@ -25,7 +25,7 @@ import { useTranslation } from "react-i18next";
 
 import { adminClient } from "../../admin-client";
 import { useAlerts } from "../../components/alert/Alerts";
-import { FormAccess } from "../../components/form-access/FormAccess";
+import { FormAccess } from "../../components/form/FormAccess";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
 import { PolicyRow } from "./PolicyRow";

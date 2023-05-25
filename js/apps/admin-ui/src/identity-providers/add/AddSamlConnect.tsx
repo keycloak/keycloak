@@ -11,7 +11,7 @@ import { Link, useNavigate } from "react-router-dom";
 
 import { adminClient } from "../../admin-client";
 import { useAlerts } from "../../components/alert/Alerts";
-import { FormAccess } from "../../components/form-access/FormAccess";
+import { FormAccess } from "../../components/form/FormAccess";
 import { ViewHeader } from "../../components/view-header/ViewHeader";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { toIdentityProvider } from "../routes/IdentityProvider";
@@ -36,7 +36,7 @@ export default function AddSamlConnect() {
     formState: { isDirty },
   } = form;
 
-  const { addAlert } = useAlerts();
+  const { addAlert, addError } = useAlerts();
   const { realm } = useRealm();
 
   const onSubmit = async (provider: DiscoveryIdentityProvider) => {
@@ -56,12 +56,7 @@ export default function AddSamlConnect() {
         })
       );
     } catch (error: any) {
-      addAlert(
-        t("createError", {
-          error: error.response?.data?.errorMessage || error,
-        }),
-        AlertVariant.danger
-      );
+      addError("identity-providers:createError", error);
     }
   };
 

@@ -3,6 +3,8 @@
 
 == Using a vault to obtain secrets
 
+Keycloak currently provides two out-of-the-box implementations of the Vault SPI: a plain-text file-based vault and Java KeyStore-based vault.
+
 To obtain a secret from a vault rather than entering it directly, enter the following specially crafted string into the appropriate field:
 
 [source]
@@ -11,7 +13,7 @@ ${vault.key}
 ----
 where the `key` is the name of the secret recognized by the vault.
 
-To prevent secrets from leaking across realms, {project_name} combines the realm name with the `key` obtained from the vault expression. This method means that the `key` does not directly map to an entry in the vault but creates the final entry name according to the algorithm used to combine the `key` with the realm name.
+To prevent secrets from leaking across realms, {project_name} combines the realm name with the `key` obtained from the vault expression. This method means that the `key` does not directly map to an entry in the vault but creates the final entry name according to the algorithm used to combine the `key` with the realm name. In case of the file-based vault, such combination reflects to a specific filename, for the Java KeyStore-based vault it's a specific alias name.
 
 You can obtain the secret from the vault in the following fields:
 

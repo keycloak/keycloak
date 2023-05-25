@@ -15,6 +15,10 @@ export type Environment = {
   resourceVersion: string;
   /** Indicates if the application is running as a Keycloak theme. */
   isRunningAsTheme: boolean;
+  /** Indicates the src for the Brand image */
+  logo: string;
+  /** Indicates the url to be followed when Brand image is clicked */
+  logoUrl: string;
 };
 
 // During development the realm can be passed as a query parameter when redirecting back from Keycloak.
@@ -30,6 +34,8 @@ const defaultEnvironment: Environment = {
   masterRealm: "master",
   resourceVersion: "unknown",
   isRunningAsTheme: false,
+  logo: "/logo.svg",
+  logoUrl: "",
 };
 
 // Merge the default and injected environment variables together.

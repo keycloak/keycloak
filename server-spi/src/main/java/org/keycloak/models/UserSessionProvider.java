@@ -97,7 +97,7 @@ public interface UserSessionProvider extends Provider {
      * Obtains the online user sessions associated with the specified client, starting from the {@code firstResult} and containing
      * at most {@code maxResults}.
      *
-     * @param realm a reference tot he realm.
+     * @param realm a reference to the realm.
      * @param client the client whose user sessions are being searched.
      * @param firstResult first result to return. Ignored if negative or {@code null}.
      * @param maxResults maximum number of results to return. Ignored if negative or {@code null}.
@@ -117,8 +117,8 @@ public interface UserSessionProvider extends Provider {
     UserSessionModel getUserSessionByBrokerSessionId(RealmModel realm, String brokerSessionId);
 
     /**
-     * Return userSession of specified ID as long as the predicate passes. Otherwise returns {@code null}.
-     * If predicate doesn't pass, implementation can do some best-effort actions to try have predicate passing (eg. download userSession from other DC)
+     * Return userSession of specified ID as long as the predicate passes. Otherwise, returns {@code null}.
+     * If predicate doesn't pass, implementation can do some best-effort actions to try to have predicate passing (e.g. download userSession from other DC)
      */
     UserSessionModel getUserSessionWithPredicate(RealmModel realm, String id, boolean offline, Predicate<UserSessionModel> predicate);
 
@@ -192,7 +192,7 @@ public interface UserSessionProvider extends Provider {
      * Obtains the offline user sessions associated with the specified client, starting from the {@code firstResult} and
      * containing at most {@code maxResults}.
      *
-     * @param realm a reference tot he realm.
+     * @param realm a reference to the realm.
      * @param client the client whose user sessions are being searched.
      * @param firstResult first result to return. Ignored if negative or {@code null}.
      * @param maxResults maximum number of results to return. Ignored if negative or {@code null}.

@@ -31,7 +31,7 @@ import { HelpItem } from "ui-shared";
 import { adminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
-import { FormAccess } from "../components/form-access/FormAccess";
+import { FormAccess } from "../components/form/FormAccess";
 import { KeycloakSpinner } from "../components/keycloak-spinner/KeycloakSpinner";
 import { KeycloakTextArea } from "../components/keycloak-text-area/KeycloakTextArea";
 import { KeycloakTextInput } from "../components/keycloak-text-input/KeycloakTextInput";

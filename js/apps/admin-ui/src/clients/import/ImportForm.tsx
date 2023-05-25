@@ -14,7 +14,7 @@ import { Link, useNavigate } from "react-router-dom";
 
 import { adminClient } from "../../admin-client";
 import { useAlerts } from "../../components/alert/Alerts";
-import { FormAccess } from "../../components/form-access/FormAccess";
+import { FormAccess } from "../../components/form/FormAccess";
 import { FileUploadForm } from "../../components/json-file-upload/FileUploadForm";
 import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 import { ViewHeader } from "../../components/view-header/ViewHeader";

@@ -41,13 +41,13 @@
     "react-hook-form": "7.43.9"
   },
   "devDependencies": {
-    "@types/react": "^18.2.4",
-    "@types/react-dom": "^18.2.3",
-    "@vitejs/plugin-react-swc": "^3.3.0",
+    "@types/react": "^18.2.7",
+    "@types/react-dom": "^18.2.4",
+    "@vitejs/plugin-react-swc": "^3.3.1",
     "rollup-plugin-peer-deps-external": "^2.2.4",
-    "vite": "^4.3.4",
+    "vite": "^4.3.8",
     "vite-plugin-checker": "^0.6.0",
     "vite-plugin-dts": "^2.3.0",
-    "vitest": "^0.31.0"
+    "vitest": "^0.31.1"
   }
 }

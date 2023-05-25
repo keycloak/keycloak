@@ -92,7 +92,6 @@ import org.keycloak.theme.freemarker.FreeMarkerProvider;
 import org.keycloak.userprofile.UserProfileContext;
 import org.keycloak.userprofile.UserProfileProvider;
 import org.keycloak.utils.MediaType;
-import org.keycloak.utils.StringUtil;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -379,14 +378,9 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
      * @return message bundle for other use
      */
     protected Properties handleThemeResources(Theme theme, Locale locale) {
-        Properties messagesBundle = new Properties();
+        Properties messagesBundle;
         try {
-            if(!StringUtil.isNotBlank(realm.getDefaultLocale()))
-            {
-                messagesBundle.putAll(realm.getRealmLocalizationTextsByLocale(realm.getDefaultLocale()));
-            }
-            messagesBundle.putAll(theme.getMessages(locale));
-            messagesBundle.putAll(realm.getRealmLocalizationTextsByLocale(locale.toLanguageTag()));
+            messagesBundle = theme.getEnhancedMessages(realm, locale);
             attributes.put("msg", new MessageFormatterMethod(locale, messagesBundle));
             attributes.put("advancedMsg", new AdvancedMessageFormatterMethod(locale, messagesBundle));
         } catch (IOException e) {
@@ -441,8 +435,6 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
 
         Locale locale = session.getContext().resolveLocale(user);
         Properties messagesBundle = handleThemeResources(theme, locale);
-        Map<String, String> localizationTexts = realm.getRealmLocalizationTextsByLocale(locale.getCountry());
-        messagesBundle.putAll(localizationTexts);
         FormMessage msg = new FormMessage(null, message);
         return formatMessage(msg, messagesBundle, locale);
     }

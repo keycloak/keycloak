@@ -14,7 +14,7 @@ import { HelpItem } from "ui-shared";
 
 import { adminClient } from "../../admin-client";
 import { useAlerts } from "../../components/alert/Alerts";
-import { FormAccess } from "../../components/form-access/FormAccess";
+import { FormAccess } from "../../components/form/FormAccess";
 import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import useFormatDate, { FORMAT_DATE_AND_TIME } from "../../utils/useFormatDate";

@@ -95,7 +95,7 @@ The {project_name} Quarkus distribution now supports importing your realms direc
 
 The {project_name} Quarkus distribution now initially supports logging to a File and logging structured data using JSON.
 
-For more information on the improvements, check the corresponding https://www.keycloak.org/server/logging[guide].
+For more information on the improvements, check the corresponding https://www.keycloak.org/server/logging[Logging] {section}.
 
 === Environment variable expansion for values in keycloak.conf
 

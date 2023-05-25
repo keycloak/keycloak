@@ -33,6 +33,7 @@ import org.keycloak.models.KeycloakTransactionManager;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RealmProvider;
 import org.keycloak.models.RoleProvider;
+import org.keycloak.models.SingleUseObjectProvider;
 import org.keycloak.models.ThemeManager;
 import org.keycloak.models.TokenManager;
 import org.keycloak.models.UserCredentialManager;
@@ -79,9 +80,6 @@ public class DefaultKeycloakSession implements KeycloakSession {
     private DatastoreProvider datastoreProvider;
     @Deprecated
     private UserCredentialManager userCredentialStorageManager;
-    private UserSessionProvider sessionProvider;
-    private UserLoginFailureProvider userLoginFailureProvider;
-    private AuthenticationSessionProvider authenticationSessionProvider;
     private final KeycloakContext context;
     private KeyManager keyManager;
     private ThemeManager themeManager;
@@ -390,26 +388,22 @@ public class DefaultKeycloakSession implements KeycloakSession {
 
     @Override
     public UserSessionProvider sessions() {
-        if (sessionProvider == null) {
-            sessionProvider = getProvider(UserSessionProvider.class);
-        }
-        return sessionProvider;
+        return getDatastoreProvider().userSessions();
     }
 
     @Override
     public UserLoginFailureProvider loginFailures() {
-        if (userLoginFailureProvider == null) {
-            userLoginFailureProvider = getProvider(UserLoginFailureProvider.class);
-        }
-        return userLoginFailureProvider;
+        return getDatastoreProvider().loginFailures();
     }
 
     @Override
     public AuthenticationSessionProvider authenticationSessions() {
-        if (authenticationSessionProvider == null) {
-            authenticationSessionProvider = getProvider(AuthenticationSessionProvider.class);
-        }
-        return authenticationSessionProvider;
+        return getDatastoreProvider().authSessions();
+    }
+
+    @Override
+    public SingleUseObjectProvider singleUseObjects() {
+        return getDatastoreProvider().singleUseObjects();
     }
 
     @Override
@@ -471,9 +465,11 @@ public class DefaultKeycloakSession implements KeycloakSession {
         try {
             Consumer<? super Provider> safeClose = p -> {
                 try {
-                    p.close();
+                    if (p != null) {
+                        p.close();
+                    }
                 } catch (Exception e) {
-                    // Ignore exception
+                    LOG.warnf(e, "Unable to close provider %s", p.getClass().getName());
                 }
             };
             providers.values().forEach(safeClose);

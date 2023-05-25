@@ -142,4 +142,8 @@ export default class SidebarPage extends CommonElements {
     cy.get('[role="progressbar"]').should("not.exist");
     return this;
   }
+
+  checkRealmSettingsLinkContainsText(expectedText: string) {
+    cy.get(this.realmSettingsBtn).should("contain", expectedText);
+  }
 }

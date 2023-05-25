@@ -38,6 +38,7 @@ import static org.keycloak.testsuite.util.ClientPoliciesUtil.createHolderOfKeyEn
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createIntentClientBindCheckExecutorConfig;
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createPKCEEnforceExecutorConfig;
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createRejectisResourceOwnerPasswordCredentialsGrantExecutorConfig;
+import static org.keycloak.testsuite.util.ClientPoliciesUtil.createRejectImplicitGrantExecutorConfig;
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createSecureClientAuthenticatorExecutorConfig;
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createSecureSigningAlgorithmForSignedJwtEnforceExecutorConfig;
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createTestRaiseExeptionConditionConfig;
@@ -103,6 +104,7 @@ import org.keycloak.services.clientpolicy.executor.FullScopeDisabledExecutorFact
 import org.keycloak.services.clientpolicy.executor.HolderOfKeyEnforcerExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.IntentClientBindCheckExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.PKCEEnforcerExecutorFactory;
+import org.keycloak.services.clientpolicy.executor.RejectImplicitGrantExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.RejectRequestExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.RejectResourceOwnerPasswordCredentialsGrantExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.SecureClientAuthenticatorExecutorFactory;
@@ -1155,5 +1157,70 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
         oauth.openLoginForm();
         assertEquals(OAuthErrorException.INVALID_REQUEST, oauth.getCurrentFragment().get(OAuth2Constants.ERROR));
         assertEquals("no claim for an intent value for ID token" , oauth.getCurrentFragment().get(OAuth2Constants.ERROR_DESCRIPTION));
+    }
+
+    @Test
+    public void testRejectImplicitGrantExecutor() throws Exception {
+
+        String clientId = generateSuffixedName(CLIENT_NAME);
+        String clientSecret = "secret";
+
+        createClientByAdmin(clientId, (ClientRepresentation clientRep) -> {
+            clientRep.setSecret(clientSecret);
+            clientRep.setStandardFlowEnabled(Boolean.TRUE);
+            clientRep.setImplicitFlowEnabled(Boolean.TRUE);
+            clientRep.setPublicClient(Boolean.FALSE);
+        });
+
+        // register profiles
+        String json = (new ClientProfilesBuilder()).addProfile(
+                (new ClientProfileBuilder()).createProfile(PROFILE_NAME, "Az Elso Profil")
+                    .addExecutor(RejectImplicitGrantExecutorFactory.PROVIDER_ID,
+                        createRejectImplicitGrantExecutorConfig(Boolean.TRUE))
+                    .toRepresentation()
+                ).toString();
+        updateProfiles(json);
+
+        // register policies
+        json = (new ClientPoliciesBuilder()).addPolicy(
+                (new ClientPolicyBuilder()).createPolicy(POLICY_NAME, "Az Elso Politika", Boolean.TRUE)
+                    .addCondition(AnyClientConditionFactory.PROVIDER_ID, 
+                        createAnyClientConditionConfig())
+                    .addProfile(PROFILE_NAME)
+                    .toRepresentation()
+                ).toString();
+        updatePolicies(json);
+
+        try {
+            String expectedErrorDescription = "Implicit/Hybrid flow is prohibited.";
+            oauth.clientId(clientId);
+
+            // implicit grant
+            testProhibitedImplicitOrHybridFlow(false, OIDCResponseType.TOKEN, null, OAuthErrorException.INVALID_GRANT, expectedErrorDescription);
+
+            // hybrid grant
+            testProhibitedImplicitOrHybridFlow(true, OIDCResponseType.TOKEN + " " + OIDCResponseType.ID_TOKEN, "exsefweag", OAuthErrorException.INVALID_GRANT, expectedErrorDescription);
+
+            // hybrid grant
+            testProhibitedImplicitOrHybridFlow(true, OIDCResponseType.TOKEN + " " + OIDCResponseType.CODE, "exsefweag", OAuthErrorException.INVALID_GRANT, expectedErrorDescription);
+
+            // hybrid grant
+            testProhibitedImplicitOrHybridFlow(true, OIDCResponseType.TOKEN + " " + OIDCResponseType.CODE + " " + OIDCResponseType.ID_TOKEN, "exsefweag", OAuthErrorException.INVALID_GRANT, expectedErrorDescription);
+
+        } finally {
+            // revert test client instance settings the same as OAuthClient.init
+            oauth.openid(true);
+            oauth.responseType(OIDCResponseType.CODE);
+            oauth.nonce(null);
+        }
+    }
+
+    private void testProhibitedImplicitOrHybridFlow(boolean isOpenid, String responseType, String nonce, String expectedError, String expectedErrorDescription) {
+        oauth.openid(isOpenid);
+        oauth.responseType(responseType);
+        oauth.nonce(nonce);
+        oauth.openLoginForm();
+        assertEquals(expectedError, oauth.getCurrentFragment().get(OAuth2Constants.ERROR));
+        assertEquals(expectedErrorDescription, oauth.getCurrentFragment().get(OAuth2Constants.ERROR_DESCRIPTION));
     }
 }

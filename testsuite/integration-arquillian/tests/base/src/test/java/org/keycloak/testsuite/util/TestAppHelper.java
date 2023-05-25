@@ -83,6 +83,21 @@ public class TestAppHelper {
         return appPage.isCurrent();
     }
 
+    public boolean login(String username, String password, String realm, String clientId, String idp) throws URISyntaxException, IOException {
+        oauth.clientId(clientId);
+        loginPage.open(realm);
+        loginPage.clickSocial(idp);
+        loginPage.login(username, password);
+
+        if (loginPage.isCurrent(realm)) {
+            return false;
+        }
+
+        completeLogin();
+
+        return appPage.isCurrent();
+    }
+
     public boolean logout() {
         try (CloseableHttpResponse response = oauth.doLogout(refreshToken, "password")) {
             return response.getStatusLine().getStatusCode() == Response.Status.NO_CONTENT.getStatusCode();

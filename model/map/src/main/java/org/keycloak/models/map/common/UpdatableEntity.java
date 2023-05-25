@@ -33,6 +33,11 @@ public interface UpdatableEntity {
         public void clearUpdatedFlag() {
             this.updated = false;
         }
+
+        @Override
+        public void markUpdatedFlag() {
+            this.updated = true;
+        }
     }
 
     /**
@@ -46,4 +51,10 @@ public interface UpdatableEntity {
      * {@link #isUpdated()} would return {@code false}.
      */
     default void clearUpdatedFlag() { }
+
+    /**
+     * An optional operation setting the updated flag. Right after using this method, the
+     * {@link #isUpdated()} would return {@code true}.
+     */
+    default void markUpdatedFlag() { }
 }

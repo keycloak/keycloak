@@ -26,9 +26,8 @@ import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
 
 import java.lang.reflect.Method;
+import java.util.AbstractMap;
 import java.util.Comparator;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.stream.Stream;
@@ -124,13 +123,12 @@ public class ProtocolMapperUtils {
     public static Stream<Entry<ProtocolMapperModel, ProtocolMapper>> getSortedProtocolMappers(KeycloakSession session, ClientSessionContext ctx) {
         KeycloakSessionFactory sessionFactory = session.getKeycloakSessionFactory();
         return ctx.getProtocolMappersStream()
-                .flatMap(mapperModel -> {
+                .<Entry<ProtocolMapperModel, ProtocolMapper>>map(mapperModel -> {
                     ProtocolMapper mapper = (ProtocolMapper) sessionFactory.getProviderFactory(ProtocolMapper.class, mapperModel.getProtocolMapper());
-                    if (mapper == null)
+                    if (mapper == null) {
                         return null;
-                    Map<ProtocolMapperModel, ProtocolMapper> protocolMapperMap = new HashMap<>();
-                    protocolMapperMap.put(mapperModel, mapper);
-                    return protocolMapperMap.entrySet().stream();
+                    }
+                    return new AbstractMap.SimpleEntry<>(mapperModel, mapper);
                 })
                 .filter(Objects::nonNull)
                 .sorted(Comparator.comparing(ProtocolMapperUtils::compare));
