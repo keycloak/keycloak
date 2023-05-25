@@ -240,16 +240,25 @@ public class ModelToRepresentation {
 
         String groupName = group.getName();
         if (exact) {
-            // exact matching applies to the group name only
+            // check exact match for group name
             if (groupName.equals(search)){
                 return true;
             }
+
+            // try to find exact match for group path elements
+            String groupPath = ModelToRepresentation.buildGroupPath(group);
+            for (String groupPathElement : KeycloakModelUtils.splitGroupPathIntoPathComponents(groupPath)) {
+                if (groupPathElement.equals(search)) {
+                    return true;
+                }
+            }
         } else {
-            // fuzzy matching applies to the group name and the group path
+            // try to match the group name directly
             if (groupName.contains(search)) {
                 return true;
             }
 
+            // try to match a group path element
             String groupPath = ModelToRepresentation.buildGroupPath(group);
             if (groupPath.contains(search)) {
                 return true;

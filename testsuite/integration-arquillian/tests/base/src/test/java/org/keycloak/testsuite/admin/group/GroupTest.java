@@ -976,8 +976,7 @@ public class GroupTest extends AbstractGroupTest {
         GroupRepresentation gTest1SubGroup2SubGroup3 = GroupBuilder.create().name("SubGroup3").build();
         GroupRepresentation gDummy = GroupBuilder.create().name("Dummy").build();
 
-        String realmName = AuthRealm.TEST;
-        RealmResource realm = adminClient.realms().realm(realmName);
+        RealmResource realm = adminClient.realms().realm(AuthRealm.TEST);
 
         createGroup(realm, gTest);
         createGroup(realm, gTest1);

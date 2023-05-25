@@ -69,6 +69,7 @@ import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -96,6 +97,9 @@ public final class KeycloakModelUtils {
     public static final String AUTH_TYPE_CLIENT_SECRET_JWT = "client-secret-jwt";
 
     public static final String GROUP_PATH_SEPARATOR = "/";
+
+    private static final Pattern GROUP_PATH_SEPARATOR_PATTERN = Pattern.compile(GROUP_PATH_SEPARATOR);
+
     private static final char CLIENT_ROLE_SEPARATOR = '.';
 
     private KeycloakModelUtils() {
@@ -695,6 +699,20 @@ public final class KeycloakModelUtils {
             buildGroupPath(sb, parent.getName(), parent.getParent());
         }
         sb.append(GROUP_PATH_SEPARATOR).append(groupName);
+    }
+
+    public static String[] splitGroupPathIntoPathComponents(String groupPathInput) {
+
+        if (groupPathInput == null) {
+            return new String[0];
+        }
+
+        String groupPath = groupPathInput.trim();
+        if (groupPath.isEmpty()) {
+            return new String[0];
+        }
+
+        return GROUP_PATH_SEPARATOR_PATTERN.split(groupPath);
     }
 
     public static String buildGroupPath(GroupModel group) {
