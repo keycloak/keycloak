@@ -136,7 +136,12 @@ public class BrokerTest extends AbstractSamlTest {
 
         AuthenticationExecutionInfoRepresentation reviewProfileAuthenticator = null;
         String firstBrokerLoginFlowAlias = null;
-        try (IdentityProviderCreator idp = new IdentityProviderCreator(realm, addIdentityProvider("https://saml.idp/saml"))) {
+        final IdentityProviderRepresentation rep = addIdentityProvider("https://saml.idp/saml");
+        rep.getConfig().put(SAMLIdentityProviderConfig.NAME_ID_POLICY_FORMAT, "undefined");
+        rep.getConfig().put(SAMLIdentityProviderConfig.PRINCIPAL_TYPE, SamlPrincipalType.ATTRIBUTE.toString());
+        rep.getConfig().put(SAMLIdentityProviderConfig.PRINCIPAL_ATTRIBUTE, "mail");
+
+        try (IdentityProviderCreator idp = new IdentityProviderCreator(realm, rep)) {
             IdentityProviderRepresentation idpRepresentation = idp.identityProvider().toRepresentation();
             firstBrokerLoginFlowAlias = idpRepresentation.getFirstBrokerLoginFlowAlias();
             List<AuthenticationExecutionInfoRepresentation> executions = realm.flows().getExecutions(firstBrokerLoginFlowAlias);

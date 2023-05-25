@@ -19,7 +19,7 @@ import { HelpItem } from "ui-shared";
 
 import { adminClient } from "../admin-client";
 import { FormattedLink } from "../components/external-link/FormattedLink";
-import { FormAccess } from "../components/form-access/FormAccess";
+import { FormAccess } from "../components/form/FormAccess";
 import { KeyValueInput } from "../components/key-value-form/KeyValueInput";
 import { KeycloakTextInput } from "../components/keycloak-text-input/KeycloakTextInput";
 import { useRealm } from "../context/realm-context/RealmContext";

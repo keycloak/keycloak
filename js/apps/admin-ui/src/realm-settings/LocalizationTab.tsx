@@ -38,7 +38,7 @@ import { HelpItem } from "ui-shared";
 
 import { adminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
-import { FormAccess } from "../components/form-access/FormAccess";
+import { FormAccess } from "../components/form/FormAccess";
 import type { KeyValueType } from "../components/key-value-form/key-value-convert";
 import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
 import { FormPanel } from "../components/scroll-form/FormPanel";

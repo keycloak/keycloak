@@ -1,7 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { FormGroup, Grid, GridItem } from "@patternfly/react-core";
 
-import { FormAccess } from "../../../components/form-access/FormAccess";
+import { FormAccess } from "../../../components/form/FormAccess";
 import { KeyValueInput } from "../../../components/key-value-form/KeyValueInput";
 
 import "../../realm-settings-section.css";
