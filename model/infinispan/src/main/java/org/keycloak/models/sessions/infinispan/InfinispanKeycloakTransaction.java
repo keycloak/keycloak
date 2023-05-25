@@ -95,6 +95,11 @@ public class InfinispanKeycloakTransaction implements KeycloakTransaction {
                 public String toString() {
                     return String.format("CacheTaskWithValue: Operation 'put' for key %s", key);
                 }
+
+                @Override
+                public Operation getOperation() {
+                    return Operation.PUT;
+                }
             });
         }
     }
@@ -115,6 +120,11 @@ public class InfinispanKeycloakTransaction implements KeycloakTransaction {
                 @Override
                 public String toString() {
                     return String.format("CacheTaskWithValue: Operation 'put' for key %s, lifespan %d TimeUnit %s", key, lifespan, lifespanUnit);
+                }
+
+                @Override
+                public Operation getOperation() {
+                    return Operation.PUT;
                 }
             });
         }
@@ -139,6 +149,11 @@ public class InfinispanKeycloakTransaction implements KeycloakTransaction {
                 @Override
                 public String toString() {
                     return String.format("CacheTaskWithValue: Operation 'putIfAbsent' for key %s", key);
+                }
+
+                @Override
+                public Operation getOperation() {
+                    return Operation.PUT;
                 }
             });
         }
@@ -186,7 +201,14 @@ public class InfinispanKeycloakTransaction implements KeycloakTransaction {
 
         Object taskKey = getTaskKey(cache, key);
 
-        // TODO:performance Eventual performance optimization could be to skip "cache.remove" if item was added in this transaction (EG. authenticationSession valid for single request due to automatic SSO login)
+        CacheTask current = tasks.get(taskKey);
+        if (current != null) {
+            if (current instanceof CacheTaskWithValue && ((CacheTaskWithValue<?>) current).getOperation() == Operation.PUT) {
+                tasks.remove(taskKey);
+                return;
+            }
+        }
+
         tasks.put(taskKey, new CacheTask() {
 
             @Override
@@ -230,7 +252,9 @@ public class InfinispanKeycloakTransaction implements KeycloakTransaction {
         void execute();
     }
 
-    public abstract class CacheTaskWithValue<V> implements CacheTask {
+    public enum Operation { PUT, OTHER }
+
+    public static abstract class CacheTaskWithValue<V> implements CacheTask {
         protected V value;
 
         public CacheTaskWithValue(V value) {
@@ -243,6 +267,10 @@ public class InfinispanKeycloakTransaction implements KeycloakTransaction {
 
         public void setValue(V value) {
             this.value = value;
+        }
+
+        public Operation getOperation() {
+            return Operation.OTHER;
         }
     }
 

@@ -137,10 +137,17 @@ export const ResourcesPolicySelect = ({
           selections={field.value}
           onSelect={(_, selectedValue) => {
             const option = selectedValue.toString();
-            const changedValue = field.value?.find((p: string) => p === option)
-              ? field.value.filter((p: string) => p !== option)
-              : [...field.value!, option];
-            field.onChange(changedValue);
+            if (variant === SelectVariant.typeaheadMulti) {
+              const changedValue = field.value?.find(
+                (p: string) => p === option
+              )
+                ? field.value.filter((p: string) => p !== option)
+                : [...field.value!, option];
+              field.onChange(changedValue);
+            } else {
+              field.onChange([option]);
+            }
+
             setSearch("");
           }}
           isOpen={open}
