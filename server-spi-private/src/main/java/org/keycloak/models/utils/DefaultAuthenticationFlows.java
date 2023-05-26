@@ -51,7 +51,7 @@ public class DefaultAuthenticationFlows {
     public static void addFlows(RealmModel realm) {
         if (realm.getFlowByAlias(BROWSER_FLOW) == null) browserFlow(realm);
         if (realm.getFlowByAlias(DIRECT_GRANT_FLOW) == null) directGrantFlow(realm, false);
-        if (realm.getFlowByAlias(REGISTRATION_FLOW) == null) registrationFlow(realm);
+        if (realm.getFlowByAlias(REGISTRATION_FLOW) == null) registrationFlow(realm, false);
         if (realm.getFlowByAlias(RESET_CREDENTIALS_FLOW) == null) resetCredentialsFlow(realm);
         if (realm.getFlowByAlias(CLIENT_AUTHENTICATION_FLOW) == null) clientAuthFlow(realm);
         if (realm.getFlowByAlias(FIRST_BROKER_LOGIN_FLOW) == null) firstBrokerLoginFlow(realm, false);
@@ -61,7 +61,7 @@ public class DefaultAuthenticationFlows {
     public static void migrateFlows(RealmModel realm) {
         if (realm.getFlowByAlias(BROWSER_FLOW) == null) browserFlow(realm, true);
         if (realm.getFlowByAlias(DIRECT_GRANT_FLOW) == null) directGrantFlow(realm, true);
-        if (realm.getFlowByAlias(REGISTRATION_FLOW) == null) registrationFlow(realm);
+        if (realm.getFlowByAlias(REGISTRATION_FLOW) == null) registrationFlow(realm, true);
         if (realm.getFlowByAlias(RESET_CREDENTIALS_FLOW) == null) resetCredentialsFlow(realm);
         if (realm.getFlowByAlias(CLIENT_AUTHENTICATION_FLOW) == null) clientAuthFlow(realm);
         if (realm.getFlowByAlias(FIRST_BROKER_LOGIN_FLOW) == null) firstBrokerLoginFlow(realm, true);
@@ -69,7 +69,7 @@ public class DefaultAuthenticationFlows {
         if (realm.getFlowByAlias(DOCKER_AUTH) == null) dockerAuthenticationFlow(realm);
     }
 
-    public static void registrationFlow(RealmModel realm) {
+    public static void registrationFlow(RealmModel realm, boolean migrate) {
         AuthenticationFlowModel registrationFlow = new AuthenticationFlowModel();
         registrationFlow.setAlias(REGISTRATION_FLOW);
         registrationFlow.setDescription("registration flow");
@@ -137,6 +137,16 @@ public class DefaultAuthenticationFlows {
         execution.setAuthenticatorFlow(false);
         //execution.setAuthenticatorConfig(captchaConfig.getId());
         realm.addAuthenticatorExecution(execution);
+
+        if (!migrate) {
+            execution = new AuthenticationExecutionModel();
+            execution.setParentFlow(registrationFormFlow.getId());
+            execution.setRequirement(AuthenticationExecutionModel.Requirement.DISABLED);
+            execution.setAuthenticator("registration-terms-and-conditions");
+            execution.setPriority(70);
+            execution.setAuthenticatorFlow(false);
+            realm.addAuthenticatorExecution(execution);
+        }
     }
 
     public static void browserFlow(RealmModel realm) {
