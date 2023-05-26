@@ -22,7 +22,6 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 
-import java.util.Collections;
 import java.util.Map;
 import java.util.stream.Stream;
 
@@ -38,31 +37,6 @@ import java.util.stream.Stream;
  * @version $Revision: 1 $
  */
 public interface UserQueryMethodsProvider {
-    /**
-     * Searches all users in the realm.
-     *
-     * @param realm a reference to the realm.
-     * @return a non-null {@link Stream} of users.
-     * @deprecated Use {@link #searchForUserStream(RealmModel, Map)} with an empty params map instead.
-     */
-    @Deprecated
-    default Stream<UserModel> getUsersStream(RealmModel realm) {
-        return searchForUserStream(realm, Collections.emptyMap());
-    }
-
-    /**
-     * Searches all users in the realm, starting from the {@code firstResult} and containing at most {@code maxResults}.
-     *
-     * @param realm       a reference to the realm.
-     * @param firstResult first result to return. Ignored if negative or {@code null}.
-     * @param maxResults  maximum number of results to return. Ignored if negative or {@code null}.
-     * @return a non-null {@link Stream} of users.
-     * @deprecated Use {@link #searchForUserStream(RealmModel, Map, Integer, Integer)} with an empty params map instead.
-     */
-    @Deprecated
-    default Stream<UserModel> getUsersStream(RealmModel realm, Integer firstResult, Integer maxResults) {
-        return searchForUserStream(realm, Collections.emptyMap(), firstResult, maxResults);
-    }
 
     /**
      * Searches for users whose username, email, first name or last name contain any of the strings in {@code search} separated by whitespace.
@@ -74,9 +48,11 @@ public interface UserQueryMethodsProvider {
      * @param realm  a reference to the realm.
      * @param search case insensitive list of string separated by whitespaces.
      * @return a non-null {@link Stream} of users that match the search string.
+     * @deprecated Use {@link #searchForUserStream(RealmModel, Map)} with an {@code params} map containing {@link UserModel#SEARCH} instead.
      */
+    @Deprecated
     default Stream<UserModel> searchForUserStream(RealmModel realm, String search) {
-        return searchForUserStream(realm, search, null, null);
+        return searchForUserStream(realm, Map.of(UserModel.SEARCH, search), null, null);
     }
 
     /**
@@ -91,8 +67,12 @@ public interface UserQueryMethodsProvider {
      * @param firstResult first result to return. Ignored if negative, zero, or {@code null}.
      * @param maxResults  maximum number of results to return. Ignored if negative or {@code null}.
      * @return a non-null {@link Stream} of users that match the search criteria.
+     * @deprecated Use {@link #searchForUserStream(RealmModel, Map, Integer, Integer)} with an {@code params} map containing {@link UserModel#SEARCH} instead.
      */
-    Stream<UserModel> searchForUserStream(RealmModel realm, String search, Integer firstResult, Integer maxResults);
+    @Deprecated
+    default Stream<UserModel> searchForUserStream(RealmModel realm, String search, Integer firstResult, Integer maxResults) {
+        return searchForUserStream(realm, Map.of(UserModel.SEARCH, search), firstResult, maxResults);
+    }
 
     /**
      * Searches for user by parameter.
@@ -100,10 +80,12 @@ public interface UserQueryMethodsProvider {
      * <p/>
      * Valid parameters are:
      * <ul>
+     *     <li>{@link UserModel#SEARCH} - search for users whose username, email, first name or last name contain any of the strings in {@code search} separated by whitespace, when {@code SEARCH} is set all other params are ignored</li>
      *     <li>{@link UserModel#FIRST_NAME} - first name (case insensitive string)</li>
      *     <li>{@link UserModel#LAST_NAME} - last name (case insensitive string)</li>
      *     <li>{@link UserModel#EMAIL} - email (case insensitive string)</li>
      *     <li>{@link UserModel#USERNAME} - username (case insensitive string)</li>
+     *     <li>{@link UserModel#EXACT} - whether search with FIRST_NAME, LAST_NAME, USERNAME or EMAIL should be exact match</li>
      *     <li>{@link UserModel#EMAIL_VERIFIED} - search only for users with verified/non-verified email (true/false)</li>
      *     <li>{@link UserModel#ENABLED} - search only for enabled/disabled users (true/false)</li>
      *     <li>{@link UserModel#IDP_ALIAS} - search only for users that have a federated identity
@@ -128,10 +110,12 @@ public interface UserQueryMethodsProvider {
      * <p/>
      * Valid parameters are:
      * <ul>
+     *     <li>{@link UserModel#SEARCH} - search for users whose username, email, first name or last name contain any of the strings in {@code search} separated by whitespace, when {@code SEARCH} is set all other params are ignored</li>
      *     <li>{@link UserModel#FIRST_NAME} - first name (case insensitive string)</li>
      *     <li>{@link UserModel#LAST_NAME} - last name (case insensitive string)</li>
      *     <li>{@link UserModel#EMAIL} - email (case insensitive string)</li>
      *     <li>{@link UserModel#USERNAME} - username (case insensitive string)</li>
+     *     <li>{@link UserModel#EXACT} - whether search with FIRST_NAME, LAST_NAME, USERNAME or EMAIL should be exact match</li>
      *     <li>{@link UserModel#EMAIL_VERIFIED} - search only for users with verified/non-verified email (true/false)</li>
      *     <li>{@link UserModel#ENABLED} - search only for enabled/disabled users (true/false)</li>
      *     <li>{@link UserModel#IDP_ALIAS} - search only for users that have a federated identity
