@@ -37,7 +37,11 @@ const ReferrerLink = () => {
 
 export const Root = () => {
   const { t } = useTranslation();
-  const indexHref = useHref("/");
+  const brandImage = environment.logo ? environment.logo : "logo.svg";
+  const logoUrl = environment.logoUrl ? environment.logoUrl : "/";
+
+  // User can indicate that he wants an internal URL by starting it with "/"
+  const indexHref = logoUrl.startsWith("/") ? useHref(logoUrl) : logoUrl;
 
   const translations = useMemo<Translations>(
     () => ({
@@ -50,10 +54,6 @@ export const Root = () => {
     [t]
   );
 
-  const brandImage = environment.logo ? environment.logo : "logo.svg";
-  const brandOnClickHandler = () =>
-    window.location.replace(environment.logoUrl);
-
   return (
     <Page
       header={
@@ -63,10 +63,9 @@ export const Root = () => {
             showNavToggle
             brand={{
               href: indexHref,
-              src: joinPath(environment.resourceUrl, "logo.svg"),
+              src: joinPath(environment.resourceUrl, brandImage),
               alt: t("logo"),
               className: style.brand,
-              onClick: environment.logoUrl ? brandOnClickHandler : undefined,
             }}
             toolbarItems={[<ReferrerLink key="link" />]}
             keycloak={keycloak}
