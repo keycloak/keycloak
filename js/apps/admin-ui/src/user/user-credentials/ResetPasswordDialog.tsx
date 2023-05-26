@@ -163,9 +163,7 @@ export const ResetPasswordDialog = ({
               id="password"
               onChange={(e) => {
                 onChange(e);
-                if (
-                  passwordConfirmation !== e.currentTarget.value
-                ) {
+                if (passwordConfirmation !== e.currentTarget.value) {
                   setError("passwordConfirmation", {
                     message: t("confirmPasswordDoesNotMatch").toString(),
                   });
