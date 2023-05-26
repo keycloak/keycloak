@@ -9,7 +9,7 @@ import {
 } from "@patternfly/react-core";
 import { QuestionCircleIcon } from "@patternfly/react-icons";
 import { cellWidth } from "@patternfly/react-table";
-import { intersectionBy, sortBy } from "lodash-es";
+import { intersectionBy, sortBy, uniqBy } from "lodash-es";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useHelp } from "ui-shared";
@@ -71,21 +71,19 @@ export const UserGroups = ({ user }: UserGroupsProps) => {
 
     setDirectMembershipList([...joinedUserGroups]);
 
+    const indirect: GroupRepresentation[] = [];
     if (!isDirectMembership)
-      joinedUserGroups.map((g) => {
-        if (g.path?.substring(1).includes("/")) {
-          const paths = g.path.substring(1).split("/");
-          paths.pop();
-          joinedUserGroups.push(
-            ...paths!.map((p) => ({
-              name: p,
-              path: g.path?.substring(0, g.path.indexOf(p) + p.length),
-            }))
-          );
-        }
+      joinedUserGroups.forEach((g) => {
+        const paths = g.path?.substring(1).split("/").slice(0, -1) || [];
+        indirect.push(
+          ...paths.map((p) => ({
+            name: p,
+            path: g.path?.substring(0, g.path.indexOf(p) + p.length),
+          }))
+        );
       });
 
-    return alphabetize(joinedUserGroups);
+    return alphabetize(uniqBy([...joinedUserGroups, ...indirect], "path"));
   };
 
   const toggleModal = () => {
@@ -114,11 +112,12 @@ export const UserGroups = ({ user }: UserGroupsProps) => {
             })
           )
         );
-        refresh();
+
         addAlert(t("removedGroupMembership"), AlertVariant.success);
       } catch (error) {
         addError("users:removedGroupMembershipError", error);
       }
+      refresh();
     },
   });
 
@@ -137,11 +136,12 @@ export const UserGroups = ({ user }: UserGroupsProps) => {
           })
         )
       );
-      refresh();
+
       addAlert(t("addedGroupMembership"), AlertVariant.success);
     } catch (error) {
       addError("users:addedGroupMembershipError", error);
     }
+    refresh();
   };
 
   return (
@@ -157,8 +157,8 @@ export const UserGroups = ({ user }: UserGroupsProps) => {
           }}
           canBrowse={isManager}
           onClose={() => setOpen(false)}
-          onConfirm={async (groups) => {
-            await addGroups(groups || []);
+          onConfirm={async (groups = []) => {
+            await addGroups(groups);
             setOpen(false);
           }}
         />
