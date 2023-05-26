@@ -178,6 +178,13 @@ div.kc-logo-text span {
     margin-bottom: 20px;
 }
 
+#kc-registration-terms-text {
+    max-height: 100px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    margin: 5px;
+}
+
 #kc-registration {
     margin-bottom: 0;
 }

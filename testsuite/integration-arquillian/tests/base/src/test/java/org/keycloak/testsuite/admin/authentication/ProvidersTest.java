@@ -70,6 +70,8 @@ public class ProvidersTest extends AbstractAuthenticationTest {
         addProviderInfo(expected, "registration-user-creation", "Registration User Creation",
                 "This action must always be first! Validates the username of the user in validation phase.  " +
                         "In success phase, this will create the user in the database.");
+        addProviderInfo(expected, "registration-terms-and-conditions", "Terms and conditions",
+                "Asks the user to accept terms and conditions before submitting its registration form.");
 
         compareProviders(expected, result);
     }
