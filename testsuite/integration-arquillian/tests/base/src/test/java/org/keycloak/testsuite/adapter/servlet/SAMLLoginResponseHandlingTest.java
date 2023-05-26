@@ -225,7 +225,7 @@ public class SAMLLoginResponseHandlingTest extends AbstractSAMLServletAdapterTes
 
                 try (Response response = protocolMappersResource.createMapper(mapper)) {
                     String createdId = getCreatedId(response);
-                    getCleanup().addCleanup((Runnable) () -> {
+                    getCleanup().addCleanup(() -> {
                         protocolMappersResource.delete(createdId);
                         mapper.setConfig(origConfig);
                         protocolMappersResource.createMapper(mapper).close();

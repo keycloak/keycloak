@@ -10,12 +10,10 @@ import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
 import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
-import { FormAccess } from "../../components/form-access/FormAccess";
+import { FormAccess } from "../../components/form/FormAccess";
 import { HelpItem } from "ui-shared";
 import { convertAttributeNameToForm } from "../../util";
 import { FormFields } from "../ClientDetails";
-
-import "./capability-config.css";
 
 type CapabilityConfigProps = {
   unWrap?: boolean;
@@ -121,7 +119,7 @@ export const CapabilityConfig = ({
             label={t("authenticationFlow")}
             fieldId="kc-flow"
           >
-            <Grid id="authenticationFlowGrid">
+            <Grid id="authenticationFlowGrid" hasGutter>
               <GridItem lg={4} sm={6}>
                 <Controller
                   name="standardFlowEnabled"

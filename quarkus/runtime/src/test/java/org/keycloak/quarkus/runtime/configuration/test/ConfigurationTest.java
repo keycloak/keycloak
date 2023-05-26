@@ -28,10 +28,14 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 
+import io.smallrye.config.SmallRyeConfig;
+import io.smallrye.config.SmallRyeConfigProviderResolver;
 import org.hibernate.dialect.H2Dialect;
 import org.hibernate.dialect.PostgreSQLDialect;
 import io.quarkus.runtime.LaunchMode;
-import io.smallrye.config.SmallRyeConfig;
+import io.smallrye.config.ConfigValue;
+import io.smallrye.config.PropertiesConfigSource;
+import io.smallrye.config.SmallRyeConfigBuilder;
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 import org.hibernate.dialect.MariaDBDialect;
@@ -44,8 +48,8 @@ import org.keycloak.quarkus.runtime.configuration.KeycloakConfigSourceProvider;
 import org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider;
 
 import io.quarkus.runtime.configuration.ConfigUtils;
-import io.smallrye.config.SmallRyeConfigProviderResolver;
 import org.keycloak.quarkus.runtime.Environment;
+import org.keycloak.quarkus.runtime.vault.FilesKeystoreVaultProviderFactory;
 import org.keycloak.quarkus.runtime.vault.FilesPlainTextVaultProviderFactory;
 import org.mariadb.jdbc.MariaDbDataSource;
 import org.postgresql.xa.PGXADataSource;
@@ -142,6 +146,12 @@ public class ConfigurationTest {
         assertEquals("/foo/bar", config.get("dir"));
         assertTrue(config.getPropertyNames()
                 .contains("kc.spi-vault-".concat(FilesPlainTextVaultProviderFactory.ID).concat("-dir")));
+
+        putEnvVar("KC_VAULT_TYPE", "JKS");
+        config = initConfig("vault", FilesKeystoreVaultProviderFactory.ID);
+        assertEquals("JKS", config.get("type"));
+        assertTrue(config.getPropertyNames()
+                .contains("kc.spi-vault-".concat(FilesKeystoreVaultProviderFactory.ID).concat("-type")));
     }
 
     @Test
@@ -186,7 +196,7 @@ public class ConfigurationTest {
         System.setProperty(CLI_ARGS, "--spi-hostname-default-frontend-url=http://fromargs.unittest" + ARG_SEPARATOR + "--no-ssl");
         assertEquals("http://fromargs.unittest", initConfig("hostname", "default").get("frontendUrl"));
     }
-    
+
     @Test
     public void testSpiConfigurationUsingCommandLineArguments() {
         System.setProperty(CLI_ARGS, "--spi-hostname-default-frontend-url=http://spifull.unittest");
@@ -214,6 +224,11 @@ public class ConfigurationTest {
         config = initConfig("vault", FilesPlainTextVaultProviderFactory.ID);
         assertEquals(1, config.getPropertyNames().size());
         assertEquals("secrets", config.get("dir"));
+
+        System.setProperty(CLI_ARGS, "--vault-type=JKS");
+        config = initConfig("vault", FilesKeystoreVaultProviderFactory.ID);
+        assertEquals(1, config.getPropertyNames().size());
+        assertEquals("JKS", config.get("type"));
 
         System.getProperties().remove(CLI_ARGS);
         System.setProperty("kc.spi-client-registration-openid-connect-static-jwk-url", "http://c.jwk.url");
@@ -527,6 +542,36 @@ public class ConfigurationTest {
 
         Environment.setProfile("prod");
         assertEquals("true", createConfig().getConfigValue("kc.hostname-strict").getValue());
+    }
+
+    @Test
+    public void testKeystoreConfigSource() {
+        // Add properties manually
+        Map<String, String> properties = new HashMap<>();
+        properties.put("smallrye.config.source.keystore.kc-default.path", "keystore");
+        properties.put("smallrye.config.source.keystore.kc-default.password", "secret");
+
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .addDefaultInterceptors()
+                .addDiscoveredSources()
+                .withSources(new PropertiesConfigSource(properties, "", 0))
+                .build();
+
+        ConfigValue secret = config.getConfigValue("my.secret");
+        assertEquals("secret", secret.getValue());
+    }
+
+    @Test
+    public void testKeystoreConfigSourcePropertyMapping() {
+        SmallRyeConfig config = new SmallRyeConfigBuilder()
+                .addDefaultInterceptors()
+                .addDiscoveredSources()
+                .build();
+
+        assertEquals(config.getConfigValue("smallrye.config.source.keystore.kc-default.password").getValue(),config.getConfigValue("kc.config-keystore-password").getValue());
+        // Properties are loaded from the file - secret can be obtained only if the mapping works correctly
+        ConfigValue secret = config.getConfigValue("my.secret");
+        assertEquals("secret", secret.getValue());
     }
 
     private Config.Scope initConfig(String... scope) {

@@ -45,7 +45,6 @@ import org.keycloak.theme.freemarker.FreeMarkerProvider;
 import org.keycloak.urls.UrlType;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.utils.MediaType;
-import org.keycloak.utils.StringUtil;
 
 /**
  * Created by st on 29/03/17.
@@ -111,12 +110,7 @@ public class AccountConsole {
             if (auth != null) user = auth.getUser();
             Locale locale = session.getContext().resolveLocale(user);
             map.put("locale", locale.toLanguageTag());
-            Properties messages = new Properties();
-            messages.putAll(theme.getMessages(locale));
-            if(StringUtil.isNotBlank(realm.getDefaultLocale())) {
-                messages.putAll(realm.getRealmLocalizationTextsByLocale(realm.getDefaultLocale()));
-            }
-            messages.putAll(realm.getRealmLocalizationTextsByLocale(locale.toLanguageTag()));
+            Properties messages = theme.getEnhancedMessages(realm, locale);
             map.put("msg", new MessageFormatterMethod(locale, messages));
             map.put("msgJSON", messagesToJsonString(messages));
             map.put("supportedLocales", supportedLocales(messages));

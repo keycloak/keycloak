@@ -42,7 +42,7 @@ The constructor for this provider class is going to store the reference to the `
 [source,java]
 ----
     @Override
-    public UserModel getUserByUsername(String username, RealmModel realm) {
+    public UserModel getUserByUsername(RealmModel realm, String username) {
         UserModel adapter = loadedUsers.get(username);
         if (adapter == null) {
             String password = properties.getProperty(username);
@@ -64,14 +64,14 @@ The constructor for this provider class is going to store the reference to the `
     }
 
     @Override
-    public UserModel getUserById(String id, RealmModel realm) {
+    public UserModel getUserById(RealmModel realm, String id) {
         StorageId storageId = new StorageId(id);
         String username = storageId.getExternalId();
-        return getUserByUsername(username, realm);
+        return getUserByUsername(realm, username);
     }
 
     @Override
-    public UserModel getUserByEmail(String email, RealmModel realm) {
+    public UserModel getUserByEmail(RealmModel realm, String email) {
         return null;
     }
 
@@ -144,8 +144,8 @@ As noted before, the only reason we implement the `CredentialInputUpdater` inter
     }
 
     @Override
-    public Set<String> getDisableableCredentialTypes(RealmModel realm, UserModel user) {
-        return Collections.EMPTY_SET;
+    public Stream<String> getDisableableCredentialTypesStream(RealmModel realm, UserModel user) {
+        return Stream.empty();
     }
 ----
 

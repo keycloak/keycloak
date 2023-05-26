@@ -18,10 +18,13 @@
 package org.keycloak.models.map.storage.jpa;
 
 import org.hibernate.boot.Metadata;
+import org.hibernate.dialect.CockroachDialect;
+import org.hibernate.engine.OptimisticLockStyle;
 import org.hibernate.engine.spi.SessionFactoryImplementor;
 import org.hibernate.event.service.spi.EventListenerRegistry;
 import org.hibernate.event.spi.EventType;
 import org.hibernate.integrator.spi.Integrator;
+import org.hibernate.mapping.RootClass;
 import org.hibernate.service.spi.SessionFactoryServiceRegistry;
 import org.keycloak.models.map.storage.jpa.hibernate.listeners.JpaAutoFlushListener;
 import org.keycloak.models.map.storage.jpa.hibernate.listeners.JpaEntityVersionListener;
@@ -43,9 +46,23 @@ public class EventListenerIntegrator implements Integrator {
             final EventListenerRegistry eventListenerRegistry =
                     sessionFactoryServiceRegistry.getService(EventListenerRegistry.class);
 
-            eventListenerRegistry.appendListeners(EventType.PRE_INSERT, JpaOptimisticLockingListener.INSTANCE);
-            eventListenerRegistry.appendListeners(EventType.PRE_UPDATE, JpaOptimisticLockingListener.INSTANCE);
-            eventListenerRegistry.appendListeners(EventType.PRE_DELETE, JpaOptimisticLockingListener.INSTANCE);
+            if (metadata.getDatabase().getDialect() instanceof CockroachDialect) {
+                // CockroachDB will always use serializable transactions, therefore no optimistic locking is necessary
+                metadata.getEntityBindings().forEach(persistentClass -> {
+                    if (persistentClass instanceof RootClass) {
+                        RootClass root = (RootClass) persistentClass;
+                        root.setOptimisticLockStyle(OptimisticLockStyle.NONE);
+                        root.setVersion(null);
+                        root.setDeclaredVersion(null);
+                    }
+                });
+                // If the version column should be updated with an incrementing number on each change in the future,
+                // implement a listener similar to JpaOptimisticLockingListener to increment it.
+            } else {
+                eventListenerRegistry.appendListeners(EventType.PRE_INSERT, JpaOptimisticLockingListener.INSTANCE);
+                eventListenerRegistry.appendListeners(EventType.PRE_UPDATE, JpaOptimisticLockingListener.INSTANCE);
+                eventListenerRegistry.appendListeners(EventType.PRE_DELETE, JpaOptimisticLockingListener.INSTANCE);
+            }
 
             eventListenerRegistry.appendListeners(EventType.PRE_INSERT, JpaEntityVersionListener.INSTANCE);
             eventListenerRegistry.appendListeners(EventType.PRE_UPDATE, JpaEntityVersionListener.INSTANCE);

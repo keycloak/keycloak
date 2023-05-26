@@ -63,6 +63,7 @@
                         </goals>
                         <configuration>
                             <arguments>pack --pack-destination=target</arguments>
+                            <pnpmInheritsProxyConfigFromMaven>false</pnpmInheritsProxyConfigFromMaven>
                         </configuration>
                     </execution>
                 </executions>

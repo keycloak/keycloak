@@ -50,7 +50,7 @@ describe("Clients SAML tests", () => {
       cy.findByTestId("forceNameIdFormat").click({
         force: true,
       });
-      cy.findByTestId("settingsSave").click();
+      cy.findByTestId("settings-save").click();
       masthead.checkNotificationMessage("Client successfully updated");
     });
   });

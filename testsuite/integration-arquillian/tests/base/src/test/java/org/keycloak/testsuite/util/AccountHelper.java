@@ -22,14 +22,16 @@ import java.util.List;
 import java.util.Map;
 import org.keycloak.models.credential.OTPCredentialModel;
 import org.keycloak.representations.idm.CredentialRepresentation;
+import org.keycloak.representations.idm.FederatedIdentityRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 
+import jakarta.ws.rs.core.Response;
 import java.util.Optional;
 
 public class AccountHelper {
 
     private static UserResource getUserResource(RealmResource realm, String username) {
-        Optional<UserRepresentation> userResult = realm.users().search(username).stream().findFirst();
+        Optional<UserRepresentation> userResult = realm.users().search(username, true).stream().findFirst();
         if (userResult.isEmpty()) {
             throw new RuntimeException("User with username " + username + " not found");
         }
@@ -61,11 +63,6 @@ public class AccountHelper {
     public static void revokeConsents(RealmResource realm, String username, String clientId) {
         UserResource user = getUserResource(realm, username);
         user.revokeConsent(clientId);
-    }
-
-    public static void logout(RealmResource realm, String username) {
-        UserResource user = getUserResource(realm, username);
-        user.logout();
     }
 
     private static Optional<CredentialRepresentation> getOtpCredentials(UserResource user, String userLabel) {
@@ -125,4 +122,38 @@ public class AccountHelper {
             return false;
         }
     }
+
+    public static Response addIdentityProvider(RealmResource childRealm, String childUsername, RealmResource providerRealm, String providerUsername, String providerId) {
+        UserResource user = getUserResource(childRealm, childUsername);
+
+        FederatedIdentityRepresentation identityRepresentation = FederatedIdentityBuilder.create()
+                .identityProvider(providerId)
+                .userId(getUserResource(providerRealm, providerUsername).toRepresentation().getId())
+                .userName(providerUsername)
+                .build();
+
+        return user.addFederatedIdentity(providerId, identityRepresentation);
+    }
+
+    public static void deleteIdentityProvider(RealmResource realm, String username, String providerId) {
+        UserResource user = getUserResource(realm, username);
+        user.removeFederatedIdentity(providerId);
+    }
+
+    public static boolean isIdentityProviderLinked(RealmResource realm, String username, String providerId)  {
+        UserResource user = getUserResource(realm, username);
+
+        for (FederatedIdentityRepresentation rep : user.getFederatedIdentity()){
+            if(rep.getIdentityProvider().equals(providerId)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public static void logout(RealmResource realm, String username) {
+        UserResource user = getUserResource(realm, username);
+        user.logout();
+    }
+
 }

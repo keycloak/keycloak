@@ -49,8 +49,6 @@ import {
 import { toClientScope } from "./routes/ClientScope";
 import { toNewClientScope } from "./routes/NewClientScope";
 
-import "./client-scope.css";
-
 type TypeSelectorProps = ClientScopeDefaultOptionalType & {
   refresh: () => void;
 };

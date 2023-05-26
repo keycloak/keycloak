@@ -145,38 +145,32 @@ describe("Realm settings events tab tests", () => {
 
     cy.findByTestId("option-aes-generated").click();
     realmSettingsPage.enterUIDisplayName("test_aes-generated");
-    realmSettingsPage.toggleSwitch("active", false);
-    realmSettingsPage.toggleSwitch("enabled", false);
     realmSettingsPage.addProvider();
 
     realmSettingsPage.toggleAddProviderDropdown();
 
     cy.findByTestId("option-ecdsa-generated").click();
     realmSettingsPage.enterUIDisplayName("test_ecdsa-generated");
-    realmSettingsPage.toggleSwitch("enabled", false);
+    realmSettingsPage.toggleSwitch("active", false);
     realmSettingsPage.addProvider();
 
     realmSettingsPage.toggleAddProviderDropdown();
 
     cy.findByTestId("option-hmac-generated").click();
     realmSettingsPage.enterUIDisplayName("test_hmac-generated");
-    realmSettingsPage.toggleSwitch("active", false);
+    realmSettingsPage.toggleSwitch("enabled", false);
     realmSettingsPage.addProvider();
 
     realmSettingsPage.toggleAddProviderDropdown();
 
     cy.findByTestId("option-rsa-generated").click();
     realmSettingsPage.enterUIDisplayName("test_rsa-generated");
-    realmSettingsPage.toggleSwitch("active", false);
-    realmSettingsPage.toggleSwitch("enabled", false);
     realmSettingsPage.addProvider();
 
     realmSettingsPage.toggleAddProviderDropdown();
 
     cy.findByTestId("option-rsa-enc-generated").click();
     realmSettingsPage.enterUIDisplayName("test_rsa-enc-generated");
-    realmSettingsPage.toggleSwitch("active", false);
-    realmSettingsPage.toggleSwitch("enabled", false);
     realmSettingsPage.addProvider();
   });
 

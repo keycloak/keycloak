@@ -88,7 +88,7 @@ public class HotRodMapStorageProvider implements MapStorageProvider {
         }
     }
 
-    private <K, E extends AbstractHotRodEntity, V extends HotRodEntityDelegate<E> & AbstractEntity, M> ConcurrentHashMapStorage<K, V, M> createHotRodMapStorage(KeycloakSession session, Class<M> modelType, MapStorageProviderFactory.Flag... flags) {
+    private <K, E extends AbstractHotRodEntity, V extends HotRodEntityDelegate<E> & AbstractEntity, M> ConcurrentHashMapStorage<K, V, M, ?> createHotRodMapStorage(KeycloakSession session, Class<M> modelType, MapStorageProviderFactory.Flag... flags) {
         HotRodConnectionProvider connectionProvider = session.getProvider(HotRodConnectionProvider.class);
         HotRodEntityDescriptor<E, V> entityDescriptor = (HotRodEntityDescriptor<E, V>) factory.getEntityDescriptor(modelType);
         Map<SearchableModelField<? super M>, MapModelCriteriaBuilder.UpdatePredicatesFunc<String, V, M>> fieldPredicates = MapFieldPredicates.getPredicates((Class<M>) entityDescriptor.getModelTypeClass());

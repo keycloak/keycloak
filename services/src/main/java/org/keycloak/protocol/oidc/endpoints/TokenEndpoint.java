@@ -173,18 +173,22 @@ public class TokenEndpoint {
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     @POST
     public Response processGrantRequest() {
-        // grant request needs to be run in a retriable transaction as concurrent execution of this action can lead to
-        // exceptions on DBs with SERIALIZABLE isolation level.
-        return KeycloakModelUtils.runJobInRetriableTransaction(session.getKeycloakSessionFactory(), new ResponseSessionTask(session) {
-            @Override
-            public Response runInternal(KeycloakSession session) {
-                // create another instance of the endpoint to isolate each run.
-                TokenEndpoint other = new TokenEndpoint(session, new TokenManager(),
-                        new EventBuilder(session.getContext().getRealm(), session, clientConnection));
-                // process the request in the created instance.
-                return other.processGrantRequestInternal();
-            }
-        }, 10, 100);
+        if (Profile.isFeatureEnabled(Profile.Feature.MAP_STORAGE)) {
+            // grant request needs to be run in a retriable transaction as concurrent execution of this action can lead to
+            // exceptions on DBs with SERIALIZABLE isolation level.
+            return KeycloakModelUtils.runJobInRetriableTransaction(session.getKeycloakSessionFactory(), new ResponseSessionTask(session) {
+                @Override
+                public Response runInternal(KeycloakSession session) {
+                    // create another instance of the endpoint to isolate each run.
+                    TokenEndpoint other = new TokenEndpoint(session, new TokenManager(),
+                            new EventBuilder(session.getContext().getRealm(), session, clientConnection));
+                    // process the request in the created instance.
+                    return other.processGrantRequestInternal();
+                }
+            }, 10, 100);
+        } else {
+            return processGrantRequestInternal();
+        }
     }
 
     private Response processGrantRequestInternal() {

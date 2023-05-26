@@ -62,11 +62,6 @@ public class TestCleanup {
     }
 
 
-    public TestCleanup addCleanup(Runnable r) {
-        genericCleanups.add(r);
-        return this;
-    }
-
     public TestCleanup addCleanup(AutoCloseable c) {
         genericCleanups.add(() -> {
             try {

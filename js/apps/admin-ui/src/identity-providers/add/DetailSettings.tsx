@@ -1,7 +1,6 @@
 import type IdentityProviderMapperRepresentation from "@keycloak/keycloak-admin-client/lib/defs/identityProviderMapperRepresentation";
 import type IdentityProviderRepresentation from "@keycloak/keycloak-admin-client/lib/defs/identityProviderRepresentation";
 import {
-  ActionGroup,
   AlertVariant,
   Button,
   ButtonVariant,
@@ -21,7 +20,8 @@ import { Link, useNavigate } from "react-router-dom";
 import { adminClient } from "../../admin-client";
 import { useAlerts } from "../../components/alert/Alerts";
 import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
-import { FormAccess } from "../../components/form-access/FormAccess";
+import { FixedButtonsGroup } from "../../components/form/FixedButtonGroup";
+import { FormAccess } from "../../components/form/FormAccess";
 import { KeycloakSpinner } from "../../components/keycloak-spinner/KeycloakSpinner";
 import { ListEmptyState } from "../../components/list-empty-state/ListEmptyState";
 import { PermissionsTab } from "../../components/permission-tab/PermissionTab";
@@ -371,20 +371,7 @@ export default function DetailSettings() {
         >
           <AdvancedSettings isOIDC={isOIDC!} isSAML={isSAML!} />
 
-          <ActionGroup className="keycloak__form_actions">
-            <Button data-testid={"save"} type="submit">
-              {t("common:save")}
-            </Button>
-            <Button
-              data-testid={"revert"}
-              variant="link"
-              onClick={() => {
-                reset();
-              }}
-            >
-              {t("common:revert")}
-            </Button>
-          </ActionGroup>
+          <FixedButtonsGroup name="idp-details" isSubmit reset={reset} />
         </FormAccess>
       ),
     },
