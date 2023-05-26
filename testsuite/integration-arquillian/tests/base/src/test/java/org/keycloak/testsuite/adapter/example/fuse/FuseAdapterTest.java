@@ -45,7 +45,6 @@ import javax.management.remote.JMXServiceURL;
 import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Assert;
-import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.common.Profile;
@@ -167,8 +166,6 @@ public class FuseAdapterTest extends AbstractExampleAdapterTest {
     @Test
     @AppServerContainer(value = ContainerConstants.APP_SERVER_FUSE63, skip = true)
     public void hawtio2LoginTest() throws Exception {
-
-        Assume.assumeTrue("This test doesn't work with phantomjs", !"phantomjs".equals(System.getProperty("js.browser")));
 
         hawtio2Page.navigateTo();
         WaitUtils.waitForPageToLoad();
@@ -348,7 +345,6 @@ public class FuseAdapterTest extends AbstractExampleAdapterTest {
         logoutConfirmPage.confirmLogout();
 
         WaitUtils.pause(2500);
-        customerPortal.navigateTo();//needed for phantomjs
         WaitUtils.waitForPageToLoad();
         customerPortal.clickCustomerListingLink();
         WaitUtils.waitForPageToLoad();
@@ -376,7 +372,6 @@ public class FuseAdapterTest extends AbstractExampleAdapterTest {
         logoutConfirmPage.confirmLogout();
 
         WaitUtils.pause(2500);
-        customerPortal.navigateTo();//needed for phantomjs
         WaitUtils.waitForPageToLoad();
         customerPortal.clickAdminInterfaceLink();
         WaitUtils.waitForPageToLoad();

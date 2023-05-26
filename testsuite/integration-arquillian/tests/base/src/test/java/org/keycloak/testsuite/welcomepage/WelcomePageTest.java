@@ -18,7 +18,6 @@
 package org.keycloak.testsuite.welcomepage;
 
 import org.hamcrest.Matchers;
-import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.After;
 import org.junit.Assert;
@@ -32,9 +31,6 @@ import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.arquillian.annotation.RestartContainer;
 import org.keycloak.testsuite.auth.page.WelcomePage;
 import org.keycloak.testsuite.auth.page.login.OIDCLogin;
-import org.keycloak.testsuite.util.DroneUtils;
-import org.keycloak.testsuite.util.PhantomJSBrowser;
-import org.openqa.selenium.WebDriver;
 
 import java.net.InetAddress;
 import java.net.NetworkInterface;
@@ -53,16 +49,10 @@ import static org.keycloak.testsuite.util.URLUtils.navigateToUri;
 @RestartContainer(initializeDatabase = true, intializeDatabaseWait = 0, withoutKeycloakAddUserFile = true)
 public class WelcomePageTest extends AbstractKeycloakTest {
 
-    @Drone
-    @PhantomJSBrowser
-    private WebDriver phantomJS;
-
     @Page
-    @PhantomJSBrowser
     protected OIDCLogin loginPage;
 
     @Page
-    @PhantomJSBrowser
     protected WelcomePage welcomePage;
 
     @Override
@@ -80,7 +70,6 @@ public class WelcomePageTest extends AbstractKeycloakTest {
         Assume.assumeThat("Test skipped",
                 suiteContext.getAuthServerInfo().isJBossBased(),
                 Matchers.is(true));
-        DroneUtils.replaceDefaultWebDriver(this, phantomJS);
         setDefaultPageUriParameters();
     }
 
@@ -150,8 +139,7 @@ public class WelcomePageTest extends AbstractKeycloakTest {
     public void test_5_AccessCreatedAdminAccount() throws Exception {
         welcomePage.navigateTo();
         welcomePage.navigateToAdminConsole();
-        // TODO PhantomJS is not loading the new admin console for some reason, so is not redirecting to the login page. It works with Chrome though.
-        Assert.assertEquals("Keycloak Administration Console", phantomJS.getTitle());
+        // TODO: Add a new assetion here that works for other browsers.
     }
 
     @Test

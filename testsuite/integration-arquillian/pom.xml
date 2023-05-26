@@ -631,30 +631,6 @@
                 <dballocator.skip>false</dballocator.skip>
             </properties>
         </profile>
-
-        <!-- Workaround for issues related to PhantomJS in some newer linux environment. See for example here for more details https://github.com/nodejs/node/issues/43132 -->
-        <profile>
-            <id>phantomjs-openssl-workaround</id>
-            <activation>
-                <os>
-                    <family>unix</family>
-                </os>
-            </activation>
-            <build>
-                <pluginManagement>
-                    <plugins>
-                        <plugin>
-                            <artifactId>maven-surefire-plugin</artifactId>
-                            <configuration>
-                                <environmentVariables>
-                                    <OPENSSL_CONF>/dev/null</OPENSSL_CONF>
-                                </environmentVariables>
-                            </configuration>
-                        </plugin>
-                    </plugins>
-                </pluginManagement>
-            </build>
-        </profile>
     </profiles>
 
 </project>

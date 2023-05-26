@@ -72,7 +72,6 @@ public class CorsExampleAdapterTest extends AbstractExampleAdapterTest {
     @ArquillianResource
     private Deployer deployer;
 
-    // Javascript browser needed, but not PhantomJS
     @Drone
     @JavascriptBrowser
     protected WebDriver jsDriver;
