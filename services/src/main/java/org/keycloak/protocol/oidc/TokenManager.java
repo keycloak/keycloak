@@ -569,7 +569,7 @@ public class TokenManager {
         }
 
         clientSession.setNote(Constants.LEVEL_OF_AUTHENTICATION, String.valueOf(new AcrStore(authSession).getLevelOfAuthenticationFromCurrentAuthentication()));
-        clientSession.setTimestamp(Time.currentTime());
+        clientSession.setTimestamp(userSession.getLastSessionRefresh());
 
         // Remove authentication session now
         new AuthenticationSessionManager(session).removeAuthenticationSession(userSession.getRealm(), authSession, true);
@@ -1085,7 +1085,8 @@ public class TokenManager {
             }
 
             if (clientSessionMaxLifespan > 0) {
-                int clientSessionMaxExpiration = userSession.getStarted() + clientSessionMaxLifespan;
+                AuthenticatedClientSessionModel clientSession = clientSessionCtx.getClientSession();
+                int clientSessionMaxExpiration = clientSession.getStarted() + clientSessionMaxLifespan;
                 sessionExpires = sessionExpires < clientSessionMaxExpiration ? sessionExpires : clientSessionMaxExpiration;
             }
 
@@ -1123,7 +1124,8 @@ public class TokenManager {
             }
 
             if (clientOfflineSessionMaxLifespan > 0) {
-                int clientOfflineSessionMaxExpiration = userSession.getStarted() + clientOfflineSessionMaxLifespan;
+                AuthenticatedClientSessionModel clientSession = clientSessionCtx.getClientSession();
+                int clientOfflineSessionMaxExpiration = clientSession.getStarted() + clientOfflineSessionMaxLifespan;
                 sessionExpires = sessionExpires < clientOfflineSessionMaxExpiration ? sessionExpires
                     : clientOfflineSessionMaxExpiration;
             }
