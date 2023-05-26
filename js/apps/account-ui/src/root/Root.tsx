@@ -6,14 +6,14 @@ import {
 } from "keycloak-masthead";
 import { Suspense, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { Outlet } from "react-router-dom";
+import { Outlet, useHref } from "react-router-dom";
 import { AlertProvider } from "ui-shared";
 
+import { ExternalLinkSquareAltIcon } from "@patternfly/react-icons";
 import { environment } from "../environment";
 import { keycloak } from "../keycloak";
 import { joinPath } from "../utils/joinPath";
 import { PageNav } from "./PageNav";
-import { ExternalLinkSquareAltIcon } from "@patternfly/react-icons";
 
 import style from "./Root.module.css";
 
@@ -37,6 +37,7 @@ const ReferrerLink = () => {
 
 export const Root = () => {
   const { t } = useTranslation();
+  const indexHref = useHref("/");
 
   const translations = useMemo<Translations>(
     () => ({
@@ -57,6 +58,7 @@ export const Root = () => {
             features={{ hasManageAccount: false }}
             showNavToggle
             brand={{
+              href: indexHref,
               src: joinPath(environment.resourceUrl, "logo.svg"),
               alt: t("logo"),
               className: style.brand,
