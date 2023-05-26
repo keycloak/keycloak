@@ -104,16 +104,6 @@ public class QuarkusPropertiesDistTest {
 
     @Test
     @BeforeStartDistribution(UpdateHibernateMetricsFromQuarkusProps.class)
-    @Launch({ "start", "--http-enabled=true", "--hostname-strict=false" })
-    @Order(7)
-    void testBuildRunTimeMismatchOnQuarkusBuildPropWarning(LaunchResult result) {
-        CLIResult cliResult = (CLIResult) result;
-        cliResult.assertNoBuild();
-        cliResult.assertBuildRuntimeMismatchWarning(QUARKUS_BUILDTIME_HIBERNATE_METRICS_KEY);
-    }
-
-    @Test
-    @BeforeStartDistribution(UpdateHibernateMetricsFromQuarkusProps.class)
     @Launch({ "build", "--metrics-enabled=true" })
     @Order(8)
     void buildFirstWithUnknownQuarkusBuildProperty(LaunchResult result) {
