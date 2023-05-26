@@ -196,8 +196,8 @@ public class HandleArtifactStepBuilder extends SamlDocumentStepBuilder<ArtifactR
 
         if (beforeStepChecker != null && beforeStepChecker instanceof SessionStateChecker) {
             SessionStateChecker sessionStateChecker = (SessionStateChecker) beforeStepChecker;
-            sessionStateChecker.setUserSessionProvider(session -> session.getProvider(SingleUseObjectProvider.class).get(artifact).get(SamlProtocol.USER_SESSION_ID));
-            sessionStateChecker.setClientSessionProvider(session -> session.getProvider(SingleUseObjectProvider.class).get(artifact).get(SamlProtocol.CLIENT_SESSION_ID));
+            sessionStateChecker.setUserSessionProvider(session -> session.singleUseObjects().get(artifact).get(SamlProtocol.USER_SESSION_ID));
+            sessionStateChecker.setClientSessionProvider(session -> session.singleUseObjects().get(artifact).get(SamlProtocol.CLIENT_SESSION_ID));
         }
 
         HttpPost post =  Soap.createMessage().addToBody(DocumentUtil.getDocument(transformed)).buildHttpPost(authServerSamlUrl);

@@ -116,6 +116,15 @@ HTTP/TLS:
                        detected based on the file name. If 'fips-mode' is set to 'strict' and no
                        value is set, it defaults to 'BCFKS'.
 
+Config:
+
+--config-keystore <config-keystore>
+                     Specifies a path to the KeyStore Configuration Source.
+--config-keystore-password <config-keystore-password>
+                     Specifies a password to the KeyStore Configuration Source.
+--config-keystore-type <config-keystore-type>
+                     Specifies a type of the KeyStore Configuration Source. Default: PKCS12.
+
 Proxy:
 
 --proxy <mode>       The proxy address forwarding mode if the server is behind a reverse proxy.
@@ -125,6 +134,9 @@ Vault:
 
 --vault-dir <dir>    If set, secrets can be obtained by reading the content of files within the
                        given directory.
+--vault-file <file>  Path to the keystore file.
+--vault-pass <pass>  Password for the vault keystore.
+--vault-type <type>  Specifies the type of the keystore file. Default: PKCS12.
 
 Logging:
 

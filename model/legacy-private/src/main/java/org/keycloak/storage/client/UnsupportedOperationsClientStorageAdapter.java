@@ -64,27 +64,4 @@ public abstract class UnsupportedOperationsClientStorageAdapter implements Clien
         return Stream.empty();
     }
 
-    @Override
-    public final Stream<String> getDefaultRolesStream() {
-        return Stream.empty();
-    }
-
-    @Override
-    public final void addDefaultRole(String name) {
-        throw new ModelException("Unsupported operation");
-
-    }
-
-    @Override
-    public final void updateDefaultRoles(String... defaultRoles) {
-        throw new ModelException("Unsupported operation");
-
-    }
-
-    @Override
-    public final void removeDefaultRoles(String... defaultRoles) {
-        throw new ModelException("Unsupported operation");
-    }
-
-
 }

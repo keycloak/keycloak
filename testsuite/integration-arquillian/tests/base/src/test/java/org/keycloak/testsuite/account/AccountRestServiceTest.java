@@ -386,6 +386,10 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
             user = updateAndGet(user);
             assertEquals("test-user@localhost", user.getUsername());
 
+            user.setEmail("new@localhost");
+            user = updateAndGet(user);
+            assertEquals("new@localhost", user.getUsername());
+
             realmRep.setRegistrationEmailAsUsername(false);
             adminClient.realm("test").update(realmRep);
 

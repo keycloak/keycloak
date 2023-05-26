@@ -5,7 +5,7 @@ import { HelpItem } from "ui-shared";
 
 import { adminClient } from "../../admin-client";
 import { useAlerts } from "../../components/alert/Alerts";
-import { FormAccess } from "../../components/form-access/FormAccess";
+import { FormAccess } from "../../components/form/FormAccess";
 import { WizardSectionHeader } from "../../components/wizard-section-header/WizardSectionHeader";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { convertFormToSettings } from "./LdapSettingsConnection";

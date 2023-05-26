@@ -1005,7 +1005,7 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
             Assert.assertNull(UserStoragePrivateUtil.userLocalStorage(session).getUserByUsername(appRealm, "username4"));
 
             // search by username (we use a terminal operation on the stream to ensure it is consumed)
-            Assert.assertEquals(1, session.users().searchForUserStream(appRealm, "username1").count());
+            Assert.assertEquals(1, session.users().searchForUserStream(appRealm, "\"username1\"").count());
             LDAPTestAsserts.assertUserImported(UserStoragePrivateUtil.userLocalStorage(session), appRealm, "username1", "John1", "Doel1", "user1@email.org", "121");
 
             // search by email (we use a terminal operation on the stream to ensure it is consumed)

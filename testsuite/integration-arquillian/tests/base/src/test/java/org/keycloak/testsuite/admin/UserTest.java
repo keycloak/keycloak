@@ -20,8 +20,8 @@ package org.keycloak.testsuite.admin;
 import org.hamcrest.Matchers;
 import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.jboss.arquillian.graphene.page.Page;
-import org.jboss.arquillian.test.api.ArquillianResource;
 import org.junit.After;
+import org.junit.Before;
 import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
@@ -33,7 +33,6 @@ import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.RoleMappingResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.admin.client.resource.UsersResource;
-import org.keycloak.common.Profile;
 import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.Base64;
 import org.keycloak.common.util.ObjectUtil;
@@ -62,9 +61,7 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.storage.UserStorageProvider;
-import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
 import org.keycloak.testsuite.federation.DummyUserFederationProviderFactory;
 import org.keycloak.testsuite.page.LoginPasswordUpdatePage;
 import org.keycloak.testsuite.pages.ErrorPage;
@@ -74,13 +71,13 @@ import org.keycloak.testsuite.pages.PageUtils;
 import org.keycloak.testsuite.pages.ProceedPage;
 import org.keycloak.testsuite.runonserver.RunHelpers;
 import org.keycloak.testsuite.updaters.Creator;
+import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.AdminClientUtil;
 import org.keycloak.testsuite.util.AdminEventPaths;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.GreenMailRule;
 import org.keycloak.testsuite.util.GroupBuilder;
 import org.keycloak.testsuite.util.MailUtils;
-import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.RoleBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
@@ -93,7 +90,6 @@ import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.ClientErrorException;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.Response;
-import jakarta.ws.rs.core.UriBuilder;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -139,9 +135,6 @@ public class UserTest extends AbstractAdminTest {
     @Page
     protected LoginPasswordUpdatePage passwordUpdatePage;
 
-    @ArquillianResource
-    protected OAuthClient oAuthClient;
-
     @Page
     protected InfoPage infoPage;
 
@@ -153,6 +146,12 @@ public class UserTest extends AbstractAdminTest {
 
     @Page
     protected LoginPage loginPage;
+
+    @Before
+    public void beforeUserTest() {
+        createAppClientInRealm(REALM_NAME);
+        assertAdminEvents.clear();
+    }
 
     @After
     public void after() {
@@ -371,7 +370,6 @@ public class UserTest extends AbstractAdminTest {
     }
 
     @Test
-    @DisableFeature(value = Profile.Feature.ACCOUNT2, skipRestart = true) // TODO remove this (KEYCLOAK-16228)
     public void updateUserWithHashedCredentials() {
         String userId = createUser("user_hashed_creds", "user_hashed_creds@localhost");
 
@@ -387,15 +385,17 @@ public class UserTest extends AbstractAdminTest {
 
         realm.users().get(userId).update(userRepresentation);
 
-        String accountUrl = RealmsResource.accountUrl(UriBuilder.fromUri(getAuthServerRoot())).build(REALM_NAME).toString();
-
-        driver.navigate().to(accountUrl);
+        oauth.realm(REALM_NAME);
+        driver.navigate().to(oauth.getLoginFormUrl());
 
         assertEquals("Sign in to your account", PageUtils.getPageTitle(driver));
 
         loginPage.login("user_hashed_creds", "admin");
 
-        assertTrue(driver.getTitle().contains("Account Management"));
+        assertTrue(driver.getTitle().contains("AUTH_RESPONSE"));
+
+        // oauth cleanup
+        oauth.realm("test");
     }
 
     @Test
@@ -2202,6 +2202,8 @@ public class UserTest extends AbstractAdminTest {
     @Test
     public void updateUserWithNewUsername() {
         switchEditUsernameAllowedOn(true);
+        getCleanup().addCleanup(() -> switchEditUsernameAllowedOn(false));
+
         String id = createUser();
 
         UserResource user = realm.users().get(id);
@@ -2211,14 +2213,12 @@ public class UserTest extends AbstractAdminTest {
 
         userRep = realm.users().get(id).toRepresentation();
         assertEquals("user11", userRep.getUsername());
-
-        // Revert
-        switchEditUsernameAllowedOn(false);
     }
 
     @Test
     public void updateUserWithoutUsername() {
         switchEditUsernameAllowedOn(true);
+        getCleanup().addCleanup(() -> switchEditUsernameAllowedOn(false));
 
         String id = createUser();
 
@@ -2242,14 +2242,12 @@ public class UserTest extends AbstractAdminTest {
         assertEquals("user1@localhost", rep.getEmail());
         assertEquals("Firstname", rep.getFirstName());
         assertEquals("Lastname", rep.getLastName());
-
-        // Revert
-        switchEditUsernameAllowedOn(false);
     }
 
     @Test
     public void updateUserWithEmailAsUsername() {
         switchRegistrationEmailAsUsername(true);
+        getCleanup().addCleanup(() -> switchRegistrationEmailAsUsername(false));
 
         String id = createUser();
 
@@ -2262,8 +2260,6 @@ public class UserTest extends AbstractAdminTest {
 
         userRep = realm.users().get(id).toRepresentation();
         assertEquals("user11@localhost", userRep.getUsername());
-
-        switchRegistrationEmailAsUsername(false);
     }
 
     @Test
@@ -2392,7 +2388,6 @@ public class UserTest extends AbstractAdminTest {
     }
 
     @Test
-    @DisableFeature(value = Profile.Feature.ACCOUNT2, skipRestart = true) // TODO remove this (KEYCLOAK-16228)
     public void resetUserPassword() {
         String userId = createUser("user1", "user1@localhost");
 
@@ -2404,15 +2399,17 @@ public class UserTest extends AbstractAdminTest {
         realm.users().get(userId).resetPassword(cred);
         assertAdminEvents.assertEvent(realmId, OperationType.ACTION, AdminEventPaths.userResetPasswordPath(userId), ResourceType.USER);
 
-        String accountUrl = RealmsResource.accountUrl(UriBuilder.fromUri(getAuthServerRoot())).build(REALM_NAME).toString();
-
-        driver.navigate().to(accountUrl);
+        oauth.realm(REALM_NAME);
+        driver.navigate().to(oauth.getLoginFormUrl());
 
         assertEquals("Sign in to your account", PageUtils.getPageTitle(driver));
 
         loginPage.login("user1", "password");
 
-        assertTrue(driver.getTitle().contains("Account Management"));
+        assertTrue(driver.getTitle().contains("AUTH_RESPONSE"));
+
+        // oauth cleanup
+        oauth.realm("test");
     }
 
     @Test
@@ -2754,19 +2751,18 @@ public class UserTest extends AbstractAdminTest {
     }
 
     @Test
-    @DisableFeature(value = Profile.Feature.ACCOUNT2, skipRestart = true) // TODO remove this (KEYCLOAK-16228)
     public void loginShouldFailAfterPasswordDeleted() {
         String userName = "credential-tester";
         String userPass = "s3cr37";
         String userId = createUser(REALM_NAME, userName, userPass);
         getCleanup(REALM_NAME).addUserId(userId);
 
-        String accountUrl = RealmsResource.accountUrl(UriBuilder.fromUri(getAuthServerRoot())).build(REALM_NAME).toString();
-        driver.navigate().to(accountUrl);
+        oauth.realm(REALM_NAME);
+        driver.navigate().to(oauth.getLoginFormUrl());
         assertEquals("Test user should be on the login page.", "Sign in to your account", PageUtils.getPageTitle(driver));
         loginPage.login(userName, userPass);
-        assertTrue("Test user should be successfully logged in.", driver.getTitle().contains("Account Management"));
-        accountPage.logOut();
+        assertTrue("Test user should be successfully logged in.", driver.getTitle().contains("AUTH_RESPONSE"));
+        AccountHelper.logout(realm, userName);
 
         Optional<CredentialRepresentation> passwordCredential =
                 realm.users().get(userId).credentials().stream()
@@ -2775,11 +2771,14 @@ public class UserTest extends AbstractAdminTest {
         assertTrue("Test user should have a password credential set.", passwordCredential.isPresent());
         realm.users().get(userId).removeCredential(passwordCredential.get().getId());
 
-        driver.navigate().to(accountUrl);
+        driver.navigate().to(oauth.getLoginFormUrl());
         assertEquals("Test user should be on the login page.", "Sign in to your account", PageUtils.getPageTitle(driver));
         loginPage.login(userName, userPass);
         assertTrue("Test user should fail to log in after password was deleted.",
                 driver.getCurrentUrl().contains(String.format("/realms/%s/login-actions/authenticate", REALM_NAME)));
+
+        //oauth cleanup
+        oauth.realm("test");
     }
 
     @Test

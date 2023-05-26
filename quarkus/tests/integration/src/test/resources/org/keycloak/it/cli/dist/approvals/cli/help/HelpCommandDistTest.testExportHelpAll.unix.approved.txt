@@ -132,6 +132,15 @@ Feature:
                        recovery-codes, scripts, step-up-authentication, token-exchange,
                        update-email, web-authn.
 
+Config:
+
+--config-keystore <config-keystore>
+                     Specifies a path to the KeyStore Configuration Source.
+--config-keystore-password <config-keystore-password>
+                     Specifies a password to the KeyStore Configuration Source.
+--config-keystore-type <config-keystore-type>
+                     Specifies a type of the KeyStore Configuration Source. Default: PKCS12.
+
 Logging:
 
 --log <handler>      Enable one or more log handlers in a comma-separated list. Possible values

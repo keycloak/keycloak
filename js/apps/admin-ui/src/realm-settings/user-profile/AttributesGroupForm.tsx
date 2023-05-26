@@ -12,7 +12,7 @@ import { FormProvider, SubmitHandler, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate, useParams } from "react-router-dom";
 
-import { FormAccess } from "../../components/form-access/FormAccess";
+import { FormAccess } from "../../components/form/FormAccess";
 import { HelpItem } from "ui-shared";
 import type { KeyValueType } from "../../components/key-value-form/key-value-convert";
 import { KeyValueInput } from "../../components/key-value-form/KeyValueInput";

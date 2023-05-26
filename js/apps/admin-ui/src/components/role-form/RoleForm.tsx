@@ -9,7 +9,7 @@ import { SubmitHandler, UseFormReturn, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Link, To } from "react-router-dom";
 
-import { FormAccess } from "../form-access/FormAccess";
+import { FormAccess } from "../form/FormAccess";
 import { AttributeForm } from "../key-value-form/AttributeForm";
 import { KeycloakTextArea } from "../keycloak-text-area/KeycloakTextArea";
 import { KeycloakTextInput } from "../keycloak-text-input/KeycloakTextInput";

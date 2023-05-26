@@ -134,7 +134,7 @@ public interface CrudOperations<V extends AbstractEntity & UpdatableEntity, M> {
      * @param value
      * @return
      */
-    default String determineKeyFromValue(V value, boolean forCreate) {
+    default String determineKeyFromValue(V value) {
         return value == null ? null : value.getId();
     }
 }

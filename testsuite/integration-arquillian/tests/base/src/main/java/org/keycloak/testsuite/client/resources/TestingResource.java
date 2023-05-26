@@ -83,11 +83,6 @@ public interface TestingResource {
     void clearAdminEventQueue();
 
     @GET
-    @Path("/clear-event-store")
-    @Produces(MediaType.APPLICATION_JSON)
-    void clearEventStore();
-
-    @GET
     @Path("/clear-event-store-for-realm")
     @Produces(MediaType.APPLICATION_JSON)
     void clearEventStore(@QueryParam("realmId") String realmId);
@@ -126,11 +121,6 @@ public interface TestingResource {
     @Path("/on-event")
     @Consumes(MediaType.APPLICATION_JSON)
     public void onEvent(final EventRepresentation rep);
-
-    @GET
-    @Path("/clear-admin-event-store")
-    @Produces(MediaType.APPLICATION_JSON)
-    void clearAdminEventStore();
 
     @GET
     @Path("/clear-admin-event-store-for-realm")

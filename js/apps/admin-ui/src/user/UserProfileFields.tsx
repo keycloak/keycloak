@@ -1,7 +1,4 @@
-import type {
-  UserProfileAttribute,
-  UserProfileAttributeRequired,
-} from "@keycloak/keycloak-admin-client/lib/defs/userProfileConfig";
+import type { UserProfileAttribute } from "@keycloak/keycloak-admin-client/lib/defs/userProfileConfig";
 import {
   Form,
   FormGroup,
@@ -92,8 +89,9 @@ const FormField = ({ attribute, roles }: FormFieldProps) => {
   const isRootAttribute = (attr?: string) =>
     attr && ROOT_ATTRIBUTES.includes(attr);
 
-  const isRequired = (required: UserProfileAttributeRequired | undefined) =>
-    Object.keys(required || {}).length !== 0;
+  const isRequired = (attribute: UserProfileAttribute) =>
+    Object.keys(attribute.required || {}).length !== 0 ||
+    ((attribute.validations?.length?.min as number) || 0) > 0;
 
   const fieldName = (attribute: UserProfileAttribute) =>
     `${isRootAttribute(attribute.name) ? "" : "attributes."}${attribute.name}`;
@@ -107,7 +105,7 @@ const FormField = ({ attribute, roles }: FormFieldProps) => {
           : attribute.displayName) || attribute.name
       }
       fieldId={attribute.name}
-      isRequired={isRequired(attribute.required)}
+      isRequired={isRequired(attribute)}
       validated={errors.username ? "error" : "default"}
       helperTextInvalid={t("common:required")}
     >

@@ -25,6 +25,7 @@ import org.keycloak.models.map.common.StringKeyConverter;
 import org.keycloak.models.map.common.delegate.SimpleDelegateProvider;
 import org.keycloak.models.map.storage.QueryParameters;
 import org.keycloak.models.map.storage.CrudOperations;
+import org.keycloak.models.map.storage.chm.ConcurrentHashMapCrudOperations;
 import org.keycloak.models.map.storage.chm.ConcurrentHashMapStorage;
 import org.keycloak.models.map.storage.chm.MapModelCriteriaBuilder;
 import org.keycloak.models.map.storage.criteria.DefaultModelCriteria;
@@ -43,15 +44,15 @@ import java.util.stream.Stream;
 
 import static org.keycloak.models.map.storage.ModelCriteriaBuilder.Operator.IN;
 
-public class HotRodUserSessionMapStorage<K> extends ConcurrentHashMapStorage<K, MapUserSessionEntity, UserSessionModel> {
+public class HotRodUserSessionMapStorage<K> extends ConcurrentHashMapStorage<K, MapUserSessionEntity, UserSessionModel, CrudOperations<MapUserSessionEntity, UserSessionModel>> {
 
-    private final ConcurrentHashMapStorage<String, MapAuthenticatedClientSessionEntity, AuthenticatedClientSessionModel> clientSessionStore;
+    private final ConcurrentHashMapStorage<String, MapAuthenticatedClientSessionEntity, AuthenticatedClientSessionModel, CrudOperations<MapAuthenticatedClientSessionEntity, AuthenticatedClientSessionModel>> clientSessionStore;
 
     public HotRodUserSessionMapStorage(CrudOperations<MapUserSessionEntity, UserSessionModel> map,
                                        StringKeyConverter<K> keyConverter,
                                        DeepCloner cloner,
                                        Map<SearchableModelField<? super UserSessionModel>, MapModelCriteriaBuilder.UpdatePredicatesFunc<K, MapUserSessionEntity, UserSessionModel>> fieldPredicates,
-                                       ConcurrentHashMapStorage<String, MapAuthenticatedClientSessionEntity, AuthenticatedClientSessionModel> clientSessionStore
+                                       ConcurrentHashMapStorage<String, MapAuthenticatedClientSessionEntity, AuthenticatedClientSessionModel, CrudOperations<MapAuthenticatedClientSessionEntity, AuthenticatedClientSessionModel>> clientSessionStore
     ) {
         super(map, keyConverter, cloner, fieldPredicates);
         this.clientSessionStore = clientSessionStore;

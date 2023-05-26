@@ -48,7 +48,6 @@ import org.keycloak.theme.beans.MessageType;
 import org.keycloak.theme.beans.MessagesPerFieldBean;
 import org.keycloak.theme.freemarker.FreeMarkerProvider;
 import org.keycloak.utils.MediaType;
-import org.keycloak.utils.StringUtil;
 
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MultivaluedMap;
@@ -217,14 +216,9 @@ public class FreeMarkerAccountProvider implements AccountProvider {
      * @return message bundle for other use
      */
     protected Properties handleThemeResources(Theme theme, Locale locale, Map<String, Object> attributes) {
-        Properties messagesBundle = new Properties();
+        Properties messagesBundle;
         try {
-            if(!StringUtil.isNotBlank(realm.getDefaultLocale()))
-            {
-                messagesBundle.putAll(realm.getRealmLocalizationTextsByLocale(realm.getDefaultLocale()));
-            }
-            messagesBundle.putAll(theme.getMessages(locale));
-            messagesBundle.putAll(realm.getRealmLocalizationTextsByLocale(locale.toLanguageTag()));
+            messagesBundle = theme.getEnhancedMessages(realm, locale);
             attributes.put("msg", new MessageFormatterMethod(locale, messagesBundle));
         } catch (IOException e) {
             logger.warn("Failed to load messages", e);

@@ -13,15 +13,13 @@ import { HelpItem } from "ui-shared";
 
 import { adminClient } from "../../admin-client";
 import { useAlerts } from "../../components/alert/Alerts";
-import { FormAccess } from "../../components/form-access/FormAccess";
+import { FormAccess } from "../../components/form/FormAccess";
 import { KeycloakSpinner } from "../../components/keycloak-spinner/KeycloakSpinner";
 import { KeycloakTextArea } from "../../components/keycloak-text-area/KeycloakTextArea";
 import { useFetch } from "../../utils/useFetch";
 import { prettyPrintJSON } from "../../util";
 import { useParams } from "../../utils/useParams";
 import type { ClientParams } from "../routes/Client";
-
-import "./authorization-details.css";
 
 export const AuthorizationExport = () => {
   const { t } = useTranslation("clients");
@@ -82,6 +80,7 @@ export const AuthorizationExport = () => {
             resizeOrientation="vertical"
             value={code}
             aria-label={t("authDetails")}
+            rows={10}
           />
         </FormGroup>
         <ActionGroup>

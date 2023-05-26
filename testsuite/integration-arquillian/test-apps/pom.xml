@@ -16,7 +16,6 @@
 
     <modules>
         <module>test-apps-dist</module>
-        <module>photoz</module>
         <module>hello-world-authz-service</module>
         <module>servlet-authz</module>
         <module>servlet-policy-enforcer</module>

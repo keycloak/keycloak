@@ -350,18 +350,6 @@
                                     </artifactItem>
                                     <artifactItem>
                                         <groupId>org.keycloak.testsuite</groupId>
-                                        <artifactId>photoz-html5-client</artifactId>
-                                        <version>${project.version}</version>
-                                        <type>war</type>
-                                    </artifactItem>
-                                    <artifactItem>
-                                        <groupId>org.keycloak.testsuite</groupId>
-                                        <artifactId>photoz-restful-api</artifactId>
-                                        <version>${project.version}</version>
-                                        <type>war</type>
-                                    </artifactItem>
-                                    <artifactItem>
-                                        <groupId>org.keycloak.testsuite</groupId>
                                         <artifactId>servlet-authz-app</artifactId>
                                         <version>${project.version}</version>
                                         <type>war</type>
@@ -1842,6 +1830,13 @@
                     <artifactId>${jdbc.mvn.artifactId}</artifactId>
                     <version>${jdbc.mvn.version}</version>
                     <scope>compile</scope>
+                </dependency>
+
+                <!-- OpenJDK 17 and further versions doesn't provide Nashorn library out of the box. -->
+                <dependency>
+                    <groupId>org.openjdk.nashorn</groupId>
+                    <artifactId>nashorn-core</artifactId>
+                    <version>${nashorn.version}</version>
                 </dependency>
 
                 <!-- CLI -->
