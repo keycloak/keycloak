@@ -35,6 +35,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.keycloak.models.Constants;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -105,7 +106,7 @@ public class MultipleRealmsTest extends AbstractTestRealmKeycloakTest {
             Assert.assertTrue(r2user1.credentialManager().isValid(UserCredentialModel.password("pass2")));
 
             // Test searching
-            Assert.assertEquals(2, currentSession.users().searchForUserStream(realm1, "user").count());
+            Assert.assertEquals(2, currentSession.users().searchForUserStream(realm1, Map.of(UserModel.SEARCH, "user")).count());
 
             return new String[] { id1, id2 };
         });
@@ -124,8 +125,8 @@ public class MultipleRealmsTest extends AbstractTestRealmKeycloakTest {
             currentSession.users().removeUser(realm1, r1user1);
             UserModel user2 = currentSession.users().getUserByUsername(realm1, "user2");
             currentSession.users().removeUser(realm1, user2);
-            Assert.assertEquals(0, currentSession.users().searchForUserStream(realm1, "user").count());
-            Assert.assertEquals(2, currentSession.users().searchForUserStream(realm2, "user").count());
+            Assert.assertEquals(0, currentSession.users().searchForUserStream(realm1, Map.of(UserModel.SEARCH, "user")).count());
+            Assert.assertEquals(2, currentSession.users().searchForUserStream(realm2, Map.of(UserModel.SEARCH, "user")).count());
 
 
             UserModel user1 = currentSession.users().getUserByUsername(realm1, "user1");

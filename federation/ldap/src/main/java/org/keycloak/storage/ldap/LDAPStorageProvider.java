@@ -343,11 +343,6 @@ public class LDAPStorageProvider implements UserStorageProvider,
         return getUserByUsername(realm, storageId.getExternalId());
     }
 
-    @Override
-    public Stream<UserModel> searchForUserStream(RealmModel realm, String search, Integer firstResult, Integer maxResults) {
-        return searchForUserStream(realm, Map.of(UserModel.SEARCH, search), firstResult, maxResults);
-    }
-
     /**
      * It supports 
      * <ul>

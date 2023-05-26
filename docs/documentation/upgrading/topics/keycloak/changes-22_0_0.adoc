@@ -349,3 +349,4 @@ their corresponding replacements.
 * `Streams` interfaces in federated storage provider classes were deprecated.
 * `KeycloakModelUtils#getClientScopeMappings` was removed.
 * Deprecated methods from `KeycloakSession` were removed.
+* `UserQueryProvider#getUsersStream` methods were removed.

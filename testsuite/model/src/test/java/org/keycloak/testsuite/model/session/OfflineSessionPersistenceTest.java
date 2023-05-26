@@ -59,7 +59,6 @@ import org.hamcrest.Matchers;
 import org.junit.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.equalTo;
 
 /**
@@ -357,7 +356,7 @@ public class OfflineSessionPersistenceTest extends KeycloakModelTest {
         reinitializeKeycloakSessionFactory();
 
         Map<String, Set<String>> actualOfflineSessionIds = withRealm(realmId, (session, realm) -> session.users()
-          .getUsersStream(realm)
+          .searchForUserStream(realm, Collections.emptyMap())
           .collect(Collectors.toMap(
             UserModel::getId,
             user -> session.sessions().getOfflineUserSessionsStream(realm, user).map(UserSessionModel::getId).collect(Collectors.toCollection(TreeSet::new))

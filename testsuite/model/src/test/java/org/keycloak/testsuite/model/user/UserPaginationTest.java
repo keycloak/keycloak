@@ -20,6 +20,7 @@ import org.keycloak.testsuite.model.RequireProvider;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -69,7 +70,7 @@ public class UserPaginationTest extends KeycloakModelTest {
     @Test
     public void testNoPaginationCalls() {
         List<UserModel> list = withRealm(realmId, (session, realm) ->
-                session.users().searchForUserStream(realm,"", 0, Constants.DEFAULT_MAX_RESULTS) // Default values used in UsersResource
+                session.users().searchForUserStream(realm, Map.of(UserModel.SEARCH, ""), 0, Constants.DEFAULT_MAX_RESULTS) // Default values used in UsersResource
                         .collect(Collectors.toList()));
         
         assertThat(list, hasSize(8));
@@ -83,7 +84,7 @@ public class UserPaginationTest extends KeycloakModelTest {
     @Test
     public void testPaginationStarting0() {
         List<UserModel> list = withRealm(realmId, (session, realm) ->
-                session.users().searchForUserStream(realm,"", 0, 6)
+                session.users().searchForUserStream(realm, Map.of(UserModel.SEARCH, ""), 0, 6)
                         .collect(Collectors.toList()));
         
         assertThat(list, hasSize(6));
@@ -98,7 +99,7 @@ public class UserPaginationTest extends KeycloakModelTest {
     @Test
     public void testPaginationFirstResultInFirstProvider() {
         List<UserModel> list = withRealm(realmId, (session, realm) ->
-                session.users().searchForUserStream(realm,"", 1, 6)
+                session.users().searchForUserStream(realm, Map.of(UserModel.SEARCH, ""), 1, 6)
                         .collect(Collectors.toList()));
         assertThat(list, hasSize(6));
 
@@ -111,7 +112,7 @@ public class UserPaginationTest extends KeycloakModelTest {
     @Test
     public void testPaginationFirstResultIsExactlyTheAmountOfUsersInTheFirstProvider() {
         List<UserModel> list = withRealm(realmId, (session, realm) ->
-                session.users().searchForUserStream(realm,"", 4, 6)
+                session.users().searchForUserStream(realm, Map.of(UserModel.SEARCH, ""), 4, 6)
                         .collect(Collectors.toList()));
         assertThat(list, hasSize(4));
 
@@ -124,7 +125,7 @@ public class UserPaginationTest extends KeycloakModelTest {
     @Test
     public void testPaginationFirstResultIsInSecondProvider() {
         List<UserModel> list = withRealm(realmId, (session, realm) ->
-                session.users().searchForUserStream(realm,"", 5, 6)
+                session.users().searchForUserStream(realm, Map.of(UserModel.SEARCH, ""), 5, 6)
                 .collect(Collectors.toList()));
         
         assertThat(list, hasSize(3));
