@@ -46,7 +46,6 @@ public abstract class AbstractUiTest extends AbstractAuthTest {
     @BeforeClass
     public static void assumeSupportedBrowser() {
         assumeFalse("Browser must not be htmlunit", System.getProperty("browser").equals("htmlUnit"));
-        assumeFalse("Browser must not be PhantomJS", System.getProperty("browser").equals("phantomjs"));
     }
 
     @Before
