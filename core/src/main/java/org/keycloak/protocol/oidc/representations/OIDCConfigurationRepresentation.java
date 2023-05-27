@@ -193,6 +193,9 @@ public class OIDCConfigurationRepresentation {
     @JsonProperty("mtls_endpoint_aliases")
     private MTLSEndpointAliases mtlsEndpointAliases;
 
+    @JsonProperty("authorization_response_iss_parameter_supported")
+    private Boolean authorizationResponseIssParameterSupported;
+
     protected Map<String, Object> otherClaims = new HashMap<String, Object>();
 
     public String getIssuer() {
@@ -624,4 +627,13 @@ public class OIDCConfigurationRepresentation {
     public Boolean getFrontChannelLogoutSupported() {
         return frontChannelLogoutSupported;
     }
+
+    public Boolean getAuthorizationResponseIssParameterSupported() {
+        return authorizationResponseIssParameterSupported;
+    }
+
+    public void setAuthorizationResponseIssParameterSupported(Boolean authorizationResponseIssParameterSupported) {
+        this.authorizationResponseIssParameterSupported = authorizationResponseIssParameterSupported;
+    }
+
 }

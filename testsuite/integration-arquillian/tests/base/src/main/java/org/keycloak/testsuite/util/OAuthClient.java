@@ -1798,6 +1798,8 @@ public class OAuthClient {
         // Just during FAPI JARM response mode JWT
         private String response;
 
+        private String issuer;
+
         public AuthorizationEndpointResponse(OAuthClient client) {
             boolean fragment;
             if (client.responseMode == null || "jwt".equals(client.responseMode)) {
@@ -1830,6 +1832,7 @@ public class OAuthClient {
             tokenType = params.get(OAuth2Constants.TOKEN_TYPE);
             expiresIn = params.get(OAuth2Constants.EXPIRES_IN);
             response = params.get(OAuth2Constants.RESPONSE);
+            issuer = params.get(OAuth2Constants.ISSUER);
         }
 
         public boolean isRedirected() {
@@ -1874,6 +1877,9 @@ public class OAuthClient {
 
         public String getResponse() {
             return response;
+        }
+        public String getIssuer() {
+            return issuer;
         }
     }
 

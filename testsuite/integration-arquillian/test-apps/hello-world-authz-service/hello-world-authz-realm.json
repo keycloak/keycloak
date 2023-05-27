@@ -40,7 +40,10 @@
       "redirectUris" : [ "http://localhost:8080/hello-world-authz-service/*" ],
       "baseUrl": "http://localhost:8080/hello-world-authz-service",
       "adminUrl": "http://localhost:8080/hello-world-authz-service",
-      "directAccessGrantsEnabled" : true
+      "directAccessGrantsEnabled" : true,
+      "attributes" : {
+        "exclude.issuer.from.auth.response": "true"
+      }
     }
   ]
 }

@@ -33,6 +33,7 @@ import org.keycloak.common.util.Base64Url;
 import org.keycloak.models.Constants;
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderMapperSyncMode;
+import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -61,6 +62,7 @@ import org.keycloak.util.JsonSerialization;
 import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.core.UriBuilder;
 import java.net.URL;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -138,6 +140,11 @@ public class ClientInitiatedAccountLinkTest extends AbstractServletsAdapterTest 
         servlet.getRedirectUris().add(uri + "/*");
         servlet.setSecret("password");
         servlet.setFullScopeAllowed(true);
+
+        Map<String, String> attributes = Optional.ofNullable(servlet.getAttributes()).orElse(new HashMap<>());
+        attributes.put(OIDCConfigAttributes.EXCLUDE_ISSUER_FROM_AUTH_RESPONSE, Boolean.TRUE.toString());
+        servlet.setAttributes(attributes);
+
         realm.setClients(new LinkedList<>());
         realm.getClients().add(servlet);
         testRealms.add(realm);

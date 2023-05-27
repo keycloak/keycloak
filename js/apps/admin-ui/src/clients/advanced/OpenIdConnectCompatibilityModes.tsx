@@ -58,6 +58,35 @@ export const OpenIdConnectCompatibilityModes = ({
         />
       </FormGroup>
       <FormGroup
+        label={t("excludeIssuerFromAuthenticationResponse")}
+        fieldId="excludeIssuerFromAuthenticationResponse"
+        hasNoPaddingTop
+        labelIcon={
+          <HelpItem
+            helpText={t("clients-help:excludeIssuerFromAuthenticationResponse")}
+            fieldLabelId="clients:excludeIssuerFromAuthenticationResponse"
+          />
+        }
+      >
+        <Controller
+          name={convertAttributeNameToForm<FormFields>(
+            "attributes.exclude.issuer.from.auth.response",
+          )}
+          defaultValue=""
+          control={control}
+          render={({ field }) => (
+            <Switch
+              id="excludeIssuerFromAuthenticationResponse-switch"
+              label={t("common:on")}
+              labelOff={t("common:off")}
+              isChecked={field.value === "true"}
+              onChange={(value) => field.onChange(value.toString())}
+              aria-label={t("excludeIssuerFromAuthenticationResponse")}
+            />
+          )}
+        />
+      </FormGroup>
+      <FormGroup
         label={t("useRefreshTokens")}
         fieldId="useRefreshTokens"
         hasNoPaddingTop
