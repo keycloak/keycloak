@@ -163,6 +163,16 @@ public class OIDCAdvancedConfigWrapper extends AbstractClientConfigWrapper {
         setAttribute(OIDCConfigAttributes.EXCLUDE_SESSION_STATE_FROM_AUTH_RESPONSE, val);
     }
 
+    public boolean isExcludeIssuerFromAuthResponse() {
+        String excludeIssuerFromAuthResponse = getAttribute(OIDCConfigAttributes.EXCLUDE_ISSUER_FROM_AUTH_RESPONSE);
+        return Boolean.parseBoolean(excludeIssuerFromAuthResponse);
+    }
+
+    public void setExcludeIssuerFromAuthResponse(boolean excludeIssuerFromAuthResponse) {
+        String val = String.valueOf(excludeIssuerFromAuthResponse);
+        setAttribute(OIDCConfigAttributes.EXCLUDE_ISSUER_FROM_AUTH_RESPONSE, val);
+    }
+
     // KEYCLOAK-6771 Certificate Bound Token
     // https://tools.ietf.org/html/draft-ietf-oauth-mtls-08#section-6.5
     public boolean isUseMtlsHokToken() {

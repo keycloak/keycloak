@@ -492,6 +492,7 @@
   "authorizationEncryptedResponseEnc": "Authorization response encryption content encryption algorithm",
   "openIdConnectCompatibilityModes": "Open ID Connect Compatibility Modes",
   "excludeSessionStateFromAuthenticationResponse": "Exclude Session State From Authentication Response",
+  "excludeIssuerFromAuthenticationResponse": "Exclude Issuer From Authentication Response",
   "useRefreshTokens": "Use refresh tokens",
   "useRefreshTokenForClientCredentialsGrant": "Use refresh tokens for client credentials grant",
   "useLowerCaseBearerType": "Use lower-case bearer type in token responses",

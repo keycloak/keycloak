@@ -42,6 +42,7 @@ public final class OIDCConfigAttributes {
     public static final String USE_JWKS_STRING = "use.jwks.string";
 
     public static final String EXCLUDE_SESSION_STATE_FROM_AUTH_RESPONSE = "exclude.session.state.from.auth.response";
+    public static final String EXCLUDE_ISSUER_FROM_AUTH_RESPONSE = "exclude.issuer.from.auth.response";
 
     public static final String USE_MTLS_HOK_TOKEN = "tls.client.certificate.bound.access.tokens";
 

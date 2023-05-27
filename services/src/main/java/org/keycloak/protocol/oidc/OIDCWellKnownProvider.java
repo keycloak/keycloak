@@ -212,6 +212,8 @@ public class OIDCWellKnownProvider implements WellKnownProvider {
         MTLSEndpointAliases mtlsEndpointAliases = getMtlsEndpointAliases(config);
         config.setMtlsEndpointAliases(mtlsEndpointAliases);
 
+        config.setAuthorizationResponseIssParameterSupported(true);
+
         config = checkConfigOverride(config);
         return config;
     }
