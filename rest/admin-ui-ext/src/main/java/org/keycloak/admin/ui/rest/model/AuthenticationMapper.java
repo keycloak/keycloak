@@ -3,6 +3,7 @@ package org.keycloak.admin.ui.rest.model;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.IdentityProviderModel;
@@ -22,7 +23,8 @@ public class AuthenticationMapper {
         authentication.setBuiltIn(flow.isBuiltIn());
         authentication.setDescription(flow.getDescription());
 
-        final List<String> usedByIdp = identityProviders.filter(idp -> idp.getFirstBrokerLoginFlowId().equals(flow.getId()))
+        final List<String> usedByIdp = identityProviders.filter(idp -> flow.getId().equals(idp.getFirstBrokerLoginFlowId())
+                        || flow.getId().equals(idp.getPostBrokerLoginFlowId()))
                 .map(IdentityProviderModel::getAlias).limit(MAX_USED_BY).collect(Collectors.toList());
         if (!usedByIdp.isEmpty()) {
             authentication.setUsedBy(new UsedBy(UsedBy.UsedByType.SPECIFIC_PROVIDERS, usedByIdp));

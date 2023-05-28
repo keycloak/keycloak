@@ -18,10 +18,47 @@ import { useRealm } from "../context/realm-context/RealmContext";
 import helpUrls from "../help-urls";
 import { RevocationModal } from "./RevocationModal";
 import SessionsTable from "./SessionsTable";
+import useToggle from "../utils/useToggle";
 
 import "./SessionsSection.css";
 
 type FilterType = "ALL" | "REGULAR" | "OFFLINE";
+
+type SessionFilterProps = {
+  filterType: FilterType;
+  onChange: (filterType: FilterType) => void;
+};
+
+const SessionFilter = ({ filterType, onChange }: SessionFilterProps) => {
+  const { t } = useTranslation("sessions");
+
+  const [open, toggle] = useToggle();
+
+  return (
+    <Select
+      data-testid="filter-session-type-select"
+      isOpen={open}
+      onToggle={toggle}
+      toggleIcon={<FilterIcon />}
+      onSelect={(_, value) => {
+        const filter = value as FilterType;
+        onChange(filter);
+        toggle();
+      }}
+      selections={filterType}
+    >
+      <SelectOption data-testid="all-sessions-option" value="ALL">
+        {t("sessionsType.allSessions")}
+      </SelectOption>
+      <SelectOption data-testid="regular-sso-option" value="REGULAR">
+        {t("sessionsType.regularSSO")}
+      </SelectOption>
+      <SelectOption data-testid="offline-option" value="OFFLINE">
+        {t("sessionsType.offline")}
+      </SelectOption>
+    </Select>
+  );
+};
 
 export default function SessionsSection() {
   const { t } = useTranslation("sessions");
@@ -32,7 +69,6 @@ export default function SessionsSection() {
   const { realm } = useRealm();
 
   const [revocationModalOpen, setRevocationModalOpen] = useState(false);
-  const [filterDropdownOpen, setFilterDropdownOpen] = useState(false);
   const [filterType, setFilterType] = useState<FilterType>("ALL");
   const [noSessions, setNoSessions] = useState(false);
 
@@ -111,28 +147,13 @@ export default function SessionsSection() {
           loader={loader}
           isSearching={filterType !== "ALL"}
           filter={
-            <Select
-              data-testid="filter-session-type-select"
-              isOpen={filterDropdownOpen}
-              onToggle={(value) => setFilterDropdownOpen(value)}
-              toggleIcon={<FilterIcon />}
-              onSelect={(_, value) => {
-                setFilterType(value as FilterType);
-                setFilterDropdownOpen(false);
+            <SessionFilter
+              filterType={filterType}
+              onChange={(type) => {
+                setFilterType(type);
                 refresh();
               }}
-              selections={filterType}
-            >
-              <SelectOption data-testid="all-sessions-option" value="ALL">
-                {t("sessionsType.allSessions")}
-              </SelectOption>
-              <SelectOption data-testid="regular-sso-option" value="REGULAR">
-                {t("sessionsType.regularSSO")}
-              </SelectOption>
-              <SelectOption data-testid="offline-option" value="OFFLINE">
-                {t("sessionsType.offline")}
-              </SelectOption>
-            </Select>
+            />
           }
         />
       </PageSection>

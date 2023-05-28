@@ -52,6 +52,8 @@ export const ResetPasswordDialog = ({
     formState: { isValid, errors },
     watch,
     handleSubmit,
+    clearErrors,
+    setError,
   } = useForm<CredentialsForm>({
     defaultValues: credFormDefaultValues,
     mode: "onChange",
@@ -59,6 +61,7 @@ export const ResetPasswordDialog = ({
 
   const [confirm, toggle] = useToggle(true);
   const password = watch("password", "");
+  const passwordConfirmation = watch("passwordConfirmation", "");
 
   const { addAlert, addError } = useAlerts();
 
@@ -121,6 +124,7 @@ export const ResetPasswordDialog = ({
     onClose();
   };
 
+  const { onChange, ...rest } = register("password", { required: true });
   return (
     <>
       <ConfirmSaveModal />
@@ -157,7 +161,17 @@ export const ResetPasswordDialog = ({
             <PasswordInput
               data-testid="passwordField"
               id="password"
-              {...register("password", { required: true })}
+              onChange={(e) => {
+                onChange(e);
+                if (passwordConfirmation !== e.currentTarget.value) {
+                  setError("passwordConfirmation", {
+                    message: t("confirmPasswordDoesNotMatch").toString(),
+                  });
+                } else {
+                  clearErrors("passwordConfirmation");
+                }
+              }}
+              {...rest}
             />
           </FormGroup>
           <FormGroup

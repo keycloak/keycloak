@@ -9,7 +9,7 @@
   ],
   "types": "lib/index.d.ts",
   "engines": {
-    "node": "^18"
+    "node": ">=18"
   },
   "scripts": {
     "build": "wireit",

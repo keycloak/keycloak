@@ -71,17 +71,30 @@
                 </file>
             </activation>
             <dependencies>
+                <!-- These ZIPs can be fetched from artifactItems, but we need to properly assess the Maven build execution order -->
                 <dependency>
                     <groupId>org.keycloak</groupId>
                     <artifactId>${app.server.oidc.adapter.artifactId}</artifactId>
                     <version>${oidc-adapter.version}</version>
                     <type>zip</type>
+                    <exclusions>
+                        <exclusion>
+                            <groupId>*</groupId>
+                            <artifactId>*</artifactId>
+                        </exclusion>
+                    </exclusions>
                 </dependency>
                 <dependency>
                     <groupId>org.keycloak</groupId>
                     <artifactId>${app.server.saml.adapter.artifactId}</artifactId>
                     <version>${saml-adapter.version}</version>
                     <type>zip</type>
+                    <exclusions>
+                        <exclusion>
+                            <groupId>*</groupId>
+                            <artifactId>*</artifactId>
+                        </exclusion>
+                    </exclusions>
                 </dependency>
             </dependencies>
             <build>
