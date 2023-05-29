@@ -18,7 +18,10 @@
 package org.keycloak.operator.crds.v2alpha1.deployment.spec;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 import io.sundr.builder.annotations.Buildable;
+
+import java.util.Map;
 
 @Buildable(editableEnabled = false, builderPackage = "io.fabric8.kubernetes.api.builder")
 public class IngressSpec {
@@ -26,11 +29,23 @@ public class IngressSpec {
     @JsonProperty("enabled")
     private boolean enabled = true;
 
+    @JsonProperty("annotations")
+    @JsonPropertyDescription("Additional annotations to be appended to the Ingress object")
+    Map<String, String> annotations;
+
     public boolean isIngressEnabled() {
         return enabled;
     }
 
     public void setIngressEnabled(boolean enabled) {
         this.enabled = enabled;
+    }
+
+    public Map<String, String> getAnnotations() {
+        return annotations;
+    }
+
+    public void setAnnotations(Map<String, String> annotations) {
+        this.annotations = annotations;
     }
 }

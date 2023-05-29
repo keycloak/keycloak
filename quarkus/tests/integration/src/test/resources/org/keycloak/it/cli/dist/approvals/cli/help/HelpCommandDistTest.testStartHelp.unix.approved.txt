@@ -166,6 +166,15 @@ Health:
                        are available at the '/health', '/health/ready' and '/health/live'
                        endpoints. Default: false.
 
+Config:
+
+--config-keystore <config-keystore>
+                     Specifies a path to the KeyStore Configuration Source.
+--config-keystore-password <config-keystore-password>
+                     Specifies a password to the KeyStore Configuration Source.
+--config-keystore-type <config-keystore-type>
+                     Specifies a type of the KeyStore Configuration Source. Default: PKCS12.
+
 Metrics:
 
 --metrics-enabled <true|false>

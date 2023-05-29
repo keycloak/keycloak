@@ -97,6 +97,12 @@
             <artifactId>wildfly-elytron</artifactId>
         </dependency>
 
+        <!-- SmallRye -->
+        <dependency>
+            <groupId>io.smallrye.config</groupId>
+            <artifactId>smallrye-config-source-keystore</artifactId>
+        </dependency>
+
         <!-- CLI -->
         <dependency>
             <groupId>info.picocli</groupId>
