@@ -30,7 +30,6 @@ import org.jboss.logging.Logger;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainers;
 import org.keycloak.testsuite.arquillian.containers.SelfManagedAppContainerLifecycle;
-import org.keycloak.testsuite.utils.arquillian.ContainerConstants;
 import org.wildfly.extras.creaper.commands.web.AddConnector;
 import org.wildfly.extras.creaper.commands.web.AddConnectorSslConfig;
 import org.wildfly.extras.creaper.core.CommandFailedException;
@@ -57,9 +56,6 @@ import java.util.Set;
 import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 
-import static org.keycloak.testsuite.arquillian.ServerTestEnricherUtil.addHttpsListenerAppServer;
-import static org.keycloak.testsuite.arquillian.ServerTestEnricherUtil.reloadOrRestartTimeoutClient;
-import static org.keycloak.testsuite.arquillian.ServerTestEnricherUtil.removeHttpsListener;
 import static org.keycloak.testsuite.util.ServerURLs.getAppServerContextRoot;
 import static org.keycloak.testsuite.util.ServerURLs.getAuthServerContextRoot;
 
@@ -213,10 +209,13 @@ public class AppServerTestEnricher {
     public static void enableHTTPSForManagementClient(OnlineManagementClient client) throws CommandFailedException, InterruptedException, TimeoutException, IOException, CliException, OperationException {
         Administration administration = new Administration(client);
         Operations operations = new Operations(client);
+        if (!operations.exists(Address.subsystem("elytron").and("key-store", "KeyStore"))) {
+            client.execute("/subsystem=elytron/key-store=KeyStore:add(path=adapter.jks,relative-to=jboss.server.config.dir,credential-reference={clear-text=\"secret\"},type=JKS");
+            client.execute("/subsystem=elytron/key-manager=KeyManager:add(key-store=KeyStore,alias-filter=server,credential-reference={clear-text=\"secret\"}");
+            client.execute("/subsystem=elytron/server-ssl-context=SslContext:add(key-manager=KeyManager,protocols=[\"TLSv1.3\"])");
 
-        if(!operations.exists(Address.coreService("management").and("security-realm", "UndertowRealm"))) {
-            client.execute("/core-service=management/security-realm=UndertowRealm:add()");
-            client.execute("/core-service=management/security-realm=UndertowRealm/server-identity=ssl:add(keystore-relative-to=jboss.server.config.dir,keystore-password=secret,keystore-path=adapter.jks");
+            client.execute("/subsystem=undertow/server=default-server/https-listener=https:undefine-attribute(name=security-realm)");
+            client.execute("/subsystem=undertow/server=default-server/https-listener=https:write-attribute(name=ssl-context,value=SslContext)");
         }
 
         client.execute("/system-property=javax.net.ssl.trustStore:add(value=${jboss.server.config.dir}/keycloak.truststore)");
@@ -244,9 +243,6 @@ public class AppServerTestEnricher {
                     client.execute("/subsystem=web/connector=https/configuration=ssl:write-attribute(name=cipher-suite, value=\"SSL_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256,SSL_ECDHE_RSA_WITH_AES_128_CBC_SHA256,SSL_RSA_WITH_AES_128_CBC_SHA256,SSL_ECDH_ECDSA_WITH_AES_128_CBC_SHA256,SSL_ECDH_RSA_WITH_AES_128_CBC_SHA256,SSL_DHE_RSA_WITH_AES_128_CBC_SHA256,SSL_DHE_DSS_WITH_AES_128_CBC_SHA256,SSL_ECDHE_ECDSA_WITH_AES_128_CBC_SHA,SSL_ECDHE_RSA_WITH_AES_128_CBC_SHA,SSL_RSA_WITH_AES_128_CBC_SHA,SSL_ECDH_ECDSA_WITH_AES_128_CBC_SHA,SSL_ECDH_RSA_WITH_AES_128_CBC_SHA,SSL_DHE_RSA_WITH_AES_128_CBC_SHA,SSL_DHE_DSS_WITH_AES_128_CBC_SHA\")");
                 }
             }
-        } else {
-            removeHttpsListener(client, administration);
-            addHttpsListenerAppServer(client);
         }
 
         reloadOrRestartTimeoutClient(administration);
@@ -369,5 +365,18 @@ public class AppServerTestEnricher {
 
     private boolean isJBossBased() {
         return testContext.getAppServerInfo().isJBossBased();
+    }
+
+    /**
+     * Restart client after timeout for reloading
+     */
+    public static void reloadOrRestartTimeoutClient(Administration administration) throws IOException, InterruptedException, TimeoutException {
+        try {
+            if (administration == null) return;
+            administration.reloadIfRequired();
+        } catch (TimeoutException e) {
+            log.warn("Cannot reload server; trying to restart it");
+            administration.restart();
+        }
     }
 }
