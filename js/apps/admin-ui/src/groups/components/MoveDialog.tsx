@@ -12,23 +12,12 @@ type MoveDialogProps = {
 };
 
 const moveToRoot = async (source: GroupRepresentation) => {
-  await adminClient.groups.del({ id: source.id! });
-  const { id } = await adminClient.groups.create({
-    ...source,
-    id: undefined,
-  });
-  if (source.subGroups) {
-    await Promise.all(
-      source.subGroups.map((s) =>
-        adminClient.groups.setOrCreateChild(
-          { id: id! },
-          {
-            ...s,
-            id: undefined,
-          }
-        )
-      )
-    );
+  try {
+    await adminClient.groups.create(source);
+  } catch (error: any) {
+    if (error.response) {
+      throw error;
+    }
   }
 };
 
