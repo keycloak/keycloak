@@ -406,7 +406,7 @@ jobs:
     timeout-minutes: 75
     strategy:
       matrix:
-        browser: [chrome]
+        browser: [chrome, firefox]
       fail-fast: false
     steps:
       - uses: actions/checkout@v3
@@ -436,7 +436,7 @@ jobs:
     timeout-minutes: 45
     strategy:
       matrix:
-        browser: [chrome]
+        browser: [chrome, firefox]
       fail-fast: false
     steps:
       - uses: actions/checkout@v3

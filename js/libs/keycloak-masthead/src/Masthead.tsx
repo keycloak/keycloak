@@ -19,7 +19,7 @@ import { loggedInUserName } from "./util";
 import { DefaultAvatar } from "./DefaultAvatar";
 
 type BrandLogo = BrandProps & {
-  onClick?: () => void;
+  href: string;
 };
 
 type KeycloakMastheadProps = PageHeaderProps & {
@@ -37,7 +37,7 @@ type KeycloakMastheadProps = PageHeaderProps & {
 };
 
 const KeycloakMasthead = ({
-  brand: { onClick: onBrandLogoClick, ...brandProps },
+  brand: { href: brandHref, ...brandProps },
   avatar,
   features: {
     hasLogout = true,
@@ -74,12 +74,8 @@ const KeycloakMasthead = ({
   return (
     <PageHeader
       {...rest}
-      logo={
-        <div onClick={onBrandLogoClick}>
-          <Brand {...brandProps} />
-        </div>
-      }
-      logoComponent="div"
+      logo={<Brand {...brandProps} />}
+      logoProps={{ href: brandHref }}
       headerTools={
         <PageHeaderTools>
           <PageHeaderToolsGroup>

@@ -10,6 +10,7 @@ public enum OptionCategory {
     HOSTNAME("Hostname", 50, ConfigSupportLevel.SUPPORTED),
     HTTP("HTTP/TLS", 60, ConfigSupportLevel.SUPPORTED),
     HEALTH("Health", 70, ConfigSupportLevel.SUPPORTED),
+    CONFIG("Config", 75, ConfigSupportLevel.SUPPORTED),
     METRICS("Metrics", 80, ConfigSupportLevel.SUPPORTED),
     PROXY("Proxy", 90, ConfigSupportLevel.SUPPORTED),
     VAULT("Vault", 100, ConfigSupportLevel.SUPPORTED),

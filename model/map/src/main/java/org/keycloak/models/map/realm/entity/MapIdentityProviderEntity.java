@@ -26,6 +26,7 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Supplier;
 
 @GenerateEntityImplementations
 @DeepCloner.Root
@@ -50,9 +51,9 @@ public interface MapIdentityProviderEntity extends UpdatableEntity, AbstractEnti
         return entity;
     }
 
-    static IdentityProviderModel toModel(MapIdentityProviderEntity entity) {
+    static IdentityProviderModel toModel(MapIdentityProviderEntity entity, Supplier<IdentityProviderModel> instanceCreator) {
         if (entity == null) return null;
-        IdentityProviderModel model = new IdentityProviderModel();
+        IdentityProviderModel model = instanceCreator.get();
         model.setInternalId(entity.getId());
         model.setAlias(entity.getAlias());
         model.setDisplayName(entity.getDisplayName());

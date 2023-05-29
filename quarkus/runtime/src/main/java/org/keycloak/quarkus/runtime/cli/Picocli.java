@@ -17,6 +17,8 @@
 
 package org.keycloak.quarkus.runtime.cli;
 
+import static java.util.Optional.ofNullable;
+import static java.util.stream.StreamSupport.stream;
 import static org.keycloak.quarkus.runtime.Environment.isRebuildCheck;
 import static org.keycloak.quarkus.runtime.Environment.isRebuilt;
 import static org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand.*;
@@ -27,6 +29,8 @@ import static org.keycloak.quarkus.runtime.configuration.Configuration.OPTION_PA
 import static org.keycloak.quarkus.runtime.configuration.Configuration.getBuildTimeProperty;
 import static org.keycloak.quarkus.runtime.configuration.Configuration.getConfig;
 import static org.keycloak.quarkus.runtime.Environment.isDevMode;
+import static org.keycloak.quarkus.runtime.configuration.Configuration.getCurrentBuiltTimeProperty;
+import static org.keycloak.quarkus.runtime.configuration.Configuration.getRawPersistedProperty;
 import static org.keycloak.quarkus.runtime.configuration.Configuration.getRuntimeProperty;
 import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers.formatValue;
 import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers.isBuildTimeProperty;
@@ -42,6 +46,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiConsumer;
@@ -59,6 +64,7 @@ import org.keycloak.quarkus.runtime.cli.command.Main;
 import org.keycloak.quarkus.runtime.cli.command.ShowConfig;
 import org.keycloak.quarkus.runtime.cli.command.StartDev;
 import org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource;
+import org.keycloak.quarkus.runtime.configuration.Configuration;
 import org.keycloak.quarkus.runtime.configuration.PersistedConfigSource;
 import org.keycloak.quarkus.runtime.configuration.QuarkusPropertiesConfigSource;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
@@ -67,6 +73,7 @@ import org.keycloak.quarkus.runtime.Environment;
 
 import io.smallrye.config.ConfigValue;
 import picocli.CommandLine;
+import picocli.CommandLine.Help.Ansi;
 import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.Model.OptionSpec;
 import picocli.CommandLine.Model.ArgGroupSpec;
@@ -170,6 +177,7 @@ public final class Picocli {
     private static int runReAugmentation(List<String> cliArgs, CommandLine cmd) {
         if(!isDevMode() && cmd != null) {
             cmd.getOut().println("Changes detected in configuration. Updating the server image.");
+            checkChangesInBuildOptionsDuringAutoBuild();
         }
 
         int exitCode;
@@ -221,7 +229,7 @@ public final class Picocli {
     }
 
     private static boolean hasConfigChanges(CommandLine cmdCommand) {
-        Optional<String> currentProfile = Optional.ofNullable(Environment.getProfile());
+        Optional<String> currentProfile = ofNullable(Environment.getProfile());
         Optional<String> persistedProfile = getBuildTimeProperty("kc.profile");
 
         if (!persistedProfile.orElse("").equals(currentProfile.orElse(""))) {
@@ -542,5 +550,50 @@ public final class Picocli {
         }
 
         return arg.startsWith(ImportRealmMixin.IMPORT_REALM);
+    }
+
+    private static void checkChangesInBuildOptionsDuringAutoBuild() {
+        if (Configuration.isOptimized()) {
+            List<PropertyMapper> buildOptions = stream(Configuration.getPropertyNames(true).spliterator(), false)
+                    .sorted()
+                    .map(PropertyMappers::getMapper)
+                    .filter(Objects::nonNull).collect(Collectors.toList());
+
+            if (buildOptions.isEmpty()) {
+                return;
+            }
+
+            StringBuilder options = new StringBuilder();
+
+            for (PropertyMapper mapper : buildOptions) {
+                String newValue = ofNullable(getCurrentBuiltTimeProperty(mapper.getFrom()))
+                        .map(ConfigValue::getValue)
+                        .orElse("<unset>");
+                String currentValue = getRawPersistedProperty(mapper.getFrom()).get();
+
+                if (newValue.equals(currentValue)) {
+                    continue;
+                }
+
+                String name = mapper.getOption().getKey();
+
+                options.append("\n\t- ")
+                    .append(name).append("=").append(currentValue)
+                    .append(" > ")
+                    .append(name).append("=").append(newValue);
+            }
+
+            if (options.length() > 0) {
+                System.out.println(
+                        Ansi.AUTO.string(
+                                new StringBuilder("@|bold,red ")
+                                        .append("The previous optimized build will be overridden with the following build options:")
+                                        .append(options)
+                                        .append("\nTo avoid that, run the 'build' command again and then start the optimized server instance using the '--optimized' flag.")
+                                        .append("|@").toString()
+                        )
+                );
+            }
+        }
     }
 }
