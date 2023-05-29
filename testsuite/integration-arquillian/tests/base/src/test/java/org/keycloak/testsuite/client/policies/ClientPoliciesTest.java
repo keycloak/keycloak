@@ -1196,16 +1196,16 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
             oauth.clientId(clientId);
 
             // implicit grant
-            testProhibitedImplicitOrHybridFlow(false, OIDCResponseType.TOKEN, null, OAuthErrorException.INVALID_GRANT, expectedErrorDescription);
+            testProhibitedImplicitOrHybridFlow(false, OIDCResponseType.TOKEN, null, OAuthErrorException.INVALID_REQUEST, expectedErrorDescription);
 
             // hybrid grant
-            testProhibitedImplicitOrHybridFlow(true, OIDCResponseType.TOKEN + " " + OIDCResponseType.ID_TOKEN, "exsefweag", OAuthErrorException.INVALID_GRANT, expectedErrorDescription);
+            testProhibitedImplicitOrHybridFlow(true, OIDCResponseType.TOKEN + " " + OIDCResponseType.ID_TOKEN, "exsefweag", OAuthErrorException.INVALID_REQUEST, expectedErrorDescription);
 
             // hybrid grant
-            testProhibitedImplicitOrHybridFlow(true, OIDCResponseType.TOKEN + " " + OIDCResponseType.CODE, "exsefweag", OAuthErrorException.INVALID_GRANT, expectedErrorDescription);
+            testProhibitedImplicitOrHybridFlow(true, OIDCResponseType.TOKEN + " " + OIDCResponseType.CODE, "exsefweag", OAuthErrorException.INVALID_REQUEST, expectedErrorDescription);
 
             // hybrid grant
-            testProhibitedImplicitOrHybridFlow(true, OIDCResponseType.TOKEN + " " + OIDCResponseType.CODE + " " + OIDCResponseType.ID_TOKEN, "exsefweag", OAuthErrorException.INVALID_GRANT, expectedErrorDescription);
+            testProhibitedImplicitOrHybridFlow(true, OIDCResponseType.TOKEN + " " + OIDCResponseType.CODE + " " + OIDCResponseType.ID_TOKEN, "exsefweag", OAuthErrorException.INVALID_REQUEST, expectedErrorDescription);
 
         } finally {
             // revert test client instance settings the same as OAuthClient.init
