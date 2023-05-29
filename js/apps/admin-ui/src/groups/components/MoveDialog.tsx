@@ -11,39 +11,13 @@ type MoveDialogProps = {
   refresh: () => void;
 };
 
-const moveToRoot = async (source: GroupRepresentation) => {
-  await adminClient.groups.del({ id: source.id! });
-  const { id } = await adminClient.groups.create({
-    ...source,
-    id: undefined,
-  });
-  if (source.subGroups) {
-    await Promise.all(
-      source.subGroups.map((s) =>
-        adminClient.groups.setOrCreateChild(
-          { id: id! },
-          {
-            ...s,
-            id: undefined,
-          }
-        )
-      )
-    );
-  }
-};
+const moveToRoot = (source: GroupRepresentation) =>
+  adminClient.groups.create(source);
 
 const moveToGroup = async (
   source: GroupRepresentation,
   dest: GroupRepresentation
-) => {
-  try {
-    await adminClient.groups.setOrCreateChild({ id: dest.id! }, source);
-  } catch (error: any) {
-    if (error.response) {
-      throw error;
-    }
-  }
-};
+) => adminClient.groups.setOrCreateChild({ id: dest.id! }, source);
 
 export const MoveDialog = ({ source, onClose, refresh }: MoveDialogProps) => {
   const { t } = useTranslation("groups");
