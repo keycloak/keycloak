@@ -48,7 +48,7 @@ oc new-project keycloak
 +
 [source,bash,subs="attributes+"]
 ----
-oc process -f https://raw.githubusercontent.com/keycloak/keycloak-quickstarts/latest/openshift-examples/keycloak.yaml \
+oc process -f https://raw.githubusercontent.com/keycloak/keycloak-quickstarts/latest/openshift/keycloak.yaml \
     -p KEYCLOAK_ADMIN=admin \
     -p KEYCLOAK_ADMIN_PASSWORD=admin \
     -p NAMESPACE=keycloak \
