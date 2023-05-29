@@ -108,7 +108,7 @@ public class RejectImplicitGrantExecutor implements ClientPolicyExecutorProvider
         // Before client policies operation, Authorization Endpoint logic has already checked whether implicit/hybrid flow is activated for a client.
         // This method rejects implicit grant regardless of client setting for allowing implicit grant.
         if (parsedResponseType.isImplicitOrHybridFlow()) {
-            throw new ClientPolicyException(OAuthErrorException.INVALID_GRANT, "Implicit/Hybrid flow is prohibited.");
+            throw new ClientPolicyException(OAuthErrorException.INVALID_REQUEST, "Implicit/Hybrid flow is prohibited.");
         }
     }
 
