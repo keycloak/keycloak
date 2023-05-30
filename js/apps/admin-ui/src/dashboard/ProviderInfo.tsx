@@ -57,8 +57,8 @@ export const ProviderInfo = () => {
                   <ul>
                     {Object.entries(providers).map(
                       ([key, { operationalInfo }]) => (
-                        <>
-                          <li key={key}>{key}</li>
+                        <li key={key}>
+                          {key}
                           {operationalInfo ? (
                             <ExpandableSection
                               key={key}
@@ -84,7 +84,7 @@ export const ProviderInfo = () => {
                               </TableComposable>
                             </ExpandableSection>
                           ) : null}
-                        </>
+                        </li>
                       )
                     )}
                   </ul>
