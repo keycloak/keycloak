@@ -61,3 +61,19 @@ See the migration guide for more details.
 The `openshift-integration` preview feature was removed from Keycloak codebase into separate extension project.
 
 See the migration guide for more details.
+
+= Context and dependency injection no longer enabled to JAX-RS Resources
+
+In order to provide a better runtime and leverage as much as possible the underlying stack,
+all injection points for contextual data using the `javax.ws.rs.core.Context` annotation were removed. The expected improvement
+in performance involves no longer creating proxies instances multiple times during the request lifecycle, and drastically reducing the amount of reflection code at runtime.
+
+If you are extending one of the following SPIs:
+
+* `PolicySpi`
+* `AdminRealmResourceSpi`
+* `IdentityProviderSpi`
+* `RealmResourceSPI`
+
+See the link:{upgradingguide_link}[{upgradingguide_name}] for more details about how to
+update your custom providers.

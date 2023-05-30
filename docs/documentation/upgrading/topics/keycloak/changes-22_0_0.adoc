@@ -243,3 +243,75 @@ The removal of openshift-integration allows us to remove few thirdparty dependen
 any of these libraries as dependencies of your own providers deployed to Keycloak server, you may also need to copy those `jar` files
 explicitly to the Keycloak distribution `providers` directory as well.
 
+= Context and dependency injection no longer enabled to JAX-RS Resources
+
+In order to provide a better runtime and leverage as much as possible the underlying stack,
+all injection points for contextual data using the `javax.ws.rs.core.Context` annotation were removed. The expected improvement
+in performance involves no longer creating proxies instances multiple times during the request lifecycle, and drastically reducing the amount of reflection code at runtime.
+
+If you are extending one of the following SPIs:
+
+* `PolicySpi`
+* `AdminRealmResourceSpi`
+* `IdentityProviderSpi`
+* `RealmResourceSPI`
+
+You should review your custom JAX-RS (sub)resources in order to obtain any contextual data as follows:
+
+[source,java]
+----
+KeycloakSession session = org.keycloak.common.util.Resteasy.getContextData(KeycloakSession.class);
+----
+
+If you need access to the current request and response objects, you can now obtain their instances directly
+from the `KeycloakSession`:
+
+[source,java]
+----
+@Context
+org.jboss.resteasy.spi.HttpRequest request;
+@Context
+org.jboss.resteasy.spi.HttpResponse response;
+----
+
+was replaced by:
+
+[source,java]
+----
+KeycloakSession session = // obtain the session, which is usually available when creating a custom provider from a factory
+KeycloakContext context = session.getContext();
+
+HttpRequest request = context.getHttpRequest();
+HttpResponse response = context.getHttpResponse();
+----
+
+In case you have no access to a `KeycloakSession` instance when invoking a JAX-RS resource method, you can obtain
+contextual data from the JAX-RS runtime as follows:
+
+[source,java]
+----
+KeycloakSession session = org.keycloak.common.util.Resteasy.getContextData(KeycloakSession.class);
+----
+
+Additional contextual data can be obtained from the runtime through the  `KeycloakContext` instance:
+
+[source,java]
+----
+KeycloakSession session = // obtain the session
+KeycloakContext context = session.getContext();
+MyContextualObject myContextualObject = context.getContextObject(MyContextualObject.class);
+----
+
+= Upgrading your custom JAX-RS resources
+
+If you are extending the server's REST APIs through the following SPIs:
+
+* `PolicySpi`
+* `AdminRealmResourceSpi`
+* `IdentityProviderSpi`
+* `RealmResourceSPI`
+
+You need to add an empty `META-INF/beans.xml` to the JAR file where your custom providers are packaged. Otherwise, they are not recognized by the server
+at runtime.
+
+You should also make sure your JAX-RS methods are declaring the expected media types for input and output by marking them with the `@Consumes` and `@Produces` annotations, respectively.
