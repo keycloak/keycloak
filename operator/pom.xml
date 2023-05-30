@@ -289,6 +289,12 @@
                         </goals>
                     </execution>
                 </executions>
+                <configuration>
+                    <systemPropertyVariables>
+                        <!-- Used in KeycloakDeploymentTest#testPreconfiguredPodLabels -->
+                        <OPERATOR_TEST_LABEL_EXPRESSION>my-value</OPERATOR_TEST_LABEL_EXPRESSION>
+                    </systemPropertyVariables>
+                </configuration>
             </plugin>
 
             <plugin>
@@ -317,9 +323,9 @@
     
     <profiles>
         <profile>
-            <id>native</id>
+            <id>operator-prod</id>
             <properties>
-            <quarkus.package.type>native</quarkus.package.type>
+                <quarkus.profile>rhbk</quarkus.profile>
             </properties>
         </profile>
     </profiles>
