@@ -16,6 +16,7 @@
  */
 package org.keycloak.services.resources.admin;
 
+import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.jboss.logging.Logger;
 import org.keycloak.http.HttpRequest;
 import org.keycloak.http.HttpResponse;
@@ -86,6 +87,7 @@ public class AdminRoot {
      * @return
      */
     @GET
+    @Operation(hidden = true)
     public Response masterRealmAdminConsoleRedirect() {
 
         if (!isAdminConsoleEnabled()) {
@@ -106,6 +108,7 @@ public class AdminRoot {
      */
     @Path("index.{html:html}") // expression is actually "index.html" but this is a hack to get around jax-doclet bug
     @GET
+    @Operation(hidden = true)
     public Response masterRealmAdminConsoleRedirectHtml() {
 
         if (!isAdminConsoleEnabled()) {
@@ -141,6 +144,7 @@ public class AdminRoot {
      * @return
      */
     @Path("{realm}/console")
+    @Operation(hidden = true)
     public AdminConsole getAdminConsole(final @PathParam("realm") String name) {
 
         if (!isAdminConsoleEnabled()) {
@@ -200,7 +204,7 @@ public class AdminRoot {
      * @return
      */
     @Path("realms")
-    public Object getRealmsAdmin() {
+    public RealmsAdminResource getRealmsAdmin() {
         HttpRequest request = getHttpRequest();
 
         if (!isAdminApiEnabled()) {
@@ -208,7 +212,7 @@ public class AdminRoot {
         }
 
         if (request.getHttpMethod().equals(HttpMethod.OPTIONS)) {
-            return new AdminCorsPreflightService(request);
+            return new RealmsAdminResourcePreflight(session, null, tokenManager, request);
         }
 
         AdminAuth auth = authenticateRealmAdminRequest(session.getContext().getRequestHeaders());
@@ -226,6 +230,7 @@ public class AdminRoot {
 
     @Path("{any:.*}")
     @OPTIONS
+    @Operation(hidden = true)
     public Object preFlight() {
         HttpRequest request = getHttpRequest();
 
