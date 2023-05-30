@@ -1,6 +1,6 @@
 <#macro mainLayout active bodyClass>
 <!doctype html>
-<html>
+<html<#if realm.internationalizationEnabled> lang="${locale.currentLanguageTag}"</#if>>
 <head>
     <meta charset="utf-8">
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
