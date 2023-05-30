@@ -105,7 +105,7 @@ export const AdvancedSettings = ({ isOIDC, isSAML }: AdvancedSettingsProps) => {
   } = useFormContext<IdentityProviderRepresentation>();
   const [syncModeOpen, setSyncModeOpen] = useState(false);
   const filteredByClaim = useWatch({ control, name: "config.filteredByClaim", defaultValue: false});
-  const [claimFilterRequired, setClaimFilterRequired] = useState(filteredByClaim == 'true');
+  const [claimFilterRequired, setClaimFilterRequired] = useState(filteredByClaim === 'true');
   return (
     <>
       {!isOIDC && !isSAML && (
