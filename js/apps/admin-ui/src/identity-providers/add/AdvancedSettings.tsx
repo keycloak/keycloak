@@ -1,5 +1,5 @@
 import type AuthenticationFlowRepresentation from "@keycloak/keycloak-admin-client/lib/defs/authenticationFlowRepresentation";
-import type IdentityProviderRepresentation from "@keycloak/keycloak-admin-client/lib/defs/IdentityProviderRepresentation";
+import type IdentityProviderRepresentation from "@keycloak/keycloak-admin-client/lib/defs/identityProviderRepresentation";
 import {
   FormGroup,
   Select,
@@ -105,7 +105,7 @@ export const AdvancedSettings = ({ isOIDC, isSAML }: AdvancedSettingsProps) => {
   } = useFormContext<IdentityProviderRepresentation>();
   const [syncModeOpen, setSyncModeOpen] = useState(false);
   const filteredByClaim = useWatch({ control, name: "config.filteredByClaim", defaultValue: false});
-  const [claimFilterRequired, setClaimFilterRequired] = useState(filteredByClaim === 'true');
+  const claimFilterRequired = filteredByClaim === 'true';
   return (
     <>
       {!isOIDC && !isSAML && (
@@ -150,7 +150,6 @@ export const AdvancedSettings = ({ isOIDC, isSAML }: AdvancedSettingsProps) => {
                 isChecked={field.value === 'true'}
                 onChange={(value) => {
                     field.onChange(value.toString())
-                    setClaimFilterRequired(value)
                   }
                 }
                 aria-label="filteredByClaim"
@@ -216,7 +215,7 @@ export const AdvancedSettings = ({ isOIDC, isSAML }: AdvancedSettingsProps) => {
                 ? ValidatedOptions.error
                 : ValidatedOptions.default
               }
-              {...register("config.claimFilterValue", { required: claimFilterRequired })}
+              {...register("config.claimFilterValue", { required: true })}
             />
           </FormGroup>
         </>
