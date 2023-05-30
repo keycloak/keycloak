@@ -149,8 +149,7 @@ export const AdvancedSettings = ({ isOIDC, isSAML }: AdvancedSettingsProps) => {
                 labelOff={t("common:off")}
                 isChecked={field.value === 'true'}
                 onChange={(value) => {
-                    const v=""+value
-                    field.onChange(v)
+                    field.onChange(value.toString())
                     setClaimFilterRequired(value)
                   }
                 }
