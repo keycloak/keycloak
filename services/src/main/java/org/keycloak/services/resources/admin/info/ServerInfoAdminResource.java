@@ -17,6 +17,9 @@
 
 package org.keycloak.services.resources.admin.info;
 
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
+import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.keycloak.broker.provider.IdentityProvider;
 import org.keycloak.broker.provider.IdentityProviderFactory;
@@ -53,6 +56,7 @@ import org.keycloak.representations.info.ServerInfoRepresentation;
 import org.keycloak.representations.info.SpiInfoRepresentation;
 import org.keycloak.representations.info.SystemInfoRepresentation;
 import org.keycloak.representations.info.ThemeInfoRepresentation;
+import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.theme.Theme;
 
 import jakarta.ws.rs.GET;
@@ -74,6 +78,7 @@ import java.util.stream.Stream;
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
+@Extension(name = KeycloakOpenAPI.Profiles.ADMIN , value = "")
 public class ServerInfoAdminResource {
 
     private static final Map<String, List<String>> ENUMS = createEnumsMap(EventType.class, OperationType.class, ResourceType.class);
@@ -92,6 +97,8 @@ public class ServerInfoAdminResource {
     @GET
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.ROOT)
+    @Operation( summary = "Get themes, social providers, auth providers, and event listeners available on this server")
     public ServerInfoRepresentation getInfo() {
         ServerInfoRepresentation info = new ServerInfoRepresentation();
         info.setSystemInfo(SystemInfoRepresentation.create(session.getKeycloakSessionFactory().getServerStartupTimestamp()));
