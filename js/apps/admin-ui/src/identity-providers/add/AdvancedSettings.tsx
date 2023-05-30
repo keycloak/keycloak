@@ -98,14 +98,18 @@ type AdvancedSettingsProps = { isOIDC: boolean; isSAML: boolean };
 
 export const AdvancedSettings = ({ isOIDC, isSAML }: AdvancedSettingsProps) => {
   const { t } = useTranslation("identity-providers");
-  const { 
+  const {
     control,
     register,
     formState: { errors },
   } = useFormContext<IdentityProviderRepresentation>();
   const [syncModeOpen, setSyncModeOpen] = useState(false);
-  const filteredByClaim = useWatch({ control, name: "config.filteredByClaim", defaultValue: false});
-  const claimFilterRequired = filteredByClaim === 'true';
+  const filteredByClaim = useWatch({
+    control,
+    name: "config.filteredByClaim",
+    defaultValue: false,
+  });
+  const claimFilterRequired = filteredByClaim === "true";
   return (
     <>
       {!isOIDC && !isSAML && (
@@ -147,11 +151,10 @@ export const AdvancedSettings = ({ isOIDC, isSAML }: AdvancedSettingsProps) => {
                 id="filteredByClaim"
                 label={t("common:on")}
                 labelOff={t("common:off")}
-                isChecked={field.value === 'true'}
+                isChecked={field.value === "true"}
                 onChange={(value) => {
-                    field.onChange(value.toString())
-                  }
-                }
+                  field.onChange(value.toString());
+                }}
                 aria-label="filteredByClaim"
               />
             )}
@@ -183,8 +186,8 @@ export const AdvancedSettings = ({ isOIDC, isSAML }: AdvancedSettingsProps) => {
               data-testid="claimFilterName"
               validated={
                 errors.config?.claimFilterName
-                ? ValidatedOptions.error
-                : ValidatedOptions.default
+                  ? ValidatedOptions.error
+                  : ValidatedOptions.default
               }
               {...register("config.claimFilterName", { required: true })}
             />
@@ -212,8 +215,8 @@ export const AdvancedSettings = ({ isOIDC, isSAML }: AdvancedSettingsProps) => {
               data-testid="claimFilterValue"
               validated={
                 errors.config?.claimFilterValue
-                ? ValidatedOptions.error
-                : ValidatedOptions.default
+                  ? ValidatedOptions.error
+                  : ValidatedOptions.default
               }
               {...register("config.claimFilterValue", { required: true })}
             />
