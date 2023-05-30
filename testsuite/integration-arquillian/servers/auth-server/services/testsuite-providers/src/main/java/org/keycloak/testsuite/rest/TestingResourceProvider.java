@@ -88,6 +88,8 @@ import org.keycloak.testsuite.runonserver.RunOnServer;
 import org.keycloak.testsuite.runonserver.SerializationUtil;
 import org.keycloak.testsuite.util.FeatureDeployerUtil;
 import org.keycloak.timer.TimerProvider;
+import org.keycloak.truststore.FileTruststoreProviderFactory;
+import org.keycloak.truststore.TruststoreProvider;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.utils.MediaType;
 
@@ -132,13 +134,16 @@ public class TestingResourceProvider implements RealmResourceProvider {
 
     private final HttpRequest request;
 
+    private final TestingResourceProviderFactory factory;
+
     @Override
     public Object getResource() {
         return this;
     }
 
-    public TestingResourceProvider(KeycloakSession session, Map<String, TimerProvider.TimerTaskContext> suspendedTimerTasks) {
+    public TestingResourceProvider(KeycloakSession session, TestingResourceProviderFactory factory, Map<String, TimerProvider.TimerTaskContext> suspendedTimerTasks) {
         this.session = session;
+        this.factory = factory;
         this.suspendedTimerTasks = suspendedTimerTasks;
         this.request = session.getContext().getHttpRequest();
     }
@@ -1080,6 +1085,26 @@ public class TestingResourceProvider implements RealmResourceProvider {
             throw new NotFoundException("Realm not found");
         }
         return realm;
+    }
+
+    @GET
+    @Path("/disable-truststore-spi")
+    @NoCache
+    public void disableTruststoreSpi() {
+        FileTruststoreProviderFactory factory = (FileTruststoreProviderFactory) session.getKeycloakSessionFactory().getProviderFactory(TruststoreProvider.class);
+        this.factory.truststoreProvider = factory.create(session);
+        factory.setProvider(null);
+    }
+
+    @GET
+    @Path("/reenable-truststore-spi")
+    @NoCache
+    public void reenableTruststoreSpi() {
+        if (this.factory.truststoreProvider == null) {
+            throw new IllegalStateException("Cannot reenable provider as it was not disabled");
+        }
+        FileTruststoreProviderFactory factory = (FileTruststoreProviderFactory) session.getKeycloakSessionFactory().getProviderFactory(TruststoreProvider.class);
+        factory.setProvider(this.factory.truststoreProvider);
     }
 
 }
