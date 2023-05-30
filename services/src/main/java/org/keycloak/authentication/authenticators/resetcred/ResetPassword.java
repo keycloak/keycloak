@@ -18,8 +18,11 @@
 package org.keycloak.authentication.authenticators.resetcred;
 
 import org.keycloak.authentication.AuthenticationFlowContext;
+import org.keycloak.authentication.requiredactions.UpdatePassword;
+import org.keycloak.models.Constants;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.credential.PasswordCredentialModel;
+
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -35,6 +38,7 @@ public class ResetPassword extends AbstractSetRequiredActionAuthenticator {
                 (context.getExecution().isConditional() &&
                         configuredFor(context))) {
             context.getAuthenticationSession().addRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD);
+            context.getAuthenticationSession().setClientNote(Constants.KC_ACTION_EXECUTING, UserModel.RequiredAction.UPDATE_PASSWORD.name());
         }
         context.success();
     }
