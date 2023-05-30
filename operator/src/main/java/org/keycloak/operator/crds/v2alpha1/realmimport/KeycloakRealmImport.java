@@ -23,7 +23,7 @@ import io.fabric8.kubernetes.model.annotation.Group;
 import io.fabric8.kubernetes.model.annotation.Version;
 import io.sundr.builder.annotations.Buildable;
 import io.sundr.builder.annotations.BuildableReference;
-
+import io.quarkiverse.operatorsdk.bundle.runtime.CSVMetadata;
 import org.keycloak.operator.Constants;
 import org.keycloak.representations.idm.ComponentExportRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
@@ -31,6 +31,10 @@ import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 
+@CSVMetadata(
+    description="Represents a Keycloak Realm Import",
+    displayName="KeycloakRealmImport"
+)
 @Group(Constants.CRDS_GROUP)
 @Version(Constants.CRDS_VERSION)
 @Buildable(editableEnabled = false, builderPackage = "io.fabric8.kubernetes.api.builder",

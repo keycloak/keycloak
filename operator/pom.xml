@@ -68,6 +68,10 @@
             <artifactId>quarkus-operator-sdk</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.quarkiverse.operatorsdk</groupId>
+            <artifactId>quarkus-operator-sdk-bundle-generator</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-resteasy-jackson</artifactId>
         </dependency>
@@ -277,7 +281,7 @@
                 <artifactId>maven-assembly-plugin</artifactId>
                 <executions>
                     <execution>
-                        <id>assemble</id>
+                        <id>assemble-quarkus</id>
                         <phase>package</phase>
                         <goals>
                             <goal>single</goal>
@@ -288,6 +292,20 @@
                             </descriptors>
                             <appendAssemblyId>false</appendAssemblyId>
                             <workDirectory>${project.build.directory}/assembly/work</workDirectory>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>assemble-bundle</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                        <configuration>
+                            <descriptors>
+                                <descriptor>olm-assembly.xml</descriptor>
+                            </descriptors>
+                            <appendAssemblyId>true</appendAssemblyId>
+                            <workDirectory>${project.build.directory}/bundle-assembly/work</workDirectory>
                         </configuration>
                     </execution>
                 </executions>
