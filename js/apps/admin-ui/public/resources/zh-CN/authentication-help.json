@@ -7,7 +7,7 @@
   "addExecution": "执行可以有多种操作，从发送重置电子邮件到验证 OTP。",
   "addSubFlow": "子级流程可以是一般形式的，也可以是表单形式的。表单类型用于构造子流，为用户生成单个流程。子级流程是一种特殊类型的执行，根据它们包含的执行的评估方式评估流程成功与否。",
   "alias": "配置名称",
-  "authDefaultActionTooltip": "如果启用，任何新用户都将获得分配给它的此项必需操作。",
+  "authDefaultActionTooltip": "如果启用，此项操作对于任何新用户都将是必需的操作。",
   "otpType": "totp 是基于时间的一次性密码。'hotp' 是一种基于计数器的一次性密码，服务器在其中保留一个用于哈希的计数器。",
   "webAuthnPolicyRpEntityName": "便于阅读的 WebAuthn依赖方的服务器名称",
   "otpHashAlgorithm": "应该使用什么哈希算法来生成 OTP。",
