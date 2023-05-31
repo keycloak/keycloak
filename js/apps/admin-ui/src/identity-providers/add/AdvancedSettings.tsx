@@ -155,7 +155,6 @@ export const AdvancedSettings = ({ isOIDC, isSAML }: AdvancedSettingsProps) => {
                 onChange={(value) => {
                   field.onChange(value.toString());
                 }}
-                aria-label="filteredByClaim"
               />
             )}
           />
