@@ -43,3 +43,7 @@ dist-ssr
 # Distribution
 *.tgz
 npm-dist
+
+# Cypress Parallel
+runner-results
+multi-reporter-config.json

@@ -191,9 +191,6 @@ jobs:
     runs-on: ubuntu-latest
     env:
       WORKSPACE: admin-ui
-    strategy:
-      matrix:
-        container: [1, 2, 3, 4, 5]
     steps:
       - uses: actions/checkout@v3
 
@@ -231,21 +228,16 @@ jobs:
         uses: cypress-io/github-action@v5
         with:
           install: false
-          record: true
-          parallel: true
-          browser: chrome
-          wait-on: http://localhost:8080
+          command: pnpm run cy:parallel
           working-directory: js/apps/admin-ui
         env:
           CYPRESS_BASE_URL: http://localhost:8080/admin/
           CYPRESS_KEYCLOAK_SERVER: http://localhost:8080
-          CYPRESS_RECORD_KEY: b8f1d15e-eab8-4ee7-8e44-c6d7cd8fc0eb
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upload server logs
         uses: actions/upload-artifact@v3
         with:
-          name: server-log-${{ matrix.container }}
+          name: server-log
           path: ~/server.log
 
   check-set-status:

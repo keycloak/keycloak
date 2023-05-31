@@ -8,6 +8,7 @@
     "test": "wireit",
     "cy:open": "cypress open --e2e --browser chrome",
     "cy:run": "cypress run --browser chrome",
+    "cy:parallel": "cypress-parallel --script cy:run --threads 4 --specsDir cypress/e2e",
     "cy:check-types": "wireit",
     "cy:ldap-server": "ldap-server-mock --conf=./cypress/fixtures/ldap/server.json --database=./cypress/fixtures/ldap/users.json"
   },
@@ -103,6 +104,8 @@
     "@vitejs/plugin-react-swc": "^3.3.1",
     "cypress": "^12.13.0",
     "cypress-axe": "^1.4.0",
+    "cypress-multi-reporters": "^1.6.3",
+    "cypress-parallel": "^0.13.0",
     "jsdom": "^22.0.0",
     "ldap-server-mock": "^6.0.1",
     "ts-node": "^10.9.1",
