@@ -55,3 +55,9 @@ For example, let's assume we want to overwrite the https://github.com/keycloak/k
 Installations which use Keycloak's `--proxy` configuration setting with mode *passthrough* should review the documentation as the behavior of this mode has changed.
 
 See the migration guide for more details.
+
+= Removed openshift-integration feature and related providers
+
+The `openshift-integration` preview feature was removed from Keycloak codebase into separate extension project.
+
+See the migration guide for more details.

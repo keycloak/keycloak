@@ -226,3 +226,20 @@ This change is already in our documentation and in our quickstart repository. Fo
 If you cannot migrate your applications to Jakarta, you can still use the "legacy" SAML JEE adapter and still
 be able to integrate with future releases of the server. However, consider upgrading your applications as soon as possible
 because we are no longer providing support to JEE.
+
+= Changes for openshift-integration feature
+
+The preview feature `openshift-integration` was removed from Keycloak codebase and moved into separate extension. This includes
+moving of related providers such as custom client storage provider and token review endpoint for Openshift integration.
+
+If you used this feature, you should not use the `openshift-integration` feature anymore when starting Keycloak server and instead you need to deploy
+the JAR file from custom extension. You can check the https://github.com/keycloak-extensions/keycloak-openshift-ext/[Openshift extension] and the instructions
+in it's README file for how to deploy the extension to your Keycloak server.
+
+= Removing thirdparty dependencies
+
+The removal of openshift-integration allows us to remove few thirdparty dependencies from Keycloak distribution. This includes
+`openshift-rest-client`, `okio-jvm`, `okhttp`, `commons-lang`, `commons-compress`, `jboss-dmr` and `kotlin-stdlib`. This means that if you use
+any of these libraries as dependencies of your own providers deployed to Keycloak server, you may also need to copy those `jar` files
+explicitly to the Keycloak distribution `providers` directory as well.
+
