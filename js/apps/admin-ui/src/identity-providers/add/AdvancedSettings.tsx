@@ -107,7 +107,7 @@ export const AdvancedSettings = ({ isOIDC, isSAML }: AdvancedSettingsProps) => {
   const filteredByClaim = useWatch({
     control,
     name: "config.filteredByClaim",
-    defaultValue: false,
+    defaultValue: "false",
   });
   const claimFilterRequired = filteredByClaim === "true";
   return (
