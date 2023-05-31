@@ -62,7 +62,7 @@
         <aesh.version>2.4</aesh.version>
         <apache.httpcomponents.version>4.5.13</apache.httpcomponents.version>
         <apache.httpcomponents.httpcore.version>4.4.14</apache.httpcomponents.httpcore.version>
-        <apache.mime4j.version>0.8.9</apache.mime4j.version>
+        <apache.mime4j.version>0.6</apache.mime4j.version>
         <jboss.dmr.version>1.5.1.Final</jboss.dmr.version>
         <bouncycastle.version>1.70</bouncycastle.version>
 
