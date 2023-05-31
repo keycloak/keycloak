@@ -1,21 +1,29 @@
 package org.keycloak.testsuite.broker;
 
+import jakarta.ws.rs.core.Response;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.models.IdentityProviderSyncMode;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.FederatedIdentityRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.Assert;
+import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.pages.LoginUpdateProfilePage;
 import org.keycloak.testsuite.pages.RegisterPage;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.util.AccountHelper;
+import org.keycloak.testsuite.util.FederatedIdentityBuilder;
 import org.openqa.selenium.NoSuchElementException;
+
+import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import static org.keycloak.testsuite.admin.ApiUtil.removeUserByUsername;
+import static org.keycloak.testsuite.admin.ApiUtil.*;
+import static org.keycloak.testsuite.broker.BrokerRunOnServerUtil.configureAutoLinkFlow;
 import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
 
 /**
@@ -339,5 +347,41 @@ public class KcOidcFirstBrokerLoginTest extends AbstractFirstBrokerLoginTest {
         log.debug("Should not fail here... We're still not logged in, so the IDP should be shown on the login page.");
         assertTrue("We should be on the login page.", driver.getPageSource().contains("Sign in to your account"));
         final var socialButton = this.loginPage.findSocialButton(bc.getIDPAlias());
+    }
+
+    @Test
+    public void testOverrideFederatedIdentityWhenExisting() {
+        RealmResource consumerRealm = adminClient.realm(bc.consumerRealmName());
+        RealmResource providerRealm = adminClient.realm(bc.providerRealmName());
+
+        consumerRealm.identityProviders().get(bc.getIDPAlias())
+                .update(bc.setUpIdentityProvider(IdentityProviderSyncMode.FORCE));
+        testingClient.server(bc.consumerRealmName()).run(configureAutoLinkFlow(bc.getIDPAlias()));
+
+        // create a user with existing federated identity
+        String createdUser = createUser(bc.getUserLogin());
+
+        FederatedIdentityRepresentation identity = FederatedIdentityBuilder.create()
+                .userId("id")
+                .userName("username")
+                .identityProvider(bc.getIDPAlias())
+                .build();
+
+        try (Response response = consumerRealm.users().get(createdUser)
+                .addFederatedIdentity(bc.getIDPAlias(), identity)) {
+            Assert.assertEquals("status", 204, response.getStatus());
+        }
+
+        // login with the same username user but different user id from provider
+        logInAsUserInIDP();
+
+        // assert federated identity updated
+        String providerUserId = ApiUtil.findUserByUsername(providerRealm, bc.getUserLogin()).getId();
+        List<FederatedIdentityRepresentation> federatedIdentities = consumerRealm.users().get(createdUser).getFederatedIdentity();
+        assertEquals(1, federatedIdentities.size());
+        FederatedIdentityRepresentation actual = federatedIdentities.get(0);
+        assertEquals(bc.getIDPAlias(), actual.getIdentityProvider());
+        assertEquals(bc.getUserLogin(), actual.getUserName());
+        assertEquals(providerUserId, actual.getUserId());
     }
 }
