@@ -225,10 +225,14 @@ public class UserPropertyFileStorage implements UserLookupProvider, UserStorageP
     public Stream<UserModel> searchForUserStream(RealmModel realm, Map<String, String> attributes, Integer firstResult, Integer maxResults) {
         String search = Optional.ofNullable(attributes.get(UserModel.USERNAME))
                 .orElseGet(()-> attributes.get(UserModel.SEARCH));
-        if (search == null) return Stream.empty();
-        Predicate<String> p = Boolean.valueOf(attributes.getOrDefault(UserModel.EXACT, Boolean.FALSE.toString()))
-                ? username -> username.equals(search)
-                : username -> username.contains(search);
+        Predicate<String> p;
+        if (search == null) {
+            p = x -> true;
+        } else {
+            p = Boolean.parseBoolean(attributes.getOrDefault(UserModel.EXACT, Boolean.FALSE.toString()))
+                    ? username -> username.equals(search)
+                    : username -> username.contains(search);
+        }
         return searchForUser(realm, search, firstResult, maxResults, p);
     }
 
