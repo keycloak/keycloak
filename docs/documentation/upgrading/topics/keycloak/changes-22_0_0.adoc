@@ -244,6 +244,15 @@ If you used this feature, you should not use the `openshift-integration` feature
 the JAR file from custom extension. You can check the https://github.com/keycloak-extensions/keycloak-openshift-ext/[Openshift extension] and the instructions
 in it's README file for how to deploy the extension to your Keycloak server.
 
+== Http Challenge flow removed
+
+The builtin authentication flow `http challenge` was removed. Same applies for the authenticator implementations `no-cookie-redirect`, `basic-auth` and `basic-auth-otp`.
+The `http challenge` authentication flow was also supposed to be used for Openshift integration and hence it was removed together with other related things as described above.
+Authenticator implementations were moved to Openshift extension described in the previous paragraph.
+
+If you use the `http challenge` flow for any of your clients, you may need to re-create the flow again after the migration to Keycloak 22. Make sure that you have Openshift extension
+deployed as it contains needed authenticator providers.
+
 = Removing thirdparty dependencies
 
 The removal of openshift-integration allows us to remove few thirdparty dependencies from Keycloak distribution. This includes
