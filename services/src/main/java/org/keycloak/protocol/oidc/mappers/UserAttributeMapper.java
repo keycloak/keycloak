@@ -131,5 +131,11 @@ public class UserAttributeMapper extends AbstractOIDCProtocolMapper implements O
         return mapper;
     }
 
-
+    public static ProtocolMapperModel createClaimMapper(String name,
+                                                        String userAttribute,
+                                                        String tokenClaimName, String claimType,
+                                                        boolean accessToken, boolean idToken) {
+        return createClaimMapper(name, userAttribute, tokenClaimName, claimType,
+                accessToken, idToken, false, false);
+    }
 }
