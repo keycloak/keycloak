@@ -14,7 +14,7 @@ type MoveDialogProps = {
 const moveToRoot = async (source: GroupRepresentation) => {
   try {
     await adminClient.groups.create(source);
-  } catch (error: any) {
+  } catch (error) {
     if (error.response) {
       throw error;
     }
