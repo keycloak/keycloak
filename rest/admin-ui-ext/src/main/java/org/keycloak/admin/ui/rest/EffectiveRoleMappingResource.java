@@ -87,6 +87,7 @@ public class EffectiveRoleMappingResource extends RoleMappingResource {
         if (client == null) {
             throw new NotFoundException("Could not find client");
         }
+
         auth.clients().requireView(client);
         return mapping(client::hasScope).collect(Collectors.toList());
     }
@@ -115,6 +116,7 @@ public class EffectiveRoleMappingResource extends RoleMappingResource {
             throw new NotFoundException("Could not find group");
         }
 
+        auth.groups().requireView(group);
         return mapping(group::hasRole).collect(Collectors.toList());
     }
 
@@ -143,6 +145,7 @@ public class EffectiveRoleMappingResource extends RoleMappingResource {
             else throw new ForbiddenException();
         }
 
+        auth.users().requireView(user);
         return mapping(user::hasRole).collect(Collectors.toList());
     }
 
@@ -165,6 +168,7 @@ public class EffectiveRoleMappingResource extends RoleMappingResource {
             )}
     )
     public final List<ClientRole> listCompositeRealmRoleMappings() {
+        auth.roles().requireList(realm);
         final RoleModel defaultRole = this.realm.getDefaultRole();
         return mapping(o -> o.hasRole(defaultRole)).collect(Collectors.toList());
     }
