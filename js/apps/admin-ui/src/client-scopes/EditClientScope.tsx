@@ -43,6 +43,7 @@ import {
   toClientScope,
 } from "./routes/ClientScope";
 import { toMapper } from "./routes/Mapper";
+import { toClientScopes } from "./routes/ClientScopes";
 
 export default function EditClientScope() {
   const { t } = useTranslation("client-scopes");
@@ -137,6 +138,7 @@ export default function EditClientScope() {
       try {
         await adminClient.clientScopes.del({ id });
         addAlert(t("deletedSuccess"), AlertVariant.success);
+        navigate(toClientScopes({ realm }));
       } catch (error) {
         addError("client-scopes:deleteError", error);
       }
