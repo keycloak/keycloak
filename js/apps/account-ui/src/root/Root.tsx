@@ -37,7 +37,7 @@ const ReferrerLink = () => {
 
 export const Root = () => {
   const { t } = useTranslation();
-  const brandImage = environment.logo ? environment.logo : "logo.svg";
+  const brandImage = environment.logo || "logo.svg";
   const logoUrl = environment.logoUrl ? environment.logoUrl : "/";
   const internalLogoHref = useHref(logoUrl);
 
