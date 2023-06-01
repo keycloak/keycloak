@@ -1023,6 +1023,9 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
             // search by a string that matches multiple fields. Should still return the one entity it matches.
             Assert.assertEquals(1, session.users().searchForUserStream(appRealm, "*11*").count());
             LDAPTestAsserts.assertUserImported(UserStoragePrivateUtil.userLocalStorage(session), appRealm, "username11", "John11", "Doel11", "user11@email.org", "124");
+
+            // search by a string that has special characters. Should succeed with an empty set, but no exceptions.
+            Assert.assertEquals(0, session.users().searchForUserStream(appRealm, "John)").count());
         });
     }
 

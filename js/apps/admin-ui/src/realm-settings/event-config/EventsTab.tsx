@@ -195,22 +195,20 @@ export const EventsTab = ({ realm }: EventsTabProps) => {
               />
             </FormAccess>
           </PageSection>
-          {events?.eventsEnabled && (
-            <PageSection>
-              <EventsTypeTable
-                key={tableKey}
-                addTypes={() => setAddEventType(true)}
-                eventTypes={events.enabledEventTypes || []}
-                onDelete={(value) => {
-                  const enabledEventTypes = events.enabledEventTypes?.filter(
-                    (e) => e !== value.id
-                  );
-                  addEvents(enabledEventTypes);
-                  setEvents({ ...events, enabledEventTypes });
-                }}
-              />
-            </PageSection>
-          )}
+          <PageSection>
+            <EventsTypeTable
+              key={tableKey}
+              addTypes={() => setAddEventType(true)}
+              eventTypes={events?.enabledEventTypes || []}
+              onDelete={(value) => {
+                const enabledEventTypes = events?.enabledEventTypes?.filter(
+                  (e) => e !== value.id
+                );
+                addEvents(enabledEventTypes);
+                setEvents({ ...events, enabledEventTypes });
+              }}
+            />
+          </PageSection>
         </Tab>
         <Tab
           eventKey="admin"

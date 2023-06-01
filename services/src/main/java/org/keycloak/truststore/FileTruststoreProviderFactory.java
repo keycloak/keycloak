@@ -62,6 +62,11 @@ public class FileTruststoreProviderFactory implements TruststoreProviderFactory 
         return provider;
     }
 
+    // For testing purposes
+    public void setProvider(TruststoreProvider provider) {
+        this.provider = provider;
+    }
+
     @Override
     public void init(Config.Scope config) {
 

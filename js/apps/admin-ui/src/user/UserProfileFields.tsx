@@ -45,7 +45,7 @@ export const UserProfileFields = ({
   return (
     <ScrollForm
       sections={[{ name: "" }, ...(config?.groups || [])].map((g) => ({
-        title: g.name || t("general"),
+        title: g.displayHeader || g.name || t("general"),
         panel: (
           <Form>
             {g.displayDescription && (

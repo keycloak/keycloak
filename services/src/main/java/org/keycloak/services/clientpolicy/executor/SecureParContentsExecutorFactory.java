@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2023 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,31 +15,26 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.rest;
+package org.keycloak.services.clientpolicy.executor;
 
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.Collections;
+import java.util.List;
 
 import org.keycloak.Config.Scope;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.services.resource.RealmResourceProvider;
-import org.keycloak.services.resource.RealmResourceProviderFactory;
-import org.keycloak.timer.TimerProvider;
-import org.keycloak.truststore.TruststoreProvider;
+import org.keycloak.provider.ProviderConfigProperty;
 
-/**
- * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
+/** 
+ * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
  */
-public class TestingResourceProviderFactory implements RealmResourceProviderFactory {
+public class SecureParContentsExecutorFactory implements ClientPolicyExecutorProviderFactory {
 
-    private Map<String, TimerProvider.TimerTaskContext> suspendedTimerTasks = new ConcurrentHashMap<>();
-
-    protected TruststoreProvider truststoreProvider;
+    public static final String PROVIDER_ID = "secure-par-content";
 
     @Override
-    public RealmResourceProvider create(KeycloakSession session) {
-        return new TestingResourceProvider(session, this, suspendedTimerTasks);
+    public ClientPolicyExecutorProvider create(KeycloakSession session) {
+        return new SecureParContentsExecutor(session);
     }
 
     @Override
@@ -56,7 +51,17 @@ public class TestingResourceProviderFactory implements RealmResourceProviderFact
 
     @Override
     public String getId() {
-        return "testing";
+        return PROVIDER_ID;
+    }
+
+    @Override
+    public String getHelpText() {
+        return "It checks if a PAR request includes necessary parameters included by an authorization request.";
+    }
+
+    @Override
+    public List<ProviderConfigProperty> getConfigProperties() {
+        return Collections.emptyList();
     }
 
 }
