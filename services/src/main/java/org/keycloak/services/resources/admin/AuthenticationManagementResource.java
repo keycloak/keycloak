@@ -392,6 +392,26 @@ public class AuthenticationManagementResource {
                 execution.setFlowId(copy.getId());
                 copy(realm, newName, subFlow, copy);
             }
+
+            if (execution.getAuthenticatorConfig() != null) {
+                AuthenticatorConfigModel config = realm.getAuthenticatorConfigById(execution.getAuthenticatorConfig());
+
+                if (config == null) {
+                    logger.debugf("Authentication execution with id [%s] not found", config.getId());
+                    throw new IllegalStateException("Authentication execution configuration not found");
+                }
+
+                config.setId(null);
+
+                if (config.getAlias() != null) {
+                    config.setAlias(newName + " " + config.getAlias());
+                }
+
+                AuthenticatorConfigModel newConfig = realm.addAuthenticatorConfig(config);
+
+                execution.setAuthenticatorConfig(newConfig.getId());
+            }
+
             execution.setId(null);
             execution.setParentFlow(to.getId());
             realm.addAuthenticatorExecution(execution);
