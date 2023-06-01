@@ -32,8 +32,8 @@ import org.keycloak.services.util.ResolveRelative;
 
 import java.net.URI;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.stream.Collectors;
 
 /**
@@ -66,7 +66,8 @@ public class RedirectUtils {
 
     public static Set<String> resolveValidRedirects(KeycloakSession session, String rootUrl, Set<String> validRedirects) {
         // If the valid redirect URI is relative (no scheme, host, port) then use the request's scheme, host, and port
-        Set<String> resolveValidRedirects = new HashSet<>();
+        // the set is ordered by length to get the longest match first
+        Set<String> resolveValidRedirects = new TreeSet<>((String s1, String s2) -> s1.length() == s2.length()? s1.compareTo(s2) : s1.length() < s2.length()? 1 : -1);
         for (String validRedirect : validRedirects) {
             if (validRedirect.startsWith("/")) {
                 validRedirect = relativeToAbsoluteURI(session, rootUrl, validRedirect);
@@ -108,15 +109,16 @@ public class RedirectUtils {
         } else {
             // Make the validations against fully decoded and normalized redirect-url. This also allows wildcards (case when client configured "Valid redirect-urls" contain wildcards)
             String decodedRedirectUri = decodeRedirectUri(redirectUri);
-            decodedRedirectUri = getNormalizedRedirectUri(decodedRedirectUri);
+            URI decodedRedirect = toUri(decodedRedirectUri);
+            decodedRedirectUri = getNormalizedRedirectUri(decodedRedirect);
             if (decodedRedirectUri == null) return null;
 
             String r = decodedRedirectUri;
             Set<String> resolveValidRedirects = resolveValidRedirects(session, rootUrl, validRedirects);
 
-            boolean valid = matchesRedirects(resolveValidRedirects, r, true);
+            String valid = matchesRedirects(resolveValidRedirects, r, true);
 
-            if (!valid && (r.startsWith(Constants.INSTALLED_APP_URL) || r.startsWith(Constants.INSTALLED_APP_LOOPBACK)) && r.indexOf(':', Constants.INSTALLED_APP_URL.length()) >= 0) {
+            if (valid == null && (r.startsWith(Constants.INSTALLED_APP_URL) || r.startsWith(Constants.INSTALLED_APP_LOOPBACK)) && r.indexOf(':', Constants.INSTALLED_APP_URL.length()) >= 0) {
                 int i = r.indexOf(':', Constants.INSTALLED_APP_URL.length());
 
                 StringBuilder sb = new StringBuilder();
@@ -133,17 +135,28 @@ public class RedirectUtils {
             }
 
             // Return the original redirectUri, which can be partially encoded - for example http://localhost:8280/foo/bar%20bar%2092%2F72/3 . Just make sure it is normalized
-            redirectUri = getNormalizedRedirectUri(redirectUri);
+            URI redirect = toUri(redirectUri);
+            redirectUri = getNormalizedRedirectUri(redirect);
 
             // We try to check validity also for original (encoded) redirectUrl, but just in case it exactly matches some "Valid Redirect URL" specified for client (not wildcards allowed)
-            if (!valid) {
+            if (valid == null) {
                 valid = matchesRedirects(resolveValidRedirects, redirectUri, false);
             }
 
-            if (valid && redirectUri.startsWith("/")) {
+            if (valid != null && redirectUri.startsWith("/")) {
                 redirectUri = relativeToAbsoluteURI(session, rootUrl, redirectUri);
             }
-            redirectUri = valid ? redirectUri : null;
+
+            String scheme = decodedRedirect.getScheme();
+            if (valid != null && scheme != null) {
+                // check the scheme is valid, it should be http(s) or explicitly allowed by the validation
+                if (!valid.startsWith(scheme + ":") && !"http".equalsIgnoreCase(scheme) && !"https".equalsIgnoreCase(scheme)) {
+                    logger.debugf("Invalid URI because scheme is not allowed: %s", redirectUri);
+                    valid = null;
+                }
+            }
+
+            redirectUri = valid != null ? redirectUri : null;
         }
 
         if (Constants.INSTALLED_APP_URN.equals(redirectUri)) {
@@ -153,18 +166,24 @@ public class RedirectUtils {
         }
     }
 
-    private static String getNormalizedRedirectUri(String redirectUri) {
+    private static URI toUri(String redirectUri) {
+        URI uri = null;
         if (redirectUri != null) {
-            try {
-                URI uri = URI.create(redirectUri);
-                redirectUri = uri.normalize().toString();
+        try {
+                uri = URI.create(redirectUri);
             } catch (IllegalArgumentException cause) {
                 logger.debug("Invalid redirect uri", cause);
-                return null;
             } catch (Exception cause) {
                 logger.debug("Unexpected error when parsing redirect uri", cause);
-                return null;
             }
+        }
+        return uri;
+    }
+
+    private static String getNormalizedRedirectUri(URI uri) {
+        String redirectUri = null;
+        if (uri != null) {
+            redirectUri = uri.normalize().toString();
             redirectUri = lowerCaseHostname(redirectUri);
         }
         return redirectUri;
@@ -229,7 +248,8 @@ public class RedirectUtils {
         return sb.toString();
     }
 
-    private static boolean matchesRedirects(Set<String> validRedirects, String redirect, boolean allowWildcards) {
+    // return the String that matched the redirect or null if not matched
+    private static String matchesRedirects(Set<String> validRedirects, String redirect, boolean allowWildcards) {
         logger.tracef("matchesRedirects: redirect URL to check: %s, allow wildcards: %b, Configured valid redirect URLs: %s", redirect, allowWildcards, validRedirects);
         for (String validRedirect : validRedirects) {
             if (validRedirect.endsWith("*") && !validRedirect.contains("?") && allowWildcards) {
@@ -238,14 +258,14 @@ public class RedirectUtils {
                 // strip off *
                 int length = validRedirect.length() - 1;
                 validRedirect = validRedirect.substring(0, length);
-                if (r.startsWith(validRedirect)) return true;
+                if (r.startsWith(validRedirect)) return validRedirect;
                 // strip off trailing '/'
                 if (length - 1 > 0 && validRedirect.charAt(length - 1) == '/') length--;
                 validRedirect = validRedirect.substring(0, length);
-                if (validRedirect.equals(r)) return true;
-            } else if (validRedirect.equals(redirect)) return true;
+                if (validRedirect.equals(r)) return validRedirect;
+            } else if (validRedirect.equals(redirect)) return validRedirect;
         }
-        return false;
+        return null;
     }
 
     private static String getSingleValidRedirectUri(Collection<String> validRedirects) {
