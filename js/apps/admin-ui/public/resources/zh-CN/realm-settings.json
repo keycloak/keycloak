@@ -3,7 +3,7 @@
   "editGroupText": "编辑属性组",
   "tableTitle": "属性组",
   "columnName": "名称",
-  "columnDisplayName": "显示名称",
+  "columnDisplayName": "展示名称",
   "columnDisplayDescription": "显示说明",
   "emptyStateMessage": "没有属性组",
   "emptyStateInstructions": "如果你想添加一个属性组，请点击下面的按钮。",
