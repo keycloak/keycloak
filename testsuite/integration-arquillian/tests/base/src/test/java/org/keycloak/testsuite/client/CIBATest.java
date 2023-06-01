@@ -1105,6 +1105,52 @@ public class CIBATest extends AbstractClientPoliciesTest {
     }
 
     @Test
+    public void testVerifyHolderOfAuthenticationRequestRef() throws Exception {
+        ClientResource firstClientResource = null;
+        ClientResource secondClientResource = null;
+        ClientRepresentation firstClientRep = null;
+        ClientRepresentation secondClientRep = null;
+        try {
+            final String username = "nutzername-gelb";
+            final String firstClientName = "test-app-scope"; // see testrealm.json
+            final String secondClientName = TEST_CLIENT_NAME;
+            final String firstClientPassword = "password";
+            final String secondClientPassword = TEST_CLIENT_PASSWORD;
+            String firstClientAuthReqId = null;
+
+            firstClientResource = ApiUtil.findClientByClientId(adminClient.realm(TEST_REALM_NAME), firstClientName);
+            assertThat(firstClientResource, notNullValue());
+
+            firstClientRep = firstClientResource.toRepresentation();
+            prepareCIBASettings(firstClientResource, firstClientRep);
+
+            secondClientResource = ApiUtil.findClientByClientId(adminClient.realm(TEST_REALM_NAME), secondClientName);
+            assertThat(secondClientResource, notNullValue());
+
+            secondClientRep = secondClientResource.toRepresentation();
+            prepareCIBASettings(secondClientResource, secondClientRep);
+
+            // first client Backchannel Authentication Request
+            AuthenticationRequestAcknowledgement response = doBackchannelAuthenticationRequest(firstClientName, firstClientPassword, username, "asdfghjkl");
+            firstClientAuthReqId = response.getAuthReqId();
+
+            // first client Authentication Channel Request
+            TestAuthenticationChannelRequest firstClientAuthenticationChannelReq = doAuthenticationChannelRequest("asdfghjkl");
+
+            // first client Authentication Channel completed
+            doAuthenticationChannelCallback(firstClientAuthenticationChannelReq);
+
+            // second client Token Request
+            OAuthClient.AccessTokenResponse tokenRes = oauth.doBackchannelAuthenticationTokenRequest(secondClientName, secondClientPassword, firstClientAuthReqId);
+            assertEquals(400, tokenRes.getStatusCode());
+            assertEquals("unauthorized client", tokenRes.getErrorDescription());
+        } finally {
+            revertCIBASettings(firstClientResource, firstClientRep);
+            revertCIBASettings(secondClientResource, secondClientRep);
+        }
+    }
+
+    @Test
     public void testRequestTokenBeforeAuthenticationNotCompleted() throws Exception {
         ClientResource clientResource = null;
         ClientRepresentation clientRep = null;
