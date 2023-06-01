@@ -20,7 +20,7 @@ const defaultEnvironment: Environment = {
   realm: "master",
   resourceUrl: "http://localhost:8080",
   logo: "/logo.svg",
-  logoUrl: "",
+  logoUrl: "/",
 };
 
 // Merge the default and injected environment variables together.
