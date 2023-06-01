@@ -796,17 +796,6 @@
                 </exclusions>
             </dependency>
             <dependency>
-                <groupId>org.apache.james</groupId>
-                <artifactId>apache-mime4j</artifactId>
-                <version>${apache.mime4j.version}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>commons-logging</groupId>
-                        <artifactId>commons-logging</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            <dependency>
                 <groupId>org.wildfly.core</groupId>
                 <artifactId>wildfly-controller</artifactId>
                 <version>${wildfly.core.version}</version>
