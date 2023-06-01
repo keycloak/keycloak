@@ -35,12 +35,11 @@ const ReferrerLink = () => {
   ) : null;
 };
 
-const logoUrl = environment.logoUrl ? environment.logoUrl : "/";
-const internalLogoHref = useHref(logoUrl);
-
 export const Root = () => {
   const { t } = useTranslation();
   const brandImage = environment.logo ? environment.logo : "logo.svg";
+  const logoUrl = environment.logoUrl ? environment.logoUrl : "/";
+  const internalLogoHref = useHref(logoUrl);
 
   // User can indicate that he wants an internal URL by starting it with "/"
   const indexHref = logoUrl.startsWith("/") ? internalLogoHref : logoUrl;
