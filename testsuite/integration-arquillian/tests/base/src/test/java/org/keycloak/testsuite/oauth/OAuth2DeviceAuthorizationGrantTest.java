@@ -16,6 +16,7 @@
  */
 package org.keycloak.testsuite.oauth;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.keycloak.models.OAuth2DeviceConfig.DEFAULT_OAUTH2_DEVICE_CODE_LIFESPAN;
@@ -59,11 +60,13 @@ import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.keycloak.util.BasicAuthHelper;
+import org.openqa.selenium.Cookie;
 
 import java.util.List;
 import java.util.LinkedList;
 
 import java.io.UnsupportedEncodingException;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author <a href="mailto:h2-wada@nri.co.jp">Hiroyuki Wada</a>
@@ -106,6 +109,7 @@ public class OAuth2DeviceAuthorizationGrantTest extends AbstractKeycloakTest {
 
         ClientRepresentation appPublic = ClientBuilder.create().id(KeycloakModelUtils.generateId()).publicClient()
             .clientId(DEVICE_APP_PUBLIC).attribute(OAuth2DeviceConfig.OAUTH2_DEVICE_AUTHORIZATION_GRANT_ENABLED, "true")
+            .redirectUris(OAuthClient.APP_ROOT + "/auth")
             .build();
         realm.client(appPublic);
 
@@ -241,6 +245,72 @@ public class OAuth2DeviceAuthorizationGrantTest extends AbstractKeycloakTest {
             realmRep.getAttributes().remove("shortVerificationUri");
             testRealm.update(realmRep);
         }
+    }
+
+    @Test
+    public void testVerifyHolderOfDeviceCode() throws Exception {
+        // Device Authorization Request from device
+        oauth.realm(REALM_NAME);
+        oauth.clientId(DEVICE_APP_PUBLIC);
+        OAuthClient.DeviceAuthorizationResponse response = oauth.doDeviceAuthorizationRequest(DEVICE_APP_PUBLIC, null);
+
+        assertEquals(200, response.getStatusCode());
+        assertNotNull(response.getDeviceCode());
+        assertNotNull(response.getUserCode());
+        assertNotNull(response.getVerificationUri());
+        assertNotNull(response.getVerificationUriComplete());
+        assertEquals(60, response.getExpiresIn());
+        assertEquals(5, response.getInterval());
+
+        openVerificationPage(response.getVerificationUriComplete());
+
+        // Do Login
+        oauth.fillLoginForm("device-login", "password");
+
+        // Consent
+        grantPage.accept();
+
+        // Token request from device
+        OAuthClient.AccessTokenResponse tokenResponse = oauth.doDeviceTokenRequest(DEVICE_APP_PUBLIC, null, response.getDeviceCode());
+
+        assertEquals(200, tokenResponse.getStatusCode());
+
+        String tokenString = tokenResponse.getAccessToken();
+        assertNotNull(tokenString);
+        AccessToken token = oauth.verifyToken(tokenString);
+
+        assertNotNull(token);
+
+        for (Cookie cookie : driver.manage().getCookies()) {
+            driver.manage().deleteCookie(cookie);
+        }
+
+        oauth.openLoginForm();
+
+        oauth.realm(REALM_NAME);
+        oauth.clientId(DEVICE_APP_PUBLIC_CUSTOM_CONSENT);
+
+        oauth.fillLoginForm("device-login", "password");
+
+        for (Cookie cookie : driver.manage().getCookies()) {
+            driver.manage().deleteCookie(cookie);
+        }
+
+        oauth.openLoginForm();
+
+        response = oauth.doDeviceAuthorizationRequest(DEVICE_APP_PUBLIC_CUSTOM_CONSENT, null);
+
+        openVerificationPage(response.getVerificationUriComplete());
+
+        // Consent
+        Assert.assertTrue(grantPage.getDisplayedGrants().contains("This is the custom consent screen text."));
+        grantPage.accept();
+
+        // Token request from device
+        tokenResponse = oauth.doDeviceTokenRequest(DEVICE_APP_PUBLIC, null, response.getDeviceCode());
+
+        assertEquals(400, tokenResponse.getStatusCode());
+        assertEquals("unauthorized client", tokenResponse.getErrorDescription());
     }
 
     @Test
