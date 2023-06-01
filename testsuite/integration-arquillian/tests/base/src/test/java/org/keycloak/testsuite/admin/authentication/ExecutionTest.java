@@ -171,7 +171,6 @@ public class ExecutionTest extends AbstractAuthenticationTest {
         assertAdminEvents.assertEvent(testRealmId, OperationType.DELETE, AdminEventPaths.authExecutionPath(authCookieExec.getId()), ResourceType.AUTH_EXECUTION);
 
         AuthenticationExecutionRepresentation rep = new AuthenticationExecutionRepresentation();
-        rep.setPriority(10);
         rep.setAuthenticator("auth-cookie");
         rep.setRequirement(CONDITIONAL);
 
@@ -194,6 +193,7 @@ public class ExecutionTest extends AbstractAuthenticationTest {
 
         // Should fail - add execution to builtin flow
         AuthenticationFlowRepresentation browserFlow = findFlowByAlias("browser", authMgmtResource.getFlows());
+        Assert.assertNotNull(browserFlow);
         rep.setParentFlow(browserFlow.getId());
         response = authMgmtResource.addExecution(rep);
         try {
@@ -205,10 +205,12 @@ public class ExecutionTest extends AbstractAuthenticationTest {
         // get Copy-of-browser flow id, and set it on execution
         List<AuthenticationFlowRepresentation> flows = authMgmtResource.getFlows();
         AuthenticationFlowRepresentation flow = findFlowByAlias("Copy-of-browser", flows);
+        Assert.assertNotNull(flow);
         rep.setParentFlow(flow.getId());
 
         // add execution - should succeed
         response = authMgmtResource.addExecution(rep);
+        String authCookieExecId = ApiUtil.getCreatedId(response);
         assertAdminEvents.assertEvent(testRealmId, OperationType.CREATE, AssertAdminEvents.isExpectedPrefixFollowedByUuid(AdminEventPaths.authMgmtBasePath() + "/executions"), rep, ResourceType.AUTH_EXECUTION);
         try {
             Assert.assertEquals("added execution", 201, response.getStatus());
@@ -216,7 +218,13 @@ public class ExecutionTest extends AbstractAuthenticationTest {
             response.close();
         }
 
-        // check execution was added
+        // check that the created execution can be retrieved by ID
+        AuthenticationExecutionRepresentation authCookieExecRetrievedById =
+                authMgmtResource.getExecution(authCookieExecId);
+        Assert.assertNotNull(authCookieExecRetrievedById);
+        compareExecution(newExec("auth-cookie", CONDITIONAL, false, flow.getId()), authCookieExecRetrievedById);
+
+        // check that the created execution is contained in the executions of flow
         List<AuthenticationExecutionInfoRepresentation> executions = authMgmtResource.getExecutions("Copy-of-browser");
         exec = findExecutionByProvider("auth-cookie", executions);
         Assert.assertNotNull("auth-cookie added", exec);

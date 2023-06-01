@@ -704,7 +704,7 @@ public class AuthenticationManagementResource {
     @GET
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
-    public Response getExecution(final @PathParam("executionId") String executionId) {
+    public AuthenticationExecutionRepresentation getExecution(final @PathParam("executionId") String executionId) {
     	//http://localhost:8080/auth/admin/realms/master/authentication/executions/cf26211b-9e68-4788-b754-1afd02e59d7f
         auth.realm().requireManageRealm();
 
@@ -714,7 +714,7 @@ public class AuthenticationManagementResource {
             throw new NotFoundException("Illegal execution");
         }
 
-        return Response.ok(model.get()).build();
+        return ModelToRepresentation.toByIdRepresentation(realm, model.get());
     }
 
     /**
