@@ -16,12 +16,14 @@ include::topics/templates/release-header.adoc[]
 // == {project_name_full} 22.0.0
 // include::topics/22_0_0.adoc[leveloffset=2]
 
+== {project_name_full} 21.1.2
+include::topics/21_1_2.adoc[leveloffset=2]
+
 == {project_name_full} 21.1.0
 include::topics/21_1_0.adoc[leveloffset=2]
 
 == {project_name_full} 21.0.0
 include::topics/21_0_0.adoc[leveloffset=2]
-
 
 == {project_name_full} 20.0.0
 include::topics/20_0_0.adoc[leveloffset=2]
