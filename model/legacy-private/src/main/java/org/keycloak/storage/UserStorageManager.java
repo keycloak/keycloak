@@ -127,6 +127,7 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
 
         // should validation be performed outside explicit sync?
         if (!model.isValidateOnAccess()) {
+            // create a proxy delegate to be as useful as possible on existing data
             return new ReadonlyUntilWriteUserModelDelegate(user, () -> {
                 UserModel userProxyOrNull = getUserModel(realm, user, importedUserValidation);
                 if(userProxyOrNull==null) {
