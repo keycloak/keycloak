@@ -82,7 +82,17 @@ export type AttributeForm = Omit<
 
 type Props = ClientSettingsProps & EvaluationResultRepresentation;
 
-export const AuthorizationEvaluate = ({ client }: Props) => {
+export const AuthorizationEvaluate = (props: Props) => {
+  const { hasAccess } = useAccess();
+
+  if (!hasAccess("view-users")) {
+    return <ForbiddenSection permissionNeeded="view-users" />;
+  }
+
+  return <AuthorizationEvaluateContent {...props} />;
+};
+
+const AuthorizationEvaluateContent = ({ client }: Props) => {
   const form = useForm<EvaluateFormInputs>({ mode: "onChange" });
   const {
     control,
@@ -106,10 +116,6 @@ export const AuthorizationEvaluate = ({ client }: Props) => {
     useState<PolicyEvaluationResponse>();
 
   const [clientRoles, setClientRoles] = useState<RoleRepresentation[]>([]);
-
-  const { hasAccess } = useAccess();
-  if (!hasAccess("view-users"))
-    return <ForbiddenSection permissionNeeded="view-users" />;
 
   useFetch(
     () => adminClient.roles.find(),
