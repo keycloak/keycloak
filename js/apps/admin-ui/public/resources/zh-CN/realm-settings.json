@@ -57,7 +57,7 @@
   "saveEventListeners": "保存事件监听器",
   "saveEventListenersSuccess": "事件侦听器已更新。",
   "saveEventListenersError": "保存事件侦听器时出错：{{error}}",
-  "userEventsSettings": "用户事件的设置",
+  "userEventsSettings": "用户事件设置",
   "adminEventsSettings": "管理员事件设置",
   "saveEvents": "保存事件",
   "expiration": "过期",
