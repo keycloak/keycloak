@@ -27,6 +27,7 @@ import io.fabric8.kubernetes.api.model.apps.StatefulSetSpecBuilder;
 import io.quarkus.logging.Log;
 import io.quarkus.test.junit.QuarkusTest;
 import org.awaitility.Awaitility;
+import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.keycloak.operator.Constants;
@@ -616,6 +617,30 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
                                 .inNamespace(namespace).withName(kc.getMetadata().getName()).get();
                         assertKeycloakStatusCondition(currentKc, KeycloakStatusCondition.READY, false, "Waiting for more replicas");
                     });
+        } catch (Exception e) {
+            savePodLogs();
+            throw e;
+        }
+    }
+
+    @Test
+    public void testPreconfiguredPodLabels() {
+        Assumptions.assumeTrue(operatorDeployment == OperatorDeployment.local,
+                "Skipping the test when Operator deployed remotely to keep stuff simple, it's just SmallRye, we don't need to retest it");
+
+        try {
+            var kc = getDefaultKeycloakDeployment();
+            deployKeycloak(k8sclient, kc, true);
+
+            // labels are set in test/resources/application.properties
+            var labels = k8sclient.apps().statefulSets().inNamespace(namespace).withName(kc.getMetadata().getName()).get()
+                    .getSpec().getTemplate().getMetadata().getLabels();
+
+            var expected = Map.of(
+                    "test.label", "foobar",
+                    "testLabelWithExpression", "my-value"
+            );
+            assertThat(labels).containsAllEntriesOf(expected);
         } catch (Exception e) {
             savePodLogs();
             throw e;
