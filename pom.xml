@@ -2147,6 +2147,18 @@
         </profile>
 
         <profile>
+            <id>operator-prod</id>
+            <activation>
+                <property>
+                    <name>operator-prod</name>
+                </property>
+            </activation>
+            <modules>
+                <module>operator</module>
+            </modules>
+        </profile>
+
+        <profile>
             <id>doclint-java8-disable</id>
             <activation>
                 <jdk>[1.8,)</jdk>

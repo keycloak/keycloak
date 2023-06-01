@@ -378,7 +378,12 @@ public class KeycloakDeployment extends OperatorManagedResource implements Statu
         baseDeployment.getMetadata().setNamespace(getNamespace());
         baseDeployment.getSpec().getSelector().setMatchLabels(Constants.DEFAULT_LABELS);
         baseDeployment.getSpec().setReplicas(keycloakCR.getSpec().getInstances());
-        baseDeployment.getSpec().getTemplate().getMetadata().setLabels(Constants.DEFAULT_LABELS);
+
+        Map<String, String> labels = new HashMap<>(Constants.DEFAULT_LABELS);
+        if (operatorConfig.keycloak().podLabels() != null) {
+            labels.putAll(operatorConfig.keycloak().podLabels());
+        }
+        baseDeployment.getSpec().getTemplate().getMetadata().setLabels(labels);
 
         Container container = baseDeployment.getSpec().getTemplate().getSpec().getContainers().get(0);
         var customImage = Optional.ofNullable(keycloakCR.getSpec().getImage());
