@@ -128,10 +128,10 @@
       "providerName": "ldap",
       "priority": 1,
       "fullSyncPeriod": -1,
-      "validateOnAccess": true,
       "changedSyncPeriod": -1,
       "config": {
         "pagination" : "true",
+        "validateOnAccess": "true",
         "debug" : "false",
         "searchScope" : "1",
         "connectionPooling" : "true",
