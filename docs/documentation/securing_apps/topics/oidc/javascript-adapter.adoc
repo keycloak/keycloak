@@ -351,7 +351,7 @@ responseType::
 
 Called to initialize the adapter.
 
-WARNING: if you are calling this method with `onLoad: 'login-required'` make sure to call it once because it sets authenticated state to `false` and you may end up in the redirect loop.
+WARNING: If you are calling this method with `onLoad: 'login-required'` make sure to call it once because it sets authenticated state to `false` and you may end up in the redirect loop.
 
 Options is an Object, where:
 
