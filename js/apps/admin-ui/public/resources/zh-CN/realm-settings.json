@@ -893,7 +893,7 @@
   "importAdded_other": "已添加 {{count}} 条记录。",
   "importOverwritten_zero": "没有记录被覆盖。",
   "importOverwritten_one": "覆盖一条记录。",
-  "importOverwritten_other": "{{count}} 条记录被覆盖。",
+  "importOverwritten_other": "{{count}} 条记录被覆写。",
   "importSkipped_zero": "没有记录被跳过。",
   "importSkipped_one": "跳过一条记录。",
   "importSkipped_other": "跳过 {{count}} 条记录。"
