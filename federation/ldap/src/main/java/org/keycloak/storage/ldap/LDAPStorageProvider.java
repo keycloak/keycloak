@@ -170,20 +170,6 @@ public class LDAPStorageProvider implements UserStorageProvider,
 
     @Override
     public UserModel validate(RealmModel realm, UserModel local) {
-        if(!this.model.isValidateOnAccess()) {
-            return new ReadonlyUntilWriteLDAPUserModelDelegate(local, () -> {
-                UserModel ldapUserProxyOrNull = createLdapUserProxyOrNull(realm, local);
-                if(ldapUserProxyOrNull==null) {
-                    throw new ModelException("User Model not found");
-                }
-                return ldapUserProxyOrNull;
-            });
-        }
-
-        return createLdapUserProxyOrNull(realm, local);
-    }
-
-    private UserModel createLdapUserProxyOrNull(RealmModel realm, UserModel local) {
         LDAPObject ldapObject = loadAndValidateUser(realm, local);
         if (ldapObject == null) {
             return null;

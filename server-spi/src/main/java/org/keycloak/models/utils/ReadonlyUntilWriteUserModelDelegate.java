@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.storage.ldap;
+package org.keycloak.models.utils;
 
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.UserModelDelegate;
@@ -27,14 +27,15 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 /**
- *
+ * Wraps a supplier method to be called once write access is required for a user
+ * As long as the access is only read, nothing happens.
  */
-public class ReadonlyUntilWriteLDAPUserModelDelegate extends UserModelDelegate {
+public class ReadonlyUntilWriteUserModelDelegate extends UserModelDelegate {
 
     private final Supplier<UserModel> supplier;
     private boolean newDelegate = false;
 
-    public ReadonlyUntilWriteLDAPUserModelDelegate(UserModel local, Supplier<UserModel> supplier) {
+    public ReadonlyUntilWriteUserModelDelegate(UserModel local, Supplier<UserModel> supplier) {
         super(local);
         this.supplier = supplier;
     }

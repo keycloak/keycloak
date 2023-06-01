@@ -48,6 +48,7 @@ import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.ProtocolMapperModel;
+import org.keycloak.models.utils.ReadonlyUntilWriteUserModelDelegate;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserConsentModel;
@@ -124,6 +125,22 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
         ImportedUserValidation importedUserValidation = getStorageProviderInstance(model, ImportedUserValidation.class, true);
         if (importedUserValidation == null) return user;
 
+        // should validation be performed outside explicit sync?
+        if (!model.isValidateOnAccess()) {
+            return new ReadonlyUntilWriteUserModelDelegate(user, () -> {
+                UserModel userProxyOrNull = getUserModel(realm, user, importedUserValidation);
+                if(userProxyOrNull==null) {
+                    throw new ModelException("User Model not found");
+                }
+                return userProxyOrNull;
+            });
+        }
+
+
+        return getUserModel(realm, user, importedUserValidation);
+    }
+
+    private UserModel getUserModel(RealmModel realm, UserModel user, ImportedUserValidation importedUserValidation) {
         UserModel validated = importedUserValidation.validate(realm, user);
         if (validated == null) {
             deleteInvalidUser(realm, user);
