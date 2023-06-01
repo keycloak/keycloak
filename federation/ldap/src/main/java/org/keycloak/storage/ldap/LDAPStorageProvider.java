@@ -431,16 +431,16 @@ public class LDAPStorageProvider implements UserStorageProvider,
 
             // Mapper should replace parameter with correct LDAP mapped attributes
             if (attributes.containsKey(UserModel.USERNAME)) {
-                ldapQuery.addWhereCondition(conditionsBuilder.equal(UserModel.USERNAME, attributes.get(UserModel.USERNAME), EscapeStrategy.NON_ASCII_CHARS_ONLY));
+                ldapQuery.addWhereCondition(conditionsBuilder.equal(UserModel.USERNAME, attributes.get(UserModel.USERNAME), EscapeStrategy.DEFAULT_EXCEPT_ASTERISK));
             }
             if (attributes.containsKey(UserModel.EMAIL)) {
-                ldapQuery.addWhereCondition(conditionsBuilder.equal(UserModel.EMAIL, attributes.get(UserModel.EMAIL), EscapeStrategy.NON_ASCII_CHARS_ONLY));
+                ldapQuery.addWhereCondition(conditionsBuilder.equal(UserModel.EMAIL, attributes.get(UserModel.EMAIL), EscapeStrategy.DEFAULT_EXCEPT_ASTERISK));
             }
             if (attributes.containsKey(UserModel.FIRST_NAME)) {
-                ldapQuery.addWhereCondition(conditionsBuilder.equal(UserModel.FIRST_NAME, attributes.get(UserModel.FIRST_NAME), EscapeStrategy.NON_ASCII_CHARS_ONLY));
+                ldapQuery.addWhereCondition(conditionsBuilder.equal(UserModel.FIRST_NAME, attributes.get(UserModel.FIRST_NAME), EscapeStrategy.DEFAULT_EXCEPT_ASTERISK));
             }
             if (attributes.containsKey(UserModel.LAST_NAME)) {
-                ldapQuery.addWhereCondition(conditionsBuilder.equal(UserModel.LAST_NAME, attributes.get(UserModel.LAST_NAME), EscapeStrategy.NON_ASCII_CHARS_ONLY));
+                ldapQuery.addWhereCondition(conditionsBuilder.equal(UserModel.LAST_NAME, attributes.get(UserModel.LAST_NAME), EscapeStrategy.DEFAULT_EXCEPT_ASTERISK));
             }
             // for all other searchable fields: Ignoring is the fallback option, since it may overestimate the results but does not ignore matches.
             // for empty params: all users are returned (pagination applies)
@@ -476,10 +476,10 @@ public class LDAPStorageProvider implements UserStorageProvider,
                     s += "*";
                 }
 
-                conditions.add(conditionsBuilder.equal(UserModel.USERNAME, s.trim().toLowerCase(), EscapeStrategy.NON_ASCII_CHARS_ONLY));
-                conditions.add(conditionsBuilder.equal(UserModel.EMAIL, s.trim().toLowerCase(), EscapeStrategy.NON_ASCII_CHARS_ONLY));
-                conditions.add(conditionsBuilder.equal(UserModel.FIRST_NAME, s, EscapeStrategy.NON_ASCII_CHARS_ONLY));
-                conditions.add(conditionsBuilder.equal(UserModel.LAST_NAME, s, EscapeStrategy.NON_ASCII_CHARS_ONLY));
+                conditions.add(conditionsBuilder.equal(UserModel.USERNAME, s.trim().toLowerCase(), EscapeStrategy.DEFAULT_EXCEPT_ASTERISK));
+                conditions.add(conditionsBuilder.equal(UserModel.EMAIL, s.trim().toLowerCase(), EscapeStrategy.DEFAULT_EXCEPT_ASTERISK));
+                conditions.add(conditionsBuilder.equal(UserModel.FIRST_NAME, s, EscapeStrategy.DEFAULT_EXCEPT_ASTERISK));
+                conditions.add(conditionsBuilder.equal(UserModel.LAST_NAME, s, EscapeStrategy.DEFAULT_EXCEPT_ASTERISK));
 
                 ldapQuery.addWhereCondition(conditionsBuilder.orCondition(conditions.toArray(Condition[]::new)));
             }
