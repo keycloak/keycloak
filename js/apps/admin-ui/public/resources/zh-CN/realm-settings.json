@@ -677,7 +677,7 @@
       "description": "用于交换令牌的代码"
     },
     "GRANT_CONSENT_ERROR": {
-      "name": "授权认证错误",
+      "name": "授权许可错误",
       "description": "授权认证错误"
     },
     "IDENTITY_PROVIDER_FIRST_LOGIN_ERROR": {
