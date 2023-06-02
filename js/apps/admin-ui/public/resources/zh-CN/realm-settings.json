@@ -790,7 +790,7 @@
     },
     "OAUTH2_DEVICE_CODE_TO_TOKEN_ERROR": {
       "name": "Oauth2设备用于交换令牌的代码错误",
-      "description": "Oauth2设备代码令牌错误"
+      "description": "Oauth2设备用于交换令牌的代码错误"
     },
     "OAUTH2_DEVICE_VERIFY_USER_CODE": {
       "name": "Oauth2设备验证用户密码",
