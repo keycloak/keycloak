@@ -30,15 +30,25 @@ import java.util.Optional;
 
 public class AccountHelper {
 
-    private static UserResource getUserResource(RealmResource realm, String username) {
+    public static UserRepresentation getUserRepresentation(RealmResource realm, String username) {
         Optional<UserRepresentation> userResult = realm.users().search(username, true).stream().findFirst();
         if (userResult.isEmpty()) {
             throw new RuntimeException("User with username " + username + " not found");
         }
 
-        UserRepresentation userRepresentation = userResult.get();
-        UserResource user = realm.users().get(userRepresentation.getId());
-        return user;
+        return userResult.get();
+    }
+
+    private static UserResource getUserResource(RealmResource realm, String username) {
+        UserRepresentation userRepresentation = getUserRepresentation(realm, username);
+
+        return realm.users().get(userRepresentation.getId());
+    }
+
+    public static UserResource updateUser(RealmResource realm, String username, UserRepresentation userRepresentation) {
+        AccountHelper.getUserResource(realm, username).update(userRepresentation);
+
+        return AccountHelper.getUserResource(realm, username);
     }
 
     public static boolean updatePassword(RealmResource realm, String username, String password) {

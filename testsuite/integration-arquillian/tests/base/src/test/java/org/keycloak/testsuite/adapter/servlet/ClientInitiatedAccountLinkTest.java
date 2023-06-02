@@ -30,7 +30,6 @@ import org.keycloak.common.Profile;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.models.Constants;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
-import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.FederatedIdentityRepresentation;
@@ -39,16 +38,15 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.resources.LoginActionsService;
+import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.testsuite.ActionURIUtils;
 import org.keycloak.testsuite.adapter.AbstractServletsAdapterTest;
-import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
 import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.utils.arquillian.ContainerConstants;
 import org.keycloak.testsuite.broker.BrokerTestTools;
 import org.keycloak.testsuite.page.AbstractPageWithInjectedUrl;
-import org.keycloak.testsuite.pages.AccountUpdateProfilePage;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginUpdateProfilePage;
@@ -87,9 +85,6 @@ public class ClientInitiatedAccountLinkTest extends AbstractServletsAdapterTest 
 
     @Page
     protected LoginUpdateProfilePage loginUpdateProfilePage;
-
-    @Page
-    protected AccountUpdateProfilePage profilePage;
 
     @Page
     private LoginPage loginPage;
@@ -551,21 +546,18 @@ public class ClientInitiatedAccountLinkTest extends AbstractServletsAdapterTest 
 
     }
 
-
     @Test
-    @DisableFeature(value = Profile.Feature.ACCOUNT2, skipRestart = true) // TODO remove this (KEYCLOAK-16228)
-    public void testAccountLinkingExpired() throws Exception {
+    public void testAccountLinkingExpired() {
         RealmResource realm = adminClient.realms().realm(CHILD_IDP);
         List<FederatedIdentityRepresentation> links = realm.users().get(childUserId).getFederatedIdentity();
         Assert.assertTrue(links.isEmpty());
 
-        // Login to account mgmt first
-        profilePage.open(CHILD_IDP);
+        // Login to application first
+        appPage.navigateTo();
         WaitUtils.waitForPageToLoad();
 
         Assert.assertTrue(loginPage.isCurrent(CHILD_IDP));
         loginPage.login("child", "password");
-        profilePage.assertCurrent();
 
         // Now in another tab, request account linking
         UriBuilder linkBuilder = UriBuilder.fromUri(appPage.getInjectedUrl().toString())

@@ -19,6 +19,7 @@ package org.keycloak.testsuite.broker;
 
 import static org.keycloak.models.IdentityProviderMapperSyncMode.IMPORT;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import org.keycloak.models.IdentityProviderMapperSyncMode;
@@ -55,7 +56,13 @@ public abstract class AbstractGroupBrokerMapperTest extends AbstractGroupMapperT
 
     public UserRepresentation createMapperAndLoginAsUserTwiceWithMapper(IdentityProviderMapperSyncMode syncMode,
             boolean createAfterFirstLogin, String groupPath) {
-        return loginAsUserTwiceWithMapper(syncMode, createAfterFirstLogin, createMatchingAttributes(), groupPath);
+        UserRepresentation user = null;
+
+        try {
+            user = loginAsUserTwiceWithMapper(syncMode, createAfterFirstLogin, createMatchingAttributes(), groupPath);
+        } catch (IOException e) {}
+
+        return user;
     }
 
     @Override

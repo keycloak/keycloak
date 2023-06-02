@@ -18,7 +18,6 @@ package org.keycloak.testsuite.broker;
 
 import static org.keycloak.testsuite.broker.BrokerTestConstants.IDP_OIDC_ALIAS;
 import static org.keycloak.testsuite.broker.BrokerTestTools.createIdentityProvider;
-import static org.keycloak.testsuite.broker.BrokerTestTools.getConsumerRoot;
 
 import org.junit.Test;
 import org.keycloak.models.IdentityProviderSyncMode;
@@ -51,7 +50,8 @@ public class KcCustomOidcBrokerTest extends AbstractInitializedBaseBrokerTest {
 
     @Test
     public void testCustomDisplayIcon() {
-        driver.navigate().to(getAccountUrl(getConsumerRoot(), bc.consumerRealmName()));
+        oauth.clientId("broker-app");
+        loginPage.open(bc.consumerRealmName());
         assertThat(driver.getPageSource(), containsString("my-custom-idp-icon"));
     }
 }

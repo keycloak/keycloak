@@ -28,7 +28,6 @@ import org.keycloak.authentication.forms.RegistrationPassword;
 import org.keycloak.authentication.forms.RegistrationProfile;
 import org.keycloak.authentication.forms.RegistrationRecaptcha;
 import org.keycloak.authentication.forms.RegistrationUserCreation;
-import org.keycloak.common.Profile;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
 import org.keycloak.models.AuthenticationExecutionModel;
@@ -37,8 +36,6 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
-import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
-import org.keycloak.testsuite.pages.AccountUpdateProfilePage;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
 import org.keycloak.testsuite.pages.LoginPage;
@@ -50,6 +47,7 @@ import org.keycloak.testsuite.util.GreenMailRule;
 import org.keycloak.testsuite.util.MailUtils;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.UserBuilder;
+import org.keycloak.testsuite.util.AccountHelper;
 
 import jakarta.mail.internet.MimeMessage;
 import jakarta.ws.rs.core.Response;
@@ -83,9 +81,6 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
 
     @Page
     protected VerifyEmailPage verifyEmailPage;
-
-    @Page
-    protected AccountUpdateProfilePage accountPage;
 
     @Rule
     public GreenMailRule greenMail = new GreenMailRule();
@@ -474,7 +469,6 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
     }
 
     @Test
-    @DisableFeature(value = Profile.Feature.ACCOUNT2, skipRestart = true) // TODO remove this (KEYCLOAK-16228)
     public void registerUserUmlats() {
         loginPage.open();
 
@@ -488,16 +482,10 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
         String userId = events.expectRegister("registeruserumlats", "registeruserumlats@email").assertEvent().getUserId();
         events.expectLogin().detail("username", "registeruserumlats").user(userId).assertEvent();
 
-        accountPage.open();
-        assertTrue(accountPage.isCurrent());
+        UserRepresentation userRepresentation = AccountHelper.getUserRepresentation(adminClient.realm("test"), "registeruserumlats");
 
-        UserRepresentation user = getUser(userId);
-        Assert.assertNotNull(user);
-        assertEquals("Äǜṳǚǘǖ", user.getFirstName());
-        assertEquals("Öṏṏ", user.getLastName());
-
-        assertEquals("Äǜṳǚǘǖ", accountPage.getFirstName());
-        assertEquals("Öṏṏ", accountPage.getLastName());
+        assertEquals("Äǜṳǚǘǖ", userRepresentation.getFirstName());
+        assertEquals("Öṏṏ", userRepresentation.getLastName());
     }
 
     // KEYCLOAK-3266

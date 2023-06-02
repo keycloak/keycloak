@@ -23,7 +23,6 @@ import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
-import org.keycloak.common.Profile;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
 import org.keycloak.models.UserModel;
@@ -33,9 +32,7 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
-import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
 import org.keycloak.testsuite.drone.Different;
-import org.keycloak.testsuite.pages.AccountUpdateProfilePage;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
 import org.keycloak.testsuite.pages.LoginPage;
@@ -68,9 +65,6 @@ public class SSOTest extends AbstractTestRealmKeycloakTest {
     protected LoginPage loginPage;
 
     @Page
-    protected AccountUpdateProfilePage profilePage;
-
-    @Page
     protected LoginPasswordUpdatePage updatePasswordPage;
 
     @Rule
@@ -81,7 +75,6 @@ public class SSOTest extends AbstractTestRealmKeycloakTest {
     }
 
     @Test
-    @DisableFeature(value = Profile.Feature.ACCOUNT2, skipRestart = true) // TODO remove this (KEYCLOAK-16228)
     public void loginSuccess() {
         loginPage.open();
         loginPage.login("test-user@localhost", "password");
@@ -113,8 +106,7 @@ public class SSOTest extends AbstractTestRealmKeycloakTest {
         // auth time hasn't changed as we authenticated through SSO cookie
         Assert.assertEquals(authTime, idToken.getAuth_time());
 
-        profilePage.open();
-        assertTrue(profilePage.isCurrent());
+        appPage.assertCurrent();
 
         // Expire session
         testingClient.testing().removeUserSession("test", sessionId);
