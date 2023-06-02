@@ -718,7 +718,7 @@
     },
     "INTROSPECT_TOKEN": {
       "name": "令牌内部检查",
-      "description": "内省令牌"
+      "description": "令牌内部检查"
     },
     "UNREGISTER_NODE": {
       "name": "注销节点",
