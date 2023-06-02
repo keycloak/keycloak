@@ -201,7 +201,7 @@
   "accessTokenLifespanImplicitFlow": "隐式流程的访问令牌寿命",
   "clientLoginTimeout": "客户端登录超时",
   "userInitiatedActionLifespan": "由用户发起的操作的生命周期",
-  "defaultAdminInitiated": "由默认管理员发起的操作的生命周期",
+  "defaultAdminInitiated": "由管理员发起的默认操作的生命周期",
   "oAuthDeviceCodeLifespan": "OAuth 2.0 设备代码寿命",
   "oAuthDevicePollingInterval": "OAuth 2.0 设备轮询间隔",
   "shortVerificationUri": "设备授权流程中的短 verification_uri",
