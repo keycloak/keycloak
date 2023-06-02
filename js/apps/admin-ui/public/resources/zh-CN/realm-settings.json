@@ -380,7 +380,7 @@
   },
   "deleteValidatorConfirmTitle": "删除验证器？",
   "deleteValidatorConfirmMsg": "您确定要永久删除验证器 {{validatorName}} 吗？",
-  "validatorDeletedSuccess": "用户用户资料配置已保存。",
+  "validatorDeletedSuccess": "用户资料配置已保存。",
   "validatorDeletedError": "保存用户资料时出错：{{error}}",
   "emptyValidators": "没有验证器。",
   "updatedUserProfileSuccess": "用户资料的配置已保存",
