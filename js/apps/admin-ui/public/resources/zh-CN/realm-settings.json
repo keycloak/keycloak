@@ -38,7 +38,7 @@
   "deleteError": "无法删除领域：{{error}}",
   "deleteConditionSuccess": "条件已删除",
   "disableConfirmTitle": "禁用领域？",
-  "disableConfirm": "如果领域被禁用，用户和客户端将无法访问它。你确定要继续吗？",
+  "disableConfirm": "如果领域被禁用，用户和客户端将无法访问它。您确定要继续吗？",
   "disablePolicyConfirmTitle": "禁用策略？",
   "disablePolicyConfirm": "如果策略被禁用，用户和客户端将无法访问该策略。您确定要继续吗？",
   "editProvider": "编辑供应者",
