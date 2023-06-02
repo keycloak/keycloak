@@ -637,7 +637,7 @@
       "description": "重置密码"
     },
     "CLIENT_INITIATED_ACCOUNT_LINKING_ERROR": {
-      "name": "客户端发起的账户关联错误",
+      "name": "客户端发起的账号关联错误",
       "description": "客户端发起的账户链接错误"
     },
     "UPDATE_CONSENT": {
