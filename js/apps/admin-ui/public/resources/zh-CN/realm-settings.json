@@ -462,7 +462,7 @@
     },
     "IMPERSONATE": {
       "name": "角色扮演",
-      "description": "模拟"
+      "description": "角色扮演"
     },
     "UPDATE_PROFILE_ERROR": {
       "name": "更新配置文件错误",
