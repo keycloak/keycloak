@@ -669,7 +669,7 @@
       "description": "身份供应者非首次登录错误"
     },
     "UPDATE_TOTP_ERROR": {
-      "name": "更新topp错误",
+      "name": "更新totp错误",
       "description": "更新topp错误"
     },
     "CODE_TO_TOKEN": {
