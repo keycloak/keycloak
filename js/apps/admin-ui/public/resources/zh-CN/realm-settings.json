@@ -674,7 +674,7 @@
     },
     "CODE_TO_TOKEN": {
       "name": "用于交换令牌的代码",
-      "description": "令牌代码"
+      "description": "用于交换令牌的代码"
     },
     "GRANT_CONSENT_ERROR": {
       "name": "授权认证错误",
