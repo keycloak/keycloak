@@ -164,7 +164,7 @@
   "selectATheme": "选择主题",
   "placeholderText": "点击并请从中选择一个",
   "userManagedAccess": "用户自主访问",
-  "userProfileEnabled": "已启用用户配置文件",
+  "userProfileEnabled": "用户资料",
   "endpoints": "终端",
   "openIDendpointConfiguration": "OpenID 端点配置",
   "samlIdentityProviderMetadata": "SAML 2.0 身份供应者元数据",
