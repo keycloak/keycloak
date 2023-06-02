@@ -405,7 +405,7 @@
   "validateName": "不允许未命名的属性配置。",
   "eventType": "被保存的事件类型",
   "searchEventType": "搜索被保存的事件类型",
-  "addSavedTypes": "添加被保存时间的类型",
+  "addSavedTypes": "添加被保存的事件类型",
   "addTypes": "添加类型",
   "eventTypes": {
     "SEND_RESET_PASSWORD": {
