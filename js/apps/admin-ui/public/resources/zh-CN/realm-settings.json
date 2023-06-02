@@ -717,7 +717,7 @@
       "description": "令牌内部检查错误"
     },
     "INTROSPECT_TOKEN": {
-      "name": "内省令牌",
+      "name": "令牌内部检查",
       "description": "内省令牌"
     },
     "UNREGISTER_NODE": {
