@@ -673,7 +673,7 @@
       "description": "更新totp错误"
     },
     "CODE_TO_TOKEN": {
-      "name": "令牌代码",
+      "name": "用于交换令牌的代码",
       "description": "令牌代码"
     },
     "GRANT_CONSENT_ERROR": {
