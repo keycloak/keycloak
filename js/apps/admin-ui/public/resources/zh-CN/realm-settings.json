@@ -461,7 +461,7 @@
       "description": "重启认证"
     },
     "IMPERSONATE": {
-      "name": "模拟",
+      "name": "角色扮演",
       "description": "模拟"
     },
     "UPDATE_PROFILE_ERROR": {
