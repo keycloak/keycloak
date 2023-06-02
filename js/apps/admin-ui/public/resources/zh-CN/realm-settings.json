@@ -163,7 +163,7 @@
   },
   "selectATheme": "选择主题",
   "placeholderText": "点击并请从中选择一个",
-  "userManagedAccess": "用户管理的访问",
+  "userManagedAccess": "用户自主访问",
   "userProfileEnabled": "已启用用户配置文件",
   "endpoints": "终端",
   "openIDendpointConfiguration": "OpenID 端点配置",
