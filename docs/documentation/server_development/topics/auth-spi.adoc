@@ -389,9 +389,6 @@ public class SecretQuestionCredentialProvider implements CredentialProvider<Secr
         this.session = session;
     }
 
-    private UserCredentialStore getCredentialStore() {
-        return session.userCredentialManager();
-    }
 ----
 
 We also want to implement the CredentialInputValidator interface, as this allows {project_name} to know that this provider can also be used to validate a
@@ -417,7 +414,7 @@ public SecretQuestionCredentialModel getCredentialFromModel(CredentialModel mode
 }
 ----
 
-Finally, we have the methods to create a credential and delete a credential. These methods call the KeycloakSession's `userCredentialManager`, which
+Finally, we have the methods to create a credential and delete a credential. These methods call the UserModel's credential manager, which
 is responsible for knowing where to read or write the credential, for example local storage or federated storage.
 
 [source,java]
@@ -427,12 +424,12 @@ public CredentialModel createCredential(RealmModel realm, UserModel user, Secret
     if (credentialModel.getCreatedDate() == null) {
         credentialModel.setCreatedDate(Time.currentTimeMillis());
     }
-    return getCredentialStore().createCredential(realm, user, credentialModel);
+    return user.credentialManager().createStoredCredential(credentialModel);
 }
 
 @Override
 public boolean deleteCredential(RealmModel realm, UserModel user, String credentialId) {
-    return getCredentialStore().removeStoredCredential(realm, user, credentialId);
+    return user.credentialManager().removeStoredCredentialById(credentialId);
 }
 ----
 

@@ -16,13 +16,14 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useLocation, useNavigate } from "react-router-dom";
 
+import { adminClient } from "../admin-client";
 import { GroupBreadCrumbs } from "../components/bread-crumb/GroupBreadCrumbs";
 import { PermissionsTab } from "../components/permission-tab/PermissionTab";
 import { ViewHeader } from "../components/view-header/ViewHeader";
 import { useAccess } from "../context/access/Access";
-import { useAdminClient, useFetch } from "../context/auth/AdminClient";
 import { useRealm } from "../context/realm-context/RealmContext";
 import helpUrls from "../help-urls";
+import { useFetch } from "../utils/useFetch";
 import useIsFeatureEnabled, { Feature } from "../utils/useIsFeatureEnabled";
 import useToggle from "../utils/useToggle";
 import { GroupAttributes } from "./GroupAttributes";
@@ -42,7 +43,6 @@ export default function GroupsSection() {
   const { t } = useTranslation("groups");
   const [activeTab, setActiveTab] = useState(0);
 
-  const { adminClient } = useAdminClient();
   const { subGroups, setSubGroups, currentGroup } = useSubGroups();
   const { realm } = useRealm();
 

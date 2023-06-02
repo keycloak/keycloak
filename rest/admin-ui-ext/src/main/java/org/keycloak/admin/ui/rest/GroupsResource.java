@@ -1,27 +1,28 @@
 package org.keycloak.admin.ui.rest;
 
-import java.util.List;
 import static org.keycloak.models.utils.ModelToRepresentation.toRepresentation;
 
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DefaultValue;
-import javax.ws.rs.GET;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DefaultValue;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
 
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.keycloak.common.Profile;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
+import org.keycloak.services.resources.admin.permissions.GroupPermissionEvaluator;
 import org.keycloak.utils.StringUtil;
 
 public class GroupsResource {
@@ -56,7 +57,8 @@ public class GroupsResource {
     public final Stream<GroupRepresentation> listGroups(@QueryParam("search") @DefaultValue("") final String search, @QueryParam("first")
     @DefaultValue("0") int first, @QueryParam("max") @DefaultValue("10") int max, @QueryParam("global") @DefaultValue("true") boolean global,
                                                         @QueryParam("exact") @DefaultValue("false") boolean exact) {
-        this.auth.groups().requireList();
+        GroupPermissionEvaluator groupsEvaluator = auth.groups();
+        groupsEvaluator.requireList();
         final Stream<GroupModel> stream;
         if (global) {
             stream = session.groups().searchForGroupByNameStream(realm, search.trim(), exact, first, max);
@@ -64,7 +66,9 @@ public class GroupsResource {
             stream = this.realm.getTopLevelGroupsStream().filter(g -> g.getName().contains(search)).skip(first).limit(max);
         }
 
-        return stream.map(g -> toGroupHierarchy(g, search, exact));
+        boolean canViewGlobal = groupsEvaluator.canView();
+        return stream.filter(group -> canViewGlobal || groupsEvaluator.canView(group))
+                .map(group -> toGroupHierarchy(group, search, exact));
     }
 
     private GroupRepresentation toGroupHierarchy(GroupModel group, final String search, boolean exact) {
@@ -80,7 +84,9 @@ public class GroupsResource {
 
         ).collect(Collectors.toList()));
 
-        setAccess(group, rep);
+        if (Profile.isFeatureEnabled(Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ)) {
+            setAccess(group, rep);
+        }
 
         return rep;
     }

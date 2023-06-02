@@ -18,17 +18,15 @@ package org.keycloak.models.map.storage.jpa.authorization.scope.entity;
 
 import java.util.Objects;
 import java.util.UUID;
-import javax.persistence.Basic;
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.FetchType;
-import javax.persistence.Id;
-import javax.persistence.Table;
-import javax.persistence.UniqueConstraint;
-import javax.persistence.Version;
+import jakarta.persistence.Basic;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
+import jakarta.persistence.Version;
 import org.hibernate.annotations.Type;
-import org.hibernate.annotations.TypeDef;
-import org.hibernate.annotations.TypeDefs;
 import org.keycloak.models.map.authorization.entity.MapScopeEntity.AbstractMapScopeEntity;
 import org.keycloak.models.map.common.DeepCloner;
 import org.keycloak.models.map.common.UuidValidator;
@@ -44,7 +42,6 @@ import org.keycloak.models.map.storage.jpa.hibernate.jsonb.JsonbType;
  */
 @Entity
 @Table(name = "kc_authz_scope", uniqueConstraints = {@UniqueConstraint(columnNames = {"realmId", "resourceServerId", "name"})})
-@TypeDefs({@TypeDef(name = "jsonb", typeClass = JsonbType.class)})
 public class JpaScopeEntity extends AbstractMapScopeEntity implements JpaRootVersionedEntity {
 
     @Id
@@ -56,7 +53,7 @@ public class JpaScopeEntity extends AbstractMapScopeEntity implements JpaRootVer
     @Column
     private int version;
 
-    @Type(type = "jsonb")
+    @Type(JsonbType.class)
     @Column(columnDefinition = "jsonb")
     private final JpaScopeMetadata metadata;
 

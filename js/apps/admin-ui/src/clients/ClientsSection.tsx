@@ -1,3 +1,5 @@
+import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
+import type { ClientQuery } from "@keycloak/keycloak-admin-client/lib/resources/clients";
 import {
   AlertVariant,
   Badge,
@@ -8,37 +10,36 @@ import {
   TabTitleText,
   ToolbarItem,
 } from "@patternfly/react-core";
-import { cellWidth, IRowData, TableText } from "@patternfly/react-table";
-import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
-import type { ClientQuery } from "@keycloak/keycloak-admin-client/lib/resources/clients";
+import { IRowData, TableText, cellWidth } from "@patternfly/react-table";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
+
+import { adminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import { FormattedLink } from "../components/external-link/FormattedLink";
+import {
+  RoutableTabs,
+  useRoutableTab,
+} from "../components/routable-tabs/RoutableTabs";
 import {
   Action,
   KeycloakDataTable,
 } from "../components/table-toolbar/KeycloakDataTable";
 import { ViewHeader } from "../components/view-header/ViewHeader";
-import { useAdminClient } from "../context/auth/AdminClient";
+import { useAccess } from "../context/access/Access";
 import { useRealm } from "../context/realm-context/RealmContext";
+import helpUrls from "../help-urls";
 import { emptyFormatter, exportClient } from "../util";
 import { convertClientToUrl } from "../utils/client-url";
 import { InitialAccessTokenList } from "./initial-access/InitialAccessTokenList";
+import { ClientRegistration } from "./registration/ClientRegistration";
 import { toAddClient } from "./routes/AddClient";
 import { toClient } from "./routes/Client";
-import { toImportClient } from "./routes/ImportClient";
-import { isRealmClient, getProtocolName } from "./utils";
-import helpUrls from "../help-urls";
-import { useAccess } from "../context/access/Access";
-import {
-  RoutableTabs,
-  useRoutableTab,
-} from "../components/routable-tabs/RoutableTabs";
 import { ClientsTab, toClients } from "./routes/Clients";
-import { ClientRegistration } from "./registration/ClientRegistration";
+import { toImportClient } from "./routes/ImportClient";
+import { getProtocolName, isRealmClient } from "./utils";
 
 const ClientDetailLink = (client: ClientRepresentation) => {
   const { t } = useTranslation("clients");
@@ -71,7 +72,6 @@ const ClientDescription = (client: ClientRepresentation) => (
 );
 
 const ClientHomeLink = (client: ClientRepresentation) => {
-  const { adminClient } = useAdminClient();
   const href = convertClientToUrl(client, adminClient.baseUrl);
 
   if (!href) {
@@ -117,8 +117,6 @@ const ToolbarItems = () => {
 export default function ClientsSection() {
   const { t } = useTranslation("clients");
   const { addAlert, addError } = useAlerts();
-
-  const { adminClient } = useAdminClient();
   const { realm } = useRealm();
 
   const [key, setKey] = useState(0);

@@ -1,10 +1,10 @@
 import { FormGroup, Title } from "@patternfly/react-core";
 import { useFormContext } from "react-hook-form";
-
 import { useTranslation } from "react-i18next";
 import { HelpItem } from "ui-shared";
+
+import { adminClient } from "../../admin-client";
 import { JsonFileUpload } from "../../components/json-file-upload/JsonFileUpload";
-import { useAdminClient } from "../../context/auth/AdminClient";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { addTrailingSlash } from "../../util";
 import { getAuthorizationHeaders } from "../../utils/getAuthorizationHeaders";
@@ -15,7 +15,6 @@ export const OpenIdConnectSettings = () => {
   const { t } = useTranslation("identity-providers");
   const id = "oidc";
 
-  const { adminClient } = useAdminClient();
   const { realm } = useRealm();
   const {
     setValue,

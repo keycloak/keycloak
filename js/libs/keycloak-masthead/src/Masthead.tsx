@@ -16,9 +16,10 @@ import { ReactNode } from "react";
 import { KeycloakDropdown } from "./KeycloakDropdown";
 import { useTranslation } from "./translation/useTranslation";
 import { loggedInUserName } from "./util";
+import { DefaultAvatar } from "./DefaultAvatar";
 
 type BrandLogo = BrandProps & {
-  onClick?: () => void;
+  href: string;
 };
 
 type KeycloakMastheadProps = PageHeaderProps & {
@@ -31,11 +32,12 @@ type KeycloakMastheadProps = PageHeaderProps & {
   };
   keycloak?: Keycloak;
   kebabDropdownItems?: ReactNode[];
-  dropdownItems: ReactNode[];
+  dropdownItems?: ReactNode[];
+  toolbarItems?: ReactNode[];
 };
 
 const KeycloakMasthead = ({
-  brand: { onClick: onBrandLogoClick, ...brandProps },
+  brand: { href: brandHref, ...brandProps },
   avatar,
   features: {
     hasLogout = true,
@@ -44,7 +46,8 @@ const KeycloakMasthead = ({
   } = {},
   keycloak,
   kebabDropdownItems,
-  dropdownItems,
+  dropdownItems = [],
+  toolbarItems,
   ...rest
 }: KeycloakMastheadProps) => {
   const { t } = useTranslation();
@@ -71,12 +74,8 @@ const KeycloakMasthead = ({
   return (
     <PageHeader
       {...rest}
-      logo={
-        <div onClick={onBrandLogoClick}>
-          <Brand {...brandProps} />
-        </div>
-      }
-      logoComponent="div"
+      logo={<Brand {...brandProps} />}
+      logoProps={{ href: brandHref }}
       headerTools={
         <PageHeaderTools>
           <PageHeaderToolsGroup>
@@ -93,6 +92,7 @@ const KeycloakMasthead = ({
                 ]}
               />
             </PageHeaderToolsItem>
+            <PageHeaderToolsItem>{toolbarItems}</PageHeaderToolsItem>
             <PageHeaderToolsItem
               visibility={{
                 default: "hidden",
@@ -109,9 +109,11 @@ const KeycloakMasthead = ({
               />
             </PageHeaderToolsItem>
           </PageHeaderToolsGroup>
-          <Avatar
-            {...{ src: picture || "/avatar.svg", alt: t("avatar"), ...avatar }}
-          />
+          {picture || avatar?.src ? (
+            <Avatar {...{ src: picture, alt: t("avatar"), ...avatar }} />
+          ) : (
+            <DefaultAvatar {...avatar} />
+          )}
         </PageHeaderTools>
       }
     />

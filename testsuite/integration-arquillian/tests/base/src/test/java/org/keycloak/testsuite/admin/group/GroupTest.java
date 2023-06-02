@@ -50,8 +50,8 @@ import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.testsuite.utils.tls.TLSUtils;
 import org.keycloak.util.JsonSerialization;
 
-import javax.ws.rs.NotFoundException;
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.core.Response;
 import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
@@ -65,8 +65,8 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-import javax.ws.rs.ClientErrorException;
-import javax.ws.rs.core.Response.Status;
+import jakarta.ws.rs.ClientErrorException;
+import jakarta.ws.rs.core.Response.Status;
 import static org.hamcrest.Matchers.*;
 
 import org.junit.Rule;
@@ -80,6 +80,7 @@ import static org.junit.Assert.assertTrue;
 
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.models.AdminRoles;
+import org.keycloak.models.GroupModel;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
@@ -278,18 +279,19 @@ public class GroupTest extends AbstractGroupTest {
     @Test
     @UncaughtServerErrorExpected
     public void doNotAllowSameGroupNameAtTopLevelInDatabase() throws Exception {
-        final String id = KeycloakModelUtils.generateId();
-        testingClient.server().run(session -> {
+        final String id = testingClient.server().fetch(session -> {
             RealmModel realm = session.realms().getRealmByName("test");
-            realm.createGroup(id, "test-group");
-        });
+            GroupModel g = realm.createGroup("test-group");
+            return g.getId();
+        }, String.class);
         getCleanup().addGroupId(id);
         // unique key should work even in top groups
         expectedException.expect(RunOnServerException.class);
         expectedException.expectMessage(ModelDuplicateException.class.getName());
         testingClient.server().run(session -> {
             RealmModel realm = session.realms().getRealmByName("test");
-            realm.createGroup("test-group");
+            GroupModel g = realm.createGroup("test-group");
+            realm.removeGroup(g);
         });
     }
 

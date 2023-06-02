@@ -12,16 +12,15 @@ Search for a user to view detailed information about the user, such as the user'
 
 .Procedure
 . Click *Users* in the main menu. This *Users* page is displayed.
-. Type the full name, last name, first name, or email address of the user you want to search for in the search box. The search returns all users who match your criteria.  
-. Alternatively, you can click *View all users* to list every user in the system.  
+. Type the full name, last name, first name, or email address of the user you want to search for in the search box. The search returns all users that match your criteria.
 +
-NOTE: This action searches only the local {project_name} database and not the federated database, such as LDAP. The backends for federated databases do not have a pagination mechanism that enables searching for users. 
+The criteria used to match users depends on the syntax used on the search box:
 +
-.. To search users from a federated backend, the user list must be synced into the {project_name} database. Adjust the search criteria to sync the backend users to the {project_name} database.
+.. `"somevalue"` -> performs exact search of the string `"somevalue"`;
+.. `\*somevalue*` -> performs infix search, akin to a `LIKE '%somevalue%'` DB query;
+.. `somevalue*` or `somevalue` -> performs prefix search, akin to a `LIKE 'somevalue%'` DB query.
 +
-.. Alternatively, click the *User Federation* in the left menu.
-... To apply changes to a selected user, click *Sync changed users* on the page with your federation provider.
-... To apply changes to all users in the database, click *Sync all users* on the page with your federation provider.
-
+NOTE: Searches performed in the *Users* page encompasses searching both {project_name}'s database and configured user federated backends, such as LDAP. Users found in federated backends will be imported into {project_name}'s database if they don't already exist there.
++
 .Additional resources
 * For more information on user federation, see <<_user-storage-federation,User Federation>>.

@@ -1,3 +1,5 @@
+import type AuthenticationFlowRepresentation from "@keycloak/keycloak-admin-client/lib/defs/authenticationFlowRepresentation";
+import RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
 import {
   AlertVariant,
   Button,
@@ -13,10 +15,10 @@ import { useState } from "react";
 import { Trans, useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 
-import type AuthenticationFlowRepresentation from "@keycloak/keycloak-admin-client/lib/defs/authenticationFlowRepresentation";
-import RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
+import { adminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
+import { KeycloakSpinner } from "../components/keycloak-spinner/KeycloakSpinner";
 import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
 import {
   RoutableTabs,
@@ -24,24 +26,21 @@ import {
 } from "../components/routable-tabs/RoutableTabs";
 import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
 import { ViewHeader } from "../components/view-header/ViewHeader";
-import { useAdminClient, useFetch } from "../context/auth/AdminClient";
 import { useRealm } from "../context/realm-context/RealmContext";
 import helpUrls from "../help-urls";
 import { addTrailingSlash } from "../util";
 import { getAuthorizationHeaders } from "../utils/getAuthorizationHeaders";
+import { useFetch } from "../utils/useFetch";
 import useLocaleSort, { mapByKey } from "../utils/useLocaleSort";
 import useToggle from "../utils/useToggle";
 import { BindFlowDialog } from "./BindFlowDialog";
-import { UsedBy } from "./components/UsedBy";
 import { DuplicateFlowModal } from "./DuplicateFlowModal";
-import { Policies } from "./policies/Policies";
 import { RequiredActions } from "./RequiredActions";
+import { UsedBy } from "./components/UsedBy";
+import { Policies } from "./policies/Policies";
 import { AuthenticationTab, toAuthentication } from "./routes/Authentication";
 import { toCreateFlow } from "./routes/CreateFlow";
 import { toFlow } from "./routes/Flow";
-
-import "./authentication-section.css";
-import { KeycloakSpinner } from "../components/keycloak-spinner/KeycloakSpinner";
 
 type UsedBy = "SPECIFIC_CLIENTS" | "SPECIFIC_PROVIDERS" | "DEFAULT";
 
@@ -83,7 +82,6 @@ const AliasRenderer = ({ id, alias, usedBy, builtIn }: AuthenticationType) => {
 
 export default function AuthenticationSection() {
   const { t } = useTranslation("authentication");
-  const { adminClient } = useAdminClient();
   const { realm: realmName } = useRealm();
   const [key, setKey] = useState(0);
   const refresh = () => {

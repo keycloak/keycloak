@@ -15,14 +15,15 @@ import { useState } from "react";
 import { Controller, FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
+import { HelpItem } from "ui-shared";
 
+import { adminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
 import { DynamicComponents } from "../components/dynamic/DynamicComponents";
-import { FormAccess } from "../components/form-access/FormAccess";
-import { HelpItem } from "ui-shared";
+import { FormAccess } from "../components/form/FormAccess";
 import { ViewHeader } from "../components/view-header/ViewHeader";
-import { useAdminClient, useFetch } from "../context/auth/AdminClient";
 import { useServerInfo } from "../context/server-info/ServerInfoProvider";
+import { useFetch } from "../utils/useFetch";
 import { useParams } from "../utils/useParams";
 import { ClientProfileParams, toClientProfile } from "./routes/ClientProfile";
 import type { ExecutorParams } from "./routes/Executor";
@@ -45,7 +46,6 @@ export default function ExecutorForm() {
   const { addAlert, addError } = useAlerts();
   const [selectExecutorTypeOpen, setSelectExecutorTypeOpen] = useState(false);
   const serverInfo = useServerInfo();
-  const { adminClient } = useAdminClient();
   const executorTypes =
     serverInfo.componentTypes?.[
       "org.keycloak.services.clientpolicy.executor.ClientPolicyExecutorProvider"

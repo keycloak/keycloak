@@ -1,5 +1,6 @@
 package org.keycloak.testsuite.broker;
 
+import jakarta.validation.constraints.AssertTrue;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.IdentityProviderResource;
 import org.keycloak.admin.client.resource.RealmResource;
@@ -8,7 +9,6 @@ import org.keycloak.common.Profile;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.IdentityProviderMapperSyncMode;
 import org.keycloak.models.IdentityProviderSyncMode;
-import org.keycloak.models.OTPPolicy;
 import org.keycloak.models.utils.TimeBasedOTP;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ComponentRepresentation;
@@ -27,14 +27,17 @@ import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.RealmBuilder;
+import org.keycloak.testsuite.util.TestAppHelper;
 import org.openqa.selenium.TimeoutException;
 
-import javax.ws.rs.client.Client;
-import javax.ws.rs.client.ClientRequestFilter;
-import javax.ws.rs.client.WebTarget;
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.client.Client;
+import jakarta.ws.rs.client.ClientRequestFilter;
+import jakarta.ws.rs.client.WebTarget;
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.Response;
+import java.io.IOException;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Set;
@@ -96,29 +99,33 @@ public abstract class AbstractAdvancedBrokerTest extends AbstractBrokerTest {
      * Refers to in old test suite: org.keycloak.testsuite.broker.AbstractKeycloakIdentityProviderTest#testAccountManagementLinkIdentity
      */
     @Test
-    public void testAccountManagementLinkIdentity() {
+    public void testAccountManagementLinkIdentity() throws URISyntaxException, IOException {
         createUser("consumer");
-        // Login as pedroigor to account management
-        accountFederatedIdentityPage.realm(bc.consumerRealmName());
-        accountFederatedIdentityPage.open();
-        loginPage.login("consumer", "password");
-        assertTrue(accountFederatedIdentityPage.isCurrent());
+        TestAppHelper testAppHelper = new TestAppHelper(oauth, loginPage, appPage);
 
-        accountFederatedIdentityPage.clickAddProvider(bc.getIDPAlias());
-        this.loginPage.login(bc.getUserLogin(), bc.getUserPassword());
+        // Link identity provider through Admin REST api
+        Response response = AccountHelper.addIdentityProvider(adminClient.realm(bc.consumerRealmName()), "consumer", adminClient.realm(bc.providerRealmName()), bc.getUserLogin(), bc.getIDPAlias());
+        Assert.assertEquals("status", 204, response.getStatus());
 
-        // Assert identity linked in account management
-        assertTrue(accountFederatedIdentityPage.isCurrent());
-        assertTrue(accountFederatedIdentityPage.isLinked(bc.getIDPAlias()));
+        // Assert identity is linked through Admin REST api
+        assertTrue(AccountHelper.isIdentityProviderLinked(adminClient.realm(bc.consumerRealmName()), "consumer", bc.getIDPAlias()));
 
-        // Revoke grant in account mgmt
-        accountFederatedIdentityPage.clickRemoveProvider(bc.getIDPAlias());
+        AccountHelper.logout(adminClient.realm(bc.consumerRealmName()), "consumer");
+
+        // Assert I am logged immediately into app page due to previously linked "test-user" identity
+        testAppHelper.login(bc.getUserLogin(), bc.getUserPassword(), bc.consumerRealmName(), "broker-app", bc.getIDPAlias());
+
+        // Unlink idp from consumer
+        AccountHelper.deleteIdentityProvider(adminClient.realm(bc.consumerRealmName()), "consumer", bc.getIDPAlias());
+        assertFalse(AccountHelper.isIdentityProviderLinked(adminClient.realm(bc.consumerRealmName()), "consumer", bc.getIDPAlias()));
 
         // Logout from account management
-        accountFederatedIdentityPage.logout();
+        AccountHelper.logout(adminClient.realm(bc.consumerRealmName()), "consumer");
+        AccountHelper.logout(adminClient.realm(bc.providerRealmName()), "testuser");
 
-        // Assert I am logged immediately to account management due to previously linked "test-user" identity
-        logInWithBroker(bc);
+        // Assert I am not logged immediately into app page and first-broker-login appears instead
+        Assert.assertFalse(testAppHelper.login(bc.getUserLogin(), bc.getUserPassword(), bc.consumerRealmName(), "broker-app", bc.getIDPAlias()));
+
         waitForPage(driver, "update account information", false);
         updateAccountInformationPage.assertCurrent();
         updateAccountInformationPage.updateAccountInformation("FirstName", "LastName");
@@ -128,20 +135,19 @@ public abstract class AbstractAdvancedBrokerTest extends AbstractBrokerTest {
         idpConfirmLinkPage.clickLinkAccount();
 
         loginPage.login(bc.getUserPassword());
-
-        accountFederatedIdentityPage.assertCurrent();
-        assertTrue(accountFederatedIdentityPage.isLinked(bc.getIDPAlias()));
+        appPage.assertCurrent();
+        assertTrue(AccountHelper.isIdentityProviderLinked(adminClient.realm(bc.consumerRealmName()), "consumer", bc.getIDPAlias()));
 
         // Unlink my "test-user"
-        accountFederatedIdentityPage.clickRemoveProvider(bc.getIDPAlias());
-        assertFalse(accountFederatedIdentityPage.isLinked(bc.getIDPAlias()));
+        AccountHelper.deleteIdentityProvider(adminClient.realm(bc.consumerRealmName()), "consumer", bc.getIDPAlias());
+        assertFalse(AccountHelper.isIdentityProviderLinked(adminClient.realm(bc.consumerRealmName()), "consumer", bc.getIDPAlias()));
 
         // Logout from account management
-        accountFederatedIdentityPage.logout();
+        AccountHelper.logout(adminClient.realm(bc.consumerRealmName()), "consumer");
+        AccountHelper.logout(adminClient.realm(bc.providerRealmName()), "testuser");
 
-        // Try to login. Previous link is not valid anymore, so now it should try to register new user
-        loginPage.clickSocial(bc.getIDPAlias());
-        loginPage.login(bc.getUserLogin(), bc.getUserPassword());
+        //Try to log in. Previous link is not valid anymore, so now it should try to register new user instead of logging into app page
+        Assert.assertFalse(testAppHelper.login(bc.getUserLogin(), bc.getUserPassword(), bc.consumerRealmName(), "broker-app", bc.getIDPAlias()));
         waitForPage(driver, "update account information", false);
         updateAccountInformationPage.assertCurrent();
     }
@@ -150,27 +156,17 @@ public abstract class AbstractAdvancedBrokerTest extends AbstractBrokerTest {
      * Refers to in old test suite: org.keycloak.testsuite.broker.AbstractKeycloakIdentityProviderTest#testAccountManagementLinkedIdentityAlreadyExists
      */
     @Test
-    public void testAccountManagementLinkedIdentityAlreadyExists() {
+    public void testAccountManagementLinkedIdentityAlreadyExists() throws URISyntaxException, IOException {
         updateExecutions(AbstractBrokerTest::disableUpdateProfileOnFirstLogin);
         createUser(bc.consumerRealmName(), "consumer", "password", "FirstName", "LastName", "consumer@localhost.com");
+        TestAppHelper testAppHelper = new TestAppHelper(oauth, loginPage, appPage);
 
-        driver.navigate().to(getAccountUrl(getConsumerRoot(), bc.consumerRealmName()));
-        logInWithBroker(bc);
-        waitForAccountManagementTitle();
-        accountUpdateProfilePage.assertCurrent();
-        logoutFromRealm(getProviderRoot(), bc.providerRealmName());
-        logoutFromRealm(getConsumerRoot(), bc.consumerRealmName());
+        // Link identity provider through Admin REST api
+        Response response = AccountHelper.addIdentityProvider(adminClient.realm(bc.consumerRealmName()), "consumer", adminClient.realm(bc.providerRealmName()), bc.getUserLogin(), bc.getIDPAlias());
+        Assert.assertEquals("status", 204, response.getStatus());
 
-        accountFederatedIdentityPage.realm(bc.consumerRealmName());
-        accountFederatedIdentityPage.open();
-        loginPage.login("consumer", "password");
-        assertTrue(accountFederatedIdentityPage.isCurrent());
-
-        accountFederatedIdentityPage.clickAddProvider(bc.getIDPAlias());
-        this.loginPage.login(bc.getUserLogin(), bc.getUserPassword());
-
-        assertTrue(accountFederatedIdentityPage.isCurrent());
-        assertEquals("Federated identity returned by " + bc.getIDPAlias() + " is already linked to another user.", accountFederatedIdentityPage.getError());
+        // Test we will log in immediately into app page
+        Assert.assertTrue(testAppHelper.login(bc.getUserLogin(), bc.getUserPassword(), bc.consumerRealmName(), "broker-app", bc.getIDPAlias()));
     }
 
     /**
@@ -198,7 +194,7 @@ public abstract class AbstractAdvancedBrokerTest extends AbstractBrokerTest {
 
         OAuthClient.AccessTokenResponse accessTokenResponse = oauth.realm(bc.consumerRealmName()).clientId("broker-app").doGrantAccessTokenRequest("broker-app-secret", bc.getUserLogin(), bc.getUserPassword());
         AtomicReference<String> accessToken = (AtomicReference<String>) new AtomicReference<>(accessTokenResponse.getAccessToken());
-        Client client = javax.ws.rs.client.ClientBuilder.newBuilder().register((ClientRequestFilter) request -> request.getHeaders().add(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken.get())).build();
+        Client client = jakarta.ws.rs.client.ClientBuilder.newBuilder().register((ClientRequestFilter) request -> request.getHeaders().add(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken.get())).build();
 
         try {
             WebTarget target = client.target(Urls.identityProviderRetrieveToken(URI.create(getConsumerRoot() + "/auth"), bc.getIDPAlias(), bc.consumerRealmName()));

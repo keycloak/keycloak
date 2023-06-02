@@ -67,7 +67,7 @@ import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.utils.tls.TLSUtils;
 import org.keycloak.util.TokenUtil;
 
-import javax.ws.rs.NotFoundException;
+import jakarta.ws.rs.NotFoundException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -143,7 +143,6 @@ public class OfflineTokenTest extends AbstractKeycloakTest {
 
         realm.client(app);
 
-        serviceAccountUserId = KeycloakModelUtils.generateId();
         UserRepresentation serviceAccountUser = UserBuilder.create()
                 .id(serviceAccountUserId)
                 .addRoles("user", "offline_access")
@@ -155,6 +154,12 @@ public class OfflineTokenTest extends AbstractKeycloakTest {
 
         testRealms.add(realm.build());
 
+    }
+
+    @Override
+    public void importTestRealms() {
+        super.importTestRealms();
+        serviceAccountUserId = adminClient.realm("test").users().search(ServiceAccountConstants.SERVICE_ACCOUNT_USER_PREFIX + "offline-client", true).get(0).getId();
     }
 
     @Test

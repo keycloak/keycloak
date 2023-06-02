@@ -19,18 +19,19 @@ import { useState } from "react";
 import { Controller, FormProvider, useForm, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
+import { HelpItem } from "ui-shared";
 
+import { adminClient } from "../../../admin-client";
 import { useAlerts } from "../../../components/alert/Alerts";
 import { useConfirmDialog } from "../../../components/confirm-dialog/ConfirmDialog";
 import { DynamicComponents } from "../../../components/dynamic/DynamicComponents";
-import { FormAccess } from "../../../components/form-access/FormAccess";
-import { HelpItem } from "ui-shared";
+import { FormAccess } from "../../../components/form/FormAccess";
 import { KeycloakSpinner } from "../../../components/keycloak-spinner/KeycloakSpinner";
 import { KeycloakTextInput } from "../../../components/keycloak-text-input/KeycloakTextInput";
 import { ViewHeader } from "../../../components/view-header/ViewHeader";
-import { useAdminClient, useFetch } from "../../../context/auth/AdminClient";
 import { useRealm } from "../../../context/realm-context/RealmContext";
 import { convertFormValuesToObject, convertToFormValues } from "../../../util";
+import { useFetch } from "../../../utils/useFetch";
 import { useParams } from "../../../utils/useParams";
 import { toUserFederationLdap } from "../../routes/UserFederationLdap";
 import { UserFederationLdapMapperParams } from "../../routes/UserFederationLdapMapper";
@@ -40,7 +41,6 @@ export default function LdapMapperDetails() {
   const [mapping, setMapping] = useState<ComponentRepresentation>();
   const [components, setComponents] = useState<ComponentTypeRepresentation[]>();
 
-  const { adminClient } = useAdminClient();
   const { id, mapperId } = useParams<UserFederationLdapMapperParams>();
   const navigate = useNavigate();
   const { realm } = useRealm();
@@ -182,24 +182,28 @@ export default function LdapMapperDetails() {
                 <DropdownItem key="delete" onClick={toggleDeleteDialog}>
                   {t("common:delete")}
                 </DropdownItem>,
-                mapper?.metadata.fedToKeycloakSyncSupported && (
-                  <DropdownItem
-                    key="fedSync"
-                    onClick={() => sync("fedToKeycloak")}
-                  >
-                    {t("syncLDAPGroupsToKeycloak")}
-                  </DropdownItem>
-                ),
-                mapper?.metadata.keycloakToFedSyncSupported && (
-                  <DropdownItem
-                    key="ldapSync"
-                    onClick={() => {
-                      sync("keycloakToFed");
-                    }}
-                  >
-                    {t("syncKeycloakGroupsToLDAP")}
-                  </DropdownItem>
-                ),
+                ...(mapper?.metadata.fedToKeycloakSyncSupported
+                  ? [
+                      <DropdownItem
+                        key="fedSync"
+                        onClick={() => sync("fedToKeycloak")}
+                      >
+                        {t("syncLDAPGroupsToKeycloak")}
+                      </DropdownItem>,
+                    ]
+                  : []),
+                ...(mapper?.metadata.keycloakToFedSyncSupported
+                  ? [
+                      <DropdownItem
+                        key="ldapSync"
+                        onClick={() => {
+                          sync("keycloakToFed");
+                        }}
+                      >
+                        {t("syncKeycloakGroupsToLDAP")}
+                      </DropdownItem>,
+                    ]
+                  : []),
               ]
         }
       />

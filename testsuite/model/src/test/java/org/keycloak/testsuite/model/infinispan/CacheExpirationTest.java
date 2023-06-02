@@ -28,6 +28,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.lang.management.ManagementFactory;
+import java.time.Instant;
 import java.util.Collections;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
@@ -38,6 +39,8 @@ import java.util.regex.Pattern;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assume.assumeFalse;
 import static org.junit.Assume.assumeThat;
 
 
@@ -63,9 +66,10 @@ public class CacheExpirationTest extends KeycloakModelTest {
               .filter(me -> me.getValue() instanceof AuthenticationSessionAuthNoteUpdateEvent)
               .forEach((c, me) -> c.remove(me.getKey()));
 
-            cache.put("1-2", AuthenticationSessionAuthNoteUpdateEvent.create("g1", "p1", "r1", Collections.emptyMap()), 20000, TimeUnit.MILLISECONDS);
-            cache.put("1-2-3", AuthenticationSessionAuthNoteUpdateEvent.create("g2", "p2", "r2", Collections.emptyMap()), 20000, TimeUnit.MILLISECONDS);
+            cache.put("1-2", AuthenticationSessionAuthNoteUpdateEvent.create("g1", "p1", "r1", Collections.emptyMap()), 30, TimeUnit.SECONDS);
+            cache.put("1-2-3", AuthenticationSessionAuthNoteUpdateEvent.create("g2", "p2", "r2", Collections.emptyMap()), 30, TimeUnit.SECONDS);
         });
+        Instant expiryInstant = Instant.now().plusSeconds(30);
 
         assumeThat("jmap output format unsupported", getNumberOfInstancesOfClass(AuthenticationSessionAuthNoteUpdateEvent.class), notNullValue());
 
@@ -91,6 +95,7 @@ public class CacheExpirationTest extends KeycloakModelTest {
                 log.debug("Waiting for caches to join the cluster");
                 do {
                     sleep(1000);
+                    assumeFalse("Items have expired already", expiryInstant.isBefore(Instant.now()));
                 } while (! cache.getAdvancedCache().getDistributionManager().isJoinComplete());
 
                 String site = CONFIG.scope("connectionsInfinispan", "default").get("siteName");
@@ -99,6 +104,7 @@ public class CacheExpirationTest extends KeycloakModelTest {
                 log.debug("Waiting for cache to receive the two elements within the cluster");
                 do {
                     sleep(1000);
+                    assumeFalse("Items have expired already", expiryInstant.isBefore(Instant.now()));
                 } while (cache.entrySet().stream()
                         .filter(me -> me.getValue() instanceof AuthenticationSessionAuthNoteUpdateEvent)
                         .count() != 2);
@@ -106,20 +112,21 @@ public class CacheExpirationTest extends KeycloakModelTest {
                 // access the items in the local cache in the different site (site-2) in order to fetch them from the remote cache
                 assertThat(cache.get("1-2"), notNullValue());
                 assertThat(cache.get("1-2-3"), notNullValue());
-
-                // this is testing for a situation where an expiration lifespan configuration was missing in a replicated cache;
-                // the elements were no longer seen in the cache, still they weren't garbage collected.
-                // we must not look into the cache as that would trigger expiration explicitly.
-                // original issue: https://issues.redhat.com/browse/KEYCLOAK-18518
-                log.debug("Waiting for garbage collection to collect the entries across all caches in JVM");
-                do {
-                    sleep(1000);
-                } while (getNumberOfInstancesOfClass(AuthenticationSessionAuthNoteUpdateEvent.class) > previousInstancesOfClass);
-
-                log.debug("Test completed");
-
             });
         });
+
+        // this is testing for a situation where an expiration lifespan configuration was missing in a replicated cache;
+        // the elements were no longer seen in the cache, still they weren't garbage collected.
+        // we must not look into the cache as that would trigger expiration explicitly.
+        // original issue: https://issues.redhat.com/browse/KEYCLOAK-18518
+        log.debug("Waiting for garbage collection to collect the entries across all caches in JVM");
+        Instant gcInstant = Instant.now().plusSeconds(90);
+        do {
+            assertFalse("Items should have been garbage-collected", gcInstant.isBefore(Instant.now()));
+            sleep(1000);
+        } while (getNumberOfInstancesOfClass(AuthenticationSessionAuthNoteUpdateEvent.class) > previousInstancesOfClass);
+
+        log.debug("Test completed");
     }
 
     private static final Pattern JMAP_HOTSPOT_PATTERN = Pattern.compile("\\s*\\d+:\\s+(\\d+)\\s+(\\d+)\\s+(\\S+)\\s*");

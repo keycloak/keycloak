@@ -32,10 +32,10 @@ import org.keycloak.testsuite.adapter.AbstractExampleAdapterTest;
 import org.keycloak.testsuite.adapter.page.AngularCorsProductTestApp;
 import org.keycloak.testsuite.adapter.page.CorsDatabaseServiceTestApp;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
+import org.keycloak.testsuite.util.JavascriptBrowser;
 import org.keycloak.testsuite.utils.arquillian.ContainerConstants;
 import org.keycloak.testsuite.auth.page.account.Account;
 import org.keycloak.testsuite.auth.page.login.OIDCLogin;
-import org.keycloak.testsuite.util.JavascriptBrowser;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
@@ -73,7 +73,7 @@ public class CorsExampleAdapterTest extends AbstractExampleAdapterTest {
     @ArquillianResource
     private Deployer deployer;
 
-    // Javascript browser needed KEYCLOAK-4703
+    // Javascript browser needed, but not PhantomJS
     @Drone
     @JavascriptBrowser
     protected WebDriver jsDriver;

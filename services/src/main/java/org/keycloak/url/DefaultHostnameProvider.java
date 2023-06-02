@@ -10,7 +10,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.urls.HostnameProvider;
 import org.keycloak.urls.UrlType;
 
-import javax.ws.rs.core.UriInfo;
+import jakarta.ws.rs.core.UriInfo;
 import java.net.URI;
 
 public class DefaultHostnameProvider implements HostnameProvider {

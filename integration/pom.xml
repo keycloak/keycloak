@@ -31,8 +31,8 @@
     <packaging>pom</packaging>
 
     <modules>
+        <module>admin-client-jee</module>
         <module>admin-client</module>
-        <module>admin-client-jakarta</module>
         <module>client-registration</module>
         <module>client-cli</module>
     </modules>

@@ -35,7 +35,7 @@ import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.testsuite.arquillian.ContainerInfo;
 import org.keycloak.testsuite.util.RoleBuilder;
 
-import javax.ws.rs.NotFoundException;
+import jakarta.ws.rs.NotFoundException;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;

@@ -1,6 +1,4 @@
-import { useState } from "react";
-import { useTranslation } from "react-i18next";
-import { Controller, useForm } from "react-hook-form";
+import type ClientInitialAccessPresentation from "@keycloak/keycloak-admin-client/lib/defs/clientInitialAccessPresentation";
 import {
   ActionGroup,
   AlertVariant,
@@ -9,18 +7,20 @@ import {
   NumberInput,
   PageSection,
 } from "@patternfly/react-core";
+import { useState } from "react";
+import { Controller, useForm } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 
-import type ClientInitialAccessPresentation from "@keycloak/keycloak-admin-client/lib/defs/clientInitialAccessPresentation";
-import { FormAccess } from "../../components/form-access/FormAccess";
+import { FormAccess } from "../../components/form/FormAccess";
 import { ViewHeader } from "../../components/view-header/ViewHeader";
 import { HelpItem } from "ui-shared";
 import { TimeSelector } from "../../components/time-selector/TimeSelector";
 import { Link, useNavigate } from "react-router-dom";
-import { useRealm } from "../../context/realm-context/RealmContext";
-import { useAdminClient } from "../../context/auth/AdminClient";
+import { adminClient } from "../../admin-client";
 import { useAlerts } from "../../components/alert/Alerts";
-import { AccessTokenDialog } from "./AccessTokenDialog";
+import { useRealm } from "../../context/realm-context/RealmContext";
 import { toClients } from "../routes/Clients";
+import { AccessTokenDialog } from "./AccessTokenDialog";
 
 export default function CreateInitialAccessToken() {
   const { t } = useTranslation("clients");
@@ -30,7 +30,6 @@ export default function CreateInitialAccessToken() {
     formState: { isValid, errors },
   } = useForm({ mode: "onChange" });
 
-  const { adminClient } = useAdminClient();
   const { realm } = useRealm();
   const { addAlert, addError } = useAlerts();
 

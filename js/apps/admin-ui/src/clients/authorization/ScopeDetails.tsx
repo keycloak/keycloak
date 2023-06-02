@@ -13,13 +13,14 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
-
-import { useAlerts } from "../../components/alert/Alerts";
-import { FormAccess } from "../../components/form-access/FormAccess";
 import { HelpItem } from "ui-shared";
+
+import { adminClient } from "../../admin-client";
+import { useAlerts } from "../../components/alert/Alerts";
+import { FormAccess } from "../../components/form/FormAccess";
 import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 import { ViewHeader } from "../../components/view-header/ViewHeader";
-import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
+import { useFetch } from "../../utils/useFetch";
 import { useParams } from "../../utils/useParams";
 import useToggle from "../../utils/useToggle";
 import { toAuthorizationTab } from "../routes/AuthenticationTab";
@@ -33,7 +34,6 @@ export default function ScopeDetails() {
   const { id, scopeId, realm } = useParams<ScopeDetailsParams>();
   const navigate = useNavigate();
 
-  const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
 
   const [deleteDialog, toggleDeleteDialog] = useToggle();

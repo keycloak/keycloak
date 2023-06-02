@@ -4,13 +4,13 @@ Some Keycloak OpenID Connect adapters have reached end-of-life and are not inclu
 
 == Fuse 6 and 7 (OpenID Connect)
 
-Keycloak will no longer be providing adapters for Fuse 6 or 7. If you need adapters for Fuse please leverage https://access.redhat.com/products/red-hat-single-sign-on[Red Hat Single Sign-On] 7.x adapters.
+Keycloak will no longer be providing adapters for Fuse 6 or 7. If you need adapters for Fuse please leverage https://access.redhat.com/products/red-hat-single-sign-on/[Red Hat Single Sign-On] 7.x adapters.
 
 == JBoss AS 7 and EAP 6 (OpenID Connect and SAML)
 
 JBoss AS 7 has been unmaintained for a very long time. If you are still using JBoss AS 7 we recommend migrating to WildFly and leveraging the native OIDC support in WildFly.
 
-Red Hat customers using Red Hat JBoss Enterprise Application Platform 6.x should use https://access.redhat.com/products/red-hat-single-sign-on[Red Hat Single Sign-On] 7.x adapters. These can be used in combination with the Keycloak server.
+Red Hat customers using Red Hat JBoss Enterprise Application Platform 6.x should use https://access.redhat.com/products/red-hat-single-sign-on/[Red Hat Single Sign-On] 7.x adapters. These can be used in combination with the Keycloak server.
 
 == Jetty 9.2 and 9.3 (OpenID Connect and SAML)
 
@@ -24,7 +24,7 @@ Spring Boot 1.x reached end of life in 2019. If you are still using Spring Boot 
 
 In WildFly 25 the legacy security layer was removed, going forward only Elytron will be supported. We recommend anyone using an older version of WildFly to upgrade and leverage native OIDC support in WildFly.
 
-Red Hat customers using Red Hat JBoss Enterprise Application Platform 7.x should use https://access.redhat.com/products/red-hat-single-sign-on[Red Hat Single Sign-On] 7.x adapters. These can be used in combination with the Keycloak server.
+Red Hat customers using Red Hat JBoss Enterprise Application Platform 7.x should use https://access.redhat.com/products/red-hat-single-sign-on/[Red Hat Single Sign-On] 7.x adapters. These can be used in combination with the Keycloak server.
 
 = New Admin Console graduation
 
@@ -92,4 +92,4 @@ See also the https://kubernetes.io/docs/tasks/run-application/configure-pdb/[Kub
 
 Starting with version 19, Keycloak supports sending logs using GELF to centralized logging solutions like ELK, EFK or Graylog out of the box.
 
-You can find the documentation and examples to get you up and running quickly in the https://www.keycloak.org/server/logging#_centralized_logging_using_gelf[logging guide]
+You can find the documentation and examples to get you up and running quickly in the https://www.keycloak.org/server/logging#_centralized_logging_using_gelf[logging] {section}.

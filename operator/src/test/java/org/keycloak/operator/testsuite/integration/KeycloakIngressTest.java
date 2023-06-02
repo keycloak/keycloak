@@ -25,6 +25,7 @@ import io.quarkus.logging.Log;
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.RestAssured;
 import org.awaitility.Awaitility;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.keycloak.operator.Constants;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
@@ -38,62 +39,84 @@ import java.util.Map;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 @QuarkusTest
 public class KeycloakIngressTest extends BaseOperatorTest {
+    private static String baseDomain;
+
+    @BeforeAll
+    public static void beforeKeycloakIngressTest() {
+        if (isOpenShift) {
+            Log.info("OpenShift detected, using real domain");
+            // see https://docs.openshift.com/container-platform/4.12/networking/ingress-operator.html#configuring-ingress
+            baseDomain = k8sclient.genericKubernetesResources("config.openshift.io/v1", "Ingress")
+                    .withName("cluster")
+                    .get()
+                    .get("spec", "domain");
+            if (baseDomain == null || baseDomain.isBlank()) {
+                throw new IllegalStateException("Couldn't fetch the base Ingress domain");
+            }
+        }
+    }
 
     @Test
     public void testIngressOnHTTP() {
         var kc = K8sUtils.getDefaultKeycloakDeployment();
         kc.getSpec().getHttpSpec().setTlsSecret(null);
         kc.getSpec().getHttpSpec().setHttpEnabled(true);
-        var hostnameSpec = new HostnameSpecBuilder()
+        var hostnameSpecBuilder = new HostnameSpecBuilder()
                 .withStrict(false)
-                .withStrictBackchannel(false)
-                .build();
-        kc.getSpec().setHostnameSpec(hostnameSpec);
+                .withStrictBackchannel(false);
+        String testHostname;
+        String baseUrl;
+        if (isOpenShift) {
+            testHostname = "kc-http-" + namespace + "." + baseDomain;
+            // on OpenShift, when Keycloak is configured for HTTP only, we use edge TLS termination, i.e. Route still uses TLS
+            baseUrl = "https://" + testHostname + ":443";
+            hostnameSpecBuilder.withHostname(testHostname);
+        }
+        else {
+            baseUrl = "http://" + kubernetesIp + ":80";
+        }
+        kc.getSpec().setHostnameSpec(hostnameSpecBuilder.build());
+
         K8sUtils.deployKeycloak(k8sclient, kc, true);
 
-        Awaitility.await()
-                .ignoreExceptions()
-                .untilAsserted(() -> {
-                    var output = RestAssured.given()
-                            .get("http://" + kubernetesIp + ":80/realms/master")
-                            .body()
-                            .jsonPath()
-                            .getString("realm");
-
-                    assertEquals("master", output);
-                });
-
-        Awaitility.await()
-                .ignoreExceptions()
-                .untilAsserted(() -> {
-                    var statusCode = RestAssured.given()
-                            .get("http://" + kubernetesIp + ":80/admin/master/console")
-                            .statusCode();
-
-                    assertEquals(200, statusCode);
-                });
+        testIngressURLs(baseUrl);
     }
 
     @Test
     public void testIngressOnHTTPS() {
         var kc = K8sUtils.getDefaultKeycloakDeployment();
-        var hostnameSpec = new HostnameSpecBuilder()
+        var hostnameSpecBuilder = new HostnameSpecBuilder()
                 .withStrict(false)
-                .withStrictBackchannel(false)
-                .build();
-        kc.getSpec().setHostnameSpec(hostnameSpec);
+                .withStrictBackchannel(false);
+        String testHostname;
+        if (isOpenShift) {
+            testHostname = "kc-https-" + namespace + "." + baseDomain;
+            hostnameSpecBuilder.withHostname(testHostname);
+        }
+        else {
+            testHostname = kubernetesIp;
+        }
+        kc.getSpec().setHostnameSpec(hostnameSpecBuilder.build());
 
         K8sUtils.deployKeycloak(k8sclient, kc, true);
 
+        testIngressURLs("https://" + testHostname + ":443");
+    }
+
+    private void testIngressURLs(String baseUrl) {
         Awaitility.await()
                 .ignoreExceptions()
                 .untilAsserted(() -> {
+                    var url = baseUrl + "/realms/master";
+                    Log.info("Testing URL: " + url);
+
                     var output = RestAssured.given()
                             .relaxedHTTPSValidation()
-                            .get("https://" + kubernetesIp + ":443/realms/master")
+                            .get(url)
                             .body()
                             .jsonPath()
                             .getString("realm");
@@ -104,9 +127,12 @@ public class KeycloakIngressTest extends BaseOperatorTest {
         Awaitility.await()
                 .ignoreExceptions()
                 .untilAsserted(() -> {
+                    var url = baseUrl + "/admin/master/console";
+                    Log.info("Testing URL: " + url);
+
                     var statusCode = RestAssured.given()
                             .relaxedHTTPSValidation()
-                            .get("https://" + kubernetesIp + ":443/admin/master/console")
+                            .get(url)
                             .statusCode();
 
                     assertEquals(200, statusCode);
@@ -146,6 +172,7 @@ public class KeycloakIngressTest extends BaseOperatorTest {
         var kc = K8sUtils.getDefaultKeycloakDeployment();
         kc.getSpec().setIngressSpec(new IngressSpec());
         kc.getSpec().getIngressSpec().setIngressEnabled(true);
+        kc.getSpec().getIngressSpec().setAnnotations(Map.of("haproxy.router.openshift.io/disable_cookies", "true"));
         K8sUtils.deployKeycloak(k8sclient, kc, true);
 
         var ingress = new KeycloakIngress(k8sclient, kc);
@@ -157,7 +184,7 @@ public class KeycloakIngressTest extends BaseOperatorTest {
                 .withName(ingress.getName());
 
         Log.info("Trying to delete the ingress");
-        assertThat(ingressSelector.delete()).isTrue();
+        assertThat(ingressSelector.delete()).isNotNull();
         Awaitility.await()
                 .untilAsserted(() -> assertThat(ingressSelector.get()).isNotNull());
 
@@ -181,6 +208,7 @@ public class KeycloakIngressTest extends BaseOperatorTest {
                     assertThat(i.getMetadata().getLabels().entrySet().containsAll(labels.entrySet())).isTrue(); // additional labels should not be overwritten
                     assertEquals("HTTPS", i.getMetadata().getAnnotations().get("nginx.ingress.kubernetes.io/backend-protocol"));
                     assertEquals("passthrough", i.getMetadata().getAnnotations().get("route.openshift.io/termination"));
+                    assertEquals("true", i.getMetadata().getAnnotations().get("haproxy.router.openshift.io/disable_cookies"));
                     assertEquals(Constants.KEYCLOAK_HTTPS_PORT, i.getSpec().getDefaultBackend().getService().getPort().getNumber());
                 });
 
@@ -234,12 +262,81 @@ public class KeycloakIngressTest extends BaseOperatorTest {
         } finally {
             Log.info("Destroying the Custom Ingress created manually to avoid errors in others Tests methods");
             if (customIngressDeployedManuallySelector != null && customIngressDeployedManuallySelector.isReady()) {
-                assertThat(customIngressDeployedManuallySelector.delete()).isTrue();
+                assertThat(customIngressDeployedManuallySelector.delete()).isNotNull();
                 Awaitility.await().untilAsserted(() -> {
                     assertThat(k8sclient.network().v1().ingresses().inNamespace(namespace).list().getItems().size()).isEqualTo(0);
                 });
             }
         }
+    }
+
+    @Test
+    public void testCustomIngressAnnotations() {
+        var kc = K8sUtils.getDefaultKeycloakDeployment();
+        kc.getSpec().setIngressSpec(new IngressSpec());
+        kc.getSpec().getIngressSpec().setIngressEnabled(true);
+
+        // set 'a'
+        kc.getSpec().getIngressSpec().setAnnotations(Map.of("a", "b"));
+        K8sUtils.deployKeycloak(k8sclient, kc, true);
+
+        var ingress = new KeycloakIngress(k8sclient, kc);
+        var ingressSelector = k8sclient
+                .network()
+                .v1()
+                .ingresses()
+                .inNamespace(namespace)
+                .withName(ingress.getName());
+
+        Awaitility.await()
+                .ignoreExceptions()
+                .untilAsserted(() -> {
+                    var i = ingressSelector.get();
+                    assertEquals("HTTPS", i.getMetadata().getAnnotations().get("nginx.ingress.kubernetes.io/backend-protocol"));
+                    assertEquals("passthrough", i.getMetadata().getAnnotations().get("route.openshift.io/termination"));
+                    assertEquals("b", i.getMetadata().getAnnotations().get("a"));
+                });
+
+        // update 'a'
+        kc.getSpec().getIngressSpec().setAnnotations(Map.of("a", "bb"));
+        K8sUtils.deployKeycloak(k8sclient, kc, true);
+
+        Awaitility.await()
+                .ignoreExceptions()
+                .untilAsserted(() -> {
+                    var i = ingressSelector.get();
+                    assertEquals("HTTPS", i.getMetadata().getAnnotations().get("nginx.ingress.kubernetes.io/backend-protocol"));
+                    assertEquals("passthrough", i.getMetadata().getAnnotations().get("route.openshift.io/termination"));
+                    assertEquals("bb", i.getMetadata().getAnnotations().get("a"));
+                });
+
+        // remove 'a' and add 'c'
+        kc.getSpec().getIngressSpec().setAnnotations(Map.of("c", "d"));
+        K8sUtils.deployKeycloak(k8sclient, kc, true);
+
+        Awaitility.await()
+                .ignoreExceptions()
+                .untilAsserted(() -> {
+                    var i = ingressSelector.get();
+                    assertEquals("HTTPS", i.getMetadata().getAnnotations().get("nginx.ingress.kubernetes.io/backend-protocol"));
+                    assertEquals("passthrough", i.getMetadata().getAnnotations().get("route.openshift.io/termination"));
+                    assertFalse(i.getMetadata().getAnnotations().containsKey("a"));
+                    assertEquals("d", i.getMetadata().getAnnotations().get("c"));
+                });
+
+        // remove all
+        kc.getSpec().getIngressSpec().setAnnotations(null);
+        K8sUtils.deployKeycloak(k8sclient, kc, true);
+
+        Awaitility.await()
+                .ignoreExceptions()
+                .untilAsserted(() -> {
+                    var i = ingressSelector.get();
+                    assertEquals("HTTPS", i.getMetadata().getAnnotations().get("nginx.ingress.kubernetes.io/backend-protocol"));
+                    assertEquals("passthrough", i.getMetadata().getAnnotations().get("route.openshift.io/termination"));
+                    assertFalse(i.getMetadata().getAnnotations().containsKey("a"));
+                    assertFalse(i.getMetadata().getAnnotations().containsKey("c"));
+                });
     }
 
     private Ingress createCustomIngress(String baseResourceName, String targetNamespace, int portNumber) {

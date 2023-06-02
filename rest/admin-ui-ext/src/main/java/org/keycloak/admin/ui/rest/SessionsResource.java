@@ -16,11 +16,11 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DefaultValue;
-import javax.ws.rs.GET;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DefaultValue;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -83,12 +83,12 @@ public class SessionsResource {
             switch (sessionId.getType()) {
                 case REGULAR:
                     result = Stream.concat(result, session.sessions().getUserSessionsStream(realm, clientModel)
-                            .map(s -> toUserSessionRepresentation(s, sessionId.getClientId(), REGULAR)));
+                            .map(s -> toUserSessionRepresentation(s, sessionId.getClientId(), REGULAR))).distinct();
                     break;
                 case OFFLINE:
                     result = Stream.concat(result, session.sessions()
                             .getOfflineUserSessionsStream(realm, clientModel, Math.max((int) (first - clientSessionsCount), 0), max)
-                            .map(s -> toUserSessionRepresentation(s, sessionId.getClientId(), OFFLINE)));
+                            .map(s -> toUserSessionRepresentation(s, sessionId.getClientId(), OFFLINE))).distinct();
                     break;
             }
         }

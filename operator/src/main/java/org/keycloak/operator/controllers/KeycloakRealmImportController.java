@@ -38,7 +38,7 @@ import org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImportStatus
 import org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImportStatusBuilder;
 import org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImportStatusCondition;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 

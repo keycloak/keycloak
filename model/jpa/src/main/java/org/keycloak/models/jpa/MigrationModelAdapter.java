@@ -21,8 +21,8 @@ import org.keycloak.common.util.Time;
 import org.keycloak.migration.MigrationModel;
 import org.keycloak.models.jpa.entities.MigrationModelEntity;
 
-import javax.persistence.EntityManager;
-import javax.persistence.TypedQuery;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.TypedQuery;
 import java.security.SecureRandom;
 import java.util.List;
 

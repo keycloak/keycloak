@@ -21,18 +21,16 @@ import {
 import { useState } from "react";
 import { Controller, useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-
+import { HelpItem } from "ui-shared";
+import { adminClient } from "../../admin-client";
 import { useAlerts } from "../../components/alert/Alerts";
 import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
-import { FormAccess } from "../../components/form-access/FormAccess";
-import { HelpItem } from "ui-shared";
-import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
+import { FormAccess } from "../../components/form/FormAccess";
+import { useFetch } from "../../utils/useFetch";
+import { FormFields } from "../ClientDetails";
 import { ClientSecret } from "./ClientSecret";
 import { SignedJWT } from "./SignedJWT";
 import { X509 } from "./X509";
-
-import "./credentials.css";
-import { FormFields } from "../ClientDetails";
 
 type AccessToken = {
   registrationAccessToken: string;
@@ -46,7 +44,6 @@ export type CredentialsProps = {
 
 export const Credentials = ({ client, save, refresh }: CredentialsProps) => {
   const { t } = useTranslation("clients");
-  const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
   const clientId = client.id!;
 
@@ -190,12 +187,9 @@ export const Credentials = ({ client, save, refresh }: CredentialsProps) => {
             {(clientAuthenticatorType === "client-jwt" ||
               clientAuthenticatorType === "client-secret-jwt") && <SignedJWT />}
             {clientAuthenticatorType === "client-jwt" && (
-              <Alert
-                variant="info"
-                isInline
-                className="kc-signedJWTAlert"
-                title={t("signedJWTConfirm")}
-              />
+              <FormGroup>
+                <Alert variant="info" isInline title={t("signedJWTConfirm")} />
+              </FormGroup>
             )}
             {clientAuthenticatorType === "client-x509" && <X509 />}
             <ActionGroup>

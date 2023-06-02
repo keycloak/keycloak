@@ -16,6 +16,7 @@
  */
 package org.keycloak.adapters.authorization;
 
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -53,12 +54,12 @@ public class PathCache {
      */
     PathCache(final int maxEntries, long maxAge,
             Map<String, PathConfig> paths) {
-        cache = new LinkedHashMap<String, CacheEntry>(16, DEFAULT_LOAD_FACTOR, true) {
+        cache = Collections.synchronizedMap(new LinkedHashMap<String, CacheEntry>(16, DEFAULT_LOAD_FACTOR, true) {
             @Override
             protected boolean removeEldestEntry(Map.Entry eldest) {
                 return cache.size()  > maxEntries;
             }
-        };
+        });
         this.maxAge = maxAge;
         this.enabled = ! (maxAge < -1 || (maxAge > -1 && maxAge <= 0));
         this.paths = paths;

@@ -1,52 +1,50 @@
-import { useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
-import { Trans, useTranslation } from "react-i18next";
+import AuthenticationExecutionInfoRepresentation from "@keycloak/keycloak-admin-client/lib/defs/authenticationExecutionInfoRepresentation";
+import AuthenticationFlowRepresentation from "@keycloak/keycloak-admin-client/lib/defs/authenticationFlowRepresentation";
+import type { AuthenticationProviderRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/authenticatorConfigRepresentation";
 import {
-  DataList,
-  Label,
-  PageSection,
-  Toolbar,
-  ToolbarItem,
-  ToolbarContent,
-  ToggleGroup,
-  ToggleGroupItem,
   AlertVariant,
   Button,
   ButtonVariant,
+  DataList,
   DropdownItem,
+  Label,
+  PageSection,
+  ToggleGroup,
+  ToggleGroupItem,
+  Toolbar,
+  ToolbarContent,
+  ToolbarItem,
 } from "@patternfly/react-core";
-import {
-  CheckCircleIcon,
-  TableIcon,
-  DomainIcon,
-} from "@patternfly/react-icons";
+import { DomainIcon, TableIcon } from "@patternfly/react-icons";
+import { useState } from "react";
+import { Trans, useTranslation } from "react-i18next";
+import { useNavigate, useParams } from "react-router-dom";
 
-import type AuthenticationExecutionInfoRepresentation from "@keycloak/keycloak-admin-client/lib/defs/authenticationExecutionInfoRepresentation";
-import type { AuthenticationProviderRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/authenticatorConfigRepresentation";
-import type AuthenticationFlowRepresentation from "@keycloak/keycloak-admin-client/lib/defs/authenticationFlowRepresentation";
-import type { FlowParams } from "./routes/Flow";
+import { adminClient } from "../admin-client";
+import { useAlerts } from "../components/alert/Alerts";
+import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import { ViewHeader } from "../components/view-header/ViewHeader";
-import { useAdminClient, useFetch } from "../context/auth/AdminClient";
+import { useRealm } from "../context/realm-context/RealmContext";
+import { useFetch } from "../utils/useFetch";
+import useToggle from "../utils/useToggle";
+import { BindFlowDialog } from "./BindFlowDialog";
+import { BuildInLabel } from "./BuildInLabel";
+import { DuplicateFlowModal } from "./DuplicateFlowModal";
+import { EditFlowModal } from "./EditFlowModal";
 import { EmptyExecutionState } from "./EmptyExecutionState";
+import { FlowDiagram } from "./components/FlowDiagram";
 import { FlowHeader } from "./components/FlowHeader";
 import { FlowRow } from "./components/FlowRow";
+import { AddStepModal } from "./components/modals/AddStepModal";
+import { AddSubFlowModal, Flow } from "./components/modals/AddSubFlowModal";
 import {
   ExecutionList,
   ExpandableExecution,
   IndexChange,
   LevelChange,
 } from "./execution-model";
-import { FlowDiagram } from "./components/FlowDiagram";
-import { useAlerts } from "../components/alert/Alerts";
-import { AddStepModal } from "./components/modals/AddStepModal";
-import { AddSubFlowModal, Flow } from "./components/modals/AddSubFlowModal";
-import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
-import { DuplicateFlowModal } from "./DuplicateFlowModal";
-import { useRealm } from "../context/realm-context/RealmContext";
-import useToggle from "../utils/useToggle";
 import { toAuthentication } from "./routes/Authentication";
-import { EditFlowModal } from "./EditFlowModal";
-import { BindFlowDialog } from "./BindFlowDialog";
+import type { FlowParams } from "./routes/Flow";
 
 export const providerConditionFilter = (
   value: AuthenticationProviderRepresentation
@@ -54,7 +52,6 @@ export const providerConditionFilter = (
 
 export default function FlowDetails() {
   const { t } = useTranslation("authentication");
-  const { adminClient } = useAdminClient();
   const { realm } = useRealm();
   const { addAlert, addError } = useAlerts();
   const { id, usedBy, builtIn } = useParams<FlowParams>();
@@ -305,14 +302,7 @@ export default function FlowDetails() {
           { text: <Label>{t(`used.${usedBy}`)}</Label> },
           builtIn
             ? {
-                text: (
-                  <Label
-                    className="keycloak_authentication-section__usedby_label"
-                    icon={<CheckCircleIcon />}
-                  >
-                    {t("buildIn")}
-                  </Label>
-                ),
+                text: <BuildInLabel />,
                 id: "builtIn",
               }
             : {},

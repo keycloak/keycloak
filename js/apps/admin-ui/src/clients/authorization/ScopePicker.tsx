@@ -1,16 +1,17 @@
-import { useState } from "react";
-import { useTranslation } from "react-i18next";
-import { Controller, useFormContext } from "react-hook-form";
+import type ScopeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/scopeRepresentation";
 import {
   FormGroup,
   Select,
   SelectOption,
   SelectVariant,
 } from "@patternfly/react-core";
-
-import type ScopeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/scopeRepresentation";
-import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
+import { useState } from "react";
+import { Controller, useFormContext } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 import { HelpItem } from "ui-shared";
+
+import { adminClient } from "../../admin-client";
+import { useFetch } from "../../utils/useFetch";
 
 type Scope = {
   id: string;
@@ -24,8 +25,6 @@ export const ScopePicker = ({ clientId }: { clientId: string }) => {
   const [open, setOpen] = useState(false);
   const [scopes, setScopes] = useState<ScopeRepresentation[]>();
   const [search, setSearch] = useState("");
-
-  const { adminClient } = useAdminClient();
 
   useFetch(
     () => {

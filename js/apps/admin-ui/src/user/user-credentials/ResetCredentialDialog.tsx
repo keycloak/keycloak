@@ -1,14 +1,14 @@
-import { useTranslation } from "react-i18next";
-import { FormProvider, useForm, useWatch } from "react-hook-form";
-import { ModalVariant, Form, AlertVariant } from "@patternfly/react-core";
-
 import type { RequiredActionAlias } from "@keycloak/keycloak-admin-client/lib/defs/requiredActionProviderRepresentation";
-import { RequiredActionMultiSelect } from "./RequiredActionMultiSelect";
-import { ConfirmDialogModal } from "../../components/confirm-dialog/ConfirmDialog";
-import { useAdminClient } from "../../context/auth/AdminClient";
-import { useAlerts } from "../../components/alert/Alerts";
-import { LifespanField } from "./LifespanField";
+import { AlertVariant, Form, ModalVariant } from "@patternfly/react-core";
 import { isEmpty } from "lodash-es";
+import { FormProvider, useForm, useWatch } from "react-hook-form";
+import { useTranslation } from "react-i18next";
+
+import { adminClient } from "../../admin-client";
+import { useAlerts } from "../../components/alert/Alerts";
+import { ConfirmDialogModal } from "../../components/confirm-dialog/ConfirmDialog";
+import { LifespanField } from "./LifespanField";
+import { RequiredActionMultiSelect } from "./RequiredActionMultiSelect";
 
 type ResetCredentialDialogProps = {
   userId: string;
@@ -41,7 +41,6 @@ export const ResetCredentialDialog = ({
   });
   const resetIsNotDisabled = !isEmpty(resetActionWatcher);
 
-  const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
 
   const sendCredentialsResetEmail = async ({

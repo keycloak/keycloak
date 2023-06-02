@@ -46,10 +46,8 @@ import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
 import org.keycloak.models.UserSessionModel;
-import org.keycloak.models.UserSessionProvider;
 import org.keycloak.models.UserSessionSpi;
 import org.keycloak.models.map.common.AbstractMapProviderFactory;
-import org.keycloak.models.map.storage.MapStorageProvider;
 import org.keycloak.models.map.storage.hotRod.connections.DefaultHotRodConnectionProviderFactory;
 import org.keycloak.models.map.storage.hotRod.connections.HotRodConnectionProvider;
 import org.keycloak.models.map.userSession.MapUserSessionProviderFactory;
@@ -90,21 +88,23 @@ import org.keycloak.testsuite.runonserver.RunOnServer;
 import org.keycloak.testsuite.runonserver.SerializationUtil;
 import org.keycloak.testsuite.util.FeatureDeployerUtil;
 import org.keycloak.timer.TimerProvider;
+import org.keycloak.truststore.FileTruststoreProviderFactory;
+import org.keycloak.truststore.TruststoreProvider;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.utils.MediaType;
 
-import javax.ws.rs.BadRequestException;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.GET;
-import javax.ws.rs.NotFoundException;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.Cookie;
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.BadRequestException;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.PUT;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.Cookie;
+import jakarta.ws.rs.core.Response;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -134,13 +134,16 @@ public class TestingResourceProvider implements RealmResourceProvider {
 
     private final HttpRequest request;
 
+    private final TestingResourceProviderFactory factory;
+
     @Override
     public Object getResource() {
         return this;
     }
 
-    public TestingResourceProvider(KeycloakSession session, Map<String, TimerProvider.TimerTaskContext> suspendedTimerTasks) {
+    public TestingResourceProvider(KeycloakSession session, TestingResourceProviderFactory factory, Map<String, TimerProvider.TimerTaskContext> suspendedTimerTasks) {
         this.session = session;
+        this.factory = factory;
         this.suspendedTimerTasks = suspendedTimerTasks;
         this.request = session.getContext().getHttpRequest();
     }
@@ -309,15 +312,6 @@ public class TestingResourceProvider implements RealmResourceProvider {
     }
 
     @GET
-    @Path("/clear-event-store")
-    @Produces(MediaType.APPLICATION_JSON)
-    public Response clearEventStore() {
-        EventStoreProvider eventStore = session.getProvider(EventStoreProvider.class);
-        eventStore.clear();
-        return Response.noContent().build();
-    }
-
-    @GET
     @Path("/clear-event-store-for-realm")
     @Produces(MediaType.APPLICATION_JSON)
     public Response clearEventStore(@QueryParam("realmId") String realmId) {
@@ -435,15 +429,6 @@ public class TestingResourceProvider implements RealmResourceProvider {
         event.setType(EventType.valueOf(rep.getType()));
         event.setUserId(rep.getUserId());
         return event;
-    }
-
-    @GET
-    @Path("/clear-admin-event-store")
-    @Produces(MediaType.APPLICATION_JSON)
-    public Response clearAdminEventStore() {
-        EventStoreProvider eventStore = session.getProvider(EventStoreProvider.class);
-        eventStore.clearAdmin();
-        return Response.noContent().build();
     }
 
     @GET
@@ -1045,7 +1030,7 @@ public class TestingResourceProvider implements RealmResourceProvider {
         builder.append("</HTML>");
 
         return Response.status(Response.Status.OK)
-                .type(javax.ws.rs.core.MediaType.TEXT_HTML_TYPE)
+                .type(jakarta.ws.rs.core.MediaType.TEXT_HTML_TYPE)
                 .entity(builder.toString()).build();
 
     }
@@ -1062,6 +1047,19 @@ public class TestingResourceProvider implements RealmResourceProvider {
         return ErrorPage.error(session, session.getContext().getAuthenticationSession(), Response.Status.BAD_REQUEST, message == null ? "" : message);
     }
 
+    @GET
+    @Path("/get-provider-implementation-class")
+    @Produces(MediaType.APPLICATION_JSON)
+    public String getProviderClassName(@QueryParam("providerClass") String providerClass, @QueryParam("providerId") String providerId) {
+        try {
+            Class<? extends Provider> providerClazz = (Class<? extends Provider>) Class.forName(providerClass);
+            Provider provider = (providerId == null) ? session.getProvider(providerClazz) : session.getProvider(providerClazz, providerId);
+            return provider.getClass().getName();
+        } catch (ClassNotFoundException cnfe) {
+            throw new RuntimeException("Cannot find provider class: " + providerClass, cnfe);
+        }
+    }
+
     private RealmModel getRealmByName(String realmName) {
         RealmProvider realmProvider = session.getProvider(RealmProvider.class);
         RealmModel realm = realmProvider.getRealmByName(realmName);
@@ -1069,6 +1067,26 @@ public class TestingResourceProvider implements RealmResourceProvider {
             throw new NotFoundException("Realm not found");
         }
         return realm;
+    }
+
+    @GET
+    @Path("/disable-truststore-spi")
+    @NoCache
+    public void disableTruststoreSpi() {
+        FileTruststoreProviderFactory factory = (FileTruststoreProviderFactory) session.getKeycloakSessionFactory().getProviderFactory(TruststoreProvider.class);
+        this.factory.truststoreProvider = factory.create(session);
+        factory.setProvider(null);
+    }
+
+    @GET
+    @Path("/reenable-truststore-spi")
+    @NoCache
+    public void reenableTruststoreSpi() {
+        if (this.factory.truststoreProvider == null) {
+            throw new IllegalStateException("Cannot reenable provider as it was not disabled");
+        }
+        FileTruststoreProviderFactory factory = (FileTruststoreProviderFactory) session.getKeycloakSessionFactory().getProviderFactory(TruststoreProvider.class);
+        factory.setProvider(this.factory.truststoreProvider);
     }
 
 }

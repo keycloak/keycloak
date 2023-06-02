@@ -20,6 +20,10 @@ package org.keycloak.testsuite.util;
 import org.keycloak.testsuite.arquillian.ContainerInfo;
 import org.keycloak.testsuite.arquillian.SuiteContext;
 import org.keycloak.testsuite.arquillian.annotation.EnableVault;
+import org.keycloak.testsuite.arquillian.containers.AbstractQuarkusDeployableContainer;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @author mhajas
@@ -31,6 +35,20 @@ public class VaultUtils {
 
         if (serverInfo.isUndertow()) {
             System.setProperty("keycloak.vault." + provider.getName() + ".provider.enabled", "true");
+        }
+        else if (serverInfo.isQuarkus()) {
+            AbstractQuarkusDeployableContainer container = (AbstractQuarkusDeployableContainer)suiteContext.getAuthServerInfo().getArquillianContainer().getDeployableContainer();
+            List<String> additionalArgs = new ArrayList<>();
+
+            if (provider == EnableVault.PROVIDER_ID.KEYSTORE) {
+                additionalArgs.add("--vault=keystore");
+                additionalArgs.add("--vault-file=../secrets/myks");
+                additionalArgs.add("--vault-pass=keystorepassword");
+            } else if (provider == EnableVault.PROVIDER_ID.PLAINTEXT) {
+                additionalArgs.add("--vault=file");
+                additionalArgs.add("--vault-dir=../secrets");
+            }
+            container.setAdditionalBuildArgs(additionalArgs);
         }
     }
 

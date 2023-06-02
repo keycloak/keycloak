@@ -15,13 +15,13 @@ import {
 import { useEffect, useState } from "react";
 import { Controller, FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-
-import { FormattedLink } from "../components/external-link/FormattedLink";
-import { FormAccess } from "../components/form-access/FormAccess";
 import { HelpItem } from "ui-shared";
+
+import { adminClient } from "../admin-client";
+import { FormattedLink } from "../components/external-link/FormattedLink";
+import { FormAccess } from "../components/form/FormAccess";
 import { KeyValueInput } from "../components/key-value-form/KeyValueInput";
 import { KeycloakTextInput } from "../components/keycloak-text-input/KeycloakTextInput";
-import { useAdminClient } from "../context/auth/AdminClient";
 import { useRealm } from "../context/realm-context/RealmContext";
 import {
   addTrailingSlash,
@@ -40,7 +40,6 @@ export const RealmSettingsGeneralTab = ({
   save,
 }: RealmSettingsGeneralTabProps) => {
   const { t } = useTranslation("realm-settings");
-  const { adminClient } = useAdminClient();
   const { realm: realmName } = useRealm();
   const form = useForm<RealmRepresentation>();
   const {

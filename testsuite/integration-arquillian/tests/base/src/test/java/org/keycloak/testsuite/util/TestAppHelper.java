@@ -22,7 +22,7 @@ import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginTotpPage;
 
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response;
 import java.io.IOException;
 import java.net.URISyntaxException;
 
@@ -75,6 +75,21 @@ public class TestAppHelper {
 
         loginTotpPage.login(otp);
         if (loginTotpPage.isCurrent()) {
+            return false;
+        }
+
+        completeLogin();
+
+        return appPage.isCurrent();
+    }
+
+    public boolean login(String username, String password, String realm, String clientId, String idp) throws URISyntaxException, IOException {
+        oauth.clientId(clientId);
+        loginPage.open(realm);
+        loginPage.clickSocial(idp);
+        loginPage.login(username, password);
+
+        if (loginPage.isCurrent(realm)) {
             return false;
         }
 

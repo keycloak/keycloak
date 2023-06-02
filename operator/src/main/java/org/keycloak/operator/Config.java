@@ -19,6 +19,8 @@ package org.keycloak.operator;
 
 import io.smallrye.config.ConfigMapping;
 
+import java.util.Map;
+
 /**
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
  */
@@ -29,5 +31,7 @@ public interface Config {
     interface Keycloak {
         String image();
         String imagePullPolicy();
+
+        Map<String, String> podLabels();
     }
 }

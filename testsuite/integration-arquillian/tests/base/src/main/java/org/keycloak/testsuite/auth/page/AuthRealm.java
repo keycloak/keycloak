@@ -20,7 +20,7 @@ package org.keycloak.testsuite.auth.page;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.testsuite.auth.page.login.PageWithLoginUrl;
 
-import javax.ws.rs.core.UriBuilder;
+import jakarta.ws.rs.core.UriBuilder;
 import java.net.URI;
 
 /**

@@ -27,12 +27,5 @@ endif::[]
 
 [.top-menu-version]
 ====
-ifeval::["{project_buildType}" == "latest"]
-[.versionlatest]
-Version *{project_version}* _Latest_
-endif::[]
-ifeval::["{project_buildType}" == "archive"]
-[.versionarchive]
-Version *{project_version}* _{release_header_latest_link}[Click here for latest]_
-endif::[]
+Version *{project_version}*
 ====

@@ -16,7 +16,6 @@
  */
 package org.keycloak.testsuite.federation;
 
-import org.apache.commons.lang.BooleanUtils;
 import org.jboss.logging.Logger;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.GroupModel;
@@ -61,7 +60,7 @@ public class HardcodedGroupStorageProvider implements GroupStorageProvider {
             Logger.getLogger(HardcodedGroupStorageProvider.class).warn(ex.getCause());
             return Stream.empty();
         }
-        if(BooleanUtils.isTrue(exact)){
+        if(exact != null && exact){
             if (search != null && this.groupName.equals(search)) {
                 return Stream.of(new HardcodedGroupAdapter(realm));
             }

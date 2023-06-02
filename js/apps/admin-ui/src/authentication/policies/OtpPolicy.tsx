@@ -19,12 +19,12 @@ import {
 import { useEffect, useMemo } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-
-import { useAlerts } from "../../components/alert/Alerts";
-import { FormAccess } from "../../components/form-access/FormAccess";
 import { HelpItem } from "ui-shared";
+
+import { adminClient } from "../../admin-client";
+import { useAlerts } from "../../components/alert/Alerts";
+import { FormAccess } from "../../components/form/FormAccess";
 import { TimeSelector } from "../../components/time-selector/TimeSelector";
-import { useAdminClient } from "../../context/auth/AdminClient";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import useLocaleSort from "../../utils/useLocaleSort";
 import useToggle from "../../utils/useToggle";
@@ -53,7 +53,6 @@ export const OtpPolicy = ({ realm, realmUpdated }: OtpPolicyProps) => {
     handleSubmit,
     formState: { isValid, isDirty, errors },
   } = useForm<FormFields>({ mode: "onChange", defaultValues: realm });
-  const { adminClient } = useAdminClient();
   const { realm: realmName } = useRealm();
   const { addAlert, addError } = useAlerts();
   const localeSort = useLocaleSort();

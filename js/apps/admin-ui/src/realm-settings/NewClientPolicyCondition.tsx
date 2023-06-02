@@ -17,15 +17,16 @@ import { useState } from "react";
 import { Controller, FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router-dom";
+import { HelpItem } from "ui-shared";
 
+import { adminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
 import { DynamicComponents } from "../components/dynamic/DynamicComponents";
-import { FormAccess } from "../components/form-access/FormAccess";
-import { HelpItem } from "ui-shared";
+import { FormAccess } from "../components/form/FormAccess";
 import { FormPanel } from "../components/scroll-form/FormPanel";
-import { useAdminClient, useFetch } from "../context/auth/AdminClient";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { useServerInfo } from "../context/server-info/ServerInfoProvider";
+import { useFetch } from "../utils/useFetch";
 import { toEditClientPolicy } from "./routes/EditClientPolicy";
 import type { EditClientPolicyConditionParams } from "./routes/EditCondition";
 
@@ -65,8 +66,6 @@ export default function NewClientPolicyCondition() {
     serverInfo.componentTypes?.[
       "org.keycloak.services.clientpolicy.condition.ClientPolicyConditionProvider"
     ];
-
-  const { adminClient } = useAdminClient();
 
   const setupForm = (condition: ClientPolicyConditionRepresentation) => {
     form.reset({ config: condition.configuration || {} });

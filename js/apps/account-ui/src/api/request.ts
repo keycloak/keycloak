@@ -15,13 +15,7 @@ export async function request(
   { signal, method, searchParams, body }: RequestOptions = {}
 ): Promise<Response> {
   const url = new URL(
-    joinPath(
-      environment.authServerUrl,
-      "realms",
-      environment.loginRealm,
-      "account",
-      path
-    )
+    joinPath(environment.authUrl, "realms", environment.realm, "account", path)
   );
 
   if (searchParams) {

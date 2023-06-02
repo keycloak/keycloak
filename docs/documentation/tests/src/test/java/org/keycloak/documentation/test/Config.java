@@ -139,7 +139,7 @@ public class Config {
 
             Map<String, Object> options = OptionsBuilder.options()
                     .inPlace(true)
-                    .attributes(AttributesBuilder.attributes().backend("html5").attribute("project_buildType", buildType).asMap())
+                    .attributes(AttributesBuilder.attributes().backend("html5").asMap())
                     .asMap();
 
             Document document = asciidoctor.loadFile(f, options);

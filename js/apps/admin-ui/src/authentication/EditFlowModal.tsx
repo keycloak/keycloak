@@ -9,10 +9,10 @@ import {
 } from "@patternfly/react-core";
 import { useEffect } from "react";
 import { FormProvider, useForm } from "react-hook-form";
-import { useTranslation } from "react-i18next";
 
+import { useTranslation } from "react-i18next";
+import { adminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
-import { useAdminClient } from "../context/auth/AdminClient";
 import { NameDescription } from "./form/NameDescription";
 
 type EditFlowModalProps = {
@@ -22,7 +22,6 @@ type EditFlowModalProps = {
 
 export const EditFlowModal = ({ flow, toggleDialog }: EditFlowModalProps) => {
   const { t } = useTranslation("authentication");
-  const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
   const form = useForm<AuthenticationFlowRepresentation>({ mode: "onChange" });
   const { reset, handleSubmit } = form;

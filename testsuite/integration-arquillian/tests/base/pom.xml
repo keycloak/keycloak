@@ -75,7 +75,7 @@
         <dependency>
             <groupId>commons-io</groupId>
             <artifactId>commons-io</artifactId>
-            <version>2.5</version>
+            <version>${commons-io.version}</version>
         </dependency>
         <dependency>
             <groupId>org.keycloak.testsuite</groupId>
@@ -98,13 +98,13 @@
             <scope>compile</scope>
         </dependency>
         <dependency>
-            <groupId>org.subethamail</groupId>
-            <artifactId>subethasmtp</artifactId>
+            <groupId>com.icegreen</groupId>
+            <artifactId>greenmail</artifactId>
             <scope>compile</scope>
         </dependency>
         <dependency>
-            <groupId>com.icegreen</groupId>
-            <artifactId>greenmail</artifactId>
+            <groupId>org.subethamail</groupId>
+            <artifactId>subethasmtp</artifactId>
             <scope>compile</scope>
         </dependency>
         <dependency>
@@ -141,15 +141,8 @@
         </dependency>
         <dependency>
             <groupId>org.keycloak.testsuite</groupId>
-            <artifactId>integration-arquillian-servers-app-server-undertow</artifactId>
+            <artifactId>integration-arquillian-util</artifactId>
             <version>${project.version}</version>
-            <scope>runtime</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.keycloak.testsuite</groupId>
-            <artifactId>photoz-restful-api</artifactId>
-            <version>${project.version}</version>
-            <classifier>classes</classifier>
         </dependency>
         <dependency>
             <groupId>org.mvel</groupId>
@@ -161,9 +154,9 @@
             <artifactId>maven-resolver-api</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.jboss</groupId>
+            <groupId>io.smallrye</groupId>
             <artifactId>jandex</artifactId>
-            <version>2.1.3.Final</version>
+            <version>${smallrye.jandex.version}</version>
         </dependency>
         <dependency>
             <groupId>com.github.stefanbirkner</groupId>
@@ -173,8 +166,38 @@
         </dependency>
         <dependency>
             <groupId>org.infinispan</groupId>
-            <artifactId>infinispan-server-hotrod</artifactId>
+            <artifactId>infinispan-server-hotrod-jakarta</artifactId>
             <version>${infinispan.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-saml-adapter-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>jakarta.xml.ws</groupId>
+            <artifactId>jakarta.xml.ws-api</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.resteasy</groupId>
+            <artifactId>resteasy-core</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>jakarta.ws.rs</groupId>
+            <artifactId>jakarta.ws.rs-api</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.wildfly.core</groupId>
+            <artifactId>wildfly-controller-client</artifactId>
+            <version>${wildfly.core.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.jboss.spec.javax.servlet</groupId>
+            <artifactId>jboss-servlet-api_3.0_spec</artifactId>
+            <scope>provided</scope>
         </dependency>
 
         <!-- Embedded Distribution -->
@@ -384,13 +407,13 @@
 
                                             <!-- Oracle -->
                                             <ORACLE_SID>${keycloak.connectionsJpa.database}</ORACLE_SID>
-                                            <ORACLE_PASSWORD>sa</ORACLE_PASSWORD>
+                                            <ORACLE_PWD>sa</ORACLE_PWD>
                                         </env>
                                         <cmd>${docker.database.cmd}</cmd>
                                         <wait>
                                             <!-- Do not use waiting for port since that is unreliable, sometimes port is listening before DB is ready to serve -->
                                             <log>${docker.database.wait-for-log-regex}</log>
-                                            <time>300000</time>
+                                            <time>2000000</time>
                                             <kill>10000</kill>
                                             <exec>
                                               <postStart>${docker.database.postStart}</postStart>
@@ -472,8 +495,29 @@
             </build>
         </profile>
         <profile>
+            <id>app-server-undertow</id>
+            <activation>
+                <property>
+                    <name>app.server</name>
+                    <value>undertow</value>
+                </property>
+            </activation>
+            <properties>
+                <app.server>undertow</app.server> <!--in case the profile is called directly-->
+            </properties>
+            <dependencies>
+                <dependency>
+                    <groupId>org.keycloak.testsuite</groupId>
+                    <artifactId>integration-arquillian-servers-app-server-undertow</artifactId>
+                    <version>${project.version}</version>
+                    <scope>runtime</scope>
+                </dependency>
+            </dependencies>
+        </profile>
+        <profile>
             <id>app-server-wildfly</id>
             <activation>
+                <activeByDefault>true</activeByDefault>
                 <property>
                     <name>app.server</name>
                     <value>wildfly</value>

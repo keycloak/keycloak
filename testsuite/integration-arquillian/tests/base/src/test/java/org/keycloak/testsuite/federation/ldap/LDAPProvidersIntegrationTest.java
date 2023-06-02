@@ -77,7 +77,7 @@ import org.keycloak.testsuite.util.LDAPTestUtils;
 import org.keycloak.testsuite.util.OAuthClient;
 
 import javax.naming.AuthenticationException;
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -1005,7 +1005,7 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
             Assert.assertNull(UserStoragePrivateUtil.userLocalStorage(session).getUserByUsername(appRealm, "username4"));
 
             // search by username (we use a terminal operation on the stream to ensure it is consumed)
-            Assert.assertEquals(1, session.users().searchForUserStream(appRealm, "username1").count());
+            Assert.assertEquals(1, session.users().searchForUserStream(appRealm, "\"username1\"").count());
             LDAPTestAsserts.assertUserImported(UserStoragePrivateUtil.userLocalStorage(session), appRealm, "username1", "John1", "Doel1", "user1@email.org", "121");
 
             // search by email (we use a terminal operation on the stream to ensure it is consumed)
@@ -1023,6 +1023,9 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
             // search by a string that matches multiple fields. Should still return the one entity it matches.
             Assert.assertEquals(1, session.users().searchForUserStream(appRealm, "*11*").count());
             LDAPTestAsserts.assertUserImported(UserStoragePrivateUtil.userLocalStorage(session), appRealm, "username11", "John11", "Doel11", "user11@email.org", "124");
+
+            // search by a string that has special characters. Should succeed with an empty set, but no exceptions.
+            Assert.assertEquals(0, session.users().searchForUserStream(appRealm, "John)").count());
         });
     }
 

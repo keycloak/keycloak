@@ -131,6 +131,10 @@ public class PolicyEnforcer {
         return httpClient;
     }
 
+    public AuthzClient getAuthzClient() {
+        return authzClient;
+    }
+
     public Map<String, PathConfig> getPaths() {
         return Collections.unmodifiableMap(paths);
     }

@@ -1,6 +1,5 @@
-import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { useTranslation } from "react-i18next";
+import type PolicyProviderRepresentation from "@keycloak/keycloak-admin-client/lib/defs/policyProviderRepresentation";
+import type PolicyRepresentation from "@keycloak/keycloak-admin-client/lib/defs/policyRepresentation";
 import {
   Alert,
   AlertVariant,
@@ -22,24 +21,26 @@ import {
   Thead,
   Tr,
 } from "@patternfly/react-table";
+import { useState } from "react";
+import { useTranslation } from "react-i18next";
+import { Link, useNavigate } from "react-router-dom";
 
-import type PolicyRepresentation from "@keycloak/keycloak-admin-client/lib/defs/policyRepresentation";
-import type PolicyProviderRepresentation from "@keycloak/keycloak-admin-client/lib/defs/policyProviderRepresentation";
-import { KeycloakSpinner } from "../../components/keycloak-spinner/KeycloakSpinner";
-import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
-import { PaginatingTableToolbar } from "../../components/table-toolbar/PaginatingTableToolbar";
+import { adminClient } from "../../admin-client";
 import { useAlerts } from "../../components/alert/Alerts";
-import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
-import useToggle from "../../utils/useToggle";
+import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
+import { KeycloakSpinner } from "../../components/keycloak-spinner/KeycloakSpinner";
+import { ListEmptyState } from "../../components/list-empty-state/ListEmptyState";
+import { PaginatingTableToolbar } from "../../components/table-toolbar/PaginatingTableToolbar";
 import { useRealm } from "../../context/realm-context/RealmContext";
-import { SearchDropdown, SearchForm } from "./SearchDropdown";
-import { MoreLabel } from "./MoreLabel";
-import { DetailDescriptionLink } from "./DetailDescription";
-import { EmptyPermissionsState } from "./EmptyPermissionsState";
+import { useFetch } from "../../utils/useFetch";
+import useToggle from "../../utils/useToggle";
 import { toNewPermission } from "../routes/NewPermission";
 import { toPermissionDetails } from "../routes/PermissionDetails";
-import { ListEmptyState } from "../../components/list-empty-state/ListEmptyState";
 import { toPolicyDetails } from "../routes/PolicyDetails";
+import { DetailDescriptionLink } from "./DetailDescription";
+import { EmptyPermissionsState } from "./EmptyPermissionsState";
+import { MoreLabel } from "./MoreLabel";
+import { SearchDropdown, SearchForm } from "./SearchDropdown";
 
 import "./permissions.css";
 
@@ -68,7 +69,6 @@ const AssociatedPoliciesRenderer = ({
 export const AuthorizationPermissions = ({ clientId }: PermissionsProps) => {
   const { t } = useTranslation("clients");
   const navigate = useNavigate();
-  const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
   const { realm } = useRealm();
 

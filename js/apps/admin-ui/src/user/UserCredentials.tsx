@@ -1,18 +1,14 @@
-import {
-  DragEvent as ReactDragEvent,
-  Fragment,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import type CredentialRepresentation from "@keycloak/keycloak-admin-client/lib/defs/credentialRepresentation";
+import type UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
 import {
   AlertVariant,
-  PageSection,
-  PageSectionVariants,
   Button,
   ButtonVariant,
   Divider,
+  PageSection,
+  PageSectionVariants,
 } from "@patternfly/react-core";
+import styles from "@patternfly/react-styles/css/components/Table/table";
 import {
   TableComposable,
   Tbody,
@@ -21,23 +17,30 @@ import {
   Thead,
   Tr,
 } from "@patternfly/react-table";
-import type UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
+import {
+  Fragment,
+  DragEvent as ReactDragEvent,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { useTranslation } from "react-i18next";
-import { useAlerts } from "../components/alert/Alerts";
-import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
-import { useAdminClient, useFetch } from "../context/auth/AdminClient";
 import { HelpItem } from "ui-shared";
+
+import { adminClient } from "../admin-client";
+import { useAlerts } from "../components/alert/Alerts";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
-import type CredentialRepresentation from "@keycloak/keycloak-admin-client/lib/defs/credentialRepresentation";
-import { ResetPasswordDialog } from "./user-credentials/ResetPasswordDialog";
-import { ResetCredentialDialog } from "./user-credentials/ResetCredentialDialog";
-import { InlineLabelEdit } from "./user-credentials/InlineLabelEdit";
-import styles from "@patternfly/react-styles/css/components/Table/table";
-import { CredentialRow } from "./user-credentials/CredentialRow";
+import { KeycloakSpinner } from "../components/keycloak-spinner/KeycloakSpinner";
+import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
 import { toUpperCase } from "../util";
+import { useFetch } from "../utils/useFetch";
+import { FederatedUserLink } from "./FederatedUserLink";
+import { CredentialRow } from "./user-credentials/CredentialRow";
+import { InlineLabelEdit } from "./user-credentials/InlineLabelEdit";
+import { ResetCredentialDialog } from "./user-credentials/ResetCredentialDialog";
+import { ResetPasswordDialog } from "./user-credentials/ResetPasswordDialog";
 
 import "./user-credentials.css";
-import { FederatedCredentials } from "./user-credentials/FederatedCredentials";
 
 type UserCredentialsProps = {
   user: UserRepresentation;
@@ -56,7 +59,6 @@ export const UserCredentials = ({ user }: UserCredentialsProps) => {
   const refresh = () => setKey(key + 1);
   const [isOpen, setIsOpen] = useState(false);
   const [openCredentialReset, setOpenCredentialReset] = useState(false);
-  const { adminClient } = useAdminClient();
   const [userCredentials, setUserCredentials] = useState<
     CredentialRepresentation[]
   >([]);
@@ -329,6 +331,26 @@ export const UserCredentials = ({ user }: UserCredentialsProps) => {
     }
   };
 
+  const useFederatedCredentials = user.federationLink || user.origin;
+  const [credentialTypes, setCredentialTypes] = useState<string[]>([]);
+
+  useFetch(
+    () => adminClient.users.getUserStorageCredentialTypes({ id: user.id! }),
+    setCredentialTypes,
+    []
+  );
+
+  if (!credentialTypes) {
+    return <KeycloakSpinner />;
+  }
+
+  const hasCredentialTypes = credentialTypes.length > 0;
+  const noCredentials = groupedUserCredentials.length === 0;
+  const noFederatedCredentials =
+    !user.credentials || user.credentials.length === 0;
+  const emptyState =
+    noCredentials && noFederatedCredentials && !hasCredentialTypes;
+
   return (
     <>
       {isOpen && (
@@ -346,7 +368,7 @@ export const UserCredentials = ({ user }: UserCredentialsProps) => {
         />
       )}
       <DeleteConfirm />
-      {user.email && (
+      {user.email && !emptyState && (
         <Button
           className="kc-resetCredentialBtn-header"
           variant="primary"
@@ -485,30 +507,58 @@ export const UserCredentials = ({ user }: UserCredentialsProps) => {
           </TableComposable>
         </PageSection>
       )}
-      {(user.federationLink || user.origin) && (
-        <FederatedCredentials user={user} onSetPassword={toggleModal} />
+      {useFederatedCredentials && hasCredentialTypes && (
+        <PageSection variant={PageSectionVariants.light}>
+          <TableComposable variant="compact">
+            <Thead>
+              <Tr>
+                <Th>{t("type")}</Th>
+                <Th>{t("providedBy")}</Th>
+                <Th />
+              </Tr>
+            </Thead>
+            <Tbody>
+              {credentialTypes.map((credential) => (
+                <Tr key={credential}>
+                  <Td>
+                    <b>{credential}</b>
+                  </Td>
+                  <Td>
+                    <FederatedUserLink user={user} />
+                  </Td>
+                  {credential === "password" && (
+                    <Td modifier="fitContent">
+                      <Button variant="secondary" onClick={toggleModal}>
+                        {t("setPassword")}
+                      </Button>
+                    </Td>
+                  )}
+                </Tr>
+              ))}
+            </Tbody>
+          </TableComposable>
+        </PageSection>
       )}
-      {groupedUserCredentials.length === 0 &&
-        !(user.federationLink || user.origin) && (
-          <ListEmptyState
-            hasIcon
-            message={t("noCredentials")}
-            instructions={t("noCredentialsText")}
-            primaryActionText={t("setPassword")}
-            onPrimaryAction={toggleModal}
-            secondaryActions={
-              user.email
-                ? [
-                    {
-                      text: t("credentialResetBtn"),
-                      onClick: toggleCredentialsResetModal,
-                      type: ButtonVariant.link,
-                    },
-                  ]
-                : undefined
-            }
-          />
-        )}
+      {emptyState && (
+        <ListEmptyState
+          hasIcon
+          message={t("noCredentials")}
+          instructions={t("noCredentialsText")}
+          primaryActionText={t("setPassword")}
+          onPrimaryAction={toggleModal}
+          secondaryActions={
+            user.email
+              ? [
+                  {
+                    text: t("credentialResetBtn"),
+                    onClick: toggleCredentialsResetModal,
+                    type: ButtonVariant.link,
+                  },
+                ]
+              : undefined
+          }
+        />
+      )}
     </>
   );
 };

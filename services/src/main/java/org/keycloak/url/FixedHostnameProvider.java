@@ -4,7 +4,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.urls.HostnameProvider;
 
-import javax.ws.rs.core.UriInfo;
+import jakarta.ws.rs.core.UriInfo;
 
 @Deprecated
 public class FixedHostnameProvider implements HostnameProvider {

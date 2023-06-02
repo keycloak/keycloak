@@ -15,4 +15,6 @@ TESTS=`testsuite/integration-arquillian/tests/base/testsuites/suite.sh fips`
 echo "Tests: $TESTS"
 export JAVA_HOME=/etc/alternatives/java_sdk_17
 set -o pipefail
-./mvnw test -Dsurefire.rerunFailingTestsCount=$SUREFIRE_RERUN_FAILING_COUNT -nsu -B -Pauth-server-quarkus,auth-server-fips140-2 -Dcom.redhat.fips=false $STRICT_OPTIONS -Dtest=$TESTS -pl testsuite/integration-arquillian/tests/base | misc/log/trimmer.sh
+
+# Profile app-server-wildfly needs to be explicitly set for FIPS tests
+./mvnw test -Dsurefire.rerunFailingTestsCount=$SUREFIRE_RERUN_FAILING_COUNT -nsu -B -Pauth-server-quarkus,auth-server-fips140-2,app-server-wildfly -Dcom.redhat.fips=false $STRICT_OPTIONS -Dtest=$TESTS -pl testsuite/integration-arquillian/tests/base | misc/log/trimmer.sh

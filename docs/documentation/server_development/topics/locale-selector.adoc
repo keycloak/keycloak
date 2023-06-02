@@ -12,5 +12,6 @@ The `LocaleSelectorProvider` interface has a single method, `resolveLocale`, whi
 Custom implementations can extend the `DefaultLocaleSelectorProvider` in order to reuse parts of the default behavior. For example to ignore the `Accept-Language` request header, a custom implementation could extend the default provider, override it's `getAcceptLanguageHeaderLocale`, and return a null value. As a result the locale selection will fall back on the realm's default language.
 
 [role="_additional-resources"]
-=== Additional resources
+=== Additional resources for Locale selector
 * For more details on creating and deploying a custom provider, see <<_providers,Service Provider Interfaces>>.
+

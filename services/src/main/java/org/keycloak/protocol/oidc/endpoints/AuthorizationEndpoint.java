@@ -20,6 +20,7 @@ package org.keycloak.protocol.oidc.endpoints;
 import org.jboss.logging.Logger;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.authentication.AuthenticationProcessor;
+import org.keycloak.common.Profile;
 import org.keycloak.common.util.ResponseSessionTask;
 import org.keycloak.constants.AdapterConstants;
 import org.keycloak.events.Details;
@@ -52,13 +53,13 @@ import org.keycloak.services.util.CacheControlUtil;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.util.TokenUtil;
 
-import javax.ws.rs.Consumes;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.core.Response;
 
 import java.util.List;
 import java.util.Map;
@@ -129,16 +130,21 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
      * Process the request in a retriable transaction.
      */
     private Response processInRetriableTransaction(final MultivaluedMap<String, String> formParameters) {
-        return KeycloakModelUtils.runJobInRetriableTransaction(session.getKeycloakSessionFactory(), new ResponseSessionTask(session) {
-            @Override
-            public Response runInternal(KeycloakSession session) {
-                session.getContext().getHttpResponse().setWriteCookiesOnTransactionComplete();
-                // create another instance of the endpoint to isolate each run.
-                AuthorizationEndpoint other = new AuthorizationEndpoint(session,
-                        new EventBuilder(session.getContext().getRealm(), session, clientConnection), action);
-                // process the request in the created instance.
-                return other.process(formParameters);            }
-        }, 10, 100);
+        if (Profile.isFeatureEnabled(Profile.Feature.MAP_STORAGE)) {
+            return KeycloakModelUtils.runJobInRetriableTransaction(session.getKeycloakSessionFactory(), new ResponseSessionTask(session) {
+                @Override
+                public Response runInternal(KeycloakSession session) {
+                    session.getContext().getHttpResponse().setWriteCookiesOnTransactionComplete();
+                    // create another instance of the endpoint to isolate each run.
+                    AuthorizationEndpoint other = new AuthorizationEndpoint(session,
+                            new EventBuilder(session.getContext().getRealm(), session, clientConnection), action);
+                    // process the request in the created instance.
+                    return other.process(formParameters);
+                }
+            }, 10, 100);
+        } else {
+            return process(formParameters);
+        }
     }
 
     private Response process(MultivaluedMap<String, String> params) {

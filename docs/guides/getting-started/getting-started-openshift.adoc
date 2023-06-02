@@ -48,7 +48,7 @@ oc new-project keycloak
 +
 [source,bash,subs="attributes+"]
 ----
-oc process -f https://raw.githubusercontent.com/keycloak/keycloak-quickstarts/latest/openshift-examples/keycloak.yaml \
+oc process -f https://raw.githubusercontent.com/keycloak/keycloak-quickstarts/latest/openshift/keycloak.yaml \
     -p KEYCLOAK_ADMIN=admin \
     -p KEYCLOAK_ADMIN_PASSWORD=admin \
     -p NAMESPACE=keycloak \
@@ -95,7 +95,7 @@ echo "Keycloak Account Console: $KEYCLOAK_URL/realms/myrealm/account" &&
 echo ""
 ----
 
-Remember these URLs as you will need them throughout this guide. The URL for the account console won't work
+Remember these URLs as you will need them throughout this {section}. The URL for the account console won't work
 right now as you will need to create the realm first.
 
 include::templates/realm-config.adoc[]

@@ -23,8 +23,8 @@ import static org.junit.Assert.assertTrue;
 import static org.keycloak.common.Profile.Feature.AUTHORIZATION;
 
 import javax.security.cert.X509Certificate;
-import javax.ws.rs.HttpMethod;
-import javax.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.HttpMethod;
+import jakarta.ws.rs.core.HttpHeaders;
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -654,7 +654,7 @@ public class PolicyEnforcerTest extends AbstractKeycloakTest {
             representation.setName("Resource " + i);
             representation.setUri("/api/" + i);
 
-            javax.ws.rs.core.Response response = clientResource.authorization().resources().create(representation);
+            jakarta.ws.rs.core.Response response = clientResource.authorization().resources().create(representation);
 
             representation.setId(response.readEntity(ResourceRepresentation.class).getId());
 
@@ -725,7 +725,7 @@ public class PolicyEnforcerTest extends AbstractKeycloakTest {
         representation.setUris(Collections.singleton("/api-method/*"));
 
         ResourcesResource resources = clientResource.authorization().resources();
-        javax.ws.rs.core.Response response = resources.create(representation);
+        jakarta.ws.rs.core.Response response = resources.create(representation);
 
         representation.setId(response.readEntity(ResourceRepresentation.class).getId());
 
@@ -832,7 +832,7 @@ public class PolicyEnforcerTest extends AbstractKeycloakTest {
         representation.setUri(uri);
         representation.setScopes(Arrays.asList(scopes).stream().map(ScopeRepresentation::new).collect(Collectors.toSet()));
 
-        javax.ws.rs.core.Response response = clientResource.authorization().resources().create(representation);
+        jakarta.ws.rs.core.Response response = clientResource.authorization().resources().create(representation);
 
         representation.setId(response.readEntity(ResourceRepresentation.class).getId());
 

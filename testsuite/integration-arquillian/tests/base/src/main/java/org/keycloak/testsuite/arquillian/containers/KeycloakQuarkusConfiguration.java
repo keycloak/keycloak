@@ -141,6 +141,10 @@ public class KeycloakQuarkusConfiguration implements ContainerConfiguration {
         this.providersPath = providersPath;
     }
 
+    public void setProvidersPath(String providersPath) {
+        this.providersPath = Paths.get(providersPath);
+    }
+
     public int getStartupTimeoutInSeconds() {
         return startupTimeoutInSeconds;
     }

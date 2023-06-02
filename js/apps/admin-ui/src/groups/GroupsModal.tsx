@@ -1,3 +1,4 @@
+import type GroupRepresentation from "@keycloak/keycloak-admin-client/lib/defs/groupRepresentation";
 import {
   AlertVariant,
   Button,
@@ -8,11 +9,10 @@ import {
   ModalVariant,
   ValidatedOptions,
 } from "@patternfly/react-core";
-import { useTranslation } from "react-i18next";
 import { useForm } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 
-import type GroupRepresentation from "@keycloak/keycloak-admin-client/lib/defs/groupRepresentation";
-import { useAdminClient } from "../context/auth/AdminClient";
+import { adminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
 import { KeycloakTextInput } from "../components/keycloak-text-input/KeycloakTextInput";
 
@@ -30,7 +30,6 @@ export const GroupsModal = ({
   refresh,
 }: GroupsModalProps) => {
   const { t } = useTranslation("groups");
-  const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
   const {
     register,

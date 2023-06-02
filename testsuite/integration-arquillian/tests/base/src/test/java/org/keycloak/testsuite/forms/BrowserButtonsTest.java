@@ -20,8 +20,8 @@ package org.keycloak.testsuite.forms;
 import static org.junit.Assert.assertEquals;
 
 import java.io.IOException;
-import javax.mail.MessagingException;
-import javax.mail.internet.MimeMessage;
+import jakarta.mail.MessagingException;
+import jakarta.mail.internet.MimeMessage;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
 import org.junit.Rule;

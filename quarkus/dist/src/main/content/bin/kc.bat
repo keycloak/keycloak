@@ -74,7 +74,7 @@ goto READ-ARGS
 if not "x%JAVA_OPTS%" == "x" (
   echo "JAVA_OPTS already set in environment; overriding default settings with values: %JAVA_OPTS%"
 ) else (
-  set "JAVA_OPTS=-Xms64m -Xmx512m -XX:MetaspaceSize=96M -XX:MaxMetaspaceSize=256m -Djava.net.preferIPv4Stack=true -Dfile.encoding=UTF-8 -Dsun.stdout.encoding=UTF-8 -Dsun.err.encoding=UTF-8 -Dstdout.encoding=UTF-8 -Dstderr.encoding=UTF-8"
+  set "JAVA_OPTS=-Xms64m -Xmx512m -XX:MetaspaceSize=96M -XX:MaxMetaspaceSize=256m -Djava.net.preferIPv4Stack=true -Dfile.encoding=UTF-8 -Dsun.stdout.encoding=UTF-8 -Dsun.err.encoding=UTF-8 -Dstdout.encoding=UTF-8 -Dstderr.encoding=UTF-8 -XX:+ExitOnOutOfMemoryError -Djava.security.egd=file:/dev/urandom"
 )
 
 @REM See also https://github.com/wildfly/wildfly-core/blob/7e5624cf92ebe4b64a4793a8c0b2a340c0d6d363/core-feature-pack/common/src/main/resources/content/bin/common.sh#L57-L60
@@ -128,7 +128,7 @@ if "x%JAVA_HOME%" == "x" (
        echo "%JAVA_HOME%\bin\java.exe" does not exist
        goto END
      )
-    set JAVA=%JAVA_HOME%\bin\java
+    set "JAVA=%JAVA_HOME%\bin\java"
   )
 )
 
@@ -159,7 +159,7 @@ set START_SERVER=true
 if "!CONFIG_ARGS:%OPTIMIZED_OPTION%=!"=="!CONFIG_ARGS!" if "!CONFIG_ARGS:%BUILD_OPTION%=!"=="!CONFIG_ARGS!" if "!CONFIG_ARGS:%HELP_LONG_OPTION%=!"=="!CONFIG_ARGS!" if "%IS_HELP_SHORT%" == "false" (
     setlocal enabledelayedexpansion
 
-    %JAVA% -Dkc.config.build-and-exit=true %JAVA_RUN_OPTS%
+    "%JAVA%" -Dkc.config.build-and-exit=true %JAVA_RUN_OPTS%
 
     if not !errorlevel! == 0 (
         set START_SERVER=false
@@ -169,7 +169,7 @@ if "!CONFIG_ARGS:%OPTIMIZED_OPTION%=!"=="!CONFIG_ARGS!" if "!CONFIG_ARGS:%BUILD_
 )
 
 if "%START_SERVER%" == "true" (
-    %JAVA% %JAVA_RUN_OPTS%
+    "%JAVA%" %JAVA_RUN_OPTS%
 )
 
 :END

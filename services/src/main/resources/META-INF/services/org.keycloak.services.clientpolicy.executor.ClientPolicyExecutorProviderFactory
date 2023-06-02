@@ -20,3 +20,5 @@ org.keycloak.services.clientpolicy.executor.RejectRequestExecutorFactory
 org.keycloak.services.clientpolicy.executor.IntentClientBindCheckExecutorFactory
 org.keycloak.services.clientpolicy.executor.SuppressRefreshTokenRotationExecutorFactory
 org.keycloak.services.clientpolicy.executor.RegistrationAccessTokenRotationDisabledExecutorFactory
+org.keycloak.services.clientpolicy.executor.RejectImplicitGrantExecutorFactory
+org.keycloak.services.clientpolicy.executor.SecureParContentsExecutorFactory

@@ -1,6 +1,4 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
-import { Trans, useTranslation } from "react-i18next";
+import type GroupRepresentation from "@keycloak/keycloak-admin-client/lib/defs/groupRepresentation";
 import {
   AlertVariant,
   Button,
@@ -14,22 +12,25 @@ import {
   ToolbarItem,
 } from "@patternfly/react-core";
 import { QuestionCircleIcon } from "@patternfly/react-icons";
+import { useState } from "react";
+import { Trans, useTranslation } from "react-i18next";
+import { Link } from "react-router-dom";
+import { useHelp } from "ui-shared";
 
-import type GroupRepresentation from "@keycloak/keycloak-admin-client/lib/defs/groupRepresentation";
+import { adminClient } from "../admin-client";
+import { useAlerts } from "../components/alert/Alerts";
+import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
+import { GroupPickerDialog } from "../components/group/GroupPickerDialog";
+import { KeycloakSpinner } from "../components/keycloak-spinner/KeycloakSpinner";
+import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
 import {
   Action,
   KeycloakDataTable,
 } from "../components/table-toolbar/KeycloakDataTable";
-import { useAdminClient, useFetch } from "../context/auth/AdminClient";
-import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
-import useToggle from "../utils/useToggle";
-import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
-import { useAlerts } from "../components/alert/Alerts";
-import { toUserFederation } from "../user-federation/routes/UserFederation";
 import { useRealm } from "../context/realm-context/RealmContext";
-import { GroupPickerDialog } from "../components/group/GroupPickerDialog";
-import { KeycloakSpinner } from "../components/keycloak-spinner/KeycloakSpinner";
-import { useHelp } from "ui-shared";
+import { toUserFederation } from "../user-federation/routes/UserFederation";
+import { useFetch } from "../utils/useFetch";
+import useToggle from "../utils/useToggle";
 
 export const DefaultsGroupsTab = () => {
   const { t } = useTranslation("realm-settings");
@@ -43,7 +44,6 @@ export const DefaultsGroupsTab = () => {
   const [load, setLoad] = useState(0);
   const reload = () => setLoad(load + 1);
 
-  const { adminClient } = useAdminClient();
   const { realm } = useRealm();
   const { addAlert, addError } = useAlerts();
   const { enabled } = useHelp();

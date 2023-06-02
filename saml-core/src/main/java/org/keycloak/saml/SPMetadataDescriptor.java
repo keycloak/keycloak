@@ -79,14 +79,16 @@ public class SPMetadataDescriptor {
         return entityDescriptor;
     }
 
-    public static KeyDescriptorType buildKeyDescriptorType(Element keyInfo, KeyTypes use, String algorithm) {
+    public static KeyDescriptorType buildKeyDescriptorType(Element keyInfo, KeyTypes use, String... algorithm) {
         KeyDescriptorType keyDescriptor = new KeyDescriptorType();
         keyDescriptor.setUse(use);
         keyDescriptor.setKeyInfo(keyInfo);
 
         if (algorithm != null) {
-            EncryptionMethodType encMethod = new EncryptionMethodType(algorithm);
-            keyDescriptor.addEncryptionMethod(encMethod);
+            for (String alg : algorithm) {
+                EncryptionMethodType encMethod = new EncryptionMethodType(alg);
+                keyDescriptor.addEncryptionMethod(encMethod);
+            }
         }
 
         return keyDescriptor;

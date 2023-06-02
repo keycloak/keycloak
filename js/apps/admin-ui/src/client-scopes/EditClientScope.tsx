@@ -14,16 +14,17 @@ import {
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
-import { useAlerts } from "../components/alert/Alerts";
+import { useHelp } from "ui-shared";
 
+import { adminClient } from "../admin-client";
+import { useAlerts } from "../components/alert/Alerts";
 import {
   AllClientScopes,
-  changeScope,
   ClientScope,
   ClientScopeDefaultOptionalType,
+  changeScope,
 } from "../components/client-scope/ClientScopeTypes";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
-import { useHelp } from "ui-shared";
 import { KeycloakSpinner } from "../components/keycloak-spinner/KeycloakSpinner";
 import { RoleMapping, Row } from "../components/role-mapping/RoleMapping";
 import {
@@ -31,9 +32,9 @@ import {
   useRoutableTab,
 } from "../components/routable-tabs/RoutableTabs";
 import { ViewHeader } from "../components/view-header/ViewHeader";
-import { useAdminClient, useFetch } from "../context/auth/AdminClient";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { convertFormValuesToObject } from "../util";
+import { useFetch } from "../utils/useFetch";
 import { useParams } from "../utils/useParams";
 import { MapperList } from "./details/MapperList";
 import { ScopeForm } from "./details/ScopeForm";
@@ -43,12 +44,12 @@ import {
   toClientScope,
 } from "./routes/ClientScope";
 import { toMapper } from "./routes/Mapper";
+import { toClientScopes } from "./routes/ClientScopes";
 
 export default function EditClientScope() {
   const { t } = useTranslation("client-scopes");
   const navigate = useNavigate();
   const { realm } = useRealm();
-  const { adminClient } = useAdminClient();
   const { id } = useParams<ClientScopeParams>();
   const { addAlert, addError } = useAlerts();
   const { enabled } = useHelp();
@@ -117,7 +118,7 @@ export default function EditClientScope() {
 
     try {
       await adminClient.clientScopes.update({ id }, clientScope);
-      await changeScope(adminClient, { ...clientScope, id }, clientScope.type);
+      await changeScope({ ...clientScope, id }, clientScope.type);
 
       addAlert(t("updateSuccess"), AlertVariant.success);
     } catch (error) {
@@ -137,6 +138,7 @@ export default function EditClientScope() {
       try {
         await adminClient.clientScopes.del({ id });
         addAlert(t("deletedSuccess"), AlertVariant.success);
+        navigate(toClientScopes({ realm }));
       } catch (error) {
         addError("client-scopes:deleteError", error);
       }

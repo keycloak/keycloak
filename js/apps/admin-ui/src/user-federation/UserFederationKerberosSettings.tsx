@@ -10,9 +10,10 @@ import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 
+import { adminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
-import { useAdminClient, useFetch } from "../context/auth/AdminClient";
 import { useRealm } from "../context/realm-context/RealmContext";
+import { useFetch } from "../utils/useFetch";
 import { useParams } from "../utils/useParams";
 import { KerberosSettingsRequired } from "./kerberos/KerberosSettingsRequired";
 import { toUserFederation } from "./routes/UserFederation";
@@ -23,7 +24,6 @@ export default function UserFederationKerberosSettings() {
   const { t } = useTranslation("user-federation");
   const form = useForm<ComponentRepresentation>({ mode: "onChange" });
   const navigate = useNavigate();
-  const { adminClient } = useAdminClient();
   const { realm } = useRealm();
 
   const { id } = useParams<{ id?: string }>();

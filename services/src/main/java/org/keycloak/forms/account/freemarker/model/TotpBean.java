@@ -29,7 +29,7 @@ import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.utils.TotpUtils;
 
-import javax.ws.rs.core.UriBuilder;
+import jakarta.ws.rs.core.UriBuilder;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;

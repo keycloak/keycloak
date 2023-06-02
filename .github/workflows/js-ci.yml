@@ -69,14 +69,14 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - uses: ./.github/actions/npm-setup
+      - uses: ./.github/actions/pnpm-setup
         with:
           working-directory: js
 
-      - run: npm run lint --workspace=${{ env.WORKSPACE }}
+      - run: pnpm --filter=${{ env.WORKSPACE }} run lint
         working-directory: js
 
-      - run: npm run build --workspace=${{ env.WORKSPACE }}
+      - run: pnpm --filter=${{ env.WORKSPACE }} run build
         working-directory: js
 
   keycloak-js:
@@ -89,11 +89,11 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - uses: ./.github/actions/npm-setup
+      - uses: ./.github/actions/pnpm-setup
         with:
           working-directory: js
 
-      - run: npm run build --workspace=${{ env.WORKSPACE }}
+      - run: pnpm --filter=${{ env.WORKSPACE }} run build
         working-directory: js
 
   keycloak-masthead:
@@ -106,14 +106,14 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - uses: ./.github/actions/npm-setup
+      - uses: ./.github/actions/pnpm-setup
         with:
           working-directory: js
 
-      - run: npm run lint --workspace=${{ env.WORKSPACE }}
+      - run: pnpm --filter=${{ env.WORKSPACE }} run lint
         working-directory: js
 
-      - run: npm run build --workspace=${{ env.WORKSPACE }}
+      - run: pnpm --filter=${{ env.WORKSPACE }} run build
         working-directory: js
 
   ui-shared:
@@ -126,14 +126,14 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - uses: ./.github/actions/npm-setup
+      - uses: ./.github/actions/pnpm-setup
         with:
           working-directory: js
 
-      - run: npm run lint --workspace=${{ env.WORKSPACE }}
+      - run: pnpm --filter=${{ env.WORKSPACE }} run lint
         working-directory: js
 
-      - run: npm run build --workspace=${{ env.WORKSPACE }}
+      - run: pnpm --filter=${{ env.WORKSPACE }} run build
         working-directory: js
 
   account-ui:
@@ -146,14 +146,14 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - uses: ./.github/actions/npm-setup
+      - uses: ./.github/actions/pnpm-setup
         with:
           working-directory: js
 
-      - run: npm run lint --workspace=${{ env.WORKSPACE }}
+      - run: pnpm --filter=${{ env.WORKSPACE }} run lint
         working-directory: js
 
-      - run: npm run build --workspace=${{ env.WORKSPACE }}
+      - run: pnpm --filter=${{ env.WORKSPACE }} run build
         working-directory: js
 
   admin-ui:
@@ -166,20 +166,20 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - uses: ./.github/actions/npm-setup
+      - uses: ./.github/actions/pnpm-setup
         with:
           working-directory: js
 
-      - run: npm run lint --workspace=${{ env.WORKSPACE }}
+      - run: pnpm --filter=${{ env.WORKSPACE }} run lint
         working-directory: js
 
-      - run: npm run test --workspace=${{ env.WORKSPACE }}
+      - run: pnpm --filter=${{ env.WORKSPACE }} run test
         working-directory: js
 
-      - run: npm run build --workspace=${{ env.WORKSPACE }}
+      - run: pnpm --filter=${{ env.WORKSPACE }} run build
         working-directory: js
 
-      - run: npm run cy:check-types --workspace=${{ env.WORKSPACE }}
+      - run: pnpm --filter=${{ env.WORKSPACE }} run cy:check-types
         working-directory: js
 
   admin-ui-e2e:
@@ -202,12 +202,12 @@ jobs:
         with:
           chrome-version: stable
 
-      - uses: ./.github/actions/npm-setup
+      - uses: ./.github/actions/pnpm-setup
         with:
           working-directory: js
 
       - name: Compile Admin Client
-        run: npm run build --workspace=@keycloak/keycloak-admin-client
+        run: pnpm --filter=@keycloak/keycloak-admin-client run build
         working-directory: js
 
       - name: Download Keycloak server
@@ -224,7 +224,7 @@ jobs:
           KEYCLOAK_ADMIN_PASSWORD: admin
 
       - name: Start LDAP server
-        run: npm run cy:ldap-server --workspace=${{ env.WORKSPACE }} &
+        run: pnpm --filter=${{ env.WORKSPACE }} run cy:ldap-server &
         working-directory: js
 
       - name: Run Cypress

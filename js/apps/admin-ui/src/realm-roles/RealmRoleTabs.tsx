@@ -13,6 +13,7 @@ import { SubmitHandler, useForm, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useLocation, useMatch, useNavigate } from "react-router-dom";
 
+import { adminClient } from "../admin-client";
 import { toClient } from "../clients/routes/Client";
 import {
   ClientRoleParams,
@@ -41,8 +42,8 @@ import {
   useRoutableTab,
 } from "../components/routable-tabs/RoutableTabs";
 import { ViewHeader } from "../components/view-header/ViewHeader";
-import { useAdminClient, useFetch } from "../context/auth/AdminClient";
 import { useRealm } from "../context/realm-context/RealmContext";
+import { useFetch } from "../utils/useFetch";
 import useIsFeatureEnabled, { Feature } from "../utils/useIsFeatureEnabled";
 import { useParams } from "../utils/useParams";
 import { UsersInRoleTab } from "./UsersInRoleTab";
@@ -57,8 +58,6 @@ export default function RealmRoleTabs() {
   });
   const { control, reset, setValue } = form;
   const navigate = useNavigate();
-
-  const { adminClient } = useAdminClient();
 
   const { id, clientId } = useParams<ClientRoleParams>();
   const { pathname } = useLocation();

@@ -3,22 +3,21 @@ import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 
+import { adminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
-import { useAdminClient } from "../context/auth/AdminClient";
 import { useRealm } from "../context/realm-context/RealmContext";
-import { toUserFederation } from "./routes/UserFederation";
-import { ExtendedHeader } from "./shared/ExtendedHeader";
 import {
   LdapComponentRepresentation,
-  serializeFormData,
   UserFederationLdapForm,
+  serializeFormData,
 } from "./UserFederationLdapForm";
+import { toUserFederation } from "./routes/UserFederation";
+import { ExtendedHeader } from "./shared/ExtendedHeader";
 
 export default function CreateUserFederationLdapSettings() {
   const { t } = useTranslation("user-federation");
   const form = useForm<LdapComponentRepresentation>({ mode: "onChange" });
   const navigate = useNavigate();
-  const { adminClient } = useAdminClient();
   const { realm } = useRealm();
   const { addAlert, addError } = useAlerts();
 

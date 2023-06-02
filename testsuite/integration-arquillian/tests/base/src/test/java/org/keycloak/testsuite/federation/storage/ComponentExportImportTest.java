@@ -20,7 +20,7 @@ import org.keycloak.testsuite.federation.UserMapStorageFactory;
 import org.keycloak.testsuite.util.RealmBuilder;
 
 import java.io.Closeable;
-import javax.ws.rs.NotFoundException;
+import jakarta.ws.rs.NotFoundException;
 import java.io.File;
 import java.util.HashSet;
 import java.util.Properties;
@@ -129,6 +129,7 @@ public class ComponentExportImportTest extends AbstractAuthTest {
             }
         });
 
+        getCleanup().addCleanup(testRealmResource()::remove);
         testRealmResource().remove();
 
         try {

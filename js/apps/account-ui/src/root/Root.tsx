@@ -1,4 +1,4 @@
-import { Page, Spinner } from "@patternfly/react-core";
+import { Button, Page, Spinner } from "@patternfly/react-core";
 import {
   KeycloakMasthead,
   Translations,
@@ -6,9 +6,10 @@ import {
 } from "keycloak-masthead";
 import { Suspense, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { Outlet } from "react-router-dom";
+import { Outlet, useHref } from "react-router-dom";
 import { AlertProvider } from "ui-shared";
 
+import { ExternalLinkSquareAltIcon } from "@patternfly/react-icons";
 import { environment } from "../environment";
 import { keycloak } from "../keycloak";
 import { joinPath } from "../utils/joinPath";
@@ -16,8 +17,28 @@ import { PageNav } from "./PageNav";
 
 import style from "./Root.module.css";
 
+const ReferrerLink = () => {
+  const { t } = useTranslation();
+  const searchParams = new URLSearchParams(location.search);
+
+  return searchParams.has("referrer_uri") ? (
+    <Button
+      component="a"
+      href={searchParams.get("referrer_uri")!.replace("_hash_", "#")}
+      variant="link"
+      icon={<ExternalLinkSquareAltIcon />}
+      iconPosition="right"
+      isInline
+    >
+      {t("backTo", { app: searchParams.get("referrer") })}
+    </Button>
+  ) : null;
+};
+
 export const Root = () => {
   const { t } = useTranslation();
+  const indexHref = useHref("/");
+
   const translations = useMemo<Translations>(
     () => ({
       avatar: t("avatar"),
@@ -37,11 +58,12 @@ export const Root = () => {
             features={{ hasManageAccount: false }}
             showNavToggle
             brand={{
+              href: indexHref,
               src: joinPath(environment.resourceUrl, "logo.svg"),
               alt: t("logo"),
               className: style.brand,
             }}
-            dropdownItems={[]}
+            toolbarItems={[<ReferrerLink key="link" />]}
             keycloak={keycloak}
           />
         </TranslationsProvider>
