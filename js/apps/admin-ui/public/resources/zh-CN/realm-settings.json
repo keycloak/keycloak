@@ -69,7 +69,7 @@
   "connectionAndAuthentication": "连接与认证",
   "from": "发件人",
   "fromDisplayName": "发件人展示名称",
-  "replyTo": "回复",
+  "replyTo": "回复地址",
   "replyToDisplayName": "回复的显示名称",
   "envelopeFrom": "信封来自",
   "host": "主机",
