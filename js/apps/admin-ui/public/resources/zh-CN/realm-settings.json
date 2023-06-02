@@ -192,7 +192,7 @@
   "loginActionTimeout": "登录操作超时",
   "refreshTokens": "刷新令牌",
   "accessTokens": "访问令牌",
-  "actionTokens": "动作令牌",
+  "actionTokens": "操作令牌",
   "overrideActionTokens": "覆盖动作令牌",
   "defaultSigAlg": "默认签名算法",
   "revokeRefreshToken": "撤销刷新令牌",
