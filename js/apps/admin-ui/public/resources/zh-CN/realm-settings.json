@@ -878,7 +878,7 @@
   "partialImportHeaderText": "部分导入允许您从之前导出的 json 文件中导入用户、客户端和其他资源。",
   "selectRealm": "选择领域",
   "chooseResources": "选择要导入的资源",
-  "selectIfResourceExists": "如果资源已经存在，指定应该做什么",
+  "selectIfResourceExists": "如果资源已存在，请指定应采取的操作",
   "import": "导入",
   "resourcesToImport": "要导入的资源",
   "importFail": "导入失败：{{error}}",
