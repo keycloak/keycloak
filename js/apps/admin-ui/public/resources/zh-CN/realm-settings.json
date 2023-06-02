@@ -867,7 +867,7 @@
   "maxFailureWaitSeconds": "最长等待时间",
   "maxDeltaTimeSeconds": "失败复位时间",
   "quickLoginCheckMilliSeconds": "快速登录检查毫秒数",
-  "minimumQuickLoginWaitSeconds": "最小快速登录等待",
+  "minimumQuickLoginWaitSeconds": "最小快速登录等待秒数",
   "partialExportHeaderText": "部分导出允许您将领域配置和其他相关资源导出到 json 文件中。",
   "includeGroupsAndRoles": "包含群组和角色",
   "includeClients": "包含客户端",
