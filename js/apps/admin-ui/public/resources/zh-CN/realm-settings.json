@@ -396,7 +396,7 @@
   "deleteAttributeSuccess": "属性已删除",
   "deleteAttributeError": "属性未删除",
   "always": "总是",
-  "scopesAsRequested": "请求范围",
+  "scopesAsRequested": "在此范围内生效",
   "generalSettings": "通用设置",
   "permission": "权限",
   "validations": "验证",
