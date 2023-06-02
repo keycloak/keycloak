@@ -478,7 +478,7 @@
     },
     "CLIENT_INITIATED_ACCOUNT_LINKING": {
       "name": "客户端发起的账号关联",
-      "description": "客户发起的账户链接"
+      "description": "客户端发起的账号关联"
     },
     "TOKEN_EXCHANGE": {
       "name": "交换令牌",
