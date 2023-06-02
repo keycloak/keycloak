@@ -45,7 +45,7 @@
   "editableRowsTable": "可编辑的行表",
   "saveSuccess": "领域更新成功",
   "saveProviderSuccess": "供应者已成功保存。",
-  "saveProviderListSuccess": "提供者的优先级已成功更新。",
+  "saveProviderListSuccess": "供应商的优先级已成功更新。",
   "saveProviderError": "保存提供者出错：{{error}}",
   "saveError": "领域无法更新：{{error}}",
   "general": "常规设置",
