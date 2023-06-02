@@ -207,7 +207,7 @@
   "shortVerificationUri": "设备授权流程中的短 verification_uri",
   "emailVerification": "邮箱验证",
   "idpAccountEmailVerification": "IdP 账户邮箱验证",
-  "executeActions": "执行动作",
+  "executeActions": "执行操作",
   "clientPolicies": "客户端策略",
   "noClientPolicies": "无客户端策略",
   "noClientPoliciesInstructions": "没有客户端策略。选择'创建客户端策略'来创建一个新的客户端策略。",
