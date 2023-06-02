@@ -502,7 +502,7 @@
     },
     "IDENTITY_PROVIDER_LINK_ACCOUNT": {
       "name": "身份提供商关联账号",
-      "description": "身份提供者链接账户"
+      "description": "身份提供商关联账号"
     },
     "DELETE_ACCOUNT": {
       "name": "删除账号",
