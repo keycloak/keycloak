@@ -80,7 +80,7 @@
   "enableStartTLS": "启用 StartTLS",
   "username": "用户名",
   "password": "密码",
-  "keys": "秘钥",
+  "keys": "密钥",
   "keysList": "秘钥列表",
   "searchKey": "搜索秘钥",
   "keystore": "密钥库",
