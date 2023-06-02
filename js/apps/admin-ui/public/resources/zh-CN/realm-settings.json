@@ -449,7 +449,7 @@
       "description": "角色扮演错误"
     },
     "CODE_TO_TOKEN_ERROR": {
-      "name": "代码令牌错误",
+      "name": "用于交换令牌的代码错误",
       "description": "令牌错误代码"
     },
     "CUSTOM_REQUIRED_ACTION": {
