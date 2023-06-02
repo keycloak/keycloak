@@ -115,7 +115,7 @@
   "publicKeys": "公钥",
   "keysFilter": {
     "ACTIVE": "活跃的秘钥",
-    "PASSIVE": "消极的秘钥",
+    "PASSIVE": "不活跃的密钥",
     "DISABLED": "禁用的秘钥"
   },
   "noKeys": "没有秘钥",
