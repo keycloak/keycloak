@@ -83,7 +83,7 @@
   "webAuthnUpdateError": "由于{{error}}，无法更新 webauthn 策略",
   "flowName": "流程名称",
   "searchForFlow": "搜索流程",
-  "usedBy": "被使用",
+  "usedBy": "使用者",
   "flowUsedBy": "使用这个流程",
   "flowUsedByDescription": "此流程由以下 {{value}} 使用",
   "buildIn": "内置",

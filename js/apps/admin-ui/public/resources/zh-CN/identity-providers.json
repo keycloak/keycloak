@@ -90,7 +90,7 @@
   "hideMetaData": "隐藏元数据",
   "noValidMetaDataFound": "在此 URL 中未找到有效的元数据：'{{error}}'",
   "advanced": "高级",
-  "metadataOfDiscoveryEndpoint": "发现终端的元数据",
+  "metadataOfDiscoveryEndpoint": "发现终端节点的元数据",
   "authorizationUrl": "授权地址",
   "passLoginHint": "传递登录提示",
   "passMaxAge": "通过 max_age",
@@ -119,7 +119,7 @@
   },
   "clientAssertionSigningAlg": "客户端断言签名算法",
   "algorithmNotSpecified": "未指定算法",
-  "acceptsPromptNone": "接受来自客户端的提示相当于无转发",
+  "acceptsPromptNone": "接受来自客户端的提示，相当于无转发。",
   "validateSignature": "验证签名",
   "useJwksUrl": "使用 JWKS URL",
   "validatingPublicKey": "验证公钥",
@@ -193,9 +193,9 @@
     "sandbox": "目标沙箱"
   },
   "stackoverflow": {
-    "key": "秘钥"
+    "key": "密钥"
   },
   "linkedin": {
-    "profileProjection": "用户资料开放"
+    "profileProjection": "开放用户资料"
   }
 }

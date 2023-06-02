@@ -3,7 +3,7 @@
   "sessionExplain": "会话是指此领域中用户及其在会话中访问的客户端的会话。",
   "searchForSession": "搜索会话",
   "user": "用户",
-  "lastAccess": "最后访问",
+  "lastAccess": "最近访问",
   "started": "开始",
   "clients": "客户端",
   "sessionsType": {
@@ -14,7 +14,7 @@
     "serviceAccount": "服务帐号"
   },
   "revocation": "撤销",
-  "revocationDescription": "这是一种撤销所有活动会话和访问令牌的方法。“不在某日期之前”意味着你可以撤销在该日期之前发行的令牌。",
+  "revocationDescription": "这是一种撤销所有活动会话和访问令牌的方法。“不在某日期之前”意味着您可以撤销在该日期之前发行的令牌。",
   "notBefore": "不早于",
   "notBeforeSuccess": "成功！ 为领域设置“不早于”",
   "notBeforeError": "清除领域的“不早于”时出错: {{error}}",

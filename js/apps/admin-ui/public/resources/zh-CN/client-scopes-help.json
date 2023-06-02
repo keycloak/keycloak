@@ -12,7 +12,7 @@
   "tokenClaimName": "要插入到令牌中的声明的名称。这可以是一个完全限定的名称，如“address.street”。在这种情况下，将创建一个嵌套的json对象。要防止嵌套并按字面使用点，请用反斜杠（\\.）转义点。",
   "claimJsonType": "应该用于填充令牌中的 JSON 声明的 JSON 类型。long、int、boolean、String和JSON类型都是有效值。",
   "protocolMapper": "协议映射",
-  "mapperName": "映射的名称",
+  "mapperName": "映射名称",
   "role": "要更改的角色名称。单击“选择角色”按钮浏览角色，或在文本框中键入角色。要引用应用程序角色，语法为“客户端名称.客户端角色”，如myapp.myrole",
   "newRoleName": "新角色名称。新名称格式与角色将映射到访问令牌中的位置相对应。因此，新名称“myapp.newname”将角色映射到访问标记中的位置。新名称“newname”将角色映射到令牌中的领域角色。"
 }

@@ -6,5 +6,5 @@
   "groups": "群组是用户具有群组成员资格的群组。要离开群组，请选择该群组并单击“离开”。",
   "userIdHelperText": "请输入此身份提供程序的用户的唯一ID。",
   "usernameHelperText": "请为身份提供程序输入用户的用户名。",
-  "federationLink": "用户存储提供者。本地存储的用户由其中导入。"
+  "federationLink": "用户存储供应商。本地存储的用户由其中导入。"
 }

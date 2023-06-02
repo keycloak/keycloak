@@ -1,7 +1,7 @@
 {
   "title": "事件",
   "eventExplain": "事件是该领域中用户活动和管理员活动的记录。事件记录的配置请跳转至 <1>Event configs</1>.",
-  "eventConfigs": "Event configs",
+  "eventConfigs": "事件设置",
   "userEvents": "用户事件",
   "adminEvents": "管理员事件",
   "searchForUserEvent": "搜索用户事件",
