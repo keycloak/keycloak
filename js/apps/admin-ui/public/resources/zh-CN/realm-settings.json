@@ -891,7 +891,7 @@
   "importAdded_zero": "没有添加记录。",
   "importAdded_one": "添加了一条记录。",
   "importAdded_other": "已添加 {{count}} 条记录。",
-  "importOverwritten_zero": "没有记录被覆盖。",
+  "importOverwritten_zero": "没有记录被覆写。",
   "importOverwritten_one": "覆写一条记录。",
   "importOverwritten_other": "{{count}} 条记录被覆写。",
   "importSkipped_zero": "没有记录被跳过。",
