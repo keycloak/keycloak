@@ -238,7 +238,7 @@
   "clientPoliciesProfiles": "客户端策略配置文件",
   "clientPoliciesPoliciesHelpText": "客户端策略允许将客户端配置文件与各种条件绑定，以指定何时执行特定客户端配置文件中的执行器所规定的行为。",
   "clientPoliciesPolicies": "客户端策略",
-  "clientPoliciesTab": "客户端策略选项卡",
+  "clientPoliciesTab": "客户端策略标签",
   "clientProfilesSubTab": "客户端配置子标签",
   "clientPoliciesSubTab": "客户端策略子标签",
   "profilesConfigType": "配置方式：",
