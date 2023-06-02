@@ -885,7 +885,7 @@
   "FAIL": "导入失败",
   "SKIP": "跳过",
   "OVERWRITE": "覆盖",
-  "added": "添加",
+  "added": "已添加",
   "skipped": "已跳过",
   "overwritten": "已被覆写",
   "importAdded_zero": "没有添加记录。",
