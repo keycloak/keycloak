@@ -124,7 +124,7 @@
   "userRegistration": "用户注册",
   "loginScreenCustomization": "登录页面定制",
   "registrationAllowed": "用户注册",
-  "userRegistrationHelpText": "启用/禁用注册页面。注册链接也会显示在登录页面上。",
+  "userRegistrationHelpText": "启用/禁用注册页面。若启用此设置，登陆页上也会显示注册链接。",
   "resetPasswordAllowed": "忘记密码",
   "forgotPassword": "忘记密码",
   "forgotPasswordHelpText": "在登录页面显示一个链接，供用户在忘记凭据时单击使用。",
