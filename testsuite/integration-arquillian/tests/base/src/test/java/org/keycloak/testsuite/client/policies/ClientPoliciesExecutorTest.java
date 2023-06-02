@@ -90,6 +90,7 @@ import org.keycloak.services.clientpolicy.condition.ClientUpdaterContextConditio
 import org.keycloak.services.clientpolicy.executor.SecureClientAuthenticatorExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.SecureClientUrisExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.SecureLogoutExecutorFactory;
+import org.keycloak.services.clientpolicy.executor.SecureParContentsExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.SecureRequestObjectExecutor;
 import org.keycloak.services.clientpolicy.executor.SecureRequestObjectExecutorFactory;
 import org.keycloak.services.clientpolicy.executor.SecureResponseTypeExecutorFactory;
@@ -99,6 +100,7 @@ import org.keycloak.services.clientpolicy.executor.SecureSigningAlgorithmForSign
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.client.resources.TestApplicationResourceUrls;
+import org.keycloak.testsuite.client.resources.TestOIDCEndpointsApplicationResource;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LogoutConfirmPage;
 import org.keycloak.testsuite.pages.OAuth2DeviceVerificationPage;
@@ -109,6 +111,7 @@ import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientPoliciesBuilder;
 import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientPolicyBuilder;
 import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientProfileBuilder;
 import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientProfilesBuilder;
+import org.keycloak.testsuite.util.OAuthClient.ParResponse;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.RoleBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
@@ -1433,5 +1436,107 @@ public class ClientPoliciesExecutorTest extends AbstractClientPoliciesTest {
         oauth.idTokenHint(response.getIdToken()).openLogout();
 
         assertTrue(driver.getPageSource().contains("Front-channel logout is not allowed for this client"));
+    }
+
+    @Test
+    public void testSecureParContentsExecutor() throws Exception {
+        // register profiles
+        String json = (new ClientProfilesBuilder()).addProfile(
+                (new ClientProfileBuilder()).createProfile(PROFILE_NAME, "Le Premier Profil")
+                        .addExecutor(SecureParContentsExecutorFactory.PROVIDER_ID, null)
+                        .toRepresentation()
+        ).toString();
+        updateProfiles(json);
+
+        String clientBetaId = generateSuffixedName("Beta-App");
+        createClientByAdmin(clientBetaId, (ClientRepresentation clientRep) -> {
+            clientRep.setSecret("secretBeta");
+        });
+
+        // register policies
+        json = (new ClientPoliciesBuilder()).addPolicy(
+                (new ClientPolicyBuilder()).createPolicy(POLICY_NAME, "La Premiere Politique", Boolean.TRUE)
+                        .addCondition(AnyClientConditionFactory.PROVIDER_ID,
+                                createAnyClientConditionConfig())
+                        .addProfile(PROFILE_NAME)
+                        .toRepresentation()
+        ).toString();
+        updatePolicies(json);
+
+        // Pushed Authorization Request
+        ParResponse pResp = oauth.doPushedAuthorizationRequest(clientBetaId, "secretBeta");
+        assertEquals(201, pResp.getStatusCode());
+        String requestUri = pResp.getRequestUri();
+
+        oauth.requestUri(requestUri);
+        oauth.clientId(clientBetaId);
+        oauth.openLoginForm();
+        assertTrue(errorPage.isCurrent());
+        assertEquals("PAR request did not include necessary parameters", errorPage.getError());
+
+        oauth.requestUri(null);
+        pResp = oauth.doPushedAuthorizationRequest(clientBetaId, "secretBeta");
+        assertEquals(201, pResp.getStatusCode());
+        requestUri = pResp.getRequestUri();
+        oauth.requestUri(requestUri);
+
+        oauth.stateParamHardcoded(null);
+        successfulLoginAndLogout(clientBetaId, "secretBeta");
+    }
+
+    @Test
+    public void testSecureParContentsExecutorWithRequestObject() throws Exception {
+        // Set up a request object
+        TestOIDCEndpointsApplicationResource oidcClientEndpointsResource = testingClient.testApp().oidcClientEndpoints();
+        oidcClientEndpointsResource.setOIDCRequest(REALM_NAME, TEST_CLIENT, oauth.getRedirectUri(), "10", null, "none");
+        String encodedRequestObject = oidcClientEndpointsResource.getOIDCRequest();
+
+        // register profiles
+        String json = (new ClientProfilesBuilder()).addProfile(
+                (new ClientProfileBuilder()).createProfile(PROFILE_NAME, "Le Premier Profil")
+                        .addExecutor(SecureParContentsExecutorFactory.PROVIDER_ID, null)
+                        .toRepresentation()
+        ).toString();
+        updateProfiles(json);
+
+        // register policies
+        json = (new ClientPoliciesBuilder()).addPolicy(
+                (new ClientPolicyBuilder()).createPolicy(POLICY_NAME, "La Premiere Politique", Boolean.TRUE)
+                        .addCondition(AnyClientConditionFactory.PROVIDER_ID,
+                                createAnyClientConditionConfig())
+                        .addProfile(PROFILE_NAME)
+                        .toRepresentation()
+        ).toString();
+        updatePolicies(json);
+
+        // Pushed Authorization Request without state parameter
+        oauth.addCustomParameter("request", encodedRequestObject);
+        ParResponse pResp = oauth.doPushedAuthorizationRequest(TEST_CLIENT, TEST_CLIENT_SECRET);
+        assertEquals(201, pResp.getStatusCode());
+        String requestUri = pResp.getRequestUri();
+
+        // only query parameters include state parameter
+        oauth.removeCustomParameter("request");
+        oauth.stateParamHardcoded("mystate2");
+        oauth.requestUri(requestUri);
+        oauth.openLoginForm();
+        assertTrue(errorPage.isCurrent());
+        assertEquals("PAR request did not include necessary parameters", errorPage.getError());
+
+        // Pushed Authorization Request with state parameter
+        oidcClientEndpointsResource.setOIDCRequest(REALM_NAME, TEST_CLIENT, oauth.getRedirectUri(), "10", "mystate2", "none");
+        encodedRequestObject = oidcClientEndpointsResource.getOIDCRequest();
+
+        oauth.requestUri(null);
+        oauth.addCustomParameter("request", encodedRequestObject);
+        pResp = oauth.doPushedAuthorizationRequest(TEST_CLIENT, TEST_CLIENT_SECRET);
+        assertEquals(201, pResp.getStatusCode());
+        requestUri = pResp.getRequestUri();
+
+        // both query parameters and PAR requests include state parameter
+        oauth.removeCustomParameter("request");
+        oauth.requestUri(requestUri);
+        successfulLoginAndLogout(TEST_CLIENT, TEST_CLIENT_SECRET);
+
     }
 }
