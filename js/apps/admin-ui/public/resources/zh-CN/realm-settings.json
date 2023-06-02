@@ -355,7 +355,7 @@
   "attributeDisplayName": "展示名称",
   "attributeGroup": "属性组",
   "enabledWhen": "何时启用",
-  "required": "必需",
+  "required": "是否为必填项",
   "requiredFor": "被应用于",
   "requiredWhen": "此时需要",
   "requiredForLabel": {
