@@ -506,7 +506,7 @@
     },
     "DELETE_ACCOUNT": {
       "name": "删除账号",
-      "description": "删除账户"
+      "description": "删除账号"
     },
     "UPDATE_PASSWORD": {
       "name": "更新密码",
