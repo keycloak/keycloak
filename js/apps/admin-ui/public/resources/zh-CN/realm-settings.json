@@ -477,7 +477,7 @@
       "description": "更新密码错误"
     },
     "CLIENT_INITIATED_ACCOUNT_LINKING": {
-      "name": "客户发起的账户关联",
+      "name": "客户端发起的账号关联",
       "description": "客户发起的账户链接"
     },
     "TOKEN_EXCHANGE": {
