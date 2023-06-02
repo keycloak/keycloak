@@ -127,7 +127,7 @@
   "userRegistrationHelpText": "启用/禁用注册页面。若启用此设置，登陆页上也会显示注册链接。",
   "resetPasswordAllowed": "忘记密码",
   "forgotPassword": "忘记密码",
-  "forgotPasswordHelpText": "在登录页面显示一个链接，供用户在忘记凭据时单击使用。",
+  "forgotPasswordHelpText": "在登录页面上显示链接以允许用户忘记凭据时点击此链接。",
   "rememberMe": "记住我",
   "rememberMeHelpText": "在登录页面上显示复选框以允许用户在浏览器重新启动之前保持登录状态，直到会话过期。",
   "emailSettings": "电子邮件设置",
