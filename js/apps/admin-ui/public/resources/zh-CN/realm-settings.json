@@ -235,7 +235,7 @@
   "profiles": "配置文件",
   "policies": "策略",
   "clientPoliciesProfilesHelpText": "客户端策略配置文件允许设置一组执行器，这些执行器将对与客户端相关的各种操作进行强制执行。这些操作可以是管理员操作，如创建或更新客户端，也可以是用户操作，如对客户端进行身份验证。",
-  "clientPoliciesProfiles": "配置",
+  "clientPoliciesProfiles": "客户端策略配置文件",
   "clientPoliciesPoliciesHelpText": "客户端策略允许将客户端配置文件与各种条件绑定，以指定何时执行特定客户端配置文件中的执行器所规定的行为。",
   "clientPoliciesPolicies": "策略",
   "clientPoliciesTab": "客户端策略选项卡",
