@@ -352,7 +352,7 @@
   "addMessageBundleError": "创建消息包时出错，{{error}}",
   "allGroups": "所有组",
   "attributeName": "名称",
-  "attributeDisplayName": "显示名称",
+  "attributeDisplayName": "展示名称",
   "attributeGroup": "属性组",
   "enabledWhen": "启用时间",
   "required": "必需",
