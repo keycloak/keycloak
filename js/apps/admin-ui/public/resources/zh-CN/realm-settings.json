@@ -67,7 +67,7 @@
   "email": "邮件",
   "template": "模版",
   "connectionAndAuthentication": "连接与认证",
-  "from": "来自",
+  "from": "发件人",
   "fromDisplayName": "来自显示的名称",
   "replyTo": "回复",
   "replyToDisplayName": "回复的显示名称",
