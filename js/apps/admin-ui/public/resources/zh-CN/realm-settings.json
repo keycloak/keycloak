@@ -849,7 +849,7 @@
   "defaultGroupAdded_other": "将 {{count}} 个群组添加到默认群组。",
   "defaultGroupAddedError": "将群组添加到默认群组时出错 {error}。",
   "noDefaultGroups": "没有默认群组",
-  "noDefaultGroupsInstructions": "默认组允许您在整个<1>身份代理</1>过程中创建或导入任何新用户时自动分配组成员。添加默认组以开始使用。",
+  "noDefaultGroupsInstructions": "设置默认组将允许您在<1>identity brokering</1>过程中创建或导入新用户时自动分配群组。添加默认组以开始使用这一功能。",
   "addGroups": "添加群组",
   "securityDefences": "安全防御",
   "headers": "标题",
