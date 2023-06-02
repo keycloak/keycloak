@@ -844,7 +844,7 @@
   "removeConfirm_other": "你确定要删除这些组吗。",
   "groupRemove_one": "群组已删除",
   "groupRemove_other": "群组已移除",
-  "groupRemoveError": "删除群组 {error} 时出错",
+  "groupRemoveError": "移除群组 {error} 时出错",
   "defaultGroupAdded_one": "新群组已被添加到默认群组",
   "defaultGroupAdded_other": "{{count}} 个新群组已被添加到默认群组",
   "defaultGroupAddedError": "将群组添加到默认群组时出错 {error}。",
