@@ -251,7 +251,7 @@
   "clientProfileName": "客户端配置文件名称",
   "clientProfileDescription": "描述",
   "emptyClientProfiles": "没有配置文件",
-  "emptyClientProfilesInstructions": "没有配置文件，选择'创建客户配置文件'来创建新的客户配置文件",
+  "emptyClientProfilesInstructions": "没有配置文件，选择'创建客户端配置文件'来创建新的客户端配置文件",
   "deleteClientProfileConfirmTitle": "删除配置文件？",
   "deleteClientProfileConfirm": "此操作将永久删除配置文件 {{profileName}}。此操作无法撤消。",
   "deleteClientSuccess": "配置文件已删除",
