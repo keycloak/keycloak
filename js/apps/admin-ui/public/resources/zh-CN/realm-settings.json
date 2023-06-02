@@ -581,7 +581,7 @@
       "description": "身份供应者非首次登录"
     },
     "IDENTITY_PROVIDER_LINK_ACCOUNT_ERROR": {
-      "name": "身份供应者链接账号错误",
+      "name": "身份提供商关联账号错误",
       "description": "身份供应者链接账号错误"
     },
     "UPDATE_EMAIL": {
