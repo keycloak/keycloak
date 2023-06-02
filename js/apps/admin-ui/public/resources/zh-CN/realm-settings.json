@@ -777,7 +777,7 @@
       "description": "刷新令牌错误"
     },
     "VERIFY_PROFILE": {
-      "name": "验证个人资料",
+      "name": "验证配置文件",
       "description": "验证个人资料"
     },
     "VERIFY_PROFILE_ERROR": {
