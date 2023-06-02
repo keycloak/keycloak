@@ -521,7 +521,7 @@
       "description": "联合身份链接错误"
     },
     "IDENTITY_PROVIDER_FIRST_LOGIN": {
-      "name": "身份提供者首次登录",
+      "name": "身份提供商首次登录",
       "description": "身份提供者首次登录"
     },
     "CLIENT_DELETE_ERROR": {
