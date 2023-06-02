@@ -25,6 +25,7 @@ import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.idm.RealmRepresentation;
 
 /**
@@ -53,24 +54,12 @@ public class MigrateTo22_0_0 implements Migration {
         if (httpChallenge == null) return;
 
         try {
-            realm.removeAuthenticationFlow(httpChallenge);
-
-            // Builtin "Http challenge" flow had subflow of this name, which should be removed as well
-            AuthenticationFlowModel subflow = realm.getFlowByAlias("Authentication Options");
-            if (subflow != null && subflow.isBuiltIn()) {
-                realm.removeAuthenticationFlow(subflow);
-            }
+            KeycloakModelUtils.deepDeleteAuthenticationFlow(realm, httpChallenge, () -> {}, () -> {});
             LOG.debugf("Removed '%s' authentication flow in realm '%s'", HTTP_CHALLENGE_FLOW, realm.getName());
         } catch (ModelException me) {
-            if (me.getMessage().endsWith("it is currently in use")) {
-                // This is the theoretic case when this flow is bind as any realm flow (EG. browser) or as first-broker-login or post-broker-login of some IDP.
-                // Which is very unlikely and doesn't have any real use-case, but can happen in theory.
-                // It doesn't affect the case when the flow is in use by some client (Authentication flow binding override)
-                LOG.warnf("Authentication flow '%s' is in use in realm '%s' and cannot be removed. Please note that authenticators from this flow may not be available anymore, unless you deploy keycloak-openshift-extension to your server",
-                        HTTP_CHALLENGE_FLOW, realm.getName());
-            } else {
-                throw me;
-            }
+            LOG.errorf("Authentication flow '%s' is in use in realm '%s' and cannot be removed. Please update your deployment to avoid using this flow before migration to latest Keycloak",
+                    HTTP_CHALLENGE_FLOW, realm.getName());
+            throw me;
         }
     }
 

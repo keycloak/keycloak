@@ -811,6 +811,32 @@ public final class KeycloakModelUtils {
                         Objects.equals(idp.getPostBrokerLoginFlowId(), model.getId()));
     }
 
+    /**
+     * Recursively remove authentication flow (including all subflows and executions) from the model storage
+     *
+     * @param realm
+     * @param authFlow flow to delete
+     * @param flowUnavailableHandler Will be executed when flow or some of it's subflow is null
+     * @param builtinFlowHandler will be executed when flow is built-in flow
+     */
+    public static void deepDeleteAuthenticationFlow(RealmModel realm, AuthenticationFlowModel authFlow, Runnable flowUnavailableHandler, Runnable builtinFlowHandler) {
+        if (authFlow == null) {
+            flowUnavailableHandler.run();
+            return;
+        }
+        if (authFlow.isBuiltIn()) {
+            builtinFlowHandler.run();
+        }
+
+        realm.getAuthenticationExecutionsStream(authFlow.getId())
+                .map(AuthenticationExecutionModel::getFlowId)
+                .filter(Objects::nonNull)
+                .map(realm::getAuthenticationFlowById)
+                .forEachOrdered(subflow -> deepDeleteAuthenticationFlow(realm, subflow, flowUnavailableHandler, builtinFlowHandler));
+
+        realm.removeAuthenticationFlow(authFlow);
+    }
+
     public static ClientScopeModel getClientScopeByName(RealmModel realm, String clientScopeName) {
         return realm.getClientScopesStream()
                 .filter(clientScope -> Objects.equals(clientScopeName, clientScope.getName()))

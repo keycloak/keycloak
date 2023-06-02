@@ -39,6 +39,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredActionProviderModel;
 import org.keycloak.models.utils.Base32;
 import org.keycloak.models.utils.DefaultAuthenticationFlows;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.provider.ConfiguredProvider;
@@ -308,28 +309,18 @@ public class AuthenticationManagementResource {
     @NoCache
     public void deleteFlow(@PathParam("id") String id) {
         auth.realm().requireManageRealm();
-        
-        deleteFlow(id, true);
-    }
-    
-    private void deleteFlow(String id, boolean isTopMostLevel) {
-        AuthenticationFlowModel flow = realm.getAuthenticationFlowById(id);
-        if (flow == null) {
-            throw new NotFoundException("Could not find flow with id");
-        }
-        if (flow.isBuiltIn()) {
-            throw new BadRequestException("Can't delete built in flow");
-        }
-        
-        realm.getAuthenticationExecutionsStream(id)
-                .map(AuthenticationExecutionModel::getFlowId)
-                .filter(Objects::nonNull)
-                .forEachOrdered(flowId -> deleteFlow(flowId, false));
 
-        realm.removeAuthenticationFlow(flow);
+        KeycloakModelUtils.deepDeleteAuthenticationFlow(realm, realm.getAuthenticationFlowById(id),
+                () -> {
+                    throw new NotFoundException("Could not find flow with id");
+                },
+                () -> {
+                    throw new BadRequestException("Can't delete built in flow");
+                }
+        );
 
         // Use just one event for top-level flow. Using separate events won't work properly for flows of depth 2 or bigger
-        if (isTopMostLevel) adminEvent.operation(OperationType.DELETE).resourcePath(session.getContext().getUri()).success();
+        adminEvent.operation(OperationType.DELETE).resourcePath(session.getContext().getUri()).success();
     }
 
     /**
