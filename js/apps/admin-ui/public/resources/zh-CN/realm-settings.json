@@ -713,7 +713,7 @@
       "description": "客户端信息错误"
     },
     "INTROSPECT_TOKEN_ERROR": {
-      "name": "内省令牌错误",
+      "name": "令牌内部检查错误",
       "description": "内省令牌错误"
     },
     "INTROSPECT_TOKEN": {
