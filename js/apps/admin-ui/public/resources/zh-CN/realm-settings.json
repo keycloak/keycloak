@@ -356,7 +356,7 @@
   "attributeGroup": "属性组",
   "enabledWhen": "何时启用",
   "required": "是否为必填项",
-  "requiredFor": "被应用于",
+  "requiredFor": "针对何人为必填项",
   "requiredWhen": "此时需要",
   "requiredForLabel": {
     "both": "用户和管理员",
