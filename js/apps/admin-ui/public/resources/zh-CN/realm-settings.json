@@ -501,7 +501,7 @@
       "description": "客户端注册"
     },
     "IDENTITY_PROVIDER_LINK_ACCOUNT": {
-      "name": "身份提供者链接账户",
+      "name": "身份提供商关联账号",
       "description": "身份提供者链接账户"
     },
     "DELETE_ACCOUNT": {
