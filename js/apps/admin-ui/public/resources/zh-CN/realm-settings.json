@@ -414,7 +414,7 @@
     },
     "UPDATE_CONSENT_ERROR": {
       "name": "更新许可错误",
-      "description": "更新认证错误"
+      "description": "更新许可错误"
     },
     "GRANT_CONSENT": {
       "name": "授权许可",
