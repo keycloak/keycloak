@@ -450,7 +450,7 @@
     },
     "CODE_TO_TOKEN_ERROR": {
       "name": "用于交换令牌的代码错误",
-      "description": "令牌错误代码"
+      "description": "用于交换令牌的代码错误"
     },
     "CUSTOM_REQUIRED_ACTION": {
       "name": "自定义所需操作",
