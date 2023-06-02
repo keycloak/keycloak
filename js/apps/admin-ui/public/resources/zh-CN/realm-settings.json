@@ -841,7 +841,7 @@
   "removeConfirmTitle_one": "移除群组？",
   "removeConfirmTitle_other": "移除群组？",
   "removeConfirm_one": "你确定要移除这个群组",
-  "removeConfirm_other": "你确定要删除这些组吗。",
+  "removeConfirm_other": "您确定要移除这些组吗？",
   "groupRemove_one": "群组已移除",
   "groupRemove_other": "群组已移除",
   "groupRemoveError": "移除群组 {error} 时出错",
