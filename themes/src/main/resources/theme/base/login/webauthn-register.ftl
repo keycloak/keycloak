@@ -113,8 +113,8 @@
                             console.log("Your browser is not able to recognize supported transport media for the authenticator.");
                         }
 
-                        let initLabel = "WebAuthn Authenticator (Default Label)";
-                        let labelResult = window.prompt("Please input your registered authenticator's label", initLabel);
+                        let initLabel = "${kcSanitize(msg("webauthn-authenticator-default-input-label"))?no_esc}";
+                        let labelResult = window.prompt("${kcSanitize(msg("webauthn-register-authenticator-input-title"))?no_esc}", initLabel);
                         if (labelResult === null) labelResult = initLabel;
                         $("#authenticatorLabel").val(labelResult);
 
