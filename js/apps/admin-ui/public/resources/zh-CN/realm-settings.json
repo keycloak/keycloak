@@ -413,7 +413,7 @@
       "description": "发送重置的密码"
     },
     "UPDATE_CONSENT_ERROR": {
-      "name": "更新认证错误",
+      "name": "更新许可错误",
       "description": "更新认证错误"
     },
     "GRANT_CONSENT": {
