@@ -135,7 +135,7 @@
   "emailAsUsernameHelpText": "允许用户将电子邮件设置为用户名。",
   "loginWithEmailAllowed": "使用邮箱登录",
   "loginWithEmailHelpText": "允许用户使用他们的电子邮件地址登录。",
-  "duplicateEmailsAllowed": "复用邮件",
+  "duplicateEmailsAllowed": "允许重复的电子邮件地址存在",
   "duplicateEmailsHelpText": "允许多个用户拥有相同的电子邮件地址。更改此设置也会清除用户的缓存。建议在关闭对重复的电子邮件地址的支持后手动更新数据库中现有用户的电子邮件限制。",
   "verifyEmail": "验证邮箱",
   "verifyEmailHelpText": "要求用户在首次登录后或提交地址更改后验证其电子邮件地址。",
