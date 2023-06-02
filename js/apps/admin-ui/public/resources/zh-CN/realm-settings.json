@@ -17,7 +17,7 @@
   "displayHeaderHint": "用于用户界面表单中呈现一组属性时应使用的用户友好名称，支持本地化值的键。例如：${profile.attribute.group.address} ",
   "displayDescriptionField": "显示说明",
   "displayDescriptionHint": "在用户界面表单中用于提示的文本。",
-  "annotationsText": "注解",
+  "annotationsText": "注释",
   "removeAnnotationText": "删除注释",
   "keyPlaceholder": "输入一个键",
   "keyLabel": "键",
