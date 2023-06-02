@@ -884,7 +884,7 @@
   "importFail": "导入失败：{{error}}",
   "FAIL": "导入失败",
   "SKIP": "跳过",
-  "OVERWRITE": "覆盖",
+  "OVERWRITE": "覆写",
   "added": "已添加",
   "skipped": "已跳过",
   "overwritten": "已被覆写",
