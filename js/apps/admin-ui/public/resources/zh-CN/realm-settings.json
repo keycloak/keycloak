@@ -53,7 +53,7 @@
   "themes": "主题",
   "events": "事件",
   "eventListeners": "事件监听器",
-  "eventListenersHelpText": "配置哪些侦听器接收该领域的事件。",
+  "eventListenersHelpText": "配置哪些监听器接收该领域的事件。",
   "saveEventListeners": "保存事件监听器",
   "saveEventListenersSuccess": "事件侦听器已更新。",
   "saveEventListenersError": "保存事件侦听器时出错：{{error}}",
