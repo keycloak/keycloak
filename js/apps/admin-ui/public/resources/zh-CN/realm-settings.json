@@ -335,7 +335,7 @@
   "userProfileSuccess": "用户资料设置成功更新。",
   "userProfileError": "无法更新用户资料设置：{{error}}",
   "status": "状态",
-  "recommendedSsoTimeout": "建议此值小于 SSO 会话空闲超时：{{time}}",
+  "recommendedSsoTimeout": "建议此值小于 SSO 会话空闲时间：{{time}}",
   "supportedLocales": "支持的语言环境",
   "defaultLocale": "默认语言环境",
   "selectLocales": "选择语言环境",
