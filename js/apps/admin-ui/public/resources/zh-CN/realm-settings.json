@@ -23,7 +23,7 @@
   "keyLabel": "键",
   "valuePlaceholder": "输入一个值",
   "valueLabel": "值",
-  "realmSettingsExplain": "领域设置是控制当前领域中用户、应用程序、角色和群组的选项的设置。",
+  "realmSettingsExplain": "领域设置用于控制当前领域中用户、应用程序、角色和群组的选项。",
   "partialImport": "部分导入",
   "partialExport": "部分导出",
   "deleteRealm": "删除领域",
