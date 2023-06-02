@@ -846,7 +846,7 @@
   "groupRemove_other": "群组已移除",
   "groupRemoveError": "删除群组 {error} 时出错",
   "defaultGroupAdded_one": "新组添加到默认群组",
-  "defaultGroupAdded_other": "将 {{count}} 个群组添加到默认群组。",
+  "defaultGroupAdded_other": "{{count}} 个新群组已被添加到默认群组",
   "defaultGroupAddedError": "将群组添加到默认群组时出错 {error}。",
   "noDefaultGroups": "没有默认群组",
   "noDefaultGroupsInstructions": "设置默认组将允许您在<1>identity brokering</1>过程中创建或导入新用户时自动分配群组。添加默认组以开始使用这一功能。",
