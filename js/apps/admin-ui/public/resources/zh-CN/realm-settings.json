@@ -140,7 +140,7 @@
   "verifyEmail": "验证邮箱",
   "verifyEmailHelpText": "要求用户在首次登录后或提交地址更改后验证其电子邮件地址。",
   "userInfoSettings": "用户信息设置",
-  "editUsernameAllowed": "编辑用户名",
+  "editUsernameAllowed": "允许编辑用户名",
   "enableSwitchSuccess": "{{switch}} 更改成功",
   "enableSwitchError": "由于{{error}},无法启用/禁用",
   "testingConnection": "测试连接",
