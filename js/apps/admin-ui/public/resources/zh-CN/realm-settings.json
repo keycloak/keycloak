@@ -602,7 +602,7 @@
     },
     "LOGOUT_ERROR": {
       "name": "登出错误",
-      "description": "注销错误"
+      "description": "登出错误"
     },
     "UPDATE_EMAIL_ERROR": {
       "name": "更新邮箱错误",
