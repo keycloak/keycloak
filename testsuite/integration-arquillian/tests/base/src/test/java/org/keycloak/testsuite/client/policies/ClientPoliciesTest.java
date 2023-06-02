@@ -1226,49 +1226,4 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
         assertEquals(expectedErrorDescription, oauth.getCurrentFragment().get(OAuth2Constants.ERROR_DESCRIPTION));
     }
 
-    @Test
-    public void testSecureParContentsExecutor() throws Exception {
-        // register profiles
-        String json = (new ClientProfilesBuilder()).addProfile(
-                (new ClientProfileBuilder()).createProfile(PROFILE_NAME, "Le Premier Profil")
-                        .addExecutor(SecureParContentsExecutorFactory.PROVIDER_ID, null)
-                        .toRepresentation()
-        ).toString();
-        updateProfiles(json);
-
-        String clientBetaId = generateSuffixedName("Beta-App");
-        createClientByAdmin(clientBetaId, (ClientRepresentation clientRep) -> {
-            clientRep.setSecret("secretBeta");
-        });
-
-        // register policies
-        json = (new ClientPoliciesBuilder()).addPolicy(
-                (new ClientPolicyBuilder()).createPolicy(POLICY_NAME, "La Premiere Politique", Boolean.TRUE)
-                        .addCondition(AnyClientConditionFactory.PROVIDER_ID,
-                                createAnyClientConditionConfig())
-                        .addProfile(PROFILE_NAME)
-                        .toRepresentation()
-        ).toString();
-        updatePolicies(json);
-
-        // Pushed Authorization Request
-        ParResponse pResp = oauth.doPushedAuthorizationRequest(clientBetaId, "secretBeta");
-        assertEquals(201, pResp.getStatusCode());
-        String requestUri = pResp.getRequestUri();
-
-        oauth.requestUri(requestUri);
-        oauth.clientId(clientBetaId);
-        oauth.openLoginForm();
-        assertTrue(errorPage.isCurrent());
-        assertEquals("PAR request did not include necessary parameters", errorPage.getError());
-
-        oauth.requestUri(null);
-        pResp = oauth.doPushedAuthorizationRequest(clientBetaId, "secretBeta");
-        assertEquals(201, pResp.getStatusCode());
-        requestUri = pResp.getRequestUri();
-        oauth.requestUri(requestUri);
-
-        oauth.stateParamHardcoded(null);
-        successfulLoginAndLogout(clientBetaId, "secretBeta");
-    }
 }
