@@ -446,7 +446,7 @@
     },
     "IMPERSONATE_ERROR": {
       "name": "角色扮演错误",
-      "description": "模拟错误"
+      "description": "角色扮演错误"
     },
     "CODE_TO_TOKEN_ERROR": {
       "name": "代码令牌错误",
