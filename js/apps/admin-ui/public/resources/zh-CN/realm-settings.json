@@ -30,7 +30,7 @@
   "deleteConfirmTitle": "删除领域？",
   "dragInstruction": "通过点击并拖动从而改变优先级",
   "deleteConfirm": "如果你删除这个领域，所有关联的数据都将被删除。",
-  "deleteProviderTitle": "删除密钥提供者？",
+  "deleteProviderTitle": "删除密钥提供商？",
   "deleteProviderConfirm": "您确定要永久删除密钥提供者 {{provider}} 吗？",
   "deleteProviderSuccess": "成功。密钥提供者已被删除。",
   "deleteProviderError": "删除密钥提供者时出错",
