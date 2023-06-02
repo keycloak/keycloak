@@ -642,7 +642,7 @@
     },
     "UPDATE_CONSENT": {
       "name": "更新许可",
-      "description": "更新认证"
+      "description": "更新许可"
     },
     "REMOVE_TOTP_ERROR": {
       "name": "移除totp错误",
