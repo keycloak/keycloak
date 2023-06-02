@@ -205,7 +205,7 @@
   "onDragMove": "正在拖动{{item}}",
   "onDragCancel": "已取消拖动。列表未更改。",
   "onDragFinish": "拖动完成{{list}}",
-  "notFound": "找不到你要查找的资源",
+  "notFound": "找不到您要查找的资源",
   "password": "密码",
   "passwordConfirmation": "确认密码",
   "temporaryPassword": "临时密码",
