@@ -354,7 +354,7 @@
   "attributeName": "名称",
   "attributeDisplayName": "展示名称",
   "attributeGroup": "属性组",
-  "enabledWhen": "启用时间",
+  "enabledWhen": "何时启用",
   "required": "必需",
   "requiredFor": "被应用于",
   "requiredWhen": "此时需要",
