@@ -375,7 +375,7 @@
     "colDescription": "描述"
   },
   "validatorColNames": {
-    "colName": "验证者姓名",
+    "colName": "验证器名称",
     "colConfig": "设置"
   },
   "deleteValidatorConfirmTitle": "删除验证器？",
