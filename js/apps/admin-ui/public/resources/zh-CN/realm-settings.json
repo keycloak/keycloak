@@ -714,7 +714,7 @@
     },
     "INTROSPECT_TOKEN_ERROR": {
       "name": "令牌内部检查错误",
-      "description": "内省令牌错误"
+      "description": "令牌内部检查错误"
     },
     "INTROSPECT_TOKEN": {
       "name": "内省令牌",
