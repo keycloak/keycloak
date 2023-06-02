@@ -71,7 +71,7 @@
   "fromDisplayName": "发件人展示名称",
   "replyTo": "回复地址",
   "replyToDisplayName": "回复地址展示名称",
-  "envelopeFrom": "信封来自",
+  "envelopeFrom": "信封发件人",
   "host": "主机",
   "port": "端口",
   "encryption": "加密",
