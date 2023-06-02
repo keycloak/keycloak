@@ -445,7 +445,7 @@
       "description": "重置密码错误"
     },
     "IMPERSONATE_ERROR": {
-      "name": "模拟错误",
+      "name": "角色扮演错误",
       "description": "模拟错误"
     },
     "CODE_TO_TOKEN_ERROR": {
