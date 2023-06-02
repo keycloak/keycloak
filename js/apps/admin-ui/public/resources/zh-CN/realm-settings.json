@@ -63,7 +63,7 @@
   "expiration": "过期",
   "clearUserEvents": "清除用户事件",
   "clearAdminEvents": "清除管理员事件",
-  "includeRepresentation": "包含表述",
+  "includeRepresentation": "是否包含表述文件",
   "email": "邮件",
   "template": "模版",
   "connectionAndAuthentication": "连接与认证",
