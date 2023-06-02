@@ -247,7 +247,7 @@
     "jsonEditor": "JSON 编辑器"
   },
   "clientProfileSearch": "搜索",
-  "searchProfile": "搜索配置",
+  "searchProfile": "搜索配置文件",
   "clientProfileName": "客户端配置文件名称",
   "clientProfileDescription": "描述",
   "emptyClientProfiles": "没有配置文件",
