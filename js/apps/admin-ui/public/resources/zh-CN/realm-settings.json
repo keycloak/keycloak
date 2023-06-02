@@ -601,7 +601,7 @@
       "description": "执行动作令牌"
     },
     "LOGOUT_ERROR": {
-      "name": "注销错误",
+      "name": "登出错误",
       "description": "注销错误"
     },
     "UPDATE_EMAIL_ERROR": {
