@@ -22,6 +22,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
+import org.keycloak.services.resources.admin.permissions.GroupPermissionEvaluator;
 import org.keycloak.utils.StringUtil;
 
 public class GroupsResource {
@@ -56,7 +57,8 @@ public class GroupsResource {
     public final Stream<GroupRepresentation> listGroups(@QueryParam("search") @DefaultValue("") final String search, @QueryParam("first")
     @DefaultValue("0") int first, @QueryParam("max") @DefaultValue("10") int max, @QueryParam("global") @DefaultValue("true") boolean global,
                                                         @QueryParam("exact") @DefaultValue("false") boolean exact) {
-        this.auth.groups().requireList();
+        GroupPermissionEvaluator groupsEvaluator = auth.groups();
+        groupsEvaluator.requireList();
         final Stream<GroupModel> stream;
         if (global) {
             stream = session.groups().searchForGroupByNameStream(realm, search.trim(), exact, first, max);
@@ -64,7 +66,9 @@ public class GroupsResource {
             stream = this.realm.getTopLevelGroupsStream().filter(g -> g.getName().contains(search)).skip(first).limit(max);
         }
 
-        return stream.map(g -> toGroupHierarchy(g, search, exact));
+        boolean canViewGlobal = groupsEvaluator.canView();
+        return stream.filter(group -> canViewGlobal || groupsEvaluator.canView(group))
+                .map(group -> toGroupHierarchy(group, search, exact));
     }
 
     private GroupRepresentation toGroupHierarchy(GroupModel group, final String search, boolean exact) {
