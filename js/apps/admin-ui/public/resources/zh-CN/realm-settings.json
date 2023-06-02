@@ -886,7 +886,7 @@
   "SKIP": "跳过",
   "OVERWRITE": "覆盖",
   "added": "添加",
-  "skipped": "被跳过",
+  "skipped": "已跳过",
   "overwritten": "已被覆写",
   "importAdded_zero": "没有添加记录。",
   "importAdded_one": "添加了一条记录。",
