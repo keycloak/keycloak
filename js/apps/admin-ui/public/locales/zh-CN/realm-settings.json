@@ -31,9 +31,9 @@
   "dragInstruction": "通过点击并拖动从而改变优先级",
   "deleteConfirm": "如果你删除这个领域，所有关联的数据都将被删除。",
   "deleteProviderTitle": "删除密钥提供商？",
-  "deleteProviderConfirm": "您确定要永久删除密钥提供者 {{provider}} 吗？",
-  "deleteProviderSuccess": "成功。密钥提供者已被删除。",
-  "deleteProviderError": "删除密钥提供者时出错",
+  "deleteProviderConfirm": "您确定要永久删除密钥供应商 {{provider}} 吗？",
+  "deleteProviderSuccess": "成功。密钥供应商已被删除。",
+  "deleteProviderError": "删除密钥供应商时出错",
   "deletedSuccess": "领域已被删除",
   "deleteError": "无法删除领域：{{error}}",
   "deleteConditionSuccess": "条件已删除",
@@ -107,7 +107,7 @@
   "keySize": "秘钥大小",
   "type": "类型",
   "name": "名称",
-  "提供者 ID": "ID",
+  "供应商 ID": "ID",
   "kid": "KID",
   "provider": "供应者",
   "providerDescription": "供应者描述",
@@ -522,7 +522,7 @@
     },
     "IDENTITY_PROVIDER_FIRST_LOGIN": {
       "name": "身份提供商首次登录",
-      "description": "身份提供者首次登录"
+      "description": "身份供应商首次登录"
     },
     "CLIENT_DELETE_ERROR": {
       "name": "客户端删除错误",
@@ -625,8 +625,8 @@
       "description": "联合身份链接"
     },
     "SEND_IDENTITY_PROVIDER_LINK": {
-      "name": "发送身份提供者链接",
-      "description": "发送身份提供者链接"
+      "name": "发送身份供应商链接",
+      "description": "发送身份供应商链接"
     },
     "SEND_VERIFY_EMAIL_ERROR": {
       "name": "发送验证邮件错误",
@@ -681,8 +681,8 @@
       "description": "授权许可错误"
     },
     "IDENTITY_PROVIDER_FIRST_LOGIN_ERROR": {
-      "name": "身份提供者首次登录错误",
-      "description": "身份提供者首次登录错误"
+      "name": "身份供应商首次登录错误",
+      "description": "身份供应商首次登录错误"
     },
     "REGISTER_NODE_ERROR": {
       "name": "注册节点错误",
