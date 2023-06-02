@@ -232,7 +232,7 @@
   "deleteClientPolicyConfirm": "此操作将永久删除策略 {{policyName}}，并且无法撤消。",
   "deleteClientPolicySuccess": "客户端策略已删除",
   "deleteClientPolicyError": "无法删除策略：{{error}}",
-  "profiles": "个人档案",
+  "profiles": "配置文件",
   "policies": "策略",
   "clientPoliciesProfilesHelpText": "客户端配置文件允许设置一组执行程序，这些执行程序是针对客户端执行的各种操作强制执行的。操作可以是管理员的操作，如创建或更新客户端，或者是用户的操作，如对客户端的身份验证。",
   "clientPoliciesProfiles": "配置",
