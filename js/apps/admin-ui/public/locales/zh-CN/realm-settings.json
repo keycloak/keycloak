@@ -421,16 +421,16 @@
       "description": "授权许可"
     },
     "REMOVE_TOTP": {
-      "name": "删除topp",
-      "description": "删除topp"
+      "name": "删除TOTP",
+      "description": "删除TOTP"
     },
     "REVOKE_GRANT": {
       "name": "撤销授权",
       "description": "撤销授权"
     },
     "UPDATE_TOTP": {
-      "name": "更新topp",
-      "description": "更新topp"
+      "name": "更新TOTP",
+      "description": "更新TOTP"
     },
     "LOGIN_ERROR": {
       "name": "登录错误",
