@@ -798,7 +798,7 @@
     },
     "OAUTH2_DEVICE_VERIFY_USER_CODE_ERROR": {
       "name": "Oauth2设备验证用户密码错误",
-      "description": "Oauth2设备验证用户密码错误"
+      "description": "Oauth2设备验证用户代码错误"
     },
     "AUTHREQID_TO_TOKEN": {
       "name": "认证令牌",
