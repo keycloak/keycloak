@@ -817,7 +817,7 @@
       "description": "Oauth2设备认证错误"
     }
   },
-  "emptyEvents": "无需添加",
+  "emptyEvents": "无可添加的事件",
   "emptyEventsInstructions": "没有更多的事件类型可以添加",
   "eventConfigSuccessfully": "成功保存配置",
   "eventConfigError": "无法保存事件配置{{error}}",
