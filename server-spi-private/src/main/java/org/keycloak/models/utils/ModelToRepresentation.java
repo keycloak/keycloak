@@ -170,12 +170,6 @@ public class ModelToRepresentation {
         return groups.map(g -> toGroupHierarchy(g, full, attributes));
     }
 
-    @Deprecated
-    public static Stream<GroupRepresentation> searchForGroupByName(RealmModel realm, boolean full, String search, Integer first, Integer max) {
-        return realm.searchForGroupByNameStream(search, first, max)
-            .map(g -> toGroupHierarchy(g, full, search));
-    }
-
     public static Stream<GroupRepresentation> searchForGroupByName(KeycloakSession session, RealmModel realm, boolean full, String search, Boolean exact, Integer first, Integer max) {
         return session.groups().searchForGroupByNameStream(realm, search, exact, first, max)
                 .map(g -> toGroupHierarchy(g, full, search, exact));
