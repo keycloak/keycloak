@@ -56,12 +56,4 @@ public interface CachedUserModel extends UserModel {
      * @return
      */
     ConcurrentMap getCachedWith();
-
-    /**
-     * @deprecated This interface is no longer necessary, collection-based methods were removed from the parent interface
-     * and therefore the parent interface can be used directly
-     */
-    @Deprecated
-    interface Streams extends CachedUserModel, UserModel.Streams {
-    }
 }
