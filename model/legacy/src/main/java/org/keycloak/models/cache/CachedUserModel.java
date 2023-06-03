@@ -17,7 +17,6 @@
 package org.keycloak.models.cache;
 
 import org.keycloak.models.UserModel;
-import org.keycloak.models.UserProvider;
 
 import java.util.concurrent.ConcurrentMap;
 

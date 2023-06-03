@@ -512,7 +512,7 @@ public class LDAPSyncTest extends AbstractLDAPTest {
             RealmModel appRealm = ctx.getRealm();
 
             // Remove all users from model
-            UserStoragePrivateUtil.userLocalStorage(session).getUsersStream(ctx.getRealm(), true)
+            UserStoragePrivateUtil.userLocalStorage(session).searchForUserStream(ctx.getRealm(), Map.of())
                     .peek(user -> System.out.println("trying to delete user: " + user.getUsername()))
                     .collect(Collectors.toList())
                     .forEach(user -> {
