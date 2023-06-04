@@ -26,46 +26,13 @@ public interface UserFederatedStorageProvider extends Provider,
         UserFederatedUserCredentialStore {
     ...
 
-    Stream<GroupModel> getGroupsStream(RealmModel realm, String userId)
-    void joinGroup(RealmModel realm, String userId, GroupModel group);
-    void leaveGroup(RealmModel realm, String userId, GroupModel group);
-    Stream<String> getMembershipStream(RealmModel realm, GroupModel group, Integer firstResult, Integer max);
-
-    ...
-
-    interface Streams extends UserFederatedStorageProvider,
-            UserAttributeFederatedStorage.Streams,
-            UserBrokerLinkFederatedStorage.Streams,
-            UserConsentFederatedStorage.Streams,
-            UserFederatedUserCredentialStore.Streams,
-            UserGroupMembershipFederatedStorage.Streams,
-            UserRequiredActionsFederatedStorage.Streams,
-            UserRoleMappingsFederatedStorage.Streams {
-
-        ...
-
-        @Override
-        default List<String> getStoredUsers(RealmModel realm, int first, int max) {
-            return this.getStoredUsersStream(realm, first, max).collect(Collectors.toList());
-        }
-
-        @Override
-        Stream<String> getStoredUsersStream(RealmModel realm, Integer first, Integer max);
-
-        ...
-    }
 }
 ----
 
-The `UserFederatedStorageProvider` instance is available on the `KeycloakSession.userFederatedStorage()` method.
+The `UserFederatedStorageProvider` instance is available on the `UserStorageUtil.userFederatedStorage(KeycloakSession)` method.
 It has all different kinds of methods for storing attributes, group and role mappings, different credential types,
 and required actions.  If your external store's datamodel  cannot support the full {project_name} feature
 set, then this service can fill in the gaps.
-
-Also, the `UserFederatedStorageProvider.Streams` interface exists. It makes all collection-based methods in `UserFederatedStorageProvider`
-default by providing implementations that delegate to the stream-based variants instead of the other way around.
-It allows for implementations to focus on the stream-based approach for processing sets of data and benefit
-from the potential memory and performance optimizations of that approach. See <<_stream_based_interfaces,Stream-based interfaces>> for more information.
 
 {project_name} comes with a helper class `org.keycloak.storage.adapter.AbstractUserAdapterFederatedStorage`
 that will delegate every single `UserModel` method except get/set of username to user federated storage.  Override
