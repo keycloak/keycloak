@@ -37,4 +37,23 @@ public class HmacTest {
         System.out.println(hmacOTP.validateHOTP("550233", decoded, 0));
         Assert.assertEquals(1, hmacOTP.validateHOTP("550233", decoded, 0));
     }
+    @Test
+    public void testHmacBase32() {
+        HmacOTP hmacOTP = new HmacOTP(6, HmacOTP.HMAC_SHA1, 10);
+        String decoded = "{B32}JNSVMMTEKZCUGSKJIVGHMNSQOZBDA5JT";
+        System.out.println(hmacOTP.generateHOTP(decoded, 0));
+        System.out.println(hmacOTP.validateHOTP("550233", decoded, 0));
+        Assert.assertEquals(1, hmacOTP.validateHOTP("550233", decoded, 0));
+    }
+    @Test
+    public void testHmacBase32Binary() {
+        // Secret from https://github.com/keycloak/keycloak/issues/11561
+        // Codes values validated aganist https://totp.app/
+        HmacOTP hmacOTP = new HmacOTP(6, HmacOTP.HMAC_SHA1, 30);
+        String decoded = "{B32}CDLYAYRJ73ORTU4PUWWATWSYQCP4H2QL";
+        String counter = "000000000359675C";
+        Assert.assertEquals("754397", hmacOTP.generateOTP(decoded, counter, 6, HmacOTP.HMAC_SHA1));
+        String counter2 = "0000000003596781";
+        Assert.assertEquals("386679", hmacOTP.generateOTP(decoded, counter2, 6, HmacOTP.HMAC_SHA1));
+    }    
 }

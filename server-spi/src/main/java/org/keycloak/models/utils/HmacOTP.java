@@ -112,7 +112,7 @@ public class HmacOTP {
 
         // Adding one byte to get the right conversion
         // byte[] k = hexStr2Bytes(key);
-        byte[] k = key.getBytes();
+        byte[] k = key.startsWith("{B32}") ? Base32.decode(key.substring(5)) : key.getBytes(); // if key has {B32} prefix is Base32 encoded
 
         hash = hmac_sha1(crypto, k, msg);
 
