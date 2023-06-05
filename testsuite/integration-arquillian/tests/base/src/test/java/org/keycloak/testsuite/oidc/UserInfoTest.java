@@ -570,7 +570,6 @@ public class UserInfoTest extends AbstractKeycloakTest {
 
         setTimeOffset(2);
 
-        WaitUtils.waitForPageToLoad();
         loginPage.login("password");
         events.expectLogin().assertEvent();
 

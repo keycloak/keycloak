@@ -61,7 +61,6 @@ import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_HOST;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlDoesntStartWith;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
 import static org.keycloak.testsuite.util.WaitUtils.pause;
-import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
 import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
 
 /**
@@ -105,7 +104,6 @@ public class JavascriptAdapterTest extends AbstractJavascriptTest {
         applicationsPage.setAuthRealm(REALM_NAME);
 
         jsDriver.navigate().to(oauth.getLoginFormUrl());
-        waitForPageToLoad();
         events.poll();
         jsDriver.manage().deleteAllCookies();
 
@@ -135,7 +133,6 @@ public class JavascriptAdapterTest extends AbstractJavascriptTest {
     }
 
     private void assertOnTestAppUrl(WebDriver jsDriver, Object output, WebElement events, String testAppUrl) {
-        waitForPageToLoad();
         assertCurrentUrlStartsWith(testAppUrl, jsDriver);
     }
 

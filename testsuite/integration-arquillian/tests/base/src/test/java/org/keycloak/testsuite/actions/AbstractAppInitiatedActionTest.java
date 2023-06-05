@@ -74,7 +74,6 @@ public abstract class AbstractAppInitiatedActionTest extends AbstractTestRealmKe
                             .queryParam(REDIRECT_URI, getAuthServerContextRoot() + "/auth/realms/master/app/auth")
                             .build(TEST_REALM_NAME).toString();
         driver.navigate().to(uri);
-        WaitUtils.waitForPageToLoad();
     }
 
     protected void assertKcActionStatus(String expectedStatus) {

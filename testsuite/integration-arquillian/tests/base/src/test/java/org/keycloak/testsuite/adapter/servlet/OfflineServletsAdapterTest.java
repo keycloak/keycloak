@@ -43,7 +43,6 @@ import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlDoesntStartWith;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
 import static org.keycloak.testsuite.util.WaitUtils.pause;
-import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
 import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
 
 /**
@@ -135,7 +134,6 @@ public class OfflineServletsAdapterTest extends AbstractServletsAdapterTest {
             // logout doesn't make sense because online user session is gone and there is no KEYCLOAK_IDENTITY / KEYCLOAK_SESSION cookie in the browser
             // navigate to login page which won't be possible if there's valid online session
             driver.navigate().to(oauth.getLoginFormUrl());
-            WaitUtils.waitForPageToLoad();
             loginPage.assertCurrent();
 
             // navigate back to offlineTokenPage to verify the offline session is still valid
@@ -272,7 +270,6 @@ public class OfflineServletsAdapterTest extends AbstractServletsAdapterTest {
 
         if (loginPage.isCurrent()) {
             loginPage.login(username, password);
-            waitForPageToLoad();
             AccountHelper.logout(adminClient.realm(TEST), DEFAULT_USERNAME);
         }
         setTimeOffset(0);

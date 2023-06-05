@@ -15,7 +15,6 @@ import java.util.Map;
 import java.util.regex.Pattern;
 
 import static org.keycloak.testsuite.util.DroneUtils.getCurrentDriver;
-import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
 import static org.keycloak.testsuite.util.ServerURLs.removeDefaultPorts;
 import static org.openqa.selenium.support.ui.ExpectedConditions.not;
 import static org.openqa.selenium.support.ui.ExpectedConditions.urlMatches;
@@ -42,8 +41,6 @@ public final class URLUtils {
         else {
             driver.navigate().to(uri);
         }
-
-        waitForPageToLoad();
 
         log.info("new current URL:  " + driver.getCurrentUrl());
         log.info("navigation complete");

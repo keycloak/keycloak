@@ -47,7 +47,6 @@ import static org.junit.Assert.*;
 import static org.keycloak.testsuite.auth.page.AuthRealm.DEMO;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlEquals;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWithLoginUrlOf;
-import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
 
 /**
  *
@@ -122,7 +121,6 @@ public class SessionServletAdapterTest extends AbstractServletsAdapterTest {
 
         logoutConfirmPage.assertCurrent();
         logoutConfirmPage.confirmLogout();
-        waitForPageToLoad();
         infoPage.assertCurrent();
 
         // Assert that I am logged out in browser1
@@ -166,7 +164,6 @@ public class SessionServletAdapterTest extends AbstractServletsAdapterTest {
         driver.navigate().to(logoutUri);
         logoutConfirmPage.assertCurrent();
         logoutConfirmPage.confirmLogout();
-        waitForPageToLoad();
         infoPage.assertCurrent();
 
         // Assert that http session was invalidated
@@ -202,7 +199,6 @@ public class SessionServletAdapterTest extends AbstractServletsAdapterTest {
         driver.navigate().to(logoutUri);
         logoutConfirmPage.assertCurrent();
         logoutConfirmPage.confirmLogout();
-        waitForPageToLoad();
         infoPage.assertCurrent();
     }
 

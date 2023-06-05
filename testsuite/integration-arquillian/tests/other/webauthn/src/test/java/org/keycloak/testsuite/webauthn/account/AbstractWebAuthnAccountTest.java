@@ -54,7 +54,6 @@ import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.keycloak.models.AuthenticationExecutionModel.Requirement.REQUIRED;
 import static org.keycloak.testsuite.util.BrowserDriverUtil.isDriverFirefox;
-import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
 
 public abstract class AbstractWebAuthnAccountTest extends AbstractAuthTest implements UseVirtualAuthenticators {
 
@@ -158,14 +157,12 @@ public abstract class AbstractWebAuthnAccountTest extends AbstractAuthTest imple
     protected void loginToAccount() {
         loginPage.assertCurrent();
         loginPage.form().login(testUser);
-        waitForPageToLoad();
     }
 
     protected void logout() {
         signingInPage.navigateTo();
         signingInPage.assertCurrent();
         signingInPage.header().clickLogoutBtn();
-        waitForPageToLoad();
     }
 
     protected SigningInPage.UserCredential addWebAuthnCredential(String label) {
@@ -181,7 +178,6 @@ public abstract class AbstractWebAuthnAccountTest extends AbstractAuthTest imple
         webAuthnRegisterPage.assertCurrent();
         webAuthnRegisterPage.clickRegister();
         webAuthnRegisterPage.registerWebAuthnCredential(label);
-        waitForPageToLoad();
         signingInPage.assertCurrent();
         return getNewestUserCredential(credentialType);
     }

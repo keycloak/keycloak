@@ -54,7 +54,6 @@ import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.keycloak.testsuite.util.BrowserDriverUtil.isDriverFirefox;
 import static org.keycloak.testsuite.util.WaitUtils.pause;
-import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
 
 /**
  * @author <a href="mailto:mabartos@redhat.com">Martin Bartos</a>
@@ -68,7 +67,6 @@ public class WebAuthnOtherSettingsTest extends AbstractWebAuthnVirtualTest {
     public void defaultValues() {
         registerDefaultUser("webauthn");
 
-        WaitUtils.waitForPageToLoad();
         appPage.assertCurrent();
 
         final String userId = Optional.ofNullable(userResource().toRepresentation())
@@ -140,7 +138,6 @@ public class WebAuthnOtherSettingsTest extends AbstractWebAuthnVirtualTest {
             assertThat(webAuthnErrorPage.getError(), containsString("The operation either timed out or was not allowed"));
 
             webAuthnErrorPage.clickTryAgain();
-            waitForPageToLoad();
 
             webAuthnRegisterPage.assertCurrent();
             webAuthnRegisterPage.clickRegister();

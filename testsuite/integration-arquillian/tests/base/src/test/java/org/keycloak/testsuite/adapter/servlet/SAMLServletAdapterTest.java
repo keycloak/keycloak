@@ -29,7 +29,6 @@ import static org.keycloak.testsuite.util.Matchers.bodyHC;
 import static org.keycloak.testsuite.util.Matchers.statusCodeIsHC;
 import static org.keycloak.testsuite.util.UIUtils.getRawPageSource;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
-import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
 import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
 
 import java.io.ByteArrayInputStream;
@@ -516,7 +515,6 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
 
     private void assertSuccessfulLogin(AbstractPage page, UserRepresentation user, Login loginPage, String expectedString) {
         page.navigateTo();
-        waitForPageToLoad();
         assertCurrentUrlStartsWith(loginPage);
         loginPage.form().login(user);
         waitUntilElement(By.xpath("//body")).text().contains(expectedString);
@@ -799,7 +797,6 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
         assertCurrentUrlStartsWith(testRealmSAMLPostLoginPage);
         testRealmSAMLPostLoginPage.form().login("bburke", "password");
         assertCurrentUrlStartsWith(employeeServletPage);
-        WaitUtils.waitForPageToLoad();
 
         employeeServletPage.logout();
         adapterLogoutPage.assertCurrent();
@@ -1202,7 +1199,6 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
         assertCurrentUrlStartsWith(testRealmSAMLPostLoginPage);
         testRealmSAMLPostLoginPage.form().login("bburke", "password");
         assertCurrentUrlStartsWith(employeeServletPage);
-        waitForPageToLoad();
         String pageSource = driver.getPageSource();
         Assert.assertThat(pageSource, containsString("Relay state: " + SamlSPFacade.RELAY_STATE));
         Assert.assertThat(pageSource, not(containsString("SAML response: null")));
@@ -1247,7 +1243,6 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
             testRealmSAMLPostLoginPage.form().login("bburke", "password");
 
             driver.navigate().to(employee2ServletPage.getUriBuilder().clone().path("getAttributes").build().toURL());
-            waitForPageToLoad();
 
             String body = driver.findElement(By.xpath("//body")).getText();
             String[] values = parseCommaSeparatedAttributes(body, "group-attribute");
@@ -1285,7 +1280,6 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
             testRealmSAMLPostLoginPage.form().login("bburke", "password");
 
             driver.navigate().to(employee2ServletPage.getUriBuilder().clone().path("getAttributes").build().toURL());
-            waitForPageToLoad();
 
             String body = driver.findElement(By.xpath("//body")).getText();
             String[] values = parseCommaSeparatedAttributes(body, "group-attribute");
@@ -1329,7 +1323,6 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
             testRealmSAMLPostLoginPage.form().login("bburke", "password");
 
             driver.navigate().to(employee2ServletPage.getUriBuilder().clone().path("getAttributes").build().toURL());
-            waitForPageToLoad();
 
             String body = driver.findElement(By.xpath("//body")).getText();
             String[] values = parseCommaSeparatedAttributes(body, "group-attribute");
@@ -1372,7 +1365,6 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
             testRealmSAMLPostLoginPage.form().login("bburke", "password");
 
             driver.navigate().to(employee2ServletPage.getUriBuilder().clone().path("getAttributes").build().toURL());
-            waitForPageToLoad();
 
             String body = driver.findElement(By.xpath("//body")).getText();
             String[] values = parseCommaSeparatedAttributes(body, "group-attribute");
@@ -1402,7 +1394,6 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
         assertSuccessfullyLoggedIn(employeeDomServletPage, "principal=bburke");
 
         driver.navigate().to(employeeDomServletPage.getUriBuilder().clone().path("getAssertionFromDocument").build().toURL());
-        waitForPageToLoad();
         String xml = getRawPageSource();
         Assert.assertNotEquals("", xml);
         Document doc = DocumentUtil.getDocument(new StringReader(xml));
@@ -1808,7 +1799,6 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
         // go to the login-actions/authenticate page and change AUTH_SESSION_ID cookies
         authenticate.setAuthRealm(SAMLSERVLETDEMO);
         authenticate.navigateTo();
-        waitForPageToLoad();
         infoPage.assertCurrent();
         Assert.assertEquals("You are already logged in.", infoPage.getInfo());
         Cookie identityCookie = driver.manage().getCookieNamed(AuthenticationManager.KEYCLOAK_IDENTITY_COOKIE);
@@ -1820,7 +1810,6 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
 
         // go back to the app page, re-login should work with the invalid cookie
         testRealmSAMLPostLoginPage.navigateTo();
-        waitForPageToLoad();
         assertSuccessfullyLoggedIn(salesPostSigServletPage, "principal=bburke");
         driver.manage().deleteAllCookies();
 
@@ -1872,23 +1861,19 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
         // go to the authenticate page and add all the returned cookies by the impersonation
         authenticate.setAuthRealm(SAMLSERVLETDEMO);
         authenticate.navigateTo();
-        waitForPageToLoad();
         errorPage.assertCurrent();
         cookies.stream().forEach(c -> driver.manage().addCookie(c));
         driver.navigate().refresh();
-        waitForPageToLoad();
         infoPage.assertCurrent();
         Assert.assertEquals("You are already logged in.", infoPage.getInfo());
 
         // now go to the saml app with all the impersonation cookies
         testRealmSAMLPostLoginPage.navigateTo();
-        waitForPageToLoad();
         assertSuccessfullyLoggedIn(salesPostSigServletPage, "principal=bburke");
         driver.manage().deleteAllCookies();
 
         // go back to the app page a second time
         testRealmSAMLPostLoginPage.navigateTo();
-        waitForPageToLoad();
         assertSuccessfullyLoggedIn(salesPostSigServletPage, "principal=bburke");
 
         salesPostSigServletPage.logout();

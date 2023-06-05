@@ -17,7 +17,6 @@
 package org.keycloak.testsuite.pages;
 
 import static org.junit.Assert.assertTrue;
-import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
 
 import org.jboss.arquillian.graphene.page.Page;
 import org.keycloak.testsuite.adapter.page.AppServerContextRoot;
@@ -58,22 +57,18 @@ public class AppServerWelcomePage extends AppServerContextRoot {
     public void login(String username, String password) {
         assertTrue(loginPage.form().isLoginButtonPresent());
         loginPage.form().login(username, password);
-        waitForPageToLoad();
     }
 
     public void navigateToAccessControl() {
         accessControlLink.click();
-        waitForPageToLoad();
     }
 
     public void navigateManageProfile() {
         manageProfileLink.click();
-        waitForPageToLoad();
     }
 
     public void logout() {
         logoutLink.click();
-        waitForPageToLoad();
     }
 
     public boolean isLoginPage() {

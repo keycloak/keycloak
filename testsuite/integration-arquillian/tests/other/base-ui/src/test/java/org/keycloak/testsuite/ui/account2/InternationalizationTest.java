@@ -74,7 +74,6 @@ public class InternationalizationTest extends AbstractAccountTest {
         assertTestUserLocale(null);
         personalInfoPage.selectLocale(CUSTOM_LOCALE);
         personalInfoPage.clickSave(false);
-        WaitUtils.waitForPageToLoad();
 
         assertTestUserLocale(CUSTOM_LOCALE);
         assertCustomLocalePersonalInfo();
@@ -110,7 +109,6 @@ public class InternationalizationTest extends AbstractAccountTest {
         // switch to locale "de"
         personalInfoPage.selectLocale(localeDe);
         personalInfoPage.clickSave(false);
-        WaitUtils.waitForPageToLoad();
 
         assertTestUserLocale(localeDe);
         assertPersonalInfo(messageDe);

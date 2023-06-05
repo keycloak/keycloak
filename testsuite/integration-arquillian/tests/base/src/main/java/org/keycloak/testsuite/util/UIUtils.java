@@ -2,9 +2,7 @@ package org.keycloak.testsuite.util;
 
 import io.appium.java_client.android.AndroidDriver;
 import org.apache.commons.lang3.StringUtils;
-import org.keycloak.testsuite.page.AbstractPatternFlyAlert;
 import org.openqa.selenium.By;
-import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.Keys;
 import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.TimeoutException;
@@ -13,16 +11,8 @@ import org.openqa.selenium.WebElement;
 import org.openqa.selenium.firefox.FirefoxDriver;
 import org.openqa.selenium.interactions.Actions;
 import org.openqa.selenium.safari.SafariDriver;
-import org.openqa.selenium.support.ui.ExpectedConditions;
-import org.openqa.selenium.support.ui.Select;
-import org.openqa.selenium.support.ui.WebDriverWait;
-
-import java.util.Optional;
-import java.util.function.Supplier;
 
 import static org.keycloak.testsuite.util.DroneUtils.getCurrentDriver;
-import static org.keycloak.testsuite.util.WaitUtils.log;
-import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
 import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
 import static org.keycloak.testsuite.util.WaitUtils.waitUntilElementClassContains;
 
@@ -34,24 +24,6 @@ public final class UIUtils {
     public static final String VALUE_ATTR_NAME = "value";
     public static final String ARIA_INVALID_ATTR_NAME = "aria-invalid";
 
-    public static boolean selectContainsOption(Select select, String optionText) {
-        for (WebElement option : select.getOptions()) {
-            if (option.getText().trim().equals(optionText)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    public static boolean currentTitleEquals(String url) {
-        try {
-            (new WebDriverWait(getCurrentDriver(), 5)).until(ExpectedConditions.titleIs(url));
-        }
-        catch (TimeoutException e) {
-            return false;
-        }
-        return true;
-    }
 
     /**
      * Safely performs an operation which is expected to cause a page reload, e.g. a link click.
@@ -62,11 +34,6 @@ public final class UIUtils {
      */
     public static void performOperationWithPageReload(Runnable operation) {
         operation.run();
-        waitForPageToLoad();
-    }
-
-    public static void refreshPageAndWaitForLoad() {
-        performOperationWithPageReload(() -> getCurrentDriver().navigate().refresh());
     }
 
     public static void clickLink(WebElement element) {
@@ -81,50 +48,6 @@ public final class UIUtils {
         else {
             performOperationWithPageReload(element::click);
         }
-    }
-
-    /**
-     * This is as an alternative for {@link #clickLink(WebElement)} and should be used in situations where we can't use
-     * {@link WaitUtils#waitForPageToLoad()}. This is because {@link WaitUtils#waitForPageToLoad()} would wait until the
-     * alert would disappeared itself (timeout).
-     *
-     * @param button to click on
-     */
-    public static void clickBtnAndWaitForAlert(WebElement button) {
-        button.click();
-        AbstractPatternFlyAlert.waitUntilDisplayed();
-    }
-
-    /**
-     * Navigates to a link directly instead of clicking on it.
-     * Some browsers are sometimes having problems with clicking on links, so this should be used only in that cases,
-     * i.e. only when clicking directly doesn't work
-     *
-     * @param element
-     */
-    public static void navigateToLink(WebElement element) {
-        URLUtils.navigateToUri(element.getAttribute("href"));
-    }
-
-    /**
-     * This is meant mainly for file uploads in Admin Console where the input fields are hidden
-     *
-     * @param element
-     * @param keys
-     */
-    public static void sendKeysToInvisibleElement(WebElement element, CharSequence... keys) {
-        if (element.isDisplayed()) {
-            element.sendKeys(keys);
-            return;
-        }
-
-        JavascriptExecutor jsExecutor = (JavascriptExecutor) getCurrentDriver();
-        String styleBckp = element.getAttribute("style");
-
-        jsExecutor.executeScript("arguments[0].setAttribute('style', 'display:block !important');", element);
-        waitUntilElement(element).is().visible();
-        element.sendKeys(keys);
-        jsExecutor.executeScript("arguments[0].setAttribute('style', '" + styleBckp + "');", element);
     }
 
     public static String getTextInputValue(WebElement input) {
@@ -170,33 +93,6 @@ public final class UIUtils {
     }
 
     /**
-     * Get text from required WebElement
-     *
-     * @param element required WebElement
-     * @return text from element, or null if element is not found
-     */
-    public static String getTextFromElementOrNull(Supplier<WebElement> element) {
-        return Optional.ofNullable(getElementOrNull(element))
-                .map(UIUtils::getTextFromElement)
-                .orElse(null);
-    }
-
-    /**
-     * Get required WebElement
-     *
-     * @param element required WebElement
-     * @return element, or null if element is not found
-     */
-    public static WebElement getElementOrNull(Supplier<WebElement> element) {
-        try {
-            return element.get();
-        } catch (NoSuchElementException e) {
-            log.debug("Particular element is not found.", e);
-            return null;
-        }
-    }
-
-    /**
      * Should be used solely with {@link org.jboss.arquillian.graphene.GrapheneElement}, i.e. all elements annotated by
      * {@link org.openqa.selenium.support.FindBy}. CANNOT be used with elements found directly using
      * {@link WebDriver#findElement(By)} and similar.
@@ -211,16 +107,6 @@ public final class UIUtils {
         catch (NoSuchElementException e) {
             return false;
         }
-    }
-
-    /**
-     * To be used only when absolutely necessary. Browsers should handle scrolling automatically but at some unknown
-     * conditions some of them (GeckoDriver) won't scroll.
-     *
-     * @param element
-     */
-    public static void scrollElementIntoView(WebElement element) {
-        ((JavascriptExecutor) getCurrentDriver()).executeScript("arguments[0].scrollIntoView(true);", element);
     }
 
     public static boolean doesElementClassContain(WebElement element, String value) {

@@ -44,7 +44,6 @@ public abstract class AbstractPage {
     protected OAuthClient oauth;
 
     public void assertCurrent() {
-        WaitUtils.waitForPageToLoad();
         String name = getClass().getSimpleName();
         Assert.assertTrue("Expected " + name + " but was " + DroneUtils.getCurrentDriver().getTitle() + " (" + DroneUtils.getCurrentDriver().getCurrentUrl() + ")",
                 isCurrent());

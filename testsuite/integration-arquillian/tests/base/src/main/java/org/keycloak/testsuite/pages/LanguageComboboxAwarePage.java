@@ -59,7 +59,6 @@ public abstract class LanguageComboboxAwarePage extends AbstractPage {
         WebElement langLink = localeDropdown.findElement(By.xpath("//a[text()='" + language + "']"));
         String url = langLink.getAttribute("href");
         DroneUtils.getCurrentDriver().navigate().to(url);
-        WaitUtils.waitForPageToLoad();
     }
 
     // If false, we don't expect form "Try another way" link available on the page. If true, we expect that it is available on the page

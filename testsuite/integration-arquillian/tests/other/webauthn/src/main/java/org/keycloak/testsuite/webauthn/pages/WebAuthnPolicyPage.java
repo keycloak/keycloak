@@ -33,7 +33,6 @@ import java.util.function.Supplier;
 
 import static org.keycloak.testsuite.util.UIUtils.getTextInputValue;
 import static org.keycloak.testsuite.util.UIUtils.setTextInputValue;
-import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
 import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
 import static org.keycloak.utils.StringUtil.isNotBlank;
 
@@ -202,13 +201,11 @@ public class WebAuthnPolicyPage {
     public void clickSaveButton() {
         waitUntilElement(checkElement(() -> saveButton)).is().clickable();
         saveButton.click();
-        waitForPageToLoad();
     }
 
     public void clickCancelButton() {
         waitUntilElement(checkElement(() -> cancelButton)).is().clickable();
         cancelButton.click();
-        waitForPageToLoad();
     }
 
     public boolean isSaveButtonEnabled() {

@@ -31,7 +31,6 @@ import org.openqa.selenium.support.ui.WebDriverWait;
 import java.time.Duration;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
 
 /**
  * WebAuthnRegisterPage, which is displayed when WebAuthnRegister required action is triggered. It is useful with Chrome testing API.
@@ -73,7 +72,6 @@ public class WebAuthnRegisterPage extends AbstractPage {
         Alert promptDialog = driver.switchTo().alert();
         promptDialog.sendKeys(authenticatorLabel);
         promptDialog.accept();
-        waitForPageToLoad();
     }
 
     public boolean isRegisterAlertPresent() {

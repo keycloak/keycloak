@@ -161,7 +161,6 @@ public class EmailTest extends AbstractI18NTest {
         link += "&kc_locale=de";
         
         DroneUtils.getCurrentDriver().navigate().to(link);
-        WaitUtils.waitForPageToLoad();
         
         Assert.assertTrue("Expected to be on InfoPage, but it was on " + DroneUtils.getCurrentDriver().getTitle(), infoPage.isCurrent());
         assertThat(infoPage.getLanguageDropdownText(), is(equalTo("English")));
@@ -174,7 +173,6 @@ public class EmailTest extends AbstractI18NTest {
         
         loginPasswordUpdatePage.openLanguage("English");
         loginPasswordUpdatePage.changePassword("pass", "pass");
-        WaitUtils.waitForPageToLoad();
         
         Assert.assertTrue("Expected to be on InfoPage, but it was on " + DroneUtils.getCurrentDriver().getTitle(), infoPage.isCurrent());
         assertThat(infoPage.getInfo(), containsString("Your account has been updated."));

@@ -14,7 +14,6 @@ import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
-import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
 
 public class BasicSpringBootTest extends AbstractSpringBootTest {
 
@@ -50,7 +49,6 @@ public class BasicSpringBootTest extends AbstractSpringBootTest {
 
     private void navigateToApplication() {
         driver.navigate().to(APPLICATION_URL + "/index.html");
-        waitForPageToLoad();
     }
 
     @Test
@@ -68,7 +66,6 @@ public class BasicSpringBootTest extends AbstractSpringBootTest {
         assertThat(driver.getPageSource(), containsString("You are now admin"));
 
         logout(BASE_URL);
-        waitForPageToLoad();
 
         assertCurrentUrlStartsWith(testRealmLoginPage);
 
@@ -88,7 +85,6 @@ public class BasicSpringBootTest extends AbstractSpringBootTest {
         assertThat(driver.getPageSource(), containsString("Forbidden"));
 
         logout(BASE_URL);
-        waitForPageToLoad();
     }
 
     @Test

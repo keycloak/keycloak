@@ -49,7 +49,6 @@ import org.keycloak.testsuite.util.DroneUtils;
 
 import static org.keycloak.testsuite.utils.io.IOUtil.loadRealm;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
-import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
 import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
 
 /**
@@ -165,7 +164,6 @@ public class CorsExampleAdapterTest extends AbstractExampleAdapterTest {
         assertNotNull(serverVersion);
 
         jsDriverAngularCorsProductPage.navigateTo();
-        waitForPageToLoad();
 
     }
 

@@ -1329,7 +1329,6 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
 
         resetPasswordPage.assertCurrent();
         resetPasswordPage.changePassword(username);
-        WaitUtils.waitForPageToLoad();
     }
 
     private String getValidRedirectUriWithRootUrl(String rootUrl, Collection<String> redirectUris) {

@@ -36,7 +36,6 @@ import org.jboss.shrinkwrap.api.asset.UrlAsset;
 
 import org.junit.Assert;
 import static org.keycloak.testsuite.auth.page.AuthRealm.DEMO;
-import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
 
 public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
 
@@ -224,7 +223,6 @@ public abstract class AbstractServletsAdapterTest extends AbstractAdapterTest {
                 .build().toString();
 
         DroneUtils.getCurrentDriver().navigate().to(timeOffsetUri);
-        waitForPageToLoad();
         String pageSource = DroneUtils.getCurrentDriver().getPageSource();
         log.info(pageSource);
     }

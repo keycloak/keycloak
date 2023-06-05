@@ -29,7 +29,6 @@ import java.util.List;
 import static org.keycloak.testsuite.util.UIUtils.clickLink;
 import static org.keycloak.testsuite.util.UIUtils.getTextFromElement;
 import static org.keycloak.testsuite.util.WaitUtils.pause;
-import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
 import static org.openqa.selenium.By.tagName;
 import static org.openqa.selenium.By.xpath;
 
@@ -80,7 +79,6 @@ public class DataTable {
 
 
     public List<WebElement> rows() {
-        waitForPageToLoad();
         pause(500); // wait a bit to ensure the table is no more changing
         return rows;
     }

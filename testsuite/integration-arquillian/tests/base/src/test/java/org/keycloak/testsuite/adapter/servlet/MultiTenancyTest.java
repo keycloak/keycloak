@@ -108,7 +108,6 @@ public class MultiTenancyTest extends AbstractServletsAdapterTest {
         String keycloakServerBaseUrl = authServerPage.toString();
         
         driver.navigate().to(tenantPage.getTenantRealmUrl("tenant1"));
-        WaitUtils.waitForPageToLoad();
         URLAssert.assertCurrentUrlStartsWith(keycloakServerBaseUrl);
         
         testRealmLoginPage.form().login("user-tenant2", "user-tenant2");

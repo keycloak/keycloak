@@ -500,7 +500,6 @@ public class AccountLinkSpringBootTest extends AbstractSpringBootTest {
 
         // Login to account mgmt first
         profilePage.open(REALM_NAME);
-        WaitUtils.waitForPageToLoad();
 
         assertCurrentUrlStartsWith(testRealmLoginPage);
         testRealmLoginPage.form().login(CHILD_USERNAME_1, CHILD_PASSWORD_1);
@@ -544,7 +543,6 @@ public class AccountLinkSpringBootTest extends AbstractSpringBootTest {
 
     private void navigateTo(String uri) {
         driver.navigate().to(uri);
-        WaitUtils.waitForPageToLoad();
     }
 
     public void logoutAll() {

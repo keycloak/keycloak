@@ -554,7 +554,6 @@ public class ClientInitiatedAccountLinkTest extends AbstractServletsAdapterTest 
 
         // Login to application first
         appPage.navigateTo();
-        WaitUtils.waitForPageToLoad();
 
         Assert.assertTrue(loginPage.isCurrent(CHILD_IDP));
         loginPage.login("child", "password");
@@ -587,7 +586,6 @@ public class ClientInitiatedAccountLinkTest extends AbstractServletsAdapterTest 
 
     private void navigateTo(String uri) {
         driver.navigate().to(uri);
-        WaitUtils.waitForPageToLoad();
     }
 
     

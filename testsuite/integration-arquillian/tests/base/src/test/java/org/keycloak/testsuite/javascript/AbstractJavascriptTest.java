@@ -39,7 +39,6 @@ import static org.hamcrest.collection.IsMapContaining.hasEntry;
 import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_HOST;
 import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_HOST2;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
-import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
 import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
 
 /**
@@ -175,7 +174,6 @@ public abstract class AbstractJavascriptTest extends AbstractAuthTest {
     }
     
     public void assertLocaleCookie(String locale, WebDriver driver1, Object output, WebElement events) {
-        waitForPageToLoad();
         Options ops = driver1.manage();
         Cookie cookie = ops.getCookieNamed("KEYCLOAK_LOCALE");
         Assert.assertNotNull(cookie);

@@ -20,7 +20,6 @@ import java.util.Map;
 
 import static org.keycloak.testsuite.broker.BrokerTestConstants.IDP_OIDC_PROVIDER_ID;
 import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_HOST2;
-import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
 import static org.keycloak.testsuite.util.ServerURLs.getAuthServerContextRoot;
 
 /**
@@ -60,8 +59,6 @@ public class BrokerTestTools {
     }
 
     public static void waitForPage(final WebDriver driver, final String title, final boolean isHtmlTitle) {
-        waitForPageToLoad();
-
         WebDriverWait wait = new WebDriverWait(driver, 5);
         ExpectedCondition<Boolean> condition = new ExpectedCondition<Boolean>() {
             private String actualTitle = null;

@@ -19,7 +19,6 @@ package org.keycloak.testsuite.authz.adapter.example;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.keycloak.common.Profile.Feature.AUTHORIZATION;
-import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
 import static org.keycloak.testsuite.utils.io.IOUtil.loadRealm;
 
 import java.io.File;
@@ -580,7 +579,6 @@ public class AbstractServletPolicyEnforcerTest extends AbstractExampleAdapterTes
 
     private void navigateTo() {
         this.driver.navigate().to(getResourceServerUrl() + "/");
-        waitForPageToLoad();
     }
 
     private boolean wasDenied() {

@@ -73,7 +73,6 @@ import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.keycloak.testsuite.util.BrowserDriverUtil.isDriverFirefox;
 import static org.keycloak.testsuite.util.BrowserDriverUtil.isDriverInstanceOf;
-import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
 
 /**
  * Abstract class for WebAuthn tests which use Virtual Authenticators
@@ -229,12 +228,10 @@ public abstract class AbstractWebAuthnVirtualTest extends AbstractTestRealmKeycl
         loginPage.open();
         loginPage.clickRegister();
 
-        waitForPageToLoad();
         registerPage.assertCurrent();
         registerPage.register("firstName", "lastName", email, username, password, password);
 
         // User was registered. Now he needs to register WebAuthn credential
-        waitForPageToLoad();
         webAuthnRegisterPage.assertCurrent();
         webAuthnRegisterPage.clickRegister();
 
@@ -242,8 +239,6 @@ public abstract class AbstractWebAuthnVirtualTest extends AbstractTestRealmKeycl
             events.clear();
             tryRegisterAuthenticator(authenticatorLabel);
         }
-
-        waitForPageToLoad();
     }
 
     private void tryRegisterAuthenticator(String authenticatorLabel) {
@@ -267,7 +262,6 @@ public abstract class AbstractWebAuthnVirtualTest extends AbstractTestRealmKeycl
             for (int i = 0; i < numberOfAllowedRetries; i++) {
                 events.clear();
                 webAuthnErrorPage.clickTryAgain();
-                waitForPageToLoad();
                 webAuthnRegisterPage.assertCurrent();
                 webAuthnRegisterPage.clickRegister();
 
@@ -298,13 +292,10 @@ public abstract class AbstractWebAuthnVirtualTest extends AbstractTestRealmKeycl
         loginPage.assertCurrent(TEST_REALM_NAME);
         loginPage.login(username, password);
 
-        waitForPageToLoad();
-
         webAuthnLoginPage.assertCurrent();
         webAuthnLoginPage.clickAuthenticate();
 
         if (shouldSuccess) {
-            waitForPageToLoad();
             appPage.assertCurrent();
         } else {
             displayErrorMessageIfPresent();
@@ -385,13 +376,11 @@ public abstract class AbstractWebAuthnVirtualTest extends AbstractTestRealmKeycl
 
     protected void logout() {
         try {
-            waitForPageToLoad();
             String logoutUrl = oauth.getLogoutUrl().build();
             driver.navigate().to(logoutUrl);
             logoutConfirmPage.assertCurrent();
             logoutConfirmPage.confirmLogout();
             infoPage.assertCurrent();
-            waitForPageToLoad();
         } catch (Exception e) {
             throw new RuntimeException("Cannot logout user", e);
         }

@@ -50,7 +50,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.keycloak.models.AuthenticationExecutionModel.Requirement.ALTERNATIVE;
 import static org.keycloak.models.AuthenticationExecutionModel.Requirement.REQUIRED;
 import static org.keycloak.testsuite.util.BrowserDriverUtil.isDriverFirefox;
-import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
 
 /**
  * @author <a href="mailto:mabartos@redhat.com">Martin Bartos</a>
@@ -143,8 +142,6 @@ public class AppInitiatedActionWebAuthnTest extends AbstractAppInitiatedActionTe
 
         webAuthnRegisterPage.assertCurrent();
         webAuthnRegisterPage.cancelAIA();
-
-        waitForPageToLoad();
 
         assertKcActionStatus(CANCELLED);
     }

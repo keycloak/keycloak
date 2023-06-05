@@ -89,7 +89,6 @@ public class BrowserTabUtil implements AutoCloseable {
 
     public void switchToTab(String windowHandle) {
         driver.switchTo().window(windowHandle);
-        WaitUtils.waitForPageToLoad();
     }
 
     public void switchToTab(int index) {

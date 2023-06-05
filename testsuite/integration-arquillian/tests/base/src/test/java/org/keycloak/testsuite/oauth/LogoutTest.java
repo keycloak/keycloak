@@ -141,7 +141,6 @@ public class LogoutTest extends AbstractKeycloakTest {
 
         setTimeOffset(2);
 
-        WaitUtils.waitForPageToLoad();
         loginPage.login("password");
 
         Assert.assertFalse(loginPage.isCurrent());

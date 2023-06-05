@@ -309,9 +309,6 @@ public class SocialLoginTest extends AbstractKeycloakTest {
         assertTrue(driver.getCurrentUrl().contains("hd=non-matching-hosted-domain"));
         doLogin();
 
-        // Just to be sure there's no redirect in progress
-        WaitUtils.waitForPageToLoad();
-
         WebElement errorMessage = driver.findElement(By.xpath(".//p[@class='instruction']"));
 
         assertTrue(errorMessage.isDisplayed());
@@ -503,7 +500,6 @@ public class SocialLoginTest extends AbstractKeycloakTest {
 
         // Just to be sure there's no redirect in progress
         WaitUtils.pause(3000);
-        WaitUtils.waitForPageToLoad();
     }
 
     private void doLogin() {
@@ -516,7 +512,6 @@ public class SocialLoginTest extends AbstractKeycloakTest {
             log.infof("already logged in to '%s'; skipping the login process", currentTestProvider.id());
         }
         WaitUtils.pause(3000);
-        WaitUtils.waitForPageToLoad();
     }
 
     private void assertAttribute(String attrName, String expectedValue) {

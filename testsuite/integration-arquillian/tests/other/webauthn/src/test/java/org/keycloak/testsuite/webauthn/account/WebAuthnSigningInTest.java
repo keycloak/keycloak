@@ -54,7 +54,6 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.keycloak.testsuite.ui.account2.page.utils.SigningInPageUtils.assertUserCredential;
 import static org.keycloak.testsuite.ui.account2.page.utils.SigningInPageUtils.testSetUpLink;
 import static org.keycloak.testsuite.util.UIUtils.refreshPageAndWaitForLoad;
-import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
 
 public class WebAuthnSigningInTest extends AbstractWebAuthnAccountTest {
 
@@ -391,12 +390,10 @@ public class WebAuthnSigningInTest extends AbstractWebAuthnAccountTest {
         SigningInPage.CredentialType credentialType = passwordless ? webAuthnPwdlessCredentialType : webAuthnCredentialType;
 
         credentialType.clickSetUpLink();
-        waitForPageToLoad();
         webAuthnRegisterPage.assertCurrent();
         assertThat(webAuthnRegisterPage.isAIA(), is(true));
         webAuthnRegisterPage.cancelAIA();
 
-        waitForPageToLoad();
         signingInPage.assertCurrent();
     }
 

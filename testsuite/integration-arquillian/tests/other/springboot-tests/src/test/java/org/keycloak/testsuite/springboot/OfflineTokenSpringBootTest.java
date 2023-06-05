@@ -38,7 +38,6 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
 import static org.keycloak.testsuite.util.WaitUtils.pause;
-import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
 
 public class OfflineTokenSpringBootTest extends AbstractSpringBootTest {
     private static final String SERVLET_URL = BASE_URL + "/TokenServlet";
@@ -61,7 +60,6 @@ public class OfflineTokenSpringBootTest extends AbstractSpringBootTest {
                 .queryParam(OAuth2Constants.SCOPE, OAuth2Constants.OFFLINE_ACCESS)
                 .build().toString();
         driver.navigate().to(servletUri);
-        waitForPageToLoad();
 
         assertCurrentUrlStartsWith(testRealmLoginPage);
         testRealmLoginPage.form().login(USER_LOGIN, USER_PASSWORD);
@@ -77,7 +75,6 @@ public class OfflineTokenSpringBootTest extends AbstractSpringBootTest {
         setAdapterAndServerTimeOffset(19999, SERVLET_URL);
 
         driver.navigate().to(SERVLET_URL);
-        waitForPageToLoad();
 
         tokenPage.assertIsCurrent();
         assertThat(tokenPage.getRefreshToken().getId(), is(not(equalTo(refreshTokenId))));
@@ -86,7 +83,6 @@ public class OfflineTokenSpringBootTest extends AbstractSpringBootTest {
         setAdapterAndServerTimeOffset(0, SERVLET_URL);
 
         logout(SERVLET_URL);
-        waitForPageToLoad();
         assertCurrentUrlStartsWith(testRealmLoginPage);
     }
 
@@ -97,7 +93,6 @@ public class OfflineTokenSpringBootTest extends AbstractSpringBootTest {
                 .queryParam(OAuth2Constants.SCOPE, OAuth2Constants.OFFLINE_ACCESS)
                 .build().toString();
         driver.navigate().to(servletUri);
-        waitForPageToLoad();
 
         assertCurrentUrlStartsWith(testRealmLoginPage);
 
@@ -110,7 +105,6 @@ public class OfflineTokenSpringBootTest extends AbstractSpringBootTest {
         setAdapterAndServerTimeOffset(9999, SERVLET_URL);
 
         driver.navigate().to(SERVLET_URL);
-        waitForPageToLoad();
         tokenPage.assertIsCurrent();
 
         setAdapterAndServerTimeOffset(0, SERVLET_URL);
@@ -134,7 +128,6 @@ public class OfflineTokenSpringBootTest extends AbstractSpringBootTest {
         // Assert refresh doesn't work now (increase time one more time)
         setAdapterAndServerTimeOffset(19999, SERVLET_URL);
         driver.navigate().to(SERVLET_URL);
-        waitForPageToLoad();
 
         assertCurrentUrlStartsWith(testRealmLoginPage);
         testRealmLoginPage.form().login(USER_LOGIN, USER_PASSWORD);
@@ -150,7 +143,6 @@ public class OfflineTokenSpringBootTest extends AbstractSpringBootTest {
 
         // Assert grant page doesn't have 'Offline Access' role when offline token is not requested
         driver.navigate().to(SERVLET_URL);
-        waitForPageToLoad();
 
         testRealmLoginPage.form().login(USER_LOGIN, USER_PASSWORD);
         oauthGrantPage.assertCurrent();
@@ -159,7 +151,6 @@ public class OfflineTokenSpringBootTest extends AbstractSpringBootTest {
         driver.navigate().to(UriBuilder.fromUri(SERVLET_URL)
                 .queryParam(OAuth2Constants.SCOPE, OAuth2Constants.OFFLINE_ACCESS)
                 .build().toString());
-        waitForPageToLoad();
 
         testRealmLoginPage.form().login(USER_LOGIN, USER_PASSWORD);
         oauthGrantPage.assertCurrent();

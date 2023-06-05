@@ -527,8 +527,6 @@ public final class KcOidcBrokerTest extends AbstractAdvancedBrokerTest {
             oauth.clientId("broker-app");
             loginPage.open(bc.consumerRealmName());
 
-            WaitUtils.waitForPageToLoad();
-
             assertThat(driver.getTitle(), Matchers.containsString("Sign in to " + bc.consumerRealmName()));
             logInWithIdp(IDP_NAME, USERNAME, PASSWORD);
 
@@ -561,8 +559,6 @@ public final class KcOidcBrokerTest extends AbstractAdvancedBrokerTest {
 
             oauth.clientId("broker-app");
             loginPage.open(bc.consumerRealmName());
-
-            WaitUtils.waitForPageToLoad();
 
             assertThat(driver.getTitle(), Matchers.containsString("Sign in to " + bc.consumerRealmName()));
             logInWithIdp(IDP_NAME, NEW_USERNAME, PASSWORD);

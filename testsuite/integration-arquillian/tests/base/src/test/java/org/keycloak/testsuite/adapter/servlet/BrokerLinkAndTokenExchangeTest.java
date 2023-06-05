@@ -760,7 +760,6 @@ public class BrokerLinkAndTokenExchangeTest extends AbstractServletsAdapterTest 
 
     private void navigateTo(String uri) {
         driver.navigate().to(uri);
-        WaitUtils.waitForPageToLoad();
     }
 
     private void checkFeature(int statusCode) throws Exception {

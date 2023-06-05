@@ -2,7 +2,6 @@ package org.keycloak.testsuite.util.javascript;
 
 import org.jboss.logging.Logger;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.testsuite.auth.page.login.OIDCLogin;
 import org.keycloak.testsuite.pages.LogoutConfirmPage;
 import org.keycloak.testsuite.util.WaitUtils;
@@ -16,7 +15,6 @@ import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.fail;
 import static org.keycloak.testsuite.util.WaitUtils.pause;
-import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
 
 
 /**
@@ -96,7 +94,6 @@ public class JavascriptTestExecutor {
         else {
             jsExecutor.executeScript("keycloak.login(" + options + ")");
         }
-        waitForPageToLoad();
 
         if (validator != null) {
             validator.validate(jsDriver, output, events);
@@ -113,7 +110,6 @@ public class JavascriptTestExecutor {
 
     public JavascriptTestExecutor loginForm(UserRepresentation user, JavascriptStateValidator validator) {
         loginPage.form().login(user);
-        waitForPageToLoad();
 
         if (validator != null) {
             validator.validate(jsDriver, null, events);
@@ -140,7 +136,6 @@ public class JavascriptTestExecutor {
             // simple check if we are at the logout confirm page, if so just click 'Yes'
             if (logoutConfirmPage != null && logoutConfirmPage.isCurrent(jsDriver)) {
                 logoutConfirmPage.confirmLogout(jsDriver);
-                waitForPageToLoad();
             }
         } catch (Exception ex) {
             // ignore errors when checking logoutConfirm page, if an error tests will also fail
@@ -216,7 +211,6 @@ public class JavascriptTestExecutor {
                 fail("Redirect to Keycloak was expected");
             }
             catch (WebDriverException e) {
-                waitForPageToLoad();
                 configured = false;
                 // the redirect should use prompt=none, that means KC should immediately redirect back to the app (regardless login state)
                 return init(argumentsBuilder, validator, false);
@@ -262,20 +256,6 @@ public class JavascriptTestExecutor {
 
         if(validator != null) {
             validator.validate(jsDriver, output, events);
-        }
-
-        return this;
-    }
-
-    public JavascriptTestExecutor openAccountPage(JavascriptStateValidator validator) {
-        jsExecutor.executeScript("window.keycloak.accountManagement()");
-        waitForPageToLoad();
-
-        // Leaving page -> loosing keycloak variable
-        configured = false;
-
-        if (validator != null) {
-            validator.validate(jsDriver, null, null);
         }
 
         return this;
@@ -327,10 +307,6 @@ public class JavascriptTestExecutor {
         validator.validate(jsDriver, timeSkew, events);
 
         return this;
-    }
-
-    public JavascriptTestExecutor executeScript(String script) {
-        return executeScript(script, null);
     }
 
     public JavascriptTestExecutor executeScript(String script, JavascriptStateValidator validator) {

@@ -22,7 +22,6 @@ import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.keycloak.OAuth2Constants;
 import org.keycloak.common.Profile.Feature;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.models.ClientModel;
@@ -61,7 +60,6 @@ import org.junit.BeforeClass;
 import static org.keycloak.storage.UserStorageProviderModel.IMPORT_ENABLED;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlEquals;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWithLoginUrlOf;
-import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -193,14 +191,11 @@ public class UserStorageConsentTest extends AbstractServletsAdapterTest {
                 .build("demo").toString();
 
         driver.navigate().to(logoutUri);
-        waitForPageToLoad();
         logoutConfirmPage.assertCurrent();
         logoutConfirmPage.confirmLogout();
-        waitForPageToLoad();
         infoPage.assertCurrent();
 
         driver.navigate().to(productPortal.toString());
-        waitForPageToLoad();
         assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
         productPortal.navigateTo();
         assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
@@ -209,7 +204,6 @@ public class UserStorageConsentTest extends AbstractServletsAdapterTest {
         Assert.assertTrue(driver.getPageSource().contains("iPhone"));
 
         driver.navigate().to(logoutUri);
-        waitForPageToLoad();
         logoutConfirmPage.assertCurrent();
         logoutConfirmPage.confirmLogout();
         adminClient.realm("demo").users().delete(uid).close();

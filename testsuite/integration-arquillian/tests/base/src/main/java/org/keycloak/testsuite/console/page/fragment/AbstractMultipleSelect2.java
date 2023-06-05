@@ -33,7 +33,6 @@ import java.util.function.Function;
 
 import static org.keycloak.testsuite.util.UIUtils.clickLink;
 import static org.keycloak.testsuite.util.WaitUtils.pause;
-import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -85,7 +84,6 @@ public abstract class AbstractMultipleSelect2<R> {
         String id = identity().apply(value);
 
         search.sendKeys(id);
-        waitForPageToLoad();
 
         if (result.isEmpty()) {
             search.sendKeys(Keys.ESCAPE);

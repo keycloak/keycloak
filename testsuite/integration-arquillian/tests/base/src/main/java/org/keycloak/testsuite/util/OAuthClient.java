@@ -314,7 +314,6 @@ public class OAuthClient {
 
     public AuthorizationEndpointResponse doLoginSocial(String brokerId, String username, String password) {
         openLoginForm();
-        WaitUtils.waitForPageToLoad();
 
         WebElement socialButton = findSocialButton(brokerId);
         clickLink(socialButton);
@@ -324,17 +323,14 @@ public class OAuthClient {
     }
 
     public void updateAccountInformation(String username, String email) {
-        WaitUtils.waitForPageToLoad();
         updateAccountInformation(username, email, "First", "Last");
     }
 
     public void linkUsers(String username, String password) {
-        WaitUtils.waitForPageToLoad();
         WebElement linkAccountButton = driver.findElement(By.id("linkAccount"));
         waitUntilElement(linkAccountButton).is().clickable();
         linkAccountButton.click();
 
-        WaitUtils.waitForPageToLoad();
         WebElement usernameInput = driver.findElement(By.id("username"));
         usernameInput.clear();
         usernameInput.sendKeys(username);
@@ -364,7 +360,6 @@ public class OAuthClient {
     }
 
     public void fillLoginForm(String username, String password, boolean rememberMe) {
-        WaitUtils.waitForPageToLoad();
         String src = driver.getPageSource();
         try {
             driver.findElement(By.id("username")).sendKeys(username);

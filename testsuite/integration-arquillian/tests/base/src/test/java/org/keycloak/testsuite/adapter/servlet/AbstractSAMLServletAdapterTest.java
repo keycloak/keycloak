@@ -23,13 +23,10 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import static org.keycloak.testsuite.admin.ApiUtil.getCreatedId;
 import static org.keycloak.testsuite.auth.page.AuthRealm.SAMLSERVLETDEMO;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
-import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
 
 public abstract class AbstractSAMLServletAdapterTest extends AbstractServletsAdapterTest {
 
@@ -95,7 +92,6 @@ public abstract class AbstractSAMLServletAdapterTest extends AbstractServletsAda
 
     protected void checkLoggedOut(AbstractPage page, Login loginPage) {
         page.navigateTo();
-        waitForPageToLoad();
         assertCurrentUrlStartsWith(loginPage);
     }
 }

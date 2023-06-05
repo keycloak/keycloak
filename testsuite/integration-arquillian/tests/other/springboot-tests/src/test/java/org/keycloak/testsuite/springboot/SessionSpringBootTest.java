@@ -31,7 +31,6 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
 import static org.keycloak.testsuite.util.WaitUtils.pause;
-import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
 
 @DisableFeature(value = Profile.Feature.ACCOUNT2, skipRestart = true) // TODO remove this (KEYCLOAK-16228)
 public class SessionSpringBootTest extends AbstractSpringBootTest {
@@ -78,7 +77,6 @@ public class SessionSpringBootTest extends AbstractSpringBootTest {
 
     private void loginAndCheckSession() {
         driver.navigate().to(SERVLET_URL);
-        waitForPageToLoad();
 
         assertCurrentUrlStartsWith(testRealmLoginPage, driver);
         testRealmLoginPage.form().login(USER_LOGIN, USER_PASSWORD);
@@ -87,7 +85,6 @@ public class SessionSpringBootTest extends AbstractSpringBootTest {
         assertThat(sessionPage.getCounter(), is(equalTo(0)));
 
         driver.navigate().to(SERVLET_URL);
-        waitForPageToLoad();
 
         assertThat(sessionPage.getCounter(), is(equalTo(1)));
     }
@@ -112,7 +109,6 @@ public class SessionSpringBootTest extends AbstractSpringBootTest {
         DroneUtils.addWebDriver(driver2);
 
         driver2.navigate().to(SERVLET_URL);
-        waitForPageToLoad(); // driver2 will be used because of DroneUtils.addWebDriver()
 
         log.info("current title is " + driver2.getTitle());
         assertCurrentUrlStartsWith(secondTestRealmLoginPage, driver2);
@@ -124,7 +120,6 @@ public class SessionSpringBootTest extends AbstractSpringBootTest {
 
         // Counter increased now
         driver2.navigate().to(SERVLET_URL);
-        waitForPageToLoad(); // driver2 will be used because of DroneUtils.addWebDriver()
 
         assertThat(secondBrowserSessionPage.getCounter(), is(equalTo(1)));
 
@@ -132,18 +127,15 @@ public class SessionSpringBootTest extends AbstractSpringBootTest {
 
         // Logout in browser1
         logout(SERVLET_URL);
-        waitForPageToLoad();
 
         // Assert that I am logged out in browser1
         driver.navigate().to(SERVLET_URL);
-        waitForPageToLoad();
 
         assertCurrentUrlStartsWith(testRealmLoginPage, driver);
 
         // Assert that I am still logged in browser2 and same session is still preserved
         DroneUtils.addWebDriver(driver2);
         driver2.navigate().to(SERVLET_URL);
-        waitForPageToLoad();
 
         secondBrowserSessionPage.assertIsCurrent();
         assertThat(secondBrowserSessionPage.getCounter(), is(equalTo(2)));
@@ -151,15 +143,11 @@ public class SessionSpringBootTest extends AbstractSpringBootTest {
         String logoutUrl = getLogoutUrl();
         driver2.navigate().to(logoutUrl);
 
-        waitForPageToLoad();
         Assert.assertThat(true, is(secondBrowserLogoutConfirmPage.isCurrent(driver2)));
         secondBrowserLogoutConfirmPage.confirmLogout(driver2);
-        waitForPageToLoad();
         secondBrowserInfoPage.assertCurrent();
-        waitForPageToLoad();
         driver2.navigate().to(SERVLET_URL);
 
-        waitForPageToLoad();
         assertCurrentUrlStartsWith(secondTestRealmLoginPage, driver2);
 
         DroneUtils.removeWebDriver();
@@ -188,11 +176,9 @@ public class SessionSpringBootTest extends AbstractSpringBootTest {
 
         // Logout
         logout(SERVLET_URL);
-        waitForPageToLoad();
 
         // Assert that http session was invalidated
         driver.navigate().to(SERVLET_URL);
-        waitForPageToLoad();
 
         assertCurrentUrlStartsWith(testRealmLoginPage, driver);
         testRealmLoginPage.form().login(USER_LOGIN, USER_PASSWORD);
@@ -205,7 +191,6 @@ public class SessionSpringBootTest extends AbstractSpringBootTest {
         realmResource.update(realmRep);
 
         logout(SERVLET_URL);
-        waitForPageToLoad();
     }
 
     @Test
@@ -219,13 +204,11 @@ public class SessionSpringBootTest extends AbstractSpringBootTest {
 
         // user1 should be still logged with original httpSession in our browser window
         driver.navigate().to(SERVLET_URL);
-        waitForPageToLoad();
 
         sessionPage.assertIsCurrent();
         assertThat(sessionPage.getCounter(), is(equalTo(2)));
 
         logout(SERVLET_URL);
-        waitForPageToLoad();
     }
 
     @Test
@@ -239,6 +222,5 @@ public class SessionSpringBootTest extends AbstractSpringBootTest {
         loginAndCheckSession();
 
         logout(SERVLET_URL);
-        waitForPageToLoad();
     }
 }

@@ -130,7 +130,6 @@ import static org.keycloak.testsuite.util.AdminClientUtil.createResteasyClient;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlEquals;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWithLoginUrlOf;
-import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
 
 /**
  *
@@ -455,7 +454,6 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
         assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
         testRealmLoginPage.form().login("bburke@redhat.com", "password");
         assertCurrentUrlEquals(inputPortal.getUriBuilder().clone().path("secured").path("post").build());
-        waitForPageToLoad();
         assertPageContains("parameter=hello");
 
         AccountHelper.logout(testRealmResource(), "bburke@redhat.com");
@@ -836,7 +834,6 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
         securePortal.navigateTo();
         assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
         testRealmLoginPage.form().login("bburke@redhat.com", "password");
-        waitForPageToLoad();
         assertCurrentUrlStartsWith(securePortal);
         assertLogged();
 
@@ -848,7 +845,6 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
             String appUri = tokenMinTTLPage.getUriBuilder().queryParam(OIDCLoginProtocol.PROMPT_PARAM, OIDCLoginProtocol.PROMPT_VALUE_LOGIN).build().toString();
             URLUtils.navigateToUri(appUri);
             assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
-            WaitUtils.waitForPageToLoad();
             testRealmLoginPage.form().setPassword("password");
             testRealmLoginPage.form().login();
             AccessToken token = tokenMinTTLPage.getAccessToken();
@@ -1005,7 +1001,6 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
 
         oAuthGrantPage.accept();
 
-        waitForPageToLoad();
         assertLogged();
 
         String userId = ApiUtil.findUserByUsername(testRealmResource(), "bburke@redhat.com").getId();
@@ -1058,7 +1053,6 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
 
         testRealmLoginPage.form().login("bburke@redhat.com", "password");
 
-        waitForPageToLoad();
         assertLogged();
 
         String userId = ApiUtil.findUserByUsername(testRealmResource(), "bburke@redhat.com").getId();
@@ -1473,7 +1467,6 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
     @Test
     public void testLoginHintFromClientRequest() {
         driver.navigate().to(customerPortal + "?login_hint=blah%3d");
-        waitForPageToLoad();
         assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
         assertThat(testRealmLoginPage.form().getUsername(), is("blah="));
     }

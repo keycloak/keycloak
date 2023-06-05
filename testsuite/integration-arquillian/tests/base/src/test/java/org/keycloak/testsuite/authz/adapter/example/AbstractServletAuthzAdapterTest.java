@@ -202,7 +202,6 @@ public abstract class AbstractServletAuthzAdapterTest extends AbstractBaseServle
     public void testAccessPublicResource() throws Exception {
         performTests(() -> {
             driver.navigate().to(getResourceServerUrl() + "/public-html.html");
-            WaitUtils.waitForPageToLoad();
             assertTrue(hasText("This is public resource that should be accessible without login."));
         });
     }
@@ -308,7 +307,6 @@ public abstract class AbstractServletAuthzAdapterTest extends AbstractBaseServle
         performTests(() -> {
             login("jdoe", "jdoe");
             driver.navigate().to(getResourceServerUrl() + "/protected/scopes.jsp");
-            WaitUtils.waitForPageToLoad();
             assertTrue(hasText("Granted"));
         });
     }

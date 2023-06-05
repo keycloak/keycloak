@@ -266,7 +266,6 @@ public class RPInitiatedLogoutTest extends AbstractTestRealmKeycloakTest {
 
             // check if the back channel logout succeeded
             driver.navigate().to(oauth.getLoginFormUrl());
-            WaitUtils.waitForPageToLoad();
             loginPage.assertCurrent();
         }
     }
@@ -532,7 +531,6 @@ public class RPInitiatedLogoutTest extends AbstractTestRealmKeycloakTest {
         MatcherAssert.assertThat(false, is(isSessionActive(tokenResponse.getSessionState())));
 
         infoPage.clickBackToApplicationLink();
-        WaitUtils.waitForPageToLoad();
         MatcherAssert.assertThat(driver.getCurrentUrl(), endsWith("/app/auth"));
     }
 
@@ -634,7 +632,6 @@ public class RPInitiatedLogoutTest extends AbstractTestRealmKeycloakTest {
             infoPage.assertCurrent();
             Assert.assertEquals("Odhlášení bylo úspěšné", infoPage.getInfo()); // Logout success message
             infoPage.clickBackToApplicationLinkCs();
-            WaitUtils.waitForPageToLoad();
             MatcherAssert.assertThat(driver.getCurrentUrl(), endsWith("/app/auth"));
         }
     }
@@ -806,7 +803,6 @@ public class RPInitiatedLogoutTest extends AbstractTestRealmKeycloakTest {
             Assert.assertEquals("Čeština", logoutConfirmPage.getLanguageDropdownText());
             logoutConfirmPage.confirmLogout();
 
-            WaitUtils.waitForPageToLoad();
             events.expectLogout(tokenResponse.getSessionState()).detail(Details.REDIRECT_URI, redirectUri).assertEvent();
             MatcherAssert.assertThat(false, is(isSessionActive(sessionId)));
             assertCurrentUrlEquals(redirectUri + "&state=my-state-2");
@@ -838,7 +834,6 @@ public class RPInitiatedLogoutTest extends AbstractTestRealmKeycloakTest {
             Assert.assertEquals("Abmelden", PageUtils.getPageTitle(driver)); // Logging out
             Assert.assertEquals("Deutsch", logoutConfirmPage.getLanguageDropdownText());
             logoutConfirmPage.confirmLogout();
-            WaitUtils.waitForPageToLoad();
             events.expectLogout(tokenResponse.getSessionState()).removeDetail(Details.REDIRECT_URI).assertEvent();
 
             // Remove ui_locales from logout request. Default locale should be set
@@ -847,7 +842,6 @@ public class RPInitiatedLogoutTest extends AbstractTestRealmKeycloakTest {
             Assert.assertEquals("Logging out", PageUtils.getPageTitle(driver));
             Assert.assertEquals("English", logoutConfirmPage.getLanguageDropdownText());
             logoutConfirmPage.confirmLogout();
-            WaitUtils.waitForPageToLoad();
             events.expectLogout(tokenResponse.getSessionState()).removeDetail(Details.REDIRECT_URI).assertEvent();
         }
     }
@@ -904,7 +898,6 @@ public class RPInitiatedLogoutTest extends AbstractTestRealmKeycloakTest {
             infoPage.assertCurrent();
             Assert.assertEquals("Odhlášení bylo úspěšné", infoPage.getInfo()); // Logout success message
             infoPage.clickBackToApplicationLinkCs();
-            WaitUtils.waitForPageToLoad();
             MatcherAssert.assertThat(driver.getCurrentUrl(), endsWith("/app/auth"));
         }
     }
@@ -927,7 +920,6 @@ public class RPInitiatedLogoutTest extends AbstractTestRealmKeycloakTest {
                 .build().toString();
 
         driver.navigate().to(changedUrl);
-        WaitUtils.waitForPageToLoad();
 
         errorPage.assertCurrent();
         Assert.assertEquals("Logout failed", errorPage.getError());
