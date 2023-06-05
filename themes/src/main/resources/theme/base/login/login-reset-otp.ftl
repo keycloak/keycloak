@@ -7,7 +7,7 @@
               method="post">
             <div class="${properties.kcFormGroupClass!}">
                 <div class="${properties.kcInputWrapperClass!}">
-                    <p>${msg("otp-reset-description")}</p>
+                    <p id="kc-otp-reset-form-description">${msg("otp-reset-description")}</p>
 
                     <#list configuredOtpCredentials.userOtpCredentials as otpCredential>
                         <input id="kc-otp-credential-${otpCredential?index}" class="${properties.kcLoginOTPListInputClass!}" type="radio" name="selectedCredentialId" value="${otpCredential.id}" <#if otpCredential.id == configuredOtpCredentials.selectedCredentialId>checked="checked"</#if>>
@@ -23,7 +23,7 @@
 
                     <div class="${properties.kcFormGroupClass!}">
                         <div id="kc-form-buttons" class="${properties.kcFormButtonsClass!}">
-                            <input class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonBlockClass!} ${properties.kcButtonLargeClass!}" type="submit" value="${msg("doSubmit")}"/>
+                            <input id="kc-otp-reset-form-submit" class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonBlockClass!} ${properties.kcButtonLargeClass!}" type="submit" value="${msg("doSubmit")}"/>
                         </div>
                     </div>
                 </div>

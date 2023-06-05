@@ -53,24 +53,6 @@ public class ResetOTP extends AbstractSetRequiredActionAuthenticator implements 
     private static final String REMOVE_ONE = "Remove one";
     private static final String REMOVE_ALL = "Remove all";
 
-    private static final List<ProviderConfigProperty> config;
-
-    static {
-        ProviderConfigurationBuilder builder = ProviderConfigurationBuilder.create();
-
-        builder.property(ACTION_ON_OTP_RESET_FLAG,
-                "Action on OTP reset.",
-                " If 'Remove none' is chosen, the user will keep all existing OTP configurations (legacy behavior)." +
-                        " If 'Remove one' is chosen, the user will be prompted to choose one OTP configuration which will then be removed." +
-                        " If 'Remove all' is chosen, all existing OTP configurations of the user will be removed." +
-                        " The user will always be prompted to configure a new OTP no matter which option is selected.",
-                ProviderConfigProperty.LIST_TYPE,
-                REMOVE_NONE,
-                asList(REMOVE_NONE, REMOVE_ONE, REMOVE_ALL));
-
-        config = builder.build();
-    }
-
     @Override
     public void authenticate(AuthenticationFlowContext context) {
         AuthenticatorConfigModel authenticatorConfigModel = context.getAuthenticatorConfig();
@@ -111,13 +93,15 @@ public class ResetOTP extends AbstractSetRequiredActionAuthenticator implements 
 
         String credentialId = inputData.getFirst("selectedCredentialId");
 
+        // This case should never occur. If you there are no OTP credentials available the form will never be displayed in the first place.
+        // If the form is displayed the first OTP credential is selected by default, and it's not possible to unselect radio buttons.
         if (credentialId == null || credentialId.isEmpty()) {
             List<CredentialModel> otpCredentialModelList = context.getUser().credentialManager()
                     .getStoredCredentialsByTypeStream(OTPCredentialModel.TYPE).collect(Collectors.toList());
 
             Response challengeResponse = context.form()
                     .setAttribute("configuredOtpCredentials", otpCredentialModelList)
-                    .setError(Messages.RESET_TOTP_MISSING_ID_ERROR)
+                    .setError(Messages.RESET_OTP_MISSING_ID_ERROR)
                     .createOtpReset();
 
             context.challenge(challengeResponse);
@@ -136,7 +120,19 @@ public class ResetOTP extends AbstractSetRequiredActionAuthenticator implements 
     }
 
     @Override public List<ProviderConfigProperty> getConfigProperties() {
-        return config;
+        ProviderConfigurationBuilder builder = ProviderConfigurationBuilder.create();
+
+        builder.property(ACTION_ON_OTP_RESET_FLAG,
+                "Action on OTP reset.",
+                " If 'Remove none' is chosen, the user will keep all existing OTP configurations (legacy behavior)." +
+                        " If 'Remove one' is chosen, the user will be prompted to choose one OTP configuration which will then be removed." +
+                        " If 'Remove all' is chosen, all existing OTP configurations of the user will be removed." +
+                        " The user will always be prompted to configure a new OTP no matter which option is selected.",
+                ProviderConfigProperty.LIST_TYPE,
+                REMOVE_NONE,
+                asList(REMOVE_NONE, REMOVE_ONE, REMOVE_ALL));
+
+        return builder.build();
     }
 
     @Override

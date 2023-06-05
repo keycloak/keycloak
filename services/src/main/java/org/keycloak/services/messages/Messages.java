@@ -62,7 +62,7 @@ public class Messages {
 
     public static final String MISSING_TOTP = "missingTotpMessage";
 
-    public static final String RESET_TOTP_MISSING_ID_ERROR = "resetTotpMissingIdError";
+    public static final String RESET_OTP_MISSING_ID_ERROR = "error-reset-otp-missing-id";
 
     public static final String MISSING_TOTP_DEVICE_NAME = "missingTotpDeviceNameMessage";
 
