@@ -37,6 +37,7 @@ import org.keycloak.models.ClientSecretConstants;
 import org.keycloak.models.Constants;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.KeycloakSessionTask;
@@ -250,20 +251,65 @@ public final class KeycloakModelUtils {
 
     /**
      * Wrap given runnable job into KeycloakTransaction.
+     * @param factory The session factory to use
+     * @param task The task to execute
      */
     public static void runJobInTransaction(KeycloakSessionFactory factory, KeycloakSessionTask task) {
-        runJobInTransactionWithResult(factory, session -> {
+        runJobInTransactionWithResult(factory, null, session -> {
             task.run(session);
             return null;
         });
     }
 
     /**
+     * Wrap given runnable job into KeycloakTransaction.
+     * @param factory The session factory to use
+     * @param context The context from the previous session
+     * @param task The task to execute
+     */
+    public static void runJobInTransaction(KeycloakSessionFactory factory, KeycloakContext context, KeycloakSessionTask task) {
+        runJobInTransactionWithResult(factory, context, session -> {
+            task.run(session);
+            return null;
+        });
+    }
+
+    /**
+     * Copy all the objects in the context to the session.
+     * @param session The session
+     * @param context The context
+     */
+    public static void propagateContext(KeycloakSession session, KeycloakContext context) {
+        session.getContext().setRealm(context.getRealm());
+        session.getContext().setClient(context.getClient());
+        session.getContext().setAuthenticationSession(context.getAuthenticationSession());
+    }
+
+    /**
      * Wrap a given callable job into a KeycloakTransaction.
+     * @param <V> The type for the result
+     * @param factory The session factory
+     * @param callable The callable to execute
+     * @return The return value from the callable
      */
     public static <V> V runJobInTransactionWithResult(KeycloakSessionFactory factory, final KeycloakSessionTaskWithResult<V> callable) {
+        return runJobInTransactionWithResult(factory, null, callable);
+    }
+
+    /**
+     * Wrap a given callable job into a KeycloakTransaction.
+     * @param <V> The type for the result
+     * @param factory The session factory
+     * @param context The context from the previous session to use
+     * @param callable The callable to execute
+     * @return The return value from the callable
+     */
+    public static <V> V runJobInTransactionWithResult(KeycloakSessionFactory factory, KeycloakContext context, final KeycloakSessionTaskWithResult<V> callable) {
         V result;
         try (KeycloakSession session = factory.create()) {
+            if (context != null) {
+                propagateContext(session, context);
+            }
             session.getTransactionManager().begin();
             try {
                 result = callable.run(session);
