@@ -7,6 +7,10 @@ export type Environment = {
   realm: string;
   /** The URL to resources such as the files in the `public` directory. */
   resourceUrl: string;
+  /** Indicates the src for the Brand image */
+  logo: string;
+  /** Indicates the url to be followed when Brand image is clicked */
+  logoUrl: string;
 };
 
 // The default environment, used during development.
@@ -15,6 +19,8 @@ const defaultEnvironment: Environment = {
   isRunningAsTheme: false,
   realm: "master",
   resourceUrl: "http://localhost:8080",
+  logo: "/logo.svg",
+  logoUrl: "/",
 };
 
 // Merge the default and injected environment variables together.
