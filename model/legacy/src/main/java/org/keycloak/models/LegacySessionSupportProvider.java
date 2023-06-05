@@ -30,6 +30,4 @@ public interface LegacySessionSupportProvider extends Provider {
     @Deprecated
     UserCredentialManager userCredentialManager();
 
-    @Deprecated
-    UserProvider userCache();
 }

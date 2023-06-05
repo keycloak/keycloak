@@ -21,8 +21,6 @@ import org.keycloak.credential.CredentialModel;
 import org.keycloak.credential.UserCredentialStore;
 
 import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
