@@ -18,6 +18,7 @@
 package org.keycloak.operator.testsuite.integration;
 
 import io.fabric8.kubernetes.api.model.Secret;
+import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.quarkus.logging.Log;
 import io.quarkus.test.junit.QuarkusTest;
 import org.awaitility.Awaitility;
@@ -63,19 +64,19 @@ public class WatchedSecretsTest extends BaseOperatorTest {
             Log.info("Updating DB Secret, expecting restart");
             testDeploymentRestarted(Set.of(kc), Set.of(), () -> {
                 dbSecret.getData().put(UUID.randomUUID().toString(), "YmxhaGJsYWg=");
-                k8sclient.secrets().createOrReplace(dbSecret);
+                k8sclient.resource(dbSecret).forceConflicts().serverSideApply();
             });
 
             Log.info("Updating TLS Secret, expecting restart");
             testDeploymentRestarted(Set.of(kc), Set.of(), () -> {
                 tlsSecret.getData().put(UUID.randomUUID().toString(), "YmxhaGJsYWg=");
-                k8sclient.secrets().createOrReplace(tlsSecret);
+                k8sclient.resource(tlsSecret).forceConflicts().serverSideApply();
             });
 
             Log.info("Updating DB Secret metadata, NOT expecting restart");
             testDeploymentRestarted(Set.of(), Set.of(kc), () -> {
                 dbSecret.getMetadata().getLabels().put(UUID.randomUUID().toString(), "YmxhaGJsYWg");
-                k8sclient.secrets().createOrReplace(dbSecret);
+                k8sclient.resource(dbSecret).forceConflicts().serverSideApply();
             });
         } catch (Exception e) {
             savePodLogs();
@@ -97,7 +98,7 @@ public class WatchedSecretsTest extends BaseOperatorTest {
 
             dbSecret.getData().put("username",
                     Base64.getEncoder().encodeToString(username.getBytes()));
-            k8sclient.secrets().createOrReplace(dbSecret);
+            k8sclient.resource(dbSecret).forceConflicts().serverSideApply();
 
             Awaitility.await()
                     .ignoreExceptions()
@@ -145,7 +146,7 @@ public class WatchedSecretsTest extends BaseOperatorTest {
             testDeploymentRestarted(Set.of(), Set.of(kc), () -> {
                 var dbSecret = getDbSecret();
                 dbSecret.getMetadata().getLabels().put(UUID.randomUUID().toString(), "YmxhaGJsYWg");
-                k8sclient.secrets().createOrReplace(dbSecret);
+                k8sclient.resource(dbSecret).forceConflicts().serverSideApply();
             });
 
             Awaitility.await().untilAsserted(() -> {
@@ -179,7 +180,7 @@ public class WatchedSecretsTest extends BaseOperatorTest {
             Log.info("Updating DB Secret, expecting restart of both KCs");
             testDeploymentRestarted(Set.of(kc1, kc2), Set.of(), () -> {
                 dbSecret.getData().put(UUID.randomUUID().toString(), "YmxhaGJsYWg=");
-                k8sclient.secrets().createOrReplace(dbSecret);
+                k8sclient.resource(dbSecret).forceConflicts().serverSideApply();
             });
 
             Log.info("Updating KC1 to not to rely on DB Secret");
@@ -191,7 +192,7 @@ public class WatchedSecretsTest extends BaseOperatorTest {
             Log.info("Updating DB Secret, expecting restart of just KC2");
             testDeploymentRestarted(Set.of(kc2), Set.of(kc1), () -> {
                 dbSecret.getData().put(UUID.randomUUID().toString(), "YmxhaGJsYWg=");
-                k8sclient.secrets().createOrReplace(dbSecret);
+                k8sclient.resource(dbSecret).forceConflicts().serverSideApply();
             });
         }
         catch (Exception e) {
@@ -264,11 +265,13 @@ public class WatchedSecretsTest extends BaseOperatorTest {
     }
 
     private Secret getDbSecret() {
-        return k8sclient.secrets().inNamespace(namespace).withName("keycloak-db-secret").get();
+		return new SecretBuilder(k8sclient.secrets().inNamespace(namespace).withName("keycloak-db-secret").get())
+				.editMetadata().withResourceVersion(null).endMetadata().build();
     }
 
     private Secret getTlsSecret() {
-        return k8sclient.secrets().inNamespace(namespace).withName("example-tls-secret").get();
+		return new SecretBuilder(k8sclient.secrets().inNamespace(namespace).withName("example-tls-secret").get())
+				.editMetadata().withResourceVersion(null).endMetadata().build();
     }
 
     private void hardcodeDBCredsInCR(Keycloak kc) {

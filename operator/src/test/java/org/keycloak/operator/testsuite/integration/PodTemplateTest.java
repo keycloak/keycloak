@@ -58,7 +58,7 @@ public class PodTemplateTest extends BaseOperatorTest {
                 .load(getClass().getResourceAsStream("/correct-podtemplate-keycloak.yml"));
 
         // Act
-        keycloakWithPodTemplate.createOrReplace();
+        keycloakWithPodTemplate.forceConflicts().serverSideApply();
 
         // Assert
         Awaitility
@@ -99,7 +99,7 @@ public class PodTemplateTest extends BaseOperatorTest {
         plainKc.getSpec().getUnsupported().setPodTeplate(podTemplate);
 
         // Act
-        k8sclient.resource(plainKc).createOrReplace();
+        k8sclient.resource(plainKc).forceConflicts().serverSideApply();
 
         // Assert
         Log.info("Getting status of Keycloak");
@@ -123,7 +123,7 @@ public class PodTemplateTest extends BaseOperatorTest {
         plainKc.getSpec().getUnsupported().setPodTeplate(podTemplate);
 
         // Act
-        k8sclient.resource(plainKc).createOrReplace();
+        k8sclient.resource(plainKc).forceConflicts().serverSideApply();
 
         // Assert
         Log.info("Getting status of Keycloak");
@@ -149,7 +149,7 @@ public class PodTemplateTest extends BaseOperatorTest {
         plainKc.getSpec().getUnsupported().setPodTeplate(podTemplate);
 
         // Act
-        k8sclient.resource(plainKc).createOrReplace();
+        k8sclient.resource(plainKc).forceConflicts().serverSideApply();
 
         // Assert
         Log.info("Getting status of Keycloak");
@@ -175,7 +175,7 @@ public class PodTemplateTest extends BaseOperatorTest {
         plainKc.getSpec().getUnsupported().setPodTeplate(podTemplate);
 
         // Act
-        k8sclient.resource(plainKc).createOrReplace();
+        k8sclient.resource(plainKc).forceConflicts().serverSideApply();
 
         // Assert
         Log.info("Getting status of Keycloak");
@@ -193,7 +193,7 @@ public class PodTemplateTest extends BaseOperatorTest {
         String secretDescriptorFilename = "test-docker-registry-secret.yaml";
 
         Secret imagePullSecret = getResourceFromFile(secretDescriptorFilename, Secret.class);
-        k8sclient.secrets().inNamespace(namespace).createOrReplace(imagePullSecret);
+        k8sclient.resource(imagePullSecret).inNamespace(namespace).forceConflicts().serverSideApply();
         LocalObjectReference localObjRefAsSecretTmp = new LocalObjectReferenceBuilder().withName(imagePullSecret.getMetadata().getName()).build();
 
         assertThat(localObjRefAsSecretTmp.getName()).isNotNull();
@@ -209,7 +209,7 @@ public class PodTemplateTest extends BaseOperatorTest {
         plainKc.getSpec().getUnsupported().setPodTeplate(podTemplate);
 
         // Act
-        k8sclient.resource(plainKc).createOrReplace();
+        k8sclient.resource(plainKc).forceConflicts().serverSideApply();
 
         // Assert
         Log.info("Getting status of Keycloak");
