@@ -130,46 +130,42 @@ public class SSOTest extends AbstractTestRealmKeycloakTest {
 
         EventRepresentation login1 = events.expectLogin().assertEvent();
 
-        try {
-            //OAuthClient oauth2 = new OAuthClient(driver2);
-            OAuthClient oauth2 = new OAuthClient();
-            oauth2.init(driver2);
+        //OAuthClient oauth2 = new OAuthClient(driver2);
+        OAuthClient oauth2 = new OAuthClient();
+        oauth2.init(driver2);
 
-            oauth2.doLogin("test-user@localhost", "password");
+        oauth2.doLogin("test-user@localhost", "password");
 
-            EventRepresentation login2 = events.expectLogin().assertEvent();
+        EventRepresentation login2 = events.expectLogin().assertEvent();
 
-            Assert.assertEquals(RequestType.AUTH_RESPONSE, RequestType.valueOf(driver2.getTitle()));
-            Assert.assertNotNull(oauth2.getCurrentQuery().get(OAuth2Constants.CODE));
+        Assert.assertEquals(RequestType.AUTH_RESPONSE, RequestType.valueOf(driver2.getTitle()));
+        Assert.assertNotNull(oauth2.getCurrentQuery().get(OAuth2Constants.CODE));
 
-            assertNotEquals(login1.getSessionId(), login2.getSessionId());
+        assertNotEquals(login1.getSessionId(), login2.getSessionId());
 
-            OAuthClient.AccessTokenResponse tokenResponse = sendTokenRequestAndGetResponse(login1);
-            oauth.idTokenHint(tokenResponse.getIdToken()).openLogout();
-            events.expectLogout(login1.getSessionId()).assertEvent();
+        OAuthClient.AccessTokenResponse tokenResponse = sendTokenRequestAndGetResponse(login1);
+        oauth.idTokenHint(tokenResponse.getIdToken()).openLogout();
+        events.expectLogout(login1.getSessionId()).assertEvent();
 
-            oauth.openLoginForm();
+        oauth.openLoginForm();
 
-            assertTrue(loginPage.isCurrent());
+        assertTrue(loginPage.isCurrent());
 
-            oauth2.openLoginForm();
+        oauth2.openLoginForm();
 
-            events.expectLogin().session(login2.getSessionId()).removeDetail(Details.USERNAME).assertEvent();
-            Assert.assertEquals(RequestType.AUTH_RESPONSE, RequestType.valueOf(driver2.getTitle()));
-            Assert.assertNotNull(oauth2.getCurrentQuery().get(OAuth2Constants.CODE));
+        events.expectLogin().session(login2.getSessionId()).removeDetail(Details.USERNAME).assertEvent();
+        Assert.assertEquals(RequestType.AUTH_RESPONSE, RequestType.valueOf(driver2.getTitle()));
+        Assert.assertNotNull(oauth2.getCurrentQuery().get(OAuth2Constants.CODE));
 
-            String code = new OAuthClient.AuthorizationEndpointResponse(oauth2).getCode();
-            OAuthClient.AccessTokenResponse response = oauth2.doAccessTokenRequest(code, "password");
-            events.poll();
-            oauth2.idTokenHint(response.getIdToken()).openLogout();
-            events.expectLogout(login2.getSessionId()).assertEvent();
+        String code = new OAuthClient.AuthorizationEndpointResponse(oauth2).getCode();
+        OAuthClient.AccessTokenResponse response = oauth2.doAccessTokenRequest(code, "password");
+        events.poll();
+        oauth2.idTokenHint(response.getIdToken()).openLogout();
+        events.expectLogout(login2.getSessionId()).assertEvent();
 
-            oauth2.openLoginForm();
+        oauth2.openLoginForm();
 
-            assertTrue(driver2.getTitle().equals("Sign in to test"));
-        } finally {
-            driver2.close();
-        }
+        assertTrue(driver2.getTitle().equals("Sign in to test"));
     }
 
 

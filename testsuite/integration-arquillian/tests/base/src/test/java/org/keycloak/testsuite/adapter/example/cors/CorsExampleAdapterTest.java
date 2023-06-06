@@ -34,7 +34,6 @@ import org.keycloak.testsuite.adapter.page.CorsDatabaseServiceTestApp;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
 import org.keycloak.testsuite.util.JavascriptBrowser;
 import org.keycloak.testsuite.utils.arquillian.ContainerConstants;
-import org.keycloak.testsuite.auth.page.account.Account;
 import org.keycloak.testsuite.auth.page.login.OIDCLogin;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
@@ -86,10 +85,6 @@ public class CorsExampleAdapterTest extends AbstractExampleAdapterTest {
     @JavascriptBrowser
     private AngularCorsProductTestApp jsDriverAngularCorsProductPage;
 
-    @Page
-    @JavascriptBrowser
-    private Account jsDriverTestRealmAccount;
-
     @Deployment(name = AngularCorsProductTestApp.DEPLOYMENT_NAME, managed = false)
     protected static WebArchive angularCorsProductExample() throws IOException {
         return exampleDeployment(AngularCorsProductTestApp.CLIENT_ID);
@@ -124,7 +119,7 @@ public class CorsExampleAdapterTest extends AbstractExampleAdapterTest {
     public void setDefaultPageUriParameters() {
         super.setDefaultPageUriParameters();
         jsDriverTestRealmLoginPage.setAuthRealm(CORS);
-        jsDriverTestRealmAccount.setAuthRealm(CORS);
+        oauth.realm(CORS);
     }
 
     @Test

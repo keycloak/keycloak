@@ -31,7 +31,6 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.adapter.AbstractServletsAdapterTest;
 import org.keycloak.testsuite.adapter.page.SessionPortal;
-import org.keycloak.testsuite.auth.page.account.Sessions;
 import org.keycloak.testsuite.auth.page.login.Login;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
 import org.keycloak.testsuite.pages.InfoPage;
@@ -66,9 +65,6 @@ public class SessionServletAdapterTest extends AbstractServletsAdapterTest {
     private SessionPortal sessionPortalPage;
 
     @Page
-    private Sessions testRealmSessions;
-
-    @Page
     protected LogoutConfirmPage logoutConfirmPage;
 
     @Page
@@ -77,7 +73,7 @@ public class SessionServletAdapterTest extends AbstractServletsAdapterTest {
     @Override
     public void setDefaultPageUriParameters() {
         super.setDefaultPageUriParameters();
-        testRealmSessions.setAuthRealm(DEMO);
+        oauth.realm(DEMO);
     }
 
     @Deployment(name = SessionPortal.DEPLOYMENT_NAME)

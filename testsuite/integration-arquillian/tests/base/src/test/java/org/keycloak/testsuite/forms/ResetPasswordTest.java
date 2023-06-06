@@ -80,7 +80,10 @@ import org.junit.*;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
+import org.openqa.selenium.support.ui.ExpectedConditions;
+import org.openqa.selenium.support.ui.WebDriverWait;
 
+import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.*;
 
@@ -1119,9 +1122,8 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
     }
 
     @Test
-    @DisableFeature(value = Profile.Feature.ACCOUNT2, skipRestart = true) // TODO remove this (KEYCLOAK-16228)
     public void resetPasswordLinkNewTabAndProperRedirectAccount() throws IOException {
-        final String REQUIRED_URI = OAuthClient.AUTH_SERVER_ROOT + "/realms/test/account/applications";
+        final String REQUIRED_URI = getAuthServerRoot() + "realms/test/account/login-redirect?path=applications";
         final String REDIRECT_URI = getAccountRedirectUrl() + "?path=applications";
         final String CLIENT_ID = "account";
         final String ACCOUNT_MANAGEMENT_TITLE = "Keycloak Account Management";
@@ -1129,14 +1131,19 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
         try (BrowserTabUtil tabUtil = BrowserTabUtil.getInstanceAndSetEnv(driver)) {
             assertThat(tabUtil.getCountOfTabs(), Matchers.is(1));
 
-            AccountHelper.logout(testRealm(), "login-test");
-            driver.navigate().to(REQUIRED_URI);
+            oauth.redirectUri(REDIRECT_URI);
+            oauth.clientId(CLIENT_ID);
+
+            loginPage.open();
             resetPasswordTwiceInNewTab(defaultUser, CLIENT_ID, false, REDIRECT_URI, REQUIRED_URI);
             assertThat(driver.getTitle(), Matchers.equalTo(ACCOUNT_MANAGEMENT_TITLE));
 
-            AccountHelper.logout(testRealm(), "login-test");
+            String logoutUrl = oauth.getLogoutUrl().build();
+            driver.navigate().to(logoutUrl);
+            logoutConfirmPage.assertCurrent();
+            logoutConfirmPage.confirmLogout();
 
-            driver.navigate().to(REQUIRED_URI);
+            loginPage.open();
             resetPasswordTwiceInNewTab(defaultUser, CLIENT_ID, true, REDIRECT_URI, REQUIRED_URI);
             assertThat(driver.getTitle(), Matchers.equalTo(ACCOUNT_MANAGEMENT_TITLE));
         }

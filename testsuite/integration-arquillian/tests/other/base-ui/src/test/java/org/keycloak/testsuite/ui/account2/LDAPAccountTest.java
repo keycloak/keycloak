@@ -84,7 +84,7 @@ public class LDAPAccountTest extends AbstractAccountTest {
         });
 
         testRealmLoginPage.setAuthRealm(testRealmPage);
-        testRealmAccountPage.setAuthRealm(testRealmPage);
+        //testRealmAccountPage.setAuthRealm(testRealmPage);
 
         testUser = createUserRepresentation(userName, email, firstName, lastName, true);
         setPasswordFor(testUser, PASSWORD);

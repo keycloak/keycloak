@@ -114,7 +114,6 @@ import static org.keycloak.testsuite.admin.ApiUtil.findClientResourceByClientId;
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-@DisableFeature(value = Profile.Feature.ACCOUNT2, skipRestart = true) // TODO remove this (KEYCLOAK-16228)
 public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest {
 
     @Rule
@@ -307,6 +306,7 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
 
     // Prompt=none with consent required for client
     @Test
+    @DisableFeature(value = Profile.Feature.ACCOUNT2, skipRestart = true) // TODO remove this (KEYCLOAK-16228)
     public void promptNoneConsentRequired() {
         // Require consent
         ClientManager.realm(adminClient.realm("test")).clientId("test-app").consentRequired(true);
