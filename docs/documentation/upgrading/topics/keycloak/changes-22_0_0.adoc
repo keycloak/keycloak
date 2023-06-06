@@ -128,7 +128,6 @@ We still provide two separate Keycloak Admin clients, one with Jakarta EE and th
 We stopped releasing the `org.keycloak:keycloak-admin-client-jakarta` artifact.
 The default one for the Keycloak Admin client with Jakarta EE support is `org.keycloak:keycloak-admin-client` (since version 22.0.0).
 
-We will continue to release the Keycloak Admin client with Java EE support for some time, but we recommend that you migrate to Jakarta EE as soon as possible.
 The new artifact with Java EE support is `org.keycloak:keycloak-admin-client-jee`.
 
 === Jakarta EE support
@@ -152,7 +151,7 @@ The new artifact with Java EE support is `org.keycloak:keycloak-admin-client-jee
 </dependency>
 ----
 
-=== Java EE support _(only temporary support)_
+=== Java EE support
 [source,xml]
 .Before migration:
 ----
