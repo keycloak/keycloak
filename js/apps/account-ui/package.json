@@ -24,6 +24,7 @@
     "ui-shared": "workspace:*"
   },
   "devDependencies": {
+    "@playwright/test": "^1.35.1",
     "@types/lodash-es": "^4.17.7",
     "@types/react": "^18.2.13",
     "@types/react-dom": "^18.2.6",

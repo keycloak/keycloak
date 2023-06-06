@@ -148,6 +148,7 @@ const NavLink = ({
 
   return (
     <NavItem
+      data-testid={to}
       to={href}
       isActive={isActive}
       onClick={(event) =>
