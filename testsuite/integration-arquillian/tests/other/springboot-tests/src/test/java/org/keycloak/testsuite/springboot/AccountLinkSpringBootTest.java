@@ -55,7 +55,6 @@ import static org.keycloak.testsuite.util.ServerURLs.getAuthServerContextRoot;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
 import static org.keycloak.testsuite.util.WaitUtils.pause;
 
-@DisableFeature(value = Profile.Feature.ACCOUNT2, skipRestart = true) // TODO remove this (KEYCLOAK-16228)
 public class AccountLinkSpringBootTest extends AbstractSpringBootTest {
 
     private static final String PARENT_REALM = "parent-realm";

@@ -26,6 +26,7 @@ import org.keycloak.testsuite.auth.page.login.Registration;
 import org.keycloak.testsuite.auth.page.login.ResetCredentials;
 import org.keycloak.testsuite.auth.page.login.UpdateAccount;
 import org.keycloak.testsuite.auth.page.login.UpdatePassword;
+import org.keycloak.testsuite.pages.AppPage;
 
 import java.util.Arrays;
 import java.util.List;
@@ -45,6 +46,9 @@ public class LoginPageTest extends AbstractLoginTest {
 
     @Page
     private UpdatePassword updatePasswordPage;
+
+    @Page
+    private AppPage appPage;
 
     @Page
     private Registration registrationPage;
@@ -74,8 +78,8 @@ public class LoginPageTest extends AbstractLoginTest {
     @Before
     public void beforeLoginTest() {
         deleteAllCookiesForTestRealm();
-        testRealmAccountPage.navigateTo();
-        assertCurrentUrlStartsWithLoginUrlOf(testRealmAccountPage);
+        driver.navigate().to(oauth.getLoginFormUrl());
+        appPage.assertCurrent();
         assertFalse(testRealmLoginPage.feedbackMessage().isPresent());
     }
 

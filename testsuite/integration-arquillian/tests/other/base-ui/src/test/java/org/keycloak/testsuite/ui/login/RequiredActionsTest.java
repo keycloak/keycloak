@@ -44,6 +44,7 @@ import org.keycloak.testsuite.auth.page.login.VerifyEmail;
 import org.openqa.selenium.OutputType;
 import org.openqa.selenium.TakesScreenshot;
 import org.openqa.selenium.htmlunit.HtmlUnitDriver;
+import org.keycloak.testsuite.pages.AppPage;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
@@ -103,6 +104,9 @@ public class RequiredActionsTest extends AbstractLoginTest {
 
     @Page
     private LoginError loginErrorPage;
+
+    @Page
+    private AppPage appPage;
 
     private TimeBasedOTP otpGenerator = new TimeBasedOTP();
 
@@ -305,7 +309,7 @@ public class RequiredActionsTest extends AbstractLoginTest {
     @Test
     public void clientConsent() {
         testRealmPage.setAuthRealm(GRANT_REALM);
-        testRealmAccountPage.setAuthRealm(GRANT_REALM);
+        oauth.realm(GRANT_REALM);
         testRealmLoginPage.setAuthRealm(GRANT_REALM);
 
         final List<String> defaultClientScopesToApprove = Arrays.asList("Email address", "User profile");
@@ -463,7 +467,7 @@ public class RequiredActionsTest extends AbstractLoginTest {
 
         // try the code is working
         deleteAllSessionsInTestRealm();
-        testRealmAccountPage.navigateTo();
+        driver.navigate().to(oauth.getLoginFormUrl());
         testRealmLoginPage.form().login(testUser);
         oneTimeCodePage.assertCurrent();
         //assertEquals("One-time code", oneTimeCodePage.getTotpLabel());
@@ -492,8 +496,8 @@ public class RequiredActionsTest extends AbstractLoginTest {
         testUser.setRequiredActions(Collections.singletonList(requiredActionPage.getActionId()));
         testUserResource().update(testUser);
 
-        testRealmAccountPage.navigateTo();
-        assertCurrentUrlStartsWithLoginUrlOf(testRealmAccountPage);
+        driver.navigate().to(oauth.getLoginFormUrl());
+        appPage.assertCurrent();
 
         testRealmLoginPage.form().login(testUser);
         requiredActionPage.assertCurrent();
@@ -507,7 +511,7 @@ public class RequiredActionsTest extends AbstractLoginTest {
         accountClientRep.getAttributes().put(CONSENT_SCREEN_TEXT, consentScreenText);
         accountClient.update(accountClientRep);
 
-        testRealmAccountPage.navigateTo();
+        driver.navigate().to(oauth.getLoginFormUrl());
         testRealmLoginPage.form().login(grantRealmUser);
         oAuthGrantPage.assertCurrent();
     }
