@@ -27,7 +27,6 @@ import org.keycloak.testsuite.Assert;
 import static org.keycloak.testsuite.broker.BrokerTestConstants.IDP_OIDC_ALIAS;
 import static org.keycloak.testsuite.broker.BrokerTestConstants.IDP_OIDC_PROVIDER_ID;
 import static org.keycloak.testsuite.broker.BrokerTestTools.createIdentityProvider;
-import static org.keycloak.testsuite.broker.BrokerTestTools.getConsumerRoot;
 
 /**
  * Migrated from old testsuite.  Previous version by Pedro Igor.
@@ -57,7 +56,9 @@ public class KcOidcBrokerHiddenIdpHintTest extends AbstractInitializedBaseBroker
 
     @Test
     public void testSuccessfulRedirectToProviderHiddenOnLoginPage() {
-        driver.navigate().to(getAccountUrl(getConsumerRoot(), bc.consumerRealmName()));
+        oauth.clientId("broker-app");
+        loginPage.open(bc.consumerRealmName());
+
         waitForPage(driver, "sign in to", true);
         String url = driver.getCurrentUrl() + "&kc_idp_hint=" + bc.getIDPAlias();
         driver.navigate().to(url);

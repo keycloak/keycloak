@@ -24,7 +24,6 @@ import org.openqa.selenium.TimeoutException;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.htmlunit.HtmlUnitDriver;
-import org.openqa.selenium.support.ui.ExpectedCondition;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.FluentWait;
 import org.openqa.selenium.support.ui.WebDriverWait;
@@ -149,30 +148,10 @@ public final class WaitUtils {
             }
         }
 
-        WebDriverWait wait = new WebDriverWait(getCurrentDriver(), PAGELOAD_TIMEOUT_MILLIS / 1000);
-        ExpectedCondition waitCondition = null;
-
-        // Different wait strategies for Admin and Account Consoles
-        if (currentUrl.matches("^[^\\/]+:\\/\\/[^\\/]+\\/auth\\/admin\\/.*$")) { // Admin Console
-            // Checks if the document is ready and asks AngularJS, if present, whether there are any REST API requests in progress
-            waitCondition = javaScriptThrowsNoExceptions(
-                    "if (document.readyState !== 'complete' "
-                    + "|| (typeof angular !== 'undefined' && angular.element(document.body).injector().get('$http').pendingRequests.length !== 0)) {"
-                    + "throw \"Not ready\";"
-                    + "}");
-        }
-        else if (
+        if (
                 ProfileAssume.isFeatureEnabled(Profile.Feature.ACCOUNT2) && currentUrl.matches("^[^\\/]+:\\/\\/[^\\/]+\\/auth\\/realms\\/[^\\/]+\\/account\\/.*$") // check for new Account Console URL
         ) {
             pause(2000); // TODO rework this temporary workaround once KEYCLOAK-11201 and/or KEYCLOAK-8181 are fixed
-        }
-
-        if (waitCondition != null) {
-            try {
-                wait.until(waitCondition);
-            } catch (TimeoutException e) {
-                log.warn("waitForPageToLoad time exceeded!");
-            }
         }
     }
 

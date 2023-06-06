@@ -8,7 +8,6 @@ import static org.keycloak.testsuite.broker.BrokerTestConstants.IDP_OIDC_PROVIDE
 import static org.keycloak.testsuite.broker.BrokerTestConstants.USER_EMAIL;
 import static org.keycloak.testsuite.broker.BrokerTestTools.createIdentityProvider;
 import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
-import static org.keycloak.testsuite.broker.BrokerTestTools.getConsumerRoot;
 import org.apache.commons.lang3.StringUtils;
 import org.keycloak.admin.client.resource.UsersResource;
 import org.keycloak.models.IdentityProviderModel;
@@ -39,7 +38,8 @@ public class KcOidcBrokerNoLoginHintTest extends AbstractBrokerTest {
 
     @Override
     protected void loginUser() {
-        driver.navigate().to(getAccountUrl(getConsumerRoot(), bc.consumerRealmName()));
+        oauth.clientId("broker-app");
+        loginPage.open(bc.consumerRealmName());
         
         driver.navigate().to(driver.getCurrentUrl() + "&login_hint=" + USER_EMAIL);
 

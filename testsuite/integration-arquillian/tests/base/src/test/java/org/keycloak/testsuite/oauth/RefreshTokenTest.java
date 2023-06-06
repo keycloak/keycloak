@@ -18,6 +18,7 @@ package org.keycloak.testsuite.oauth;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.gargoylesoftware.htmlunit.WebClient;
+import java.io.Closeable;
 import org.hamcrest.CoreMatchers;
 import org.jboss.arquillian.drone.webdriver.htmlunit.DroneHtmlUnitDriver;
 import org.jboss.arquillian.graphene.page.Page;
@@ -33,12 +34,16 @@ import org.keycloak.admin.client.resource.RealmsResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.common.enums.SslRequired;
 import org.keycloak.crypto.Algorithm;
+import org.keycloak.events.EventType;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.jose.jws.JWSHeader;
 import org.keycloak.jose.jws.JWSInput;
+import org.keycloak.models.AuthenticatedClientSessionModel;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.SessionTimeoutHelper;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
@@ -1045,37 +1050,182 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
         }
     }
 
+    private String getClientSessionUuid(final String userSessionId, String clientId) {
+        return testingClient.server().fetch(session -> {
+            RealmModel realmModel = session.realms().getRealmByName("test");
+            ClientModel clientModel = realmModel.getClientByClientId(clientId);
+            UserSessionModel userSession = session.sessions().getUserSession(realmModel, userSessionId);
+            AuthenticatedClientSessionModel clientSession = userSession.getAuthenticatedClientSessionByClient(clientModel.getId());
+            return clientSession.getId();
+        }, String.class);
+    }
+
+    private int checkIfUserAndClientSessionExist(final String userSessionId, final String clientId, final String clientSessionId) {
+        return testingClient.server().fetch(session -> {
+            RealmModel realmModel = session.realms().getRealmByName("test");
+            ClientModel clientModel = realmModel.getClientByClientId(clientId);
+            UserSessionModel userSession = session.sessions().getUserSession(realmModel, userSessionId);
+            if (userSession != null) {
+                AuthenticatedClientSessionModel clientSession = userSession.getAuthenticatedClientSessionByClient(clientModel.getId());
+                return clientSession != null && clientSessionId.equals(clientSession.getId())? 2 : 1;
+            }
+            return 0;
+        }, Integer.class);
+    }
+
     @Test
     public void refreshTokenUserSessionMaxLifespan() throws Exception {
-        oauth.doLogin("test-user@localhost", "password");
-
-        EventRepresentation loginEvent = events.expectLogin().assertEvent();
-
-        String sessionId = loginEvent.getSessionId();
-
-        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-        OAuthClient.AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, "password");
-
-        events.poll();
-
-        String refreshId = oauth.parseRefreshToken(tokenResponse.getRefreshToken()).getId();
-
         RealmResource realmResource = adminClient.realm("test");
-        Integer maxLifespan = realmResource.toRepresentation().getSsoSessionMaxLifespan();
-        try {
-            RealmManager.realm(realmResource).ssoSessionMaxLifespan(1);
+        getTestingClient().testing().setTestingInfinispanTimeService();
+        try (Closeable realmUpdater = new RealmAttributeUpdater(realmResource)
+                .updateWith(r -> {
+                    r.setSsoSessionMaxLifespan(3600);
+                    r.setSsoSessionIdleTimeout(7200);
+                }).update()) {
+            oauth.doLogin("test-user@localhost", "password");
+            EventRepresentation loginEvent = events.expectLogin().assertEvent();
 
-            setTimeOffset(2);
+            String sessionId = loginEvent.getSessionId();
 
+            String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+            OAuthClient.AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, "password");
+            assertTrue("Invalid ExpiresIn", 0 < tokenResponse.getRefreshExpiresIn() && tokenResponse.getRefreshExpiresIn() <= 3600);
+            final String clientSessionId = getClientSessionUuid(sessionId, loginEvent.getClientId());
+            assertEquals(2, checkIfUserAndClientSessionExist(sessionId, loginEvent.getClientId(), clientSessionId));
+
+            events.poll();
+
+            setTimeOffset(1800);
+
+            String refreshId = oauth.parseRefreshToken(tokenResponse.getRefreshToken()).getId();
+            tokenResponse = oauth.doRefreshTokenRequest(tokenResponse.getRefreshToken(), "password");
+            assertTrue("Invalid ExpiresIn", 0 < tokenResponse.getRefreshExpiresIn() && tokenResponse.getRefreshExpiresIn() <= 1800);
+            assertEquals(2, checkIfUserAndClientSessionExist(sessionId, loginEvent.getClientId(), clientSessionId));
+            events.expectRefresh(refreshId, sessionId).assertEvent();
+
+            setTimeOffset(3700);
+            oauth.parseRefreshToken(tokenResponse.getRefreshToken()).getId();
             tokenResponse = oauth.doRefreshTokenRequest(tokenResponse.getRefreshToken(), "password");
 
             assertEquals(400, tokenResponse.getStatusCode());
             assertNull(tokenResponse.getAccessToken());
             assertNull(tokenResponse.getRefreshToken());
-
-            events.expectRefresh(refreshId, sessionId).error(Errors.INVALID_TOKEN);
+            events.expect(EventType.REFRESH_TOKEN).error(Errors.INVALID_TOKEN).user((String) null).assertEvent();
+            assertEquals(0, checkIfUserAndClientSessionExist(sessionId, loginEvent.getClientId(), clientSessionId));
         } finally {
-            RealmManager.realm(realmResource).ssoSessionMaxLifespan(maxLifespan);
+            getTestingClient().testing().revertTestingInfinispanTimeService();
+            events.clear();
+            resetTimeOffset();
+        }
+    }
+
+    @Test
+    public void refreshTokenUserClientMaxLifespanSmallerThanSession() throws Exception {
+        RealmResource realmResource = adminClient.realm("test");
+        getTestingClient().testing().setTestingInfinispanTimeService();
+        try (Closeable realmUpdater = new RealmAttributeUpdater(realmResource)
+                .updateWith(r -> {
+                    r.setSsoSessionMaxLifespan(3600);
+                    r.setSsoSessionIdleTimeout(7200);
+                    r.setClientSessionMaxLifespan(1000);
+                    r.setClientSessionIdleTimeout(7200);
+                }).update()) {
+
+            oauth.doLogin("test-user@localhost", "password");
+            EventRepresentation loginEvent = events.expectLogin().assertEvent();
+
+            String sessionId = loginEvent.getSessionId();
+
+            String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+            OAuthClient.AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, "password");
+            assertTrue("Invalid ExpiresIn", 0 < tokenResponse.getRefreshExpiresIn() && tokenResponse.getRefreshExpiresIn() <= 1000);
+            String clientSessionId = getClientSessionUuid(sessionId, loginEvent.getClientId());
+            assertEquals(2, checkIfUserAndClientSessionExist(sessionId, loginEvent.getClientId(), clientSessionId));
+
+            events.poll();
+
+            setTimeOffset(600);
+            String refreshId = oauth.parseRefreshToken(tokenResponse.getRefreshToken()).getId();
+            tokenResponse = oauth.doRefreshTokenRequest(tokenResponse.getRefreshToken(), "password");
+            assertTrue("Invalid ExpiresIn", 0 < tokenResponse.getRefreshExpiresIn() && tokenResponse.getRefreshExpiresIn() <= 400);
+            assertEquals(2, checkIfUserAndClientSessionExist(sessionId, loginEvent.getClientId(), clientSessionId));
+            events.expectRefresh(refreshId, sessionId).assertEvent();
+
+            setTimeOffset(1100);
+            tokenResponse = oauth.doRefreshTokenRequest(tokenResponse.getRefreshToken(), "password");
+            assertEquals(400, tokenResponse.getStatusCode());
+            assertNull(tokenResponse.getAccessToken());
+            assertNull(tokenResponse.getRefreshToken());
+            events.expect(EventType.REFRESH_TOKEN).error(Errors.INVALID_TOKEN).user((String) null).assertEvent();
+            assertEquals(1, checkIfUserAndClientSessionExist(sessionId, loginEvent.getClientId(), clientSessionId));
+
+            setTimeOffset(1600);
+            oauth.doSilentLogin();
+            loginEvent = events.expectLogin().assertEvent();
+            sessionId = loginEvent.getSessionId();
+            code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+            tokenResponse = oauth.doAccessTokenRequest(code, "password");
+            assertTrue("Invalid ExpiresIn", 0 < tokenResponse.getRefreshExpiresIn() && tokenResponse.getRefreshExpiresIn() <= 1000);
+            events.expectCodeToToken(loginEvent.getDetails().get(Details.CODE_ID), sessionId).assertEvent();
+
+            clientSessionId = getClientSessionUuid(sessionId, loginEvent.getClientId());
+            assertEquals(2, checkIfUserAndClientSessionExist(sessionId, loginEvent.getClientId(), clientSessionId));
+
+            setTimeOffset(3700);
+            tokenResponse = oauth.doRefreshTokenRequest(tokenResponse.getRefreshToken(), "password");
+            assertEquals(400, tokenResponse.getStatusCode());
+            assertNull(tokenResponse.getAccessToken());
+            assertNull(tokenResponse.getRefreshToken());
+            events.expect(EventType.REFRESH_TOKEN).error(Errors.INVALID_TOKEN).user((String) null).assertEvent();
+            assertEquals(0, checkIfUserAndClientSessionExist(sessionId, loginEvent.getClientId(), clientSessionId));
+        } finally {
+            getTestingClient().testing().revertTestingInfinispanTimeService();
+            events.clear();
+            resetTimeOffset();
+        }
+    }
+
+    @Test
+    public void refreshTokenUserClientMaxLifespanGreaterThanSession() throws Exception {
+        RealmResource realmResource = adminClient.realm("test");
+        getTestingClient().testing().setTestingInfinispanTimeService();
+        try (Closeable realmUpdater = new RealmAttributeUpdater(realmResource)
+                .updateWith(r -> {
+                    r.setSsoSessionMaxLifespan(3600);
+                    r.setSsoSessionIdleTimeout(7200);
+                    r.setClientSessionMaxLifespan(5000);
+                    r.setClientSessionIdleTimeout(7200);
+                }).update()) {
+
+            oauth.doLogin("test-user@localhost", "password");
+            EventRepresentation loginEvent = events.expectLogin().assertEvent();
+
+            String sessionId = loginEvent.getSessionId();
+
+            String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+            OAuthClient.AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, "password");
+            assertTrue("Invalid ExpiresIn", 0 < tokenResponse.getRefreshExpiresIn() && tokenResponse.getRefreshExpiresIn() <= 3600);
+            String clientSessionId = getClientSessionUuid(sessionId, loginEvent.getClientId());
+            assertEquals(2, checkIfUserAndClientSessionExist(sessionId, loginEvent.getClientId(), clientSessionId));
+
+            events.poll();
+
+            setTimeOffset(1800);
+            String refreshId = oauth.parseRefreshToken(tokenResponse.getRefreshToken()).getId();
+            tokenResponse = oauth.doRefreshTokenRequest(tokenResponse.getRefreshToken(), "password");
+            assertTrue("Invalid ExpiresIn", 0 < tokenResponse.getRefreshExpiresIn() && tokenResponse.getRefreshExpiresIn() <= 1800);
+            assertEquals(2, checkIfUserAndClientSessionExist(sessionId, loginEvent.getClientId(), clientSessionId));
+            events.expectRefresh(refreshId, sessionId).assertEvent();
+
+            setTimeOffset(3700);
+            tokenResponse = oauth.doRefreshTokenRequest(tokenResponse.getRefreshToken(), "password");
+            assertEquals(400, tokenResponse.getStatusCode());
+            assertNull(tokenResponse.getAccessToken());
+            assertNull(tokenResponse.getRefreshToken());
+            events.expect(EventType.REFRESH_TOKEN).error(Errors.INVALID_TOKEN).user((String) null).assertEvent();
+            assertEquals(0, checkIfUserAndClientSessionExist(sessionId, loginEvent.getClientId(), clientSessionId));
+        } finally {
+            getTestingClient().testing().revertTestingInfinispanTimeService();
             events.clear();
             resetTimeOffset();
         }
@@ -1129,6 +1279,79 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
             testRealmRep.setRememberMe(previousRememberMe);
             testRealm.update(testRealmRep);
             resetTimeOffset();
+        }
+    }
+
+    @Test
+    public void refreshTokenClientSessionMaxLifespan() throws Exception {
+        RealmResource realm = adminClient.realm("test");
+        RealmRepresentation rep = realm.toRepresentation();
+        Integer originalSsoSessionMaxLifespan = rep.getSsoSessionMaxLifespan();
+
+        ClientResource client = ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app");
+        ClientRepresentation clientRepresentation = client.toRepresentation();
+
+        getTestingClient().testing().setTestingInfinispanTimeService();
+
+        try {
+            rep.setSsoSessionMaxLifespan(1000);
+            realm.update(rep);
+
+            clientRepresentation.getAttributes().put(OIDCConfigAttributes.CLIENT_SESSION_MAX_LIFESPAN, "500");
+            client.update(clientRepresentation);
+
+            oauth.doLogin("test-user@localhost", "password");
+
+            EventRepresentation loginEvent = events.expectLogin().assertEvent();
+            String sessionId = loginEvent.getSessionId();
+
+            String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+            OAuthClient.AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, "password");
+
+            events.poll();
+
+            String refreshId = oauth.parseRefreshToken(tokenResponse.getRefreshToken()).getId();
+
+            tokenResponse = oauth.doRefreshTokenRequest(tokenResponse.getRefreshToken(), "password");
+            assertTrue("Invalid RefreshExpiresIn", 0 < tokenResponse.getRefreshExpiresIn() && tokenResponse.getRefreshExpiresIn() <= 500);
+
+            setTimeOffset(100);
+
+            tokenResponse = oauth.doRefreshTokenRequest(tokenResponse.getRefreshToken(), "password");
+            assertTrue("Invalid RefreshExpiresIn", 0 < tokenResponse.getRefreshExpiresIn() && tokenResponse.getRefreshExpiresIn() <= 400);
+
+            setTimeOffset(600);
+
+            oauth.doSilentLogin();
+            code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+
+            tokenResponse = oauth.doAccessTokenRequest(code, "password");
+            assertEquals(200, tokenResponse.getStatusCode());
+            assertTrue("Invalid RefreshExpiresIn", 0 < tokenResponse.getRefreshExpiresIn() && tokenResponse.getRefreshExpiresIn() <= 400);
+
+            setTimeOffset(700);
+
+            tokenResponse = oauth.doRefreshTokenRequest(tokenResponse.getRefreshToken(), "password");
+            assertEquals(200, tokenResponse.getStatusCode());
+            assertTrue("Invalid RefreshExpiresIn", 0 < tokenResponse.getRefreshExpiresIn() && tokenResponse.getRefreshExpiresIn() <= 300);
+
+            setTimeOffset(1100);
+
+            tokenResponse = oauth.doRefreshTokenRequest(tokenResponse.getRefreshToken(), "password");
+            assertEquals(400, tokenResponse.getStatusCode());
+            assertNull(tokenResponse.getAccessToken());
+            assertNull(tokenResponse.getRefreshToken());
+
+            events.expectRefresh(refreshId, sessionId).error(Errors.INVALID_TOKEN);
+        } finally {
+            rep.setSsoSessionMaxLifespan(originalSsoSessionMaxLifespan);
+            realm.update(rep);
+            clientRepresentation.getAttributes().put(OIDCConfigAttributes.CLIENT_SESSION_MAX_LIFESPAN, null);
+            client.update(clientRepresentation);
+
+            events.clear();
+            resetTimeOffset();
+            getTestingClient().testing().revertTestingInfinispanTimeService();
         }
     }
 

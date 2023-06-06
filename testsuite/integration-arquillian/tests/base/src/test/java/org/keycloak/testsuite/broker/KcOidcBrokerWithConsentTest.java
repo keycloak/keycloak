@@ -3,7 +3,6 @@ package org.keycloak.testsuite.broker;
 import static org.junit.Assert.assertEquals;
 import static org.keycloak.testsuite.broker.BrokerRunOnServerUtil.removeBrokerExpiredSessions;
 import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
-import static org.keycloak.testsuite.broker.BrokerTestTools.getConsumerRoot;
 
 import java.util.List;
 
@@ -51,7 +50,9 @@ public class KcOidcBrokerWithConsentTest extends AbstractInitializedBaseBrokerTe
      */
     @Test
     public void testConsentDeniedWithExpiredClientSession() {
-        driver.navigate().to(getAccountUrl(getConsumerRoot(), bc.consumerRealmName()));
+        oauth.clientId("broker-app");
+        loginPage.open(bc.consumerRealmName());
+
         log.debug("Clicking social " + bc.getIDPAlias());
         loginPage.clickSocial(bc.getIDPAlias());
         waitForPage(driver, "sign in to", true);
@@ -78,13 +79,14 @@ public class KcOidcBrokerWithConsentTest extends AbstractInitializedBaseBrokerTe
      */
     @Test
     public void testConsentDeniedWithExpiredAndClearedClientSession() {
-        driver.navigate().to(getAccountUrl(getConsumerRoot(), bc.consumerRealmName()));
+        oauth.clientId("broker-app");
+        loginPage.open(bc.consumerRealmName());
+
         logInWithBroker(bc);
 
         // Set time offset
         invokeTimeOffset(60);
         try {
-
             testingClient.server(bc.providerRealmName()).run(removeBrokerExpiredSessions());
 
             // User rejected consent
@@ -93,7 +95,6 @@ public class KcOidcBrokerWithConsentTest extends AbstractInitializedBaseBrokerTe
 
             // Assert login page with "You took too long to login..." message
             Assert.assertEquals("Your login attempt timed out. Login will start from the beginning.", loginPage.getError());
-
         } finally {
             invokeTimeOffset(0);
         }
@@ -105,7 +106,10 @@ public class KcOidcBrokerWithConsentTest extends AbstractInitializedBaseBrokerTe
     @Test
     public void testLoginCancelConsent() {
         updateExecutions(AbstractBrokerTest::disableUpdateProfileOnFirstLogin);
-        driver.navigate().to(getAccountUrl(getConsumerRoot(), bc.consumerRealmName()));
+
+        oauth.clientId("broker-app");
+        loginPage.open(bc.consumerRealmName());
+
         logInWithBroker(bc);
 
         // User rejected consent

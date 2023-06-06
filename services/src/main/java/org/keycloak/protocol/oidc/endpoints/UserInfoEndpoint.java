@@ -255,7 +255,7 @@ public class UserInfoEndpoint {
 
         AccessToken userInfo = new AccessToken();
 
-        tokenManager.transformUserInfoAccessToken(session, userInfo, userSession, clientSessionCtx);
+        userInfo = tokenManager.transformUserInfoAccessToken(session, userInfo, userSession, clientSessionCtx);
         Map<String, Object> claims = tokenManager.generateUserInfoClaims(userInfo, userModel);
 
         Response.ResponseBuilder responseBuilder;

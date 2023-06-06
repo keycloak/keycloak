@@ -3,7 +3,6 @@ package org.keycloak.testsuite.broker;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.keycloak.testsuite.broker.BrokerTestTools.getConsumerRoot;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -24,6 +23,7 @@ import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
+import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.OAuthClient;
 
 import com.google.common.collect.ImmutableMap;
@@ -131,7 +131,7 @@ public class OidcClaimToUserSessionNoteMapperTest extends AbstractIdentityProvid
     }
 
     private void logout() {
-        logoutFromRealm(getConsumerRoot(), bc.consumerRealmName());
+        AccountHelper.logout(adminClient.realm(bc.consumerRealmName()), bc.getUserLogin());
     }
 
     private AccessToken login() {

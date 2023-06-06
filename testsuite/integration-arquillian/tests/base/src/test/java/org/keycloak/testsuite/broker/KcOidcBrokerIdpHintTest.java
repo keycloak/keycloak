@@ -18,7 +18,6 @@ package org.keycloak.testsuite.broker;
 
 import org.junit.Test;
 import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
-import static org.keycloak.testsuite.broker.BrokerTestTools.getConsumerRoot;
 
 import org.keycloak.testsuite.Assert;
 
@@ -37,7 +36,8 @@ public class KcOidcBrokerIdpHintTest extends AbstractInitializedBaseBrokerTest {
 
     @Test
     public void testSuccessfulRedirect() {
-        driver.navigate().to(getAccountUrl(getConsumerRoot(), bc.consumerRealmName()));
+        oauth.clientId("broker-app");
+        loginPage.open(bc.consumerRealmName());
         waitForPage(driver, "sign in to", true);
         String url = driver.getCurrentUrl() + "&kc_idp_hint=" + bc.getIDPAlias();
         driver.navigate().to(url);
@@ -55,7 +55,8 @@ public class KcOidcBrokerIdpHintTest extends AbstractInitializedBaseBrokerTest {
     // KEYCLOAK-5260
     @Test
     public void testSuccessfulRedirectToProviderAfterLoginPageShown() {
-        driver.navigate().to(getAccountUrl(getConsumerRoot(), bc.consumerRealmName()));
+        oauth.clientId("broker-app");
+        loginPage.open(bc.consumerRealmName());
         waitForPage(driver, "sign in to", true);
         
         String urlWithHint = driver.getCurrentUrl() + "&kc_idp_hint=" + bc.getIDPAlias();        
@@ -71,7 +72,9 @@ public class KcOidcBrokerIdpHintTest extends AbstractInitializedBaseBrokerTest {
                 driver.getCurrentUrl().contains("/auth/realms/" + bc.providerRealmName() + "/"));
         
         // redirect shouldn't happen
-        driver.navigate().to(getAccountUrl(getConsumerRoot(), bc.consumerRealmName()));
+        oauth.clientId("broker-app");
+        loginPage.open(bc.consumerRealmName());
+
         waitForPage(driver, "sign in to", true);
         Assert.assertTrue("Driver should be on the consumer realm page",
                 driver.getCurrentUrl().contains("/auth/realms/" + bc.consumerRealmName() + "/"));
@@ -79,7 +82,8 @@ public class KcOidcBrokerIdpHintTest extends AbstractInitializedBaseBrokerTest {
     
         @Test
     public void testInvalidIdentityProviderHint() {
-        driver.navigate().to(getAccountUrl(getConsumerRoot(), bc.consumerRealmName()));
+            oauth.clientId("broker-app");
+            loginPage.open(bc.consumerRealmName());
         waitForPage(driver, "sign in to", true);
         String url = driver.getCurrentUrl() + "&kc_idp_hint=bogus-idp";
         driver.navigate().to(url);

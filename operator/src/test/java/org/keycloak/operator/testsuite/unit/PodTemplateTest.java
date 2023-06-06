@@ -33,6 +33,9 @@ import org.keycloak.operator.crds.v2alpha1.deployment.spec.HostnameSpecBuilder;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.HttpSpecBuilder;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.UnsupportedSpec;
 
+import java.util.Collections;
+import java.util.Map;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -52,6 +55,10 @@ public class PodTemplateTest {
                     @Override
                     public String imagePullPolicy() {
                         return "Never";
+                    }
+                    @Override
+                    public Map<String, String> podLabels() {
+                        return Collections.emptyMap();
                     }
                 };
             }

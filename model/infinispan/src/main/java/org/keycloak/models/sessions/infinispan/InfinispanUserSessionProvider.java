@@ -27,7 +27,6 @@ import org.jboss.logging.Logger;
 import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.common.util.Retry;
 import org.keycloak.common.util.Time;
-import org.keycloak.device.DeviceActivityManager;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
@@ -76,7 +75,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -193,8 +191,13 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
         final UUID clientSessionId = keyGenerator.generateKeyUUID(session, clientSessionCache);
         AuthenticatedClientSessionEntity entity = new AuthenticatedClientSessionEntity(clientSessionId);
         entity.setRealmId(realm.getId());
+        entity.setClientId(client.getId());
         entity.setTimestamp(Time.currentTime());
         entity.getNotes().put(AuthenticatedClientSessionModel.STARTED_AT_NOTE, String.valueOf(entity.getTimestamp()));
+        entity.getNotes().put(AuthenticatedClientSessionModel.USER_SESSION_STARTED_AT_NOTE, String.valueOf(userSession.getStarted()));
+        if (userSession.isRememberMe()) {
+            entity.getNotes().put(AuthenticatedClientSessionModel.USER_SESSION_REMEMBER_ME_NOTE, "true");
+        }
 
         InfinispanChangelogBasedTransaction<String, UserSessionEntity> userSessionUpdateTx = getTransaction(false);
         InfinispanChangelogBasedTransaction<UUID, AuthenticatedClientSessionEntity> clientSessionUpdateTx = getClientSessionTransaction(false);
@@ -287,7 +290,12 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
             return null;
         }
 
-        return importUserSession(realm, offline, persistentUserSession);
+        UserSessionEntity sessionEntity = importUserSession(realm, offline, persistentUserSession);
+        if (sessionEntity == null) {
+            persister.removeUserSession(sessionId, offline);
+        }
+
+        return sessionEntity;
     }
 
     private UserSessionEntity getUserSessionEntityFromCacheOrImportIfNecessary(RealmModel realm, boolean offline, UserSessionModel persistentUserSession) {
@@ -414,7 +422,13 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
             return null;
         }
 
-        return importClientSession((UserSessionAdapter) userSession, clientSession, getTransaction(offline), getClientSessionTransaction(offline), offline);
+        AuthenticatedClientSessionAdapter clientAdapter = importClientSession((UserSessionAdapter) userSession, clientSession, getTransaction(offline),
+                getClientSessionTransaction(offline), offline, true);
+
+        if (clientAdapter == null) {
+            persister.removeClientSession(userSession.getId(), client.getId(), offline);
+        }
+        return clientAdapter;
     }
 
     private AuthenticatedClientSessionEntity getClientSessionEntity(UUID id, boolean offline) {
@@ -815,11 +829,12 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
 
         InfinispanChangelogBasedTransaction<String, UserSessionEntity> userSessionUpdateTx = getTransaction(true);
         InfinispanChangelogBasedTransaction<UUID, AuthenticatedClientSessionEntity> clientSessionUpdateTx = getClientSessionTransaction(true);
-        AuthenticatedClientSessionAdapter offlineClientSession = importClientSession(userSessionAdapter, clientSession, userSessionUpdateTx, clientSessionUpdateTx, true);
+        AuthenticatedClientSessionAdapter offlineClientSession = importClientSession(userSessionAdapter, clientSession, userSessionUpdateTx, clientSessionUpdateTx, true, false);
 
         // update timestamp to current time
         offlineClientSession.setTimestamp(Time.currentTime());
         offlineClientSession.getNotes().put(AuthenticatedClientSessionModel.STARTED_AT_NOTE, String.valueOf(offlineClientSession.getTimestamp()));
+        offlineClientSession.getNotes().put(AuthenticatedClientSessionModel.USER_SESSION_STARTED_AT_NOTE, String.valueOf(offlineUserSession.getStarted()));
 
         session.getProvider(UserSessionPersisterProvider.class).createClientSession(clientSession, true);
 
@@ -863,7 +878,8 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
                     for (Map.Entry<String, AuthenticatedClientSessionModel> entry : persistentUserSession.getAuthenticatedClientSessions().entrySet()) {
                         String clientUUID = entry.getKey();
                         AuthenticatedClientSessionModel clientSession = entry.getValue();
-                        AuthenticatedClientSessionEntity clientSessionToImport = createAuthenticatedClientSessionInstance(clientSession, userSessionEntityToImport.getRealmId(), offline);
+                        AuthenticatedClientSessionEntity clientSessionToImport = createAuthenticatedClientSessionInstance(clientSession,
+                                userSessionEntityToImport.getRealmId(), clientUUID, offline);
 
                         // Update timestamp to same value as userSession. LastSessionRefresh of userSession from DB will have correct value
                         clientSessionToImport.setTimestamp(userSessionEntityToImport.getLastSessionRefresh());
@@ -970,14 +986,15 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
     }
 
     private <T extends SessionEntity> void importSessionsWithExpiration(Map<? extends Object, SessionEntityWrapper<T>> sessionsById,
-                                              BasicCache cache, BiFunction<RealmModel, T, Long> lifespanMsCalculator,
-                                              BiFunction<RealmModel, T, Long> maxIdleTimeMsCalculator) {
+                                              BasicCache cache, SessionFunction<T> lifespanMsCalculator,
+                                              SessionFunction<T> maxIdleTimeMsCalculator) {
         sessionsById.forEach((id, sessionEntityWrapper) -> {
 
             T sessionEntity = sessionEntityWrapper.getEntity();
             RealmModel currentRealm = session.realms().getRealm(sessionEntity.getRealmId());
-            long lifespan = lifespanMsCalculator.apply(currentRealm, sessionEntity);
-            long maxIdle = maxIdleTimeMsCalculator.apply(currentRealm, sessionEntity);
+            ClientModel client = sessionEntityWrapper.getClientIfNeeded(currentRealm);
+            long lifespan = lifespanMsCalculator.apply(currentRealm, client, sessionEntity);
+            long maxIdle = maxIdleTimeMsCalculator.apply(currentRealm, client, sessionEntity);
 
             if(lifespan != SessionTimeouts.ENTRY_EXPIRED_FLAG
                     && maxIdle != SessionTimeouts.ENTRY_EXPIRED_FLAG ) {
@@ -1055,8 +1072,21 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
     private AuthenticatedClientSessionAdapter importClientSession(UserSessionAdapter sessionToImportInto, AuthenticatedClientSessionModel clientSession,
                                                                   InfinispanChangelogBasedTransaction<String, UserSessionEntity> userSessionUpdateTx,
                                                                   InfinispanChangelogBasedTransaction<UUID, AuthenticatedClientSessionEntity> clientSessionUpdateTx,
-                                                                  boolean offline) {
-        AuthenticatedClientSessionEntity entity = createAuthenticatedClientSessionInstance(clientSession, sessionToImportInto.getRealm().getId(), offline);
+                                                                  boolean offline, boolean checkExpiration) {
+        AuthenticatedClientSessionEntity entity = createAuthenticatedClientSessionInstance(clientSession,
+                sessionToImportInto.getRealm().getId(), clientSession.getClient().getId(), offline);
+
+        if (checkExpiration) {
+            SessionFunction<AuthenticatedClientSessionEntity> lifespanChecker = offline
+                    ? SessionTimeouts::getOfflineClientSessionLifespanMs : SessionTimeouts::getClientSessionLifespanMs;
+            SessionFunction<AuthenticatedClientSessionEntity> idleTimeoutChecker = offline
+                    ? SessionTimeouts::getOfflineClientSessionMaxIdleMs : SessionTimeouts::getClientSessionMaxIdleMs;
+            if (idleTimeoutChecker.apply(sessionToImportInto.getRealm(), clientSession.getClient(), entity) == SessionTimeouts.ENTRY_EXPIRED_FLAG
+                    || lifespanChecker.apply(sessionToImportInto.getRealm(), clientSession.getClient(), entity) == SessionTimeouts.ENTRY_EXPIRED_FLAG) {
+                return null;
+            }
+        }
+
         final UUID clientSessionId = entity.getId();
 
         SessionUpdateTask<AuthenticatedClientSessionEntity> createClientSessionTask = Tasks.addIfAbsentSync();
@@ -1072,10 +1102,12 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
     }
 
 
-    private AuthenticatedClientSessionEntity createAuthenticatedClientSessionInstance(AuthenticatedClientSessionModel clientSession, String realmId, boolean offline) {
+    private AuthenticatedClientSessionEntity createAuthenticatedClientSessionInstance(AuthenticatedClientSessionModel clientSession,
+            String realmId, String clientId, boolean offline) {
         final UUID clientSessionId = keyGenerator.generateKeyUUID(session, getClientSessionCache(offline));
         AuthenticatedClientSessionEntity entity = new AuthenticatedClientSessionEntity(clientSessionId);
         entity.setRealmId(realmId);
+        entity.setClientId(clientId);
 
         entity.setAction(clientSession.getAction());
         entity.setAuthMethod(clientSession.getProtocol());
