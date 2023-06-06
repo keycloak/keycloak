@@ -176,7 +176,23 @@ CONDITION: RollingUpdate
 
 === Accessing the Keycloak deployment
 
-The Keycloak deployment is exposed through a basic Ingress and is accessible through the provided hostname.
+The Keycloak deployment is exposed through a basic Ingress and is accessible through the provided hostname.  On installations with multiple default IngressClass instances
+or when running on OpenShift 4.12+ you should provide an ingressClassName by setting `ingress` spec with `className` property to the desired class name:
+
+Edit YAML file `example-kc.yaml`:
+
+[source,yaml]
+----
+apiVersion: k8s.keycloak.org/v2alpha1
+kind: Keycloak
+metadata:
+  name: example-kc
+spec:
+    ...
+    ingress:
+      className: openshift-default
+----
+
 If the default ingress does not fit your use case, disable it by setting `ingress` spec with `enabled` property to `false` value:
 
 Edit YAML file `example-kc.yaml`:

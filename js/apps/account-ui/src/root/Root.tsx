@@ -37,7 +37,12 @@ const ReferrerLink = () => {
 
 export const Root = () => {
   const { t } = useTranslation();
-  const indexHref = useHref("/");
+  const brandImage = environment.logo || "logo.svg";
+  const logoUrl = environment.logoUrl ? environment.logoUrl : "/";
+  const internalLogoHref = useHref(logoUrl);
+
+  // User can indicate that he wants an internal URL by starting it with "/"
+  const indexHref = logoUrl.startsWith("/") ? internalLogoHref : logoUrl;
 
   const translations = useMemo<Translations>(
     () => ({
@@ -59,7 +64,7 @@ export const Root = () => {
             showNavToggle
             brand={{
               href: indexHref,
-              src: joinPath(environment.resourceUrl, "logo.svg"),
+              src: joinPath(environment.resourceUrl, brandImage),
               alt: t("logo"),
               className: style.brand,
             }}

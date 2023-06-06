@@ -72,11 +72,8 @@ public class KeycloakIngress extends OperatorManagedResource implements StatusUp
             annotations.put("route.openshift.io/termination", "edge");
         }
 
-        if (keycloak.getSpec().getIngressSpec() != null &&
-                keycloak.getSpec().getIngressSpec().getAnnotations() != null) {
-            annotations.putAll(keycloak.getSpec().getIngressSpec().getAnnotations());
-
-        }
+        var optionalSpec = Optional.ofNullable(keycloak.getSpec().getIngressSpec());
+        optionalSpec.map(IngressSpec::getAnnotations).ifPresent(annotations::putAll);
 
         Ingress ingress = new IngressBuilder()
                 .withNewMetadata()
@@ -85,6 +82,7 @@ public class KeycloakIngress extends OperatorManagedResource implements StatusUp
                     .addToAnnotations(annotations)
                 .endMetadata()
                 .withNewSpec()
+                    .withIngressClassName(optionalSpec.map(IngressSpec::getIngressClassName).orElse(null))
                     .withNewDefaultBackend()
                         .withNewService()
                             .withName(keycloak.getMetadata().getName() + Constants.KEYCLOAK_SERVICE_SUFFIX)

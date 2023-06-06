@@ -55,19 +55,19 @@ public class KcOidcBrokerPassMaxAgeTest extends AbstractBrokerTest {
     @Test
     @Override
     public void loginWithExistingUser() {
-
         // login as brokered user user, perform profile update on first broker login and logout user
         loginUser();
         testSingleLogout();
 
-        driver.navigate().to(getAccountUrl(getConsumerRoot(), bc.consumerRealmName()));
+        oauth.clientId("broker-app");
+        loginPage.open(bc.consumerRealmName());
+
         loginPage.clickSocial(bc.getIDPAlias());
         waitForPage(driver, "sign in to", true);
         Assert.assertTrue("Driver should be on the provider realm page right now",
                 driver.getCurrentUrl().contains("/auth/realms/" + bc.providerRealmName() + "/"));
 
         loginPage.login(bc.getUserLogin(), bc.getUserPassword());
-        accountUpdateProfilePage.assertCurrent();
 
         setTimeOffset(2);
 
@@ -101,14 +101,15 @@ public class KcOidcBrokerPassMaxAgeTest extends AbstractBrokerTest {
         loginUser();
         testSingleLogout();
 
-        driver.navigate().to(getAccountUrl(getConsumerRoot(), bc.consumerRealmName()));
+        oauth.clientId("broker-app");
+        loginPage.open(bc.consumerRealmName());
+
         loginPage.clickSocial(bc.getIDPAlias());
         waitForPage(driver, "sign in to", true);
         Assert.assertTrue("Driver should be on the provider realm page right now",
                 driver.getCurrentUrl().contains("/auth/realms/" + bc.providerRealmName() + "/"));
 
         loginPage.login(bc.getUserLogin(), bc.getUserPassword());
-        accountUpdateProfilePage.assertCurrent();
 
         IdentityProviderResource idpResource = realmsResouce().realm(bc.consumerRealmName()).identityProviders()
                 .get(bc.getIDPAlias());

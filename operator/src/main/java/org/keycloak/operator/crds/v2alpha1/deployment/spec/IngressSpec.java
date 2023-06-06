@@ -27,18 +27,29 @@ import java.util.Map;
 public class IngressSpec {
 
     @JsonProperty("enabled")
-    private boolean enabled = true;
+    private boolean ingressEnabled = true;
+    
+    @JsonProperty("className")
+    private String ingressClassName;
 
     @JsonProperty("annotations")
     @JsonPropertyDescription("Additional annotations to be appended to the Ingress object")
     Map<String, String> annotations;
 
     public boolean isIngressEnabled() {
-        return enabled;
+        return ingressEnabled;
     }
 
     public void setIngressEnabled(boolean enabled) {
-        this.enabled = enabled;
+        this.ingressEnabled = enabled;
+    }
+    
+    public String getIngressClassName() {
+        return ingressClassName;
+    }
+    
+    public void setIngressClassName(String className) {
+        this.ingressClassName = className;
     }
 
     public Map<String, String> getAnnotations() {

@@ -30,6 +30,7 @@ import java.util.AbstractMap;
 import java.util.Comparator;
 import java.util.Map.Entry;
 import java.util.Objects;
+import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 /**
@@ -131,6 +132,21 @@ public class ProtocolMapperUtils {
                     return new AbstractMap.SimpleEntry<>(mapperModel, mapper);
                 })
                 .filter(Objects::nonNull)
+                .sorted(Comparator.comparing(ProtocolMapperUtils::compare));
+    }
+
+    public static Stream<Entry<ProtocolMapperModel, ProtocolMapper>> getSortedProtocolMappers(KeycloakSession session, ClientSessionContext ctx, Predicate<Entry<ProtocolMapperModel, ProtocolMapper>> filter) {
+        KeycloakSessionFactory sessionFactory = session.getKeycloakSessionFactory();
+        return ctx.getProtocolMappersStream()
+                .<Entry<ProtocolMapperModel, ProtocolMapper>>map(mapperModel -> {
+                    ProtocolMapper mapper = (ProtocolMapper) sessionFactory.getProviderFactory(ProtocolMapper.class, mapperModel.getProtocolMapper());
+                    if (mapper == null) {
+                        return null;
+                    }
+                    return new AbstractMap.SimpleEntry<>(mapperModel, mapper);
+                })
+                .filter(Objects::nonNull)
+                .filter(filter)
                 .sorted(Comparator.comparing(ProtocolMapperUtils::compare));
     }
 

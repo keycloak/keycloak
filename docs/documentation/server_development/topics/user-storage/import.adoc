@@ -30,9 +30,9 @@ begin first by modifying the `createAdapter()` method.
 [source,java]
 ----
     protected UserModel createAdapter(RealmModel realm, String username) {
-        UserModel local = session.userLocalStorage().getUserByUsername(username, realm);
+        UserModel local = UserStoragePrivateUtil.userLocalStorage(session).getUserByUsername(realm, username);
         if (local == null) {
-            local = session.userLocalStorage().addUser(realm, username);
+            local = UserStoragePrivateUtil.userLocalStorage(session).addUser(realm, username);
             local.setFederationLink(model.getId());
         }
         return new UserModelDelegate(local) {
@@ -49,7 +49,7 @@ begin first by modifying the `createAdapter()` method.
     }
 ----
 
-In this method we call the `KeycloakSession.userLocalStorage()` method to obtain a reference to local {project_name}
+In this method we call the `UserStoragePrivateUtil.userLocalStorage(session)` method to obtain a reference to local {project_name}
 user storage. We see if the user is stored locally, if not, we add it locally. Do not set the `id` of the local user.
 Let {project_name} automatically generate the `id`.  Also note that we call
 `UserModel.setFederationLink()` and pass in the ID of the `ComponentModel` of our provider. This sets a link between
