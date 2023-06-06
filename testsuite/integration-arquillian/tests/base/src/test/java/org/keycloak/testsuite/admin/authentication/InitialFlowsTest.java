@@ -227,7 +227,7 @@ public class InitialFlowsTest extends AbstractAuthenticationTest {
         addExecInfo(execs, "Reset Password", "reset-password", false, 0, 2, REQUIRED, null, new String[]{REQUIRED, ALTERNATIVE, DISABLED});
         addExecInfo(execs, "Reset - Conditional OTP", null, false, 0, 3, CONDITIONAL, true, new String[]{REQUIRED, ALTERNATIVE, DISABLED, CONDITIONAL});
         addExecInfo(execs, "Condition - user configured", "conditional-user-configured", false, 1, 0, REQUIRED, null, new String[]{REQUIRED, DISABLED});
-        addExecInfo(execs, "Reset OTP", "reset-otp", false, 1, 1, REQUIRED, null, new String[]{REQUIRED, ALTERNATIVE, DISABLED});
+        addExecInfo(execs, "Reset OTP", "reset-otp", true, 1, 1, REQUIRED, null, new String[]{REQUIRED, ALTERNATIVE, DISABLED});
         expected.add(new FlowExecutions(flow, execs));
 
         return expected;
