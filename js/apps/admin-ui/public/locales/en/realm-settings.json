@@ -861,6 +861,7 @@
   "xRobotsTag": "X-Robots-Tag",
   "xXSSProtection": "X-XSS-Protection",
   "strictTransportSecurity": "HTTP Strict Transport Security (HSTS)",
+  "referrerPolicy": "Referrer Policy",
   "failureFactor": "Max login failures",
   "permanentLockout": "Permanent lockout",
   "waitIncrementSeconds": "Wait increment",

@@ -14,6 +14,7 @@ import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.social.github.GitHubUserAttributeMapper;
+import org.keycloak.testsuite.util.AccountHelper;
 
 import java.util.HashMap;
 
@@ -27,7 +28,6 @@ import static org.keycloak.models.IdentityProviderMapperSyncMode.LEGACY;
 import static org.keycloak.testsuite.broker.KcOidcBrokerConfiguration.HARDOCDED_CLAIM;
 import static org.keycloak.testsuite.broker.KcOidcBrokerConfiguration.HARDOCDED_VALUE;
 import static org.keycloak.testsuite.broker.KcOidcBrokerConfiguration.USER_INFO_CLAIM;
-import static org.keycloak.testsuite.broker.BrokerTestTools.getConsumerRoot;
 
 /**
  * @author <a href="mailto:external.martin.idel@bosch.io">Martin Idel</a>
@@ -115,7 +115,7 @@ public class JsonUserAttributeMapperTest extends AbstractIdentityProviderMapperT
         if (createAfterFirstLogin) {
             createGithubProviderMapper(idp, syncMode);
         }
-        logoutFromRealm(getConsumerRoot(), bc.consumerRealmName());
+        AccountHelper.logout(adminClient.realm(bc.consumerRealmName()), bc.getUserLogin());
 
         if (!createAfterFirstLogin) {
             updateClaimSentToIDP(claim, updatedValue);

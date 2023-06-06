@@ -560,14 +560,6 @@ public final class KeycloakModelUtils {
         });
     }
 
-    public static String resolveFirstAttribute(GroupModel group, String name) {
-        String value = group.getFirstAttribute(name);
-        if (value != null) return value;
-        if (group.getParentId() == null) return null;
-        return resolveFirstAttribute(group.getParent(), name);
-
-    }
-
     public static Collection<String> resolveAttribute(GroupModel group, String name, boolean aggregateAttrs) {
         Set<String> values = group.getAttributeStream(name).collect(Collectors.toSet());
         if ((values.isEmpty() || aggregateAttrs) && group.getParentId() != null) {
@@ -587,7 +579,6 @@ public final class KeycloakModelUtils {
         }
         Stream<Collection<String>> attributes = user.getGroupsStream()
                 .map(group -> resolveAttribute(group, name, aggregateAttrs))
-                .filter(Objects::nonNull)
                 .filter(attr -> !attr.isEmpty());
 
         if (!aggregateAttrs) {

@@ -17,6 +17,7 @@
 
 package org.keycloak.protocol.oidc;
 
+import java.util.Collections;
 import java.util.HashMap;
 import org.jboss.logging.Logger;
 import org.keycloak.http.HttpRequest;
@@ -47,6 +48,7 @@ import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.Constants;
 import org.keycloak.models.ImpersonationSessionNote;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.SingleUseObjectProvider;
@@ -56,6 +58,7 @@ import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.UserSessionProvider;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.RoleUtils;
+import org.keycloak.protocol.ProtocolMapper;
 import org.keycloak.protocol.ProtocolMapperUtils;
 import org.keycloak.protocol.oidc.mappers.OIDCAccessTokenMapper;
 import org.keycloak.protocol.oidc.mappers.OIDCAccessTokenResponseMapper;
@@ -90,8 +93,12 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.BiConsumer;
+import java.util.function.BinaryOperator;
+import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
+import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -569,7 +576,7 @@ public class TokenManager {
         }
 
         clientSession.setNote(Constants.LEVEL_OF_AUTHENTICATION, String.valueOf(new AcrStore(authSession).getLevelOfAuthenticationFromCurrentAuthentication()));
-        clientSession.setTimestamp(Time.currentTime());
+        clientSession.setTimestamp(userSession.getLastSessionRefresh());
 
         // Remove authentication session now
         new AuthenticationSessionManager(session).removeAuthenticationSession(userSession.getRealm(), authSession, true);
@@ -740,36 +747,36 @@ public class TokenManager {
 
     public AccessToken transformAccessToken(KeycloakSession session, AccessToken token,
                                             UserSessionModel userSession, ClientSessionContext clientSessionCtx) {
-
-        AtomicReference<AccessToken> finalToken = new AtomicReference<>(token);
-        ProtocolMapperUtils.getSortedProtocolMappers(session, clientSessionCtx)
-                .filter(mapper -> mapper.getValue() instanceof OIDCAccessTokenMapper)
-                .forEach(mapper -> finalToken.set(((OIDCAccessTokenMapper) mapper.getValue())
-                        .transformAccessToken(finalToken.get(), mapper.getKey(), session, userSession, clientSessionCtx)));
-        return finalToken.get();
+        return ProtocolMapperUtils.getSortedProtocolMappers(session, clientSessionCtx, mapper -> mapper.getValue() instanceof OIDCAccessTokenMapper)
+                .collect(new TokenCollector<AccessToken>(token) {
+                    @Override
+                    protected AccessToken applyMapper(AccessToken token, Map.Entry<ProtocolMapperModel, ProtocolMapper> mapper) {
+                        return ((OIDCAccessTokenMapper) mapper.getValue()).transformAccessToken(token, mapper.getKey(), session, userSession, clientSessionCtx);
+                    }
+                });
     }
 
     public AccessTokenResponse transformAccessTokenResponse(KeycloakSession session, AccessTokenResponse accessTokenResponse,
             UserSessionModel userSession, ClientSessionContext clientSessionCtx) {
 
-        AtomicReference<AccessTokenResponse> finalResponseToken = new AtomicReference<>(accessTokenResponse);
-        ProtocolMapperUtils.getSortedProtocolMappers(session, clientSessionCtx)
-                .filter(mapper -> mapper.getValue() instanceof OIDCAccessTokenResponseMapper)
-                .forEach(mapper -> finalResponseToken.set(((OIDCAccessTokenResponseMapper) mapper.getValue())
-                        .transformAccessTokenResponse(finalResponseToken.get(), mapper.getKey(), session, userSession, clientSessionCtx)));
-
-        return finalResponseToken.get();
+        return ProtocolMapperUtils.getSortedProtocolMappers(session, clientSessionCtx, mapper -> mapper.getValue() instanceof OIDCAccessTokenResponseMapper)
+                .collect(new TokenCollector<AccessTokenResponse>(accessTokenResponse) {
+                    @Override
+                    protected AccessTokenResponse applyMapper(AccessTokenResponse token, Map.Entry<ProtocolMapperModel, ProtocolMapper> mapper) {
+                        return ((OIDCAccessTokenResponseMapper) mapper.getValue()).transformAccessTokenResponse(token, mapper.getKey(), session, userSession, clientSessionCtx);
+                    }
+                });
     }
 
     public AccessToken transformUserInfoAccessToken(KeycloakSession session, AccessToken token,
-                                            UserSessionModel userSession, ClientSessionContext clientSessionCtx) {
-
-        AtomicReference<AccessToken> finalToken = new AtomicReference<>(token);
-        ProtocolMapperUtils.getSortedProtocolMappers(session, clientSessionCtx)
-                .filter(mapper -> mapper.getValue() instanceof UserInfoTokenMapper)
-                .forEach(mapper -> finalToken.set(((UserInfoTokenMapper) mapper.getValue())
-                        .transformUserInfoToken(finalToken.get(), mapper.getKey(), session, userSession, clientSessionCtx)));
-        return finalToken.get();
+                                                    UserSessionModel userSession, ClientSessionContext clientSessionCtx) {
+        return ProtocolMapperUtils.getSortedProtocolMappers(session, clientSessionCtx, mapper -> mapper.getValue() instanceof UserInfoTokenMapper)
+                .collect(new TokenCollector<AccessToken>(token) {
+                    @Override
+                    protected AccessToken applyMapper(AccessToken token, Map.Entry<ProtocolMapperModel, ProtocolMapper> mapper) {
+                        return ((UserInfoTokenMapper) mapper.getValue()).transformUserInfoToken(token, mapper.getKey(), session, userSession, clientSessionCtx);
+                    }
+                });
     }
 
     public Map<String, Object> generateUserInfoClaims(AccessToken userInfo, UserModel userModel) {
@@ -863,14 +870,51 @@ public class TokenManager {
         return claims;
     }
 
-    public void transformIDToken(KeycloakSession session, IDToken token,
-                                      UserSessionModel userSession, ClientSessionContext clientSessionCtx) {
+    private abstract static class TokenCollector<T> implements Collector<Map.Entry<ProtocolMapperModel, ProtocolMapper>, TokenCollector<T>, T> {
 
-        AtomicReference<IDToken> finalToken = new AtomicReference<>(token);
-        ProtocolMapperUtils.getSortedProtocolMappers(session, clientSessionCtx)
-                .filter(mapper -> mapper.getValue() instanceof OIDCIDTokenMapper)
-                .forEach(mapper -> finalToken.set(((OIDCIDTokenMapper) mapper.getValue())
-                        .transformIDToken(finalToken.get(), mapper.getKey(), session, userSession, clientSessionCtx)));
+        private T token;
+
+        public TokenCollector(T token) {
+            this.token = token;
+        }
+
+        @Override
+        public Supplier<TokenCollector<T>> supplier() {
+            return () -> this;
+        }
+
+        @Override
+        public Function<TokenCollector<T>, T> finisher() {
+            return idTokenWrapper -> idTokenWrapper.token;
+        }
+
+        @Override
+        public Set<Collector.Characteristics> characteristics() {
+            return Collections.emptySet();
+        }
+
+        @Override
+        public BinaryOperator<TokenCollector<T>> combiner() {
+            return (tMutableWrapper, tMutableWrapper2) -> { throw new IllegalStateException("can't combine"); };
+        }
+
+        @Override
+        public BiConsumer<TokenCollector<T>, Map.Entry<ProtocolMapperModel, ProtocolMapper>> accumulator() {
+            return (idToken, mapper) -> idToken.token = applyMapper(idToken.token, mapper);
+        }
+
+        protected abstract T applyMapper(T token, Map.Entry<ProtocolMapperModel, ProtocolMapper> mapper);
+
+    }
+
+    public IDToken transformIDToken(KeycloakSession session, IDToken token,
+                                    UserSessionModel userSession, ClientSessionContext clientSessionCtx) {
+        return ProtocolMapperUtils.getSortedProtocolMappers(session, clientSessionCtx, mapper -> mapper.getValue() instanceof OIDCIDTokenMapper)
+                .collect(new TokenCollector<IDToken>(token) {
+                    protected IDToken applyMapper(IDToken token, Map.Entry<ProtocolMapperModel, ProtocolMapper> mapper) {
+                        return ((OIDCIDTokenMapper) mapper.getValue()).transformIDToken(token, mapper.getKey(), session, userSession, clientSessionCtx);
+                    }
+                });
     }
 
     protected AccessToken initToken(RealmModel realm, ClientModel client, UserModel user, UserSessionModel session,
@@ -1085,7 +1129,8 @@ public class TokenManager {
             }
 
             if (clientSessionMaxLifespan > 0) {
-                int clientSessionMaxExpiration = userSession.getStarted() + clientSessionMaxLifespan;
+                AuthenticatedClientSessionModel clientSession = clientSessionCtx.getClientSession();
+                int clientSessionMaxExpiration = clientSession.getStarted() + clientSessionMaxLifespan;
                 sessionExpires = sessionExpires < clientSessionMaxExpiration ? sessionExpires : clientSessionMaxExpiration;
             }
 
@@ -1123,7 +1168,8 @@ public class TokenManager {
             }
 
             if (clientOfflineSessionMaxLifespan > 0) {
-                int clientOfflineSessionMaxExpiration = userSession.getStarted() + clientOfflineSessionMaxLifespan;
+                AuthenticatedClientSessionModel clientSession = clientSessionCtx.getClientSession();
+                int clientOfflineSessionMaxExpiration = clientSession.getStarted() + clientOfflineSessionMaxLifespan;
                 sessionExpires = sessionExpires < clientOfflineSessionMaxExpiration ? sessionExpires
                     : clientOfflineSessionMaxExpiration;
             }
@@ -1175,7 +1221,7 @@ public class TokenManager {
             }
 
             if (isIdTokenAsDetachedSignature == false) {
-                transformIDToken(session, idToken, userSession, clientSessionCtx);
+                idToken = transformIDToken(session, idToken, userSession, clientSessionCtx);
             }
             return this;
         }
@@ -1257,7 +1303,7 @@ public class TokenManager {
             if (userNotBefore > notBefore) notBefore = userNotBefore;
             res.setNotBeforePolicy(notBefore);
 
-            transformAccessTokenResponse(session, res, userSession, clientSessionCtx);
+            res = transformAccessTokenResponse(session, res, userSession, clientSessionCtx);
 
             // OIDC Financial API Read Only Profile : scope MUST be returned in the response from Token Endpoint
             String responseScope = clientSessionCtx.getScopeString();

@@ -213,7 +213,9 @@ export default function NewAttributeSettings() {
           {
             name: profileConfig.name,
             displayName: profileConfig.displayName!,
-            required: profileConfig.isRequired ? profileConfig.required : {},
+            required: profileConfig.isRequired
+              ? profileConfig.required
+              : undefined,
             selector: profileConfig.selector,
             permissions: profileConfig.permissions!,
             annotations,

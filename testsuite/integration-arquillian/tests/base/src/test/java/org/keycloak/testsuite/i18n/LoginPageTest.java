@@ -121,6 +121,16 @@ public class LoginPageTest extends AbstractI18NTest {
     }
 
     @Test
+    public void htmlLangAttribute() {
+        loginPage.open();
+        assertEquals("en", loginPage.getHtmlLanguage());
+
+        oauth.uiLocales("de");
+        loginPage.open();
+        assertEquals("de", loginPage.getHtmlLanguage());
+    }
+
+    @Test
     public void acceptLanguageHeader() throws IOException {
         try(CloseableHttpClient httpClient = (CloseableHttpClient) new HttpClientBuilder().build()) {
             ApacheHttpClient43Engine engine = new ApacheHttpClient43Engine(httpClient);

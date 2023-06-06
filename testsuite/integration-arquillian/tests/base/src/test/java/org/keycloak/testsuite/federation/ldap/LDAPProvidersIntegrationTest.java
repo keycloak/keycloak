@@ -69,7 +69,6 @@ import org.keycloak.storage.ldap.mappers.UserAttributeLDAPStorageMapper;
 import org.keycloak.testsuite.AbstractAuthTest;
 import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.LDAPRule;
@@ -421,7 +420,6 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
     }
 
     @Test
-    @DisableFeature(value = Profile.Feature.ACCOUNT2, skipRestart = true) // TODO remove this (KEYCLOAK-16228)
     public void deleteFederationLink() throws Exception {
         // KEYCLOAK-4789: Login in client, which requires consent
         oauth.clientId("third-party");
@@ -471,7 +469,6 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
     }
 
     @Test
-    @DisableFeature(value = Profile.Feature.ACCOUNT2, skipRestart = true) // TODO remove this (KEYCLOAK-16228)
     public void loginLdap() {
         loginPage.open();
         loginPage.login("johnkeycloak", "Password1");
@@ -479,10 +476,11 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
         Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
         Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
 
-        profilePage.open();
-        Assert.assertEquals("John", profilePage.getFirstName());
-        Assert.assertEquals("Doe", profilePage.getLastName());
-        Assert.assertEquals("john@email.org", profilePage.getEmail());
+        UserRepresentation userRepresentation = AccountHelper.getUserRepresentation(adminClient.realm(TEST_REALM_NAME), "johnkeycloak");
+
+        Assert.assertEquals("John", userRepresentation.getFirstName());
+        Assert.assertEquals("Doe", userRepresentation.getLastName());
+        Assert.assertEquals("john@email.org", userRepresentation.getEmail());
     }
 
     @Test
@@ -1023,6 +1021,9 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
             // search by a string that matches multiple fields. Should still return the one entity it matches.
             Assert.assertEquals(1, session.users().searchForUserStream(appRealm, "*11*").count());
             LDAPTestAsserts.assertUserImported(UserStoragePrivateUtil.userLocalStorage(session), appRealm, "username11", "John11", "Doel11", "user11@email.org", "124");
+
+            // search by a string that has special characters. Should succeed with an empty set, but no exceptions.
+            Assert.assertEquals(0, session.users().searchForUserStream(appRealm, "John)").count());
         });
     }
 

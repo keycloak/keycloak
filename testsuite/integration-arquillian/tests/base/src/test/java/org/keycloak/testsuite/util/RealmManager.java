@@ -172,4 +172,18 @@ public class RealmManager {
         realm.update(rep);
         return this;
     }
+
+    public RealmManager clientSessionMaxLifespan(int clientSessionLaxLifespan) {
+        RealmRepresentation rep = realm.toRepresentation();
+        rep.setClientSessionMaxLifespan(clientSessionLaxLifespan);
+        realm.update(rep);
+        return this;
+    }
+
+    public RealmManager clientSessionIdleTimeout(int clientSessionIdleTimeout) {
+        RealmRepresentation rep = realm.toRepresentation();
+        rep.setClientSessionIdleTimeout(clientSessionIdleTimeout);
+        realm.update(rep);
+        return this;
+    }
 }

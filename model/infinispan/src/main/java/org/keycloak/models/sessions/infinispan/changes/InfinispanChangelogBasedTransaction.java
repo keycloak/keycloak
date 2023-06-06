@@ -20,16 +20,17 @@ package org.keycloak.models.sessions.infinispan.changes;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
-import java.util.function.BiFunction;
 
 import org.infinispan.Cache;
 import org.infinispan.context.Flag;
 import org.jboss.logging.Logger;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.AbstractKeycloakTransaction;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.sessions.infinispan.CacheDecorators;
+import org.keycloak.models.sessions.infinispan.SessionFunction;
 import org.keycloak.models.sessions.infinispan.entities.SessionEntity;
 import org.keycloak.models.sessions.infinispan.remotestore.RemoteCacheInvoker;
 import org.keycloak.connections.infinispan.InfinispanUtil;
@@ -48,11 +49,11 @@ public class InfinispanChangelogBasedTransaction<K, V extends SessionEntity> ext
 
     private final Map<K, SessionUpdatesList<V>> updates = new HashMap<>();
 
-    private final BiFunction<RealmModel, V, Long> lifespanMsLoader;
-    private final BiFunction<RealmModel, V, Long> maxIdleTimeMsLoader;
+    private final SessionFunction<V> lifespanMsLoader;
+    private final SessionFunction<V> maxIdleTimeMsLoader;
 
     public InfinispanChangelogBasedTransaction(KeycloakSession kcSession, Cache<K, SessionEntityWrapper<V>> cache, RemoteCacheInvoker remoteCacheInvoker,
-                                               BiFunction<RealmModel, V, Long> lifespanMsLoader, BiFunction<RealmModel, V, Long> maxIdleTimeMsLoader) {
+                                               SessionFunction<V> lifespanMsLoader, SessionFunction<V> maxIdleTimeMsLoader) {
         this.kcSession = kcSession;
         this.cacheName = cache.getName();
         this.cache = cache;
@@ -162,8 +163,8 @@ public class InfinispanChangelogBasedTransaction<K, V extends SessionEntity> ext
 
             RealmModel realm = sessionUpdates.getRealm();
 
-            long lifespanMs = lifespanMsLoader.apply(realm, sessionWrapper.getEntity());
-            long maxIdleTimeMs = maxIdleTimeMsLoader.apply(realm, sessionWrapper.getEntity());
+            long lifespanMs = lifespanMsLoader.apply(realm, sessionUpdates.getClient(), sessionWrapper.getEntity());
+            long maxIdleTimeMs = maxIdleTimeMsLoader.apply(realm, sessionUpdates.getClient(), sessionWrapper.getEntity());
 
             MergedUpdate<V> merged = MergedUpdate.computeUpdate(sessionUpdates.getUpdateTasks(), sessionWrapper, lifespanMs, maxIdleTimeMs);
 

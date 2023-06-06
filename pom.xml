@@ -43,7 +43,7 @@
         <jboss.snapshots.repo.id>jboss-snapshots-repository</jboss.snapshots.repo.id>
         <jboss.snapshots.repo.url>https://s01.oss.sonatype.org/content/repositories/snapshots/</jboss.snapshots.repo.url>
 
-        <quarkus.version>3.0.4.Final</quarkus.version>
+        <quarkus.version>3.1.0.Final</quarkus.version>
         <quarkus.build.version>3.0.3.Final</quarkus.build.version>
 
         <project.build-time>${timestamp}</project.build-time>
@@ -67,7 +67,7 @@
         <apache.httpcomponents.httpcore.version>4.4.16</apache.httpcomponents.httpcore.version>
         <apache.mime4j.version>0.6</apache.mime4j.version>
         <jboss.dmr.version>1.5.1.Final</jboss.dmr.version>
-        <bouncycastle.version>1.72</bouncycastle.version>
+        <bouncycastle.version>1.73</bouncycastle.version>
         <bouncycastle-bcprov-jdk15on.version>1.70</bouncycastle-bcprov-jdk15on.version>
 
         <!-- TODO Are these correct versions? -->
@@ -86,7 +86,7 @@
         <hibernate.c3p0.version>${hibernate-orm.version}</hibernate.c3p0.version>
         <infinispan.version>14.0.9.Final</infinispan.version>
         <infinispan.protostream.processor.version>4.6.2.Final</infinispan.protostream.processor.version>
-        <jackson.version>2.14.2</jackson.version>
+        <jackson.version>2.15.0</jackson.version>
         <jackson.databind.version>2.14.2</jackson.databind.version>
         <jackson.annotations.version>${jackson.version}</jackson.annotations.version>
 
@@ -99,7 +99,7 @@
         <jakarta.xml.ws.version>4.0.0</jakarta.xml.ws.version>
         <jakarta.xml.bind.version>4.0.0</jakarta.xml.bind.version>
         <jakarta.transaction.version>2.0.1</jakarta.transaction.version>
-        <jakarta.activation.version>2.1.1</jakarta.activation.version>
+        <jakarta.activation.version>2.1.2</jakarta.activation.version>
         <jakarta.xml.soap.version>3.0.0</jakarta.xml.soap.version>
 
         <servlet.api.30.version>1.0.2.Final</servlet.api.30.version>
@@ -138,11 +138,7 @@
         <picketbox.version>5.0.3.Final</picketbox.version>
         <google.guava.version>30.1-jre</google.guava.version>
         <xstream.version>1.4.20</xstream.version>
-        <okhttp.version>4.10.0</okhttp.version>
         <org.snakeyaml.snakeyaml-engine.version>2.6</org.snakeyaml.snakeyaml-engine.version>
-
-        <!-- Openshift -->
-        <version.com.openshift.openshift-restclient-java>9.0.5.Final</version.com.openshift.openshift-restclient-java>
 
         <!-- Others -->
         <commons-lang.version>2.6</commons-lang.version>
@@ -155,7 +151,7 @@
         <javaparser.version>3.24.2</javaparser.version>
 
         <jetty9.version>${jetty94.version}</jetty9.version>
-        <liquibase.version>4.20.0</liquibase.version>
+        <liquibase.version>4.21.0</liquibase.version>
         <osgi.version>4.2.0</osgi.version>
         <pax.web.version>7.1.0</pax.web.version>
         <servlet.api.30.version>1.0.2.Final</servlet.api.30.version>
@@ -322,16 +318,6 @@
                 <groupId>org.snakeyaml</groupId>
                 <artifactId>snakeyaml-engine</artifactId>
                 <version>${org.snakeyaml.snakeyaml-engine.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.squareup.okhttp3</groupId>
-                <artifactId>okhttp</artifactId>
-                <version>${okhttp.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.squareup.okhttp3</groupId>
-                <artifactId>logging-interceptor</artifactId>
-                <version>${okhttp.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.jboss</groupId>
@@ -1589,13 +1575,6 @@
                 <version>${project.version}</version>
             </dependency>
 
-            <!-- Openshift -->
-            <dependency>
-                <groupId>com.openshift</groupId>
-                <artifactId>openshift-restclient-java</artifactId>
-                <version>${version.com.openshift.openshift-restclient-java}</version>
-            </dependency>
-
             <dependency>
                 <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-saml-as7-modules</artifactId>
@@ -2160,6 +2139,18 @@
             <activation>
                 <property>
                     <name>operator</name>
+                </property>
+            </activation>
+            <modules>
+                <module>operator</module>
+            </modules>
+        </profile>
+
+        <profile>
+            <id>operator-prod</id>
+            <activation>
+                <property>
+                    <name>operator-prod</name>
                 </property>
             </activation>
             <modules>

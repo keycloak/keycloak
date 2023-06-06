@@ -57,8 +57,6 @@ public class Profile {
 
         IMPERSONATION("Ability for admins to impersonate users", Type.DEFAULT),
 
-        OPENSHIFT_INTEGRATION("Extension to enable securing OpenShift", Type.PREVIEW),
-
         SCRIPTS("Write custom authenticators using JavaScript", Type.PREVIEW),
 
         TOKEN_EXCHANGE("Token Exchange Service", Type.PREVIEW),
