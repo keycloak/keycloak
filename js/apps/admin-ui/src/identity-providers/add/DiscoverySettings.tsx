@@ -2,11 +2,13 @@ import IdentityProviderRepresentation from "@keycloak/keycloak-admin-client/lib/
 import {
   ExpandableSection,
   FormGroup,
+  ValidatedOptions,
+} from "@patternfly/react-core";
+import {
   Select,
   SelectOption,
   SelectVariant,
-  ValidatedOptions,
-} from "@patternfly/react-core";
+} from "@patternfly/react-core/deprecated";
 import { useState } from "react";
 import { Controller, useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -54,12 +56,13 @@ const Fields = ({ readOnly }: DiscoverySettingsProps) => {
         label={t("authorizationUrl")}
         fieldId="kc-authorization-url"
         isRequired
-        validated={
-          errors.config?.authorizationUrl
-            ? ValidatedOptions.error
-            : ValidatedOptions.default
-        }
-        helperTextInvalid={t("common:required")}
+        // TODO: Use FormHelperText, HelperText, and HelperTextItem directly inside children. helperText, helperTextInvalid and validated props have been removed.
+        // validated={
+        //   errors.config?.authorizationUrl
+        //     ? ValidatedOptions.error
+        //     : ValidatedOptions.default
+        // }
+        // helperTextInvalid={t("common:required")}
       >
         <KeycloakTextInput
           type="url"
@@ -70,7 +73,7 @@ const Fields = ({ readOnly }: DiscoverySettingsProps) => {
               ? ValidatedOptions.error
               : ValidatedOptions.default
           }
-          isReadOnly={readOnly}
+          readOnly={readOnly}
           {...register("config.authorizationUrl", { required: true })}
         />
       </FormGroup>
@@ -79,12 +82,13 @@ const Fields = ({ readOnly }: DiscoverySettingsProps) => {
         label={t("tokenUrl")}
         fieldId="tokenUrl"
         isRequired
-        validated={
-          errors.config?.tokenUrl
-            ? ValidatedOptions.error
-            : ValidatedOptions.default
-        }
-        helperTextInvalid={t("common:required")}
+        // TODO: Use FormHelperText, HelperText, and HelperTextItem directly inside children. helperText, helperTextInvalid and validated props have been removed.
+        // validated={
+        //   errors.config?.tokenUrl
+        //     ? ValidatedOptions.error
+        //     : ValidatedOptions.default
+        // }
+        // helperTextInvalid={t("common:required")}
       >
         <KeycloakTextInput
           type="url"
@@ -95,7 +99,7 @@ const Fields = ({ readOnly }: DiscoverySettingsProps) => {
               ? ValidatedOptions.error
               : ValidatedOptions.default
           }
-          isReadOnly={readOnly}
+          readOnly={readOnly}
           {...register("config.tokenUrl", { required: true })}
         />
       </FormGroup>

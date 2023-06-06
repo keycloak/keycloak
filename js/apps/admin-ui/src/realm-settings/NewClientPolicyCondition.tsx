@@ -8,10 +8,12 @@ import {
   Button,
   FormGroup,
   PageSection,
+} from "@patternfly/react-core";
+import {
   Select,
   SelectOption,
   SelectVariant,
-} from "@patternfly/react-core";
+} from "@patternfly/react-core/deprecated";
 import { camelCase } from "lodash-es";
 import { useState } from "react";
 import { Controller, FormProvider, useForm } from "react-hook-form";
@@ -208,7 +210,7 @@ export default function NewClientPolicyCondition() {
                   data-testid="conditionType-select"
                   toggleId="provider"
                   isDisabled={!!conditionName}
-                  onToggle={(toggle) => setOpenConditionType(toggle)}
+                  onToggle={(_event, toggle) => setOpenConditionType(toggle)}
                   onSelect={(_, value) => {
                     field.onChange(value);
                     setConditionProperties(

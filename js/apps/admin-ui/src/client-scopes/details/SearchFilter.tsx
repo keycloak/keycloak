@@ -1,13 +1,13 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { ToolbarItem } from "@patternfly/react-core";
 import {
   Dropdown,
   DropdownItem,
   DropdownToggle,
   Select,
   SelectOption,
-  ToolbarItem,
-} from "@patternfly/react-core";
+} from "@patternfly/react-core/deprecated";
 import { FilterIcon } from "@patternfly/react-icons";
 
 import {
@@ -72,7 +72,8 @@ export const SearchDropdown = ({
     <Dropdown
       className="keycloak__client-scopes__searchtype"
       toggle={
-        <DropdownToggle id="toggle-id" onToggle={setSearchToggle}>
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        <DropdownToggle id="toggle-id" onToggle={(_event) => setSearchToggle}>
           <FilterIcon /> {t(`clientScopeSearch.${searchType}`)}
         </DropdownToggle>
       }
@@ -107,7 +108,8 @@ export const SearchToolbar = ({
           <ToolbarItem>
             <Select
               className="keycloak__client-scopes__searchtype"
-              onToggle={setOpen}
+              // eslint-disable-next-line @typescript-eslint/no-unused-vars
+              onToggle={(_event) => setOpen}
               isOpen={open}
               selections={[
                 type === AllClientScopes.none
@@ -139,7 +141,8 @@ export const SearchToolbar = ({
           <ToolbarItem>
             <Select
               className="keycloak__client-scopes__searchtype"
-              onToggle={setOpen}
+              // eslint-disable-next-line @typescript-eslint/no-unused-vars
+              onToggle={(_event) => setOpen}
               isOpen={open}
               selections={[t(`protocolTypes.${protocol}`)]}
               onSelect={(_, value) => {

@@ -1,10 +1,9 @@
+import { FormGroup, Switch } from "@patternfly/react-core";
 import {
-  FormGroup,
   Select,
   SelectOption,
   SelectVariant,
-  Switch,
-} from "@patternfly/react-core";
+} from "@patternfly/react-core/deprecated";
 import { useState } from "react";
 import { Controller, UseFormReturn } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -53,14 +52,15 @@ export const LdapSettingsSearching = ({
           }
           fieldId="kc-edit-mode"
           isRequired
-          validated={
-            (form.formState.errors.config as any)?.editMode?.[0]
-              ? "error"
-              : "default"
-          }
-          helperTextInvalid={
-            (form.formState.errors.config as any)?.editMode?.[0].message
-          }
+          // TODO: Use FormHelperText, HelperText, and HelperTextItem directly inside children. helperText, // helperTextInvalid and validated props have been removed.
+          // validated={
+          //   (form.formState.errors.config as any)?.editMode?.[0]
+          //     ? "error"
+          //     : "default"
+          // }
+          // helperTextInvalid={
+          //   (form.formState.errors.config as any)?.editMode?.[0].message
+          // }
         >
           <Controller
             name="config.editMode[0]"
@@ -107,14 +107,15 @@ export const LdapSettingsSearching = ({
           }
           fieldId="kc-ui-users-dn"
           isRequired
-          validated={
-            (form.formState.errors.config as any)?.usersDn?.[0]
-              ? "error"
-              : "default"
-          }
-          helperTextInvalid={
-            (form.formState.errors.config as any)?.usersDn?.[0].message
-          }
+          // TODO: Use FormHelperText, HelperText, and HelperTextItem directly inside children. helperText, // helperTextInvalid and validated props have been removed.
+          // validated={
+          //   (form.formState.errors.config as any)?.usersDn?.[0]
+          //     ? "error"
+          //     : "default"
+          // }
+          // helperTextInvalid={
+          //   (form.formState.errors.config as any)?.usersDn?.[0].message
+          // }
         >
           <KeycloakTextInput
             isRequired
@@ -144,15 +145,16 @@ export const LdapSettingsSearching = ({
           }
           fieldId="kc-username-ldap-attribute"
           isRequired
-          validated={
-            (form.formState.errors.config as any)?.usernameLDAPAttribute?.[0]
-              ? "error"
-              : "default"
-          }
-          helperTextInvalid={
-            (form.formState.errors.config as any)?.usernameLDAPAttribute?.[0]
-              .message
-          }
+          // TODO: Use FormHelperText, HelperText, and HelperTextItem directly inside children. helperText, // helperTextInvalid and validated props have been removed.
+          // validated={
+          //   (form.formState.errors.config as any)?.usernameLDAPAttribute?.[0]
+          //     ? "error"
+          //     : "default"
+          // }
+          // helperTextInvalid={
+          //   (form.formState.errors.config as any)?.usernameLDAPAttribute?.[0]
+          //     .message
+          // }
         >
           <KeycloakTextInput
             isRequired
@@ -182,14 +184,15 @@ export const LdapSettingsSearching = ({
           }
           fieldId="kc-rdn-ldap-attribute"
           isRequired
-          validated={
-            (form.formState.errors.config as any)?.rdnLDAPAttribute?.[0]
-              ? "error"
-              : "default"
-          }
-          helperTextInvalid={
-            (form.formState.errors.config as any)?.rdnLDAPAttribute?.[0].message
-          }
+          // TODO: Use FormHelperText, HelperText, and HelperTextItem directly inside children. helperText, // helperTextInvalid and validated props have been removed.
+          // validated={
+          //   (form.formState.errors.config as any)?.rdnLDAPAttribute?.[0]
+          //     ? "error"
+          //     : "default"
+          // }
+          // helperTextInvalid={
+          //   (form.formState.errors.config as any)?.rdnLDAPAttribute?.[0].message
+          // }
         >
           <KeycloakTextInput
             isRequired
@@ -219,15 +222,16 @@ export const LdapSettingsSearching = ({
           }
           fieldId="kc-uuid-ldap-attribute"
           isRequired
-          validated={
-            (form.formState.errors.config as any)?.uuidLDAPAttribute?.[0]
-              ? "error"
-              : "default"
-          }
-          helperTextInvalid={
-            (form.formState.errors.config as any)?.uuidLDAPAttribute?.[0]
-              .message
-          }
+          // TODO: Use FormHelperText, HelperText, and HelperTextItem directly inside children. helperText, // helperTextInvalid and validated props have been removed.
+          // validated={
+          //   (form.formState.errors.config as any)?.uuidLDAPAttribute?.[0]
+          //     ? "error"
+          //     : "default"
+          // }
+          // helperTextInvalid={
+          //   (form.formState.errors.config as any)?.uuidLDAPAttribute?.[0]
+          //     .message
+          // }
         >
           <KeycloakTextInput
             isRequired
@@ -257,15 +261,17 @@ export const LdapSettingsSearching = ({
           }
           fieldId="kc-user-object-classes"
           isRequired
-          validated={
-            (form.formState.errors.config as any)?.userObjectClasses?.[0]
-              ? "error"
-              : "default"
-          }
-          helperTextInvalid={
-            (form.formState.errors.config as any)?.userObjectClasses?.[0]
-              .message
-          }
+          // TODO: Use FormHelperText, HelperText, and HelperTextItem directly inside children. helperText, // helperTextInvalid and validated props have been removed.
+
+          // validated={
+          //   (form.formState.errors.config as any)?.userObjectClasses?.[0]
+          //     ? "error"
+          //     : "default"
+          // }
+          // helperTextInvalid={
+          //   (form.formState.errors.config as any)?.userObjectClasses?.[0]
+          //     .message
+          // }
         >
           <KeycloakTextInput
             isRequired
@@ -294,15 +300,16 @@ export const LdapSettingsSearching = ({
             />
           }
           fieldId="kc-user-ldap-filter"
-          validated={
-            (form.formState.errors.config as any)?.customUserSearchFilter?.[0]
-              ? "error"
-              : "default"
-          }
-          helperTextInvalid={
-            (form.formState.errors.config as any)?.customUserSearchFilter?.[0]
-              .message
-          }
+          // TODO: Use FormHelperText, HelperText, and HelperTextItem directly inside children. helperText, // helperTextInvalid and validated props have been removed.
+          // validated={
+          //   (form.formState.errors.config as any)?.customUserSearchFilter?.[0]
+          //     ? "error"
+          //     : "default"
+          // }
+          // helperTextInvalid={
+          //   (form.formState.errors.config as any)?.customUserSearchFilter?.[0]
+          //     .message
+          // }
         >
           <KeycloakTextInput
             id="kc-user-ldap-filter"
@@ -398,7 +405,7 @@ export const LdapSettingsSearching = ({
                 id="kc-ui-pagination"
                 data-testid="ui-pagination"
                 isDisabled={false}
-                onChange={(value) => field.onChange([`${value}`])}
+                onChange={(_event, value) => field.onChange([`${value}`])}
                 isChecked={field.value[0] === "true"}
                 label={t("common:on")}
                 labelOff={t("common:off")}

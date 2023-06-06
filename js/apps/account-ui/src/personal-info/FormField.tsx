@@ -1,6 +1,6 @@
 import { FormGroup, Select, SelectOption } from "@patternfly/react-core";
 import { TFuncKey } from "i18next";
-import { get } from "lodash-es";
+// import { get } from "lodash-es";
 import { useState } from "react";
 import { useFormContext, Controller } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -15,7 +15,7 @@ type FormFieldProps = {
 export const FormField = ({ attribute }: FormFieldProps) => {
   const { t } = useTranslation();
   const {
-    formState: { errors },
+    // formState: { errors },
     register,
     control,
   } = useFormContext();
@@ -35,10 +35,11 @@ export const FormField = ({ attribute }: FormFieldProps) => {
       }
       fieldId={attribute.name}
       isRequired={attribute.required}
-      validated={get(errors, fieldName(attribute.name)) ? "error" : "default"}
-      helperTextInvalid={
-        get(errors, fieldName(attribute.name))?.message as string
-      }
+      // TODO: Use FormHelperText, HelperText, and HelperTextItem directly inside children. helperText, helperTextInvalid and validated props have been removed.
+      // validated={get(errors, fieldName(attribute.name)) ? "error" : "default"}
+      // helperTextInvalid={
+      //   get(errors, fieldName(attribute.name))?.message as string
+      // }
     >
       {isSelect(attribute) ? (
         <Controller

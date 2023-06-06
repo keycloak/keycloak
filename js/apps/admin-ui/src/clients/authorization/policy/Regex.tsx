@@ -17,8 +17,9 @@ export const Regex = () => {
       <FormGroup
         label={t("targetClaim")}
         fieldId="targetClaim"
-        helperTextInvalid={t("common:required")}
-        validated={errors.targetClaim ? "error" : "default"}
+        // TODO: Use FormHelperText, HelperText, and HelperTextItem directly inside children. helperText, // helperTextInvalid and validated props have been removed.
+        // helperTextInvalid={t("common:required")}
+        // validated={errors.targetClaim ? "error" : "default"}
         isRequired
         labelIcon={
           <HelpItem
@@ -44,8 +45,9 @@ export const Regex = () => {
           />
         }
         isRequired
-        validated={errors.pattern ? "error" : "default"}
-        helperTextInvalid={t("common:required")}
+        // TODO: Use FormHelperText, HelperText, and HelperTextItem directly inside children. helperText, // helperTextInvalid and validated props have been removed.
+        // validated={errors.pattern ? "error" : "default"}
+        // helperTextInvalid={t("common:required")}
       >
         <KeycloakTextInput
           id="pattern"

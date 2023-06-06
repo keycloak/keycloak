@@ -71,10 +71,11 @@ export const AddMessageBundleModal = ({
           label={t("common:key")}
           name="key"
           fieldId="key-id"
-          helperTextInvalid={t("common:required")}
-          validated={
-            errors.key ? ValidatedOptions.error : ValidatedOptions.default
-          }
+          // TODO: Use FormHelperText, HelperText, and HelperTextItem directly inside children. helperText, helperTextInvalid and validated props have been removed.
+          // helperTextInvalid={t("common:required")}
+          // validated={
+          //   errors.key ? ValidatedOptions.error : ValidatedOptions.default
+          // }
           isRequired
         >
           <KeycloakTextInput
@@ -91,10 +92,11 @@ export const AddMessageBundleModal = ({
           label={t("common:value")}
           name="add-value"
           fieldId="value-id"
-          helperTextInvalid={t("common:required")}
-          validated={
-            errors.value ? ValidatedOptions.error : ValidatedOptions.default
-          }
+          // TODO: Use FormHelperText, HelperText, and HelperTextItem directly inside children. helperText, helperTextInvalid and validated props have been removed.
+          // helperTextInvalid={t("common:required")}
+          // validated={
+          //   errors.value ? ValidatedOptions.error : ValidatedOptions.default
+          // }
           isRequired
         >
           <KeycloakTextInput

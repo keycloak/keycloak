@@ -1,11 +1,9 @@
+import { ActionGroup, Button, FormGroup } from "@patternfly/react-core";
 import {
-  ActionGroup,
-  Button,
-  FormGroup,
   Select,
   SelectOption,
   SelectVariant,
-} from "@patternfly/react-core";
+} from "@patternfly/react-core/deprecated";
 import { sortBy } from "lodash-es";
 import { useState } from "react";
 import { Controller, useFormContext } from "react-hook-form";
@@ -82,7 +80,8 @@ export const AuthenticationOverrides = ({
             <Select
               toggleId="browserFlow"
               variant={SelectVariant.single}
-              onToggle={setBrowserFlowOpen}
+              // eslint-disable-next-line @typescript-eslint/no-unused-vars
+              onToggle={(_event) => setBrowserFlowOpen}
               isOpen={browserFlowOpen}
               onSelect={(_, value) => {
                 field.onChange(value);
@@ -114,7 +113,8 @@ export const AuthenticationOverrides = ({
               <Select
                 toggleId="directGrant"
                 variant={SelectVariant.single}
-                onToggle={setDirectGrantOpen}
+                // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                onToggle={(_event) => setDirectGrantOpen}
                 isOpen={directGrantOpen}
                 onSelect={(_, value) => {
                   field.onChange(value);

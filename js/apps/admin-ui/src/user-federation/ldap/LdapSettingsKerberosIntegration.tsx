@@ -60,7 +60,7 @@ export const LdapSettingsKerberosIntegration = ({
                 id="kc-allow-kerberos-authentication"
                 data-testid="allow-kerberos-auth"
                 isDisabled={false}
-                onChange={(value) => field.onChange([`${value}`])}
+                onChange={(_event, value) => field.onChange([`${value}`])}
                 isChecked={field.value[0] === "true"}
                 label={t("common:on")}
                 labelOff={t("common:off")}
@@ -82,15 +82,16 @@ export const LdapSettingsKerberosIntegration = ({
               }
               fieldId="kc-kerberos-realm"
               isRequired
-              validated={
-                (form.formState.errors.config as any)?.kerberosRealm?.[0]
-                  ? "error"
-                  : "default"
-              }
-              helperTextInvalid={
-                (form.formState.errors.config as any)?.kerberosRealm?.[0]
-                  .message
-              }
+              // TODO: Use FormHelperText, HelperText, and HelperTextItem directly inside children. helperText, // helperTextInvalid and validated props have been removed.
+              // validated={
+              //   (form.formState.errors.config as any)?.kerberosRealm?.[0]
+              //     ? "error"
+              //     : "default"
+              // }
+              // helperTextInvalid={
+              //   (form.formState.errors.config as any)?.kerberosRealm?.[0]
+              //     .message
+              // }
             >
               <KeycloakTextInput
                 isRequired
@@ -120,15 +121,16 @@ export const LdapSettingsKerberosIntegration = ({
               }
               fieldId="kc-server-principal"
               isRequired
-              validated={
-                (form.formState.errors.config as any)?.serverPrincipal?.[0]
-                  ? "error"
-                  : "default"
-              }
-              helperTextInvalid={
-                (form.formState.errors.config as any)?.serverPrincipal?.[0]
-                  .message
-              }
+              // TODO: Use FormHelperText, HelperText, and HelperTextItem directly inside children. helperText, // helperTextInvalid and validated props have been removed.
+              // validated={
+              //   (form.formState.errors.config as any)?.serverPrincipal?.[0]
+              //     ? "error"
+              //     : "default"
+              // }
+              // helperTextInvalid={
+              //   (form.formState.errors.config as any)?.serverPrincipal?.[0]
+              //     .message
+              // }
             >
               <KeycloakTextInput
                 isRequired
@@ -158,14 +160,15 @@ export const LdapSettingsKerberosIntegration = ({
               }
               fieldId="kc-key-tab"
               isRequired
-              validated={
-                (form.formState.errors.config as any)?.keyTab?.[0]
-                  ? "error"
-                  : "default"
-              }
-              helperTextInvalid={
-                (form.formState.errors.config as any)?.keyTab?.[0].message
-              }
+              // TODO: Use FormHelperText, HelperText, and HelperTextItem directly inside children. helperText, // helperTextInvalid and validated props have been removed.
+              // validated={
+              //   (form.formState.errors.config as any)?.keyTab?.[0]
+              //     ? "error"
+              //     : "default"
+              // }
+              // helperTextInvalid={
+              //   (form.formState.errors.config as any)?.keyTab?.[0].message
+              // }
             >
               <KeycloakTextInput
                 isRequired
@@ -206,7 +209,7 @@ export const LdapSettingsKerberosIntegration = ({
                     id="kc-debug"
                     data-testid="debug"
                     isDisabled={false}
-                    onChange={(value) => field.onChange([`${value}`])}
+                    onChange={(_event, value) => field.onChange([`${value}`])}
                     isChecked={field.value[0] === "true"}
                     label={t("common:on")}
                     labelOff={t("common:off")}
@@ -239,7 +242,7 @@ export const LdapSettingsKerberosIntegration = ({
                 id="kc-use-kerberos-password-authentication"
                 data-testid="use-kerberos-pw-auth"
                 isDisabled={false}
-                onChange={(value) => field.onChange([`${value}`])}
+                onChange={(_event, value) => field.onChange([`${value}`])}
                 isChecked={field.value[0] === "true"}
                 label={t("common:on")}
                 labelOff={t("common:off")}

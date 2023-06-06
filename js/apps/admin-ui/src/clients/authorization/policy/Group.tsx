@@ -2,7 +2,7 @@ import type GroupRepresentation from "@keycloak/keycloak-admin-client/lib/defs/g
 import { Button, Checkbox, FormGroup } from "@patternfly/react-core";
 import { MinusCircleIcon } from "@patternfly/react-icons";
 import {
-  TableComposable,
+  Table /* data-codemods */,
   Tbody,
   Td,
   Th,
@@ -36,7 +36,7 @@ export const Group = () => {
     register,
     getValues,
     setValue,
-    formState: { errors },
+    // formState: { errors },
   } = useFormContext<GroupForm>();
   const values = getValues("groups");
 
@@ -88,8 +88,9 @@ export const Group = () => {
           />
         }
         fieldId="groups"
-        helperTextInvalid={t("requiredGroups")}
-        validated={errors.groups ? "error" : "default"}
+        // TODO: Use FormHelperText, HelperText, and HelperTextItem directly inside children. helperText, // helperTextInvalid and validated props have been removed.
+        // helperTextInvalid={t("requiredGroups")}
+        // validated={errors.groups ? "error" : "default"}
         isRequired
       >
         <Controller
@@ -136,7 +137,7 @@ export const Group = () => {
           )}
         />
         {selectedGroups.length > 0 && (
-          <TableComposable variant="compact">
+          <Table variant="compact">
             <Thead>
               <Tr>
                 <Th>{t("groups")}</Th>
@@ -183,7 +184,7 @@ export const Group = () => {
                 </Tr>
               ))}
             </Tbody>
-          </TableComposable>
+          </Table>
         )}
       </FormGroup>
     </>

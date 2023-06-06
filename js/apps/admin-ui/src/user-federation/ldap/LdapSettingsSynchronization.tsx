@@ -56,7 +56,7 @@ export const LdapSettingsSynchronization = ({
                 name="importEnabled"
                 label={t("common:on")}
                 labelOff={t("common:off")}
-                onChange={(value) => field.onChange([`${value}`])}
+                onChange={(_event, value) => field.onChange([`${value}`])}
                 isChecked={field.value[0] === "true"}
                 isDisabled={false}
                 aria-label={t("importUsers")}
@@ -85,7 +85,7 @@ export const LdapSettingsSynchronization = ({
                 data-testid="syncRegistrations"
                 label={t("common:on")}
                 labelOff={t("common:off")}
-                onChange={(value) => field.onChange([`${value}`])}
+                onChange={(_event, value) => field.onChange([`${value}`])}
                 isChecked={field.value[0] === "true"}
                 aria-label={t("syncRegistrations")}
               />
@@ -130,7 +130,7 @@ export const LdapSettingsSynchronization = ({
                 id="kc-periodic-full-sync"
                 data-testid="periodic-full-sync"
                 isDisabled={false}
-                onChange={(value) => field.onChange(value)}
+                onChange={(_event, value) => field.onChange(value)}
                 isChecked={field.value === true}
                 label={t("common:on")}
                 labelOff={t("common:off")}
@@ -181,7 +181,7 @@ export const LdapSettingsSynchronization = ({
                 id="kc-periodic-changed-users-sync"
                 data-testid="periodic-changed-users-sync"
                 isDisabled={false}
-                onChange={(value) => field.onChange(value)}
+                onChange={(_event, value) => field.onChange(value)}
                 isChecked={field.value === true}
                 label={t("common:on")}
                 labelOff={t("common:off")}

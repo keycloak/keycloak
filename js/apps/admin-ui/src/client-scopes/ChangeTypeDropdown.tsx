@@ -1,4 +1,5 @@
-import { AlertVariant, Select } from "@patternfly/react-core";
+import { AlertVariant } from "@patternfly/react-core";
+import { Select } from "@patternfly/react-core/deprecated";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -36,7 +37,8 @@ export const ChangeTypeDropdown = ({
       selections={[]}
       isDisabled={selectedRows.length === 0}
       placeholderText={t("changeTypeTo")}
-      onToggle={setOpen}
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      onToggle={(_event) => setOpen}
       onSelect={async (_, value) => {
         try {
           await Promise.all(

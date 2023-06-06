@@ -3,14 +3,16 @@ import {
   AlertVariant,
   Button,
   ButtonVariant,
-  Dropdown,
-  DropdownItem,
-  KebabToggle,
   Popover,
   Text,
   TextContent,
   ToolbarItem,
 } from "@patternfly/react-core";
+import {
+  Dropdown,
+  DropdownItem,
+  KebabToggle,
+} from "@patternfly/react-core/deprecated";
 import { QuestionCircleIcon } from "@patternfly/react-icons";
 import { useState } from "react";
 import { Trans, useTranslation } from "react-i18next";

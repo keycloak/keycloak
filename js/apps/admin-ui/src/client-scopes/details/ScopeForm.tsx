@@ -3,12 +3,14 @@ import {
   ActionGroup,
   Button,
   FormGroup,
-  Select,
-  SelectOption,
-  SelectVariant,
   Switch,
   ValidatedOptions,
 } from "@patternfly/react-core";
+import {
+  Select,
+  SelectOption,
+  SelectVariant,
+} from "@patternfly/react-core/deprecated";
 import { useEffect, useState } from "react";
 import { Controller, FormProvider, useForm, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -97,10 +99,11 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
           />
         }
         fieldId="kc-name"
-        validated={
-          errors.name ? ValidatedOptions.error : ValidatedOptions.default
-        }
-        helperTextInvalid={t("common:required")}
+        // TODO: Use FormHelperText, HelperText, and HelperTextItem directly inside children. helperText, helperTextInvalid and validated props have been removed.
+        // validated={
+        //   errors.name ? ValidatedOptions.error : ValidatedOptions.default
+        // }
+        // helperTextInvalid={t("common:required")}
         isRequired
       >
         <KeycloakTextInput
@@ -127,7 +130,7 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
             )}
             label={t("dynamicScope")}
             labelIcon={t("client-scopes-help:dynamicScope")}
-            onChange={(value) => {
+            onChange={(_e, value) => {
               setDynamicRegex(value ? form.getValues("name") || "" : "", value);
             }}
             stringify
@@ -153,10 +156,11 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
           />
         }
         fieldId="kc-description"
-        validated={
-          errors.description ? ValidatedOptions.error : ValidatedOptions.default
-        }
-        helperTextInvalid={t("common:maxLength", { length: 255 })}
+        // TODO: Use FormHelperText, HelperText, and HelperTextItem directly inside children. helperText, // helperTextInvalid and validated props have been removed.
+        // validated={
+        //   errors.description ? ValidatedOptions.error : ValidatedOptions.default
+        // }
+        // helperTextInvalid={t("common:maxLength", { length: 255 })}
       >
         <KeycloakTextInput
           id="kc-description"
@@ -190,7 +194,8 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
               variant={SelectVariant.single}
               isOpen={openType}
               selections={field.value}
-              onToggle={setOpenType}
+              // eslint-disable-next-line @typescript-eslint/no-unused-vars
+              onToggle={(_event) => setOpenType}
               onSelect={(_, value) => {
                 field.onChange(value);
                 setOpenType(false);
@@ -219,7 +224,8 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
             render={({ field }) => (
               <Select
                 toggleId="kc-protocol"
-                onToggle={isOpen}
+                // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                onToggle={(_event) => isOpen}
                 onSelect={(_, value) => {
                   field.onChange(value);
                   isOpen(false);
@@ -266,7 +272,7 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
               label={t("common:on")}
               labelOff={t("common:off")}
               isChecked={field.value === "true"}
-              onChange={(value) => field.onChange(value.toString())}
+              onChange={(_event, value) => field.onChange(value.toString())}
             />
           )}
         />
@@ -315,7 +321,7 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
               label={t("common:on")}
               labelOff={t("common:off")}
               isChecked={field.value === "true"}
-              onChange={(value) => field.onChange(value.toString())}
+              onChange={(_event, value) => field.onChange(value.toString())}
             />
           )}
         />

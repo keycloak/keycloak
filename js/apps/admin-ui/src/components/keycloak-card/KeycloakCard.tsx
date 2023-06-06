@@ -1,16 +1,14 @@
 import {
   Card,
-  CardActions,
   CardBody,
   CardFooter,
   CardHeader,
   CardTitle,
-  Dropdown,
   Flex,
   FlexItem,
-  KebabToggle,
   Label,
 } from "@patternfly/react-core";
+import { Dropdown, KebabToggle } from "@patternfly/react-core/deprecated";
 import { ReactElement, useState } from "react";
 import { Link, To } from "react-router-dom";
 
@@ -41,19 +39,27 @@ export const KeycloakCard = ({
 
   return (
     <Card isSelectable>
-      <CardHeader>
-        <CardActions>
-          {dropdownItems && (
-            <Dropdown
-              data-testid={`${title}-dropdown`}
-              isPlain
-              position={"right"}
-              toggle={<KebabToggle onToggle={onDropdownToggle} />}
-              isOpen={isDropdownOpen}
-              dropdownItems={dropdownItems}
-            />
-          )}
-        </CardActions>
+      <CardHeader
+        actions={{
+          actions: (
+            // eslint-disable-next-line react/jsx-no-useless-fragment
+            <>
+              {dropdownItems && (
+                <Dropdown
+                  data-testid={`${title}-dropdown`}
+                  isPlain
+                  position={"right"}
+                  toggle={<KebabToggle onToggle={onDropdownToggle} />}
+                  isOpen={isDropdownOpen}
+                  dropdownItems={dropdownItems}
+                />
+              )}
+            </>
+          ),
+          hasNoOffset: false,
+          className: undefined,
+        }}
+      >
         <CardTitle data-testid="keycloak-card-title">
           <Link to={to}>{title}</Link>
         </CardTitle>

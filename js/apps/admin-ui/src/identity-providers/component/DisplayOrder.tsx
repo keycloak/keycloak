@@ -31,7 +31,7 @@ export const DisplayOrder = () => {
             value={field.value}
             data-testid="displayOrder"
             min={0}
-            onChange={(value) => {
+            onChange={(_event, value) => {
               const num = Number(value);
               field.onChange(value === "" ? value : num < 0 ? 0 : num);
             }}

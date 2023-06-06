@@ -4,11 +4,11 @@ import {
   AlertVariant,
   Button,
   ButtonVariant,
-  DropdownItem,
   FormGroup,
   PageSection,
   ValidatedOptions,
 } from "@patternfly/react-core";
+import { DropdownItem } from "@patternfly/react-core/deprecated";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -139,10 +139,11 @@ export default function ScopeDetails() {
                 fieldLabelId="name"
               />
             }
-            helperTextInvalid={t("common:required")}
-            validated={
-              errors.name ? ValidatedOptions.error : ValidatedOptions.default
-            }
+            // TODO: Use FormHelperText, HelperText, and HelperTextItem directly inside children. helperText, // helperTextInvalid and validated props have been removed.
+            // helperTextInvalid={t("common:required")}
+            // validated={
+            //   errors.name ? ValidatedOptions.error : ValidatedOptions.default
+            // }
             isRequired
           >
             <KeycloakTextInput

@@ -76,7 +76,7 @@ export const AuthorizationExport = () => {
         >
           <KeycloakTextArea
             id="authorizationDetails"
-            readOnly
+            readOnlyVariant="default"
             resizeOrientation="vertical"
             value={code}
             aria-label={t("authDetails")}

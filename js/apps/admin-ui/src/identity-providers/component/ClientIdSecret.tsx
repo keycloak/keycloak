@@ -1,5 +1,8 @@
 import IdentityProviderRepresentation from "@keycloak/keycloak-admin-client/lib/defs/identityProviderRepresentation";
-import { FormGroup, ValidatedOptions } from "@patternfly/react-core";
+import {
+  FormGroup,
+  // ValidatedOptions
+} from "@patternfly/react-core";
 import { useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
@@ -15,10 +18,9 @@ export const ClientIdSecret = ({
   create?: boolean;
 }) => {
   const { t } = useTranslation("identity-providers");
-
   const {
     register,
-    formState: { errors },
+    // formState: { errors },
   } = useFormContext<IdentityProviderRepresentation>();
 
   return (
@@ -33,12 +35,13 @@ export const ClientIdSecret = ({
         }
         fieldId="kc-client-id"
         isRequired
-        validated={
-          errors.config?.clientId
-            ? ValidatedOptions.error
-            : ValidatedOptions.default
-        }
-        helperTextInvalid={t("common:required")}
+        // TODO: Use FormHelperText, HelperText, and HelperTextItem directly inside children. helperText, helperTextInvalid and validated props have been removed.
+        // validated={
+        //   errors.config?.clientId
+        //     ? ValidatedOptions.error
+        //     : ValidatedOptions.default
+        // }
+        // helperTextInvalid={t("common:required")}
       >
         <KeycloakTextInput
           isRequired
@@ -57,12 +60,13 @@ export const ClientIdSecret = ({
         }
         fieldId="kc-client-secret"
         isRequired={secretRequired}
-        validated={
-          errors.config?.clientSecret
-            ? ValidatedOptions.error
-            : ValidatedOptions.default
-        }
-        helperTextInvalid={t("common:required")}
+        // TODO: Use FormHelperText, HelperText, and HelperTextItem directly inside children. helperText, helperTextInvalid and validated props have been removed.
+        // validated={
+        //   errors.config?.clientSecret
+        //     ? ValidatedOptions.error
+        //     : ValidatedOptions.default
+        // }
+        // helperTextInvalid={t("common:required")}
       >
         {create ? (
           <PasswordInput

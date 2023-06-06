@@ -5,13 +5,12 @@ import {
   AlertVariant,
   Button,
   ButtonVariant,
-  DropdownItem,
   FormGroup,
   PageSection,
   Radio,
-  SelectVariant,
   Switch,
 } from "@patternfly/react-core";
+import { DropdownItem, SelectVariant } from "@patternfly/react-core/deprecated";
 import { useState } from "react";
 import { Controller, FormProvider, useForm, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -210,8 +209,9 @@ export default function PermissionDetails() {
             <FormGroup
               label={t("common:name")}
               isRequired
-              helperTextInvalid={t("common:required")}
-              validated={errors.name ? "error" : "default"}
+              // TODO: Use FormHelperText, HelperText, and HelperTextItem directly inside children. helperText, // helperTextInvalid and validated props have been removed.
+              // helperTextInvalid={t("common:required")}
+              // validated={errors.name ? "error" : "default"}
               fieldId="name"
               labelIcon={
                 <HelpItem
@@ -235,8 +235,9 @@ export default function PermissionDetails() {
                   fieldLabelId="description"
                 />
               }
-              validated={errors.description ? "error" : "default"}
-              helperTextInvalid={errors.description?.message}
+              // TODO: Use FormHelperText, HelperText, and HelperTextItem directly inside children. helperText, // helperTextInvalid and validated props have been removed.
+              // validated={errors.description ? "error" : "default"}
+              // helperTextInvalid={errors.description?.message}
             >
               <KeycloakTextArea
                 id="description"
@@ -265,7 +266,8 @@ export default function PermissionDetails() {
                 label={t("common:on")}
                 labelOff={t("common:off")}
                 isChecked={applyToResourceTypeFlag}
-                onChange={setApplyToResourceTypeFlag}
+                // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                onChange={(_event) => setApplyToResourceTypeFlag}
                 aria-label={t("applyToResourceTypeFlag")}
               />
             </FormGroup>
@@ -298,8 +300,9 @@ export default function PermissionDetails() {
                     fieldLabelId="clients:resources"
                   />
                 }
-                helperTextInvalid={t("common:required")}
-                validated={errors.resources ? "error" : "default"}
+                // TODO: Use FormHelperText, HelperText, and HelperTextItem directly inside children. helperText, // helperTextInvalid and validated props have been removed.
+                // helperTextInvalid={t("common:required")}
+                // validated={errors.resources ? "error" : "default"}
                 isRequired={permissionType !== "scope"}
               >
                 <ResourcesPolicySelect
@@ -328,8 +331,9 @@ export default function PermissionDetails() {
                     fieldLabelId="clients:scopesSelect"
                   />
                 }
-                helperTextInvalid={t("common:required")}
-                validated={errors.scopes ? "error" : "default"}
+                // TODO: Use FormHelperText, HelperText, and HelperTextItem directly inside children. helperText, helperTextInvalid and validated props have been removed.
+                // helperTextInvalid={t("common:required")}
+                // validated={errors.scopes ? "error" : "default"}
                 isRequired
               >
                 <ScopeSelect

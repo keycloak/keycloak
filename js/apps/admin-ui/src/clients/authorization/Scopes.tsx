@@ -8,7 +8,7 @@ import {
 } from "@patternfly/react-core";
 import {
   ExpandableRowContent,
-  TableComposable,
+  Table /* data-codemods */,
   Tbody,
   Td,
   Th,
@@ -180,7 +180,7 @@ export const AuthorizationScopes = ({ clientId }: ScopesProps) => {
           }
         >
           {!noData && (
-            <TableComposable aria-label={t("scopes")} variant="compact">
+            <Table aria-label={t("scopes")} variant="compact">
               <Thead>
                 <Tr>
                   <Th />
@@ -297,7 +297,7 @@ export const AuthorizationScopes = ({ clientId }: ScopesProps) => {
                   </Tr>
                 </Tbody>
               ))}
-            </TableComposable>
+            </Table>
           )}
         </PaginatingTableToolbar>
       )}

@@ -5,6 +5,7 @@ import {
   InputGroup,
   Text,
   Tooltip,
+  InputGroupItem,
 } from "@patternfly/react-core";
 import { useEffect, useRef } from "react";
 import { useFormContext } from "react-hook-form";
@@ -87,37 +88,43 @@ export const RevocationPanel = ({
           }
         >
           <InputGroup>
-            <KeycloakTextInput
-              type="text"
-              id="kc-not-before"
-              name="notBefore"
-              isReadOnly
-              value={getNotBeforeValue()}
-            />
-            <Button
-              id="setToNow"
-              variant="control"
-              onClick={() => {
-                setNotBefore(Date.now() / 1000, "notBeforeSetToNow");
-              }}
-            >
-              {t("setToNow")}
-            </Button>
-            <Button
-              id="clear"
-              variant="control"
-              onClick={() => {
-                setNotBefore(0, "notBeforeNowClear");
-              }}
-            >
-              {t("clear")}
-            </Button>
+            <InputGroupItem>
+              <KeycloakTextInput
+                type="text"
+                id="kc-not-before"
+                name="notBefore"
+                readOnlyVariant="default"
+                value={getNotBeforeValue()}
+              />
+            </InputGroupItem>
+            <InputGroupItem>
+              <Button
+                id="setToNow"
+                variant="control"
+                onClick={() => {
+                  setNotBefore(Date.now() / 1000, "notBeforeSetToNow");
+                }}
+              >
+                {t("setToNow")}
+              </Button>
+            </InputGroupItem>
+            <InputGroupItem>
+              <Button
+                id="clear"
+                variant="control"
+                onClick={() => {
+                  setNotBefore(0, "notBeforeNowClear");
+                }}
+              >
+                {t("clear")}
+              </Button>
+            </InputGroupItem>
           </InputGroup>
         </FormGroup>
         <ActionGroup>
           {!adminUrl && (
             <Tooltip
-              reference={pushRevocationButtonRef}
+              triggerRef={pushRevocationButtonRef}
               content={t("clients-help:notBeforeTooltip")}
             />
           )}

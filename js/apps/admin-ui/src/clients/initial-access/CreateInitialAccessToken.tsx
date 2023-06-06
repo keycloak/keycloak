@@ -79,8 +79,9 @@ export default function CreateInitialAccessToken() {
                 fieldLabelId="clients:expiration"
               />
             }
-            helperTextInvalid={t("expirationValueNotValid")}
-            validated={errors.expiration ? "error" : "default"}
+            // TODO: Use FormHelperText, HelperText, and HelperTextItem directly inside children. helperText, // helperTextInvalid and validated props have been removed.
+            // helperTextInvalid={t("expirationValueNotValid")}
+            // validated={errors.expiration ? "error" : "default"}
           >
             <Controller
               name="expiration"

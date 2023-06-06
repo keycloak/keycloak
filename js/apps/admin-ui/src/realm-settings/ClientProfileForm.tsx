@@ -11,7 +11,6 @@ import {
   DataListItemCells,
   DataListItemRow,
   Divider,
-  DropdownItem,
   Flex,
   FlexItem,
   FormGroup,
@@ -19,8 +18,9 @@ import {
   PageSection,
   Text,
   TextVariants,
-  ValidatedOptions,
+  // ValidatedOptions,
 } from "@patternfly/react-core";
+import { DropdownItem } from "@patternfly/react-core/deprecated";
 import { PlusCircleIcon, TrashIcon } from "@patternfly/react-icons";
 import { Fragment, useMemo, useState } from "react";
 import { useFieldArray, useForm } from "react-hook-form";
@@ -62,7 +62,10 @@ export default function ClientProfileForm() {
     setValue,
     getValues,
     register,
-    formState: { isDirty, errors },
+    formState: {
+      isDirty,
+      // errors
+    },
     control,
   } = useForm<ClientProfileForm>({
     defaultValues,
@@ -226,17 +229,18 @@ export default function ClientProfileForm() {
           <FormGroup
             label={t("newClientProfileName")}
             fieldId="kc-name"
-            helperText={t("createClientProfileNameHelperText")}
+            // helperText={t("createClientProfileNameHelperText")}
             isRequired
-            helperTextInvalid={t("common:required")}
-            validated={
-              errors.name ? ValidatedOptions.error : ValidatedOptions.default
-            }
+            // TODO: Use FormHelperText, HelperText, and HelperTextItem directly inside children. helperText, helperTextInvalid and validated props have been removed.
+            // helperTextInvalid={t("common:required")}
+            // validated={
+            //   errors.name ? ValidatedOptions.error : ValidatedOptions.default
+            // }
           >
             <KeycloakTextInput
               id="kc-name"
               data-testid="client-profile-name"
-              isReadOnly={isGlobalProfile}
+              readOnlyVariant={isGlobalProfile ? "default" : undefined}
               {...register("name", { required: true })}
             />
           </FormGroup>
@@ -244,7 +248,7 @@ export default function ClientProfileForm() {
             <KeycloakTextArea
               id="kc-description"
               data-testid="client-profile-description"
-              isReadOnly={isGlobalProfile}
+              readOnlyVariant={isGlobalProfile ? "default" : undefined}
               {...register("description")}
             />
           </FormGroup>

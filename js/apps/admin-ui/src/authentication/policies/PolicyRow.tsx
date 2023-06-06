@@ -38,10 +38,11 @@ export const PolicyRow = ({
       label={displayName}
       fieldId={id!}
       isRequired
-      helperTextInvalid={t("common:required")}
-      validated={
-        errors[id!] ? ValidatedOptions.error : ValidatedOptions.default
-      }
+      // TODO: Use FormHelperText, HelperText, and HelperTextItem directly inside children. helperText, helperTextInvalid and validated props have been removed.
+      // helperTextInvalid={t("common:required")}
+      // validated={
+      //   errors[id!] ? ValidatedOptions.error : ValidatedOptions.default
+      // }
       labelIcon={
         <HelpItem
           helpText={t(`authentication-help:passwordPolicies.${id}`)}

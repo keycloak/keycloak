@@ -1,13 +1,10 @@
 import RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
+import { ActionGroup, Button, FormGroup, Switch } from "@patternfly/react-core";
 import {
-  ActionGroup,
-  Button,
-  FormGroup,
   Select,
   SelectOption,
   SelectVariant,
-  Switch,
-} from "@patternfly/react-core";
+} from "@patternfly/react-core/deprecated";
 import { useState } from "react";
 import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -154,7 +151,7 @@ export const AdvancedSettings = ({
                   label={t("common:on")}
                   labelOff={t("common:off")}
                   isChecked={field.value === "true"}
-                  onChange={(value) => field.onChange("" + value)}
+                  onChange={(_event, value) => field.onChange("" + value)}
                   aria-label={t("oAuthMutual")}
                 />
               )}
@@ -181,7 +178,8 @@ export const AdvancedSettings = ({
                 <Select
                   toggleId="keyForCodeExchange"
                   variant={SelectVariant.single}
-                  onToggle={setOpen}
+                  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                  onToggle={(_event) => setOpen}
                   isOpen={open}
                   onSelect={(_, value) => {
                     field.onChange(value);
@@ -220,7 +218,7 @@ export const AdvancedSettings = ({
                   label={t("common:on")}
                   labelOff={t("common:off")}
                   isChecked={field.value === "true"}
-                  onChange={(value) => field.onChange(value.toString())}
+                  onChange={(_event, value) => field.onChange(value.toString())}
                   aria-label={t("pushedAuthorizationRequestRequired")}
                 />
               )}

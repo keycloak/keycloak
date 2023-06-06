@@ -1,17 +1,19 @@
 import {
   Button,
-  ContextSelector,
-  ContextSelectorItem,
-  ContextSelectorItemProps,
   Divider,
-  Dropdown,
-  DropdownItem,
-  DropdownToggle,
   Label,
   Spinner,
   Split,
   SplitItem,
 } from "@patternfly/react-core";
+import {
+  ContextSelector,
+  ContextSelectorItem,
+  ContextSelectorItemProps,
+  Dropdown,
+  DropdownItem,
+  DropdownToggle,
+} from "@patternfly/react-core/deprecated";
 import { CheckIcon } from "@patternfly/react-icons";
 import { Fragment, useState, useMemo } from "react";
 import { useTranslation } from "react-i18next";
@@ -124,7 +126,7 @@ export const RealmSelector = () => {
       screenReaderLabel={realm}
       onToggle={() => setOpen(!open)}
       searchInputValue={search}
-      onSearchInputChange={(value) => setSearch(value)}
+      onSearchInputChange={(_e, value) => setSearch(value)}
       className="keycloak__realm_selector__context_selector"
       footer={
         whoAmI.canCreateRealm() && (

@@ -1,10 +1,10 @@
 import ComponentRepresentation from "@keycloak/keycloak-admin-client/lib/defs/componentRepresentation";
+import { FormGroup } from "@patternfly/react-core";
 import {
-  FormGroup,
   Select,
   SelectOption,
   SelectVariant,
-} from "@patternfly/react-core";
+} from "@patternfly/react-core/deprecated";
 import { useState } from "react";
 import { Controller, UseFormReturn } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -113,8 +113,9 @@ export const LdapSettingsGeneral = ({
           }
           fieldId="kc-ui-display-name"
           isRequired
-          validated={form.formState.errors.name ? "error" : "default"}
-          helperTextInvalid={form.formState.errors.name?.message}
+          // TODO: Use FormHelperText, HelperText, and HelperTextItem directly inside children. helperText, // helperTextInvalid and validated props have been removed.
+          // validated={form.formState.errors.name ? "error" : "default"}
+          // helperTextInvalid={form.formState.errors.name?.message}
         >
           {/* These hidden fields are required so data object written back matches data retrieved */}
           <KeycloakTextInput

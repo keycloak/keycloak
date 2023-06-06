@@ -1,10 +1,9 @@
+import { FormGroup, Switch } from "@patternfly/react-core";
 import {
-  FormGroup,
   Select,
   SelectOption,
   SelectVariant,
-  Switch,
-} from "@patternfly/react-core";
+} from "@patternfly/react-core/deprecated";
 import { isEqual } from "lodash-es";
 import { useState } from "react";
 import { Controller, UseFormReturn, useWatch } from "react-hook-form";
@@ -69,8 +68,10 @@ export const KerberosSettingsRequired = ({
           }
           fieldId="kc-ui-display-name"
           isRequired
-          validated={form.formState.errors.name ? "error" : "default"}
-          helperTextInvalid={(form.formState.errors.name as any)?.message}
+          // TODO: Use FormHelperText, HelperText, and HelperTextItem directly inside children. helperText, // helperTextInvalid and validated props have been removed.
+
+          // validated={form.formState.errors.name ? "error" : "default"}
+          // helperTextInvalid={(form.formState.errors.name as any)?.message}
         >
           {/* These hidden fields are required so data object written back matches data retrieved */}
           <KeycloakTextInput
@@ -117,14 +118,15 @@ export const KerberosSettingsRequired = ({
           }
           fieldId="kc-kerberos-realm"
           isRequired
-          validated={
-            (form.formState.errors.config as any)?.kerberosRealm?.[0]
-              ? "error"
-              : "default"
-          }
-          helperTextInvalid={
-            (form.formState.errors.config as any)?.kerberosRealm?.[0].message
-          }
+          // TODO: Use FormHelperText, HelperText, and HelperTextItem directly inside children. helperText, helperTextInvalid and validated props have been removed.
+          // validated={
+          //   (form.formState.errors.config as any)?.kerberosRealm?.[0]
+          //     ? "error"
+          //     : "default"
+          // }
+          // helperTextInvalid={
+          //   (form.formState.errors.config as any)?.kerberosRealm?.[0].message
+          // }
         >
           <KeycloakTextInput
             isRequired
@@ -154,14 +156,15 @@ export const KerberosSettingsRequired = ({
           }
           fieldId="kc-server-principal"
           isRequired
-          validated={
-            (form.formState.errors.config as any)?.serverPrincipal?.[0]
-              ? "error"
-              : "default"
-          }
-          helperTextInvalid={
-            (form.formState.errors.config as any)?.serverPrincipal?.[0].message
-          }
+          // TODO: Use FormHelperText, HelperText, and HelperTextItem directly inside children. helperText, // helperTextInvalid and validated props have been removed.
+          // validated={
+          //   (form.formState.errors.config as any)?.serverPrincipal?.[0]
+          //     ? "error"
+          //     : "default"
+          // }
+          // helperTextInvalid={
+          //   (form.formState.errors.config as any)?.serverPrincipal?.[0].message
+          // }
         >
           <KeycloakTextInput
             isRequired
@@ -191,14 +194,15 @@ export const KerberosSettingsRequired = ({
           }
           fieldId="kc-key-tab"
           isRequired
-          validated={
-            (form.formState.errors.config as any)?.keyTab?.[0]
-              ? "error"
-              : "default"
-          }
-          helperTextInvalid={
-            (form.formState.errors.config as any)?.keyTab?.[0].message
-          }
+          // TODO: Use FormHelperText, HelperText, and HelperTextItem directly inside children. helperText, helperTextInvalid and validated props have been removed.
+          // validated={
+          //   (form.formState.errors.config as any)?.keyTab?.[0]
+          //     ? "error"
+          //     : "default"
+          // }
+          // helperTextInvalid={
+          //   (form.formState.errors.config as any)?.keyTab?.[0].message
+          // }
         >
           <KeycloakTextInput
             isRequired
@@ -238,7 +242,7 @@ export const KerberosSettingsRequired = ({
               <Switch
                 id={"kc-debug"}
                 data-testid="debug"
-                onChange={(value) => field.onChange([`${value}`])}
+                onChange={(_event, value) => field.onChange([`${value}`])}
                 isChecked={field.value?.[0] === "true"}
                 label={t("common:on")}
                 labelOff={t("common:off")}
@@ -269,7 +273,7 @@ export const KerberosSettingsRequired = ({
               <Switch
                 id={"kc-allow-password-authentication"}
                 data-testid="allow-password-authentication"
-                onChange={(value) => field.onChange([`${value}`])}
+                onChange={(_event, value) => field.onChange([`${value}`])}
                 isChecked={field.value?.[0] === "true"}
                 label={t("common:on")}
                 labelOff={t("common:off")}
@@ -339,7 +343,7 @@ export const KerberosSettingsRequired = ({
               <Switch
                 id={"kc-update-first-login"}
                 data-testid="update-first-login"
-                onChange={(value) => field.onChange([`${value}`])}
+                onChange={(_event, value) => field.onChange([`${value}`])}
                 isChecked={field.value?.[0] === "true"}
                 label={t("common:on")}
                 labelOff={t("common:off")}

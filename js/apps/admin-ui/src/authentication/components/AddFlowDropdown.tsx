@@ -1,10 +1,10 @@
 import type { AuthenticationProviderRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/authenticatorConfigRepresentation";
+import { Tooltip } from "@patternfly/react-core";
 import {
   Dropdown,
   DropdownItem,
   DropdownToggle,
-  Tooltip,
-} from "@patternfly/react-core";
+} from "@patternfly/react-core/deprecated";
 import { PlusIcon } from "@patternfly/react-icons";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -53,7 +53,11 @@ export const AddFlowDropdown = ({
           data-testid={`${execution.displayName}-edit-dropdown`}
           isOpen={open}
           toggle={
-            <DropdownToggle onToggle={setOpen} aria-label={t("common:add")}>
+            <DropdownToggle
+              // eslint-disable-next-line @typescript-eslint/no-unused-vars
+              onToggle={(_event) => setOpen}
+              aria-label={t("common:add")}
+            >
               <PlusIcon />
             </DropdownToggle>
           }

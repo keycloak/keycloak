@@ -2,16 +2,19 @@ import type GroupRepresentation from "@keycloak/keycloak-admin-client/lib/defs/g
 import {
   AlertVariant,
   Checkbox,
+  InputGroup,
+  Tooltip,
+  TreeView,
+  TreeViewDataItem,
+  InputGroupItem,
+} from "@patternfly/react-core";
+import {
   Dropdown,
   DropdownItem,
   DropdownPosition,
   DropdownSeparator,
-  InputGroup,
   KebabToggle,
-  Tooltip,
-  TreeView,
-  TreeViewDataItem,
-} from "@patternfly/react-core";
+} from "@patternfly/react-core/deprecated";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
@@ -219,16 +222,20 @@ export const GroupTree = ({
       inputGroupOnEnter={setSearch}
       toolbarItem={
         <InputGroup className="pf-u-pt-sm">
-          <Checkbox
-            id="exact"
-            data-testid="exact-search"
-            name="exact"
-            isChecked={exact}
-            onChange={(value) => setExact(value)}
-          />
-          <label htmlFor="exact" className="pf-u-pl-sm">
-            {t("exactSearch")}
-          </label>
+          <InputGroupItem>
+            <Checkbox
+              id="exact"
+              data-testid="exact-search"
+              name="exact"
+              isChecked={exact}
+              onChange={(_event, value) => setExact(value)}
+            />
+          </InputGroupItem>
+          <InputGroupItem>
+            <label htmlFor="exact" className="pf-u-pl-sm">
+              {t("exactSearch")}
+            </label>
+          </InputGroupItem>
         </InputGroup>
       }
     >

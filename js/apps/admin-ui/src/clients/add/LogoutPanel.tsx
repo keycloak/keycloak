@@ -79,15 +79,16 @@ export const LogoutPanel = ({
               fieldLabelId="clients:frontchannelLogoutUrl"
             />
           }
-          helperTextInvalid={
-            errors.attributes?.[beerify("frontchannel.logout.url")]
-              ?.message as string
-          }
-          validated={
-            errors.attributes?.[beerify("frontchannel.logout.url")]?.message
-              ? ValidatedOptions.error
-              : ValidatedOptions.default
-          }
+          // TODO: Use FormHelperText, HelperText, and HelperTextItem directly inside children. helperText, // helperTextInvalid and validated props have been removed.
+          // helperTextInvalid={
+          //   errors.attributes?.[beerify("frontchannel.logout.url")]
+          //     ?.message as string
+          // }
+          // validated={
+          //   errors.attributes?.[beerify("frontchannel.logout.url")]?.message
+          //     ? ValidatedOptions.error
+          //     : ValidatedOptions.default
+          // }
         >
           <KeycloakTextInput
             id="frontchannelLogoutUrl"
@@ -120,15 +121,16 @@ export const LogoutPanel = ({
                 fieldLabelId="clients:backchannelLogoutUrl"
               />
             }
-            helperTextInvalid={
-              errors.attributes?.[beerify("backchannel.logout.url")]
-                ?.message as string
-            }
-            validated={
-              errors.attributes?.[beerify("backchannel.logout.url")]?.message
-                ? ValidatedOptions.error
-                : ValidatedOptions.default
-            }
+            // TODO: Use FormHelperText, HelperText, and HelperTextItem directly inside children. helperText, // helperTextInvalid and validated props have been removed.
+            // helperTextInvalid={
+            //   errors.attributes?.[beerify("backchannel.logout.url")]
+            //     ?.message as string
+            // }
+            // validated={
+            //   errors.attributes?.[beerify("backchannel.logout.url")]?.message
+            //     ? ValidatedOptions.error
+            //     : ValidatedOptions.default
+            // }
           >
             <KeycloakTextInput
               id="backchannelLogoutUrl"
@@ -172,7 +174,7 @@ export const LogoutPanel = ({
                   label={t("common:on")}
                   labelOff={t("common:off")}
                   isChecked={field.value === "true"}
-                  onChange={(value) => field.onChange(value.toString())}
+                  onChange={(_event, value) => field.onChange(value.toString())}
                   aria-label={t("backchannelLogoutSessionRequired")}
                 />
               )}
@@ -203,7 +205,7 @@ export const LogoutPanel = ({
                   label={t("common:on")}
                   labelOff={t("common:off")}
                   isChecked={field.value === "true"}
-                  onChange={(value) => field.onChange(value.toString())}
+                  onChange={(_event, value) => field.onChange(value.toString())}
                   aria-label={t("backchannelLogoutRevokeOfflineSessions")}
                 />
               )}

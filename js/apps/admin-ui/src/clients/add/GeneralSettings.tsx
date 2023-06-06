@@ -1,9 +1,9 @@
+import { FormGroup } from "@patternfly/react-core";
 import {
-  FormGroup,
   Select,
   SelectOption,
   SelectVariant,
-} from "@patternfly/react-core";
+} from "@patternfly/react-core/deprecated";
 import { useState } from "react";
 import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -18,7 +18,7 @@ export const GeneralSettings = () => {
   const { t } = useTranslation("clients");
   const {
     control,
-    formState: { errors },
+    // formState: { errors },
   } = useFormContext();
 
   const providers = useLoginProviders();
@@ -29,7 +29,8 @@ export const GeneralSettings = () => {
       <FormGroup
         label={t("clientType")}
         fieldId="kc-type"
-        validated={errors.protocol ? "error" : "default"}
+        // TODO: Use FormHelperText, HelperText, and HelperTextItem directly inside children. helperText, helperTextInvalid and validated props have been removed.
+        // validated={errors.protocol ? "error" : "default"}
         labelIcon={
           <HelpItem
             helpText={t("clients-help:clientType")}
@@ -44,7 +45,8 @@ export const GeneralSettings = () => {
           render={({ field }) => (
             <Select
               id="kc-type"
-              onToggle={isOpen}
+              // eslint-disable-next-line @typescript-eslint/no-unused-vars
+              onToggle={(_event) => isOpen}
               onSelect={(_, value) => {
                 field.onChange(value.toString());
                 isOpen(false);

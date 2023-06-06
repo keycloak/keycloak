@@ -54,7 +54,11 @@ export const AuthorizationDataModal = ({
           </Button>,
         ]}
       >
-        <KeycloakTextArea readOnly rows={20} value={prettyPrintJSON(data)} />
+        <KeycloakTextArea
+          readOnlyVariant="default"
+          rows={20}
+          value={prettyPrintJSON(data)}
+        />
       </Modal>
     </>
   );

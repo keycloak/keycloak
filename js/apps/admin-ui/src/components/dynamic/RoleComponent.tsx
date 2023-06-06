@@ -35,7 +35,7 @@ export const RoleComponent = ({
   const [openModal, toggleModal] = useToggle();
   const {
     control,
-    formState: { errors },
+    // formState: { errors },
   } = useFormContext();
 
   const fieldName = convertToName(name!);
@@ -46,8 +46,9 @@ export const RoleComponent = ({
       labelIcon={
         <HelpItem helpText={t(helpText!)} fieldLabelId={`dynamic:${label}`} />
       }
-      validated={errors[fieldName] ? "error" : "default"}
-      helperTextInvalid={t("common:required")}
+      // TODO: Use FormHelperText, HelperText, and HelperTextItem directly inside children. helperText, // helperTextInvalid and validated props have been removed.
+      // validated={errors[fieldName] ? "error" : "default"}
+      // helperTextInvalid={t("common:required")}
       fieldId={name!}
     >
       <Controller

@@ -41,18 +41,23 @@ export const SwitchControl = <
         control={control}
         name={props.name}
         defaultValue={defaultValue}
-        render={({ field: { onChange, value } }) => (
+        render={({
+          field: {
+            // onChange,
+            value,
+          },
+        }) => (
           <Switch
             id={props.name}
             data-testid={props.name}
             label={props.labelOn}
             labelOff={props.labelOff}
             isChecked={props.stringify ? value === "true" : value}
-            onChange={(checked, e) => {
-              const value = props.stringify ? checked.toString() : checked;
-              props.onChange?.(checked, e);
-              onChange(value);
-            }}
+            // onChange={(checked, e) => {
+            //   const value = props.stringify ? checked.toString() : checked;
+            //   props.onChange?.(checked, e);
+            //   onChange(value);
+            // }}
           />
         )}
       />

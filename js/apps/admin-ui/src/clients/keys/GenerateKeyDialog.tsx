@@ -13,12 +13,14 @@ import {
   FormGroup,
   Modal,
   ModalVariant,
-  Select,
-  SelectOption,
-  SelectVariant,
   Text,
   TextContent,
 } from "@patternfly/react-core";
+import {
+  Select,
+  SelectOption,
+  SelectVariant,
+} from "@patternfly/react-core/deprecated";
 
 import type KeyStoreConfig from "@keycloak/keycloak-admin-client/lib/defs/keystoreConfig";
 import { HelpItem } from "ui-shared";
@@ -90,7 +92,8 @@ export const KeyForm = ({
           render={({ field }) => (
             <Select
               toggleId="archiveFormat"
-              onToggle={setOpenArchiveFormat}
+              // eslint-disable-next-line @typescript-eslint/no-unused-vars
+              onToggle={(_event) => setOpenArchiveFormat}
               onSelect={(_, value) => {
                 field.onChange(value.toString());
                 setOpenArchiveFormat(false);

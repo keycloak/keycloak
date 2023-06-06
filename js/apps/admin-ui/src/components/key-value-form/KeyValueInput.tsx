@@ -9,6 +9,8 @@ import {
   HelperText,
   HelperTextItem,
   InputGroup,
+  EmptyStateFooter,
+  InputGroupItem,
 } from "@patternfly/react-core";
 import { MinusCircleIcon, PlusCircleIcon } from "@patternfly/react-icons";
 import { Fragment } from "react";
@@ -70,22 +72,28 @@ export const KeyValueInput = ({ name }: KeyValueInputProps) => {
               </GridItem>
               <GridItem span={6}>
                 <InputGroup>
-                  <KeycloakTextInput
-                    placeholder={t("valuePlaceholder")}
-                    aria-label={t("value")}
-                    data-testid={`${name}-value`}
-                    {...register(`${name}.${index}.value`, { required: true })}
-                    validated={valueError ? "error" : "default"}
-                    isRequired
-                  />
-                  <Button
-                    variant="link"
-                    title={t("removeAttribute")}
-                    onClick={() => remove(index)}
-                    data-testid={`${name}-remove`}
-                  >
-                    <MinusCircleIcon />
-                  </Button>
+                  <InputGroupItem>
+                    <KeycloakTextInput
+                      placeholder={t("valuePlaceholder")}
+                      aria-label={t("value")}
+                      data-testid={`${name}-value`}
+                      {...register(`${name}.${index}.value`, {
+                        required: true,
+                      })}
+                      validated={valueError ? "error" : "default"}
+                      isRequired
+                    />
+                  </InputGroupItem>
+                  <InputGroupItem>
+                    <Button
+                      variant="link"
+                      title={t("removeAttribute")}
+                      onClick={() => remove(index)}
+                      data-testid={`${name}-remove`}
+                    >
+                      <MinusCircleIcon />
+                    </Button>
+                  </InputGroupItem>
                 </InputGroup>
                 {valueError && (
                   <HelperText>
@@ -120,15 +128,17 @@ export const KeyValueInput = ({ name }: KeyValueInputProps) => {
       variant="xs"
     >
       <EmptyStateBody>{t("missingAttributes")}</EmptyStateBody>
-      <Button
-        data-testid={`${name}-add-row`}
-        variant="link"
-        icon={<PlusCircleIcon />}
-        isSmall
-        onClick={appendNew}
-      >
-        {t("addAttribute")}
-      </Button>
+      <EmptyStateFooter>
+        <Button
+          data-testid={`${name}-add-row`}
+          variant="link"
+          icon={<PlusCircleIcon />}
+          size="sm"
+          onClick={appendNew}
+        >
+          {t("addAttribute")}
+        </Button>
+      </EmptyStateFooter>
     </EmptyState>
   );
 };

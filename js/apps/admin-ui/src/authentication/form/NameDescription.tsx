@@ -19,10 +19,11 @@ export const NameDescription = () => {
       <FormGroup
         label={t("common:name")}
         fieldId="kc-name"
-        helperTextInvalid={t("common:required")}
-        validated={
-          errors.alias ? ValidatedOptions.error : ValidatedOptions.default
-        }
+        // TODO: Use FormHelperText, HelperText, and HelperTextItem directly inside children. helperText, // helperTextInvalid and validated props have been removed.
+        // helperTextInvalid={t("common:required")}
+        // validated={
+        //   errors.alias ? ValidatedOptions.error : ValidatedOptions.default
+        // }
         labelIcon={
           <HelpItem
             helpText={t("authentication-help:name")}
@@ -49,10 +50,11 @@ export const NameDescription = () => {
             fieldLabelId="description"
           />
         }
-        validated={
-          errors.description ? ValidatedOptions.error : ValidatedOptions.default
-        }
-        helperTextInvalid={errors.description?.message}
+        // TODO: Use FormHelperText, HelperText, and HelperTextItem directly inside children. helperText, // helperTextInvalid and validated props have been removed.
+        // validated={
+        //   errors.description ? ValidatedOptions.error : ValidatedOptions.default
+        // }
+        // helperTextInvalid={errors.description?.message}
       >
         <KeycloakTextArea
           id="kc-description"

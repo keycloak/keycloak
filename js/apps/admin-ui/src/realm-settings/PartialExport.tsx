@@ -108,7 +108,8 @@ export const PartialExportDialog = ({
             id="include-groups-and-roles-check"
             data-testid="include-groups-and-roles-check"
             isChecked={exportGroupsAndRoles}
-            onChange={setExportGroupsAndRoles}
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            onChange={(_event) => setExportGroupsAndRoles}
             label={t("common:on")}
             labelOff={t("common:off")}
             aria-label={t("includeGroupsAndRoles")}
@@ -122,7 +123,8 @@ export const PartialExportDialog = ({
           <Switch
             id="include-clients-check"
             data-testid="include-clients-check"
-            onChange={setExportClients}
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            onChange={(_event) => setExportClients}
             isChecked={exportClients}
             label={t("common:on")}
             labelOff={t("common:off")}

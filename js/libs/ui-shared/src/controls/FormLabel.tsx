@@ -1,4 +1,7 @@
-import { FormGroup, ValidatedOptions } from "@patternfly/react-core";
+import {
+  FormGroup,
+  // ValidatedOptions
+} from "@patternfly/react-core";
 import { PropsWithChildren } from "react";
 import { FieldError, FieldValues, Merge } from "react-hook-form";
 import { HelpItem } from "./HelpItem";
@@ -15,7 +18,7 @@ export const FormLabel = ({
   name,
   label,
   labelIcon,
-  error,
+  // error,
   children,
   ...rest
 }: PropsWithChildren<FormLabelProps>) => (
@@ -27,8 +30,9 @@ export const FormLabel = ({
         <HelpItem helpText={labelIcon} fieldLabelId={name} />
       ) : undefined
     }
-    helperTextInvalid={error?.message}
-    validated={error ? ValidatedOptions.error : ValidatedOptions.default}
+    // TODO: Use FormHelperText, HelperText, and HelperTextItem directly inside children. helperText, // helperTextInvalid and validated props have been removed.
+    // helperTextInvalid={error?.message}
+    // validated={error ? ValidatedOptions.error : ValidatedOptions.default}
     {...rest}
   >
     {children}

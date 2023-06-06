@@ -1,14 +1,11 @@
 import type ClientScopeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientScopeRepresentation";
 import type UserProfileConfig from "@keycloak/keycloak-admin-client/lib/defs/userProfileConfig";
+import { Divider, FormGroup, Radio, Switch } from "@patternfly/react-core";
 import {
-  Divider,
-  FormGroup,
-  Radio,
   Select,
   SelectOption,
   SelectVariant,
-  Switch,
-} from "@patternfly/react-core";
+} from "@patternfly/react-core/deprecated";
 import { isEqual } from "lodash-es";
 import { useState } from "react";
 import { Controller, useFormContext, useWatch } from "react-hook-form";
@@ -81,8 +78,9 @@ export const AttributeGeneralSettings = () => {
         }
         fieldId="kc-attribute-name"
         isRequired
-        validated={form.formState.errors.name ? "error" : "default"}
-        helperTextInvalid={t("validateName")}
+        // TODO: Use FormHelperText, HelperText, and HelperTextItem directly inside children. helperText, // helperTextInvalid and validated props have been removed.
+        // validated={form.formState.errors.name ? "error" : "default"}
+        // helperTextInvalid={t("validateName")}
       >
         <KeycloakTextInput
           isRequired
@@ -214,7 +212,9 @@ export const AttributeGeneralSettings = () => {
                     expandedText: t("common:hide"),
                     collapsedText: t("common:showRemaining"),
                   }}
-                  onToggle={(isOpen) => setSelectEnabledWhenOpen(isOpen)}
+                  onToggle={(_event, isOpen) =>
+                    setSelectEnabledWhenOpen(isOpen)
+                  }
                   selections={field.value}
                   onSelect={(_, selectedValue) => {
                     const option = selectedValue.toString();
@@ -364,7 +364,9 @@ export const AttributeGeneralSettings = () => {
                         expandedText: t("common:hide"),
                         collapsedText: t("common:showRemaining"),
                       }}
-                      onToggle={(isOpen) => setSelectRequiredForOpen(isOpen)}
+                      onToggle={(_event, isOpen) =>
+                        setSelectRequiredForOpen(isOpen)
+                      }
                       selections={field.value}
                       onSelect={(_, selectedValue) => {
                         const option = selectedValue.toString();

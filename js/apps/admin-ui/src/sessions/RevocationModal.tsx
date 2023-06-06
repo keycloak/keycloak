@@ -195,14 +195,15 @@ export const RevocationModal = ({
           label={t("notBefore")}
           name="notBefore"
           fieldId="not-before"
-          validated={
-            errors.email ? ValidatedOptions.error : ValidatedOptions.default
-          }
+          // TODO: Use FormHelperText, HelperText, and HelperTextItem directly inside children. helperText, helperTextInvalid and validated props have been removed.
+          // validated={
+          //   errors.email ? ValidatedOptions.error : ValidatedOptions.default
+          // }
         >
           <KeycloakTextInput
             data-testid="not-before-input"
             autoFocus
-            isReadOnly
+            readOnly
             value={
               realm?.notBefore === 0
                 ? (t("none") as string)

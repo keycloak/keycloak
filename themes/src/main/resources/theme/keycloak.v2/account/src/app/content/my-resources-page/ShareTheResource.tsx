@@ -184,7 +184,8 @@ export class ShareTheResource extends React.Component<ShareTheResourceProps, Sha
                             <FormGroup
                                 label="Add users to share your resource with"
                                 type="string"
-                                helperTextInvalid={Msg.localize('resourceAlreadyShared')}
+                                // TODO: Use FormHelperText, HelperText, and HelperTextItem directly inside children. helperText, // helperTextInvalid and validated props have been removed.
+                                // helperTextInvalid={Msg.localize('resourceAlreadyShared')}
                                 fieldId="username"
                                 isRequired
                                 >

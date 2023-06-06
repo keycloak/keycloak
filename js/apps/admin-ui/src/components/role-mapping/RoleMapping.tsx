@@ -186,7 +186,7 @@ export const RoleMapping = ({
                 id="hideInheritedRoles"
                 data-testid="hideInheritedRoles"
                 isChecked={hide}
-                onChange={(check) => {
+                onChange={(_event, check) => {
                   setHide(check);
                   refresh();
                 }}

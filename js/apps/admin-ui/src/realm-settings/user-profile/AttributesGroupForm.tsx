@@ -120,8 +120,9 @@ export default function AttributesGroupForm() {
             label={t("realm-settings:nameField")}
             fieldId="kc-name"
             isRequired
-            helperTextInvalid={t("common:required")}
-            validated={form.formState.errors.name ? "error" : "default"}
+            // TODO: Use FormHelperText, HelperText, and HelperTextItem directly inside children. helperText, // helperTextInvalid and validated props have been removed.
+            // helperTextInvalid={t("common:required")}
+            // validated={form.formState.errors.name ? "error" : "default"}
             labelIcon={
               <HelpItem
                 helpText={t("realm-settings:nameHint")}
@@ -131,7 +132,7 @@ export default function AttributesGroupForm() {
           >
             <KeycloakTextInput
               id="kc-name"
-              isReadOnly={!!matchingGroup}
+              readOnlyVariant={matchingGroup ? "default" : undefined}
               {...form.register("name", { required: true })}
             />
             {!!matchingGroup && (

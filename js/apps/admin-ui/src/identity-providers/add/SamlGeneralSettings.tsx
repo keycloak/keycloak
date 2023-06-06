@@ -47,16 +47,17 @@ export const SamlGeneralSettings = ({
         }
         fieldId="alias"
         isRequired
-        validated={
-          errors.alias ? ValidatedOptions.error : ValidatedOptions.default
-        }
-        helperTextInvalid={t("common:required")}
+        // TODO: Use FormHelperText, HelperText, and HelperTextItem directly inside children. helperText, helperTextInvalid and validated props have been removed.
+        // validated={
+        //   errors.alias ? ValidatedOptions.error : ValidatedOptions.default
+        // }
+        // helperTextInvalid={t("common:required")}
       >
         <KeycloakTextInput
           isRequired
           id="alias"
           data-testid="alias"
-          isReadOnly={isAliasReadonly}
+          readOnly={isAliasReadonly}
           validated={
             errors.alias ? ValidatedOptions.error : ValidatedOptions.default
           }

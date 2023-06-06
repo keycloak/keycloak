@@ -7,10 +7,10 @@
     "lint": "wireit"
   },
   "dependencies": {
-    "@patternfly/patternfly": "^4.224.2",
-    "@patternfly/react-core": "^4.276.8",
-    "@patternfly/react-icons": "^4.93.6",
-    "@patternfly/react-table": "^4.113.0",
+    "@patternfly/patternfly": "^5.0.0-alpha.69",
+    "@patternfly/react-core": "^5.0.0-alpha.127",
+    "@patternfly/react-icons": "^5.0.0-alpha.20",
+    "@patternfly/react-table": "^5.0.0-alpha.131",
     "i18next": "^22.5.0",
     "i18next-http-backend": "^2.2.1",
     "keycloak-js": "workspace:*",

@@ -127,8 +127,10 @@ export default function CustomProviderSettings() {
                 fieldLabelId="user-federation:uiDisplayName"
               />
             }
-            helperTextInvalid={t("validateName")}
-            validated={errors.name ? "error" : "default"}
+            // TODO: Use FormHelperText, HelperText, and HelperTextItem directly inside children. helperText, // helperTextInvalid and validated props have been removed.
+
+            // helperTextInvalid={t("validateName")}
+            // validated={errors.name ? "error" : "default"}
             fieldId="kc-ui-display-name"
             isRequired
           >

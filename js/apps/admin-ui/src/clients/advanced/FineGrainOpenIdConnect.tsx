@@ -1,11 +1,9 @@
+import { ActionGroup, Button, FormGroup } from "@patternfly/react-core";
 import {
-  ActionGroup,
-  Button,
-  FormGroup,
   Select,
   SelectOption,
   SelectVariant,
-} from "@patternfly/react-core";
+} from "@patternfly/react-core/deprecated";
 import { useState } from "react";
 import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -180,7 +178,8 @@ export const FineGrainOpenIdConnect = ({
             <Select
               toggleId="accessTokenSignatureAlgorithm"
               variant={SelectVariant.single}
-              onToggle={setAccessTokenOpen}
+              // eslint-disable-next-line @typescript-eslint/no-unused-vars
+              onToggle={(_event) => setAccessTokenOpen}
               isOpen={accessTokenOpen}
               onSelect={(_, value) => {
                 field.onChange(value);
@@ -213,7 +212,8 @@ export const FineGrainOpenIdConnect = ({
             <Select
               toggleId="idTokenSignatureAlgorithm"
               variant={SelectVariant.single}
-              onToggle={setIdTokenOpen}
+              // eslint-disable-next-line @typescript-eslint/no-unused-vars
+              onToggle={(_event) => setIdTokenOpen}
               isOpen={idTokenOpen}
               onSelect={(_, value) => {
                 field.onChange(value);
@@ -246,7 +246,8 @@ export const FineGrainOpenIdConnect = ({
             <Select
               toggleId="idTokenEncryptionKeyManagementAlgorithm"
               variant={SelectVariant.single}
-              onToggle={setIdTokenKeyManagementOpen}
+              // eslint-disable-next-line @typescript-eslint/no-unused-vars
+              onToggle={(_event) => setIdTokenKeyManagementOpen}
               isOpen={idTokenKeyManagementOpen}
               onSelect={(_, value) => {
                 field.onChange(value);
@@ -281,7 +282,8 @@ export const FineGrainOpenIdConnect = ({
             <Select
               toggleId="idTokenEncryptionContentEncryptionAlgorithm"
               variant={SelectVariant.single}
-              onToggle={setIdTokenContentOpen}
+              // eslint-disable-next-line @typescript-eslint/no-unused-vars
+              onToggle={(_event) => setIdTokenContentOpen}
               isOpen={idTokenContentOpen}
               onSelect={(_, value) => {
                 field.onChange(value);
@@ -314,7 +316,8 @@ export const FineGrainOpenIdConnect = ({
             <Select
               toggleId="userInfoSignedResponseAlgorithm"
               variant={SelectVariant.single}
-              onToggle={setUserInfoSignedResponseOpen}
+              // eslint-disable-next-line @typescript-eslint/no-unused-vars
+              onToggle={(_event) => setUserInfoSignedResponseOpen}
               isOpen={userInfoSignedResponseOpen}
               onSelect={(_, value) => {
                 field.onChange(value);
@@ -349,7 +352,10 @@ export const FineGrainOpenIdConnect = ({
             <Select
               toggleId="userInfoResponseEncryptionKeyManagementAlgorithm"
               variant={SelectVariant.single}
-              onToggle={setUserInfoResponseEncryptionKeyManagementOpen}
+              // eslint-disable-next-line @typescript-eslint/no-unused-vars
+              onToggle={(_event) =>
+                setUserInfoResponseEncryptionKeyManagementOpen
+              }
               isOpen={userInfoResponseEncryptionKeyManagementOpen}
               onSelect={(_, value) => {
                 field.onChange(value);
@@ -384,7 +390,10 @@ export const FineGrainOpenIdConnect = ({
             <Select
               toggleId="userInfoResponseEncryptionContentEncryptionAlgorithm"
               variant={SelectVariant.single}
-              onToggle={setUserInfoResponseEncryptionContentEncryptionOpen}
+              // eslint-disable-next-line @typescript-eslint/no-unused-vars
+              onToggle={(_event) =>
+                setUserInfoResponseEncryptionContentEncryptionOpen
+              }
               isOpen={userInfoResponseEncryptionContentEncryptionOpen}
               onSelect={(_, value) => {
                 field.onChange(value);
@@ -417,7 +426,8 @@ export const FineGrainOpenIdConnect = ({
             <Select
               toggleId="requestObjectSignatureAlgorithm"
               variant={SelectVariant.single}
-              onToggle={setRequestObjectSignatureOpen}
+              // eslint-disable-next-line @typescript-eslint/no-unused-vars
+              onToggle={(_event) => setRequestObjectSignatureOpen}
               isOpen={requestObjectSignatureOpen}
               onSelect={(_, value) => {
                 field.onChange(value);
@@ -450,7 +460,8 @@ export const FineGrainOpenIdConnect = ({
             <Select
               toggleId="requestObjectEncryption"
               variant={SelectVariant.single}
-              onToggle={setRequestObjectEncryptionOpen}
+              // eslint-disable-next-line @typescript-eslint/no-unused-vars
+              onToggle={(_event) => setRequestObjectEncryptionOpen}
               isOpen={requestObjectEncryptionOpen}
               onSelect={(_, value) => {
                 field.onChange(value);
@@ -483,7 +494,8 @@ export const FineGrainOpenIdConnect = ({
             <Select
               toggleId="requestObjectEncoding"
               variant={SelectVariant.single}
-              onToggle={setRequestObjectEncodingOpen}
+              // eslint-disable-next-line @typescript-eslint/no-unused-vars
+              onToggle={(_event) => setRequestObjectEncodingOpen}
               isOpen={requestObjectEncodingOpen}
               onSelect={(_, value) => {
                 field.onChange(value);
@@ -516,7 +528,8 @@ export const FineGrainOpenIdConnect = ({
             <Select
               toggleId="requestObjectRequired"
               variant={SelectVariant.single}
-              onToggle={setRequestObjectRequiredOpen}
+              // eslint-disable-next-line @typescript-eslint/no-unused-vars
+              onToggle={(_event) => setRequestObjectRequiredOpen}
               isOpen={requestObjectRequiredOpen}
               onSelect={(_, value) => {
                 field.onChange(value);
@@ -566,7 +579,8 @@ export const FineGrainOpenIdConnect = ({
             <Select
               toggleId="authorizationSignedResponseAlg"
               variant={SelectVariant.single}
-              onToggle={setAuthorizationSignedOpen}
+              // eslint-disable-next-line @typescript-eslint/no-unused-vars
+              onToggle={(_event) => setAuthorizationSignedOpen}
               isOpen={authorizationSignedOpen}
               onSelect={(_, value) => {
                 field.onChange(value);
@@ -599,7 +613,8 @@ export const FineGrainOpenIdConnect = ({
             <Select
               toggleId="authorizationEncryptedResponseAlg"
               variant={SelectVariant.single}
-              onToggle={setAuthorizationEncryptedOpen}
+              // eslint-disable-next-line @typescript-eslint/no-unused-vars
+              onToggle={(_event) => setAuthorizationEncryptedOpen}
               isOpen={authorizationEncryptedOpen}
               onSelect={(_, value) => {
                 field.onChange(value);
@@ -632,7 +647,8 @@ export const FineGrainOpenIdConnect = ({
             <Select
               toggleId="authorizationEncryptedResponseEnc"
               variant={SelectVariant.single}
-              onToggle={setAuthorizationEncryptedResponseOpen}
+              // eslint-disable-next-line @typescript-eslint/no-unused-vars
+              onToggle={(_event) => setAuthorizationEncryptedResponseOpen}
               isOpen={authorizationEncryptedResponseOpen}
               onSelect={(_, value) => {
                 field.onChange(value);

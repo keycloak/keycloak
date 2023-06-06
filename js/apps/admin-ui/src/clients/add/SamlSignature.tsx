@@ -1,9 +1,9 @@
+import { FormGroup } from "@patternfly/react-core";
 import {
-  FormGroup,
   Select,
   SelectOption,
   SelectVariant,
-} from "@patternfly/react-core";
+} from "@patternfly/react-core/deprecated";
 import { useState } from "react";
 import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -93,7 +93,8 @@ export const SamlSignature = () => {
               render={({ field }) => (
                 <Select
                   toggleId="signatureAlgorithm"
-                  onToggle={setAlgOpen}
+                  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                  onToggle={(_event) => setAlgOpen}
                   onSelect={(_, value) => {
                     field.onChange(value.toString());
                     setAlgOpen(false);
@@ -133,7 +134,8 @@ export const SamlSignature = () => {
               render={({ field }) => (
                 <Select
                   toggleId="signatureKeyName"
-                  onToggle={setKeyOpen}
+                  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                  onToggle={(_event) => setKeyOpen}
                   onSelect={(_, value) => {
                     field.onChange(value.toString());
                     setKeyOpen(false);
@@ -171,7 +173,8 @@ export const SamlSignature = () => {
               render={({ field }) => (
                 <Select
                   toggleId="canonicalization"
-                  onToggle={setCanOpen}
+                  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                  onToggle={(_event) => setCanOpen}
                   onSelect={(_, value) => {
                     field.onChange(value.toString());
                     setCanOpen(false);

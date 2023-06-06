@@ -1,6 +1,6 @@
 import { forwardRef, MutableRefObject, Ref, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Button, InputGroup } from "@patternfly/react-core";
+import { Button, InputGroup, InputGroupItem } from "@patternfly/react-core";
 import { EyeIcon, EyeSlashIcon } from "@patternfly/react-icons";
 
 import {
@@ -21,11 +21,13 @@ const PasswordInputBase = ({
   const [hidePassword, setHidePassword] = useState(true);
   return (
     <InputGroup>
-      <KeycloakTextInput
-        {...rest}
-        type={hidePassword ? "password" : "text"}
-        ref={innerRef}
-      />
+      <InputGroupItem>
+        <KeycloakTextInput
+          {...rest}
+          type={hidePassword ? "password" : "text"}
+          ref={innerRef}
+        />
+      </InputGroupItem>
       {hasReveal && (
         <Button
           variant="control"

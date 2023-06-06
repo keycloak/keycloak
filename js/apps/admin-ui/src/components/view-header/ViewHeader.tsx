@@ -2,9 +2,6 @@ import {
   Badge,
   Button,
   Divider,
-  Dropdown,
-  DropdownPosition,
-  DropdownToggle,
   Level,
   LevelItem,
   PageSection,
@@ -15,6 +12,11 @@ import {
   ToolbarContent,
   ToolbarItem,
 } from "@patternfly/react-core";
+import {
+  Dropdown,
+  DropdownPosition,
+  DropdownToggle,
+} from "@patternfly/react-core/deprecated";
 import {
   ReactElement,
   ReactNode,
@@ -130,7 +132,7 @@ export const ViewHeader = ({
                       isDisabled={isReadOnly}
                       isChecked={isEnabled}
                       aria-label={t("common:enabled")}
-                      onChange={(value) => {
+                      onChange={(_event, value) => {
                         onToggle(value);
                       }}
                     />
@@ -190,7 +192,7 @@ export const ViewHeader = ({
             toggle={
               <DropdownToggle
                 onToggle={() => onLowerDropdownToggle()}
-                isPrimary
+                toggleVariant="primary"
                 id="ufToggleId"
               >
                 {t(lowerDropdownMenuTitle)}

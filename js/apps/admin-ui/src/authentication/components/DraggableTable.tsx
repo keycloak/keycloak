@@ -10,16 +10,16 @@ import { get } from "lodash-es";
 import {
   ActionsColumn,
   IAction,
-  TableComposable,
-  TableComposableProps,
+  Table /* data-codemods */,
+  TableProps,
   Tbody,
   Td,
   Th,
   Thead,
   Tr,
 } from "@patternfly/react-table";
-import { ThInfoType } from "@patternfly/react-table/components/Table/base/types";
 import styles from "@patternfly/react-styles/css/components/DataList/data-list";
+import { ThInfoType } from "@patternfly/react-table/dist/esm/components/Table/base/types";
 
 export type Field<T> = {
   name: string;
@@ -30,7 +30,7 @@ export type Field<T> = {
 
 export type Action<T> = IAction & { isActionable?: (item: T) => boolean };
 
-type DraggableTableProps<T> = Omit<TableComposableProps, "data" | "ref"> & {
+type DraggableTableProps<T> = Omit<TableProps, "data" | "ref"> & {
   keyField: string;
   columns: Field<T>[];
   data: T[];
@@ -190,7 +190,7 @@ export function DraggableTable<T>({
   };
 
   return (
-    <TableComposable
+    <Table
       aria-label="Draggable table"
       className={state.dragging ? styles.modifiers.dragOver : ""}
       {...props}
@@ -250,6 +250,6 @@ export function DraggableTable<T>({
           </Tr>
         ))}
       </Tbody>
-    </TableComposable>
+    </Table>
   );
 }

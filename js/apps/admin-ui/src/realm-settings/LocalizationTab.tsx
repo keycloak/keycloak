@@ -6,14 +6,16 @@ import {
   Divider,
   FormGroup,
   PageSection,
-  Select,
-  SelectGroup,
-  SelectOption,
-  SelectVariant,
   Switch,
   TextContent,
   ToolbarItem,
 } from "@patternfly/react-core";
+import {
+  Select,
+  SelectGroup,
+  SelectOption,
+  SelectVariant,
+} from "@patternfly/react-core/deprecated";
 import { SearchIcon } from "@patternfly/react-icons";
 import {
   EditableTextCell,
@@ -22,14 +24,16 @@ import {
   IRowCell,
   RowEditType,
   RowErrors,
-  Table,
-  TableBody,
-  TableHeader,
   TableVariant,
   applyCellEdits,
   cancelCellEdits,
   validateCellEdits,
 } from "@patternfly/react-table";
+import {
+  Table,
+  TableBody,
+  TableHeader,
+} from "@patternfly/react-table/deprecated";
 import { cloneDeep, isEqual, uniqWith } from "lodash-es";
 import { useEffect, useMemo, useState } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
@@ -406,7 +410,7 @@ export const LocalizationTab = ({ save, realm }: LocalizationTabProps) => {
                   render={({ field }) => (
                     <Select
                       toggleId="kc-l-supported-locales"
-                      onToggle={(open) => {
+                      onToggle={(_event, open) => {
                         setSupportedLocalesOpen(open);
                       }}
                       onSelect={(_, v) => {
@@ -542,7 +546,9 @@ export const LocalizationTab = ({ save, realm }: LocalizationTabProps) => {
                     className="kc-filter-by-locale-select"
                     variant={SelectVariant.single}
                     isDisabled={!internationalizationEnabled}
-                    onToggle={(isExpanded) => setFilterDropdownOpen(isExpanded)}
+                    onToggle={(_event, isExpanded) =>
+                      setFilterDropdownOpen(isExpanded)
+                    }
                     onSelect={(_, value) => {
                       setSelectMenuLocale(value.toString());
                       setSelectMenuValueSelected(true);

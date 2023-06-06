@@ -2,16 +2,19 @@ import type ClientScopeRepresentation from "@keycloak/keycloak-admin-client/lib/
 import {
   Button,
   ButtonVariant,
-  Dropdown,
-  DropdownDirection,
-  DropdownItem,
-  DropdownToggle,
   Modal,
   ModalVariant,
+} from "@patternfly/react-core";
+import {
+  Dropdown,
+  DropdownToggle,
+  DropdownDirection,
+  DropdownItem,
   Select,
   SelectOption,
   SelectVariant,
-} from "@patternfly/react-core";
+  SelectDirection,
+} from "@patternfly/react-core/deprecated";
 import {
   CaretDownIcon,
   CaretUpIcon,
@@ -177,7 +180,7 @@ export const AddScopeDialog = ({
                   <DropdownToggle
                     isDisabled={rows.length === 0}
                     onToggle={() => setAddToggle(!addToggle)}
-                    isPrimary
+                    toggleVariant="primary"
                     toggleIndicator={CaretUpIcon}
                     id="add-scope-toggle"
                   >

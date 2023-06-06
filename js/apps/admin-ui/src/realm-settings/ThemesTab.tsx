@@ -4,10 +4,12 @@ import {
   Button,
   FormGroup,
   PageSection,
+} from "@patternfly/react-core";
+import {
   Select,
   SelectOption,
   SelectVariant,
-} from "@patternfly/react-core";
+} from "@patternfly/react-core/deprecated";
 import { useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";

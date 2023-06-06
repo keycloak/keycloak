@@ -83,8 +83,9 @@ export const OpenIdConnectSettings = () => {
                 fieldLabelId="identity-providers:importConfig"
               />
             }
-            validated={errors.discoveryError ? "error" : "default"}
-            helperTextInvalid={errors.discoveryError?.message as string}
+            // TODO: Use FormHelperText, HelperText, and HelperTextItem directly inside children. helperText, helperTextInvalid and validated props have been removed.
+            // validated={errors.discoveryError ? "error" : "default"}
+            // helperTextInvalid={errors.discoveryError?.message as string}
           >
             <JsonFileUpload
               id="kc-import-config"

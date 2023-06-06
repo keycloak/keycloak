@@ -33,29 +33,9 @@ export const ManageOrderDialog = ({
   const { t } = useTranslation("identity-providers");
   const { addAlert, addError } = useAlerts();
 
-  const [alias, setAlias] = useState("");
-  const [liveText, setLiveText] = useState("");
-  const [order, setOrder] = useState(
-    providers.map((provider) => provider.alias!)
-  );
-
-  const onDragStart = (id: string) => {
-    setAlias(id);
-    setLiveText(t("common:onDragStart", { item: id }));
-  };
-
-  const onDragMove = () => {
-    setLiveText(t("common:onDragMove", { item: alias }));
-  };
-
-  const onDragCancel = () => {
-    setLiveText(t("common:onDragCancel"));
-  };
-
-  const onDragFinish = (providerOrder: string[]) => {
-    setLiveText(t("common:onDragFinish", { list: providerOrder }));
-    setOrder(providerOrder);
-  };
+  // const [alias, setAlias] = useState("");
+  const [liveText] = useState("");
+  const [order] = useState(providers.map((provider) => provider.alias!));
 
   return (
     <Modal
@@ -106,11 +86,6 @@ export const ManageOrderDialog = ({
         aria-label={t("manageOrderTableAria")}
         data-testid="manageOrderDataList"
         isCompact
-        onDragFinish={onDragFinish}
-        onDragStart={onDragStart}
-        onDragMove={onDragMove}
-        onDragCancel={onDragCancel}
-        itemOrder={order}
       >
         {sortBy(providers, "config.guiOrder", "alias").map((provider) => (
           <DataListItem

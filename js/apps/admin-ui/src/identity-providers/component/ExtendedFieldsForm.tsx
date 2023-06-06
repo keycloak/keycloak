@@ -1,5 +1,9 @@
 import IdentityProviderRepresentation from "@keycloak/keycloak-admin-client/lib/defs/identityProviderRepresentation";
-import { FormGroup, Switch, ValidatedOptions } from "@patternfly/react-core";
+import {
+  FormGroup,
+  Switch,
+  // ValidatedOptions
+} from "@patternfly/react-core";
 import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
@@ -138,7 +142,7 @@ const GoogleFields = () => {
               label={t("common:on")}
               labelOff={t("common:off")}
               isChecked={field.value === "true"}
-              onChange={(value) => field.onChange(value.toString())}
+              onChange={(_event, value) => field.onChange(value.toString())}
               aria-label={t("google.userIp")}
             />
           )}
@@ -164,7 +168,7 @@ const GoogleFields = () => {
               label={t("common:on")}
               labelOff={t("common:off")}
               isChecked={field.value === "true"}
-              onChange={(value) => field.onChange(value.toString())}
+              onChange={(_event, value) => field.onChange(value.toString())}
               aria-label={t("google.offlineAccess")}
             />
           )}
@@ -178,7 +182,7 @@ const OpenshiftFields = () => {
   const { t } = useTranslation("identity-providers");
   const {
     register,
-    formState: { errors },
+    // formState: { errors },
   } = useFormContext<IdentityProviderRepresentation>();
 
   return (
@@ -192,12 +196,13 @@ const OpenshiftFields = () => {
       }
       fieldId="baseUrl"
       isRequired
-      validated={
-        errors.config?.baseUrl
-          ? ValidatedOptions.error
-          : ValidatedOptions.default
-      }
-      helperTextInvalid={t("common:required")}
+      // TODO: Use FormHelperText, HelperText, and HelperTextItem directly inside children. helperText, helperTextInvalid and validated props have been removed.
+      // validated={
+      //   errors.config?.baseUrl
+      //     ? ValidatedOptions.error
+      //     : ValidatedOptions.default
+      // }
+      // helperTextInvalid={t("common:required")}
     >
       <KeycloakTextInput
         id="baseUrl"
@@ -234,7 +239,7 @@ const PaypalFields = () => {
             label={t("common:on")}
             labelOff={t("common:off")}
             isChecked={field.value === "true"}
-            onChange={(value) => field.onChange(value.toString())}
+            onChange={(_event, value) => field.onChange(value.toString())}
             aria-label={t("paypal.sandbox")}
           />
         )}
@@ -247,7 +252,7 @@ const StackoverflowFields = () => {
   const { t } = useTranslation("identity-providers");
   const {
     register,
-    formState: { errors },
+    // formState: { errors },
   } = useFormContext<IdentityProviderRepresentation>();
 
   return (
@@ -261,10 +266,11 @@ const StackoverflowFields = () => {
       }
       fieldId="stackoverflowKey"
       isRequired
-      validated={
-        errors.config?.key ? ValidatedOptions.error : ValidatedOptions.default
-      }
-      helperTextInvalid={t("common:required")}
+      // TODO: Use FormHelperText, HelperText, and HelperTextItem directly inside children. helperText, helperTextInvalid and validated props have been removed.
+      // validated={
+      //   errors.config?.key ? ValidatedOptions.error : ValidatedOptions.default
+      // }
+      // helperTextInvalid={t("common:required")}
     >
       <KeycloakTextInput
         id="stackoverflowKey"

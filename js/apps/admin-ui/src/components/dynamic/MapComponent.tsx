@@ -89,7 +89,7 @@ export const MapComponent = ({ name, label, helpText }: ComponentProps) => {
                 aria-label={t("key")}
                 defaultValue={attribute.key}
                 data-testid={`${fieldName}.${index}.key`}
-                onChange={(value) => updateKey(index, value)}
+                onChange={(_event, value) => updateKey(index, value)}
                 onBlur={() => update()}
               />
             </FlexItem>
@@ -103,7 +103,7 @@ export const MapComponent = ({ name, label, helpText }: ComponentProps) => {
                 aria-label={t("common:value")}
                 defaultValue={attribute.value}
                 data-testid={`${fieldName}.${index}.value`}
-                onChange={(value) => updateValue(index, value)}
+                onChange={(_event, value) => updateValue(index, value)}
                 onBlur={() => update()}
               />
             </FlexItem>

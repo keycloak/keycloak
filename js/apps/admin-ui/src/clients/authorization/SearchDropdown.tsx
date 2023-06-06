@@ -1,15 +1,12 @@
 import type PolicyProviderRepresentation from "@keycloak/keycloak-admin-client/lib/defs/policyProviderRepresentation";
+import { ActionGroup, Button, Form, FormGroup } from "@patternfly/react-core";
 import {
-  ActionGroup,
-  Button,
   Dropdown,
   DropdownToggle,
-  Form,
-  FormGroup,
   Select,
   SelectOption,
   SelectVariant,
-} from "@patternfly/react-core";
+} from "@patternfly/react-core/deprecated";
 import { useEffect } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";

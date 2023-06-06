@@ -4,7 +4,11 @@ import type {
   Clients,
   PolicyQuery,
 } from "@keycloak/keycloak-admin-client/lib/resources/clients";
-import { Select, SelectOption, SelectVariant } from "@patternfly/react-core";
+import {
+  Select,
+  SelectOption,
+  SelectVariant,
+} from "@patternfly/react-core/deprecated";
 import { useState } from "react";
 import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -125,7 +129,8 @@ export const ResourcesPolicySelect = ({
         <Select
           toggleId={name}
           variant={variant}
-          onToggle={setOpen}
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          onToggle={(_event) => setOpen}
           onFilter={(_, filter) => {
             setSearch(filter);
             return toSelectOptions();

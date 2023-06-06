@@ -87,5 +87,5 @@ export const CheckableTreeView = ({
   };
 
   const mapped = state.options.map((item) => mapTree(item));
-  return <TreeView data={mapped} onCheck={onCheck} hasChecks />;
+  return <TreeView data={mapped} onCheck={onCheck} hasCheckboxes />;
 };

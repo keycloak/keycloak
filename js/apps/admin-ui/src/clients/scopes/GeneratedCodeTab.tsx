@@ -4,7 +4,7 @@ import {
   CodeBlockAction,
   EmptyState,
   EmptyStateBody,
-  Title,
+  EmptyStateHeader,
 } from "@patternfly/react-core";
 
 import type UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
@@ -36,10 +36,8 @@ export const GeneratedCodeTab = ({
       <KeycloakTextArea id={`text-area-${label}`} rows={20} value={text} />
     </CodeBlock>
   ) : (
-    <EmptyState variant="large" id={label}>
-      <Title headingLevel="h2" size="lg">
-        {t(`${label}No`)}
-      </Title>
+    <EmptyState variant="lg" id={label}>
+      <EmptyStateHeader titleText={<>{t(`${label}No`)}</>} headingLevel="h2" />
       <EmptyStateBody>{t(`${label}IsDisabled`)}</EmptyStateBody>
     </EmptyState>
   );

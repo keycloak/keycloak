@@ -3,10 +3,11 @@ import { useTranslation } from "react-i18next";
 import {
   EmptyState,
   EmptyStateIcon,
-  Title,
   EmptyStateBody,
   Button,
   Tooltip,
+  EmptyStateHeader,
+  EmptyStateFooter,
 } from "@patternfly/react-core";
 import { PlusCircleIcon } from "@patternfly/react-icons";
 
@@ -81,23 +82,26 @@ export const EmptyPermissionsState = ({
 }: EmptyPermissionsStateProps) => {
   const { t } = useTranslation("clients");
   return (
-    <EmptyState data-testid="empty-state" variant="large">
-      <EmptyStateIcon icon={PlusCircleIcon} />
-      <Title headingLevel="h1" size="lg">
-        {t("emptyPermissions")}
-      </Title>
+    <EmptyState data-testid="empty-state" variant="lg">
+      <EmptyStateHeader
+        titleText={<>{t("emptyPermissions")}</>}
+        icon={<EmptyStateIcon icon={PlusCircleIcon} />}
+        headingLevel="h1"
+      />
       <EmptyStateBody>{t("emptyPermissionInstructions")}</EmptyStateBody>
-      <TooltipEmptyButton
-        permissionType="resource"
-        disabled={isResourceEnabled}
-        clientId={clientId}
-      />
-      <br />
-      <TooltipEmptyButton
-        permissionType="scope"
-        disabled={isScopeEnabled}
-        clientId={clientId}
-      />
+      <EmptyStateFooter>
+        <TooltipEmptyButton
+          permissionType="resource"
+          disabled={isResourceEnabled}
+          clientId={clientId}
+        />
+        <br />
+        <TooltipEmptyButton
+          permissionType="scope"
+          disabled={isScopeEnabled}
+          clientId={clientId}
+        />
+      </EmptyStateFooter>
     </EmptyState>
   );
 };

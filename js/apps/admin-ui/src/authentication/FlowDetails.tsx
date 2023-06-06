@@ -1,12 +1,11 @@
-import AuthenticationExecutionInfoRepresentation from "@keycloak/keycloak-admin-client/lib/defs/authenticationExecutionInfoRepresentation";
-import AuthenticationFlowRepresentation from "@keycloak/keycloak-admin-client/lib/defs/authenticationFlowRepresentation";
+// import type AuthenticationExecutionInfoRepresentation from "@keycloak/keycloak-admin-client/lib/defs/authenticationExecutionInfoRepresentation";
+import type AuthenticationFlowRepresentation from "@keycloak/keycloak-admin-client/lib/defs/authenticationFlowRepresentation";
 import type { AuthenticationProviderRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/authenticatorConfigRepresentation";
 import {
   AlertVariant,
   Button,
   ButtonVariant,
   DataList,
-  DropdownItem,
   Label,
   PageSection,
   ToggleGroup,
@@ -15,7 +14,11 @@ import {
   ToolbarContent,
   ToolbarItem,
 } from "@patternfly/react-core";
-import { DomainIcon, TableIcon } from "@patternfly/react-icons";
+import { DropdownItem } from "@patternfly/react-core/deprecated";
+import {
+  DomainIcon,
+  TableIcon,
+} from "@patternfly/react-icons";
 import { useState } from "react";
 import { Trans, useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router-dom";
@@ -40,8 +43,8 @@ import { AddSubFlowModal, Flow } from "./components/modals/AddSubFlowModal";
 import {
   ExecutionList,
   ExpandableExecution,
-  IndexChange,
-  LevelChange,
+  // IndexChange,
+  // LevelChange,
 } from "./execution-model";
 import { toAuthentication } from "./routes/Authentication";
 import type { FlowParams } from "./routes/Flow";
@@ -62,9 +65,9 @@ export default function FlowDetails() {
   const [tableView, setTableView] = useState(true);
   const [flow, setFlow] = useState<AuthenticationFlowRepresentation>();
   const [executionList, setExecutionList] = useState<ExecutionList>();
-  const [dragged, setDragged] =
-    useState<AuthenticationExecutionInfoRepresentation>();
-  const [liveText, setLiveText] = useState("");
+  // const [dragged, setDragged] =
+  //   useState<AuthenticationExecutionInfoRepresentation>();
+  const [liveText] = useState("");
 
   const [showAddExecutionDialog, setShowAddExecutionDialog] =
     useState<boolean>();
@@ -96,39 +99,39 @@ export default function FlowDetails() {
     [key]
   );
 
-  const executeChange = async (
-    ex: AuthenticationFlowRepresentation,
-    change: LevelChange | IndexChange
-  ) => {
-    try {
-      let id = ex.id!;
-      if ("parent" in change) {
-        await adminClient.authenticationManagement.delExecution({ id });
-        const result =
-          await adminClient.authenticationManagement.addExecutionToFlow({
-            flow: change.parent?.displayName! || flow?.alias!,
-            provider: ex.providerId!,
-          });
-        id = result.id!;
-      }
-      const times = change.newIndex - change.oldIndex;
-      for (let index = 0; index < Math.abs(times); index++) {
-        if (times > 0) {
-          await adminClient.authenticationManagement.lowerPriorityExecution({
-            id,
-          });
-        } else {
-          await adminClient.authenticationManagement.raisePriorityExecution({
-            id,
-          });
-        }
-      }
-      refresh();
-      addAlert(t("updateFlowSuccess"), AlertVariant.success);
-    } catch (error: any) {
-      addError("authentication:updateFlowError", error);
-    }
-  };
+  // const executeChange = async (
+  //   ex: AuthenticationFlowRepresentation,
+  //   change: LevelChange | IndexChange
+  // ) => {
+  //   try {
+  //     let id = ex.id!;
+  //     if ("parent" in change) {
+  //       await adminClient.authenticationManagement.delExecution({ id });
+  //       const result =
+  //         await adminClient.authenticationManagement.addExecutionToFlow({
+  //           flow: change.parent?.displayName! || flow?.alias!,
+  //           provider: ex.providerId!,
+  //         });
+  //       id = result.id!;
+  //     }
+  //     const times = change.newIndex - change.oldIndex;
+  //     for (let index = 0; index < Math.abs(times); index++) {
+  //       if (times > 0) {
+  //         await adminClient.authenticationManagement.lowerPriorityExecution({
+  //           id,
+  //         });
+  //       } else {
+  //         await adminClient.authenticationManagement.raisePriorityExecution({
+  //           id,
+  //         });
+  //       }
+  //     }
+  //     refresh();
+  //     addAlert(t("updateFlowSuccess"), AlertVariant.success);
+  //   } catch (error: any) {
+  //     addError("authentication:updateFlowError", error);
+  //   }
+  // };
 
   const update = async (execution: ExpandableExecution) => {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -354,41 +357,7 @@ export default function FlowDetails() {
             </Toolbar>
             <DeleteConfirm />
             {tableView && (
-              <DataList
-                aria-label={t("flows")}
-                onDragFinish={(order) => {
-                  const withoutHeaderId = order.slice(1);
-                  setLiveText(
-                    t("common:onDragFinish", { list: dragged?.displayName })
-                  );
-                  const change = executionList.getChange(
-                    dragged!,
-                    withoutHeaderId
-                  );
-                  executeChange(dragged!, change);
-                }}
-                onDragStart={(id) => {
-                  const item = executionList.findExecution(id)!;
-                  setLiveText(
-                    t("common:onDragStart", { item: item.displayName })
-                  );
-                  setDragged(item);
-                  if (!item.isCollapsed) {
-                    item.isCollapsed = true;
-                    setExecutionList(executionList.clone());
-                  }
-                }}
-                onDragMove={() =>
-                  setLiveText(
-                    t("common:onDragMove", { item: dragged?.displayName })
-                  )
-                }
-                onDragCancel={() => setLiveText(t("common:onDragCancel"))}
-                itemOrder={[
-                  "header",
-                  ...executionList.order().map((ex) => ex.id!),
-                ]}
-              >
+              <DataList aria-label={t("flows")}>
                 <FlowHeader />
                 <>
                   {executionList.expandableList.map((execution) => (

@@ -99,7 +99,10 @@ const AuthorizationEvaluateContent = ({ client }: Props) => {
     register,
     reset,
     trigger,
-    formState: { isValid, errors },
+    formState: {
+      isValid,
+      // errors
+    },
   } = form;
   const { t } = useTranslation("clients");
   const { addError } = useAlerts();

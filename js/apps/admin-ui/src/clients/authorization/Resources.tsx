@@ -9,7 +9,7 @@ import {
 } from "@patternfly/react-core";
 import {
   ExpandableRowContent,
-  TableComposable,
+  Table /* data-codemods */,
   Tbody,
   Td,
   Th,
@@ -182,7 +182,7 @@ export const AuthorizationResources = ({ clientId }: ResourcesProps) => {
           }
         >
           {!noData && (
-            <TableComposable aria-label={t("resources")} variant="compact">
+            <Table aria-label={t("resources")} variant="compact">
               <Thead>
                 <Tr>
                   <Th />
@@ -286,7 +286,7 @@ export const AuthorizationResources = ({ clientId }: ResourcesProps) => {
                   </Tr>
                 </Tbody>
               ))}
-            </TableComposable>
+            </Table>
           )}
         </PaginatingTableToolbar>
       )}

@@ -1,12 +1,11 @@
 import type IdentityProviderMapperRepresentation from "@keycloak/keycloak-admin-client/lib/defs/identityProviderMapperRepresentation";
 import type { IdentityProviderMapperTypeRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/identityProviderMapperTypeRepresentation";
+import { FormGroup, ValidatedOptions } from "@patternfly/react-core";
 import {
-  FormGroup,
   Select,
   SelectOption,
   SelectVariant,
-  ValidatedOptions,
-} from "@patternfly/react-core";
+} from "@patternfly/react-core/deprecated";
 import { useState } from "react";
 import { Controller, UseFormReturn } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -57,10 +56,11 @@ export const AddMapperForm = ({
         }
         fieldId="kc-name"
         isRequired
-        validated={
-          errors.name ? ValidatedOptions.error : ValidatedOptions.default
-        }
-        helperTextInvalid={t("common:required")}
+        // TODO: Use FormHelperText, HelperText, and HelperTextItem directly inside children. helperText, helperTextInvalid and validated props have been removed.
+        // validated={
+        //   errors.name ? ValidatedOptions.error : ValidatedOptions.default
+        // }
+        // helperTextInvalid={t("common:required")}
       >
         <KeycloakTextInput
           id="kc-name"

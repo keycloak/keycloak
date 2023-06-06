@@ -1,10 +1,10 @@
 import type ScopeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/scopeRepresentation";
+import { FormGroup } from "@patternfly/react-core";
 import {
-  FormGroup,
   Select,
   SelectOption,
   SelectVariant,
-} from "@patternfly/react-core";
+} from "@patternfly/react-core/deprecated";
 import { useState } from "react";
 import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -72,7 +72,8 @@ export const ScopePicker = ({ clientId }: { clientId: string }) => {
               expandedText: t("common:hide"),
               collapsedText: t("common:showRemaining"),
             }}
-            onToggle={setOpen}
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            onToggle={(_event) => setOpen}
             isOpen={open}
             selections={field.value.map((o: Scope) => o.name)}
             onFilter={(_, value) => {

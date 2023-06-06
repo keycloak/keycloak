@@ -1,12 +1,10 @@
 import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
+import { Button, ButtonVariant, ToolbarItem } from "@patternfly/react-core";
 import {
-  Button,
-  ButtonVariant,
   Dropdown,
   DropdownItem,
   KebabToggle,
-  ToolbarItem,
-} from "@patternfly/react-core";
+} from "@patternfly/react-core/deprecated";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useAccess } from "../../context/access/Access";
@@ -51,7 +49,7 @@ export function UserDataTableToolbarItems({
   ) : (
     <ToolbarItem>
       <Dropdown
-        toggle={<KebabToggle onToggle={(open) => setKebabOpen(open)} />}
+        toggle={<KebabToggle onToggle={(_event, open) => setKebabOpen(open)} />}
         isOpen={kebabOpen}
         isPlain
         dropdownItems={[

@@ -11,20 +11,22 @@ import {
   DescriptionListDescription,
   DescriptionListGroup,
   DescriptionListTerm,
-  Dropdown,
-  DropdownToggle,
   Flex,
   FlexItem,
   Form,
   FormGroup,
   PageSection,
-  Select,
-  SelectOption,
-  SelectVariant,
   Tab,
   TabTitleText,
   Tooltip,
 } from "@patternfly/react-core";
+import {
+  Dropdown,
+  DropdownToggle,
+  Select,
+  SelectOption,
+  SelectVariant,
+} from "@patternfly/react-core/deprecated";
 import { CheckCircleIcon, WarningTriangleIcon } from "@patternfly/react-icons";
 import { cellWidth, expandable } from "@patternfly/react-table";
 import { pickBy } from "lodash-es";
@@ -239,7 +241,7 @@ export default function EventsSection() {
             toggle={
               <DropdownToggle
                 data-testid="userEventsSearchSelectorToggle"
-                onToggle={(isOpen) => setSearchDropdownOpen(isOpen)}
+                onToggle={(_event, isOpen) => setSearchDropdownOpen(isOpen)}
                 className="keycloak__events_search_selector_dropdown__toggle"
               >
                 {t("searchForUserEvent")}
@@ -284,7 +286,7 @@ export default function EventsSection() {
                       }}
                       variant={SelectVariant.typeaheadMulti}
                       typeAheadAriaLabel="Select"
-                      onToggle={(isOpen) => setSelectOpen(isOpen)}
+                      onToggle={(_event, isOpen) => setSelectOpen(isOpen)}
                       selections={field.value}
                       onSelect={(_, selectedValue) => {
                         const option = selectedValue.toString() as EventType;

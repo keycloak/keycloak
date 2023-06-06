@@ -10,12 +10,14 @@ import {
   NumberInput,
   PageSection,
   Radio,
-  Select,
-  SelectOption,
-  SelectVariant,
   Switch,
   ValidatedOptions,
 } from "@patternfly/react-core";
+import {
+  Select,
+  SelectOption,
+  SelectVariant,
+} from "@patternfly/react-core/deprecated";
 import { useEffect, useMemo } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -243,12 +245,13 @@ export const OtpPolicy = ({ realm, realmUpdated }: OtpPolicyProps) => {
           <FormGroup
             label={t("otpPolicyPeriod")}
             fieldId="otpPolicyPeriod"
-            helperTextInvalid={t("otpPolicyPeriodErrorHint")}
-            validated={
-              errors.otpPolicyPeriod
-                ? ValidatedOptions.error
-                : ValidatedOptions.default
-            }
+            // TODO: Use FormHelperText, HelperText, and HelperTextItem directly inside children. helperText, // helperTextInvalid and validated props have been removed.
+            // helperTextInvalid={t("otpPolicyPeriodErrorHint")}
+            // validated={
+            //   errors.otpPolicyPeriod
+            //     ? ValidatedOptions.error
+            //     : ValidatedOptions.default
+            // }
             labelIcon={
               <HelpItem
                 helpText={t("authentication-help:otpPolicyPeriod")}
@@ -286,12 +289,13 @@ export const OtpPolicy = ({ realm, realmUpdated }: OtpPolicyProps) => {
           <FormGroup
             label={t("initialCounter")}
             fieldId="initialCounter"
-            helperTextInvalid={t("initialCounterErrorHint")}
-            validated={
-              errors.otpPolicyInitialCounter
-                ? ValidatedOptions.error
-                : ValidatedOptions.default
-            }
+            // TODO: Use FormHelperText, HelperText, and HelperTextItem directly inside children. helperText, // helperTextInvalid and validated props have been removed.
+            // helperTextInvalid={t("initialCounterErrorHint")}
+            // validated={
+            //   errors.otpPolicyInitialCounter
+            //     ? ValidatedOptions.error
+            //     : ValidatedOptions.default
+            // }
             labelIcon={
               <HelpItem
                 helpText={t("authentication-help:initialCounter")}

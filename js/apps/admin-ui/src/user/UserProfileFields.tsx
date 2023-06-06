@@ -1,11 +1,6 @@
 import type { UserProfileAttribute } from "@keycloak/keycloak-admin-client/lib/defs/userProfileConfig";
-import {
-  Form,
-  FormGroup,
-  Select,
-  SelectOption,
-  Text,
-} from "@patternfly/react-core";
+import { Form, FormGroup, Text } from "@patternfly/react-core";
+import { Select, SelectOption } from "@patternfly/react-core/deprecated";
 import { Fragment } from "react";
 import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -74,7 +69,7 @@ type FormFieldProps = {
 const FormField = ({ attribute, roles }: FormFieldProps) => {
   const { t } = useTranslation("users");
   const {
-    formState: { errors },
+    // formState: { errors },
     register,
     control,
   } = useFormContext();
@@ -106,8 +101,9 @@ const FormField = ({ attribute, roles }: FormFieldProps) => {
       }
       fieldId={attribute.name}
       isRequired={isRequired(attribute)}
-      validated={errors.username ? "error" : "default"}
-      helperTextInvalid={t("common:required")}
+      // TODO: Use FormHelperText, HelperText, and HelperTextItem directly inside children. // helperTextInvalid and validated props have been removed.
+      // validated={errors.username ? "error" : "default"}
+      // helperTextInvalid={t("common:required")}
     >
       {isSelect(attribute) ? (
         <Controller

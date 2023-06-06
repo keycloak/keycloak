@@ -86,7 +86,7 @@ export const DiscoveryEndpointField = ({
           label={t("common:on")}
           labelOff={t("common:off")}
           isChecked={discovery}
-          onChange={(checked) => {
+          onChange={(_event, checked) => {
             clearErrors("discoveryError");
             setDiscovery(checked);
           }}
@@ -109,20 +109,22 @@ export const DiscoveryEndpointField = ({
               fieldLabelId="identity-providers:discoveryEndpoint"
             />
           }
-          validated={
-            errors.discoveryError || errors.discoveryEndpoint
-              ? "error"
-              : !discoveryResult
-              ? "default"
-              : "success"
-          }
-          helperTextInvalid={
-            errors.discoveryEndpoint
-              ? t("common:required")
-              : t("noValidMetaDataFound", {
-                  error: errors.discoveryError?.message,
-                })
-          }
+          // TODO: Use FormHelperText, HelperText, and HelperTextItem directly inside children. helperText, // helperTextInvalid and validated props have been removed.
+
+          // validated={
+          //   errors.discoveryError || errors.discoveryEndpoint
+          //     ? "error"
+          //     : !discoveryResult
+          //     ? "default"
+          //     : "success"
+          // }
+          // helperTextInvalid={
+          //   errors.discoveryEndpoint
+          //     ? t("common:required")
+          //     : t("noValidMetaDataFound", {
+          //         error: errors.discoveryError?.message,
+          //       })
+          // }
           isRequired
         >
           <KeycloakTextInput
@@ -141,7 +143,7 @@ export const DiscoveryEndpointField = ({
                 ? "default"
                 : "success"
             }
-            customIconUrl={
+            customIcon={
               discovering
                 ? environment.resourceUrl + "/discovery-load-indicator.svg"
                 : ""

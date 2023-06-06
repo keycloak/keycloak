@@ -1,11 +1,11 @@
 import { useTranslation } from "react-i18next";
 import { Modal, ModalVariant } from "@patternfly/react-core";
+import { TableVariant } from "@patternfly/react-table";
 import {
   Table,
   TableBody,
   TableHeader,
-  TableVariant,
-} from "@patternfly/react-table";
+} from "@patternfly/react-table/deprecated";
 
 type CredentialDataDialogProps = {
   credentialData: [string, string][];

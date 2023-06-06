@@ -15,7 +15,8 @@ export const KeycloakTextInput = forwardRef<
   HTMLInputElement,
   KeycloakTextInputProps
 >(({ onChange, ...props }, ref) => {
-  const onChangeForward: TextInputProps["onChange"] = (_, event) =>
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const onChangeForward: TextInputProps["onChange"] = (event, _) =>
     onChange?.(event);
 
   return <TextInput {...props} ref={ref} onChange={onChangeForward} />;

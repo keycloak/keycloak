@@ -248,7 +248,7 @@ export function UserDataTable() {
                   />
                 </ToolbarContent>
               </Toolbar>
-              <EmptyState data-testid="empty-state" variant="large">
+              <EmptyState data-testid="empty-state" variant="lg">
                 <TextContent className="kc-search-users-text">
                   <Text>{t("searchForUserDescription")}</Text>
                 </TextContent>

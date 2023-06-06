@@ -5,11 +5,11 @@ import {
   AlertVariant,
   Button,
   ButtonVariant,
-  DropdownItem,
   FormGroup,
   PageSection,
   ValidatedOptions,
 } from "@patternfly/react-core";
+import { DropdownItem } from "@patternfly/react-core/deprecated";
 import { useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -210,7 +210,7 @@ export default function MappingDetails() {
               type="text"
               id="mapperType"
               name="mapperType"
-              isReadOnly
+              readOnlyVariant="default"
               value={mapping?.name}
             />
           </FormGroup>
@@ -224,14 +224,15 @@ export default function MappingDetails() {
             }
             fieldId="name"
             isRequired
-            validated={
-              errors.name ? ValidatedOptions.error : ValidatedOptions.default
-            }
-            helperTextInvalid={t("common:required")}
+            // TODO: Use FormHelperText, HelperText, and HelperTextItem directly inside children. helperText, helperTextInvalid and validated props have been removed.
+            // validated={
+            //   errors.name ? ValidatedOptions.error : ValidatedOptions.default
+            // }
+            // helperTextInvalid={t("common:required")}
           >
             <KeycloakTextInput
               id="name"
-              isReadOnly={isUpdating}
+              readOnlyVariant={isUpdating ? "default" : undefined}
               validated={
                 errors.name ? ValidatedOptions.error : ValidatedOptions.default
               }

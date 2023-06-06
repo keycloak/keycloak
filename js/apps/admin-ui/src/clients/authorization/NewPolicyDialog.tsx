@@ -7,7 +7,7 @@ import {
   TextVariants,
 } from "@patternfly/react-core";
 import {
-  TableComposable,
+  Table /* data-codemods */,
   Tbody,
   Td,
   Th,
@@ -53,7 +53,7 @@ export const NewPolicyDialog = ({
       isOpen
       onClose={toggleDialog}
     >
-      <TableComposable aria-label={t("policies")} variant="compact">
+      <Table aria-label={t("policies")} variant="compact">
         <Thead>
           <Tr>
             <Th>{t("common:name")}</Th>
@@ -66,7 +66,7 @@ export const NewPolicyDialog = ({
               key={provider.type}
               data-testid={provider.type}
               onRowClick={() => onSelect(provider)}
-              isHoverable
+              isClickable
             >
               <Td>{provider.name}</Td>
               <Td>
@@ -76,7 +76,7 @@ export const NewPolicyDialog = ({
             </Tr>
           ))}
         </Tbody>
-      </TableComposable>
+      </Table>
     </Modal>
   );
 };

@@ -134,10 +134,11 @@ export const ExecutionConfigModal = ({
             <FormGroup
               label={t("alias")}
               fieldId="alias"
-              helperTextInvalid={t("common:required")}
-              validated={
-                errors.alias ? ValidatedOptions.error : ValidatedOptions.default
-              }
+              // TODO: Use FormHelperText, HelperText, and HelperTextItem directly inside children. helperText, // helperTextInvalid and validated props have been removed.
+              // helperTextInvalid={t("common:required")}
+              // validated={
+              //   errors.alias ? ValidatedOptions.error : ValidatedOptions.default
+              // }
               isRequired
               labelIcon={
                 <HelpItem
@@ -147,7 +148,7 @@ export const ExecutionConfigModal = ({
               }
             >
               <KeycloakTextInput
-                isReadOnly={!!config}
+                readOnlyVariant={config ? "default" : undefined}
                 id="alias"
                 data-testid="alias"
                 validated={

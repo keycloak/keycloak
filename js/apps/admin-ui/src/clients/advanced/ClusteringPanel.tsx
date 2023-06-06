@@ -131,7 +131,8 @@ export const ClusteringPanel = ({
         />
         <ExpandableSection
           toggleText={t("registeredClusterNodes")}
-          onToggle={setExpanded}
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          onToggle={(_event) => setExpanded}
           isExpanded={expanded}
         >
           <KeycloakDataTable

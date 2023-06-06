@@ -5,7 +5,7 @@ import {
   Form,
   FormGroup,
   Switch,
-  ValidatedOptions,
+  // ValidatedOptions,
 } from "@patternfly/react-core";
 import { Controller, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -49,7 +49,10 @@ export const ResetPasswordDialog = ({
   const {
     register,
     control,
-    formState: { isValid, errors },
+    formState: {
+      isValid,
+      // errors
+    },
     watch,
     handleSubmit,
     clearErrors,
@@ -150,12 +153,13 @@ export const ResetPasswordDialog = ({
             name="password"
             label={t("password")}
             fieldId="password"
-            helperTextInvalid={t("common:required")}
-            validated={
-              errors.password
-                ? ValidatedOptions.error
-                : ValidatedOptions.default
-            }
+            // TODO: Use FormHelperText, HelperText, and HelperTextItem directly inside children. helperText, // helperTextInvalid and validated props have been removed.
+            // helperTextInvalid={t("common:required")}
+            // validated={
+            //   errors.password
+            //     ? ValidatedOptions.error
+            //     : ValidatedOptions.default
+            // }
             isRequired
           >
             <PasswordInput
@@ -182,12 +186,13 @@ export const ResetPasswordDialog = ({
                 : t("passwordConfirmation")
             }
             fieldId="passwordConfirmation"
-            helperTextInvalid={errors.passwordConfirmation?.message}
-            validated={
-              errors.passwordConfirmation
-                ? ValidatedOptions.error
-                : ValidatedOptions.default
-            }
+            // TODO: Use FormHelperText, HelperText, and HelperTextItem directly inside children. helperText, // helperTextInvalid and validated props have been removed.
+            // helperTextInvalid={errors.passwordConfirmation?.message}
+            // validated={
+            //   errors.passwordConfirmation
+            //     ? ValidatedOptions.error
+            //     : ValidatedOptions.default
+            // }
             isRequired
           >
             <PasswordInput

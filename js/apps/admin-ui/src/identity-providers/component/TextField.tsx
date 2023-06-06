@@ -10,7 +10,7 @@ export const TextField = ({ label, field, isReadOnly = false }: FieldProps) => {
       <KeycloakTextInput
         id={label}
         data-testid={label}
-        isReadOnly={isReadOnly}
+        readOnlyVariant={isReadOnly ? "default" : undefined}
         {...register(field)}
       />
     </FormGroupField>

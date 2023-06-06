@@ -15,7 +15,8 @@ export const KeycloakTextArea = forwardRef<
   HTMLTextAreaElement,
   KeycloakTextAreaProps
 >(({ onChange, ...props }, ref) => {
-  const onChangeForward: TextAreaProps["onChange"] = (_, event) =>
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const onChangeForward: TextAreaProps["onChange"] = (event, _) =>
     onChange?.(event);
 
   return <TextArea {...props} ref={ref} onChange={onChangeForward} />;

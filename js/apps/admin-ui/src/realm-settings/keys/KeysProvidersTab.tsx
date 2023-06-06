@@ -11,6 +11,7 @@ import {
   Toolbar,
   ToolbarGroup,
   ToolbarItem,
+  InputGroupItem,
 } from "@patternfly/react-core";
 import { SearchIcon } from "@patternfly/react-icons";
 import { KeyboardEvent, useMemo, useState } from "react";
@@ -130,7 +131,7 @@ export const KeysProvidersTab = ({
     }
   };
 
-  const handleInputChange = (value: string) => {
+  const handleInputChange = (_event: React.KeyboardEvent, value: string) => {
     setSearchVal(value);
   };
 
@@ -161,23 +162,28 @@ export const KeysProvidersTab = ({
           <ToolbarGroup className="providers-toolbar">
             <ToolbarItem>
               <InputGroup>
-                <TextInput
-                  name={"inputGroupName"}
-                  id={"inputGroupName"}
-                  data-testid="provider-search-input"
-                  type="search"
-                  aria-label={t("common:search")}
-                  placeholder={t("common:search")}
-                  onChange={handleInputChange}
-                  onKeyDown={handleKeyDown}
-                />
-                <Button
-                  variant={ButtonVariant.control}
-                  aria-label={t("common:search")}
-                  onClick={onSearch}
-                >
-                  <SearchIcon />
-                </Button>
+                <InputGroupItem isFill>
+                  <TextInput
+                    name={"inputGroupName"}
+                    id={"inputGroupName"}
+                    data-testid="provider-search-input"
+                    type="search"
+                    aria-label={t("common:search")}
+                    placeholder={t("common:search")}
+                    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                    onChange={(_event) => handleInputChange}
+                    onKeyDown={handleKeyDown}
+                  />
+                </InputGroupItem>
+                <InputGroupItem>
+                  <Button
+                    variant={ButtonVariant.control}
+                    aria-label={t("common:search")}
+                    onClick={onSearch}
+                  >
+                    <SearchIcon />
+                  </Button>
+                </InputGroupItem>
               </InputGroup>
             </ToolbarItem>
             <ToolbarItem>
