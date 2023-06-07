@@ -79,12 +79,13 @@ public class GroupsResource {
                                                  @QueryParam("exact") @DefaultValue("false") Boolean exact,
                                                  @QueryParam("first") Integer firstResult,
                                                  @QueryParam("max") Integer maxResults,
-                                                 @QueryParam("briefRepresentation") @DefaultValue("true") boolean briefRepresentation) {
+                                                 @QueryParam("briefRepresentation") @DefaultValue("true") boolean briefRepresentation,
+                                                 @QueryParam("populateHierarchy") @DefaultValue("true") boolean populateHierarchy) {
         auth.groups().requireList();
 
         if (Objects.nonNull(searchQuery)) {
             Map<String, String> attributes = SearchQueryUtils.getFields(searchQuery);
-            return ModelToRepresentation.searchGroupsByAttributes(session, realm, !briefRepresentation, attributes, firstResult, maxResults);
+            return ModelToRepresentation.searchGroupsByAttributes(session, realm, !briefRepresentation, populateHierarchy, attributes, firstResult, maxResults);
         } else if (Objects.nonNull(search)) {
             return ModelToRepresentation.searchForGroupByName(session, realm, !briefRepresentation, search.trim(), exact, firstResult, maxResults);
         } else if(Objects.nonNull(firstResult) && Objects.nonNull(maxResults)) {

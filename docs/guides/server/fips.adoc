@@ -35,7 +35,19 @@ BouncyCastle FIPS can be downloaded from the https://www.bouncycastle.org/fips-j
 
 You can create either `pkcs12` or `bcfks` keystore to be used for the Keycloak server SSL. The `pkcs12` works well in BCFIPS non-approved mode.
 
-PKCS12 keystore can be generated with OpenJDK 17 Java on RHEL 9 in the standard way.
+PKCS12 keystore can be generated with OpenJDK 17 Java on RHEL 9 in the standard way. Make sure that the system is in FIPS mode, you can check it with the following command:
+
+```bash
+fips-mode-setup --check
+```
+
+If the system is not in FIPS mode, you can enable it with the following command:
+
+```bash
+fips-mode-setup --enable
+```
+
+The command changes the default `java.security` file in order to use FIPS enabled security providers, so no additional configuration is needed. Additionally, in PKCS12 keystore you can store PBE (password-based encryption) keys simply via the keytool command, which makes it ideal for using it with Keycloak KeyStore Vault and/or to store configuration properties in the KeyStore Config Source. For more details, see the https://www.keycloak.org/server/configuration[Configuration Guide] and the https://www.keycloak.org/server/vault[Vault Guide].
 
 BCFKS keystore generation requires the use of the BouncyCastle FIPS libraries and a custom security file.
 
@@ -45,7 +57,7 @@ securerandom.strongAlgorithms=PKCS11:SunPKCS11-NSS-FIPS
 ```
 
 Next enter a command such as the following to generate the keystore:
-```
+```bash
 keytool -keystore $KEYCLOAK_HOME/conf/server.keystore \
   -storetype bcfks \
   -providername BCFIPS \

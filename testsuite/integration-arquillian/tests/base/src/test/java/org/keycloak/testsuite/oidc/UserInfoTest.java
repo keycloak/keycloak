@@ -207,6 +207,28 @@ public class UserInfoTest extends AbstractKeycloakTest {
             client.close();
         }
     }
+    
+    @Test
+    public void testSuccess_postMethod_charset_body() throws Exception {
+        Client client = AdminClientUtil.createResteasyClient();
+
+        try {
+            AccessTokenResponse accessTokenResponse = executeGrantAccessTokenRequest(client);
+
+            Form form = new Form();
+            form.param("access_token", accessTokenResponse.getToken());
+
+            WebTarget userInfoTarget = UserInfoClientUtil.getUserInfoWebTarget(client);
+            Response response = userInfoTarget.request()
+                    .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_FORM_URLENCODED_TYPE.withCharset("utf-8"))
+                    .post(Entity.form(form));
+
+            testSuccessfulUserInfoResponse(response);
+
+        } finally {
+            client.close();
+        }
+    }
 
 
     // KEYCLOAK-8838
