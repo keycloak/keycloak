@@ -20,13 +20,12 @@ package org.keycloak.quarkus.runtime.storage.legacy.infinispan;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
 import io.micrometer.core.instrument.Metrics;
+import org.infinispan.commons.marshall.ProtoStreamMarshaller;
 import org.infinispan.configuration.parsing.ConfigurationBuilderHolder;
 import org.infinispan.configuration.parsing.ParserRegistry;
-import org.infinispan.jboss.marshalling.core.JBossUserMarshaller;
 import org.infinispan.manager.DefaultCacheManager;
 import org.infinispan.metrics.config.MicrometerMeterRegisterConfigurationBuilder;
 import org.jboss.logging.Logger;
@@ -68,12 +67,7 @@ public class CacheManagerFactory {
     }
 
     private ExecutorService createThreadPool() {
-        return Executors.newSingleThreadExecutor(new ThreadFactory() {
-            @Override
-            public Thread newThread(Runnable r) {
-                return new Thread(r, "keycloak-cache-init");
-            }
-        });
+        return Executors.newSingleThreadExecutor(r -> new Thread(r, "keycloak-cache-init"));
     }
 
     private DefaultCacheManager startCacheManager() {
@@ -88,10 +82,7 @@ public class CacheManagerFactory {
             builder.getGlobalConfigurationBuilder().module(MicrometerMeterRegisterConfigurationBuilder.class).meterRegistry(Metrics.globalRegistry);
         }
 
-        // For Infinispan 10, we go with the JBoss marshalling.
-        // TODO: This should be replaced later with the marshalling recommended by infinispan. Probably protostream.
-        // See https://infinispan.org/docs/stable/titles/developing/developing.html#marshalling for the details
-        builder.getGlobalConfigurationBuilder().serialization().marshaller(new JBossUserMarshaller());
+        builder.getGlobalConfigurationBuilder().serialization().marshaller(new ProtoStreamMarshaller());
 
         return new DefaultCacheManager(builder, isStartEagerly());
     }

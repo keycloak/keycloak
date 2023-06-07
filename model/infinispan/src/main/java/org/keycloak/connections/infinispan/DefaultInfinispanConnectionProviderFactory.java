@@ -19,13 +19,13 @@ package org.keycloak.connections.infinispan;
 
 import org.infinispan.client.hotrod.ProtocolVersion;
 import org.infinispan.commons.dataconversion.MediaType;
+import org.infinispan.commons.marshall.ProtoStreamMarshaller;
 import org.infinispan.configuration.cache.CacheMode;
 import org.infinispan.configuration.cache.Configuration;
 import org.infinispan.configuration.cache.ConfigurationBuilder;
 import org.infinispan.configuration.global.GlobalConfigurationBuilder;
 import org.infinispan.eviction.EvictionStrategy;
 import org.infinispan.eviction.EvictionType;
-import org.infinispan.jboss.marshalling.core.JBossUserMarshaller;
 import org.infinispan.manager.DefaultCacheManager;
 import org.infinispan.manager.EmbeddedCacheManager;
 import org.infinispan.persistence.remote.configuration.RemoteStoreConfigurationBuilder;
@@ -216,10 +216,7 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
             gcb.jmx().domain(InfinispanConnectionProvider.JMX_DOMAIN).enable();
         }
 
-        // For Infinispan 10, we go with the JBoss marshalling.
-        // TODO: This should be replaced later with the marshalling recommended by infinispan. Probably protostream.
-        // See https://infinispan.org/docs/stable/titles/developing/developing.html#marshalling for the details
-        gcb.serialization().marshaller(new JBossUserMarshaller());
+        gcb.serialization().marshaller(new ProtoStreamMarshaller());
 
         cacheManager = new DefaultCacheManager(gcb.build());
         if (useKeycloakTimeService) {
