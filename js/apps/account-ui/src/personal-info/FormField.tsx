@@ -1,4 +1,5 @@
-import { FormGroup, Select, SelectOption } from "@patternfly/react-core";
+import { FormGroup } from "@patternfly/react-core";
+import { Select, SelectOption } from "@patternfly/react-core/deprecated";
 import { TFuncKey } from "i18next";
 // import { get } from "lodash-es";
 import { useState } from "react";

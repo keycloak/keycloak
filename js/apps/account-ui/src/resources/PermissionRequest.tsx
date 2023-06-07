@@ -2,6 +2,7 @@ import {
   Badge,
   Button,
   Chip,
+  Icon,
   Modal,
   ModalVariant,
   Text,
@@ -9,7 +10,7 @@ import {
 import { UserCheckIcon } from "@patternfly/react-icons";
 
 import {
-  TableComposable,
+  Table /* data-codemods */,
   Tbody,
   Td,
   Th,
@@ -66,7 +67,9 @@ export const PermissionRequest = ({
   return (
     <>
       <Button variant="link" onClick={toggle}>
-        <UserCheckIcon size="lg" />
+        <Icon iconSize="lg">
+          <UserCheckIcon />
+        </Icon>
         <Badge>{resource.shareRequests.length}</Badge>
       </Button>
       <Modal
@@ -80,7 +83,7 @@ export const PermissionRequest = ({
           </Button>,
         ]}
       >
-        <TableComposable aria-label={t("resources")}>
+        <Table aria-label={t("resources")}>
           <Thead>
             <Tr>
               <Th>{t("requestor")}</Th>
@@ -125,7 +128,7 @@ export const PermissionRequest = ({
               </Tr>
             ))}
           </Tbody>
-        </TableComposable>
+        </Table>
       </Modal>
     </>
   );

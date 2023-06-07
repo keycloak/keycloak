@@ -221,7 +221,7 @@ export function UserDataTable() {
                         type="search"
                         aria-label={t("search")}
                         placeholder={t("users:searchForUser")}
-                        onChange={(value) => {
+                        onChange={(_e, value) => {
                           setSearchUser(value);
                         }}
                         onKeyDown={(e) => {

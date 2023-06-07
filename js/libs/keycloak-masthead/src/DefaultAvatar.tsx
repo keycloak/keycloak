@@ -10,12 +10,12 @@ type DefaultAvatarProps = {
 export const DefaultAvatar = ({
   className = "",
   border,
-  size = "md",
-}: DefaultAvatarProps) => (
+}: // size = "md",
+DefaultAvatarProps) => (
   <svg
     className={css(
       styles.avatar,
-      styles.modifiers[size],
+      // styles.modifiers[size],
       border === "light" && styles.modifiers.light,
       border === "dark" && styles.modifiers.dark,
       className

@@ -1,8 +1,4 @@
-lockfileVersion: '6.1'
-
-settings:
-  autoInstallPeers: true
-  excludeLinksFromLockfile: false
+lockfileVersion: '6.0'
 
 importers:
 
@@ -75,10 +71,10 @@ importers:
         specifier: ^5.0.0-alpha.127
         version: 5.0.0-alpha.127(react-dom@18.2.0)(react@18.2.0)
       '@patternfly/react-icons':
-        specifier: 5.0.0-alpha.20
+        specifier: ^5.0.0-alpha.20
         version: 5.0.0-alpha.20(react-dom@18.2.0)(react@18.2.0)
       '@patternfly/react-table':
-        specifier: 5.0.0-alpha.131
+        specifier: ^5.0.0-alpha.131
         version: 5.0.0-alpha.131(react-dom@18.2.0)(react@18.2.0)
       i18next:
         specifier: ^22.5.0
@@ -377,7 +373,7 @@ importers:
         version: 4.276.8(react-dom@18.2.0)(react@18.2.0)
       '@patternfly/react-styles':
         specifier: ^4.11.8
-        version: 4.92.6
+        version: 4.11.8
       keycloak-js:
         specifier: workspace:*
         version: link:../keycloak-js
@@ -966,18 +962,16 @@ packages:
       fastq: 1.15.0
     dev: true
 
-  /@octokit/auth-token@3.0.3:
-    resolution: {integrity: sha512-/aFM2M4HVDBT/jjDBa84sJniv1t9Gm/rLkalaz9htOm+L+8JMj1k9w0CkUdcxNyNxZPlTxKPVko+m1VlM58ZVA==}
+  /@octokit/auth-token@3.0.4:
+    resolution: {integrity: sha512-TWFX7cZF2LXoCvdmJWY7XVPi74aSY0+FfBZNSXEXFkMpjcqsQwDSYVv5FhRFaI0V1ECnwbz4j59T/G+rXNWaIQ==}
     engines: {node: '>= 14'}
-    dependencies:
-      '@octokit/types': 9.2.3
     dev: false
 
   /@octokit/core@4.2.1:
     resolution: {integrity: sha512-tEDxFx8E38zF3gT7sSMDrT1tGumDgsw5yPG6BBh/X+5ClIQfMH/Yqocxz1PnHx6CHyF6pxmovUTOfZAUvQ0Lvw==}
     engines: {node: '>= 14'}
     dependencies:
-      '@octokit/auth-token': 3.0.3
+      '@octokit/auth-token': 3.0.4
       '@octokit/graphql': 5.0.6
       '@octokit/request': 6.2.5
       '@octokit/request-error': 3.0.3
@@ -1133,12 +1127,12 @@ packages:
     dependencies:
       '@patternfly/react-icons': 5.0.0-alpha.20(react-dom@18.2.0)(react@18.2.0)
       '@patternfly/react-styles': 5.0.0-alpha.17
-      '@patternfly/react-tokens': 5.0.0-alpha.16
+      '@patternfly/react-tokens': 5.0.0-prerelease.2
       focus-trap: 7.4.3
       react: 18.2.0
       react-dom: 18.2.0(react@18.2.0)
       react-dropzone: 14.2.3(react@18.2.0)
-      tslib: 2.5.0
+      tslib: 2.5.3
     dev: false
 
   /@patternfly/react-icons@4.93.6(react-dom@18.2.0)(react@18.2.0):
@@ -1161,6 +1155,10 @@ packages:
       react-dom: 18.2.0(react@18.2.0)
     dev: false
 
+  /@patternfly/react-styles@4.11.8:
+    resolution: {integrity: sha512-JSSBqZ6LvZxRdaNvezSRV7dIMK+hLc9lL1RTLCQDRZq2OllR6CDSh1OePsBa22jBWXmXwpL/z7anJsm3F59SMw==}
+    dev: false
+
   /@patternfly/react-styles@4.92.6:
     resolution: {integrity: sha512-b8uQdEReMyeoMzjpMri845QxqtupY/tIFFYfVeKoB2neno8gkcW1RvDdDe62LF88q45OktCwAe/8A99ker10Iw==}
     dev: false
@@ -1178,7 +1176,7 @@ packages:
       '@patternfly/react-core': 5.0.0-alpha.127(react-dom@18.2.0)(react@18.2.0)
       '@patternfly/react-icons': 5.0.0-alpha.20(react-dom@18.2.0)(react@18.2.0)
       '@patternfly/react-styles': 5.0.0-alpha.17
-      '@patternfly/react-tokens': 5.0.0-alpha.16
+      '@patternfly/react-tokens': 5.0.0-prerelease.2
       lodash: 4.17.21
       react: 18.2.0
       react-dom: 18.2.0(react@18.2.0)
@@ -1189,8 +1187,12 @@ packages:
     resolution: {integrity: sha512-tm7C6nat+uKMr1hrapis7hS3rN9cr41tpcCKhx6cod6FLU8KwF2Yt5KUxakhIOCEcE/M/EhXhAw/qejp8w0r7Q==}
     dev: false
 
-  /@pkgr/utils@2.4.0:
-    resolution: {integrity: sha512-2OCURAmRtdlL8iUDTypMrrxfwe8frXTeXaxGsVOaYtc/wrUyk8Z/0OBetM7cdlsy7ZFWlMX72VogKeh+A4Xcjw==}
+  /@patternfly/react-tokens@5.0.0-prerelease.2:
+    resolution: {integrity: sha512-pber40hmKutGBi34lciBX90Gf03UMmJtqOMgDfAP2SnUvWEfQWOsGnlVck2uQKclWV28+mrnAhWN/DI0FFeW9w==}
+    dev: false
+
+  /@pkgr/utils@2.4.1:
+    resolution: {integrity: sha512-JOqwkgFEyi+OROIyq7l4Jy28h/WwhDnG/cPkXG2Z1iFbubB6jsHW1NDvmyOzTBxHr3yg68YGirmh1JUgMqa+9w==}
     engines: {node: ^12.20.0 || ^14.18.0 || >=16.0.0}
     dependencies:
       cross-spawn: 7.0.3

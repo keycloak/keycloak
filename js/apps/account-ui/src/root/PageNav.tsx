@@ -4,6 +4,7 @@ import {
   NavItem,
   NavList,
   PageSidebar,
+  PageSidebarBody,
 } from "@patternfly/react-core";
 import { TFuncKey } from "i18next";
 import {
@@ -69,8 +70,8 @@ const menuItems: MenuItem[] = [
 ];
 
 export const PageNav = () => (
-  <PageSidebar
-    nav={
+  <PageSidebar>
+    <PageSidebarBody>
       <Nav>
         <NavList>
           {menuItems.map((menuItem) => (
@@ -78,8 +79,8 @@ export const PageNav = () => (
           ))}
         </NavList>
       </Nav>
-    }
-  />
+    </PageSidebarBody>
+  </PageSidebar>
 );
 
 type NavMenuItemProps = {
