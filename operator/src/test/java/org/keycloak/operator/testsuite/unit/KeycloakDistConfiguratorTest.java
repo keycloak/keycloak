@@ -22,6 +22,7 @@ import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.api.model.apps.StatefulSetBuilder;
 import io.quarkus.test.junit.QuarkusTest;
+
 import org.junit.jupiter.api.Test;
 import org.keycloak.common.util.CollectionUtil;
 import org.keycloak.operator.Constants;
@@ -208,7 +209,7 @@ public class KeycloakDistConfiguratorTest {
 
     private void assertWarningStatusFirstClassFields(KeycloakDistConfigurator distConfig, boolean expectWarning, Collection<String> firstClassFields) {
         final String message = "warning: You need to specify these fields as the first-class citizen of the CR: ";
-        final KeycloakStatusAggregator statusBuilder = new KeycloakStatusAggregator();
+        final KeycloakStatusAggregator statusBuilder = new KeycloakStatusAggregator(1L);
         distConfig.validateOptions(statusBuilder);
         final KeycloakStatus status = statusBuilder.build();
 

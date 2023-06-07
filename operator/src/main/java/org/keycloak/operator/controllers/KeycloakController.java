@@ -98,7 +98,7 @@ public class KeycloakController implements Reconciler<Keycloak>, EventSourceInit
 
         Log.infof("--- Reconciling Keycloak: %s in namespace: %s", kcName, namespace);
 
-        var statusAggregator = new KeycloakStatusAggregator();
+        var statusAggregator = new KeycloakStatusAggregator(kc.getStatus(), kc.getMetadata().getGeneration());
 
         var kcAdminSecret = new KeycloakAdminSecret(client, kc);
         kcAdminSecret.createOrUpdateReconciled();
@@ -139,10 +139,8 @@ public class KeycloakController implements Reconciler<Keycloak>, EventSourceInit
             updateControl = UpdateControl.updateStatus(kc);
         }
 
-        if (status
-                .getConditions()
-                .stream()
-                .anyMatch(c -> c.getType().equals(KeycloakStatusCondition.READY) && !c.getStatus())) {
+        if (status.findCondition(KeycloakStatusCondition.READY)
+                .filter(c -> !Boolean.TRUE.equals(c.getStatus())).isPresent()) {
             updateControl.rescheduleAfter(10, TimeUnit.SECONDS);
         }
 
@@ -152,7 +150,7 @@ public class KeycloakController implements Reconciler<Keycloak>, EventSourceInit
     @Override
     public ErrorStatusUpdateControl<Keycloak> updateErrorStatus(Keycloak kc, Context<Keycloak> context, Exception e) {
         Log.error("--- Error reconciling", e);
-        KeycloakStatus status = new KeycloakStatusAggregator()
+        KeycloakStatus status = new KeycloakStatusAggregator(kc.getStatus(), kc.getMetadata().getGeneration())
                 .addErrorMessage("Error performing operations:\n" + e.getMessage())
                 .build();
 

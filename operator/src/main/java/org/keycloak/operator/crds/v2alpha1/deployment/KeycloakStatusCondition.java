@@ -31,6 +31,8 @@ public class KeycloakStatusCondition {
     private String type;
     private Boolean status;
     private String message;
+    private String lastTransitionTime;
+    private Long observedGeneration;
 
     public String getType() {
         return type;
@@ -56,17 +58,35 @@ public class KeycloakStatusCondition {
         this.message = message;
     }
 
+    public String getLastTransitionTime() {
+        return lastTransitionTime;
+    }
+
+    public void setLastTransitionTime(String lastTransitionTime) {
+        this.lastTransitionTime = lastTransitionTime;
+    }
+
+    public Long getObservedGeneration() {
+        return observedGeneration;
+    }
+
+    public void setObservedGeneration(Long observedGeneration) {
+        this.observedGeneration = observedGeneration;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         KeycloakStatusCondition that = (KeycloakStatusCondition) o;
-        return Objects.equals(getType(), that.getType()) && Objects.equals(getStatus(), that.getStatus()) && Objects.equals(getMessage(), that.getMessage());
+        return Objects.equals(getType(), that.getType()) && Objects.equals(getStatus(), that.getStatus()) && Objects.equals(getMessage(), that.getMessage())
+                && Objects.equals(getLastTransitionTime(), that.getLastTransitionTime())
+                && Objects.equals(getObservedGeneration(), that.getObservedGeneration());
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(getType(), getStatus(), getMessage());
+        return Objects.hash(getType(), getStatus(), getMessage(), getObservedGeneration(), getLastTransitionTime());
     }
 
     @Override
