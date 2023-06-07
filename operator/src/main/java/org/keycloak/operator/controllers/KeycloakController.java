@@ -37,7 +37,7 @@ import org.keycloak.operator.Config;
 import org.keycloak.operator.Constants;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatus;
-import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusBuilder;
+import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusAggregator;
 import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusCondition;
 
 import jakarta.inject.Inject;
@@ -92,13 +92,13 @@ public class KeycloakController implements Reconciler<Keycloak>, EventSourceInit
     }
 
     @Override
-    public UpdateControl<Keycloak> reconcile(Keycloak kc, Context context) {
+    public UpdateControl<Keycloak> reconcile(Keycloak kc, Context<Keycloak> context) {
         String kcName = kc.getMetadata().getName();
         String namespace = kc.getMetadata().getNamespace();
 
         Log.infof("--- Reconciling Keycloak: %s in namespace: %s", kcName, namespace);
 
-        var statusBuilder = new KeycloakStatusBuilder();
+        var statusAggregator = new KeycloakStatusAggregator();
 
         var kcAdminSecret = new KeycloakAdminSecret(client, kc);
         kcAdminSecret.createOrUpdateReconciled();
@@ -112,21 +112,21 @@ public class KeycloakController implements Reconciler<Keycloak>, EventSourceInit
             Log.info("Config Secrets modified, restarting deployment");
             kcDeployment.rollingRestart();
         }
-        kcDeployment.updateStatus(statusBuilder);
+        kcDeployment.updateStatus(statusAggregator);
         watchedSecrets.createOrUpdateReconciled();
 
         var kcService = new KeycloakService(client, kc);
-        kcService.updateStatus(statusBuilder);
+        kcService.updateStatus(statusAggregator);
         kcService.createOrUpdateReconciled();
         var kcDiscoveryService = new KeycloakDiscoveryService(client, kc);
-        kcDiscoveryService.updateStatus(statusBuilder);
+        kcDiscoveryService.updateStatus(statusAggregator);
         kcDiscoveryService.createOrUpdateReconciled();
 
         var kcIngress = new KeycloakIngress(client, kc);
-        kcIngress.updateStatus(statusBuilder);
+        kcIngress.updateStatus(statusAggregator);
         kcIngress.createOrUpdateReconciled();
 
-        var status = statusBuilder.build();
+        var status = statusAggregator.build();
 
         Log.info("--- Reconciliation finished successfully");
 
@@ -152,7 +152,7 @@ public class KeycloakController implements Reconciler<Keycloak>, EventSourceInit
     @Override
     public ErrorStatusUpdateControl<Keycloak> updateErrorStatus(Keycloak kc, Context<Keycloak> context, Exception e) {
         Log.error("--- Error reconciling", e);
-        KeycloakStatus status = new KeycloakStatusBuilder()
+        KeycloakStatus status = new KeycloakStatusAggregator()
                 .addErrorMessage("Error performing operations:\n" + e.getMessage())
                 .build();
 

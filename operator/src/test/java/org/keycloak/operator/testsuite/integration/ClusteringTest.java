@@ -17,28 +17,30 @@
 
 package org.keycloak.operator.testsuite.integration;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import io.fabric8.kubernetes.client.utils.Serialization;
 import io.quarkus.logging.Log;
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.RestAssured;
+
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
 import org.keycloak.operator.Constants;
-import org.keycloak.operator.testsuite.utils.CRAssert;
 import org.keycloak.operator.controllers.KeycloakService;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
-import org.keycloak.operator.testsuite.utils.K8sUtils;
+import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusCondition;
 import org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImport;
 import org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImportStatusCondition;
-import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusCondition;
+import org.keycloak.operator.testsuite.utils.CRAssert;
+import org.keycloak.operator.testsuite.utils.K8sUtils;
 
 import java.time.Duration;
+import java.util.Optional;
+
+import com.fasterxml.jackson.databind.JsonNode;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
-
 
 @QuarkusTest
 public class ClusteringTest extends BaseOperatorTest {
@@ -55,11 +57,29 @@ public class ClusteringTest extends BaseOperatorTest {
 
         var kcPodsSelector = k8sclient.pods().inNamespace(namespace).withLabel("app", "keycloak");
 
+        var scale = crSelector.scale();
+        assertThat(scale.getSpec().getReplicas()).isEqualTo(1);
+        assertThat(scale.getStatus().getReplicas()).isEqualTo(1);
+        assertThat(scale.getStatus().getSelector()).isEqualTo(Constants.DEFAULT_LABELS_AS_STRING);
+
+        // when scale it to 0
+        Keycloak scaled = crSelector.scale(0);
+        assertThat(scaled.getSpec().getInstances()).isEqualTo(0);
+
+        Awaitility.await()
+                .atMost(Duration.ofSeconds(60))
+                .ignoreExceptions()
+                .untilAsserted(() -> assertThat(Optional.ofNullable(crSelector.scale().getStatus().getReplicas()).orElse(0)).isEqualTo(0));
+
+        Awaitility.await()
+                .atMost(1, MINUTES)
+                .pollDelay(1, SECONDS)
+                .ignoreExceptions()
+                .untilAsserted(() -> CRAssert.assertKeycloakStatusCondition(crSelector.get(), KeycloakStatusCondition.READY, true));
+
         // when scale it to 3
-        crSelector.accept(keycloak -> {
-        	keycloak.getMetadata().setResourceVersion(null); 
-        	keycloak.getSpec().setInstances(3);	
-        });
+        crSelector.scale(3);
+        assertThat(crSelector.scale().getSpec().getReplicas()).isEqualTo(3);
 
         Awaitility.await()
                 .atMost(1, MINUTES)
@@ -68,15 +88,19 @@ public class ClusteringTest extends BaseOperatorTest {
                 .untilAsserted(() -> CRAssert.assertKeycloakStatusCondition(crSelector.get(), KeycloakStatusCondition.READY, false));
 
         Awaitility.await()
-                .atMost(Duration.ofSeconds(60))
+                .atMost(Duration.ofSeconds(180))
                 .ignoreExceptions()
                 .untilAsserted(() -> assertThat(kcPodsSelector.list().getItems().size()).isEqualTo(3));
 
+        Awaitility.await()
+                .atMost(Duration.ofSeconds(60))
+                .ignoreExceptions()
+                .untilAsserted(() -> assertThat(crSelector.scale().getStatus().getReplicas()).isEqualTo(3));
+
         // when scale it down to 2
-        crSelector.accept(keycloak -> {
-        	keycloak.getMetadata().setResourceVersion(null); 
-        	keycloak.getSpec().setInstances(2);	
-        });
+        crSelector.scale(2);
+        assertThat(crSelector.scale().getSpec().getReplicas()).isEqualTo(2);
+
         Awaitility.await()
                 .atMost(Duration.ofSeconds(180))
                 .ignoreExceptions()
@@ -87,6 +111,11 @@ public class ClusteringTest extends BaseOperatorTest {
                 .pollDelay(1, SECONDS)
                 .ignoreExceptions()
                 .untilAsserted(() -> CRAssert.assertKeycloakStatusCondition(crSelector.get(), KeycloakStatusCondition.READY, true));
+
+        Awaitility.await()
+                .atMost(Duration.ofSeconds(60))
+                .ignoreExceptions()
+                .untilAsserted(() -> assertThat(crSelector.scale().getStatus().getReplicas()).isEqualTo(2));
 
         // get the service
         var service = new KeycloakService(k8sclient, kc);
@@ -122,8 +151,8 @@ public class ClusteringTest extends BaseOperatorTest {
         K8sUtils.deployKeycloak(k8sclient, kc, false);
         var targetInstances = 3;
         crSelector.accept(keycloak -> {
-        	keycloak.getMetadata().setResourceVersion(null); 
-        	keycloak.getSpec().setInstances(targetInstances);	
+        	keycloak.getMetadata().setResourceVersion(null);
+        	keycloak.getSpec().setInstances(targetInstances);
         });
         var realm = k8sclient.load(getClass().getResourceAsStream("/token-test-realm.yaml")).inNamespace(namespace);
         var realmImportSelector = k8sclient.resources(KeycloakRealmImport.class).inNamespace(namespace).withName("example-token-test-kc");

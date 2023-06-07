@@ -19,11 +19,12 @@ package org.keycloak.operator.crds.v2alpha1.deployment;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
 
 /**
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
  */
-public class KeycloakStatusBuilder {
+public class KeycloakStatusAggregator {
     private final KeycloakStatusCondition readyCondition;
     private final KeycloakStatusCondition hasErrorsCondition;
     private final KeycloakStatusCondition rollingUpdate;
@@ -31,8 +32,10 @@ public class KeycloakStatusBuilder {
     private final List<String> notReadyMessages = new ArrayList<>();
     private final List<String> errorMessages = new ArrayList<>();
     private final List<String> rollingUpdateMessages = new ArrayList<>();
+    
+    private final KeycloakStatusBuilder statusBuilder = new KeycloakStatusBuilder();
 
-    public KeycloakStatusBuilder() {
+    public KeycloakStatusAggregator() {
         readyCondition = new KeycloakStatusCondition();
         readyCondition.setType(KeycloakStatusCondition.READY);
         readyCondition.setStatus(true);
@@ -46,26 +49,38 @@ public class KeycloakStatusBuilder {
         rollingUpdate.setStatus(false);
     }
 
-    public KeycloakStatusBuilder addNotReadyMessage(String message) {
+    public KeycloakStatusAggregator addNotReadyMessage(String message) {
         readyCondition.setStatus(false);
         notReadyMessages.add(message);
         return this;
     }
 
-    public KeycloakStatusBuilder addErrorMessage(String message) {
+    public KeycloakStatusAggregator addErrorMessage(String message) {
         hasErrorsCondition.setStatus(true);
         errorMessages.add(message);
         return this;
     }
 
-    public KeycloakStatusBuilder addWarningMessage(String message) {
+    public KeycloakStatusAggregator addWarningMessage(String message) {
         errorMessages.add("warning: " + message);
         return this;
     }
 
-    public KeycloakStatusBuilder addRollingUpdateMessage(String message) {
+    public KeycloakStatusAggregator addRollingUpdateMessage(String message) {
         rollingUpdate.setStatus(true);
         rollingUpdateMessages.add(message);
+        return this;
+    }
+    
+    /**
+     * Apply non-condition changes to the status
+     */
+    public KeycloakStatusAggregator apply(Consumer<KeycloakStatusBuilder> toApply) {
+        statusBuilder.withConditions(List.of());
+        toApply.accept(statusBuilder);
+        if (!statusBuilder.getConditions().isEmpty()) {
+            throw new AssertionError("use addXXXMessage methods to modify conditions");
+        }
         return this;
     }
 
@@ -73,9 +88,7 @@ public class KeycloakStatusBuilder {
         readyCondition.setMessage(String.join("\n", notReadyMessages));
         hasErrorsCondition.setMessage(String.join("\n", errorMessages));
         rollingUpdate.setMessage(String.join("\n", rollingUpdateMessages));
-
-        KeycloakStatus status = new KeycloakStatus();
-        status.setConditions(List.of(readyCondition, hasErrorsCondition, rollingUpdate));
-        return status;
+        
+        return statusBuilder.withConditions(List.of(readyCondition, hasErrorsCondition, rollingUpdate)).build();
     }
 }
