@@ -90,7 +90,7 @@ public class RealmImportTest extends BaseOperatorTest {
         deployKeycloak(k8sclient, kc, false);
 
         // Act
-        k8sclient.load(getClass().getResourceAsStream("/example-realm.yaml")).inNamespace(namespace).createOrReplace();
+        k8sclient.load(getClass().getResourceAsStream("/example-realm.yaml")).inNamespace(namespace).forceConflicts().serverSideApply();
 
         // Assert
         var crSelector = k8sclient
@@ -151,7 +151,7 @@ public class RealmImportTest extends BaseOperatorTest {
         deployKeycloak(k8sclient, keycloak, false);
 
         // Act
-        k8sclient.load(getClass().getResourceAsStream("/example-realm.yaml")).inNamespace(namespace).createOrReplace();
+        k8sclient.load(getClass().getResourceAsStream("/example-realm.yaml")).inNamespace(namespace).forceConflicts().serverSideApply();
 
         // Assert
         var crSelector = k8sclient
@@ -178,7 +178,7 @@ public class RealmImportTest extends BaseOperatorTest {
         deployKeycloak(k8sclient, getDefaultKeycloakDeployment(), true); // make sure there are no errors due to missing KC Deployment
 
         // Act
-        k8sclient.load(getClass().getResourceAsStream("/incorrect-realm.yaml")).inNamespace(namespace).createOrReplace();
+        k8sclient.load(getClass().getResourceAsStream("/incorrect-realm.yaml")).inNamespace(namespace).forceConflicts().serverSideApply();
 
         // Assert
         Awaitility.await()
