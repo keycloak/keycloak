@@ -119,7 +119,7 @@ public class KeycloakIngress extends OperatorManagedResource implements StatusUp
     }
 
     protected void deleteExistingIngress() {
-        client.network().v1().ingresses().inNamespace(getNamespace()).delete(existingIngress);
+        client.resource(existingIngress).delete();
     }
 
     private boolean isExistingIngressFromSameOwnerReference() {

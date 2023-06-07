@@ -54,7 +54,11 @@ public abstract class OperatorManagedResource {
                 setOwnerReferences(resource);
 
                 Log.debugf("Creating or updating resource: %s", resource);
-                resource = client.resource(resource).inNamespace(getNamespace()).createOrReplace();
+                // Until https://github.com/fabric8io/kubernetes-client/issues/5215 is resolved
+                // or event filtering is added, serverSideApply should not be used here
+                // resource.getMetadata().setResourceVersion(null);
+            	// resource = client.resource(resource).inNamespace(getNamespace()).forceConflicts().serverSideApply();
+            	resource = client.resource(resource).inNamespace(getNamespace()).createOrReplace();
                 Log.debugf("Successfully created or updated resource: %s", resource);
             } catch (Exception e) {
                 Log.error("Failed to create or update resource");

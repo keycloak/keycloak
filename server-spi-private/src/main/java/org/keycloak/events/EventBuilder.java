@@ -44,7 +44,7 @@ public class EventBuilder {
 
     private static final Logger log = Logger.getLogger(EventBuilder.class);
 
-    private final KeycloakSessionFactory sessionFactory;
+    private final KeycloakSession session;
     private EventStoreProvider store;
     private List<EventListenerProvider> listeners;
     private RealmModel realm;
@@ -57,7 +57,7 @@ public class EventBuilder {
     }
 
     public EventBuilder(RealmModel realm, KeycloakSession session) {
-        this.sessionFactory = session.getKeycloakSessionFactory();
+        this.session = session;
         this.realm = realm;
 
         event = new Event();
@@ -86,11 +86,12 @@ public class EventBuilder {
         .collect(Collectors.toList());
     }
 
-    private EventBuilder(KeycloakSessionFactory sessionFactory, List<EventListenerProvider> listeners, RealmModel realm, Event event) {
+    private EventBuilder(KeycloakSession session, EventStoreProvider store, List<EventListenerProvider> listeners, RealmModel realm, Event event) {
         this.listeners = listeners;
         this.realm = realm;
         this.event = event;
-        this.sessionFactory = sessionFactory;
+        this.session = session;
+        this.store = store;
     }
 
     public EventBuilder realm(RealmModel realm) {
@@ -225,7 +226,7 @@ public class EventBuilder {
     }
 
     public EventBuilder clone() {
-        return new EventBuilder(sessionFactory, listeners, realm, event.clone());
+        return new EventBuilder(session, store, listeners, realm, event.clone());
     }
 
     private void send(boolean sendImmediately) {
@@ -234,7 +235,7 @@ public class EventBuilder {
 
         Set<String> eventTypes = realm.getEnabledEventTypesStream().collect(Collectors.toSet());
         if (sendImmediately) {
-            KeycloakModelUtils.runJobInTransaction(sessionFactory, session -> {
+            KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), session.getContext(), session -> {
                 EventStoreProvider store = session.getProvider(EventStoreProvider.class);
                 List<EventListenerProvider> listeners = getEventListeners(session, realm);
 

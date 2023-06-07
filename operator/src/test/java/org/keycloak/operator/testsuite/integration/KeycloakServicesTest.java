@@ -57,8 +57,9 @@ public class KeycloakServicesTest extends BaseOperatorTest {
 
         currentService.getMetadata().getLabels().putAll(labels);
         currentService.getSpec().setSessionAffinity("ClientIP");
-
-        serviceSelector.createOrReplace(currentService);
+        
+        currentService.getMetadata().setResourceVersion(null);
+        k8sclient.resource(currentService).forceConflicts().serverSideApply();
 
         Awaitility.await()
                 .untilAsserted(() -> {
@@ -97,7 +98,7 @@ public class KeycloakServicesTest extends BaseOperatorTest {
         currentDiscoveryService.getMetadata().getLabels().putAll(labels);
         currentDiscoveryService.getSpec().setSessionAffinity("ClientIP");
 
-        discoveryServiceSelector.createOrReplace(currentDiscoveryService);
+        discoveryServiceSelector.edit(ignored -> currentDiscoveryService);
 
         Awaitility.await()
                 .untilAsserted(() -> {

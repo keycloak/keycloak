@@ -55,11 +55,11 @@ public class ClusteringTest extends BaseOperatorTest {
 
         var kcPodsSelector = k8sclient.pods().inNamespace(namespace).withLabel("app", "keycloak");
 
-        Keycloak keycloak = crSelector.get();
-
         // when scale it to 3
-        keycloak.getSpec().setInstances(3);
-        k8sclient.resources(Keycloak.class).inNamespace(namespace).createOrReplace(keycloak);
+        crSelector.accept(keycloak -> {
+        	keycloak.getMetadata().setResourceVersion(null); 
+        	keycloak.getSpec().setInstances(3);	
+        });
 
         Awaitility.await()
                 .atMost(1, MINUTES)
@@ -73,8 +73,10 @@ public class ClusteringTest extends BaseOperatorTest {
                 .untilAsserted(() -> assertThat(kcPodsSelector.list().getItems().size()).isEqualTo(3));
 
         // when scale it down to 2
-        keycloak.getSpec().setInstances(2);
-        k8sclient.resources(Keycloak.class).inNamespace(namespace).createOrReplace(keycloak);
+        crSelector.accept(keycloak -> {
+        	keycloak.getMetadata().setResourceVersion(null); 
+        	keycloak.getSpec().setInstances(2);	
+        });
         Awaitility.await()
                 .atMost(Duration.ofSeconds(180))
                 .ignoreExceptions()
@@ -119,11 +121,13 @@ public class ClusteringTest extends BaseOperatorTest {
                 .withName(kc.getMetadata().getName());
         K8sUtils.deployKeycloak(k8sclient, kc, false);
         var targetInstances = 3;
-        kc.getSpec().setInstances(targetInstances);
-        k8sclient.resources(Keycloak.class).inNamespace(namespace).createOrReplace(kc);
-        var realm = k8sclient.resources(KeycloakRealmImport.class).inNamespace(namespace).load(getClass().getResourceAsStream("/token-test-realm.yaml"));
+        crSelector.accept(keycloak -> {
+        	keycloak.getMetadata().setResourceVersion(null); 
+        	keycloak.getSpec().setInstances(targetInstances);	
+        });
+        var realm = k8sclient.load(getClass().getResourceAsStream("/token-test-realm.yaml")).inNamespace(namespace);
         var realmImportSelector = k8sclient.resources(KeycloakRealmImport.class).inNamespace(namespace).withName("example-token-test-kc");
-        realm.createOrReplace();
+        realm.forceConflicts().serverSideApply();
 
         Log.info("Waiting for a stable Keycloak Cluster");
         Awaitility.await()
