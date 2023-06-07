@@ -28,7 +28,7 @@ import org.keycloak.operator.Constants;
 import org.keycloak.operator.controllers.KeycloakDistConfigurator;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatus;
-import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusBuilder;
+import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusAggregator;
 import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusCondition;
 import org.keycloak.operator.crds.v2alpha1.deployment.ValueOrSecret;
 import org.keycloak.operator.testsuite.utils.K8sUtils;
@@ -208,7 +208,7 @@ public class KeycloakDistConfiguratorTest {
 
     private void assertWarningStatusFirstClassFields(KeycloakDistConfigurator distConfig, boolean expectWarning, Collection<String> firstClassFields) {
         final String message = "warning: You need to specify these fields as the first-class citizen of the CR: ";
-        final KeycloakStatusBuilder statusBuilder = new KeycloakStatusBuilder();
+        final KeycloakStatusAggregator statusBuilder = new KeycloakStatusAggregator();
         distConfig.validateOptions(statusBuilder);
         final KeycloakStatus status = statusBuilder.build();
 

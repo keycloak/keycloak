@@ -19,11 +19,38 @@ package org.keycloak.operator.crds.v2alpha1.deployment;
 import java.util.List;
 import java.util.Objects;
 
+import io.fabric8.kubernetes.model.annotation.LabelSelector;
+import io.fabric8.kubernetes.model.annotation.StatusReplicas;
+import io.sundr.builder.annotations.Buildable;
+
 /**
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
  */
+@Buildable(editableEnabled = false, builderPackage = "io.fabric8.kubernetes.api.builder", lazyCollectionInitEnabled = false)
 public class KeycloakStatus {
+    
+    @LabelSelector
+    private String selector;
+    @StatusReplicas
+    private Integer instances;
+    
     private List<KeycloakStatusCondition> conditions;
+    
+    public String getSelector() {
+        return selector;
+    }
+    
+    public void setSelector(String selector) {
+        this.selector = selector;
+    }
+    
+    public Integer getInstances() {
+        return instances;
+    }
+    
+    public void setInstances(Integer instances) {
+        this.instances = instances;
+    }
 
     public List<KeycloakStatusCondition> getConditions() {
         return conditions;
@@ -38,11 +65,13 @@ public class KeycloakStatus {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         KeycloakStatus status = (KeycloakStatus) o;
-        return Objects.equals(getConditions(), status.getConditions());
+        return Objects.equals(getConditions(), status.getConditions()) 
+                && Objects.equals(getInstances(), status.getInstances())
+                && Objects.equals(getSelector(), status.getSelector());
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(getConditions());
+        return Objects.hash(getConditions(), getInstances(), getSelector());
     }
 }
