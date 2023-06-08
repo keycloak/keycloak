@@ -63,10 +63,8 @@ public class SessionsResource {
         auth.realm().requireViewRealm();
 
         Stream<SessionId> clientIds = Stream.<SessionId>builder().build();
-        long clientSessionsCount = 0L;
         if (type == ALL || type == REGULAR) {
             final Map<String, Long> clientSessionStats = session.sessions().getActiveClientSessionStats(realm, false);
-            clientSessionsCount = clientSessionStats.values().stream().reduce(0L, Long::sum);
             clientIds = Stream.concat(clientIds, clientSessionStats
                     .keySet().stream().map(i -> new SessionId(i, REGULAR)));
         }
@@ -75,8 +73,7 @@ public class SessionsResource {
                     .keySet().stream().map(i -> new SessionId(i, OFFLINE)));
         }
 
-
-        final List<SessionId> sessionIds = clientIds.skip(first).limit(max).collect(Collectors.toList());
+        final List<SessionId> sessionIds = clientIds.collect(Collectors.toList());
         Stream<SessionRepresentation> result = Stream.<SessionRepresentation>builder().build();
         for (SessionId sessionId : sessionIds) {
             ClientModel clientModel = realm.getClientById(sessionId.getClientId());
@@ -87,16 +84,16 @@ public class SessionsResource {
                     break;
                 case OFFLINE:
                     result = Stream.concat(result, session.sessions()
-                            .getOfflineUserSessionsStream(realm, clientModel, Math.max((int) (first - clientSessionsCount), 0), max)
+                            .getOfflineUserSessionsStream(realm, clientModel, null, null)
                             .map(s -> toUserSessionRepresentation(s, sessionId.getClientId(), OFFLINE))).distinct();
                     break;
             }
         }
 
         if (!search.equals("")) {
-            return result.filter(s -> s.getUsername().contains(search) || s.getIpAddress().contains(search));
+            result = result.filter(s -> s.getUsername().contains(search) || s.getIpAddress().contains(search));
         }
-        return result;
+        return result.skip(first).limit(max);
     }
 
     private SessionRepresentation toUserSessionRepresentation(final UserSessionModel userSession, String clientId, SessionType type) {
