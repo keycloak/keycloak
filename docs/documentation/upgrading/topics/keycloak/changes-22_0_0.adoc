@@ -249,7 +249,7 @@ NOTE: The Openshift extension is not officially supported and maintained by Keyc
 == Http Challenge flow removed
 
 The built-in authentication flow `http challenge` was removed along with the authenticator implementations `no-cookie-redirect`, `basic-auth`, and `basic-auth-otp`.
-The `http challenge` authentication flow was also supposed to be used for Openshift integration and hence it was removed together with other related things as described above.
+The `http challenge` authentication flow was also intended for Openshift integration and therefore it was removed along with other related capabilities as described above.
 Authenticator implementations were moved to Openshift extension described in the previous paragraph.
 
 If you use the `http challenge` flow as realm flow or as `First Broker Login` or `Post Broker Login` flow of some of your identity providers, the migration won't be possible. So please update
