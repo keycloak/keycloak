@@ -17,10 +17,12 @@
 
 package org.keycloak.quarkus.runtime.integration.jaxrs;
 
-import java.io.IOException;
+import java.io.BufferedOutputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.OutputStream;
+
 import jakarta.ws.rs.ConstrainedTo;
 import jakarta.ws.rs.RuntimeType;
-import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.ext.Provider;
 import jakarta.ws.rs.ext.WriterInterceptor;
 import jakarta.ws.rs.ext.WriterInterceptorContext;
@@ -34,12 +36,18 @@ import jakarta.annotation.Priority;
 @ConstrainedTo(RuntimeType.SERVER)
 @Priority(10000)
 public class TransactionalResponseInterceptor implements WriterInterceptor, TransactionalSessionHandler {
-    @Override
-    public void aroundWriteTo(WriterInterceptorContext context) throws IOException, WebApplicationException {
-        KeycloakSession session = Resteasy.getContextData(KeycloakSession.class);
 
+    @Override
+    public void aroundWriteTo(WriterInterceptorContext context) {
+        KeycloakSession session = Resteasy.getContextData(KeycloakSession.class);
+        OutputStream outputStream = context.getOutputStream();
+
+        // see https://github.com/keycloak/keycloak/issues/20451
         try {
+            context.setOutputStream(new BufferedOutputStream(outputStream, 8192));
             context.proceed();
+        } catch (Exception cause) {
+            throw new RuntimeException(cause);
         } finally {
             // make sure response is closed after writing to the response output stream
             // this is needed in order to support streams from endpoints as they need access to underlying resources like database
