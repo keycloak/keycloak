@@ -19,12 +19,9 @@ package org.keycloak.common.util;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Response;
 
-import org.keycloak.models.ClientModel;
-import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionTaskWithResult;
-import org.keycloak.models.RealmModel;
-import org.keycloak.sessions.RootAuthenticationSessionModel;
+import org.keycloak.models.utils.KeycloakModelUtils;
 
 /**
  * A {@link KeycloakSessionTaskWithResult} that is aimed to be used by endpoints that want to produce a {@link Response} in
@@ -60,7 +57,7 @@ public abstract class ResponseSessionTask implements KeycloakSessionTaskWithResu
         KeycloakSession originalContextSession = Resteasy.getContextData(KeycloakSession.class);
         try {
             // set up the current session context based on the original session context.
-            this.setupSessionContext(session);
+            KeycloakModelUtils.cloneContextRealmClientSessionToSession(originalSession.getContext(), session);
             // push the current session into the resteasy context.
             Resteasy.pushContext(KeycloakSession.class, session);
             // run the actual task.
@@ -80,38 +77,6 @@ public abstract class ResponseSessionTask implements KeycloakSessionTaskWithResu
         } finally {
             // restore original session in resteasy context.
             Resteasy.pushContext(KeycloakSession.class, originalContextSession);
-        }
-    }
-
-    /**
-     * Sets up the context for the specified session. The original realm's context is used to determine what models
-     * need to be re-loaded using the current session.
-     *
-     * @param session the session whose context is to be prepared.
-     */
-    private void setupSessionContext(final KeycloakSession session) {
-        if (this.originalSession == null) return;
-        KeycloakContext context = this.originalSession.getContext();
-        // setup realm model if necessary.
-        RealmModel realmModel = null;
-        if (context.getRealm() != null) {
-            realmModel = session.realms().getRealm(context.getRealm().getId());
-            session.getContext().setRealm(realmModel);
-        }
-        // setup client model if necessary.
-        ClientModel clientModel = null;
-        if (context.getClient() != null) {
-            clientModel = session.clients().getClientById(realmModel, context.getClient().getId());
-            session.getContext().setClient(clientModel);
-        }
-        // setup auth session model if necessary.
-        if (context.getAuthenticationSession() != null) {
-            RootAuthenticationSessionModel rootAuthSession = session.authenticationSessions().getRootAuthenticationSession(realmModel,
-                    context.getAuthenticationSession().getParentSession().getId());
-            if (rootAuthSession != null) {
-                session.getContext().setAuthenticationSession(rootAuthSession.getAuthenticationSession(clientModel,
-                        context.getAuthenticationSession().getTabId()));
-            }
         }
     }
 
