@@ -76,6 +76,8 @@ import java.util.stream.Stream;
 import org.keycloak.models.AccountRoles;
 import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
+import org.keycloak.sessions.AuthenticationSessionModel;
+import org.keycloak.sessions.RootAuthenticationSessionModel;
 
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
@@ -275,14 +277,82 @@ public final class KeycloakModelUtils {
     }
 
     /**
-     * Copy all the objects in the context to the session.
-     * @param session The session
-     * @param context The context
+     * Sets up the context for the specified session with the RealmModel.
+     *
+     * @param origContext The original context to propagate
+     * @param targetSession The new target session to propagate the context to
      */
-    public static void propagateContext(KeycloakSession session, KeycloakContext context) {
-        session.getContext().setRealm(context.getRealm());
-        session.getContext().setClient(context.getClient());
-        session.getContext().setAuthenticationSession(context.getAuthenticationSession());
+    public static void cloneContextRealmClientToSession(final KeycloakContext origContext, final KeycloakSession targetSession) {
+        cloneContextToSession(origContext, targetSession, false);
+    }
+
+    /**
+     * Sets up the context for the specified session with the RealmModel, clientModel and
+     * AuthenticatedSessionModel.
+     *
+     * @param origContext The original context to propagate
+     * @param targetSession The new target session to propagate the context to
+     */
+    public static void cloneContextRealmClientSessionToSession(final KeycloakContext origContext, final KeycloakSession targetSession) {
+        cloneContextToSession(origContext, targetSession, true);
+    }
+
+    /**
+     * Sets up the context for the specified session.The original realm's context is used to
+     * determine what models need to be re-loaded using the current session. The models
+     * in the context are re-read from the new session via the IDs.
+     */
+    private static void cloneContextToSession(final KeycloakContext origContext, final KeycloakSession targetSession,
+            final boolean includeAuthenticatedSessionModel) {
+        if (origContext == null) {
+            return;
+        }
+
+        // setup realm model if necessary.
+        RealmModel realmModel = null;
+        if (origContext.getRealm() != null) {
+            realmModel = targetSession.realms().getRealm(origContext.getRealm().getId());
+            if (realmModel != null) {
+                targetSession.getContext().setRealm(realmModel);
+            }
+        }
+
+        // setup client model if necessary.
+        ClientModel clientModel = null;
+        if (origContext.getClient() != null) {
+            if (origContext.getRealm() == null || !Objects.equals(origContext.getRealm().getId(), origContext.getClient().getRealm().getId())) {
+                realmModel = targetSession.realms().getRealm(origContext.getClient().getRealm().getId());
+            }
+            if (realmModel != null) {
+                clientModel = targetSession.clients().getClientById(realmModel, origContext.getClient().getId());
+                if (clientModel != null) {
+                    targetSession.getContext().setClient(clientModel);
+                }
+            }
+        }
+
+        // setup auth session model if necessary.
+        if (includeAuthenticatedSessionModel && origContext.getAuthenticationSession() != null) {
+            if (origContext.getClient() == null || !Objects.equals(origContext.getClient().getId(), origContext.getAuthenticationSession().getClient().getId())) {
+                realmModel = (origContext.getRealm() == null || !Objects.equals(origContext.getRealm().getId(), origContext.getAuthenticationSession().getRealm().getId()))
+                        ? targetSession.realms().getRealm(origContext.getAuthenticationSession().getRealm().getId())
+                        : targetSession.getContext().getRealm();
+                clientModel = (realmModel != null)
+                        ? targetSession.clients().getClientById(realmModel, origContext.getAuthenticationSession().getClient().getId())
+                        : null;
+            }
+            if (clientModel != null) {
+                RootAuthenticationSessionModel rootAuthSession = targetSession.authenticationSessions().getRootAuthenticationSession(
+                        realmModel, origContext.getAuthenticationSession().getParentSession().getId());
+                if (rootAuthSession != null) {
+                    AuthenticationSessionModel authSessionModel = rootAuthSession.getAuthenticationSession(clientModel,
+                            origContext.getAuthenticationSession().getTabId());
+                    if (authSessionModel != null) {
+                        targetSession.getContext().setAuthenticationSession(authSessionModel);
+                    }
+                }
+            }
+        }
     }
 
     /**
@@ -307,11 +377,9 @@ public final class KeycloakModelUtils {
     public static <V> V runJobInTransactionWithResult(KeycloakSessionFactory factory, KeycloakContext context, final KeycloakSessionTaskWithResult<V> callable) {
         V result;
         try (KeycloakSession session = factory.create()) {
-            if (context != null) {
-                propagateContext(session, context);
-            }
             session.getTransactionManager().begin();
             try {
+                cloneContextRealmClientToSession(context, session);
                 result = callable.run(session);
             } catch (Throwable t) {
                 session.getTransactionManager().setRollbackOnly();
