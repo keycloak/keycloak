@@ -79,6 +79,10 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
             Log.info("Checking Keycloak pod has ready replicas == 1");
             assertThat(k8sclient.apps().statefulSets().inNamespace(namespace).withName(deploymentName).get().getStatus().getReadyReplicas()).isEqualTo(1);
 
+            Log.info("Checking observedGeneration is the same as the spec");
+            Keycloak latest = k8sclient.resource(kc).get();
+            assertThat(latest.getMetadata().getGeneration()).isEqualTo(latest.getStatus().getObservedGeneration());
+
             // Delete CR
             Log.info("Deleting Keycloak CR and watching cleanup");
             k8sclient.resource(kc).delete();
