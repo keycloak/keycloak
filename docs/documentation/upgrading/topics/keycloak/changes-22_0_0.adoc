@@ -243,6 +243,19 @@ If you used this feature, you should not use the `openshift-integration` feature
 the JAR file from custom extension. You can check the https://github.com/keycloak-extensions/keycloak-openshift-ext/[Openshift extension] and the instructions
 in it's README file for how to deploy the extension to your Keycloak server.
 
+NOTE: The Openshift extension is not officially supported and maintained by Keycloak team. You can use it only at your own risk.
+
+== Http Challenge flow removed
+
+The built-in authentication flow `http challenge` was removed along with the authenticator implementations `no-cookie-redirect`, `basic-auth`, and `basic-auth-otp`.
+The `http challenge` authentication flow was also intended for Openshift integration and therefore it was removed along with other related capabilities as described above.
+Authenticator implementations were moved to the Openshift extension described in the previous paragraph.
+
+If you use the `http challenge` flow as a realm flow or as `First Broker Login` or `Post Broker Login` flow for any of your identity providers, the migration is not possible. Be sure to update
+your realm configuration to eliminate the use of the `http challenge` flow before migration.
+If you use the `http challenge` flow  as `Authentication Flow Binding Override` for any client, the migration would complete, but you could no longer log in to that client.
+After the migration, you would need to re-create the flow and update the configuration of your clients to use the new/differentJson flow.
+
 = Removing thirdparty dependencies
 
 The removal of openshift-integration allows us to remove few thirdparty dependencies from Keycloak distribution. This includes
