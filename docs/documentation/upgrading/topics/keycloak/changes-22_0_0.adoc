@@ -253,7 +253,7 @@ The `http challenge` authentication flow was also intended for Openshift integra
 Authenticator implementations were moved to the Openshift extension described in the previous paragraph.
 
 If you use the `http challenge` flow as a realm flow or as `First Broker Login` or `Post Broker Login` flow for any of your identity providers, the migration is not possible. Be sure to update
-your realm configuration before migration to not using `http challenge` flow.
+your realm configuration to eliminate the use of the `http challenge` flow before migration.
 If you use the `http challenge` flow for any of your clients as `Authentication Flow Binding Override`, the migration would be possible, but you won't be able to login to that particular client.
 You may need to re-create the flow again after the migration to Keycloak 22 and update configuration of your clients to use the new/differentJson flow.
 
