@@ -14,7 +14,7 @@ SHORT_VERSION=`echo $NEW_VERSION | awk -F '.' '{ print $1"."$2 }'`
 sed -i 's/:project_version: .*/:project_version: '$NEW_VERSION'/' topics/templates/document-attributes.adoc
 sed -i 's/:project_versionMvn: .*/:project_versionMvn: '$NEW_VERSION'/' topics/templates/document-attributes.adoc
 sed -i 's/:project_versionNpm: .*/:project_versionNpm: '$NEW_VERSION'/' topics/templates/document-attributes.adoc
-sed -i 's/:project_versionDoc: .*/:project_versionDoc: '$SHORT_VERSION'/' topics/templates/document-attributes.adoc
+sed -i 's/:project_versionDoc: .*/:project_versionDoc: '$NEW_VERSION'/' topics/templates/document-attributes.adoc
 cd -
 
 # Keycloak JS
