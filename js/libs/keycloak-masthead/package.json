@@ -41,7 +41,7 @@
   },
   "dependencies": {
     "@patternfly/react-core": "^5.0.0-alpha.127",
-    "@patternfly/react-icons": "^5.0.0-alpha.20",
+    "@patternfly/react-styles": "^5.0.0-alpha.17",
     "keycloak-js": "workspace:*",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
