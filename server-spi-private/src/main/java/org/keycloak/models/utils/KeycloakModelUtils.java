@@ -763,17 +763,6 @@ public final class KeycloakModelUtils {
         return normalized;
     }
 
-    /**
-     * @param client    {@link ClientModel}
-     * @param container {@link ScopeContainerModel}
-     * @return
-     * @deprecated Use {@link #getClientScopeMappingsStream(ClientModel, ScopeContainerModel)}  getClientScopeMappingsStream} instead.
-     */
-    @Deprecated
-    public static Set<RoleModel> getClientScopeMappings(ClientModel client, ScopeContainerModel container) {
-        return getClientScopeMappingsStream(client, container).collect(Collectors.toSet());
-    }
-
     public static Stream<RoleModel> getClientScopeMappingsStream(ClientModel client, ScopeContainerModel container) {
         return container.getScopeMappingsStream()
                 .filter(role -> role.getContainer() instanceof ClientModel &&

@@ -23,12 +23,4 @@ package org.keycloak.storage.user;
  * It's a combination of {@link UserQueryMethodsProvider} and {@link UserCountMethodsProvider}
  */
 public interface UserQueryProvider extends UserQueryMethodsProvider, UserCountMethodsProvider {
-
-    /**
-     * @deprecated This interface is no longer necessary, collection-based methods were removed from the parent interface
-     * and therefore the parent interface can be used directly
-     */
-    @Deprecated
-    interface Streams extends UserQueryProvider {
-    }
 }

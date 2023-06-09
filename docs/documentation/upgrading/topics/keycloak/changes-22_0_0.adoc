@@ -335,3 +335,17 @@ You need to add an empty `META-INF/beans.xml` to the JAR file where your custom 
 at runtime.
 
 You should also make sure your JAX-RS methods are declaring the expected media types for input and output by marking them with the `@Consumes` and `@Produces` annotations, respectively.
+
+= Deprecated methods from data providers and models
+
+In earlier versions of Keycloak, provider and model interfaces underwent a cleanup process that involved deprecating certain methods. 
+In this release the methods were removed and some additional methods were deprecated. The Javadoc for these methods from Keycloak 21 included information about 
+their corresponding replacements.
+
+* `RealmModel#searchForGroupByNameStream(String, Integer, Integer)` was removed.
+* `UserProvider#getUsersStream(RealmModel, boolean)` was removed.
+* `UserSessionPersisterProvider#loadUserSessions(int, int, boolean, int, String)` was removed.
+* Interfaces added for Streamification work were removed. Such as `RoleMapperModel.Streams` and similar.
+* `Streams` interfaces in federated storage provider classes were deprecated.
+* `KeycloakModelUtils#getClientScopeMappings` was removed.
+* Deprecated methods from `KeycloakSession` were removed.
