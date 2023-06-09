@@ -418,7 +418,7 @@ public abstract class AbstractUserAdapterFederatedStorage extends UserModelDefau
     }
 
     /**
-     * @deprecated This interface is no longer necessary, collection-based methods were removed from the parent interface
+     * @deprecated This interface is no longer necessary; collection-based methods were removed from the parent interface
      * and therefore the parent interface can be used directly
      */
     @Deprecated

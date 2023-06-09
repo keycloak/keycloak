@@ -51,7 +51,7 @@ public interface UserGroupMembershipFederatedStorage {
     Stream<String> getMembershipStream(RealmModel realm, GroupModel group, Integer firstResult, Integer max);
 
     /**
-     * @deprecated This interface is no longer necessary, collection-based methods were removed from the parent interface
+     * @deprecated This interface is no longer necessary; collection-based methods were removed from the parent interface
      * and therefore the parent interface can be used directly
      */
     @Deprecated
