@@ -11,6 +11,20 @@ export type Environment = {
   logo: string;
   /** Indicates the url to be followed when Brand image is clicked */
   logoUrl: string;
+  /** Feature flags */
+  features: {
+    isRegistrationEmailAsUsername: boolean;
+    isEditUserNameAllowed: boolean;
+    isInternationalizationEnabled: boolean;
+    isLinkedAccountsEnabled: boolean;
+    isEventsEnabled: boolean;
+    isMyResourcesEnabled: boolean;
+    isTotpConfigured: boolean;
+    deleteAccountAllowed: boolean;
+    updateEmailFeatureEnabled: boolean;
+    updateEmailActionEnabled: boolean;
+    isViewGroupsEnabled: boolean;
+  };
 };
 
 // The default environment, used during development.
@@ -21,6 +35,19 @@ const defaultEnvironment: Environment = {
   resourceUrl: "http://localhost:8080",
   logo: "/logo.svg",
   logoUrl: "/",
+  features: {
+    isRegistrationEmailAsUsername: false,
+    isEditUserNameAllowed: true,
+    isInternationalizationEnabled: true,
+    isLinkedAccountsEnabled: true,
+    isEventsEnabled: true,
+    isMyResourcesEnabled: true,
+    isTotpConfigured: true,
+    deleteAccountAllowed: true,
+    updateEmailFeatureEnabled: true,
+    updateEmailActionEnabled: true,
+    isViewGroupsEnabled: true,
+  },
 };
 
 // Merge the default and injected environment variables together.
