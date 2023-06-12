@@ -831,6 +831,12 @@
                 <groupId>org.wildfly.core</groupId>
                 <artifactId>wildfly-server</artifactId>
                 <version>${wildfly.core.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>io.smallrye</groupId>
+                        <artifactId>jandex</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>org.wildfly</groupId>
