@@ -8,20 +8,36 @@ import {
   GridItem,
   HelperText,
   HelperTextItem,
-  InputGroup,
 } from "@patternfly/react-core";
 import { MinusCircleIcon, PlusCircleIcon } from "@patternfly/react-icons";
 import { Fragment } from "react";
-import { useFieldArray, useFormContext } from "react-hook-form";
+import {
+  FieldValues,
+  useFieldArray,
+  useFormContext,
+  useWatch,
+} from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
 import { KeycloakTextInput } from "../keycloak-text-input/KeycloakTextInput";
+import { KeySelect } from "./KeySelect";
+import { ValueSelect } from "./ValueSelect";
+
+export type DefaultValue = {
+  key: string;
+  values?: string[];
+  label: string;
+};
 
 type KeyValueInputProps = {
   name: string;
+  defaultKeyValue?: DefaultValue[];
 };
 
-export const KeyValueInput = ({ name }: KeyValueInputProps) => {
+export const KeyValueInput = ({
+  name,
+  defaultKeyValue,
+}: KeyValueInputProps) => {
   const { t } = useTranslation("common");
   const {
     control,
@@ -30,36 +46,54 @@ export const KeyValueInput = ({ name }: KeyValueInputProps) => {
   } = useFormContext();
 
   const { fields, append, remove } = useFieldArray({
+    shouldUnregister: true,
     control,
     name,
   });
 
   const appendNew = () => append({ key: "", value: "" });
 
+  const values = useWatch<FieldValues>({
+    name,
+    control,
+    defaultValue: [],
+  });
+
   return fields.length > 0 ? (
     <>
       <Grid hasGutter>
-        <GridItem className="pf-c-form__label" span={6}>
+        <GridItem className="pf-c-form__label" span={5}>
           <span className="pf-c-form__label-text">{t("key")}</span>
         </GridItem>
-        <GridItem className="pf-c-form__label" span={6}>
+        <GridItem className="pf-c-form__label" span={7}>
           <span className="pf-c-form__label-text">{t("value")}</span>
         </GridItem>
         {fields.map((attribute, index) => {
           const keyError = !!(errors as any)[name]?.[index]?.key;
           const valueError = !!(errors as any)[name]?.[index]?.value;
+          const defaultItem = defaultKeyValue?.find(
+            (v) => v.key === values[index]?.key
+          );
 
           return (
             <Fragment key={attribute.id}>
-              <GridItem span={6}>
-                <KeycloakTextInput
-                  placeholder={t("keyPlaceholder")}
-                  aria-label={t("key")}
-                  data-testid={`${name}-key`}
-                  {...register(`${name}.${index}.key`, { required: true })}
-                  validated={keyError ? "error" : "default"}
-                  isRequired
-                />
+              <GridItem span={5}>
+                {defaultKeyValue ? (
+                  <KeySelect
+                    name={`${name}.${index}.key`}
+                    selectItems={defaultKeyValue}
+                    rules={{ required: true }}
+                  />
+                ) : (
+                  <KeycloakTextInput
+                    placeholder={t("keyPlaceholder")}
+                    aria-label={t("key")}
+                    data-testid={`${name}-key`}
+                    {...register(`${name}.${index}.key`, { required: true })}
+                    validated={keyError ? "error" : "default"}
+                    isRequired
+                  />
+                )}
                 {keyError && (
                   <HelperText>
                     <HelperTextItem variant="error">
@@ -68,8 +102,14 @@ export const KeyValueInput = ({ name }: KeyValueInputProps) => {
                   </HelperText>
                 )}
               </GridItem>
-              <GridItem span={6}>
-                <InputGroup>
+              <GridItem span={5}>
+                {defaultItem?.values ? (
+                  <ValueSelect
+                    name={`${name}.${index}.value`}
+                    selectItems={defaultItem.values}
+                    rules={{ required: true }}
+                  />
+                ) : (
                   <KeycloakTextInput
                     placeholder={t("valuePlaceholder")}
                     aria-label={t("value")}
@@ -78,15 +118,7 @@ export const KeyValueInput = ({ name }: KeyValueInputProps) => {
                     validated={valueError ? "error" : "default"}
                     isRequired
                   />
-                  <Button
-                    variant="link"
-                    title={t("removeAttribute")}
-                    onClick={() => remove(index)}
-                    data-testid={`${name}-remove`}
-                  >
-                    <MinusCircleIcon />
-                  </Button>
-                </InputGroup>
+                )}
                 {valueError && (
                   <HelperText>
                     <HelperTextItem variant="error">
@@ -94,6 +126,16 @@ export const KeyValueInput = ({ name }: KeyValueInputProps) => {
                     </HelperTextItem>
                   </HelperText>
                 )}
+              </GridItem>
+              <GridItem span={2}>
+                <Button
+                  variant="link"
+                  title={t("removeAttribute")}
+                  onClick={() => remove(index)}
+                  data-testid={`${name}-remove`}
+                >
+                  <MinusCircleIcon />
+                </Button>
               </GridItem>
             </Fragment>
           );
