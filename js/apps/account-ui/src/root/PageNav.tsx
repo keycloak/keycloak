@@ -35,7 +35,7 @@ type MenuItem = RootMenuItem | MenuItemWithChildren;
 const menuItems: MenuItem[] = [
   {
     label: "personalInfo",
-    path: "personal-info",
+    path: "/",
   },
   {
     label: "accountSecurity",
