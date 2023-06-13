@@ -95,6 +95,7 @@ public class AccountConsole {
             map.put("authUrl", authUrl.getPath().endsWith("/") ? authUrl : authUrl + "/");
             map.put("baseUrl", accountBaseUrl);
             map.put("realm", realm);
+            map.put("clientId", Constants.ACCOUNT_CONSOLE_CLIENT_ID);
             map.put("resourceUrl", Urls.themeRoot(authUrl).getPath() + "/" + Constants.ACCOUNT_MANAGEMENT_CLIENT_ID + "/" + theme.getName());
             map.put("resourceCommonUrl", Urls.themeRoot(adminBaseUri).getPath() + "/common/keycloak");
             map.put("resourceVersion", Version.RESOURCES_VERSION);
