@@ -56,6 +56,7 @@ export const ResetCredentialDialog = ({
         id: userId,
         actions,
         lifespan,
+        clientId: "security-admin-console",
       });
       addAlert(t("credentialResetEmailSuccess"), AlertVariant.success);
       onClose();
