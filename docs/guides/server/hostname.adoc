@@ -85,42 +85,288 @@ To reduce attack surface, the administration endpoints for Keycloak and the Admi
 Therefore, you can secure them by using a reverse proxy.
 For more information about which paths to expose using a reverse proxy, see <@links.server id="reverseproxy"/>.
 
-== Example Scenarios
-The following are more example scenarios and the corresponding commands for setting up a hostname.
+== Configuration Examples by Different Scenarios
 
-Note that the `start` command requires setting up TLS. The corresponding options are not shown for example purposes. For more details, see <@links.server id="enabletls"/>.
+Through this set of hostname configuration options, Keycloak aims to provide a flexible way to adapt to the characteristics of different environments.
 
-=== Exposing the server behind a TLS termination proxy
+Misconfiguration of the `hostname` and/or its `reverse proxy` options can lead to unusual and unpleasant behavior, such as Keycloak's `Admin Console` not loading correctly.
 
-In this example, the server is running behind a TLS termination proxy and publicly available from `https://mykeycloak`.
+In an attempt to further improve the user experience and minimize the occurrence of misconfigurations, see the list of sample `hostname` and `proxy` configurations below, which is oriented to possible scenarios that may exist in different computing environments.
 
-.Configuration:
-<@kc.start parameters="--hostname=mykeycloak --proxy=edge"/>
+The following are more example scenarios and the corresponding commands for setting up the `hostname` and/or `proxy` options.
 
-=== Exposing the server without a proxy
+> Note that the `start` command requires setting up TLS. The corresponding options are not shown for example purposes. For more details, see <@links.server id="enabletls"/>.
 
-In this example, the server is running without a proxy and exposed using a URL using HTTPS.
+=== Scenario 01 - Development test in localhost over HTTP
+
+.Description:
+The most basic option to run in `localhost` with all default values. For development and/or local testing purposes.
 
 .Keycloak configuration:
-<@kc.start parameters="--hostname-url=https://mykeycloak"/>
 
-It is highly recommended using a TLS termination proxy in front of the server for security and availability reasons. For more details,
-see <@links.server id="reverseproxy"/>.
+  <@kc.startdev parameters=""/>
 
-=== Forcing backend endpoints to use the same URL the server is exposed
+All 3 endpoint categories are available at: `http://localhost:8080`
 
+---
+
+=== Scenario 02 - Exposing the server with custom hostname over HTTP
+
+.Description:
+Just setting a custom `hostname` to be reachable via HTTP only.
+
+.Keycloak configuration:
+
+  <@kc.start parameters="--hostname=mykeycloak.com --http-enabled=true --hostname-strict-https=false"/>
+
+All 3 endpoint categories are available at: `http://mykeycloak.com:8080`
+
+---
+
+=== Scenario 03 - Exposing the server with custom hostname over HTTPS
+
+.Description:
+Setting a custom `hostname` to be reachable over HTTPS and exposing the server without a proxy.
+
+.Keycloak configuration:
+Set the HTTPS/TLS Certificates in Keycloak. For more details, see <@links.server id="enabletls"/>.
+
+  <@kc.start parameters="-hostname=mykeycloak.com --https-certificate-file=/path-to-file/the-cert.pem --https-certificate-key-file=/path-to-file/the-cert-key.pem"/>
+
+All 3 endpoint categories are available at: `https://mykeycloak.com:8443`
+
+---
+
+=== Scenario 04 - Exposing the server with custom hostname and Admin Console URL and both over HTTP
+
+.Description:
+Setting a custom `hostname` for Frontend and Backend, and setting a different URL to reach Admin Console UI. Both reachable via HTTP only.
+
+.Keycloak configuration:
+
+  <@kc.start parameters="--hostname=mykeycloak.com --hostname-admin=admin.mykeycloak.com --http-enabled=true --hostname-strict-https=false"/>
+
+Frontend/Backend available at: `http://mykeycloak.com:8080`
+
+Admin Console available at: `http://admin.mykeycloak.com:8080`
+
+---
+
+=== Scenario 05 - Exposing the server with custom hostname and Admin Console URL and both over HTTPS
+
+.Description:
+Setting a custom `hostname` for Frontend/Backend endpoints, and setting a different URL to reach `Admin Console UI`. Both reachable over HTTPS.
+
+.Keycloak configuration:
+
+Set the HTTPS/TLS Certificates in Keycloak. For more details, see <@links.server id="enabletls"/>.
+
+  <@kc.start parameters="--hostname=mykeycloak.com --hostname-admin=admin.mykeycloak.com --https-certificate-file=/path-to-file/the-cert.pem --https-certificate-key-file=/path-to-file/the-cert-key.pem"/>
+
+Frontend/Backend available at: `https://mykeycloak.com:8443`
+
+Admin Console available at: `https://admin.mykeycloak.com:8443`
+
+---
+
+=== Scenario 06 - Exposing the server with custom hostname over HTTP and behind a proxy in 'edge' mode
+
+.Description:
+Setting a custom `hostname` and setting a `reverse proxy` in 'edge' mode in front of Keycloak, which redirects the incoming requests on its port [80] to Keycloak on port [8080], via HTTP in both ends.
+
+.Keycloak configuration:
+
+  <@kc.start parameters="--hostname=mykeycloak.com --proxy=edge --http-enabled=true --hostname-strict-https=false"/>
+
+For more information about which paths to expose using a reverse proxy, see <@links.server id="reverseproxy"/>.
+
+All 3 endpoint categories are available at: `http://mykeycloak.com`
+
+---
+
+=== Scenario 07 - Exposing the server with custom hostname over HTTPS and behind a proxy in 'edge' mode
+
+.Description:
+Setting a custom `hostname` and setting a `reverse proxy` in 'edge' mode in front of Keycloak, which redirects the incoming requests on its port [443] to Keycloak on port [8080], over HTTPS only in `proxy` end.
+
+.Keycloak configuration:
+
+  <@kc.start parameters="--hostname=mykeycloak.com --proxy=edge"/>
+
+Set the HTTPS/TLS termination on your `reverse proxy` end. In this scenario, Keycloak remains in HTTP only, and trust in your `proxy`.
+
+All 3 endpoint categories are available at: `https://mykeycloak.com`
+
+---
+
+=== Scenario 08 - Exposing the server with custom hostname over HTTP and behind a proxy in 'passthrough' mode
+
+.Description:
+Setting a custom `hostname` and setting a `reverse proxy` in 'passthrough' mode in front of Keycloak, which redirects the incoming requests on its port [80] to Keycloak on port [8080], via HTTP only in both ends.
+
+.Keycloak configuration:
+
+  <@kc.start parameters="--hostname=mykeycloak.com --proxy=passthrough --http-enabled=true --hostname-strict-https=false"/>
+
+Reverse proxy doesn't have HTTPS/TLS termination and trust in Keycloak. The access to your Keycloak instance behind the proxy is then provided over HTTP only, ## which is not recommended ##.
+
+All 3 endpoint categories are available at: `http://mykeycloak.com`
+
+---
+
+=== Scenario 09 - Exposing the server with custom hostname over HTTPS and behind a proxy in 'passthrough' mode
+
+.Description:
+Setting a custom `hostname` and setting a `reverse proxy` in 'passthrough' mode in front of Keycloak, which redirects the incoming requests on its port [80] to Keycloak on port [8080], via HTTP only in both ends.
+
+.Keycloak configuration:
+
+  <@kc.start parameters="--hostname=mykeycloak.com --proxy=passthrough --https-certificate-file=/path-to-file/the-cert.pem --https-certificate-key-file=/path-to-file/the-cert-key.pem"/>
+
+Your `reverse proxy` don't have HTTPS/TLS termination and trust in Keycloak, which has HTTP/TLS termination. Set the HTTPS/TLS certificates in Keycloak. For more details, see <@links.server id="enabletls"/>;
+
+For more information about which paths to expose using a `reverse proxy`, see <@links.server id="reverseproxy"/>.
+
+All 3 endpoint categories are available at: `https://mykeycloak.com`
+
+---
+
+=== Scenario 10 - Exposing the server with custom hostname over HTTPS and behind a proxy in 'reencrypt' mode
+
+.Description:
+Setting a custom `hostname` and setting a `reverse proxy` in 'reencrypt' mode in front of Keycloak, which redirects the incoming requests on its port [443] to Keycloak on port [8443], via HTTPS on both ends.
+
+.Keycloak configuration:
+
+  <@kc.start parameters="--hostname=mykeycloak.com --proxy=reencrypt --https-certificate-file=/path-to-file/the-cert.pem --https-certificate-key-file=/path-to-file/the-cert-key.pem"/>
+
+Either your `reverse proxy` and Keycloak have HTTPS/TLS termination, with different certificates. Set the properly HTTPS/TLS certificates in Keycloak. For more details, see <@links.server id="enabletls"/>.
+
+Also set the HTTPS/TLS termination on your `reverse proxy`. For more information about which paths to expose using a `reverse proxy`, see <@links.server id="reverseproxy"/>.
+
+All 3 endpoint categories are available at: `https://mykeycloak.com`
+
+---
+
+=== Scenario 11 - Exposing the server with custom hostname and Admin Console URL over HTTP and behind a proxy in 'edge' mode
+
+.Description:
+Keycloak is behind a `reverse proxy` in 'edge' mode. Setting a custom `hostname` for Frontend and Backend, and setting a different URL to reach `Admin Console UI`. Both reachable via HTTP only.
+
+.Keycloak configuration:
+
+  <@kc.start parameters="--hostname=mykeycloak.com --hostname-admin=admin.mykeycloak.com --proxy=edge --http-enabled=true --hostname-strict-https=false"/>
+
+For more information about which paths to expose using a `reverse proxy`, see <@links.server id="reverseproxy"/>.
+
+No HTTS/TLS termination in any end, ## which is not recommended. ##
+
+Frontend/Backend available at: `http://mykeycloak.com`
+
+Admin Console available at: `http://admin.mykeycloak.com`
+
+---
+
+=== Scenario 12 - Exposing the server with custom hostname and Admin Console URL over HTTPS and behind a proxy in 'edge' mode
+
+.Description:
+Keycloak is behind a `reverse proxy` in 'edge' mode. Setting a custom `hostname for Frontend and Backend, and setting a different URL to reach Admin Console UI. `Reverse proxy` in 'edge' mode in front of Keycloak, which redirects the incoming requests on its port [443] to Keycloak on port [8080], via HTTPS only in `proxy` end.
+
+.Keycloak configuration:
+
+  <@kc.start parameters="--hostname=mykeycloak.com --hostname-admin=admin.mykeycloak.com --proxy=edge"/>
+
+For more information about which paths to expose using a `reverse proxy`, see <@links.server id="reverseproxy"/>.
+
+You must set the HTTS/TLS termination in `reverse proxy` end. Keycloak accept HTTP and trusts on `reverse proxy HTTPS/TLS termination settings.
+
+Frontend/Backend available at: `https://mykeycloak.com`
+
+Admin Console available at: `https://admin.mykeycloak.com`
+
+---
+
+=== Scenario 13 - Exposing the server with custom hostname and Admin Console URL over HTTP and behind a Proxy in 'passthrough' mode
+
+.Description:
+Keycloak is behind a `reverse proxy` in 'passthrough' mode. Setting a custom `hostname for Frontend and Backend, and setting a different URL to reach `Admin Console UI`. Both reachable via HTTP only.
+
+.Keycloak configuration:
+
+  <@kc.start parameters="--hostname=mykeycloak.com --hostname-admin=admin.mykeycloak.com --proxy=passthrough --http-enabled=true --hostname-strict-https=false"/>
+
+For more information about which paths to expose using a `reverse proxy`, see <@links.server id="reverseproxy"/>.
+
+No HTTS/TLS termination in any end, ## which is not recommended ##.
+
+Frontend/Backend available at: `http://mykeycloak.com`
+
+Admin Console available at: `http://admin.mykeycloak.com`
+
+---
+
+=== Scenario 14 - Exposing the server with custom hostname and Admin Console URL over HTTPS and behind a proxy in 'passthrough' mode
+
+.Description:
+Keycloak is behind a `reverse proxy` in 'passthrough' mode. Setting a custom `hostname` for Frontend/Backend, and setting a different URL to reach `Admin Console UI`. `Reverse proxy` in 'passthrough' mode in front of Keycloak, which redirects the incoming requests on its port [80] to Keycloak on port [8443], via HTTPS only in Keycloak end.
+
+.Keycloak configuration:
+
+  <@kc.start parameters="--hostname=mykeycloak.com --hostname-admin=admin.mykeycloak.com --proxy=passthrough --https-certificate-file=/path-to-file/the-cert.pem --https-certificate-key-file=/path-to-file/the-cert-key.pem"/>
+
+For more information about which paths to expose using a `reverse proxy`, see <@links.server id="reverseproxy"/>.
+
+Set the HTTPS/TLS certificates in Keycloak. For more details, see <@links.server id="enabletls"/>.
+
+Frontend/Backend available at: `https://mykeycloak.com`
+
+Admin Console available at: `https://admin.mykeycloak.com`
+
+---
+
+=== Scenario 15 - Exposing the server with custom hostname and Admin Console URL over HTTPS and behind a proxy in 'reencrypt' mode
+
+.Description:
+Keycloak is behind a `reverse proxy` in 'reencrypt' mode. Setting a custom `hostname` for Frontend/Backend endpoints, and setting a different URL to reach `Admin Console UI`. `Reverse proxy` in 'reencrypt' mode in front of Keycloak, which redirects the incoming requests on its port [443] to Keycloak on port [8443], via HTTPS in both ends.
+
+.Keycloak configuration:
+
+  <@kc.start parameters="--hostname-admin=admin.mykeycloak.com --proxy=reencrypt --https-certificate-file=/path-to-file/the-cert.pem --https-certificate-key-file=/path-to-file/the-cert-key.pem"/>
+
+Either your `reverse proxy` and Keycloak have HTTPS/TLS termination, with different certificates. Set the properly HTTPS/TLS certificates in Keycloak. For more details, see <@links.server id="enabletls"/>;
+
+Also set the HTTPS/TLS termination on your `reverse proxy`. For more information about which paths to expose using a `reverse proxy`, see <@links.server id="reverseproxy"/>.
+
+Frontend/Backend available at: `https://mykeycloak.com`
+
+Admin Console available at: `https://admin.mykeycloak.com`
+
+---
+
+=== [WIP - To be checked] Scenario 16 - Forcing backend endpoints to use the same URL the server is exposed
+
+.Description:
 In this example, backend endpoints are exposed using the same URL used by the server so that clients always fetch the same URL
 regardless of the origin of the request.
 
 .Keycloak configuration:
-<@kc.start parameters="--hostname=mykeycloak --hostname-strict-backchannel=true"/>
 
-=== Exposing the server using a port other than the default ports
+  <@kc.start parameters="--hostname=mykeycloak --hostname-strict-backchannel=true"/>
 
+All 3 endpoint categories are available at: `[TBD]`
+
+---
+
+=== [WIP - To be checked] Scenario 17 - Exposing the server using a port other than the default ports
+
+.Description:
 In this example, the server is accessible using a port other than the default ports.
 
 .Keycloak configuration:
-<@kc.start parameters="--hostname-url=https://mykeycloak:8989"/>
+
+  <@kc.start parameters="--hostname-url=https://mykeycloak:8989"/>
+
+All 3 endpoint categories are available at: `[TBD]`
 
 == Troubleshooting
 
