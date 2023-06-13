@@ -19,6 +19,7 @@ import { useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
 import { useConfirmDialog } from "../../../components/confirm-dialog/ConfirmDialog";
+import { DefaultValue } from "../../../components/key-value-form/KeyValueInput";
 import useToggle from "../../../utils/useToggle";
 import type { IndexedValidations } from "../../NewAttributeSettings";
 import { AddValidatorDialog } from "../attribute/AddValidatorDialog";
@@ -29,7 +30,7 @@ export const AttributeValidations = () => {
   const { t } = useTranslation("realm-settings");
   const [addValidatorModalOpen, toggleModal] = useToggle();
   const [validatorToDelete, setValidatorToDelete] = useState<string>();
-  const { setValue, control, register } = useFormContext();
+  const { setValue, control, register, getValues } = useFormContext();
 
   const validators: IndexedValidations[] = useWatch({
     name: "validations",
@@ -39,7 +40,7 @@ export const AttributeValidations = () => {
 
   useEffect(() => {
     register("validations");
-  }, []);
+  }, [register]);
 
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
     titleKey: t("deleteValidatorConfirmTitle"),
@@ -63,6 +64,16 @@ export const AttributeValidations = () => {
         <AddValidatorDialog
           selectedValidators={validators}
           onConfirm={(newValidator) => {
+            const annotations: DefaultValue[] = getValues("annotations");
+            if (
+              newValidator.id === "options" &&
+              !annotations.find((a) => a.key === "inputType")
+            ) {
+              setValue("annotations", [
+                ...annotations,
+                { key: "inputType", value: "select" },
+              ]);
+            }
             setValue("validations", [
               ...validators,
               { key: newValidator.id, value: newValidator.config },
