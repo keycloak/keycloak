@@ -166,13 +166,7 @@ public class WatchedSecretsStore extends OperatorManagedResource {
 
     private Set<Secret> fetchCurrentSecrets(Set<String> secretsNames) {
         return secretsNames.stream()
-                .map(n -> {
-                    Secret secret = client.secrets().inNamespace(getNamespace()).withName(n).get();
-                    if (secret == null) {
-                        throw new IllegalStateException("Secret " + n + " not found");
-                    }
-                    return secret;
-                })
+                .map(n -> client.secrets().inNamespace(getNamespace()).withName(n).require())
                 .collect(Collectors.toSet());
     }
 

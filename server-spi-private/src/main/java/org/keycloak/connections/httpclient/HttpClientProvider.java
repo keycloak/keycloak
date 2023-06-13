@@ -54,7 +54,7 @@ public interface HttpClientProvider extends Provider {
      *
      * @param uri
      * @return response stream, you must close this stream or leaks will happen
-     * @throws IOException
+     * @throws IOException On network errors, no content being returned or a non-2xx HTTP status code
      */
     public InputStream get(String uri) throws IOException;
 }

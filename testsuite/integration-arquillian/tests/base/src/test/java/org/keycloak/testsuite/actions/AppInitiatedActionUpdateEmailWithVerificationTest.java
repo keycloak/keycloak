@@ -16,6 +16,8 @@
  */
 package org.keycloak.testsuite.actions;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.endsWith;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -24,18 +26,25 @@ import jakarta.mail.Address;
 import jakarta.mail.Message;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
+import org.hamcrest.MatcherAssert;
+import org.hamcrest.Matchers;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
+import org.keycloak.TokenVerifier;
+import org.keycloak.common.VerificationException;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
+import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.InfoPage;
 import org.keycloak.testsuite.util.GreenMailRule;
 import org.keycloak.testsuite.util.MailUtils;
+import org.openqa.selenium.By;
+import org.openqa.selenium.WebElement;
 
 public class AppInitiatedActionUpdateEmailWithVerificationTest extends AbstractAppInitiatedActionUpdateEmailTest {
 
@@ -140,4 +149,37 @@ public class AppInitiatedActionUpdateEmailWithVerificationTest extends AbstractA
 		return MailUtils.getPasswordResetEmailLink(message).trim();
 	}
 
+	@Test
+	public void updateEmailWithRedirect() throws Exception {
+		doAIA();
+		loginPage.login("test-user@localhost", "password");
+
+		emailUpdatePage.assertCurrent();
+		assertTrue(emailUpdatePage.isCancelDisplayed());
+		emailUpdatePage.changeEmail("new@localhost");
+
+		events.expect(EventType.SEND_VERIFY_EMAIL).detail(Details.EMAIL, "new@localhost").assertEvent();
+		Assert.assertEquals("test-user@localhost", ActionUtil.findUserWithAdminClient(adminClient, "test-user@localhost").getEmail());
+		String link = fetchEmailConfirmationLink("new@localhost");
+		String token = link.substring(link.indexOf("key=") + "key=".length()).split("&")[0];
+		try {
+			final AccessToken actionTokenVerifyEmail = TokenVerifier.create(token, AccessToken.class).getToken();
+			//Issue #14860
+			assertEquals("test-app", actionTokenVerifyEmail.getIssuedFor());
+		} catch (VerificationException e) {
+			throw new IOException(e);
+		}
+		driver.navigate().to(link);
+
+		infoPage.assertCurrent();
+		assertEquals(String.format("The account email has been successfully updated to %s.", "new@localhost"), infoPage.getInfo());
+		//Issue #15136
+		final WebElement backToApplicationLink = driver.findElement(By.linkText("« Back to Application"));
+		assertThat(backToApplicationLink.toString(), Matchers.containsString("/auth/realms/master/app/auth"));
+
+		events.expect(EventType.UPDATE_EMAIL)
+				.detail(Details.PREVIOUS_EMAIL, "test-user@localhost")
+				.detail(Details.UPDATED_EMAIL, "new@localhost");
+		Assert.assertEquals("new@localhost", ActionUtil.findUserWithAdminClient(adminClient, "test-user@localhost").getEmail());
+	}
 }

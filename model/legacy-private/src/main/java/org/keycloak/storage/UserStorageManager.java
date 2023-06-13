@@ -455,40 +455,16 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
     }
 
     @Override
-    public Stream<UserModel> searchForUserStream(RealmModel realm, String search, Integer firstResult, Integer maxResults) {
-        Stream<UserModel> results = query((provider, firstResultInQuery, maxResultsInQuery) -> {
-            if (provider instanceof UserQueryMethodsProvider) {
-                return ((UserQueryMethodsProvider)provider).searchForUserStream(realm, search, firstResultInQuery, maxResultsInQuery);
-            }
-            return Stream.empty();
-        }, (provider, firstResultInQuery, maxResultsInQuery) -> {
-            if (provider instanceof UserCountMethodsProvider) {
-                return ((UserCountMethodsProvider)provider).getUsersCount(realm, search);
-            }
-            return 0;
-        }, realm, firstResult, maxResults);
-        return importValidation(realm, results);
-    }
-
-    @Override
     public Stream<UserModel> searchForUserStream(RealmModel realm, Map<String, String> attributes, Integer firstResult, Integer maxResults) {
         Stream<UserModel> results = query((provider, firstResultInQuery, maxResultsInQuery) -> {
             if (provider instanceof UserQueryMethodsProvider) {
-                if (attributes.containsKey(UserModel.SEARCH)) {
-                    return ((UserQueryMethodsProvider)provider).searchForUserStream(realm, attributes.get(UserModel.SEARCH), firstResultInQuery, maxResultsInQuery);
-                } else {
-                    return ((UserQueryMethodsProvider)provider).searchForUserStream(realm, attributes, firstResultInQuery, maxResultsInQuery);
-                }
+                return ((UserQueryMethodsProvider)provider).searchForUserStream(realm, attributes, firstResultInQuery, maxResultsInQuery);
             }
             return Stream.empty();
         },
         (provider, firstResultInQuery, maxResultsInQuery) -> {
             if (provider instanceof UserCountMethodsProvider) {
-                if (attributes.containsKey(UserModel.SEARCH)) {
-                    return ((UserCountMethodsProvider)provider).getUsersCount(realm, attributes.get(UserModel.SEARCH));
-                } else {
-                    return ((UserCountMethodsProvider)provider).getUsersCount(realm, attributes);
-                }
+                return ((UserCountMethodsProvider)provider).getUsersCount(realm, attributes);
             }
             return 0;
         }

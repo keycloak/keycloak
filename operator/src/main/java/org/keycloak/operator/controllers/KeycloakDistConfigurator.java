@@ -29,7 +29,7 @@ import io.quarkus.logging.Log;
 import org.keycloak.common.util.CollectionUtil;
 import org.keycloak.operator.Constants;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
-import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusBuilder;
+import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusAggregator;
 import org.keycloak.operator.crds.v2alpha1.deployment.ValueOrSecret;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.DatabaseSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.FeatureSpec;
@@ -85,7 +85,7 @@ public class KeycloakDistConfigurator {
      *
      * @param status Keycloak Status builder
      */
-    public void validateOptions(KeycloakStatusBuilder status) {
+    public void validateOptions(KeycloakStatusAggregator status) {
         assumeFirstClassCitizens(status);
     }
 
@@ -175,7 +175,7 @@ public class KeycloakDistConfigurator {
      *
      * @param status                    Status of the deployment
      */
-    protected void assumeFirstClassCitizens(KeycloakStatusBuilder status) {
+    protected void assumeFirstClassCitizens(KeycloakStatusAggregator status) {
         final var serverConfigNames = keycloakCR
                 .getSpec()
                 .getAdditionalOptions()

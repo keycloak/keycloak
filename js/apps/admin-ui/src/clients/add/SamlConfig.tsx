@@ -131,6 +131,10 @@ export const SamlConfig = () => {
         )}
         label="optimizeLookup"
       />
+      <Toggle
+        name={convertAttributeNameToForm("attributes.saml.allow.ecp.flow")}
+        label="allowEcpFlow"
+      />
     </FormAccess>
   );
 };

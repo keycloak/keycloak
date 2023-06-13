@@ -12,7 +12,6 @@ import {
 
 import { useServerInfo } from "../context/server-info/ServerInfoProvider";
 import { TableToolbar } from "../components/table-toolbar/TableToolbar";
-import { isDefined } from "ui-shared";
 
 export const ProviderInfo = () => {
   const { t } = useTranslation("dashboard");
@@ -56,37 +55,39 @@ export const ProviderInfo = () => {
                 <Td>{name}</Td>
                 <Td>
                   <ul>
-                    {Object.entries(providers).map(([key]) => (
-                      <li key={key}>{key}</li>
-                    ))}
+                    {Object.entries(providers).map(
+                      ([key, { operationalInfo }]) => (
+                        <li key={key}>
+                          {key}
+                          {operationalInfo ? (
+                            <ExpandableSection
+                              key={key}
+                              isExpanded={open.includes(key)}
+                              onToggle={() => toggleOpen(key)}
+                              toggleText={
+                                open.includes(key)
+                                  ? t("showLess")
+                                  : t("showMore")
+                              }
+                            >
+                              <TableComposable borders={false}>
+                                <Tbody>
+                                  {Object.entries(operationalInfo).map(
+                                    ([key, value]) => (
+                                      <Tr key={key}>
+                                        <Td>{key}</Td>
+                                        <Td>{value}</Td>
+                                      </Tr>
+                                    )
+                                  )}
+                                </Tbody>
+                              </TableComposable>
+                            </ExpandableSection>
+                          ) : null}
+                        </li>
+                      )
+                    )}
                   </ul>
-                  {Object.entries(providers)
-                    .map(([key, { operationalInfo }]) =>
-                      operationalInfo ? (
-                        <ExpandableSection
-                          key={key}
-                          isExpanded={open.includes(key)}
-                          onToggle={() => toggleOpen(key)}
-                          toggleText={
-                            open.includes(key) ? t("showLess") : t("showMore")
-                          }
-                        >
-                          <TableComposable borders={false}>
-                            <Tbody>
-                              {Object.entries(operationalInfo).map(
-                                ([key, value]) => (
-                                  <Tr key={key}>
-                                    <Td>{key}</Td>
-                                    <Td>{value}</Td>
-                                  </Tr>
-                                )
-                              )}
-                            </Tbody>
-                          </TableComposable>
-                        </ExpandableSection>
-                      ) : null
-                    )
-                    .filter(isDefined)}
                 </Td>
               </Tr>
             ))}

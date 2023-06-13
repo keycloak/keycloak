@@ -375,6 +375,7 @@
   "includeAuthnStatement": "Include AuthnStatement",
   "includeOneTimeUseCondition": "Include OneTimeUse Condition",
   "optimizeLookup": "Optimize REDIRECT signing key lookup",
+  "allowEcpFlow": "Allow ECP flow",
   "signDocuments": "Sign documents",
   "signAssertions": "Sign assertions",
   "signatureKeyName": "SAML signature key name",

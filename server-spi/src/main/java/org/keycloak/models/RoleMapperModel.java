@@ -18,8 +18,6 @@
 package org.keycloak.models;
 
 import java.util.Objects;
-import java.util.Set;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -85,12 +83,4 @@ public interface RoleMapperModel {
      * @param role Role to remove
      */
     void deleteRoleMapping(RoleModel role);
-
-    /**
-     * @deprecated This interface is no longer necessary, collection-based methods were removed from the parent interface
-     * and therefore the parent interface can be used directly
-     */
-    @Deprecated
-    interface Streams extends RoleMapperModel {
-    }
 }

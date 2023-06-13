@@ -1654,11 +1654,6 @@ public class IdentityBrokerStateTestHelpers {
         }
 
         @Override
-        public Stream<GroupModel> searchForGroupByNameStream(String search, Integer first, Integer max) {
-            return null;
-        }
-
-        @Override
         public boolean removeGroup(GroupModel group) {
             return false;
         }

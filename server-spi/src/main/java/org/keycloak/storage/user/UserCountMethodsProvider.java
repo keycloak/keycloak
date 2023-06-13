@@ -68,7 +68,9 @@ public interface UserCountMethodsProvider {
      * @param realm  the realm
      * @param search case insensitive list of strings separated by whitespaces.
      * @return number of users that match the search
+     * @deprecated Use {@link #getUsersCount(RealmModel, Map)} with an {@code params} map containing {@link UserModel#SEARCH} instead.
      */
+    @Deprecated
     default int getUsersCount(RealmModel realm, String search) {
         if (!(this instanceof UserQueryMethodsProvider)) {
             return 0;
@@ -85,7 +87,9 @@ public interface UserCountMethodsProvider {
      * @param search   case insensitive list of strings separated by whitespaces.
      * @param groupIds set of groups IDs, the returned user needs to belong to at least one of them
      * @return number of users that match the search and given groups
+     * @deprecated Use {@link #getUsersCount(RealmModel, Map, Set)} with an {@code params} map containing {@link UserModel#SEARCH} instead.
      */
+    @Deprecated
     default int getUsersCount(RealmModel realm, String search, Set<String> groupIds) {
         if (groupIds == null || groupIds.isEmpty() || !(this instanceof UserQueryMethodsProvider)) {
             return 0;

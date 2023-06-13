@@ -82,22 +82,23 @@ export class Agent {
       const baseParams = this.getBaseParams?.() ?? {};
 
       // Filter query parameters by queryParamKeys
-      const queryParams = queryParamKeys
-        ? pick(payload, queryParamKeys)
-        : undefined;
+      const queryParams =
+        queryParamKeys.length > 0 ? pick(payload, queryParamKeys) : undefined;
 
       // Add filtered payload parameters to base parameters
       const allUrlParamKeys = [...Object.keys(baseParams), ...urlParamKeys];
       const urlParams = { ...baseParams, ...pick(payload, allUrlParamKeys) };
 
-      // Omit url parameters and query parameters from payload
-      const omittedKeys = ignoredKeys
-        ? [...allUrlParamKeys, ...queryParamKeys].filter(
-            (key) => !ignoredKeys.includes(key)
-          )
-        : [...allUrlParamKeys, ...queryParamKeys];
+      if (!(payload instanceof FormData)) {
+        // Omit url parameters and query parameters from payload
+        const omittedKeys = ignoredKeys
+          ? [...allUrlParamKeys, ...queryParamKeys].filter(
+              (key) => !ignoredKeys.includes(key)
+            )
+          : [...allUrlParamKeys, ...queryParamKeys];
 
-      payload = omit(payload, omittedKeys);
+        payload = omit(payload, omittedKeys);
+      }
 
       // Transform keys of both payload and queryParams
       if (keyTransform) {

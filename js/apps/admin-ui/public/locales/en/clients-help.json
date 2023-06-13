@@ -22,6 +22,7 @@
   "includeAuthnStatement": "Should a statement specifying the method and timestamp be included in login responses?",
   "includeOneTimeUseCondition": "Should a OneTimeUse Condition be included in login responses?",
   "optimizeLookup": "When signing SAML documents in REDIRECT binding for SP that is secured by Keycloak adapter, should the ID of the signing key be included in SAML protocol message in <Extensions> element? This optimizes validation of the signature as the validating party uses a single key instead of trying every known key for validation.",
+  "allowEcpFlow": "This client is allowed to use ECP flow for authenticating users.",
   "signDocuments": "Should SAML documents be signed by the realm?",
   "signAssertions": "Should assertions inside SAML documents be signed? This setting is not needed if document is already being signed.",
   "signatureAlgorithm": "The signature algorithm to use to sign documents. Note that 'SHA1' based algorithms are deprecated and can be removed in the future. It is recommended to stick to some more secure algorithm instead of '*_SHA1'",
