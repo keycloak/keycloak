@@ -239,7 +239,7 @@
 
         <!-- Frontend -->
         <node.version>v18.16.0</node.version>
-        <pnpm.version>8.6.1</pnpm.version>
+        <pnpm.version>8.6.2</pnpm.version>
     </properties>
 
     <url>http://keycloak.org</url>
