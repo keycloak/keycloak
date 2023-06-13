@@ -22,10 +22,6 @@
             for reference
         -->
         <wildfly.common.version>1.5.4.Final-format-001</wildfly.common.version>
-        <!--
-            FIXME: This is currently NOT aligned with Quarkus and QOSDK. We need to use a newer Fabric8 version to resolve issues in Vert.x HTTP Client.
-            Tracked by: https://github.com/keycloak/keycloak/issues/20130
-        -->
         <kubernetes-client.version>6.6.2</kubernetes-client.version>
 
         <compiler-plugin.version>3.8.1</compiler-plugin.version>
@@ -35,8 +31,8 @@
         <maven.compiler.target>11</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-        <quarkus.operator.sdk.version>6.1.0</quarkus.operator.sdk.version>
-        <quarkus.operator.build.version>3.1.0.Final</quarkus.operator.build.version>
+        <quarkus.operator.sdk.version>6.1.1</quarkus.operator.sdk.version>
+        <quarkus.operator.build.version>3.1.1.Final</quarkus.operator.build.version>
         <quarkus.container-image.group>keycloak</quarkus.container-image.group>
     </properties>
     
