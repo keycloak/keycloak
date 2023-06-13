@@ -62,33 +62,30 @@ public class SessionsResource {
                                                        @DefaultValue("0") int first, @QueryParam("max") @DefaultValue("10") int max) {
         auth.realm().requireViewRealm();
 
-        Stream<SessionId> clientIds = Stream.<SessionId>builder().build();
+        Stream<SessionId> sessionIdStream = Stream.<SessionId>builder().build();
         if (type == ALL || type == REGULAR) {
             final Map<String, Long> clientSessionStats = session.sessions().getActiveClientSessionStats(realm, false);
-            clientIds = Stream.concat(clientIds, clientSessionStats
+            sessionIdStream = Stream.concat(sessionIdStream, clientSessionStats
                     .keySet().stream().map(i -> new SessionId(i, REGULAR)));
         }
         if (type == ALL || type == OFFLINE) {
-            clientIds = Stream.concat(clientIds, session.sessions().getActiveClientSessionStats(realm, true)
+            sessionIdStream = Stream.concat(sessionIdStream, session.sessions().getActiveClientSessionStats(realm, true)
                     .keySet().stream().map(i -> new SessionId(i, OFFLINE)));
         }
 
-        final List<SessionId> sessionIds = clientIds.collect(Collectors.toList());
-        Stream<SessionRepresentation> result = Stream.<SessionRepresentation>builder().build();
-        for (SessionId sessionId : sessionIds) {
+        Stream<SessionRepresentation> result = sessionIdStream.flatMap((sessionId) -> {
             ClientModel clientModel = realm.getClientById(sessionId.getClientId());
             switch (sessionId.getType()) {
                 case REGULAR:
-                    result = Stream.concat(result, session.sessions().getUserSessionsStream(realm, clientModel)
-                            .map(s -> toUserSessionRepresentation(s, sessionId.getClientId(), REGULAR))).distinct();
-                    break;
+                    return session.sessions().getUserSessionsStream(realm, clientModel)
+                            .map(s -> toUserSessionRepresentation(s, sessionId.getClientId(), REGULAR));
                 case OFFLINE:
-                    result = Stream.concat(result, session.sessions()
+                    return session.sessions()
                             .getOfflineUserSessionsStream(realm, clientModel, null, null)
-                            .map(s -> toUserSessionRepresentation(s, sessionId.getClientId(), OFFLINE))).distinct();
-                    break;
+                            .map(s -> toUserSessionRepresentation(s, sessionId.getClientId(), OFFLINE));
             }
-        }
+            return Stream.<SessionRepresentation>builder().build();
+        }).distinct();
 
         if (!search.equals("")) {
             result = result.filter(s -> s.getUsername().contains(search) || s.getIpAddress().contains(search));
