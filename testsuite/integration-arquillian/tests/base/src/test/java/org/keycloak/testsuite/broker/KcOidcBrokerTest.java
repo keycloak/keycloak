@@ -518,7 +518,7 @@ public final class KcOidcBrokerTest extends AbstractAdvancedBrokerTest {
 
         IdentityProviderRepresentation identityProvider = identityProviderResource.toRepresentation();
         updateIdPClaimFilter(identityProvider, identityProviderResource, true, USER_ATTRIBUTE_NAME, USER_ATTRIBUTE_VALUE);
-        driver.navigate().to(getAccountUrl(getConsumerRoot(), bc.consumerRealmName()));
+
         WaitUtils.waitForPageToLoad();
 
         loginFetchingUserFromUserEndpoint();
@@ -534,7 +534,7 @@ public final class KcOidcBrokerTest extends AbstractAdvancedBrokerTest {
 
         IdentityProviderRepresentation identityProvider = identityProviderResource.toRepresentation();
         updateIdPClaimFilter(identityProvider, identityProviderResource, true, USER_ATTRIBUTE_NAME, CLAIM_FILTER_REGEXP);
-        driver.navigate().to(getAccountUrl(getConsumerRoot(), bc.consumerRealmName()));
+
         WaitUtils.waitForPageToLoad();
 
         loginFetchingUserFromUserEndpoint();
@@ -550,7 +550,6 @@ public final class KcOidcBrokerTest extends AbstractAdvancedBrokerTest {
 
         IdentityProviderRepresentation identityProvider = identityProviderResource.toRepresentation();
         updateIdPClaimFilter(identityProvider, identityProviderResource, true, "hardcoded-missing-claim", "hardcoded-missing-claim-value");
-        driver.navigate().to(getAccountUrl(getConsumerRoot(), bc.consumerRealmName()));
         WaitUtils.waitForPageToLoad();
 
         loginFetchingUserFromUserEndpoint(true);
