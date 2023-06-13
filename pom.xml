@@ -86,8 +86,8 @@
         <hibernate.c3p0.version>${hibernate-orm.version}</hibernate.c3p0.version>
         <infinispan.version>14.0.10.Final</infinispan.version>
         <infinispan.protostream.processor.version>4.6.2.Final</infinispan.protostream.processor.version>
-        <jackson.version>2.15.0</jackson.version>
-        <jackson.databind.version>2.14.2</jackson.databind.version>
+        <jackson.version>2.15.2</jackson.version>
+        <jackson.databind.version>${jackson.version}</jackson.databind.version>
         <jackson.annotations.version>${jackson.version}</jackson.annotations.version>
 
         <!--JAKARTA-->
