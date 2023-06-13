@@ -67,7 +67,9 @@ public class JpaRealmProviderFactory implements RealmProviderFactory, ProviderEv
 
     @Override
     public void close() {
-        onClose.run();
+        if (onClose != null) {
+            onClose.run();
+        }
     }
 
     @Override
