@@ -85,3 +85,7 @@ The previous and now removed WildFly distribution provided a built-in vault prov
 = KeyStore Config Source added
 
 In relation to the KeyStore Vault news, we also integrated Quarkus's recently released feature called KeyStore Config Source. This means that among the already existing configuration sources (CLI parameters, environment variables and files), you can now configure your Keycloak server via configuration properties stored in a Java keystore file. You can learn more about this feature in the https://www.keycloak.org/server/configuration[Configuration guide].
+
+= Account Console v3 promoted to preview
+
+In version 21.1.0 of Keycloak the new Account Console (version 3) was introduced as an experimental feature. Starting this version it has been promoted to a preview feature.
