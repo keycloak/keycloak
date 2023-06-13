@@ -49,6 +49,7 @@ export const KeySelect = ({ selectItems, ...rest }: KeySelectProp) => {
         <GridItem lg={10}>
           <KeycloakTextInput
             id="customValue"
+            data-testid={rest.name}
             placeholder={t("keyPlaceholder")}
             value={field.value}
             onChange={field.onChange}

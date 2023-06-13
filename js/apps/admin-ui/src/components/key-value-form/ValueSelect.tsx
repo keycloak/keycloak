@@ -41,6 +41,6 @@ export const ValueSelect = ({
       ))}
     </Select>
   ) : (
-    <KeycloakTextInput id="customValue" {...field} />
+    <KeycloakTextInput id="customValue" data-testid={rest.name} {...field} />
   );
 };
