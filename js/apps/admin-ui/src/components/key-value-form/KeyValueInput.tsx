@@ -71,9 +71,6 @@ export const KeyValueInput = ({
         {fields.map((attribute, index) => {
           const keyError = !!(errors as any)[name]?.[index]?.key;
           const valueError = !!(errors as any)[name]?.[index]?.value;
-          const defaultItem = defaultKeyValue?.find(
-            (v) => v.key === values[index]?.key
-          );
 
           return (
             <Fragment key={attribute.id}>
@@ -103,10 +100,11 @@ export const KeyValueInput = ({
                 )}
               </GridItem>
               <GridItem span={5}>
-                {defaultItem?.values ? (
+                {defaultKeyValue ? (
                   <ValueSelect
                     name={`${name}.${index}.value`}
-                    selectItems={defaultItem.values}
+                    keyValue={values[index]?.key}
+                    selectItems={defaultKeyValue}
                     rules={{ required: true }}
                   />
                 ) : (
