@@ -1,10 +1,10 @@
 export type Environment = {
   /** The URL to the root of the auth server. */
   authUrl: string;
-  /** Indicates if the application is running as a Keycloak theme. */
-  isRunningAsTheme: boolean;
-  /** The realm used to sign into. */
+  /** The realm used to authenticate the user to the Account Console. */
   realm: string;
+  /** The identifier of the client used to authenticate the user to the Account Console. */
+  clientId: string;
   /** The URL to resources such as the files in the `public` directory. */
   resourceUrl: string;
   /** Indicates the src for the Brand image */
@@ -30,8 +30,8 @@ export type Environment = {
 // The default environment, used during development.
 const defaultEnvironment: Environment = {
   authUrl: "http://localhost:8180",
-  isRunningAsTheme: false,
   realm: "master",
+  clientId: "security-admin-console-v2",
   resourceUrl: "http://localhost:8080",
   logo: "/logo.svg",
   logoUrl: "/",

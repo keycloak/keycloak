@@ -88,8 +88,8 @@
   <script id="environment" type="application/json">
     {
       "authUrl": "${authUrl}",
-      "isRunningAsTheme": true,
       "realm": "${realm.name}",
+      "clientId": "${clientId}",
       "resourceUrl": "${resourceUrl}",
       "logo": "${properties.logo!""}",
       "logoUrl": "${properties.logoUrl!""}",
