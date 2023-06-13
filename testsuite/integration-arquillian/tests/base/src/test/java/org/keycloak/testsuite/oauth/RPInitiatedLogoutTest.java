@@ -30,7 +30,6 @@ import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.admin.client.resource.ClientsResource;
 import org.keycloak.admin.client.resource.UserResource;
-import org.keycloak.common.Profile;
 import org.keycloak.common.util.UriUtils;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
@@ -47,7 +46,6 @@ import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.InfoPage;
@@ -57,7 +55,6 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
@@ -82,7 +79,13 @@ import org.keycloak.testsuite.pages.PageUtils;
 import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.updaters.UserAttributeUpdater;
-import org.keycloak.testsuite.util.*;
+import org.keycloak.testsuite.util.ClientBuilder;
+import org.keycloak.testsuite.util.ClientManager;
+import org.keycloak.testsuite.util.InfinispanTestTimeServiceRule;
+import org.keycloak.testsuite.util.Matchers;
+import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.URLUtils;
+import org.keycloak.testsuite.util.WaitUtils;
 import org.openqa.selenium.NoSuchElementException;
 
 /**
