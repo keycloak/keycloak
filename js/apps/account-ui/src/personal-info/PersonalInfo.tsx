@@ -1,4 +1,10 @@
-import { ActionGroup, Button, Form } from "@patternfly/react-core";
+import {
+  ActionGroup,
+  Alert,
+  Button,
+  ExpandableSection,
+  Form,
+} from "@patternfly/react-core";
 import { useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -10,6 +16,8 @@ import {
   UserRepresentation,
 } from "../api/representations";
 import { Page } from "../components/page/Page";
+import { environment } from "../environment";
+import { keycloak } from "../keycloak";
 import { usePromise } from "../utils/usePromise";
 import { FormField } from "./FormField";
 
@@ -79,6 +87,31 @@ const PersonalInfo = () => {
             {t("doCancel")}
           </Button>
         </ActionGroup>
+        {environment.features.deleteAccountAllowed && (
+          <ExpandableSection toggleText={t("deleteAccount")}>
+            <Alert
+              isInline
+              title={t("deleteAccount")}
+              variant="danger"
+              actionLinks={
+                <Button
+                  id="delete-account-btn"
+                  variant="danger"
+                  onClick={() =>
+                    keycloak.login({
+                      action: "delete_account",
+                    })
+                  }
+                  className="delete-button"
+                >
+                  {t("doDelete")}
+                </Button>
+              }
+            >
+              {t("deleteAccountWarning")}
+            </Alert>
+          </ExpandableSection>
+        )}
       </Form>
     </Page>
   );
