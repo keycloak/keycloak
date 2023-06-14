@@ -214,5 +214,5 @@
   "forbidden_other": "Forbidden, permissions needed:",
   "noRealmRolesToAssign": "There are no realm roles to assign",
   "loadingRealms": "Loading realms…",
-  "customAttribute": "Custom Attribute..."
+  "customAttribute": "Custom Attribute…"
 }
