@@ -26,9 +26,7 @@ import io.sundr.builder.annotations.BuildableReference;
 
 import org.keycloak.operator.Constants;
 import org.keycloak.representations.idm.ComponentExportRepresentation;
-import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
-import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 
 @Group(Constants.CRDS_GROUP)
@@ -40,10 +38,7 @@ import org.keycloak.representations.idm.authorization.ScopeRepresentation;
         @BuildableReference(KeycloakRealmImportSpec.class)
 })
 @SchemaSwap(originalType = GroupRepresentation.class, fieldName = "subGroups", targetType = org.keycloak.representations.overrides.NoSubGroupsGroupRepresentationList.class)
-@SchemaSwap(originalType = RealmRepresentation.class, fieldName = "components", targetType = org.keycloak.representations.overrides.ComponentExportRepresentationMap.class)
-@SchemaSwap(originalType = CredentialRepresentation.class, fieldName = "config", targetType = org.keycloak.representations.overrides.MultivaluedStringStringHashMap.class)
 @SchemaSwap(originalType = ComponentExportRepresentation.class, fieldName = "subComponents", targetType = org.keycloak.representations.overrides.NoSubcomponentsComponentExportRepresentationMap.class)
-@SchemaSwap(originalType = ComponentExportRepresentation.class, fieldName = "config", targetType = org.keycloak.representations.overrides.MultivaluedStringStringHashMap.class)
 @SchemaSwap(originalType = ScopeRepresentation.class, fieldName = "policies")
 @SchemaSwap(originalType = ScopeRepresentation.class, fieldName = "resources")
 public class KeycloakRealmImport extends CustomResource<KeycloakRealmImportSpec, KeycloakRealmImportStatus> implements Namespaced {
