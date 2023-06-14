@@ -16,9 +16,6 @@
  */
 package org.keycloak.protocol.saml;
 
-import java.io.ByteArrayInputStream;
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.security.KeyManagementException;
 import java.security.cert.X509Certificate;
@@ -135,8 +132,8 @@ public class SamlMetadataKeyLocatorTest {
         }
 
         @Override
-        protected InputStream openInputStream() throws Exception {
-            return new ByteArrayInputStream(descriptor.getBytes(StandardCharsets.UTF_8));
+        protected String getKeys() throws Exception {
+            return descriptor;
         }
     }
 

@@ -16,7 +16,6 @@
  */
 package org.keycloak.protocol.saml;
 
-import java.io.InputStream;
 import org.jboss.logging.Logger;
 import org.keycloak.connections.httpclient.HttpClientProvider;
 import org.keycloak.models.KeycloakSession;
@@ -44,7 +43,7 @@ public class SamlMetadataPublicKeyLoader extends SamlAbstractMetadataPublicKeyLo
     }
 
     @Override
-    protected InputStream openInputStream() throws Exception {
+    protected String getKeys() throws Exception {
         logger.debugf("loading keys from metadata endpoint %s", metadataUrl);
         return session.getProvider(HttpClientProvider.class).get(metadataUrl);
     }

@@ -17,12 +17,12 @@
 
 package org.keycloak.connections.httpclient;
 
-import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.entity.EntityBuilder;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.ContentType;
+import org.apache.http.impl.client.BasicResponseHandler;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
@@ -35,7 +35,6 @@ import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.truststore.TruststoreProvider;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.security.KeyStore;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -75,6 +74,8 @@ public class DefaultHttpClientFactory implements HttpClientFactory {
     private volatile CloseableHttpClient httpClient;
     private Config.Scope config;
 
+    private final BasicResponseHandler responseHandler = new BasicResponseHandler();
+
     @Override
     public HttpClientProvider create(KeycloakSession session) {
         lazyInit(session);
@@ -107,20 +108,14 @@ public class DefaultHttpClientFactory implements HttpClientFactory {
             }
 
             @Override
-            public InputStream get(String uri) throws IOException {
+            public String get(String uri) throws IOException {
                 HttpGet request = new HttpGet(uri);
                 HttpResponse response = httpClient.execute(request);
-                int statusCode = response.getStatusLine().getStatusCode();
-                HttpEntity entity = response.getEntity();
-                if (statusCode < 200 || statusCode >= 300) {
-                    EntityUtils.consumeQuietly(entity);
-                    throw new IOException("Unexpected HTTP status code " + response.getStatusLine().getStatusCode() + " when expecting 2xx");
-                }
-                if (entity == null) {
+                String body = responseHandler.handleResponse(response);
+                if (body == null) {
                     throw new IOException("No content returned from HTTP call");
                 }
-                return entity.getContent();
-
+                return body;
             }
         };
     }
