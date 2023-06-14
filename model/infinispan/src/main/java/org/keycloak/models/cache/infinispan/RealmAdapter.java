@@ -1454,13 +1454,7 @@ public class RealmAdapter implements CachedRealmModel {
     @Override
     public Stream<ClientScopeModel> getClientScopesStream() {
         if (isUpdated()) return updated.getClientScopesStream();
-        return cached.getClientScopes().stream().map(scope -> {
-            ClientScopeModel model = cacheSession.getClientScopeById(this, scope);
-            if (model == null) {
-                throw new IllegalStateException("Cached clientScope not found: " + scope);
-            }
-            return model;
-        });
+        return cacheSession.getClientScopesStream(this);
     }
 
     @Override
