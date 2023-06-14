@@ -21,6 +21,7 @@ import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
+
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -88,7 +89,8 @@ public class SessionsResource {
         }).distinct();
 
         if (!search.equals("")) {
-            result = result.filter(s -> s.getUsername().contains(search) || s.getIpAddress().contains(search));
+            result = result.filter(s -> s.getUsername().contains(search) || s.getIpAddress().contains(search)
+                    || s.getClients().values().stream().anyMatch(c -> c.contains(search)));
         }
         return result.skip(first).limit(max);
     }
