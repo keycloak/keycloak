@@ -23,7 +23,6 @@ import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentatio
 import org.keycloak.util.JsonSerialization;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.Map;
 
 /**
@@ -54,14 +53,14 @@ public class OIDCIdentityProviderFactory extends AbstractIdentityProviderFactory
     }
 
     @Override
-    public Map<String, String> parseConfig(KeycloakSession session, InputStream inputStream) {
-        return parseOIDCConfig(session, inputStream);
+    public Map<String, String> parseConfig(KeycloakSession session, String config) {
+        return parseOIDCConfig(session, config);
     }
 
-    protected static Map<String, String> parseOIDCConfig(KeycloakSession session, InputStream inputStream) {
+    protected static Map<String, String> parseOIDCConfig(KeycloakSession session, String configString) {
         OIDCConfigurationRepresentation rep;
         try {
-            rep = JsonSerialization.readValue(inputStream, OIDCConfigurationRepresentation.class);
+            rep = JsonSerialization.readValue(configString, OIDCConfigurationRepresentation.class);
         } catch (IOException e) {
             throw new RuntimeException("failed to load openid connect metadata", e);
         }

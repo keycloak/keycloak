@@ -49,7 +49,6 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Stream;
@@ -96,26 +95,21 @@ public class IdentityProvidersResource {
 
     /**
      * Import identity provider from uploaded JSON file
-     *
-     * @param input
-     * @return
-     * @throws IOException
      */
     @POST
     @Path("import-config")
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces(MediaType.APPLICATION_JSON)
-    public Map<String, String> importFrom() throws IOException {
+    public Map<String, String> importFrom() {
         this.auth.realm().requireManageIdentityProviders();
         MultivaluedMap<String, FormPartValue> formDataMap = session.getContext().getHttpRequest().getMultiPartFormParameters();
         if (!(formDataMap.containsKey("providerId") && formDataMap.containsKey("file"))) {
             throw new BadRequestException();
         }
         String providerId = formDataMap.getFirst("providerId").asString();
-        InputStream inputStream = formDataMap.getFirst("file").asInputStream();
-        IdentityProviderFactory providerFactory = getProviderFactoryById(providerId);
-        Map<String, String> config = providerFactory.parseConfig(session, inputStream);
-        return config;
+        String file = formDataMap.getFirst("file").asString();
+        IdentityProviderFactory<?> providerFactory = getProviderFactoryById(providerId);
+        return providerFactory.parseConfig(session, file);
     }
 
     /**
@@ -139,18 +133,9 @@ public class IdentityProvidersResource {
         
         String providerId = data.get("providerId").toString();
         String from = data.get("fromUrl").toString();
-        InputStream inputStream = session.getProvider(HttpClientProvider.class).get(from);
-        try {
-            IdentityProviderFactory providerFactory = getProviderFactoryById(providerId);
-            Map<String, String> config;
-            config = providerFactory.parseConfig(session, inputStream);
-            return config;
-        } finally {
-            try {
-                inputStream.close();
-            } catch (IOException e) {
-            }
-        }
+        String body = session.getProvider(HttpClientProvider.class).get(from);
+        IdentityProviderFactory<?> providerFactory = getProviderFactoryById(providerId);
+        return providerFactory.parseConfig(session, body);
     }
 
     /**

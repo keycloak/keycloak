@@ -20,7 +20,6 @@ package org.keycloak.connections.httpclient;
 import org.keycloak.provider.Provider;
 
 import java.io.IOException;
-import java.io.InputStream;
 import org.apache.http.impl.client.CloseableHttpClient;
 
 /**
@@ -53,8 +52,8 @@ public interface HttpClientProvider extends Provider {
      * Helper method
      *
      * @param uri
-     * @return response stream, you must close this stream or leaks will happen
+     * @return Body of the response
      * @throws IOException On network errors, no content being returned or a non-2xx HTTP status code
      */
-    public InputStream get(String uri) throws IOException;
+    public String get(String uri) throws IOException;
 }

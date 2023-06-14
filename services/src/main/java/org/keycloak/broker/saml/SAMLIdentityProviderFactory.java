@@ -16,7 +16,6 @@
  */
 package org.keycloak.broker.saml;
 
-import java.io.InputStream;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -26,7 +25,6 @@ import javax.xml.namespace.QName;
 
 import org.keycloak.Config.Scope;
 import org.keycloak.broker.provider.AbstractIdentityProviderFactory;
-import org.keycloak.common.util.Time;
 import org.keycloak.dom.saml.v2.assertion.AttributeType;
 import org.keycloak.dom.saml.v2.metadata.EndpointType;
 import org.keycloak.dom.saml.v2.metadata.EntitiesDescriptorType;
@@ -39,6 +37,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.saml.common.exceptions.ParsingException;
 import org.keycloak.saml.common.util.DocumentUtil;
+import org.keycloak.saml.common.util.StaxParserUtil;
 import org.keycloak.saml.processing.core.parsers.saml.SAMLParser;
 import org.keycloak.saml.validators.DestinationValidator;
 import org.w3c.dom.Element;
@@ -71,9 +70,9 @@ public class SAMLIdentityProviderFactory extends AbstractIdentityProviderFactory
     }
 
     @Override
-    public Map<String, String> parseConfig(KeycloakSession session, InputStream inputStream) {
+    public Map<String, String> parseConfig(KeycloakSession session, String config) {
         try {
-            Object parsedObject = SAMLParser.getInstance().parse(inputStream);
+            Object parsedObject = SAMLParser.getInstance().parse(StaxParserUtil.getXMLEventReader(config));
             EntityDescriptorType entityType;
 
             if (EntitiesDescriptorType.class.isInstance(parsedObject)) {
