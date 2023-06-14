@@ -950,6 +950,10 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
             }
         } else {
             this.session.users().addFederatedIdentity(this.realmModel, authenticatedUser, newModel);
+            federatedUser = this.session.users().getUserByFederatedIdentity(this.realmModel, newModel);
+            if(federatedUser != null) {
+                updateFederatedIdentity(context, federatedUser);
+            }
         }
         context.getIdp().authenticationFinished(authSession, context);
 
