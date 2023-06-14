@@ -22,23 +22,22 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
-import javax.persistence.Basic;
-import javax.persistence.CascadeType;
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.FetchType;
-import javax.persistence.Id;
-import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
-import javax.persistence.OneToMany;
-import javax.persistence.Table;
-import javax.persistence.Version;
+import jakarta.persistence.Basic;
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 import org.hibernate.annotations.Type;
-import org.hibernate.annotations.TypeDef;
-import org.hibernate.annotations.TypeDefs;
 import org.keycloak.models.map.common.DeepCloner;
 import org.keycloak.models.map.common.UuidValidator;
 import org.keycloak.models.map.storage.jpa.Constants;
+import org.keycloak.models.map.storage.jpa.JpaChildEntity;
 import org.keycloak.models.map.storage.jpa.JpaRootVersionedEntity;
 import org.keycloak.models.map.storage.jpa.hibernate.jsonb.JsonbType;
 import org.keycloak.models.map.userSession.MapAuthenticatedClientSessionEntity.AbstractAuthenticatedClientSessionEntity;
@@ -48,8 +47,7 @@ import org.keycloak.models.map.userSession.MapAuthenticatedClientSessionEntity.A
  */
 @Entity
 @Table(name = "kc_client_session")
-@TypeDefs({@TypeDef(name = "jsonb", typeClass = JsonbType.class)})
-public class JpaClientSessionEntity extends AbstractAuthenticatedClientSessionEntity implements JpaRootVersionedEntity {
+public class JpaClientSessionEntity extends AbstractAuthenticatedClientSessionEntity implements JpaRootVersionedEntity, JpaChildEntity<JpaUserSessionEntity> {
 
     @Id
     @Column
@@ -60,7 +58,7 @@ public class JpaClientSessionEntity extends AbstractAuthenticatedClientSessionEn
     @Column
     private int version;
 
-    @Type(type = "jsonb")
+    @Type(JsonbType.class)
     @Column(columnDefinition = "jsonb")
     private final JpaClientSessionMetadata metadata;
 
@@ -90,13 +88,23 @@ public class JpaClientSessionEntity extends AbstractAuthenticatedClientSessionEn
         this.metadata = new JpaClientSessionMetadata(cloner);
     }
 
+    public boolean isMetadataInitialized() {
+        return metadata != null;
+    }
+
+    @Override
+    public JpaUserSessionEntity getParent() {
+        return root;
+    }
+
     public void setParent(JpaUserSessionEntity root) {
         this.root = root;
     }
 
     @Override
     public Integer getEntityVersion() {
-        return metadata.getEntityVersion();
+        if (isMetadataInitialized()) return metadata.getEntityVersion();
+        return entityVersion;
     }
 
     @Override
@@ -137,7 +145,8 @@ public class JpaClientSessionEntity extends AbstractAuthenticatedClientSessionEn
 
     @Override
     public String getClientId() {
-        return metadata.getClientId();
+        if (isMetadataInitialized()) return metadata.getClientId();
+        return clientId;
     }
 
     @Override

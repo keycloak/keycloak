@@ -18,9 +18,6 @@ Submodules are enabled with profiles: `-Papp-server-MODULE`
 * __`wildfly` Wildfly 11__
 * __`eap6` EAP 6__ Requires access to EAP product repo, or setting `-Deap6.version` to public EAP 6 Alpha.
 * __`eap` EAP 7__ Requires access to EAP product repo.
-* __`relative`__ Activate with `-Papp-server-relative`.
- * __`wildfly` Relative Wildfly 10__ Based on [`auth-server/jboss/wildfly`](../auth-server/README.md). Activate with `-Pauth-server-wildfly`.
- * __`eap` Relative EAP 7__ Based on [`auth-server/jboss/eap`](../auth-server/README.md). Activate with `-Pauth-server-eap`.
 
 ### Adapter Configs Location
 

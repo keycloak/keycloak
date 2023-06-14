@@ -28,8 +28,13 @@ import org.junit.jupiter.api.Test;
 import org.keycloak.operator.Config;
 import org.keycloak.operator.controllers.KeycloakDeployment;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
-import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakSpec;
-import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakSpecUnsupported;
+import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakSpecBuilder;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.HostnameSpecBuilder;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.HttpSpecBuilder;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.UnsupportedSpec;
+
+import java.util.Collections;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -51,15 +56,23 @@ public class PodTemplateTest {
                     public String imagePullPolicy() {
                         return "Never";
                     }
+                    @Override
+                    public Map<String, String> podLabels() {
+                        return Collections.emptyMap();
+                    }
                 };
             }
         };
         var kc = new Keycloak();
-        var spec = new KeycloakSpec();
-        spec.setUnsupported(new KeycloakSpecUnsupported(podTemplate));
-        spec.setHostname("example.com");
-        spec.setTlsSecret("example-tls-secret");
-        kc.setSpec(spec);
+
+        var httpSpec = new HttpSpecBuilder().withTlsSecret("example-tls-secret").build();
+        var hostnameSpec = new HostnameSpecBuilder().withHostname("example.com").build();
+
+        kc.setSpec(new KeycloakSpecBuilder().withUnsupported(new UnsupportedSpec(podTemplate))
+                .withHttpSpec(httpSpec)
+                .withHostnameSpec(hostnameSpec)
+                .build());
+
         var deployment = new KeycloakDeployment(null, config, kc, existingDeployment, "dummy-admin");
         return (StatefulSet) deployment.getReconciledResource().get();
     }

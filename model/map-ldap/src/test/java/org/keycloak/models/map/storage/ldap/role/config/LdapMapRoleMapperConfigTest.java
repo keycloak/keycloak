@@ -30,9 +30,9 @@ public class LdapMapRoleMapperConfigTest {
         LdapMapRoleMapperConfig sut = new LdapMapRoleMapperConfig(config);
 
         Assert.assertEquals("ou=myclient,dc=keycloak,dc=org",
-                sut.getRolesDn(true, "myclient"));
+                sut.getRolesDn("myclient"));
         Assert.assertEquals("ou=\\ me\\=co\\\\ol\\, val\\=V\u00E9ronique,dc=keycloak,dc=org",
-                sut.getRolesDn(true, " me=co\\ol, val=V\u00E9ronique"));
+                sut.getRolesDn(" me=co\\ol, val=V\u00E9ronique"));
     }
 
 }

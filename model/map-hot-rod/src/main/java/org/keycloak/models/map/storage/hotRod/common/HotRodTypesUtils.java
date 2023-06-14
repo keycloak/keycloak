@@ -18,10 +18,14 @@
 package org.keycloak.models.map.storage.hotRod.common;
 
 import org.keycloak.models.map.common.AbstractEntity;
+import org.keycloak.models.map.common.DeepCloner;
 import org.keycloak.models.map.storage.hotRod.authSession.HotRodAuthenticationSessionEntity;
 import org.keycloak.models.map.storage.hotRod.realm.entity.HotRodLocalizationTexts;
 import org.keycloak.models.map.storage.hotRod.user.HotRodUserConsentEntity;
 import org.keycloak.models.map.storage.hotRod.user.HotRodUserFederatedIdentityEntity;
+import org.keycloak.models.map.storage.hotRod.userSession.AuthenticatedClientSessionReferenceOnlyFieldDelegate;
+import org.keycloak.models.map.storage.hotRod.userSession.HotRodAuthenticatedClientSessionEntityReference;
+import org.keycloak.models.map.userSession.MapAuthenticatedClientSessionEntity;
 
 import java.util.HashMap;
 import java.util.List;
@@ -144,5 +148,13 @@ public class HotRodTypesUtils {
         hotRodLocalizationTexts.setValues(migrateMapToSet(p1, HotRodTypesUtils::createHotRodPairFromMapEntry));
 
         return hotRodLocalizationTexts;
+    }
+
+    public static HotRodAuthenticatedClientSessionEntityReference migrateMapAuthenticatedClientSessionEntityToHotRodAuthenticatedClientSessionEntityReference(MapAuthenticatedClientSessionEntity p0) {
+        return new HotRodAuthenticatedClientSessionEntityReference(p0.getClientId(), p0.getId());
+    }
+
+    public static MapAuthenticatedClientSessionEntity migrateHotRodAuthenticatedClientSessionEntityReferenceToMapAuthenticatedClientSessionEntity(HotRodAuthenticatedClientSessionEntityReference collectionItem) {
+        return DeepCloner.DUMB_CLONER.entityFieldDelegate(MapAuthenticatedClientSessionEntity.class, new AuthenticatedClientSessionReferenceOnlyFieldDelegate(collectionItem));
     }
 }

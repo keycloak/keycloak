@@ -27,7 +27,7 @@ public class JpaPermissionMetadata extends MapPermissionTicketEntityImpl impleme
     }
 
     public JpaPermissionMetadata() {
-        super();
+        super(DeepCloner.DUMB_CLONER);
     }
 
     private Integer entityVersion;

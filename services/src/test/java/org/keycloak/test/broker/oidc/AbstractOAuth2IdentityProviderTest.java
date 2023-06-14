@@ -121,16 +121,17 @@ public class AbstractOAuth2IdentityProviderTest {
 	}
 
 	private TestProvider getTested() {		
-		return new TestProvider(getConfig(null, null, null, Boolean.FALSE));
+		return new TestProvider(getConfig(null, null, null, Boolean.FALSE, Boolean.FALSE));
 	}
 
-	private OAuth2IdentityProviderConfig getConfig(final String autorizationUrl, final String defaultScope, final String clientId, final Boolean isLoginHint) {
+	private OAuth2IdentityProviderConfig getConfig(final String autorizationUrl, final String defaultScope, final String clientId, final Boolean isLoginHint, final Boolean passMaxAge) {
 		IdentityProviderModel model = new IdentityProviderModel();
 		OAuth2IdentityProviderConfig config = new OAuth2IdentityProviderConfig(model);
 		config.setAuthorizationUrl(autorizationUrl);
 		config.setDefaultScope(defaultScope);
 		config.setClientId(clientId);
 		config.setLoginHint(isLoginHint);
+		config.setPassMaxAge(passMaxAge);
 		return config;
 	}
 

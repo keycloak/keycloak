@@ -19,7 +19,6 @@
 
 package org.keycloak.protocol.oidc.grants.device.endpoints;
 
-import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.Config;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.models.KeycloakContext;
@@ -39,9 +38,7 @@ public class DeviceEndpointFactory implements RealmResourceProviderFactory {
         KeycloakContext context = session.getContext();
         RealmModel realm = context.getRealm();
         EventBuilder event = new EventBuilder(realm, session, context.getConnection());
-        DeviceEndpoint provider = new DeviceEndpoint(realm, event);
-        ResteasyProviderFactory.getInstance().injectProperties(provider);
-        return provider;
+        return new DeviceEndpoint(session, event);
     }
 
     @Override

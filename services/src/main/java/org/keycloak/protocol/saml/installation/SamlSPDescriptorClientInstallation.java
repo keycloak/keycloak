@@ -20,6 +20,8 @@ package org.keycloak.protocol.saml.installation;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.dom.saml.v2.metadata.EntityDescriptorType;
+import org.keycloak.dom.saml.v2.metadata.KeyDescriptorType;
+import org.keycloak.dom.saml.v2.metadata.KeyTypes;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
@@ -32,13 +34,11 @@ import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.saml.common.util.StaxUtil;
 import org.keycloak.saml.processing.core.saml.v2.writers.SAMLMetadataWriter;
 
-import org.w3c.dom.Element;
-
 import java.io.StringWriter;
 import java.net.URI;
-import java.util.Arrays;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
+import java.util.Collections;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 import javax.xml.stream.XMLStreamWriter;
 
 
@@ -92,17 +92,24 @@ public class SamlSPDescriptorClientInstallation implements ClientInstallationPro
 
             String nameIdFormat = samlClient.getNameIDFormat();
             if (nameIdFormat == null) nameIdFormat = SamlProtocol.SAML_DEFAULT_NAMEID_FORMAT;
-            Element spCertificate = SPMetadataDescriptor.buildKeyInfoElement(null, samlClient.getClientSigningCertificate());
-            Element encCertificate = SPMetadataDescriptor.buildKeyInfoElement(null, samlClient.getClientEncryptingCertificate());
+            KeyDescriptorType spCertificate = SPMetadataDescriptor.buildKeyDescriptorType(
+                    SPMetadataDescriptor.buildKeyInfoElement(null, samlClient.getClientSigningCertificate()),
+                    KeyTypes.SIGNING,
+                    null);
+
+            KeyDescriptorType encCertificate = SPMetadataDescriptor.buildKeyDescriptorType(
+                    SPMetadataDescriptor.buildKeyInfoElement(null, samlClient.getClientEncryptingCertificate()),
+                    KeyTypes.ENCRYPTION,
+                    null);
 
             StringWriter sw = new StringWriter();
             XMLStreamWriter writer = StaxUtil.getXMLStreamWriter(sw);
             SAMLMetadataWriter metadataWriter = new SAMLMetadataWriter(writer);
 
-            EntityDescriptorType entityDescriptor = SPMetadataDescriptor.buildSPdescriptor(
+            EntityDescriptorType entityDescriptor = SPMetadataDescriptor.buildSPDescriptor(
                 loginBinding, logoutBinding, new URI(assertionUrl), new URI(logoutUrl), 
                 samlClient.requiresClientSignature(), samlClient.requiresAssertionSignature(), samlClient.requiresEncryption(), 
-                client.getClientId(), nameIdFormat, Arrays.asList(spCertificate), Arrays.asList(encCertificate));
+                client.getClientId(), nameIdFormat, Collections.singletonList(spCertificate), Collections.singletonList(encCertificate));
             
             metadataWriter.writeEntityDescriptor(entityDescriptor);
 

@@ -34,19 +34,6 @@ import java.util.stream.Stream;
 public interface ClientProvider extends ClientLookupProvider, Provider {
 
     /**
-     * Returns the clients of the given realm.
-     * @deprecated use the stream variant instead
-     * @param realm Realm.
-     * @param firstResult First result to return. Ignored if negative or {@code null}.
-     * @param maxResults Maximum number of results to return. Ignored if negative or {@code null}.
-     * @return List of the clients. Never returns {@code null}.
-     */
-    @Deprecated
-    default List<ClientModel> getClients(RealmModel realm, Integer firstResult, Integer maxResults) {
-        return getClientsStream(realm, firstResult, maxResults).collect(Collectors.toList());
-    }
-
-    /**
      * Returns the clients of the given realm as a stream.
      * @param realm Realm.
      * @param firstResult First result to return. Ignored if negative or {@code null}.
@@ -54,18 +41,6 @@ public interface ClientProvider extends ClientLookupProvider, Provider {
      * @return Stream of the clients. Never returns {@code null}.
      */
     Stream<ClientModel> getClientsStream(RealmModel realm, Integer firstResult, Integer maxResults);
-
-    /**
-     * Returns all the clients of the given realm.
-     * @deprecated use the stream variant instead
-     * Effectively the same as the call {@code getClients(realm, null, null)}.
-     * @param realm Realm.
-     * @return List of the clients. Never returns {@code null}.
-     */
-    @Deprecated
-    default List<ClientModel> getClients(RealmModel realm) {
-        return this.getClientsStream(realm, null, null).collect(Collectors.toList());
-    }
 
     /**
      * Returns all the clients of the given realm as a stream.
@@ -109,31 +84,11 @@ public interface ClientProvider extends ClientLookupProvider, Provider {
     long getClientsCount(RealmModel realm);
 
     /**
-     * Returns a list of clients that are expected to always show up in account console.
-     * @deprecated use the stream variant instead
-     * @param realm Realm owning the clients.
-     * @return List of the clients. Never returns {@code null}.
-     */
-    @Deprecated
-    default List<ClientModel> getAlwaysDisplayInConsoleClients(RealmModel realm) {
-        return getAlwaysDisplayInConsoleClientsStream(realm).collect(Collectors.toList());
-    }
-
-    /**
      * Returns a stream of clients that are expected to always show up in account console.
      * @param realm Realm owning the clients.
      * @return Stream of the clients. Never returns {@code null}.
      */
     Stream<ClientModel> getAlwaysDisplayInConsoleClientsStream(RealmModel realm);
-
-    /**
-     * Removes given client from the given realm.
-     * @param id Internal ID of the client
-     * @param realm Realm.
-     * @return {@code true} if the client existed and has been removed, {@code false} otherwise.
-     * @deprecated Use {@link #removeClient(RealmModel, String)} instead.
-     */
-    default boolean removeClient(String id, RealmModel realm) { return this.removeClient(realm, id); }
 
     /**
      * Removes given client from the given realm.

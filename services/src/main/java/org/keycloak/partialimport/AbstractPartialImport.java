@@ -23,7 +23,7 @@ import org.keycloak.representations.idm.PartialImportRepresentation;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.ServicesLogger;
 
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -66,8 +66,7 @@ public abstract class AbstractPartialImport<T> implements PartialImport<T> {
     }
 
     protected ErrorResponseException existsError(String message) {
-        Response error = ErrorResponse.exists(message);
-        return new ErrorResponseException(error);
+        throw ErrorResponse.exists(message);
     }
 
     protected PartialImportResult overwritten(String modelId, T resourceRep){

@@ -64,6 +64,9 @@ public final class Constants {
     public static final int DEFAULT_OFFLINE_SESSION_MAX_LIFESPAN = 5184000;
     public static final String DEFAULT_SIGNATURE_ALGORITHM = Algorithm.RS256;
 
+    public static final int DEFAULT_SESSION_IDLE_TIMEOUT = 1800; // 30 minutes
+    public static final int DEFAULT_SESSION_MAX_LIFESPAN = 36000; // 10 hours
+
     public static final String DEFAULT_WEBAUTHN_POLICY_SIGNATURE_ALGORITHMS = Algorithm.ES256;
     public static final String DEFAULT_WEBAUTHN_POLICY_RP_ENTITY_NAME = "keycloak";
     // it stands for optional parameter not specified in WebAuthn
@@ -143,4 +146,8 @@ public final class Constants {
     public static final String DEFAULT_ACR_VALUES = "default.acr.values";
     public static final int MINIMUM_LOA = 0;
     public static final int NO_LOA = -1;
+
+    public static final Boolean REALM_ATTR_USERNAME_CASE_SENSITIVE_DEFAULT = Boolean.FALSE;
+    public static final String REALM_ATTR_USERNAME_CASE_SENSITIVE = "keycloak.username-search.case-sensitive";
+
 }

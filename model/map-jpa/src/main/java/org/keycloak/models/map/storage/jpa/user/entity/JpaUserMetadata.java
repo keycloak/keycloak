@@ -29,7 +29,7 @@ import org.keycloak.models.map.user.MapUserEntityImpl;
 public class JpaUserMetadata extends MapUserEntityImpl implements Serializable {
 
     public JpaUserMetadata() {
-        super();
+        super(DeepCloner.DUMB_CLONER);
     }
 
     public JpaUserMetadata(final DeepCloner cloner) {
@@ -37,6 +37,7 @@ public class JpaUserMetadata extends MapUserEntityImpl implements Serializable {
     }
 
     private Integer entityVersion;
+    private String usernameWithCase;
 
     public Integer getEntityVersion() {
         return entityVersion;
@@ -45,4 +46,13 @@ public class JpaUserMetadata extends MapUserEntityImpl implements Serializable {
     public void setEntityVersion(Integer entityVersion) {
         this.entityVersion = entityVersion;
     }
+
+    public void setUsernameWithCase(String username) {
+        this.usernameWithCase = username;
+    }
+
+    public String getUsernameWithCase() {
+        return this.usernameWithCase;
+    }
+
 }

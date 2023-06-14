@@ -17,17 +17,17 @@
 
 package org.keycloak.adapters;
 
+import static org.keycloak.protocol.oidc.client.authentication.ClientCredentialsProviderUtils.bootstrapClientAuthenticator;
+
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.http.client.HttpClient;
 import org.jboss.logging.Logger;
-import org.keycloak.adapters.authentication.ClientCredentialsProviderUtils;
 import org.keycloak.adapters.authorization.PolicyEnforcer;
 import org.keycloak.adapters.rotation.HardcodedPublicKeyLocator;
 import org.keycloak.adapters.rotation.JWKPublicKeyLocator;
 import org.keycloak.common.crypto.CryptoIntegration;
 import org.keycloak.common.enums.SslRequired;
-import org.keycloak.common.util.BouncyIntegration;
 import org.keycloak.common.util.PemUtils;
 import org.keycloak.enums.TokenStore;
 import org.keycloak.representations.adapters.config.AdapterConfig;
@@ -98,7 +98,7 @@ public class KeycloakDeploymentBuilder {
         if (adapterConfig.getPrincipalAttribute() != null) deployment.setPrincipalAttribute(adapterConfig.getPrincipalAttribute());
 
         deployment.setResourceCredentials(adapterConfig.getCredentials());
-        deployment.setClientAuthenticator(ClientCredentialsProviderUtils.bootstrapClientAuthenticator(deployment));
+        deployment.setClientAuthenticator(bootstrapClientAuthenticator(adapterConfig));
 
         deployment.setPublicClient(adapterConfig.isPublicClient());
         deployment.setUseResourceRoleMappings(adapterConfig.isUseResourceRoleMappings());
@@ -153,7 +153,14 @@ public class KeycloakDeploymentBuilder {
                     if (policyEnforcer == null) {
                         synchronized (deployment) {
                             if (policyEnforcer == null) {
-                                policyEnforcer = new PolicyEnforcer(deployment, adapterConfig);
+                                policyEnforcer = PolicyEnforcer.builder()
+                                        .authServerUrl(adapterConfig.getAuthServerUrl())
+                                        .realm(adapterConfig.getRealm())
+                                        .clientId(adapterConfig.getResource())
+                                        .bearerOnly(adapterConfig.isBearerOnly())
+                                        .credentialProvider(deployment.getClientAuthenticator())
+                                        .enforcerConfig(policyEnforcerConfig)
+                                        .httpClient(deployment.getClient()).build();
                             }
                         }
                     }
@@ -202,6 +209,7 @@ public class KeycloakDeploymentBuilder {
 
 
     public static KeycloakDeployment build(AdapterConfig adapterConfig) {
+        CryptoIntegration.init(KeycloakDeploymentBuilder.class.getClassLoader());
         return new KeycloakDeploymentBuilder().internalBuild(adapterConfig);
     }
 

@@ -10,23 +10,19 @@ import static org.junit.Assert.assertTrue;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.StringReader;
-import java.security.KeyPair;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.Scanner;
 
-import org.bouncycastle.openssl.PEMKeyPair;
-import org.bouncycastle.openssl.PEMParser;
-import org.bouncycastle.openssl.jcajce.JcaPEMKeyConverter;
-import org.bouncycastle.util.Arrays;
-import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.keycloak.common.crypto.CryptoIntegration;
 import org.keycloak.common.crypto.CryptoProvider;
 import org.keycloak.common.util.Base64;
 import org.keycloak.common.util.DerUtils;
+import org.keycloak.common.util.PemUtils;
 import org.keycloak.dom.saml.v2.assertion.NameIDType;
 import org.keycloak.dom.saml.v2.assertion.SubjectType.STSubType;
 import org.keycloak.dom.saml.v2.protocol.ResponseType;
@@ -66,7 +62,7 @@ public class AssertionUtilTest {
             byte[] validSignature = Base64.decode(signatureElement.getTextContent());
 
             // change the signature value slightly
-            byte[] invalidSignature = Arrays.clone(validSignature);
+            byte[] invalidSignature =  Arrays.copyOf(validSignature, validSignature.length);
             invalidSignature[0] ^= invalidSignature[0];
             signatureElement.setTextContent(Base64.encodeBytes(invalidSignature));
 
@@ -91,7 +87,8 @@ public class AssertionUtilTest {
             assertNotNull(subType.getEncryptedID());
             assertNull(subType.getBaseID());
 
-            AssertionUtil.decryptId(responseType, extractPrivateKey());
+            PrivateKey pk = extractPrivateKey();
+            AssertionUtil.decryptId(responseType, data -> Collections.singletonList(pk));
 
             assertNull(subType.getEncryptedID());
             assertNotNull(subType.getBaseID());
@@ -107,6 +104,7 @@ public class AssertionUtilTest {
     }
 
     private PrivateKey extractPrivateKey() throws IOException {
+
         StringBuilder sb = new StringBuilder();
         try (Scanner sc = new Scanner(getEncryptedIdTestFileInputStream())) {
             while (sc.hasNextLine()) {
@@ -124,11 +122,7 @@ public class AssertionUtilTest {
             }
         }
         assertNotEquals("PEM certificate not found in test data", 0, sb.length());
-        PEMParser pp = new PEMParser(new StringReader(sb.toString()));
-        PEMKeyPair pemKeyPair = (PEMKeyPair) pp.readObject();
-        KeyPair kp = new JcaPEMKeyConverter().getKeyPair(pemKeyPair);
-        pp.close();
-        return kp.getPrivate();
+        return PemUtils.decodePrivateKey(sb.toString());
     }
 
 }

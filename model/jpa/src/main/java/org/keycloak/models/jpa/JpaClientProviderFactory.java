@@ -25,7 +25,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.protocol.saml.SamlConfigAttributes;
 
-import javax.persistence.EntityManager;
+import jakarta.persistence.EntityManager;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
@@ -70,7 +70,7 @@ public class JpaClientProviderFactory implements ClientProviderFactory {
     @Override
     public ClientProvider create(KeycloakSession session) {
         EntityManager em = session.getProvider(JpaConnectionProvider.class).getEntityManager();
-        return new JpaRealmProvider(session, em, clientSearchableAttributes);
+        return new JpaRealmProvider(session, em, clientSearchableAttributes, null);
     }
 
     @Override

@@ -22,23 +22,28 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
+
+import io.micrometer.core.instrument.Metrics;
 import org.infinispan.configuration.parsing.ConfigurationBuilderHolder;
 import org.infinispan.configuration.parsing.ParserRegistry;
 import org.infinispan.jboss.marshalling.core.JBossUserMarshaller;
 import org.infinispan.manager.DefaultCacheManager;
+import org.infinispan.metrics.config.MicrometerMeterRegisterConfigurationBuilder;
 import org.jboss.logging.Logger;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
 
 public class CacheManagerFactory {
 
     private String config;
+    private boolean metricsEnabled;
     private DefaultCacheManager cacheManager;
     private Future<DefaultCacheManager> cacheManagerFuture;
     private ExecutorService executor;
     private boolean initialized;
 
-    public CacheManagerFactory(String config) {
+    public CacheManagerFactory(String config, boolean metricsEnabled) {
         this.config = config;
+        this.metricsEnabled = metricsEnabled;
         this.executor = createThreadPool();
         this.cacheManagerFuture = executor.submit(this::startCacheManager);
     }
@@ -76,6 +81,11 @@ public class CacheManagerFactory {
 
         if (builder.getNamedConfigurationBuilders().get("sessions").clustering().cacheMode().isClustered()) {
             configureTransportStack(builder);
+        }
+
+        if (metricsEnabled) {
+            builder.getGlobalConfigurationBuilder().addModule(MicrometerMeterRegisterConfigurationBuilder.class);
+            builder.getGlobalConfigurationBuilder().module(MicrometerMeterRegisterConfigurationBuilder.class).meterRegistry(Metrics.globalRegistry);
         }
 
         // For Infinispan 10, we go with the JBoss marshalling.

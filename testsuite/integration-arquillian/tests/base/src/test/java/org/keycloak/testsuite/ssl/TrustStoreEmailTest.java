@@ -20,7 +20,6 @@ import org.jboss.arquillian.graphene.page.Page;
 import org.junit.After;
 import org.junit.Rule;
 import org.junit.Test;
-import org.keycloak.common.Profile;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
@@ -31,29 +30,21 @@ import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
-import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
 import org.keycloak.testsuite.auth.page.AuthRealm;
-import org.keycloak.testsuite.auth.page.account.AccountManagement;
 import org.keycloak.testsuite.auth.page.login.OIDCLogin;
 import org.keycloak.testsuite.auth.page.login.VerifyEmail;
+import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.MailServerConfiguration;
 import org.keycloak.testsuite.util.SslMailServer;
 
 import static org.junit.Assert.assertEquals;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
-
-import java.util.Map;
-
 import static org.keycloak.testsuite.util.MailAssert.assertEmailAndGetUrl;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
-
 
 /**
  *
  * @author fkiss
  */
-@DisableFeature(value = Profile.Feature.ACCOUNT2, skipRestart = true) // TODO remove this (KEYCLOAK-16228)
 public class TrustStoreEmailTest extends AbstractTestRealmKeycloakTest {
 
     @Page
@@ -61,9 +52,6 @@ public class TrustStoreEmailTest extends AbstractTestRealmKeycloakTest {
 
     @Page
     protected AuthRealm testRealmPage;
-
-    @Page
-    protected AccountManagement accountManagement;
 
     @Page
     private VerifyEmail testRealmVerifyEmailPage;
@@ -85,7 +73,6 @@ public class TrustStoreEmailTest extends AbstractTestRealmKeycloakTest {
         super.setDefaultPageUriParameters();
         testRealmPage.setAuthRealm("test");
         testRealmVerifyEmailPage.setAuthRealm(testRealmPage);
-        accountManagement.setAuthRealm(testRealmPage);
         testRealmLoginPage.setAuthRealm(testRealmPage);
     }
 
@@ -96,17 +83,16 @@ public class TrustStoreEmailTest extends AbstractTestRealmKeycloakTest {
 
 
     @Test
-    @AuthServerContainerExclude(AuthServer.REMOTE)
     public void verifyEmailWithSslEnabled() {
         UserRepresentation user = ApiUtil.findUserByUsername(testRealm(), "test-user@localhost");
 
         SslMailServer.startWithSsl(this.getClass().getClassLoader().getResource(SslMailServer.PRIVATE_KEY).getFile());
-        accountManagement.navigateTo();
+        driver.navigate().to(oauth.getLoginFormUrl());
         testRealmLoginPage.form().login(user.getUsername(), "password");
 
         EventRepresentation sendEvent = events.expectRequiredAction(EventType.SEND_VERIFY_EMAIL)
                 .user(user.getId())
-                .client("account")
+                .client("test-app")
                 .detail(Details.USERNAME, "test-user@localhost")
                 .detail(Details.EMAIL, "test-user@localhost")
                 .removeDetail(Details.REDIRECT_URI)
@@ -125,7 +111,7 @@ public class TrustStoreEmailTest extends AbstractTestRealmKeycloakTest {
 
         events.expectRequiredAction(EventType.VERIFY_EMAIL)
                 .user(user.getId())
-                .client("account")
+                .client("test-app")
                 .detail(Details.USERNAME, "test-user@localhost")
                 .detail(Details.EMAIL, "test-user@localhost")
                 .detail(Details.CODE_ID, mailCodeId)
@@ -133,17 +119,18 @@ public class TrustStoreEmailTest extends AbstractTestRealmKeycloakTest {
                 .assertEvent();
 
         events.expectLogin()
-                .client("account")
+                .client("test-app")
                 .user(user.getId())
                 .session(mailCodeId)
                 .detail(Details.USERNAME, "test-user@localhost")
                 .removeDetail(Details.REDIRECT_URI)
                 .assertEvent();
 
-        assertCurrentUrlStartsWith(accountManagement);
-        accountManagement.signOut();
+        assertCurrentUrlStartsWith(oauth.APP_AUTH_ROOT);
+        AccountHelper.logout(testRealm(), user.getUsername());
+        driver.navigate().to(oauth.getLoginFormUrl());
         testRealmLoginPage.form().login(user.getUsername(), "password");
-        assertCurrentUrlStartsWith(accountManagement);
+        assertCurrentUrlStartsWith(oauth.APP_AUTH_ROOT);
     }
 
     @Test
@@ -151,13 +138,13 @@ public class TrustStoreEmailTest extends AbstractTestRealmKeycloakTest {
         UserRepresentation user = ApiUtil.findUserByUsername(testRealm(), "test-user@localhost");
 
         SslMailServer.startWithSsl(this.getClass().getClassLoader().getResource(SslMailServer.INVALID_KEY).getFile());
-        accountManagement.navigateTo();
+        driver.navigate().to(oauth.getLoginFormUrl());
         loginPage.form().login(user.getUsername(), "password");
 
         events.expectRequiredAction(EventType.SEND_VERIFY_EMAIL_ERROR)
                 .error(Errors.EMAIL_SEND_FAILED)
                 .user(user.getId())
-                .client("account")
+                .client("test-app")
                 .detail(Details.USERNAME, "test-user@localhost")
                 .detail(Details.EMAIL, "test-user@localhost")
                 .removeDetail(Details.REDIRECT_URI)
@@ -181,13 +168,13 @@ public class TrustStoreEmailTest extends AbstractTestRealmKeycloakTest {
 
         try {
             SslMailServer.startWithSsl(this.getClass().getClassLoader().getResource(SslMailServer.PRIVATE_KEY).getFile());
-            accountManagement.navigateTo();
+            driver.navigate().to(oauth.getLoginFormUrl());
             loginPage.form().login(user.getUsername(), "password");
 
             events.expectRequiredAction(EventType.SEND_VERIFY_EMAIL_ERROR)
                     .error(Errors.EMAIL_SEND_FAILED)
                     .user(user.getId())
-                    .client("account")
+                    .client("test-app")
                     .detail(Details.USERNAME, "test-user@localhost")
                     .detail(Details.EMAIL, "test-user@localhost")
                     .removeDetail(Details.REDIRECT_URI)

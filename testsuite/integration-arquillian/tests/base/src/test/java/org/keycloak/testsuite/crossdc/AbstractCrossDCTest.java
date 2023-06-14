@@ -21,7 +21,6 @@ import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
 import org.keycloak.testsuite.arquillian.ContainerInfo;
 import org.keycloak.testsuite.arquillian.LoadBalancerController;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.arquillian.annotation.LoadBalancer;
 
 import java.util.ArrayList;
@@ -34,7 +33,6 @@ import org.keycloak.testsuite.client.KeycloakTestingClient;
 
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.arquillian.CrossDCTestEnricher;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 import org.keycloak.testsuite.arquillian.annotation.InitialDcState;
 
 import static org.keycloak.testsuite.arquillian.CrossDCTestEnricher.forAllBackendNodesStream;
@@ -45,7 +43,6 @@ import static org.keycloak.testsuite.arquillian.CrossDCTestEnricher.forAllBacken
  * @author hmlnarik
  */
 @InitialDcState
-@AuthServerContainerExclude(AuthServer.REMOTE)
 public abstract class AbstractCrossDCTest extends AbstractTestRealmKeycloakTest {
 
     // Keep the following constants in sync with arquillian

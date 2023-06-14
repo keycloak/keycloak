@@ -19,8 +19,10 @@ package org.keycloak.quarkus.runtime.cli.command;
 
 import static org.keycloak.quarkus.runtime.Environment.setProfile;
 import static org.keycloak.quarkus.runtime.cli.Picocli.NO_PARAM_LABEL;
+import static org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand.OPTIMIZED_BUILD_OPTION_LONG;
 import static org.keycloak.quarkus.runtime.configuration.Configuration.getRawPersistedProperty;
 
+import org.keycloak.config.OptionCategory;
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.Messages;
 
@@ -29,14 +31,15 @@ import picocli.CommandLine.Command;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Command(name = Start.NAME,
         header = "Start the server.",
         description = {
                 "%nUse this command to run the server in production."
         },
-        footer = "%nBy default, this command tries to update the server configuration by running a '" + Build.NAME + "' before starting the server. You can disable this behavior by using the '" + Start.OPTIMIZED_BUILD_OPTION_LONG + "' option:%n%n"
-                + "      $ ${PARENT-COMMAND-FULL-NAME:-$PARENTCOMMAND} ${COMMAND-NAME} '" + Start.OPTIMIZED_BUILD_OPTION_LONG + "'%n%n"
+        footer = "%nBy default, this command tries to update the server configuration by running a '" + Build.NAME + "' before starting the server. You can disable this behavior by using the '" + OPTIMIZED_BUILD_OPTION_LONG + "' option:%n%n"
+                + "      $ ${PARENT-COMMAND-FULL-NAME:-$PARENTCOMMAND} ${COMMAND-NAME} '" + OPTIMIZED_BUILD_OPTION_LONG + "'%n%n"
                 + "By doing that, the server should start faster based on any previous configuration you have set when manually running the '" + Build.NAME + "' command.")
 public final class Start extends AbstractStartCommand implements Runnable {
 
@@ -50,14 +53,14 @@ public final class Start extends AbstractStartCommand implements Runnable {
             order = 1)
     Boolean autoConfig;
 
-    @CommandLine.Option(names = {OPTIMIZED_BUILD_OPTION_LONG},
-            description = "Use this option to achieve an optional startup time if you have previously built a server image using the 'build' command.",
-            paramLabel = NO_PARAM_LABEL,
-            order = 1)
-    Boolean noAutoConfig;
+    @CommandLine.Mixin
+    OptimizedMixin optimizedMixin;
 
     @CommandLine.Mixin
     ImportRealmMixin importRealmMixin;
+
+    @CommandLine.Mixin
+    HelpAllMixin helpAllMixin;
 
     @Override
     protected void doBeforeRun() {
@@ -81,5 +84,14 @@ public final class Start extends AbstractStartCommand implements Runnable {
         }
 
         return false;
+    }
+
+    public List<OptionCategory> getOptionCategories() {
+        return super.getOptionCategories().stream().filter(optionCategory -> optionCategory != OptionCategory.EXPORT && optionCategory != OptionCategory.IMPORT).collect(Collectors.toList());
+    }
+
+    @Override
+    public boolean includeRuntime() {
+        return true;
     }
 }

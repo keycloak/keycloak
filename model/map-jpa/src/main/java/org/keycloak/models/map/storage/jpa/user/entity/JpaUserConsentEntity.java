@@ -20,23 +20,23 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 
-import javax.persistence.Basic;
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.FetchType;
-import javax.persistence.GeneratedValue;
-import javax.persistence.Id;
-import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
-import javax.persistence.Table;
-import javax.persistence.UniqueConstraint;
+import jakarta.persistence.Basic;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 
 import org.hibernate.annotations.Type;
-import org.hibernate.annotations.TypeDef;
-import org.hibernate.annotations.TypeDefs;
 import org.keycloak.models.map.common.DeepCloner;
 import org.keycloak.models.map.common.UpdatableEntity;
+import org.keycloak.models.map.storage.jpa.Constants;
 import org.keycloak.models.map.storage.jpa.JpaChildEntity;
+import org.keycloak.models.map.storage.jpa.JpaRootEntity;
 import org.keycloak.models.map.storage.jpa.hibernate.jsonb.JsonbType;
 import org.keycloak.models.map.user.MapUserConsentEntity;
 
@@ -51,8 +51,7 @@ import org.keycloak.models.map.user.MapUserConsentEntity;
         uniqueConstraints = {
                 @UniqueConstraint(columnNames = {"clientId"})
         })
-@TypeDefs({@TypeDef(name = "jsonb", typeClass = JsonbType.class)})
-public class JpaUserConsentEntity extends UpdatableEntity.Impl implements MapUserConsentEntity, JpaChildEntity<JpaUserEntity> {
+public class JpaUserConsentEntity extends UpdatableEntity.Impl implements MapUserConsentEntity, JpaRootEntity, JpaChildEntity<JpaUserEntity> {
 
     @Id
     @Column
@@ -63,7 +62,11 @@ public class JpaUserConsentEntity extends UpdatableEntity.Impl implements MapUse
     @Basic(fetch = FetchType.LAZY)
     private String clientId;
 
-    @Type(type = "jsonb")
+    @Column(insertable = false, updatable = false)
+    @Basic(fetch = FetchType.LAZY)
+    private Integer entityVersion;
+
+    @Type(JsonbType.class)
     @Column(columnDefinition = "jsonb")
     private final JpaUserConsentMetadata metadata;
 
@@ -79,10 +82,17 @@ public class JpaUserConsentEntity extends UpdatableEntity.Impl implements MapUse
         this.metadata = new JpaUserConsentMetadata(cloner);
     }
 
-    public Integer getEntityVersion() {
-        return this.metadata.getEntityVersion();
+    public boolean isMetadataInitialized() {
+        return metadata != null;
     }
 
+    @Override
+    public Integer getEntityVersion() {
+        if (isMetadataInitialized()) return this.metadata.getEntityVersion();
+        return entityVersion;
+    }
+
+    @Override
     public void setEntityVersion(Integer version) {
         this.metadata.setEntityVersion(version);
     }
@@ -97,8 +107,24 @@ public class JpaUserConsentEntity extends UpdatableEntity.Impl implements MapUse
     }
 
     @Override
+    public String getId() {
+        return id == null ? null : id.toString();
+    }
+
+    @Override
+    public void setId(String id) {
+        this.id = id == null ? null : UUID.fromString(id);
+    }
+
+    @Override
+    public Integer getCurrentSchemaVersion() {
+        return Constants.CURRENT_SCHEMA_VERSION_USER_CONSENT;
+    }
+
+    @Override
     public String getClientId() {
-        return this.metadata.getClientId();
+        if (isMetadataInitialized()) return this.metadata.getClientId();
+        return clientId;
     }
 
     @Override

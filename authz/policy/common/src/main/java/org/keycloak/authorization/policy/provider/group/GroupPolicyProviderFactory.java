@@ -19,6 +19,7 @@ package org.keycloak.authorization.policy.provider.group;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -213,7 +214,13 @@ public class GroupPolicyProviderFactory implements PolicyProviderFactory<GroupPo
         policy.setConfig(config);
     }
 
-    private HashSet<GroupPolicyRepresentation.GroupDefinition> getGroupsDefinition(Map<String, String> config) throws IOException {
-        return new HashSet<>(Arrays.asList(JsonSerialization.readValue(config.get("groups"), GroupPolicyRepresentation.GroupDefinition[].class)));
+    private Set<GroupPolicyRepresentation.GroupDefinition> getGroupsDefinition(Map<String, String> config) throws IOException {
+        String groups = config.get("groups");
+
+        if (groups == null) {
+            return Collections.emptySet();
+        }
+
+        return new HashSet<>(Arrays.asList(JsonSerialization.readValue(groups, GroupPolicyRepresentation.GroupDefinition[].class)));
     }
 }

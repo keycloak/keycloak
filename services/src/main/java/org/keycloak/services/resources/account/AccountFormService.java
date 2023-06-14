@@ -85,21 +85,21 @@ import org.keycloak.userprofile.EventAuditingAttributeChangeListener;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.utils.CredentialHelper;
 
-import javax.ws.rs.Consumes;
-import javax.ws.rs.FormParam;
-import javax.ws.rs.GET;
-import javax.ws.rs.NotFoundException;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.Status;
-import javax.ws.rs.core.UriBuilder;
-import javax.ws.rs.core.UriInfo;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.FormParam;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response.Status;
+import jakarta.ws.rs.core.UriBuilder;
+import jakarta.ws.rs.core.UriInfo;
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.net.URI;
@@ -139,12 +139,12 @@ public class AccountFormService extends AbstractSecuredLocalService {
     public static final String ACCOUNT_MGMT_FORWARDED_ERROR_NOTE = "ACCOUNT_MGMT_FORWARDED_ERROR";
 
     private final AppAuthManager authManager;
-    private EventBuilder event;
+    private final EventBuilder event;
     private AccountProvider account;
     private EventStoreProvider eventStore;
 
-    public AccountFormService(RealmModel realm, ClientModel client, EventBuilder event) {
-        super(realm, client);
+    public AccountFormService(KeycloakSession session, ClientModel client, EventBuilder event) {
+        super(session, client);
         this.event = event;
         this.authManager = new AppAuthManager();
     }
@@ -774,11 +774,11 @@ public class AccountFormService extends AbstractSecuredLocalService {
         Resource resource = authorization.getStoreFactory().getResourceStore().findById(realm, null, resourceId);
 
         if (resource == null) {
-            return ErrorResponse.error("Invalid resource", Response.Status.BAD_REQUEST);
+            throw ErrorResponse.error("Invalid resource", Response.Status.BAD_REQUEST);
         }
 
         if (action == null) {
-            return ErrorResponse.error("Invalid action", Response.Status.BAD_REQUEST);
+            throw ErrorResponse.error("Invalid action", Response.Status.BAD_REQUEST);
         }
 
         boolean isGrant = "grant".equals(action);
@@ -901,7 +901,7 @@ public class AccountFormService extends AbstractSecuredLocalService {
         ResourceServer resourceServer = resource.getResourceServer();
 
         if (resource == null) {
-            return ErrorResponse.error("Invalid resource", Response.Status.BAD_REQUEST);
+            throw ErrorResponse.error("Invalid resource", Response.Status.BAD_REQUEST);
         }
 
         if (userIds == null || userIds.length == 0) {
@@ -988,14 +988,14 @@ public class AccountFormService extends AbstractSecuredLocalService {
         PermissionTicketStore ticketStore = authorization.getStoreFactory().getPermissionTicketStore();
 
         if (action == null) {
-            return ErrorResponse.error("Invalid action", Response.Status.BAD_REQUEST);
+            throw ErrorResponse.error("Invalid action", Response.Status.BAD_REQUEST);
         }
 
         for (String resourceId : resourceIds) {
             Resource resource = authorization.getStoreFactory().getResourceStore().findById(realm, null, resourceId);
 
             if (resource == null) {
-                return ErrorResponse.error("Invalid resource", Response.Status.BAD_REQUEST);
+                throw ErrorResponse.error("Invalid resource", Response.Status.BAD_REQUEST);
             }
 
             Map<PermissionTicket.FilterOption, String> filters = new EnumMap<>(PermissionTicket.FilterOption.class);

@@ -39,7 +39,6 @@ import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.FormMessage;
 import org.keycloak.services.util.CacheControlUtil;
 import org.keycloak.theme.FreeMarkerException;
-import org.keycloak.theme.FreeMarkerUtil;
 import org.keycloak.theme.Theme;
 import org.keycloak.theme.beans.AdvancedMessageFormatterMethod;
 import org.keycloak.theme.beans.LocaleBean;
@@ -47,15 +46,15 @@ import org.keycloak.theme.beans.MessageBean;
 import org.keycloak.theme.beans.MessageFormatterMethod;
 import org.keycloak.theme.beans.MessageType;
 import org.keycloak.theme.beans.MessagesPerFieldBean;
+import org.keycloak.theme.freemarker.FreeMarkerProvider;
 import org.keycloak.utils.MediaType;
-import org.keycloak.utils.StringUtil;
 
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.Status;
-import javax.ws.rs.core.UriBuilder;
-import javax.ws.rs.core.UriInfo;
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response.Status;
+import jakarta.ws.rs.core.UriBuilder;
+import jakarta.ws.rs.core.UriInfo;
 import java.io.IOException;
 import java.net.URI;
 import java.text.MessageFormat;
@@ -87,7 +86,7 @@ public class FreeMarkerAccountProvider implements AccountProvider {
     protected boolean passwordUpdateSupported;
     protected boolean passwordSet;
     protected KeycloakSession session;
-    protected FreeMarkerUtil freeMarker;
+    protected FreeMarkerProvider freeMarker;
     protected HttpHeaders headers;
     protected Map<String, Object> attributes;
 
@@ -97,9 +96,9 @@ public class FreeMarkerAccountProvider implements AccountProvider {
     protected MessageType messageType = MessageType.ERROR;
     private boolean authorizationSupported;
 
-    public FreeMarkerAccountProvider(KeycloakSession session, FreeMarkerUtil freeMarker) {
+    public FreeMarkerAccountProvider(KeycloakSession session) {
         this.session = session;
-        this.freeMarker = freeMarker;
+        this.freeMarker = session.getProvider(FreeMarkerProvider.class);
     }
 
     public AccountProvider setUriInfo(UriInfo uriInfo) {
@@ -217,14 +216,9 @@ public class FreeMarkerAccountProvider implements AccountProvider {
      * @return message bundle for other use
      */
     protected Properties handleThemeResources(Theme theme, Locale locale, Map<String, Object> attributes) {
-        Properties messagesBundle = new Properties();
+        Properties messagesBundle;
         try {
-            if(!StringUtil.isNotBlank(realm.getDefaultLocale()))
-            {
-                messagesBundle.putAll(realm.getRealmLocalizationTextsByLocale(realm.getDefaultLocale()));
-            }
-            messagesBundle.putAll(theme.getMessages(locale));
-            messagesBundle.putAll(realm.getRealmLocalizationTextsByLocale(locale.toLanguageTag()));
+            messagesBundle = theme.getEnhancedMessages(realm, locale);
             attributes.put("msg", new MessageFormatterMethod(locale, messagesBundle));
         } catch (IOException e) {
             logger.warn("Failed to load messages", e);

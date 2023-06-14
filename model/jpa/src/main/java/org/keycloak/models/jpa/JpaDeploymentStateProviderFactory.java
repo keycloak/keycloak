@@ -17,7 +17,7 @@
 
 package org.keycloak.models.jpa;
 
-import javax.persistence.EntityManager;
+import jakarta.persistence.EntityManager;
 import org.keycloak.Config;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.models.KeycloakSession;
@@ -45,7 +45,7 @@ public class JpaDeploymentStateProviderFactory implements DeploymentStateProvide
     @Override
     public DeploymentStateProvider create(KeycloakSession session) {
         EntityManager em = session.getProvider(JpaConnectionProvider.class).getEntityManager();
-        return new JpaRealmProvider(session, em, null);
+        return new JpaRealmProvider(session, em, null, null);
     }
 
     @Override

@@ -17,6 +17,9 @@
 
 package org.keycloak.models.map.storage.hotRod.group;
 
+import org.infinispan.api.annotations.indexing.Basic;
+import org.infinispan.api.annotations.indexing.Indexed;
+import org.infinispan.api.annotations.indexing.Keyword;
 import org.infinispan.protostream.GeneratedSchema;
 import org.infinispan.protostream.annotations.AutoProtoSchemaBuilder;
 import org.infinispan.protostream.annotations.ProtoDoc;
@@ -26,7 +29,7 @@ import org.keycloak.models.map.annotations.IgnoreForEntityImplementationGenerato
 import org.keycloak.models.map.group.MapGroupEntity;
 import org.keycloak.models.map.storage.hotRod.common.AbstractHotRodEntity;
 import org.keycloak.models.map.storage.hotRod.common.CommonPrimitivesProtoSchemaInitializer;
-import org.keycloak.models.map.storage.hotRod.common.HotRodAttributeEntityNonIndexed;
+import org.keycloak.models.map.storage.hotRod.common.HotRodAttributeEntity;
 import org.keycloak.models.map.storage.hotRod.common.UpdatableHotRodEntityDelegateImpl;
 
 import java.util.Objects;
@@ -38,7 +41,7 @@ import java.util.Set;
         topLevelEntity = true,
         modelClass = "org.keycloak.models.GroupModel"
 )
-@ProtoDoc("@Indexed")
+@Indexed
 @ProtoDoc("schema-version: " + HotRodGroupEntity.VERSION)
 public class HotRodGroupEntity extends AbstractHotRodEntity {
 
@@ -77,43 +80,35 @@ public class HotRodGroupEntity extends AbstractHotRodEntity {
             HotRodGroupEntity entity = getHotRodEntity();
             entity.updated |= ! Objects.equals(entity.name, name);
             entity.name = name;
-            entity.nameLowercase = name == null ? null : name.toLowerCase();
         }
     }
 
-    @ProtoDoc("@Field(index = Index.YES, store = Store.YES)")
+    @Basic(projectable = true)
     @ProtoField(number = 1)
     public Integer entityVersion = VERSION;
 
-    @ProtoDoc("@Field(index = Index.YES, store = Store.YES)")
+    @Basic(projectable = true, sortable = true)
     @ProtoField(number = 2)
     public String id;
 
-    @ProtoDoc("@Field(index = Index.YES, store = Store.YES)")
+    @Basic(sortable = true)
     @ProtoField(number = 3)
     public String realmId;
 
-    @ProtoDoc("@Field(index = Index.YES, store = Store.YES)")
+    @Keyword(sortable = true, normalizer = "lowercase")
     @ProtoField(number = 4)
     public String name;
 
-    /**
-     * Lowercase interpretation of {@link #name} field. Infinispan doesn't support case-insensitive LIKE for non-analyzed fields.
-     * Search on analyzed fields can be case-insensitive (based on used analyzer) but doesn't support ORDER BY analyzed field.
-     */
-    @ProtoDoc("@Field(index = Index.YES, store = Store.YES)")
+    @Basic(sortable = true)
     @ProtoField(number = 5)
-    public String nameLowercase;
-
-    @ProtoDoc("@Field(index = Index.YES, store = Store.YES)")
-    @ProtoField(number = 6)
     public String parentId;
 
-    @ProtoField(number = 7)
-    public Set<HotRodAttributeEntityNonIndexed> attributes;
+    @Basic(sortable = true)
+    @ProtoField(number = 6)
+    public Set<HotRodAttributeEntity> attributes;
 
-    @ProtoDoc("@Field(index = Index.YES, store = Store.YES)")
-    @ProtoField(number = 8)
+    @Basic(sortable = true)
+    @ProtoField(number = 7)
     public Set<String> grantedRoles;
 
     @Override

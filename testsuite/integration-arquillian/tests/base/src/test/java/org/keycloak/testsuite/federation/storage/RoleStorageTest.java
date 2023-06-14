@@ -21,7 +21,7 @@ import org.keycloak.common.Profile.Feature;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.stream.Collectors;
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.not;
@@ -40,13 +40,10 @@ import org.keycloak.storage.role.RoleStorageProvider;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 import org.keycloak.testsuite.auth.page.AuthRealm;
 import org.keycloak.testsuite.federation.HardcodedRoleStorageProviderFactory;
 import org.junit.BeforeClass;
 
-@AuthServerContainerExclude(AuthServer.REMOTE)
 public class RoleStorageTest extends AbstractTestRealmKeycloakTest {
 
     private String providerId;

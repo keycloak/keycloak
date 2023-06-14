@@ -31,7 +31,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import javax.ws.rs.NotFoundException;
+import jakarta.ws.rs.NotFoundException;
 
 import org.junit.Test;
 import org.keycloak.admin.client.resource.UsersResource;
@@ -62,9 +62,6 @@ import org.keycloak.representations.idm.authorization.PermissionTicketRepresenta
 import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.UmaPermissionRepresentation;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
-import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
 import org.keycloak.testsuite.arquillian.annotation.UncaughtServerErrorExpected;
 import org.keycloak.testsuite.runonserver.RunOnServer;
 import org.keycloak.testsuite.util.ClientBuilder;
@@ -77,7 +74,6 @@ import org.keycloak.testsuite.util.UserBuilder;
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
-@AuthServerContainerExclude(AuthServer.REMOTE)
 public class UserManagedPermissionServiceTest extends AbstractResourceServerTest {
 
     @Override
@@ -1070,7 +1066,7 @@ public class UserManagedPermissionServiceTest extends AbstractResourceServerTest
         Resource resource = policy.getResources().iterator().next();
         assertEquals("Resource A", resource.getName());
 
-        realm.removeGroup(realm.searchForGroupByNameStream("group_remove", -1, -1).findAny().get());
+        realm.removeGroup(session.groups().searchForGroupByNameStream(realm, "group_remove", false, null, null).findAny().get());
 
         filters = new HashMap<>();
 

@@ -16,8 +16,11 @@
  */
 package org.keycloak.crypto;
 
+import org.keycloak.common.crypto.CryptoConstants;
+
 public interface Algorithm {
 
+    /* RSA signing algorithms  */
     String HS256 = "HS256";
     String HS384 = "HS384";
     String HS512 = "HS512";
@@ -31,5 +34,11 @@ public interface Algorithm {
     String PS384 = "PS384";
     String PS512 = "PS512";
 
+    /* RSA Encryption Algorithms */
+    String RSA1_5 = CryptoConstants.RSA1_5;
+    String RSA_OAEP = CryptoConstants.RSA_OAEP;
+    String RSA_OAEP_256 = CryptoConstants.RSA_OAEP_256;
+
+    /* AES */
     String AES = "AES";
 }

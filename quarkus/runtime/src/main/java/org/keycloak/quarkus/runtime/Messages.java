@@ -18,6 +18,7 @@
 package org.keycloak.quarkus.runtime;
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.jboss.logging.Logger;
@@ -30,7 +31,7 @@ public final class Messages {
 
     }
 
-    public static IllegalArgumentException invalidDatabaseVendor(String db, String... availableOptions) {
+    public static IllegalArgumentException invalidDatabaseVendor(String db, List<String> availableOptions) {
         return new IllegalArgumentException("Invalid database vendor [" + db + "]. Possible values are: " + String.join(", ", availableOptions) + ".");
     }
 

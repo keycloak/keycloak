@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import org.jboss.arquillian.container.spi.ConfigurationException;
 import org.jboss.arquillian.container.spi.client.container.ContainerConfiguration;
 import org.jboss.logging.Logger;
+import org.keycloak.common.crypto.FipsMode;
 import org.keycloak.util.JsonSerialization;
 
 import java.io.IOException;
@@ -22,7 +23,17 @@ public class KeycloakQuarkusConfiguration implements ContainerConfiguration {
     private int bindHttpPortOffset = 100;
     private int bindHttpPort = 8080;
     private int bindHttpsPortOffset = 0;
-    private int bindHttpsPort = Integer.valueOf(System.getProperty("auth.server.https.port", "8543"));
+    private int bindHttpsPort = Integer.getInteger("auth.server.https.port", 8543);
+
+    private String keystoreFile = System.getProperty("auth.server.keystore");
+
+    private String keystorePassword = System.getProperty("auth.server.keystore.password");
+
+
+    private String truststoreFile = System.getProperty("auth.server.truststore");
+
+    private String truststorePassword = System.getProperty("auth.server.truststore.password");
+
     private int debugPort = -1;
     private Path providersPath = Paths.get(System.getProperty("auth.server.home"));
     private int startupTimeoutInSeconds = 300;
@@ -33,6 +44,8 @@ public class KeycloakQuarkusConfiguration implements ContainerConfiguration {
     private String javaOpts;
     private boolean reaugmentBeforeStart;
     private String importFile = System.getProperty("migration.import.file.name");
+
+    private FipsMode fipsMode = FipsMode.valueOfOption(System.getProperty("auth.server.fips.mode"));
 
     @Override
     public void validate() throws ConfigurationException {
@@ -88,12 +101,48 @@ public class KeycloakQuarkusConfiguration implements ContainerConfiguration {
         this.bindHttpPort = bindHttpPort;
     }
 
+    public String getKeystoreFile() {
+        return keystoreFile;
+    }
+
+    public void setKeystoreFile(String keystoreFile) {
+        this.keystoreFile = keystoreFile;
+    }
+
+    public String getKeystorePassword() {
+        return keystorePassword;
+    }
+
+    public void setKeystorePassword(String keystorePassword) {
+        this.keystorePassword = keystorePassword;
+    }
+
+    public String getTruststoreFile() {
+        return truststoreFile;
+    }
+
+    public void setTruststoreFile(String truststoreFile) {
+        this.truststoreFile = truststoreFile;
+    }
+
+    public String getTruststorePassword() {
+        return truststorePassword;
+    }
+
+    public void setTruststorePassword(String truststorePassword) {
+        this.truststorePassword = truststorePassword;
+    }
+
     public Path getProvidersPath() {
         return providersPath;
     }
 
     public void setProvidersPath(Path providersPath) {
         this.providersPath = providersPath;
+    }
+
+    public void setProvidersPath(String providersPath) {
+        this.providersPath = Paths.get(providersPath);
     }
 
     public int getStartupTimeoutInSeconds() {
@@ -140,6 +189,14 @@ public class KeycloakQuarkusConfiguration implements ContainerConfiguration {
         return javaOpts;
     }
 
+    public void appendJavaOpts(String javaOpts) {
+        if (javaOpts == null) {
+            setJavaOpts(javaOpts);
+        } else {
+            setJavaOpts(this.javaOpts + " " + javaOpts);
+        }
+    }
+
     public boolean isReaugmentBeforeStart() {
         return reaugmentBeforeStart;
     }
@@ -164,5 +221,11 @@ public class KeycloakQuarkusConfiguration implements ContainerConfiguration {
         this.importFile = importFile;
     }
 
+    public FipsMode getFipsMode() {
+        return fipsMode;
+    }
 
+    public void setFipsMode(FipsMode fipsMode) {
+        this.fipsMode = fipsMode;
+    }
 }

@@ -2,9 +2,6 @@ package org.keycloak.config;
 
 import org.keycloak.config.database.Database;
 
-import java.util.ArrayList;
-import java.util.List;
-
 public class DatabaseOptions {
 
     public static final Option<String> DB_DIALECT = new OptionBuilder<>("db-dialect", String.class)
@@ -15,15 +12,14 @@ public class DatabaseOptions {
 
     public static final Option<String> DB_DRIVER = new OptionBuilder<>("db-driver", String.class)
             .category(OptionCategory.DATABASE)
-            .hidden()
-            .defaultValue(Database.getDriver("dev-file", true).get())
+            .description("The fully qualified class name of the JDBC driver. If not set, a default driver is set accordingly to the chosen database.")
             .build();
 
     public static final Option<String> DB = new OptionBuilder<>("db", String.class)
             .category(OptionCategory.DATABASE)
-            .description(String.format("The database vendor. Possible values are: %s.", String.join(", ", Database.getAliases())))
+            .description("The database vendor.")
             .defaultValue("dev-file")
-            .expectedStringValues(Database.getAliases())
+            .expectedValues(Database::getLegacyStoreAliases)
             .buildTime(true)
             .build();
 
@@ -50,7 +46,9 @@ public class DatabaseOptions {
 
     public static final Option<String> DB_URL_PROPERTIES = new OptionBuilder<>("db-url-properties", String.class)
             .category(OptionCategory.DATABASE)
-            .description("Sets the properties of the default JDBC URL of the chosen vendor. If the `db-url` option is set, this option is ignored.")
+            .description("Sets the properties of the default JDBC URL of the chosen vendor. " +
+                    "Make sure to set the properties accordingly to the format expected by the database vendor, as well as appending the right character at the beginning of this property value. " +
+                    "If the `db-url` option is set, this option is ignored.")
             .build();
 
     public static final Option<String> DB_USERNAME = new OptionBuilder<>("db-username", String.class)
@@ -83,23 +81,4 @@ public class DatabaseOptions {
             .defaultValue(100)
             .description("The maximum size of the connection pool.")
             .build();
-
-    public static final List<Option<?>> ALL_OPTIONS = new ArrayList<>();
-
-    static {
-        ALL_OPTIONS.add(DB_DIALECT);
-        ALL_OPTIONS.add(DB_DRIVER);
-        ALL_OPTIONS.add(DB);
-        ALL_OPTIONS.add(DB_URL);
-        ALL_OPTIONS.add(DB_URL_HOST);
-        ALL_OPTIONS.add(DB_URL_DATABASE);
-        ALL_OPTIONS.add(DB_URL_PORT);
-        ALL_OPTIONS.add(DB_URL_PROPERTIES);
-        ALL_OPTIONS.add(DB_USERNAME);
-        ALL_OPTIONS.add(DB_PASSWORD);
-        ALL_OPTIONS.add(DB_SCHEMA);
-        ALL_OPTIONS.add(DB_POOL_INITIAL_SIZE);
-        ALL_OPTIONS.add(DB_POOL_MIN_SIZE);
-        ALL_OPTIONS.add(DB_POOL_MAX_SIZE);
-    }
 }

@@ -74,16 +74,9 @@ public class ReadOnlyAttributeUnchangedValidator implements SimpleValidator {
         }
 
         UserModel user = attributeContext.getUser();
-
-        List<String> existingAttrValues = user == null ? null : user.getAttribute(key);
-        String existingValue = null;
-
-        if (existingAttrValues != null && !existingAttrValues.isEmpty()) {
-            existingValue = existingAttrValues.get(0);
-        }
+        String existingValue = user == null ? null : user.getFirstAttribute(key);
 
         String value = null;
-
         if (!values.isEmpty()) {
             value = values.get(0);
         }

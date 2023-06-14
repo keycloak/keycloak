@@ -20,7 +20,7 @@ import static org.keycloak.protocol.ProtocolMapperUtils.isEnabled;
 
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
-import javax.ws.rs.NotFoundException;
+import jakarta.ws.rs.NotFoundException;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.KeycloakSession;
@@ -37,17 +37,16 @@ import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.PUT;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 import java.text.MessageFormat;
 import java.util.List;
 import java.util.Objects;
@@ -64,24 +63,24 @@ import java.util.stream.Stream;
 public class ProtocolMappersResource {
     protected static final Logger logger = Logger.getLogger(ProtocolMappersResource.class);
 
-    protected RealmModel realm;
+    protected final RealmModel realm;
 
-    protected ProtocolMapperContainerModel client;
+    protected final ProtocolMapperContainerModel client;
 
-    protected AdminPermissionEvaluator auth;
-    protected AdminPermissionEvaluator.RequirePermissionCheck managePermission;
-    protected AdminPermissionEvaluator.RequirePermissionCheck viewPermission;
+    protected final AdminPermissionEvaluator auth;
+    protected final AdminPermissionEvaluator.RequirePermissionCheck managePermission;
+    protected final AdminPermissionEvaluator.RequirePermissionCheck viewPermission;
 
-    protected AdminEventBuilder adminEvent;
+    protected final AdminEventBuilder adminEvent;
 
-    @Context
-    protected KeycloakSession session;
+    protected final KeycloakSession session;
 
-    public ProtocolMappersResource(RealmModel realm, ProtocolMapperContainerModel client, AdminPermissionEvaluator auth,
+    public ProtocolMappersResource(KeycloakSession session, ProtocolMapperContainerModel client, AdminPermissionEvaluator auth,
                                    AdminEventBuilder adminEvent,
                                    AdminPermissionEvaluator.RequirePermissionCheck managePermission,
                                    AdminPermissionEvaluator.RequirePermissionCheck viewPermission) {
-        this.realm = realm;
+        this.session = session;
+        this.realm = session.getContext().getRealm();
         this.auth = auth;
         this.client = client;
         this.adminEvent = adminEvent.resource(ResourceType.PROTOCOL_MAPPER);
@@ -128,7 +127,7 @@ public class ProtocolMappersResource {
             adminEvent.operation(OperationType.CREATE).resourcePath(session.getContext().getUri(), model.getId()).representation(rep).success();
 
         } catch (ModelDuplicateException e) {
-            return ErrorResponse.exists("Protocol mapper exists with same name");
+            throw ErrorResponse.exists("Protocol mapper exists with same name");
         }
 
         return Response.created(session.getContext().getUri().getAbsolutePathBuilder().path(model.getId()).build()).build();

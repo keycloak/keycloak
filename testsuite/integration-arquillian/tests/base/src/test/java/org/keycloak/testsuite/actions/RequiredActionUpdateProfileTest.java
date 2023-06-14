@@ -16,6 +16,9 @@
  */
 package org.keycloak.testsuite.actions;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.anyOf;
+import static org.hamcrest.Matchers.containsString;
 import static org.junit.Assert.assertFalse;
 
 import java.util.Arrays;
@@ -226,7 +229,10 @@ public class RequiredActionUpdateProfileTest extends AbstractTestRealmKeycloakTe
         Assert.assertEquals("New last", updateProfilePage.getLastName());
         Assert.assertEquals("", updateProfilePage.getEmail());
 
-        Assert.assertEquals("Please specify email.", updateProfilePage.getInputErrors().getEmailError());
+        assertThat(updateProfilePage.getInputErrors().getEmailError(), anyOf(
+                containsString("Please specify email"),
+                containsString("Please specify this field")
+        ));
 
         events.assertEmpty();
     }

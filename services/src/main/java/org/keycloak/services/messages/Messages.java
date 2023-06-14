@@ -62,6 +62,8 @@ public class Messages {
 
     public static final String MISSING_TOTP = "missingTotpMessage";
 
+    public static final String RESET_OTP_MISSING_ID_ERROR = "error-reset-otp-missing-id";
+
     public static final String MISSING_TOTP_DEVICE_NAME = "missingTotpDeviceNameMessage";
 
     public static final String COOKIE_NOT_FOUND = "cookieNotFoundMessage";
@@ -181,6 +183,10 @@ public class Messages {
 
     public static final String IDENTITY_PROVIDER_MISSING_STATE_ERROR = "identityProviderMissingStateMessage";
 
+    public static final String IDENTITY_PROVIDER_INVALID_RESPONSE = "identityProviderInvalidResponseMessage";
+
+    public static final String IDENTITY_PROVIDER_INVALID_SIGNATURE = "identityProviderInvalidSignatureMessage";
+
     public static final String IDENTITY_PROVIDER_NOT_FOUND = "identityProviderNotFoundMessage";
 
     public static final String IDENTITY_PROVIDER_LINK_SUCCESS = "identityProviderLinkSuccess";
@@ -214,6 +220,8 @@ public class Messages {
     public static final String SUCCESS_GRANT_REVOKED = "successGrantRevokedMessage";
 
     public static final String MISSING_IDENTITY_PROVIDER = "missingIdentityProviderMessage";
+
+    public static final String INVALID_TOKEN_REQUIRED_ACTIONS = "invalidTokenRequiredActions";
 
     public static final String INVALID_FEDERATED_IDENTITY_ACTION = "invalidFederatedIdentityActionMessage";
 
@@ -278,6 +286,8 @@ public class Messages {
 
     // Conditions in Conditional Flow
     public static final String ACCESS_DENIED = "access-denied";
+
+    public static final String ACCESS_DENIED_WHEN_IDP_AUTH = "access-denied-when-idp-auth";
 
     public static final String DELETE_ACCOUNT_LACK_PRIVILEDGES = "deletingAccountForbidden";
     public static final String DELETE_ACCOUNT_ERROR = "errorDeletingAccount";

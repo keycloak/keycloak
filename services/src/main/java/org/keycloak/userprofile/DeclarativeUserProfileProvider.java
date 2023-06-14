@@ -27,10 +27,10 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -61,7 +61,6 @@ import org.keycloak.userprofile.validator.BlankAttributeValidator;
 import org.keycloak.userprofile.validator.ImmutableAttributeValidator;
 import org.keycloak.validate.AbstractSimpleValidator;
 import org.keycloak.validate.ValidatorConfig;
-import org.keycloak.validate.validators.EmailValidator;
 
 /**
  * {@link UserProfileProvider} loading configuration from the changeable JSON file stored in component config. Parsed
@@ -128,6 +127,9 @@ public class DeclarativeUserProfileProvider extends AbstractUserProfileProvider<
     protected Attributes createAttributes(UserProfileContext context, Map<String, ?> attributes,
             UserModel user, UserProfileMetadata metadata) {
         if (isEnabled(session)) {
+            if (user != null && user.getServiceAccountClientLink() != null) {
+                return new LegacyAttributes(context, attributes, user, metadata, session);
+            }
             return new DefaultAttributes(context, attributes, user, metadata, session);
         }
         return new LegacyAttributes(context, attributes, user, metadata, session);
@@ -139,18 +141,12 @@ public class DeclarativeUserProfileProvider extends AbstractUserProfileProvider<
         UserProfileMetadata decoratedMetadata = metadata.clone();
 
         if (!isEnabled(session)) {
-            if(!context.equals(UserProfileContext.USER_API) && !context.equals(UserProfileContext.REGISTRATION_USER_CREATION)) {
+            if(!context.equals(UserProfileContext.USER_API)
+                    && !context.equals(UserProfileContext.REGISTRATION_USER_CREATION)
+                    && !context.equals(UserProfileContext.UPDATE_EMAIL)) {
                 decoratedMetadata.addAttribute(UserModel.FIRST_NAME, 1, new AttributeValidatorMetadata(BlankAttributeValidator.ID, BlankAttributeValidator.createConfig(
                         Messages.MISSING_FIRST_NAME, metadata.getContext() == UserProfileContext.IDP_REVIEW))).setAttributeDisplayName("${firstName}");
                 decoratedMetadata.addAttribute(UserModel.LAST_NAME, 2, new AttributeValidatorMetadata(BlankAttributeValidator.ID, BlankAttributeValidator.createConfig(Messages.MISSING_LAST_NAME, metadata.getContext() == UserProfileContext.IDP_REVIEW))).setAttributeDisplayName("${lastName}");
-                
-                //add email format validator to legacy profile
-                List<AttributeMetadata> em = decoratedMetadata.getAttribute(UserModel.EMAIL);
-                for(AttributeMetadata e: em) {
-                    e.addValidator(new AttributeValidatorMetadata(EmailValidator.ID, ValidatorConfig.builder().config(EmailValidator.IGNORE_EMPTY_VALUE, true).build()));
-                }
-                
-                return decoratedMetadata;
             }
             return decoratedMetadata;
         }
@@ -160,7 +156,7 @@ public class DeclarativeUserProfileProvider extends AbstractUserProfileProvider<
 
         // not cached, create a note with cache
         if (metadataMap == null) {
-            metadataMap = new HashMap<>();
+            metadataMap = new ConcurrentHashMap<>();
             model.setNote(PARSED_CONFIG_COMPONENT_KEY, metadataMap);
         }
 
@@ -272,11 +268,16 @@ public class DeclarativeUserProfileProvider extends AbstractUserProfileProvider<
         UPConfig parsedConfig = getParsedConfig(model);
 
         // do not change config for REGISTRATION_USER_CREATION context, everything important is covered thanks to REGISTRATION_PROFILE
-        if (parsedConfig == null || context == UserProfileContext.REGISTRATION_USER_CREATION) {
+        // do not change config for UPDATE_EMAIL context, validations are already set and do not need including anything else from the configuration
+        if (parsedConfig == null
+                || context == UserProfileContext.REGISTRATION_USER_CREATION
+                || context == UserProfileContext.UPDATE_EMAIL
+        ) {
             return decoratedMetadata;
         }
 
         Map<String, UPGroup> groupsByName = asHashMap(parsedConfig.getGroups());
+        RealmModel realm = session.getContext().getRealm();
         int guiOrder = 0;
         
         for (UPAttribute attrConfig : parsedConfig.getAttributes()) {
@@ -291,11 +292,12 @@ public class DeclarativeUserProfileProvider extends AbstractUserProfileProvider<
             }
 
             UPAttributeRequired rc = attrConfig.getRequired();
-            Predicate<AttributeContext> required = AttributeMetadata.ALWAYS_FALSE;
+            if (rc != null) {
+                validators.add(new AttributeValidatorMetadata(AttributeRequiredByMetadataValidator.ID));
+            }
 
-            if (rc != null && !isUsernameOrEmailAttribute(attributeName)) {
-                // do not take requirements from config for username and email as they are
-                // driven by business logic from parent!
+            Predicate<AttributeContext> required = AttributeMetadata.ALWAYS_FALSE;
+            if (rc != null) {
                 if (rc.isAlways() || UPConfigUtils.isRoleForContext(context, rc.getRoles())) {
                     required = AttributeMetadata.ALWAYS_TRUE;
                 } else if (UPConfigUtils.canBeAuthFlowContext(context) && rc.getScopes() != null && !rc.getScopes().isEmpty()) {
@@ -303,8 +305,6 @@ public class DeclarativeUserProfileProvider extends AbstractUserProfileProvider<
                     // we have to create required validation with scopes based selector
                     required = (c) -> requestedScopePredicate(c, rc.getScopes());
                 }
-
-                validators.add(new AttributeValidatorMetadata(AttributeRequiredByMetadataValidator.ID));
             }
 
             Predicate<AttributeContext> writeAllowed = AttributeMetadata.ALWAYS_FALSE;
@@ -329,7 +329,7 @@ public class DeclarativeUserProfileProvider extends AbstractUserProfileProvider<
 
             Predicate<AttributeContext> selector = AttributeMetadata.ALWAYS_TRUE;
             UPAttributeSelector sc = attrConfig.getSelector();
-            if (sc != null && !isUsernameOrEmailAttribute(attributeName) && UPConfigUtils.canBeAuthFlowContext(context) && sc.getScopes() != null && !sc.getScopes().isEmpty()) {
+            if (sc != null && !isBuiltInAttribute(attributeName) && UPConfigUtils.canBeAuthFlowContext(context) && sc.getScopes() != null && !sc.getScopes().isEmpty()) {
                 // for contexts executed from auth flow and with configured scopes selector
                 // we have to create correct predicate
                 selector = (c) -> requestedScopePredicate(c, sc.getScopes());
@@ -339,34 +339,46 @@ public class DeclarativeUserProfileProvider extends AbstractUserProfileProvider<
             String attributeGroup = attrConfig.getGroup();
             AttributeGroupMetadata groupMetadata = toAttributeGroupMeta(groupsByName.get(attributeGroup));
 
-            if (isUsernameOrEmailAttribute(attributeName)) {
+            guiOrder++;
+
+            if (isBuiltInAttribute(attributeName)) {
                 // make sure username and email are writable if permissions are not set
                 if (permissions == null || permissions.isEmpty()) {
                     writeAllowed = AttributeMetadata.ALWAYS_TRUE;
+                    readAllowed = AttributeMetadata.ALWAYS_TRUE;
                 }
 
-                List<AttributeMetadata> atts = decoratedMetadata.getAttribute(attributeName);
+                if (UserModel.USERNAME.equals(attributeName)) {
+                    required = AttributeMetadata.ALWAYS_TRUE;
+                }
 
-                if (atts.isEmpty()) {
-                    // attribute metadata doesn't exist so we have to add it. We keep it optional as Abstract base
-                    // doesn't require it.
-                    decoratedMetadata.addAttribute(attributeName, guiOrder++, writeAllowed, validators)
-                            .addAnnotations(annotations)
+                // Add ImmutableAttributeValidator to ensure that attributes that are configured
+                // as read-only are marked as such.
+                // Skip this for username in realms with username = email to allow change of email
+                // address on initial login with profile via idp
+                if (!realm.isRegistrationEmailAsUsername() && UserModel.EMAIL.equals(attributeName)) {
+                    validators.add(new AttributeValidatorMetadata(ImmutableAttributeValidator.ID));
+                }
+
+                List<AttributeMetadata> existingMetadata = decoratedMetadata.getAttribute(attributeName);
+
+                if (existingMetadata.isEmpty()) {
+                    throw new IllegalStateException("Attribute " + attributeName + " not defined in the context.");
+                }
+
+                for (AttributeMetadata metadata : existingMetadata) {
+                    metadata.addAnnotations(annotations)
                             .setAttributeDisplayName(attrConfig.getDisplayName())
-                            .setAttributeGroupMetadata(groupMetadata);
-                } else {
-                    final int localGuiOrder = guiOrder++;
-                    // only add configured validators and annotations if attribute metadata exist
-                    atts.stream().forEach(c -> c.addValidator(validators)
-                            .addAnnotations(annotations)
-                            .setAttributeDisplayName(attrConfig.getDisplayName())
-                            .setGuiOrder(localGuiOrder)
-                            .setAttributeGroupMetadata(groupMetadata));
+                            .setGuiOrder(guiOrder)
+                            .setAttributeGroupMetadata(groupMetadata)
+                            .addReadCondition(readAllowed)
+                            .addWriteCondition(writeAllowed)
+                            .addValidators(validators)
+                            .setRequired(required);
                 }
             } else {
-                // always add validation for immutable/read-only attributes
                 validators.add(new AttributeValidatorMetadata(ImmutableAttributeValidator.ID));
-                decoratedMetadata.addAttribute(attributeName, guiOrder++, validators, selector, writeAllowed, required, readAllowed)
+                decoratedMetadata.addAttribute(attributeName, guiOrder, validators, selector, writeAllowed, required, readAllowed)
                         .addAnnotations(annotations)
                         .setAttributeDisplayName(attrConfig.getDisplayName())
                         .setAttributeGroupMetadata(groupMetadata);
@@ -388,7 +400,7 @@ public class DeclarativeUserProfileProvider extends AbstractUserProfileProvider<
         return new AttributeGroupMetadata(group.getName(), group.getDisplayHeader(), group.getDisplayDescription(), group.getAnnotations());
     }
 
-    private boolean isUsernameOrEmailAttribute(String attributeName) {
+    private boolean isBuiltInAttribute(String attributeName) {
         return UserModel.USERNAME.equals(attributeName) || UserModel.EMAIL.equals(attributeName);
     }
 

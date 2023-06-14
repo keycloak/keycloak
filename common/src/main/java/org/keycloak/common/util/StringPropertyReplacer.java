@@ -51,6 +51,8 @@ public final class StringPropertyReplacer
     private static final int SEEN_DOLLAR = 1;
     private static final int IN_BRACKET = 2;
 
+    private static final Properties systemEnvProperties = new SystemEnvProperties();
+
     /**
      * Go through the input string and replace any occurance of ${p} with
      * the System.getProperty(p) value. If there is no such property p defined,
@@ -177,7 +179,7 @@ public final class StringPropertyReplacer
                         if (resolver != null)
                             value = resolver.resolve(key);
                         else
-                            value = System.getProperty(key);
+                            value = systemEnvProperties.getProperty(key);
 
                         if (value == null)
                         {
@@ -189,7 +191,7 @@ public final class StringPropertyReplacer
                                 if (resolver != null)
                                     value = resolver.resolve(realKey);
                                 else
-                                    value = System.getProperty(realKey);
+                                    value = systemEnvProperties.getProperty(realKey);
 
                                 if (value == null)
                                 {
@@ -282,7 +284,7 @@ public final class StringPropertyReplacer
                 if (resolver != null)
                     value = resolver.resolve(key1);
                 else
-                    value = System.getProperty(key1);
+                    value = systemEnvProperties.getProperty(key1);
             }
             // Check the second part, if there is one and first lookup failed
             if (value == null && comma < key.length() - 1)
@@ -291,7 +293,7 @@ public final class StringPropertyReplacer
                 if (resolver != null)
                     value = resolver.resolve(key2);
                 else
-                    value = System.getProperty(key2);
+                    value = systemEnvProperties.getProperty(key2);
             }
         }
         // Return whatever we've found or null

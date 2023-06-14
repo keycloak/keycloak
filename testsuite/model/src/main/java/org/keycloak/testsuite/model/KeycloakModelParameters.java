@@ -72,4 +72,8 @@ public class KeycloakModelParameters {
     public void beforeSuite(Config cf) {
 
     }
+
+    public void afterSuite() {
+
+    }
 }

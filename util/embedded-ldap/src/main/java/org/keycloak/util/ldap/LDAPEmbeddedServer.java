@@ -29,7 +29,6 @@ import org.apache.directory.api.ldap.model.schema.SchemaManager;
 import org.apache.directory.server.core.api.DirectoryService;
 import org.apache.directory.server.core.api.interceptor.Interceptor;
 import org.apache.directory.server.core.api.partition.Partition;
-import org.apache.directory.server.core.factory.AvlPartitionFactory;
 import org.apache.directory.server.core.factory.DefaultDirectoryServiceFactory;
 import org.apache.directory.server.core.factory.JdbmPartitionFactory;
 import org.apache.directory.server.core.normalization.NormalizationInterceptor;
@@ -45,6 +44,7 @@ import org.keycloak.common.util.StreamUtil;
 
 import java.io.File;
 import java.io.InputStream;
+import java.security.KeyStore;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -175,7 +175,8 @@ public class LDAPEmbeddedServer {
 
     public void init() throws Exception {
         log.info("Creating LDAP Directory Service. Config: baseDN=" + baseDN + ", bindHost=" + bindHost + ", bindPort=" + bindPort +
-                ", ldapSaslPrincipal=" + ldapSaslPrincipal + ", directoryServiceFactory=" + directoryServiceFactory + ", ldif=" + ldifFile);
+                ", ldapSaslPrincipal=" + ldapSaslPrincipal + ", directoryServiceFactory=" + directoryServiceFactory + ", ldif=" + ldifFile +
+                ", enableSSL=" + enableSSL + ", enableStartTLS: " + enableStartTLS + ", keystoreFile: " + keystoreFile + ", default java keystore type: " + KeyStore.getDefaultType());
 
         this.directoryService = createDirectoryService();
 

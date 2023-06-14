@@ -20,12 +20,10 @@ package org.keycloak.testsuite.model.session;
 import org.hamcrest.Matchers;
 import org.junit.Assert;
 import org.junit.Test;
-import org.keycloak.common.util.Time;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.sessions.infinispan.InfinispanAuthenticationSessionProviderFactory;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.AuthenticationSessionProvider;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
@@ -50,7 +48,7 @@ public class AuthenticationSessionTest extends KeycloakModelTest {
 
     @Override
     public void createEnvironment(KeycloakSession s) {
-        RealmModel realm = s.realms().createRealm("test");
+        RealmModel realm = createRealm(s, "test");
         realm.setDefaultRole(s.roles().addRealmRole(realm, Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + realm.getName()));
         realm.setAccessCodeLifespanLogin(1800);
 
@@ -65,7 +63,6 @@ public class AuthenticationSessionTest extends KeycloakModelTest {
     }
 
     @Test
-    @RequireProvider(value = AuthenticationSessionProvider.class, only = InfinispanAuthenticationSessionProviderFactory.PROVIDER_ID)
     public void testLimitAuthSessions() {
         AtomicReference<String> rootAuthSessionId = new AtomicReference<>();
         List<String> tabIds = withRealm(realmId, (session, realm) -> {
@@ -74,20 +71,28 @@ public class AuthenticationSessionTest extends KeycloakModelTest {
             ClientModel client = realm.getClientByClientId("test-app");
             return IntStream.range(0, 300)
                     .mapToObj(i -> {
-                        Time.setOffset(i);
+                        setTimeOffset(i);
                         return ras.createAuthenticationSession(client);
                     })
                     .map(AuthenticationSessionModel::getTabId)
                     .collect(Collectors.toList());
         });
 
-        withRealm(realmId, (session, realm) -> {
+        String tabId = withRealm(realmId, (session, realm) -> {
             RootAuthenticationSessionModel ras = session.authenticationSessions().getRootAuthenticationSession(realm, rootAuthSessionId.get());
             ClientModel client = realm.getClientByClientId("test-app");
 
             // create 301st auth session
-            AuthenticationSessionModel as = ras.createAuthenticationSession(client);
-            Assert.assertEquals(as, ras.getAuthenticationSession(client, as.getTabId()));
+            return ras.createAuthenticationSession(client).getTabId();
+        });
+
+        withRealm(realmId, (session, realm) -> {
+            RootAuthenticationSessionModel ras = session.authenticationSessions().getRootAuthenticationSession(realm, rootAuthSessionId.get());
+            ClientModel client = realm.getClientByClientId("test-app");
+
+            assertThat(ras.getAuthenticationSessions(), Matchers.aMapWithSize(300));
+
+            Assert.assertEquals(tabId, ras.getAuthenticationSession(client, tabId).getTabId());
 
             // assert the first authentication session was deleted
             Assert.assertNull(ras.getAuthenticationSession(client, tabIds.get(0)));
@@ -178,7 +183,7 @@ public class AuthenticationSessionTest extends KeycloakModelTest {
             RootAuthenticationSessionModel rootAuthSession = session.authenticationSessions().getRootAuthenticationSession(realm, rootAuthSessionId.get());
             Assert.assertNotNull(rootAuthSession);
 
-            Time.setOffset(1900);
+            setTimeOffset(1900);
 
             return null;
         });

@@ -162,7 +162,9 @@ public class InfinispanNotificationsManager {
                         workaround for Infinispan 12.1.7.Final to prevent a deadlock while
                         DefaultInfinispanConnectionProviderFactory is shutting down PersistenceManagerImpl
                         that acquires a writeLock and this put that acquires a readLock.
-                        https://issues.redhat.com/browse/ISPN-13664
+                        First seen with https://issues.redhat.com/browse/ISPN-13664 and still occurs probably due to
+                        https://issues.redhat.com/browse/ISPN-13666 in 13.0.10
+                        Tracked in https://github.com/keycloak/keycloak/issues/9871
                     */
                     synchronized (DefaultInfinispanConnectionProviderFactory.class) {
                         workRemoteCache.put(eventKey, wrappedEvent, 120, TimeUnit.SECONDS);
@@ -244,7 +246,9 @@ public class InfinispanNotificationsManager {
                         workaround for Infinispan 12.1.7.Final to prevent a deadlock while
                         DefaultInfinispanConnectionProviderFactory is shutting down PersistenceManagerImpl
                         that acquires a writeLock and this get that acquires a readLock.
-                        https://issues.redhat.com/browse/ISPN-13664
+                        First seen with https://issues.redhat.com/browse/ISPN-13664 and still occurs probably due to
+                        https://issues.redhat.com/browse/ISPN-13666 in 13.0.10
+                        Tracked in https://github.com/keycloak/keycloak/issues/9871
                     */
                     Object value;
                     synchronized (DefaultInfinispanConnectionProviderFactory.class) {
@@ -254,9 +258,15 @@ public class InfinispanNotificationsManager {
 
                 });
             } catch (RejectedExecutionException ree) {
-                // avoid touching the cache when creating a log message to avoid a deadlock in Infinispan 12.1.7.Final
-                logger.errorf("Rejected submitting of the event for key: %s. Server going to shutdown or pool exhausted. Pool: %s", key, listenersExecutor.toString());
-                throw ree;
+                // server is shutting down or pool was terminated - don't throw errors
+                if (ree.getMessage() != null && (ree.getMessage().contains("Terminated") || ree.getMessage().contains("Shutting down"))) {
+                    logger.warnf("Rejected submitting of the event for key: %s because server is shutting down or pool was terminated.", key);
+                    logger.debug(ree);
+                } else {
+                    // avoid touching the cache when creating a log message to avoid a deadlock in Infinispan 12.1.7.Final
+                    logger.errorf("Rejected submitting of the event for key: %s. Server going to shutdown or pool exhausted. Pool: %s", key, listenersExecutor.toString());
+                    throw ree;
+                }
             }
         }
 

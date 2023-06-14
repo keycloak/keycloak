@@ -21,10 +21,14 @@ import org.keycloak.authorization.model.Policy;
 import org.keycloak.events.Event;
 import org.keycloak.events.admin.AdminEvent;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.GroupModel;
+import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.map.storage.CriterionNotSupportedException;
 import org.keycloak.models.map.storage.ModelCriteriaBuilder;
+import org.keycloak.models.map.storage.ModelCriteriaBuilder.Operator;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.storage.SearchableModelField;
 import org.keycloak.storage.StorageId;
 import org.keycloak.util.EnumWithStableIndex;
@@ -36,9 +40,8 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static org.keycloak.models.map.storage.hotRod.IckleQueryMapModelCriteriaBuilder.LOWERCASE_NORMALIZED_MODEL_FIELDS;
 import static org.keycloak.models.map.storage.hotRod.IckleQueryMapModelCriteriaBuilder.getFieldName;
-import static org.keycloak.models.map.storage.hotRod.IckleQueryMapModelCriteriaBuilder.sanitizeAnalyzed;
-import static org.keycloak.models.map.storage.hotRod.IckleQueryOperators.C;
 
 /**
  * This class provides knowledge on how to build Ickle query where clauses for specified {@link SearchableModelField}.
@@ -60,8 +63,10 @@ public class IckleQueryWhereClauses {
     static {
         WHERE_CLAUSE_PRODUCER_OVERRIDES.put(ClientModel.SearchableFields.ATTRIBUTE, IckleQueryWhereClauses::whereClauseForAttributes);
         WHERE_CLAUSE_PRODUCER_OVERRIDES.put(UserModel.SearchableFields.ATTRIBUTE, IckleQueryWhereClauses::whereClauseForAttributes);
+        WHERE_CLAUSE_PRODUCER_OVERRIDES.put(GroupModel.SearchableFields.ATTRIBUTE, IckleQueryWhereClauses::whereClauseForAttributes);
         WHERE_CLAUSE_PRODUCER_OVERRIDES.put(UserModel.SearchableFields.IDP_AND_USER, IckleQueryWhereClauses::whereClauseForUserIdpAlias);
         WHERE_CLAUSE_PRODUCER_OVERRIDES.put(UserModel.SearchableFields.CONSENT_CLIENT_FEDERATION_LINK, IckleQueryWhereClauses::whereClauseForConsentClientFederationLink);
+        WHERE_CLAUSE_PRODUCER_OVERRIDES.put(UserModel.SearchableFields.USERNAME_CASE_INSENSITIVE, IckleQueryWhereClauses::whereClauseForUsernameCaseInsensitive);
         WHERE_CLAUSE_PRODUCER_OVERRIDES.put(UserSessionModel.SearchableFields.CORRESPONDING_SESSION_ID, IckleQueryWhereClauses::whereClauseForCorrespondingSessionId);
         WHERE_CLAUSE_PRODUCER_OVERRIDES.put(Policy.SearchableFields.CONFIG, IckleQueryWhereClauses::whereClauseForPolicyConfig);
         WHERE_CLAUSE_PRODUCER_OVERRIDES.put(Event.SearchableFields.EVENT_TYPE, IckleQueryWhereClauses::whereClauseForEnumWithStableIndex);
@@ -94,15 +99,12 @@ public class IckleQueryWhereClauses {
                                             Object[] values, Map<String, Object> parameters) {
         String fieldName = IckleQueryMapModelCriteriaBuilder.getFieldName(modelField);
 
-        if (IckleQueryMapModelCriteriaBuilder.isAnalyzedModelField(modelField) &&
-                (op.equals(ModelCriteriaBuilder.Operator.ILIKE) || op.equals(ModelCriteriaBuilder.Operator.EQ) || op.equals(ModelCriteriaBuilder.Operator.NE))) {
+        if (op == ModelCriteriaBuilder.Operator.ILIKE && !LOWERCASE_NORMALIZED_MODEL_FIELDS.contains(modelField)) {
+            throw new CriterionNotSupportedException(modelField, op, "Attempt to search case-insensitively without lowercase normalizer applied on the field.");
+        }
 
-            String clause = C + "." + fieldName + " : '" + sanitizeAnalyzed(((String)values[0]).toLowerCase()) + "'";
-            if (op.equals(ModelCriteriaBuilder.Operator.NE)) {
-                return "not(" + clause + ")";
-            }
-
-            return clause;
+        if (op == ModelCriteriaBuilder.Operator.LIKE && LOWERCASE_NORMALIZED_MODEL_FIELDS.contains(modelField)) {
+            throw new CriterionNotSupportedException(modelField, op, "Attempt to search case-sensitively with lowercase-normalized field.");
         }
 
         return whereClauseProducerForModelField(modelField).produceWhereClause(fieldName, op, values, parameters);
@@ -225,5 +227,15 @@ public class IckleQueryWhereClauses {
         }
 
         return produceWhereClause(modelFieldName, op, values, parameters);
+    }
+
+    private static String whereClauseForUsernameCaseInsensitive(String modelFieldName, ModelCriteriaBuilder.Operator op, Object[] values, Map<String, Object> parameters) {
+        for (int i = 0; i < values.length; i++) {
+            if (values[i] instanceof String) {
+                values[i] = KeycloakModelUtils.toLowerCaseSafe((String) values[i]);
+            }
+        }
+
+        return produceWhereClause(modelFieldName, op == ModelCriteriaBuilder.Operator.ILIKE ? ModelCriteriaBuilder.Operator.LIKE : op, values, parameters);
     }
 }

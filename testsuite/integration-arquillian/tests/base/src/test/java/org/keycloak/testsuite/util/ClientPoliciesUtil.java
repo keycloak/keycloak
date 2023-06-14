@@ -41,8 +41,10 @@ import org.keycloak.services.clientpolicy.condition.ClientUpdaterSourceRolesCond
 import org.keycloak.services.clientpolicy.executor.ConsentRequiredExecutor;
 import org.keycloak.services.clientpolicy.executor.FullScopeDisabledExecutor;
 import org.keycloak.services.clientpolicy.executor.HolderOfKeyEnforcerExecutor;
+import org.keycloak.services.clientpolicy.executor.IntentClientBindCheckExecutor;
 import org.keycloak.services.clientpolicy.executor.PKCEEnforcerExecutor;
 import org.keycloak.services.clientpolicy.executor.RejectResourceOwnerPasswordCredentialsGrantExecutor;
+import org.keycloak.services.clientpolicy.executor.RejectImplicitGrantExecutor;
 import org.keycloak.services.clientpolicy.executor.SecureClientAuthenticatorExecutor;
 import org.keycloak.services.clientpolicy.executor.SecureRequestObjectExecutor;
 import org.keycloak.services.clientpolicy.executor.SecureResponseTypeExecutor;
@@ -220,6 +222,19 @@ public final class ClientPoliciesUtil {
         return config;
     }
 
+    public static RejectImplicitGrantExecutor.Configuration createRejectImplicitGrantExecutorConfig(Boolean autoConfigure) {
+        RejectImplicitGrantExecutor.Configuration config = new RejectImplicitGrantExecutor.Configuration();
+        config.setAutoConfigure(autoConfigure);
+        return config;
+    }
+
+    public static IntentClientBindCheckExecutor.Configuration createIntentClientBindCheckExecutorConfig(String intentName, String endpoint) {
+        IntentClientBindCheckExecutor.Configuration config = new IntentClientBindCheckExecutor.Configuration();
+        config.setIntentName(intentName);
+        config.setIntentClientBindCheckEndpoint(endpoint);
+        return config;
+    }
+
     public static class ClientPoliciesBuilder {
         private final ClientPoliciesRepresentation policiesRep;
 
@@ -309,9 +324,9 @@ public final class ClientPoliciesUtil {
     }
 
     public static TestRaiseExceptionExecutor.Configuration createTestRaiseExeptionExecutorConfig(List<ClientPolicyEvent> events) {
-           TestRaiseExceptionExecutor.Configuration conf = new TestRaiseExceptionExecutor.Configuration();
-           conf.setEvents(events);
-           return conf;
+        TestRaiseExceptionExecutor.Configuration conf = new TestRaiseExceptionExecutor.Configuration();
+        conf.setEvents(events);
+        return conf;
     }
 
     public static ClientPolicyConditionConfigurationRepresentation createAnyClientConditionConfig() {

@@ -56,7 +56,11 @@ public class KeycloakArquillianExtension implements LoadableExtension {
                 .service(ResourceProvider.class, TestContextProvider.class)
                 .service(ResourceProvider.class, AdminClientProvider.class)
                 .service(ResourceProvider.class, OAuthClientProvider.class)
-                .service(ResourceProvider.class, LoadBalancerControllerProvider.class);
+                .service(ResourceProvider.class, LoadBalancerControllerProvider.class)
+                .service(ResourceProvider.class, PostgresContainerProvider.class)
+                .service(ResourceProvider.class, CockroachdbContainerProvider.class)
+                .service(ResourceProvider.class, HotRodContainerProvider.class)
+                .service(ResourceProvider.class, LegacyKeycloakContainerProvider.class);
 
         builder
                 .service(DeploymentScenarioGenerator.class, DeploymentTargetModifier.class)
@@ -66,7 +70,9 @@ public class KeycloakArquillianExtension implements LoadableExtension {
                 .observer(AuthServerTestEnricher.class)
                 .observer(AppServerTestEnricher.class)
                 .observer(CrossDCTestEnricher.class)
-                .observer(HotRodStoreTestEnricher.class)
+                .observer(HotRodContainerProvider.class)
+                .observer(PostgresContainerProvider.class)
+                .observer(CockroachdbContainerProvider.class)
                 .observer(H2TestEnricher.class);
         builder
                 .service(TestExecutionDecider.class, MigrationTestExecutionDecider.class)

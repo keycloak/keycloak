@@ -30,5 +30,5 @@ This will also automatically import the LDIF from `ldap-example-users.ldif` into
 and protocol mappers. Note that there are not any roles or users in this file. All of users, roles and role mappings data will be imported automatically from LDAP. 
  
  
-**4)** Test the example. In your web browser open `http://localhost:8080/ldap-portal` . You can login either as `jbrown` with password `password` or as
+**4)** Test the example. In your web browser open `http://localhost:8080/ldap-portal` . You can log in either as `jbrown` with password `password` or as
 `bwilson` with password `password` . You can see that access token contains all the claims and role mappings corresponding to the LDAP data provided in LDIF.

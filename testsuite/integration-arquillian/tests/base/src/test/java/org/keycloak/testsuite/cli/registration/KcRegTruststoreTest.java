@@ -35,7 +35,7 @@ public class KcRegTruststoreTest extends AbstractRegCliTest {
 
         // only run the rest of this test if ssl protected keycloak server is available
         if (!AUTH_SERVER_SSL_REQUIRED) {
-            System.out.println("TEST SKIPPED - This test requires HTTPS. Run with '-Pauth-server-wildfly -Dauth.server.ssl.required=true'");
+            System.out.println("TEST SKIPPED - This test requires HTTPS. Run with '-Pauth-server-quarkus -Dauth.server.ssl.required=true'");
             return;
         }
 

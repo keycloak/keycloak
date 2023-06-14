@@ -26,12 +26,18 @@ import org.keycloak.Config;
 public class OIDCProviderConfig {
 
     private final boolean legacyLogoutRedirectUri;
+    private final boolean suppressLogoutConfirmationScreen;
 
     public OIDCProviderConfig(Config.Scope config) {
         this.legacyLogoutRedirectUri = config.getBoolean(OIDCLoginProtocolFactory.CONFIG_LEGACY_LOGOUT_REDIRECT_URI, false);
+        this.suppressLogoutConfirmationScreen = config.getBoolean(OIDCLoginProtocolFactory.SUPPRESS_LOGOUT_CONFIRMATION_SCREEN, false);
     }
 
     public boolean isLegacyLogoutRedirectUri() {
         return legacyLogoutRedirectUri;
+    }
+
+    public boolean suppressLogoutConfirmationScreen() {
+        return suppressLogoutConfirmationScreen;
     }
 }

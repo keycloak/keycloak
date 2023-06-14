@@ -22,13 +22,13 @@ import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientException;
-import io.fabric8.kubernetes.client.extended.run.RunConfigBuilder;
 import io.fabric8.kubernetes.client.utils.KubernetesResourceUtil;
 import io.fabric8.kubernetes.client.utils.Serialization;
 import io.quarkus.logging.Log;
 import org.awaitility.Awaitility;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusCondition;
+import org.keycloak.operator.testsuite.integration.BaseOperatorTest;
 
 import java.util.Objects;
 import java.util.UUID;
@@ -43,7 +43,9 @@ public final class K8sUtils {
     }
 
     public static Keycloak getDefaultKeycloakDeployment() {
-        return getResourceFromFile("example-keycloak.yaml", Keycloak.class);
+        Keycloak kc = getResourceFromFile("example-keycloak.yaml", Keycloak.class);
+        kc.getMetadata().setNamespace(BaseOperatorTest.getCurrentNamespace());
+        return kc;
     }
 
     public static Secret getDefaultTlsSecret() {
@@ -56,10 +58,10 @@ public final class K8sUtils {
     }
 
     public static void deployKeycloak(KubernetesClient client, Keycloak kc, boolean waitUntilReady, boolean deployTlsSecret) {
-        client.resources(Keycloak.class).inNamespace(kc.getMetadata().getNamespace()).createOrReplace(kc);
+        client.resource(kc).forceConflicts().serverSideApply();
 
         if (deployTlsSecret) {
-            client.secrets().inNamespace(kc.getMetadata().getNamespace()).createOrReplace(getDefaultTlsSecret());
+            client.resource(getDefaultTlsSecret()).inNamespace(kc.getMetadata().getNamespace()).serverSideApply();
         }
 
         if (waitUntilReady) {
@@ -97,13 +99,12 @@ public final class K8sUtils {
         var podName = KubernetesResourceUtil.sanitizeName("curl-" + UUID.randomUUID());
         try {
             Pod curlPod = k8sclient.run().inNamespace(namespace)
-                    .withRunConfig(new RunConfigBuilder()
+                    .withNewRunConfig()
                             .withArgs(args)
                             .withName(podName)
                             .withImage("curlimages/curl:7.78.0")
                             .withRestartPolicy("Never")
-                            .build())
-                    .done();
+                            .done();
             Log.info("Waiting for curl Pod to finish running");
             Awaitility.await().atMost(3, TimeUnit.MINUTES)
                     .until(() -> {

@@ -3,6 +3,8 @@
 The module holds the codebase to build the Keycloak Operator on top of [Quarkus](https://quarkus.io/).
 Using the [Quarkus Operator SDK](https://github.com/quarkiverse/quarkus-operator-sdk).
 
+Also see [Operator guides](https://www.keycloak.org/guides#operator)
+
 ## Activating the Module
 
 When build from the project root directory, this module is only enabled if the installed JDK is 11 or newer. 
@@ -16,6 +18,12 @@ Build the Docker image with:
 ```bash
 mvn clean package -Doperator -Dquarkus.container-image.build=true
 ```
+
+This will build a container image from `src/main/docker/Dockerfile.jvm`, using `docker` by default. `podman` is also supported if you do these steps beforehand:
+
+- Follow [this guide](https://quarkus.io/guides/podman#setting-docker_host-on-linux) to enable the podman user socket
+- Set the `DOCKER_HOST` environment variable to point at this user socket. For example: `DOCKER_HOST=unix:///run/user/1000/podman/podman.sock`.
+- You may also have to set `QUARKUS_DOCKER_EXECUTABLE_NAME=podman`
 
 ## Configuration
 

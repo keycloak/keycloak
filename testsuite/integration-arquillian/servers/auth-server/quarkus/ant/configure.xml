@@ -8,6 +8,11 @@
             <arg value="--http-relative-path=/auth"/>
             <arg value="--cache=local"/>
         </exec>
+        <exec osfamily="windows" executable="${auth.server.home}/bin/kc.bat" failonerror="true">
+            <arg value="build"/>
+            <arg value="--http-relative-path=/auth"/>
+            <arg value="--cache=local"/>
+        </exec>
     </target>
 
     <macrodef name="bin-chmod">

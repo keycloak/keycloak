@@ -39,7 +39,7 @@ import static org.keycloak.jose.jwk.JWKUtil.toIntegerBytes;
  */
 public class JWKBuilder {
 
-    public static final String DEFAULT_PUBLIC_KEY_USE = "sig";
+    public static final KeyUse DEFAULT_PUBLIC_KEY_USE = KeyUse.SIG;
 
     private String kid;
 
@@ -105,13 +105,17 @@ public class JWKBuilder {
 
     public JWK rsa(Key key, KeyUse keyUse) {
         JWK k = rsa(key);
-        String keyUseString = keyUse == null ? DEFAULT_PUBLIC_KEY_USE : keyUse.getSpecName();
+        String keyUseString = keyUse == null ? DEFAULT_PUBLIC_KEY_USE.getSpecName() : keyUse.getSpecName();
         if (KeyUse.ENC == keyUse) keyUseString = "enc";
         k.setPublicKeyUse(keyUseString);
         return k;
     }
 
     public JWK ec(Key key) {
+        return ec(key, DEFAULT_PUBLIC_KEY_USE);
+    }
+
+    public JWK ec(Key key, KeyUse keyUse) {
         ECPublicKey ecKey = (ECPublicKey) key;
 
         ECPublicJWK k = new ECPublicJWK();
@@ -122,10 +126,10 @@ public class JWKBuilder {
         k.setKeyId(kid);
         k.setKeyType(KeyType.EC);
         k.setAlgorithm(algorithm);
-        k.setPublicKeyUse(DEFAULT_PUBLIC_KEY_USE);
+        k.setPublicKeyUse(keyUse == null ? DEFAULT_PUBLIC_KEY_USE.getSpecName() : keyUse.getSpecName());
         k.setCrv("P-" + fieldSize);
-        k.setX(Base64Url.encode(toIntegerBytes(ecKey.getW().getAffineX())));
-        k.setY(Base64Url.encode(toIntegerBytes(ecKey.getW().getAffineY())));
+        k.setX(Base64Url.encode(toIntegerBytes(ecKey.getW().getAffineX(), fieldSize)));
+        k.setY(Base64Url.encode(toIntegerBytes(ecKey.getW().getAffineY(), fieldSize)));
         
         return k;
     }

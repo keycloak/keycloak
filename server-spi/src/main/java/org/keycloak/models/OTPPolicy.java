@@ -26,8 +26,6 @@ import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -44,10 +42,9 @@ public class OTPPolicy implements Serializable {
     protected int digits;
     protected int lookAheadWindow;
     protected int period;
+    protected boolean isCodeReusable;
 
     private static final Map<String, String> algToKeyUriAlg = new HashMap<>();
-
-    private static final OtpApp[] allApplications = new OtpApp[] { new FreeOTP(), new GoogleAuthenticator() };
 
     static {
         algToKeyUriAlg.put(HmacOTP.HMAC_SHA1, "SHA1");
@@ -59,15 +56,24 @@ public class OTPPolicy implements Serializable {
     }
 
     public OTPPolicy(String type, String algorithm, int initialCounter, int digits, int lookAheadWindow, int period) {
+        this(type, algorithm, initialCounter, digits, lookAheadWindow, period, DEFAULT_IS_REUSABLE);
+    }
+
+    public OTPPolicy(String type, String algorithm, int initialCounter, int digits, int lookAheadWindow, int period, boolean isCodeReusable) {
         this.type = type;
         this.algorithm = algorithm;
         this.initialCounter = initialCounter;
         this.digits = digits;
         this.lookAheadWindow = lookAheadWindow;
         this.period = period;
+        this.isCodeReusable = isCodeReusable;
     }
 
     public static OTPPolicy DEFAULT_POLICY = new OTPPolicy(OTPCredentialModel.TOTP, HmacOTP.HMAC_SHA1, 0, 6, 1, 30);
+    public static final boolean DEFAULT_IS_REUSABLE = false;
+
+    // Realm attributes
+    public static final String REALM_REUSABLE_CODE_ATTRIBUTE = "realmReusableOtpCode";
 
     public String getAlgorithmKey() {
         return algToKeyUriAlg.containsKey(algorithm) ? algToKeyUriAlg.get(algorithm) : algorithm;
@@ -121,8 +127,17 @@ public class OTPPolicy implements Serializable {
         this.period = period;
     }
 
+    public boolean isCodeReusable() {
+        return isCodeReusable;
+    }
+
+    public void setCodeReusable(boolean isReusable) {
+        isCodeReusable = isReusable;
+    }
+
     /**
      * Constructs the <code>otpauth://</code> URI based on the <a href="https://github.com/google/google-authenticator/wiki/Key-Uri-Format">Key-Uri-Format</a>.
+     *
      * @param realm
      * @param user
      * @param secret
@@ -158,57 +173,6 @@ public class OTPPolicy implements Serializable {
             return "otpauth://" + type + "/" + label+ "?" + parameters;
         } catch (UnsupportedEncodingException e) {
             throw new RuntimeException(e);
-        }
-    }
-
-    public List<String> getSupportedApplications() {
-        List<String> applications = new LinkedList<>();
-        for (OtpApp a : allApplications) {
-            if (a.supports(this)) {
-                applications.add(a.getName());
-            }
-        }
-        return applications;
-    }
-
-    public interface OtpApp {
-
-        String getName();
-
-        boolean supports(OTPPolicy policy);
-    }
-
-    public static class GoogleAuthenticator implements OtpApp {
-
-        @Override
-        public String getName() {
-            return "Google Authenticator";
-        }
-
-        @Override
-        public boolean supports(OTPPolicy policy) {
-            if (policy.digits != 6) {
-                return false;
-            }
-
-            if (!policy.getAlgorithm().equals("HmacSHA1")) {
-                return false;
-            }
-
-            return policy.getType().equals("totp") && policy.getPeriod() == 30;
-        }
-    }
-
-    public static class FreeOTP implements OtpApp {
-
-        @Override
-        public String getName() {
-            return "FreeOTP";
-        }
-
-        @Override
-        public boolean supports(OTPPolicy policy) {
-            return true;
         }
     }
 

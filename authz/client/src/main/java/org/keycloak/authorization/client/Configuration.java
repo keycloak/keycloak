@@ -17,14 +17,14 @@
  */
 package org.keycloak.authorization.client;
 
-import java.util.List;
 import java.util.Map;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.apache.http.client.HttpClient;
 import org.apache.http.impl.client.HttpClients;
+import org.keycloak.protocol.oidc.client.authentication.ClientCredentialsProvider;
+import org.keycloak.protocol.oidc.client.authentication.ClientCredentialsProviderUtils;
 import org.keycloak.representations.adapters.config.AdapterConfig;
-import org.keycloak.util.BasicAuthHelper;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -35,7 +35,7 @@ public class Configuration extends AdapterConfig {
     private HttpClient httpClient;
 
     @JsonIgnore
-    private ClientAuthenticator clientAuthenticator = createDefaultClientAuthenticator();
+    private ClientCredentialsProvider clientCredentialsProvider;
 
     public Configuration() {
 
@@ -66,27 +66,18 @@ public class Configuration extends AdapterConfig {
         return httpClient;
     }
 
-    ClientAuthenticator getClientAuthenticator() {
-        return this.clientAuthenticator;
+    public void setHttpClient(HttpClient httpClient) {
+        this.httpClient = httpClient;
     }
 
-    /**
-     * Creates a default client authenticator which uses HTTP BASIC and client id and secret to authenticate the client.
-     *
-     * @return the default client authenticator
-     */
-    private ClientAuthenticator createDefaultClientAuthenticator() {
-        return new ClientAuthenticator() {
-            @Override
-            public void configureClientCredentials(Map<String, List<String>> requestParams, Map<String, String> requestHeaders) {
-                String secret = (String) getCredentials().get("secret");
+    public void setClientCredentialsProvider(ClientCredentialsProvider clientCredentialsProvider) {
+        this.clientCredentialsProvider = clientCredentialsProvider;
+    }
 
-                if (secret == null) {
-                    throw new RuntimeException("Client secret not provided.");
-                }
-
-                requestHeaders.put("Authorization", BasicAuthHelper.createHeader(getResource(), secret));
-            }
-        };
+    public ClientCredentialsProvider getClientCredentialsProvider() {
+        if (clientCredentialsProvider == null) {
+            clientCredentialsProvider = ClientCredentialsProviderUtils.bootstrapClientAuthenticator(this);
+        }
+        return clientCredentialsProvider;
     }
 }

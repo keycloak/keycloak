@@ -91,7 +91,9 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
             workaround for Infinispan 12.1.7.Final to prevent a deadlock while
             DefaultInfinispanConnectionProviderFactory is shutting down PersistenceManagerImpl
             that acquires a writeLock and this removal that acquires a readLock.
-            https://issues.redhat.com/browse/ISPN-13664
+            First seen with https://issues.redhat.com/browse/ISPN-13664 and still occurs probably due to
+            https://issues.redhat.com/browse/ISPN-13666 in 13.0.10
+            Tracked in https://github.com/keycloak/keycloak/issues/9871
         */
         synchronized (DefaultInfinispanConnectionProviderFactory.class) {
             if (cacheManager != null && !containerManaged) {
@@ -236,6 +238,7 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
 
         ConfigurationBuilder sessionConfigBuilder = createCacheConfigurationBuilder();
         if (clustered) {
+            sessionConfigBuilder.simpleCache(false);
             String sessionsMode = config.get("sessionsMode", "distributed");
             if (sessionsMode.equalsIgnoreCase("replicated")) {
                 sessionConfigBuilder.clustering().cacheMode(async ? CacheMode.REPL_ASYNC : CacheMode.REPL_SYNC);
@@ -257,6 +260,7 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
                     .l1()
                         .enabled(l1Enabled)
                         .lifespan(l1Lifespan)
+                    .stateTransfer().timeout(30, TimeUnit.SECONDS)
                     .build();
         }
 
@@ -317,6 +321,7 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
 
         ConfigurationBuilder replicationConfigBuilder = createCacheConfigurationBuilder();
         if (clustered) {
+            replicationConfigBuilder.simpleCache(false);
             replicationConfigBuilder.clustering().cacheMode(async ? CacheMode.REPL_ASYNC : CacheMode.REPL_SYNC);
         }
 
@@ -352,6 +357,7 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
 
         final ConfigurationBuilder actionTokenCacheConfigBuilder = getActionTokenCacheConfig();
         if (clustered) {
+            actionTokenCacheConfigBuilder.simpleCache(false);
             actionTokenCacheConfigBuilder.clustering().cacheMode(async ? CacheMode.REPL_ASYNC : CacheMode.REPL_SYNC);
         }
         if (jdgEnabled) {
@@ -371,6 +377,7 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
 
     private Configuration getRevisionCacheConfig(long maxEntries) {
         ConfigurationBuilder cb = createCacheConfigurationBuilder();
+        cb.simpleCache(false);
         cb.invocationBatching().enable().transaction().transactionMode(TransactionMode.TRANSACTIONAL);
 
         // Use Embedded manager even in managed ( wildfly/eap ) environment. We don't want infinispan to participate in global transaction
@@ -391,7 +398,7 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
 
     // Used for cross-data centers scenario. Usually integration with external JDG server, which itself handles communication between DCs.
     private void configureRemoteCacheStore(ConfigurationBuilder builder, boolean async, String cacheName) {
-        String jdgServer = config.get("remoteStoreHost", "localhost");
+        String jdgServer = config.get("remoteStoreHost", "127.0.0.1");
         Integer jdgPort = config.getInt("remoteStorePort", 11222);
 
         // After upgrade to Infinispan 12.1.7.Final it's required that both remote store and embedded cache use
@@ -420,7 +427,7 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
     }
 
     private void configureRemoteActionTokenCacheStore(ConfigurationBuilder builder, boolean async) {
-        String jdgServer = config.get("remoteStoreHost", "localhost");
+        String jdgServer = config.get("remoteStoreHost", "127.0.0.1");
         Integer jdgPort = config.getInt("remoteStorePort", 11222);
 
         // After upgrade to Infinispan 12.1.7.Final it's required that both remote store and embedded cache use

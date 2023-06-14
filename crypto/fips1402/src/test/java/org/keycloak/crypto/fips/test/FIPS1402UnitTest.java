@@ -2,9 +2,8 @@ package org.keycloak.crypto.fips.test;
 
 import org.junit.Assert;
 import org.junit.ClassRule;
-import org.junit.Rule;
 import org.junit.Test;
-import org.keycloak.common.crypto.CryptoProviderTypes;
+import org.keycloak.common.crypto.CryptoConstants;
 import org.keycloak.crypto.fips.FIPSAesKeyWrapAlgorithmProvider;
 import org.keycloak.common.crypto.CryptoIntegration;
 import org.keycloak.jose.jwe.alg.JWEAlgorithmProvider;
@@ -20,7 +19,7 @@ public class FIPS1402UnitTest {
 
     @Test
     public void testFips() throws Exception {
-        JWEAlgorithmProvider jweAlg = CryptoIntegration.getProvider().getAlgorithmProvider(JWEAlgorithmProvider.class, CryptoProviderTypes.AES_KEY_WRAP_ALGORITHM_PROVIDER);
+        JWEAlgorithmProvider jweAlg = CryptoIntegration.getProvider().getAlgorithmProvider(JWEAlgorithmProvider.class, CryptoConstants.A128KW);
         Assert.assertEquals(jweAlg.getClass(), FIPSAesKeyWrapAlgorithmProvider.class);
     }
 }

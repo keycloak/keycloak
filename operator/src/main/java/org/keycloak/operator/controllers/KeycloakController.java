@@ -20,14 +20,14 @@ import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.api.model.networking.v1.Ingress;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.fabric8.kubernetes.client.informers.SharedIndexInformer;
+import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.ErrorStatusHandler;
+import io.javaoperatorsdk.operator.api.reconciler.ErrorStatusUpdateControl;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceInitializer;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
-import io.javaoperatorsdk.operator.api.reconciler.RetryInfo;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
@@ -37,18 +37,16 @@ import org.keycloak.operator.Config;
 import org.keycloak.operator.Constants;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatus;
-import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusBuilder;
+import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusAggregator;
 import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusCondition;
 
-import javax.inject.Inject;
-import java.util.List;
-import java.util.Optional;
+import jakarta.inject.Inject;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-import static io.javaoperatorsdk.operator.api.reconciler.Constants.NO_FINALIZER;
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.WATCH_CURRENT_NAMESPACE;
 
-@ControllerConfiguration(namespaces = WATCH_CURRENT_NAMESPACE, finalizerName = NO_FINALIZER)
+@ControllerConfiguration(namespaces = WATCH_CURRENT_NAMESPACE)
 public class KeycloakController implements Reconciler<Keycloak>, EventSourceInitializer<Keycloak>, ErrorStatusHandler<Keycloak> {
 
     @Inject
@@ -58,29 +56,35 @@ public class KeycloakController implements Reconciler<Keycloak>, EventSourceInit
     Config config;
 
     @Override
-    public List<EventSource> prepareEventSources(EventSourceContext<Keycloak> context) {
-        String namespace = context.getConfigurationService().getClientConfiguration().getNamespace();
+    public Map<String, EventSource> prepareEventSources(EventSourceContext<Keycloak> context) {
+        String namespace = context.getControllerConfiguration().getConfigurationService().getClientConfiguration().getNamespace();
 
-        SharedIndexInformer<StatefulSet> deploymentInformer =
-                client.apps().statefulSets().inNamespace(namespace)
-                        .withLabels(Constants.DEFAULT_LABELS)
-                        .runnableInformer(0);
+        InformerConfiguration<StatefulSet> statefulSetIC = InformerConfiguration
+                .from(StatefulSet.class)
+                .withLabelSelector(Constants.DEFAULT_LABELS_AS_STRING)
+                .withNamespaces(namespace)
+                .withSecondaryToPrimaryMapper(Mappers.fromOwnerReference())
+                .build();
 
-        SharedIndexInformer<Service> servicesInformer =
-                client.services().inNamespace(namespace)
-                        .withLabels(Constants.DEFAULT_LABELS)
-                        .runnableInformer(0);
+        InformerConfiguration<Service> servicesIC = InformerConfiguration
+                .from(Service.class)
+                .withLabelSelector(Constants.DEFAULT_LABELS_AS_STRING)
+                .withNamespaces(namespace)
+                .withSecondaryToPrimaryMapper(Mappers.fromOwnerReference())
+                .build();
 
-        SharedIndexInformer<Ingress> ingressesInformer =
-                client.network().v1().ingresses().inNamespace(namespace)
-                        .withLabels(Constants.DEFAULT_LABELS)
-                        .runnableInformer(0);
+        InformerConfiguration<Ingress> ingressesIC = InformerConfiguration
+                .from(Ingress.class)
+                .withLabelSelector(Constants.DEFAULT_LABELS_AS_STRING)
+                .withNamespaces(namespace)
+                .withSecondaryToPrimaryMapper(Mappers.fromOwnerReference())
+                .build();
 
-        EventSource deploymentEvent = new InformerEventSource<>(deploymentInformer, Mappers.fromOwnerReference());
-        EventSource servicesEvent = new InformerEventSource<>(servicesInformer, Mappers.fromOwnerReference());
-        EventSource ingressesEvent = new InformerEventSource<>(ingressesInformer, Mappers.fromOwnerReference());
+        EventSource statefulSetEvent = new InformerEventSource<>(statefulSetIC, context);
+        EventSource servicesEvent = new InformerEventSource<>(servicesIC, context);
+        EventSource ingressesEvent = new InformerEventSource<>(ingressesIC, context);
 
-        return List.of(deploymentEvent,
+        return EventSourceInitializer.nameEventSources(statefulSetEvent,
                 servicesEvent,
                 ingressesEvent,
                 WatchedSecretsStore.getStoreEventSource(client, namespace),
@@ -88,13 +92,13 @@ public class KeycloakController implements Reconciler<Keycloak>, EventSourceInit
     }
 
     @Override
-    public UpdateControl<Keycloak> reconcile(Keycloak kc, Context context) {
+    public UpdateControl<Keycloak> reconcile(Keycloak kc, Context<Keycloak> context) {
         String kcName = kc.getMetadata().getName();
         String namespace = kc.getMetadata().getNamespace();
 
         Log.infof("--- Reconciling Keycloak: %s in namespace: %s", kcName, namespace);
 
-        var statusBuilder = new KeycloakStatusBuilder();
+        var statusAggregator = new KeycloakStatusAggregator(kc.getStatus(), kc.getMetadata().getGeneration());
 
         var kcAdminSecret = new KeycloakAdminSecret(client, kc);
         kcAdminSecret.createOrUpdateReconciled();
@@ -108,21 +112,21 @@ public class KeycloakController implements Reconciler<Keycloak>, EventSourceInit
             Log.info("Config Secrets modified, restarting deployment");
             kcDeployment.rollingRestart();
         }
-        kcDeployment.updateStatus(statusBuilder);
+        kcDeployment.updateStatus(statusAggregator);
         watchedSecrets.createOrUpdateReconciled();
 
         var kcService = new KeycloakService(client, kc);
-        kcService.updateStatus(statusBuilder);
+        kcService.updateStatus(statusAggregator);
         kcService.createOrUpdateReconciled();
         var kcDiscoveryService = new KeycloakDiscoveryService(client, kc);
-        kcDiscoveryService.updateStatus(statusBuilder);
+        kcDiscoveryService.updateStatus(statusAggregator);
         kcDiscoveryService.createOrUpdateReconciled();
 
         var kcIngress = new KeycloakIngress(client, kc);
-        kcIngress.updateStatus(statusBuilder);
+        kcIngress.updateStatus(statusAggregator);
         kcIngress.createOrUpdateReconciled();
 
-        var status = statusBuilder.build();
+        var status = statusAggregator.build();
 
         Log.info("--- Reconciliation finished successfully");
 
@@ -135,10 +139,8 @@ public class KeycloakController implements Reconciler<Keycloak>, EventSourceInit
             updateControl = UpdateControl.updateStatus(kc);
         }
 
-        if (status
-                .getConditions()
-                .stream()
-                .anyMatch(c -> c.getType().equals(KeycloakStatusCondition.READY) && !c.getStatus())) {
+        if (status.findCondition(KeycloakStatusCondition.READY)
+                .filter(c -> !Boolean.TRUE.equals(c.getStatus())).isPresent()) {
             updateControl.rescheduleAfter(10, TimeUnit.SECONDS);
         }
 
@@ -146,14 +148,14 @@ public class KeycloakController implements Reconciler<Keycloak>, EventSourceInit
     }
 
     @Override
-    public Optional<Keycloak> updateErrorStatus(Keycloak kc, RetryInfo retryInfo, RuntimeException e) {
+    public ErrorStatusUpdateControl<Keycloak> updateErrorStatus(Keycloak kc, Context<Keycloak> context, Exception e) {
         Log.error("--- Error reconciling", e);
-        KeycloakStatus status = new KeycloakStatusBuilder()
+        KeycloakStatus status = new KeycloakStatusAggregator(kc.getStatus(), kc.getMetadata().getGeneration())
                 .addErrorMessage("Error performing operations:\n" + e.getMessage())
                 .build();
 
         kc.setStatus(status);
 
-        return Optional.of(kc);
+        return ErrorStatusUpdateControl.updateStatus(kc);
     }
 }

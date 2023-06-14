@@ -20,8 +20,8 @@ import java.io.InputStream;
 import java.util.HashSet;
 import java.util.List;
 
-import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.core.Response;
 
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.StreamUtil;
@@ -50,11 +50,13 @@ public class ParEndpointRequestParserProcessor {
         try {
             AuthorizationEndpointRequest request = new AuthorizationEndpointRequest();
 
-            AuthzEndpointQueryStringParser parser = new AuthzEndpointQueryStringParser(requestParams);
+            AuthzEndpointQueryStringParser parser = new AuthzEndpointQueryStringParser(requestParams, false);
             parser.parseRequest(request);
 
             if (parser.getInvalidRequestMessage() != null) {
                 request.setInvalidRequestMessage(parser.getInvalidRequestMessage());
+            }
+            if (request.getInvalidRequestMessage() != null) {
                 return request;
             }
 

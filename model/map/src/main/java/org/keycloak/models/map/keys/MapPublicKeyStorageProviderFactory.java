@@ -18,7 +18,7 @@
 package org.keycloak.models.map.keys;
 
 import org.keycloak.common.Profile;
-import org.keycloak.crypto.KeyWrapper;
+import org.keycloak.crypto.PublicKeysWrapper;
 import org.keycloak.keys.PublicKeyStorageProviderFactory;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.map.common.AbstractEntity;
@@ -32,7 +32,7 @@ import java.util.concurrent.FutureTask;
 public class MapPublicKeyStorageProviderFactory extends AbstractMapProviderFactory<MapPublicKeyStorageProvider, AbstractEntity, Object>
         implements PublicKeyStorageProviderFactory<MapPublicKeyStorageProvider>, EnvironmentDependentProviderFactory {
 
-    private final Map<String, FutureTask<Map<String, KeyWrapper>>> tasksInProgress = new ConcurrentHashMap<>();
+    private final Map<String, FutureTask<PublicKeysWrapper>> tasksInProgress = new ConcurrentHashMap<>();
 
     public MapPublicKeyStorageProviderFactory() {
         super(Object.class, MapPublicKeyStorageProvider.class);

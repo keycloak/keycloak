@@ -20,6 +20,7 @@
 package org.keycloak.userprofile;
 
 import java.util.Map;
+import java.util.Objects;
 
 import org.keycloak.validate.ValidationContext;
 import org.keycloak.validate.Validator;
@@ -79,4 +80,16 @@ public final class AttributeValidatorMetadata {
         return validator.validate(context.getAttribute().getValue(), context.getMetadata().getName(), new UserProfileAttributeValidationContext(context), validatorConfig);
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (o == this) return true;
+        if (! (o instanceof AttributeValidatorMetadata)) return false;
+        AttributeValidatorMetadata other = (AttributeValidatorMetadata) o;
+        return Objects.equals(getValidatorId(), other.getValidatorId());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(validatorId);
+    }
 }

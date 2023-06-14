@@ -23,6 +23,7 @@ import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserConsentModel;
+import org.keycloak.models.map.annotations.CollectionKey;
 import org.keycloak.models.map.annotations.GenerateEntityImplementations;
 import org.keycloak.models.map.common.DeepCloner;
 import org.keycloak.models.map.common.UpdatableEntity;
@@ -38,7 +39,7 @@ public interface MapUserConsentEntity extends UpdatableEntity {
     public static MapUserConsentEntity fromModel(UserConsentModel model) {
         long currentTime = Time.currentTimeMillis();
 
-        MapUserConsentEntity consentEntity = new MapUserConsentEntityImpl();
+        MapUserConsentEntity consentEntity = DeepCloner.DUMB_CLONER.newInstance(MapUserConsentEntity.class);
         consentEntity.setClientId(model.getClient().getId());
         consentEntity.setCreatedDate(currentTime);
         consentEntity.setLastUpdatedDate(currentTime);
@@ -77,6 +78,7 @@ public interface MapUserConsentEntity extends UpdatableEntity {
         return model;
     }
 
+    @CollectionKey
     String getClientId();
     void setClientId(String clientId);
 

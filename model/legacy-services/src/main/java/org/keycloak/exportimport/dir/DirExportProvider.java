@@ -20,6 +20,7 @@ package org.keycloak.exportimport.dir;
 import org.keycloak.exportimport.util.ExportUtils;
 import org.keycloak.exportimport.util.MultipleStepsExportProvider;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.platform.Platform;
@@ -34,23 +35,28 @@ import java.util.List;
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class DirExportProvider extends MultipleStepsExportProvider {
+public class DirExportProvider extends MultipleStepsExportProvider<DirExportProvider> {
+    
+    private String dir; 
+    
+    private File rootDirectory;
 
-    private final File rootDirectory;
-
-    public DirExportProvider() {
+    public DirExportProvider(KeycloakSessionFactory sessionFactory) {
         // Determine platform tmp directory
-        this.rootDirectory = new File(Platform.getPlatform().getTmpDirectory(), "keycloak-export");
-        this.rootDirectory.mkdirs();
-
-        logger.infof("Exporting into directory %s", this.rootDirectory.getAbsolutePath());
+        super(sessionFactory);
     }
-
-    public DirExportProvider(File rootDirectory) {
-        this.rootDirectory = rootDirectory;
-        this.rootDirectory.mkdirs();
-
-        logger.infof("Exporting into directory %s", this.rootDirectory.getAbsolutePath());
+    
+    private File getRootDirectory() {
+        if (rootDirectory == null) {
+            if (dir == null) {
+                rootDirectory = new File(Platform.getPlatform().getTmpDirectory(), "keycloak-export");
+            } else {
+                rootDirectory = new File(dir);
+            }
+            rootDirectory.mkdirs();
+            logger.infof("Exporting into directory %s", rootDirectory.getAbsolutePath());
+        }
+        return rootDirectory;
     }
 
     public static boolean recursiveDeleteDir(File dirPath) {
@@ -72,7 +78,7 @@ public class DirExportProvider extends MultipleStepsExportProvider {
 
     @Override
     public void writeRealm(String fileName, RealmRepresentation rep) throws IOException {
-        File file = new File(this.rootDirectory, fileName);
+        File file = new File(getRootDirectory(), fileName);
         try (FileOutputStream is = new FileOutputStream(file)) {
             JsonSerialization.prettyMapper.writeValue(is, rep);
         }
@@ -80,14 +86,14 @@ public class DirExportProvider extends MultipleStepsExportProvider {
 
     @Override
     protected void writeUsers(String fileName, KeycloakSession session, RealmModel realm, List<UserModel> users) throws IOException {
-        File file = new File(this.rootDirectory, fileName);
+        File file = new File(getRootDirectory(), fileName);
         FileOutputStream os = new FileOutputStream(file);
         ExportUtils.exportUsersToStream(session, realm, users, JsonSerialization.prettyMapper, os);
     }
 
     @Override
     protected void writeFederatedUsers(String fileName, KeycloakSession session, RealmModel realm, List<String> users) throws IOException {
-        File file = new File(this.rootDirectory, fileName);
+        File file = new File(getRootDirectory(), fileName);
         FileOutputStream os = new FileOutputStream(file);
         ExportUtils.exportFederatedUsersToStream(session, realm, users, JsonSerialization.prettyMapper, os);
     }
@@ -95,4 +101,10 @@ public class DirExportProvider extends MultipleStepsExportProvider {
     @Override
     public void close() {
     }
+
+    public DirExportProvider withDir(String dir) {
+        this.dir = dir;
+        return this;
+    }
+
 }

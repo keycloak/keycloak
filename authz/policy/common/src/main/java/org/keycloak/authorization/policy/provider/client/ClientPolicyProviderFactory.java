@@ -19,7 +19,7 @@ package org.keycloak.authorization.policy.provider.client;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -67,7 +67,7 @@ public class ClientPolicyProviderFactory implements PolicyProviderFactory<Client
     @Override
     public ClientPolicyRepresentation toRepresentation(Policy policy, AuthorizationProvider authorization) {
         ClientPolicyRepresentation representation = new ClientPolicyRepresentation();
-        representation.setClients(new HashSet<>(Arrays.asList(getClients(policy))));
+        representation.setClients(getClients(policy));
         return representation;
     }
 
@@ -88,7 +88,7 @@ public class ClientPolicyProviderFactory implements PolicyProviderFactory<Client
 
     @Override
     public void onImport(Policy policy, PolicyRepresentation representation, AuthorizationProvider authorization) {
-        updateClients(policy, new HashSet<>(Arrays.asList(getClients(policy))), authorization);
+        updateClients(policy, getClients(policy), authorization);
     }
 
     @Override
@@ -193,17 +193,17 @@ public class ClientPolicyProviderFactory implements PolicyProviderFactory<Client
         }
     }
 
-    private String[] getClients(Policy policy) {
+    private Set<String> getClients(Policy policy) {
         String clients = policy.getConfig().get("clients");
 
         if (clients != null) {
             try {
-                return JsonSerialization.readValue(clients.getBytes(), String[].class);
+                return JsonSerialization.readValue(clients, Set.class);
             } catch (IOException e) {
                 throw new RuntimeException("Could not parse clients [" + clients + "] from policy config [" + policy.getName() + "].", e);
             }
         }
 
-        return new String[]{};
+        return Collections.emptySet();
     }
 }

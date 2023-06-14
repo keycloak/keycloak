@@ -23,6 +23,9 @@ import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvi
 
 import java.util.function.BooleanSupplier;
 
+/**
+ * Checks if the legacy store is enabled. returns true if no storage=... is set. Returns false otherwise.
+ */
 public class IsLegacyStoreEnabled implements BooleanSupplier {
 
     @Override

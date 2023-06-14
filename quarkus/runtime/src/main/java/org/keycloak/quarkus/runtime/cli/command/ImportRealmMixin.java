@@ -37,20 +37,10 @@ public final class ImportRealmMixin {
             paramLabel = NO_PARAM_LABEL,
             arity = "0")
     public void setImportRealm(String realmFiles) {
-        StringBuilder filesToImport = new StringBuilder(Optional.ofNullable(realmFiles).orElse(""));
-
-        if (filesToImport.length() > 0) {
-            throw new CommandLine.ParameterException(spec.commandLine(), "Instead of manually specifying the files to import, just copy them to the 'data/import' directory.");
-        }
-
         File importDir = Environment.getHomePath().resolve("data").resolve("import").toFile();
 
         if (importDir.exists()) {
-            for (File realmFile : importDir.listFiles()) {
-                filesToImport.append(realmFile.getAbsolutePath()).append(",");
-            }
+            System.setProperty("keycloak.import", importDir.getAbsolutePath());
         }
-
-        System.setProperty("keycloak.import", filesToImport.toString());
     }
 }

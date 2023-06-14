@@ -17,17 +17,14 @@
 
 package org.keycloak.quarkus.runtime.transaction;
 
-import javax.enterprise.inject.spi.CDI;
-import javax.transaction.TransactionManager;
-
+import jakarta.enterprise.inject.spi.CDI;
+import jakarta.transaction.TransactionManager;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
-import org.keycloak.common.Profile;
 import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.transaction.JtaTransactionManagerLookup;
 
-public class QuarkusJtaTransactionManagerLookup implements JtaTransactionManagerLookup, EnvironmentDependentProviderFactory {
+public class QuarkusJtaTransactionManagerLookup implements JtaTransactionManagerLookup {
 
     private static final Logger logger = Logger.getLogger(QuarkusJtaTransactionManagerLookup.class);
 
@@ -41,7 +38,7 @@ public class QuarkusJtaTransactionManagerLookup implements JtaTransactionManager
                     tm = CDI.current().select(TransactionManager.class).get();
                     logger.tracev("TransactionManager = {0}", tm);
                     if (tm == null) {
-                        logger.debug("Could not locate JTA TransactionManager. JTA transactions not supported.");
+                        throw new RuntimeException("You must provide JTA TransactionManager as the default transaction type is JTA");
                     }
                 }
             }
@@ -66,10 +63,5 @@ public class QuarkusJtaTransactionManagerLookup implements JtaTransactionManager
     @Override
     public int order() {
         return 100;
-    }
-
-    @Override
-    public boolean isSupported() {
-        return !Profile.isFeatureEnabled(Profile.Feature.MAP_STORAGE);
     }
 }

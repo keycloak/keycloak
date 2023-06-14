@@ -16,12 +16,15 @@
  */
 package org.keycloak.models.map.common;
 
+import org.keycloak.models.map.annotations.CollectionKey;
+
 /**
  *
  * @author hmlnarik
  */
 public interface AbstractEntity {
 
+    @CollectionKey
     String getId();
     void setId(String id);
 }

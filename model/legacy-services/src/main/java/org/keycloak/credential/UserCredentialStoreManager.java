@@ -35,7 +35,7 @@ import java.util.stream.Stream;
  * @version $Revision: 1 $
  */
 @Deprecated
-public class UserCredentialStoreManager implements UserCredentialManager.Streams, OnUserCache {
+public class UserCredentialStoreManager implements UserCredentialManager, OnUserCache {
 
     private final static Logger log = Logger.getLogger(UserCredentialStoreManager.class);
 

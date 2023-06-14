@@ -19,9 +19,9 @@ package org.keycloak.models.map.storage.jpa.user;
 import java.util.Arrays;
 import java.util.Collection;
 
-import javax.persistence.criteria.CriteriaBuilder;
-import javax.persistence.criteria.Join;
-import javax.persistence.criteria.JoinType;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.Join;
+import jakarta.persistence.criteria.JoinType;
 
 import org.keycloak.models.UserModel;
 import org.keycloak.models.map.storage.CriterionNotSupportedException;
@@ -54,8 +54,31 @@ public class JpaUserModelCriteriaBuilder extends JpaModelCriteriaBuilder<JpaUser
     public JpaUserModelCriteriaBuilder compare(SearchableModelField<? super UserModel> modelField, Operator op, Object... value) {
         switch(op) {
             case EQ:
-                if (modelField == UserModel.SearchableFields.REALM_ID ||
-                    modelField == UserModel.SearchableFields.USERNAME ||
+                if (modelField == UserModel.SearchableFields.USERNAME_CASE_INSENSITIVE) {
+                    
+                    validateValue(value, modelField, op, String.class);
+
+                    return new JpaUserModelCriteriaBuilder((cb, query, root) ->
+                        cb.equal(root.get("username"), value[0].toString().toLowerCase())
+                    );
+
+                } else if (modelField == UserModel.SearchableFields.USERNAME) {
+                    validateValue(value, modelField, op, String.class);
+
+                    return new JpaUserModelCriteriaBuilder((cb, query, root) ->
+                        cb.or(
+                            cb.and(
+                                cb.equal(root.get("usernameWithCase"), value[0]),
+                                cb.ge(root.get("entityVersion"), 2)
+                            ),
+                            cb.and(
+                                cb.equal(root.get("username"), value[0].toString().toLowerCase()),
+                                cb.le(root.get("entityVersion"), 1)
+                            )
+                        )
+                    );
+
+                } else if (modelField == UserModel.SearchableFields.REALM_ID ||
                     modelField == UserModel.SearchableFields.EMAIL ||
                     modelField == UserModel.SearchableFields.FEDERATION_LINK) {
 
@@ -144,6 +167,7 @@ public class JpaUserModelCriteriaBuilder extends JpaModelCriteriaBuilder<JpaUser
                         Join<JpaUserEntity, JpaUserAttributeEntity> join = root.join("attributes", JoinType.LEFT);
                         return cb.and(
                                 cb.equal(join.get("name"), value[0]),
+                                hashExpression(cb, join, "value_hash", value[1]),
                                 cb.equal(join.get("value"), value[1])
                         );
                     });
@@ -152,14 +176,43 @@ public class JpaUserModelCriteriaBuilder extends JpaModelCriteriaBuilder<JpaUser
                     throw new CriterionNotSupportedException(modelField, op);
                 }
             case ILIKE:
-                if (modelField == UserModel.SearchableFields.USERNAME ||
-                    modelField == UserModel.SearchableFields.FIRST_NAME ||
+                if (modelField == UserModel.SearchableFields.FIRST_NAME ||
                     modelField == UserModel.SearchableFields.LAST_NAME ||
                     modelField == UserModel.SearchableFields.EMAIL) {
 
                     validateValue(value, modelField, op, String.class);
                     return new JpaUserModelCriteriaBuilder((cb, query, root) ->
                             cb.like(cb.lower(root.get(modelField.getName())), value[0].toString().toLowerCase()));
+
+                } else if (modelField == UserModel.SearchableFields.USERNAME_CASE_INSENSITIVE) {
+
+                    validateValue(value, modelField, op, String.class);
+
+                    return new JpaUserModelCriteriaBuilder((cb, query, root) ->
+                        cb.like(root.get("username"), value[0].toString().toLowerCase())
+                    );
+
+                } else {
+                    throw new CriterionNotSupportedException(modelField, op);
+                }
+            case LIKE:
+                if (modelField == UserModel.SearchableFields.USERNAME) {
+
+                    validateValue(value, modelField, op, String.class);
+
+                    return new JpaUserModelCriteriaBuilder((cb, query, root) ->
+                        cb.or(
+                            cb.and(
+                                cb.like(root.get("usernameWithCase"), value[0].toString()),
+                                cb.ge(root.get("entityVersion"), 2)
+                            ),
+                            cb.and(
+                                cb.like(root.get("username"), value[0].toString()),
+                                cb.le(root.get("entityVersion"), 1)
+                            )
+                        )
+                    );
+                    
                 } else {
                     throw new CriterionNotSupportedException(modelField, op);
                 }

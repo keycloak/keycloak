@@ -27,25 +27,17 @@ import java.util.Properties;
  */
 public class Version {
     public static final String UNKNOWN = "UNKNOWN";
-    public static String NAME;
-    public static String NAME_FULL;
-    public static String NAME_HTML;
+    public static final String NAME = "Keycloak";
+    public static final String NAME_HTML = "<div class=\"kc-logo-text\"><span>Keycloak</span></div>";
     public static String VERSION;
-    public static String VERSION_KEYCLOAK;
     public static String RESOURCES_VERSION;
     public static String BUILD_TIME;
-    public static String DEFAULT_PROFILE;
 
     static {
         try (InputStream is = Version.class.getResourceAsStream("/keycloak-version.properties")) {
             Properties props = new Properties();
             props.load(is);
-            Version.NAME = props.getProperty("name");
-            Version.NAME_FULL = props.getProperty("name-full");
-            Version.NAME_HTML = props.getProperty("name-html");
-            Version.DEFAULT_PROFILE = props.getProperty("default-profile");
             Version.VERSION = props.getProperty("version");
-            Version.VERSION_KEYCLOAK = props.getProperty("version-keycloak");
             Version.BUILD_TIME = props.getProperty("build-time");
             Version.RESOURCES_VERSION = Version.VERSION.toLowerCase();
 

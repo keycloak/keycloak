@@ -17,7 +17,6 @@
 
 package org.keycloak.models.map.storage.hotRod.common;
 
-import org.keycloak.models.map.common.AbstractEntity;
 import org.keycloak.models.map.common.UpdatableEntity;
 
 public interface HotRodEntityDelegate<E> extends UpdatableEntity {

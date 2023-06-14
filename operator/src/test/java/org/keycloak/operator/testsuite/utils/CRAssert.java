@@ -19,7 +19,11 @@ package org.keycloak.operator.testsuite.utils;
 
 import io.fabric8.kubernetes.client.utils.Serialization;
 import io.quarkus.logging.Log;
+
+import org.assertj.core.api.ObjectAssert;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
+import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatus;
+import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusCondition;
 import org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImport;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -35,20 +39,39 @@ public final class CRAssert {
     public static void assertKeycloakStatusCondition(Keycloak kc, String condition, boolean status, String containedMessage) {
         Log.debugf("Asserting CR: %s, condition: %s, status: %s, message: %s", kc.getMetadata().getName(), condition, status, containedMessage);
         try {
-            assertThat(kc.getStatus().getConditions().stream()
-                    .anyMatch(c ->
-                            c.getType().equals(condition) &&
-                                    c.getStatus() == status &&
-                                    (containedMessage == null || c.getMessage().contains(containedMessage)))
-            ).isTrue();
+            assertKeycloakStatusCondition(kc.getStatus(), condition, status, containedMessage, null);
         } catch (Exception e) {
             Log.infof("Asserting CR: %s with status:\n%s", kc.getMetadata().getName(), Serialization.asYaml(kc.getStatus()));
             throw e;
         }
     }
 
+    public static void assertKeycloakStatusCondition(KeycloakStatus kcStatus, String condition, Boolean status, String containedMessage) {
+        assertKeycloakStatusCondition(kcStatus, condition, status, containedMessage, null);
+    }
+
+    public static ObjectAssert<KeycloakStatusCondition> assertKeycloakStatusCondition(KeycloakStatus kcStatus, String condition, Boolean status, String containedMessage, Long observedGeneration) {
+        KeycloakStatusCondition statusCondition = kcStatus.findCondition(condition).orElseThrow();
+        assertThat(statusCondition.getStatus()).isEqualTo(status);
+        if (containedMessage != null) {
+            assertThat(statusCondition.getMessage()).contains(containedMessage);
+        }
+        if (observedGeneration != null) {
+            assertThat(statusCondition.getObservedGeneration()).isEqualTo(observedGeneration);
+        }
+        if (status != null) {
+            assertThat(statusCondition.getLastTransitionTime()).isNotNull();
+        }
+        return assertThat(statusCondition);
+    }
+
+    public static void assertKeycloakStatusDoesNotContainMessage(KeycloakStatus kcStatus, String message) {
+        assertThat(kcStatus.getConditions())
+                .noneMatch(c -> c.getMessage().contains(message));
+    }
+
     public static void assertKeycloakRealmImportStatusCondition(KeycloakRealmImport kri, String condition, boolean status) {
-        assertThat(kri.getStatus().getConditions().stream()
-                .anyMatch(c -> c.getType().equals(condition) && c.getStatus() == status)).isTrue();
+        assertThat(kri.getStatus().getConditions())
+                .anyMatch(c -> c.getType().equals(condition) && c.getStatus() == status);
     }
 }

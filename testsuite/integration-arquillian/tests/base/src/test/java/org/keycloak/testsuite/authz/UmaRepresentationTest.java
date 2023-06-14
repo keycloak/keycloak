@@ -30,13 +30,9 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.authorization.*;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
-
 import java.util.List;
 import org.keycloak.authorization.model.ResourceServer;
 
-@AuthServerContainerExclude(AuthServer.REMOTE)
 public class UmaRepresentationTest extends AbstractResourceServerTest {
     private ResourceRepresentation resource;
     private PermissionResource permission;

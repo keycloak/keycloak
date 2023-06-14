@@ -26,33 +26,33 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-import javax.persistence.Basic;
-import javax.persistence.CascadeType;
-import javax.persistence.CollectionTable;
-import javax.persistence.Column;
-import javax.persistence.ElementCollection;
-import javax.persistence.Entity;
-import javax.persistence.FetchType;
-import javax.persistence.Id;
-import javax.persistence.JoinColumn;
-import javax.persistence.OneToMany;
-import javax.persistence.Table;
-import javax.persistence.UniqueConstraint;
-import javax.persistence.Version;
+import jakarta.persistence.Basic;
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.CollectionTable;
+import jakarta.persistence.Column;
+import jakarta.persistence.ElementCollection;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
+import jakarta.persistence.Version;
 
 import org.hibernate.annotations.Type;
-import org.hibernate.annotations.TypeDef;
-import org.hibernate.annotations.TypeDefs;
 import org.keycloak.models.map.common.DeepCloner;
 import org.keycloak.models.map.common.UuidValidator;
+import org.keycloak.models.map.storage.jpa.Constants;
 import org.keycloak.models.map.storage.jpa.JpaRootVersionedEntity;
 import org.keycloak.models.map.storage.jpa.hibernate.jsonb.JsonbType;
 import org.keycloak.models.map.user.MapUserConsentEntity;
 import org.keycloak.models.map.user.MapUserCredentialEntity;
 import org.keycloak.models.map.user.MapUserEntity;
 import org.keycloak.models.map.user.MapUserFederatedIdentityEntity;
+import org.keycloak.models.utils.KeycloakModelUtils;
 
-import static org.keycloak.models.map.storage.jpa.Constants.CURRENT_SCHEMA_VERSION_USER;
+import java.util.Optional;
 import static org.keycloak.models.map.storage.jpa.JpaMapStorageProviderFactory.CLONER;
 
 /**
@@ -64,10 +64,10 @@ import static org.keycloak.models.map.storage.jpa.JpaMapStorageProviderFactory.C
 @Entity
 @Table(name = "kc_user",
         uniqueConstraints = {
-                @UniqueConstraint(columnNames = {"realmId", "username"}),
+                // if same username it can differ only in usernameWithCase
+                @UniqueConstraint(columnNames = {"realmId", "username", "usernameWithCase"}),
                 @UniqueConstraint(columnNames = {"realmId", "emailConstraint"})
         })
-@TypeDefs({@TypeDef(name = "jsonb", typeClass = JsonbType.class)})
 @SuppressWarnings("ConstantConditions")
 public class JpaUserEntity extends MapUserEntity.AbstractUserEntity implements JpaRootVersionedEntity {
 
@@ -80,7 +80,7 @@ public class JpaUserEntity extends MapUserEntity.AbstractUserEntity implements J
     @Column
     private int version;
 
-    @Type(type = "jsonb")
+    @Type(JsonbType.class)
     @Column(columnDefinition = "jsonb")
     private final JpaUserMetadata metadata;
 
@@ -95,6 +95,10 @@ public class JpaUserEntity extends MapUserEntity.AbstractUserEntity implements J
     @Column(insertable = false, updatable = false)
     @Basic(fetch = FetchType.LAZY)
     private String username;
+
+    @Column(insertable = false, updatable = false)
+    @Basic(fetch = FetchType.LAZY)
+    private String usernameWithCase;
 
     @Column(insertable = false, updatable = false)
     @Basic(fetch = FetchType.LAZY)
@@ -163,13 +167,15 @@ public class JpaUserEntity extends MapUserEntity.AbstractUserEntity implements J
      * It is used to select user without metadata(json) field.
      */
     public JpaUserEntity(final UUID id, final int version, final Integer entityVersion, final String realmId, final String username,
-                         final String firstName, final String lastName, final String email, final String emailConstraint,
-                         final String federationLink, final Boolean enabled, final Boolean emailVerified, final Long timestamp) {
+                         final String usernameWithCase, final String firstName, final String lastName, final String email, 
+                         final String emailConstraint, final String federationLink, final Boolean enabled, final Boolean emailVerified, 
+                         final Long timestamp) {
         this.id = id;
         this.version = version;
         this.entityVersion = entityVersion;
         this.realmId = realmId;
         this.username = username;
+        this.usernameWithCase = usernameWithCase;
         this.firstName = firstName;
         this.lastName = lastName;
         this.email = email;
@@ -198,7 +204,7 @@ public class JpaUserEntity extends MapUserEntity.AbstractUserEntity implements J
 
     @Override
     public Integer getCurrentSchemaVersion() {
-        return CURRENT_SCHEMA_VERSION_USER;
+        return Constants.CURRENT_SCHEMA_VERSION_USER;
     }
 
     @Override
@@ -228,15 +234,20 @@ public class JpaUserEntity extends MapUserEntity.AbstractUserEntity implements J
         this.metadata.setRealmId(realmId);
     }
 
+    /**
+     * @return User's username with respecting letter case.
+     */
     @Override
     public String getUsername() {
-        if (this.isMetadataInitialized()) return this.metadata.getUsername();
-        return this.username;
+        if (this.isMetadataInitialized()) return this.metadata.getUsernameWithCase();
+        //entities with entityVersion 1 the usernameWithCase might not be filled yet, therefore there is tha fallback to username field
+        return this.usernameWithCase == null ? this.username : this.usernameWithCase;
     }
 
     @Override
     public void setUsername(String username) {
-        this.metadata.setUsername(username);
+        this.metadata.setUsername(KeycloakModelUtils.toLowerCaseSafe(username));
+        this.metadata.setUsernameWithCase(username);
     }
 
     @Override
@@ -459,6 +470,14 @@ public class JpaUserEntity extends MapUserEntity.AbstractUserEntity implements J
     }
 
     @Override
+    public Optional<MapUserConsentEntity> getUserConsent(String clientId) {
+        return this.consents.stream()
+          .map(MapUserConsentEntity.class::cast)
+          .filter(muce -> Objects.equals(muce.getClientId(), clientId))
+          .findAny();
+    }
+
+    @Override
     public void setUserConsents(Set<MapUserConsentEntity> userConsents) {
         this.consents.clear();
         if (userConsents != null) {
@@ -470,13 +489,13 @@ public class JpaUserEntity extends MapUserEntity.AbstractUserEntity implements J
     public void addUserConsent(MapUserConsentEntity userConsentEntity) {
         JpaUserConsentEntity entity = (JpaUserConsentEntity) CLONER.from(userConsentEntity);
         entity.setParent(this);
-        entity.setEntityVersion(this.getEntityVersion());
+        entity.setEntityVersion(Constants.CURRENT_SCHEMA_VERSION_USER_CONSENT);
         this.consents.add(entity);
     }
 
     @Override
     public Boolean removeUserConsent(MapUserConsentEntity userConsentEntity) {
-        return this.consents.removeIf(uc -> Objects.equals(uc.getClientId(), userConsentEntity.getClientId()));
+        return removeUserConsent(userConsentEntity.getClientId());
     }
 
     @Override
@@ -491,6 +510,11 @@ public class JpaUserEntity extends MapUserEntity.AbstractUserEntity implements J
     }
 
     @Override
+    public Optional<MapUserCredentialEntity> getCredential(String id) {
+        return metadata.getCredential(id);
+    }
+
+    @Override
     public void setCredentials(List<MapUserCredentialEntity> credentials) {
         this.metadata.setCredentials(credentials);
     }
@@ -502,13 +526,26 @@ public class JpaUserEntity extends MapUserEntity.AbstractUserEntity implements J
 
     @Override
     public Boolean removeCredential(MapUserCredentialEntity credentialEntity) {
-        return super.removeCredential(credentialEntity.getId());
+        return removeCredential(credentialEntity.getId());
+    }
+
+    @Override
+    public Boolean removeCredential(String id) {
+        return metadata.removeCredential(id);
     }
 
     //user federated identities
     @Override
     public Set<MapUserFederatedIdentityEntity> getFederatedIdentities() {
         return this.federatedIdentities.stream().map(MapUserFederatedIdentityEntity.class::cast).collect(Collectors.toSet());
+    }
+
+    @Override
+    public Optional<MapUserFederatedIdentityEntity> getFederatedIdentity(String identityProviderId) {
+        return this.federatedIdentities.stream()
+          .map(MapUserFederatedIdentityEntity.class::cast)
+          .filter(muce -> Objects.equals(muce.getIdentityProvider(), identityProviderId))
+          .findAny();
     }
 
     @Override
@@ -523,13 +560,13 @@ public class JpaUserEntity extends MapUserEntity.AbstractUserEntity implements J
     public void addFederatedIdentity(MapUserFederatedIdentityEntity federatedIdentity) {
         JpaUserFederatedIdentityEntity entity = (JpaUserFederatedIdentityEntity) CLONER.from(federatedIdentity);
         entity.setParent(this);
-        entity.setEntityVersion(this.getEntityVersion());
+        entity.setEntityVersion(Constants.CURRENT_SCHEMA_VERSION_USER_FEDERATED_IDENTITY);
         this.federatedIdentities.add(entity);
     }
 
     @Override
     public Boolean removeFederatedIdentity(MapUserFederatedIdentityEntity federatedIdentity) {
-        return this.federatedIdentities.removeIf(fi -> Objects.equals(fi.getIdentityProvider(), federatedIdentity.getIdentityProvider()));
+        return removeFederatedIdentity(federatedIdentity.getIdentityProvider());
     }
 
     @Override

@@ -19,6 +19,7 @@ package org.keycloak.it.cli.dist;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand.OPTIMIZED_BUILD_OPTION_LONG;
 
 import org.junit.jupiter.api.Test;
 import org.keycloak.it.junit5.extension.CLIResult;
@@ -72,7 +73,7 @@ class BuildCommandDistTest {
         distribution.run("build", "--cache=local");
         distribution.removeProperty("proxy");
 
-        CLIResult result = distribution.run("start", "--hostname=mykeycloak");
+        CLIResult result = distribution.run("start", "--hostname=mykeycloak", OPTIMIZED_BUILD_OPTION_LONG);
         result.assertMessage("Key material not provided to setup HTTPS");
     }
 }

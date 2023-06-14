@@ -1,5 +1,8 @@
 package org.keycloak.encoding;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 import org.apache.commons.io.IOUtils;
 import org.jboss.logging.Logger;
 import org.keycloak.models.KeycloakSession;
@@ -46,11 +49,27 @@ public class GzipResourceEncodingProvider implements ResourceEncodingProvider {
                     if (!parent.isDirectory()) {
                         parent.mkdirs();
                     }
-                    FileOutputStream fos = new FileOutputStream(encodedFile);
+                    File tmpEncodedFile = File.createTempFile(
+                            encodedFile.getName(),
+                            "tmp",
+                            parent);
+
+                    FileOutputStream fos = new FileOutputStream(tmpEncodedFile);
                     GZIPOutputStream gos = new GZIPOutputStream(fos);
                     IOUtils.copy(is, gos);
                     gos.close();
                     is.close();
+                    try {
+                        Files.move(
+                                tmpEncodedFile.toPath(),
+                                encodedFile.toPath(),
+                                REPLACE_EXISTING);
+                    } catch ( IOException io ) {
+                        logger.warnf("Fail to move %s  %s", tmpEncodedFile.toString(), io);
+                        if (!encodedFile.exists()) {
+                            encodedFile = null;
+                        }
+                    }
                 } else {
                     encodedFile = null;
                 }

@@ -17,51 +17,46 @@
 
 package org.keycloak.testsuite.util;
 
-
-import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
 import org.keycloak.testsuite.arquillian.ContainerInfo;
 import org.keycloak.testsuite.arquillian.SuiteContext;
 import org.keycloak.testsuite.arquillian.annotation.EnableVault;
-import org.wildfly.extras.creaper.core.online.CliException;
-import org.wildfly.extras.creaper.core.online.OnlineManagementClient;
+import org.keycloak.testsuite.arquillian.containers.AbstractQuarkusDeployableContainer;
 
-import java.io.IOException;
-import java.util.concurrent.TimeoutException;
-
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @author mhajas
  */
 public class VaultUtils {
 
-    public static void enableVault(SuiteContext suiteContext, EnableVault.PROVIDER_ID provider) throws IOException, CliException, TimeoutException, InterruptedException {
+    public static void enableVault(SuiteContext suiteContext, EnableVault.PROVIDER_ID provider) {
         ContainerInfo serverInfo = suiteContext.getAuthServerInfo();
 
         if (serverInfo.isUndertow()) {
             System.setProperty("keycloak.vault." + provider.getName() + ".provider.enabled", "true");
-        } else if (serverInfo.isJBossBased()) {
-            OnlineManagementClient client = AuthServerTestEnricher.getManagementClient();
-            // configure the selected provider and set it as the default vault provider.
-            client.execute("/subsystem=keycloak-server/spi=vault/:add(default-provider=" + provider.getName() + ")");
-            for (String command : provider.getCliInstallationCommands()) {
-                client.execute(command);
+        }
+        else if (serverInfo.isQuarkus()) {
+            AbstractQuarkusDeployableContainer container = (AbstractQuarkusDeployableContainer)suiteContext.getAuthServerInfo().getArquillianContainer().getDeployableContainer();
+            List<String> additionalArgs = new ArrayList<>();
+
+            if (provider == EnableVault.PROVIDER_ID.KEYSTORE) {
+                additionalArgs.add("--vault=keystore");
+                additionalArgs.add("--vault-file=../secrets/myks");
+                additionalArgs.add("--vault-pass=keystorepassword");
+            } else if (provider == EnableVault.PROVIDER_ID.PLAINTEXT) {
+                additionalArgs.add("--vault=file");
+                additionalArgs.add("--vault-dir=../secrets");
             }
-            client.close();
+            container.setAdditionalBuildArgs(additionalArgs);
         }
     }
 
-    public static void disableVault(SuiteContext suiteContext, EnableVault.PROVIDER_ID provider) throws IOException, CliException, TimeoutException, InterruptedException {
+    public static void disableVault(SuiteContext suiteContext, EnableVault.PROVIDER_ID provider) {
         ContainerInfo serverInfo = suiteContext.getAuthServerInfo();
 
         if (serverInfo.isUndertow()) {
             System.setProperty("keycloak.vault." + provider.getName() + ".provider.enabled", "false");
-        } else if (serverInfo.isJBossBased()) {
-            OnlineManagementClient client = AuthServerTestEnricher.getManagementClient();
-            for (String command : provider.getCliRemovalCommands()) {
-                client.execute(command);
-            }
-            client.execute("/subsystem=keycloak-server/spi=vault/:remove");
-            client.close();
         }
     }
 

@@ -1,1 +1,1 @@
-Keycloak - Version ${product.version}
+Keycloak - Version ${project.version}

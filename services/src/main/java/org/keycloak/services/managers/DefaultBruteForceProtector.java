@@ -99,7 +99,7 @@ public class DefaultBruteForceProtector implements Runnable, BruteForceProtector
         this.factory = factory;
     }
 
-    public void failure(KeycloakSession session, LoginEvent event) {
+    protected void failure(KeycloakSession session, LoginEvent event) {
         logger.debug("failure");
         RealmModel realm = getRealmModel(session, event);
         logFailure(event);
@@ -213,22 +213,22 @@ public class DefaultBruteForceProtector implements Runnable, BruteForceProtector
                         events.add(take);
                         queue.drainTo(events, TRANSACTION_SIZE);
                         Collections.sort(events); // we sort to avoid deadlock due to ordered updates.  Maybe I'm overthinking this.
-                        KeycloakSession session = factory.create();
-                        session.getTransactionManager().begin();
-                        try {
-                            for (LoginEvent event : events) {
-                                if (event instanceof FailedLogin) {
-                                    failure(session, event);
-                                } else if (event instanceof SuccessfulLogin) {
-                                    success(session, event);
-                                } else if (event instanceof ShutdownEvent) {
-                                    run = false;
+                        try (KeycloakSession session = factory.create()) {
+                            session.getTransactionManager().begin();
+                            try {
+                                for (LoginEvent event : events) {
+                                    if (event instanceof FailedLogin) {
+                                        failure(session, event);
+                                    } else if (event instanceof SuccessfulLogin) {
+                                        success(session, event);
+                                    } else if (event instanceof ShutdownEvent) {
+                                        run = false;
+                                    }
                                 }
+                            } catch (Exception e) {
+                                session.getTransactionManager().setRollbackOnly();
+                                throw e;
                             }
-                            session.getTransactionManager().commit();
-                        } catch (Exception e) {
-                            session.getTransactionManager().rollback();
-                            throw e;
                         } finally {
                             for (LoginEvent event : events) {
                                 if (event instanceof FailedLogin) {
@@ -238,7 +238,6 @@ public class DefaultBruteForceProtector implements Runnable, BruteForceProtector
                                 }
                             }
                             events.clear();
-                            session.close();
                         }
                     } catch (Exception e) {
                         ServicesLogger.LOGGER.failedProcessingType(e);
@@ -252,7 +251,7 @@ public class DefaultBruteForceProtector implements Runnable, BruteForceProtector
         }
     }
 
-    private void success(KeycloakSession session, LoginEvent event) {
+    protected void success(KeycloakSession session, LoginEvent event) {
         String userId = event.userId;
 
         UserLoginFailureModel user = getUserModel(session, event);
@@ -295,13 +294,8 @@ public class DefaultBruteForceProtector implements Runnable, BruteForceProtector
 
     @Override
     public void successfulLogin(final RealmModel realm, final UserModel user, final ClientConnection clientConnection) {
-        try {
-            SuccessfulLogin event = new SuccessfulLogin(realm.getId(), user.getId(), clientConnection.getRemoteAddr());
-            queue.offer(event);
-
-            event.latch.await(5, TimeUnit.SECONDS);
-        } catch (InterruptedException e) {
-        }
+        SuccessfulLogin event = new SuccessfulLogin(realm.getId(), user.getId(), clientConnection.getRemoteAddr());
+        queue.offer(event);
         logger.trace("sent success event");
     }
 

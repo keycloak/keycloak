@@ -25,9 +25,7 @@ import org.keycloak.models.UserSessionModel;
 import org.keycloak.provider.Provider;
 
 import java.util.Collection;
-import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -89,15 +87,6 @@ public interface UserSessionPersisterProvider extends Provider {
     Stream<UserSessionModel> loadUserSessionsStream(RealmModel realm, ClientModel client, boolean offline, Integer firstResult, Integer maxResults);
 
     /**
-     * Called during startup. For each userSession, it loads also clientSessions
-     * @deprecated Use {@link #loadUserSessionsStream(Integer, Integer, boolean, String) loadUserSessionsStream} instead.
-     */
-    @Deprecated
-    default List<UserSessionModel> loadUserSessions(int firstResult, int maxResults, boolean offline, int lastCreatedOn, String lastUserSessionId) {
-        return loadUserSessionsStream(firstResult, maxResults, offline, lastUserSessionId).collect(Collectors.toList());
-    }
-
-    /**
      * Called during startup. For each userSession, it loads also clientSessions.
      * @param firstResult {@code Integer} Index of the first desired user session. Ignored if negative or {@code null}.
      * @param maxResults {@code Integer} Maximum number of returned user sessions. Ignored if negative or {@code null}.
@@ -108,6 +97,16 @@ public interface UserSessionPersisterProvider extends Provider {
      */
     Stream<UserSessionModel> loadUserSessionsStream(Integer firstResult, Integer maxResults, boolean offline,
                                                     String lastUserSessionId);
+
+    /**
+     * Loads client session from the db by provided user session and client.
+     * @param realm RealmModel Realm for the associated client session.
+     * @param client ClientModel Client used for the creation of client session.
+     * @param userSession UserSessionModel User session for the associated client session.
+     * @param offline boolean Flag that indicates the client session should be online/offline.
+     * @return Client session according the provided criteria or {@code null} if not found.
+     */
+    AuthenticatedClientSessionModel loadClientSession(RealmModel realm, ClientModel client, UserSessionModel userSession, boolean offline);
 
     /**
      * Retrieves the count of user sessions for all realms.

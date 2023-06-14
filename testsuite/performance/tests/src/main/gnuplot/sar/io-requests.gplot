@@ -1,5 +1,0 @@
-set title "IO Requests Per Second"
-plot for [i=4:6:1] \
-    datafile using 3:i \
-    title columnheader(i) \
-    with lines

@@ -20,12 +20,16 @@ package org.keycloak.quarkus.runtime.integration.jaxrs;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import javax.ws.rs.ApplicationPath;
-import org.keycloak.exportimport.ExportImportManager;
-import org.keycloak.models.utils.PostMigrationEvent;
+import jakarta.ws.rs.ApplicationPath;
+
+import org.keycloak.config.HostnameOptions;
+import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.quarkus.runtime.configuration.Configuration;
 import org.keycloak.quarkus.runtime.integration.QuarkusKeycloakSessionFactory;
+import org.keycloak.quarkus.runtime.services.resources.DebugHostnameSettingsResource;
 import org.keycloak.services.resources.KeycloakApplication;
 import org.keycloak.quarkus.runtime.services.resources.QuarkusWelcomeResource;
+import org.keycloak.services.resources.LoginActionsService;
 import org.keycloak.services.resources.WelcomeResource;
 
 @ApplicationPath("/")
@@ -36,17 +40,10 @@ public class QuarkusKeycloakApplication extends KeycloakApplication {
     }
 
     @Override
-    protected void startup() {
+    public KeycloakSessionFactory createSessionFactory() {
         QuarkusKeycloakSessionFactory instance = QuarkusKeycloakSessionFactory.getInstance();
-        sessionFactory = instance;
         instance.init();
-        ExportImportManager exportImportManager = bootstrap();
-
-        if (exportImportManager.isRunExport()) {
-            exportImportManager.runExport();
-        }
-
-        sessionFactory.publish(new PostMigrationEvent(sessionFactory));
+        return instance;
     }
 
     @Override
@@ -61,6 +58,10 @@ public class QuarkusKeycloakApplication extends KeycloakApplication {
                 .collect(Collectors.toSet());
 
         singletons.add(new QuarkusWelcomeResource());
+
+        if (Configuration.getOptionalBooleanValue("--" + HostnameOptions.HOSTNAME_DEBUG.getKey()).orElse(Boolean.FALSE)) {
+            singletons.add(new DebugHostnameSettingsResource());
+        }
 
         return singletons;
     }

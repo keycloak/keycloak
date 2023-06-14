@@ -24,7 +24,6 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.RealmResource;
-import org.keycloak.common.Profile;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
 import org.keycloak.models.AuthenticationExecutionModel;
@@ -37,11 +36,10 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
-import org.keycloak.testsuite.pages.AccountTotpPage;
 import org.keycloak.testsuite.pages.LoginConfigTotpPage;
 import org.keycloak.testsuite.pages.LoginTotpPage;
 import org.keycloak.testsuite.pages.RegisterPage;
+import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
@@ -94,9 +92,6 @@ public class AppInitiatedActionTotpSetupTest extends AbstractAppInitiatedActionT
     protected LoginConfigTotpPage totpPage;
 
     @Page
-    protected AccountTotpPage accountTotpPage;
-
-    @Page
     protected RegisterPage registerPage;
 
     protected TimeBasedOTP totp = new TimeBasedOTP();
@@ -111,7 +106,7 @@ public class AppInitiatedActionTotpSetupTest extends AbstractAppInitiatedActionT
 
         doAIA();
         
-        assertTrue(totpPage.isCurrent());
+        totpPage.assertCurrent();
 
         totpPage.configure(totp.generateTOTP(totpPage.getTotpSecret()));
 
@@ -363,16 +358,17 @@ public class AppInitiatedActionTotpSetupTest extends AbstractAppInitiatedActionT
 
         events.expectLogout(authSessionId).assertEvent();
 
+        setOtpTimeOffset(TimeBasedOTP.DEFAULT_INTERVAL_SECONDS, totp);
+
         loginPage.open();
         loginPage.login("test-user@localhost", "password");
-        
+
         loginTotpPage.login(totp.generateTOTP(totpSecret));
 
         events.expectLogin().assertEvent();
     }
 
     @Test
-    @DisableFeature(value = Profile.Feature.ACCOUNT2, skipRestart = true) // TODO remove this (KEYCLOAK-16228)
     public void setupTotpRegisteredAfterTotpRemoval() {
         // Register new user
         loginPage.open();
@@ -412,23 +408,15 @@ public class AppInitiatedActionTotpSetupTest extends AbstractAppInitiatedActionT
         assertTrue(loginPage.isCurrent());
         Assert.assertFalse(totpPage.isCurrent());
 
+        setOtpTimeOffset(TimeBasedOTP.DEFAULT_INTERVAL_SECONDS, totp);
+
         // Login with one-time password
         loginTotpPage.login(totp.generateTOTP(totpCode));
+        events.expectLogin().user(userId).detail(Details.USERNAME, "setupTotp2").assertEvent();
 
-        loginEvent = events.expectLogin().user(userId).detail(Details.USERNAME, "setupTotp2").assertEvent();
-
-        // Open account page
-        accountTotpPage.open();
-        accountTotpPage.assertCurrent();
-
-        // Remove google authentificator
-        accountTotpPage.removeTotp();
-
-        events.expectAccount(EventType.REMOVE_TOTP).user(userId).assertEvent();
-
-        // Logout
-        accountTotpPage.logout();
-        events.expectLogout(loginEvent.getSessionId()).user(userId).detail(Details.REDIRECT_URI, oauth.AUTH_SERVER_ROOT + "/realms/test/account/totp").assertEvent();
+        // Remove google authenticator
+        Assert.assertTrue(AccountHelper.deleteTotpAuthentication(testRealm(),"setupTotp2"));
+        AccountHelper.logout(testRealm(),"setupTotp2");
 
         // Try to login
         loginPage.open();
@@ -471,6 +459,8 @@ public class AppInitiatedActionTotpSetupTest extends AbstractAppInitiatedActionT
         oauth.idTokenHint(tokenResponse.getIdToken()).openLogout();
 
         events.expectLogout(loginEvent.getSessionId()).assertEvent();
+
+        setOtpTimeOffset(TimeBasedOTP.DEFAULT_INTERVAL_SECONDS, timeBased);
 
         loginPage.open();
         loginPage.login("test-user@localhost", "password");

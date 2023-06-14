@@ -23,8 +23,8 @@ import com.webauthn4j.data.attestation.authenticator.COSEKey;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.credential.CredentialModel;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.UserCredentialManager;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.SubjectCredentialManager;
 import org.keycloak.models.credential.dto.WebAuthnCredentialData;
 
 import java.io.Serializable;
@@ -55,11 +55,11 @@ public class WebAuthnDataWrapper implements Serializable {
         final UserModel user = session.users().getUserByUsername(session.getContext().getRealm(), username);
         if (user == null) return;
 
-        final UserCredentialManager userCredentialManager = session.userCredentialManager();
+        SubjectCredentialManager userCredentialManager = user.credentialManager();
         if (userCredentialManager == null) return;
 
         final CredentialModel credential = userCredentialManager
-                .getStoredCredentialsByTypeStream(session.getContext().getRealm(), user, credentialType)
+                .getStoredCredentialsByTypeStream(credentialType)
                 .findFirst()
                 .orElse(null);
 

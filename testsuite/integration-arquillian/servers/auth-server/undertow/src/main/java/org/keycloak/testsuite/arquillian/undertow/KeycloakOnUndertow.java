@@ -60,14 +60,14 @@ import org.keycloak.testsuite.utils.undertow.UndertowWarClassLoader;
 import org.keycloak.util.JsonSerialization;
 
 import io.undertow.servlet.api.InstanceHandle;
-import javax.servlet.DispatcherType;
-import javax.servlet.ServletException;
+import jakarta.servlet.DispatcherType;
+import jakarta.servlet.ServletException;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import javax.servlet.Filter;
+import jakarta.servlet.Filter;
 import org.xnio.Options;
 import org.xnio.SslClientAuthMode;
 
@@ -232,15 +232,11 @@ public class KeycloakOnUndertow implements DeployableContainer<KeycloakOnUnderto
     }
 
     protected void setupDevConfig() {
-        KeycloakSession session = sessionFactory.create();
-        try {
+        try (KeycloakSession session = sessionFactory.create()) {
             session.getTransactionManager().begin();
             if (new ApplianceBootstrap(session).isNoMasterUser()) {
                 new ApplianceBootstrap(session).createMasterRealmUser("admin", "admin");
             }
-            session.getTransactionManager().commit();
-        } finally {
-            session.close();
         }
     }
 

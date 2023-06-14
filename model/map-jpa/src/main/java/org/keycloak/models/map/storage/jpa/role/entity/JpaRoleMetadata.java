@@ -27,7 +27,7 @@ public class JpaRoleMetadata extends MapRoleEntityImpl implements Serializable {
     }
 
     public JpaRoleMetadata() {
-        super();
+        super(DeepCloner.DUMB_CLONER);
     }
 
     private Integer entityVersion;

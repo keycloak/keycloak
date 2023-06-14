@@ -1025,7 +1025,17 @@ public class RealmCacheSession implements CacheRealmProvider {
 
     @Override
     public Stream<GroupModel> searchForGroupByNameStream(RealmModel realm, String search, Integer first, Integer max) {
-        return getGroupDelegate().searchForGroupByNameStream(realm, search, first, max);
+        return getGroupDelegate().searchForGroupByNameStream(realm, search, false, first, max);
+    }
+
+    @Override
+    public Stream<GroupModel> searchForGroupByNameStream(RealmModel realm, String search, Boolean exact, Integer firstResult, Integer maxResults) {
+       return getGroupDelegate().searchForGroupByNameStream(realm, search, exact, firstResult, maxResults);
+    }
+
+    @Override
+    public Stream<GroupModel> searchGroupsByAttributes(RealmModel realm, Map<String, String> attributes, Integer firstResult, Integer maxResults) {
+        return getGroupDelegate().searchGroupsByAttributes(realm, attributes, firstResult, maxResults);
     }
 
     @Override
@@ -1156,6 +1166,9 @@ public class RealmCacheSession implements CacheRealmProvider {
         StorageId storageId = new StorageId(cached.getId());
         if (!storageId.isLocal()) {
             ComponentModel component = realm.getComponent(storageId.getProviderId());
+            if (component == null) {
+                return null;
+            }
             ClientStorageProviderModel model = new ClientStorageProviderModel(component);
 
             // although we do set a timeout, Infinispan has no guarantees when the user will be evicted

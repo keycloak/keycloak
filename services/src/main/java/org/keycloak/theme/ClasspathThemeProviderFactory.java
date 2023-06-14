@@ -102,8 +102,14 @@ public class ClasspathThemeProviderFactory implements ThemeProviderFactory {
 
     protected void loadThemes(ClassLoader classLoader, InputStream themesInputStream) {
         try {
-            ThemesRepresentation themesRep = JsonSerialization.readValue(themesInputStream, ThemesRepresentation.class);
+            loadThemes(classLoader, JsonSerialization.readValue(themesInputStream, ThemesRepresentation.class));
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to load themes", e);
+        }
+    }
 
+    protected void loadThemes(ClassLoader classLoader, ThemesRepresentation themesRep) {
+        try {
             for (ThemeRepresentation themeRep : themesRep.getThemes()) {
                 for (String t : themeRep.getTypes()) {
                     Theme.Type type = Theme.Type.valueOf(t.toUpperCase());

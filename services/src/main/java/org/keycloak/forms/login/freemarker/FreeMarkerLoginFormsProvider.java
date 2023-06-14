@@ -29,11 +29,11 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
-import javax.ws.rs.core.MultivaluedHashMap;
-import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriBuilder;
-import javax.ws.rs.core.UriInfo;
+import jakarta.ws.rs.core.MultivaluedHashMap;
+import jakarta.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.UriBuilder;
+import jakarta.ws.rs.core.UriInfo;
 import org.jboss.logging.Logger;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.authentication.AuthenticationFlowContext;
@@ -81,7 +81,6 @@ import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.LoginActionsService;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.theme.FreeMarkerException;
-import org.keycloak.theme.FreeMarkerUtil;
 import org.keycloak.theme.Theme;
 import org.keycloak.theme.beans.AdvancedMessageFormatterMethod;
 import org.keycloak.theme.beans.LocaleBean;
@@ -89,10 +88,10 @@ import org.keycloak.theme.beans.MessageBean;
 import org.keycloak.theme.beans.MessageFormatterMethod;
 import org.keycloak.theme.beans.MessageType;
 import org.keycloak.theme.beans.MessagesPerFieldBean;
+import org.keycloak.theme.freemarker.FreeMarkerProvider;
 import org.keycloak.userprofile.UserProfileContext;
 import org.keycloak.userprofile.UserProfileProvider;
 import org.keycloak.utils.MediaType;
-import org.keycloak.utils.StringUtil;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -121,15 +120,15 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
     protected ClientModel client;
     protected UriInfo uriInfo;
 
-    protected FreeMarkerUtil freeMarker;
+    protected FreeMarkerProvider freeMarker;
 
     protected UserModel user;
 
     protected final Map<String, Object> attributes = new HashMap<>();
 
-    public FreeMarkerLoginFormsProvider(KeycloakSession session, FreeMarkerUtil freeMarker) {
+    public FreeMarkerLoginFormsProvider(KeycloakSession session) {
         this.session = session;
-        this.freeMarker = freeMarker;
+        this.freeMarker = session.getProvider(FreeMarkerProvider.class);
         this.attributes.put("scripts", new LinkedList<>());
         this.realm = session.getContext().getRealm();
         this.client = session.getContext().getClient();
@@ -228,7 +227,7 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
 
         switch (page) {
             case LOGIN_CONFIG_TOTP:
-                attributes.put("totp", new TotpBean(session, realm, user, uriInfo.getRequestUriBuilder()));
+                attributes.put("totp", new TotpBean(session, realm, user, getTotpUriBuilder()));
                 break;
             case LOGIN_RECOVERY_AUTHN_CODES_CONFIG:
                 attributes.put("recoveryAuthnCodesConfigBean", new RecoveryAuthnCodesBean());
@@ -260,6 +259,9 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
             case LOGIN_TOTP:
                 attributes.put("otpLogin", new TotpLoginBean(session, realm, user, (String) this.attributes.get(OTPFormAuthenticator.SELECTED_OTP_CREDENTIAL_ID)));
                 break;
+            case LOGIN_RESET_OTP:
+                attributes.put("configuredOtpCredentials", new TotpLoginBean(session, realm, user, (String) this.attributes.get(OTPFormAuthenticator.SELECTED_OTP_CREDENTIAL_ID)));
+                break;
             case REGISTER:
                 if(isDynamicUserProfile()) {
                     page = LoginFormsPages.REGISTER_USER_PROFILE;
@@ -275,6 +277,7 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
                         new OAuthGrantBean(accessCode, client, clientScopesRequested));
                 break;
             case CODE:
+                attributes.remove("message"); // No need to include "message" attribute as error is included in separate field anyway
                 attributes.put(OAuth2Constants.CODE, new CodeBean(accessCode, messageType == MessageType.ERROR ? getFirstMessageUnformatted() : null));
                 break;
             case X509_CONFIRM:
@@ -303,6 +306,18 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
     
     private boolean isDynamicUserProfile() {
         return session.getProvider(UserProfileProvider.class).getConfiguration() != null;
+    }
+
+    /**
+     * Get sure that correct hostname and path is used for totp form.
+     * Relevant when running in proxy mode.
+     *
+     * @return UriBuilder with configured hostname and path set
+     */
+    private UriBuilder getTotpUriBuilder() {
+        return uriInfo.getBaseUriBuilder()
+                .replacePath(uriInfo.getRequestUri().getPath())
+                .replaceQuery(uriInfo.getRequestUri().getQuery());
     }
 
     @Override
@@ -366,14 +381,9 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
      * @return message bundle for other use
      */
     protected Properties handleThemeResources(Theme theme, Locale locale) {
-        Properties messagesBundle = new Properties();
+        Properties messagesBundle;
         try {
-            if(!StringUtil.isNotBlank(realm.getDefaultLocale()))
-            {
-                messagesBundle.putAll(realm.getRealmLocalizationTextsByLocale(realm.getDefaultLocale()));
-            }
-            messagesBundle.putAll(theme.getMessages(locale));
-            messagesBundle.putAll(realm.getRealmLocalizationTextsByLocale(locale.toLanguageTag()));
+            messagesBundle = theme.getEnhancedMessages(realm, locale);
             attributes.put("msg", new MessageFormatterMethod(locale, messagesBundle));
             attributes.put("advancedMsg", new AdvancedMessageFormatterMethod(locale, messagesBundle));
         } catch (IOException e) {
@@ -428,8 +438,6 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
 
         Locale locale = session.getContext().resolveLocale(user);
         Properties messagesBundle = handleThemeResources(theme, locale);
-        Map<String, String> localizationTexts = realm.getRealmLocalizationTextsByLocale(locale.getCountry());
-        messagesBundle.putAll(localizationTexts);
         FormMessage msg = new FormMessage(null, message);
         return formatMessage(msg, messagesBundle, locale);
     }
@@ -459,7 +467,7 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
             attributes.put("realm", new RealmBean(realm));
 
             List<IdentityProviderModel> identityProviders = LoginFormsUtil
-                    .filterIdentityProviders(realm.getIdentityProvidersStream(), session, context);
+                    .filterIdentityProvidersForTheme(realm.getIdentityProvidersStream(), session, context);
             attributes.put("social", new IdentityProviderBean(realm, session, identityProviders, baseUriWithCodeAndClientId));
 
             attributes.put("url", new UrlBean(realm, theme, baseUri, this.actionUri));
@@ -544,7 +552,7 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
 
     public Response createLoginPassword(){
         return createResponse(LoginFormsPages.LOGIN_PASSWORD);
-    };
+    }
 
     @Override
     public Response createPasswordReset() {
@@ -553,6 +561,10 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
             authenticationSession.setAuthNote(AbstractUsernameFormAuthenticator.ATTEMPTED_USERNAME, loginHint);
         }
         return createResponse(LoginFormsPages.LOGIN_RESET_PASSWORD);
+    }
+
+    @Override public Response createOtpReset() {
+        return createResponse(LoginFormsPages.LOGIN_RESET_OTP);
     }
 
     @Override
@@ -574,11 +586,19 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
     public Response createRegistration() {
         String loginHint = authenticationSession.getClientNote(OIDCLoginProtocol.LOGIN_HINT_PARAM);
         if (loginHint != null && !loginHint.isEmpty()) {
-            this.formData = new MultivaluedHashMap<>();
+            if (this.formData == null) {
+                this.formData = new MultivaluedHashMap<>();
+            }
             if(this.realm.isRegistrationEmailAsUsername()) {
-                this.formData.putSingle("email", loginHint);
+                String value = this.formData.getFirst("email");
+                if (value == null || value.trim().isEmpty()) {
+                    this.formData.putSingle("email", loginHint);
+                }
             } else {
-                this.formData.putSingle("username", loginHint);
+                String value = this.formData.getFirst("username");
+                if (value == null || value.trim().isEmpty()) {
+                    this.formData.putSingle("username", loginHint);
+                }
             }
         }
 

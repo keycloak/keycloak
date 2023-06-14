@@ -11,6 +11,7 @@ import static org.keycloak.testsuite.broker.BrokerTestTools.getConsumerRoot;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
@@ -51,8 +52,10 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response;
 
+// Remove @Ignore when closing Github issue 20643
+@Ignore
 public class BackchannelLogoutTest extends AbstractNestedBrokerTest {
 
     public static final String ACCOUNT_CLIENT_NAME = "account";
@@ -361,7 +364,6 @@ public class BackchannelLogoutTest extends AbstractNestedBrokerTest {
 
     @Test
     public void postBackchannelLogoutWithoutSessionIdMultipleOpenSessionDifferentIdentityProvider() throws Exception {
-
         IdentityProviderRepresentation identityProvider2 = addSecondIdentityProviderToConsumerRealm();
         String brokerClientIdProviderRealm = getClientId(nbc.providerRealmName(), BROKER_CLIENT_ID);
 

@@ -18,6 +18,8 @@
 package org.keycloak.protocol.oidc.utils;
 
 import org.jboss.logging.Logger;
+import org.keycloak.common.util.Encode;
+import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.common.util.UriUtils;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
@@ -91,19 +93,6 @@ public class RedirectUtils {
         KeycloakUriInfo uriInfo = session.getContext().getUri();
         RealmModel realm = session.getContext().getRealm();
 
-        if (redirectUri != null) {
-            try {
-                URI uri = URI.create(redirectUri);
-                redirectUri = uri.normalize().toString();
-            } catch (IllegalArgumentException cause) {
-                logger.debug("Invalid redirect uri", cause);
-                return null;
-            } catch (Exception cause) {
-                logger.debug("Unexpected error when parsing redirect uri", cause);
-                return null;
-            }
-        }
-
         if (redirectUri == null) {
             if (!requireRedirectUri) {
                 redirectUri = getSingleValidRedirectUri(validRedirects);
@@ -117,12 +106,15 @@ public class RedirectUtils {
             logger.debug("No Redirect URIs supplied");
             redirectUri = null;
         } else {
-            redirectUri = lowerCaseHostname(redirectUri);
+            // Make the validations against fully decoded and normalized redirect-url. This also allows wildcards (case when client configured "Valid redirect-urls" contain wildcards)
+            String decodedRedirectUri = decodeRedirectUri(redirectUri);
+            decodedRedirectUri = getNormalizedRedirectUri(decodedRedirectUri);
+            if (decodedRedirectUri == null) return null;
 
-            String r = redirectUri;
+            String r = decodedRedirectUri;
             Set<String> resolveValidRedirects = resolveValidRedirects(session, rootUrl, validRedirects);
 
-            boolean valid = matchesRedirects(resolveValidRedirects, r);
+            boolean valid = matchesRedirects(resolveValidRedirects, r, true);
 
             if (!valid && (r.startsWith(Constants.INSTALLED_APP_URL) || r.startsWith(Constants.INSTALLED_APP_LOOPBACK)) && r.indexOf(':', Constants.INSTALLED_APP_URL.length()) >= 0) {
                 int i = r.indexOf(':', Constants.INSTALLED_APP_URL.length());
@@ -137,8 +129,17 @@ public class RedirectUtils {
 
                 r = sb.toString();
 
-                valid = matchesRedirects(resolveValidRedirects, r);
+                valid = matchesRedirects(resolveValidRedirects, r, true);
             }
+
+            // Return the original redirectUri, which can be partially encoded - for example http://localhost:8280/foo/bar%20bar%2092%2F72/3 . Just make sure it is normalized
+            redirectUri = getNormalizedRedirectUri(redirectUri);
+
+            // We try to check validity also for original (encoded) redirectUrl, but just in case it exactly matches some "Valid Redirect URL" specified for client (not wildcards allowed)
+            if (!valid) {
+                valid = matchesRedirects(resolveValidRedirects, redirectUri, false);
+            }
+
             if (valid && redirectUri.startsWith("/")) {
                 redirectUri = relativeToAbsoluteURI(session, rootUrl, redirectUri);
             }
@@ -150,6 +151,59 @@ public class RedirectUtils {
         } else {
             return redirectUri;
         }
+    }
+
+    private static String getNormalizedRedirectUri(String redirectUri) {
+        if (redirectUri != null) {
+            try {
+                URI uri = URI.create(redirectUri);
+                redirectUri = uri.normalize().toString();
+            } catch (IllegalArgumentException cause) {
+                logger.debug("Invalid redirect uri", cause);
+                return null;
+            } catch (Exception cause) {
+                logger.debug("Unexpected error when parsing redirect uri", cause);
+                return null;
+            }
+            redirectUri = lowerCaseHostname(redirectUri);
+        }
+        return redirectUri;
+    }
+
+    // Decode redirectUri. We don't decode query and fragment as those can be encoded in the original URL.
+    // URL can be decoded multiple times (in case it was encoded multiple times, or some of it's parts were encoded multiple times)
+    private static String decodeRedirectUri(String redirectUri) {
+        if (redirectUri == null) return null;
+        int MAX_DECODING_COUNT = 5; // Max count of attempts for decoding URL (in case it was encoded multiple times)
+
+        try {
+            KeycloakUriBuilder uriBuilder = KeycloakUriBuilder.fromUri(redirectUri).preserveDefaultPort();
+            String origQuery = uriBuilder.getQuery();
+            String origFragment = uriBuilder.getFragment();
+            String encodedRedirectUri = uriBuilder
+                    .replaceQuery(null)
+                    .fragment(null)
+                    .buildAsString();
+            String decodedRedirectUri = null;
+
+            for (int i = 0; i < MAX_DECODING_COUNT; i++) {
+                decodedRedirectUri = Encode.decode(encodedRedirectUri);
+                if (decodedRedirectUri.equals(encodedRedirectUri)) {
+                    // URL is decoded. We can return it (after attach original query and fragment)
+                    return KeycloakUriBuilder.fromUri(decodedRedirectUri).preserveDefaultPort()
+                            .replaceQuery(origQuery)
+                            .fragment(origFragment)
+                            .buildAsString();
+                } else {
+                    // Next attempt
+                    encodedRedirectUri = decodedRedirectUri;
+                }
+            }
+        } catch (IllegalArgumentException iae) {
+            logger.debugf("Illegal redirect URI used: %s, Details: %s", redirectUri, iae.getMessage());
+        }
+        logger.debugf("Was not able to decode redirect URI: %s", redirectUri);
+        return null;
     }
 
     private static String lowerCaseHostname(String redirectUri) {
@@ -175,9 +229,10 @@ public class RedirectUtils {
         return sb.toString();
     }
 
-    private static boolean matchesRedirects(Set<String> validRedirects, String redirect) {
+    private static boolean matchesRedirects(Set<String> validRedirects, String redirect, boolean allowWildcards) {
+        logger.tracef("matchesRedirects: redirect URL to check: %s, allow wildcards: %b, Configured valid redirect URLs: %s", redirect, allowWildcards, validRedirects);
         for (String validRedirect : validRedirects) {
-            if (validRedirect.endsWith("*") && !validRedirect.contains("?")) {
+            if (validRedirect.endsWith("*") && !validRedirect.contains("?") && allowWildcards) {
                 // strip off the query component - we don't check them when wildcards are effective
                 String r = redirect.contains("?") ? redirect.substring(0, redirect.indexOf("?")) : redirect;
                 // strip off *

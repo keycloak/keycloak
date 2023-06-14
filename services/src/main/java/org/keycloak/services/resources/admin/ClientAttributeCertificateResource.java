@@ -18,16 +18,16 @@
 package org.keycloak.services.resources.admin;
 
 import org.jboss.resteasy.annotations.cache.NoCache;
-import org.jboss.resteasy.plugins.providers.multipart.InputPart;
-import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataInput;
-import javax.ws.rs.NotAcceptableException;
-import javax.ws.rs.NotFoundException;
+import jakarta.ws.rs.NotAcceptableException;
+import jakarta.ws.rs.NotFoundException;
 
-import org.keycloak.common.util.BouncyIntegration;
+import org.keycloak.common.crypto.CryptoIntegration;
 import org.keycloak.common.util.PemUtils;
 import org.keycloak.common.util.StreamUtil;
+import org.keycloak.common.util.KeystoreUtil.KeystoreFormat;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
+import org.keycloak.http.FormPartValue;
 import org.keycloak.jose.jwk.JSONWebKeySet;
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jwk.JWKParser;
@@ -44,14 +44,15 @@ import org.keycloak.services.util.CertificateInfoHelper;
 import org.keycloak.util.JWKSUtils;
 import org.keycloak.util.JsonSerialization;
 
-import javax.ws.rs.BadRequestException;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.BadRequestException;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.core.Response;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -60,8 +61,8 @@ import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
-import java.util.List;
-import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * @resource Client Attribute Certificate
@@ -74,15 +75,15 @@ public class ClientAttributeCertificateResource {
     public static final String PUBLIC_KEY_PEM = "Public Key PEM";
     public static final String JSON_WEB_KEY_SET = "JSON Web Key Set";
 
-    protected RealmModel realm;
-    private AdminPermissionEvaluator auth;
-    protected ClientModel client;
-    protected KeycloakSession session;
-    protected AdminEventBuilder adminEvent;
-    protected String attributePrefix;
+    protected final RealmModel realm;
+    private final AdminPermissionEvaluator auth;
+    protected final ClientModel client;
+    protected final KeycloakSession session;
+    protected final AdminEventBuilder adminEvent;
+    protected final String attributePrefix;
 
-    public ClientAttributeCertificateResource(RealmModel realm, AdminPermissionEvaluator auth, ClientModel client, KeycloakSession session, String attributePrefix, AdminEventBuilder adminEvent) {
-        this.realm = realm;
+    public ClientAttributeCertificateResource(AdminPermissionEvaluator auth, ClientModel client, KeycloakSession session, String attributePrefix, AdminEventBuilder adminEvent) {
+        this.realm = session.getContext().getRealm();
         this.auth = auth;
         this.client = client;
         this.session = session;
@@ -137,11 +138,11 @@ public class ClientAttributeCertificateResource {
     @Path("upload")
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces(MediaType.APPLICATION_JSON)
-    public CertificateRepresentation uploadJks(MultipartFormDataInput input) throws IOException {
+    public CertificateRepresentation uploadJks() throws IOException {
         auth.clients().requireConfigure(client);
 
         try {
-            CertificateRepresentation info = getCertFromRequest(input);
+            CertificateRepresentation info = getCertFromRequest();
             CertificateInfoHelper.updateClientModelCertificateInfo(client, info, attributePrefix);
 
             adminEvent.operation(OperationType.ACTION).resourcePath(session.getContext().getUri()).representation(info).success();
@@ -162,11 +163,11 @@ public class ClientAttributeCertificateResource {
     @Path("upload-certificate")
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces(MediaType.APPLICATION_JSON)
-    public CertificateRepresentation uploadJksCertificate(MultipartFormDataInput input) throws IOException {
+    public CertificateRepresentation uploadJksCertificate() throws IOException {
         auth.clients().requireConfigure(client);
 
         try {
-            CertificateRepresentation info = getCertFromRequest(input);
+            CertificateRepresentation info = getCertFromRequest();
             info.setPrivateKey(null);
             CertificateInfoHelper.updateClientModelCertificateInfo(client, info, attributePrefix);
 
@@ -177,16 +178,16 @@ public class ClientAttributeCertificateResource {
         }
     }
 
-    private CertificateRepresentation getCertFromRequest(MultipartFormDataInput input) throws IOException {
+    private CertificateRepresentation getCertFromRequest() throws IOException {
         auth.clients().requireManage(client);
         CertificateRepresentation info = new CertificateRepresentation();
-        Map<String, List<InputPart>> uploadForm = input.getFormDataMap();
-        List<InputPart> keystoreFormatPart = uploadForm.get("keystoreFormat");
+        MultivaluedMap<String, FormPartValue> uploadForm = session.getContext().getHttpRequest().getMultiPartFormParameters();
+        FormPartValue keystoreFormatPart = uploadForm.getFirst("keystoreFormat");
         if (keystoreFormatPart == null) throw new BadRequestException();
-        String keystoreFormat = keystoreFormatPart.get(0).getBodyAsString();
-        List<InputPart> inputParts = uploadForm.get("file");
+        String keystoreFormat = keystoreFormatPart.asString();
+        FormPartValue inputParts = uploadForm.getFirst("file");
         if (keystoreFormat.equals(CERTIFICATE_PEM)) {
-            String pem = StreamUtil.readString(inputParts.get(0).getBody(InputStream.class, null));
+            String pem = StreamUtil.readString(inputParts.asInputStream());
 
             pem = PemUtils.removeBeginEnd(pem);
 
@@ -196,7 +197,7 @@ public class ClientAttributeCertificateResource {
             info.setCertificate(pem);
             return info;
         } else if (keystoreFormat.equals(PUBLIC_KEY_PEM)) {
-            String pem = StreamUtil.readString(inputParts.get(0).getBody(InputStream.class, null));
+            String pem = StreamUtil.readString(inputParts.asInputStream());
 
             // Validate format
             KeycloakModelUtils.getPublicKey(pem);
@@ -204,7 +205,7 @@ public class ClientAttributeCertificateResource {
             info.setPublicKey(pem);
             return info;
         } else if (keystoreFormat.equals(JSON_WEB_KEY_SET)) {
-            InputStream stream = inputParts.get(0).getBody(InputStream.class, null);
+            InputStream stream = inputParts.asInputStream();
             JSONWebKeySet keySet = JsonSerialization.readValue(stream, JSONWebKeySet.class);
             JWK publicKeyJwk = JWKSUtils.getKeyForUse(keySet, JWK.Use.SIG);
             if (publicKeyJwk == null) {
@@ -219,19 +220,17 @@ public class ClientAttributeCertificateResource {
         }
 
 
-        String keyAlias = uploadForm.get("keyAlias").get(0).getBodyAsString();
-        List<InputPart> keyPasswordPart = uploadForm.get("keyPassword");
-        char[] keyPassword = keyPasswordPart != null ? keyPasswordPart.get(0).getBodyAsString().toCharArray() : null;
+        String keyAlias = uploadForm.getFirst("keyAlias").asString();
+        FormPartValue keyPasswordPart = uploadForm.getFirst("keyPassword");
+        char[] keyPassword = keyPasswordPart != null ? keyPasswordPart.asString().toCharArray() : null;
 
-        List<InputPart> storePasswordPart = uploadForm.get("storePassword");
-        char[] storePassword = storePasswordPart != null ? storePasswordPart.get(0).getBodyAsString().toCharArray() : null;
+        FormPartValue storePasswordPart = uploadForm.getFirst("storePassword");
+        char[] storePassword = storePasswordPart != null ? storePasswordPart.asString().toCharArray() : null;
         PrivateKey privateKey = null;
         X509Certificate certificate = null;
         try {
-            KeyStore keyStore = null;
-            if (keystoreFormat.equals("JKS")) keyStore = KeyStore.getInstance("JKS");
-            else keyStore = KeyStore.getInstance(keystoreFormat, BouncyIntegration.PROVIDER);
-            keyStore.load(inputParts.get(0).getBody(InputStream.class, null), storePassword);
+            KeyStore keyStore = CryptoIntegration.getProvider().getKeyStore(KeystoreFormat.valueOf(keystoreFormat));
+            keyStore.load(inputParts.asInputStream(), storePassword);
             try {
                 privateKey = (PrivateKey)keyStore.getKey(keyAlias, keyPassword);
             } catch (Exception e) {
@@ -269,9 +268,7 @@ public class ClientAttributeCertificateResource {
     public byte[] getKeystore(final KeyStoreConfig config) {
         auth.clients().requireView(client);
 
-        if (config.getFormat() != null && !config.getFormat().equals("JKS") && !config.getFormat().equals("PKCS12")) {
-            throw new NotAcceptableException("Only support jks or pkcs12 format.");
-        }
+        checkKeystoreFormat(config);
 
         CertificateRepresentation info = CertificateInfoHelper.getCertificateFromClient(client, attributePrefix);
         String privatePem = info.getPrivateKey();
@@ -308,9 +305,7 @@ public class ClientAttributeCertificateResource {
     public byte[] generateAndGetKeystore(final KeyStoreConfig config) {
         auth.clients().requireConfigure(client);
 
-        if (config.getFormat() != null && !config.getFormat().equals("JKS") && !config.getFormat().equals("PKCS12")) {
-            throw new NotAcceptableException("Only support jks or pkcs12 format.");
-        }
+        checkKeystoreFormat(config);
         if (config.getKeyPassword() == null) {
             throw new ErrorResponseException("password-missing", "Need to specify a key password for jks generation and download", Response.Status.BAD_REQUEST);
         }
@@ -332,9 +327,7 @@ public class ClientAttributeCertificateResource {
     private byte[] getKeystore(KeyStoreConfig config, String privatePem, String certPem) {
         try {
             String format = config.getFormat();
-            KeyStore keyStore;
-            if (format.equals("JKS")) keyStore = KeyStore.getInstance("JKS");
-            else keyStore = KeyStore.getInstance(format, BouncyIntegration.PROVIDER);
+            KeyStore keyStore = CryptoIntegration.getProvider().getKeyStore(KeystoreFormat.valueOf(format));
             keyStore.load(null, null);
             String keyAlias = config.getKeyAlias();
             if (keyAlias == null) keyAlias = client.getClientId();
@@ -369,6 +362,21 @@ public class ClientAttributeCertificateResource {
             return rtn;
         } catch (Exception e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    private void checkKeystoreFormat(KeyStoreConfig config) throws NotAcceptableException {
+        if (config.getFormat() != null) {
+            Set<KeystoreFormat> supportedKeystoreFormats = CryptoIntegration.getProvider().getSupportedKeyStoreTypes()
+                    .collect(Collectors.toSet());
+            try {
+                KeystoreFormat format = Enum.valueOf(KeystoreFormat.class, config.getFormat().toUpperCase());
+                if (config.getFormat() != null && !supportedKeystoreFormats.contains(format)) {
+                    throw new NotAcceptableException("Not supported keystore format. Supported keystore formats: " + supportedKeystoreFormats);
+                }
+            } catch (IllegalArgumentException iae) {
+                throw new NotAcceptableException("Not supported keystore format. Supported keystore formats: " + supportedKeystoreFormats);
+            }
         }
     }
 

@@ -16,20 +16,24 @@
  */
 package org.keycloak.models.map.authSession;
 
+import org.jboss.logging.Logger;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.map.common.DeepCloner;
 import org.keycloak.models.map.common.TimeAdapter;
 import org.keycloak.models.utils.SessionExpiration;
 import org.keycloak.sessions.AuthenticationSessionModel;
 
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.keycloak.models.utils.SessionExpiration.getAuthSessionLifespan;
@@ -39,8 +43,15 @@ import static org.keycloak.models.utils.SessionExpiration.getAuthSessionLifespan
  */
 public class MapRootAuthenticationSessionAdapter extends AbstractRootAuthenticationSessionModel<MapRootAuthenticationSessionEntity> {
 
-    public MapRootAuthenticationSessionAdapter(KeycloakSession session, RealmModel realm, MapRootAuthenticationSessionEntity entity) {
+    private static final Logger LOG = Logger.getLogger(MapRootAuthenticationSessionAdapter.class);
+
+    private int authSessionsLimit;
+
+    private static Comparator<MapAuthenticationSessionEntity> TIMESTAMP_COMPARATOR = Comparator.comparingLong(MapAuthenticationSessionEntity::getTimestamp);
+
+    public MapRootAuthenticationSessionAdapter(KeycloakSession session, RealmModel realm, MapRootAuthenticationSessionEntity entity, int authSessionsLimit) {
         super(session, realm, entity);
+        this.authSessionsLimit = authSessionsLimit;
     }
 
     @Override
@@ -83,7 +94,19 @@ public class MapRootAuthenticationSessionAdapter extends AbstractRootAuthenticat
     public AuthenticationSessionModel createAuthenticationSession(ClientModel client) {
         Objects.requireNonNull(client, "The provided client can't be null!");
 
-        MapAuthenticationSessionEntity authSessionEntity = new MapAuthenticationSessionEntityImpl();
+        Set<MapAuthenticationSessionEntity> authenticationSessions = entity.getAuthenticationSessions();
+        if (authenticationSessions != null && authenticationSessions.size() >= authSessionsLimit) {
+            String tabId = authenticationSessions.stream().min(TIMESTAMP_COMPARATOR).map(MapAuthenticationSessionEntity::getTabId).orElse(null);
+
+            if (tabId != null) {
+                LOG.debugf("Reached limit (%s) of active authentication sessions per a root authentication session. Removing oldest authentication session with TabId %s.", authSessionsLimit, tabId);
+
+                // remove the oldest authentication session
+                entity.removeAuthenticationSession(tabId);
+            }
+        }
+
+        MapAuthenticationSessionEntity authSessionEntity = DeepCloner.DUMB_CLONER.newInstance(MapAuthenticationSessionEntity.class);
         authSessionEntity.setClientUUID(client.getId());
 
         long timestamp = Time.currentTimeMillis();

@@ -1,7 +1,0 @@
-{
-  "realm" : "facebook-identity-provider-realm",
-  "resource" : "facebook-authentication",
-  "auth-server-url": "/auth",
-  "ssl-required" : "external",
-  "public-client" : true
-}

@@ -30,7 +30,6 @@ import org.keycloak.testsuite.AbstractAuthTest;
 import org.keycloak.testsuite.adapter.page.AppServerContextRoot;
 import org.keycloak.testsuite.arquillian.SuiteContext;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.util.ServerURLs;
 
 import java.io.IOException;
@@ -44,7 +43,6 @@ import static org.keycloak.testsuite.arquillian.AppServerTestEnricher.CURRENT_AP
 import static org.keycloak.testsuite.arquillian.AppServerTestEnricher.enableHTTPSForAppServer;
 import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_PORT;
 import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_SSL_REQUIRED;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 
 /**
  * <code>@AppServerContainer</code> is needed for stopping recursion in 
@@ -53,7 +51,6 @@ import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.A
  * @author tkyjovsk
  */
 @AppServerContainer("")
-@AuthServerContainerExclude(AuthServer.REMOTE)
 public abstract class AbstractAdapterTest extends AbstractAuthTest {
 
     @Page

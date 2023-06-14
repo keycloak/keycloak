@@ -17,8 +17,7 @@
 
 package org.keycloak.models.map.singleUseObject;
 
-import org.keycloak.models.ActionTokenKeyModel;
-import org.keycloak.models.ActionTokenValueModel;
+import org.keycloak.models.SingleUseObjectValueModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.map.common.AbstractEntity;
 
@@ -27,7 +26,7 @@ import java.util.Objects;
 /**
  * @author <a href="mailto:mkanis@redhat.com">Martin Kanis</a>
  */
-public abstract class AbstractSingleUseObjectModel<E extends AbstractEntity> implements ActionTokenKeyModel, ActionTokenValueModel {
+public abstract class AbstractSingleUseObjectModel<E extends AbstractEntity> implements SingleUseObjectValueModel {
 
     protected final KeycloakSession session;
     protected final E entity;
@@ -42,7 +41,7 @@ public abstract class AbstractSingleUseObjectModel<E extends AbstractEntity> imp
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof ActionTokenValueModel)) return false;
+        if (!(o instanceof SingleUseObjectValueModel)) return false;
 
         MapSingleUseObjectAdapter that = (MapSingleUseObjectAdapter) o;
         return Objects.equals(that.entity.getId(), entity.getId());

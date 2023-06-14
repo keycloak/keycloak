@@ -21,18 +21,19 @@
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
         <artifactId>integration-arquillian-servers</artifactId>
-        <version>999-SNAPSHOT</version>
+        <version>999.0.0-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>integration-arquillian-migration-server-parent</artifactId>
-    <name>Migration Server Parent</name>
+    <artifactId>integration-arquillian-migration-server</artifactId>
     <packaging>pom</packaging>
 
+    <name>Migration Server Quarkus</name>
+
     <properties>
+        <auth.server.output.directory>auth-server-migration</auth.server.output.directory>
         <auth.server.home>${project.build.directory}/unpacked/keycloak-${migrated.auth.server.version}
         </auth.server.home>
-        <auth.server.dist.artifactId>keycloak-quarkus-dist</auth.server.dist.artifactId>
         <jdbc.driver.tmp.dir>${project.build.directory}/jdbc-driver</jdbc.driver.tmp.dir>
     </properties>
 
@@ -101,7 +102,7 @@
                             <artifactItems>
                                 <artifactItem>
                                     <groupId>org.keycloak</groupId>
-                                    <artifactId>${auth.server.dist.artifactId}</artifactId>
+                                    <artifactId>keycloak-quarkus-dist</artifactId>
                                     <version>${migrated.auth.server.version}</version>
                                     <type>zip</type>
                                     <outputDirectory>${project.build.directory}/unpacked</outputDirectory>
@@ -130,60 +131,25 @@
                     </execution>
                 </executions>
             </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>create-zip</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                        <configuration>
+                            <descriptors>
+                                <descriptor>assembly.xml</descriptor>
+                            </descriptors>
+                            <appendAssemblyId>false</appendAssemblyId>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
-    
-    <profiles>
-        <profile>
-            <id>auth-server-migration-legacy</id>
-            <modules>
-                <module>legacy</module>
-            </modules>
-            <properties>
-                <auth.server.dist.artifactId>keycloak-server-dist</auth.server.dist.artifactId>
-            </properties>
-        </profile>
-
-        <profile>
-            <id>auth-server-migration</id>
-            <modules>
-                <module>quarkus</module>
-            </modules>
-            <properties>
-                <auth.server.dist.artifactId>keycloak-quarkus-dist</auth.server.dist.artifactId>
-            </properties>
-        </profile>
-
-        <profile>
-            <id>community</id>
-            <activation>
-                <property>
-                    <name>!product</name>
-                </property>
-            </activation>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-deploy-plugin</artifactId>
-                        <configuration>
-                            <skip>true</skip>
-                        </configuration>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-
-        <profile>
-            <id>productized-server</id>
-            <activation>
-                <property>
-                    <name>previous.product.unpacked.folder.name</name>
-                </property>
-            </activation>
-            <properties>
-                <auth.server.home>${project.build.directory}/unpacked/${previous.product.unpacked.folder.name}</auth.server.home>
-            </properties>
-        </profile>
-    </profiles>
 </project>

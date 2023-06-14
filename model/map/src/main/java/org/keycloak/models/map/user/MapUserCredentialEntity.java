@@ -19,6 +19,7 @@ package org.keycloak.models.map.user;
 
 import org.keycloak.credential.CredentialModel;
 import org.keycloak.models.map.annotations.GenerateEntityImplementations;
+import org.keycloak.models.map.common.AbstractEntity;
 import org.keycloak.models.map.common.DeepCloner;
 import org.keycloak.models.map.common.UpdatableEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
@@ -27,10 +28,10 @@ import java.util.Comparator;
 
 @GenerateEntityImplementations
 @DeepCloner.Root
-public interface MapUserCredentialEntity extends UpdatableEntity {
+public interface MapUserCredentialEntity extends AbstractEntity, UpdatableEntity {
 
     public static MapUserCredentialEntity fromModel(CredentialModel model) {
-        MapUserCredentialEntity credentialEntity = new MapUserCredentialEntityImpl();
+        MapUserCredentialEntity credentialEntity = DeepCloner.DUMB_CLONER.newInstance(MapUserCredentialEntity.class);
         String id = model.getId() == null ? KeycloakModelUtils.generateId() : model.getId();
         credentialEntity.setId(id);
         credentialEntity.setCreatedDate(model.getCreatedDate());
@@ -52,9 +53,6 @@ public interface MapUserCredentialEntity extends UpdatableEntity {
         model.setCredentialData(entity.getCredentialData());
         return model;
     }
-
-    String getId();
-    void setId(String id);
 
     String getType();
     void setType(String type);

@@ -17,36 +17,30 @@
 
 package org.keycloak.testsuite.admin.client;
 
-import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.ClientResource;
-import org.keycloak.common.Profile;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
+import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.UserSessionRepresentation;
-import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
-import org.keycloak.testsuite.auth.page.AuthRealm;
-import org.keycloak.testsuite.auth.page.account.AccountManagement;
+import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.AdminEventPaths;
 
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
 
 /**
  *
  * @author Stan Silvert ssilvert@redhat.com (C) 2016 Red Hat Inc.
  */
-@DisableFeature(value = Profile.Feature.ACCOUNT2, skipRestart = true) // TODO remove this (KEYCLOAK-16228)
 public class SessionTest extends AbstractClientTest {
-
-
-    @Page
-    protected AccountManagement testRealmAccountManagementPage;
 
     @Before
     public void init() {
@@ -56,28 +50,29 @@ public class SessionTest extends AbstractClientTest {
 
         assertAdminEvents.assertEvent(getRealmId(), OperationType.CREATE, AdminEventPaths.userResourcePath(testUser.getId()), ResourceType.USER);
         assertAdminEvents.assertEvent(getRealmId(), OperationType.ACTION, AdminEventPaths.userResetPasswordPath(testUser.getId()), ResourceType.USER);
+
+        createAppClientInRealm(testRealmResource().toRepresentation().getRealm());
     }
 
     @Override
     public void setDefaultPageUriParameters() {
         super.setDefaultPageUriParameters();
-        testRealmAccountManagementPage.setAuthRealm(TEST);
         loginPage.setAuthRealm(TEST);
     }
 
     @Test
     public void testGetAppSessionCount() {
-        ClientResource accountClient = findClientResourceById("account");
+        ClientResource accountClient = findClientResourceById("test-app");
         int sessionCount = accountClient.getApplicationSessionCount().get("count");
         assertEquals(0, sessionCount);
 
-        testRealmAccountManagementPage.navigateTo();
+        driver.navigate().to(oauth.getLoginFormUrl());
         loginPage.form().login(testUser);
 
         sessionCount = accountClient.getApplicationSessionCount().get("count");
         assertEquals(1, sessionCount);
 
-        testRealmAccountManagementPage.signOut();
+        AccountHelper.logout(testRealmResource(), testUser.getUsername());
 
         sessionCount = accountClient.getApplicationSessionCount().get("count");
         assertEquals(0, sessionCount);
@@ -86,9 +81,9 @@ public class SessionTest extends AbstractClientTest {
     @Test
     public void testGetUserSessions() {
         //List<java.util.Map<String, String>> stats = this.testRealmResource().getClientSessionStats();
-        ClientResource account = findClientResourceById("account");
+        ClientResource account = findClientResourceById("test-app");
 
-        testRealmAccountManagementPage.navigateTo();
+        driver.navigate().to(oauth.getLoginFormUrl());
         loginPage.form().login(testUser);
 
         List<UserSessionRepresentation> sessions = account.getUserSessions(0, 5);
@@ -101,11 +96,32 @@ public class SessionTest extends AbstractClientTest {
         assertEquals(testUserRep.getUsername(), rep.getUsername());
 
         String clientId = account.toRepresentation().getId();
-        assertEquals("account", rep.getClients().get(clientId));
+        assertEquals("test-app", rep.getClients().get(clientId));
         assertNotNull(rep.getIpAddress());
         assertNotNull(rep.getLastAccess());
         assertNotNull(rep.getStart());
+        assertFalse(rep.isRememberMe());
 
-        testRealmAccountManagementPage.signOut();
+        AccountHelper.logout(testRealmResource(), testUser.getUsername());
+    }
+
+    @Test
+    public void testGetUserSessionsWithRememberMe() {
+        RealmRepresentation realm = adminClient.realm(TEST).toRepresentation();
+        realm.setRememberMe(true);
+        adminClient.realm(TEST).update(realm);
+
+        driver.navigate().to(oauth.getLoginFormUrl());
+        loginPage.form().rememberMe(true);
+        loginPage.form().login(testUser);
+
+        ClientResource account = findClientResourceById("test-app");
+        List<UserSessionRepresentation> sessions = account.getUserSessions(0, 5);
+        assertEquals(1, sessions.size());
+
+        UserSessionRepresentation rep = sessions.get(0);
+        assertTrue(rep.isRememberMe());
+
+        AccountHelper.logout(testRealmResource(), testUser.getUsername());
     }
 }

@@ -33,7 +33,7 @@ public class JpaUserLoginFailureMetadata extends MapUserLoginFailureEntityImpl i
     }
 
     public JpaUserLoginFailureMetadata() {
-        super();
+        super(DeepCloner.DUMB_CLONER);
     }
 
     private Integer entityVersion;
@@ -45,4 +45,5 @@ public class JpaUserLoginFailureMetadata extends MapUserLoginFailureEntityImpl i
     public void setEntityVersion(Integer entityVersion) {
         this.entityVersion = entityVersion;
     }
+
 }

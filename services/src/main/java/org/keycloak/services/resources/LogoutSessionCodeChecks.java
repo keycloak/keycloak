@@ -20,11 +20,10 @@ package org.keycloak.services.resources;
 
 import java.net.URI;
 
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriInfo;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.UriInfo;
 
-import org.jboss.resteasy.spi.HttpRequest;
-import org.keycloak.authentication.AuthenticationProcessor;
+import org.keycloak.http.HttpRequest;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
@@ -42,7 +41,7 @@ import org.keycloak.sessions.RootAuthenticationSessionModel;
 public class LogoutSessionCodeChecks extends SessionCodeChecks {
 
     public LogoutSessionCodeChecks(RealmModel realm, UriInfo uriInfo, HttpRequest request, ClientConnection clientConnection, KeycloakSession session, EventBuilder event,
-                             String code, String clientId, String tabId) {
+                                   String code, String clientId, String tabId) {
         super(realm, uriInfo, request, clientConnection, session, event, null, code, null, clientId, tabId, null);
     }
 
@@ -66,5 +65,10 @@ public class LogoutSessionCodeChecks extends SessionCodeChecks {
             return false;
         }
         return true;
+    }
+
+    @Override
+    protected boolean checkClientDisabled(ClientModel client) {
+        return !client.isEnabled() && getClientCode() != null;
     }
 }

@@ -31,16 +31,15 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import javax.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.context.ApplicationScoped;
 
 import io.quarkus.runtime.ApplicationLifecycleManager;
 import io.quarkus.runtime.Quarkus;
 
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
-import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.models.KeycloakTransactionManager;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.quarkus.runtime.cli.ExecutionExceptionHandler;
 import org.keycloak.quarkus.runtime.cli.Picocli;
 import org.keycloak.common.Version;
@@ -63,7 +62,7 @@ public class KeycloakMain implements QuarkusApplication {
     private static final String KEYCLOAK_ADMIN_PASSWORD_ENV_VAR = "KEYCLOAK_ADMIN_PASSWORD";
 
     public static void main(String[] args) {
-        System.setProperty("kc.version", Version.VERSION_KEYCLOAK);
+        System.setProperty("kc.version", Version.VERSION);
         List<String> cliArgs = Picocli.parseArgs(args);
 
         if (cliArgs.isEmpty()) {
@@ -80,7 +79,7 @@ public class KeycloakMain implements QuarkusApplication {
                 return;
             }
 
-            start(errorHandler, errStream);
+            start(errorHandler, errStream, args);
 
             return;
         }
@@ -94,12 +93,8 @@ public class KeycloakMain implements QuarkusApplication {
         return cliArgs.size() == 2 && cliArgs.get(0).equals(Start.NAME) && cliArgs.stream().anyMatch(OPTIMIZED_BUILD_OPTION_LONG::equals);
     }
 
-    public static void start(ExecutionExceptionHandler errorHandler, PrintWriter errStream) {
-        ClassLoader originalCl = Thread.currentThread().getContextClassLoader();
-
+    public static void start(ExecutionExceptionHandler errorHandler, PrintWriter errStream, String[] args) {
         try {
-            Thread.currentThread().setContextClassLoader(new KeycloakClassLoader());
-
             Quarkus.run(KeycloakMain.class, (exitCode, cause) -> {
                 if (cause != null) {
                     errorHandler.error(errStream,
@@ -112,14 +107,12 @@ public class KeycloakMain implements QuarkusApplication {
                     // as we are replacing the default exit handler, we need to force exit
                     System.exit(exitCode);
                 }
-            });
+            }, args);
         } catch (Throwable cause) {
             errorHandler.error(errStream,
                     String.format("Unexpected error when starting the server in (%s) mode", getKeycloakModeFromProfile(getProfileOrDefault("prod"))),
                     cause.getCause());
             System.exit(1);
-        } finally {
-            Thread.currentThread().setContextClassLoader(originalCl);
         }
     }
 
@@ -159,24 +152,13 @@ public class KeycloakMain implements QuarkusApplication {
         }
 
         KeycloakSessionFactory sessionFactory = KeycloakApplication.getSessionFactory();
-        KeycloakSession session = sessionFactory.create();
-        KeycloakTransactionManager transaction = session.getTransactionManager();
 
         try {
-            transaction.begin();
-
-            new ApplianceBootstrap(session).createMasterRealmUser(adminUserName, adminPassword);
-            ServicesLogger.LOGGER.addUserSuccess(adminUserName, Config.getAdminRealm());
-
-            transaction.commit();
-        } catch (IllegalStateException e) {
-            session.getTransactionManager().rollback();
-            ServicesLogger.LOGGER.addUserFailedUserExists(adminUserName, Config.getAdminRealm());
+            KeycloakModelUtils.runJobInTransaction(sessionFactory, session -> {
+                new ApplianceBootstrap(session).createMasterRealmUser(adminUserName, adminPassword);
+            });
         } catch (Throwable t) {
-            session.getTransactionManager().rollback();
             ServicesLogger.LOGGER.addUserFailed(t, adminUserName, Config.getAdminRealm());
-        } finally {
-            session.close();
         }
     }
 }

@@ -48,7 +48,11 @@ import org.keycloak.protocol.oidc.utils.OIDCResponseMode;
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.adapters.action.PushNotBeforeAction;
+import org.keycloak.services.CorsErrorResponseException;
 import org.keycloak.services.ServicesLogger;
+import org.keycloak.services.clientpolicy.ClientPolicyException;
+import org.keycloak.services.clientpolicy.context.ImplicitHybridTokenResponse;
+import org.keycloak.services.clientpolicy.context.TokenRefreshContext;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.protocol.oidc.utils.OAuth2Code;
@@ -63,10 +67,10 @@ import java.net.URI;
 import java.util.Optional;
 import java.util.UUID;
 
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriBuilder;
-import javax.ws.rs.core.UriInfo;
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.UriBuilder;
+import jakarta.ws.rs.core.UriInfo;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -237,7 +241,8 @@ public class OIDCLoginProtocol implements LoginProtocol {
                     authSession.getClientNote(OAuth2Constants.SCOPE),
                     authSession.getClientNote(OIDCLoginProtocol.REDIRECT_URI_PARAM),
                     authSession.getClientNote(OIDCLoginProtocol.CODE_CHALLENGE_PARAM),
-                    authSession.getClientNote(OIDCLoginProtocol.CODE_CHALLENGE_METHOD_PARAM));
+                    authSession.getClientNote(OIDCLoginProtocol.CODE_CHALLENGE_METHOD_PARAM),
+                    userSession.getId());
 
             code = OAuth2CodeParser.persistCode(session, clientSession, codeData);
             redirectUri.addParam(OAuth2Constants.CODE, code);
@@ -265,6 +270,15 @@ public class OIDCLoginProtocol implements LoginProtocol {
                 // http://openid.net/specs/openid-financial-api-part-2.html#authorization-server
                 if (state != null && !state.isEmpty())
                     responseBuilder.generateStateHash(state);
+            }
+
+            try {
+                session.clientPolicy().triggerOnEvent(new ImplicitHybridTokenResponse(authSession, clientSessionCtx, responseBuilder));
+            } catch (ClientPolicyException cpe) {
+                event.error(cpe.getError());
+                new AuthenticationSessionManager(session).removeAuthenticationSession(realm, authSession, true);
+                redirectUri.addParam(OAuth2Constants.ERROR_DESCRIPTION, cpe.getError());
+                return redirectUri.build();
             }
 
             AccessTokenResponse res = responseBuilder.build();
@@ -312,8 +326,13 @@ public class OIDCLoginProtocol implements LoginProtocol {
         if (state != null) {
             redirectUri.addParam(OAuth2Constants.STATE, state);
         }
-        
-        new AuthenticationSessionManager(session).removeAuthenticationSession(realm, authSession, true);
+
+        if (error == Error.PASSIVE_LOGIN_REQUIRED || error == Error.PASSIVE_INTERACTION_REQUIRED) {
+            // passive check error, just delete the tabId maintaining session and don't reset the restart cookie
+            new AuthenticationSessionManager(session).removeTabIdInAuthenticationSession(realm, authSession);
+        } else {
+            new AuthenticationSessionManager(session).removeAuthenticationSession(realm, authSession, true);
+        }
         return redirectUri.build();
     }
 

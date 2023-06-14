@@ -17,6 +17,8 @@
 
 package org.keycloak.models.map.storage.hotRod.singleUseObject;
 
+import org.infinispan.api.annotations.indexing.Basic;
+import org.infinispan.api.annotations.indexing.Indexed;
 import org.infinispan.protostream.GeneratedSchema;
 import org.infinispan.protostream.annotations.AutoProtoSchemaBuilder;
 import org.infinispan.protostream.annotations.ProtoDoc;
@@ -35,9 +37,9 @@ import java.util.Set;
         implementInterface = "org.keycloak.models.map.singleUseObject.MapSingleUseObjectEntity",
         inherits = "org.keycloak.models.map.storage.hotRod.singleUseObject.HotRodSingleUseObjectEntity.AbstractHotRodSingleUseObjectEntityDelegate",
         topLevelEntity = true,
-        modelClass = "org.keycloak.models.ActionTokenValueModel"
+        modelClass = "org.keycloak.models.SingleUseObjectValueModel"
 )
-@ProtoDoc("@Indexed")
+@Indexed
 @ProtoDoc("schema-version: " + HotRodSingleUseObjectEntity.VERSION)
 public class HotRodSingleUseObjectEntity extends AbstractHotRodEntity {
 
@@ -56,7 +58,7 @@ public class HotRodSingleUseObjectEntity extends AbstractHotRodEntity {
         HotRodSingleUseObjectEntitySchema INSTANCE = new HotRodSingleUseObjectEntitySchemaImpl();
     }
 
-    @ProtoDoc("@Field(index = Index.YES, store = Store.YES)")
+    @Basic(projectable = true)
     @ProtoField(number = 1)
     public Integer entityVersion = VERSION;
 
@@ -65,15 +67,6 @@ public class HotRodSingleUseObjectEntity extends AbstractHotRodEntity {
 
     @ProtoField(number = 3)
     public String objectKey;
-
-    @ProtoField(number = 4)
-    public String userId;
-
-    @ProtoField(number = 5)
-    public String actionId;
-
-    @ProtoField(number = 6)
-    public String actionVerificationNonce;
 
     @ProtoField(number = 7)
     public Long expiration;

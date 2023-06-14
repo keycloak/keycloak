@@ -1,0 +1,34 @@
+name: Check if a job passed
+description: Fails if the job is required and was not successful
+
+inputs:
+  required:
+    description: Is the job required
+    required: true
+    default: true
+  conclusion:
+    description: Job conclusion (success if passed, most likely empty otherwise)
+    required: true
+
+outputs:
+  status:
+    description: "Check status"
+    value: ${{ steps.changes.outputs.java }}
+
+runs:
+  using: "composite"
+  steps:
+    - id: check-job
+      name: Check job
+      shell: bash
+      run: |
+        if [ "${{ inputs.required }}" == "false" ]; then
+          echo "Not required to run, skipping"
+        else
+          if [ "${{ inputs.conclusion }}" == "success" ]; then
+            echo "Success"
+          else
+            echo "Required to run, but didn't succeed"
+            exit 1
+          fi        
+        fi

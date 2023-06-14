@@ -18,10 +18,8 @@
 package org.keycloak.testsuite.admin;
 
 import org.hamcrest.Matchers;
-import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataOutput;
 import org.junit.AfterClass;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.admin.client.Keycloak;
@@ -70,8 +68,8 @@ import org.keycloak.testsuite.util.IdentityProviderBuilder;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
 
-import javax.ws.rs.ClientErrorException;
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.ClientErrorException;
+import jakarta.ws.rs.core.Response;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.Collections;
@@ -299,7 +297,22 @@ public class PermissionsTest extends AbstractKeycloakTest {
                 realm.toRepresentation();
             }
         }, Resource.REALM, false, true);
-        assertGettersEmpty(clients.get(AdminRoles.QUERY_REALMS).realm(REALM_NAME).toRepresentation());
+
+        {
+            RealmRepresentation realm = clients.get(AdminRoles.QUERY_REALMS).realm(REALM_NAME).toRepresentation();
+            assertGettersEmpty(realm);
+            assertNull(realm.isRegistrationEmailAsUsername());
+
+            realm = clients.get(AdminRoles.VIEW_USERS).realm(REALM_NAME).toRepresentation();
+            assertNotNull(realm.isRegistrationEmailAsUsername());
+
+            realm = clients.get(AdminRoles.MANAGE_USERS).realm(REALM_NAME).toRepresentation();
+            assertNotNull(realm.isRegistrationEmailAsUsername());
+
+            // query users only if granted through fine-grained admin
+            realm = clients.get(AdminRoles.QUERY_USERS).realm(REALM_NAME).toRepresentation();
+            assertNull(realm.isRegistrationEmailAsUsername());
+        }
 
         // this should pass given that users granted with "query" roles are allowed to access the realm with limited access
         for (String role : AdminRoles.ALL_QUERY_ROLES) {
@@ -366,17 +379,21 @@ public class PermissionsTest extends AbstractKeycloakTest {
                 response.set(realm.partialImport(new PartialImportRepresentation()));
             }
         }, Resource.REALM, true);
-        invoke(new Invocation() {
-            public void invoke(RealmResource realm) {
-                realm.clearRealmCache();
-            }
-        }, Resource.REALM, true);
-        invoke(new Invocation() {
-            public void invoke(RealmResource realm) {
-                realm.clearUserCache();
-            }
-        }, Resource.REALM, true);
 
+        if (isJpaRealmProvider()) {
+            // Caching is disabled with the new store, we need to skip these invocations
+            invoke(new Invocation() {
+                public void invoke(RealmResource realm) {
+                    realm.clearRealmCache();
+                }
+            }, Resource.REALM, true);
+            invoke(new Invocation() {
+                public void invoke(RealmResource realm) {
+                    realm.clearUserCache();
+                }
+            }, Resource.REALM, true);
+
+        }
         // Delete realm
         invoke(new Invocation() {
             public void invoke(RealmResource realm) {
@@ -638,12 +655,12 @@ public class PermissionsTest extends AbstractKeycloakTest {
 
         invoke(new Invocation() {
             public void invoke(RealmResource realm) {
-                realm.clients().get(foo.getId()).getCertficateResource("nosuch").uploadJks(new MultipartFormDataOutput());
+                realm.clients().get(foo.getId()).getCertficateResource("nosuch").uploadJks(null);
             }
         }, Resource.CLIENT, true);
         invoke(new Invocation() {
             public void invoke(RealmResource realm) {
-                realm.clients().get(foo.getId()).getCertficateResource("nosuch").uploadJksCertificate(new MultipartFormDataOutput());
+                realm.clients().get(foo.getId()).getCertficateResource("nosuch").uploadJksCertificate(null);
             }
         }, Resource.CLIENT, true);
 
@@ -1723,7 +1740,7 @@ public class PermissionsTest extends AbstractKeycloakTest {
         }, Resource.IDENTITY_PROVIDER, true);
         invoke(new Invocation() {
             public void invoke(RealmResource realm) {
-                realm.identityProviders().importFrom(new MultipartFormDataOutput());
+                realm.identityProviders().importFrom(null);
             }
         }, Resource.IDENTITY_PROVIDER, true);
     }
@@ -1764,6 +1781,9 @@ public class PermissionsTest extends AbstractKeycloakTest {
 
     @Test
     public void partialExport() {
+        // re-enable as part of https://github.com/keycloak/keycloak/issues/14291
+        ProfileAssume.assumeFeatureDisabled(Profile.Feature.MAP_STORAGE);
+
         invoke(new Invocation() {
             public void invoke(RealmResource realm) {
                 realm.partialExport(false, false);
@@ -1789,6 +1809,103 @@ public class PermissionsTest extends AbstractKeycloakTest {
                 realm.partialExport(false, false);
             }
         }, clients.get("none"), false);
+    }
+
+    @Test
+    public void localizations() {
+        verifyAnyAdminRoleReqired(realm -> realm.localization().getRealmSpecificLocales());
+
+        verifyAnyAdminRoleReqired(realm -> realm.localization().getRealmLocalizationText("en", "test"));
+
+        verifyAnyAdminRoleReqired(realm -> realm.localization().getRealmLocalizationTexts("en"));
+        verifyAnyAdminRoleReqired(realm -> realm.localization().getRealmLocalizationTexts("en", false));
+        
+        invoke(new Invocation() {
+            public void invoke(RealmResource realm) {
+                realm.localization().createOrUpdateRealmLocalizationTexts("en", Collections.<String, String>emptyMap());
+            }
+        }, clients.get("view-realm"), false);
+        invoke(new Invocation() {
+            public void invoke(RealmResource realm) {
+                realm.localization().createOrUpdateRealmLocalizationTexts("en", Collections.<String, String>emptyMap());
+            }
+        }, clients.get("manage-realm"), true);
+        invoke(new Invocation() {
+            public void invoke(RealmResource realm) {
+                realm.localization().createOrUpdateRealmLocalizationTexts("en", Collections.<String, String>emptyMap());
+            }
+        }, clients.get("master-admin"), true);
+        invoke(new Invocation() {
+            public void invoke(RealmResource realm) {
+                realm.localization().createOrUpdateRealmLocalizationTexts("en", Collections.<String, String>emptyMap());
+            }
+        }, clients.get("none"), false);
+        invoke(new Invocation() {
+            public void invoke(RealmResource realm) {
+                realm.localization().deleteRealmLocalizationText("en", "test");
+            }
+        }, clients.get("REALM2"), false);
+
+        invoke(new Invocation() {
+            public void invoke(RealmResource realm) {
+                realm.localization().deleteRealmLocalizationText("en", "test");
+            }
+        }, clients.get("view-realm"), false);
+        invoke(new Invocation() {
+            public void invoke(RealmResource realm) {
+                realm.localization().deleteRealmLocalizationText("en", "test");
+            }
+        }, clients.get("manage-realm"), true);
+        invoke(new Invocation() {
+            public void invoke(RealmResource realm) {
+                realm.localization().deleteRealmLocalizationText("en", "test");
+            }
+        }, clients.get("master-admin"), true);
+        invoke(new Invocation() {
+            public void invoke(RealmResource realm) {
+                realm.localization().deleteRealmLocalizationText("en", "test");
+            }
+        }, clients.get("none"), false);
+        invoke(new Invocation() {
+            public void invoke(RealmResource realm) {
+                realm.localization().deleteRealmLocalizationText("en", "test");
+            }
+        }, clients.get("REALM2"), false);
+
+        invoke(new Invocation() {
+            public void invoke(RealmResource realm) {
+                realm.localization().deleteRealmLocalizationTexts("en");
+            }
+        }, clients.get("view-realm"), false);
+        invoke(new Invocation() {
+            public void invoke(RealmResource realm) {
+                realm.localization().deleteRealmLocalizationTexts("en");
+            }
+        }, clients.get("manage-realm"), true);
+        invoke(new Invocation() {
+            public void invoke(RealmResource realm) {
+                realm.localization().deleteRealmLocalizationTexts("en");
+            }
+        }, clients.get("master-admin"), true);
+        invoke(new Invocation() {
+            public void invoke(RealmResource realm) {
+                realm.localization().deleteRealmLocalizationTexts("en");
+            }
+        }, clients.get("none"), false);
+        invoke(new Invocation() {
+            public void invoke(RealmResource realm) {
+                realm.localization().deleteRealmLocalizationTexts("en");
+            }
+        }, clients.get("REALM2"), false);
+    }
+
+    private void verifyAnyAdminRoleReqired(Invocation invocation) {
+        invoke(invocation, clients.get("view-realm"), true);
+        invoke(invocation, clients.get("manage-realm"), true);
+        invoke(invocation, clients.get("multi"), true);
+        invoke(invocation, clients.get("master-admin"), true);
+        invoke(invocation, clients.get("none"), false);
+        invoke(invocation, clients.get("REALM2"), false);
     }
 
     private void invoke(final Invocation invocation, Resource resource, boolean manage) {

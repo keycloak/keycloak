@@ -22,15 +22,14 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.MediaType;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.MediaType;
 
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
-import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.utils.ModelToRepresentation;
@@ -47,16 +46,13 @@ public class ClientScopeEvaluateScopeMappingsResource {
     private final AdminPermissionEvaluator auth;
     private final ClientModel client;
     private final String scopeParam;
-    private final KeycloakSession session;
-
 
     public ClientScopeEvaluateScopeMappingsResource(RoleContainerModel roleContainer, AdminPermissionEvaluator auth, ClientModel client,
-                                                    String scopeParam, KeycloakSession session) {
+                                                    String scopeParam) {
         this.roleContainer = roleContainer;
         this.auth = auth;
         this.client = client;
         this.scopeParam = scopeParam;
-        this.session = session;
     }
 
 

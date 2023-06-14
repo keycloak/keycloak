@@ -21,12 +21,16 @@ import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
+import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RealmProvider;
+import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.provider.ProviderEventListener;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.Consumer;
-import java.util.function.Function;
 
 import static org.hamcrest.CoreMatchers.allOf;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -34,6 +38,7 @@ import static org.hamcrest.Matchers.aMapWithSize;
 import static org.hamcrest.Matchers.anEmptyMap;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasEntry;
+import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.notNullValue;
 
 @RequireProvider(RealmProvider.class)
@@ -45,7 +50,7 @@ public class RealmModelTest extends KeycloakModelTest {
 
     @Override
     public void createEnvironment(KeycloakSession s) {
-        RealmModel realm = s.realms().createRealm("realm");
+        RealmModel realm = createRealm(s, "realm");
         realm.setDefaultRole(s.roles().addRealmRole(realm, Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + realm.getName()));
         this.realmId = realm.getId();
     }
@@ -108,12 +113,12 @@ public class RealmModelTest extends KeycloakModelTest {
 
     @Test
     public void testRealmPreRemoveDoesntRemoveEntitiesFromOtherRealms() {
-        realm1Id = inComittedTransaction((Function<KeycloakSession, String>)  session -> {
+        realm1Id = inComittedTransaction(session -> {
             RealmModel realm = session.realms().createRealm("realm1");
             realm.setDefaultRole(session.roles().addRealmRole(realm, Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + realm.getName()));
             return realm.getId();
         });
-        realm2Id = inComittedTransaction((Function<KeycloakSession, String>)  session -> {
+        realm2Id = inComittedTransaction(session -> {
             RealmModel realm = session.realms().createRealm("realm2");
             realm.setDefaultRole(session.roles().addRealmRole(realm, Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + realm.getName()));
             return realm.getId();
@@ -139,5 +144,43 @@ public class RealmModelTest extends KeycloakModelTest {
         });
 
         assertThat(resourceServer, notNullValue());
+    }
+
+    @Test
+    public void testMoveGroup() {
+        ProviderEventListener providerEventListener = null;
+        try {
+            List<GroupModel.GroupPathChangeEvent> groupPathChangeEvents = new ArrayList<>();
+            providerEventListener = event -> {
+                if (event instanceof GroupModel.GroupPathChangeEvent) {
+                    groupPathChangeEvents.add((GroupModel.GroupPathChangeEvent) event);
+                }
+            };
+            getFactory().register(providerEventListener);
+
+            withRealm(realmId, (session, realm) -> {
+                GroupModel groupA = realm.createGroup("a");
+                GroupModel groupB = realm.createGroup("b");
+
+                final String previousPath = "/a";
+                assertThat(KeycloakModelUtils.buildGroupPath(groupA), equalTo(previousPath));
+
+                realm.moveGroup(groupA, groupB);
+
+                final String expectedNewPath = "/b/a";
+                assertThat(KeycloakModelUtils.buildGroupPath(groupA), equalTo(expectedNewPath));
+
+                assertThat(groupPathChangeEvents, hasSize(1));
+                GroupModel.GroupPathChangeEvent groupPathChangeEvent = groupPathChangeEvents.get(0);
+                assertThat(groupPathChangeEvent.getPreviousPath(), equalTo(previousPath));
+                assertThat(groupPathChangeEvent.getNewPath(), equalTo(expectedNewPath));
+
+                return null;
+            });
+        } finally {
+            if (providerEventListener != null) {
+                getFactory().unregister(providerEventListener);
+            }
+        }
     }
 }

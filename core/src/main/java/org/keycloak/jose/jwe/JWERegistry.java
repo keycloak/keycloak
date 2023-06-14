@@ -21,11 +21,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.keycloak.common.crypto.CryptoIntegration;
-import org.keycloak.common.crypto.CryptoProviderTypes;
 import org.keycloak.jose.jwe.alg.DirectAlgorithmProvider;
 import org.keycloak.jose.jwe.alg.JWEAlgorithmProvider;
-import org.keycloak.jose.jwe.alg.RsaKeyEncryption256JWEAlgorithmProvider;
-import org.keycloak.jose.jwe.alg.RsaKeyEncryptionJWEAlgorithmProvider;
 import org.keycloak.jose.jwe.enc.AesCbcHmacShaEncryptionProvider;
 import org.keycloak.jose.jwe.enc.AesGcmJWEEncryptionProvider;
 import org.keycloak.jose.jwe.enc.JWEEncryptionProvider;
@@ -36,23 +33,11 @@ import org.keycloak.jose.jwe.enc.JWEEncryptionProvider;
  */
 class JWERegistry {
 
-    // https://tools.ietf.org/html/rfc7518#page-12
+    // https://tools.ietf.org/html/rfc7518#page-22
     // Registry not pluggable for now. Just supported algorithms included
     private static final Map<String, JWEEncryptionProvider> ENC_PROVIDERS = new HashMap<>();
 
-    // https://tools.ietf.org/html/rfc7518#page-22
-    // Registry not pluggable for now. Just supported algorithms included
-    private static final Map<String, JWEAlgorithmProvider> ALG_PROVIDERS = new HashMap<>();
-
-
     static {
-        // Provider 'dir' just directly uses encryption keys for encrypt/decrypt content.
-        ALG_PROVIDERS.put(JWEConstants.DIR, new DirectAlgorithmProvider());
-        ALG_PROVIDERS.put(JWEConstants.A128KW, CryptoIntegration.getProvider().getAlgorithmProvider(JWEAlgorithmProvider.class, CryptoProviderTypes.AES_KEY_WRAP_ALGORITHM_PROVIDER));
-        ALG_PROVIDERS.put(JWEConstants.RSA_OAEP, new RsaKeyEncryptionJWEAlgorithmProvider("RSA/ECB/OAEPWithSHA-1AndMGF1Padding"));
-        ALG_PROVIDERS.put(JWEConstants.RSA_OAEP_256, new RsaKeyEncryption256JWEAlgorithmProvider("RSA/ECB/OAEPWithSHA-256AndMGF1Padding"));
-
-
         ENC_PROVIDERS.put(JWEConstants.A256GCM, new AesGcmJWEEncryptionProvider(JWEConstants.A256GCM));
         ENC_PROVIDERS.put(JWEConstants.A128CBC_HS256, new AesCbcHmacShaEncryptionProvider.Aes128CbcHmacSha256Provider());
         ENC_PROVIDERS.put(JWEConstants.A192CBC_HS384, new AesCbcHmacShaEncryptionProvider.Aes192CbcHmacSha384Provider());
@@ -61,7 +46,12 @@ class JWERegistry {
 
 
     static JWEAlgorithmProvider getAlgProvider(String alg) {
-        return ALG_PROVIDERS.get(alg);
+        // https://tools.ietf.org/html/rfc7518#page-12
+        if (JWEConstants.DIRECT.equals(alg)) {
+            return new DirectAlgorithmProvider();
+        } else {
+            return CryptoIntegration.getProvider().getAlgorithmProvider(JWEAlgorithmProvider.class, alg);
+        }
     }
 
 

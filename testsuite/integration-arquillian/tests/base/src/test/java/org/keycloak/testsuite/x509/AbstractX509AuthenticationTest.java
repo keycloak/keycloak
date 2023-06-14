@@ -49,7 +49,6 @@ import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.pages.AbstractPage;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginPage;
@@ -64,7 +63,7 @@ import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
 import org.openqa.selenium.WebDriver;
 
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response;
 import java.lang.reflect.Field;
 import java.net.URI;
 import java.util.ArrayList;
@@ -82,20 +81,19 @@ import static org.keycloak.authentication.authenticators.x509.X509AuthenticatorC
 import static org.keycloak.authentication.authenticators.x509.X509AuthenticatorConfigModel.MappingSourceType.SUBJECTDN_CN;
 import static org.keycloak.authentication.authenticators.x509.X509AuthenticatorConfigModel.MappingSourceType.SUBJECTDN_EMAIL;
 import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_SSL_REQUIRED;
-import static org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer.REMOTE;
 
 /**
  * @author <a href="mailto:brat000012001@gmail.com">Peter Nalyvayko</a>
  * @version $Revision: 1 $
  * @since 10/28/2016
  */
-@AuthServerContainerExclude(REMOTE)
 public abstract class AbstractX509AuthenticationTest extends AbstractTestRealmKeycloakTest {
 
     public static final String EMPTY_CRL_PATH = "empty.crl";
     public static final String INTERMEDIATE_CA_CRL_PATH = "intermediate-ca.crl";
     public static final String INTERMEDIATE_CA_INVALID_SIGNATURE_CRL_PATH = "intermediate-ca-invalid-signature.crl";
     public static final String INTERMEDIATE_CA_3_CRL_PATH = "intermediate-ca-3.crl";
+    public static final String INVALID_CRL_PATH = "invalid.crl";
     protected final Logger log = Logger.getLogger(this.getClass());
 
     static final String REQUIRED = "REQUIRED";
@@ -293,14 +291,12 @@ public abstract class AbstractX509AuthenticationTest extends AbstractTestRealmKe
 
         UserRepresentation user = UserBuilder.create()
                 .id(KeycloakModelUtils.generateId())
-                .username("Keycloak")
+                .username("keycloak")
                 .email("localhost@localhost")
                 .enabled(true)
                 .password("password")
                 .addAttribute("x509_issuer_identity", "Keycloak Intermediate CA")
                 .build();
-
-        userId2 = user.getId();
 
         ClientRepresentation client = findTestApp(testRealm);
         URI baseUri = URI.create(client.getRedirectUris().get(0));
@@ -313,6 +309,12 @@ public abstract class AbstractX509AuthenticationTest extends AbstractTestRealmKe
         RealmBuilder.edit(testRealm)
                 .user(user)
                 .client(app);
+    }
+
+    @Override
+    public void importTestRealms() {
+        super.importTestRealms();
+        userId2 = adminClient.realm("test").users().search("keycloak", true).get(0).getId();
     }
 
     AuthenticationFlowRepresentation createFlow(AuthenticationFlowRepresentation flowRep) {

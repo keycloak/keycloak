@@ -104,7 +104,7 @@ public class JWKParser {
             ECParameterSpec params = CryptoIntegration.getProvider().createECParams(name);
             ECPublicKeySpec pubKeySpec = new ECPublicKeySpec(point, params);
 
-            KeyFactory kf = KeyFactory.getInstance("ECDSA");
+            KeyFactory kf = CryptoIntegration.getProvider().getKeyFactory("ECDSA");
             return kf.generatePublic(pubKeySpec);
         } catch (Exception e) {
             throw new RuntimeException(e);

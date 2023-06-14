@@ -104,14 +104,19 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
     public static final String ROLES_SCOPE_CONSENT_TEXT = "${rolesScopeConsentText}";
 
     public static final String CONFIG_LEGACY_LOGOUT_REDIRECT_URI = "legacy-logout-redirect-uri";
+    public static final String SUPPRESS_LOGOUT_CONFIRMATION_SCREEN = "suppress-logout-confirmation-screen";
 
     private OIDCProviderConfig providerConfig;
 
     @Override
     public void init(Config.Scope config) {
+        initBuiltIns();
         this.providerConfig = new OIDCProviderConfig(config);
         if (providerConfig.isLegacyLogoutRedirectUri()) {
             logger.warnf("Deprecated switch '%s' is enabled. Please try to disable it and update your clients to use OpenID Connect compliant way for RP-initiated logout.", CONFIG_LEGACY_LOGOUT_REDIRECT_URI);
+        }
+        if (providerConfig.suppressLogoutConfirmationScreen()) {
+            logger.warnf("Deprecated switch '%s' is enabled. Please try to disable it and update your clients to use OpenID Connect compliant way for RP-initiated logout.", SUPPRESS_LOGOUT_CONFIRMATION_SCREEN);
         }
     }
 
@@ -125,29 +130,29 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
         return builtins;
     }
 
-    static Map<String, ProtocolMapperModel> builtins = new HashMap<>();
+    private Map<String, ProtocolMapperModel> builtins = new HashMap<>();
 
-    static {
+    void initBuiltIns() {
                 ProtocolMapperModel model;
-        model = UserPropertyMapper.createClaimMapper(USERNAME,
+        model = UserAttributeMapper.createClaimMapper(USERNAME,
                 "username",
-                "preferred_username", "String",
+                "preferred_username", String.class.getSimpleName(),
                 true, true);
         builtins.put(USERNAME, model);
 
-        model = UserPropertyMapper.createClaimMapper(EMAIL,
+        model = UserAttributeMapper.createClaimMapper(EMAIL,
                 "email",
                 "email", "String",
                 true, true);
         builtins.put(EMAIL, model);
 
-        model = UserPropertyMapper.createClaimMapper(GIVEN_NAME,
+        model = UserAttributeMapper.createClaimMapper(GIVEN_NAME,
                 "firstName",
                 "given_name", "String",
                 true, true);
         builtins.put(GIVEN_NAME, model);
 
-        model = UserPropertyMapper.createClaimMapper(FAMILY_NAME,
+        model = UserAttributeMapper.createClaimMapper(FAMILY_NAME,
                 "lastName",
                 "family_name", "String",
                 true, true);
@@ -200,7 +205,7 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
         builtins.put(IMPERSONATOR_ID.getDisplayName(), UserSessionNoteMapper.createUserSessionNoteMapper(IMPERSONATOR_ID));
         builtins.put(IMPERSONATOR_USERNAME.getDisplayName(), UserSessionNoteMapper.createUserSessionNoteMapper(IMPERSONATOR_USERNAME));
 
-        model = UserPropertyMapper.createClaimMapper(UPN, "username",
+        model = UserAttributeMapper.createClaimMapper(UPN, "username",
                 "upn", "String",
                 true, true);
         builtins.put(UPN, model);
@@ -214,7 +219,7 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
         }
     }
 
-    private static void createUserAttributeMapper(String name, String attrName, String claimName, String type) {
+    private void createUserAttributeMapper(String name, String attrName, String claimName, String type) {
         ProtocolMapperModel model = UserAttributeMapper.createClaimMapper(name,
                 attrName,
                 claimName, type,
@@ -293,7 +298,7 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
     }
 
 
-    public static ClientScopeModel addRolesClientScope(RealmModel newRealm) {
+    public ClientScopeModel addRolesClientScope(RealmModel newRealm) {
         ClientScopeModel rolesScope = KeycloakModelUtils.getClientScopeByName(newRealm, ROLES_SCOPE);
         if (rolesScope == null) {
             rolesScope = newRealm.addClientScope(ROLES_SCOPE);
@@ -316,7 +321,7 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
     }
 
 
-    public static ClientScopeModel addWebOriginsClientScope(RealmModel newRealm) {
+    public ClientScopeModel addWebOriginsClientScope(RealmModel newRealm) {
         ClientScopeModel originsScope = KeycloakModelUtils.getClientScopeByName(newRealm, WEB_ORIGINS_SCOPE);
         if (originsScope == null) {
             originsScope = newRealm.addClientScope(WEB_ORIGINS_SCOPE);
@@ -343,7 +348,7 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
      * @param newRealm the realm to which the {@code microprofile-jwt} scope is to be added.
      * @return a reference to the {@code microprofile-jwt} client scope that was either created or already exists in the realm.
      */
-    public static ClientScopeModel addMicroprofileJWTClientScope(RealmModel newRealm) {
+    public ClientScopeModel addMicroprofileJWTClientScope(RealmModel newRealm) {
         ClientScopeModel microprofileScope = KeycloakModelUtils.getClientScopeByName(newRealm, MICROPROFILE_JWT_SCOPE);
         if (microprofileScope == null) {
             microprofileScope = newRealm.addClientScope(MICROPROFILE_JWT_SCOPE);
@@ -362,7 +367,7 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
     }
 
 
-    public static void addAcrClientScope(RealmModel newRealm) {
+    public void addAcrClientScope(RealmModel newRealm) {
         if (Profile.isFeatureEnabled(Profile.Feature.STEP_UP_AUTHENTICATION)) {
             ClientScopeModel acrScope = KeycloakModelUtils.getClientScopeByName(newRealm, ACR_SCOPE);
             if (acrScope == null) {
@@ -390,8 +395,8 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
     }
 
     @Override
-    public Object createProtocolEndpoint(RealmModel realm, EventBuilder event) {
-        return new OIDCLoginProtocolService(realm, event, providerConfig);
+    public Object createProtocolEndpoint(KeycloakSession session, EventBuilder event) {
+        return new OIDCLoginProtocolService(session, event, providerConfig);
     }
 
     @Override

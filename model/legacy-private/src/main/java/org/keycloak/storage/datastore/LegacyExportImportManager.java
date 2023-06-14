@@ -21,6 +21,9 @@ import org.jboss.logging.Logger;
 import org.keycloak.common.enums.SslRequired;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.component.ComponentModel;
+import org.keycloak.exportimport.ExportAdapter;
+import org.keycloak.exportimport.ExportOptions;
+import org.keycloak.exportimport.util.ExportUtils;
 import org.keycloak.keys.KeyProvider;
 import org.keycloak.migration.MigrationProvider;
 import org.keycloak.migration.migrators.MigrateTo8_0_0;
@@ -38,6 +41,7 @@ import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.LDAPConstants;
+import org.keycloak.models.ModelException;
 import org.keycloak.models.OAuth2DeviceConfig;
 import org.keycloak.models.OTPPolicy;
 import org.keycloak.models.ParConfig;
@@ -55,6 +59,8 @@ import org.keycloak.models.utils.DefaultKeyProviders;
 import org.keycloak.models.utils.DefaultRequiredActions;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.RepresentationToModel;
+import org.keycloak.partialimport.PartialImportResults;
+import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.representations.idm.ApplicationRepresentation;
 import org.keycloak.representations.idm.AuthenticationExecutionExportRepresentation;
 import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
@@ -71,6 +77,7 @@ import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.OAuthClientRepresentation;
+import org.keycloak.representations.idm.PartialImportRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
@@ -82,14 +89,20 @@ import org.keycloak.representations.idm.UserFederationMapperRepresentation;
 import org.keycloak.representations.idm.UserFederationProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.storage.ExportImportManager;
+import org.keycloak.storage.ImportRealmFromRepresentationEvent;
+import org.keycloak.storage.PartialImportRealmFromRepresentationEvent;
 import org.keycloak.storage.UserStoragePrivateUtil;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.UserStorageProviderModel;
 import org.keycloak.storage.UserStorageUtil;
 import org.keycloak.storage.federated.UserFederatedStorageProvider;
 import org.keycloak.userprofile.UserProfileProvider;
+import org.keycloak.util.JsonSerialization;
 import org.keycloak.validation.ValidationUtil;
 
+import jakarta.ws.rs.core.MediaType;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -101,12 +114,14 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import static org.keycloak.models.utils.DefaultRequiredActions.getDefaultRequiredActionCaseInsensitively;
 import static org.keycloak.models.utils.RepresentationToModel.createCredentials;
 import static org.keycloak.models.utils.RepresentationToModel.createFederatedIdentities;
 import static org.keycloak.models.utils.RepresentationToModel.createGroups;
 import static org.keycloak.models.utils.RepresentationToModel.createRoleMappings;
 import static org.keycloak.models.utils.RepresentationToModel.importGroup;
 import static org.keycloak.models.utils.RepresentationToModel.importRoles;
+import static org.keycloak.models.utils.StripSecretsUtils.stripForExport;
 
 /**
  * This wraps the functionality about export/import for legacy storage. This will be handled differently for the new map storage,
@@ -120,6 +135,28 @@ public class LegacyExportImportManager implements ExportImportManager {
 
     public LegacyExportImportManager(KeycloakSession session) {
         this.session = session;
+    }
+
+    public void exportRealm(RealmModel realm, ExportOptions options, ExportAdapter callback) {
+        callback.setType(MediaType.APPLICATION_JSON);
+        callback.writeToOutputStream(outputStream -> {
+            RealmRepresentation rep = ExportUtils.exportRealm(session, realm, options, false);
+            stripForExport(session, rep);
+            JsonSerialization.writeValueToStream(outputStream, rep);
+            outputStream.close();
+        });
+    }
+
+    @Override
+    public RealmModel importRealm(InputStream requestBody) {
+        RealmRepresentation rep;
+        try {
+            rep = JsonSerialization.readValue(requestBody, RealmRepresentation.class);
+        } catch (IOException e) {
+            throw new ModelException("unable to read contents from stream", e);
+        }
+        logger.debugv("importRealm: {0}", rep.getRealm());
+        return ImportRealmFromRepresentationEvent.fire(session, rep);
     }
 
     @Override
@@ -419,6 +456,17 @@ public class LegacyExportImportManager implements ExportImportManager {
         }
     }
 
+    @Override
+    public PartialImportResults partialImportRealm(RealmModel realm, InputStream requestBody) {
+        PartialImportRepresentation rep;
+        try {
+            rep = JsonSerialization.readValue(requestBody, PartialImportRepresentation.class);
+        } catch (IOException e) {
+            throw new ModelException("unable to read contents from stream", e);
+        }
+        return PartialImportRealmFromRepresentationEvent.fire(session, rep, realm);
+    }
+
     private static RoleModel getOrAddRealmRole(RealmModel realm, String name) {
         RoleModel role = realm.getRole(name);
         if (role == null) {
@@ -464,6 +512,10 @@ public class LegacyExportImportManager implements ExportImportManager {
         Map<String, ClientModel> appMap = new HashMap<String, ClientModel>();
         for (ClientRepresentation resourceRep : rep.getClients()) {
             ClientModel app = RepresentationToModel.createClient(session, realm, resourceRep, mappedFlows);
+            String postLogoutRedirectUris = app.getAttribute(OIDCConfigAttributes.POST_LOGOUT_REDIRECT_URIS);
+            if (postLogoutRedirectUris == null) {
+                app.setAttribute(OIDCConfigAttributes.POST_LOGOUT_REDIRECT_URIS, "+");
+            }
             appMap.put(app.getClientId(), app);
 
             ValidationUtil.validateClient(session, app, false, r -> {
@@ -818,11 +870,7 @@ public class LegacyExportImportManager implements ExportImportManager {
         }
         if (userRep.getRequiredActions() != null) {
             for (String requiredAction : userRep.getRequiredActions()) {
-                try {
-                    user.addRequiredAction(UserModel.RequiredAction.valueOf(requiredAction.toUpperCase()));
-                } catch (IllegalArgumentException iae) {
-                    user.addRequiredAction(requiredAction);
-                }
+                user.addRequiredAction(getDefaultRequiredActionCaseInsensitively(requiredAction));
             }
         }
         createCredentials(userRep, session, newRealm, user, false);
@@ -1223,9 +1271,7 @@ public class LegacyExportImportManager implements ExportImportManager {
             if (rep.getAuthenticationFlows() != null) {
                 for (AuthenticationFlowRepresentation flowRep : rep.getAuthenticationFlows()) {
                     AuthenticationFlowModel model = RepresentationToModel.toModel(flowRep);
-                    // make sure new id is generated for new AuthenticationFlowModel instance
                     String previousId = model.getId();
-                    model.setId(null);
                     model = newRealm.addAuthenticationFlow(model);
                     // store the mapped ids so that clients can reference the correct flow when importing the authenticationFlowBindingOverrides
                     mappedFlows.put(previousId, model.getId());
@@ -1369,8 +1415,8 @@ public class LegacyExportImportManager implements ExportImportManager {
         if (rep.getOtpPolicyAlgorithm() != null) policy.setAlgorithm(rep.getOtpPolicyAlgorithm());
         if (rep.getOtpPolicyDigits() != null) policy.setDigits(rep.getOtpPolicyDigits());
         if (rep.getOtpPolicyPeriod() != null) policy.setPeriod(rep.getOtpPolicyPeriod());
+        if (rep.isOtpPolicyCodeReusable() != null) policy.setCodeReusable(rep.isOtpPolicyCodeReusable());
         return policy;
-
     }
 
 
@@ -1380,9 +1426,9 @@ public class LegacyExportImportManager implements ExportImportManager {
         model.setPriority(rep.getPriority());
         model.setDefaultAction(rep.isDefaultAction());
         model.setEnabled(rep.isEnabled());
-        model.setProviderId(rep.getProviderId());
+        model.setProviderId(getDefaultRequiredActionCaseInsensitively(rep.getProviderId()));
         model.setName(rep.getName());
-        model.setAlias(rep.getAlias());
+        model.setAlias(getDefaultRequiredActionCaseInsensitively(rep.getAlias()));
         return model;
     }
 

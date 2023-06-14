@@ -19,10 +19,13 @@ package org.keycloak.models.map.storage.jpa.group;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
-import javax.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaBuilder;
 
+import jakarta.persistence.criteria.Join;
+import jakarta.persistence.criteria.JoinType;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.map.storage.CriterionNotSupportedException;
+import org.keycloak.models.map.storage.jpa.group.entity.JpaGroupAttributeEntity;
 import org.keycloak.models.map.storage.jpa.group.entity.JpaGroupEntity;
 import org.keycloak.models.map.storage.jpa.JpaModelCriteriaBuilder;
 import org.keycloak.models.map.storage.jpa.JpaPredicateFunction;
@@ -71,6 +74,17 @@ public class JpaGroupModelCriteriaBuilder extends JpaModelCriteriaBuilder<JpaGro
                             cb.function("->", JsonbType.class, root.get("metadata"), cb.literal("fGrantedRoles")),
                             cb.literal(convertToJson(value[0]))))
                     );
+                } else if (modelField == GroupModel.SearchableFields.ATTRIBUTE) {
+                    validateValue(value, modelField, op, String.class, String.class);
+
+                    return new JpaGroupModelCriteriaBuilder((cb, query, root) -> {
+                        Join<JpaGroupEntity, JpaGroupAttributeEntity> join = root.join("attributes", JoinType.LEFT);
+                        return cb.and(
+                            cb.equal(join.get("name"), value[0]),
+                            hashExpression(cb, join, "value_hash", value[1]),
+                            cb.equal(join.get("value"), value[1])
+                        );
+                    });
                 } else {
                     throw new CriterionNotSupportedException(modelField, op);
                 }

@@ -19,6 +19,7 @@
 package org.keycloak.authorization.policy.provider.user;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -71,7 +72,13 @@ public class UserPolicyProviderFactory implements PolicyProviderFactory<UserPoli
         UserPolicyRepresentation representation = new UserPolicyRepresentation();
 
         try {
-            representation.setUsers(JsonSerialization.readValue(policy.getConfig().get("users"), Set.class));
+            String users = policy.getConfig().get("users");
+
+            if (users == null) {
+                representation.setUsers(Collections.emptySet());
+            } else {
+                representation.setUsers(JsonSerialization.readValue(users, Set.class));
+            }
         } catch (IOException cause) {
             throw new RuntimeException("Failed to deserialize roles", cause);
         }

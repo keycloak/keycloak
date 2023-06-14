@@ -16,6 +16,7 @@
  */
 package org.keycloak.authorization.policy.provider.js;
 
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -56,12 +57,12 @@ public class ScriptCache {
      * @param maxAge the time in milliseconds that an entry can stay in the cache. If {@code -1}, entries never expire
      */
     public ScriptCache(final int maxEntries, long maxAge) {
-        cache = new LinkedHashMap<String, CacheEntry>(16, DEFAULT_LOAD_FACTOR, true) {
+        cache = Collections.synchronizedMap(new LinkedHashMap<String, CacheEntry>(16, DEFAULT_LOAD_FACTOR, true) {
             @Override
             protected boolean removeEldestEntry(Map.Entry eldest) {
                 return cache.size()  > maxEntries;
             }
-        };
+        });
         this.maxAge = maxAge;
     }
 

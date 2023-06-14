@@ -54,6 +54,6 @@ public class ClearKeysCacheRealmAdminProvider implements AdminRealmResourceProvi
 
     @Override
     public Object getResource(KeycloakSession session, RealmModel realm, AdminPermissionEvaluator auth, AdminEventBuilder adminEvent) {
-        return new ClearKeysCacheResource(session, realm, auth, adminEvent);
+        return new ClearKeysCacheResource(session, auth, adminEvent);
     }
 }

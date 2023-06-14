@@ -16,6 +16,7 @@
  */
 package org.keycloak.models.map.storage.jpa.hibernate.jsonb.migration;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.util.Arrays;
 import java.util.List;
@@ -29,6 +30,13 @@ import java.util.function.Function;
 public class JpaUserMigration {
 
     public static final List<Function<ObjectNode, ObjectNode>> MIGRATORS = Arrays.asList(
-            o -> o // no migration yet
+            o -> o,
+            JpaUserMigration::migrateTreeFrom1To2
     );
+
+    // adds a usernameWithCase column into json
+    private static ObjectNode migrateTreeFrom1To2(ObjectNode node) {
+        JsonNode usernameNode = node.path("fUsername");
+        return node.put("usernameWithCase", usernameNode.asText());
+    }
 }

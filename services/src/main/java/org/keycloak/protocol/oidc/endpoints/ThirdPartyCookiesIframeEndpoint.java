@@ -20,21 +20,24 @@ package org.keycloak.protocol.oidc.endpoints;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.utils.MediaType;
 
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.Response;
 
-import static org.keycloak.services.util.IframeUtil.returnIframeFromResources;
+import static org.keycloak.protocol.oidc.endpoints.IframeUtil.returnIframeFromResources;
 
 /**
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
  */
 public class ThirdPartyCookiesIframeEndpoint {
-    @Context
-    private KeycloakSession session;
+
+    private final KeycloakSession session;
+
+    public ThirdPartyCookiesIframeEndpoint(KeycloakSession session) {
+        this.session = session;
+    }
 
     @GET
     @Path("step1.html")

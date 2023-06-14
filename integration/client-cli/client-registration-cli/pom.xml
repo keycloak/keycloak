@@ -21,7 +21,7 @@
     <parent>
         <artifactId>keycloak-client-cli-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>999-SNAPSHOT</version>
+        <version>999.0.0-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -39,6 +39,10 @@
             <artifactId>keycloak-core</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.jboss.logging</groupId>
+            <artifactId>jboss-logging</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>httpclient</artifactId>
         </dependency>
@@ -53,7 +57,6 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
-                <!--version>2.4.3</version-->
                 <executions>
                     <execution>
                         <phase>package</phase>
@@ -66,9 +69,9 @@
                                     <artifact>org.keycloak:keycloak-core</artifact>
                                     <includes>
                                         <include>org/keycloak/util/**</include>
+                                        <include>org/keycloak/crypto/**</include>
                                         <include>org/keycloak/json/**</include>
-                                        <include>org/keycloak/jose/jws/**</include>
-                                        <include>org/keycloak/jose/jwk/**</include>
+                                        <include>org/keycloak/jose/**</include>
                                         <include>org/keycloak/representations/adapters/config/**</include>
                                         <include>org/keycloak/representations/AccessTokenResponse.class</include>
                                         <include>org/keycloak/representations/idm/ClientRepresentation.class</include>
@@ -84,19 +87,8 @@
                                     <artifact>org.keycloak:keycloak-common</artifact>
                                     <includes>
                                         <include>org/keycloak/common/util/**</include>
+                                        <include>org/keycloak/common/crypto/**</include>
                                     </includes>
-                                </filter>
-                                <filter>
-                                    <artifact>org.bouncycastle:bcprov-jdk15on</artifact>
-                                    <includes>
-                                        <include>**/**</include>
-                                    </includes>
-                                </filter>
-                                <filter>
-                                    <artifact>org.bouncycastle:bcpkix-jdk15on</artifact>
-                                    <excludes>
-                                        <exclude>**/**</exclude>
-                                    </excludes>
                                 </filter>
                                 <filter>
                                     <artifact>com.fasterxml.jackson.core:jackson-core</artifact>

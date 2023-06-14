@@ -27,20 +27,18 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-import javax.persistence.Basic;
-import javax.persistence.CascadeType;
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.FetchType;
-import javax.persistence.Id;
-import javax.persistence.OneToMany;
-import javax.persistence.Table;
-import javax.persistence.UniqueConstraint;
-import javax.persistence.Version;
+import jakarta.persistence.Basic;
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.Id;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
+import jakarta.persistence.Version;
 
 import org.hibernate.annotations.Type;
-import org.hibernate.annotations.TypeDef;
-import org.hibernate.annotations.TypeDefs;
 import org.keycloak.models.map.common.DeepCloner;
 import org.keycloak.models.map.common.UuidValidator;
 import org.keycloak.models.map.realm.MapRealmEntity;
@@ -55,10 +53,10 @@ import org.keycloak.models.map.realm.entity.MapOTPPolicyEntity;
 import org.keycloak.models.map.realm.entity.MapRequiredActionProviderEntity;
 import org.keycloak.models.map.realm.entity.MapRequiredCredentialEntity;
 import org.keycloak.models.map.realm.entity.MapWebAuthnPolicyEntity;
+import org.keycloak.models.map.storage.jpa.Constants;
 import org.keycloak.models.map.storage.jpa.JpaRootVersionedEntity;
-import org.keycloak.models.map.storage.jpa.hibernate.jsonb.JsonbType;
 
-import static org.keycloak.models.map.storage.jpa.Constants.CURRENT_SCHEMA_VERSION_REALM;
+import org.keycloak.models.map.storage.jpa.hibernate.jsonb.JsonbType;
 import static org.keycloak.models.map.storage.jpa.JpaMapStorageProviderFactory.CLONER;
 
 /**
@@ -74,7 +72,6 @@ import static org.keycloak.models.map.storage.jpa.JpaMapStorageProviderFactory.C
                 columnNames = {"name"}
         )
 })
-@TypeDefs({@TypeDef(name = "jsonb", typeClass = JsonbType.class)})
 @SuppressWarnings("ConstantConditions")
 public class JpaRealmEntity extends MapRealmEntity.AbstractRealmEntity implements JpaRootVersionedEntity {
 
@@ -87,7 +84,7 @@ public class JpaRealmEntity extends MapRealmEntity.AbstractRealmEntity implement
     @Column
     private int version;
 
-    @Type(type = "jsonb")
+    @Type(JsonbType.class)
     @Column(columnDefinition = "jsonb")
     private final JpaRealmMetadata metadata;
 
@@ -161,7 +158,7 @@ public class JpaRealmEntity extends MapRealmEntity.AbstractRealmEntity implement
 
     @Override
     public Integer getCurrentSchemaVersion() {
-        return CURRENT_SCHEMA_VERSION_REALM;
+        return Constants.CURRENT_SCHEMA_VERSION_REALM;
     }
 
     @Override
@@ -888,7 +885,7 @@ public class JpaRealmEntity extends MapRealmEntity.AbstractRealmEntity implement
     public void addComponent(MapComponentEntity component) {
         JpaComponentEntity jpaComponent = JpaComponentEntity.class.cast(CLONER.from(component));
         jpaComponent.setParent(this);
-        jpaComponent.setEntityVersion(this.getEntityVersion());
+        jpaComponent.setEntityVersion(Constants.CURRENT_SCHEMA_VERSION_COMPONENT);
         this.components.add(jpaComponent);
     }
 
@@ -903,13 +900,27 @@ public class JpaRealmEntity extends MapRealmEntity.AbstractRealmEntity implement
     }
 
     @Override
+    public Optional<MapAuthenticationFlowEntity> getAuthenticationFlow(String p0) {
+        return metadata.getAuthenticationFlow(p0);
+    }
+
+    @Override
     public void addAuthenticationFlow(MapAuthenticationFlowEntity authenticationFlow) {
         this.metadata.addAuthenticationFlow(authenticationFlow);
     }
 
     @Override
+    public Boolean removeAuthenticationFlow(String p0) {
+        return metadata.removeAuthenticationFlow(p0);
+    }
+
+    @Override
     public Set<MapAuthenticationExecutionEntity> getAuthenticationExecutions() {
         return this.metadata.getAuthenticationExecutions();
+    }
+
+    public Optional<MapAuthenticationExecutionEntity> getAuthenticationExecution(String p0) {
+        return metadata.getAuthenticationExecution(p0);
     }
 
     @Override
@@ -918,8 +929,18 @@ public class JpaRealmEntity extends MapRealmEntity.AbstractRealmEntity implement
     }
 
     @Override
+    public Boolean removeAuthenticationExecution(String p0) {
+        return metadata.removeAuthenticationExecution(p0);
+    }
+
+    @Override
     public Set<MapAuthenticatorConfigEntity> getAuthenticatorConfigs() {
         return this.metadata.getAuthenticatorConfigs();
+    }
+
+    @Override
+    public Optional<MapAuthenticatorConfigEntity> getAuthenticatorConfig(String p0) {
+        return metadata.getAuthenticatorConfig(p0);
     }
 
     @Override
@@ -928,13 +949,28 @@ public class JpaRealmEntity extends MapRealmEntity.AbstractRealmEntity implement
     }
 
     @Override
+    public Boolean removeAuthenticatorConfig(String p0) {
+        return metadata.removeAuthenticatorConfig(p0);
+    }
+
+    @Override
     public Set<MapRequiredActionProviderEntity> getRequiredActionProviders() {
         return this.metadata.getRequiredActionProviders();
     }
 
     @Override
+    public Optional<MapRequiredActionProviderEntity> getRequiredActionProvider(String requiredActionProviderId) {
+        return this.metadata.getRequiredActionProvider(requiredActionProviderId);
+    }
+
+    @Override
     public void addRequiredActionProvider(MapRequiredActionProviderEntity requiredActionProvider) {
         this.metadata.addRequiredActionProvider(requiredActionProvider);
+    }
+
+    @Override
+    public Boolean removeRequiredActionProvider(String requiredActionProviderId) {
+        return this.metadata.removeRequiredActionProvider(requiredActionProviderId);
     }
 
     @Override
@@ -948,6 +984,11 @@ public class JpaRealmEntity extends MapRealmEntity.AbstractRealmEntity implement
     }
 
     @Override
+    public Boolean removeIdentityProvider(String p0) {
+        return metadata.removeIdentityProvider(p0);
+    }
+
+    @Override
     public void addIdentityProviderMapper(MapIdentityProviderMapperEntity identityProviderMapper) {
         this.metadata.addIdentityProviderMapper(identityProviderMapper);
     }
@@ -958,13 +999,33 @@ public class JpaRealmEntity extends MapRealmEntity.AbstractRealmEntity implement
     }
 
     @Override
+    public Optional<MapIdentityProviderMapperEntity> getIdentityProviderMapper(String p0) {
+        return metadata.getIdentityProviderMapper(p0);
+    }
+
+    @Override
+    public Boolean removeIdentityProviderMapper(String p0) {
+        return metadata.removeIdentityProviderMapper(p0);
+    }
+
+    @Override
     public Set<MapClientInitialAccessEntity> getClientInitialAccesses() {
         return this.metadata.getClientInitialAccesses();
     }
 
     @Override
+    public Optional<MapClientInitialAccessEntity> getClientInitialAccess(String p0) {
+        return metadata.getClientInitialAccess(p0);
+    }
+
+    @Override
     public void addClientInitialAccess(MapClientInitialAccessEntity clientInitialAccess) {
         this.metadata.addClientInitialAccess(clientInitialAccess);
+    }
+
+    @Override
+    public Boolean removeClientInitialAccess(String p0) {
+        return metadata.removeClientInitialAccess(p0);
     }
 
     @Override

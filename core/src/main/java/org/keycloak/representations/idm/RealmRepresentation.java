@@ -24,7 +24,6 @@ import org.jboss.logging.Logger;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.util.JsonSerialization;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -122,6 +121,7 @@ public class RealmRepresentation {
     protected Integer otpPolicyDigits;
     protected Integer otpPolicyLookAheadWindow;
     protected Integer otpPolicyPeriod;
+    protected Boolean otpPolicyCodeReusable;
     protected List<String> otpSupportedApplications;
 
     // WebAuthn 2-factor properties below
@@ -1023,6 +1023,14 @@ public class RealmRepresentation {
 
     public void setOtpSupportedApplications(List<String> otpSupportedApplications) {
         this.otpSupportedApplications = otpSupportedApplications;
+    }
+
+    public Boolean isOtpPolicyCodeReusable() {
+        return otpPolicyCodeReusable;
+    }
+
+    public void setOtpPolicyCodeReusable(Boolean isCodeReusable) {
+        this.otpPolicyCodeReusable = isCodeReusable;
     }
 
     // WebAuthn 2-factor properties below

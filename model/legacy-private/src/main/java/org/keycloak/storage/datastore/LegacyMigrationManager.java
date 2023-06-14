@@ -24,6 +24,7 @@ import org.keycloak.migration.ModelVersion;
 import org.keycloak.migration.migrators.MigrateTo12_0_0;
 import org.keycloak.migration.migrators.MigrateTo14_0_0;
 import org.keycloak.migration.migrators.MigrateTo18_0_0;
+import org.keycloak.migration.migrators.MigrateTo20_0_0;
 import org.keycloak.migration.migrators.MigrateTo1_2_0;
 import org.keycloak.migration.migrators.MigrateTo1_3_0;
 import org.keycloak.migration.migrators.MigrateTo1_4_0;
@@ -33,6 +34,8 @@ import org.keycloak.migration.migrators.MigrateTo1_7_0;
 import org.keycloak.migration.migrators.MigrateTo1_8_0;
 import org.keycloak.migration.migrators.MigrateTo1_9_0;
 import org.keycloak.migration.migrators.MigrateTo1_9_2;
+import org.keycloak.migration.migrators.MigrateTo21_0_0;
+import org.keycloak.migration.migrators.MigrateTo22_0_0;
 import org.keycloak.migration.migrators.MigrateTo2_0_0;
 import org.keycloak.migration.migrators.MigrateTo2_1_0;
 import org.keycloak.migration.migrators.MigrateTo2_2_0;
@@ -104,7 +107,10 @@ public class LegacyMigrationManager implements MigrationManager {
             new MigrateTo9_0_4(),
             new MigrateTo12_0_0(),
             new MigrateTo14_0_0(),
-            new MigrateTo18_0_0()
+            new MigrateTo18_0_0(),
+            new MigrateTo20_0_0(),
+            new MigrateTo21_0_0(),
+            new MigrateTo22_0_0()
     };
 
     private final KeycloakSession session;
@@ -118,7 +124,7 @@ public class LegacyMigrationManager implements MigrationManager {
         session.setAttribute(Constants.STORAGE_BATCH_SIZE, Integer.getInteger("keycloak.migration.batch-size"));
         MigrationModel model = session.getProvider(DeploymentStateProvider.class).getMigrationModel();
 
-        ModelVersion currentVersion = new ModelVersion(Version.VERSION_KEYCLOAK);
+        ModelVersion currentVersion = new ModelVersion(Version.VERSION);
         ModelVersion latestUpdate = migrations[migrations.length-1].getVersion();
         ModelVersion databaseVersion = model.getStoredVersion() != null ? new ModelVersion(model.getStoredVersion()) : null;
 

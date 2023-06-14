@@ -18,7 +18,6 @@
 
 org.keycloak.models.sessions.infinispan.entities.wildfly.GroupListPredicateWFExternalizer
 org.keycloak.models.sessions.infinispan.entities.wildfly.RealmRemovedSessionEventWFExternalizer
-org.keycloak.models.sessions.infinispan.entities.wildfly.ActionTokenReducedKeyWFExternalizer
 org.keycloak.models.sessions.infinispan.entities.wildfly.WrapperClusterEventWFExternalizer
 org.keycloak.models.sessions.infinispan.entities.wildfly.UserConsentsUpdatedEventWFExternalizer
 org.keycloak.models.sessions.infinispan.entities.wildfly.RoleRemovedEventWFExternalizer

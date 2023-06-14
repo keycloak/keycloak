@@ -18,6 +18,8 @@ package org.keycloak.testsuite.forms;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.anyOf;
+import static org.hamcrest.Matchers.containsString;
 import static org.junit.Assert.assertEquals;
 
 import static org.keycloak.testsuite.forms.VerifyProfileTest.PERMISSIONS_ALL;
@@ -31,6 +33,7 @@ import java.util.Collections;
 import java.util.List;
 
 import org.apache.commons.lang3.StringUtils;
+import org.hamcrest.Matchers;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -39,7 +42,6 @@ import org.keycloak.common.Profile;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
 import org.keycloak.testsuite.util.ClientScopeBuilder;
@@ -51,7 +53,6 @@ import org.openqa.selenium.WebDriver;
  * @author Vlastimil Elias <velias@redhat.com>
  */
 @EnableFeature(value = Profile.Feature.DECLARATIVE_USER_PROFILE)
-@AuthServerContainerExclude(AuthServerContainerExclude.AuthServer.REMOTE)
 public class RegisterWithUserProfileTest extends RegisterTest {
 
     private static final String SCOPE_LAST_NAME = "lastName";
@@ -60,7 +61,7 @@ public class RegisterWithUserProfileTest extends RegisterTest {
     private static ClientRepresentation client_scope_optional;
 
     public static String UP_CONFIG_BASIC_ATTRIBUTES = "{\"name\": \"username\"," + PERMISSIONS_ALL + ", \"required\": {}},"
-            + "{\"name\": \"email\"," + PERMISSIONS_ALL + ", \"required\": {}},";
+            + "{\"name\": \"email\"," + PERMISSIONS_ALL + ", \"required\": {\"roles\" : [\"user\"]}},";
 
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
@@ -222,7 +223,7 @@ public class RegisterWithUserProfileTest extends RegisterTest {
         registerPage.assertCurrent();
         assertEquals("Length must be between 3 and 255.", registerPage.getInputAccountErrors().getLastNameError());
 
-        events.expectRegister("registeruserinvalidlastnamelength", "registerUserInvalidLastNameLength@email")
+        events.expectRegister("registerUserInvalidLastNameLength", "registerUserInvalidLastNameLength@email")
                 .error("invalid_registration").assertEvent();
     }
 
@@ -603,6 +604,64 @@ public class RegisterWithUserProfileTest extends RegisterTest {
         assertEquals(null, user.firstAttribute(ATTRIBUTE_DEPARTMENT));
     }
 
+    @Test
+    public void testEmailAsOptional() {
+
+        setUserProfileConfiguration("{\"attributes\": ["
+                + "{\"name\": \"firstName\"," + PERMISSIONS_ALL + ", \"required\": {}},"
+                + "{\"name\": \"lastName\"," + PERMISSIONS_ALL + ", \"required\": {}},"
+                + "{\"name\": \"email\"," + PERMISSIONS_ALL + "}"
+                + "]}");
+
+        loginPage.open();
+        loginPage.clickRegister();
+        registerPage.assertCurrent();
+
+        registerPage.register("firstName", "lastName", null, "registerWithoutEmail", "password", "password");
+        assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+    }
+
+    @Test
+    public void testEmailRequired() {
+
+        setUserProfileConfiguration("{\"attributes\": ["
+                + "{\"name\": \"firstName\"," + PERMISSIONS_ALL + ", \"required\": {}},"
+                + "{\"name\": \"lastName\"," + PERMISSIONS_ALL + ", \"required\": {}},"
+                + "{\"name\": \"email\"," + PERMISSIONS_ALL + ", \"required\": {}}"
+                + "]}");
+
+        loginPage.open();
+        loginPage.clickRegister();
+        registerPage.assertCurrent();
+
+        registerPage.register("firstName", "lastName", null, "registerWithoutEmail", "password", "password");
+        registerPage.assertCurrent();
+        assertThat(registerPage.getInputAccountErrors().getEmailError(), anyOf(
+                containsString("Please specify email"),
+                containsString("Please specify this field")
+        ));
+
+    }
+
+    @Test
+    public void testEmailRequiredForUser() {
+
+        setUserProfileConfiguration("{\"attributes\": ["
+                + "{\"name\": \"firstName\"," + PERMISSIONS_ALL + ", \"required\": {}},"
+                + "{\"name\": \"lastName\"," + PERMISSIONS_ALL + ", \"required\": {}},"
+                + "{\"name\": \"email\"," + PERMISSIONS_ALL + ", \"required\": {\"roles\" : [\"user\"]}}"
+                + "]}");
+
+        loginPage.open();
+        loginPage.clickRegister();
+        registerPage.assertCurrent();
+
+        registerPage.register("firstName", "lastName", null, "registerWithoutEmail", "password", "password");
+        assertThat(registerPage.getInputAccountErrors().getEmailError(), anyOf(
+                containsString("Please specify email"),
+                containsString("Please specify this field")
+        ));
+    }
 
     private void assertUserRegistered(String userId, String username, String email, String firstName, String lastName) {
         events.expectLogin().detail("username", username.toLowerCase()).user(userId).assertEvent();
@@ -613,7 +672,7 @@ public class RegisterWithUserProfileTest extends RegisterTest {
         // test that timestamp is current with 10s tollerance
         Assert.assertTrue((System.currentTimeMillis() - user.getCreatedTimestamp()) < 10000);
         // test user info is set from form
-        assertEquals(username.toLowerCase(), user.getUsername());
+        assertThat(username, Matchers.equalToIgnoringCase(user.getUsername()));
         assertEquals(email.toLowerCase(), user.getEmail());
         assertEquals(firstName, user.getFirstName());
 

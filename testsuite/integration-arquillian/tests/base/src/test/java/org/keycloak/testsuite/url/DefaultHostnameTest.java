@@ -31,6 +31,7 @@ import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
 
+import jakarta.ws.rs.core.UriBuilder;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -41,13 +42,10 @@ import java.util.Map;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer.QUARKUS;
-import static org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer.REMOTE;
 import static org.keycloak.testsuite.util.OAuthClient.AUTH_SERVER_ROOT;
 import static org.keycloak.testsuite.util.ServerURLs.getAuthServerContextRoot;
 
-import javax.ws.rs.core.UriBuilder;
-
-@AuthServerContainerExclude({REMOTE, QUARKUS})
+@AuthServerContainerExclude({QUARKUS})
 public class DefaultHostnameTest extends AbstractHostnameTest {
 
     @ArquillianResource
@@ -115,6 +113,26 @@ public class DefaultHostnameTest extends AbstractHostnameTest {
 
         try {
             rep.getAttributes().put("frontendUrl", "");
+            realmResource.update(rep);
+
+            assertWellKnown("frontendUrl", transformUrlIfQuarkusServer(AUTH_SERVER_ROOT));
+        } finally {
+            rep.getAttributes().put("frontendUrl", realmFrontEndUrl);
+            realmResource.update(rep);
+            reset();
+        }
+    }
+
+    @Test
+    public void wrongProtocolRealmFrontendUrl() throws Exception {
+        expectedBackendUrl = transformUrlIfQuarkusServer(AUTH_SERVER_ROOT);
+        oauth.clientId("direct-grant");
+
+        RealmResource realmResource = realmsResouce().realm("frontendUrl");
+        RealmRepresentation rep = realmResource.toRepresentation();
+
+        try {
+            rep.getAttributes().put("frontendUrl", "wrong://example.com");
             realmResource.update(rep);
 
             assertWellKnown("frontendUrl", transformUrlIfQuarkusServer(AUTH_SERVER_ROOT));
@@ -267,6 +285,21 @@ public class DefaultHostnameTest extends AbstractHostnameTest {
         }
     }
 
+
+    private void assertOldAdminPageJsPathSetCorrectly(String realm, String expectedAdminUrl) throws IOException {
+        try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
+            SimpleHttp get = SimpleHttp.doGet(AUTH_SERVER_ROOT + "/admin/" + realm + "/console/", client);
+
+            for (Map.Entry<String, String> entry : createRequestHeaders(expectedAdminUrl).entrySet()) {
+                get.header(entry.getKey(), entry.getValue());
+            }
+
+            SimpleHttp.Response response = get.asResponse();
+            String indexPage = response.asString();
+            assertTrue(indexPage.contains("/custom/js/"));
+        }
+    }
+
     private void assertAdminPage(String realm, String expectedFrontendUrl, String expectedAdminUrl) throws IOException, URISyntaxException {
         try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
             SimpleHttp get = SimpleHttp.doGet(AUTH_SERVER_ROOT + "/admin/" + realm + "/console/", client);
@@ -278,10 +311,10 @@ public class DefaultHostnameTest extends AbstractHostnameTest {
             SimpleHttp.Response response = get.asResponse();
             String indexPage = response.asString();
 
-            assertTrue(indexPage.contains("authServerUrl = '" + expectedFrontendUrl +"'"));
-            assertTrue(indexPage.contains("authUrl = '" + expectedAdminUrl +"'"));
-            assertTrue(indexPage.contains("consoleBaseUrl = '" + new URI(expectedAdminUrl).getPath() +"/admin/" + realm + "/console/'"));
-            assertTrue(indexPage.contains("resourceUrl = '" + new URI(expectedAdminUrl).getPath() +"/resources/"));
+            assertTrue(indexPage.contains("\"authServerUrl\": \"" + expectedFrontendUrl +"\""));
+            assertTrue(indexPage.contains("\"authUrl\": \"" + expectedAdminUrl +"\""));
+            assertTrue(indexPage.contains("\"consoleBaseUrl\": \"" + new URI(expectedAdminUrl).getPath() +"/admin/" + realm + "/console/\""));
+            assertTrue(indexPage.contains("\"resourceUrl\": \"" + new URI(expectedAdminUrl).getPath() +"/resources/"));
 
             String cspHeader = response.getFirstHeader(BrowserSecurityHeaders.CONTENT_SECURITY_POLICY.getHeaderName());
 

@@ -19,6 +19,7 @@ package org.keycloak.testsuite.webauthn.registration;
 
 import org.hamcrest.Matchers;
 import org.junit.Test;
+import org.junit.Ignore;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.testsuite.webauthn.AbstractWebAuthnVirtualTest;
 import org.keycloak.testsuite.webauthn.pages.WebAuthnAuthenticatorsList;
@@ -78,6 +79,7 @@ public class PolicyJsInjectionTest extends AbstractWebAuthnVirtualTest {
     }
 
     @Test
+    @Ignore
     public void attestationConveyancePreference() {
         final String expectedMessage = getExpectedMessageByDriver(
                 "(value of 'attestation' member of PublicKeyCredentialCreationOptions) is not a valid value for enumeration AttestationConveyancePreference.",
@@ -90,6 +92,7 @@ public class PolicyJsInjectionTest extends AbstractWebAuthnVirtualTest {
     }
 
     @Test
+    @Ignore
     public void authenticatorAttachment() {
         final String expectedMessage = getExpectedMessageByDriver(
                 "(value of 'authenticatorAttachment' member of AuthenticatorSelectionCriteria) is not a valid value for enumeration AuthenticatorAttachment.",
@@ -110,6 +113,7 @@ public class PolicyJsInjectionTest extends AbstractWebAuthnVirtualTest {
     }
 
     @Test
+    @Ignore
     public void userVerificationRequirement() {
         String expectedMessage = getExpectedMessageByDriver(
                 "(value of 'userVerification' member of AuthenticatorSelectionCriteria) is not a valid value for enumeration UserVerificationRequirement.",

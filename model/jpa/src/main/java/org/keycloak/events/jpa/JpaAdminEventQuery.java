@@ -22,13 +22,13 @@ import org.keycloak.events.admin.AdminEventQuery;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 
-import javax.persistence.EntityManager;
-import javax.persistence.TypedQuery;
-import javax.persistence.criteria.CriteriaBuilder;
-import javax.persistence.criteria.CriteriaQuery;
-import javax.persistence.criteria.Expression;
-import javax.persistence.criteria.Predicate;
-import javax.persistence.criteria.Root;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.TypedQuery;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.Expression;
+import jakarta.persistence.criteria.Predicate;
+import jakarta.persistence.criteria.Root;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.LinkedList;
@@ -50,7 +50,8 @@ public class JpaAdminEventQuery implements AdminEventQuery {
     private final ArrayList<Predicate> predicates;
     private Integer firstResult;
     private Integer maxResults;
-    
+    private boolean orderByDescTime = true;
+
     public JpaAdminEventQuery(EntityManager em) {
         this.em = em;
 
@@ -144,12 +145,28 @@ public class JpaAdminEventQuery implements AdminEventQuery {
     }
 
     @Override
+    public AdminEventQuery orderByDescTime() {
+        orderByDescTime = true;
+        return this;
+    }
+
+    @Override
+    public AdminEventQuery orderByAscTime() {
+        orderByDescTime = false;
+        return this;
+    }
+
+    @Override
     public Stream<AdminEvent> getResultStream() {
         if (!predicates.isEmpty()) {
             cq.where(cb.and(predicates.toArray(new Predicate[predicates.size()])));
         }
 
-        cq.orderBy(cb.desc(root.get("time")));
+        if (orderByDescTime) {
+            cq.orderBy(cb.desc(root.get("time")));
+        } else {
+            cq.orderBy(cb.asc(root.get("time")));
+        }
 
         TypedQuery<AdminEventEntity> query = em.createQuery(cq);
 

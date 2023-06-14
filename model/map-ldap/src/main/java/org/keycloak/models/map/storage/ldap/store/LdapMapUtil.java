@@ -17,6 +17,7 @@
 
 package org.keycloak.models.map.storage.ldap.store;
 
+import org.jboss.logging.Logger;
 import org.keycloak.models.ModelException;
 
 import java.text.SimpleDateFormat;
@@ -29,6 +30,8 @@ import java.util.TimeZone;
  * @author Pedro Igor
  */
 public class LdapMapUtil {
+
+    private static final Logger logger = Logger.getLogger(LdapMapUtil.class);
 
     /**
      * <p>Formats the given date.</p>
@@ -249,6 +252,5 @@ public class LdapMapUtil {
             return Integer.toHexString(value);
         }
     }
-
 
 }

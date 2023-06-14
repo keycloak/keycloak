@@ -387,7 +387,8 @@ public class CrossDCTestEnricher {
         if (! containerInfo.isStarted()) {
             log.infof("--DC: Starting backend auth-server node: %s", containerInfo.getQualifier());
             containerController.get().start(containerInfo.getQualifier());
-            AuthServerTestEnricher.initializeTLS(containerInfo);
+            // Cross-DC are not working with Quarkus
+            //AuthServerTestEnricher.initializeTLS(containerInfo);
             createRESTClientsForNode(containerInfo);
         }
     }

@@ -9,8 +9,8 @@
                 <p>${msg("loginTotpStep1")}</p>
 
                 <ul id="kc-totp-supported-apps">
-                    <#list totp.policy.supportedApplications as app>
-                        <li>${app}</li>
+                    <#list totp.supportedApplications as app>
+                        <li>${msg(app)}</li>
                     </#list>
                 </ul>
             </li>

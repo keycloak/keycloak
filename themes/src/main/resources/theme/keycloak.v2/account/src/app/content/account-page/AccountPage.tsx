@@ -180,7 +180,7 @@ export class AccountPage extends React.Component<AccountPageProps, AccountPageSt
                         onSubmit={(event) => this.handleSubmit(event)}
                         className="personal-info-form"
                     >
-                        {!this.isRegistrationEmailAsUsername && (
+                        {!this.isRegistrationEmailAsUsername && fields.username != undefined && (
                             <FormGroup
                                 label={Msg.localize("username")}
                                 fieldId="user-name"

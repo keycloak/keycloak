@@ -17,6 +17,7 @@
 
 package org.keycloak.storage.ldap.mappers.membership;
 
+import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.storage.ldap.LDAPConfig;
@@ -93,6 +94,10 @@ public enum MembershipType {
             if (ldapConfig.getUsernameLdapAttribute().equals(ldapConfig.getRdnLdapAttribute())) {
                 for (LDAPDn userDn : dns) {
                     String username = userDn.getFirstRdn().getAttrValue(ldapConfig.getRdnLdapAttribute());
+                    if (username == null) {
+                        throw new ModelException("User returned from LDAP has null username! Check configuration of your LDAP mappings. Mapped username LDAP attribute: " +
+                            ldapConfig.getRdnLdapAttribute() + ", user DN: " + userDn + ", attributes from LDAP: " + userDn.getFirstRdn().getAllKeys());
+                    }
                     usernames.add(username);
                 }
             } else {

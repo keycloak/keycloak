@@ -2,12 +2,12 @@
 
 ## Introduction
 
-Basic example that demonstrates how to setup an application as a SAML v2.0 Service Provider using SAML HTTP POST Binding with Signature Support.  This example uses the Keycloak Servlet Filter to accomplish this
+Basic example that demonstrates how to set up an application as a SAML v2.0 Service Provider using SAML HTTP POST Binding with Signature Support.  This example uses the Keycloak Servlet Filter to accomplish this
 Note that no role checks are done with the servlet filter.  You would have to do this manually.
 
 ## Import the test realm
 
-If you haven't already done so, you need to import the test realm for this examples.  Clicking on the below link will bring you to the
+If you haven't already done so, you need to import the test realm for this example.  Clicking on the below link will bring you to the
 create realm page in the Admin UI.  The username/password is admin/admin to login in.  Keycloak will ask you to
 create a new admin password before you can go to the create realm page.
 

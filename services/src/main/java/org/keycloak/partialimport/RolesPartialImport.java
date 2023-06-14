@@ -18,6 +18,7 @@ package org.keycloak.partialimport;
 
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.RoleModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.representations.idm.PartialImportRepresentation;
@@ -26,9 +27,10 @@ import org.keycloak.representations.idm.RolesRepresentation;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.ServicesLogger;
 
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -54,6 +56,7 @@ public class RolesPartialImport implements PartialImport<RolesRepresentation> {
 
     private final RealmRolesPartialImport realmRolesPI = new RealmRolesPartialImport();
     private final ClientRolesPartialImport clientRolesPI = new ClientRolesPartialImport();
+    private RoleRepresentation newDefaultRole;
 
     @Override
     public void prepare(PartialImportRepresentation rep, RealmModel realm, KeycloakSession session) throws ErrorResponseException {
@@ -66,6 +69,16 @@ public class RolesPartialImport implements PartialImport<RolesRepresentation> {
 
         realmRolesPI.prepare(rep, realm, session);
         this.realmRolesToOverwrite = realmRolesPI.getToOverwrite();
+        if (realmRolesToOverwrite.size() > 0) {
+            String defaultRoleName = realm.getDefaultRole().getName();
+            for (RoleRepresentation representation : realmRolesToOverwrite) {
+                if (Objects.equals(defaultRoleName, representation.getName())) {
+                    this.newDefaultRole = representation;
+                    break;
+                }
+            }
+        }
+
         this.realmRolesToSkip = realmRolesPI.getToSkip();
     }
 
@@ -94,11 +107,16 @@ public class RolesPartialImport implements PartialImport<RolesRepresentation> {
         if (rep.hasRealmRoles()) setUniqueIds(rep.getRoles().getRealm());
         if (rep.hasClientRoles()) setUniqueIds(rep.getRoles().getClient());
 
+        if (newDefaultRole != null) {
+            RoleModel defaultRole = RepresentationToModel.createRole(realm, newDefaultRole);
+            realm.setDefaultRole(defaultRole);
+        }
+
         try {
             RepresentationToModel.importRoles(rep.getRoles(), realm);
         } catch (Exception e) {
             ServicesLogger.LOGGER.roleImportError(e);
-            throw new ErrorResponseException(ErrorResponse.error(e.getMessage(), Response.Status.INTERNAL_SERVER_ERROR));
+            throw ErrorResponse.error(e.getMessage(), Response.Status.INTERNAL_SERVER_ERROR);
         }
 
         // add "add" results for new roles created

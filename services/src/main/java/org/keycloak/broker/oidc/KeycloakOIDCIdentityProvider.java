@@ -39,10 +39,10 @@ import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.util.JsonSerialization;
 
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.core.Response;
 import java.io.IOException;
 
 import static org.keycloak.utils.LockObjectsForModification.lockUserSessionsForModification;
@@ -61,7 +61,7 @@ public class KeycloakOIDCIdentityProvider extends OIDCIdentityProvider {
 
     @Override
     public Object callback(RealmModel realm, AuthenticationCallback callback, EventBuilder event) {
-        return new KeycloakEndpoint(callback, realm, event);
+        return new KeycloakEndpoint(callback, realm, event, this);
     }
 
     @Override
@@ -71,9 +71,14 @@ public class KeycloakOIDCIdentityProvider extends OIDCIdentityProvider {
         context.getContextData().put(VALIDATED_ACCESS_TOKEN, access);
     }
 
-    protected class KeycloakEndpoint extends OIDCEndpoint {
-        public KeycloakEndpoint(AuthenticationCallback callback, RealmModel realm, EventBuilder event) {
-            super(callback, realm, event);
+    protected static class KeycloakEndpoint extends OIDCEndpoint {
+
+        private KeycloakOIDCIdentityProvider provider;
+
+        public KeycloakEndpoint(AuthenticationCallback callback, RealmModel realm, EventBuilder event,
+                KeycloakOIDCIdentityProvider provider) {
+            super(callback, realm, event, provider);
+            this.provider = provider;
         }
 
         @POST
@@ -87,7 +92,7 @@ public class KeycloakOIDCIdentityProvider extends OIDCIdentityProvider {
                 return Response.status(400).build();
             }
 
-            if (!verify(token)) {
+            if (!provider.verify(token)) {
                 logger.warn("Failed to verify logout request");
                 return Response.status(400).build();
             }
@@ -101,7 +106,7 @@ public class KeycloakOIDCIdentityProvider extends OIDCIdentityProvider {
             if (!validateAction(action)) return Response.status(400).build();
             if (action.getKeycloakSessionIds() != null) {
                 for (String sessionId : action.getKeycloakSessionIds()) {
-                    String brokerSessionId = getConfig().getAlias() + "." + sessionId;
+                    String brokerSessionId = provider.getConfig().getAlias() + "." + sessionId;
                     UserSessionModel userSession = lockUserSessionsForModification(session, () -> session.sessions().getUserSessionByBrokerSessionId(realm, brokerSessionId));
                     if (userSession != null
                             && userSession.getState() != UserSessionModel.State.LOGGING_OUT
@@ -127,7 +132,7 @@ public class KeycloakOIDCIdentityProvider extends OIDCIdentityProvider {
                 logger.warn("admin request failed, expired token");
                 return false;
             }
-            if (!getConfig().getClientId().equals(action.getResource())) {
+            if (!provider.getConfig().getClientId().equals(action.getResource())) {
                 logger.warn("Resource name does not match");
                 return false;
 

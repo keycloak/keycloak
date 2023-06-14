@@ -17,9 +17,8 @@
 package org.keycloak.services.resources.account;
 
 import org.jboss.logging.Logger;
-import org.jboss.resteasy.spi.HttpRequest;
-import org.jboss.resteasy.spi.HttpResponse;
-import org.jboss.resteasy.spi.ResteasyProviderFactory;
+import org.keycloak.http.HttpRequest;
+import org.keycloak.http.HttpResponse;
 import org.keycloak.common.enums.AccountRestApiVersion;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.models.ClientModel;
@@ -32,17 +31,16 @@ import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.resources.Cors;
 import org.keycloak.theme.Theme;
 
-import javax.ws.rs.HttpMethod;
-import javax.ws.rs.InternalServerErrorException;
-import javax.ws.rs.NotAuthorizedException;
-import javax.ws.rs.NotFoundException;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.UriInfo;
+import jakarta.ws.rs.HttpMethod;
+import jakarta.ws.rs.InternalServerErrorException;
+import jakarta.ws.rs.NotAuthorizedException;
+import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.UriInfo;
 import java.io.IOException;
 import java.util.List;
 
@@ -51,19 +49,19 @@ import java.util.List;
  */
 public class AccountLoader {
 
-    private KeycloakSession session;
-    private EventBuilder event;
+    private final KeycloakSession session;
+    private final EventBuilder event;
 
-    @Context
-    private HttpRequest request;
-    @Context
-    private HttpResponse response;
+    private final HttpRequest request;
+    private final HttpResponse response;
 
     private static final Logger logger = Logger.getLogger(AccountLoader.class);
 
     public AccountLoader(KeycloakSession session, EventBuilder event) {
         this.session = session;
         this.event = event;
+        this.request = session.getContext().getHttpRequest();
+        this.response = session.getContext().getHttpResponse();
     }
 
     @Path("/")
@@ -71,7 +69,7 @@ public class AccountLoader {
         RealmModel realm = session.getContext().getRealm();
         ClientModel client = getAccountManagementClient(realm);
 
-        HttpRequest request = session.getContext().getContextObject(HttpRequest.class);
+        HttpRequest request = session.getContext().getHttpRequest();
         HttpHeaders headers = session.getContext().getRequestHeaders();
         MediaType content = headers.getMediaType();
         List<MediaType> accepts = headers.getAcceptableMediaTypes();
@@ -86,13 +84,11 @@ public class AccountLoader {
             return getAccountRestService(client, null);
         } else {
             if (deprecatedAccount) {
-                AccountFormService accountFormService = new AccountFormService(realm, client, event);
-                ResteasyProviderFactory.getInstance().injectProperties(accountFormService);
+                AccountFormService accountFormService = new AccountFormService(session, client, event);
                 accountFormService.init();
                 return accountFormService;
             } else {
-                AccountConsole console = new AccountConsole(realm, client, theme);
-                ResteasyProviderFactory.getInstance().injectProperties(console);
+                AccountConsole console = new AccountConsole(session, client, theme);
                 console.init();
                 return console;
             }
@@ -151,10 +147,7 @@ public class AccountLoader {
             }
         }
 
-        AccountRestService accountRestService = new AccountRestService(session, auth, client, event, version);
-        ResteasyProviderFactory.getInstance().injectProperties(accountRestService);
-        accountRestService.init();
-        return accountRestService;
+        return new AccountRestService(session, auth, event, version);
     }
 
     private ClientModel getAccountManagementClient(RealmModel realm) {

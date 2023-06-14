@@ -1,10 +1,16 @@
 package org.keycloak.common.crypto;
 
+import java.security.KeyStore;
+import java.security.Provider;
+import java.security.Security;
 import java.util.List;
 import java.util.ServiceLoader;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
+
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.TrustManagerFactory;
 
 import org.jboss.logging.Logger;
 import org.keycloak.common.util.BouncyIntegration;
@@ -24,9 +30,15 @@ public class CryptoIntegration {
             synchronized (lock) {
                 if (cryptoProvider == null) {
                     cryptoProvider = detectProvider(classLoader);
-                    logger.debugv("BouncyCastle provider: {0}", BouncyIntegration.PROVIDER);
+                    logger.debugv("java security provider: {0}", BouncyIntegration.PROVIDER);
+
                 }
             }
+        }
+
+        if (logger.isTraceEnabled()) {
+            logger.tracef(dumpJavaSecurityProviders());
+            logger.tracef(dumpSecurityProperties());
         }
     }
 
@@ -49,9 +61,34 @@ public class CryptoIntegration {
             throw new IllegalStateException("Multiple crypto providers loaded with the classLoader: " + classLoader +
                     ". Make sure only one cryptoProvider available on the classpath. Available providers: " +foundProviders);
         } else {
-            logger.infof("Detected security provider: %s", foundProviders.get(0).getClass().getName());
+            logger.debugf("Detected crypto provider: %s", foundProviders.get(0).getClass().getName());
             return foundProviders.get(0);
         }
     }
 
+    public static String dumpJavaSecurityProviders() {
+        StringBuilder builder = new StringBuilder("Java security providers: [ \n");
+        for (Provider p : Security.getProviders()) {
+            builder.append(" " + p.toString() + " - " + p.getClass() + ", \n");
+        }
+        return builder.append("]").toString();
+    }
+
+    public static String dumpSecurityProperties() {
+        StringBuilder builder = new StringBuilder("Security properties: [ \n")
+                .append(" Java security properties file: " + System.getProperty("java.security.properties") + "\n")
+                .append(" Default keystore type: " + KeyStore.getDefaultType() + "\n")
+                .append(" KeyManagerFactory.getDefaultAlgorithm(): " + KeyManagerFactory.getDefaultAlgorithm() + "\n")
+                .append(" TrustManagerFactory.getDefaultAlgorithm(): " + TrustManagerFactory.getDefaultAlgorithm() + "\n")
+                .append(" keystore.type.compat: " + Security.getProperty("keystore.type.compat") + "\n");
+        Stream.of("javax.net.ssl.trustStoreType", "javax.net.ssl.trustStore", "javax.net.ssl.trustStoreProvider",
+                        "javax.net.ssl.keyStoreType", "javax.net.ssl.keyStore", "javax.net.ssl.keyStoreProvider")
+                .forEach(propertyName -> builder.append(" " + propertyName + ": " + System.getProperty(propertyName) + "\n"));
+        return builder.append("]").toString();
+    }
+
+    public static void setProvider(CryptoProvider provider) {
+        logger.debugf("Using the crypto provider: %s", provider.getClass().getName());
+        cryptoProvider = provider;
+    }
 }

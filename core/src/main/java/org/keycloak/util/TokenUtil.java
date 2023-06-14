@@ -203,7 +203,7 @@ public class TokenUtil {
             default: throw new IllegalArgumentException("Bad size for Encryption key: " + aesKey + ". Valid sizes are 16, 24, 32.");
         }
 
-        JWEHeader jweHeader = new JWEHeader(JWEConstants.DIR, encAlgorithm, null);
+        JWEHeader jweHeader = new JWEHeader(JWEConstants.DIRECT, encAlgorithm, null);
         JWE jwe = new JWE()
                 .header(jweHeader)
                 .content(contentBytes);

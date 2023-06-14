@@ -4,11 +4,9 @@ import org.junit.Test;
 import org.keycloak.testsuite.Assert;
 
 import static org.junit.Assert.assertEquals;
-import static org.keycloak.testsuite.broker.BrokerTestTools.getConsumerRoot;
 import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
 
 public class KcSamlBrokerLoginHintWithOptionEnabledTest extends AbstractSamlLoginHintTest {
-
 
     // KEYCLOAK-13950
     @Test
@@ -16,7 +14,9 @@ public class KcSamlBrokerLoginHintWithOptionEnabledTest extends AbstractSamlLogi
         String username = "all-info-set@localhost.com";
         createUser(bc.providerRealmName(), username, "password", "FirstName");
 
-        driver.navigate().to(getAccountUrl(getConsumerRoot(), bc.consumerRealmName()));
+        oauth.clientId("broker-app");
+        loginPage.open(bc.consumerRealmName());
+
         log.debug("Clicking social " + bc.getIDPAlias());
         String fishyLoginHint = "<an-xml-tag>";
         addLoginHintOnSocialButton(fishyLoginHint);

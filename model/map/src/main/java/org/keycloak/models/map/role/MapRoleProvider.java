@@ -26,10 +26,11 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
-import org.keycloak.models.map.storage.MapKeycloakTransaction;
 import org.keycloak.models.map.storage.MapStorage;
 import org.keycloak.models.RoleModel.SearchableFields;
 import org.keycloak.models.RoleProvider;
+import org.keycloak.models.map.common.DeepCloner;
+import org.keycloak.models.map.common.HasRealmId;
 import org.keycloak.models.map.storage.ModelCriteriaBuilder.Operator;
 import org.keycloak.models.map.storage.criteria.DefaultModelCriteria;
 
@@ -44,17 +45,25 @@ public class MapRoleProvider implements RoleProvider {
 
     private static final Logger LOG = Logger.getLogger(MapRoleProvider.class);
     private final KeycloakSession session;
-    final MapKeycloakTransaction<MapRoleEntity, RoleModel> tx;
+    final MapStorage<MapRoleEntity, RoleModel> store;
+    private final boolean storeHasRealmId;
 
     public MapRoleProvider(KeycloakSession session, MapStorage<MapRoleEntity, RoleModel> roleStore) {
         this.session = session;
-        this.tx = roleStore.createTransaction(session);
-        session.getTransactionManager().enlist(tx);
+        this.store = roleStore;
+        this.storeHasRealmId = store instanceof HasRealmId;
     }
 
     private Function<MapRoleEntity, RoleModel> entityToAdapterFunc(RealmModel realm) {
         // Clone entity before returning back, to avoid giving away a reference to the live object to the caller
         return origEntity -> new MapRoleAdapter(session, realm, origEntity);
+    }
+
+    private MapStorage<MapRoleEntity, RoleModel> storeWithRealm(RealmModel realm) {
+        if (storeHasRealmId) {
+            ((HasRealmId) store).setRealmId(realm == null ? null : realm.getId());
+        }
+        return store;
     }
 
     @Override
@@ -65,15 +74,14 @@ public class MapRoleProvider implements RoleProvider {
 
         LOG.tracef("addRealmRole(%s, %s, %s)%s", realm, id, name, getShortStackTrace());
 
-        MapRoleEntity entity = new MapRoleEntityImpl();
+        MapRoleEntity entity = DeepCloner.DUMB_CLONER.newInstance(MapRoleEntity.class);
         entity.setId(id);
         entity.setRealmId(realm.getId());
         entity.setName(name);
-        entity.setClientRole(false);
-        if (entity.getId() != null && tx.read(entity.getId()) != null) {
+        if (entity.getId() != null && storeWithRealm(realm).exists(entity.getId())) {
             throw new ModelDuplicateException("Role exists: " + id);
         }
-        entity = tx.create(entity);
+        entity = storeWithRealm(realm).create(entity);
         return entityToAdapterFunc(realm).apply(entity);
     }
 
@@ -81,9 +89,10 @@ public class MapRoleProvider implements RoleProvider {
     public Stream<RoleModel> getRealmRolesStream(RealmModel realm, Integer first, Integer max) {
         DefaultModelCriteria<RoleModel> mcb = criteria();
         mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
-                 .compare(SearchableFields.IS_CLIENT_ROLE, Operator.NE, true);
+                // filter realm roles only
+                 .compare(SearchableFields.CLIENT_ID, Operator.NOT_EXISTS);
 
-        return tx.read(withCriteria(mcb).pagination(first, max, SearchableFields.NAME))
+        return storeWithRealm(realm).read(withCriteria(mcb).pagination(first, max, SearchableFields.NAME))
             .map(entityToAdapterFunc(realm));
     }
 
@@ -100,7 +109,7 @@ public class MapRoleProvider implements RoleProvider {
             mcb = mcb.compare(RoleModel.SearchableFields.NAME, Operator.ILIKE, "%" + search + "%");
         }
 
-        return tx.read(withCriteria(mcb).pagination(first, max, RoleModel.SearchableFields.NAME))
+        return storeWithRealm(realm).read(withCriteria(mcb).pagination(first, max, RoleModel.SearchableFields.NAME))
                 .map(entityToAdapterFunc(realm));
     }
 
@@ -108,9 +117,10 @@ public class MapRoleProvider implements RoleProvider {
     public Stream<RoleModel> getRealmRolesStream(RealmModel realm) {
         DefaultModelCriteria<RoleModel> mcb = criteria();
         mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
-                 .compare(SearchableFields.IS_CLIENT_ROLE, Operator.NE, true);
+                // filter realm roles only
+                 .compare(SearchableFields.CLIENT_ID, Operator.NOT_EXISTS);
         
-        return tx.read(withCriteria(mcb).orderBy(SearchableFields.NAME, ASCENDING))
+        return storeWithRealm(realm).read(withCriteria(mcb).orderBy(SearchableFields.NAME, ASCENDING))
                 .map(entityToAdapterFunc(realm));
     }
 
@@ -122,47 +132,49 @@ public class MapRoleProvider implements RoleProvider {
 
         LOG.tracef("addClientRole(%s, %s, %s)%s", client, id, name, getShortStackTrace());
 
-        MapRoleEntity entity = new MapRoleEntityImpl();
+        MapRoleEntity entity = DeepCloner.DUMB_CLONER.newInstance(MapRoleEntity.class);
+        final RealmModel realm = client.getRealm();
         entity.setId(id);
-        entity.setRealmId(client.getRealm().getId());
+        entity.setRealmId(realm.getId());
         entity.setName(name);
-        entity.setClientRole(true);
         entity.setClientId(client.getId());
-        if (entity.getId() != null && tx.read(entity.getId()) != null) {
+        if (entity.getId() != null && storeWithRealm(realm).exists(entity.getId())) {
             throw new ModelDuplicateException("Role exists: " + id);
         }
-        entity = tx.create(entity);
-        return entityToAdapterFunc(client.getRealm()).apply(entity);
+        entity = storeWithRealm(realm).create(entity);
+        return entityToAdapterFunc(realm).apply(entity);
     }
 
     @Override
     public Stream<RoleModel> getClientRolesStream(ClientModel client, Integer first, Integer max) {
         DefaultModelCriteria<RoleModel> mcb = criteria();
-        mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, client.getRealm().getId())
+        final RealmModel realm = client.getRealm();
+        mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
                 .compare(SearchableFields.CLIENT_ID, Operator.EQ, client.getId());
 
-        return tx.read(withCriteria(mcb).pagination(first, max, SearchableFields.NAME))
-                .map(entityToAdapterFunc(client.getRealm()));
+        return storeWithRealm(realm).read(withCriteria(mcb).pagination(first, max, SearchableFields.NAME))
+                .map(entityToAdapterFunc(realm));
     }
 
     @Override
     public Stream<RoleModel> getClientRolesStream(ClientModel client) {
         DefaultModelCriteria<RoleModel> mcb = criteria();
-        mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, client.getRealm().getId())
+        final RealmModel realm = client.getRealm();
+        mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
           .compare(SearchableFields.CLIENT_ID, Operator.EQ, client.getId());
 
-        return tx.read(withCriteria(mcb).orderBy(SearchableFields.NAME, ASCENDING))
-                .map(entityToAdapterFunc(client.getRealm()));
+        return storeWithRealm(realm).read(withCriteria(mcb).orderBy(SearchableFields.NAME, ASCENDING))
+                .map(entityToAdapterFunc(realm));
     }
     @Override
     public boolean removeRole(RoleModel role) {
-        LOG.tracef("removeRole(%s(%s))%s", role.getName(), role.getId(), getShortStackTrace());
+        LOG.tracef("removeRole(%s)%s", role, getShortStackTrace());
 
         RealmModel realm = role.isClientRole() ? ((ClientModel)role.getContainer()).getRealm() : (RealmModel)role.getContainer();
 
         session.invalidate(ROLE_BEFORE_REMOVE, realm, role);
 
-        tx.delete(role.getId());
+        storeWithRealm(realm).delete(role.getId());
 
         session.invalidate(ROLE_AFTER_REMOVE, realm, role);
 
@@ -188,16 +200,14 @@ public class MapRoleProvider implements RoleProvider {
 
         DefaultModelCriteria<RoleModel> mcb = criteria();
         mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
-                 .compare(SearchableFields.IS_CLIENT_ROLE, Operator.NE, true)
+                // filter realm roles only
+                 .compare(SearchableFields.CLIENT_ID, Operator.NOT_EXISTS)
                  .compare(SearchableFields.NAME, Operator.EQ, name);
 
-        String roleId = tx.read(withCriteria(mcb))
+        return storeWithRealm(realm).read(withCriteria(mcb))
                 .map(entityToAdapterFunc(realm))
-                .map(RoleModel::getId)
                 .findFirst()
                 .orElse(null);
-        //we need to go via session.roles() not to bypass cache
-        return roleId == null ? null : session.roles().getRoleById(realm, roleId);
     }
 
     @Override
@@ -208,17 +218,15 @@ public class MapRoleProvider implements RoleProvider {
         LOG.tracef("getClientRole(%s, %s)%s", client, name, getShortStackTrace());
 
         DefaultModelCriteria<RoleModel> mcb = criteria();
-        mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, client.getRealm().getId())
+        final RealmModel realm = client.getRealm();
+        mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
           .compare(SearchableFields.CLIENT_ID, Operator.EQ, client.getId())
           .compare(SearchableFields.NAME, Operator.EQ, name);
 
-        String roleId = tx.read(withCriteria(mcb))
-                .map(entityToAdapterFunc(client.getRealm()))
-                .map(RoleModel::getId)
+        return storeWithRealm(realm).read(withCriteria(mcb))
+                .map(entityToAdapterFunc(realm))
                 .findFirst()
                 .orElse(null);
-        //we need to go via session.roles() not to bypass cache
-        return roleId == null ? null : session.roles().getRoleById(client.getRealm(), roleId);
     }
 
     @Override
@@ -229,7 +237,7 @@ public class MapRoleProvider implements RoleProvider {
 
         LOG.tracef("getRoleById(%s, %s)%s", realm, id, getShortStackTrace());
 
-        MapRoleEntity entity = tx.read(id);
+        MapRoleEntity entity = storeWithRealm(realm).read(id);
         String realmId = realm.getId();
         // when a store doesn't store information about all realms, it doesn't have the information about
         return (entity == null || (entity.getRealmId() != null && !Objects.equals(realmId, entity.getRealmId())))
@@ -244,13 +252,14 @@ public class MapRoleProvider implements RoleProvider {
         }
         DefaultModelCriteria<RoleModel> mcb = criteria();
         mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
-                .compare(SearchableFields.IS_CLIENT_ROLE, Operator.NE, true)
+                // filter realm roles only
+                .compare(SearchableFields.CLIENT_ID, Operator.NOT_EXISTS)
                 .or(
                         mcb.compare(SearchableFields.NAME, Operator.ILIKE, "%" + search + "%"),
                         mcb.compare(SearchableFields.DESCRIPTION, Operator.ILIKE, "%" + search + "%")
                 );
 
-        return tx.read(withCriteria(mcb).pagination(first, max, SearchableFields.NAME))
+        return storeWithRealm(realm).read(withCriteria(mcb).pagination(first, max, SearchableFields.NAME))
                 .map(entityToAdapterFunc(realm));
     }
 
@@ -260,15 +269,16 @@ public class MapRoleProvider implements RoleProvider {
             return Stream.empty();
         }
         DefaultModelCriteria<RoleModel> mcb = criteria();
-        mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, client.getRealm().getId())
+        final RealmModel realm = client.getRealm();
+        mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
                 .compare(SearchableFields.CLIENT_ID, Operator.EQ, client.getId())
                 .or(
                         mcb.compare(SearchableFields.NAME, Operator.ILIKE, "%" + search + "%"),
                         mcb.compare(SearchableFields.DESCRIPTION, Operator.ILIKE, "%" + search + "%")
                 );
 
-        return tx.read(withCriteria(mcb).pagination(first, max, SearchableFields.NAME))
-                .map(entityToAdapterFunc(client.getRealm()));
+        return storeWithRealm(realm).read(withCriteria(mcb).pagination(first, max, SearchableFields.NAME))
+                .map(entityToAdapterFunc(realm));
     }
 
     public void preRemove(RealmModel realm) {
@@ -276,7 +286,7 @@ public class MapRoleProvider implements RoleProvider {
         DefaultModelCriteria<RoleModel> mcb = criteria();
         mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId());
 
-        tx.delete(withCriteria(mcb));
+        storeWithRealm(realm).delete(withCriteria(mcb));
     }
 
     public void preRemove(RealmModel realm, RoleModel role) {
@@ -284,7 +294,7 @@ public class MapRoleProvider implements RoleProvider {
         DefaultModelCriteria<RoleModel> mcb = criteria();
         mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
                 .compare(SearchableFields.COMPOSITE_ROLE, Operator.EQ, role.getId());
-        tx.read(withCriteria(mcb)).forEach(mapRoleEntity -> mapRoleEntity.removeCompositeRole(role.getId()));
+        storeWithRealm(realm).read(withCriteria(mcb)).forEach(mapRoleEntity -> mapRoleEntity.removeCompositeRole(role.getId()));
     }
 
     @Override

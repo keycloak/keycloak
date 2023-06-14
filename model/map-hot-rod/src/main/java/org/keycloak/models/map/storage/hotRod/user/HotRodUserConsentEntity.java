@@ -17,23 +17,23 @@
 
 package org.keycloak.models.map.storage.hotRod.user;
 
-import org.infinispan.protostream.annotations.ProtoDoc;
+import org.infinispan.api.annotations.indexing.Basic;
+import org.infinispan.api.annotations.indexing.Indexed;
 import org.infinispan.protostream.annotations.ProtoField;
 import org.keycloak.models.map.annotations.GenerateHotRodEntityImplementation;
-import org.keycloak.models.map.storage.hotRod.client.HotRodProtocolMapperEntityDelegate;
 import org.keycloak.models.map.storage.hotRod.common.AbstractHotRodEntity;
 
 import java.util.Set;
 
 @GenerateHotRodEntityImplementation(implementInterface = "org.keycloak.models.map.user.MapUserConsentEntity")
-@ProtoDoc("@Indexed")
+@Indexed
 public class HotRodUserConsentEntity extends AbstractHotRodEntity {
+    @Basic(sortable = true)
     @ProtoField(number = 1)
-    @ProtoDoc("@Field(index = Index.YES, store = Store.YES)")
     public String clientId;
-    
+
+    @Basic(sortable = true)
     @ProtoField(number = 2)
-    @ProtoDoc("@Field(index = Index.YES, store = Store.YES)")
     public Set<String> grantedClientScopesIds;
 
     @ProtoField(number = 3)

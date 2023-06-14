@@ -40,7 +40,7 @@ public class KeycloakServicesTest extends BaseOperatorTest {
         var serviceSelector = k8sclient.services().inNamespace(namespace).withName(service.getName());
 
         Log.info("Trying to delete the service");
-        assertThat(serviceSelector.delete()).isTrue();
+        assertThat(serviceSelector.delete()).isNotNull();
         Awaitility.await()
                 .untilAsserted(() -> assertThat(serviceSelector.get()).isNotNull());
 
@@ -57,8 +57,9 @@ public class KeycloakServicesTest extends BaseOperatorTest {
 
         currentService.getMetadata().getLabels().putAll(labels);
         currentService.getSpec().setSessionAffinity("ClientIP");
-
-        serviceSelector.createOrReplace(currentService);
+        
+        currentService.getMetadata().setResourceVersion(null);
+        k8sclient.resource(currentService).forceConflicts().serverSideApply();
 
         Awaitility.await()
                 .untilAsserted(() -> {
@@ -79,7 +80,7 @@ public class KeycloakServicesTest extends BaseOperatorTest {
         var discoveryServiceSelector = k8sclient.services().inNamespace(namespace).withName(discoveryService.getName());
 
         Log.info("Trying to delete the discovery service");
-        assertThat(discoveryServiceSelector.delete()).isTrue();
+        assertThat(discoveryServiceSelector.delete()).isNotNull();
         Awaitility.await()
                 .untilAsserted(() -> assertThat(discoveryServiceSelector.get()).isNotNull());
 
@@ -97,7 +98,7 @@ public class KeycloakServicesTest extends BaseOperatorTest {
         currentDiscoveryService.getMetadata().getLabels().putAll(labels);
         currentDiscoveryService.getSpec().setSessionAffinity("ClientIP");
 
-        discoveryServiceSelector.createOrReplace(currentDiscoveryService);
+        discoveryServiceSelector.edit(ignored -> currentDiscoveryService);
 
         Awaitility.await()
                 .untilAsserted(() -> {

@@ -32,13 +32,16 @@ import org.keycloak.protocol.oidc.endpoints.request.AuthorizationEndpointRequest
 import org.keycloak.protocol.oidc.grants.ciba.channel.CIBAAuthenticationRequest;
 import org.keycloak.protocol.oidc.grants.ciba.clientpolicy.context.BackchannelAuthenticationRequestContext;
 import org.keycloak.protocol.oidc.grants.ciba.clientpolicy.context.BackchannelTokenRequestContext;
+import org.keycloak.protocol.oidc.grants.ciba.clientpolicy.context.BackchannelTokenResponseContext;
 import org.keycloak.representations.idm.ClientPolicyConditionConfigurationRepresentation;
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.ClientPolicyVote;
 import org.keycloak.services.clientpolicy.context.AuthorizationRequestContext;
 import org.keycloak.services.clientpolicy.context.ServiceAccountTokenRequestContext;
+import org.keycloak.services.clientpolicy.context.ServiceAccountTokenResponseContext;
 import org.keycloak.services.clientpolicy.context.TokenRequestContext;
+import org.keycloak.services.clientpolicy.context.TokenResponseContext;
 
 /**
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
@@ -92,14 +95,23 @@ public class ClientScopesCondition extends AbstractClientPolicyConditionProvider
             case TOKEN_REQUEST:
                 if (isScopeMatched(((TokenRequestContext)context).getParseResult().getClientSession())) return ClientPolicyVote.YES;
                 return ClientPolicyVote.NO;
+            case TOKEN_RESPONSE:
+                if (isScopeMatched(((TokenResponseContext)context).getParseResult().getClientSession())) return ClientPolicyVote.YES;
+                return ClientPolicyVote.NO;
             case SERVICE_ACCOUNT_TOKEN_REQUEST:
                 if (isScopeMatched(((ServiceAccountTokenRequestContext)context).getClientSession())) return ClientPolicyVote.YES;
+                return ClientPolicyVote.NO;
+            case SERVICE_ACCOUNT_TOKEN_RESPONSE:
+                if (isScopeMatched(((ServiceAccountTokenResponseContext)context).getClientSession())) return ClientPolicyVote.YES;
                 return ClientPolicyVote.NO;
             case BACKCHANNEL_AUTHENTICATION_REQUEST:
                 if (isScopeMatched(((BackchannelAuthenticationRequestContext)context).getParsedRequest())) return ClientPolicyVote.YES;
                 return ClientPolicyVote.NO;
             case BACKCHANNEL_TOKEN_REQUEST:
                 if (isScopeMatched(((BackchannelTokenRequestContext)context).getParsedRequest())) return ClientPolicyVote.YES;
+                return ClientPolicyVote.NO;
+            case BACKCHANNEL_TOKEN_RESPONSE:
+                if (isScopeMatched(((BackchannelTokenResponseContext)context).getParsedRequest())) return ClientPolicyVote.YES;
                 return ClientPolicyVote.NO;
             default:
                 return ClientPolicyVote.ABSTAIN;

@@ -24,24 +24,26 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.oidc.utils.WebOriginsUtils;
 import org.keycloak.utils.MediaType;
 
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriInfo;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.UriInfo;
 import java.util.Set;
 
-import static org.keycloak.services.util.IframeUtil.returnIframeFromResources;
+import static org.keycloak.protocol.oidc.endpoints.IframeUtil.returnIframeFromResources;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class LoginStatusIframeEndpoint {
 
-    @Context
-    private KeycloakSession session;
+    private final KeycloakSession session;
+
+    public LoginStatusIframeEndpoint(KeycloakSession session) {
+        this.session = session;
+    }
 
     @GET
     @Produces(MediaType.TEXT_HTML_UTF_8)

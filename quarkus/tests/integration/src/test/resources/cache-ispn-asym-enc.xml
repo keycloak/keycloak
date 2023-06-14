@@ -23,17 +23,13 @@
 
 <jgroups>
     <stack name="encrypt-udp" extends="udp">
-      <SSL_KEY_EXCHANGE keystore_name="server.jks"
-                        keystore_password="password"
-                        stack.combine="INSERT_AFTER"
-                        stack.position="VERIFY_SUSPECT"/>
-      <ASYM_ENCRYPT asym_keylength="2048"
-                    asym_algorithm="RSA"
-                    change_key_on_coord_leave = "false"
-                    change_key_on_leave = "false"
-                    use_external_key_exchange = "true"
-                    stack.combine="INSERT_BEFORE"
-                    stack.position="pbcast.NAKACK2"/>
+        <SSL_KEY_EXCHANGE keystore_name="server.jks"
+                          keystore_password="password"/>
+        <ASYM_ENCRYPT asym_keylength="2048"
+                      asym_algorithm="RSA"
+                      change_key_on_coord_leave = "false"
+                      change_key_on_leave = "false"
+                      use_external_key_exchange="true"/>
     </stack>
   </jgroups>
 

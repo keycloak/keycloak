@@ -28,7 +28,6 @@ import org.keycloak.testsuite.pages.SetupRecoveryAuthnCodesPage;
 import org.keycloak.testsuite.util.FlowUtil;
 import org.openqa.selenium.WebDriver;
 import org.junit.Assert;
-import  org.keycloak.testsuite.util.WaitUtils;
 
 import java.util.Arrays;
 import java.util.List;
@@ -206,16 +205,15 @@ public class RecoveryAuthnCodesAuthenticatorTest extends AbstractTestRealmKeyclo
                 long randomNumber = (long)Math.random()*1000000000000L;
                 enterRecoveryAuthnCodePage.enterRecoveryAuthnCode(String.valueOf(randomNumber));
                 enterRecoveryAuthnCodePage.clickSignInButton();
-                WaitUtils.waitForPageToLoad();
                 enterRecoveryAuthnCodePage.assertCurrent();
                 String feedbackText = enterRecoveryAuthnCodePage.getFeedbackText();
-                Assert.assertEquals(feedbackText, "Invalid recovery authentication code");
+                Assert.assertEquals("Invalid recovery authentication code", feedbackText);
             }
             // Now enter the right code which should not work
             enterRecoveryAuthnCodePage.enterRecoveryAuthnCode(generatedRecoveryAuthnCodes.get(enterRecoveryAuthnCodePage.getRecoveryAuthnCodeToEnterNumber()));
             enterRecoveryAuthnCodePage.clickSignInButton();
             // Message changes after exhausting number of brute force attempts
-            Assert.assertEquals(enterRecoveryAuthnCodePage.getFeedbackText(), "Invalid username or password.");
+            Assert.assertEquals("Invalid username or password.", enterRecoveryAuthnCodePage.getFeedbackText());
             enterRecoveryAuthnCodePage.assertAccountLinkAvailability(false);
         } finally {
             RealmRepresentation rep = testRealm().toRepresentation();

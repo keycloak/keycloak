@@ -15,7 +15,6 @@ import org.infinispan.server.hotrod.configuration.HotRodServerConfigurationBuild
 import org.junit.rules.ExternalResource;
 import org.keycloak.Config;
 import org.keycloak.connections.infinispan.InfinispanUtil;
-import org.keycloak.models.map.storage.hotRod.common.HotRodUtils;
 
 import java.io.IOException;
 
@@ -84,29 +83,6 @@ public class HotRodServerRule extends ExternalResource {
         InfinispanUtil.setTimeServiceToKeycloakTime(hotRodCacheManager2);
     }
 
-    public void createHotRodMapStoreServer() {
-        hotRodCacheManager = configureHotRodCacheManager("hotrod/infinispan.xml");
-        hotRodServer = new HotRodServer();
-
-        HotRodUtils.createHotRodMapStoreServer(hotRodServer, hotRodCacheManager, 11444);
-
-        org.infinispan.client.hotrod.configuration.ConfigurationBuilder remoteBuilder = new org.infinispan.client.hotrod.configuration.ConfigurationBuilder();
-        org.infinispan.client.hotrod.configuration.Configuration cfg = remoteBuilder
-                .addServers(hotRodServer.getHost() + ":" + hotRodServer.getPort()).build();
-        remoteCacheManager = new RemoteCacheManager(cfg);
-    }
-
-    private DefaultCacheManager configureHotRodCacheManager(String configPath) {
-        DefaultCacheManager manager = null;
-        try {
-            manager = new DefaultCacheManager(configPath);
-        } catch (IOException e) {
-            new RuntimeException(e);
-        }
-
-        return manager;
-    }
-
     private void getCaches(String... cache) {
         for (String c: cache) {
             hotRodCacheManager.getCache(c, true);
@@ -122,10 +98,10 @@ public class HotRodServerRule extends ExternalResource {
 
         sessionConfigBuilder1.sites().addBackup()
                 .site("site-2").backupFailurePolicy(BackupFailurePolicy.IGNORE).strategy(BackupConfiguration.BackupStrategy.SYNC)
-                .replicationTimeout(15000).enabled(true);
+                .replicationTimeout(15000);
         sessionConfigBuilder2.sites().addBackup()
                 .site("site-1").backupFailurePolicy(BackupFailurePolicy.IGNORE).strategy(BackupConfiguration.BackupStrategy.SYNC)
-                .replicationTimeout(15000).enabled(true);
+                .replicationTimeout(15000);
 
         Configuration sessionCacheConfiguration1 = sessionConfigBuilder1.build();
         Configuration sessionCacheConfiguration2 = sessionConfigBuilder2.build();

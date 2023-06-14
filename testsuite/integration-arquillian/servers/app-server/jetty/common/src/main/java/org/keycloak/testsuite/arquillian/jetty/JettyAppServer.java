@@ -43,6 +43,7 @@ import org.jboss.arquillian.container.spi.client.protocol.metadata.HTTPContext;
 import org.jboss.arquillian.container.spi.client.protocol.metadata.ProtocolMetaData;
 import org.jboss.arquillian.container.spi.client.protocol.metadata.Servlet;
 import org.jboss.logging.Logger;
+import org.jboss.resteasy.core.ResteasyDeploymentImpl;
 import org.jboss.resteasy.plugins.server.servlet.HttpServlet30Dispatcher;
 import org.jboss.resteasy.spi.ResteasyDeployment;
 import org.jboss.shrinkwrap.api.Archive;
@@ -240,7 +241,7 @@ public class JettyAppServer implements DeployableContainer<JettyAppServerConfigu
             resteasyServlet.setInitParameter("javax.ws.rs.Application", jaxrsApplication);
         } else if (!pathAnnotatedClasses.isEmpty()) {
             log.debug("App has @Path annotated classes: " + pathAnnotatedClasses);
-            ResteasyDeployment deployment = new ResteasyDeployment();
+            ResteasyDeployment deployment = new ResteasyDeploymentImpl();
             deployment.setApplication(new RestSamlApplicationConfig(pathAnnotatedClasses));
             webAppContext.setAttribute(ResteasyDeployment.class.getName(), deployment);
         } else {

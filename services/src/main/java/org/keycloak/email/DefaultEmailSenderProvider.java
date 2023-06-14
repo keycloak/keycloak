@@ -17,7 +17,7 @@
 
 package org.keycloak.email;
 
-import com.sun.mail.smtp.SMTPMessage;
+import jakarta.mail.internet.MimeUtility;
 import org.jboss.logging.Logger;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserModel;
@@ -26,32 +26,34 @@ import org.keycloak.truststore.HostnameVerificationPolicy;
 import org.keycloak.truststore.JSSETruststoreConfigurator;
 import org.keycloak.vault.VaultStringSecret;
 
-import javax.mail.Address;
-import javax.mail.MessagingException;
-import javax.mail.Multipart;
-import javax.mail.Session;
-import javax.mail.Transport;
-import javax.mail.internet.AddressException;
-import javax.mail.internet.InternetAddress;
-import javax.mail.internet.MimeBodyPart;
-import javax.mail.internet.MimeMultipart;
+import jakarta.mail.Address;
+import jakarta.mail.MessagingException;
+import jakarta.mail.Multipart;
+import jakarta.mail.Session;
+import jakarta.mail.Message;
+import jakarta.mail.Transport;
+import jakarta.mail.internet.AddressException;
+import jakarta.mail.internet.InternetAddress;
+import jakarta.mail.internet.MimeBodyPart;
+import jakarta.mail.internet.MimeMultipart;
+import jakarta.mail.internet.MimeMessage;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocketFactory;
 import java.io.UnsupportedEncodingException;
-import java.security.KeyManagementException;
-import java.security.NoSuchAlgorithmException;
+import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.Map;
 import java.util.Properties;
+
+import static org.keycloak.utils.StringUtil.isNotBlank;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class DefaultEmailSenderProvider implements EmailSenderProvider {
 
-    private static final String SUPPORTED_SSL_PROTOCOLS = getSupportedSslProtocols();
-
     private static final Logger logger = Logger.getLogger(DefaultEmailSenderProvider.class);
+    private static final String SUPPORTED_SSL_PROTOCOLS = getSupportedSslProtocols();
 
     private final KeycloakSession session;
 
@@ -126,19 +128,21 @@ public class DefaultEmailSenderProvider implements EmailSenderProvider {
                 multipart.addBodyPart(htmlPart);
             }
 
-            SMTPMessage msg = new SMTPMessage(session);
+            Message msg = new MimeMessage(session);
             msg.setFrom(toInternetAddress(from, fromDisplayName));
 
             msg.setReplyTo(new Address[]{toInternetAddress(from, fromDisplayName)});
-            if (replyTo != null && !replyTo.isEmpty()) {
+
+            if (isNotBlank(replyTo)) {
                 msg.setReplyTo(new Address[]{toInternetAddress(replyTo, replyToDisplayName)});
             }
-            if (envelopeFrom != null && !envelopeFrom.isEmpty()) {
-                msg.setEnvelopeFrom(envelopeFrom);
+
+            if (isNotBlank(envelopeFrom)) {
+                props.setProperty("mail.smtp.from", envelopeFrom);
             }
 
             msg.setHeader("To", address);
-            msg.setSubject(subject, "utf-8");
+            msg.setSubject(MimeUtility.encodeText(subject, StandardCharsets.UTF_8.name(), null));
             msg.setContent(multipart);
             msg.saveChanges();
             msg.setSentDate(new Date());

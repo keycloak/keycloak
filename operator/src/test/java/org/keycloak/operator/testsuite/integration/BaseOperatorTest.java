@@ -22,35 +22,35 @@ import io.fabric8.kubernetes.api.model.NamespaceBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.client.Config;
 import io.fabric8.kubernetes.client.ConfigBuilder;
-import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import io.javaoperatorsdk.operator.Operator;
+import io.javaoperatorsdk.operator.api.config.ConfigurationServiceProvider;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
-import io.quarkiverse.operatorsdk.runtime.OperatorProducer;
 import io.quarkiverse.operatorsdk.runtime.QuarkusConfigurationService;
 import io.quarkus.logging.Log;
+import jakarta.enterprise.inject.Instance;
+import jakarta.enterprise.inject.spi.CDI;
+import jakarta.enterprise.util.TypeLiteral;
 import org.awaitility.Awaitility;
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.TestInfo;
 import org.keycloak.operator.Constants;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 
-import javax.enterprise.inject.Instance;
-import javax.enterprise.inject.spi.CDI;
-import javax.enterprise.util.TypeLiteral;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.time.Duration;
-import java.util.List;
 import java.util.UUID;
-import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.keycloak.operator.Utils.isOpenShift;
 import static org.keycloak.operator.testsuite.utils.K8sUtils.getResourceFromFile;
 
 public abstract class BaseOperatorTest {
@@ -75,6 +75,7 @@ public abstract class BaseOperatorTest {
   protected static String kubernetesIp;
   protected static String customImage;
   private static Operator operator;
+  protected static boolean isOpenShift;
 
 
   @BeforeAll
@@ -91,6 +92,7 @@ public abstract class BaseOperatorTest {
     createK8sClient();
     createCRDs();
     createNamespace();
+    isOpenShift = isOpenShift(k8sclient);
 
     if (operatorDeployment == OperatorDeployment.remote) {
       createRBACresourcesAndOperatorDeployment();
@@ -104,18 +106,21 @@ public abstract class BaseOperatorTest {
   }
 
   @BeforeEach
-  public void beforeEach() {
-    Log.info(((operatorDeployment == OperatorDeployment.remote) ? "Remote " : "Local ") + "Run Test :" + namespace);
+  public void beforeEach(TestInfo testInfo) {
+    String testClassName = testInfo.getTestClass().map(c -> c.getSimpleName() + ".").orElse("");
+    Log.info("\n------- STARTING: " + testClassName + testInfo.getDisplayName() + "\n"
+            + "------- Namespace: " + namespace + "\n"
+            + "------- Mode: " + ((operatorDeployment == OperatorDeployment.remote) ? "remote" : "local"));
   }
 
   private static void createK8sClient() {
-    k8sclient = new DefaultKubernetesClient(new ConfigBuilder(Config.autoConfigure(null)).withNamespace(namespace).build());
+    k8sclient = new KubernetesClientBuilder().withConfig(new ConfigBuilder(Config.autoConfigure(null)).withNamespace(namespace).build()).build();
   }
 
   private static void createRBACresourcesAndOperatorDeployment() throws FileNotFoundException {
     Log.info("Creating RBAC and Deployment into Namespace " + namespace);
     k8sclient.load(new FileInputStream(TARGET_KUBERNETES_GENERATED_YML_FOLDER + deploymentTarget + ".yml"))
-            .inNamespace(namespace).createOrReplace();
+            .inNamespace(namespace).forceConflicts().serverSideApply();
   }
 
   private static void cleanRBACresourcesAndOperatorDeployment() throws FileNotFoundException {
@@ -128,11 +133,9 @@ public abstract class BaseOperatorTest {
     Log.info("Creating CRDs");
     try {
       var deploymentCRD = k8sclient.load(new FileInputStream(TARGET_KUBERNETES_GENERATED_YML_FOLDER + "keycloaks.k8s.keycloak.org-v1.yml"));
-      deploymentCRD.createOrReplace();
-      deploymentCRD.waitUntilReady(5, TimeUnit.SECONDS);
+      deploymentCRD.forceConflicts().serverSideApply();
       var realmImportCRD = k8sclient.load(new FileInputStream(TARGET_KUBERNETES_GENERATED_YML_FOLDER + "keycloakrealmimports.k8s.keycloak.org-v1.yml"));
-      realmImportCRD.createOrReplace();
-      realmImportCRD.waitUntilReady(5, TimeUnit.SECONDS);
+      realmImportCRD.forceConflicts().serverSideApply();
     } catch (Exception e) {
       Log.warn("Failed to create Keycloak CRD, retrying", e);
       createCRDs();
@@ -143,22 +146,20 @@ public abstract class BaseOperatorTest {
     Log.info("Registering reconcilers for operator : " + operator + " [" + operatorDeployment + "]");
 
     for (Reconciler<?> reconciler : reconcilers) {
-      final var config = configuration.getConfigurationFor(reconciler);
-      if (!config.isRegistrationDelayed()) {
-        Log.info("Register and apply : " + reconciler.getClass().getName());
-        OperatorProducer.applyCRDIfNeededAndRegister(operator, reconciler, configuration);
-      }
+      Log.info("Register and apply : " + reconciler.getClass().getName());
+      operator.register(reconciler);
     }
   }
 
   private static void createOperator() {
+    configuration.getClientConfiguration().setNamespace(namespace);
+    ConfigurationServiceProvider.reset();
     operator = new Operator(k8sclient, configuration);
-    operator.getConfigurationService().getClientConfiguration().setNamespace(namespace);
   }
 
   private static void createNamespace() {
     Log.info("Creating Namespace " + namespace);
-    k8sclient.namespaces().create(new NamespaceBuilder().withNewMetadata().withName(namespace).endMetadata().build());
+    k8sclient.resource(new NamespaceBuilder().withNewMetadata().addToLabels("app","keycloak-test").withName(namespace).endMetadata().build()).create();
   }
 
   private static void calculateNamespace() {
@@ -168,7 +169,7 @@ public abstract class BaseOperatorTest {
   protected static void deployDB() {
     // DB
     Log.info("Creating new PostgreSQL deployment");
-    k8sclient.load(BaseOperatorTest.class.getResourceAsStream("/example-postgres.yaml")).inNamespace(namespace).createOrReplace();
+    k8sclient.load(BaseOperatorTest.class.getResourceAsStream("/example-postgres.yaml")).inNamespace(namespace).forceConflicts().serverSideApply();
 
     // Check DB has deployed and ready
     Log.info("Checking Postgres is running");
@@ -179,7 +180,7 @@ public abstract class BaseOperatorTest {
   }
 
   protected static void deployDBSecret() {
-    k8sclient.secrets().inNamespace(namespace).createOrReplace(getResourceFromFile("example-db-secret.yaml", Secret.class));
+    k8sclient.resource(getResourceFromFile("example-db-secret.yaml", Secret.class)).inNamespace(namespace).forceConflicts().serverSideApply();
   }
 
   protected static void deleteDB() {
@@ -254,7 +255,11 @@ public abstract class BaseOperatorTest {
     }
 
     Log.info("Deleting namespace : " + namespace);
-    assertThat(k8sclient.namespaces().withName(namespace).delete()).isTrue();
+    assertThat(k8sclient.namespaces().withName(namespace).delete()).isNotNull();
     k8sclient.close();
+  }
+
+  public static String getCurrentNamespace() {
+    return namespace;
   }
 }

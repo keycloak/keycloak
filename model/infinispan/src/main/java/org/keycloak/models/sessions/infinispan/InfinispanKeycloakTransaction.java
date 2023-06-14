@@ -16,6 +16,8 @@
  */
 package org.keycloak.models.sessions.infinispan;
 
+import org.infinispan.client.hotrod.RemoteCache;
+import org.infinispan.commons.api.BasicCache;
 import org.keycloak.cluster.ClusterEvent;
 import org.keycloak.cluster.ClusterProvider;
 import org.infinispan.context.Flag;
@@ -93,11 +95,16 @@ public class InfinispanKeycloakTransaction implements KeycloakTransaction {
                 public String toString() {
                     return String.format("CacheTaskWithValue: Operation 'put' for key %s", key);
                 }
+
+                @Override
+                public Operation getOperation() {
+                    return Operation.PUT;
+                }
             });
         }
     }
 
-    public <K, V> void put(Cache<K, V> cache, K key, V value, long lifespan, TimeUnit lifespanUnit) {
+    public <K, V> void put(BasicCache<K, V> cache, K key, V value, long lifespan, TimeUnit lifespanUnit) {
         log.tracev("Adding cache operation: {0} on {1}", CacheOperation.ADD_WITH_LIFESPAN, key);
 
         Object taskKey = getTaskKey(cache, key);
@@ -113,6 +120,11 @@ public class InfinispanKeycloakTransaction implements KeycloakTransaction {
                 @Override
                 public String toString() {
                     return String.format("CacheTaskWithValue: Operation 'put' for key %s, lifespan %d TimeUnit %s", key, lifespan, lifespanUnit);
+                }
+
+                @Override
+                public Operation getOperation() {
+                    return Operation.PUT;
                 }
             });
         }
@@ -137,6 +149,11 @@ public class InfinispanKeycloakTransaction implements KeycloakTransaction {
                 @Override
                 public String toString() {
                     return String.format("CacheTaskWithValue: Operation 'putIfAbsent' for key %s", key);
+                }
+
+                @Override
+                public Operation getOperation() {
+                    return Operation.PUT;
                 }
             });
         }
@@ -179,12 +196,19 @@ public class InfinispanKeycloakTransaction implements KeycloakTransaction {
         tasks.put(taskKey, () -> clusterProvider.notify(taskKey, event, ignoreSender, ClusterProvider.DCNotify.ALL_DCS));
     }
 
-    public <K, V> void remove(Cache<K, V> cache, K key) {
+    public <K, V> void remove(BasicCache<K, V> cache, K key) {
         log.tracev("Adding cache operation: {0} on {1}", CacheOperation.REMOVE, key);
 
         Object taskKey = getTaskKey(cache, key);
 
-        // TODO:performance Eventual performance optimization could be to skip "cache.remove" if item was added in this transaction (EG. authenticationSession valid for single request due to automatic SSO login)
+        CacheTask current = tasks.get(taskKey);
+        if (current != null) {
+            if (current instanceof CacheTaskWithValue && ((CacheTaskWithValue<?>) current).getOperation() == Operation.PUT) {
+                tasks.remove(taskKey);
+                return;
+            }
+        }
+
         tasks.put(taskKey, new CacheTask() {
 
             @Override
@@ -201,7 +225,7 @@ public class InfinispanKeycloakTransaction implements KeycloakTransaction {
     }
 
     // This is for possibility to lookup for session by id, which was created in this transaction
-    public <K, V> V get(Cache<K, V> cache, K key) {
+    public <K, V> V get(BasicCache<K, V> cache, K key) {
         Object taskKey = getTaskKey(cache, key);
         CacheTask current = tasks.get(taskKey);
         if (current != null) {
@@ -214,7 +238,7 @@ public class InfinispanKeycloakTransaction implements KeycloakTransaction {
         return cache.get(key);
     }
 
-    private static <K, V> Object getTaskKey(Cache<K, V> cache, K key) {
+    private static <K, V> Object getTaskKey(BasicCache<K, V> cache, K key) {
         if (key instanceof String) {
             return new StringBuilder(cache.getName())
                     .append("::")
@@ -228,7 +252,9 @@ public class InfinispanKeycloakTransaction implements KeycloakTransaction {
         void execute();
     }
 
-    public abstract class CacheTaskWithValue<V> implements CacheTask {
+    public enum Operation { PUT, OTHER }
+
+    public static abstract class CacheTaskWithValue<V> implements CacheTask {
         protected V value;
 
         public CacheTaskWithValue(V value) {
@@ -242,11 +268,17 @@ public class InfinispanKeycloakTransaction implements KeycloakTransaction {
         public void setValue(V value) {
             this.value = value;
         }
+
+        public Operation getOperation() {
+            return Operation.OTHER;
+        }
     }
 
     // Ignore return values. Should have better performance within cluster / cross-dc env
-    private static <K, V> Cache<K, V> decorateCache(Cache<K, V> cache) {
-        return cache.getAdvancedCache()
+    private static <K, V> BasicCache<K, V> decorateCache(BasicCache<K, V> cache) {
+        if (cache instanceof RemoteCache)
+            return cache;
+        return ((Cache) cache).getAdvancedCache()
                 .withFlags(Flag.IGNORE_RETURN_VALUES, Flag.SKIP_REMOTE_LOOKUP);
     }
 }

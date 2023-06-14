@@ -18,6 +18,7 @@ package org.keycloak.broker.oidc;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
+import org.apache.http.client.HttpClient;
 import org.jboss.logging.Logger;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
@@ -30,6 +31,7 @@ import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.common.util.Time;
+import org.keycloak.connections.httpclient.HttpClientProvider;
 import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.crypto.SignatureProvider;
 import org.keycloak.events.Details;
@@ -39,6 +41,7 @@ import org.keycloak.events.EventType;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.keys.loader.PublicKeyStorageManager;
+import org.keycloak.models.AbstractKeycloakTransaction;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.KeycloakSession;
@@ -59,15 +62,15 @@ import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.vault.VaultStringSecret;
 
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriBuilder;
-import javax.ws.rs.core.UriInfo;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.UriBuilder;
+import jakarta.ws.rs.core.UriInfo;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -101,7 +104,7 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
 
     @Override
     public Object callback(RealmModel realm, AuthenticationCallback callback, EventBuilder event) {
-        return new OIDCEndpoint(callback, realm, event);
+        return new OIDCEndpoint(callback, realm, event, this);
     }
 
     /**
@@ -124,7 +127,7 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
     public void backchannelLogout(KeycloakSession session, UserSessionModel userSession, UriInfo uriInfo, RealmModel realm) {
         if (getConfig().getLogoutUrl() == null || getConfig().getLogoutUrl().trim().equals("") || !getConfig().isBackchannelSupported())
             return;
-        String idToken = getIDTokenForLogout(session, userSession);
+        String idToken = userSession.getNote(FEDERATED_ID_TOKEN);
         if (idToken == null) return;
         backchannelLogout(userSession, idToken);
     }
@@ -134,23 +137,35 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
         UriBuilder logoutUri = UriBuilder.fromUri(getConfig().getLogoutUrl())
                 .queryParam("state", sessionId);
         logoutUri.queryParam("id_token_hint", idToken);
-        String url = logoutUri.build().toString();
-        try {
-            int status = SimpleHttp.doGet(url, session).asStatus();
-            boolean success = status >= 200 && status < 400;
-            if (!success) {
-                logger.warn("Failed backchannel broker logout to: " + url);
+
+        final String url = logoutUri.build().toString();
+        final HttpClient client = session.getProvider(HttpClientProvider.class).getHttpClient();
+        session.getTransactionManager().enlistAfterCompletion(new AbstractKeycloakTransaction() {
+            @Override
+            protected void commitImpl() {
+                try {
+                    int status = SimpleHttp.doGet(url, client).asStatus();
+                    boolean success = status >= 200 && status < 400;
+                    if (!success) {
+                        logger.warn("Failed backchannel broker logout to: " + url);
+                    }
+                } catch (Exception e) {
+                    logger.warn("Failed backchannel broker logout to: " + url, e);
+                }
             }
-        } catch (Exception e) {
-            logger.warn("Failed backchannel broker logout to: " + url, e);
-        }
+
+            @Override
+            protected void rollbackImpl() {
+                // no-op
+            }
+        });
     }
 
 
     @Override
     public Response keycloakInitiatedBrowserLogout(KeycloakSession session, UserSessionModel userSession, UriInfo uriInfo, RealmModel realm) {
         if (getConfig().getLogoutUrl() == null || getConfig().getLogoutUrl().trim().equals("")) return null;
-        String idToken = getIDTokenForLogout(session, userSession);
+        String idToken = userSession.getNote(FEDERATED_ID_TOKEN);
         if (idToken != null && getConfig().isBackchannelSupported()) {
             backchannelLogout(userSession, idToken);
             return null;
@@ -234,25 +249,6 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
         }
     }
 
-    private String getIDTokenForLogout(KeycloakSession session, UserSessionModel userSession) {
-        String tokenExpirationString = userSession.getNote(FEDERATED_TOKEN_EXPIRATION);
-        long exp = tokenExpirationString == null ? 0 : Long.parseLong(tokenExpirationString);
-        int currentTime = Time.currentTime();
-        if (exp > 0 && currentTime > exp) {
-            String response = refreshTokenForLogout(session, userSession);
-            AccessTokenResponse tokenResponse = null;
-            try {
-                tokenResponse = JsonSerialization.readValue(response, AccessTokenResponse.class);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-            return tokenResponse.getIdToken();
-        } else {
-            return userSession.getNote(FEDERATED_ID_TOKEN);
-
-        }
-    }
-
     protected void processAccessTokenResponse(BrokeredIdentityContext context, AccessTokenResponse response) {
 
 
@@ -316,9 +312,9 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
         }
     }
 
-    protected class OIDCEndpoint extends Endpoint {
-        public OIDCEndpoint(AuthenticationCallback callback, RealmModel realm, EventBuilder event) {
-            super(callback, realm, event);
+    protected static class OIDCEndpoint extends Endpoint {
+        public OIDCEndpoint(AuthenticationCallback callback, RealmModel realm, EventBuilder event, OIDCIdentityProvider provider) {
+            super(callback, realm, event, provider);
         }
 
         @Override
@@ -372,6 +368,20 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
 
         JsonWebToken idToken = validateToken(encodedIdToken);
 
+        if (getConfig().isPassMaxAge()) {
+            AuthenticationSessionModel authSession = session.getContext().getAuthenticationSession();
+
+            if (isAuthTimeExpired(idToken, authSession)) {
+                throw new IdentityBrokerException("User not re-authenticated by the target OpenID Provider");
+            }
+
+            Object authTime = idToken.getOtherClaims().get(IDToken.AUTH_TIME);
+
+            if (authTime != null) {
+                authSession.setClientNote(AuthenticationManager.AUTH_TIME_BROKER, authTime.toString());
+            }
+        }
+
         try {
             BrokeredIdentityContext identity = extractIdentity(tokenResponse, accessToken, idToken);
             
@@ -394,6 +404,25 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
         } catch (Exception e) {
             throw new IdentityBrokerException("Could not fetch attributes from userinfo endpoint.", e);
         }
+    }
+
+    protected boolean isAuthTimeExpired(JsonWebToken idToken, AuthenticationSessionModel authSession) {
+        String maxAge = authSession.getClientNote(OIDCLoginProtocol.MAX_AGE_PARAM);
+
+        if (maxAge == null) {
+            return false;
+        }
+
+        String authTime = idToken.getOtherClaims().getOrDefault(IDToken.AUTH_TIME, "0").toString();
+        int authTimeInt = authTime == null ? 0 : Integer.parseInt(authTime);
+        int maxAgeInt = Integer.parseInt(maxAge);
+
+        if (authTimeInt + maxAgeInt < Time.currentTime()) {
+            logger.debugf("Invalid auth_time claim. User not re-authenticated by the target OP.");
+            return true;
+        }
+
+        return false;
     }
 
     private static final MediaType APPLICATION_JWT_TYPE = MediaType.valueOf("application/jwt");
@@ -798,6 +827,12 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
 
         authenticationSession.setClientNote(BROKER_NONCE_PARAM, nonce);
         uriBuilder.queryParam(OIDCLoginProtocol.NONCE_PARAM, nonce);
+
+        String maxAge = request.getAuthenticationSession().getClientNote(OIDCLoginProtocol.MAX_AGE_PARAM);
+
+        if (getConfig().isPassMaxAge() && maxAge != null) {
+            uriBuilder.queryParam(OIDCLoginProtocol.MAX_AGE_PARAM, maxAge);
+        }
 
         return uriBuilder;
     }

@@ -25,6 +25,11 @@ import java.util.Optional;
 import java.util.function.BooleanSupplier;
 import org.keycloak.config.StorageOptions;
 
+/***
+ * Checks if JPA is enabled either for the legacy or the new store.
+ *
+ * Returns true if the legacy store is used or the new store is used with storage==jpa
+ */
 public class IsJpaStoreEnabled implements BooleanSupplier {
 
     @Override

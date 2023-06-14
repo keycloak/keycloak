@@ -17,6 +17,8 @@
 
 package org.keycloak.models.map.storage.hotRod.authSession;
 
+import org.infinispan.api.annotations.indexing.Basic;
+import org.infinispan.api.annotations.indexing.Indexed;
 import org.infinispan.protostream.GeneratedSchema;
 import org.infinispan.protostream.annotations.AutoProtoSchemaBuilder;
 import org.infinispan.protostream.annotations.ProtoDoc;
@@ -41,7 +43,7 @@ import java.util.Set;
         topLevelEntity = true,
         modelClass = "org.keycloak.sessions.RootAuthenticationSessionModel"
 )
-@ProtoDoc("@Indexed")
+@Indexed
 @ProtoDoc("schema-version: " + HotRodRootAuthenticationSessionEntity.VERSION)
 public class HotRodRootAuthenticationSessionEntity extends AbstractHotRodEntity {
 
@@ -62,21 +64,20 @@ public class HotRodRootAuthenticationSessionEntity extends AbstractHotRodEntity 
     }
 
 
-    @ProtoDoc("@Field(index = Index.YES, store = Store.YES)")
+    @Basic(projectable = true)
     @ProtoField(number = 1)
     public Integer entityVersion = VERSION;
 
     @ProtoField(number = 2)
     public String id;
 
-    @ProtoDoc("@Field(index = Index.YES, store = Store.YES)")
+    @Basic(sortable = true)
     @ProtoField(number = 3)
     public String realmId;
 
     @ProtoField(number = 4)
     public Long timestamp;
 
-    @ProtoDoc("@Field(index = Index.YES, store = Store.YES)")
     @ProtoField(number = 5)
     public Long expiration;
 
@@ -96,26 +97,6 @@ public class HotRodRootAuthenticationSessionEntity extends AbstractHotRodEntity 
             if (entity.id != null) throw new IllegalStateException("Id cannot be changed");
             entity.id = id;
             entity.updated |= id != null;
-        }
-
-        @Override
-        public Optional<MapAuthenticationSessionEntity> getAuthenticationSession(String tabId) {
-            HotRodRootAuthenticationSessionEntity rootAuthSession = getHotRodEntity();
-            if (rootAuthSession.authenticationSessions == null || rootAuthSession.authenticationSessions.isEmpty()) return Optional.empty();
-
-            return rootAuthSession.authenticationSessions.stream()
-                    .filter(as -> Objects.equals(as.tabId, tabId))
-                    .findFirst()
-                    .map(HotRodAuthenticationSessionEntityDelegate::new);
-        }
-
-        @Override
-        public Boolean removeAuthenticationSession(String tabId) {
-            HotRodRootAuthenticationSessionEntity rootAuthSession = getHotRodEntity();
-            boolean removed = rootAuthSession.authenticationSessions != null &&
-                    rootAuthSession.authenticationSessions.removeIf(c -> Objects.equals(c.tabId, tabId));
-            rootAuthSession.updated |= removed;
-            return removed;
         }
 
         @Override

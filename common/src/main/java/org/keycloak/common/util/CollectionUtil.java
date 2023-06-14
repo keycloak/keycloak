@@ -18,9 +18,12 @@
 package org.keycloak.common.util;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * @author <a href="mailto:jeroen.rosenberg@gmail.com">Jeroen Rosenberg</a>
@@ -74,5 +77,16 @@ public class CollectionUtil {
 
     public static boolean isNotEmpty(Collection<?> collection) {
         return !isEmpty(collection);
+    }
+
+    public static <T> Set<T> intersection(Collection<T> col1, Collection<T> col2) {
+        if (isEmpty(col1) || isEmpty(col2)) return Collections.emptySet();
+
+        final Collection<T> iteratorCollection = col1.size() <= col2.size() ? col1 : col2;
+        final Collection<T> searchCollection = iteratorCollection.equals(col1) ? col2 : col1;
+
+        return iteratorCollection.stream()
+                .filter(searchCollection::contains)
+                .collect(Collectors.toSet());
     }
 }

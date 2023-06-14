@@ -17,7 +17,7 @@
 
 package org.keycloak.models.map.singleUseObject;
 
-import org.keycloak.models.ActionTokenValueModel;
+import org.keycloak.models.SingleUseObjectValueModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.SingleUseObjectProviderFactory;
 import org.keycloak.models.map.common.AbstractMapProviderFactory;
@@ -25,16 +25,16 @@ import org.keycloak.models.map.common.AbstractMapProviderFactory;
 /**
  * @author <a href="mailto:mkanis@redhat.com">Martin Kanis</a>
  */
-public class MapSingleUseObjectProviderFactory extends AbstractMapProviderFactory<MapSingleUseObjectProvider, MapSingleUseObjectEntity, ActionTokenValueModel>
+public class MapSingleUseObjectProviderFactory extends AbstractMapProviderFactory<MapSingleUseObjectProvider, MapSingleUseObjectEntity, SingleUseObjectValueModel>
         implements SingleUseObjectProviderFactory<MapSingleUseObjectProvider> {
 
     public MapSingleUseObjectProviderFactory() {
-        super(ActionTokenValueModel.class, MapSingleUseObjectProvider.class);
+        super(SingleUseObjectValueModel.class, MapSingleUseObjectProvider.class);
     }
 
     @Override
     public MapSingleUseObjectProvider createNew(KeycloakSession session) {
-        return new MapSingleUseObjectProvider(session, getStorage(session));
+        return new MapSingleUseObjectProvider(getMapStorage(session));
     }
 
     @Override

@@ -21,13 +21,16 @@ import io.fabric8.kubernetes.api.model.networking.v1.IngressBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.api.model.networking.v1.Ingress;
 import org.keycloak.operator.Constants;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.IngressSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
-import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusBuilder;
+import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusAggregator;
 
 import java.util.HashMap;
 import java.util.Optional;
 
-public class KeycloakIngress extends OperatorManagedResource implements StatusUpdater<KeycloakStatusBuilder> {
+import static org.keycloak.operator.crds.v2alpha1.CRDUtils.isTlsConfigured;
+
+public class KeycloakIngress extends OperatorManagedResource implements StatusUpdater<KeycloakStatusAggregator> {
 
     private final Ingress existingIngress;
     private final Keycloak keycloak;
@@ -40,8 +43,9 @@ public class KeycloakIngress extends OperatorManagedResource implements StatusUp
 
     @Override
     protected Optional<HasMetadata> getReconciledResource() {
-        if (keycloak.getSpec().isDisableDefaultIngress()) {
-            if (existingIngress != null) {
+        IngressSpec ingressSpec = keycloak.getSpec().getIngressSpec();
+        if (ingressSpec != null && !ingressSpec.isIngressEnabled()) {
+            if (existingIngress != null && isExistingIngressFromSameOwnerReference()) {
                 deleteExistingIngress();
             }
             return Optional.empty();
@@ -49,27 +53,36 @@ public class KeycloakIngress extends OperatorManagedResource implements StatusUp
             var defaultIngress = newIngress();
             var resultIngress = (existingIngress != null) ? existingIngress : defaultIngress;
 
-            if (resultIngress.getMetadata().getAnnotations() == null) {
-                resultIngress.getMetadata().setAnnotations(new HashMap<>());
-            }
-            resultIngress.getMetadata().getAnnotations().putAll(defaultIngress.getMetadata().getAnnotations());
+            resultIngress.getMetadata().setAnnotations(defaultIngress.getMetadata().getAnnotations());
             resultIngress.setSpec(defaultIngress.getSpec());
             return Optional.of(resultIngress);
         }
     }
 
     private Ingress newIngress() {
-        var port = (keycloak.getSpec().isHttp()) ? Constants.KEYCLOAK_HTTP_PORT : Constants.KEYCLOAK_HTTPS_PORT;
-        var backendProtocol = (keycloak.getSpec().isHttp()) ? "HTTP" : "HTTPS";
+        var port = KeycloakService.getServicePort(keycloak);
+        var annotations = new HashMap<String, String>();
+
+        // set default annotations
+        if (isTlsConfigured(keycloak)) {
+            annotations.put("nginx.ingress.kubernetes.io/backend-protocol", "HTTPS");
+            annotations.put("route.openshift.io/termination", "passthrough");
+        } else {
+            annotations.put("nginx.ingress.kubernetes.io/backend-protocol", "HTTP");
+            annotations.put("route.openshift.io/termination", "edge");
+        }
+
+        var optionalSpec = Optional.ofNullable(keycloak.getSpec().getIngressSpec());
+        optionalSpec.map(IngressSpec::getAnnotations).ifPresent(annotations::putAll);
 
         Ingress ingress = new IngressBuilder()
                 .withNewMetadata()
                     .withName(getName())
                     .withNamespace(getNamespace())
-                    .addToAnnotations("nginx.ingress.kubernetes.io/backend-protocol", backendProtocol)
-                    .addToAnnotations("route.openshift.io/termination", "passthrough")
+                    .addToAnnotations(annotations)
                 .endMetadata()
                 .withNewSpec()
+                    .withIngressClassName(optionalSpec.map(IngressSpec::getIngressClassName).orElse(null))
                     .withNewDefaultBackend()
                         .withNewService()
                             .withName(keycloak.getMetadata().getName() + Constants.KEYCLOAK_SERVICE_SUFFIX)
@@ -97,15 +110,26 @@ public class KeycloakIngress extends OperatorManagedResource implements StatusUp
                 .endSpec()
                 .build();
 
-        if (!keycloak.getSpec().isHostnameDisabled()) {
-            ingress.getSpec().getRules().get(0).setHost(keycloak.getSpec().getHostname());
+        final var hostnameSpec = keycloak.getSpec().getHostnameSpec();
+        if (hostnameSpec != null && hostnameSpec.getHostname() != null) {
+            ingress.getSpec().getRules().get(0).setHost(hostnameSpec.getHostname());
         }
 
         return ingress;
     }
 
     protected void deleteExistingIngress() {
-        client.network().v1().ingresses().inNamespace(getNamespace()).delete(existingIngress);
+        client.resource(existingIngress).delete();
+    }
+
+    private boolean isExistingIngressFromSameOwnerReference() {
+
+        return existingIngress
+                .getMetadata()
+                .getOwnerReferences()
+                .stream()
+                .anyMatch(oneOwnerRef -> oneOwnerRef.getUid().equalsIgnoreCase(keycloak.getMetadata().getUid()));
+
     }
 
     protected Ingress fetchExistingIngress() {
@@ -118,10 +142,14 @@ public class KeycloakIngress extends OperatorManagedResource implements StatusUp
                 .get();
     }
 
-    public void updateStatus(KeycloakStatusBuilder status) {
-        if (!keycloak.getSpec().isDisableDefaultIngress() && existingIngress == null) {
+    public void updateStatus(KeycloakStatusAggregator status) {
+        IngressSpec ingressSpec = keycloak.getSpec().getIngressSpec();
+        if (ingressSpec == null) {
+            ingressSpec = new IngressSpec();
+            ingressSpec.setIngressEnabled(true);
+        }
+        if (ingressSpec.isIngressEnabled() && existingIngress == null) {
             status.addNotReadyMessage("No existing Keycloak Ingress found, waiting for creating a new one");
-            return;
         }
     }
 

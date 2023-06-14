@@ -26,11 +26,9 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.message.BasicNameValuePair;
 import org.jboss.logging.Logger;
 import org.keycloak.OAuth2Constants;
-import org.keycloak.adapters.authentication.ClientCredentialsProviderUtils;
+import org.keycloak.adapters.AdapterUtils;
 import org.keycloak.adapters.rotation.AdapterTokenVerifier;
 import org.keycloak.common.VerificationException;
-import org.keycloak.common.util.KeycloakUriBuilder;
-import org.keycloak.constants.ServiceUrlConstants;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
 import org.keycloak.util.JsonSerialization;
@@ -96,7 +94,7 @@ public class DirectAccessGrantsLoginModule extends AbstractKeycloakLoginModule {
             formparams.add(new BasicNameValuePair(OAuth2Constants.SCOPE, scope));
         }
 
-        ClientCredentialsProviderUtils.setClientCredentials(deployment, post, formparams);
+        AdapterUtils.setClientCredentials(deployment, post, formparams);
 
         UrlEncodedFormEntity form = new UrlEncodedFormEntity(formparams, "UTF-8");
         post.setEntity(form);
@@ -154,7 +152,7 @@ public class DirectAccessGrantsLoginModule extends AbstractKeycloakLoginModule {
                 HttpPost post = new HttpPost(logoutUri);
 
                 List<NameValuePair> formparams = new ArrayList<>();
-                ClientCredentialsProviderUtils.setClientCredentials(deployment, post, formparams);
+                AdapterUtils.setClientCredentials(deployment, post, formparams);
                 formparams.add(new BasicNameValuePair(OAuth2Constants.REFRESH_TOKEN, refreshToken));
 
                 UrlEncodedFormEntity form = new UrlEncodedFormEntity(formparams, "UTF-8");

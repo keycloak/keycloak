@@ -19,9 +19,13 @@ package org.keycloak.quarkus.runtime.cli.command;
 
 import static org.keycloak.quarkus.runtime.Messages.cliExecutionError;
 
+import org.keycloak.config.OptionCategory;
 import picocli.CommandLine;
 import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.Spec;
+
+import java.util.Arrays;
+import java.util.List;
 
 public abstract class AbstractCommand {
 
@@ -34,5 +38,26 @@ public abstract class AbstractCommand {
 
     protected void executionError(CommandLine cmd, String message, Throwable cause) {
         cliExecutionError(cmd, message, cause);
+    }
+
+    /**
+     * Returns true if this command should include runtime options for the CLI.
+     */
+    public boolean includeRuntime() {
+        return false;
+    }
+
+    /**
+     * Returns true if this command should include build time options for the CLI.
+     */
+    public boolean includeBuildTime() {
+        return false;
+    }
+
+    /**
+     * Returns a list of all option categories which are available for this command.
+     */
+    public List<OptionCategory> getOptionCategories() {
+        return Arrays.asList(OptionCategory.values());
     }
 }

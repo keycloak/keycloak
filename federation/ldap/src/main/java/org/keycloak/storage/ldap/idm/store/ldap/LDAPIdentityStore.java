@@ -295,15 +295,12 @@ public class LDAPIdentityStore implements IdentityStore {
     @Override
     public int countQueryResults(LDAPQuery identityQuery) {
         int limit = identityQuery.getLimit();
-        int offset = identityQuery.getOffset();
 
         identityQuery.setLimit(0);
-        identityQuery.setOffset(0);
 
         int resultCount = identityQuery.getResultList().size();
 
         identityQuery.setLimit(limit);
-        identityQuery.setOffset(offset);
 
         return resultCount;
     }
@@ -550,8 +547,8 @@ public class LDAPIdentityStore implements IdentityStore {
                 // Ignore empty attributes on create (changetype: add)
                 !(isCreate && attrValue.isEmpty()) &&
 
-                // Since we're extracting for saving, skip read-only attributes. ldapObject.getReadOnlyAttributeNames() are lower-cased
-                !ldapObject.getReadOnlyAttributeNames().contains(attrNameLowercased) &&
+                // Skip read-only attributes for saving if not create. ldapObject.getReadOnlyAttributeNames() are lower-cased
+                (isCreate || !ldapObject.getReadOnlyAttributeNames().contains(attrNameLowercased)) &&
 
                 // Only extract RDN for create since it can't be changed on update
                 (isCreate || !rdnAttrNamesLowerCased.contains(attrNameLowercased))

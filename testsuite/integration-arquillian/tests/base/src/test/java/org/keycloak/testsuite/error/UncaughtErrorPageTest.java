@@ -23,8 +23,9 @@ import org.keycloak.testsuite.arquillian.annotation.UncaughtServerErrorExpected;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.utils.MediaType;
+import org.openqa.selenium.By;
 
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
@@ -32,6 +33,7 @@ import java.net.URI;
 import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 
@@ -102,7 +104,7 @@ public class UncaughtErrorPageTest extends AbstractKeycloakTest {
         try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
             String accessToken = adminClient.tokenManager().getAccessTokenString();
 
-            HttpPost post = new HttpPost(suiteContext.getAuthServerInfo().getUriBuilder().path("/auth/admin/realms").build());
+            HttpPost post = new HttpPost(suiteContext.getAuthServerInfo().getUriBuilder().path("/auth/admin/realms/master/components").build());
             post.setEntity(new StringEntity("{ invalid : invalid }"));
             post.setHeader("Authorization", "bearer " + accessToken);
             post.setHeader("Content-Type", "application/json");
@@ -122,7 +124,7 @@ public class UncaughtErrorPageTest extends AbstractKeycloakTest {
         try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
             String accessToken = adminClient.tokenManager().getAccessTokenString();
 
-            HttpPost post = new HttpPost(suiteContext.getAuthServerInfo().getUriBuilder().path("/auth/admin/realms").build());
+            HttpPost post = new HttpPost(suiteContext.getAuthServerInfo().getUriBuilder().path("/auth/admin/realms/master/components").build());
             post.setEntity(new StringEntity("{\"<img src=alert(1)>\":1}"));
             post.setHeader("Authorization", "bearer " + accessToken);
             post.setHeader("Content-Type", "application/json");
@@ -203,6 +205,29 @@ public class UncaughtErrorPageTest extends AbstractKeycloakTest {
         }
     }
 
+    @Test
+    public void switchLocale() throws MalformedURLException {
+        RealmResource testRealm = realmsResouce().realm("master");
+        RealmRepresentation rep = testRealm.toRepresentation();
+        rep.setInternationalizationEnabled(true);
+        rep.setDefaultLocale("en");
+        HashSet<String> supported = new HashSet<>();
+        supported.add("en");
+        supported.add("de");
+        rep.setSupportedLocales(supported);
+        testRealm.update(rep);
+
+        try {
+            checkPageNotFound("/auth/realms/master/nosuch");
+            String url = driver.findElement(By.xpath("//a[text()='Deutsch']")).getAttribute("href");
+            driver.navigate().to(url);
+            errorPage.assertCurrent();
+        } finally {
+            rep.setInternationalizationEnabled(false);
+            testRealm.update(rep);
+        }
+    }
+
     private void checkPageNotFound(String path) throws MalformedURLException {
         URI uri = suiteContext.getAuthServerInfo().getUriBuilder().path(path).build();
         driver.navigate().to(uri.toURL());
@@ -211,4 +236,27 @@ public class UncaughtErrorPageTest extends AbstractKeycloakTest {
         assertEquals("Page not found", errorPage.getError());
     }
 
+    @Test
+    public void jsonProcessingException() throws IOException {
+        try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
+            String accessToken = adminClient.tokenManager().getAccessTokenString();
+
+            // send an empty array to the user endpoint which expects a User json object
+            HttpPost post = new HttpPost(suiteContext.getAuthServerInfo().getUriBuilder().path("/auth/admin/realms/master/users").build());
+            post.setEntity(new StringEntity("[]"));
+            post.setHeader("Authorization", "bearer " + accessToken);
+            post.setHeader("Content-Type", "application/json");
+
+            try (CloseableHttpResponse response = client.execute(post)) {
+                assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatusLine().getStatusCode());
+
+                Header header = response.getFirstHeader("Content-Type");
+                assertThat(header, notNullValue());
+                assertEquals(MediaType.APPLICATION_JSON, header.getValue());
+
+                OAuth2ErrorRepresentation error = JsonSerialization.readValue(response.getEntity().getContent(), OAuth2ErrorRepresentation.class);
+                assertEquals("unknown_error", error.getError());
+            }
+        }
+    }
 }

@@ -3,7 +3,6 @@
     {
       "name": "address",
       "types": [
-        "admin",
         "account",
         "login"
       ]

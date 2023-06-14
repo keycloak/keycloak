@@ -189,6 +189,10 @@ and then execute the following command from the project root directory:
 mvn -f testsuite/integration-arquillian/pom.xml clean install -Pauth-server-quarkus -Dtest=OIDCProtocolMappersTest
 ```
 
+### Resolving DNS names when running tests
+
+In order to avoid using external services for DNS resolution, the tests are executed using a local host file by setting the `-Djdk.net.hosts.file=${project.build.testOutputDirectory}/hosts_file` system property.
+
 ## Documentation
 
 The documentation is a set of guides available from the [docs](../docs/guides/src/main/server) module. Please,
@@ -203,6 +207,66 @@ Please, make sure:
 * Documentation is updated if you are introducing any new behavior or changing an existing one that needs to be communicated
 * Make sure you have a test within the [tests/integration](tests/integration) module to cover the changes
 * You probably want to run a full build of the `quarkus` module, including running tests, to make sure you won't be surprised by failures in CI.
+
+## Upgrading Quarkus Version
+
+Upgrading Quarkus requires a few steps:
+
+* Change the Quarkus version
+* Change the dependencies we are using from Quarkus 
+* Run a build to make sure the server extension is not broken
+
+The steps still require a lot of manual work, and we should be improving this.
+
+### Changing the Quarkus version
+
+To change the Quarkus version, you can run the following script:
+
+```bash
+./set-quarkus-version.sh <version>
+```
+
+The `set-quarkus-version.sh` script is enough to change the version for all dependencies we are
+using from Quarkus. 
+
+The `<version>` should point to a branch or a tag from Quarkus repository.
+
+It is also possible to change to a snapshot version by running:
+
+```bash
+./set-quarkus-version.sh
+```
+
+### Run a local build
+
+After changing the dependency versions, you can run a local build to make sure the server extension is not broken by API changes and if
+all tests are passing:
+
+```
+mvn clean install
+```
+
+### Changing versions of JDBC Extensions
+
+It might happen that when upgrading a version for any of the JDBC extensions (e.g.: `quarkus-jdbc-postgresql`) you also need to make sure the server extension is using the same JDBC Drivers.
+
+For that, you should look at the `deployment` module of the corresponding JDBC extension from Quarkus (e.g.: https://github.com/quarkusio/quarkus/blob/main/extensions/jdbc/jdbc-postgresql/deployment/src/main/java/io/quarkus/jdbc/postgresql/deployment/JDBCPostgreSQLProcessor.java) to check if they match with the drivers used by the server extension by looking at the `org.keycloak.config.database.Database` class.
+
+### Changing versions of Quarkiverse dependencies
+
+Make sure the Quarkiverse dependencies are also updated and in sync with the Quarkus version you are upgrading.
+
+For now, we only have this Quarkiverse dependency:
+
+  * https://github.com/quarkiverse/quarkus-vault
+
+### What can go wrong when upgrading?
+
+The perfect scenario is that after performing all the steps above the server extension will compile, the distribution can be built,
+and all tests will pass.
+
+However, it is expected breaking changes between Quarkus upgrades that break the integration code we have in both [deployment](deployment) and [runtime](runtime) modules. When this happens,
+you should understand what is breaking and upgrade the integration code accordingly.
 
 ## References
 

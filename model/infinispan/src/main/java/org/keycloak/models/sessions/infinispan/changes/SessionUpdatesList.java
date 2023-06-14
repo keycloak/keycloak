@@ -20,6 +20,7 @@ package org.keycloak.models.sessions.infinispan.changes;
 import java.util.LinkedList;
 import java.util.List;
 
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.sessions.infinispan.entities.SessionEntity;
@@ -32,6 +33,8 @@ import org.keycloak.models.sessions.infinispan.entities.SessionEntity;
 class SessionUpdatesList<S extends SessionEntity> {
 
     private final RealmModel realm;
+
+    private final ClientModel client;
 
     private final SessionEntityWrapper<S> entityWrapper;
 
@@ -47,10 +50,15 @@ class SessionUpdatesList<S extends SessionEntity> {
         this.realm = realm;
         this.entityWrapper = entityWrapper;
         this.persistenceState = persistenceState;
+        this.client = entityWrapper.getClientIfNeeded(realm);
     }
 
     public RealmModel getRealm() {
         return realm;
+    }
+
+    public ClientModel getClient() {
+        return client;
     }
 
     public SessionEntityWrapper<S> getEntityWrapper() {

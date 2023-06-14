@@ -26,26 +26,23 @@ import org.keycloak.models.map.storage.criteria.DefaultModelCriteria;
 
 import java.util.Arrays;
 import java.util.Date;
-import java.util.function.Function;
 import java.util.stream.Stream;
 
 import static org.keycloak.models.map.storage.ModelCriteriaBuilder.Operator.EQ;
 import static org.keycloak.models.map.storage.ModelCriteriaBuilder.Operator.GE;
 import static org.keycloak.models.map.storage.ModelCriteriaBuilder.Operator.IN;
 import static org.keycloak.models.map.storage.ModelCriteriaBuilder.Operator.LE;
+import static org.keycloak.models.map.storage.QueryParameters.Order.ASCENDING;
 import static org.keycloak.models.map.storage.QueryParameters.Order.DESCENDING;
 import static org.keycloak.models.map.storage.criteria.DefaultModelCriteria.criteria;
 
-public class MapAuthEventQuery implements EventQuery {
+public abstract class MapAuthEventQuery implements EventQuery {
 
     private Integer firstResult;
     private Integer maxResults;
+    private QueryParameters.Order order = DESCENDING;
     private DefaultModelCriteria<Event> mcb = criteria();
-    private final Function<QueryParameters<Event>, Stream<Event>> resultProducer;
-
-    public MapAuthEventQuery(Function<QueryParameters<Event>, Stream<Event>> resultProducer) {
-        this.resultProducer = resultProducer;
-    }
+    protected String realmId;
 
     @Override
     public EventQuery type(EventType... types) {
@@ -56,6 +53,7 @@ public class MapAuthEventQuery implements EventQuery {
     @Override
     public EventQuery realm(String realmId) {
         mcb = mcb.compare(SearchableFields.REALM_ID, EQ, realmId);
+        this.realmId = realmId;
         return this;
     }
 
@@ -102,10 +100,24 @@ public class MapAuthEventQuery implements EventQuery {
     }
 
     @Override
+    public EventQuery orderByDescTime() {
+        order = DESCENDING;
+        return this;
+    }
+
+    @Override
+    public EventQuery orderByAscTime() {
+        order = ASCENDING;
+        return this;
+    }
+
+    @Override
     public Stream<Event> getResultStream() {
-        return resultProducer.apply(QueryParameters.withCriteria(mcb)
+        return read(QueryParameters.withCriteria(mcb)
                 .offset(firstResult)
                 .limit(maxResults)
-                .orderBy(SearchableFields.TIMESTAMP, DESCENDING));
+                .orderBy(SearchableFields.TIMESTAMP, order));
     }
+
+    protected abstract Stream<Event> read(QueryParameters<Event> queryParameters);
 }

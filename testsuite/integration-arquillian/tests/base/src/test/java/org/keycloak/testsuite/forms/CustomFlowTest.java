@@ -56,12 +56,12 @@ import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.RealmRepUtil;
 import org.keycloak.testsuite.util.UserBuilder;
 
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response;
 
 import java.util.HashMap;
 import java.util.Map;
 
-import javax.ws.rs.core.Response.Status;
+import jakarta.ws.rs.core.Response.Status;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 import static org.keycloak.testsuite.util.Matchers.statusCodeIs;
@@ -337,7 +337,7 @@ public class CustomFlowTest extends AbstractFlowTest {
         testingClient.testing().updateAuthenticator(state);
 
         OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("password", "test-user", "password");
-        assertEquals(400, response.getStatusCode());
+        assertEquals(401, response.getStatusCode());
         assertEquals("invalid_client", response.getError());
 
         events.expectLogin()
@@ -347,7 +347,7 @@ public class CustomFlowTest extends AbstractFlowTest {
                 .removeDetail(Details.CODE_ID)
                 .removeDetail(Details.REDIRECT_URI)
                 .removeDetail(Details.CONSENT)
-                .error(Errors.INVALID_CLIENT_CREDENTIALS)
+                .error(Errors.CLIENT_NOT_FOUND)
                 .assertEvent();
 
         state.setClientId("test-app");

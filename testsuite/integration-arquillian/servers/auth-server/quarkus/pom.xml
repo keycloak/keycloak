@@ -5,7 +5,7 @@
     <parent>
         <artifactId>integration-arquillian-servers-auth-server</artifactId>
         <groupId>org.keycloak.testsuite</groupId>
-        <version>999-SNAPSHOT</version>
+        <version>999.0.0-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -14,13 +14,14 @@
 
     <properties>
         <auth.server.home>${project.build.directory}/unpacked/keycloak-${project.version}</auth.server.home>
-        <common.resources>${basedir}/../jboss/common</common.resources>
+        <common.resources>${basedir}/../common</common.resources>
         <session.cache.owners>2</session.cache.owners>
         <offline.session.cache.owners>2</offline.session.cache.owners>
         <login.failure.cache.owners>2</login.failure.cache.owners>
         <auth.server.quarkus.cluster.config>local</auth.server.quarkus.cluster.config>
         <!-- Path to testsuite/test resources : Themes-->
         <keycloak.base.test.resource>${project.parent.basedir}/../../tests/base/src/test/resources</keycloak.base.test.resource>
+        <auth.server.fips.mode>disabled</auth.server.fips.mode>
     </properties>
     
     <dependencies>
@@ -263,41 +264,78 @@
             </properties>
         </profile>
 
-        <!-- Nashorn script engine needs to be manually added for the new Java versions as it is not part of the JDK anymore  -->
         <profile>
-            <id>jdk15</id>
-            <activation>
-                <jdk>[15,)</jdk>
-            </activation>
+            <id>auth-server-fips140-2</id>
+            <properties>
+                <auth.server.fips.mode>non-strict</auth.server.fips.mode>
+            </properties>
 
             <dependencies>
                 <dependency>
-                    <groupId>org.openjdk.nashorn</groupId>
-                    <artifactId>nashorn-core</artifactId>
+                    <groupId>org.keycloak</groupId>
+                    <artifactId>keycloak-crypto-fips1402</artifactId>
                 </dependency>
             </dependencies>
 
             <build>
                 <plugins>
                     <plugin>
+                        <artifactId>maven-resources-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>copy-fips-pki-conf</id>
+                                <phase>process-resources</phase>
+                                <goals>
+                                    <goal>copy-resources</goal>
+                                </goals>
+                                <configuration>
+                                    <outputDirectory>${auth.server.home}/conf</outputDirectory>
+                                    <resources>
+                                        <resource>
+                                            <directory>${common.resources}/fips</directory>
+                                            <includes>
+                                                <include>**</include>
+                                            </includes>
+                                        </resource>
+                                    </resources>
+                                    <overwrite>true</overwrite>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+
+                    <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-dependency-plugin</artifactId>
                         <executions>
                             <execution>
-                                <id>copy-dependencies-quarkus</id>
+                                <id>copy-bcfips-deps</id>
                                 <phase>generate-resources</phase>
                                 <goals>
                                     <goal>copy-dependencies</goal>
                                 </goals>
                                 <configuration>
                                     <outputDirectory>${auth.server.home}/providers</outputDirectory>
-                                    <includeArtifactIds>nashorn-core,asm,asm-util,asm-commons</includeArtifactIds>
+                                    <includeArtifactIds>bc-fips,bctls-fips,bcpkix-fips</includeArtifactIds>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>copy-bcfips-deps-client</id>
+                                <phase>generate-resources</phase>
+                                <goals>
+                                    <goal>copy-dependencies</goal>
+                                </goals>
+                                <configuration>
+                                    <outputDirectory>${auth.server.home}/bin/client/lib</outputDirectory>
+                                    <includeArtifactIds>bc-fips,bctls-fips</includeArtifactIds>
                                 </configuration>
                             </execution>
                         </executions>
                     </plugin>
+
                 </plugins>
             </build>
+
         </profile>
 
     </profiles>

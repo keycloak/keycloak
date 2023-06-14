@@ -18,19 +18,21 @@ package org.keycloak.models.map.storage.ldap;
 
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.map.common.AbstractEntity;
-import org.keycloak.models.map.storage.MapKeycloakTransaction;
+import org.keycloak.models.map.common.SessionAttributesUtils;
 import org.keycloak.models.map.storage.MapStorage;
 import org.keycloak.models.map.storage.MapStorageProvider;
 import org.keycloak.models.map.storage.MapStorageProviderFactory.Flag;
 
 public class LdapMapStorageProvider implements MapStorageProvider {
 
+    private final KeycloakSession session;
     private final LdapMapStorageProviderFactory factory;
-    private final String sessionTxPrefix;
+    private final int factoryId;
 
-    public LdapMapStorageProvider(LdapMapStorageProviderFactory factory, String sessionTxPrefix) {
+    public LdapMapStorageProvider(KeycloakSession session, LdapMapStorageProviderFactory factory, int factoryId) {
+        this.session = session;
         this.factory = factory;
-        this.sessionTxPrefix = sessionTxPrefix;
+        this.factoryId = factoryId;
     }
 
     @Override
@@ -38,21 +40,12 @@ public class LdapMapStorageProvider implements MapStorageProvider {
     }
 
     @Override
-    @SuppressWarnings("unchecked")
-    public <V extends AbstractEntity, M> MapStorage<V, M> getStorage(Class<M> modelType, Flag... flags) {
-        // MapStorage is not a functional interface, therefore don't try to convert it to a lambda as additional methods might be added in the future
-        //noinspection Convert2Lambda
-        return new MapStorage<V, M>() {
-            @Override
-            public MapKeycloakTransaction<V, M> createTransaction(KeycloakSession session) {
-                MapKeycloakTransaction<V, M> sessionTx = session.getAttribute(sessionTxPrefix + modelType.hashCode(), MapKeycloakTransaction.class);
-                if (sessionTx == null) {
-                    sessionTx = factory.createTransaction(session, modelType);
-                    session.setAttribute(sessionTxPrefix + modelType.hashCode(), sessionTx);
-                }
-                return sessionTx;
-            }
-        };
+    public <V extends AbstractEntity, M> MapStorage<V, M> getMapStorage(Class<M> modelType, Flag... flags) {
+        return SessionAttributesUtils.createMapStorageIfAbsent(session, getClass(), modelType, factoryId, () -> {
+            LdapMapStorage store = (LdapMapStorage) factory.createMapStorage(session, modelType);
+            session.getTransactionManager().enlist(store);
+            return store;
+        });
     }
 
 }

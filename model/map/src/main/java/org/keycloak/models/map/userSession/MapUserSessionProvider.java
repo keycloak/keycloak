@@ -18,7 +18,6 @@ package org.keycloak.models.map.userSession;
 
 import org.jboss.logging.Logger;
 import org.keycloak.common.util.Time;
-import org.keycloak.device.DeviceActivityManager;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
@@ -27,8 +26,9 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.UserSessionProvider;
+import org.keycloak.models.map.common.DeepCloner;
+import org.keycloak.models.map.common.HasRealmId;
 import org.keycloak.models.map.common.TimeAdapter;
-import org.keycloak.models.map.storage.MapKeycloakTransaction;
 import org.keycloak.models.map.storage.MapStorage;
 import org.keycloak.models.map.storage.ModelCriteriaBuilder.Operator;
 import org.keycloak.models.map.storage.criteria.DefaultModelCriteria;
@@ -62,18 +62,18 @@ public class MapUserSessionProvider implements UserSessionProvider {
 
     private static final Logger LOG = Logger.getLogger(MapUserSessionProvider.class);
     private final KeycloakSession session;
-    protected final MapKeycloakTransaction<MapUserSessionEntity, UserSessionModel> userSessionTx;
+    protected final MapStorage<MapUserSessionEntity, UserSessionModel> userSessionTx;
 
     /**
      * Storage for transient user sessions which lifespan is limited to one request.
      */
     private final Map<String, MapUserSessionEntity> transientUserSessions = new HashMap<>();
+    private final boolean storeHasRealmId;
 
     public MapUserSessionProvider(KeycloakSession session, MapStorage<MapUserSessionEntity, UserSessionModel> userSessionStore) {
         this.session = session;
-        userSessionTx = userSessionStore.createTransaction(session);
-
-        session.getTransactionManager().enlistAfterCompletion(userSessionTx);
+        this.userSessionTx = userSessionStore;
+        this.storeHasRealmId = userSessionTx instanceof HasRealmId;
     }
 
     private Function<MapUserSessionEntity, UserSessionModel> userEntityToAdapterFunc(RealmModel realm) {
@@ -84,13 +84,24 @@ public class MapUserSessionProvider implements UserSessionProvider {
                 if (TRANSIENT == origEntity.getPersistenceState()) {
                     transientUserSessions.remove(origEntity.getId());
                 } else {
-                    userSessionTx.delete(origEntity.getId());
+                    storeWithRealm(realm).delete(origEntity.getId());
                 }
                 return null;
             } else {
-                return new MapUserSessionAdapter(session, realm, origEntity);
+                UserModel userModel = session.users().getUserById(realm, origEntity.getUserId());
+                if (userModel != null) {
+                    return new MapUserSessionAdapter(session, realm, userModel, origEntity);
+                }
+                return null;
             }
         };
+    }
+
+    private MapStorage<MapUserSessionEntity, UserSessionModel> storeWithRealm(RealmModel realm) {
+        if (storeHasRealmId) {
+            ((HasRealmId) userSessionTx).setRealmId(realm == null ? null : realm.getId());
+        }
+        return userSessionTx;
     }
 
     @Override
@@ -102,7 +113,7 @@ public class MapUserSessionProvider implements UserSessionProvider {
     public AuthenticatedClientSessionModel createClientSession(RealmModel realm, ClientModel client, UserSessionModel userSession) {
         LOG.tracef("createClientSession(%s, %s, %s)%s", realm, client, userSession, getShortStackTrace());
 
-        MapUserSessionEntity userSessionEntity = getUserSessionById(userSession.getId());
+        MapUserSessionEntity userSessionEntity = getUserSessionById(realm, userSession.getId());
 
         if (userSessionEntity == null) {
             throw new IllegalStateException("User session entity does not exist: " + userSession.getId());
@@ -113,11 +124,14 @@ public class MapUserSessionProvider implements UserSessionProvider {
         }
 
         MapAuthenticatedClientSessionEntity entity = createAuthenticatedClientSessionEntityInstance(null, userSession.getId(),
-                realm.getId(), client.getId(), false);
+                realm.getId(), client.getId(), userSession.isOffline());
         String started = entity.getTimestamp() != null ? String.valueOf(TimeAdapter.fromMilliSecondsToSeconds(entity.getTimestamp())) : String.valueOf(0);
         entity.setNote(AuthenticatedClientSessionModel.STARTED_AT_NOTE, started);
+        entity.setNote(AuthenticatedClientSessionModel.USER_SESSION_STARTED_AT_NOTE, String.valueOf(userSession.getStarted()));
+        if (userSession.isRememberMe()) {
+            entity.setNote(AuthenticatedClientSessionModel.USER_SESSION_REMEMBER_ME_NOTE, "true");
+        }
         setClientSessionExpiration(entity, realm, client);
-
         userSessionEntity.addAuthenticatedClientSession(entity);
 
         // We need to load the clientSession through userModel so we return an entity that is included within the
@@ -136,13 +150,6 @@ public class MapUserSessionProvider implements UserSessionProvider {
     }
 
     @Override
-    public UserSessionModel createUserSession(RealmModel realm, UserModel user, String loginUsername, String ipAddress,
-                                              String authMethod, boolean rememberMe, String brokerSessionId, String brokerUserId) {
-        return createUserSession(null, realm, user, loginUsername, ipAddress, authMethod, rememberMe, brokerSessionId,
-                brokerUserId, UserSessionModel.SessionPersistenceState.PERSISTENT);
-    }
-
-    @Override
     public UserSessionModel createUserSession(String id, RealmModel realm, UserModel user, String loginUsername,
                                               String ipAddress, String authMethod, boolean rememberMe, String brokerSessionId,
                                               String brokerUserId, UserSessionModel.SessionPersistenceState persistenceState) {
@@ -157,19 +164,15 @@ public class MapUserSessionProvider implements UserSessionProvider {
             }
             transientUserSessions.put(entity.getId(), entity);
         } else {
-            if (id != null && userSessionTx.read(id) != null) {
+            if (id != null && storeWithRealm(realm).exists(id)) {
                 throw new ModelDuplicateException("User session exists: " + id);
             }
-            entity = userSessionTx.create(entity);
+            entity = storeWithRealm(realm).create(entity);
         }
 
         entity.setPersistenceState(persistenceState);
         setUserSessionExpiration(entity, realm);
         UserSessionModel userSession = userEntityToAdapterFunc(realm).apply(entity);
-
-        if (userSession != null) {
-            DeviceActivityManager.attachDevice(userSession, session);
-        }
 
         return userSession;
     }
@@ -187,13 +190,19 @@ public class MapUserSessionProvider implements UserSessionProvider {
             return userEntityToAdapterFunc(realm).apply(userSessionEntity);
         }
 
-        DefaultModelCriteria<UserSessionModel> mcb = realmAndOfflineCriteriaBuilder(realm, false)
-                .compare(UserSessionModel.SearchableFields.ID, Operator.EQ, id);
+        // This is an exceptional case where not to use the criteria query:
+        // As the ID is already known, and we expect in almost all cases to have exactly one row being returned,
+        // the provider fetches the instance by ID and does the filtering in the Java code afterward instead
+        // of using the criteria query. When using a criteria query in earlier versions, the store (CockroachDB) would pick
+        // a wrong optimization path and lock too many DB rows which would result in transaction-not-serializable exceptions
+        // on concurrent transactions. This change has been done in the assumption that all stores would be faster
+        // to evaluate the fetch-by-id than a criteria query.
+        userSessionEntity = storeWithRealm(realm).read(id);
+        if (userSessionEntity != null && Objects.equals(userSessionEntity.getRealmId(), realm.getId()) && !userSessionEntity.isOffline()) {
+            return userEntityToAdapterFunc(realm).apply(userSessionEntity);
+        }
 
-        return userSessionTx.read(withCriteria(mcb))
-                .findFirst()
-                .map(userEntityToAdapterFunc(realm))
-                .orElse(null);
+        return null;
     }
 
     @Override
@@ -203,7 +212,7 @@ public class MapUserSessionProvider implements UserSessionProvider {
 
         LOG.tracef("getUserSessionsStream(%s, %s)%s", realm, user, getShortStackTrace());
 
-        return userSessionTx.read(withCriteria(mcb))
+        return storeWithRealm(realm).read(withCriteria(mcb))
                 .map(userEntityToAdapterFunc(realm))
                 .filter(Objects::nonNull);
     }
@@ -215,7 +224,7 @@ public class MapUserSessionProvider implements UserSessionProvider {
 
         LOG.tracef("getUserSessionsStream(%s, %s)%s", realm, client, getShortStackTrace());
 
-        return userSessionTx.read(withCriteria(mcb))
+        return storeWithRealm(realm).read(withCriteria(mcb))
                 .map(userEntityToAdapterFunc(realm))
                 .filter(Objects::nonNull);
     }
@@ -229,7 +238,7 @@ public class MapUserSessionProvider implements UserSessionProvider {
                 .compare(UserSessionModel.SearchableFields.CLIENT_ID, Operator.EQ, client.getId());
 
 
-        return userSessionTx.read(withCriteria(mcb).pagination(firstResult, maxResults,
+        return storeWithRealm(realm).read(withCriteria(mcb).pagination(firstResult, maxResults,
                         UserSessionModel.SearchableFields.LAST_SESSION_REFRESH))
                 .map(userEntityToAdapterFunc(realm))
                 .filter(Objects::nonNull);
@@ -242,7 +251,7 @@ public class MapUserSessionProvider implements UserSessionProvider {
 
         LOG.tracef("getUserSessionByBrokerUserIdStream(%s, %s)%s", realm, brokerUserId, getShortStackTrace());
 
-        return userSessionTx.read(withCriteria(mcb))
+        return storeWithRealm(realm).read(withCriteria(mcb))
                 .map(userEntityToAdapterFunc(realm))
                 .filter(Objects::nonNull);
     }
@@ -254,7 +263,7 @@ public class MapUserSessionProvider implements UserSessionProvider {
 
         LOG.tracef("getUserSessionByBrokerSessionId(%s, %s)%s", realm, brokerSessionId, getShortStackTrace());
 
-        return userSessionTx.read(withCriteria(mcb))
+        return storeWithRealm(realm).read(withCriteria(mcb))
                 .findFirst()
                 .map(userEntityToAdapterFunc(realm))
                 .orElse(null);
@@ -287,7 +296,7 @@ public class MapUserSessionProvider implements UserSessionProvider {
 
         LOG.tracef("getActiveUserSessions(%s, %s)%s", realm, client, getShortStackTrace());
 
-        return userSessionTx.getCount(withCriteria(mcb));
+        return storeWithRealm(realm).getCount(withCriteria(mcb));
     }
 
     @Override
@@ -296,7 +305,7 @@ public class MapUserSessionProvider implements UserSessionProvider {
 
         LOG.tracef("getActiveClientSessionStats(%s, %s)%s", realm, offline, getShortStackTrace());
 
-        return userSessionTx.read(withCriteria(mcb))
+        return storeWithRealm(realm).read(withCriteria(mcb))
                 .map(userEntityToAdapterFunc(realm))
                 .filter(Objects::nonNull)
                 .map(UserSessionModel::getAuthenticatedClientSessions)
@@ -314,7 +323,16 @@ public class MapUserSessionProvider implements UserSessionProvider {
 
         LOG.tracef("removeUserSession(%s, %s)%s", realm, session, getShortStackTrace());
 
-        userSessionTx.delete(withCriteria(mcb));
+        // This is an exceptional case where not to use the criteria query:
+        // As the ID is already known, the provider does the filtering in the Java code and uses delete-by-id
+        // instead of using the criteria query to delete rows.
+        // When using a criteria query in earlier versions, the store (CockroachDB) would pick
+        // a wrong optimization path and lock too many DB rows which would result in transaction-not-serializable exceptions
+        // on concurrent transactions. This change has been done in the assumption that delete-by-id would be faster than
+        // delete-by-criteria for all stores.
+        if (Objects.equals(session.getRealm(), realm) && !session.isOffline()) {
+            storeWithRealm(realm).delete(session.getId());
+        }
     }
 
     @Override
@@ -325,7 +343,7 @@ public class MapUserSessionProvider implements UserSessionProvider {
 
         LOG.tracef("removeUserSessions(%s, %s)%s", realm, user, getShortStackTrace());
 
-        userSessionTx.delete(withCriteria(mcb));
+        storeWithRealm(realm).delete(withCriteria(mcb));
     }
 
     @Override
@@ -344,7 +362,7 @@ public class MapUserSessionProvider implements UserSessionProvider {
 
         LOG.tracef("removeUserSessions(%s)%s", realm, getShortStackTrace());
 
-        userSessionTx.delete(withCriteria(mcb));
+        storeWithRealm(realm).delete(withCriteria(mcb));
     }
 
     @Override
@@ -362,7 +380,8 @@ public class MapUserSessionProvider implements UserSessionProvider {
         LOG.tracef("createOfflineUserSession(%s)%s", userSession, getShortStackTrace());
 
         MapUserSessionEntity offlineUserSession = createUserSessionEntityInstance(userSession, true);
-        offlineUserSession = userSessionTx.create(offlineUserSession);
+        RealmModel realm = userSession.getRealm();
+        offlineUserSession = storeWithRealm(realm).create(offlineUserSession);
 
         // set a reference for the offline user session to the original online user session
         userSession.setNote(CORRESPONDING_SESSION_ID, offlineUserSession.getId());
@@ -393,12 +412,12 @@ public class MapUserSessionProvider implements UserSessionProvider {
 
         DefaultModelCriteria<UserSessionModel> mcb;
         if (userSession.isOffline()) {
-            userSessionTx.delete(userSession.getId());
+            storeWithRealm(realm).delete(userSession.getId());
         } else if (userSession.getNote(CORRESPONDING_SESSION_ID) != null) {
             String uk = userSession.getNote(CORRESPONDING_SESSION_ID);
             mcb = realmAndOfflineCriteriaBuilder(realm, true)
                     .compare(UserSessionModel.SearchableFields.ID, Operator.EQ, uk);
-            userSessionTx.delete(withCriteria(mcb));
+            storeWithRealm(realm).delete(withCriteria(mcb));
             userSession.removeNote(CORRESPONDING_SESSION_ID);
         }
     }
@@ -411,6 +430,7 @@ public class MapUserSessionProvider implements UserSessionProvider {
         MapAuthenticatedClientSessionEntity clientSessionEntity = createAuthenticatedClientSessionInstance(clientSession, offlineUserSession, true);
         int currentTime = Time.currentTime();
         clientSessionEntity.setNote(AuthenticatedClientSessionModel.STARTED_AT_NOTE, String.valueOf(currentTime));
+        clientSessionEntity.setNote(AuthenticatedClientSessionModel.USER_SESSION_STARTED_AT_NOTE, String.valueOf(offlineUserSession.getStarted()));
         clientSessionEntity.setTimestamp(Time.currentTimeMillis());
         RealmModel realm = clientSession.getRealm();
         setClientSessionExpiration(clientSessionEntity, realm, clientSession.getClient());
@@ -439,7 +459,7 @@ public class MapUserSessionProvider implements UserSessionProvider {
 
         LOG.tracef("getOfflineUserSessionsStream(%s, %s)%s", realm, user, getShortStackTrace());
 
-        return userSessionTx.read(withCriteria(mcb))
+        return storeWithRealm(realm).read(withCriteria(mcb))
                 .map(userEntityToAdapterFunc(realm))
                 .filter(Objects::nonNull);
     }
@@ -451,7 +471,7 @@ public class MapUserSessionProvider implements UserSessionProvider {
 
         LOG.tracef("getOfflineUserSessionByBrokerSessionId(%s, %s)%s", realm, brokerSessionId, getShortStackTrace());
 
-        return userSessionTx.read(withCriteria(mcb))
+        return storeWithRealm(realm).read(withCriteria(mcb))
                 .findFirst()
                 .map(userEntityToAdapterFunc(realm))
                 .orElse(null);
@@ -464,7 +484,7 @@ public class MapUserSessionProvider implements UserSessionProvider {
 
         LOG.tracef("getOfflineUserSessionByBrokerUserIdStream(%s, %s)%s", realm, brokerUserId, getShortStackTrace());
 
-        return userSessionTx.read(withCriteria(mcb))
+        return storeWithRealm(realm).read(withCriteria(mcb))
                 .map(userEntityToAdapterFunc(realm))
                 .filter(Objects::nonNull);
     }
@@ -476,7 +496,7 @@ public class MapUserSessionProvider implements UserSessionProvider {
 
         LOG.tracef("getOfflineSessionsCount(%s, %s)%s", realm, client, getShortStackTrace());
 
-        return userSessionTx.getCount(withCriteria(mcb));
+        return storeWithRealm(realm).getCount(withCriteria(mcb));
     }
 
     @Override
@@ -487,7 +507,7 @@ public class MapUserSessionProvider implements UserSessionProvider {
 
         LOG.tracef("getOfflineUserSessionsStream(%s, %s, %s, %s)%s", realm, client, firstResult, maxResults, getShortStackTrace());
 
-        return userSessionTx.read(withCriteria(mcb).pagination(firstResult, maxResults,
+        return storeWithRealm(realm).read(withCriteria(mcb).pagination(firstResult, maxResults,
                         UserSessionModel.SearchableFields.LAST_SESSION_REFRESH))
                 .map(userEntityToAdapterFunc(realm))
                 .filter(Objects::nonNull);
@@ -538,7 +558,7 @@ public class MapUserSessionProvider implements UserSessionProvider {
 
         LOG.tracef("removeAllUserSessions(%s)%s", realm, getShortStackTrace());
 
-        userSessionTx.delete(withCriteria(mcb));
+        storeWithRealm(realm).delete(withCriteria(mcb));
     }
 
     private Stream<MapUserSessionEntity> getOfflineUserSessionEntityStream(RealmModel realm, String userSessionId) {
@@ -552,7 +572,7 @@ public class MapUserSessionProvider implements UserSessionProvider {
                 .compare(UserSessionModel.SearchableFields.ID, Operator.EQ, userSessionId);
 
         // check if it's an offline user session
-        MapUserSessionEntity userSessionEntity = userSessionTx.read(withCriteria(mcb)).findFirst().orElse(null);
+        MapUserSessionEntity userSessionEntity = storeWithRealm(realm).read(withCriteria(mcb)).findFirst().orElse(null);
         if (userSessionEntity != null) {
             if (Boolean.TRUE.equals(userSessionEntity.isOffline())) {
                 return Stream.of(userSessionEntity);
@@ -561,7 +581,7 @@ public class MapUserSessionProvider implements UserSessionProvider {
             // no session found by the given ID, try to find by corresponding session ID
             mcb = realmAndOfflineCriteriaBuilder(realm, true)
                     .compare(UserSessionModel.SearchableFields.CORRESPONDING_SESSION_ID, Operator.EQ, userSessionId);
-            return userSessionTx.read(withCriteria(mcb));
+            return storeWithRealm(realm).read(withCriteria(mcb));
         }
 
         // it's online user session so lookup offline user session by corresponding session id reference
@@ -569,7 +589,7 @@ public class MapUserSessionProvider implements UserSessionProvider {
         if (offlineUserSessionId != null) {
             mcb = realmAndOfflineCriteriaBuilder(realm, true)
                     .compare(UserSessionModel.SearchableFields.ID, Operator.EQ, offlineUserSessionId);
-            return userSessionTx.read(withCriteria(mcb));
+            return storeWithRealm(realm).read(withCriteria(mcb));
         }
 
         return Stream.empty();
@@ -581,13 +601,13 @@ public class MapUserSessionProvider implements UserSessionProvider {
                 .compare(UserSessionModel.SearchableFields.IS_OFFLINE, Operator.EQ, offline);
     }
 
-    private MapUserSessionEntity getUserSessionById(String id) {
+    private MapUserSessionEntity getUserSessionById(RealmModel realm, String id) {
         if (id == null) return null;
 
         MapUserSessionEntity userSessionEntity = transientUserSessions.get(id);
 
         if (userSessionEntity == null) {
-            MapUserSessionEntity userSession = userSessionTx.read(id);
+            MapUserSessionEntity userSession = storeWithRealm(realm).read(id);
             return userSession;
         }
         return userSessionEntity;
@@ -625,7 +645,7 @@ public class MapUserSessionProvider implements UserSessionProvider {
     private MapUserSessionEntity createUserSessionEntityInstance(String id, String realmId, String userId, String loginUsername, String ipAddress,
                                                                  String authMethod, boolean rememberMe, String brokerSessionId, String brokerUserId,
                                                                  boolean offline) {
-        MapUserSessionEntityImpl userSessionEntity = new MapUserSessionEntityImpl();
+        MapUserSessionEntity userSessionEntity = DeepCloner.DUMB_CLONER.newInstance(MapUserSessionEntity.class);
         userSessionEntity.setId(id);
         userSessionEntity.setRealmId(realmId);
         userSessionEntity.setUserId(userId);
@@ -643,7 +663,7 @@ public class MapUserSessionProvider implements UserSessionProvider {
 
     private MapAuthenticatedClientSessionEntity createAuthenticatedClientSessionEntityInstance(String id, String userSessionId, String realmId,
                                                                                                String clientId, boolean offline) {
-        MapAuthenticatedClientSessionEntityImpl clientSessionEntity = new MapAuthenticatedClientSessionEntityImpl();
+        MapAuthenticatedClientSessionEntity clientSessionEntity = DeepCloner.DUMB_CLONER.newInstance(MapAuthenticatedClientSessionEntity.class);
         clientSessionEntity.setId(id == null ? KeycloakModelUtils.generateId() : id);
         clientSessionEntity.setRealmId(realmId);
         clientSessionEntity.setClientId(clientId);

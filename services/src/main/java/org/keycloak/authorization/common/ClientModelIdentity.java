@@ -68,4 +68,17 @@ public class ClientModelIdentity implements Identity {
         if (role == null) return false;
         return serviceAccount.hasRole(role);
     }
+
+    @Override
+    public boolean hasOneClientRole(String clientId, String... roleNames) {
+        if (serviceAccount == null) return false;
+        ClientModel client = realm.getClientByClientId(clientId);
+        for (String roleName : roleNames) {
+            RoleModel role = client.getRole(roleName);
+            if (role == null) continue;
+            if (serviceAccount.hasRole(role)) return true;
+        }
+        return false;
+    }
+
 }

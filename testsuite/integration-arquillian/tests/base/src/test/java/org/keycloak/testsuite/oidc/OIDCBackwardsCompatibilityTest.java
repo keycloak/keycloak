@@ -31,9 +31,6 @@ import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
-import org.keycloak.testsuite.pages.AccountUpdateProfilePage;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LoginPage;
@@ -45,7 +42,6 @@ import org.keycloak.testsuite.util.OAuthClient;
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-@AuthServerContainerExclude(AuthServer.REMOTE)
 public class OIDCBackwardsCompatibilityTest extends AbstractTestRealmKeycloakTest {
 
     @Rule
@@ -56,9 +52,6 @@ public class OIDCBackwardsCompatibilityTest extends AbstractTestRealmKeycloakTes
 
     @Page
     protected LoginPage loginPage;
-
-    @Page
-    protected AccountUpdateProfilePage profilePage;
 
     @Page
     protected OAuthGrantPage grantPage;
@@ -103,7 +96,7 @@ public class OIDCBackwardsCompatibilityTest extends AbstractTestRealmKeycloakTes
         // Open login again and assert session_state not present
         driver.navigate().to(oauth.getLoginFormUrl());
         org.keycloak.testsuite.Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        loginEvent = events.expectLogin().detail(Details.USERNAME, "test-user@localhost").assertEvent();
+        events.expectLogin().detail(Details.USERNAME, "test-user@localhost").assertEvent();
 
         authzResponse = new OAuthClient.AuthorizationEndpointResponse(oauth);
         Assert.assertNull(authzResponse.getSessionState());

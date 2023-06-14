@@ -22,27 +22,26 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
-import javax.persistence.Basic;
-import javax.persistence.CascadeType;
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.FetchType;
-import javax.persistence.Id;
-import javax.persistence.OneToMany;
-import javax.persistence.Table;
-import javax.persistence.Version;
+import jakarta.persistence.Basic;
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.Id;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 import org.hibernate.annotations.Type;
-import org.hibernate.annotations.TypeDef;
-import org.hibernate.annotations.TypeDefs;
 import org.keycloak.models.map.authSession.MapAuthenticationSessionEntity;
 import org.keycloak.models.map.authSession.MapRootAuthenticationSessionEntity.AbstractRootAuthenticationSessionEntity;
 import org.keycloak.models.map.common.DeepCloner;
 import org.keycloak.models.map.common.UuidValidator;
 import org.keycloak.models.map.storage.jpa.Constants;
 import org.keycloak.models.map.storage.jpa.JpaRootVersionedEntity;
-import org.keycloak.models.map.storage.jpa.hibernate.jsonb.JsonbType;
 
+import org.keycloak.models.map.storage.jpa.hibernate.jsonb.JsonbType;
 import static org.keycloak.models.map.storage.jpa.JpaMapStorageProviderFactory.CLONER;
+import static org.keycloak.models.map.storage.jpa.authSession.entity.JpaRootAuthenticationSessionEntity.TABLE_NAME;
 
 /**
  * Entity represents root authentication session.
@@ -52,9 +51,10 @@ import static org.keycloak.models.map.storage.jpa.JpaMapStorageProviderFactory.C
  * therefore marked as non-insertable and non-updatable to instruct hibernate.
  */
 @Entity
-@Table(name = "kc_auth_root_session")
-@TypeDefs({@TypeDef(name = "jsonb", typeClass = JsonbType.class)})
+@Table(name = TABLE_NAME)
 public class JpaRootAuthenticationSessionEntity extends AbstractRootAuthenticationSessionEntity implements JpaRootVersionedEntity {
+
+    public static final String TABLE_NAME = "kc_auth_root_session";
 
     @Id
     @Column
@@ -65,7 +65,7 @@ public class JpaRootAuthenticationSessionEntity extends AbstractRootAuthenticati
     @Column
     private int version;
 
-    @Type(type = "jsonb")
+    @Type(JsonbType.class)
     @Column(columnDefinition = "jsonb")
     private final JpaRootAuthenticationSessionMetadata metadata;
 
@@ -103,8 +103,9 @@ public class JpaRootAuthenticationSessionEntity extends AbstractRootAuthenticati
      * Used by hibernate when calling cb.construct from read(QueryParameters) method.
      * It is used to select root auth session without metadata(json) field.
      */
-    public JpaRootAuthenticationSessionEntity(UUID id, Integer entityVersion, String realmId, Long timestamp, Long expiration) {
+    public JpaRootAuthenticationSessionEntity(UUID id, int version, Integer entityVersion, String realmId, Long timestamp, Long expiration) {
         this.id = id;
+        this.version = version;
         this.entityVersion = entityVersion;
         this.realmId = realmId;
         this.timestamp = timestamp;
@@ -200,7 +201,7 @@ public class JpaRootAuthenticationSessionEntity extends AbstractRootAuthenticati
     public void addAuthenticationSession(MapAuthenticationSessionEntity authenticationSession) {
         JpaAuthenticationSessionEntity jpaAuthSession = JpaAuthenticationSessionEntity.class.cast(CLONER.from(authenticationSession));
         jpaAuthSession.setParent(this);
-        jpaAuthSession.setEntityVersion(this.getEntityVersion());
+        jpaAuthSession.setEntityVersion(Constants.CURRENT_SCHEMA_VERSION_AUTH_SESSION);
         authSessions.add(jpaAuthSession);
     }
 

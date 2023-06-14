@@ -20,6 +20,7 @@ import org.keycloak.common.util.Time;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ModelIllegalStateException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 
@@ -42,8 +43,11 @@ import static org.keycloak.models.map.userSession.SessionExpiration.setUserSessi
  */
 public class MapUserSessionAdapter extends AbstractUserSessionModel {
 
-    public MapUserSessionAdapter(KeycloakSession session, RealmModel realm, MapUserSessionEntity entity) {
+    private final UserModel user;
+
+    public MapUserSessionAdapter(KeycloakSession session, RealmModel realm, UserModel userModel, MapUserSessionEntity entity) {
         super(session, realm, entity);
+        this.user = userModel;
     }
 
     @Override
@@ -68,7 +72,7 @@ public class MapUserSessionAdapter extends AbstractUserSessionModel {
 
     @Override
     public UserModel getUser() {
-        return session.users().getUserById(getRealm(), entity.getUserId());
+        return this.user;
     }
 
     @Override
@@ -126,14 +130,14 @@ public class MapUserSessionAdapter extends AbstractUserSessionModel {
         }
 
         return authenticatedClientSessions
-                    .stream()
-                    .filter(this::filterAndRemoveExpiredClientSessions)
-                    .filter(this::matchingOfflineFlag)
-                    .filter(this::filterAndRemoveClientSessionWithoutClient)
-                    .collect(Collectors.toMap(MapAuthenticatedClientSessionEntity::getClientId, this::clientEntityToModel));
+                .stream()
+                .filter(this::filterAndRemoveExpiredClientSessions)
+                .filter(this::matchingOfflineFlag)
+                .filter(this::filterAndRemoveClientSessionWithoutClient)
+                .collect(Collectors.toMap(MapAuthenticatedClientSessionEntity::getClientId, this::clientSessionEntityToModel));
     }
 
-    private AuthenticatedClientSessionModel clientEntityToModel(MapAuthenticatedClientSessionEntity clientSessionEntity) {
+    private AuthenticatedClientSessionModel clientSessionEntityToModel(MapAuthenticatedClientSessionEntity clientSessionEntity) {
         return new MapAuthenticatedClientSessionAdapter(session, realm, this, clientSessionEntity) {
             @Override
             public void detachFromUserSession() {
@@ -144,7 +148,12 @@ public class MapUserSessionAdapter extends AbstractUserSessionModel {
     }
 
     public boolean filterAndRemoveExpiredClientSessions(MapAuthenticatedClientSessionEntity clientSession) {
-        if (isExpired(clientSession, false)) {
+        try {
+            if (isExpired(clientSession, false)) {
+                entity.removeAuthenticatedClientSession(clientSession.getClientId());
+                return false;
+            }
+        } catch (ModelIllegalStateException ex) {
             entity.removeAuthenticatedClientSession(clientSession.getClientId());
             return false;
         }
@@ -170,7 +179,9 @@ public class MapUserSessionAdapter extends AbstractUserSessionModel {
         Boolean isClientSessionOffline = clientSession.isOffline();
 
         // If client session doesn't have offline flag default to false
-        if (isClientSessionOffline == null) return !isOffline();
+        if (isClientSessionOffline == null) {
+            return !isOffline();
+        }
 
         return isOffline() == isClientSessionOffline;
     }
@@ -181,9 +192,10 @@ public class MapUserSessionAdapter extends AbstractUserSessionModel {
                 .filter(this::filterAndRemoveExpiredClientSessions)
                 .filter(this::matchingOfflineFlag)
                 .filter(this::filterAndRemoveClientSessionWithoutClient)
-                .map(this::clientEntityToModel)
+                .map(this::clientSessionEntityToModel)
                 .orElse(null);
     }
+
     @Override
     public void removeAuthenticatedClientSessions(Collection<String> removedClientUKS) {
         removedClientUKS.forEach(entity::removeAuthenticatedClientSession);
@@ -248,8 +260,9 @@ public class MapUserSessionAdapter extends AbstractUserSessionModel {
 
         String correspondingSessionId = entity.getNote(CORRESPONDING_SESSION_ID);
         entity.setNotes(new ConcurrentHashMap<>());
-        if (correspondingSessionId != null)
+        if (correspondingSessionId != null) {
             entity.setNote(CORRESPONDING_SESSION_ID, correspondingSessionId);
+        }
 
         entity.clearAuthenticatedClientSessions();
     }
@@ -261,8 +274,12 @@ public class MapUserSessionAdapter extends AbstractUserSessionModel {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof UserSessionModel)) return false;
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof UserSessionModel)) {
+            return false;
+        }
 
         UserSessionModel that = (UserSessionModel) o;
         return Objects.equals(that.getId(), getId());

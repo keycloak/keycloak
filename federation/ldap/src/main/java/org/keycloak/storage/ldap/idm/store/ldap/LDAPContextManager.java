@@ -71,7 +71,7 @@ public final class LDAPContextManager implements AutoCloseable {
         if (!LDAPConstants.AUTH_TYPE_NONE.equals(ldapConfig.getAuthType())) {
             vaultCharSecret = getVaultSecret();
 
-            if (vaultCharSecret != null && !ldapConfig.isStartTls()) {
+            if (vaultCharSecret != null && !ldapConfig.isStartTls() && ldapConfig.getBindCredential() != null) {
                 connProp.put(SECURITY_CREDENTIALS, vaultCharSecret.getAsArray()
                         .orElse(ldapConfig.getBindCredential().toCharArray()));
             }
@@ -87,7 +87,8 @@ public final class LDAPContextManager implements AutoCloseable {
             }
 
             tlsResponse = startTLS(ldapContext, ldapConfig.getAuthType(), ldapConfig.getBindDN(),
-                    vaultCharSecret.getAsArray().orElse(ldapConfig.getBindCredential().toCharArray()), sslSocketFactory);
+                    vaultCharSecret.getAsArray().orElse(ldapConfig.getBindCredential() != null? ldapConfig.getBindCredential().toCharArray() : null),
+                    sslSocketFactory);
 
             // Exception should be already thrown by LDAPContextManager.startTLS if "startTLS" could not be established, but rather do some additional check
             if (tlsResponse == null) {
@@ -139,7 +140,7 @@ public final class LDAPContextManager implements AutoCloseable {
         if(!ldapConfig.isStartTls()) {
             String authType = ldapConfig.getAuthType();
 
-            env.put(Context.SECURITY_AUTHENTICATION, authType);
+            if (authType != null) env.put(Context.SECURITY_AUTHENTICATION, authType);
 
             String bindDN = ldapConfig.getBindDN();
 
@@ -150,8 +151,8 @@ public final class LDAPContextManager implements AutoCloseable {
             }
 
             if (!LDAPConstants.AUTH_TYPE_NONE.equals(authType)) {
-                env.put(Context.SECURITY_PRINCIPAL, bindDN);
-                env.put(Context.SECURITY_CREDENTIALS, bindCredential);
+                if (bindDN != null) env.put(Context.SECURITY_PRINCIPAL, bindDN);
+                if (bindCredential != null) env.put(Context.SECURITY_CREDENTIALS, bindCredential);
             }
         }
 

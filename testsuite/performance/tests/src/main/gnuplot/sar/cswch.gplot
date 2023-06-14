@@ -1,2 +1,0 @@
-set title "Context Switches Per Second"
-plot datafile using 3:5 title columnheader(5) with lines

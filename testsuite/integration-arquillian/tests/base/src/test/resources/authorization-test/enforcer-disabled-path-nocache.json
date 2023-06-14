@@ -1,0 +1,31 @@
+{
+  "realm": "authz-test",
+  "auth-server-url": "http://localhost:8180/auth",
+  "ssl-required": "external",
+  "resource": "resource-server-test",
+  "credentials": {
+    "secret": "secret"
+  },
+  "bearer-only": true,
+  "policy-enforcer": {
+    "path-cache": {
+      "lifespan": 1
+    },
+    "paths": [
+      {
+        "name": "Resource B",
+        "path": "/api/resource/public",
+        "enforcement-mode": "DISABLED"
+      },
+      {
+        "name": "Nonexistent",
+        "path": "/api/resource/all-public/*",
+        "enforcement-mode": "DISABLED"
+      },
+      {
+        "name": "Static Test Resource",
+        "path": "/api/any-resource/test"
+      }
+    ]
+  }
+}

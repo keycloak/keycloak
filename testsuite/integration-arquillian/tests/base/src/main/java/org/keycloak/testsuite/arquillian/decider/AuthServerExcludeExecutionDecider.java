@@ -47,10 +47,6 @@ public class AuthServerExcludeExecutionDecider implements TestExecutionDecider {
 
         if (method.isAnnotationPresent(AuthServerContainerExclude.class)) {
             List<AuthServer> excluded = Arrays.asList(method.getAnnotation(AuthServerContainerExclude.class).value());
-            
-            if (AuthServerTestEnricher.isAuthServerRemote() && excluded.contains(AuthServer.REMOTE)) {
-                return ExecutionDecision.dontExecute("Excluded by @AuthServerContainerExclude.");
-            }
 
             if (AuthServerTestEnricher.isAuthServerQuarkus() && excluded.contains(AuthServer.QUARKUS)) {
                 return ExecutionDecision.dontExecute("Excluded by @AuthServerContainerExclude.");
@@ -58,10 +54,6 @@ public class AuthServerExcludeExecutionDecider implements TestExecutionDecider {
         } else { //class
             if (testContext.getTestClass().isAnnotationPresent(AuthServerContainerExclude.class)) {
                 List<AuthServer> excluded = Arrays.asList(((AuthServerContainerExclude) testContext.getTestClass().getAnnotation(AuthServerContainerExclude.class)).value());
-                
-                if (AuthServerTestEnricher.isAuthServerRemote() && excluded.contains(AuthServer.REMOTE)) {
-                    return ExecutionDecision.dontExecute("Excluded by @AuthServerContainerExclude.");
-                }
 
                 if (AuthServerTestEnricher.isAuthServerQuarkus() && excluded.contains(AuthServer.QUARKUS)) {
                     return ExecutionDecision.dontExecute("Excluded by @AuthServerContainerExclude.");

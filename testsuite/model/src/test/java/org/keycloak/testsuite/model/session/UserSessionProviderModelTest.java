@@ -20,7 +20,6 @@ import org.hamcrest.Matchers;
 import org.infinispan.client.hotrod.RemoteCache;
 import org.junit.Assert;
 import org.junit.Test;
-import org.keycloak.common.util.Time;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
@@ -53,6 +52,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
@@ -76,7 +76,7 @@ public class UserSessionProviderModelTest extends KeycloakModelTest {
 
     @Override
     public void createEnvironment(KeycloakSession s) {
-        RealmModel realm = s.realms().createRealm("test");
+        RealmModel realm = createRealm(s, "test");
         realm.setOfflineSessionIdleTimeout(Constants.DEFAULT_OFFLINE_SESSION_IDLE_TIMEOUT);
         realm.setDefaultRole(s.roles().addRealmRole(realm, Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + realm.getName()));
         realm.setSsoSessionIdleTimeout(1800);
@@ -93,20 +93,6 @@ public class UserSessionProviderModelTest extends KeycloakModelTest {
 
     @Override
     public void cleanEnvironment(KeycloakSession s) {
-        RealmModel realm = s.realms().getRealm(realmId);
-        s.sessions().removeUserSessions(realm);
-
-        UserModel user1 = s.users().getUserByUsername(realm, "user1");
-        UserModel user2 = s.users().getUserByUsername(realm, "user2");
-
-        UserManager um = new UserManager(s);
-        if (user1 != null) {
-            um.removeUser(realm, user1);
-        }
-        if (user2 != null) {
-            um.removeUser(realm, user2);
-        }
-
         s.realms().removeRealm(realmId);
     }
 
@@ -192,7 +178,7 @@ public class UserSessionProviderModelTest extends KeycloakModelTest {
                         clientSession.setTimestamp(1);
                     });
                 } else {
-                    Time.setOffset(1000);
+                    setTimeOffset(1000);
                 }
             });
 
@@ -210,7 +196,7 @@ public class UserSessionProviderModelTest extends KeycloakModelTest {
                 });
             });
         } finally {
-            Time.setOffset(0);
+            setTimeOffset(0);
             kcSession.getKeycloakSessionFactory().publish(new ResetTimeOffsetEvent());
             if (timer != null && timerTaskCtx != null) {
                 timer.schedule(timerTaskCtx.getRunnable(), timerTaskCtx.getIntervalMillis(), PersisterLastSessionRefreshStoreFactory.DB_LSR_PERIODIC_TASK_NAME);
@@ -296,20 +282,40 @@ public class UserSessionProviderModelTest extends KeycloakModelTest {
                 (usMapStorageProvider == null || ConcurrentHashMapStorageProviderFactory.PROVIDER_ID.equals(usMapStorageProvider)));
 
         Set<String> userSessionIds = Collections.newSetFromMap(new ConcurrentHashMap<>());
+        CountDownLatch latch = new CountDownLatch(4);
 
-        inIndependentFactories(4, 30, () -> withRealm(realmId, (session, realm) -> {
-            UserModel user = session.users().getUserByUsername(realm, "user1");
-            UserSessionModel userSession = session.sessions().createUserSession(realm, user, "user1", "", "", false, null, null);
-            userSessionIds.add(userSession.getId());
+        inIndependentFactories(4, 30, () -> {
+            withRealm(realmId, (session, realm) -> {
+                UserModel user = session.users().getUserByUsername(realm, "user1");
+                UserSessionModel userSession = session.sessions().createUserSession(null, realm, user, "user1", "", "", false, null, null, UserSessionModel.SessionPersistenceState.PERSISTENT);
+                userSessionIds.add(userSession.getId());
 
-            return null;
-        }));
+                latch.countDown();
 
-        assertThat(userSessionIds, Matchers.iterableWithSize(4));
+                return null;
+            });
 
-        withRealm(realmId, (session, realm) -> {
-            userSessionIds.forEach(id -> Assert.assertNotNull(session.sessions().getUserSession(realm, id)));
-            return null;
+            // wait for other nodes to finish
+            try {
+                latch.await();
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+
+            assertThat(userSessionIds, Matchers.iterableWithSize(4));
+
+            // wait a bit to allow replication
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+
+            withRealm(realmId, (session, realm) -> {
+                userSessionIds.forEach(id -> Assert.assertNotNull(session.sessions().getUserSession(realm, id)));
+
+                return null;
+            });
         });
     }
 }

@@ -28,8 +28,6 @@ import org.keycloak.representations.idm.ClientPoliciesRepresentation;
 import org.keycloak.representations.idm.ClientProfilesRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.Assert;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
-import org.keycloak.testsuite.util.WaitUtils;
 import org.keycloak.testsuite.utils.io.IOUtil;
 import org.keycloak.util.JsonSerialization;
 
@@ -38,7 +36,6 @@ import org.keycloak.util.JsonSerialization;
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-@AuthServerContainerExclude(value = {AuthServerContainerExclude.AuthServer.REMOTE})
 public class JsonFileImport1301MigrationClientPoliciesTest extends AbstractJsonFileImportMigrationTest {
 
     @Override
@@ -66,5 +63,6 @@ public class JsonFileImport1301MigrationClientPoliciesTest extends AbstractJsonF
         Assert.assertTrue(clientProfiles.getProfiles().isEmpty());
         ClientPoliciesRepresentation clientPolicies = adminClient.realms().realm("test").clientPoliciesPoliciesResource().getPolicies();
         Assert.assertTrue(clientPolicies.getPolicies().isEmpty());
+        testViewGroups(masterRealm);
     }
 }

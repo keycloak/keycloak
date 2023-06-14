@@ -18,7 +18,7 @@
 
 package org.keycloak.authorization.jpa.store;
 
-import javax.persistence.EntityManager;
+import jakarta.persistence.EntityManager;
 
 import org.keycloak.Config;
 import org.keycloak.authorization.AuthorizationProvider;

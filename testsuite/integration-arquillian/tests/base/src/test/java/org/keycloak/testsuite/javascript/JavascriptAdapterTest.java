@@ -7,11 +7,9 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.ClientResource;
-import org.keycloak.common.Profile;
 import org.keycloak.common.util.Retry;
 import org.keycloak.common.util.UriUtils;
 import org.keycloak.events.Details;
-import org.keycloak.events.EventType;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.ClaimsRepresentation;
 import org.keycloak.representations.IDToken;
@@ -23,16 +21,15 @@ import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.SuiteContext;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
-import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
 import org.keycloak.testsuite.auth.page.account.Applications;
 import org.keycloak.testsuite.auth.page.login.OAuthGrant;
 import org.keycloak.testsuite.auth.page.login.UpdatePassword;
+import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.util.JavascriptBrowser;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
+import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.javascript.JSObjectBuilder;
 import org.keycloak.testsuite.util.javascript.JavascriptStateValidator;
 import org.keycloak.testsuite.util.javascript.JavascriptTestExecutor;
@@ -52,23 +49,24 @@ import static java.lang.Math.toIntExact;
 import static org.hamcrest.CoreMatchers.anyOf;
 import static org.hamcrest.CoreMatchers.both;
 import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.CoreMatchers.not;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.lessThan;
 import static org.hamcrest.collection.IsMapContaining.hasEntry;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_HOST;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlDoesntStartWith;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
+import static org.keycloak.testsuite.util.WaitUtils.pause;
 import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
 import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
 
 /**
  * @author mhajas
  */
-@AuthServerContainerExclude(AuthServer.REMOTE)
 public class JavascriptAdapterTest extends AbstractJavascriptTest {
 
     private String testAppUrl;
@@ -145,7 +143,7 @@ public class JavascriptAdapterTest extends AbstractJavascriptTest {
     public void testJSConsoleAuth() {
         testExecutor.init(defaultArguments(), this::assertInitNotAuth)
                 .login(this::assertOnLoginPage)
-                .loginForm( UserBuilder.create().username("user").password("invalid-password").build(),
+                .loginForm(UserBuilder.create().username("user").password("invalid-password").build(),
                         (driver1, output, events) -> assertCurrentUrlDoesntStartWith(testAppUrl, driver1))
                 .loginForm(UserBuilder.create().username("invalid-user").password("password").build(),
                         (driver1, output, events) -> assertCurrentUrlDoesntStartWith(testAppUrl, driver1))
@@ -290,7 +288,6 @@ public class JavascriptAdapterTest extends AbstractJavascriptTest {
     }
 
     @Test
-    @DisableFeature(value = Profile.Feature.ACCOUNT2, skipRestart = true) // TODO remove this (KEYCLOAK-16228)
     public void grantBrowserBasedApp() {
         Assume.assumeTrue("This test doesn't work with phantomjs", !"phantomjs".equals(System.getProperty("js.browser")));
 
@@ -321,11 +318,8 @@ public class JavascriptAdapterTest extends AbstractJavascriptTest {
             applicationsPage.navigateTo();
             events.expectCodeToToken(codeId, loginEvent.getSessionId()).client(CLIENT_ID).assertEvent();
 
-            applicationsPage.revokeGrantForApplication(CLIENT_ID);
-            events.expect(EventType.REVOKE_GRANT)
-                  .client("account")
-                  .detail(Details.REVOKED_CLIENT, CLIENT_ID)
-                  .assertEvent();
+            AccountHelper.revokeConsents(adminClient.realm(REALM_NAME), testUser.getUsername(),CLIENT_ID);
+            Assert.assertTrue(AccountHelper.getUserConsents(adminClient.realm(REALM_NAME), testUser.getUsername()).isEmpty());
 
             jsDriver.navigate().to(testAppUrl);
             testExecutor.configure() // need to configure because we refreshed page
@@ -389,21 +383,23 @@ public class JavascriptAdapterTest extends AbstractJavascriptTest {
 
     @Test
     public void implicitFlowOnTokenExpireTest() {
-        RealmRepresentation realm = adminClient.realms().realm(REALM_NAME).toRepresentation();
-        Integer storeAccesTokenLifespan = realm.getAccessTokenLifespanForImplicitFlow();
-        try {
-            realm.setAccessTokenLifespanForImplicitFlow(5);
-            adminClient.realms().realm(REALM_NAME).update(realm);
+        try (RealmAttributeUpdater rau = new RealmAttributeUpdater(adminClient.realms().realm(REALM_NAME))
+                .setAccessTokenLifespanForImplicitFlow(3)
+                .update()
+        ) {
+                setImplicitFlowForClient();
+                testExecutor.init(defaultArguments().implicitFlow());
 
-            setImplicitFlowForClient();
-            testExecutor.logInAndInit(defaultArguments().implicitFlow(), testUser, this::assertInitAuth)
-                  .addTimeSkew(-5); // Move in time instead of wait
+                testExecutor.logInAndInit(defaultArguments().implicitFlow(), testUser, this::assertInitAuth);
+                assertThat(driver.getPageSource(), not(containsString("Access token expired")));
 
-            waitUntilElement(eventsArea).text().contains("Access token expired");
-        } finally {
-            // Get to origin state
-            realm.setAccessTokenLifespanForImplicitFlow(storeAccesTokenLifespan);
-            adminClient.realms().realm(REALM_NAME).update(realm);
+                // Here we can't move in time because we are waiting for onTokenExpired execution which is already
+                //   scheduled by setTimeout method, so we can't make it execute sooner
+                pause(1000);
+
+                waitUntilElement(eventsArea).text().contains("Access token expired");
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
     }
 
@@ -807,23 +803,6 @@ public class JavascriptAdapterTest extends AbstractJavascriptTest {
                     assertInitAuth(driver1, output, events1);
                     assertThat(driver1.getCurrentUrl(), containsString("#fragmentPart"));
                 });
-    }
-
-    @Test
-    public void testRefreshTokenWithDeprecatedPromiseHandles() {
-        String refreshWithDeprecatedHandles = "var callback = arguments[arguments.length - 1];" +
-                "   window.keycloak.updateToken(9999).success(function (refreshed) {" +
-            "            callback('Success handle');" +
-                "   }).error(function () {" +
-                "       callback('Error handle');" +
-                "   });";
-
-        testExecutor.init(defaultArguments(), this::assertInitNotAuth)
-                .executeAsyncScript(refreshWithDeprecatedHandles, assertOutputContains("Error handle"))
-                .login(this::assertOnLoginPage)
-                .loginForm(testUser, this::assertOnTestAppUrl)
-                .init(defaultArguments(), this::assertInitAuth)
-                .executeAsyncScript(refreshWithDeprecatedHandles, assertOutputContains("Success handle"));
     }
 
     @Test

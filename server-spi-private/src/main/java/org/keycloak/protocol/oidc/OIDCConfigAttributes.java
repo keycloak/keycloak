@@ -82,6 +82,8 @@ public final class OIDCConfigAttributes {
     public static final String FRONT_CHANNEL_LOGOUT_URI = "frontchannel.logout.url";
     public static final String FRONT_CHANNEL_LOGOUT_SESSION_REQUIRED = "frontchannel.logout.session.required";
 
+    public static final String POST_LOGOUT_REDIRECT_URIS = "post.logout.redirect.uris";
+
     private OIDCConfigAttributes() {
     }
 

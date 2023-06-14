@@ -29,14 +29,11 @@ import org.keycloak.events.EventBuilder;
 import org.keycloak.models.KeycloakSession;
 
 import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.net.URLDecoder;
 import java.util.Iterator;
 
 /**
  * LinkedIn social provider. See https://developer.linkedin.com/docs/oauth2
- * 
+ *
  * @author Vlastimil Elias (velias at redhat dot com)
  */
 public class LinkedInIdentityProvider extends AbstractOAuth2IdentityProvider<OAuth2IdentityProviderConfig> implements SocialIdentityProvider<OAuth2IdentityProviderConfig> {
@@ -50,11 +47,13 @@ public class LinkedInIdentityProvider extends AbstractOAuth2IdentityProvider<OAu
 	public static final String EMAIL_SCOPE = "r_emailaddress";
 	public static final String DEFAULT_SCOPE = "r_liteprofile " + EMAIL_SCOPE;
 
+	private static final String PROFILE_PROJECTION = "profileProjection";
+
 	public LinkedInIdentityProvider(KeycloakSession session, OAuth2IdentityProviderConfig config) {
 		super(session, config);
 		config.setAuthorizationUrl(AUTH_URL);
 		config.setTokenUrl(TOKEN_URL);
-		config.setUserInfoUrl(PROFILE_URL);
+		config.setUserInfoUrl(getUserInfoUrl(config.getConfig().get(PROFILE_PROJECTION)));
 		// email scope is mandatory in order to resolve the username using the email address
 		if (!config.getDefaultScope().contains(EMAIL_SCOPE)) {
 			config.setDefaultScope(config.getDefaultScope() + " " + EMAIL_SCOPE);
@@ -68,7 +67,7 @@ public class LinkedInIdentityProvider extends AbstractOAuth2IdentityProvider<OAu
 
 	@Override
 	protected String getProfileEndpointForValidation(EventBuilder event) {
-		return PROFILE_URL;
+		return getConfig().getUserInfoUrl();
 	}
 
 	@Override
@@ -90,7 +89,7 @@ public class LinkedInIdentityProvider extends AbstractOAuth2IdentityProvider<OAu
 	protected BrokeredIdentityContext doGetFederatedIdentity(String accessToken) {
 		log.debug("doGetFederatedIdentity()");
 		try {
-			BrokeredIdentityContext identity = extractIdentityFromProfile(null, doHttpGet(PROFILE_URL, accessToken));
+			BrokeredIdentityContext identity = extractIdentityFromProfile(null, doHttpGet(getConfig().getUserInfoUrl(), accessToken));
 
 			identity.setEmail(fetchEmailAddress(accessToken, identity));
 
@@ -151,5 +150,17 @@ public class LinkedInIdentityProvider extends AbstractOAuth2IdentityProvider<OAu
 		}
 
 		return null;
+	}
+
+	/**
+	 * append profileProjection to profile URL if exists
+	 *
+	 * @param projection parameter
+	 * @return Profile URL
+	 */
+	private String getUserInfoUrl(String projection) {
+		return projection == null || projection.isEmpty()
+			? PROFILE_URL
+			: PROFILE_URL + "?projection=" + projection;
 	}
 }

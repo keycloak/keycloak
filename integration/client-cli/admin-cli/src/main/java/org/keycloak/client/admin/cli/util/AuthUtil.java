@@ -191,7 +191,8 @@ public class AuthUtil {
 
     public static String getSignedRequestToken(String keystore, String storePass, String keyPass, String alias, int sigLifetime, String clientId, String realmInfoUrl) {
 
-        KeyPair keypair = KeystoreUtil.loadKeyPairFromKeystore(keystore, storePass, keyPass, alias, KeystoreUtil.KeystoreFormat.JKS);
+        KeystoreUtil.KeystoreFormat keystoreType = Enum.valueOf(KeystoreUtil.KeystoreFormat.class, KeystoreUtil.getKeystoreType(null, keystore, KeystoreUtil.KeystoreFormat.JKS.toString()));
+        KeyPair keypair = KeystoreUtil.loadKeyPairFromKeystore(keystore, storePass, keyPass, alias, keystoreType);
 
         JsonWebToken reqToken = new JsonWebToken();
         reqToken.id(UUID.randomUUID().toString());
