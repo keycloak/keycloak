@@ -51,23 +51,27 @@ public class AdminEventBuilder {
     private EventStoreProvider store;
 
     public AdminEventBuilder(RealmModel realm, AdminAuth auth, KeycloakSession session, ClientConnection clientConnection) {
-        this(realm, auth, session, clientConnection.getRemoteAddr());
+        this(realm, auth, session, clientConnection.getRemoteAddr(), null);
     }
 
-    private AdminEventBuilder(RealmModel realm, AdminAuth auth, KeycloakSession session, String ipAddress) {
+    private AdminEventBuilder(RealmModel realm, AdminAuth auth, KeycloakSession session, String ipAddress, AdminEvent adminEvent) {
         this.realm = realm;
-        adminEvent = new AdminEvent();
-
         this.listeners = new HashMap<>();
         updateStore(session);
         addListeners(session);
         this.auth = auth;
         this.ipAddress = ipAddress;
-        realm(realm);
-        authRealm(auth.getRealm());
-        authClient(auth.getClient());
-        authUser(auth.getUser());
-        authIpAddress(ipAddress);
+        if (adminEvent != null) {
+            this.adminEvent = new AdminEvent(adminEvent);
+        } else {
+            this.adminEvent = new AdminEvent();
+            // Assumption: the following methods write information to the adminEvent only
+            realm(realm);
+            authRealm(auth.getRealm());
+            authClient(auth.getClient());
+            authUser(auth.getUser());
+            authIpAddress(ipAddress);
+        }
     }
 
     /**
@@ -86,7 +90,8 @@ public class AdminEventBuilder {
                 newEventRealm,
                 new AdminAuth(newAuthRealm, this.auth.getToken(), newAuthUser, newAuthClient),
                 session,
-                ipAddress
+                ipAddress,
+                adminEvent
         );
     }
 
