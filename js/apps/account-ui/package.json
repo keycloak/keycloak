@@ -11,7 +11,7 @@
     "@patternfly/react-core": "^4.276.8",
     "@patternfly/react-icons": "^4.93.6",
     "@patternfly/react-table": "^4.113.0",
-    "i18next": "^22.5.0",
+    "i18next": "^22.5.1",
     "i18next-http-backend": "^2.2.1",
     "keycloak-js": "workspace:*",
     "keycloak-masthead": "workspace:*",
@@ -20,13 +20,13 @@
     "react-dom": "^18.2.0",
     "react-hook-form": "^7.44.3",
     "react-i18next": "^12.3.1",
-    "react-router-dom": "6.11.2",
+    "react-router-dom": "6.12.1",
     "ui-shared": "workspace:*"
   },
   "devDependencies": {
     "@types/lodash-es": "^4.17.7",
-    "@types/react": "^18.2.8",
-    "@types/react-dom": "^18.2.4",
+    "@types/react": "^18.2.12",
+    "@types/react-dom": "^18.2.5",
     "@vitejs/plugin-react-swc": "^3.3.2",
     "vite": "^4.3.9",
     "vite-plugin-checker": "^0.6.0"
