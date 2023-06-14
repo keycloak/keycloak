@@ -22,15 +22,15 @@ const allTimes: TimeUnit[] = [
   { unit: "day", label: "times.days", multiplier: 86400 },
 ];
 
-export type TimeSelectorProps = TextInputProps &
+export type TimeSelectorProps = Omit<TextInputProps, "onChange"> &
   Pick<DropdownProps, "menuAppendTo"> & {
-    value: number;
+    value?: number;
     units?: Unit[];
-    onChange: (time: number | string) => void;
+    onChange?: (time: number | string) => void;
     className?: string;
   };
 
-export const getTimeUnit = (value: number) =>
+export const getTimeUnit = (value: number | undefined = 0) =>
   allTimes.reduce(
     (v, time) =>
       value % time.multiplier === 0 && v.multiplier < time.multiplier
@@ -73,7 +73,10 @@ export const TimeSelector = ({
     const filteredUnits = units.map(
       (unit) => allTimes.find((time) => time.unit === unit)!
     );
-    if (!filteredUnits.every((u) => u.multiplier === multiplier)) {
+    if (
+      !filteredUnits.every((u) => u.multiplier === multiplier) &&
+      filteredUnits[0] !== allTimes[0]
+    ) {
       filteredUnits.unshift(allTimes[0]);
     }
     return filteredUnits;
@@ -86,20 +89,20 @@ export const TimeSelector = ({
       setMultiplier(multiplier);
       setTimeValue(value / multiplier);
     } else {
-      setTimeValue(value);
+      setTimeValue(value || "");
       setMultiplier(defaultMultiplier);
     }
-  }, [value]);
+  }, [value, defaultMultiplier]);
 
   const updateTimeout = (
     timeout: "" | number,
     times: number | undefined = multiplier
   ) => {
     if (timeout !== "") {
-      onChange(timeout * (times || 1));
+      onChange?.(timeout * (times || 1));
       setTimeValue(timeout);
     } else {
-      onChange("");
+      onChange?.("");
     }
   };
 

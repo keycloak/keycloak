@@ -27,6 +27,7 @@ import org.keycloak.authentication.authenticators.browser.CookieAuthenticatorFac
 import org.keycloak.authentication.forms.RegistrationPassword;
 import org.keycloak.authentication.forms.RegistrationProfile;
 import org.keycloak.authentication.forms.RegistrationRecaptcha;
+import org.keycloak.authentication.forms.RegistrationTermsAndConditions;
 import org.keycloak.authentication.forms.RegistrationUserCreation;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
@@ -34,6 +35,7 @@ import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.pages.AppPage;
@@ -52,6 +54,7 @@ import org.keycloak.testsuite.util.AccountHelper;
 import jakarta.mail.internet.MimeMessage;
 import jakarta.ws.rs.core.Response;
 import java.io.IOException;
+import java.util.UUID;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.anyOf;
@@ -353,7 +356,7 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
 
         //contains few special characters we want to be sure they are allowed in username
         String username = "register.U-se@rS_uccess";
-        
+
         registerPage.register("firstName", "lastName", "registerUserSuccess@email", username, "password", "password");
 
         appPage.assertCurrent();
@@ -644,6 +647,56 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
         registerPage.assertCurrent();
     }
 
+    //KEYCLOAK-15244
+    @Test
+    public void registerUserMissingTermsAcceptance() {
+        configureRegistrationFlowWithCustomRegistrationPageForm(UUID.randomUUID().toString(),
+                AuthenticationExecutionModel.Requirement.REQUIRED);
+
+        try {
+            loginPage.open();
+            loginPage.clickRegister();
+            registerPage.assertCurrent();
+
+            registerPage.register("firstName", "lastName", "registerUserMissingTermsAcceptance@email",
+                    "registerUserMissingTermsAcceptance", "password", "password", null, false);
+
+            registerPage.assertCurrent();
+            assertEquals("You must agree to our terms and conditions.", registerPage.getInputAccountErrors().getTermsError());
+
+            events.expectRegister("registerUserMissingTermsAcceptance", "registerUserMissingTermsAcceptance@email")
+                    .removeDetail(Details.USERNAME)
+                    .removeDetail(Details.EMAIL)
+                    .error("invalid_registration").assertEvent();
+        } finally {
+            configureRegistrationFlowWithCustomRegistrationPageForm(UUID.randomUUID().toString());
+        }
+    }
+
+    //KEYCLOAK-15244
+    @Test
+    public void registerUserSuccessTermsAcceptance() {
+        configureRegistrationFlowWithCustomRegistrationPageForm(UUID.randomUUID().toString(),
+                AuthenticationExecutionModel.Requirement.REQUIRED);
+
+        try {
+            loginPage.open();
+            loginPage.clickRegister();
+            registerPage.assertCurrent();
+
+            registerPage.register("firstName", "lastName", "registerUserSuccessTermsAcceptance@email",
+                    "registerUserSuccessTermsAcceptance", "password", "password", null, true);
+
+            assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+
+            String userId = events.expectRegister("registerUserSuccessTermsAcceptance", "registerUserSuccessTermsAcceptance@email")
+                    .assertEvent().getUserId();
+            assertUserRegistered(userId, "registerUserSuccessTermsAcceptance", "registerUserSuccessTermsAcceptance@email");
+        } finally {
+            configureRegistrationFlowWithCustomRegistrationPageForm(UUID.randomUUID().toString());
+        }
+    }
+
     protected RealmAttributeUpdater configureRealmRegistrationEmailAsUsername(final boolean value) {
         return getRealmAttributeUpdater().setRegistrationEmailAsUsername(value);
     }
@@ -709,19 +762,24 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
     }
 
     private void configureRegistrationFlowWithCustomRegistrationPageForm(String newFlowAlias) {
+        configureRegistrationFlowWithCustomRegistrationPageForm(newFlowAlias, AuthenticationExecutionModel.Requirement.DISABLED);
+    }
+
+    private void configureRegistrationFlowWithCustomRegistrationPageForm(String newFlowAlias, AuthenticationExecutionModel.Requirement termsAndConditionRequirement) {
         testingClient.server("test").run(session -> FlowUtil.inCurrentRealm(session).copyRegistrationFlow(newFlowAlias));
         testingClient.server("test").run(session -> FlowUtil.inCurrentRealm(session)
                 .selectFlow(newFlowAlias)
-                        .clear()
-                        .addAuthenticatorExecution(AuthenticationExecutionModel.Requirement.ALTERNATIVE, CookieAuthenticatorFactory.PROVIDER_ID)
-                        .addSubFlowExecution("Sub Flow", AuthenticationFlow.BASIC_FLOW, AuthenticationExecutionModel.Requirement.ALTERNATIVE, subflow -> subflow
-                                .addSubFlowExecution("Sub sub Form Flow", AuthenticationFlow.FORM_FLOW, AuthenticationExecutionModel.Requirement.REQUIRED, subsubflow -> subsubflow
-                                        .addAuthenticatorExecution(AuthenticationExecutionModel.Requirement.REQUIRED, RegistrationUserCreation.PROVIDER_ID)
-                                        .addAuthenticatorExecution(AuthenticationExecutionModel.Requirement.REQUIRED, RegistrationProfile.PROVIDER_ID)
-                                        .addAuthenticatorExecution(AuthenticationExecutionModel.Requirement.REQUIRED, RegistrationPassword.PROVIDER_ID)
-                                        .addAuthenticatorExecution(AuthenticationExecutionModel.Requirement.DISABLED, RegistrationRecaptcha.PROVIDER_ID)
-                                )
+                .clear()
+                .addAuthenticatorExecution(AuthenticationExecutionModel.Requirement.ALTERNATIVE, CookieAuthenticatorFactory.PROVIDER_ID)
+                .addSubFlowExecution("Sub Flow", AuthenticationFlow.BASIC_FLOW, AuthenticationExecutionModel.Requirement.ALTERNATIVE, subflow -> subflow
+                        .addSubFlowExecution("Sub sub Form Flow", AuthenticationFlow.FORM_FLOW, AuthenticationExecutionModel.Requirement.REQUIRED, subsubflow -> subsubflow
+                                .addAuthenticatorExecution(AuthenticationExecutionModel.Requirement.REQUIRED, RegistrationUserCreation.PROVIDER_ID)
+                                .addAuthenticatorExecution(AuthenticationExecutionModel.Requirement.REQUIRED, RegistrationProfile.PROVIDER_ID)
+                                .addAuthenticatorExecution(AuthenticationExecutionModel.Requirement.REQUIRED, RegistrationPassword.PROVIDER_ID)
+                                .addAuthenticatorExecution(AuthenticationExecutionModel.Requirement.DISABLED, RegistrationRecaptcha.PROVIDER_ID)
+                                .addAuthenticatorExecution(termsAndConditionRequirement, RegistrationTermsAndConditions.PROVIDER_ID)
                         )
+                )
                 .defineAsRegistrationFlow() // Activate this new flow
         );
     }

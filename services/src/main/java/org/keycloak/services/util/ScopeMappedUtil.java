@@ -18,35 +18,27 @@
 package org.keycloak.services.util;
 
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.RoleModel;
 import org.keycloak.models.ScopeContainerModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.idm.ClientMappingsRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 
-import java.util.LinkedList;
 import java.util.List;
-import java.util.Set;
+import java.util.stream.Collectors;
 
 public class ScopeMappedUtil {
     public static ClientMappingsRepresentation toClientMappingsRepresentation(ClientModel client, ScopeContainerModel scopeContainer) {
-        Set<RoleModel> roleMappings = KeycloakModelUtils.getClientScopeMappings(client, scopeContainer);
+        List<RoleRepresentation> roles = KeycloakModelUtils.getClientScopeMappingsStream(client, scopeContainer)
+                .map(role -> ModelToRepresentation.toBriefRepresentation(role))
+                .collect(Collectors.toList());
 
-        if (!roleMappings.isEmpty()) {
+        if (roles.isEmpty()) return null;
 
-            ClientMappingsRepresentation mappings = new ClientMappingsRepresentation();
-            mappings.setId(client.getId());
-            mappings.setClient(client.getClientId());
-            List<RoleRepresentation> roles = new LinkedList<>();
-            mappings.setMappings(roles);
-            for (RoleModel role : roleMappings) {
-                roles.add(ModelToRepresentation.toBriefRepresentation(role));
-            }
-
-            return mappings;
-        } else {
-            return null;
-        }
+        ClientMappingsRepresentation mappings = new ClientMappingsRepresentation();
+        mappings.setId(client.getId());
+        mappings.setClient(client.getClientId());
+        mappings.setMappings(roles);
+        return mappings;
     }
 }

@@ -142,7 +142,11 @@ public class UserInfoEndpoint {
         authorization(accessToken);
 
         try {
-            if (MediaType.APPLICATION_FORM_URLENCODED.equalsIgnoreCase(headers.getHeaderString(HttpHeaders.CONTENT_TYPE))) {
+            
+            String contentType = headers.getHeaderString(HttpHeaders.CONTENT_TYPE);
+            jakarta.ws.rs.core.MediaType mediaType = jakarta.ws.rs.core.MediaType.valueOf(contentType);
+            
+            if (jakarta.ws.rs.core.MediaType.APPLICATION_FORM_URLENCODED_TYPE.isCompatible(mediaType)) {
                 MultivaluedMap<String, String> formParams = request.getDecodedFormParameters();
                 checkAccessTokenDuplicated(formParams);
                 accessToken = formParams.getFirst(OAuth2Constants.ACCESS_TOKEN);

@@ -147,3 +147,40 @@ article.pf-c-card.pf-m-flat.kc-available-idps > div > div > h1 {
 .pf-c-table tbody > tr > * {
   white-space: nowrap;
 }
+
+.user-attribute-search-form {
+  display: block;
+  padding: 20px;
+  width: 700px;
+}
+
+.user-attribute-search-form-headline {
+  margin-bottom: 1.5rem;
+}
+
+.user-attribute-search-form-alert {
+  margin-bottom: 1.5rem;
+}
+
+.user-attribute-search-form-key-value {
+  margin-bottom: .5rem;
+}
+
+.user-attribute-search-form-left {
+  display: inline-block;
+  width: 35%;
+}
+
+.user-attribute-search-form-right {
+  display: inline-block;
+  width: 65%;
+}
+
+.user-attribute-search-form-action-group button {
+  margin-top: 2rem;
+}
+
+.user-attribute-search-form-subtoolbar {
+  margin-top: -2rem;
+  display: ruby;
+}

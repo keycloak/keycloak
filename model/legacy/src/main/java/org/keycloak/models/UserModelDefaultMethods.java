@@ -17,8 +17,6 @@
 
 package org.keycloak.models;
 
-import java.util.stream.Stream;
-
 /**
  * @author <a href="mailto:external.Martin.Idel@bosch.io">Martin Idel</a>
  * @version $Revision: 1 $
@@ -59,14 +57,5 @@ public abstract class UserModelDefaultMethods implements UserModel {
     @Override
     public String toString() {
         return getClass().getName() + "@" + getId();
-    }
-
-
-    /**
-     * @deprecated This interface is no longer necessary, collection-based methods were removed from the parent interface
-     * and therefore the parent interface can be used directly
-     */
-    @Deprecated
-    public abstract static class Streams extends UserModelDefaultMethods implements UserModel {
     }
 }

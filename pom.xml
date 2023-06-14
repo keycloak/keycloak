@@ -65,7 +65,6 @@
         <aesh.version>2.4</aesh.version>
         <apache.httpcomponents.version>4.5.14</apache.httpcomponents.version>
         <apache.httpcomponents.httpcore.version>4.4.16</apache.httpcomponents.httpcore.version>
-        <apache.mime4j.version>0.6</apache.mime4j.version>
         <jboss.dmr.version>1.5.1.Final</jboss.dmr.version>
         <bouncycastle.version>1.73</bouncycastle.version>
         <bouncycastle-bcprov-jdk15on.version>1.70</bouncycastle-bcprov-jdk15on.version>
@@ -84,7 +83,7 @@
         <hibernate-orm.version>6.2.1.Final</hibernate-orm.version>
         <hibernate-orm.plugin.version>6.2.1.Final</hibernate-orm.plugin.version>
         <hibernate.c3p0.version>${hibernate-orm.version}</hibernate.c3p0.version>
-        <infinispan.version>14.0.9.Final</infinispan.version>
+        <infinispan.version>14.0.10.Final</infinispan.version>
         <infinispan.protostream.processor.version>4.6.2.Final</infinispan.protostream.processor.version>
         <jackson.version>2.15.0</jackson.version>
         <jackson.databind.version>2.14.2</jackson.databind.version>
@@ -127,7 +126,7 @@
         <org.glassfish.jaxb.xsom.version>2.3.3-b02</org.glassfish.jaxb.xsom.version>
         <undertow.version>2.2.24.Final</undertow.version>
         <undertow-jakarta.version>2.3.2.Final</undertow-jakarta.version>
-        <wildfly-elytron.version>2.1.0.Final</wildfly-elytron.version>
+        <wildfly-elytron.version>2.2.0.Final</wildfly-elytron.version>
         <elytron.undertow-server.version>1.9.0.Final</elytron.undertow-server.version>
         <jetty94.version>9.4.40.v20210413</jetty94.version>
         <woodstox.version>6.0.3</woodstox.version>
@@ -240,7 +239,7 @@
 
         <!-- Frontend -->
         <node.version>v18.16.0</node.version>
-        <pnpm.version>8.5.1</pnpm.version>
+        <pnpm.version>8.6.2</pnpm.version>
     </properties>
 
     <url>http://keycloak.org</url>
@@ -812,17 +811,6 @@
                 </exclusions>
             </dependency>
             <dependency>
-                <groupId>org.apache.james</groupId>
-                <artifactId>apache-mime4j</artifactId>
-                <version>${apache.mime4j.version}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>commons-logging</groupId>
-                        <artifactId>commons-logging</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            <dependency>
                 <groupId>org.wildfly.core</groupId>
                 <artifactId>wildfly-controller</artifactId>
                 <version>${wildfly.core.version}</version>
@@ -831,6 +819,12 @@
                 <groupId>org.wildfly.core</groupId>
                 <artifactId>wildfly-server</artifactId>
                 <version>${wildfly.core.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>io.smallrye</groupId>
+                        <artifactId>jandex</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>org.wildfly</groupId>

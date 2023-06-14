@@ -193,14 +193,14 @@ public class KeycloakIngressTest extends BaseOperatorTest {
 
         Log.info("Trying to modify the ingress");
 
-        var currentIngress = ingressSelector.get();
         var labels = Map.of("address", "EvergreenTerrace742");
-        currentIngress.getSpec().getDefaultBackend().getService().setPort(new ServiceBackendPortBuilder().withName("foo").build());
+		ingressSelector.accept(currentIngress -> {
+			currentIngress.getMetadata().setResourceVersion(null);
+			currentIngress.getSpec().getDefaultBackend().getService().setPort(new ServiceBackendPortBuilder().withName("foo").build());
 
-        currentIngress.getMetadata().getAnnotations().clear();
-        currentIngress.getMetadata().getLabels().putAll(labels);
-
-        ingressSelector.createOrReplace(currentIngress);
+	        currentIngress.getMetadata().getAnnotations().clear();
+	        currentIngress.getMetadata().getLabels().putAll(labels);
+		});
 
         Awaitility.await()
                 .ignoreExceptions()
@@ -396,7 +396,7 @@ public class KeycloakIngressTest extends BaseOperatorTest {
                 .endSpec()
                 .build();
 
-        customIngressCreated = k8sclient.network().v1().ingresses().inNamespace(targetNamespace).create(customIngressCreated);
+        customIngressCreated = k8sclient.resource(customIngressCreated).create();
 
         return customIngressCreated;
     }

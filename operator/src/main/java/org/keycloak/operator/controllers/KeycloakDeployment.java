@@ -33,7 +33,7 @@ import org.keycloak.common.util.CollectionUtil;
 import org.keycloak.operator.Config;
 import org.keycloak.operator.Constants;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
-import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusBuilder;
+import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusAggregator;
 import org.keycloak.operator.crds.v2alpha1.deployment.ValueOrSecret;
 
 import java.nio.charset.StandardCharsets;
@@ -41,6 +41,7 @@ import java.util.ArrayList;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -50,7 +51,7 @@ import java.util.stream.Collectors;
 
 import static org.keycloak.operator.crds.v2alpha1.CRDUtils.isTlsConfigured;
 
-public class KeycloakDeployment extends OperatorManagedResource implements StatusUpdater<KeycloakStatusBuilder> {
+public class KeycloakDeployment extends OperatorManagedResource implements StatusUpdater<KeycloakStatusAggregator> {
 
     private final Config operatorConfig;
     private final KeycloakDistConfigurator distConfigurator;
@@ -122,7 +123,7 @@ public class KeycloakDeployment extends OperatorManagedResource implements Statu
                 .get();
     }
 
-    public void validatePodTemplate(KeycloakStatusBuilder status) {
+    public void validatePodTemplate(KeycloakStatusAggregator status) {
         if (keycloakCR.getSpec() == null ||
                 keycloakCR.getSpec().getUnsupported() == null ||
                 keycloakCR.getSpec().getUnsupported().getPodTemplate() == null) {
@@ -379,7 +380,7 @@ public class KeycloakDeployment extends OperatorManagedResource implements Statu
         baseDeployment.getSpec().getSelector().setMatchLabels(Constants.DEFAULT_LABELS);
         baseDeployment.getSpec().setReplicas(keycloakCR.getSpec().getInstances());
 
-        Map<String, String> labels = new HashMap<>(Constants.DEFAULT_LABELS);
+        Map<String, String> labels = new LinkedHashMap<>(Constants.DEFAULT_LABELS);
         if (operatorConfig.keycloak().podLabels() != null) {
             labels.putAll(operatorConfig.keycloak().podLabels());
         }
@@ -491,20 +492,24 @@ public class KeycloakDeployment extends OperatorManagedResource implements Statu
 
         return envVars;
     }
-
-    public void updateStatus(KeycloakStatusBuilder status) {
+    
+    public void updateStatus(KeycloakStatusAggregator status) {
+        status.apply(b -> b.withSelector(Constants.DEFAULT_LABELS_AS_STRING));
         validatePodTemplate(status);
         if (existingDeployment == null) {
             status.addNotReadyMessage("No existing StatefulSet found, waiting for creating a new one");
             return;
         }
 
-        if (existingDeployment.getStatus() == null
-                || existingDeployment.getStatus().getReadyReplicas() == null
-                || existingDeployment.getStatus().getReadyReplicas() < keycloakCR.getSpec().getInstances()) {
-            status.addNotReadyMessage("Waiting for more replicas");
+        if (existingDeployment.getStatus() == null) {
+            status.addNotReadyMessage("Waiting for deployment status");
+        } else {
+            status.apply(b -> b.withInstances(existingDeployment.getStatus().getReadyReplicas()));
+            if (Optional.ofNullable(existingDeployment.getStatus().getReadyReplicas()).orElse(0) < keycloakCR.getSpec().getInstances()) {
+                status.addNotReadyMessage("Waiting for more replicas");
+            }
         }
-
+        
         if (migrationInProgress) {
             status.addNotReadyMessage("Performing Keycloak upgrade, scaling down the deployment");
         } else if (existingDeployment.getStatus() != null

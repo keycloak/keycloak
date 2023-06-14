@@ -24,6 +24,7 @@ import { PaginatingTableToolbar } from "../table-toolbar/PaginatingTableToolbar"
 import { GroupPath } from "./GroupPath";
 
 import "./group-picker-dialog.css";
+import { fetchAdminUI } from "../../context/auth/admin-ui-endpoint";
 
 export type GroupPickerDialogProps = {
   id?: string;
@@ -72,11 +73,16 @@ export const GroupPickerDialog = ({
       let existingUserGroups;
       let count = 0;
       if (!groupId) {
-        groups = await adminClient.groups.find({
-          first,
-          max: max + (isSearching ? 0 : 1),
-          search: isSearching ? filter : "",
-        });
+        groups = await fetchAdminUI<GroupRepresentation[]>(
+          "ui-ext/groups",
+          Object.assign(
+            {
+              first: `${first}`,
+              max: `${max + 1}`,
+            },
+            isSearching ? null : { search: filter }
+          )
+        );
       } else if (!navigation.map(({ id }) => id).includes(groupId)) {
         group = await adminClient.groups.findOne({ id: groupId });
         if (!group) {

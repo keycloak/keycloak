@@ -70,6 +70,8 @@ public class ProvidersTest extends AbstractAuthenticationTest {
         addProviderInfo(expected, "registration-user-creation", "Registration User Creation",
                 "This action must always be first! Validates the username of the user in validation phase.  " +
                         "In success phase, this will create the user in the database.");
+        addProviderInfo(expected, "registration-terms-and-conditions", "Terms and conditions",
+                "Asks the user to accept terms and conditions before submitting its registration form.");
 
         compareProviders(expected, result);
     }
@@ -154,8 +156,6 @@ public class ProvidersTest extends AbstractAuthenticationTest {
                 "Validates a username and password from login form.");
         addProviderInfo(result, "auth-x509-client-username-form", "X509/Validate Username Form",
                 "Validates username and password from X509 client certificate received as a part of mutual SSL handshake.");
-        addProviderInfo(result, "basic-auth", "Basic Auth Challenge", "Challenge-response authentication using HTTP BASIC scheme.");
-        addProviderInfo(result, "basic-auth-otp", "Basic Auth Password+OTP", "Challenge-response authentication using HTTP BASIC scheme.  Password param should contain a combination of password + otp. Realm's OTP policy is used to determine how to parse this. This SHOULD NOT BE USED in conjection with regular basic auth provider.");
         addProviderInfo(result, "direct-grant-auth-x509-username", "X509/Validate Username",
                 "Validates username and password from X509 client certificate received as a part of mutual SSL handshake.");
         addProviderInfo(result, "direct-grant-validate-otp", "OTP", "Validates the one time password supplied as a 'totp' form parameter in direct grant request");
@@ -179,12 +179,11 @@ public class ProvidersTest extends AbstractAuthenticationTest {
                 "User reviews and updates profile data retrieved from Identity Provider in the displayed form");
         addProviderInfo(result, "idp-username-password-form", "Username Password Form for identity provider reauthentication",
                 "Validates a password from login form. Username may be already known from identity provider authentication");
-        addProviderInfo(result, "no-cookie-redirect", "Browser Redirect for Cookie free authentication", "Perform a 302 redirect to get user agent's current URI on authenticate path with an auth_session_id query parameter.  This is for client's that do not support cookies.");
         addProviderInfo(result, "push-button-authenticator", "TEST: Button Login",
                 "Just press the button to login.");
         addProviderInfo(result, "reset-credential-email", "Send Reset Email", "Send email to user and wait for response.");
         addProviderInfo(result, "reset-credentials-choose-user", "Choose User", "Choose a user to reset credentials for");
-        addProviderInfo(result, "reset-otp", "Reset OTP", "Sets the Configure OTP required action.");
+        addProviderInfo(result, "reset-otp", "Reset OTP", "Removes existing OTP configurations (if chosen) and sets the 'Configure OTP' required action.");
         addProviderInfo(result, "reset-password", "Reset Password", "Sets the Update Password required action if execution is REQUIRED.  " +
                 "Will also set it if execution is OPTIONAL and the password is currently configured for it.");
         addProviderInfo(result, "testsuite-dummy-click-through", "Testsuite Dummy Click Thru",
