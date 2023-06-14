@@ -77,7 +77,6 @@ export class Groups extends Resource<{ realm?: string }> {
     method: "POST",
     path: "/{id}/children",
     urlParamKeys: ["id"],
-    returnResourceIdInLocationHeader: { field: "id" },
   });
 
   /**
