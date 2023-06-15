@@ -105,8 +105,8 @@ importers:
         specifier: ^7.44.3
         version: 7.44.3(react@18.2.0)
       react-i18next:
-        specifier: ^12.3.1
-        version: 12.3.1(i18next@22.5.1)(react-dom@18.2.0)(react@18.2.0)
+        specifier: ^13.0.0
+        version: 13.0.0(i18next@22.5.1)(react-dom@18.2.0)(react@18.2.0)
       react-router-dom:
         specifier: 6.12.1
         version: 6.12.1(react-dom@18.2.0)(react@18.2.0)
@@ -202,8 +202,8 @@ importers:
         specifier: ^7.44.3
         version: 7.44.3(react@18.2.0)
       react-i18next:
-        specifier: ^12.3.1
-        version: 12.3.1(i18next@22.5.1)(react-dom@18.2.0)(react@18.2.0)
+        specifier: ^13.0.0
+        version: 13.0.0(i18next@22.5.1)(react-dom@18.2.0)(react@18.2.0)
       react-router:
         specifier: ^6.12.1
         version: 6.12.1(react@18.2.0)
@@ -5575,10 +5575,10 @@ packages:
       react: 18.2.0
     dev: false
 
-  /react-i18next@12.3.1(i18next@22.5.1)(react-dom@18.2.0)(react@18.2.0):
-    resolution: {integrity: sha512-5v8E2XjZDFzK7K87eSwC7AJcAkcLt5xYZ4+yTPDAW1i7C93oOY1dnr4BaQM7un4Hm+GmghuiPvevWwlca5PwDA==}
+  /react-i18next@13.0.0(i18next@22.5.1)(react-dom@18.2.0)(react@18.2.0):
+    resolution: {integrity: sha512-qRFbrSgynsBSjfnSTb/Um3mw9uPjOfDi4Iq2rMCuzfsRsYGdkEdyCr0i+T0bR0bG6xwULvK4k1oRVLLd7ZDBVw==}
     peerDependencies:
-      i18next: '>= 19.0.0'
+      i18next: '>= 23.0.1'
       react: '>= 16.8.0'
       react-dom: '*'
       react-native: '*'
@@ -7070,7 +7070,7 @@ packages:
       react-dropzone: 14.2.3(react@18.2.0)
       react-error-boundary: 3.1.4(react@18.2.0)
       react-hook-form: 7.44.3(react@18.2.0)
-      react-i18next: 12.3.1(i18next@22.5.1)(react-dom@18.2.0)(react@18.2.0)
+      react-i18next: 13.0.0(i18next@22.5.1)(react-dom@18.2.0)(react@18.2.0)
       react-router: 6.12.1(react@18.2.0)
       react-router-dom: 6.12.1(react-dom@18.2.0)(react@18.2.0)
       reactflow: 11.7.2(react-dom@18.2.0)(react@18.2.0)
