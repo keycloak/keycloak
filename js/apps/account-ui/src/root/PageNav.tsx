@@ -54,6 +54,7 @@ const menuItems: MenuItem[] = [
       {
         label: "linkedAccounts",
         path: "account-security/linked-accounts",
+        isHidden: !environment.features.isLinkedAccountsEnabled,
       },
     ],
   },
@@ -115,9 +116,11 @@ function NavMenuItem({ menuItem }: NavMenuItemProps) {
       isActive={isActive}
       isExpanded={isActive}
     >
-      {menuItem.children.map((child) => (
-        <NavMenuItem key={child.label} menuItem={child} />
-      ))}
+      {menuItem.children
+        .filter((menuItem) => !menuItem.isHidden)
+        .map((child) => (
+          <NavMenuItem key={child.label} menuItem={child} />
+        ))}
     </NavExpandable>
   );
 }
