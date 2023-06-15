@@ -104,6 +104,7 @@ public class KeycloakDeployment {
 
     protected boolean delegateBearerErrorResponseSending = false;
     protected boolean verifyTokenAudience = false;
+    protected String tokenIssuer;
     private AdapterConfig adapterConfig;
 
     public KeycloakDeployment() {
@@ -596,6 +597,14 @@ public class KeycloakDeployment {
 
     public void setVerifyTokenAudience(boolean verifyTokenAudience) {
         this.verifyTokenAudience = verifyTokenAudience;
+    }
+
+    public String getTokenIssuer() {
+        return tokenIssuer;
+    }
+
+    public void setTokenIssuer(String tokenIssuer) {
+        this.tokenIssuer = tokenIssuer;
     }
 
     public void setClient(Callable<HttpClient> callable) {

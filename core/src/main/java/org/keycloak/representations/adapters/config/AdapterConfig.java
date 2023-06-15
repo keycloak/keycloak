@@ -41,7 +41,7 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
         "register-node-at-startup", "register-node-period", "token-store", "adapter-state-cookie-path", "principal-attribute",
         "proxy-url", "turn-off-change-session-id-on-login", "token-minimum-time-to-live",
         "min-time-between-jwks-requests", "public-key-cache-ttl",
-        "policy-enforcer", "ignore-oauth-query-parameter", "verify-token-audience"
+        "policy-enforcer", "ignore-oauth-query-parameter", "verify-token-audience","token-issuer"
 })
 public class AdapterConfig extends BaseAdapterConfig implements AdapterHttpClientConfig {
 
@@ -90,6 +90,8 @@ public class AdapterConfig extends BaseAdapterConfig implements AdapterHttpClien
     protected boolean ignoreOAuthQueryParameter = false;
     @JsonProperty("verify-token-audience")
     protected boolean verifyTokenAudience = false;
+    @JsonProperty("token-issuer")
+    protected String tokenIssuer;
 
     @JsonProperty("socket-timeout-millis")
     protected long socketTimeout = -1L;
@@ -295,6 +297,14 @@ public class AdapterConfig extends BaseAdapterConfig implements AdapterHttpClien
 
     public void setVerifyTokenAudience(boolean verifyTokenAudience) {
         this.verifyTokenAudience = verifyTokenAudience;
+    }
+
+    public String getTokenIssuer() {
+        return tokenIssuer;
+    }
+
+    public void setTokenIssuer(String tokenIssuer) {
+        this.tokenIssuer = tokenIssuer;
     }
 
     public long getSocketTimeout() {

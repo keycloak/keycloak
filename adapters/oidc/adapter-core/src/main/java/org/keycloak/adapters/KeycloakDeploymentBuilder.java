@@ -130,6 +130,7 @@ public class KeycloakDeploymentBuilder {
         deployment.setIgnoreOAuthQueryParameter(adapterConfig.isIgnoreOAuthQueryParameter());
         deployment.setRewriteRedirectRules(adapterConfig.getRedirectRewriteRules());
         deployment.setVerifyTokenAudience(adapterConfig.isVerifyTokenAudience());
+        deployment.setTokenIssuer(adapterConfig.getTokenIssuer());
 
         if (realmKeyPem == null && adapterConfig.isBearerOnly() && adapterConfig.getAuthServerUrl() == null) {
             throw new IllegalArgumentException("For bearer auth, you must set the realm-public-key or auth-server-url");

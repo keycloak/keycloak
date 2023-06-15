@@ -104,7 +104,7 @@ public class AdapterTokenVerifier {
         if (withDefaultChecks) {
             tokenVerifier
                     .withDefaultChecks()
-                    .realmUrl(deployment.getRealmInfoUrl());
+                    .realmUrl(deployment.getTokenIssuer() !=null? deployment.getTokenIssuer() : deployment.getRealmInfoUrl());
         }
 
         String kid = tokenVerifier.getHeader().getKeyId();

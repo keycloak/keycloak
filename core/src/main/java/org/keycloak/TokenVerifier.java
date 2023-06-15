@@ -94,6 +94,8 @@ public class TokenVerifier<T extends JsonWebToken> {
 
         private static final RealmUrlCheck NULL_INSTANCE = new RealmUrlCheck(null);
 
+        private static final String ANY_ISSUER = "any";
+
         private final String realmUrl;
 
         public RealmUrlCheck(String realmUrl) {
@@ -104,6 +106,10 @@ public class TokenVerifier<T extends JsonWebToken> {
         public boolean test(JsonWebToken t) throws VerificationException {
             if (this.realmUrl == null) {
                 throw new VerificationException("Realm URL not set");
+            }
+
+            if(ANY_ISSUER.equals(this.realmUrl)) {
+                return true;
             }
 
             if (! this.realmUrl.equals(t.getIssuer())) {
@@ -315,7 +321,7 @@ public class TokenVerifier<T extends JsonWebToken> {
     /**
      * Sets the key for verification of HMAC-based signature.
      * @param secretKey
-     * @return 
+     * @return
      */
     public TokenVerifier<T> secretKey(SecretKey secretKey) {
         this.secretKey = secretKey;
