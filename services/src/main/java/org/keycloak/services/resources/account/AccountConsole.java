@@ -125,22 +125,16 @@ public class AccountConsole {
                 }
             });
 
-            EventStoreProvider eventStore = session.getProvider(EventStoreProvider.class);
-            map.put("isEventsEnabled", eventStore != null && realm.isEventsEnabled());
             map.put("isAuthorizationEnabled", Profile.isFeatureEnabled(Profile.Feature.AUTHORIZATION));
             
-            boolean isTotpConfigured = false;
             boolean deleteAccountAllowed = false;
             boolean isViewGroupsEnabled= false;
             if (user != null) {
-                isTotpConfigured = user.credentialManager().isConfiguredFor(realm.getOTPPolicy().getType());
                 RoleModel deleteAccountRole = realm.getClientByClientId(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID).getRole(AccountRoles.DELETE_ACCOUNT);
                 deleteAccountAllowed = deleteAccountRole != null && user.hasRole(deleteAccountRole) && realm.getRequiredActionProviderByAlias(DeleteAccount.PROVIDER_ID).isEnabled();
                 RoleModel viewGrouRole = realm.getClientByClientId(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID).getRole(AccountRoles.VIEW_GROUPS);
                 isViewGroupsEnabled = viewGrouRole != null && user.hasRole(viewGrouRole);
             }
-
-            map.put("isTotpConfigured", isTotpConfigured);
 
             map.put("deleteAccountAllowed", deleteAccountAllowed);
 
