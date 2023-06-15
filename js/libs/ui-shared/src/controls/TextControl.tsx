@@ -26,6 +26,7 @@ export const TextControl = <
 >(
   props: TextControlProps<T, P>
 ) => {
+  const { labelIcon, ...rest } = props;
   const required = !!props.rules?.required;
   const defaultValue = props.defaultValue ?? ("" as PathValue<T, P>);
 
@@ -38,7 +39,7 @@ export const TextControl = <
     <FormLabel
       name={props.name}
       label={props.label}
-      labelIcon={props.labelIcon}
+      labelIcon={labelIcon}
       isRequired={required}
       error={fieldState.error}
     >
@@ -50,7 +51,7 @@ export const TextControl = <
           fieldState.error ? ValidatedOptions.error : ValidatedOptions.default
         }
         isDisabled={props.isDisabled}
-        {...props}
+        {...rest}
         {...field}
       />
     </FormLabel>
