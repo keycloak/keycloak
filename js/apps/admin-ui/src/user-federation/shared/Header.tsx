@@ -94,12 +94,12 @@ export const Header = ({
                   {t("deleteProvider")}
                 </DropdownItem>,
               ]}
-              isEnabled={field.value === "true"}
+              isEnabled={field.value?.[0] === "true"}
               onToggle={(value) => {
                 if (!value) {
                   toggleDisableDialog();
                 } else {
-                  field.onChange(`${value}`);
+                  field.onChange([value.toString()]);
                   save();
                 }
               }}
