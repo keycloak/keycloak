@@ -164,7 +164,7 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
                 .add()
                 .property().name(LDAPConstants.USE_TRUSTSTORE_SPI)
                 .type(ProviderConfigProperty.STRING_TYPE)
-                .defaultValue("ldapsOnly")
+                .defaultValue("always")
                 .add()
                 .property().name(LDAPConstants.CONNECTION_POOLING)
                 .type(ProviderConfigProperty.BOOLEAN_TYPE)
