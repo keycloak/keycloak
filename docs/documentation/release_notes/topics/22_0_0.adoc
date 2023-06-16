@@ -126,3 +126,12 @@ q=<name>:<value> <name>:<value> ...
 ```
 
 Where `<name>` and `<value>` represent the attribute name and value, respectively.
+
+= LDAPS-only Truststore option removed
+
+LDAP option to use truststore SPI `Only for ldaps` has been removed. This parameter is used to
+select truststore for TLS-secured LDAP connection: either internal Keycloak truststore is
+picked (`Always`), or the global JVM one (`Never`).
+
+Deployments where `Only for ldaps` was used will automatically behave as if `Always` option was
+selected for TLS-secured LDAP connections.
