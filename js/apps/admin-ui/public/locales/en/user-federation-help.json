@@ -7,7 +7,7 @@
   "ldapConnectionAndAuthorizationSettingsDescription": "This section contains options related to the configuration of the connection to the LDAP server. It also contains options related to authentication of the LDAP connection to the LDAP server.",
   "consoleDisplayConnectionUrlHelp": "Connection URL to your LDAP server",
   "enableStartTlsHelp": "Encrypts the connection to LDAP using STARTTLS, which will disable connection pooling",
-  "useTruststoreSpiHelp": "Specifies whether LDAP connection will use the Truststore SPI with the truststore configured in standalone.xml/domain.sml. 'Always' means that it will always use it. 'Never' means that it will not use it. 'Only for ldaps' means that it will use it if your connection URL use ldaps. Note that even if standalone.xml/domain.xml is not configured, the default java cacerts or certificate specified by 'javax.net.ssl.trustStore' property will be used.",
+  "useTruststoreSpiHelp": "Specifies whether LDAP connection will use the Truststore SPI with the truststore configured in command-line options. 'Always' means that it will always use it. 'Never' means that it will not use it. Note that even if Keycloak truststore is not configured, the default java cacerts or certificate specified by 'javax.net.ssl.trustStore' property will be used.",
   "connectionPoolingHelp": "Determines if Keycloak should use connection pooling for accessing LDAP server.",
   "connectionTimeoutHelp": "LDAP connection timeout in milliseconds",
   "bindTypeHelp": "Type of the authentication method used during LDAP bind operation. It is used in most of the requests sent to the LDAP server. Currently only 'none' (anonymous LDAP authentication) or 'simple' (bind credential + bind password authentication) mechanisms are available.",
