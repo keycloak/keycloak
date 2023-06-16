@@ -428,6 +428,11 @@ jobs:
         name: Integration test setup
         uses: ./.github/actions/integration-test-setup
 
+      - id: install-chrome
+        name: Install Chrome browser
+        uses: ./.github/actions/install-chrome
+        if: matrix.browser == 'chrome'
+
       - name: Run Account Console IT
         run: ./mvnw test ${{ env.SUREFIRE_RETRY }} -Pauth-server-quarkus -Dtest=**.account2.**,!SigningInTest#passwordlessWebAuthnTest,!SigningInTest#twoFactorWebAuthnTest -Dbrowser=${{ matrix.browser }} "-Dwebdriver.chrome.driver=$CHROMEWEBDRIVER/chromedriver" "-Dwebdriver.gecko.driver=$GECKOWEBDRIVER/geckodriver" -f testsuite/integration-arquillian/tests/other/base-ui/pom.xml | misc/log/trimmer.sh
 
@@ -457,6 +462,11 @@ jobs:
       - id: integration-test-setup
         name: Integration test setup
         uses: ./.github/actions/integration-test-setup
+
+      - id: install-chrome
+        name: Install Chrome browser
+        uses: ./.github/actions/install-chrome
+        if: matrix.browser == 'chrome'
 
       - name: Run Forms IT
         run: |
@@ -492,6 +502,12 @@ jobs:
       - id: integration-test-setup
         name: Integration test setup
         uses: ./.github/actions/integration-test-setup
+
+      # Don't use Chrome for testing (just regular Chrome) until https://bugs.chromium.org/p/chromedriver/issues/detail?id=4533 is resolved
+      #- id: install-chrome
+      #  name: Install Chrome browser
+      #  uses: ./.github/actions/install-chrome
+      #  if: matrix.browser == 'chrome'
 
       - name: Run WebAuthn IT
         run: ./mvnw test ${{ env.SUREFIRE_RETRY }} -Pauth-server-quarkus -Dtest=org.keycloak.testsuite.webauthn.**.*Test -Dbrowser=${{ matrix.browser }} "-Dwebdriver.chrome.driver=$CHROMEWEBDRIVER/chromedriver" "-Dwebdriver.gecko.driver=$GECKOWEBDRIVER/geckodriver" -Pwebauthn -f testsuite/integration-arquillian/tests/other/pom.xml | misc/log/trimmer.sh
