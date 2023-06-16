@@ -25,7 +25,6 @@ import javax.naming.directory.SearchControls;
 
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Properties;
 import java.util.Set;
 
@@ -66,7 +65,12 @@ public class LDAPConfig {
     }
 
     public String getUseTruststoreSpi() {
-        return config.getFirst(LDAPConstants.USE_TRUSTSTORE_SPI);
+        String value = config.getFirst(LDAPConstants.USE_TRUSTSTORE_SPI);
+        if (LDAPConstants.USE_TRUSTSTORE_LDAPS_ONLY.equals(value)) {
+            value = LDAPConstants.USE_TRUSTSTORE_ALWAYS;
+            config.putSingle(LDAPConstants.USE_TRUSTSTORE_SPI, value);
+        }
+        return value;
     }
 
     public String getUsersDn() {
