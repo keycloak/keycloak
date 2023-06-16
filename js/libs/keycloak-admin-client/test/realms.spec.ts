@@ -413,7 +413,7 @@ describe("Realms", () => {
             connectionTimeout: "",
             connectionUrl: "1",
             startTls: "",
-            useTruststoreSpi: "ldapsOnly",
+            useTruststoreSpi: "always",
           }
         );
         fail("exception should have been thrown");
@@ -455,7 +455,7 @@ describe("Realms", () => {
             connectionTimeout: "",
             connectionUrl: "1",
             startTls: "",
-            useTruststoreSpi: "ldapsOnly",
+            useTruststoreSpi: "always",
           }
         );
         fail("exception should have been thrown");
