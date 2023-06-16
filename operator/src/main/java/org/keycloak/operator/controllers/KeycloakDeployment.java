@@ -404,23 +404,26 @@ public class KeycloakDeployment extends OperatorManagedResource implements Statu
 
         // probes
         var tlsConfigured = isTlsConfigured(keycloakCR);
-        var userRelativePath = readConfigurationValue(Constants.KEYCLOAK_HTTP_RELATIVE_PATH_KEY);
-        var kcRelativePath = (userRelativePath == null) ? "" : userRelativePath;
         var protocol = !tlsConfigured ? "HTTP" : "HTTPS";
         var kcPort = KeycloakService.getServicePort(keycloakCR);
+
+        // Relative path ends with '/'
+        var kcRelativePath = Optional.ofNullable(readConfigurationValue(Constants.KEYCLOAK_HTTP_RELATIVE_PATH_KEY))
+                .map(path -> !path.endsWith("/") ? path + "/" : path)
+                .orElse("/");
 
         container.getReadinessProbe().setHttpGet(
             new HTTPGetActionBuilder()
                 .withScheme(protocol)
                 .withPort(new IntOrString(kcPort))
-                .withPath(kcRelativePath + "/health/ready")
+                .withPath(kcRelativePath + "health/ready")
                 .build()
         );
         container.getLivenessProbe().setHttpGet(
             new HTTPGetActionBuilder()
                 .withScheme(protocol)
                 .withPort(new IntOrString(kcPort))
-                .withPath(kcRelativePath + "/health/live")
+                .withPath(kcRelativePath + "health/live")
                 .build()
         );
 
