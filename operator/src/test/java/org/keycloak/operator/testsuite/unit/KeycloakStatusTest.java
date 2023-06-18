@@ -17,6 +17,8 @@
 
 package org.keycloak.operator.testsuite.unit;
 
+import io.fabric8.kubernetes.client.utils.Serialization;
+
 import org.assertj.core.api.Condition;
 import org.junit.jupiter.api.Test;
 import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatus;
@@ -25,6 +27,7 @@ import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusCondition;
 import org.keycloak.operator.testsuite.utils.CRAssert;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
 public class KeycloakStatusTest {
@@ -135,6 +138,18 @@ public class KeycloakStatusTest {
         KeycloakStatus status = new KeycloakStatusAggregator(prior, 2L).apply(b -> b.withObservedGeneration(2L)).build();
         assertEquals(2, status.getObservedGeneration());
         assertEquals(3, status.getInstances());
+    }
+
+    @Test
+    public void testStatusSerializtion() {
+        KeycloakStatusCondition condition = new KeycloakStatusCondition();
+        condition.setStatus(false);
+
+        String yaml = Serialization.asYaml(condition);
+        assertEquals("---\nstatus: \"False\"\n", yaml);
+
+        var deserialized = Serialization.unmarshal(yaml, KeycloakStatusCondition.class);
+        assertFalse(deserialized.getStatus());
     }
 
 }

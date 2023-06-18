@@ -38,7 +38,7 @@ public class KeycloakRealmImportStatus {
     public boolean isDone() {
         return conditions
                 .stream()
-                .anyMatch(c -> c.getStatus() && c.getType().equals(DONE));
+                .anyMatch(c -> Boolean.TRUE.equals(c.getStatus()) && c.getType().equals(DONE));
     }
 
     @Override

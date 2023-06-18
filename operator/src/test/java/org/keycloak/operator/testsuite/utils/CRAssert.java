@@ -26,6 +26,8 @@ import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatus;
 import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusCondition;
 import org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImport;
 
+import java.util.Objects;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
@@ -70,8 +72,8 @@ public final class CRAssert {
                 .noneMatch(c -> c.getMessage().contains(message));
     }
 
-    public static void assertKeycloakRealmImportStatusCondition(KeycloakRealmImport kri, String condition, boolean status) {
+    public static void assertKeycloakRealmImportStatusCondition(KeycloakRealmImport kri, String condition, Boolean status) {
         assertThat(kri.getStatus().getConditions())
-                .anyMatch(c -> c.getType().equals(condition) && c.getStatus() == status);
+                .anyMatch(c -> c.getType().equals(condition) && Objects.equals(c.getStatus(), status));
     }
 }
