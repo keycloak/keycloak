@@ -96,7 +96,7 @@ public class KeycloakRealmImportController implements Reconciler<KeycloakRealmIm
         if (status
                 .getConditions()
                 .stream()
-                .anyMatch(c -> c.getType().equals(KeycloakRealmImportStatusCondition.DONE) && !c.getStatus())) {
+                .anyMatch(c -> c.getType().equals(KeycloakRealmImportStatusCondition.DONE) && !Boolean.TRUE.equals(c.getStatus()))) {
             updateControl.rescheduleAfter(10, TimeUnit.SECONDS);
         }
 
