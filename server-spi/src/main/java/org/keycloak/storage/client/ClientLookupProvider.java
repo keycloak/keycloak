@@ -20,9 +20,7 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.RealmModel;
 
-import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -62,6 +60,8 @@ public interface ClientLookupProvider {
     Stream<ClientModel> searchClientsByClientIdStream(RealmModel realm, String clientId, Integer firstResult, Integer maxResults);
 
     Stream<ClientModel> searchClientsByAttributes(RealmModel realm, Map<String, String> attributes, Integer firstResult, Integer maxResults);
+
+    Stream<ClientModel> searchClientsByAuthenticationFlowBindingOverrides(RealmModel realm, Map<String, String> overrides, Integer firstResult, Integer maxResults);
 
     /**
      * Return all default scopes (if {@code defaultScope} is {@code true}) or all optional scopes (if {@code defaultScope} is {@code false}) linked with the client

@@ -1144,6 +1144,12 @@ public class IdentityBrokerStateTestHelpers {
         }
 
         @Override
+        public Stream<ClientModel> searchClientByAuthenticationFlowBindingOverrides(Map<String, String> overrides, Integer firstResult, Integer maxResults) {
+            return null;
+        }
+
+
+        @Override
         public void updateRequiredCredentials(Set<String> creds) {
 
         }

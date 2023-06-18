@@ -167,6 +167,11 @@ public class ClientStorageManager implements ClientProvider {
         return query((p, f, m) -> p.searchClientsByAttributes(realm, attributes, f, m), realm, firstResult, maxResults);
     }
 
+    @Override
+    public Stream<ClientModel> searchClientsByAuthenticationFlowBindingOverrides(RealmModel realm, Map<String, String> overrides, Integer firstResult, Integer maxResults) {
+        return query((p, f, m) -> p.searchClientsByAuthenticationFlowBindingOverrides(realm, overrides, f, m), realm, firstResult, maxResults);
+    }
+
     @FunctionalInterface
     interface PaginatedQuery {
         Stream<ClientModel> query(ClientLookupProvider provider, Integer firstResult, Integer maxResults);
