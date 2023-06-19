@@ -960,11 +960,6 @@
                 <version>${wildfly.version}</version>
             </dependency>
             <dependency>
-                <groupId>org.wildfly.security</groupId>
-                <artifactId>wildfly-elytron</artifactId>
-                <version>${wildfly-elytron.version}</version>
-            </dependency>
-            <dependency>
                 <groupId>org.wildfly.common</groupId>
                 <artifactId>wildfly-common</artifactId>
                 <version>${wildfly.common.version}</version>
