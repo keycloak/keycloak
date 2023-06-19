@@ -9,7 +9,6 @@ import { useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useAlerts } from "ui-shared";
-
 import { getPersonalInfo, savePersonalInfo } from "../api/methods";
 import {
   UserProfileMetadata,
@@ -17,6 +16,7 @@ import {
 } from "../api/representations";
 import { Page } from "../components/page/Page";
 import { environment } from "../environment";
+import { TFuncKey } from "../i18n";
 import { keycloak } from "../keycloak";
 import { usePromise } from "../utils/usePromise";
 import { FormField } from "./FormField";
@@ -64,7 +64,10 @@ const PersonalInfo = () => {
           e.params.map((p) => (isBundleKey(p) ? unWrap(p) : p))
         );
         setError(fieldName(e.field) as keyof UserRepresentation, {
-          message: t(e.errorMessage, { ...params, defaultValue: e.field }),
+          message: t(e.errorMessage as TFuncKey, {
+            ...params,
+            defaultValue: e.field,
+          }),
           type: "server",
         });
       });

@@ -1,11 +1,11 @@
 import { FormGroup, Select, SelectOption } from "@patternfly/react-core";
-import { TFuncKey } from "i18next";
 import { get } from "lodash-es";
 import { useState } from "react";
-import { useFormContext, Controller } from "react-hook-form";
+import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { KeycloakTextInput } from "ui-shared";
 import { UserProfileAttributeMetadata } from "../api/representations";
+import { TFuncKey } from "../i18n";
 import { fieldName, isBundleKey, unWrap } from "./PersonalInfo";
 
 type FormFieldProps = {

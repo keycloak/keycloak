@@ -11,7 +11,6 @@ export const NAMESPACE_SEPARATOR = ":";
 export const KEY_SEPARATOR = ".";
 
 export const i18n = createInstance({
-  returnNull: false,
   fallbackLng: DEFAULT_LOCALE,
   defaultNS: DEFAULT_NAMESPACE,
   nsSeparator: NAMESPACE_SEPARATOR,
