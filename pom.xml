@@ -135,7 +135,7 @@
         <nashorn.version>15.4</nashorn.version>
         <ua-parser.version>1.5.4</ua-parser.version>
         <picketbox.version>5.0.3.Final</picketbox.version>
-        <google.guava.version>30.1-jre</google.guava.version>
+        <google.guava.version>32.0.1-jre</google.guava.version>
         <xstream.version>1.4.20</xstream.version>
         <org.snakeyaml.snakeyaml-engine.version>2.6</org.snakeyaml.snakeyaml-engine.version>
 
