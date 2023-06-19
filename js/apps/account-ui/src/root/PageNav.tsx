@@ -5,21 +5,21 @@ import {
   NavList,
   PageSidebar,
 } from "@patternfly/react-core";
-import { TFuncKey } from "i18next";
 import {
-  MouseEvent as ReactMouseEvent,
   PropsWithChildren,
+  MouseEvent as ReactMouseEvent,
   useMemo,
 } from "react";
 import { useTranslation } from "react-i18next";
 import {
-  matchPath,
   To,
+  matchPath,
   useHref,
   useLinkClickHandler,
   useLocation,
 } from "react-router-dom";
 import { environment } from "../environment";
+import { TFuncKey } from "../i18n";
 
 type RootMenuItem = {
   label: TFuncKey;
@@ -82,7 +82,7 @@ export const PageNav = () => (
           {menuItems
             .filter((menuItem) => !menuItem.isHidden)
             .map((menuItem) => (
-              <NavMenuItem key={menuItem.label} menuItem={menuItem} />
+              <NavMenuItem key={menuItem.label as string} menuItem={menuItem} />
             ))}
         </NavList>
       </Nav>
@@ -119,7 +119,7 @@ function NavMenuItem({ menuItem }: NavMenuItemProps) {
       {menuItem.children
         .filter((menuItem) => !menuItem.isHidden)
         .map((child) => (
-          <NavMenuItem key={child.label} menuItem={child} />
+          <NavMenuItem key={child.label as string} menuItem={child} />
         ))}
     </NavExpandable>
   );
