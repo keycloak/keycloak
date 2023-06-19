@@ -39,6 +39,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredActionProviderModel;
 import org.keycloak.models.utils.Base32;
 import org.keycloak.models.utils.DefaultAuthenticationFlows;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.provider.ConfiguredProvider;
@@ -211,6 +212,11 @@ public class AuthenticationManagementResource {
             throw ErrorResponse.exists("Flow " + flow.getAlias() + " already exists");
         }
         
+        //adding an empty string to avoid NPE
+        if(Objects.isNull(flow.getDescription())) {
+            flow.setDescription("");
+        }
+        
         ReservedCharValidator.validate(flow.getAlias());
 
         AuthenticationFlowModel createdModel = realm.addAuthenticationFlow(RepresentationToModel.toModel(flow));
@@ -303,28 +309,18 @@ public class AuthenticationManagementResource {
     @NoCache
     public void deleteFlow(@PathParam("id") String id) {
         auth.realm().requireManageRealm();
-        
-        deleteFlow(id, true);
-    }
-    
-    private void deleteFlow(String id, boolean isTopMostLevel) {
-        AuthenticationFlowModel flow = realm.getAuthenticationFlowById(id);
-        if (flow == null) {
-            throw new NotFoundException("Could not find flow with id");
-        }
-        if (flow.isBuiltIn()) {
-            throw new BadRequestException("Can't delete built in flow");
-        }
-        
-        realm.getAuthenticationExecutionsStream(id)
-                .map(AuthenticationExecutionModel::getFlowId)
-                .filter(Objects::nonNull)
-                .forEachOrdered(flowId -> deleteFlow(flowId, false));
 
-        realm.removeAuthenticationFlow(flow);
+        KeycloakModelUtils.deepDeleteAuthenticationFlow(realm, realm.getAuthenticationFlowById(id),
+                () -> {
+                    throw new NotFoundException("Could not find flow with id");
+                },
+                () -> {
+                    throw new BadRequestException("Can't delete built in flow");
+                }
+        );
 
         // Use just one event for top-level flow. Using separate events won't work properly for flows of depth 2 or bigger
-        if (isTopMostLevel) adminEvent.operation(OperationType.DELETE).resourcePath(session.getContext().getUri()).success();
+        adminEvent.operation(OperationType.DELETE).resourcePath(session.getContext().getUri()).success();
     }
 
     /**
@@ -387,6 +383,26 @@ public class AuthenticationManagementResource {
                 execution.setFlowId(copy.getId());
                 copy(realm, newName, subFlow, copy);
             }
+
+            if (execution.getAuthenticatorConfig() != null) {
+                AuthenticatorConfigModel config = realm.getAuthenticatorConfigById(execution.getAuthenticatorConfig());
+
+                if (config == null) {
+                    logger.debugf("Authentication execution with id [%s] not found", config.getId());
+                    throw new IllegalStateException("Authentication execution configuration not found");
+                }
+
+                config.setId(null);
+
+                if (config.getAlias() != null) {
+                    config.setAlias(newName + " " + config.getAlias());
+                }
+
+                AuthenticatorConfigModel newConfig = realm.addAuthenticatorConfig(config);
+
+                execution.setAuthenticatorConfig(newConfig.getId());
+            }
+
             execution.setId(null);
             execution.setParentFlow(to.getId());
             realm.addAuthenticatorExecution(execution);
@@ -416,7 +432,9 @@ public class AuthenticationManagementResource {
         String alias = data.get("alias");
         String type = data.get("type");
         String provider = data.get("provider");
-        String description = data.get("description");
+        
+        //Make sure that the description to avoid NullPointerException
+        String description = Objects.isNull(data.get("description")) ? "" : data.get("description");
 
 
         AuthenticationFlowModel newFlow = realm.getFlowByAlias(alias);
@@ -673,12 +691,17 @@ public class AuthenticationManagementResource {
         if (!checkFlow.getAlias().equals(rep.getDisplayName())) {
             checkFlow.setAlias(rep.getDisplayName());
         }
-
-        //check if the description changed
+        
+        // check if description is null and set an empty String to avoid NPE
+        if (Objects.isNull(checkFlow.getDescription())) {
+            checkFlow.setDescription("");
+        }
+        
+        // check if the description changed
         if (!checkFlow.getDescription().equals(rep.getDescription())) {
             checkFlow.setDescription(rep.getDescription());
         }
-
+        
         //update the flow
         realm.updateAuthenticationFlow(checkFlow);
         adminEvent.operation(OperationType.UPDATE).resource(ResourceType.AUTH_EXECUTION).resourcePath(session.getContext().getUri()).representation(rep).success();

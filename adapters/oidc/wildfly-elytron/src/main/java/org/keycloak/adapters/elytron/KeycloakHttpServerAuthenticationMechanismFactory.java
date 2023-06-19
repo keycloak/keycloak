@@ -19,6 +19,7 @@
 package org.keycloak.adapters.elytron;
 
 import org.keycloak.adapters.AdapterDeploymentContext;
+import org.keycloak.adapters.NodesRegistrationManagement;
 import org.wildfly.security.http.HttpAuthenticationException;
 import org.wildfly.security.http.HttpServerAuthenticationMechanism;
 import org.wildfly.security.http.HttpServerAuthenticationMechanismFactory;
@@ -33,6 +34,7 @@ import java.util.Map;
 public class KeycloakHttpServerAuthenticationMechanismFactory implements HttpServerAuthenticationMechanismFactory {
 
     private final AdapterDeploymentContext deploymentContext;
+    private final NodesRegistrationManagement nodesRegistrationManagement;
 
     /**
      * <p>Creates a new instance.
@@ -45,6 +47,7 @@ public class KeycloakHttpServerAuthenticationMechanismFactory implements HttpSer
 
     public KeycloakHttpServerAuthenticationMechanismFactory(AdapterDeploymentContext deploymentContext) {
         this.deploymentContext = deploymentContext;
+        this.nodesRegistrationManagement = new NodesRegistrationManagement();
     }
 
     @Override
@@ -59,9 +62,14 @@ public class KeycloakHttpServerAuthenticationMechanismFactory implements HttpSer
         mechanismProperties.putAll(properties);
 
         if (KeycloakHttpServerAuthenticationMechanism.NAME.equals(mechanismName)) {
-            return new KeycloakHttpServerAuthenticationMechanism(properties, callbackHandler, this.deploymentContext);
+            return new KeycloakHttpServerAuthenticationMechanism(properties, callbackHandler, this.deploymentContext, nodesRegistrationManagement);
         }
 
         return null;
+    }
+
+    @Override
+    public void shutdown() {
+        this.nodesRegistrationManagement.stop();
     }
 }

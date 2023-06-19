@@ -164,7 +164,7 @@ public class DeviceEndpoint extends AuthorizationEndpointBase implements RealmRe
         // To inform "expired_token" to the client, the lifespan of the cache provider is longer than device code
         int lifespanSeconds = expiresIn + interval + 10;
 
-        SingleUseObjectProvider singleUseStore = session.getProvider(SingleUseObjectProvider.class);
+        SingleUseObjectProvider singleUseStore = session.singleUseObjects();
 
         singleUseStore.put(deviceCode.serializeKey(), lifespanSeconds, deviceCode.toMap());
         singleUseStore.put(userCode.serializeKey(), lifespanSeconds, userCode.serializeValue());
@@ -292,7 +292,7 @@ public class DeviceEndpoint extends AuthorizationEndpointBase implements RealmRe
     }
 
     public static OAuth2DeviceCodeModel getDeviceByUserCode(KeycloakSession session, RealmModel realm, String userCode) {
-        SingleUseObjectProvider singleUseStore = session.getProvider(SingleUseObjectProvider.class);
+        SingleUseObjectProvider singleUseStore = session.singleUseObjects();
         Map<String, String> notes = singleUseStore.get(OAuth2DeviceUserCodeModel.createKey(realm, userCode));
 
         if (notes != null) {

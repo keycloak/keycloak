@@ -39,7 +39,6 @@ import org.openqa.selenium.WebElement;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
-import static org.keycloak.testsuite.broker.BrokerTestTools.getConsumerRoot;
 import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
 
 /**
@@ -65,7 +64,9 @@ public abstract class AbstractDefaultIdpTest extends AbstractInitializedBaseBrok
         configureFlow(null);
 
         // Navigate to the auth page
-        driver.navigate().to(getAccountUrl(getConsumerRoot(), bc.consumerRealmName()));
+        oauth.clientId("broker-app");
+        loginPage.open(bc.consumerRealmName());
+
         waitForPage(driver, "sign in to", true);
 
         Assert.assertTrue("Driver should be on the initial page and nothing should have happened",
@@ -81,7 +82,9 @@ public abstract class AbstractDefaultIdpTest extends AbstractInitializedBaseBrok
         createUser(bc.providerRealmName(), username, "password", "FirstName");
 
         // Navigate to the auth page
-        driver.navigate().to(getAccountUrl(getConsumerRoot(), bc.consumerRealmName()));
+        oauth.clientId("broker-app");
+        loginPage.open(bc.providerRealmName());
+
         waitForPage(driver, "sign in to", true);
 
         // Make sure we got redirected to the remote IdP automatically
@@ -97,7 +100,10 @@ public abstract class AbstractDefaultIdpTest extends AbstractInitializedBaseBrok
         createUser(bc.providerRealmName(), username, "password", "FirstName");
 
         // Navigate to the auth page
-        driver.navigate().to(getAccountUrl(getConsumerRoot(), bc.consumerRealmName()));
+        oauth.clientId("broker-app");
+        oauth.realm(bc.consumerRealmName());
+        oauth.openLoginForm();
+
         waitForPage(driver, "sign in to", true);
 
         // Make sure we got redirected to the remote IdP automatically

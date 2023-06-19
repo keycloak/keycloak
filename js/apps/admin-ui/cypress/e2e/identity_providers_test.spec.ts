@@ -306,7 +306,7 @@ describe("Identity provider test", () => {
       listingPage.goToItemDetails("github");
 
       githubSettings.fillData("github");
-      cy.findByTestId("save").click();
+      cy.findByTestId("idp-details-save").click();
     });
 
     it("should check input switches and inputs", () => {
@@ -341,7 +341,7 @@ describe("Identity provider test", () => {
       advancedSettings.assertAccountLinkingOnlySwitchTurnedOn(true);
       advancedSettings.assertHideOnLoginPageSwitchTurnedOn(true);
 
-      cy.findByTestId("save").click();
+      cy.findByTestId("idp-details-save").click();
     });
 
     it("should revert and save options", () => {
@@ -359,7 +359,7 @@ describe("Identity provider test", () => {
       advancedSettings.assertAcceptsPromptNoneForwardFromClientSwitchTurnedOn(
         false
       );
-      cy.findByTestId("revert").click();
+      cy.findByTestId("idp-details-revert").click();
       advancedSettings.assertStoreTokensSwitchTurnedOn(true);
       advancedSettings.assertAcceptsPromptNoneForwardFromClientSwitchTurnedOn(
         true

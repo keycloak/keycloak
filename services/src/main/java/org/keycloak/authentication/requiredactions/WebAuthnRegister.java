@@ -17,6 +17,7 @@
 package org.keycloak.authentication.requiredactions;
 
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collections;
@@ -117,7 +118,8 @@ public class WebAuthnRegister implements RequiredActionProvider, CredentialRegis
         // mandatory
         WebAuthnPolicy policy = getWebAuthnPolicy(context);
         List<String> signatureAlgorithmsList = policy.getSignatureAlgorithm();
-        String signatureAlgorithms = stringifySignatureAlgorithms(signatureAlgorithmsList);
+        // Convert human-readable algorithms to their COSE identifier form
+        List<Long> signatureAlgorithms = convertSignatureAlgorithms(signatureAlgorithmsList);
         String rpEntityName = policy.getRpEntityName();
 
         // optional
@@ -284,38 +286,45 @@ public class WebAuthnRegister implements RequiredActionProvider, CredentialRegis
                 );
     }
 
-    private String stringifySignatureAlgorithms(List<String> signatureAlgorithmsList) {
-        if (signatureAlgorithmsList == null || signatureAlgorithmsList.isEmpty()) return "";
-        StringBuilder sb = new StringBuilder();
+    /**
+     * Converts a list of human-readable webauthn signature methods (ES256, RS256, etc) into
+     * their <a href="https://www.iana.org/assignments/cose/cose.xhtml#algorithms"> COSE identifier</a> form.
+     *
+     * Returns the list of converted algorithm identifiers.
+    **/
+    private List<Long> convertSignatureAlgorithms(List<String> signatureAlgorithmsList) {
+        List<Long> algs = new ArrayList();
+        if (signatureAlgorithmsList == null || signatureAlgorithmsList.isEmpty()) return algs;
+
         for (String s : signatureAlgorithmsList) {
             switch (s) {
             case Algorithm.ES256 :
-                sb.append(COSEAlgorithmIdentifier.ES256.getValue()).append(",");
+                algs.add(COSEAlgorithmIdentifier.ES256.getValue());
                 break;
             case Algorithm.RS256 :
-                sb.append(COSEAlgorithmIdentifier.RS256.getValue()).append(",");
+                algs.add(COSEAlgorithmIdentifier.RS256.getValue());
                 break;
             case Algorithm.ES384 :
-                sb.append(COSEAlgorithmIdentifier.ES384.getValue()).append(",");
+                algs.add(COSEAlgorithmIdentifier.ES384.getValue());
                 break;
             case Algorithm.RS384 :
-                sb.append(COSEAlgorithmIdentifier.RS384.getValue()).append(",");
+                algs.add(COSEAlgorithmIdentifier.RS384.getValue());
                 break;
             case Algorithm.ES512 :
-                sb.append(COSEAlgorithmIdentifier.ES512.getValue()).append(",");
+                algs.add(COSEAlgorithmIdentifier.ES512.getValue());
                 break;
             case Algorithm.RS512 :
-                sb.append(COSEAlgorithmIdentifier.RS512.getValue()).append(",");
+                algs.add(COSEAlgorithmIdentifier.RS512.getValue());
                 break;
             case "RS1" :
-                sb.append(COSEAlgorithmIdentifier.RS1.getValue()).append(",");
+                algs.add(COSEAlgorithmIdentifier.RS1.getValue());
                 break;
             default:
                 // NOP
             }
         }
-        if (sb.lastIndexOf(",") > -1) sb.deleteCharAt(sb.lastIndexOf(","));
-        return sb.toString();
+
+        return algs;
     }
 
     private void showInfoAfterWebAuthnApiCreate(RegistrationData response) {

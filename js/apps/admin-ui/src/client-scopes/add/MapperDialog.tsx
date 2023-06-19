@@ -24,7 +24,7 @@ import { KeycloakDataTable } from "../../components/table-toolbar/KeycloakDataTa
 import useLocaleSort, { mapByKey } from "../../utils/useLocaleSort";
 
 type Row = {
-  name: string;
+  id: string;
   description: string;
   item: ProtocolMapperRepresentation;
 };
@@ -61,7 +61,7 @@ export const AddMapperDialog = (props: AddMapperDialogProps) => {
         )[0];
         return {
           item: mapper,
-          name: mapper.name!,
+          id: mapper.name!,
           description: mapperType.helpText,
         };
       }),
@@ -191,7 +191,7 @@ export const AddMapperDialog = (props: AddMapperDialogProps) => {
           searchPlaceholderKey="common:searchForMapper"
           columns={[
             {
-              name: "name",
+              name: "id",
               displayKey: "common:name",
             },
             {

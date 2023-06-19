@@ -1,6 +1,5 @@
 {
   "name": "keycloak-masthead",
-  "version": "999.0.0-SNAPSHOT",
   "type": "module",
   "main": "./dist/keycloak-masthead.js",
   "types": "./dist/keycloak-masthead.d.ts",
@@ -42,16 +41,17 @@
   },
   "dependencies": {
     "@patternfly/react-core": "^4.276.8",
-    "keycloak-js": "999.0.0-SNAPSHOT",
+    "@patternfly/react-styles": "^4.11.8",
+    "keycloak-js": "workspace:*",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
   },
   "devDependencies": {
-    "@types/react": "^18.2.4",
-    "@types/react-dom": "^18.2.3",
-    "@vitejs/plugin-react-swc": "^3.3.0",
+    "@types/react": "^18.2.12",
+    "@types/react-dom": "^18.2.5",
+    "@vitejs/plugin-react-swc": "^3.3.2",
     "rollup-plugin-peer-deps-external": "^2.2.4",
-    "vite": "^4.3.4",
+    "vite": "^4.3.9",
     "vite-plugin-checker": "^0.6.0",
     "vite-plugin-dts": "^2.3.0"
   }

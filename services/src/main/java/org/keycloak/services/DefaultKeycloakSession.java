@@ -33,9 +33,9 @@ import org.keycloak.models.KeycloakTransactionManager;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RealmProvider;
 import org.keycloak.models.RoleProvider;
+import org.keycloak.models.SingleUseObjectProvider;
 import org.keycloak.models.ThemeManager;
 import org.keycloak.models.TokenManager;
-import org.keycloak.models.UserCredentialManager;
 import org.keycloak.models.UserLoginFailureProvider;
 import org.keycloak.models.UserProvider;
 import org.keycloak.models.UserSessionProvider;
@@ -45,7 +45,6 @@ import org.keycloak.provider.ProviderFactory;
 import org.keycloak.provider.InvalidationHandler.InvalidableObjectType;
 import org.keycloak.provider.InvalidationHandler.ObjectType;
 import org.keycloak.services.clientpolicy.ClientPolicyManager;
-import org.keycloak.models.LegacySessionSupportProvider;
 import org.keycloak.sessions.AuthenticationSessionProvider;
 import org.keycloak.storage.DatastoreProvider;
 import org.keycloak.vault.DefaultVaultTranscriber;
@@ -77,11 +76,6 @@ public class DefaultKeycloakSession implements KeycloakSession {
     private final Map<String, Object> attributes = new HashMap<>();
     private final Map<InvalidableObjectType, Set<Object>> invalidationMap = new HashMap<>();
     private DatastoreProvider datastoreProvider;
-    @Deprecated
-    private UserCredentialManager userCredentialStorageManager;
-    private UserSessionProvider sessionProvider;
-    private UserLoginFailureProvider userLoginFailureProvider;
-    private AuthenticationSessionProvider authenticationSessionProvider;
     private final KeycloakContext context;
     private KeyManager keyManager;
     private ThemeManager themeManager;
@@ -107,16 +101,6 @@ public class DefaultKeycloakSession implements KeycloakSession {
             this.datastoreProvider = getProvider(DatastoreProvider.class);
         }
         return this.datastoreProvider;
-    }
-
-    @Override
-    @Deprecated
-    public UserProvider userCache() {
-        LegacySessionSupportProvider provider = this.getProvider(LegacySessionSupportProvider.class);
-        if (provider == null) {
-            throw new IllegalStateException("legacy support for userCache is not enabled");
-        }
-        return provider.userCache();
     }
 
     @Override
@@ -175,90 +159,12 @@ public class DefaultKeycloakSession implements KeycloakSession {
     }
 
     @Override
-    @Deprecated
-    public UserProvider userLocalStorage() {
-        throw new IllegalStateException("Access to the legacy store is no longer possible via this method. Adjust your code according to the Keycloak 19 Upgrading Guide.");
-    }
-
-    @Override
-    @Deprecated
-    public RealmProvider realmLocalStorage() {
-        throw new IllegalStateException("Access to the legacy store is no longer possible via this method. Adjust your code according to the Keycloak 19 Upgrading Guide.");
-    }
-
-    @Override
-    @Deprecated
-    public ClientProvider clientLocalStorage() {
-        throw new IllegalStateException("Access to the legacy store is no longer possible via this method. Adjust your code according to the Keycloak 19 Upgrading Guide.");
-    }
-
-    @Override
-    @Deprecated
-    public ClientScopeProvider clientScopeLocalStorage() {
-        throw new IllegalStateException("Access to the legacy store is no longer possible via this method. Adjust your code according to the Keycloak 19 Upgrading Guide.");
-    }
-
-    @Override
-    @Deprecated
-    public GroupProvider groupLocalStorage() {
-        throw new IllegalStateException("Access to the legacy store is no longer possible via this method. Adjust your code according to the Keycloak 19 Upgrading Guide.");
-    }
-
-    @Override
-    @Deprecated
-    public ClientProvider clientStorageManager() {
-        throw new IllegalStateException("Access to the legacy store is no longer possible via this method. Adjust your code according to the Keycloak 19 Upgrading Guide.");
-    }
-
-    @Override
-    @Deprecated
-    public ClientScopeProvider clientScopeStorageManager() {
-        throw new IllegalStateException("Access to the legacy store is no longer possible via this method. Adjust your code according to the Keycloak 19 Upgrading Guide.");
-    }
-
-    @Override
-    @Deprecated
-    public RoleProvider roleLocalStorage() {
-        throw new IllegalStateException("Access to the legacy store is no longer possible via this method. Adjust your code according to the Keycloak 19 Upgrading Guide.");
-    }
-
-    @Override
-    @Deprecated
-    public RoleProvider roleStorageManager() {
-        throw new IllegalStateException("Access to the legacy store is no longer possible via this method. Adjust your code according to the Keycloak 19 Upgrading Guide.");
-    }
-
-    @Override
-    @Deprecated
-    public GroupProvider groupStorageManager() {
-        throw new IllegalStateException("Access to the legacy store is no longer possible via this method. Adjust your code according to the Keycloak 19 Upgrading Guide.");
-    }
-
-    @Override
-    @Deprecated
-    public UserProvider userStorageManager() {
-        throw new IllegalStateException("Access to the legacy store is no longer possible via this method. Adjust your code according to the Keycloak 19 Upgrading Guide.");
-    }
-
-    @Override
     public UserProvider users() {
         return getDatastoreProvider().users();
     }
 
-    @Override
-    @Deprecated
-    public UserCredentialManager userCredentialManager() {
-        if (userCredentialStorageManager == null) {
-            LegacySessionSupportProvider provider = this.getProvider(LegacySessionSupportProvider.class);
-            if (provider == null) {
-                throw new IllegalStateException("legacy support for a UserCredentialManager is not enabled");
-            }
-            userCredentialStorageManager = provider.userCredentialManager();
-        }
-        return userCredentialStorageManager;
-    }
-
     @SuppressWarnings("unchecked")
+    @Override
     public <T extends Provider> T getProvider(Class<T> clazz) {
         Integer hash = clazz.hashCode();
         T provider = (T) providers.get(hash);
@@ -276,6 +182,7 @@ public class DefaultKeycloakSession implements KeycloakSession {
     }
 
     @SuppressWarnings("unchecked")
+    @Override
     public <T extends Provider> T getProvider(Class<T> clazz, String id) {
         Integer hash = clazz.hashCode() + id.hashCode();
         T provider = (T) providers.get(hash);
@@ -390,26 +297,22 @@ public class DefaultKeycloakSession implements KeycloakSession {
 
     @Override
     public UserSessionProvider sessions() {
-        if (sessionProvider == null) {
-            sessionProvider = getProvider(UserSessionProvider.class);
-        }
-        return sessionProvider;
+        return getDatastoreProvider().userSessions();
     }
 
     @Override
     public UserLoginFailureProvider loginFailures() {
-        if (userLoginFailureProvider == null) {
-            userLoginFailureProvider = getProvider(UserLoginFailureProvider.class);
-        }
-        return userLoginFailureProvider;
+        return getDatastoreProvider().loginFailures();
     }
 
     @Override
     public AuthenticationSessionProvider authenticationSessions() {
-        if (authenticationSessionProvider == null) {
-            authenticationSessionProvider = getProvider(AuthenticationSessionProvider.class);
-        }
-        return authenticationSessionProvider;
+        return getDatastoreProvider().authSessions();
+    }
+
+    @Override
+    public SingleUseObjectProvider singleUseObjects() {
+        return getDatastoreProvider().singleUseObjects();
     }
 
     @Override
@@ -471,9 +374,11 @@ public class DefaultKeycloakSession implements KeycloakSession {
         try {
             Consumer<? super Provider> safeClose = p -> {
                 try {
-                    p.close();
+                    if (p != null) {
+                        p.close();
+                    }
                 } catch (Exception e) {
-                    // Ignore exception
+                    LOG.warnf(e, "Unable to close provider %s", p.getClass().getName());
                 }
             };
             providers.values().forEach(safeClose);

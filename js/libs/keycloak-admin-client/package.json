@@ -9,13 +9,13 @@
   ],
   "types": "lib/index.d.ts",
   "engines": {
-    "node": "^12.20.0 || ^14.13.1 || >=16.0.0"
+    "node": ">=18"
   },
   "scripts": {
     "build": "wireit",
     "lint": "wireit",
     "test": "wireit",
-    "prepublishOnly": "npm run build"
+    "prepublishOnly": "pnpm run build"
   },
   "wireit": {
     "build": {
@@ -43,11 +43,11 @@
     "url-template": "^3.1.0"
   },
   "devDependencies": {
-    "@faker-js/faker": "^7.6.0",
+    "@faker-js/faker": "^8.0.2",
     "@types/chai": "^4.3.5",
     "@types/lodash-es": "^4.17.7",
     "@types/mocha": "^10.0.1",
-    "@types/node": "^18.16.3",
+    "@types/node": "^20.3.1",
     "chai": "^4.3.7",
     "mocha": "^10.2.0",
     "ts-node": "^10.9.1"

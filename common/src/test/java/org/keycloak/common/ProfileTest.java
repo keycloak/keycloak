@@ -79,7 +79,6 @@ public class ProfileTest {
             Profile.Feature.RECOVERY_CODES,
             Profile.Feature.SCRIPTS,
             Profile.Feature.TOKEN_EXCHANGE,
-            Profile.Feature.OPENSHIFT_INTEGRATION,
             Profile.Feature.MAP_STORAGE,
             Profile.Feature.DECLARATIVE_USER_PROFILE,
             Profile.Feature.CLIENT_SECRET_ROTATION,
@@ -91,7 +90,7 @@ public class ProfileTest {
             disabledFeatures.add(Profile.Feature.KERBEROS);
         }
         assertEquals(profile.getDisabledFeatures(), disabledFeatures);
-        assertEquals(profile.getPreviewFeatures(), Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ, Profile.Feature.RECOVERY_CODES, Profile.Feature.SCRIPTS, Profile.Feature.TOKEN_EXCHANGE, Profile.Feature.OPENSHIFT_INTEGRATION, Profile.Feature.DECLARATIVE_USER_PROFILE, Profile.Feature.CLIENT_SECRET_ROTATION, Profile.Feature.UPDATE_EMAIL);
+        assertEquals(profile.getPreviewFeatures(), Profile.Feature.ACCOUNT3, Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ, Profile.Feature.RECOVERY_CODES, Profile.Feature.SCRIPTS, Profile.Feature.TOKEN_EXCHANGE, Profile.Feature.DECLARATIVE_USER_PROFILE, Profile.Feature.CLIENT_SECRET_ROTATION, Profile.Feature.UPDATE_EMAIL);
     }
 
     @Test
@@ -265,7 +264,7 @@ public class ProfileTest {
         Profile.Feature[] a = actual.toArray(new Profile.Feature[0]);
         Arrays.sort(a, new FeatureComparator());
         Arrays.sort(expected, new FeatureComparator());
-        Assert.assertArrayEquals(a, expected);
+        Assert.assertArrayEquals(expected, a);
     }
 
     private static class FeatureComparator implements Comparator<Profile.Feature> {

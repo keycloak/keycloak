@@ -27,6 +27,7 @@ import io.fabric8.kubernetes.api.model.apps.StatefulSetSpecBuilder;
 import io.quarkus.logging.Log;
 import io.quarkus.test.junit.QuarkusTest;
 import org.awaitility.Awaitility;
+import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.keycloak.operator.Constants;
@@ -78,9 +79,13 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
             Log.info("Checking Keycloak pod has ready replicas == 1");
             assertThat(k8sclient.apps().statefulSets().inNamespace(namespace).withName(deploymentName).get().getStatus().getReadyReplicas()).isEqualTo(1);
 
+            Log.info("Checking observedGeneration is the same as the spec");
+            Keycloak latest = k8sclient.resource(kc).get();
+            assertThat(latest.getMetadata().getGeneration()).isEqualTo(latest.getStatus().getObservedGeneration());
+
             // Delete CR
             Log.info("Deleting Keycloak CR and watching cleanup");
-            k8sclient.resources(Keycloak.class).delete(kc);
+            k8sclient.resource(kc).delete();
             Awaitility.await()
                     .untilAsserted(() -> assertThat(k8sclient.apps().statefulSets().inNamespace(namespace).withName(deploymentName).get()).isNull());
         } catch (Exception e) {
@@ -145,11 +150,19 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
             deployKeycloak(k8sclient, defaultKCDeploy, false);
 
             assertThat(
-                    Constants.DEFAULT_DIST_CONFIG.get(valueSecretHealthProp.getName())
+                    Constants.DEFAULT_DIST_CONFIG_LIST.stream()
+                                                      .filter(oneValueOrSecret -> oneValueOrSecret.getName().equalsIgnoreCase(valueSecretHealthProp.getName()))
+                                                      .findFirst()
+                                                      .get()
+                                                      .getValue()
             ).isEqualTo("true"); // just a sanity check default values did not change
 
             assertThat(
-                    Constants.DEFAULT_DIST_CONFIG.get(valueSecretProxyProp.getName())
+                    Constants.DEFAULT_DIST_CONFIG_LIST.stream()
+                                                      .filter(oneValueOrSecret -> oneValueOrSecret.getName().equalsIgnoreCase(valueSecretProxyProp.getName()))
+                                                      .findFirst()
+                                                      .get()
+                                                      .getValue()
             ).isEqualTo("passthrough"); // just a sanity check default values did not change
 
             Awaitility.await()
@@ -208,7 +221,7 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
 
             deployment.getMetadata().getLabels().putAll(labels);
             deployment.getSpec().getTemplate().getSpec().getContainers().get(0).setEnv(List.of(flandersEnvVar));
-            k8sclient.apps().statefulSets().createOrReplace(deployment);
+            k8sclient.resource(deployment).forceConflicts().serverSideApply();
 
             Awaitility.await()
                     .atMost(5, MINUTES)
@@ -547,7 +560,7 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
                     .endMetadata()
                     .addToStringData(keyName, "/barfoo")
                     .build();
-            k8sclient.secrets().inNamespace(namespace).createOrReplace(httpRelativePathSecret);
+            k8sclient.resource(httpRelativePathSecret).forceConflicts().serverSideApply();
 
             kc.getSpec().getAdditionalOptions().add(new ValueOrSecret(Constants.KEYCLOAK_HTTP_RELATIVE_PATH_KEY,
                     new SecretKeySelectorBuilder()
@@ -614,11 +627,35 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
         }
     }
 
+    @Test
+    public void testPreconfiguredPodLabels() {
+        Assumptions.assumeTrue(operatorDeployment == OperatorDeployment.local,
+                "Skipping the test when Operator deployed remotely to keep stuff simple, it's just SmallRye, we don't need to retest it");
+
+        try {
+            var kc = getDefaultKeycloakDeployment();
+            deployKeycloak(k8sclient, kc, true);
+
+            // labels are set in test/resources/application.properties
+            var labels = k8sclient.apps().statefulSets().inNamespace(namespace).withName(kc.getMetadata().getName()).get()
+                    .getSpec().getTemplate().getMetadata().getLabels();
+
+            var expected = Map.of(
+                    "test.label", "foobar",
+                    "testLabelWithExpression", "my-value"
+            );
+            assertThat(labels).containsAllEntriesOf(expected);
+        } catch (Exception e) {
+            savePodLogs();
+            throw e;
+        }
+    }
+
     private void handleFakeImagePullSecretCreation(Keycloak keycloakCR,
                                                    String secretDescriptorFilename) {
 
         Secret imagePullSecret = getResourceFromFile(secretDescriptorFilename, Secret.class);
-        k8sclient.secrets().inNamespace(namespace).createOrReplace(imagePullSecret);
+        k8sclient.resource(imagePullSecret).inNamespace(namespace).forceConflicts().serverSideApply();
         LocalObjectReference localObjRefAsSecretTmp = new LocalObjectReferenceBuilder().withName(imagePullSecret.getMetadata().getName()).build();
         keycloakCR.getSpec().setImagePullSecrets(Collections.singletonList(localObjRefAsSecretTmp));
     }

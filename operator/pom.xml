@@ -21,8 +21,8 @@
             See https://github.com/quarkusio/quarkus/blob/<versionTag>/bom/application/pom.xml
             for reference
         -->
-        <kubernetes-client.version>6.5.1</kubernetes-client.version>
         <wildfly.common.version>1.5.4.Final-format-001</wildfly.common.version>
+        <kubernetes-client.version>6.6.2</kubernetes-client.version>
 
         <compiler-plugin.version>3.8.1</compiler-plugin.version>
         <maven.compiler.parameters>true</maven.compiler.parameters>
@@ -31,20 +31,20 @@
         <maven.compiler.target>11</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-        <quarkus.operator.sdk.version>6.0.1</quarkus.operator.sdk.version>
-        <quarkus.version>3.0.0.Final</quarkus.version>
+        <quarkus.operator.sdk.version>6.1.1</quarkus.operator.sdk.version>
+        <quarkus.operator.build.version>3.1.1.Final</quarkus.operator.build.version>
         <quarkus.container-image.group>keycloak</quarkus.container-image.group>
     </properties>
     
     <dependencyManagement>
         <dependencies>
-        <dependency>
-            <groupId>io.quarkiverse.operatorsdk</groupId>
-            <artifactId>quarkus-operator-sdk-bom</artifactId>
-            <version>${quarkus.operator.sdk.version}</version>
-            <type>pom</type>
-            <scope>import</scope>
-        </dependency>
+            <dependency>
+                <groupId>io.quarkiverse.operatorsdk</groupId>
+                <artifactId>quarkus-operator-sdk-bom</artifactId>
+                <version>${quarkus.operator.sdk.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -95,17 +95,11 @@
           <groupId>io.quarkus</groupId>
           <artifactId>quarkus-container-image-docker</artifactId>
         </dependency>
-        <!-- FIXME: We should not need OKHttp Client, see HttpClientFactory class -->
-        <dependency>
-            <groupId>io.fabric8</groupId>
-            <artifactId>kubernetes-httpclient-okhttp</artifactId>
-            <version>${kubernetes-client.version}</version>
-        </dependency>
 
         <!-- Keycloak -->
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-common</artifactId>
+            <artifactId>keycloak-core</artifactId>
         </dependency>
 
         <!-- FIXME: Adding BC for now as removing the Bouncycastle dependencies from the operator makes it unusable on K3s and possibly on other kubernetes distributions (e.g. Rancher is based on K3s). -->
@@ -154,7 +148,7 @@
             <plugin>
                 <groupId>io.quarkus</groupId>
                 <artifactId>quarkus-maven-plugin</artifactId>
-                <version>${quarkus.version}</version>
+                <version>${quarkus.operator.build.version}</version>
             </plugin>
             <plugin>
                 <artifactId>maven-compiler-plugin</artifactId>
@@ -166,7 +160,7 @@
             <plugin>
                 <groupId>io.quarkus</groupId>
                 <artifactId>quarkus-maven-plugin</artifactId>
-                <version>${quarkus.version}</version>
+                <version>${quarkus.operator.build.version}</version>
                 <executions>
                     <execution>
                     <goals>
@@ -189,22 +183,6 @@
                             <resources>
                             <resource>
                                 <directory>src/main/kubernetes</directory>
-                                <filtering>true</filtering>
-                            </resource>
-                            </resources>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>import-keycloak-core</id>
-                        <phase>validate</phase>
-                        <goals>
-                            <goal>copy-resources</goal>
-                        </goals>
-                        <configuration>
-                            <outputDirectory>${basedir}/target/keycloak-core</outputDirectory>
-                            <resources>
-                            <resource>
-                                <directory>${basedir}/../core/src/main/java</directory>
                                 <filtering>true</filtering>
                             </resource>
                             </resources>
@@ -243,7 +221,6 @@
                         </goals>
                         <configuration>
                             <sources>
-                                <source>${basedir}/target/keycloak-core</source>
                                 <source>${basedir}/target/generated-sources/java</source>
                             </sources>
                         </configuration>
@@ -251,23 +228,6 @@
                 </executions>
             </plugin>
 
-            <plugin>
-                <artifactId>exec-maven-plugin</artifactId>
-                <groupId>org.codehaus.mojo</groupId>
-                <version>1.6.0</version>
-                <executions>
-                    <execution>
-                        <id>patch-core-sources</id>
-                        <phase>generate-sources</phase>
-                        <goals>
-                            <goal>exec</goal>
-                        </goals>
-                        <configuration>
-                            <executable>${basedir}/patch-sources.sh</executable>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
             <plugin>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <executions>
@@ -280,6 +240,33 @@
                         <phase>verify</phase>
                         <goals>
                             <goal>test</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <systemPropertyVariables>
+                        <!-- Used in KeycloakDeploymentTest#testPreconfiguredPodLabels -->
+                        <OPERATOR_TEST_LABEL_EXPRESSION>my-value</OPERATOR_TEST_LABEL_EXPRESSION>
+                    </systemPropertyVariables>
+                </configuration>
+            </plugin>
+            
+            <plugin>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>filterEnum</id>
+                        <phase>package</phase>
+                        <configuration>
+                            <target>
+                                <replaceregexp file="${project.build.directory}/kubernetes/keycloakrealmimports.k8s.keycloak.org-v1.yml"
+                                   match="[^\n]*- ENUM\$VALUES\s*\n"
+                                   flags="g"
+                                   replace=""/>
+                            </target>
+                        </configuration>
+                        <goals>
+                            <goal>run</goal>
                         </goals>
                     </execution>
                 </executions>
@@ -311,9 +298,9 @@
     
     <profiles>
         <profile>
-            <id>native</id>
+            <id>operator-prod</id>
             <properties>
-            <quarkus.package.type>native</quarkus.package.type>
+                <quarkus.profile>rhbk</quarkus.profile>
             </properties>
         </profile>
     </profiles>

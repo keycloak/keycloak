@@ -28,6 +28,10 @@ spec:
     poolMaxSize: 3
   ingress:
     enabled: false
+    className: nginx
+    annotations:
+      myAnnotation: myValue
+      anotherAnnotation: anotherValue
   http:
     httpEnabled: true
     httpPort: 123

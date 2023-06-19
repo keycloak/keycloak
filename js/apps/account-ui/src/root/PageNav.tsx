@@ -19,15 +19,18 @@ import {
   useLinkClickHandler,
   useLocation,
 } from "react-router-dom";
+import { environment } from "../environment";
 
 type RootMenuItem = {
   label: TFuncKey;
   path: string;
+  isHidden?: boolean;
 };
 
 type MenuItemWithChildren = {
   label: TFuncKey;
   children: MenuItem[];
+  isHidden?: boolean;
 };
 
 type MenuItem = RootMenuItem | MenuItemWithChildren;
@@ -35,7 +38,7 @@ type MenuItem = RootMenuItem | MenuItemWithChildren;
 const menuItems: MenuItem[] = [
   {
     label: "personalInfo",
-    path: "personal-info",
+    path: "/",
   },
   {
     label: "accountSecurity",
@@ -51,6 +54,7 @@ const menuItems: MenuItem[] = [
       {
         label: "linkedAccounts",
         path: "account-security/linked-accounts",
+        isHidden: !environment.features.isLinkedAccountsEnabled,
       },
     ],
   },
@@ -61,10 +65,12 @@ const menuItems: MenuItem[] = [
   {
     label: "groups",
     path: "groups",
+    isHidden: !environment.features.isViewGroupsEnabled,
   },
   {
     label: "resources",
     path: "resources",
+    isHidden: !environment.features.isMyResourcesEnabled,
   },
 ];
 
@@ -73,9 +79,11 @@ export const PageNav = () => (
     nav={
       <Nav>
         <NavList>
-          {menuItems.map((menuItem) => (
-            <NavMenuItem key={menuItem.label} menuItem={menuItem} />
-          ))}
+          {menuItems
+            .filter((menuItem) => !menuItem.isHidden)
+            .map((menuItem) => (
+              <NavMenuItem key={menuItem.label} menuItem={menuItem} />
+            ))}
         </NavList>
       </Nav>
     }
@@ -108,9 +116,11 @@ function NavMenuItem({ menuItem }: NavMenuItemProps) {
       isActive={isActive}
       isExpanded={isActive}
     >
-      {menuItem.children.map((child) => (
-        <NavMenuItem key={child.label} menuItem={child} />
-      ))}
+      {menuItem.children
+        .filter((menuItem) => !menuItem.isHidden)
+        .map((child) => (
+          <NavMenuItem key={child.label} menuItem={child} />
+        ))}
     </NavExpandable>
   );
 }

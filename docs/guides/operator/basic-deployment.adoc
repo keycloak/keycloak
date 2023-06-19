@@ -25,11 +25,11 @@ A database should be available and accessible from the cluster namespace where K
 For a list of supported databases, see <@links.server id="db"/>.
 The Keycloak Operator does not manage the database and you need to provision it yourself. Consider verifying your cloud provider offering or using a database operator such as https://access.crunchydata.com/documentation/postgres-operator/latest/[Crunchy].
 
-For development purposes, you can use an ephemeral PostgreSQL pod installation. To provision it, enter the following commands:
+For development purposes, you can use an ephemeral PostgreSQL pod installation. To provision it, follow the approach below:
 
-[source,bash]
+Create YAML file `example-postgres.yaml`:
+[source,yaml]
 ----
-cat <<EOF >> example-postgres.yaml
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
@@ -73,7 +73,12 @@ spec:
   ports:
   - port: 5432
     targetPort: 5432
-EOF
+----
+
+Apply the changes:
+
+[source,bash]
+----
 kubectl apply -f example-postgres.yaml
 ----
 
@@ -114,11 +119,11 @@ kubectl create secret generic keycloak-db-secret \
   --from-literal=password=[your_database_password]
 ----
 
-You can customize several fields using the Keycloak CRD. However, for a basic deployment, you can enter the following example commands:
+You can customize several fields using the Keycloak CRD. For a basic deployment, you can stick to the following approach:
 
-[source,bash]
+Create YAML file `example-kc.yaml`:
+[source,yaml]
 ----
-cat <<EOF >> example-kc.yaml
 apiVersion: k8s.keycloak.org/v2alpha1
 kind: Keycloak
 metadata:
@@ -138,7 +143,12 @@ spec:
     tlsSecret: example-tls-secret
   hostname:
     hostname: test.keycloak.org
-EOF
+----
+
+Apply the changes:
+
+[source,bash]
+----
 kubectl apply -f example-kc.yaml
 ----
 
@@ -166,12 +176,29 @@ CONDITION: RollingUpdate
 
 === Accessing the Keycloak deployment
 
-The Keycloak deployment is exposed through a basic Ingress and is accessible through the provided hostname.
+The Keycloak deployment is exposed through a basic Ingress and is accessible through the provided hostname.  On installations with multiple default IngressClass instances
+or when running on OpenShift 4.12+ you should provide an ingressClassName by setting `ingress` spec with `className` property to the desired class name:
+
+Edit YAML file `example-kc.yaml`:
+
+[source,yaml]
+----
+apiVersion: k8s.keycloak.org/v2alpha1
+kind: Keycloak
+metadata:
+  name: example-kc
+spec:
+    ...
+    ingress:
+      className: openshift-default
+----
+
 If the default ingress does not fit your use case, disable it by setting `ingress` spec with `enabled` property to `false` value:
 
-[source,bash]
+Edit YAML file `example-kc.yaml`:
+
+[source,yaml]
 ----
-cat <<EOF >> example-kc.yaml
 apiVersion: k8s.keycloak.org/v2alpha1
 kind: Keycloak
 metadata:
@@ -180,7 +207,12 @@ spec:
     ...
     ingress:
       enabled: false
-EOF
+----
+
+Apply the changes:
+
+[source,bash]
+----
 kubectl apply -f example-kc.yaml
 ----
 You can provide an alternative ingress resource pointing to the service `<keycloak-cr-name>-service`.

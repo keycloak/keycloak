@@ -116,10 +116,11 @@ export class IdentityProviders extends Resource<{ realm?: string }> {
   });
 
   public importFromUrl = this.makeRequest<
-    {
-      fromUrl: string;
-      providerId: string;
-    },
+    | {
+        fromUrl: string;
+        providerId: string;
+      }
+    | FormData,
     Record<string, string>
   >({
     method: "POST",

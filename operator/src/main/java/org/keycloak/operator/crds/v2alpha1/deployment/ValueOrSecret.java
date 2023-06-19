@@ -21,9 +21,12 @@ import io.fabric8.kubernetes.api.model.SecretKeySelector;
 
 import java.util.Objects;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+
 /**
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
  */
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class ValueOrSecret {
     private String name;
     private String value;

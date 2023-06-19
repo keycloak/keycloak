@@ -25,9 +25,7 @@ import org.keycloak.models.UserSessionModel;
 import org.keycloak.provider.Provider;
 
 import java.util.Collection;
-import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -87,15 +85,6 @@ public interface UserSessionPersisterProvider extends Provider {
      * @return
      */
     Stream<UserSessionModel> loadUserSessionsStream(RealmModel realm, ClientModel client, boolean offline, Integer firstResult, Integer maxResults);
-
-    /**
-     * Called during startup. For each userSession, it loads also clientSessions
-     * @deprecated Use {@link #loadUserSessionsStream(Integer, Integer, boolean, String) loadUserSessionsStream} instead.
-     */
-    @Deprecated
-    default List<UserSessionModel> loadUserSessions(int firstResult, int maxResults, boolean offline, int lastCreatedOn, String lastUserSessionId) {
-        return loadUserSessionsStream(firstResult, maxResults, offline, lastUserSessionId).collect(Collectors.toList());
-    }
 
     /**
      * Called during startup. For each userSession, it loads also clientSessions.

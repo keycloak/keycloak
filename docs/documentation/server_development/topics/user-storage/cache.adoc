@@ -8,7 +8,7 @@ is propagated to the entire cluster so that the other nodes' user cache is also 
 
 ==== Managing the user cache
 
-You can access the user cache by calling `KeycloakSession.userCache()`.
+You can access the user cache by calling `KeycloakSession.getProvider(UserCache.class)`.
 
 [source,java]
 ----

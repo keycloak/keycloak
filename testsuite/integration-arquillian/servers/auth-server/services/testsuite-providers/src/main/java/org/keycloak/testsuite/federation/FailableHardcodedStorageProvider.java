@@ -222,20 +222,6 @@ public class FailableHardcodedStorageProvider implements UserStorageProvider, Us
     }
 
     @Override
-    public Stream<UserModel> getUsersStream(RealmModel realm) {
-        checkForceFail();
-        UserModel model = getUserByUsername(realm, username);
-        return model != null ? Stream.of(model) : Stream.empty();
-    }
-
-    @Override
-    public Stream<UserModel> getUsersStream(RealmModel realm, Integer firstResult, Integer maxResults) {
-        checkForceFail();
-        UserModel model = getUserByUsername(realm, username);
-        return model != null ? Stream.of(model) : Stream.empty();
-    }
-
-    @Override
     public Stream<UserModel> searchForUserStream(RealmModel realm, String search) {
         checkForceFail();
         if (!search.equals(username)) return Stream.empty();

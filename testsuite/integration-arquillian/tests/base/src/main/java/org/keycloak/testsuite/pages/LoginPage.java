@@ -38,6 +38,9 @@ public class LoginPage extends LanguageComboboxAwarePage {
     @ArquillianResource
     protected OAuthClient oauth;
 
+    @FindBy(xpath = "//html")
+    protected WebElement htmlRoot;
+
     @FindBy(id = "username")
     protected WebElement usernameInput;
 
@@ -68,13 +71,11 @@ public class LoginPage extends LanguageComboboxAwarePage {
     @FindBy(className = "alert-success")
     private WebElement loginSuccessMessage;
 
-
     @FindBy(className = "alert-info")
     private WebElement loginInfoMessage;
 
     @FindBy(className = "instruction")
     private WebElement instruction;
-
 
     public void login(String username, String password) {
         clearUsernameInputAndWaitIfNecessary();
@@ -109,12 +110,15 @@ public class LoginPage extends LanguageComboboxAwarePage {
         usernameInput.sendKeys(username);
         passwordInput.clear();
         clickLink(submitButton);
-
     }
+
     public void missingUsername() {
         clearUsernameInputAndWaitIfNecessary();
         clickLink(submitButton);
+    }
 
+    public String getHtmlLanguage() {
+        return htmlRoot.getAttribute("lang");
     }
 
     public String getUsername() {
@@ -168,6 +172,7 @@ public class LoginPage extends LanguageComboboxAwarePage {
     public String getSuccessMessage() {
         return loginSuccessMessage != null ? loginSuccessMessage.getText() : null;
     }
+
     public String getInfoMessage() {
         try {
             return getTextFromElement(loginInfoMessage);
@@ -175,7 +180,6 @@ public class LoginPage extends LanguageComboboxAwarePage {
             return null;
         }
     }
-
 
     public boolean isCurrent() {
         String realm = "test";
@@ -232,4 +236,9 @@ public class LoginPage extends LanguageComboboxAwarePage {
         assertCurrent();
     }
 
+    public void open(String realm){
+        oauth.realm(realm);
+        oauth.openLoginForm();
+        assertCurrent(realm);
+    }
 }

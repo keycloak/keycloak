@@ -31,6 +31,9 @@ import java.util.stream.Stream;
 
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
+import org.keycloak.broker.provider.IdentityProvider;
+import org.keycloak.broker.provider.IdentityProviderFactory;
+import org.keycloak.broker.social.SocialIdentityProvider;
 import org.keycloak.common.enums.SslRequired;
 import org.keycloak.component.ComponentFactory;
 import org.keycloak.component.ComponentModel;
@@ -943,7 +946,8 @@ public class MapRealmAdapter extends AbstractRealmModel<MapRealmEntity> implemen
     @Override
     public Stream<IdentityProviderModel> getIdentityProvidersStream() {
         Set<MapIdentityProviderEntity> ips = entity.getIdentityProviders();
-        return ips == null ? Stream.empty() : ips.stream().map(MapIdentityProviderEntity::toModel);
+        return ips == null ? Stream.empty() : ips.stream()
+          .map(e -> MapIdentityProviderEntity.toModel(e, () -> this.getModelFromProviderFactory(e.getProviderId())));
     }
 
     @Override
@@ -952,8 +956,25 @@ public class MapRealmAdapter extends AbstractRealmModel<MapRealmEntity> implemen
         return ips == null ? null : ips.stream()
                 .filter(identityProvider -> Objects.equals(identityProvider.getAlias(), alias))
                 .findFirst()
-                .map(MapIdentityProviderEntity::toModel)
+                .map(e -> MapIdentityProviderEntity.toModel(e, () -> this.getModelFromProviderFactory(e.getProviderId())))
                 .orElse(null);
+    }
+
+    // This is a violation of layering requirements, this should NOT be in store code.
+    // However, there is no easy way around this given the current number of IdentityProviderModel implementations
+    private IdentityProviderModel getModelFromProviderFactory(String providerId) {
+        Optional<IdentityProviderFactory> factory = Stream.concat(session.getKeycloakSessionFactory().getProviderFactoriesStream(IdentityProvider.class),
+                                                                  session.getKeycloakSessionFactory().getProviderFactoriesStream(SocialIdentityProvider.class))
+                                                          .filter(providerFactory -> Objects.equals(providerFactory.getId(), providerId))
+                                                          .map(IdentityProviderFactory.class::cast)
+                                                          .findFirst();
+
+        if (factory.isPresent()) {
+            return factory.get().createConfig();
+        } else {
+            LOG.warn("Couldn't find a suitable identity provider factory for " + providerId);
+            return new IdentityProviderModel();
+        }
     }
 
     @Override
@@ -1425,12 +1446,6 @@ public class MapRealmAdapter extends AbstractRealmModel<MapRealmEntity> implemen
     }
 
     @Override
-    @Deprecated
-    public Stream<GroupModel> searchForGroupByNameStream(String search, Integer first, Integer max) {
-        return session.groups().searchForGroupByNameStream(this, search, false, first, max);
-    }
-
-    @Override
     public boolean removeGroup(GroupModel group) {
         return session.groups().removeGroup(this, group);
     }
@@ -1552,38 +1567,6 @@ public class MapRealmAdapter extends AbstractRealmModel<MapRealmEntity> implemen
     @Override
     public Stream<RoleModel> searchForRolesStream(String search, Integer first, Integer max) {
         return session.roles().searchForRolesStream(this, search, first, max);
-    }
-
-    @Override
-    @Deprecated
-    public Stream<String> getDefaultRolesStream() {
-        return getDefaultRole().getCompositesStream().filter(this::isRealmRole).map(RoleModel::getName);
-    }
-
-    private boolean isRealmRole(RoleModel role) {
-        return ! role.isClientRole();
-    }
-
-    @Override
-    @Deprecated
-    public void addDefaultRole(String name) {
-        getDefaultRole().addCompositeRole(getOrAddRoleId(name));
-    }
-
-    private RoleModel getOrAddRoleId(String name) {
-        RoleModel role = getRole(name);
-        if (role == null) {
-            role = addRole(name);
-        }
-        return role;
-    }
-
-    @Override
-    @Deprecated
-    public void removeDefaultRoles(String... defaultRoles) {
-        for (String defaultRole : defaultRoles) {
-            getDefaultRole().removeCompositeRole(getRole(defaultRole));
-        }
     }
 
     @Override

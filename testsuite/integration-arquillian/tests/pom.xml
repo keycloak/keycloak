@@ -215,7 +215,7 @@
         <github.secretToken/>
         <ieDriverArch>Win32</ieDriverArch>
         <ieDriverVersion/>
-        <js.browser>phantomjs</js.browser>
+        <js.browser>chrome</js.browser>
         <js.chromeArguments>--headless</js.chromeArguments>
         <htmlUnitBrowserVersion>chrome</htmlUnitBrowserVersion>
         <firefox_binary/> <!-- the path is set automatically based on the OS -->
@@ -345,18 +345,6 @@
                                     <artifactItem>
                                         <groupId>org.keycloak.testsuite</groupId>
                                         <artifactId>hello-world-authz-service</artifactId>
-                                        <version>${project.version}</version>
-                                        <type>war</type>
-                                    </artifactItem>
-                                    <artifactItem>
-                                        <groupId>org.keycloak.testsuite</groupId>
-                                        <artifactId>photoz-html5-client</artifactId>
-                                        <version>${project.version}</version>
-                                        <type>war</type>
-                                    </artifactItem>
-                                    <artifactItem>
-                                        <groupId>org.keycloak.testsuite</groupId>
-                                        <artifactId>photoz-restful-api</artifactId>
                                         <version>${project.version}</version>
                                         <type>war</type>
                                     </artifactItem>
@@ -1842,6 +1830,13 @@
                     <artifactId>${jdbc.mvn.artifactId}</artifactId>
                     <version>${jdbc.mvn.version}</version>
                     <scope>compile</scope>
+                </dependency>
+
+                <!-- OpenJDK 17 and further versions doesn't provide Nashorn library out of the box. -->
+                <dependency>
+                    <groupId>org.openjdk.nashorn</groupId>
+                    <artifactId>nashorn-core</artifactId>
+                    <version>${nashorn.version}</version>
                 </dependency>
 
                 <!-- CLI -->

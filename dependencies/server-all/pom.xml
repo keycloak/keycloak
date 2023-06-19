@@ -112,11 +112,6 @@
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-authz-policy-common</artifactId>
         </dependency>
-
-        <dependency>
-            <groupId>com.openshift</groupId>
-            <artifactId>openshift-restclient-java</artifactId>
-        </dependency>
     </dependencies>
 
 </project>

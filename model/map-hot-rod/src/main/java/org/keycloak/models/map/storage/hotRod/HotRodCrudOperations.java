@@ -234,7 +234,9 @@ public class HotRodCrudOperations<K, E extends AbstractHotRodEntity, V extends A
 
         // workaround if the query contains us.clientId field, in which case don't read by id => read without optimistic locking.
         // See https://issues.redhat.com/browse/ISPN-14537
-        if (!dmc.isEmpty() && dmc.partiallyEvaluate((field,  op, arg) -> field == UserSessionModel.SearchableFields.CLIENT_ID).toString().contains("__TRUE__")) {
+        if (!dmc.isEmpty() && dmc.partiallyEvaluate((field,  op, arg) ->
+                field == UserSessionModel.SearchableFields.CLIENT_ID || field == UserSessionModel.SearchableFields.CORRESPONDING_SESSION_ID
+            ).toString().contains("__TRUE__")) {
             Query<E> query = prepareQueryWithPrefixAndParameters(null, queryParameters);
             CloseableIterator<E> iterator = paginateQuery(query, queryParameters.getOffset(),
                     queryParameters.getLimit()).iterator();

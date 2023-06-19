@@ -16,7 +16,12 @@
  */
 package org.keycloak.operator;
 
+import org.keycloak.operator.crds.v2alpha1.deployment.ValueOrSecret;
+
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 import java.util.stream.Collectors;
 
 public final class Constants {
@@ -30,21 +35,22 @@ public final class Constants {
     public static final String COMPONENT_LABEL = "app.kubernetes.io/component";
     public static final String KEYCLOAK_COMPONENT_LABEL = "keycloak.org/component";
 
-    public static final Map<String, String> DEFAULT_LABELS = Map.of(
+    public static final Map<String, String> DEFAULT_LABELS = Collections.unmodifiableMap(new TreeMap<>(Map.of(
             "app", NAME,
             MANAGED_BY_LABEL, MANAGED_BY_VALUE
-    );
+    )));
 
     public static final String DEFAULT_LABELS_AS_STRING = DEFAULT_LABELS.entrySet().stream()
             .map(e -> e.getKey() + "=" + e.getValue())
             .collect(Collectors.joining(","));
 
-    public static final Map<String, String> DEFAULT_DIST_CONFIG = Map.of(
-        "health-enabled","true",
-        "cache", "ispn",
-        "cache-stack", "kubernetes",
-        "proxy", "passthrough"
+    public static final List<ValueOrSecret> DEFAULT_DIST_CONFIG_LIST = List.of(
+            new ValueOrSecret("health-enabled", "true"),
+            new ValueOrSecret("cache", "ispn"),
+            new ValueOrSecret("cache-stack", "kubernetes"),
+            new ValueOrSecret("proxy", "passthrough")
     );
+
 
     public static final Integer KEYCLOAK_HTTP_PORT = 8080;
     public static final Integer KEYCLOAK_HTTPS_PORT = 8443;

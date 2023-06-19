@@ -178,6 +178,13 @@ div.kc-logo-text span {
     margin-bottom: 20px;
 }
 
+#kc-registration-terms-text {
+    max-height: 100px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    margin: 5px;
+}
+
 #kc-registration {
     margin-bottom: 0;
 }
@@ -253,6 +260,10 @@ ul#kc-totp-supported-apps {
     margin-top: 20px;
 }
 
+.kc-social-links li {
+    width: 100%;
+}
+
 .kc-social-provider-logo {
     font-size: 23px;
     width: 30px;
@@ -272,7 +283,6 @@ ul#kc-totp-supported-apps {
 
 .kc-social-provider-name {
     position: relative;
-    top: 3px;
 }
 
 .kc-social-icon-text {

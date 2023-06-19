@@ -578,7 +578,7 @@
         <profile>
             <id>db-oracle</id>
             <properties>
-                <docker.database.image>docker.io/gvenzl/oracle-xe:21-slim-faststart</docker.database.image>
+                <docker.database.image>docker.io/miquelsi/oracle-19c:${oracledb.version}</docker.database.image>
                 <docker.database.port>1521</docker.database.port>
                 <docker.database.shmsize>1073741824</docker.database.shmsize>
                 <docker.database.skip>false</docker.database.skip>

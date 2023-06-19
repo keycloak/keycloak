@@ -62,6 +62,8 @@ public interface LoginFormsProvider extends Provider {
 
     Response createLoginPassword();
 
+    Response  createOtpReset();
+
     Response createPasswordReset();
 
     Response createLoginTotp();

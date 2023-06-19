@@ -257,6 +257,11 @@ public class PersistentUserSessionAdapter implements OfflineUserSessionModel {
         return getId().hashCode();
     }
 
+    @Override
+    public String toString() {
+        return getId();
+    }
+
     protected static class PersistentUserSessionData {
 
         @JsonProperty("brokerSessionId")

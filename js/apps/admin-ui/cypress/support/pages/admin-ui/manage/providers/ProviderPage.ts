@@ -430,6 +430,11 @@ export default class ProviderPage {
     return this;
   }
 
+  assertCardContainsText(providerType: string, expectedText: string) {
+    cy.findByTestId(`${providerType}-card`).should("contain", expectedText);
+    return this;
+  }
+
   disableEnabledSwitch(providerType: string) {
     cy.get(`#${providerType}-switch`).uncheck({ force: true });
     return this;

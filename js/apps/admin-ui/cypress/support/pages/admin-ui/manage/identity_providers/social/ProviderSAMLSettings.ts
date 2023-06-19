@@ -46,8 +46,8 @@ export default class ProviderSAMLSettings extends PageObject {
   private attributeConsumingServiceName = "attributeConsumingServiceName";
 
   private comparison = "#comparison";
-  private saveBtn = "save";
-  private revertBtn = "revert";
+  private saveBtn = "idp-details-save";
+  private revertBtn = "idp-details-revert";
 
   public clickSaveBtn() {
     cy.findByTestId(this.saveBtn).click();
