@@ -349,8 +349,8 @@ importers:
         version: 0.9.0
     devDependencies:
       '@rollup/plugin-commonjs':
-        specifier: ^25.0.1
-        version: 25.0.1(rollup@3.25.1)
+        specifier: ^25.0.2
+        version: 25.0.2(rollup@3.25.1)
       '@rollup/plugin-inject':
         specifier: ^5.0.3
         version: 5.0.3(rollup@3.25.1)
@@ -1281,8 +1281,8 @@ packages:
     engines: {node: '>=14'}
     dev: false
 
-  /@rollup/plugin-commonjs@25.0.1(rollup@3.25.1):
-    resolution: {integrity: sha512-2DJ4kv4b1xfTJopWhu61ANdNRHvzQZ2fpaIrlgaP2jOfUv1wDJ0Ucqy8AZlbFmn/iUjiwKoqki9j55Y6L8kyNQ==}
+  /@rollup/plugin-commonjs@25.0.2(rollup@3.25.1):
+    resolution: {integrity: sha512-NGTwaJxIO0klMs+WSFFtBP7b9TdTJ3K76HZkewT8/+yHzMiUGVQgaPtLQxNVYIgT5F7lxkEyVID+yS3K7bhCow==}
     engines: {node: '>=14.0.0'}
     peerDependencies:
       rollup: ^2.68.0||^3.0.0
