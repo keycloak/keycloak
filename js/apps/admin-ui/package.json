@@ -108,6 +108,6 @@
     "ts-node": "^10.9.1",
     "vite": "^4.3.9",
     "vite-plugin-checker": "^0.6.0",
-    "vitest": "^0.32.0"
+    "vitest": "^0.32.2"
   }
 }
