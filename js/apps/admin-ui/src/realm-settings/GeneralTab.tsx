@@ -35,13 +35,15 @@ type RealmSettingsGeneralTabProps = {
   save: (realm: RealmRepresentation) => void;
 };
 
+type FormFields = Omit<RealmRepresentation, "groups">;
+
 export const RealmSettingsGeneralTab = ({
   realm,
   save,
 }: RealmSettingsGeneralTabProps) => {
   const { t } = useTranslation("realm-settings");
   const { realm: realmName } = useRealm();
-  const form = useForm<RealmRepresentation>();
+  const form = useForm<FormFields>();
   const {
     register,
     control,
