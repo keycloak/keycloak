@@ -2,7 +2,7 @@
 
 ==== Tomcat SAML adapters
 
-WARNING: {project_name} Tomcat SAML adapter is deprecated. It is recommended to use other client adapter if possible.
+WARNING: The {project_name} Tomcat SAML adapter is deprecated. We recommend that you use another client adapter if possible.
 
 To be able to secure WAR apps deployed on Tomcat 8 or 9 you must install the Keycloak Tomcat SAML adapter into your Tomcat installation.
 You then have to provide some extra configuration in each WAR you deploy to Tomcat.
