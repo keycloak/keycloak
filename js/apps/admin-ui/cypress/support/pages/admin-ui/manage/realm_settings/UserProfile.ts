@@ -148,7 +148,7 @@ export default class UserProfile {
   }
 
   typeJSON(text: string) {
-    this.textArea().type(text);
+    this.textArea().type(text, { force: true });
     return this;
   }
 
