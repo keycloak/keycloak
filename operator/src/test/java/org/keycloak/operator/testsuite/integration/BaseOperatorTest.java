@@ -46,6 +46,8 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileWriter;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.time.Duration;
 import java.util.UUID;
 
@@ -84,12 +86,18 @@ public abstract class BaseOperatorTest {
     reconcilers = CDI.current().select(new TypeLiteral<>() {});
     operatorDeployment = ConfigProvider.getConfig().getOptionalValue(OPERATOR_DEPLOYMENT_PROP, OperatorDeployment.class).orElse(OperatorDeployment.local);
     deploymentTarget = ConfigProvider.getConfig().getOptionalValue(QUARKUS_KUBERNETES_DEPLOYMENT_TARGET, String.class).orElse("kubernetes");
-    kubernetesIp = ConfigProvider.getConfig().getOptionalValue(OPERATOR_KUBERNETES_IP, String.class).orElse("localhost");
     customImage = ConfigProvider.getConfig().getOptionalValue(OPERATOR_CUSTOM_IMAGE, String.class).orElse(null);
 
     setDefaultAwaitilityTimings();
     calculateNamespace();
     createK8sClient();
+    kubernetesIp = ConfigProvider.getConfig().getOptionalValue(OPERATOR_KUBERNETES_IP, String.class).orElseGet(() -> {
+        try {
+            return new URL(k8sclient.getConfiguration().getMasterUrl()).getHost();
+        } catch (MalformedURLException e) {
+            return "localhost";
+        }
+    });
     createCRDs();
     createNamespace();
     isOpenShift = isOpenShift(k8sclient);
