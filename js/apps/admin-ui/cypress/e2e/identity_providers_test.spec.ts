@@ -355,7 +355,7 @@ describe("Identity provider test", () => {
       sidebarPage.goToIdentityProviders();
       listingPage.goToItemDetails("github");
 
-      cy.findByTestId("jump-link-advanced-settings").click();
+      advancedSettings.ensureAdvancedSettingsAreVisible();
       advancedSettings.assertStoreTokensSwitchTurnedOn(true);
       advancedSettings.assertAcceptsPromptNoneForwardFromClientSwitchTurnedOn(
         true
