@@ -94,9 +94,9 @@ To run tests on Mac with `minikube` and the `docker` driver you should run `mini
 -Dtest.operator.kubernetes.ip=localhost
 ```
 
-On Linux or on Mac using `minikube` on a VM, instead you should pass this additional property:
+On Linux or on Mac using `minikube` on a VM, instead you should enable ingress:
 ```bash
--Dtest.operator.kubernetes.ip=$(minikube ip)
+minikube addons enable ingress
 ```
 
 To avoid skipping tests that are depending on custom Keycloak images, you need to build those first:
