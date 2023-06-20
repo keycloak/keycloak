@@ -210,62 +210,51 @@ export default class ProviderBaseGeneralSettingsPage extends PageObject {
   }
 
   public assertStoreTokensSwitchTurnedOn(isOn: boolean) {
-    super.assertSwitchStateOn(cy.get(this.storeTokensSwitch),
-      isOn
-    );
+    super.assertSwitchStateOn(cy.get(this.storeTokensSwitch), isOn);
     return this;
   }
 
   public assertStoredTokensReadableTurnedOn(isOn: boolean) {
-    super.assertSwitchStateOn(cy.get(this.storedTokensReadable).parent(),
-      isOn
-    );
+    super.assertSwitchStateOn(cy.get(this.storedTokensReadable).parent(), isOn);
     return this;
   }
 
   public assertAcceptsPromptNoneForwardFromClientSwitchTurnedOn(isOn: boolean) {
     super.assertSwitchStateOn(
-      cy.get(this.acceptsPromptNoneForwardFromClientSwitch).parent(), 
-        isOn
-      );
+      cy.get(this.acceptsPromptNoneForwardFromClientSwitch).parent(),
+      isOn
+    );
     return this;
   }
 
   public assertDisableUserInfoSwitchTurnedOn(isOn: boolean) {
     super.assertSwitchStateOn(
       cy.get(this.disableUserInfoSwitch).parent(),
-        isOn
-      );
+      isOn
+    );
     return this;
   }
 
   public assertTrustEmailSwitchTurnedOn(isOn: boolean) {
-    super.assertSwitchStateOn(cy.get(this.trustEmailSwitch).parent(),
-      isOn
-    );
+    super.assertSwitchStateOn(cy.get(this.trustEmailSwitch).parent(), isOn);
     return this;
   }
 
   public assertAccountLinkingOnlySwitchTurnedOn(isOn: boolean) {
-    super.assertSwitchStateOn(cy.get(this.accountLinkingOnlySwitch),
-      isOn
-    );
+    super.assertSwitchStateOn(cy.get(this.accountLinkingOnlySwitch), isOn);
     return this;
   }
 
   public assertHideOnLoginPageSwitchTurnedOn(isOn: boolean) {
     super.assertSwitchStateOn(
       cy.get(this.hideOnLoginPageSwitch).parent(),
-        isOn
-      );
+      isOn
+    );
     return this;
   }
 
   public assertEssentialClaimSwitchTurnedOn(isOn: boolean) {
-    super.assertSwitchStateOn(
-      cy.get(this.essentialClaimSwitch).parent(),
-        isOn
-      );
+    super.assertSwitchStateOn(cy.get(this.essentialClaimSwitch).parent(), isOn);
     return this;
   }
 
