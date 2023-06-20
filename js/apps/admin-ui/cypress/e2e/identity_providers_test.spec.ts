@@ -335,7 +335,7 @@ describe("Identity provider test", () => {
       advancedSettings.typeClaimNameInput("claim-name");
       advancedSettings.typeClaimValueInput("claim-value");
 
-      advancedSettings.ensureAdvancedSettingsAreVisible()
+      advancedSettings.ensureAdvancedSettingsAreVisible();
       advancedSettings.assertStoreTokensSwitchTurnedOn(true);
       advancedSettings.assertAcceptsPromptNoneForwardFromClientSwitchTurnedOn(
         true

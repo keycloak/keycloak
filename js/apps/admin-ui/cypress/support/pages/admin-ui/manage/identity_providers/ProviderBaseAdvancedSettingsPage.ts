@@ -221,17 +221,13 @@ export default class ProviderBaseGeneralSettingsPage extends PageObject {
 
   public assertAcceptsPromptNoneForwardFromClientSwitchTurnedOn(isOn: boolean) {
     super.assertSwitchStateOn(
-      cy.get(this.acceptsPromptNoneForwardFromClientSwitch).parent(),
-      isOn
-    );
+      cy.get(this.acceptsPromptNoneForwardFromClientSwitch).parent(), isOn);
     return this;
   }
 
   public assertDisableUserInfoSwitchTurnedOn(isOn: boolean) {
     super.assertSwitchStateOn(
-      cy.get(this.disableUserInfoSwitch).parent(),
-      isOn
-    );
+      cy.get(this.disableUserInfoSwitch).parent(), isOn);
     return this;
   }
 
@@ -247,17 +243,13 @@ export default class ProviderBaseGeneralSettingsPage extends PageObject {
 
   public assertHideOnLoginPageSwitchTurnedOn(isOn: boolean) {
     super.assertSwitchStateOn(
-      cy.get(this.hideOnLoginPageSwitch).parent(),
-      isOn
-    );
+      cy.get(this.hideOnLoginPageSwitch).parent(), isOn);
     return this;
   }
 
   public assertEssentialClaimSwitchTurnedOn(isOn: boolean) {
     super.assertSwitchStateOn(
-      cy.get(this.essentialClaimSwitch).parent(),
-      isOn
-    );
+      cy.get(this.essentialClaimSwitch).parent(), isOn);
     return this;
   }
 
