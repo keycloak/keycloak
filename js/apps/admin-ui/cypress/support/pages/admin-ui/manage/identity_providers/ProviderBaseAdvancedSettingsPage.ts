@@ -211,53 +211,61 @@ export default class ProviderBaseGeneralSettingsPage extends PageObject {
 
   public assertStoreTokensSwitchTurnedOn(isOn: boolean) {
     super.assertSwitchStateOn(cy.get(this.storeTokensSwitch),
-      isOn);
+      isOn
+    );
     return this;
   }
 
   public assertStoredTokensReadableTurnedOn(isOn: boolean) {
     super.assertSwitchStateOn(cy.get(this.storedTokensReadable).parent(),
-      isOn);
+      isOn
+    );
     return this;
   }
 
   public assertAcceptsPromptNoneForwardFromClientSwitchTurnedOn(isOn: boolean) {
     super.assertSwitchStateOn(
       cy.get(this.acceptsPromptNoneForwardFromClientSwitch).parent(), 
-        isOn);
+        isOn
+      );
     return this;
   }
 
   public assertDisableUserInfoSwitchTurnedOn(isOn: boolean) {
     super.assertSwitchStateOn(
       cy.get(this.disableUserInfoSwitch).parent(),
-        isOn);
+        isOn
+      );
     return this;
   }
 
   public assertTrustEmailSwitchTurnedOn(isOn: boolean) {
     super.assertSwitchStateOn(cy.get(this.trustEmailSwitch).parent(),
-      isOn);
+      isOn
+    );
     return this;
   }
 
   public assertAccountLinkingOnlySwitchTurnedOn(isOn: boolean) {
     super.assertSwitchStateOn(cy.get(this.accountLinkingOnlySwitch),
-      isOn);
+      isOn
+    );
     return this;
   }
 
   public assertHideOnLoginPageSwitchTurnedOn(isOn: boolean) {
     super.assertSwitchStateOn(
       cy.get(this.hideOnLoginPageSwitch).parent(),
-        isOn);
+        isOn
+      );
     return this;
   }
 
   public assertEssentialClaimSwitchTurnedOn(isOn: boolean) {
     super.assertSwitchStateOn(
       cy.get(this.essentialClaimSwitch).parent(),
-        isOn);
+        isOn
+      );
     return this;
   }
 
