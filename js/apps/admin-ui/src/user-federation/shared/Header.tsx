@@ -69,8 +69,8 @@ export const Header = ({
       <DisableConfirm />
       <DeleteConfirm />
       <Controller
-        name="config.enabled[0]"
-        defaultValue={["true"][0]}
+        name="config.enabled"
+        defaultValue={["true"]}
         control={control}
         render={({ field }) =>
           !id ? (
@@ -94,12 +94,12 @@ export const Header = ({
                   {t("deleteProvider")}
                 </DropdownItem>,
               ]}
-              isEnabled={field.value === "true"}
+              isEnabled={field.value?.[0] === "true"}
               onToggle={(value) => {
                 if (!value) {
                   toggleDisableDialog();
                 } else {
-                  field.onChange(value.toString());
+                  field.onChange([value.toString()]);
                   save();
                 }
               }}

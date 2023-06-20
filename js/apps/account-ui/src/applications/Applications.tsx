@@ -20,13 +20,13 @@ import {
   ExternalLinkAltIcon,
   InfoAltIcon,
 } from "@patternfly/react-icons";
-import { TFuncKey } from "i18next";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { ContinueCancelModal, useAlerts } from "ui-shared";
 import { deleteConsent, getApplications } from "../api/methods";
 import { ClientRepresentation } from "../api/representations";
-import { useAlerts, ContinueCancelModal } from "ui-shared";
 import { Page } from "../components/page/Page";
+import { TFuncKey } from "../i18n";
 import { usePromise } from "../utils/usePromise";
 
 type Application = ClientRepresentation & {

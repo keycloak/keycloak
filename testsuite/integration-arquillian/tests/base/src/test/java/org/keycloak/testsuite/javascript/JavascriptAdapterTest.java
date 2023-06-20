@@ -21,7 +21,6 @@ import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.SuiteContext;
-import org.keycloak.testsuite.auth.page.account.Applications;
 import org.keycloak.testsuite.auth.page.login.OAuthGrant;
 import org.keycloak.testsuite.auth.page.login.UpdatePassword;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
@@ -79,10 +78,6 @@ public class JavascriptAdapterTest extends AbstractJavascriptTest {
 
     @Page
     @JavascriptBrowser
-    private Applications applicationsPage;
-
-    @Page
-    @JavascriptBrowser
     private OAuthGrant oAuthGrantPage;
 
     @Page
@@ -102,7 +97,7 @@ public class JavascriptAdapterTest extends AbstractJavascriptTest {
 
         jsDriverTestRealmLoginPage.setAuthRealm(REALM_NAME);
         oAuthGrantPage.setAuthRealm(REALM_NAME);
-        applicationsPage.setAuthRealm(REALM_NAME);
+        oauth.realm(REALM_NAME);
 
         jsDriver.navigate().to(oauth.getLoginFormUrl());
         waitForPageToLoad();
@@ -315,7 +310,7 @@ public class JavascriptAdapterTest extends AbstractJavascriptTest {
 
             testExecutor.init(defaultArguments(), this::assertInitAuth);
 
-            applicationsPage.navigateTo();
+            driver.navigate().to(oauth.getLoginFormUrl());
             events.expectCodeToToken(codeId, loginEvent.getSessionId()).client(CLIENT_ID).assertEvent();
 
             AccountHelper.revokeConsents(adminClient.realm(REALM_NAME), testUser.getUsername(),CLIENT_ID);
