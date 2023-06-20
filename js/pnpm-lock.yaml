@@ -114,6 +114,9 @@ importers:
         specifier: workspace:*
         version: link:../../libs/ui-shared
     devDependencies:
+      '@playwright/test':
+        specifier: ^1.35.1
+        version: 1.35.1
       '@types/lodash-es':
         specifier: ^4.17.7
         version: 4.17.7
@@ -250,6 +253,9 @@ importers:
       '@types/react-dom':
         specifier: ^18.2.6
         version: 18.2.6
+      '@types/uuid':
+        specifier: ^9.0.2
+        version: 9.0.2
       '@vitejs/plugin-react-swc':
         specifier: ^3.3.2
         version: 3.3.2(vite@4.3.9)
@@ -268,6 +274,9 @@ importers:
       ts-node:
         specifier: ^10.9.1
         version: 10.9.1(@types/node@20.3.1)(typescript@5.1.3)
+      uuid:
+        specifier: ^9.0.0
+        version: 9.0.0
       vite:
         specifier: ^4.3.9
         version: 4.3.9(@types/node@20.3.1)
@@ -1174,6 +1183,17 @@ packages:
       tslib: 2.5.3
     dev: true
 
+  /@playwright/test@1.35.1:
+    resolution: {integrity: sha512-b5YoFe6J9exsMYg0pQAobNDR85T1nLumUYgUTtKm4d21iX2L7WqKq9dW8NGJ+2vX0etZd+Y7UeuqsxDXm9+5ZA==}
+    engines: {node: '>=16'}
+    hasBin: true
+    dependencies:
+      '@types/node': 20.3.1
+      playwright-core: 1.35.1
+    optionalDependencies:
+      fsevents: 2.3.2
+    dev: true
+
   /@reactflow/background@11.2.3(react-dom@18.2.0)(react@18.2.0):
     resolution: {integrity: sha512-hFoxKt7ZkQclM7CXg7p3EHb+ngUslqFq122Gsrj55N5rFeEdtIkWHuoi+WS0dLRVfX+acuUs6hZl8JuC/JtQ7g==}
     peerDependencies:
@@ -1961,6 +1981,10 @@ packages:
     resolution: {integrity: sha512-FkHXCb+ikSoUP4Y4rOslzTdX5sqYwMxfefKh1GmZ8ce1GOkEHntSp6b5cGadmNfp5e4BMEWOMx+WSKd5/MqlDA==}
     dependencies:
       '@types/jest': 29.5.2
+    dev: true
+
+  /@types/uuid@9.0.2:
+    resolution: {integrity: sha512-kNnC1GFBLuhImSnV7w4njQkUiJi0ZXUycu1rUaouPqiKlXkh77JKgdRnTAp1x5eBwcIwbtI+3otwzuIDEuDoxQ==}
     dev: true
 
   /@types/yargs-parser@21.0.0:
@@ -5368,6 +5392,12 @@ packages:
       pathe: 1.1.1
     dev: true
 
+  /playwright-core@1.35.1:
+    resolution: {integrity: sha512-pNXb6CQ7OqmGDRspEjlxE49w+4YtR6a3X6mT1hZXeJHWmsEz7SunmvZeiG/+y1yyMZdHnnn73WKYdtV1er0Xyg==}
+    engines: {node: '>=16'}
+    hasBin: true
+    dev: true
+
   /popper.js@1.16.1:
     resolution: {integrity: sha512-Wb4p1J4zyFTbM+u6WuO4XstYx4Ky9Cewe4DWrel7B0w6VVICvPwdOpotjzcf6eD8TsckVnIMNONQyPIUFOUbCQ==}
     deprecated: You can find the new Popper v2 at @popperjs/core, this package is dedicated to the legacy v1
@@ -6504,6 +6534,11 @@ packages:
 
   /uuid@8.3.2:
     resolution: {integrity: sha512-+NYs2QeMWy+GWFOEm9xnn6HCDp0l7QBD7ml8zLUmJ+93Q5NF0NocErnwkTkXVFNiX3/fpC6afS8Dhb/gz7R7eg==}
+    hasBin: true
+    dev: true
+
+  /uuid@9.0.0:
+    resolution: {integrity: sha512-MXcSTerfPa4uqyzStbRoTgt5XIe3x5+42+q1sDuy3R5MDk66URdLMOZe5aPX/SQd+kuYAh0FdP/pO28IkQyTeg==}
     hasBin: true
     dev: true
 

@@ -59,7 +59,7 @@ export const AlertProvider = ({ children }: PropsWithChildren) => {
 
   return (
     <AlertContext.Provider value={{ addAlert, addError }}>
-      <AlertGroup isToast>
+      <AlertGroup isToast data-testid="alerts">
         {alerts.map(({ id, variant, message, description }) => (
           <Alert
             key={id}

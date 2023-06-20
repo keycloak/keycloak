@@ -47,6 +47,7 @@ export const FormField = ({ attribute }: FormFieldProps) => {
           control={control}
           render={({ field }) => (
             <Select
+              data-testid={attribute.name}
               toggleId={attribute.name}
               onToggle={toggle}
               onSelect={(_, value) => {
@@ -79,6 +80,7 @@ export const FormField = ({ attribute }: FormFieldProps) => {
         />
       ) : (
         <KeycloakTextInput
+          data-testid={attribute.name}
           id={attribute.name}
           isDisabled={attribute.readOnly}
           {...register(fieldName(attribute.name), {
