@@ -59,6 +59,8 @@ import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
 import static org.keycloak.testsuite.admin.ApiUtil.createUserWithAdminClient;
 import static org.keycloak.testsuite.admin.ApiUtil.findClientByClientId;
 import static org.keycloak.testsuite.admin.ApiUtil.resetUserPassword;
+
+import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.OAuthClient.AccessTokenResponse;
 import org.keycloak.testsuite.util.OAuthClient.AuthorizationEndpointResponse;
@@ -354,8 +356,9 @@ public class ConsentsTest extends AbstractKeycloakTest {
         RealmRepresentation providerRealmRep = providerRealm.toRepresentation();
         providerRealmRep.setAccountTheme("keycloak");
         providerRealm.update(providerRealmRep);
+        providerRealm.clients().create(ClientBuilder.create().clientId("test-app").redirectUris("*").addWebOrigin("*").publicClient().build());
 
-        ClientRepresentation providerAccountRep = providerRealm.clients().findByClientId("account").get(0);
+        ClientRepresentation providerAccountRep = providerRealm.clients().findByClientId("test-app").get(0);
 
         // add offline_scope to default account-console client scope
         ClientScopeRepresentation offlineAccessScope = providerRealm.getDefaultOptionalClientScopes().stream()
@@ -371,7 +374,7 @@ public class ConsentsTest extends AbstractKeycloakTest {
         List<UserRepresentation> searchResult = providerRealm.users().search(getUserLogin());
         UserRepresentation user = searchResult.get(0);
 
-        driver.navigate().to(getAccountUrl(providerRealmName()));
+        accountLoginPage.open(providerRealmName());
 
         waitForPage("Sign in to provider");
         log.debug("Logging in");
@@ -381,8 +384,6 @@ public class ConsentsTest extends AbstractKeycloakTest {
         log.debug("Grant consent for offline_access");
         Assert.assertTrue(consentPage.isCurrent());
         consentPage.confirm();
-
-        waitForPage("keycloak account console");
 
         // disable consent required again to enable direct grant token retrieval.
         providerAccountRep.setConsentRequired(false);
