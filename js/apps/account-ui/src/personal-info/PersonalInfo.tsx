@@ -83,10 +83,20 @@ const PersonalInfo = () => {
           ))}
         </FormProvider>
         <ActionGroup>
-          <Button type="submit" id="save-btn" variant="primary">
+          <Button
+            data-testid="save"
+            type="submit"
+            id="save-btn"
+            variant="primary"
+          >
             {t("doSave")}
           </Button>
-          <Button id="cancel-btn" variant="link" onClick={() => reset()}>
+          <Button
+            data-testid="cancel"
+            id="cancel-btn"
+            variant="link"
+            onClick={() => reset()}
+          >
             {t("doCancel")}
           </Button>
         </ActionGroup>
