@@ -416,7 +416,7 @@ jobs:
         uses: ./.github/actions/integration-test-setup
 
       - name: Run Account Console IT
-        run: ./mvnw test -Dsurefire.rerunFailingTestsCount=${{ env.SUREFIRE_RERUN_FAILING_COUNT }} -nsu -B -Pauth-server-quarkus -Dtest=**.account2.**,!SigningInTest#passwordlessWebAuthnTest,!SigningInTest#twoFactorWebAuthnTest -Dbrowser=${{ matrix.browser }} "-Dwebdriver.chrome.driver=$CHROMEWEBDRIVER/chromedriver" -f testsuite/integration-arquillian/tests/other/base-ui/pom.xml | misc/log/trimmer.sh
+        run: ./mvnw test -Dsurefire.rerunFailingTestsCount=${{ env.SUREFIRE_RERUN_FAILING_COUNT }} -nsu -B -Pauth-server-quarkus -Dtest=**.account2.**,!SigningInTest#passwordlessWebAuthnTest,!SigningInTest#twoFactorWebAuthnTest -Dbrowser=${{ matrix.browser }} "-Dwebdriver.chrome.driver=$CHROMEWEBDRIVER/chromedriver" "-Dwebdriver.gecko.driver=$GECKOWEBDRIVER/geckodriver" -f testsuite/integration-arquillian/tests/other/base-ui/pom.xml | misc/log/trimmer.sh
 
       - name: Upload JVM Heapdumps
         if: always()
@@ -449,7 +449,7 @@ jobs:
         run: |
           TESTS=`testsuite/integration-arquillian/tests/base/testsuites/suite.sh forms`
           echo "Tests: $TESTS"
-          ./mvnw test -Dsurefire.rerunFailingTestsCount=${{ env.SUREFIRE_RERUN_FAILING_COUNT }} -nsu -B -Pauth-server-quarkus -Dtest=$TESTS -Dbrowser=${{ matrix.browser }} "-Dwebdriver.chrome.driver=$CHROMEWEBDRIVER/chromedriver" -f testsuite/integration-arquillian/tests/base/pom.xml | misc/log/trimmer.sh
+          ./mvnw test -Dsurefire.rerunFailingTestsCount=${{ env.SUREFIRE_RERUN_FAILING_COUNT }} -nsu -B -Pauth-server-quarkus -Dtest=$TESTS -Dbrowser=${{ matrix.browser }} "-Dwebdriver.chrome.driver=$CHROMEWEBDRIVER/chromedriver" "-Dwebdriver.gecko.driver=$GECKOWEBDRIVER/geckodriver" -f testsuite/integration-arquillian/tests/base/pom.xml | misc/log/trimmer.sh
 
       - name: Upload JVM Heapdumps
         if: always()
@@ -479,7 +479,7 @@ jobs:
         uses: ./.github/actions/integration-test-setup
 
       - name: Run WebAuthn IT
-        run: ./mvnw test -Dsurefire.rerunFailingTestsCount=${{ env.SUREFIRE_RERUN_FAILING_COUNT }} -nsu -B -Pauth-server-quarkus -Dtest=org.keycloak.testsuite.webauthn.**.*Test -Dbrowser=${{ matrix.browser }} "-Dwebdriver.chrome.driver=$CHROMEWEBDRIVER/chromedriver" -Pwebauthn -f testsuite/integration-arquillian/tests/other/pom.xml | misc/log/trimmer.sh
+        run: ./mvnw test -Dsurefire.rerunFailingTestsCount=${{ env.SUREFIRE_RERUN_FAILING_COUNT }} -nsu -B -Pauth-server-quarkus -Dtest=org.keycloak.testsuite.webauthn.**.*Test -Dbrowser=${{ matrix.browser }} "-Dwebdriver.chrome.driver=$CHROMEWEBDRIVER/chromedriver" "-Dwebdriver.gecko.driver=$GECKOWEBDRIVER/geckodriver" -Pwebauthn -f testsuite/integration-arquillian/tests/other/pom.xml | misc/log/trimmer.sh
 
       - name: Upload JVM Heapdumps
         if: always()
