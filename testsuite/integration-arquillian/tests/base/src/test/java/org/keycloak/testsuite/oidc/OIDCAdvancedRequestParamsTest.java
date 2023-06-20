@@ -31,7 +31,6 @@ import org.keycloak.admin.client.resource.ProtocolMappersResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.authentication.authenticators.client.JWTClientAuthenticator;
 import org.keycloak.broker.provider.util.SimpleHttp;
-import org.keycloak.common.Profile;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.Time;
@@ -50,7 +49,6 @@ import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.keys.Attributes;
 import org.keycloak.keys.KeyProvider;
 import org.keycloak.models.AuthenticatedClientSessionModel;
-import org.keycloak.models.Constants;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
@@ -69,14 +67,12 @@ import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.KeysMetadataRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.services.util.CertificateInfoHelper;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.AbstractAdminTest;
 import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
 import org.keycloak.testsuite.client.resources.TestApplicationResourceUrls;
 import org.keycloak.testsuite.client.resources.TestOIDCEndpointsApplicationResource;
 import org.keycloak.testsuite.pages.AppPage;
@@ -84,9 +80,13 @@ import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.OAuthGrantPage;
 import org.keycloak.testsuite.rest.resource.TestingOIDCEndpointsApplicationResource;
-import org.keycloak.testsuite.util.*;
 import org.keycloak.util.JWKSUtils;
 import org.keycloak.util.JsonSerialization;
+import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.ClientManager;
+import org.keycloak.testsuite.util.AdminClientUtil;
+import org.keycloak.testsuite.util.UserInfoClientUtil;
+import org.keycloak.testsuite.util.KeyUtils;
 
 import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.core.Response;
@@ -114,7 +114,6 @@ import static org.keycloak.testsuite.admin.ApiUtil.findClientResourceByClientId;
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-@DisableFeature(value = Profile.Feature.ACCOUNT2, skipRestart = true) // TODO remove this (KEYCLOAK-16228)
 public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest {
 
     @Rule
@@ -312,26 +311,19 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
         ClientManager.realm(adminClient.realm("test")).clientId("test-app").consentRequired(true);
 
         try {
-            driver.navigate().to(RealmsResource.accountUrl(UriBuilder.fromUri(getAuthServerRoot())).build("test").toString());
-            assertTrue(loginPage.isCurrent());
-            loginPage.login("test-user@localhost", "password");
-            assertEquals(driver.getCurrentUrl(), getAuthServerRoot() + "realms/test/account/");
-
-            events.expectLogin().client(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID)
-                    .removeDetail(Details.REDIRECT_URI)
-                    .detail(Details.USERNAME, "test-user@localhost").assertEvent();
-
-            // Assert error shown when trying prompt=none and consent not yet retrieved
+            // Assert error shown when trying prompt=none and consent not yet granted
             driver.navigate().to(oauth.getLoginFormUrl() + "&prompt=none");
             assertTrue(appPage.isCurrent());
             Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
             OAuthClient.AuthorizationEndpointResponse resp = new OAuthClient.AuthorizationEndpointResponse(oauth);
             Assert.assertNull(resp.getCode());
-            Assert.assertEquals(OAuthErrorException.INTERACTION_REQUIRED, resp.getError());
+            Assert.assertEquals(OAuthErrorException.LOGIN_REQUIRED, resp.getError());
 
-            // Confirm consent
-            driver.navigate().to(oauth.getLoginFormUrl());
+            // Login and confirm consent
+            loginPage.open();
+            assertTrue(loginPage.isCurrent());
+            loginPage.login("test-user@localhost", "password");
             grantPage.assertCurrent();
             grantPage.accept();
 

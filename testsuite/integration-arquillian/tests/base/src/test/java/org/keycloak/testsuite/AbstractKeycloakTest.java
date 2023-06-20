@@ -57,7 +57,6 @@ import org.keycloak.testsuite.auth.page.AuthRealm;
 import org.keycloak.testsuite.auth.page.AuthServer;
 import org.keycloak.testsuite.auth.page.AuthServerContextRoot;
 import org.keycloak.testsuite.auth.page.WelcomePage;
-import org.keycloak.testsuite.auth.page.account.Account;
 import org.keycloak.testsuite.auth.page.login.OIDCLogin;
 import org.keycloak.testsuite.auth.page.login.UpdatePassword;
 import org.keycloak.testsuite.client.KeycloakTestingClient;
@@ -145,9 +144,6 @@ public abstract class AbstractKeycloakTest {
 
     @Page
     protected AuthRealm masterRealmPage;
-
-    @Page
-    protected Account accountPage;
 
     @Page
     protected OIDCLogin loginPage;
@@ -293,7 +289,7 @@ public abstract class AbstractKeycloakTest {
     protected void deleteAllCookiesForRealm(String realmName) {
         // we can't use /auth/realms/{realmName} because some browsers (e.g. Chrome) apparently don't send cookies
         // to JSON pages and therefore can't delete realms cookies there; a non existing page will do just fine
-        navigateToUri(accountPage.getAuthRoot() + "/realms/" + realmName + "/super-random-page");
+        navigateToUri(oauth.SERVER_ROOT + "/auth/realms/" + realmName + "/super-random-page");
         log.info("deleting cookies in '" + realmName + "' realm");
         driver.manage().deleteAllCookies();
     }
