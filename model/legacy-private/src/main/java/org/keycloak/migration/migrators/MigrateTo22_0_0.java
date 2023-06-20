@@ -41,12 +41,16 @@ public class MigrateTo22_0_0 implements Migration {
 
     @Override
     public void migrate(KeycloakSession session) {
-        session.realms().getRealmsStream().forEach(this::removeHttpChallengeFlow);
+        session.realms().getRealmsStream().forEach((realm) -> {
+            removeHttpChallengeFlow(realm);
+            updateAccountTheme(realm);
+        });
     }
 
     @Override
     public void migrateImport(KeycloakSession session, RealmModel realm, RealmRepresentation rep, boolean skipUserDependent) {
         removeHttpChallengeFlow(realm);
+        updateAccountTheme(realm);
     }
 
     private void removeHttpChallengeFlow(RealmModel realm) {
@@ -60,6 +64,13 @@ public class MigrateTo22_0_0 implements Migration {
             LOG.errorf("Authentication flow '%s' is in use in realm '%s' and cannot be removed. Please update your deployment to avoid using this flow before migration to latest Keycloak",
                     HTTP_CHALLENGE_FLOW, realm.getName());
             throw me;
+        }
+    }
+
+    private void updateAccountTheme(RealmModel realm) {
+        String accountTheme = realm.getAccountTheme();
+        if ("keycloak".equals(accountTheme) || "rh-sso".equals(accountTheme)) {
+            realm.setAccountTheme("keycloak.v2");
         }
     }
 

@@ -17,5 +17,5 @@
 #
 #
 
-org.keycloak.examples.providersoverride.CustomFreemarkerAccountProviderFactory1
-org.keycloak.examples.providersoverride.CustomFreemarkerAccountProviderFactory2
+org.keycloak.examples.providersoverride.CustomDefaultEmailSenderProviderFactory1
+org.keycloak.examples.providersoverride.CustomDefaultEmailSenderProviderFactory2
