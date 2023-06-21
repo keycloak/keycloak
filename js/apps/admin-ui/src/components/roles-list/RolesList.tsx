@@ -106,7 +106,7 @@ export const RolesList = ({
           ]);
         }
         setSelectedRole(undefined);
-        addAlert(t("roleDeletedSuccess"), AlertVariant.success);
+        addAlert(t("roles:roleDeletedSuccess"), AlertVariant.success);
       } catch (error) {
         addError("roles:roleDeleteError", error);
       }
