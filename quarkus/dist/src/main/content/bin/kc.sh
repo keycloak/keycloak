@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/sh
 
 case "$(uname)" in
     CYGWIN*)
@@ -53,7 +53,7 @@ do
     case "$1" in
       --debug)
           DEBUG_MODE=true
-          if [ -n "$2" ] && [[ "$2" =~ ^[0-9]+$ ]]; then
+          if [ -n "$2" ] && expr "$2" : '[0-9]\+$' >/dev/null; then
               DEBUG_PORT=$2
               shift
           fi
@@ -63,15 +63,11 @@ do
           break
           ;;
       *)
-          if [[ $1 = --* || ! $1 =~ ^-D.* ]]; then
-            if [[ "$1" = "start-dev" ]]; then
-              CONFIG_ARGS="$CONFIG_ARGS --profile=dev $1"
-            else
-              CONFIG_ARGS="$CONFIG_ARGS $1"
-            fi
-          else
-            SERVER_OPTS="$SERVER_OPTS $1"
-          fi
+          case "$1" in
+            start-dev) CONFIG_ARGS="$CONFIG_ARGS --profile=dev $1";;
+            -D*) SERVER_OPTS="$SERVER_OPTS $1";;
+            *) CONFIG_ARGS="$CONFIG_ARGS $1";;
+          esac
           ;;
     esac
     shift
@@ -128,13 +124,12 @@ if [ "$PRINT_ENV" = "true" ]; then
   echo "Using JAVA_RUN_OPTS: $JAVA_RUN_OPTS"
 fi
 
-if [[ (! $CONFIG_ARGS = *"--optimized"*) ]] && [[ ! "$CONFIG_ARGS" == " build"* ]] && [[ ! "$CONFIG_ARGS" == *"-h" ]] && [[ ! "$CONFIG_ARGS" == *"--help"* ]]; then
-    eval "'$JAVA'" -Dkc.config.build-and-exit=true $JAVA_RUN_OPTS
-    EXIT_CODE=$?
+case "$CONFIG_ARGS" in
+  " build"* | *--optimized* | *-h | *--help*) ;;
+  *)
+    eval "'$JAVA'" -Dkc.config.build-and-exit=true $JAVA_RUN_OPTS || exit $?
     JAVA_RUN_OPTS="-Dkc.config.built=true $JAVA_RUN_OPTS"
-    if [ $EXIT_CODE != 0 ]; then
-      exit $EXIT_CODE
-    fi
-fi
+    ;;
+esac
 
 eval exec "'$JAVA'" $JAVA_RUN_OPTS
