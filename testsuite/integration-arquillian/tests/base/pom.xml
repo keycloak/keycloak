@@ -1187,6 +1187,7 @@
                 <surefire.memory.Xmx>2048m</surefire.memory.Xmx>
                 <surefire.memory.metaspace>512m</surefire.memory.metaspace>
                 <surefire.memory.metaspace.max>1024m</surefire.memory.metaspace.max>
+                <junit-vintage-engine.version>5.9.3</junit-vintage-engine.version>
             </properties>
             <dependencies>
                 <dependency>
@@ -1194,23 +1195,18 @@
                     <artifactId>keycloak-junit5</artifactId>
                     <version>${project.version}</version>
                     <exclusions>
-
                         <!-- TODO: FIPS not yet supported -->
                         <exclusion>
                             <groupId>org.keycloak</groupId>
                             <artifactId>keycloak-crypto-fips1402</artifactId>
                         </exclusion>
-
-                        <!-- Remove Junit5 deps-->
-                        <exclusion>
-                            <groupId>org.junit.jupiter</groupId>
-                            <artifactId>junit-jupiter</artifactId>
-                        </exclusion>
-                        <exclusion>
-                            <groupId>io.quarkus</groupId>
-                            <artifactId>quarkus-junit5-internal</artifactId>
-                        </exclusion>
                     </exclusions>
+                </dependency>
+                <dependency>
+                    <groupId>org.junit.vintage</groupId>
+                    <artifactId>junit-vintage-engine</artifactId>
+                    <version>${junit-vintage-engine.version}</version>
+                    <scope>test</scope>
                 </dependency>
                 <dependency>
                     <groupId>org.jboss.logmanager</groupId>
