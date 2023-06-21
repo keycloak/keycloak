@@ -21,9 +21,7 @@ case "$(uname)" in
         ;;
 esac
 
-if [ "x$RESOLVED_NAME" = "x" ]; then
-    RESOLVED_NAME="$0"
-fi
+RESOLVED_NAME="${RESOLVED_NAME:-"$0"}"
 
 GREP="grep"
 DIRNAME="$(dirname "$RESOLVED_NAME")"
@@ -73,8 +71,8 @@ do
     shift
 done
 
-if [ "x$JAVA" = "x" ]; then
-    if [ "x$JAVA_HOME" != "x" ]; then
+if [ -z "$JAVA" ]; then
+    if [ -n "$JAVA_HOME" ]; then
         JAVA="$JAVA_HOME/bin/java"
     else
         JAVA="java"
@@ -84,7 +82,7 @@ fi
 #
 # Specify options to pass to the Java VM.
 #
-if [ "x$JAVA_OPTS" = "x" ]; then
+if [ -z "$JAVA_OPTS" ]; then
    # The defaults set up Keycloak with '-XX:+UseParallelGC -XX:MinHeapFreeRatio=10 -XX:MaxHeapFreeRatio=20 -XX:GCTimeRatio=4 -XX:AdaptiveSizePolicyWeight=90' which proved to provide a good throughput and efficiency in the total memory allocation and CPU overhead.
    # If the memory is not used, it will be freed. See https://developers.redhat.com/blog/2017/04/04/openjdk-and-containers for details.
    # To optimize for large heap sizes or for throughput and better response time due to shorter GC pauses, consider ZGC and Shenandoah GC.
@@ -95,14 +93,14 @@ else
 fi
 
 # See also https://github.com/wildfly/wildfly-core/blob/7e5624cf92ebe4b64a4793a8c0b2a340c0d6d363/core-feature-pack/common/src/main/resources/content/bin/common.sh#L57-L60
-if [ "x$JAVA_ADD_OPENS" = "x" ]; then
+if [ -z "$JAVA_ADD_OPENS" ]; then
    JAVA_ADD_OPENS="--add-opens=java.base/java.util=ALL-UNNAMED --add-opens=java.base/java.util.concurrent=ALL-UNNAMED --add-opens=java.base/java.security=ALL-UNNAMED"
 else
    echo "JAVA_ADD_OPENS already set in environment; overriding default settings with values: $JAVA_ADD_OPENS"
 fi
 JAVA_OPTS="$JAVA_OPTS $JAVA_ADD_OPENS"
 
-if [ "x$JAVA_OPTS_APPEND" != "x" ]; then
+if [ -n "$JAVA_OPTS_APPEND" ]; then
   echo "Appending additional Java properties to JAVA_OPTS: $JAVA_OPTS_APPEND"
   JAVA_OPTS="$JAVA_OPTS $JAVA_OPTS_APPEND"
 fi
@@ -110,7 +108,7 @@ fi
 # Set debug settings if not already set
 if [ "$DEBUG_MODE" = "true" ]; then
     DEBUG_OPT="$(echo "$JAVA_OPTS" | $GREP "\-agentlib:jdwp")"
-    if [ "x$DEBUG_OPT" = "x" ]; then
+    if [ -z "$DEBUG_OPT" ]; then
         JAVA_OPTS="$JAVA_OPTS -agentlib:jdwp=transport=dt_socket,address=$DEBUG_PORT,server=y,suspend=$DEBUG_SUSPEND"
     else
         echo "Debug already enabled in JAVA_OPTS, ignoring --debug argument"

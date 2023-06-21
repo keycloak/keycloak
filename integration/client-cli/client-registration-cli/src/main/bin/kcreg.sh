@@ -19,12 +19,10 @@ case "`uname`" in
         ;;
 esac
 
-if [ "x$RESOLVED_NAME" = "x" ]; then
-    RESOLVED_NAME="$0"
-fi
+RESOLVED_NAME="${RESOLVED_NAME:-"$0"}"
 
-if [ "x$JAVA" = "x" ]; then
-    if [ "x$JAVA_HOME" != "x" ]; then
+if [ -z "$JAVA" ]; then
+    if [ -n "$JAVA_HOME" ]; then
         JAVA="$JAVA_HOME/bin/java"
     else
         JAVA="java"
