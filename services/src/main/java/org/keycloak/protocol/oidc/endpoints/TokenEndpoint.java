@@ -180,7 +180,7 @@ public class TokenEndpoint {
                 @Override
                 public Response runInternal(KeycloakSession session) {
                     // create another instance of the endpoint to isolate each run.
-                    TokenEndpoint other = new TokenEndpoint(session, new TokenManager(),
+                    TokenEndpoint other = new TokenEndpoint(session, tokenManager,
                             new EventBuilder(session.getContext().getRealm(), session, clientConnection));
                     // process the request in the created instance.
                     return other.processGrantRequestInternal();
