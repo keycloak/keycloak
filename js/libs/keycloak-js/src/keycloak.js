@@ -50,7 +50,7 @@ function Keycloak (config) {
 
     kc.init = function (initOptions) {
         if (kc.didInitialize) {
-            throw 'A \'Keycloak\' instance can only be initialized once.';
+            throw new Error("A 'Keycloak' instance can only be initialized once.");
         }
 
         kc.didInitialize = true;
