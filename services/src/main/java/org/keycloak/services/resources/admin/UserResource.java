@@ -677,9 +677,8 @@ public class UserResource {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     public Stream<String> getConfiguredUserStorageCredentialTypes() {
-        // This has "requireManage" due the compatibility with "credentials()" endpoint. Strictly said, it is reading endpoint, not writing,
-        // so may be revisited if to rather use "requireView" here in the future.
-        auth.users().requireManage(user);
+        // changed to "requireView" as per issue #20783
+        auth.users().requireView(user);
         return user.credentialManager().getConfiguredUserStorageCredentialTypesStream();
     }
 
