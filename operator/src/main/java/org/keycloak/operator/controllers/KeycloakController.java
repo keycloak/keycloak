@@ -55,6 +55,9 @@ public class KeycloakController implements Reconciler<Keycloak>, EventSourceInit
     @Inject
     Config config;
 
+    @Inject
+    WatchedSecrets watchedSecrets;
+
     @Override
     public Map<String, EventSource> prepareEventSources(EventSourceContext<Keycloak> context) {
         String namespace = context.getControllerConfiguration().getConfigurationService().getClientConfiguration().getNamespace();
@@ -86,9 +89,7 @@ public class KeycloakController implements Reconciler<Keycloak>, EventSourceInit
 
         return EventSourceInitializer.nameEventSources(statefulSetEvent,
                 servicesEvent,
-                ingressesEvent,
-                WatchedSecretsStore.getStoreEventSource(client, namespace),
-                WatchedSecretsStore.getWatchedSecretsEventSource(client, namespace));
+                ingressesEvent, watchedSecrets.getWatchedSecretsEventSource());
     }
 
     @Override
@@ -104,14 +105,9 @@ public class KeycloakController implements Reconciler<Keycloak>, EventSourceInit
         kcAdminSecret.createOrUpdateReconciled();
 
         var kcDeployment = new KeycloakDeployment(client, config, kc, context.getSecondaryResource(StatefulSet.class).orElse(null), kcAdminSecret.getName());
-        var watchedSecrets = new WatchedSecretsStore(kcDeployment.getConfigSecretsNames(), client, kc);
+        kcDeployment.setWatchedSecrets(watchedSecrets);
         kcDeployment.createOrUpdateReconciled();
-        if (watchedSecrets.changesDetected()) {
-            Log.info("Config Secrets modified, restarting deployment");
-            kcDeployment.rollingRestart();
-        }
         kcDeployment.updateStatus(statusAggregator);
-        watchedSecrets.createOrUpdateReconciled();
 
         var kcService = new KeycloakService(client, kc);
         kcService.updateStatus(statusAggregator);

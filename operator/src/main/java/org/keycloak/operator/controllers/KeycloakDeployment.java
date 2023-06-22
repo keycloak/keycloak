@@ -46,6 +46,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
@@ -62,6 +63,7 @@ public class KeycloakDeployment extends OperatorManagedResource implements Statu
     private final String adminSecretName;
 
     private Set<String> serverConfigSecretsNames;
+    private WatchedSecrets watchedSecrets;
 
     private boolean migrationInProgress;
 
@@ -82,6 +84,10 @@ public class KeycloakDeployment extends OperatorManagedResource implements Statu
         this.baseDeployment = createBaseDeployment();
         this.distConfigurator = configureDist();
         mergePodTemplate(this.baseDeployment.getSpec().getTemplate());
+    }
+
+    public void setWatchedSecrets(WatchedSecrets watchedSecrets) {
+        this.watchedSecrets = watchedSecrets;
     }
 
     @Override
@@ -109,6 +115,11 @@ public class KeycloakDeployment extends OperatorManagedResource implements Statu
             }
 
             migrateDeployment(existingDeployment, reconciledDeployment);
+        }
+
+        var configSecretsNames = getConfigSecretsNames();
+        if (!configSecretsNames.isEmpty() && watchedSecrets != null) {
+            watchedSecrets.processWatched(configSecretsNames, keycloakCR, reconciledDeployment);
         }
 
         return Optional.of(reconciledDeployment);
@@ -495,7 +506,8 @@ public class KeycloakDeployment extends OperatorManagedResource implements Statu
 
         return envVars;
     }
-    
+
+    @Override
     public void updateStatus(KeycloakStatusAggregator status) {
         status.apply(b -> b.withSelector(Constants.DEFAULT_LABELS_AS_STRING));
         validatePodTemplate(status);
@@ -512,7 +524,7 @@ public class KeycloakDeployment extends OperatorManagedResource implements Statu
                 status.addNotReadyMessage("Waiting for more replicas");
             }
         }
-        
+
         if (migrationInProgress) {
             status.addNotReadyMessage("Performing Keycloak upgrade, scaling down the deployment");
         } else if (existingDeployment.getStatus() != null
@@ -525,22 +537,15 @@ public class KeycloakDeployment extends OperatorManagedResource implements Statu
         distConfigurator.validateOptions(status);
     }
 
-    public Set<String> getConfigSecretsNames() {
-        Set<String> ret = new HashSet<>(serverConfigSecretsNames);
+    public List<String> getConfigSecretsNames() {
+        TreeSet<String> ret = new TreeSet<>(serverConfigSecretsNames);
         ret.addAll(distConfigurator.getSecretNames());
-        return ret;
+        return new ArrayList<>(ret);
     }
 
     @Override
     public String getName() {
         return keycloakCR.getMetadata().getName();
-    }
-
-    public void rollingRestart() {
-        client.apps().statefulSets()
-                .inNamespace(getNamespace())
-                .withName(getName())
-                .rolling().restart();
     }
 
     public void migrateDeployment(StatefulSet previousDeployment, StatefulSet reconciledDeployment) {
