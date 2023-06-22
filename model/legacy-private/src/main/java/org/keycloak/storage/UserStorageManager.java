@@ -48,7 +48,6 @@ import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.ProtocolMapperModel;
-import org.keycloak.models.utils.ReadonlyUntilWriteUserModelDelegate;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserConsentModel;
@@ -60,6 +59,7 @@ import org.keycloak.models.cache.OnUserCache;
 import org.keycloak.models.cache.UserCache;
 import org.keycloak.models.utils.ComponentUtil;
 import org.keycloak.models.utils.ReadOnlyUserModelDelegate;
+import org.keycloak.models.utils.ReadonlyUntilWriteUserModelDelegate;
 import org.keycloak.storage.client.ClientStorageProvider;
 import org.keycloak.storage.datastore.LegacyDatastoreProvider;
 import org.keycloak.storage.federated.UserFederatedStorageProvider;
@@ -131,12 +131,12 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
             return new ReadonlyUntilWriteUserModelDelegate(user, () -> {
                 UserModel userProxyOrNull = getUserModel(realm, user, importedUserValidation);
                 if(userProxyOrNull==null) {
-                    throw new ModelException("User Model not found");
+                    //not not throw exception as the code before
+                    logger.debugf("User was considered read only, but has not been found where it originally came from '%s'", user.getUsername());
                 }
                 return userProxyOrNull;
             });
         }
-
 
         return getUserModel(realm, user, importedUserValidation);
     }
