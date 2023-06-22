@@ -2094,7 +2094,7 @@ public class OAuthClient {
         }
     }
 
-    private KeyWrapper getRealmPublicKey(String realm, String algoritm, String kid) {
+    private KeyWrapper getRealmPublicKey(String realm, String algorithm, String kid) {
         boolean loadedKeysFromServer = false;
         JSONWebKeySet jsonWebKeySet = publicKeys.get(realm);
         if (jsonWebKeySet == null) {
@@ -2103,17 +2103,17 @@ public class OAuthClient {
             loadedKeysFromServer = true;
         }
 
-        KeyWrapper key = findKey(jsonWebKeySet, algoritm, kid);
+        KeyWrapper key = findKey(jsonWebKeySet, algorithm, kid);
 
         if (key == null && !loadedKeysFromServer) {
             jsonWebKeySet = getRealmKeys(realm);
             publicKeys.put(realm, jsonWebKeySet);
 
-            key = findKey(jsonWebKeySet, algoritm, kid);
+            key = findKey(jsonWebKeySet, algorithm, kid);
         }
 
         if (key == null) {
-            throw new RuntimeException("Public key for realm:" + realm + ", algorithm: " + algoritm + " not found");
+            throw new RuntimeException("Public key for realm:" + realm + ", algorithm: " + algorithm + " not found");
         }
 
         return key;
@@ -2128,9 +2128,9 @@ public class OAuthClient {
         }
     }
 
-    private KeyWrapper findKey(JSONWebKeySet jsonWebKeySet, String algoritm, String kid) {
+    private KeyWrapper findKey(JSONWebKeySet jsonWebKeySet, String algorithm, String kid) {
         for (JWK k : jsonWebKeySet.getKeys()) {
-            if (k.getKeyId().equals(kid) && k.getAlgorithm().equals(algoritm)) {
+            if (k.getKeyId().equals(kid) && k.getAlgorithm().equals(algorithm)) {
                 PublicKey publicKey = JWKParser.create(k).toPublicKey();
 
                 KeyWrapper key = new KeyWrapper();
