@@ -618,6 +618,33 @@ public class UserTest extends AbstractAdminTest {
         }
     }
 
+    @Test
+    public void updateUserWithInvalidPolicyPassword() {
+        createUsers();
+
+        RealmRepresentation rep = realm.toRepresentation();
+        String passwordPolicy = rep.getPasswordPolicy();
+        rep.setPasswordPolicy("length(8)");
+        realm.update(rep);
+        UserRepresentation user = new UserRepresentation();
+        user.setUsername("username1");
+        user.setEmail("user1@localhost");
+        CredentialRepresentation rawPassword = new CredentialRepresentation();
+        rawPassword.setValue("ABCD");
+        rawPassword.setType(CredentialRepresentation.PASSWORD);
+        user.setCredentials(Collections.singletonList(rawPassword));
+        assertAdminEvents.clear();
+
+        try (Response response = realm.users().create(user)) {
+            assertEquals(400, response.getStatus());
+            ErrorRepresentation error = response.readEntity(ErrorRepresentation.class);
+            Assert.assertEquals("Password policy not met", error.getErrorMessage());
+            rep.setPasswordPolicy(passwordPolicy);
+            assertAdminEvents.assertEmpty();
+            realm.update(rep);
+        }
+    }
+
     private List<String> createUsers() {
         List<String> ids = new ArrayList<>();
 

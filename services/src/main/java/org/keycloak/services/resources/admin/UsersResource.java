@@ -175,7 +175,8 @@ public class UsersResource {
             if (session.getTransactionManager().isActive()) {
                 session.getTransactionManager().setRollbackOnly();
             }
-            throw ErrorResponse.error("Password policy not met", Response.Status.BAD_REQUEST);
+            logger.warn("Password policy not met", e);
+            throw ErrorResponse.error("Password policy not met", new Object[] { e.getMessage() }, Response.Status.BAD_REQUEST);
         } catch (ModelException me){
             if (session.getTransactionManager().isActive()) {
                 session.getTransactionManager().setRollbackOnly();

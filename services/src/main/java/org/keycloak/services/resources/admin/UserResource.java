@@ -52,6 +52,7 @@ import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.models.utils.RoleUtils;
+import org.keycloak.policy.PasswordPolicyNotMetException;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.utils.RedirectUtils;
 import org.keycloak.provider.ProviderFactory;
@@ -210,6 +211,10 @@ public class UserResource {
         } catch (ReadOnlyException re) {
             session.getTransactionManager().setRollbackOnly();
             throw ErrorResponse.error("User is read only!", Status.BAD_REQUEST);
+        } catch (PasswordPolicyNotMetException e) {
+            session.getTransactionManager().setRollbackOnly();
+            logger.warn("Password policy not met", e);
+            throw ErrorResponse.error("Password policy not met", new Object[] { e.getMessage() }, Status.BAD_REQUEST);
         } catch (ModelException me) {
             logger.warn("Could not update user!", me);
             session.getTransactionManager().setRollbackOnly();
