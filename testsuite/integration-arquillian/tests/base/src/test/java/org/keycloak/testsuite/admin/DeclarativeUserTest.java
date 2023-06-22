@@ -8,6 +8,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasSize;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.keycloak.testsuite.forms.VerifyProfileTest.PERMISSIONS_ALL;
@@ -21,6 +22,7 @@ import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.admin.client.resource.UsersResource;
 import org.keycloak.common.Profile;
+import org.keycloak.models.UserModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ErrorRepresentation;
@@ -338,6 +340,34 @@ public class DeclarativeUserTest extends AbstractAdminTest {
             assertThat(DeclarativeUserProfileProvider.class.getName(), is(provider.getClass().getName()));
             assertThat(provider, instanceOf(DeclarativeUserProfileProvider.class));
         });
+    }
+
+    @Test
+    public void testUserLocale() {
+        RealmRepresentation realmRep = realm.toRepresentation();
+        Boolean internationalizationEnabled = realmRep.isInternationalizationEnabled();
+        realmRep.setInternationalizationEnabled(true);
+        realm.update(realmRep);
+
+        try {
+            UserRepresentation user1 = new UserRepresentation();
+            user1.setUsername("user1");
+            user1.singleAttribute(UserModel.LOCALE, "pt_BR");
+            String user1Id = createUser(user1);
+
+            UserResource userResource = realm.users().get(user1Id);
+            user1 = userResource.toRepresentation();
+            assertEquals("pt_BR", user1.getAttributes().get(UserModel.LOCALE).get(0));
+
+            realmRep.setInternationalizationEnabled(false);
+            realm.update(realmRep);
+
+            user1 = userResource.toRepresentation();
+            assertNull(user1.getAttributes().get(UserModel.LOCALE));
+        } finally {
+            realmRep.setInternationalizationEnabled(internationalizationEnabled);
+            realm.update(realmRep);
+        }
     }
 
     private String createUser(UserRepresentation userRep) {
