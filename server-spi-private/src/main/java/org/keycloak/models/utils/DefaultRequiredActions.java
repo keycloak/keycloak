@@ -311,6 +311,9 @@ public class DefaultRequiredActions {
      *         of {@link UserModel.RequiredAction}
      */
     public static String getDefaultRequiredActionCaseInsensitively(String providerId) {
+        if (providerId == null) {
+            return null;
+        }
         String upperCase = providerId.toUpperCase();
         if (REQUIRED_ACTIONS.contains(upperCase)) {
             return upperCase;
