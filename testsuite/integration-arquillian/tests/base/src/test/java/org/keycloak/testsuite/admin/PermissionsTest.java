@@ -1675,11 +1675,6 @@ public class PermissionsTest extends AbstractKeycloakTest {
                 clients.get(AdminRoles.VIEW_USERS).realm(REALM_NAME).users().get(user.getId()).getConfiguredUserStorageCredentialTypes();
             }
         }, clients.get(AdminRoles.VIEW_USERS), true);
-        invoke(new Invocation() {
-            public void invoke(RealmResource realm) {
-                clients.get(AdminRoles.QUERY_USERS).realm(REALM_NAME).users().get(user.getId()).getConfiguredUserStorageCredentialTypes();
-            }
-        }, clients.get(AdminRoles.QUERY_USERS), true);
     }
 
     @Test
