@@ -40,6 +40,7 @@ public class KeycloakDiscoveryService extends OperatorManagedResource implements
     private ServiceSpec getServiceSpec() {
       return new ServiceSpecBuilder()
               .addNewPort()
+              .withProtocol("TCP")
               .withPort(Constants.KEYCLOAK_DISCOVERY_SERVICE_PORT)
               .endPort()
               .withSelector(Constants.DEFAULT_LABELS)
@@ -49,14 +50,7 @@ public class KeycloakDiscoveryService extends OperatorManagedResource implements
 
     @Override
     protected Optional<HasMetadata> getReconciledResource() {
-        var service = fetchExistingService();
-        if (service == null) {
-            service = newService();
-        } else {
-            service.setSpec(getServiceSpec());
-        }
-
-        return Optional.of(service);
+        return Optional.of(newService());
     }
 
     private Service newService() {
@@ -78,6 +72,7 @@ public class KeycloakDiscoveryService extends OperatorManagedResource implements
                 .get();
     }
 
+    @Override
     public void updateStatus(KeycloakStatusAggregator status) {
         if (existingService == null) {
             status.addNotReadyMessage("No existing Discovery Service found, waiting for creating a new one");

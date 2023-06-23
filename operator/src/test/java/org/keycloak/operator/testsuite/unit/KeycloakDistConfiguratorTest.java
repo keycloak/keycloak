@@ -166,6 +166,9 @@ public class KeycloakDistConfiguratorTest {
         assertWarningStatusFirstClassFields(distConfig, false, expectedFields);
         expectedValues.forEach((k, v) -> assertEnvVarNotPresent(container.getEnv(), getKeycloakOptionEnvVarName(k)));
 
+        // mimic what KeycloakDeployment does and set all additionalOptions as env first
+        expectedValues.forEach((k, v) -> container.getEnv().add(new EnvVar(getKeycloakOptionEnvVarName(k), v, null)));
+
         config.accept(distConfig);
 
         assertWarningStatusFirstClassFields(distConfig, true, expectedFields);
@@ -180,8 +183,7 @@ public class KeycloakDistConfiguratorTest {
         assertThat(envVars).isNotNull();
         assertEnvVarPresent(envVars, varName);
 
-        final String foundValue = envVars.stream().filter(f -> varName.equals(f.getName()))
-                .findFirst()
+        var matching = envVars.stream().filter(f -> varName.equals(f.getName()))
                 .map(envVar -> {
                     if (envVar.getValue() != null) {
                         return envVar.getValue();
@@ -192,8 +194,9 @@ public class KeycloakDistConfiguratorTest {
                     }
 
                     return null;
-                })
-                .orElse(null);
+                }).collect(Collectors.toList());
+        assertThat(matching.size()).isLessThan(2);
+        final String foundValue = matching.stream().findFirst().orElse(null);
 
         assertThat(foundValue).isNotNull();
         assertThat(foundValue).isEqualTo(expectedValue);

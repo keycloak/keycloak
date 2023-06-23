@@ -64,6 +64,7 @@ public class KeycloakController implements Reconciler<Keycloak>, EventSourceInit
                 .withLabelSelector(Constants.DEFAULT_LABELS_AS_STRING)
                 .withNamespaces(namespace)
                 .withSecondaryToPrimaryMapper(Mappers.fromOwnerReference())
+                .withOnUpdateFilter(new MetadataAwareOnUpdateFilter<>())
                 .build();
 
         InformerConfiguration<Service> servicesIC = InformerConfiguration
@@ -71,6 +72,7 @@ public class KeycloakController implements Reconciler<Keycloak>, EventSourceInit
                 .withLabelSelector(Constants.DEFAULT_LABELS_AS_STRING)
                 .withNamespaces(namespace)
                 .withSecondaryToPrimaryMapper(Mappers.fromOwnerReference())
+                .withOnUpdateFilter(new MetadataAwareOnUpdateFilter<>())
                 .build();
 
         InformerConfiguration<Ingress> ingressesIC = InformerConfiguration
@@ -78,6 +80,7 @@ public class KeycloakController implements Reconciler<Keycloak>, EventSourceInit
                 .withLabelSelector(Constants.DEFAULT_LABELS_AS_STRING)
                 .withNamespaces(namespace)
                 .withSecondaryToPrimaryMapper(Mappers.fromOwnerReference())
+                .withOnUpdateFilter(new MetadataAwareOnUpdateFilter<>())
                 .build();
 
         EventSource statefulSetEvent = new InformerEventSource<>(statefulSetIC, context);

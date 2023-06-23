@@ -29,14 +29,13 @@ import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEven
 import io.javaoperatorsdk.operator.processing.event.source.informer.Mappers;
 import io.quarkus.logging.Log;
 import org.keycloak.operator.Constants;
+import org.keycloak.operator.Utils;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.Base64;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -84,9 +83,8 @@ public class WatchedSecretsStore extends OperatorManagedResource {
 
     @Override
     protected Optional<HasMetadata> getReconciledResource() {
-        Secret secret = existingStore != null ? existingStore : getNewStore();
-        secret.setData(null);
-        secret.setStringData(currentVersions);
+        Secret secret = getNewStore();
+        secret.setData(currentVersions);
 
         return Optional.of(secret);
     }
@@ -135,16 +133,7 @@ public class WatchedSecretsStore extends OperatorManagedResource {
     }
 
     private Map<String, String> getNewLastObservedVersions() {
-        if (existingStore != null && existingStore.getData() != null) {
-            return existingStore.getData().entrySet().stream()
-                    .collect(Collectors.toMap(
-                            Map.Entry::getKey,
-                            e -> new String(Base64.getDecoder().decode(e.getValue()))
-                    ));
-        }
-        else {
-            return Collections.emptyMap();
-        }
+        return Optional.ofNullable(existingStore).map(Secret::getData).orElse(Map.of());
     }
 
     private Map<String, String> getNewCurrentVersions() {
@@ -157,7 +146,7 @@ public class WatchedSecretsStore extends OperatorManagedResource {
         try {
             // using hashes as it's more robust than resource versions that can change e.g. just when adding a label
             byte[] bytes = MessageDigest.getInstance("MD5").digest(serializedData.getBytes(StandardCharsets.UTF_8));
-            return new BigInteger(1, bytes).toString(16);
+            return Utils.asBase64(new BigInteger(1, bytes).toString(16));
         }
         catch (NoSuchAlgorithmException e) {
             throw new RuntimeException(e);

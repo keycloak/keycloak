@@ -55,14 +55,7 @@ public class KeycloakService extends OperatorManagedResource implements StatusUp
 
     @Override
     protected Optional<HasMetadata> getReconciledResource() {
-        var service = fetchExistingService();
-        if (service == null) {
-            service = newService();
-        } else {
-            service.setSpec(getServiceSpec());
-        }
-
-        return Optional.of(service);
+        return Optional.of(newService());
     }
 
     private Service newService() {
@@ -84,6 +77,7 @@ public class KeycloakService extends OperatorManagedResource implements StatusUp
                 .get();
     }
 
+    @Override
     public void updateStatus(KeycloakStatusAggregator status) {
         if (existingService == null) {
             status.addNotReadyMessage("No existing Keycloak Service found, waiting for creating a new one");
@@ -91,12 +85,13 @@ public class KeycloakService extends OperatorManagedResource implements StatusUp
         }
     }
 
+    @Override
     public String getName() {
         return cr.getMetadata().getName() + Constants.KEYCLOAK_SERVICE_SUFFIX;
     }
 
     public static int getServicePort(Keycloak keycloak) {
-        // we assume HTTP when TLS is not configureed
+        // we assume HTTP when TLS is not configured
         if (!isTlsConfigured(keycloak)) {
             return getValueFromSubSpec(keycloak.getSpec().getHttpSpec(), HttpSpec::getHttpPort).orElse(Constants.KEYCLOAK_HTTP_PORT);
         } else {
