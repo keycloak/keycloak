@@ -28,9 +28,9 @@ import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.api.model.batch.v1.Job;
 import io.fabric8.kubernetes.api.model.batch.v1.JobBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.fabric8.kubernetes.client.ResourceNotFoundException;
 import io.fabric8.kubernetes.client.utils.KubernetesResourceUtil;
 import io.quarkus.logging.Log;
+
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 import org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImport;
 import org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImportStatusBuilder;
@@ -55,15 +55,15 @@ public class KeycloakRealmImportJob extends OperatorManagedResource {
         this.secretName = secretName;
         this.volumeName = KubernetesResourceUtil.sanitizeName(secretName + "-volume");
 
-        this.existingJob = fetchExistingJob();
-        this.existingDeployment = fetchExistingDeployment();
-        this.keycloak = fetchExistingKeycloak();
+        this.existingJob = fetchExisting(Job.class, getName());
+        this.existingDeployment = fetchExisting(StatefulSet.class, getKeycloakName());
+        this.keycloak = fetchExisting(Keycloak.class, getKeycloakName());
     }
 
     @Override
     protected Optional<HasMetadata> getReconciledResource() {
         if (existingDeployment == null) {
-            throw new ResourceNotFoundException("Keycloak Deployment not found: " + getKeycloakName());
+            return Optional.empty(); // handled in the status
         } else if (existingJob == null) {
             Log.info("Creating a new Job");
             return Optional.of(createImportJob());
@@ -73,30 +73,11 @@ public class KeycloakRealmImportJob extends OperatorManagedResource {
         }
     }
 
-    private Job fetchExistingJob() {
+    private <T extends HasMetadata> T fetchExisting(Class<T> type, String name) {
         return client
-                .batch()
-                .v1()
-                .jobs()
+                .resources(type)
                 .inNamespace(getNamespace())
-                .withName(getName())
-                .get();
-    }
-
-    private StatefulSet fetchExistingDeployment() {
-        return client
-                .apps()
-                .statefulSets()
-                .inNamespace(getNamespace())
-                .withName(getKeycloakName())
-                .get();
-    }
-
-    private Keycloak fetchExistingKeycloak() {
-        return client
-                .resources(Keycloak.class)
-                .inNamespace(getNamespace())
-                .withName(getKeycloakName())
+                .withName(name)
                 .get();
     }
 
@@ -187,7 +168,7 @@ public class KeycloakRealmImportJob extends OperatorManagedResource {
 
     public void updateStatus(KeycloakRealmImportStatusBuilder status) {
         if (existingDeployment == null) {
-            status.addNotReadyMessage("No existing Deployment found, waiting for it to be created");
+            status.addErrorMessage("No existing Deployment found, waiting for it to be created");
             return;
         }
 
@@ -205,7 +186,7 @@ public class KeycloakRealmImportJob extends OperatorManagedResource {
             } else if (oldStatus.getSucceeded() != null && oldStatus.getSucceeded() > 0) {
                 if (!lastReportedStatus.isDone()) {
                     Log.info("Job finished performing a rolling restart of the deployment");
-                    rollingRestart();
+                    rollingRestart(); // could be based upon a hash annotation on the deployment instead
                 }
                 status.addDone();
             } else if (oldStatus.getFailed() != null && oldStatus.getFailed() > 0) {

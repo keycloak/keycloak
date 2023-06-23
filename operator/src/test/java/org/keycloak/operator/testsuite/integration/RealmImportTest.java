@@ -27,6 +27,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.keycloak.operator.testsuite.utils.CRAssert;
+import org.keycloak.operator.testsuite.utils.K8sUtils;
 import org.keycloak.operator.controllers.KeycloakService;
 import org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImport;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.UnsupportedSpec;
@@ -90,7 +91,7 @@ public class RealmImportTest extends BaseOperatorTest {
         deployKeycloak(k8sclient, kc, false);
 
         // Act
-        k8sclient.load(getClass().getResourceAsStream("/example-realm.yaml")).inNamespace(namespace).forceConflicts().serverSideApply();
+        K8sUtils.set(k8sclient, getClass().getResourceAsStream("/example-realm.yaml"));
 
         // Assert
         var crSelector = k8sclient
@@ -151,7 +152,7 @@ public class RealmImportTest extends BaseOperatorTest {
         deployKeycloak(k8sclient, keycloak, false);
 
         // Act
-        k8sclient.load(getClass().getResourceAsStream("/example-realm.yaml")).inNamespace(namespace).forceConflicts().serverSideApply();
+        K8sUtils.set(k8sclient, getClass().getResourceAsStream("/example-realm.yaml"));
 
         // Assert
         var crSelector = k8sclient
@@ -178,7 +179,7 @@ public class RealmImportTest extends BaseOperatorTest {
         deployKeycloak(k8sclient, getDefaultKeycloakDeployment(), true); // make sure there are no errors due to missing KC Deployment
 
         // Act
-        k8sclient.load(getClass().getResourceAsStream("/incorrect-realm.yaml")).inNamespace(namespace).forceConflicts().serverSideApply();
+        K8sUtils.set(k8sclient, getClass().getResourceAsStream("/incorrect-realm.yaml"));
 
         // Assert
         Awaitility.await()

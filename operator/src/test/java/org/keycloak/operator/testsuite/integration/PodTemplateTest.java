@@ -28,6 +28,7 @@ import io.quarkus.test.junit.QuarkusTest;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
 import org.keycloak.operator.testsuite.utils.CRAssert;
+import org.keycloak.operator.testsuite.utils.K8sUtils;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 
 import java.util.Collections;
@@ -53,12 +54,8 @@ public class PodTemplateTest extends BaseOperatorTest {
 
     @Test
     public void testPodTemplateIsMerged() {
-        // Arrange
-        var keycloakWithPodTemplate = k8sclient
-                .load(getClass().getResourceAsStream("/correct-podtemplate-keycloak.yml"));
-
         // Act
-        keycloakWithPodTemplate.forceConflicts().serverSideApply();
+        K8sUtils.set(k8sclient, getClass().getResourceAsStream("/correct-podtemplate-keycloak.yml"));
 
         // Assert
         Awaitility
@@ -99,7 +96,7 @@ public class PodTemplateTest extends BaseOperatorTest {
         plainKc.getSpec().getUnsupported().setPodTeplate(podTemplate);
 
         // Act
-        k8sclient.resource(plainKc).forceConflicts().serverSideApply();
+        K8sUtils.set(k8sclient, plainKc);
 
         // Assert
         Log.info("Getting status of Keycloak");
@@ -123,7 +120,7 @@ public class PodTemplateTest extends BaseOperatorTest {
         plainKc.getSpec().getUnsupported().setPodTeplate(podTemplate);
 
         // Act
-        k8sclient.resource(plainKc).forceConflicts().serverSideApply();
+        K8sUtils.set(k8sclient, plainKc);
 
         // Assert
         Log.info("Getting status of Keycloak");
@@ -149,7 +146,7 @@ public class PodTemplateTest extends BaseOperatorTest {
         plainKc.getSpec().getUnsupported().setPodTeplate(podTemplate);
 
         // Act
-        k8sclient.resource(plainKc).forceConflicts().serverSideApply();
+        K8sUtils.set(k8sclient, plainKc);
 
         // Assert
         Log.info("Getting status of Keycloak");
@@ -175,7 +172,7 @@ public class PodTemplateTest extends BaseOperatorTest {
         plainKc.getSpec().getUnsupported().setPodTeplate(podTemplate);
 
         // Act
-        k8sclient.resource(plainKc).forceConflicts().serverSideApply();
+        K8sUtils.set(k8sclient, plainKc);
 
         // Assert
         Log.info("Getting status of Keycloak");
@@ -193,7 +190,7 @@ public class PodTemplateTest extends BaseOperatorTest {
         String secretDescriptorFilename = "test-docker-registry-secret.yaml";
 
         Secret imagePullSecret = getResourceFromFile(secretDescriptorFilename, Secret.class);
-        k8sclient.resource(imagePullSecret).inNamespace(namespace).forceConflicts().serverSideApply();
+        K8sUtils.set(k8sclient, imagePullSecret);
         LocalObjectReference localObjRefAsSecretTmp = new LocalObjectReferenceBuilder().withName(imagePullSecret.getMetadata().getName()).build();
 
         assertThat(localObjRefAsSecretTmp.getName()).isNotNull();
@@ -209,7 +206,7 @@ public class PodTemplateTest extends BaseOperatorTest {
         plainKc.getSpec().getUnsupported().setPodTeplate(podTemplate);
 
         // Act
-        k8sclient.resource(plainKc).forceConflicts().serverSideApply();
+        K8sUtils.set(k8sclient, plainKc);
 
         // Assert
         Log.info("Getting status of Keycloak");
