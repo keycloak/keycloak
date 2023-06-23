@@ -12,12 +12,14 @@ type MoveDialogProps = {
 };
 
 const moveToRoot = (source: GroupRepresentation) =>
-  adminClient.groups.create(source);
+  source.id
+    ? adminClient.groups.updateRoot(source)
+    : adminClient.groups.create(source);
 
 const moveToGroup = async (
   source: GroupRepresentation,
   dest: GroupRepresentation
-) => adminClient.groups.setOrCreateChild({ id: dest.id! }, source);
+) => adminClient.groups.updateChildGroup({ id: dest.id! }, source);
 
 export const MoveDialog = ({ source, onClose, refresh }: MoveDialogProps) => {
   const { t } = useTranslation("groups");

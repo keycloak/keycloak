@@ -48,7 +48,9 @@ export const GroupsModal = ({
       } else if (rename) {
         await adminClient.groups.update({ id }, group);
       } else {
-        await adminClient.groups.setOrCreateChild({ id }, group);
+        await (group.id
+          ? adminClient.groups.updateChildGroup({ id }, group)
+          : adminClient.groups.createChildGroup({ id }, group));
       }
 
       refresh(rename ? group : undefined);
