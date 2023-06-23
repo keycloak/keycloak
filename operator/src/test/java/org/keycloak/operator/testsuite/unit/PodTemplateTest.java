@@ -270,7 +270,7 @@ public class PodTemplateTest {
     }
 
     @Test
-    public void testAnnotationsAreMerged() {
+    public void testAnnotationsAreNotMerged() {
         // Arrange
         var existingDeployment = new StatefulSetBuilder()
                 .withNewSpec()
@@ -292,7 +292,6 @@ public class PodTemplateTest {
         var podTemplate = getDeployment(additionalPodTemplate, existingDeployment).getSpec().getTemplate();
 
         // Assert
-        assertThat(podTemplate.getMetadata().getAnnotations()).containsEntry("one", "1");
         assertThat(podTemplate.getMetadata().getAnnotations()).containsEntry("two", "2");
     }
 

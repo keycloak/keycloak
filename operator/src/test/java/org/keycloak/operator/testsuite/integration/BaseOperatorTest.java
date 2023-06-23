@@ -41,6 +41,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestInfo;
 import org.keycloak.operator.Constants;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
+import org.keycloak.operator.testsuite.utils.K8sUtils;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -127,8 +128,7 @@ public abstract class BaseOperatorTest {
 
   private static void createRBACresourcesAndOperatorDeployment() throws FileNotFoundException {
     Log.info("Creating RBAC and Deployment into Namespace " + namespace);
-    k8sclient.load(new FileInputStream(TARGET_KUBERNETES_GENERATED_YML_FOLDER + deploymentTarget + ".yml"))
-            .inNamespace(namespace).forceConflicts().serverSideApply();
+    K8sUtils.set(k8sclient, new FileInputStream(TARGET_KUBERNETES_GENERATED_YML_FOLDER + deploymentTarget + ".yml"));
   }
 
   private static void cleanRBACresourcesAndOperatorDeployment() throws FileNotFoundException {
@@ -140,10 +140,8 @@ public abstract class BaseOperatorTest {
   private static void createCRDs() {
     Log.info("Creating CRDs");
     try {
-      var deploymentCRD = k8sclient.load(new FileInputStream(TARGET_KUBERNETES_GENERATED_YML_FOLDER + "keycloaks.k8s.keycloak.org-v1.yml"));
-      deploymentCRD.forceConflicts().serverSideApply();
-      var realmImportCRD = k8sclient.load(new FileInputStream(TARGET_KUBERNETES_GENERATED_YML_FOLDER + "keycloakrealmimports.k8s.keycloak.org-v1.yml"));
-      realmImportCRD.forceConflicts().serverSideApply();
+      K8sUtils.set(k8sclient, new FileInputStream(TARGET_KUBERNETES_GENERATED_YML_FOLDER + "keycloaks.k8s.keycloak.org-v1.yml"));
+      K8sUtils.set(k8sclient, new FileInputStream(TARGET_KUBERNETES_GENERATED_YML_FOLDER + "keycloakrealmimports.k8s.keycloak.org-v1.yml"));
     } catch (Exception e) {
       Log.warn("Failed to create Keycloak CRD, retrying", e);
       createCRDs();
@@ -177,7 +175,7 @@ public abstract class BaseOperatorTest {
   protected static void deployDB() {
     // DB
     Log.info("Creating new PostgreSQL deployment");
-    k8sclient.load(BaseOperatorTest.class.getResourceAsStream("/example-postgres.yaml")).inNamespace(namespace).forceConflicts().serverSideApply();
+    K8sUtils.set(k8sclient, BaseOperatorTest.class.getResourceAsStream("/example-postgres.yaml"));
 
     // Check DB has deployed and ready
     Log.info("Checking Postgres is running");
@@ -188,7 +186,7 @@ public abstract class BaseOperatorTest {
   }
 
   protected static void deployDBSecret() {
-    k8sclient.resource(getResourceFromFile("example-db-secret.yaml", Secret.class)).inNamespace(namespace).forceConflicts().serverSideApply();
+    K8sUtils.set(k8sclient, getResourceFromFile("example-db-secret.yaml", Secret.class));
   }
 
   protected static void deleteDB() {
