@@ -170,8 +170,10 @@ public class DeviceEndpoint extends AuthorizationEndpointBase implements RealmRe
         singleUseStore.put(userCode.serializeKey(), lifespanSeconds, userCode.serializeValue());
 
         try {
-            String deviceUrl = realm.getAttribute(SHORT_VERIFICATION_URI) != null ? realm.getAttribute(SHORT_VERIFICATION_URI) : DeviceGrantType.oauth2DeviceVerificationUrl(session.getContext().getUri()).build(realm.getName())
-                .toString();
+            String deviceUrl = realm.getAttribute(SHORT_VERIFICATION_URI);
+            if (deviceUrl == null || deviceUrl.isEmpty()) {
+                deviceUrl = DeviceGrantType.oauth2DeviceVerificationUrl(session.getContext().getUri()).build(realm.getName()).toString();
+            }
 
             OAuth2DeviceAuthorizationResponse response = new OAuth2DeviceAuthorizationResponse();
             response.setDeviceCode(deviceCode.getDeviceCode());
