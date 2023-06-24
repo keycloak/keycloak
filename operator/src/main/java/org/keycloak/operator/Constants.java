@@ -22,7 +22,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
-import java.util.stream.Collectors;
 
 public final class Constants {
     public static final String CRDS_GROUP = "k8s.keycloak.org";
@@ -30,6 +29,7 @@ public final class Constants {
     public static final String SHORT_NAME = "kc";
     public static final String NAME = "keycloak";
     public static final String PLURAL_NAME = "keycloaks";
+    public static final String INSTANCE_LABEL = "app.kubernetes.io/instance";
     public static final String MANAGED_BY_LABEL = "app.kubernetes.io/managed-by";
     public static final String MANAGED_BY_VALUE = "keycloak-operator";
     public static final String COMPONENT_LABEL = "app.kubernetes.io/component";
@@ -40,9 +40,7 @@ public final class Constants {
             MANAGED_BY_LABEL, MANAGED_BY_VALUE
     )));
 
-    public static final String DEFAULT_LABELS_AS_STRING = DEFAULT_LABELS.entrySet().stream()
-            .map(e -> e.getKey() + "=" + e.getValue())
-            .collect(Collectors.joining(","));
+    public static final String DEFAULT_LABELS_AS_STRING = Utils.toSelectorString(DEFAULT_LABELS);
 
     public static final List<ValueOrSecret> DEFAULT_DIST_CONFIG_LIST = List.of(
             new ValueOrSecret("health-enabled", "true"),

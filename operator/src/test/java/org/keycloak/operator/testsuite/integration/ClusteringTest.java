@@ -17,6 +17,12 @@
 
 package org.keycloak.operator.testsuite.integration;
 
+import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.api.model.Secret;
+import io.fabric8.kubernetes.api.model.Service;
+import io.fabric8.kubernetes.api.model.apps.StatefulSet;
+import io.fabric8.kubernetes.api.model.networking.v1.Ingress;
+import io.fabric8.kubernetes.client.readiness.Readiness;
 import io.fabric8.kubernetes.client.utils.Serialization;
 import io.quarkus.logging.Log;
 import io.quarkus.test.junit.QuarkusTest;
@@ -46,13 +52,65 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class ClusteringTest extends BaseOperatorTest {
 
     @Test
+    public void testMultipleDeployments() throws InterruptedException {
+        // given
+        var kc = K8sUtils.getDefaultKeycloakDeployment();
+
+        // another instance running off the same database
+        // - should eventually give this a separate schema
+        var kc1 = K8sUtils.getDefaultKeycloakDeployment();
+        kc1.getMetadata().setName("another-example");
+        kc1.getSpec().getHostnameSpec().setHostname("another-example.com");
+        // this is using the wrong tls-secret, but simply removing http spec renders the pod unstartable
+
+        try {
+            K8sUtils.deployKeycloak(k8sclient, kc, true);
+            K8sUtils.deployKeycloak(k8sclient, kc1, true);
+        } catch (Exception e) {
+            k8sclient.resources(Keycloak.class).list().getItems().stream().forEach(k -> {
+                Log.infof("Keycloak %s status: %s", k.getMetadata().getName(), Serialization.asYaml(k.getStatus()));
+            });
+            k8sclient.pods().list().getItems().stream().filter(p -> !Readiness.isPodReady(p)).forEach(p -> {
+                Log.infof("Pod %s not ready: %s", p.getMetadata().getName(), Serialization.asYaml(p.getStatus()));
+            });
+            throw e;
+        }
+
+        assertThat(k8sclient.resources(Keycloak.class).list().getItems().size()).isEqualTo(2);
+
+        // get the current version for the uid
+        kc = k8sclient.resource(kc).get();
+        kc1 = k8sclient.resource(kc1).get();
+
+        // the main resources are ready, check for the expected dependents
+        checkInstanceCount(1, StatefulSet.class, kc, kc1);
+        checkInstanceCount(2, Secret.class, kc, kc1);
+        checkInstanceCount(1, Ingress.class, kc, kc1);
+        checkInstanceCount(2, Service.class, kc, kc1);
+
+        // ensure they don't see each other's pods
+        assertThat(k8sclient.resource(kc).scale().getStatus().getReplicas()).isEqualTo(1);
+        assertThat(k8sclient.resource(kc1).scale().getStatus().getReplicas()).isEqualTo(1);
+
+        // could also scale one instance to zero end ensure the services are no longer reachable
+    }
+
+    private void checkInstanceCount(int count, Class<? extends HasMetadata> type, HasMetadata... toCheck) {
+        var instances = k8sclient.resources(type).list().getItems();
+
+        for (HasMetadata hasMetadata : toCheck) {
+            assertThat(instances.stream()
+                    .filter(h -> h.getOwnerReferenceFor(hasMetadata).isPresent() && hasMetadata.getMetadata()
+                            .getName().equals(h.getMetadata().getLabels().get(Constants.INSTANCE_LABEL)))
+                    .count()).isEqualTo(count);
+        }
+    }
+
+    @Test
     public void testKeycloakScaleAsExpected() {
         // given
         var kc = K8sUtils.getDefaultKeycloakDeployment();
-        var crSelector = k8sclient
-                .resources(Keycloak.class)
-                .inNamespace(kc.getMetadata().getNamespace())
-                .withName(kc.getMetadata().getName());
+        var crSelector = k8sclient.resource(kc);
         K8sUtils.deployKeycloak(k8sclient, kc, true);
 
         var kcPodsSelector = k8sclient.pods().inNamespace(namespace).withLabel("app", "keycloak");
@@ -60,7 +118,7 @@ public class ClusteringTest extends BaseOperatorTest {
         var scale = crSelector.scale();
         assertThat(scale.getSpec().getReplicas()).isEqualTo(1);
         assertThat(scale.getStatus().getReplicas()).isEqualTo(1);
-        assertThat(scale.getStatus().getSelector()).isEqualTo(Constants.DEFAULT_LABELS_AS_STRING);
+        assertThat(scale.getStatus().getSelector()).isEqualTo("app=keycloak,app.kubernetes.io/managed-by=keycloak-operator,app.kubernetes.io/instance=example-kc");
 
         // when scale it to 0
         Keycloak scaled = crSelector.scale(0);
@@ -139,16 +197,10 @@ public class ClusteringTest extends BaseOperatorTest {
         // given
         Log.info("Setup");
         var kc = K8sUtils.getDefaultKeycloakDeployment();
-        var crSelector = k8sclient
-                .resources(Keycloak.class)
-                .inNamespace(kc.getMetadata().getNamespace())
-                .withName(kc.getMetadata().getName());
+        var crSelector = k8sclient.resource(kc);
         K8sUtils.deployKeycloak(k8sclient, kc, false);
         var targetInstances = 3;
-        crSelector.accept(keycloak -> {
-        	keycloak.getMetadata().setResourceVersion(null);
-        	keycloak.getSpec().setInstances(targetInstances);
-        });
+        crSelector.scale(targetInstances);
         K8sUtils.set(k8sclient, getClass().getResourceAsStream("/token-test-realm.yaml"));
         var realmImportSelector = k8sclient.resources(KeycloakRealmImport.class).inNamespace(namespace).withName("example-token-test-kc");
 
