@@ -143,7 +143,7 @@ public class HolderOfKeyEnforcerExecutor implements ClientPolicyExecutorProvider
     }
 
     private void checkUserInfo(UserInfoRequestContext context, HttpRequest request) throws ClientPolicyException {
-        String encodedAccessToken = context.getTokenString();
+        String encodedAccessToken = context.getTokenForUserInfo().getToken();
 
         AccessToken accessToken = session.tokens().decode(encodedAccessToken, AccessToken.class);
         if (accessToken == null) {

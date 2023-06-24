@@ -512,6 +512,7 @@ public class LogoutEndpoint {
 
         try {
             session.clientPolicy().triggerOnEvent(new LogoutRequestContext(form));
+            refreshToken = form.getFirst(OAuth2Constants.REFRESH_TOKEN);
         } catch (ClientPolicyException cpe) {
             throw new CorsErrorResponseException(cors, cpe.getError(), cpe.getErrorDetail(), cpe.getErrorStatus());
         }

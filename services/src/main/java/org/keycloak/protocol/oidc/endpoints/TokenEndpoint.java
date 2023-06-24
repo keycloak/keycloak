@@ -497,6 +497,7 @@ public class TokenEndpoint {
         } else {
             res = responseBuilder.build();
         }
+
         event.success();
 
         return cors.builder(Response.ok(res).type(MediaType.APPLICATION_JSON_TYPE)).build();
@@ -528,6 +529,7 @@ public class TokenEndpoint {
 
         try {
             session.clientPolicy().triggerOnEvent(new TokenRefreshContext(formParams));
+            refreshToken = formParams.getFirst(OAuth2Constants.REFRESH_TOKEN);
         } catch (ClientPolicyException cpe) {
             event.error(cpe.getError());
             throw new CorsErrorResponseException(cors, cpe.getError(), cpe.getErrorDetail(), cpe.getErrorStatus());
