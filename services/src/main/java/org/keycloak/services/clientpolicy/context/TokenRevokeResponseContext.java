@@ -25,24 +25,21 @@ import org.keycloak.services.clientpolicy.ClientPolicyEvent;
 /**
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
  */
-public class LogoutRequestContext implements ClientPolicyContext {
+public class TokenRevokeResponseContext implements ClientPolicyContext {
 
     private final MultivaluedMap<String, String> params;
 
-    public LogoutRequestContext(MultivaluedMap<String, String> params) {
+    public TokenRevokeResponseContext(MultivaluedMap<String, String> params) {
         this.params = params;
-    }
-
-    public LogoutRequestContext() {
-        this(null);
     }
 
     @Override
     public ClientPolicyEvent getEvent() {
-        return ClientPolicyEvent.LOGOUT_REQUEST;
+        return ClientPolicyEvent.TOKEN_REVOKE_RESPONSE;
     }
 
     public MultivaluedMap<String, String> getParams() {
         return params;
     }
+
 }

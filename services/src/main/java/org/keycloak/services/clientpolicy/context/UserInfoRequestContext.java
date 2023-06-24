@@ -17,6 +17,7 @@
 
 package org.keycloak.services.clientpolicy.context;
 
+import org.keycloak.protocol.oidc.endpoints.UserInfoEndpoint;
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyEvent;
 
@@ -25,10 +26,10 @@ import org.keycloak.services.clientpolicy.ClientPolicyEvent;
  */
 public class UserInfoRequestContext implements ClientPolicyContext {
 
-    private final String tokenString;
+    private UserInfoEndpoint.TokenForUserInfo tokenForUserInfo;
 
-    public UserInfoRequestContext(String tokenString) {
-        this.tokenString = tokenString;
+    public UserInfoRequestContext(UserInfoEndpoint.TokenForUserInfo tokenForUserInfo) {
+        this.tokenForUserInfo = tokenForUserInfo;
     }
 
     @Override
@@ -36,8 +37,8 @@ public class UserInfoRequestContext implements ClientPolicyContext {
         return ClientPolicyEvent.USERINFO_REQUEST;
     }
 
-    public String getTokenString() {
-        return tokenString;
+    public UserInfoEndpoint.TokenForUserInfo getTokenForUserInfo() {
+        return tokenForUserInfo;
     }
 
 }

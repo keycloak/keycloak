@@ -1018,6 +1018,8 @@ public class TokenManager {
 
         String stateHash;
 
+        private AccessTokenResponse response;
+
         public AccessTokenResponseBuilder(RealmModel realm, ClientModel client, EventBuilder event, KeycloakSession session,
                                           UserSessionModel userSession, ClientSessionContext clientSessionCtx) {
             this.realm = realm;
@@ -1152,6 +1154,8 @@ public class TokenManager {
         }
 
         public AccessTokenResponse build() {
+            if (response != null) return response;
+
             if (accessToken != null) {
                 event.detail(Details.TOKEN_ID, accessToken.getId());
             }
@@ -1214,7 +1218,8 @@ public class TokenManager {
             res.setScope(responseScope);
             event.detail(Details.SCOPE, responseScope);
 
-            return res;
+            response = res;
+            return response;
         }
 
 
