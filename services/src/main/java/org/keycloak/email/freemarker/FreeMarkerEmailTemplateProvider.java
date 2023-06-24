@@ -203,7 +203,7 @@ public class FreeMarkerEmailTemplateProvider implements EmailTemplateProvider {
 
     @Override
     public void send(String subjectFormatKey, String bodyTemplate, Map<String, Object> bodyAttributes) throws EmailException {
-        send(subjectFormatKey, Collections.emptyList(), bodyTemplate, bodyAttributes);
+        send(subjectFormatKey, bodyAttributes, bodyTemplate, bodyAttributes);
     }
 
     protected EmailTemplate processTemplate(String subjectKey, List<Object> subjectAttributes, String template, Map<String, Object> attributes) throws EmailException {
