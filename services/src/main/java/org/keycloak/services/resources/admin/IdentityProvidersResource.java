@@ -60,6 +60,8 @@ import java.util.Objects;
 import java.util.stream.Stream;
 
 import static jakarta.ws.rs.core.Response.Status.BAD_REQUEST;
+
+import org.keycloak.services.validation.Validation;
 import org.keycloak.utils.ReservedCharValidator;
 
 /**
@@ -196,6 +198,10 @@ public class IdentityProvidersResource {
     @Operation( summary = "Create a new identity provider")
     public Response create(@Parameter(description = "JSON body") IdentityProviderRepresentation representation) {
         this.auth.realm().requireManageIdentityProviders();
+
+        if (Validation.isBlank(representation.getAlias())) {
+            throw new BadRequestException("Empty alias not allowed");
+        }
 
         ReservedCharValidator.validate(representation.getAlias());
         
