@@ -92,11 +92,7 @@ public class DefaultLocaleSelectorProvider implements LocaleSelectorProvider {
     }
 
     private Locale getUserSelectedLocale(RealmModel realm, AuthenticationSessionModel session) {
-        if (session == null) {
-            return null;
-        }
-
-        String locale = session.getAuthNote(USER_REQUEST_LOCALE);
+        String locale = session == null ? this.session.getAttribute(USER_REQUEST_LOCALE, String.class) : session.getAuthNote(USER_REQUEST_LOCALE);
         if (locale == null) {
             return null;
         }
