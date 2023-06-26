@@ -49,8 +49,6 @@ To authenticate, you call the `login` function. Two options exist to make the ad
 * `login-required` authenticates the client if the user is logged in to {project_name} or displays the login page if the user is not logged in. 
 * `check-sso` only authenticates the client if the user is already logged in. If the user is not logged in, the browser is redirected back to the application and remains unauthenticated.
 
-WARNING: make sure to call `init()` once during application bootstrapping. Otherwise you can end up in the redirect loop.
-
 You can configure a _silent_ `check-sso` option. With this feature enabled, your browser will not perform a full redirect to the {project_name} server and back to your application, but this action will be performed in a hidden iframe. Therefore, your application resources are only loaded and parsed once by the browser, namely when the application is initialized and not again after the redirect back from {project_name} to your application. This approach is particularly useful in case of SPAs (Single Page Applications).
 
 To enable the _silent_ `check-sso`, you provide a `silentCheckSsoRedirectUri` attribute in the init method. Make sure this URI is a valid endpoint in the application; it must be configured as a valid redirect for the client in the {project_name} Admin Console:
@@ -350,8 +348,6 @@ responseType::
 *init(options)*
 
 Called to initialize the adapter.
-
-WARNING: If you are calling this method make sure to call it once because it sets authenticated state to `false` and you may end up in the redirect loop.
 
 Options is an Object, where:
 
