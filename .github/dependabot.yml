@@ -31,6 +31,7 @@ updates:
     versioning-strategy: increase
     schedule:
       interval: weekly
+      day: saturday
     labels:
       - area/dependencies
       - team/ui
