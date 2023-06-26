@@ -36,7 +36,6 @@ import org.keycloak.services.managers.BruteForceProtector;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.AssertEvents.ExpectedEvent;
-import org.keycloak.testsuite.arquillian.annotation.IgnoreBrowserDriver;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
 import org.keycloak.testsuite.pages.LoginPage;
@@ -51,9 +50,6 @@ import org.keycloak.testsuite.util.RealmRepUtil;
 import org.keycloak.testsuite.util.UserBuilder;
 
 import jakarta.mail.internet.MimeMessage;
-import org.openqa.selenium.chrome.ChromeDriver;
-import org.openqa.selenium.firefox.FirefoxDriver;
-
 import java.net.MalformedURLException;
 import java.util.Calendar;
 import java.util.Collections;
@@ -568,8 +564,6 @@ public class BruteForceTest extends AbstractTestRealmKeycloakTest {
     }
 
     @Test
-    @IgnoreBrowserDriver(FirefoxDriver.class) // TODO: https://github.com/keycloak/keycloak/issues/20525
-    @IgnoreBrowserDriver(ChromeDriver.class)
     public void testResetPassword() throws Exception {
         String userId = adminClient.realm("test").users().search("user2", null, null, null, 0, 1).get(0).getId();
 
