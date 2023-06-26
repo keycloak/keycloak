@@ -121,8 +121,8 @@ importers:
         specifier: ^4.17.7
         version: 4.17.7
       '@types/react':
-        specifier: ^18.2.13
-        version: 18.2.13
+        specifier: ^18.2.14
+        version: 18.2.14
       '@types/react-dom':
         specifier: ^18.2.6
         version: 18.2.6
@@ -248,8 +248,8 @@ importers:
         specifier: ^4.17.7
         version: 4.17.7
       '@types/react':
-        specifier: ^18.2.13
-        version: 18.2.13
+        specifier: ^18.2.14
+        version: 18.2.14
       '@types/react-dom':
         specifier: ^18.2.6
         version: 18.2.6
@@ -398,8 +398,8 @@ importers:
         version: 18.2.0(react@18.2.0)
     devDependencies:
       '@types/react':
-        specifier: ^18.2.13
-        version: 18.2.13
+        specifier: ^18.2.14
+        version: 18.2.14
       '@types/react-dom':
         specifier: ^18.2.6
         version: 18.2.6
@@ -438,8 +438,8 @@ importers:
         version: 7.44.3(react@18.2.0)
     devDependencies:
       '@types/react':
-        specifier: ^18.2.13
-        version: 18.2.13
+        specifier: ^18.2.14
+        version: 18.2.14
       '@types/react-dom':
         specifier: ^18.2.6
         version: 18.2.6
@@ -1116,7 +1116,7 @@ packages:
       react: 18.2.0
       react-dom: 18.2.0(react@18.2.0)
       react-dropzone: 9.0.0(react@18.2.0)
-      react-monaco-editor: 0.51.0(@types/react@18.2.13)(monaco-editor@0.34.1)(react@18.2.0)
+      react-monaco-editor: 0.51.0(@types/react@18.2.14)(monaco-editor@0.34.1)(react@18.2.0)
       tslib: 2.5.3
     dev: false
 
@@ -1931,11 +1931,11 @@ packages:
   /@types/react-dom@18.2.6:
     resolution: {integrity: sha512-2et4PDvg6PVCyS7fuTc4gPoksV58bW0RwSxWKcPRcHZf0PRUGq03TKcD/rUHe3azfV6/5/biUBJw+HhCQjaP0A==}
     dependencies:
-      '@types/react': 18.2.13
+      '@types/react': 18.2.14
     dev: true
 
-  /@types/react@18.2.13:
-    resolution: {integrity: sha512-vJ+zElvi/Zn9cVXB5slX2xL8PZodPCwPRDpittQdw43JR2AJ5k3vKdgJJyneV/cYgIbLQUwXa9JVDvUZXGba+Q==}
+  /@types/react@18.2.14:
+    resolution: {integrity: sha512-A0zjq+QN/O0Kpe30hA1GidzyFjatVvrpIvWLxD+xv67Vt91TWWgco9IvrJBkeyHm1trGaFS/FSGqPlhyeZRm0g==}
     dependencies:
       '@types/prop-types': 15.7.5
       '@types/scheduler': 0.16.3
@@ -5634,14 +5634,14 @@ packages:
     resolution: {integrity: sha512-xWGDIW6x921xtzPkhiULtthJHoJvBbF3q26fzloPCK0hsvxtPVelvftw3zjbHWSkR2km9Z+4uxbDDK/6Zw9B8w==}
     dev: true
 
-  /react-monaco-editor@0.51.0(@types/react@18.2.13)(monaco-editor@0.34.1)(react@18.2.0):
+  /react-monaco-editor@0.51.0(@types/react@18.2.14)(monaco-editor@0.34.1)(react@18.2.0):
     resolution: {integrity: sha512-6jx1V8p6gHVKJHFaTvicOtmlhFjOJhekobeNd92ZAo7F5UvAin1cF7bxWLCKgtxClYZ7CB3Ar284Kpbhj22FpQ==}
     peerDependencies:
       '@types/react': '>=17 <= 18'
       monaco-editor: ^0.34.1
       react: '>=17 <= 18'
     dependencies:
-      '@types/react': 18.2.13
+      '@types/react': 18.2.14
       monaco-editor: 0.34.1
       prop-types: 15.8.1
       react: 18.2.0
