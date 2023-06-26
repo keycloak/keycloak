@@ -38,7 +38,6 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
-import org.keycloak.testsuite.arquillian.annotation.IgnoreBrowserDriver;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
 import org.keycloak.testsuite.pages.LoginPage;
@@ -54,9 +53,6 @@ import org.keycloak.testsuite.util.AccountHelper;
 
 import jakarta.mail.internet.MimeMessage;
 import jakarta.ws.rs.core.Response;
-import org.openqa.selenium.chrome.ChromeDriver;
-import org.openqa.selenium.firefox.FirefoxDriver;
-
 import java.io.IOException;
 import java.util.UUID;
 
@@ -653,8 +649,6 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
 
     //KEYCLOAK-15244
     @Test
-    @IgnoreBrowserDriver(ChromeDriver.class) // TODO: https://github.com/keycloak/keycloak/issues/20992
-    @IgnoreBrowserDriver(FirefoxDriver.class)
     public void registerUserMissingTermsAcceptance() {
         configureRegistrationFlowWithCustomRegistrationPageForm(UUID.randomUUID().toString(),
                 AuthenticationExecutionModel.Requirement.REQUIRED);
@@ -681,8 +675,6 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
 
     //KEYCLOAK-15244
     @Test
-    @IgnoreBrowserDriver(ChromeDriver.class) // TODO: https://github.com/keycloak/keycloak/issues/20992
-    @IgnoreBrowserDriver(FirefoxDriver.class)
     public void registerUserSuccessTermsAcceptance() {
         configureRegistrationFlowWithCustomRegistrationPageForm(UUID.randomUUID().toString(),
                 AuthenticationExecutionModel.Requirement.REQUIRED);
