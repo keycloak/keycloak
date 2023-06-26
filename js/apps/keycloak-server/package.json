@@ -19,6 +19,6 @@
     "@types/gunzip-maybe": "^1.4.0",
     "@types/tar-fs": "^2.0.1",
     "gunzip-maybe": "^1.4.2",
-    "tar-fs": "^3.0.2"
+    "tar-fs": "^3.0.3"
   }
 }
