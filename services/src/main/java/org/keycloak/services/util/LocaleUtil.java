@@ -43,10 +43,15 @@ public class LocaleUtil {
     }
 
     public static void processLocaleParam(KeycloakSession session, RealmModel realm, AuthenticationSessionModel authSession) {
-        if (authSession != null && realm.isInternationalizationEnabled()) {
+        if (realm.isInternationalizationEnabled()) {
             String locale = session.getContext().getUri().getQueryParameters().getFirst(LocaleSelectorProvider.KC_LOCALE_PARAM);
             if (locale != null) {
-                authSession.setAuthNote(LocaleSelectorProvider.USER_REQUEST_LOCALE, locale);
+                if (authSession != null) {
+                    authSession.setAuthNote(LocaleSelectorProvider.USER_REQUEST_LOCALE, locale);
+                } else {
+                    // Might be on info/error page when we don't have authenticationSession
+                    session.setAttribute(LocaleSelectorProvider.USER_REQUEST_LOCALE, locale);
+                }
 
                 LocaleUpdaterProvider localeUpdater = session.getProvider(LocaleUpdaterProvider.class);
                 localeUpdater.updateLocaleCookie(locale);

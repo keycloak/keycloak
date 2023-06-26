@@ -107,12 +107,8 @@ public class Urls {
         return realmLogout(baseUri).path(LogoutEndpoint.class, "logoutConfirmAction").build(realmName);
     }
 
-    public static URI loginActionUpdatePassword(URI baseUri, String realmName) {
-        return loginActionsBase(baseUri).path(LoginActionsService.class, "updatePassword").build(realmName);
-    }
-
-    public static URI loginActionUpdateTotp(URI baseUri, String realmName) {
-        return loginActionsBase(baseUri).path(LoginActionsService.class, "updateTotp").build(realmName);
+    public static URI loginActionsDetachedInfo(URI baseUri, String realmName) {
+        return loginActionsBase(baseUri).path(LoginActionsService.class, "detachedInfo").build(realmName);
     }
 
     public static UriBuilder requiredActionBase(URI baseUri) {

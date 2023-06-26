@@ -222,6 +222,7 @@ public class SessionCodeChecks {
         ClientModel client = authSession.getClient();
         if (client == null) {
             event.error(Errors.CLIENT_NOT_FOUND);
+            session.getProvider(LoginFormsProvider.class).setDetachedAuthSession();
             response = ErrorPage.error(session, authSession, Response.Status.BAD_REQUEST, Messages.UNKNOWN_LOGIN_REQUESTER);
             clientCode.removeExpiredClientSession();
             return false;
@@ -232,6 +233,7 @@ public class SessionCodeChecks {
 
         if (checkClientDisabled(client)) {
             event.error(Errors.CLIENT_DISABLED);
+            session.getProvider(LoginFormsProvider.class).setDetachedAuthSession();
             response = ErrorPage.error(session, authSession, Response.Status.BAD_REQUEST, Messages.LOGIN_REQUESTER_NOT_ENABLED);
             clientCode.removeExpiredClientSession();
             return false;

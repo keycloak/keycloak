@@ -146,6 +146,7 @@ public class EmailTest extends AbstractI18NTest {
     }
 
     //KEYCLOAK-7478
+    // Issue 13922
     @Test
     public void changeLocaleOnInfoPage() throws InterruptedException, IOException {
         UserResource testUser = ApiUtil.findUserByUsernameId(testRealm(), "login-test");
@@ -178,5 +179,15 @@ public class EmailTest extends AbstractI18NTest {
         
         Assert.assertTrue("Expected to be on InfoPage, but it was on " + DroneUtils.getCurrentDriver().getTitle(), infoPage.isCurrent());
         assertThat(infoPage.getInfo(), containsString("Your account has been updated."));
+
+        // Change language again when on final info page with the message about updated account (authSession removed already at this point)
+        infoPage.openLanguage("Deutsch");
+        assertEquals("Deutsch", infoPage.getLanguageDropdownText());
+        assertThat(infoPage.getInfo(), containsString("Ihr Benutzerkonto wurde aktualisiert."));
+
+        infoPage.openLanguage("English");
+        assertEquals("English", infoPage.getLanguageDropdownText());
+        assertThat(infoPage.getInfo(), containsString("Your account has been updated."));
+
     }
 }
