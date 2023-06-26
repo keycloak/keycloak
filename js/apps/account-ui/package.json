@@ -30,7 +30,7 @@
     "@types/react-dom": "^18.2.6",
     "@vitejs/plugin-react-swc": "^3.3.2",
     "vite": "^4.3.9",
-    "vite-plugin-checker": "^0.6.0"
+    "vite-plugin-checker": "^0.6.1"
   },
   "wireit": {
     "dev": {
