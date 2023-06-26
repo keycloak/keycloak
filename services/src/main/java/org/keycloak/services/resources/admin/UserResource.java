@@ -331,6 +331,14 @@ public class UserResource {
         ProfileHelper.requireFeature(Profile.Feature.IMPERSONATION);
 
         auth.users().requireImpersonate(user);
+
+        if (!user.isEnabled()) {
+            throw ErrorResponse.error("User is disabled", Status.BAD_REQUEST);
+        }
+        if (user.getServiceAccountClientLink() != null) {
+            throw ErrorResponse.error("Service accounts cannot be impersonated", Status.BAD_REQUEST);
+        }
+
         RealmModel authenticatedRealm = auth.adminAuth().getRealm();
         // if same realm logout before impersonation
         boolean sameRealm = false;
