@@ -85,7 +85,7 @@
     "react-i18next": "^13.0.0",
     "react-router": "^6.12.1",
     "react-router-dom": "6.12.1",
-    "reactflow": "^11.7.3",
+    "reactflow": "^11.7.4",
     "ui-shared": "workspace:*",
     "use-react-router-breadcrumbs": "^4.0.1"
   },
