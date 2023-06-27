@@ -102,8 +102,8 @@ in Keycloak 12.
 The initial plan was to remove it much sooner, but it was retained for two reasons: 
 
 * We wanted to provide
-sufficient enough time for everyone to migrate to the v2 of the Account Console. Secondly, it was heavily used through
-our tests, which required a fair bit of effort to update the tests to rely on the Account APIs instead of the console itself.
+sufficient time for users to migrate to Account Console v2. 
+* Our tests  heavily used Account Console v1.  Updating the tests to rely on the Account APIs instead of the console required significant time.
 
 = Account Console v3 promoted to preview
 
