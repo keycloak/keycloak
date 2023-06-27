@@ -94,7 +94,7 @@ The are additional fields available in the keycloak.status to facilitate keycloa
 
 In scenarios where advanced management is needed you may now directly update most fields on operator managed resources that have not been set by the operator directly. This can be used as an alternative to the unsupported stanza of the Keycloak spec. Like the unsupported stanza these direct modifications are not considered supported. If your modifications prevent the operator from being able to manage the resource, there Keycloak CR will show this error condition and the operator will log it.
 
-= Account Console v1
+= Account Console v1 removal
 
 The old Account Console (v1) is now completely removed. This version of the Account Console was marked as deprecated
 back in Keycloak 12.
