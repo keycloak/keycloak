@@ -4,6 +4,9 @@ import org.keycloak.broker.provider.AbstractIdentityProviderFactory;
 import org.keycloak.broker.social.SocialIdentityProviderFactory;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.provider.ProviderConfigProperty;
+
+import java.util.List;
 
 /**
  * OpenShift 4 Identity Provider factory class.
@@ -33,5 +36,10 @@ public class OpenshiftV4IdentityProviderFactory extends AbstractIdentityProvider
     @Override
     public OpenshiftV4IdentityProviderConfig createConfig() {
         return new OpenshiftV4IdentityProviderConfig();
+    }
+
+    @Override
+    public List<ProviderConfigProperty> getConfigProperties() {
+        return OpenshiftV4IdentityProviderConfig.getConfigProperties();
     }
 }
