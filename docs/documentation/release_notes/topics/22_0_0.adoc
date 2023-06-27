@@ -97,7 +97,7 @@ In scenarios where advanced management is needed you may now directly update mos
 = Account Console v1 removal
 
 The old Account Console (v1) is now completely removed. This version of the Account Console was marked as deprecated
-back in Keycloak 12.
+in Keycloak 12.
 
 The initial plans was to remove it much earlier, but was kept for two reasons. Firstly, to provide
 sufficient enough time for everyone to migrate to the v2 of the Account Console. Secondly, it was heavily used through
