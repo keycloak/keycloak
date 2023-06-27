@@ -99,7 +99,9 @@ In scenarios where advanced management is needed you may now directly update mos
 The old Account Console (v1) is now completely removed. This version of the Account Console was marked as deprecated
 in Keycloak 12.
 
-The initial plans was to remove it much earlier, but was kept for two reasons. Firstly, to provide
+The initial plan was to remove it much sooner, but it was retained for two reasons: 
+
+* We wanted to provide
 sufficient enough time for everyone to migrate to the v2 of the Account Console. Secondly, it was heavily used through
 our tests, which required a fair bit of effort to update the tests to rely on the Account APIs instead of the console itself.
 
