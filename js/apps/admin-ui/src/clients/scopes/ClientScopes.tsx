@@ -240,7 +240,7 @@ export const ClientScopes = ({
       <KeycloakDataTable
         key={key}
         loader={loader}
-        ariaLabelKey="clients:clientScopeList"
+        ariaLabelKey={`clients:clientScopeList-${key}`}
         searchPlaceholderKey={
           searchType === "name" ? "clients:searchByName" : undefined
         }
