@@ -34,7 +34,11 @@ public class CryptoInfoRepresentation {
     private String cryptoProvider;
     private List<String> supportedKeystoreTypes;
 
-    public static CryptoInfoRepresentation create() {
+    private List<String> clientSignatureSymmetricAlgorithms;
+
+    private List<String> clientSignatureAsymmetricAlgorithms;
+
+    public static CryptoInfoRepresentation create(List<String> clientSignatureSymmetricAlgorithms, List<String> clientSignatureAsymmetricAlgorithms) {
         CryptoInfoRepresentation info = new CryptoInfoRepresentation();
 
         CryptoProvider cryptoProvider = CryptoIntegration.getProvider();
@@ -42,6 +46,8 @@ public class CryptoInfoRepresentation {
         info.supportedKeystoreTypes = CryptoIntegration.getProvider().getSupportedKeyStoreTypes()
                 .map(KeystoreUtil.KeystoreFormat::toString)
                 .collect(Collectors.toList());
+        info.clientSignatureSymmetricAlgorithms = clientSignatureSymmetricAlgorithms;
+        info.clientSignatureAsymmetricAlgorithms = clientSignatureAsymmetricAlgorithms;
 
         return info;
     }
@@ -60,5 +66,21 @@ public class CryptoInfoRepresentation {
 
     public void setSupportedKeystoreTypes(List<String> supportedKeystoreTypes) {
         this.supportedKeystoreTypes = supportedKeystoreTypes;
+    }
+
+    public List<String> getClientSignatureSymmetricAlgorithms() {
+        return clientSignatureSymmetricAlgorithms;
+    }
+
+    public void setClientSignatureSymmetricAlgorithms(List<String> clientSignatureSymmetricAlgorithms) {
+        this.clientSignatureSymmetricAlgorithms = clientSignatureSymmetricAlgorithms;
+    }
+
+    public List<String> getClientSignatureAsymmetricAlgorithms() {
+        return clientSignatureAsymmetricAlgorithms;
+    }
+
+    public void setClientSignatureAsymmetricAlgorithms(List<String> clientSignatureAsymmetricAlgorithms) {
+        this.clientSignatureAsymmetricAlgorithms = clientSignatureAsymmetricAlgorithms;
     }
 }

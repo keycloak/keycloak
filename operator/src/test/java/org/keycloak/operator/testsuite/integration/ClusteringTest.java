@@ -149,9 +149,8 @@ public class ClusteringTest extends BaseOperatorTest {
         	keycloak.getMetadata().setResourceVersion(null);
         	keycloak.getSpec().setInstances(targetInstances);
         });
-        var realm = k8sclient.load(getClass().getResourceAsStream("/token-test-realm.yaml")).inNamespace(namespace);
+        K8sUtils.set(k8sclient, getClass().getResourceAsStream("/token-test-realm.yaml"));
         var realmImportSelector = k8sclient.resources(KeycloakRealmImport.class).inNamespace(namespace).withName("example-token-test-kc");
-        realm.forceConflicts().serverSideApply();
 
         Log.info("Waiting for a stable Keycloak Cluster");
         Awaitility.await()

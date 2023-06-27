@@ -18,6 +18,9 @@ package org.keycloak.models;
 
 import org.junit.Assert;
 import org.junit.Test;
+import org.keycloak.models.credential.OTPCredentialModel;
+import org.keycloak.models.credential.OTPCredentialModel.SecretEncoding;
+import org.keycloak.models.utils.Base32;
 import org.keycloak.models.utils.TimeBasedOTP;
 
 import java.nio.charset.StandardCharsets;
@@ -54,5 +57,33 @@ public class TotpTest {
 
             Assert.assertTrue("Should accept code with skew offset " + i,totp.validateTOTP(otp, secret.getBytes(StandardCharsets.UTF_8)));
         }
+    }
+
+    @Test
+    public void testBase32EncodedSecret() {
+        TimeBasedOTP totp = new TimeBasedOTP("HmacSHA1", 8, 60, 1);
+        String rawSecret = "JNSVMMTEKZCUGSKJIVGHMNSQOZBDA5JT";
+        String otp = totp.generateTOTP(Base32.decode(rawSecret));
+        OTPCredentialModel credentialModel = OTPCredentialModel.createTOTP(rawSecret, 8, 30, "HmacSHA1");
+
+        Assert.assertFalse(totp.validateTOTP(otp, credentialModel.getDecodedSecret()));
+
+        OTPCredentialModel encodedCredential = OTPCredentialModel.createTOTP(rawSecret, 8, 30, "HmacSHA1", SecretEncoding.BASE32.name());
+
+        Assert.assertTrue(totp.validateTOTP(otp, encodedCredential.getDecodedSecret()));
+    }
+
+    @Test
+    public void testBase32BinaryEncodedSecret() {
+        TimeBasedOTP totp = new TimeBasedOTP("HmacSHA1", 8, 60, 1);
+        String rawSecret = "CDLYAYRJ73ORTU4PUWWATWSYQCP4H2QL";
+        String otp = totp.generateTOTP(Base32.decode(rawSecret));
+        OTPCredentialModel credentialModel = OTPCredentialModel.createTOTP(rawSecret, 8, 30, "HmacSHA1");
+
+        Assert.assertFalse(totp.validateTOTP(otp, credentialModel.getDecodedSecret()));
+
+        OTPCredentialModel encodedCredential = OTPCredentialModel.createTOTP(rawSecret, 8, 30, "HmacSHA1", SecretEncoding.BASE32.name());
+
+        Assert.assertTrue(totp.validateTOTP(otp, encodedCredential.getDecodedSecret()));
     }
 }

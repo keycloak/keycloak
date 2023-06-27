@@ -17,6 +17,7 @@
 
 package org.keycloak.operator.testsuite.unit;
 
+import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.IntOrString;
 import io.fabric8.kubernetes.api.model.PodTemplateSpec;
 import io.fabric8.kubernetes.api.model.PodTemplateSpecBuilder;
@@ -29,12 +30,15 @@ import org.keycloak.operator.Config;
 import org.keycloak.operator.controllers.KeycloakDeployment;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakSpecBuilder;
+import org.keycloak.operator.crds.v2alpha1.deployment.ValueOrSecret;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.HostnameSpecBuilder;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.HttpSpecBuilder;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.UnsupportedSpec;
 
 import java.util.Collections;
 import java.util.Map;
+import java.util.function.Consumer;
+import java.util.function.Function;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -42,9 +46,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @QuarkusTest
 public class PodTemplateTest {
-
-    private StatefulSet getDeployment(PodTemplateSpec podTemplate, StatefulSet existingDeployment) {
-        var config = new Config(){
+    private StatefulSet getDeployment(PodTemplateSpec podTemplate, StatefulSet existingDeployment, Consumer<KeycloakSpecBuilder> additionalSpec) {
+        var config = new Config() {
             @Override
             public Keycloak keycloak() {
                 return new Keycloak() {
@@ -52,6 +55,7 @@ public class PodTemplateTest {
                     public String image() {
                         return "dummy-image";
                     }
+
                     @Override
                     public String imagePullPolicy() {
                         return "Never";
@@ -68,13 +72,23 @@ public class PodTemplateTest {
         var httpSpec = new HttpSpecBuilder().withTlsSecret("example-tls-secret").build();
         var hostnameSpec = new HostnameSpecBuilder().withHostname("example.com").build();
 
-        kc.setSpec(new KeycloakSpecBuilder().withUnsupported(new UnsupportedSpec(podTemplate))
+        var keycloakSpecBuilder = new KeycloakSpecBuilder()
+                .withUnsupported(new UnsupportedSpec(podTemplate))
                 .withHttpSpec(httpSpec)
-                .withHostnameSpec(hostnameSpec)
-                .build());
+                .withHostnameSpec(hostnameSpec);
+
+        if (additionalSpec != null) {
+            additionalSpec.accept(keycloakSpecBuilder);
+        }
+
+        kc.setSpec(keycloakSpecBuilder.build());
 
         var deployment = new KeycloakDeployment(null, config, kc, existingDeployment, "dummy-admin");
         return (StatefulSet) deployment.getReconciledResource().get();
+    }
+
+    private StatefulSet getDeployment(PodTemplateSpec podTemplate, StatefulSet existingDeployment) {
+        return getDeployment(podTemplate, existingDeployment, null);
     }
 
     private StatefulSet getDeployment(PodTemplateSpec podTemplate) {
@@ -256,7 +270,7 @@ public class PodTemplateTest {
     }
 
     @Test
-    public void testAnnotationsAreMerged() {
+    public void testAnnotationsAreNotMerged() {
         // Arrange
         var existingDeployment = new StatefulSetBuilder()
                 .withNewSpec()
@@ -278,7 +292,33 @@ public class PodTemplateTest {
         var podTemplate = getDeployment(additionalPodTemplate, existingDeployment).getSpec().getTemplate();
 
         // Assert
-        assertThat(podTemplate.getMetadata().getAnnotations()).containsEntry("one", "1");
         assertThat(podTemplate.getMetadata().getAnnotations()).containsEntry("two", "2");
+    }
+
+    @Test
+    public void testRelativePathHealthProbes() {
+        final Function<String, Container> setUpRelativePath = (path) -> getDeployment(null, new StatefulSet(),
+                spec -> spec.withAdditionalOptions(new ValueOrSecret("http-relative-path", path)))
+                .getSpec()
+                .getTemplate()
+                .getSpec()
+                .getContainers()
+                .get(0);
+
+        var first = setUpRelativePath.apply("/");
+        assertEquals("/health/ready", first.getReadinessProbe().getHttpGet().getPath());
+        assertEquals("/health/live", first.getLivenessProbe().getHttpGet().getPath());
+
+        var second = setUpRelativePath.apply("some");
+        assertEquals("some/health/ready", second.getReadinessProbe().getHttpGet().getPath());
+        assertEquals("some/health/live", second.getLivenessProbe().getHttpGet().getPath());
+
+        var third = setUpRelativePath.apply("");
+        assertEquals("/health/ready", third.getReadinessProbe().getHttpGet().getPath());
+        assertEquals("/health/live", third.getLivenessProbe().getHttpGet().getPath());
+
+        var fourth = setUpRelativePath.apply("/some/");
+        assertEquals("/some/health/ready", fourth.getReadinessProbe().getHttpGet().getPath());
+        assertEquals("/some/health/live", fourth.getLivenessProbe().getHttpGet().getPath());
     }
 }

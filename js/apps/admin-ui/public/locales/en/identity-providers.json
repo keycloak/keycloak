@@ -181,24 +181,5 @@
     "local": "LOCAL",
     "brokerId": "BROKER_ID",
     "brokerUsername": "BROKER_USERNAME"
-  },
-  "baseUrl": "Base URL",
-  "apiUrl": "API URL",
-  "facebook": {
-    "fetchedFields": "Additional user's profile fields"
-  },
-  "google": {
-    "hostedDomain": "Hosted Domain",
-    "userIp": "Use userIp Param",
-    "offlineAccess": "Request refresh token"
-  },
-  "paypal": {
-    "sandbox": "Target Sandbox"
-  },
-  "stackoverflow": {
-    "key": "Key"
-  },
-  "linkedin": {
-    "profileProjection": "Profile Projection"
   }
 }

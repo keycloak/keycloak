@@ -19,9 +19,11 @@ package org.keycloak.operator;
 
 import io.fabric8.kubernetes.client.KubernetesClient;
 
+import java.nio.charset.StandardCharsets;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Base64;
 
 /**
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
@@ -37,6 +39,10 @@ public final class Utils {
      */
     public static String iso8601Now() {
         return ZonedDateTime.now(ZoneOffset.UTC).format(DateTimeFormatter.ISO_INSTANT);
+    }
+
+    public static String asBase64(String toEncode) {
+        return Base64.getEncoder().encodeToString(toEncode.getBytes(StandardCharsets.UTF_8));
     }
 
 }

@@ -370,9 +370,14 @@ public class UsersResource {
                                  @QueryParam("email") String email,
                                  @QueryParam("emailVerified") Boolean emailVerified,
                                  @QueryParam("username") String username,
-                                 @QueryParam("enabled") Boolean enabled) {
+                                 @QueryParam("enabled") Boolean enabled,
+                                 @QueryParam("q") String searchQuery) {
         UserPermissionEvaluator userPermissionEvaluator = auth.users();
         userPermissionEvaluator.requireQuery();
+
+        Map<String, String> searchAttributes = searchQuery == null
+                ? Collections.emptyMap()
+                : SearchQueryUtils.getFields(searchQuery);
 
         if (search != null) {
             if (search.startsWith(SEARCH_ID_PARAMETER)) {
@@ -383,7 +388,7 @@ public class UsersResource {
             } else {
                 return session.users().getUsersCount(realm, search.trim(), auth.groups().getGroupsWithViewPermission());
             }
-        } else if (last != null || first != null || email != null || username != null || emailVerified != null || enabled != null) {
+        } else if (last != null || first != null || email != null || username != null || emailVerified != null || enabled != null || !searchAttributes.isEmpty()) {
             Map<String, String> parameters = new HashMap<>();
             if (last != null) {
                 parameters.put(UserModel.LAST_NAME, last);
@@ -403,6 +408,8 @@ public class UsersResource {
             if (enabled != null) {
                 parameters.put(UserModel.ENABLED, enabled.toString());
             }
+            parameters.putAll(searchAttributes);
+
             if (userPermissionEvaluator.canView()) {
                 return session.users().getUsersCount(realm, parameters);
             } else {

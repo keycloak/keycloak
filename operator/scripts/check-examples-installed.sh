@@ -3,7 +3,7 @@ set -euxo pipefail
 
 max_retries=500
 c=0
-while [[ $(kubectl get keycloaks/example-kc -o jsonpath="{.status.conditions[?(@.type == 'Ready')].status}") != "true" ]]
+while [[ $(kubectl get keycloaks/example-kc -o jsonpath="{.status.conditions[?(@.type == 'Ready')].status}") != "True" ]]
 do
   echo "waiting for Keycloak example-kc status"
   ((c++)) && ((c==max_retries)) && exit -1
@@ -11,7 +11,7 @@ do
 done
 
 c=0
-while [[ $(kubectl get keycloakrealmimports/example-count0-kc -o jsonpath="{.status.conditions[?(@.type == 'Done')].status}") != "true" ]]
+while [[ $(kubectl get keycloakrealmimports/example-count0-kc -o jsonpath="{.status.conditions[?(@.type == 'Done')].status}") != "True" ]]
 do
   echo "waiting for Keycloak Realm Import example-count0-kc status"
   ((c++)) && ((c==max_retries)) &&  exit -1

@@ -40,6 +40,7 @@ public class ValidationTest {
         Assert.assertFalse(Validation.isEmailValid("abc@.foo"));
         Assert.assertFalse(Validation.isEmailValid("abc@foo."));
         Assert.assertFalse(Validation.isEmailValid("abc@foo..bar"));
+        Assert.assertTrue(Validation.isEmailValid("diegø@foo.com"));
     }
     
     @Test

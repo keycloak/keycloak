@@ -98,27 +98,5 @@
   "attributeValue": "Value the attribute must have. If the attribute is a list, then the value must be contained in the list.",
   "attributes": "Name and (regex) value of the attributes to search for in token. The configured name of an attribute is searched in SAML attribute name and attribute friendly name fields. Every given attribute description must be met to set the role. If the attribute is an array, then the value must be contained in the array. If an attribute can be found several times, then one match is sufficient.",
   "regexAttributeValues": "If enabled attribute values are interpreted as regular expressions.",
-  "role": "Role to grant to user if all attributes are present. Click 'Select Role' button to browse roles, or just type it in the textbox. To reference a client role the syntax is clientname.clientrole, i.e. myclient.myrole",
-  "baseUrl": "Override the default Base URL for this identity provider.",
-  "apiUrl": "Override the default API URL for this identity provider.",
-  "facebook": {
-    "fetchedFields": "Provide additional fields which would be fetched using the profile request. This will be appended to the default set of 'id,name,email,first_name,last_name'."
-  },
-  "google": {
-    "hostedDomain": "Set 'hd' query parameter when logging in with Google. Google will list accounts only for this domain. Keycloak validates that the returned identity token has a claim for this domain. When '*' is entered, any hosted account can be used. Comma ',' separated list of domains is supported.",
-    "userIp": "Set 'userIp' query parameter when invoking on Google's User Info service.  This will use the user's ip address.  Useful if Google is throttling access to the User Info service.",
-    "offlineAccess": "Set 'access_type' query parameter to 'offline' when redirecting to google authorization endpoint, to get a refresh token back. Useful if planning to use Token Exchange to retrieve Google token to access Google APIs when the user is not at the browser."
-  },
-  "openshift": {
-    "baseUrl": "Base Url to OpenShift Online API"
-  },
-  "paypal": {
-    "sandbox": "Target PayPal's sandbox environment"
-  },
-  "stackoverflow": {
-    "key": "The Key obtained from Stack Overflow client registration."
-  },
-  "linkedin": {
-    "profileProjection": "Projection parameter for profile request. Leave empty for default projection."
-  }
+  "role": "Role to grant to user if all attributes are present. Click 'Select Role' button to browse roles, or just type it in the textbox. To reference a client role the syntax is clientname.clientrole, i.e. myclient.myrole"
 }

@@ -60,13 +60,14 @@ public class KeycloakRealmImportController implements Reconciler<KeycloakRealmIm
                 .withLabelSelector(Constants.DEFAULT_LABELS_AS_STRING)
                 .withNamespaces(context.getControllerConfiguration().getConfigurationService().getClientConfiguration().getNamespace())
                 .withSecondaryToPrimaryMapper(Mappers.fromOwnerReference())
+                .withOnUpdateFilter(new MetadataAwareOnUpdateFilter<>())
                 .build();
 
         return EventSourceInitializer.nameEventSources(new InformerEventSource<>(jobIC, context));
     }
 
     @Override
-    public UpdateControl<KeycloakRealmImport> reconcile(KeycloakRealmImport realm, Context context) {
+    public UpdateControl<KeycloakRealmImport> reconcile(KeycloakRealmImport realm, Context<KeycloakRealmImport> context) {
         String realmName = realm.getMetadata().getName();
         String realmNamespace = realm.getMetadata().getNamespace();
 
@@ -96,7 +97,7 @@ public class KeycloakRealmImportController implements Reconciler<KeycloakRealmIm
         if (status
                 .getConditions()
                 .stream()
-                .anyMatch(c -> c.getType().equals(KeycloakRealmImportStatusCondition.DONE) && !c.getStatus())) {
+                .anyMatch(c -> c.getType().equals(KeycloakRealmImportStatusCondition.DONE) && !Boolean.TRUE.equals(c.getStatus()))) {
             updateControl.rescheduleAfter(10, TimeUnit.SECONDS);
         }
 
