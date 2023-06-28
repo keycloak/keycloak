@@ -834,10 +834,6 @@
             <id>app-server-wildfly</id>
             <activation>
                 <activeByDefault>true</activeByDefault>
-                <property>
-                    <name>app.server</name>
-                    <value>wildfly</value>
-                </property>
             </activation>
             <modules>
                 <module>wildfly</module>
