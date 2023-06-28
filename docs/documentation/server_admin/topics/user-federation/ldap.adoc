@@ -78,7 +78,7 @@ When you configure a secure connection URL to your LDAP store (for example,`ldap
 
 Configure the global truststore for {project_name} with the Truststore SPI. For more information about configuring the global truststore, see the https://www.keycloak.org/server/keycloak-truststore[Configuring a Truststore] {section}. If you do not configure the Truststore SPI, the truststore falls back to the default mechanism provided by Java, which can be the file supplied by the `javax.net.ssl.trustStore` system property or the cacerts file from the JDK if the system property is unset.
 
-The `Use Truststore SPI` configuration property, in the LDAP federation provider configuration, controls the truststore SPI. By default, {project_name} sets the property to `Only for ldaps`, which is adequate for most deployments.  {project_name} uses the Truststore SPI if the connection URL to LDAP starts with `ldaps` only.
+The `Use Truststore SPI` configuration property, in the LDAP federation provider configuration, controls the truststore SPI. By default, {project_name} sets the property to `Always`, which is adequate for most deployments.  {project_name} uses the Truststore SPI if the connection URL to LDAP starts with `ldaps` only.
 
 ==== Synchronizing LDAP users to {project_name}
 

@@ -24,6 +24,7 @@ import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.Constants;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ModelToRepresentation;
@@ -31,7 +32,6 @@ import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.ManagementPermissionReference;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.ErrorResponse;
-import org.keycloak.services.Urls;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionManagement;
 import org.keycloak.services.resources.admin.permissions.AdminPermissions;
@@ -156,39 +156,41 @@ public class GroupResource {
         if (ObjectUtil.isBlank(groupName)) {
             throw ErrorResponse.error("Group name is missing", Response.Status.BAD_REQUEST);
         }
-        boolean childExists = group.getSubGroupsStream().anyMatch(s -> Objects.equals(s.getName(), groupName));
-        if (childExists) {
+
+        try {
+            Response.ResponseBuilder builder = Response.status(204);
+            GroupModel child = null;
+            if (rep.getId() != null) {
+                child = realm.getGroupById(rep.getId());
+                if (child == null) {
+                    throw new NotFoundException("Could not find child by id");
+                }
+                if (!Objects.equals(child.getParentId(), group.getId())) {
+                    realm.moveGroup(child, group);
+                }
+                adminEvent.operation(OperationType.UPDATE);
+            } else {
+                child = realm.createGroup(groupName, group);
+                updateGroup(rep, child, realm, session);
+                URI uri = session.getContext().getUri().getBaseUriBuilder()
+                        .path(AdminRoot.class)
+                        .path(AdminRoot.class, "getRealmsAdmin")
+                        .path(RealmsAdminResource.class, "getRealmAdmin")
+                        .path(RealmAdminResource.class, "getGroups")
+                        .path(GroupsResource.class, "getGroupById")
+                        .build(realm.getName(), child.getId());
+                builder.status(201).location(uri);
+                rep.setId(child.getId());
+                adminEvent.operation(OperationType.CREATE);
+
+            }
+            adminEvent.resourcePath(session.getContext().getUri()).representation(rep).success();
+
+            GroupRepresentation childRep = ModelToRepresentation.toGroupHierarchy(child, true);
+            return builder.type(MediaType.APPLICATION_JSON_TYPE).entity(childRep).build();
+        } catch (ModelDuplicateException e) {
             throw ErrorResponse.exists("Sibling group named '" + groupName + "' already exists.");
         }
-
-        Response.ResponseBuilder builder = Response.status(204);
-        GroupModel child = null;
-        if (rep.getId() != null) {
-            child = realm.getGroupById(rep.getId());
-            if (child == null) {
-                throw new NotFoundException("Could not find child by id");
-            }
-            realm.moveGroup(child, group);
-            adminEvent.operation(OperationType.UPDATE);
-        } else {
-            child = realm.createGroup(groupName, group);
-            updateGroup(rep, child, realm, session);
-            URI uri = session.getContext().getUri().getBaseUriBuilder()
-                    .path(AdminRoot.class)
-                    .path(AdminRoot.class, "getRealmsAdmin")
-                    .path(RealmsAdminResource.class, "getRealmAdmin")
-                    .path(RealmAdminResource.class, "getGroups")
-                    .path(GroupsResource.class, "getGroupById")
-                    .build(realm.getName(), child.getId());
-            builder.status(201).location(uri);
-            rep.setId(child.getId());
-            adminEvent.operation(OperationType.CREATE);
-
-        }
-        adminEvent.resourcePath(session.getContext().getUri()).representation(rep).success();
-
-        GroupRepresentation childRep = ModelToRepresentation.toGroupHierarchy(child, true);
-        return builder.type(MediaType.APPLICATION_JSON_TYPE).entity(childRep).build();
     }
 
     public static void updateGroup(GroupRepresentation rep, GroupModel model, RealmModel realm, KeycloakSession session) {

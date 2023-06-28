@@ -183,16 +183,27 @@ public class GroupTest extends AbstractGroupTest {
         assertSameNameNotAllowed(response,"Top level group named 'top' already exists.");
         response.close();
 
+        // allow moving the group to top level (nothing is done)
+        response = realm.groups().add(topGroup);
+        assertEquals(Response.Status.NO_CONTENT, response.getStatusInfo());
+        response.close();
+
         GroupRepresentation level2Group = new GroupRepresentation();
         level2Group.setName("level2");
         response = realm.groups().group(topGroup.getId()).subGroup(level2Group);
         assertEquals(201, response.getStatus()); // created status
+        level2Group.setId(ApiUtil.getCreatedId(response));
         response.close();
 
         GroupRepresentation anotherlevel2Group = new GroupRepresentation();
         anotherlevel2Group.setName("level2");
         response = realm.groups().group(topGroup.getId()).subGroup(anotherlevel2Group);
         assertSameNameNotAllowed(response,"Sibling group named 'level2' already exists.");
+        response.close();
+
+        // allow moving the group to the same parent (nothing is done)
+        response = realm.groups().group(topGroup.getId()).subGroup(level2Group);
+        assertEquals(Response.Status.NO_CONTENT, response.getStatusInfo());
         response.close();
     }
 
