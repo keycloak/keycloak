@@ -33,7 +33,7 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
   const {
     register,
     control,
-    // formState: { errors },
+    formState: { errors },
   } = useFormContext<IdentityProviderRepresentation>();
   const [namedPolicyDropdownOpen, setNamedPolicyDropdownOpen] = useState(false);
   const [principalTypeDropdownOpen, setPrincipalTypeDropdownOpen] =

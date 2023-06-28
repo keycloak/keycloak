@@ -34,7 +34,7 @@ export const AddHostDialog = ({
   const {
     register,
     handleSubmit,
-    // formState: { isDirty, isValid },
+    formState: { isDirty, isValid },
   } = useForm<FormFields>();
   const { addAlert, addError } = useAlerts();
 

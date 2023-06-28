@@ -11,7 +11,7 @@ export const NameDescription = () => {
   const { t } = useTranslation("authentication");
   const {
     register,
-    // formState: { errors },
+    formState: { errors },
   } = useFormContext<AuthenticationFlowRepresentation>();
 
   return (

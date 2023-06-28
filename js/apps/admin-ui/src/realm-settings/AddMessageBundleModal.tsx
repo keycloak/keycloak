@@ -32,7 +32,7 @@ export const AddMessageBundleModal = ({
   form: {
     register,
     handleSubmit,
-    // formState: { errors },
+    formState: { errors },
   },
 }: AddMessageBundleModalProps) => {
   const { t } = useTranslation("realm-settings");

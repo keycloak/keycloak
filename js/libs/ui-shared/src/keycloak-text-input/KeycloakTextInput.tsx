@@ -15,10 +15,16 @@ export const KeycloakTextInput = forwardRef<
   HTMLInputElement,
   KeycloakTextInputProps
 >(({ onChange, ...props }, ref) => {
-  const onChangeForward: TextInputProps["onChange"] = (_, event) =>
+  const onChangeForward: TextInputProps["onChange"] = (event) =>
     onChange?.(event);
 
-  return <TextInput {...props} ref={ref} onChange={onChangeForward} />;
+  return (
+    <TextInput
+      {...props}
+      ref={ref}
+      onChange={(event, _) => onChangeForward(event, _)}
+    />
+  );
 });
 
 // We need to fake the displayName to match what PatternFly expects.

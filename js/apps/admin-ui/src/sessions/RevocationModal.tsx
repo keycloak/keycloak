@@ -38,7 +38,7 @@ export const RevocationModal = ({
   const {
     register,
     handleSubmit,
-    // formState: { errors },
+    formState: { errors },
   } = useForm();
   const [realm, setRealm] = useState<RealmRepresentation>();
 

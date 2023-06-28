@@ -30,7 +30,7 @@ export const BruteForceDetection = ({
     setValue,
     handleSubmit,
     control,
-    // formState: { isDirty },
+    formState: { isDirty },
   } = form;
 
   const enable = useWatch({

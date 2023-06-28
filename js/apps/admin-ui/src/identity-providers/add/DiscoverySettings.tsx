@@ -34,7 +34,7 @@ const Fields = ({ readOnly }: DiscoverySettingsProps) => {
   const {
     register,
     control,
-    // formState: { errors },
+    formState: { errors },
   } = useFormContext<IdentityProviderRepresentation>();
 
   const validateSignature = useWatch({

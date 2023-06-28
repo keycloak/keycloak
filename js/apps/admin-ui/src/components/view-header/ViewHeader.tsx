@@ -192,7 +192,7 @@ export const ViewHeader = ({
             toggle={
               <DropdownToggle
                 onToggle={() => onLowerDropdownToggle()}
-                isPrimary
+                toggleVariant="primary"
                 id="ufToggleId"
               >
                 {t(lowerDropdownMenuTitle)}

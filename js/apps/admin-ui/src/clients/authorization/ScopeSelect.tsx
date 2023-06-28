@@ -28,7 +28,7 @@ export const ScopeSelect = ({
     control,
     getValues,
     setValue,
-    // formState: { errors },
+    formState: { errors },
   } = useFormContext();
 
   const [scopes, setScopes] = useState<ScopeRepresentation[]>([]);

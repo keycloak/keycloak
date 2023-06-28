@@ -164,7 +164,7 @@ export const GenerateKeyDialog = ({
 
   const {
     handleSubmit,
-    // formState: { isValid },
+    formState: { isValid },
   } = form;
 
   return (

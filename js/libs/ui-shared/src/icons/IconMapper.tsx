@@ -13,6 +13,7 @@ import {
   StackOverflowIcon,
   TwitterIcon,
 } from "@patternfly/react-icons";
+import { Icon as IconWrapper } from "@patternfly/react-core";
 
 type IconMapperProps = {
   icon: string;
@@ -20,7 +21,11 @@ type IconMapperProps = {
 
 export const IconMapper = ({ icon }: IconMapperProps) => {
   const Icon = getIcon(icon);
-  return <Icon size="lg" alt={icon} />;
+  return (
+    <IconWrapper iconSize="lg">
+      <Icon alt={icon} />
+    </IconWrapper>
+  );
 };
 
 function getIcon(icon: string) {

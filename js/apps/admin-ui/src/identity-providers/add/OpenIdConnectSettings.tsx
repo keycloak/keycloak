@@ -16,7 +16,7 @@ export const OpenIdConnectSettings = () => {
     setValue,
     setError,
     clearErrors,
-    // formState: { errors },
+    formState: { errors },
   } = useFormContext();
 
   const setupForm = (result: any) => {

@@ -16,7 +16,7 @@ export const Time = ({
   const { t } = useTranslation("realm-settings");
   const {
     control,
-    // formState: { errors },
+    formState: { errors },
   } = useFormContext();
   return (
     <FormGroup

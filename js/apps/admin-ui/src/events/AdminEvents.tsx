@@ -130,7 +130,7 @@ export const AdminEvents = () => {
     getValues,
     register,
     reset,
-    // formState: { isDirty },
+    formState: { isDirty },
     control,
   } = useForm<AdminEventSearchForm>({
     mode: "onChange",

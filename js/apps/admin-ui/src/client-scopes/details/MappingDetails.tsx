@@ -41,7 +41,7 @@ export default function MappingDetails() {
   const {
     register,
     setValue,
-    // formState: { errors },
+    formState: { errors },
     handleSubmit,
   } = form;
   const [mapping, setMapping] = useState<ProtocolMapperTypeRepresentation>();

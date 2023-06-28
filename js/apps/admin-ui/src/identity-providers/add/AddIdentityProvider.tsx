@@ -37,7 +37,7 @@ export default function AddIdentityProvider() {
   );
   const {
     handleSubmit,
-    // formState: { isDirty },
+    formState: { isDirty },
   } = form;
 
   const { addAlert, addError } = useAlerts();

@@ -42,7 +42,7 @@ export default function ScopeDetails() {
     register,
     reset,
     handleSubmit,
-    // formState: { errors },
+    formState: { errors },
   } = useForm<FormFields>({
     mode: "onChange",
   });

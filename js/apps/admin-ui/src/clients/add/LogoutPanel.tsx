@@ -27,7 +27,7 @@ export const LogoutPanel = ({
     register,
     control,
     watch,
-    // formState: { errors },
+    formState: { errors },
   } = useFormContext<FormFields>();
 
   const { hasAccess } = useAccess();

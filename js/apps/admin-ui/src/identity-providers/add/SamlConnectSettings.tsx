@@ -28,7 +28,7 @@ export const SamlConnectSettings = () => {
     register,
     setError,
     clearErrors,
-    // formState: { errors },
+    formState: { errors },
   } = useFormContext<FormFields>();
 
   const setupForm = (result: IdentityProviderRepresentation) => {

@@ -23,7 +23,7 @@ export const EventListenersForm = ({
   const { t } = useTranslation("realm-settings");
   const {
     control,
-    // formState: { isDirty },
+    formState: { isDirty },
   } = form;
 
   const [selectEventListenerOpen, setSelectEventListenerOpen] = useState(false);

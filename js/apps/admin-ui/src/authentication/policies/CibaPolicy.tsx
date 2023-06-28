@@ -50,7 +50,7 @@ export const CibaPolicy = ({ realm, realmUpdated }: CibaPolicyProps) => {
     register,
     handleSubmit,
     setValue,
-    // formState: { errors, isValid, isDirty },
+    formState: { errors, isValid, isDirty },
   } = useForm<FormFields>({ mode: "onChange" });
   const { realm: realmName } = useRealm();
   const { addAlert, addError } = useAlerts();

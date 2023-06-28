@@ -47,7 +47,7 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
     control,
     handleSubmit,
     setValue,
-    // formState: { errors, isDirty, isValid },
+    formState: { errors, isDirty, isValid },
   } = form;
   const { realm } = useRealm();
 

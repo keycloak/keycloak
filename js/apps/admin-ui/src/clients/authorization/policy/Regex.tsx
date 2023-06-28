@@ -9,7 +9,7 @@ export const Regex = () => {
   const { t } = useTranslation("clients");
   const {
     register,
-    // formState: { errors },
+    formState: { errors },
   } = useFormContext();
 
   return (

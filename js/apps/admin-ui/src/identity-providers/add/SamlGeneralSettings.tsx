@@ -28,7 +28,7 @@ export const SamlGeneralSettings = ({
   const {
     register,
     watch,
-    // formState: { errors },
+    formState: { errors },
   } = useFormContext();
 
   const alias = watch("alias");

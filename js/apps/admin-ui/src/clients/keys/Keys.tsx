@@ -46,7 +46,7 @@ export const Keys = ({ clientId, save, hasConfigureAccess }: KeysProps) => {
     control,
     register,
     getValues,
-    // formState: { isDirty },
+    formState: { isDirty },
   } = useFormContext<FormFields>();
   const { addAlert, addError } = useAlerts();
 

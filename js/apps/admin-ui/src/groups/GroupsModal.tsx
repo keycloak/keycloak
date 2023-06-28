@@ -34,7 +34,7 @@ export const GroupsModal = ({
   const {
     register,
     handleSubmit,
-    // formState: { errors },
+    formState: { errors },
   } = useForm({
     defaultValues: { name: rename },
   });

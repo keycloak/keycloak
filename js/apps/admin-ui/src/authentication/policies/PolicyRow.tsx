@@ -30,7 +30,7 @@ export const PolicyRow = ({
   const {
     control,
     register,
-    // formState: { errors },
+    formState: { errors },
   } = useFormContext();
 
   return (

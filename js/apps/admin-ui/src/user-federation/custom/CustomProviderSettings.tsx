@@ -42,7 +42,7 @@ export default function CustomProviderSettings() {
     reset,
     setValue,
     handleSubmit,
-    // formState: { errors, isDirty },
+    formState: { errors, isDirty },
   } = form;
 
   const { addAlert, addError } = useAlerts();

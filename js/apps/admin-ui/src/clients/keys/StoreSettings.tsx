@@ -17,7 +17,7 @@ export const StoreSettings = ({
   const { t } = useTranslation("clients");
   const {
     register,
-    // formState: { errors },
+    formState: { errors },
   } = useFormContext<KeyStoreConfig>();
 
   return (

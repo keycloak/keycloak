@@ -43,7 +43,7 @@ export const SearchDropdown = ({
     register,
     control,
     reset,
-    // formState: { isDirty },
+    formState: { isDirty },
     handleSubmit,
   } = useForm<SearchForm>({ mode: "onChange" });
 

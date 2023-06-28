@@ -49,7 +49,10 @@ export const ResetPasswordDialog = ({
   const {
     register,
     control,
-    // formState: { isValid, errors },
+    formState: {
+      isValid,
+      // errors
+    },
     watch,
     handleSubmit,
     clearErrors,

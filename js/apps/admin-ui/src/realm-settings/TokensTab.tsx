@@ -463,7 +463,6 @@ export const RealmSettingsTokensTab = ({
                   value={field.value!}
                   onChange={field.onChange}
                   units={["minute", "hour", "day"]}
-                  menuAppendTo={}
                 />
               )}
             />

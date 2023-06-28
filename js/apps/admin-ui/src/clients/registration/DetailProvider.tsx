@@ -44,7 +44,7 @@ export default function DetailProvider() {
     control,
     handleSubmit,
     reset,
-    // formState: { errors },
+    formState: { errors },
   } = form;
 
   const { realm } = useRealm();

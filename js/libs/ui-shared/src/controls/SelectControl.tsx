@@ -7,12 +7,12 @@ import {
   useFormContext,
   UseControllerProps,
 } from "react-hook-form";
+import { ValidatedOptions } from "@patternfly/react-core";
 import {
   Select,
   SelectOption,
   SelectProps,
-  ValidatedOptions,
-} from "@patternfly/react-core";
+} from "@patternfly/react-core/deprecated";
 import { FormLabel } from "./FormLabel";
 
 type Option = {
@@ -46,7 +46,7 @@ export const SelectControl = <
 }: SelectControlProps<T, P>) => {
   const {
     control,
-    // formState: { errors },
+    formState: { errors },
   } = useFormContext();
   const [open, setOpen] = useState(false);
   return (
@@ -64,7 +64,7 @@ export const SelectControl = <
           <Select
             {...rest}
             toggleId={name}
-            onToggle={(isOpen) => setOpen(isOpen)}
+            onToggle={(_event, isOpen) => setOpen(isOpen)}
             selections={value}
             onSelect={(_, v) => {
               const option = v.toString();

@@ -28,7 +28,7 @@ export const RoleForm = ({
     register,
     control,
     handleSubmit,
-    // formState: { errors },
+    formState: { errors },
   },
   onSubmit,
   cancelLink,

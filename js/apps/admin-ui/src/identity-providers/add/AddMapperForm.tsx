@@ -36,7 +36,7 @@ export const AddMapperForm = ({
   const {
     control,
     register,
-    // formState: { errors },
+    formState: { errors },
   } = form;
 
   const [mapperTypeOpen, setMapperTypeOpen] = useState(false);

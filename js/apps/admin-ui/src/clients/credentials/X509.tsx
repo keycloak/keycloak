@@ -11,7 +11,7 @@ export const X509 = () => {
   const {
     register,
     control,
-    // formState: { errors },
+    formState: { errors },
   } = useFormContext<FormFields>();
   return (
     <>

@@ -26,7 +26,7 @@ export const DiscoveryEndpointField = ({
     setError,
     watch,
     clearErrors,
-    // formState: { errors },
+    formState: { errors },
   } = useFormContext();
   const discoveryUrl = watch("discoveryEndpoint");
 

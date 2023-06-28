@@ -51,7 +51,10 @@ export const RealmSettingsGeneralTab = ({
     control,
     handleSubmit,
     setValue,
-    // formState: { isDirty, errors },
+    formState: {
+      isDirty,
+      // errors
+    },
   } = form;
   const isFeatureEnabled = useIsFeatureEnabled();
   const [open, setOpen] = useState(false);

@@ -98,7 +98,7 @@ export const PasswordPolicy = ({
     handleSubmit,
     setValue,
     reset,
-    // formState: { isDirty },
+    formState: { isDirty },
   } = form;
 
   const setupForm = (realm: RealmRepresentation) => {

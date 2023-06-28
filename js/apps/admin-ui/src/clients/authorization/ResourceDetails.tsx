@@ -59,7 +59,7 @@ export default function ResourceDetails() {
   });
   const {
     register,
-    // formState: { errors },
+    formState: { errors },
     control,
     setValue,
     handleSubmit,

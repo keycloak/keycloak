@@ -152,7 +152,7 @@ export default function EventsSection() {
     getValues,
     register,
     reset,
-    // formState: { isDirty },
+    formState: { isDirty },
     control,
     handleSubmit,
   } = useForm<UserEventSearchForm>({

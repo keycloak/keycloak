@@ -116,7 +116,7 @@ export const MapperList = ({
             onSelect={() => setMapperAction(false)}
             toggle={
               <DropdownToggle
-                isPrimary
+                toggleVariant="primary"
                 id="mapperAction"
                 onToggle={() => setMapperAction(!mapperAction)}
                 toggleIndicator={CaretDownIcon}

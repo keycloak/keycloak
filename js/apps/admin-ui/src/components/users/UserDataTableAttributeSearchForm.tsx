@@ -55,7 +55,7 @@ export function UserDataTableAttributeSearchForm({
     getValues,
     register,
     reset,
-    // formState: { errors },
+    formState: { errors },
     setValue,
     setError,
     clearErrors,

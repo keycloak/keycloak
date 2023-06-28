@@ -20,7 +20,7 @@ export const HeadersForm = ({ realm, save }: HeadersFormProps) => {
   const form = useForm();
   const {
     setValue,
-    // formState: { isDirty },
+    formState: { isDirty },
     handleSubmit,
   } = form;
 

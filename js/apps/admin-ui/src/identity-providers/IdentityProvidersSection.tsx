@@ -231,7 +231,7 @@ export default function IdentityProvidersSection() {
                     toggle={
                       <DropdownToggle
                         onToggle={() => setAddProviderOpen(!addProviderOpen)}
-                        isPrimary
+                        toggleVariant="primary"
                       >
                         {t("addProvider")}
                       </DropdownToggle>

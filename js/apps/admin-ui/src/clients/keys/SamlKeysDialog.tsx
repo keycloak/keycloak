@@ -76,7 +76,7 @@ export const SamlKeysDialog = ({
   const form = useForm<SamlKeysDialogForm>({ mode: "onChange" });
   const {
     handleSubmit,
-    // formState: { isValid },
+    formState: { isValid },
   } = form;
 
   const { addAlert, addError } = useAlerts();

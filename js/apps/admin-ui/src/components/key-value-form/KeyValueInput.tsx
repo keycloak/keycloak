@@ -43,7 +43,7 @@ export const KeyValueInput = ({
   const {
     control,
     register,
-    // formState: { errors },
+    formState: { errors },
   } = useFormContext();
 
   const { fields, append, remove } = useFieldArray({

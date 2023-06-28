@@ -51,7 +51,7 @@ export default function AddMapper() {
   const {
     handleSubmit,
     register,
-    // formState: { errors },
+    formState: { errors },
   } = form;
   const { addAlert, addError } = useAlerts();
   const navigate = useNavigate();

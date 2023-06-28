@@ -65,7 +65,7 @@ export const ResourcesPolicySelect = ({
 
   const {
     control,
-    // formState: { errors },
+    formState: { errors },
   } = useFormContext<PolicyRepresentation>();
   const [items, setItems] = useState<Policies[]>([]);
   const [search, setSearch] = useState("");

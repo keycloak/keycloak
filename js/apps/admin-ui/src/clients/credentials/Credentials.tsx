@@ -55,7 +55,7 @@ export const Credentials = ({ client, save, refresh }: CredentialsProps) => {
 
   const {
     control,
-    // formState: { isDirty },
+    formState: { isDirty },
     handleSubmit,
   } = useFormContext<FormFields>();
 

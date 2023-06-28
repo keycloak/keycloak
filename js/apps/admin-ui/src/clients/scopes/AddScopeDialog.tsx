@@ -179,7 +179,7 @@ export const AddScopeDialog = ({
                   <DropdownToggle
                     isDisabled={rows.length === 0}
                     onToggle={() => setAddToggle(!addToggle)}
-                    isPrimary
+                    toggleVariant="primary"
                     toggleIndicator={CaretUpIcon}
                     id="add-scope-toggle"
                   >

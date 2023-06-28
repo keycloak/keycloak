@@ -206,7 +206,7 @@ export const AuthorizationPermissions = ({ clientId }: PermissionsProps) => {
                   toggle={
                     <DropdownToggle
                       onToggle={toggleCreate}
-                      isPrimary
+                      toggleVariant="primary"
                       data-testid="permissionCreateDropdown"
                     >
                       {t("createPermission")}

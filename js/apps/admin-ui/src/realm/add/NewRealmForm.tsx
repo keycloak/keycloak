@@ -35,7 +35,7 @@ export default function NewRealmForm() {
     handleSubmit,
     control,
     setValue,
-    // formState: { errors },
+    formState: { errors },
   } = useForm<RealmRepresentation>({ mode: "onChange" });
 
   const handleFileChange = (obj?: object) => {

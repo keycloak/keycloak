@@ -27,7 +27,7 @@ export default function CreateInitialAccessToken() {
   const {
     handleSubmit,
     control,
-    // formState: { isValid, errors },
+    formState: { isValid, errors },
   } = useForm({ mode: "onChange" });
 
   const { realm } = useRealm();

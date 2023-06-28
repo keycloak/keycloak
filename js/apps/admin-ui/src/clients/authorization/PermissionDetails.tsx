@@ -51,7 +51,7 @@ export default function PermissionDetails() {
     register,
     control,
     reset,
-    // formState: { errors },
+    formState: { errors },
     handleSubmit,
   } = form;
 

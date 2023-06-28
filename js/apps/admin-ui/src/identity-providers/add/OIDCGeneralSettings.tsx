@@ -16,7 +16,7 @@ export const OIDCGeneralSettings = ({ id }: { id: string }) => {
 
   const {
     register,
-    // formState: { errors },
+    formState: { errors },
   } = useFormContext();
 
   return (

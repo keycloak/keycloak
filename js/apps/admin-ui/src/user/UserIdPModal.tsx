@@ -35,7 +35,7 @@ export const UserIdpModal = ({
   const {
     register,
     handleSubmit,
-    // formState: { isValid, errors },
+    formState: { isValid, errors },
   } = useForm<FederatedIdentityRepresentation>({
     mode: "onChange",
   });
