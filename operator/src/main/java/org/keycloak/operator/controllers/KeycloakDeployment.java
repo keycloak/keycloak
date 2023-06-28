@@ -33,6 +33,7 @@ import io.quarkus.logging.Log;
 import org.keycloak.common.util.CollectionUtil;
 import org.keycloak.operator.Config;
 import org.keycloak.operator.Constants;
+import org.keycloak.operator.Utils;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusAggregator;
 import org.keycloak.operator.crds.v2alpha1.deployment.ValueOrSecret;
@@ -42,7 +43,6 @@ import java.util.ArrayList;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -71,15 +71,7 @@ public class KeycloakDeployment extends OperatorManagedResource implements Statu
         this.operatorConfig = config;
         this.keycloakCR = keycloakCR;
         this.adminSecretName = adminSecretName;
-
-        if (existingDeployment != null) {
-            Log.info("Existing Deployment provided by controller");
-            this.existingDeployment = existingDeployment;
-        } else {
-            Log.info("Trying to fetch existing Deployment from the API");
-            this.existingDeployment = fetchExistingDeployment();
-        }
-
+        this.existingDeployment = existingDeployment;
         this.baseDeployment = createBaseDeployment();
         this.distConfigurator = configureDist();
         mergePodTemplate(this.baseDeployment.getSpec().getTemplate());
@@ -93,18 +85,18 @@ public class KeycloakDeployment extends OperatorManagedResource implements Statu
         else {
             Log.info("Existing Deployment found, handling migration");
 
+            if (!existingDeployment.isMarkedForDeletion() && !hasExpectedMatchLabels(existingDeployment)) {
+                client.resource(existingDeployment).lockResourceVersion().delete();
+                Log.info("Existing Deployment found with old label selector, it will be recreated");
+            }
+
             migrateDeployment(existingDeployment, baseDeployment);
         }
         return Optional.of(baseDeployment);
     }
 
-    private StatefulSet fetchExistingDeployment() {
-        return client
-                .apps()
-                .statefulSets()
-                .inNamespace(getNamespace())
-                .withName(getName())
-                .get();
+    private boolean hasExpectedMatchLabels(StatefulSet statefulSet) {
+        return Optional.ofNullable(statefulSet).map(s -> getInstanceLabels().equals(s.getSpec().getSelector().getMatchLabels())).orElse(true);
     }
 
     public void validatePodTemplate(KeycloakStatusAggregator status) {
@@ -361,10 +353,10 @@ public class KeycloakDeployment extends OperatorManagedResource implements Statu
 
         baseDeployment.getMetadata().setName(getName());
         baseDeployment.getMetadata().setNamespace(getNamespace());
-        baseDeployment.getSpec().getSelector().setMatchLabels(Constants.DEFAULT_LABELS);
+        baseDeployment.getSpec().getSelector().setMatchLabels(getInstanceLabels());
         baseDeployment.getSpec().setReplicas(keycloakCR.getSpec().getInstances());
 
-        Map<String, String> labels = new LinkedHashMap<>(Constants.DEFAULT_LABELS);
+        Map<String, String> labels = getInstanceLabels();
         if (operatorConfig.keycloak().podLabels() != null) {
             labels.putAll(operatorConfig.keycloak().podLabels());
         }
@@ -483,7 +475,7 @@ public class KeycloakDeployment extends OperatorManagedResource implements Statu
 
     @Override
     public void updateStatus(KeycloakStatusAggregator status) {
-        status.apply(b -> b.withSelector(Constants.DEFAULT_LABELS_AS_STRING));
+        status.apply(b -> b.withSelector(Utils.toSelectorString(getInstanceLabels())));
         validatePodTemplate(status);
         if (existingDeployment == null) {
             status.addNotReadyMessage("No existing StatefulSet found, waiting for creating a new one");
