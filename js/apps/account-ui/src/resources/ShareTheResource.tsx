@@ -137,12 +137,13 @@ export const ShareTheResource = ({
         <FormGroup
           label={t("shareUser")}
           type="string"
-          helperTextInvalid={errors.usernames?.message}
+          // TODO: Use FormHelperText, HelperText, and HelperTextItem directly inside children. helperText, helperTextInvalid and validated props have been removed.
+          // helperTextInvalid={errors.usernames?.message}
           fieldId="users"
           isRequired
-          validated={
-            errors.usernames ? ValidatedOptions.error : ValidatedOptions.default
-          }
+          // validated={
+          //   errors.usernames ? ValidatedOptions.error : ValidatedOptions.default
+          // }
         >
           <InputGroup>
             <KeycloakTextInput

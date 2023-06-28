@@ -13,7 +13,6 @@ type HelpItemProps = {
 export const HelpItem = ({
   helpText,
   fieldLabelId,
-  noVerticalAlign = true,
   unWrap = false,
 }: HelpItemProps) => {
   const { enabled } = useHelp();
@@ -27,10 +26,10 @@ export const HelpItem = ({
             onClick={(e) => e.preventDefault()}
             className="pf-c-form__group-label-help"
           >
-            <HelpIcon noVerticalAlign={noVerticalAlign} />
+            <HelpIcon />
           </button>
         )}
-        {unWrap && <HelpIcon noVerticalAlign={noVerticalAlign} />}
+        {unWrap && <HelpIcon />}
       </>
     </Popover>
   ) : null;

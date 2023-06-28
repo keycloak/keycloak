@@ -46,7 +46,7 @@ export const SelectControl = <
 }: SelectControlProps<T, P>) => {
   const {
     control,
-    formState: { errors },
+    // formState: { errors },
   } = useFormContext();
   const [open, setOpen] = useState(false);
   return (

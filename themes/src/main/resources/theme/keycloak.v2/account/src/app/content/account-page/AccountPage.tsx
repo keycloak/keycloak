@@ -184,12 +184,13 @@ export class AccountPage extends React.Component<AccountPageProps, AccountPageSt
                             <FormGroup
                                 label={Msg.localize("username")}
                                 fieldId="user-name"
-                                helperTextInvalid={this.state.errors.username}
-                                validated={
-                                    this.state.errors.username !== ""
-                                        ? ValidatedOptions.error
-                                        : ValidatedOptions.default
-                                }
+                                // TODO: Use FormHelperText, HelperText, and HelperTextItem directly inside children. helperText, helperTextInvalid and validated props have been removed.
+                                // helperTextInvalid={this.state.errors.username}
+                                // validated={
+                                //     this.state.errors.username !== ""
+                                //         ? ValidatedOptions.error
+                                //         : ValidatedOptions.default
+                                // }
                             >
                                 {this.isEditUserNameAllowed && <this.UsernameInput />}
                                 {!this.isEditUserNameAllowed && (
@@ -200,12 +201,13 @@ export class AccountPage extends React.Component<AccountPageProps, AccountPageSt
                         {!this.isUpdateEmailFeatureEnabled && fields.email != undefined && <FormGroup
                             label={Msg.localize('email')}
                             fieldId="email-address"
-                            helperTextInvalid={this.state.errors.email}
-                            validated={
-                                this.state.errors.email !== ""
-                                    ? ValidatedOptions.error
-                                    : ValidatedOptions.default
-                            }
+                            // TODO: Use FormHelperText, HelperText, and HelperTextItem directly inside children. helperText, helperTextInvalid and validated props have been removed.
+                            // helperTextInvalid={this.state.errors.email}
+                            // validated={
+                            //     this.state.errors.email !== ""
+                            //         ? ValidatedOptions.error
+                            //         : ValidatedOptions.default
+                            // }
                         >
                             <TextInput
                                 isRequired
@@ -253,12 +255,13 @@ export class AccountPage extends React.Component<AccountPageProps, AccountPageSt
                         { fields.firstName != undefined && <FormGroup
                                 label={Msg.localize("firstName")}
                                 fieldId="first-name"
-                                helperTextInvalid={this.state.errors.firstName}
-                                validated={
-                                    this.state.errors.firstName !== ""
-                                        ? ValidatedOptions.error
-                                        : ValidatedOptions.default
-                                }
+                                // TODO: Use FormHelperText, HelperText, and HelperTextItem directly inside children. helperText, helperTextInvalid and validated props have been removed.
+                                // helperTextInvalid={this.state.errors.firstName}
+                                // validated={
+                                //     this.state.errors.firstName !== ""
+                                //         ? ValidatedOptions.error
+                                //         : ValidatedOptions.default
+                                // }
                             >
                                 <TextInput
                                     isRequired
@@ -279,12 +282,13 @@ export class AccountPage extends React.Component<AccountPageProps, AccountPageSt
                         {fields.lastName != undefined && <FormGroup
                                 label={Msg.localize("lastName")}
                                 fieldId="last-name"
-                                helperTextInvalid={this.state.errors.lastName}
-                                validated={
-                                    this.state.errors.lastName !== ""
-                                        ? ValidatedOptions.error
-                                        : ValidatedOptions.default
-                                }
+                                // TODO: Use FormHelperText, HelperText, and HelperTextItem directly inside children. helperText, helperTextInvalid and validated props have been removed.
+                                // helperTextInvalid={this.state.errors.lastName}
+                                // validated={
+                                //     this.state.errors.lastName !== ""
+                                //         ? ValidatedOptions.error
+                                //         : ValidatedOptions.default
+                                // }
                             >
                                 <TextInput
                                     isRequired
