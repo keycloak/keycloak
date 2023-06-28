@@ -2,7 +2,7 @@
 
 === OpenID Connect
 [role="_abstract"]
-link:https://openid.net/connect/[OpenID Connect] (OIDC) is an authentication protocol that is an extension of link:https://datatracker.ietf.org/doc/html/rfc6749[OAuth 2.0].
+link:https://openid.net/developers/how-connect-works/[OpenID Connect] (OIDC) is an authentication protocol that is an extension of link:https://datatracker.ietf.org/doc/html/rfc6749[OAuth 2.0].
 
 OAuth 2.0 is a framework for building authorization protocols and is incomplete. OIDC, however, is a full authentication and authorization protocol that uses the link:https://jwt.io[Json Web Token] (JWT) standards.  The JWT standards define an identity token JSON format and methods to digitally sign and encrypt data in a compact and web-friendly way.
 
