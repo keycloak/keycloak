@@ -2,12 +2,14 @@ import {
   AlertVariant,
   Button,
   ButtonVariant,
-  Dropdown,
-  DropdownItem,
-  KebabToggle,
   PageSection,
   ToolbarItem,
 } from "@patternfly/react-core";
+import {
+  Dropdown,
+  DropdownItem,
+  KebabToggle,
+} from "@patternfly/react-core/deprecated";
 import { cellWidth } from "@patternfly/react-table";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -245,7 +247,11 @@ export default function ClientScopesSection() {
               </ToolbarItem>
               <ToolbarItem>
                 <Dropdown
-                  toggle={<KebabToggle onToggle={setKebabOpen} />}
+                  toggle={
+                    <KebabToggle
+                      onToggle={(_event, val) => setKebabOpen(val)}
+                    />
+                  }
                   isOpen={kebabOpen}
                   isPlain
                   dropdownItems={[

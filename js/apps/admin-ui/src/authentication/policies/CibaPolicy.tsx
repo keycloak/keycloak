@@ -8,10 +8,13 @@ import {
   InputGroup,
   InputGroupText,
   PageSection,
+  InputGroupItem,
+} from "@patternfly/react-core";
+import {
   Select,
   SelectOption,
   SelectVariant,
-} from "@patternfly/react-core";
+} from "@patternfly/react-core/deprecated";
 import { useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -47,7 +50,7 @@ export const CibaPolicy = ({ realm, realmUpdated }: CibaPolicyProps) => {
     register,
     handleSubmit,
     setValue,
-    formState: { errors, isValid, isDirty },
+    // formState: { errors, isValid, isDirty },
   } = useForm<FormFields>({ mode: "onChange" });
   const { realm: realmName } = useRealm();
   const { addAlert, addError } = useAlerts();
@@ -115,7 +118,7 @@ export const CibaPolicy = ({ realm, realmUpdated }: CibaPolicyProps) => {
                 selections={field.value}
                 variant={SelectVariant.single}
                 isOpen={backchannelTokenDeliveryModeOpen}
-                onToggle={(isExpanded) =>
+                onToggle={(_event, isExpanded) =>
                   setBackchannelTokenDeliveryModeOpen(isExpanded)
                 }
               >
@@ -141,39 +144,44 @@ export const CibaPolicy = ({ realm, realmUpdated }: CibaPolicyProps) => {
               fieldLabelId="authentication:cibaExpiresIn"
             />
           }
-          validated={errors.attributes?.cibaExpiresIn ? "error" : "default"}
-          helperTextInvalid={
-            errors.attributes?.cibaExpiresIn?.message as string
-          }
+          // TODO: Use FormHelperText, HelperText, and HelperTextItem directly inside children. helperText, helperTextInvalid and validated props have been removed.
+          // validated={errors.attributes?.cibaExpiresIn ? "error" : "default"}
+          // helperTextInvalid={
+          //   errors.attributes?.cibaExpiresIn?.message as string
+          // }
           isRequired
         >
           <InputGroup>
-            <KeycloakTextInput
-              id="cibaExpiresIn"
-              type="number"
-              min={CIBA_EXPIRES_IN_MIN}
-              max={CIBA_EXPIRES_IN_MAX}
-              {...register("attributes.cibaExpiresIn", {
-                min: {
-                  value: CIBA_EXPIRES_IN_MIN,
-                  message: t("common:greaterThan", {
+            <InputGroupItem>
+              <KeycloakTextInput
+                id="cibaExpiresIn"
+                type="number"
+                min={CIBA_EXPIRES_IN_MIN}
+                max={CIBA_EXPIRES_IN_MAX}
+                {...register("attributes.cibaExpiresIn", {
+                  min: {
                     value: CIBA_EXPIRES_IN_MIN,
-                  }),
-                },
-                max: {
-                  value: CIBA_EXPIRES_IN_MAX,
-                  message: t("common:lessThan", { value: CIBA_EXPIRES_IN_MAX }),
-                },
-                required: {
-                  value: true,
-                  message: t("common:required"),
-                },
-              })}
-              validated={errors.attributes?.cibaExpiresIn ? "error" : "default"}
-            />
-            <InputGroupText variant="plain">
-              {t("common:times:seconds")}
-            </InputGroupText>
+                    message: t("common:greaterThan", {
+                      value: CIBA_EXPIRES_IN_MIN,
+                    }),
+                  },
+                  max: {
+                    value: CIBA_EXPIRES_IN_MAX,
+                    message: t("common:lessThan", {
+                      value: CIBA_EXPIRES_IN_MAX,
+                    }),
+                  },
+                  required: {
+                    value: true,
+                    message: t("common:required"),
+                  },
+                })}
+                validated={
+                  errors.attributes?.cibaExpiresIn ? "error" : "default"
+                }
+              />
+            </InputGroupItem>
+            <InputGroupText>{t("common:times:seconds")}</InputGroupText>
           </InputGroup>
         </FormGroup>
         <FormGroup
@@ -185,37 +193,40 @@ export const CibaPolicy = ({ realm, realmUpdated }: CibaPolicyProps) => {
               fieldLabelId="authentication:cibaInterval"
             />
           }
-          validated={errors.attributes?.cibaInterval ? "error" : "default"}
-          helperTextInvalid={errors.attributes?.cibaInterval?.message as string}
+          // TODO: Use FormHelperText, HelperText, and HelperTextItem directly inside children. helperText, helperTextInvalid and validated props have been removed.
+          // validated={errors.attributes?.cibaInterval ? "error" : "default"}
+          // helperTextInvalid={errors.attributes?.cibaInterval?.message as string}
           isRequired
         >
           <InputGroup>
-            <KeycloakTextInput
-              id="cibaInterval"
-              type="number"
-              min={CIBA_INTERVAL_MIN}
-              max={CIBA_INTERVAL_MAX}
-              {...register("attributes.cibaInterval", {
-                min: {
-                  value: CIBA_INTERVAL_MIN,
-                  message: t("common:greaterThan", {
+            <InputGroupItem>
+              <KeycloakTextInput
+                id="cibaInterval"
+                type="number"
+                min={CIBA_INTERVAL_MIN}
+                max={CIBA_INTERVAL_MAX}
+                {...register("attributes.cibaInterval", {
+                  min: {
                     value: CIBA_INTERVAL_MIN,
-                  }),
-                },
-                max: {
-                  value: CIBA_INTERVAL_MAX,
-                  message: t("common:lessThan", { value: CIBA_INTERVAL_MAX }),
-                },
-                required: {
-                  value: true,
-                  message: t("common:required"),
-                },
-              })}
-              validated={errors.attributes?.cibaInterval ? "error" : "default"}
-            />
-            <InputGroupText variant="plain">
-              {t("common:times:seconds")}
-            </InputGroupText>
+                    message: t("common:greaterThan", {
+                      value: CIBA_INTERVAL_MIN,
+                    }),
+                  },
+                  max: {
+                    value: CIBA_INTERVAL_MAX,
+                    message: t("common:lessThan", { value: CIBA_INTERVAL_MAX }),
+                  },
+                  required: {
+                    value: true,
+                    message: t("common:required"),
+                  },
+                })}
+                validated={
+                  errors.attributes?.cibaInterval ? "error" : "default"
+                }
+              />
+            </InputGroupItem>
+            <InputGroupText>{t("common:times:seconds")}</InputGroupText>
           </InputGroup>
         </FormGroup>
         <FormGroup
@@ -232,7 +243,9 @@ export const CibaPolicy = ({ realm, realmUpdated }: CibaPolicyProps) => {
             toggleId="cibaAuthRequestedUserHint"
             selections="login_hint"
             isOpen={authRequestedUserHintOpen}
-            onToggle={(isExpanded) => setAuthRequestedUserHintOpen(isExpanded)}
+            onToggle={(_event, isExpanded) =>
+              setAuthRequestedUserHintOpen(isExpanded)
+            }
             isDisabled
           >
             <SelectOption value="login_hint">login_hint</SelectOption>

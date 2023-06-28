@@ -33,7 +33,7 @@ export default function AddSamlConnect() {
   });
   const {
     handleSubmit,
-    formState: { isDirty },
+    // formState: { isDirty },
   } = form;
 
   const { addAlert, addError } = useAlerts();

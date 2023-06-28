@@ -11,7 +11,7 @@ import {
   Split,
   SplitItem,
   TimePicker,
-  ValidatedOptions,
+  // ValidatedOptions,
 } from "@patternfly/react-core";
 
 import { HelpItem } from "ui-shared";
@@ -156,7 +156,7 @@ export const Time = () => {
   const { t } = useTranslation("clients");
   const {
     getValues,
-    formState: { errors },
+    // formState: { errors },
   } = useFormContext();
   const [repeat, setRepeat] = useState(getValues("month"));
   return (
@@ -214,10 +214,11 @@ export const Time = () => {
           />
         }
         isRequired
-        helperTextInvalid={t("common:required")}
-        validated={
-          errors.notBefore ? ValidatedOptions.error : ValidatedOptions.default
-        }
+        // TODO: Use FormHelperText, HelperText, and HelperTextItem directly inside children. helperText, helperTextInvalid and validated props have been removed.
+        // helperTextInvalid={t("common:required")}
+        // validated={
+        //   errors.notBefore ? ValidatedOptions.error : ValidatedOptions.default
+        // }
       >
         <DateTime name="notBefore" />
       </FormGroup>
@@ -230,13 +231,14 @@ export const Time = () => {
             fieldLabelId="clients:expireTime"
           />
         }
+        // TODO: Use FormHelperText, HelperText, and HelperTextItem directly inside children. helperText, helperTextInvalid and validated props have been removed.
         isRequired
-        helperTextInvalid={t("common:required")}
-        validated={
-          errors.notOnOrAfter
-            ? ValidatedOptions.error
-            : ValidatedOptions.default
-        }
+        // helperTextInvalid={t("common:required")}
+        // validated={
+        //   errors.notOnOrAfter
+        //     ? ValidatedOptions.error
+        //     : ValidatedOptions.default
+        // }
       >
         <DateTime name="notOnOrAfter" />
       </FormGroup>

@@ -28,7 +28,7 @@ export const AccessTokenDialog = ({
     >
       <Alert
         title={t("copyInitialAccessToken")}
-        titleHeadingLevel="h2"
+        component="h2"
         isInline
         variant={AlertVariant.warning}
       />

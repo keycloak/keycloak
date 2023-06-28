@@ -3,9 +3,9 @@ import {
   AlertVariant,
   ButtonVariant,
   CardTitle,
-  DropdownItem,
   Gallery,
   GalleryItem,
+  Icon,
   PageSection,
   Split,
   SplitItem,
@@ -13,6 +13,7 @@ import {
   TextContent,
   TextVariants,
 } from "@patternfly/react-core";
+import { DropdownItem } from "@patternfly/react-core/deprecated";
 import { DatabaseIcon } from "@patternfly/react-icons";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -219,7 +220,9 @@ export default function UserFederationSection() {
                   <CardTitle>
                     <Split hasGutter>
                       <SplitItem>
-                        <DatabaseIcon size="lg" />
+                        <Icon iconSize="lg">
+                          <DatabaseIcon />
+                        </Icon>
                       </SplitItem>
                       <SplitItem isFilled>
                         {t("addProvider", {

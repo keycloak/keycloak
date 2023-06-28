@@ -35,7 +35,7 @@ export type FileUploadFormProps = Omit<FileUploadProps, "onChange"> & {
 export const FileUploadForm = ({
   id,
   onChange,
-  helpText = "common-help:helpFileUpload",
+  // helpText = "common-help:helpFileUpload",
   unWrap = false,
   language,
   extension,
@@ -124,7 +124,8 @@ export const FileUploadForm = ({
         <FormGroup
           label={t("resourceFile")}
           fieldId={id}
-          helperText={t(helpText)}
+          // TODO: Use FormHelperText, HelperText, and HelperTextItem directly inside children. helperText, helperTextInvalid and validated props have been removed.
+          // helperText={t(helpText)}
         >
           <FileUpload
             data-testid={id}

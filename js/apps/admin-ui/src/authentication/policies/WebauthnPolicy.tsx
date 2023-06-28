@@ -7,13 +7,15 @@ import {
   FormGroup,
   PageSection,
   Popover,
-  Select,
-  SelectOption,
-  SelectVariant,
   Switch,
   Text,
   TextContent,
 } from "@patternfly/react-core";
+import {
+  Select,
+  SelectOption,
+  SelectVariant,
+} from "@patternfly/react-core/deprecated";
 import { QuestionCircleIcon } from "@patternfly/react-icons";
 import { useEffect, useState } from "react";
 import {
@@ -104,7 +106,7 @@ const WebauthnSelect = ({
         render={({ field }) => (
           <Select
             toggleId={name}
-            onToggle={toggle}
+            onToggle={(_event, val) => toggle(val)}
             onSelect={(_, selectedValue) => {
               if (isMultiSelect) {
                 const changedValue = field.value.find(
@@ -167,7 +169,7 @@ export const WebauthnPolicy = ({
     register,
     setValue,
     handleSubmit,
-    formState: { isDirty, errors },
+    // formState: { isDirty, errors },
   } = form;
 
   const namePrefix = isPasswordLess
@@ -212,8 +214,9 @@ export const WebauthnPolicy = ({
         <FormGroup
           label={t("webAuthnPolicyRpEntityName")}
           fieldId="webAuthnPolicyRpEntityName"
-          helperTextInvalid={t("common:required")}
-          validated={errors.webAuthnPolicyRpEntityName ? "error" : "default"}
+          // TODO: Use FormHelperText, HelperText, and HelperTextItem directly inside children. helperText, helperTextInvalid and validated props have been removed.
+          // helperTextInvalid={t("common:required")}
+          // validated={errors.webAuthnPolicyRpEntityName ? "error" : "default"}
           isRequired
           labelIcon={
             <HelpItem
@@ -279,8 +282,9 @@ export const WebauthnPolicy = ({
           <FormGroup
             label={t("webAuthnPolicyCreateTimeout")}
             fieldId="webAuthnPolicyCreateTimeout"
-            helperTextInvalid={t("webAuthnPolicyCreateTimeoutHint")}
-            validated={errors.webAuthnPolicyCreateTimeout ? "error" : "default"}
+            // TODO: Use FormHelperText, HelperText, and HelperTextItem directly inside children. helperText, helperTextInvalid and validated props have been removed.
+            // helperTextInvalid={t("webAuthnPolicyCreateTimeoutHint")}
+            // validated={errors.webAuthnPolicyCreateTimeout ? "error" : "default"}
             labelIcon={
               <HelpItem
                 helpText={t("authentication-help:webAuthnPolicyCreateTimeout")}

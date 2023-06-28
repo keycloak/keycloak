@@ -5,8 +5,8 @@ import { useTranslation } from "react-i18next";
 import { HelpItem } from "ui-shared";
 import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 import { MultiLineInput } from "../../components/multi-line-input/MultiLineInput";
-import { useRealm } from "../../context/realm-context/RealmContext";
-import environment from "../../environment";
+// import { useRealm } from "../../context/realm-context/RealmContext";
+// import environment from "../../environment";
 import { convertAttributeNameToForm } from "../../util";
 import { FormFields } from "../ClientDetails";
 
@@ -21,11 +21,11 @@ export const LoginSettings = ({
 }: LoginSettingsProps) => {
   const { t } = useTranslation("clients");
   const { register, watch } = useFormContext<FormFields>();
-  const { realm } = useRealm();
+  // const { realm } = useRealm();
 
-  const idpInitiatedSsoUrlName: string = watch(
-    "attributes.saml_idp_initiated_sso_url_name"
-  );
+  // const idpInitiatedSsoUrlName: string = watch(
+  //   "attributes.saml_idp_initiated_sso_url_name"
+  // );
 
   const standardFlowEnabled = watch("standardFlowEnabled");
   return (
@@ -118,12 +118,13 @@ export const LoginSettings = ({
                 fieldLabelId="clients:idpInitiatedSsoUrlName"
               />
             }
-            helperText={
-              idpInitiatedSsoUrlName !== "" &&
-              t("idpInitiatedSsoUrlNameHelp", {
-                url: `${environment.authServerUrl}/realms/${realm}/protocol/saml/clients/${idpInitiatedSsoUrlName}`,
-              })
-            }
+            // TODO: Use FormHelperText, HelperText, and HelperTextItem directly inside children. helperText, helperTextInvalid and validated props have been removed.
+            // helperText={
+            //   idpInitiatedSsoUrlName !== "" &&
+            //   t("idpInitiatedSsoUrlNameHelp", {
+            //     url: `${environment.authServerUrl}/realms/${realm}/protocol/saml/clients/${idpInitiatedSsoUrlName}`,
+            //   })
+            // }
           >
             <KeycloakTextInput
               id="idpInitiatedSsoUrlName"

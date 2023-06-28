@@ -1,4 +1,5 @@
-import { Grid, GridItem, Select, SelectOption } from "@patternfly/react-core";
+import { Grid, GridItem } from "@patternfly/react-core";
+import { Select, SelectOption } from "@patternfly/react-core/deprecated";
 import { useState } from "react";
 import { UseControllerProps, useController } from "react-hook-form";
 import { useTranslation } from "react-i18next";

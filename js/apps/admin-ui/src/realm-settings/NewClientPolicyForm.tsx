@@ -11,7 +11,6 @@ import {
   DataListItemCells,
   DataListItemRow,
   Divider,
-  DropdownItem,
   Flex,
   FlexItem,
   FormGroup,
@@ -20,6 +19,7 @@ import {
   TextVariants,
   ValidatedOptions,
 } from "@patternfly/react-core";
+import { DropdownItem } from "@patternfly/react-core/deprecated";
 import { PlusCircleIcon, TrashIcon } from "@patternfly/react-icons";
 import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
@@ -464,12 +464,13 @@ export default function NewClientPolicyForm() {
             label={t("common:name")}
             fieldId="kc-client-profile-name"
             isRequired
-            helperTextInvalid={form.formState.errors.name?.message}
-            validated={
-              form.formState.errors.name
-                ? ValidatedOptions.error
-                : ValidatedOptions.default
-            }
+            // TODO: Use FormHelperText, HelperText, and HelperTextItem directly inside children. helperText, helperTextInvalid and validated props have been removed.
+            // helperTextInvalid={form.formState.errors.name?.message}
+            // validated={
+            //   form.formState.errors.name
+            //     ? ValidatedOptions.error
+            //     : ValidatedOptions.default
+            // }
           >
             <KeycloakTextInput
               id="kc-client-profile-name"

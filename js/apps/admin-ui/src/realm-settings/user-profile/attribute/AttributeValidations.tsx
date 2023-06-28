@@ -7,7 +7,7 @@ import {
 } from "@patternfly/react-core";
 import { PlusCircleIcon } from "@patternfly/react-icons";
 import {
-  TableComposable,
+  Table /* data-codemods */,
   Tbody,
   Td,
   Th,
@@ -96,7 +96,7 @@ export const AttributeValidations = () => {
         </Button>
         <Divider />
         {validators.length !== 0 ? (
-          <TableComposable>
+          <Table>
             <Thead>
               <Tr>
                 <Th>{t("validatorColNames.colName")}</Th>
@@ -129,7 +129,7 @@ export const AttributeValidations = () => {
                 </Tr>
               ))}
             </Tbody>
-          </TableComposable>
+          </Table>
         ) : (
           <Text className="kc-emptyValidators" component={TextVariants.h6}>
             {t("realm-settings:emptyValidators")}

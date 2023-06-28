@@ -1,11 +1,9 @@
+import { ActionGroup, Button, FormGroup } from "@patternfly/react-core";
 import {
-  ActionGroup,
-  Button,
-  FormGroup,
   Select,
   SelectOption,
   SelectVariant,
-} from "@patternfly/react-core";
+} from "@patternfly/react-core/deprecated";
 import { useState } from "react";
 import { Controller, UseFormReturn } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -25,7 +23,7 @@ export const EventListenersForm = ({
   const { t } = useTranslation("realm-settings");
   const {
     control,
-    formState: { isDirty },
+    // formState: { isDirty },
   } = form;
 
   const [selectEventListenerOpen, setSelectEventListenerOpen] = useState(false);
@@ -61,7 +59,7 @@ export const EventListenersForm = ({
               }}
               variant={SelectVariant.typeaheadMulti}
               typeAheadAriaLabel="Select"
-              onToggle={(isOpen) => setSelectEventListenerOpen(isOpen)}
+              onToggle={(_event, isOpen) => setSelectEventListenerOpen(isOpen)}
               selections={field.value}
               onSelect={(_, selectedValue) => {
                 const option = selectedValue.toString();

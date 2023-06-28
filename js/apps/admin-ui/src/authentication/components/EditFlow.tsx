@@ -89,12 +89,13 @@ export const EditFlow = ({ execution, onRowChange }: EditFlowProps) => {
             <FormGroup
               label={t("common:name")}
               fieldId="name"
-              helperTextInvalid={t("common:required")}
-              validated={
-                errors.displayName
-                  ? ValidatedOptions.error
-                  : ValidatedOptions.default
-              }
+              // TODO: Use FormHelperText, HelperText, and HelperTextItem directly inside children. helperText, helperTextInvalid and validated props have been removed.
+              // helperTextInvalid={t("common:required")}
+              // validated={
+              //   errors.displayName
+              //     ? ValidatedOptions.error
+              //     : ValidatedOptions.default
+              // }
               labelIcon={
                 <HelpItem
                   helpText={t("authentication-help:name")}
@@ -124,12 +125,13 @@ export const EditFlow = ({ execution, onRowChange }: EditFlowProps) => {
                   fieldLabelId="description"
                 />
               }
-              validated={
-                errors.description
-                  ? ValidatedOptions.error
-                  : ValidatedOptions.default
-              }
-              helperTextInvalid={errors.description?.message}
+              // TODO: Use FormHelperText, HelperText, and HelperTextItem directly inside children. helperText, helperTextInvalid and validated props have been removed.
+              // validated={
+              //   errors.description
+              //     ? ValidatedOptions.error
+              //     : ValidatedOptions.default
+              // }
+              // helperTextInvalid={errors.description?.message}
             >
               <KeycloakTextArea
                 id="kc-description"

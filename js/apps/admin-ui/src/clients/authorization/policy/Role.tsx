@@ -1,7 +1,7 @@
 import { Button, Checkbox, FormGroup } from "@patternfly/react-core";
 import { MinusCircleIcon } from "@patternfly/react-icons";
 import {
-  TableComposable,
+  Table /* data-codemods */,
   Tbody,
   Td,
   Th,
@@ -25,7 +25,7 @@ export const Role = () => {
     control,
     getValues,
     setValue,
-    formState: { errors },
+    // formState: { errors },
   } = useFormContext<{
     roles?: RequiredIdValue[];
   }>();
@@ -67,8 +67,9 @@ export const Role = () => {
         />
       }
       fieldId="roles"
-      helperTextInvalid={t("requiredRoles")}
-      validated={errors.roles ? "error" : "default"}
+      // TODO: Use FormHelperText, HelperText, and HelperTextItem directly inside children. helperText, helperTextInvalid and validated props have been removed.
+      // helperTextInvalid={t("requiredRoles")}
+      // validated={errors.roles ? "error" : "default"}
       isRequired
     >
       <Controller
@@ -112,7 +113,7 @@ export const Role = () => {
         )}
       />
       {selectedRoles.length > 0 && (
-        <TableComposable variant="compact">
+        <Table variant="compact">
           <Thead>
             <Tr>
               <Th>{t("roles")}</Th>
@@ -162,7 +163,7 @@ export const Role = () => {
               </Tr>
             ))}
           </Tbody>
-        </TableComposable>
+        </Table>
       )}
     </FormGroup>
   );

@@ -1,10 +1,10 @@
 import type RequiredActionProviderRepresentation from "@keycloak/keycloak-admin-client/lib/defs/requiredActionProviderRepresentation";
+import { FormGroup } from "@patternfly/react-core";
 import {
-  FormGroup,
   Select,
   SelectOption,
   SelectVariant,
-} from "@patternfly/react-core";
+} from "@patternfly/react-core/deprecated";
 import { useState } from "react";
 import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -62,7 +62,7 @@ export const RequiredActionMultiSelect = ({
             }}
             placeholderText={t("requiredActionPlaceholder")}
             menuAppendTo="parent"
-            onToggle={(open) => setOpen(open)}
+            onToggle={(_event, open) => setOpen(open)}
             isOpen={open}
             selections={field.value}
             onSelect={(_, selectedValue) =>

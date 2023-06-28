@@ -10,6 +10,7 @@ import {
   FormGroup,
   InputGroup,
   Switch,
+  InputGroupItem,
 } from "@patternfly/react-core";
 import { useState } from "react";
 import { Controller, useFormContext } from "react-hook-form";
@@ -51,7 +52,7 @@ const EmailVerified = () => {
     <FormGroup
       label={t("emailVerified")}
       fieldId="kc-email-verified"
-      helperTextInvalid={t("common:required")}
+      // helperTextInvalid={t("common:required")}
       labelIcon={
         <HelpItem
           helpText={t("users-help:emailVerified")}
@@ -67,7 +68,7 @@ const EmailVerified = () => {
           <Switch
             data-testid="email-verified-switch"
             id="kc-user-email-verified"
-            onChange={(value) => field.onChange(value)}
+            onChange={(_event, value) => field.onChange(value)}
             isChecked={field.value}
             label={t("common:yes")}
             labelOff={t("common:no")}
@@ -104,7 +105,7 @@ export const UserForm = ({
     watch,
     control,
     reset,
-    formState: { errors },
+    // formState: { errors },
   } = useFormContext();
   const watchUsernameInput = watch("username");
   const [selectedGroups, setSelectedGroups] = useState<GroupRepresentation[]>(
@@ -189,7 +190,7 @@ export const UserForm = ({
               aria-label={t("userID")}
               value={user.id}
               type="text"
-              isReadOnly
+              readOnly
             />
           </FormGroup>
           <FormGroup label={t("createdAt")} fieldId="kc-created-at" isRequired>
@@ -199,7 +200,7 @@ export const UserForm = ({
               id="kc-created-at"
               aria-label={t("createdAt")}
               name="createdTimestamp"
-              isReadOnly
+              readOnly
             />
           </FormGroup>
         </>
@@ -231,12 +232,13 @@ export const UserForm = ({
               label={t("username")}
               fieldId="kc-username"
               isRequired
-              validated={errors.username ? "error" : "default"}
-              helperTextInvalid={t("common:required")}
+              // TODO: Use FormHelperText, HelperText, and HelperTextItem directly inside children. helperText, helperTextInvalid and validated props have been removed.
+              // validated={errors.username ? "error" : "default"}
+              // helperTextInvalid={t("common:required")}
             >
               <KeycloakTextInput
                 id="kc-username"
-                isReadOnly={
+                readOnly={
                   !!user?.id &&
                   !realm?.editUsernameAllowed &&
                   realm?.editUsernameAllowed !== undefined
@@ -248,8 +250,10 @@ export const UserForm = ({
           <FormGroup
             label={t("email")}
             fieldId="kc-email"
-            validated={errors.email ? "error" : "default"}
-            helperTextInvalid={t("users:emailInvalid")}
+            // TODO: Use FormHelperText, HelperText, and HelperTextItem directly inside children. helperText, helperTextInvalid and validated props have been removed.
+
+            // validated={errors.email ? "error" : "default"}
+            // helperTextInvalid={t("users:emailInvalid")}
           >
             <KeycloakTextInput
               type="email"
@@ -264,8 +268,9 @@ export const UserForm = ({
           <FormGroup
             label={t("firstName")}
             fieldId="kc-firstName"
-            validated={errors.firstName ? "error" : "default"}
-            helperTextInvalid={t("common:required")}
+            // TODO: Use FormHelperText, HelperText, and HelperTextItem directly inside children. helperText, helperTextInvalid and validated props have been removed.
+            // validated={errors.firstName ? "error" : "default"}
+            // helperTextInvalid={t("common:required")}
           >
             <KeycloakTextInput
               data-testid="firstName-input"
@@ -276,7 +281,8 @@ export const UserForm = ({
           <FormGroup
             label={t("lastName")}
             fieldId="kc-lastName"
-            validated={errors.lastName ? "error" : "default"}
+            // TODO: Use FormHelperText, HelperText, and HelperTextItem directly inside children. helperText, helperTextInvalid and validated props have been removed.
+            // validated={errors.lastName ? "error" : "default"}
           >
             <KeycloakTextInput
               data-testid="lastName-input"
@@ -301,7 +307,7 @@ export const UserForm = ({
           <Switch
             data-testid="user-locked-switch"
             id="temporaryLocked"
-            onChange={(value) => {
+            onChange={(_event, value) => {
               unLockUser();
               setLocked(value);
             }}
@@ -316,8 +322,9 @@ export const UserForm = ({
         <FormGroup
           label={t("common:groups")}
           fieldId="kc-groups"
-          validated={errors.requiredActions ? "error" : "default"}
-          helperTextInvalid={t("common:required")}
+          // TODO: Use FormHelperText, HelperText, and HelperTextItem directly inside children. helperText, helperTextInvalid and validated props have been removed.
+          // validated={errors.requiredActions ? "error" : "default"}
+          // helperTextInvalid={t("common:required")}
           labelIcon={
             <HelpItem helpText={t("users-help:groups")} fieldLabelId="groups" />
           }
@@ -328,24 +335,28 @@ export const UserForm = ({
             control={control}
             render={() => (
               <InputGroup>
-                <ChipGroup categoryName={" "}>
-                  {selectedGroups.map((currentChip) => (
-                    <Chip
-                      key={currentChip.id}
-                      onClick={() => deleteItem(currentChip.name!)}
-                    >
-                      {currentChip.path}
-                    </Chip>
-                  ))}
-                </ChipGroup>
-                <Button
-                  id="kc-join-groups-button"
-                  onClick={toggleModal}
-                  variant="secondary"
-                  data-testid="join-groups-button"
-                >
-                  {t("users:joinGroups")}
-                </Button>
+                <InputGroupItem>
+                  <ChipGroup categoryName={" "}>
+                    {selectedGroups.map((currentChip) => (
+                      <Chip
+                        key={currentChip.id}
+                        onClick={() => deleteItem(currentChip.name!)}
+                      >
+                        {currentChip.path}
+                      </Chip>
+                    ))}
+                  </ChipGroup>
+                </InputGroupItem>
+                <InputGroupItem>
+                  <Button
+                    id="kc-join-groups-button"
+                    onClick={toggleModal}
+                    variant="secondary"
+                    data-testid="join-groups-button"
+                  >
+                    {t("users:joinGroups")}
+                  </Button>
+                </InputGroupItem>
               </InputGroup>
             )}
           />

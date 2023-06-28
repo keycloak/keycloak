@@ -1,10 +1,9 @@
+import { FormGroup, NumberInput } from "@patternfly/react-core";
 import {
-  FormGroup,
-  NumberInput,
   Select,
   SelectOption,
   SelectVariant,
-} from "@patternfly/react-core";
+} from "@patternfly/react-core/deprecated";
 import { isEqual } from "lodash-es";
 import { Controller, UseFormReturn, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";

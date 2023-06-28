@@ -5,10 +5,6 @@ import {
   Button,
   ButtonVariant,
   CardTitle,
-  Dropdown,
-  DropdownGroup,
-  DropdownItem,
-  DropdownToggle,
   Gallery,
   PageSection,
   Spinner,
@@ -19,6 +15,12 @@ import {
   TextVariants,
   ToolbarItem,
 } from "@patternfly/react-core";
+import {
+  Dropdown,
+  DropdownGroup,
+  DropdownItem,
+  DropdownToggle,
+} from "@patternfly/react-core/deprecated";
 import { groupBy, sortBy } from "lodash-es";
 import { Fragment, useState } from "react";
 import { useTranslation } from "react-i18next";

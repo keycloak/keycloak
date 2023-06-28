@@ -50,7 +50,7 @@ export const RealmSettingsEmailTab = ({
     watch,
     reset: resetForm,
     getValues,
-    formState: { errors },
+    // formState: { errors },
   } = useForm<RealmRepresentation>({ defaultValues: realm });
 
   const reset = () => resetForm(realm);
@@ -124,8 +124,9 @@ export const RealmSettingsEmailTab = ({
             label={t("from")}
             fieldId="kc-display-name"
             isRequired
-            validated={errors.smtpServer?.from ? "error" : "default"}
-            helperTextInvalid={t("users:emailInvalid")}
+            // TODO: Use FormHelperText, HelperText, and HelperTextItem directly inside children. helperText, helperTextInvalid and validated props have been removed.
+            // validated={errors.smtpServer?.from ? "error" : "default"}
+            // helperTextInvalid={t("users:emailInvalid")}
           >
             <KeycloakTextInput
               type="email"
@@ -159,8 +160,9 @@ export const RealmSettingsEmailTab = ({
           <FormGroup
             label={t("replyTo")}
             fieldId="kc-reply-to"
-            validated={errors.smtpServer?.replyTo ? "error" : "default"}
-            helperTextInvalid={t("users:emailInvalid")}
+            // TODO: Use FormHelperText, HelperText, and HelperTextItem directly inside children. helperText, helperTextInvalid and validated props have been removed.
+            // validated={errors.smtpServer?.replyTo ? "error" : "default"}
+            // helperTextInvalid={t("users:emailInvalid")}
           >
             <KeycloakTextInput
               type="email"
@@ -220,8 +222,9 @@ export const RealmSettingsEmailTab = ({
             label={t("host")}
             fieldId="kc-host"
             isRequired
-            validated={errors.smtpServer?.host ? "error" : "default"}
-            helperTextInvalid={t("common:required")}
+            // TODO: Use FormHelperText, HelperText, and HelperTextItem directly inside children. helperText, helperTextInvalid and validated props have been removed.
+            // validated={errors.smtpServer?.host ? "error" : "default"}
+            // helperTextInvalid={t("common:required")}
           >
             <KeycloakTextInput
               id="kc-host"
@@ -248,7 +251,7 @@ export const RealmSettingsEmailTab = ({
                   data-testid="enable-ssl"
                   label={t("enableSSL")}
                   isChecked={field.value === "true"}
-                  onChange={(value) => field.onChange("" + value)}
+                  onChange={(_event, value) => field.onChange("" + value)}
                 />
               )}
             />
@@ -262,7 +265,7 @@ export const RealmSettingsEmailTab = ({
                   data-testid="enable-start-tls"
                   label={t("enableStartTLS")}
                   isChecked={field.value === "true"}
-                  onChange={(value) => field.onChange("" + value)}
+                  onChange={(_event, value) => field.onChange("" + value)}
                 />
               )}
             />
@@ -283,7 +286,7 @@ export const RealmSettingsEmailTab = ({
                   label={t("common:enabled")}
                   labelOff={t("common:disabled")}
                   isChecked={field.value === "true"}
-                  onChange={(value) => {
+                  onChange={(_event, value) => {
                     field.onChange("" + value);
                   }}
                   aria-label={t("authentication")}
@@ -297,8 +300,9 @@ export const RealmSettingsEmailTab = ({
                 label={t("username")}
                 fieldId="kc-username"
                 isRequired
-                validated={errors.smtpServer?.user ? "error" : "default"}
-                helperTextInvalid={t("common:required")}
+                // TODO: Use FormHelperText, HelperText, and HelperTextItem directly inside children. helperText, helperTextInvalid and validated props have been removed.
+                // validated={errors.smtpServer?.user ? "error" : "default"}
+                // helperTextInvalid={t("common:required")}
               >
                 <KeycloakTextInput
                   id="kc-username"
@@ -312,8 +316,9 @@ export const RealmSettingsEmailTab = ({
                 label={t("password")}
                 fieldId="kc-username"
                 isRequired
-                validated={errors.smtpServer?.password ? "error" : "default"}
-                helperTextInvalid={t("common:required")}
+                // TODO: Use FormHelperText, HelperText, and HelperTextItem directly inside children. helperText, helperTextInvalid and validated props have been removed.
+                // validated={errors.smtpServer?.password ? "error" : "default"}
+                // helperTextInvalid={t("common:required")}
                 labelIcon={
                   <HelpItem
                     helpText={t("realm-settings-help:password")}

@@ -5,6 +5,7 @@ import {
   NavItem,
   NavList,
   PageSidebar,
+  PageSidebarBody,
 } from "@patternfly/react-core";
 import { FormEvent } from "react";
 import { useTranslation } from "react-i18next";
@@ -17,6 +18,7 @@ import { AddRealmRoute } from "./realm/routes/AddRealm";
 import { routes } from "./routes";
 
 import "./page-nav.css";
+// import { Select } from "@patternfly/react-core/deprecated";
 
 type LeftNavProps = { title: string; path: string };
 
@@ -88,10 +90,9 @@ export const PageNav = () => {
   const isOnAddRealm = !!useMatch(AddRealmRoute.path);
 
   return (
-    <PageSidebar
-      className="keycloak__page_nav__nav"
-      nav={
-        <Nav onSelect={onSelect}>
+    <PageSidebar className="keycloak__page_nav__nav">
+      <PageSidebarBody>
+        <Nav onSelect={(_event, item) => onSelect(item as SelectedItem)}>
           <NavList>
             <NavItem className="keycloak__page_nav__nav_item__realm-selector">
               <RealmSelector />
@@ -119,7 +120,7 @@ export const PageNav = () => {
             </NavGroup>
           )}
         </Nav>
-      }
-    />
+      </PageSidebarBody>
+    </PageSidebar>
   );
 };

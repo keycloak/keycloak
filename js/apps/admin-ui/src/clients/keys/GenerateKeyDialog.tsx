@@ -13,12 +13,14 @@ import {
   FormGroup,
   Modal,
   ModalVariant,
-  Select,
-  SelectOption,
-  SelectVariant,
   Text,
   TextContent,
 } from "@patternfly/react-core";
+import {
+  Select,
+  SelectOption,
+  SelectVariant,
+} from "@patternfly/react-core/deprecated";
 
 import type KeyStoreConfig from "@keycloak/keycloak-admin-client/lib/defs/keystoreConfig";
 import { HelpItem } from "ui-shared";
@@ -90,7 +92,7 @@ export const KeyForm = ({
           render={({ field }) => (
             <Select
               toggleId="archiveFormat"
-              onToggle={setOpenArchiveFormat}
+              onToggle={(_event, val) => setOpenArchiveFormat(val)}
               onSelect={(_, value) => {
                 field.onChange(value.toString());
                 setOpenArchiveFormat(false);
@@ -162,7 +164,7 @@ export const GenerateKeyDialog = ({
 
   const {
     handleSubmit,
-    formState: { isValid },
+    // formState: { isValid },
   } = form;
 
   return (

@@ -14,12 +14,14 @@ import {
   Panel,
   PanelHeader,
   PanelMainBody,
-  Select,
-  SelectOption,
-  SelectVariant,
   Switch,
   Title,
 } from "@patternfly/react-core";
+import {
+  Select,
+  SelectOption,
+  SelectVariant,
+} from "@patternfly/react-core/deprecated";
 import { useState } from "react";
 import { Controller, FormProvider, useForm, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -99,7 +101,7 @@ const AuthorizationEvaluateContent = ({ client }: Props) => {
     register,
     reset,
     trigger,
-    formState: { isValid, errors },
+    // formState: { isValid, errors },
   } = form;
   const { t } = useTranslation("clients");
   const { addError } = useAlerts();
@@ -230,8 +232,9 @@ const AuthorizationEvaluateContent = ({ client }: Props) => {
                   />
                 }
                 fieldId="realmRole"
-                validated={errors.roleIds ? "error" : "default"}
-                helperTextInvalid={t("common:required")}
+                // TODO: Use FormHelperText, HelperText, and HelperTextItem directly inside children. helperText, helperTextInvalid and validated props have been removed.
+                // validated={errors.roleIds ? "error" : "default"}
+                // helperTextInvalid={t("common:required")}
                 isRequired={user.length === 0}
               >
                 <Controller
@@ -247,7 +250,7 @@ const AuthorizationEvaluateContent = ({ client }: Props) => {
                       placeholderText={t("selectARole")}
                       variant={SelectVariant.typeaheadMulti}
                       toggleId="role"
-                      onToggle={setRoleDropdownOpen}
+                      onToggle={(_event, val) => setRoleDropdownOpen(val)}
                       selections={field.value}
                       onSelect={(_, v) => {
                         const option = v.toString();
@@ -304,7 +307,7 @@ const AuthorizationEvaluateContent = ({ client }: Props) => {
                   label={t("common:on")}
                   labelOff={t("common:off")}
                   isChecked={applyToResourceType}
-                  onChange={setApplyToResourceType}
+                  onChange={(_event, val) => setApplyToResourceType(val)}
                   aria-label={t("applyToResourceType")}
                 />
               </FormGroup>
@@ -342,8 +345,9 @@ const AuthorizationEvaluateContent = ({ client }: Props) => {
                       />
                     }
                     fieldId="client"
-                    validated={errors.alias ? "error" : "default"}
-                    helperTextInvalid={t("common:required")}
+                    // TODO: Use FormHelperText, HelperText, and HelperTextItem directly inside children. helperText, helperTextInvalid and validated props have been removed.
+                    // validated={errors.alias ? "error" : "default"}
+                    // helperTextInvalid={t("common:required")}
                   >
                     <KeycloakTextInput
                       id="alias"
@@ -369,7 +373,7 @@ const AuthorizationEvaluateContent = ({ client }: Props) => {
                       render={({ field }) => (
                         <Select
                           toggleId="authScopes"
-                          onToggle={setScopesDropdownOpen}
+                          onToggle={(_event, val) => setScopesDropdownOpen(val)}
                           onSelect={(_, v) => {
                             const option = v.toString();
                             if (field.value.includes(option)) {
@@ -415,7 +419,8 @@ const AuthorizationEvaluateContent = ({ client }: Props) => {
                       fieldLabelId={`contextualAttributes`}
                     />
                   }
-                  helperTextInvalid={t("common:required")}
+                  // TODO: Use FormHelperText, HelperText, and HelperTextItem directly inside children. helperText, helperTextInvalid and validated props have been removed.
+                  // helperTextInvalid={t("common:required")}
                   fieldId="contextualAttributes"
                 >
                   <KeyBasedAttributeInput

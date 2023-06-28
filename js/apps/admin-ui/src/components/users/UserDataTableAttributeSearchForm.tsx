@@ -6,13 +6,16 @@ import {
   Button,
   ButtonVariant,
   InputGroup,
-  Select,
-  SelectOption,
-  SelectVariant,
   Text,
   TextContent,
   TextVariants,
+  InputGroupItem,
 } from "@patternfly/react-core";
+import {
+  Select,
+  SelectOption,
+  SelectVariant,
+} from "@patternfly/react-core/deprecated";
 import { Form } from "react-router-dom";
 import { KeycloakTextInput } from "../keycloak-text-input/KeycloakTextInput";
 import { useTranslation } from "react-i18next";
@@ -52,7 +55,7 @@ export function UserDataTableAttributeSearchForm({
     getValues,
     register,
     reset,
-    formState: { errors },
+    // formState: { errors },
     setValue,
     setError,
     clearErrors,
@@ -131,7 +134,7 @@ export function UserDataTableAttributeSearchForm({
         <Select
           data-testid="search-attribute-name"
           variant={SelectVariant.typeahead}
-          onToggle={(isOpen) => setSelectAttributeKeyOpen(isOpen)}
+          onToggle={(_event, isOpen) => setSelectAttributeKeyOpen(isOpen)}
           selections={getValues().displayName}
           onSelect={(_, selectedValue) => {
             setValue("displayName", selectedValue.toString());
@@ -207,26 +210,30 @@ export function UserDataTableAttributeSearchForm({
       </div>
       <div className="user-attribute-search-form-right">
         <InputGroup>
-          <KeycloakTextInput
-            id="value"
-            placeholder={t("common:valuePlaceholder")}
-            validated={errors.value && "error"}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                e.preventDefault();
-                addToFilter();
-              }
-            }}
-            {...register("value", {
-              required: true,
-              validate: isAttributeValueValid,
-            })}
-          />
-          <Button
-            variant="control"
-            icon={<CheckIcon />}
-            onClick={addToFilter}
-          />
+          <InputGroupItem>
+            <KeycloakTextInput
+              id="value"
+              placeholder={t("common:valuePlaceholder")}
+              validated={errors.value && "error"}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  addToFilter();
+                }
+              }}
+              {...register("value", {
+                required: true,
+                validate: isAttributeValueValid,
+              })}
+            />
+          </InputGroupItem>
+          <InputGroupItem>
+            <Button
+              variant="control"
+              icon={<CheckIcon />}
+              onClick={addToFilter}
+            />
+          </InputGroupItem>
         </InputGroup>
       </div>
       {createAttributeSearchChips()}

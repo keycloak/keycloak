@@ -36,7 +36,7 @@ export default function AddOpenIdConnect() {
   });
   const {
     handleSubmit,
-    formState: { isDirty },
+    // formState: { isDirty },
   } = form;
 
   const { addAlert, addError } = useAlerts();

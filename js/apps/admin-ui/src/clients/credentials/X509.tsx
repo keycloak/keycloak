@@ -11,7 +11,7 @@ export const X509 = () => {
   const {
     register,
     control,
-    formState: { errors },
+    // formState: { errors },
   } = useFormContext<FormFields>();
   return (
     <>
@@ -38,7 +38,7 @@ export const X509 = () => {
               label={t("common:on")}
               labelOff={t("common:off")}
               isChecked={field.value === "true"}
-              onChange={(value) => field.onChange(value.toString())}
+              onChange={(_event, value) => field.onChange(value.toString())}
               aria-label={t("allowRegexComparison")}
             />
           )}
@@ -53,12 +53,13 @@ export const X509 = () => {
             fieldLabelId="clients:subject"
           />
         }
-        helperTextInvalid={t("common:required")}
-        validated={
-          errors.attributes?.[beerify("x509.subjectdn")]
-            ? ValidatedOptions.error
-            : ValidatedOptions.default
-        }
+        // TODO: Use FormHelperText, HelperText, and HelperTextItem directly inside children. helperText, helperTextInvalid and validated props have been removed.
+        // helperTextInvalid={t("common:required")}
+        // validated={
+        //   errors.attributes?.[beerify("x509.subjectdn")]
+        //     ? ValidatedOptions.error
+        //     : ValidatedOptions.default
+        // }
         isRequired
       >
         <KeycloakTextInput

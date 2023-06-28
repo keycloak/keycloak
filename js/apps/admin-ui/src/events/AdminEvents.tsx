@@ -6,25 +6,26 @@ import {
   Chip,
   ChipGroup,
   DatePicker,
-  Dropdown,
-  DropdownToggle,
   Flex,
   FlexItem,
   Form,
   FormGroup,
   Modal,
   ModalVariant,
+} from "@patternfly/react-core";
+import {
+  Dropdown,
+  DropdownToggle,
   Select,
   SelectOption,
   SelectVariant,
-} from "@patternfly/react-core";
+} from "@patternfly/react-core/deprecated";
+import { TableVariant, cellWidth } from "@patternfly/react-table";
 import {
   Table,
   TableBody,
   TableHeader,
-  TableVariant,
-  cellWidth,
-} from "@patternfly/react-table";
+} from "@patternfly/react-table/deprecated";
 import { pickBy } from "lodash-es";
 import { PropsWithChildren, useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
@@ -129,7 +130,7 @@ export const AdminEvents = () => {
     getValues,
     register,
     reset,
-    formState: { isDirty },
+    // formState: { isDirty },
     control,
   } = useForm<AdminEventSearchForm>({
     mode: "onChange",
@@ -206,7 +207,7 @@ export const AdminEvents = () => {
             toggle={
               <DropdownToggle
                 data-testid="adminEventsSearchSelectorToggle"
-                onToggle={(isOpen) => setSearchDropdownOpen(isOpen)}
+                onToggle={(_event, isOpen) => setSearchDropdownOpen(isOpen)}
                 className="keycloak__events_search_selector_dropdown__toggle"
               >
                 {t("searchForAdminEvent")}
@@ -239,7 +240,9 @@ export const AdminEvents = () => {
                       }}
                       variant={SelectVariant.typeaheadMulti}
                       typeAheadAriaLabel="Select"
-                      onToggle={(isOpen) => setSelectResourceTypesOpen(isOpen)}
+                      onToggle={(_event, isOpen) =>
+                        setSelectResourceTypesOpen(isOpen)
+                      }
                       selections={field.value}
                       onSelect={(_, selectedValue) => {
                         const option = selectedValue.toString();
@@ -300,7 +303,9 @@ export const AdminEvents = () => {
                       }}
                       variant={SelectVariant.typeaheadMulti}
                       typeAheadAriaLabel="Select"
-                      onToggle={(isOpen) => setSelectOperationTypesOpen(isOpen)}
+                      onToggle={(_event, isOpen) =>
+                        setSelectOperationTypesOpen(isOpen)
+                      }
                       selections={field.value}
                       onSelect={(_, selectedValue) => {
                         const option = selectedValue.toString();

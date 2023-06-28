@@ -6,7 +6,7 @@ import {
   FormGroup,
   PageSection,
   TextInput,
-  ValidatedOptions,
+  // ValidatedOptions,
 } from "@patternfly/react-core";
 import { Controller, FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -51,7 +51,7 @@ export const KeyProviderForm = ({
     register,
     control,
     handleSubmit,
-    formState: { errors },
+    // formState: { errors },
     reset,
   } = form;
 
@@ -114,7 +114,7 @@ export const KeyProviderForm = ({
           <KeycloakTextInput
             id="providerId"
             data-testid="providerId-input"
-            isReadOnly
+            readOnly
             {...register("id")}
           />
         </FormGroup>
@@ -129,10 +129,11 @@ export const KeyProviderForm = ({
         }
         fieldId="name"
         isRequired
-        validated={
-          errors.name ? ValidatedOptions.error : ValidatedOptions.default
-        }
-        helperTextInvalid={t("common:required")}
+        // TODO: Use FormHelperText, HelperText, and HelperTextItem directly inside children. helperText, helperTextInvalid and validated props have been removed.
+        // validated={
+        //   errors.name ? ValidatedOptions.error : ValidatedOptions.default
+        // }
+        // helperTextInvalid={t("common:required")}
       >
         <Controller
           name="name"

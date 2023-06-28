@@ -5,13 +5,13 @@ import {
   DrawerContentBody,
   DrawerHead,
   DrawerPanelContent,
-  DropdownItem,
   PageSection,
   PageSectionVariants,
   Tab,
   TabTitleText,
   Tabs,
 } from "@patternfly/react-core";
+import { DropdownItem } from "@patternfly/react-core/deprecated";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useLocation, useNavigate } from "react-router-dom";

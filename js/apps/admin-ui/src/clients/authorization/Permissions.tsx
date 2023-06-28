@@ -5,16 +5,18 @@ import {
   AlertVariant,
   ButtonVariant,
   DescriptionList,
-  Dropdown,
-  DropdownItem,
-  DropdownSeparator,
-  DropdownToggle,
   PageSection,
   ToolbarItem,
 } from "@patternfly/react-core";
 import {
+  Dropdown,
+  DropdownItem,
+  DropdownSeparator,
+  DropdownToggle,
+} from "@patternfly/react-core/deprecated";
+import {
   ExpandableRowContent,
-  TableComposable,
+  Table /* data-codemods */,
   Tbody,
   Td,
   Th,
@@ -263,7 +265,7 @@ export const AuthorizationPermissions = ({ clientId }: PermissionsProps) => {
           }
         >
           {!noData && (
-            <TableComposable aria-label={t("resources")} variant="compact">
+            <Table aria-label={t("resources")} variant="compact">
               <Thead>
                 <Tr>
                   <Th />
@@ -359,7 +361,7 @@ export const AuthorizationPermissions = ({ clientId }: PermissionsProps) => {
                   </Tr>
                 </Tbody>
               ))}
-            </TableComposable>
+            </Table>
           )}
         </PaginatingTableToolbar>
       )}

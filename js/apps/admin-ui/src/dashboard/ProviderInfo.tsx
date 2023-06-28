@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ExpandableSection, PageSection } from "@patternfly/react-core";
 import {
-  TableComposable,
+  Table /* data-codemods */,
   Tbody,
   Td,
   Th,
@@ -42,7 +42,7 @@ export const ProviderInfo = () => {
         inputGroupPlaceholder={t("common:search")}
         inputGroupOnEnter={setFilter}
       >
-        <TableComposable variant="compact">
+        <Table variant="compact">
           <Thead>
             <Tr>
               <Th width={20}>{t("spi")}</Th>
@@ -70,7 +70,7 @@ export const ProviderInfo = () => {
                                   : t("showMore")
                               }
                             >
-                              <TableComposable borders={false}>
+                              <Table borders={false}>
                                 <Tbody>
                                   {Object.entries(operationalInfo).map(
                                     ([key, value]) => (
@@ -81,7 +81,7 @@ export const ProviderInfo = () => {
                                     )
                                   )}
                                 </Tbody>
-                              </TableComposable>
+                              </Table>
                             </ExpandableSection>
                           ) : null}
                         </li>
@@ -92,7 +92,7 @@ export const ProviderInfo = () => {
               </Tr>
             ))}
           </Tbody>
-        </TableComposable>
+        </Table>
       </TableToolbar>
     </PageSection>
   );

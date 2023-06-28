@@ -42,7 +42,7 @@ export const BooleanComponent = ({
               field.value === true ||
               field.value?.[0] === "true"
             }
-            onChange={(value) => field.onChange("" + value)}
+            onChange={(_event, value) => field.onChange("" + value)}
             data-testid={name}
             aria-label={t(label!)}
           />

@@ -16,7 +16,7 @@ export const OIDCGeneralSettings = ({ id }: { id: string }) => {
 
   const {
     register,
-    formState: { errors },
+    // formState: { errors },
   } = useFormContext();
 
   return (
@@ -33,13 +33,14 @@ export const OIDCGeneralSettings = ({ id }: { id: string }) => {
         }
         fieldId="alias"
         isRequired
-        validated={
-          errors.alias ? ValidatedOptions.error : ValidatedOptions.default
-        }
-        helperTextInvalid={t("common:required")}
+        // TODO: Use FormHelperText, HelperText, and HelperTextItem directly inside children. helperText, helperTextInvalid and validated props have been removed.
+        // validated={
+        //   errors.alias ? ValidatedOptions.error : ValidatedOptions.default
+        // }
+        // helperTextInvalid={t("common:required")}
       >
         <KeycloakTextInput
-          isReadOnly={tab === "settings"}
+          readOnly={tab === "settings"}
           isRequired
           id="alias"
           data-testid="alias"

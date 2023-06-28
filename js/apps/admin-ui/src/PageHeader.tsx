@@ -1,6 +1,5 @@
+import { Avatar, Brand } from "@patternfly/react-core";
 import {
-  Avatar,
-  Brand,
   Dropdown,
   DropdownItem,
   DropdownSeparator,
@@ -10,7 +9,7 @@ import {
   PageHeaderTools,
   PageHeaderToolsGroup,
   PageHeaderToolsItem,
-} from "@patternfly/react-core";
+} from "@patternfly/react-core/deprecated";
 import { HelpIcon } from "@patternfly/react-icons";
 import { ReactNode, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -102,7 +101,7 @@ const KebabDropdown = () => {
       id="user-dropdown-kebab"
       isPlain
       position="right"
-      toggle={<KebabToggle onToggle={setDropdownOpen} />}
+      toggle={<KebabToggle onToggle={(_event, val) => setDropdownOpen(val)} />}
       isOpen={isDropdownOpen}
       dropdownItems={kebabDropdownItems}
     />
@@ -120,7 +119,7 @@ const UserDropdown = () => {
       id="user-dropdown"
       isOpen={isDropdownOpen}
       toggle={
-        <DropdownToggle onToggle={setDropdownOpen}>
+        <DropdownToggle onToggle={(_event, val) => setDropdownOpen(val)}>
           {whoAmI.getDisplayName()}
         </DropdownToggle>
       }

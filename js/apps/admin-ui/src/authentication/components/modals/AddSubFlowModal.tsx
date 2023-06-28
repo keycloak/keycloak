@@ -6,11 +6,13 @@ import {
   FormGroup,
   Modal,
   ModalVariant,
+  // ValidatedOptions,
+} from "@patternfly/react-core";
+import {
   Select,
   SelectOption,
   SelectVariant,
-  ValidatedOptions,
-} from "@patternfly/react-core";
+} from "@patternfly/react-core/deprecated";
 import { useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -46,7 +48,7 @@ export const AddSubFlowModal = ({
     control,
     setValue,
     handleSubmit,
-    formState: { errors },
+    // formState: { errors },
   } = useForm<Flow>();
   const [open, setOpen] = useState(false);
   const [openProvider, setOpenProvider] = useState(false);
@@ -94,10 +96,11 @@ export const AddSubFlowModal = ({
         <FormGroup
           label={t("common:name")}
           fieldId="name"
-          helperTextInvalid={t("common:required")}
-          validated={
-            errors.name ? ValidatedOptions.error : ValidatedOptions.default
-          }
+          // TODO: Use FormHelperText, HelperText, and HelperTextItem directly inside children. helperText, helperTextInvalid and validated props have been removed.
+          // helperTextInvalid={t("common:required")}
+          // validated={
+          //   errors.name ? ValidatedOptions.error : ValidatedOptions.default
+          // }
           labelIcon={
             <HelpItem
               helpText={t("authentication-help:name")}
@@ -109,9 +112,9 @@ export const AddSubFlowModal = ({
           <KeycloakTextInput
             id="name"
             data-testid="name"
-            validated={
-              errors.name ? ValidatedOptions.error : ValidatedOptions.default
-            }
+            // validated={
+            //   errors.name ? ValidatedOptions.error : ValidatedOptions.default
+            // }
             {...register("name", { required: true })}
           />
         </FormGroup>
@@ -149,7 +152,7 @@ export const AddSubFlowModal = ({
               <Select
                 menuAppendTo="parent"
                 toggleId="flowType"
-                onToggle={setOpen}
+                onToggle={(_event, val) => setOpen(val)}
                 onSelect={(_, value) => {
                   field.onChange(value.toString());
                   setOpen(false);
@@ -190,7 +193,7 @@ export const AddSubFlowModal = ({
                 <Select
                   menuAppendTo="parent"
                   toggleId="provider"
-                  onToggle={setOpenProvider}
+                  onToggle={(_event, val) => setOpenProvider(val)}
                   onSelect={(_, value) => {
                     field.onChange(value.toString());
                     setOpenProvider(false);

@@ -3,11 +3,13 @@ import {
   ExpandableSection,
   FormGroup,
   NumberInput,
+  ValidatedOptions,
+} from "@patternfly/react-core";
+import {
   Select,
   SelectOption,
   SelectVariant,
-  ValidatedOptions,
-} from "@patternfly/react-core";
+} from "@patternfly/react-core/deprecated";
 import { useState } from "react";
 import { Controller, useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -31,7 +33,7 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
   const {
     register,
     control,
-    formState: { errors },
+    // formState: { errors },
   } = useFormContext<IdentityProviderRepresentation>();
   const [namedPolicyDropdownOpen, setNamedPolicyDropdownOpen] = useState(false);
   const [principalTypeDropdownOpen, setPrincipalTypeDropdownOpen] =
@@ -104,12 +106,13 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
         }
         fieldId="kc-sso-service-url"
         isRequired
-        validated={
-          errors.config?.singleSignOnServiceUrl
-            ? ValidatedOptions.error
-            : ValidatedOptions.default
-        }
-        helperTextInvalid={t("common:required")}
+        // TODO: Use FormHelperText, HelperText, and HelperTextItem directly inside children. helperText, helperTextInvalid and validated props have been removed.
+        // validated={
+        //   errors.config?.singleSignOnServiceUrl
+        //     ? ValidatedOptions.error
+        //     : ValidatedOptions.default
+        // }
+        // helperTextInvalid={t("common:required")}
       >
         <KeycloakTextInput
           type="url"
@@ -120,7 +123,7 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
               ? ValidatedOptions.error
               : ValidatedOptions.default
           }
-          isReadOnly={readOnly}
+          readOnly={readOnly}
           {...register("config.singleSignOnServiceUrl", { required: true })}
         />
       </FormGroup>
@@ -134,17 +137,18 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
         }
         fieldId="single-logout-service-url"
         data-testid="single-logout-service-url"
-        validated={
-          errors.config?.singleLogoutServiceUrl
-            ? ValidatedOptions.error
-            : ValidatedOptions.default
-        }
-        helperTextInvalid={t("common:required")}
+        // TODO: Use FormHelperText, HelperText, and HelperTextItem directly inside children. helperText, helperTextInvalid and validated props have been removed.
+        // validated={
+        //   errors.config?.singleLogoutServiceUrl
+        //     ? ValidatedOptions.error
+        //     : ValidatedOptions.default
+        // }
+        // helperTextInvalid={t("common:required")}
       >
         <KeycloakTextInput
           type="url"
           id="single-logout-service-url"
-          isReadOnly={readOnly}
+          readOnly={readOnly}
           {...register("config.singleLogoutServiceUrl")}
         />
       </FormGroup>
@@ -152,7 +156,7 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
         field="config.backchannelSupported"
         label="backchannelLogout"
         data-testid="backchannelLogout"
-        isReadOnly={readOnly}
+        readOnly={readOnly}
       />
       <FormGroup
         label={t("nameIdPolicyFormat")}
@@ -163,7 +167,7 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
           />
         }
         fieldId="kc-nameIdPolicyFormat"
-        helperTextInvalid={t("common:required")}
+        // helperTextInvalid={t("common:required")}
       >
         <Controller
           name="config.nameIDPolicyFormat"
@@ -172,7 +176,9 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
           render={({ field }) => (
             <Select
               toggleId="kc-nameIdPolicyFormat"
-              onToggle={(isExpanded) => setNamedPolicyDropdownOpen(isExpanded)}
+              onToggle={(_event, isExpanded) =>
+                setNamedPolicyDropdownOpen(isExpanded)
+              }
               isOpen={namedPolicyDropdownOpen}
               onSelect={(_, value) => {
                 field.onChange(value as string);
@@ -242,7 +248,7 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
           />
         }
         fieldId="kc-principalType"
-        helperTextInvalid={t("common:required")}
+        // helperTextInvalid={t("common:required")}
       >
         <Controller
           name="config.principalType"
@@ -251,7 +257,7 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
           render={({ field }) => (
             <Select
               toggleId="kc-principalType"
-              onToggle={(isExpanded) =>
+              onToggle={(_event, isExpanded) =>
                 setPrincipalTypeDropdownOpen(isExpanded)
               }
               isOpen={principalTypeDropdownOpen}
@@ -301,7 +307,7 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
           <KeycloakTextInput
             id="principalAttribute"
             data-testid="principalAttribute"
-            isReadOnly={readOnly}
+            readOnly={readOnly}
             {...register("config.principalAttribute")}
           />
         </FormGroup>
@@ -309,31 +315,31 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
       <SwitchField
         field="config.allowCreate"
         label="allowCreate"
-        isReadOnly={readOnly}
+        readOnly={readOnly}
       />
 
       <SwitchField
         field="config.postBindingResponse"
         label="httpPostBindingResponse"
-        isReadOnly={readOnly}
+        readOnly={readOnly}
       />
 
       <SwitchField
         field="config.postBindingAuthnRequest"
         label="httpPostBindingAuthnRequest"
-        isReadOnly={readOnly}
+        readOnly={readOnly}
       />
 
       <SwitchField
         field="config.postBindingLogout"
         label="httpPostBindingLogout"
-        isReadOnly={readOnly}
+        readOnly={readOnly}
       />
 
       <SwitchField
         field="config.wantAuthnRequestsSigned"
         label="wantAuthnRequestsSigned"
-        isReadOnly={readOnly}
+        readOnly={readOnly}
       />
 
       {wantAuthnSigned === "true" && (
@@ -355,7 +361,7 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
               render={({ field }) => (
                 <Select
                   toggleId="kc-signatureAlgorithm"
-                  onToggle={(isExpanded) =>
+                  onToggle={(_event, isExpanded) =>
                     setSignatureAlgorithmDropdownOpen(isExpanded)
                   }
                   isOpen={signatureAlgorithmDropdownOpen}
@@ -394,7 +400,7 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
               render={({ field }) => (
                 <Select
                   toggleId="kc-encryptionAlgorithm"
-                  onToggle={(isExpanded) =>
+                  onToggle={(_event, isExpanded) =>
                     setEncryptionAlgorithmDropdownOpen(isExpanded)
                   }
                   isOpen={encryptionAlgorithmDropdownOpen}
@@ -429,7 +435,7 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
               render={({ field }) => (
                 <Select
                   toggleId="kc-samlSignatureKeyName"
-                  onToggle={(isExpanded) =>
+                  onToggle={(_event, isExpanded) =>
                     setSamlSignatureKeyNameDropdownOpen(isExpanded)
                   }
                   isOpen={samlSignatureKeyNameDropdownOpen}
@@ -454,31 +460,31 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
       <SwitchField
         field="config.wantAssertionsSigned"
         label="wantAssertionsSigned"
-        isReadOnly={readOnly}
+        readOnly={readOnly}
       />
 
       <SwitchField
         field="config.wantAssertionsEncrypted"
         label="wantAssertionsEncrypted"
-        isReadOnly={readOnly}
+        readOnly={readOnly}
       />
       <SwitchField
         field="config.forceAuthn"
         label="forceAuthentication"
-        isReadOnly={readOnly}
+        readOnly={readOnly}
       />
 
       <SwitchField
         field="config.validateSignature"
         label="validateSignature"
-        isReadOnly={readOnly}
+        readOnly={readOnly}
       />
       {validateSignature === "true" && (
         <FormGroupField label="validatingX509Certs">
           <KeycloakTextArea
             id="validatingX509Certs"
             data-testid="validatingX509Certs"
-            isReadOnly={readOnly}
+            readOnly={readOnly}
             {...register("config.signingCertificate")}
           ></KeycloakTextArea>
         </FormGroupField>
@@ -487,13 +493,13 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
         field="config.signSpMetadata"
         label="signServiceProviderMetadata"
         data-testid="signServiceProviderMetadata"
-        isReadOnly={readOnly}
+        readOnly={readOnly}
       />
       <SwitchField
         field="config.loginHint"
         label="passSubject"
         data-testid="passSubject"
-        isReadOnly={readOnly}
+        readOnly={readOnly}
       />
 
       <FormGroup
@@ -505,7 +511,7 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
           />
         }
         fieldId="allowedClockSkew"
-        helperTextInvalid={t("common:required")}
+        // helperTextInvalid={t("common:required")}
       >
         <Controller
           name="config.allowedClockSkew"
@@ -544,7 +550,7 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
           />
         }
         fieldId="attributeConsumingServiceIndex"
-        helperTextInvalid={t("common:required")}
+        // helperTextInvalid={t("common:required")}
       >
         <Controller
           name="config.attributeConsumingServiceIndex"
@@ -583,12 +589,12 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
           />
         }
         fieldId="attributeConsumingServiceName"
-        helperTextInvalid={t("common:required")}
+        // helperTextInvalid={t("common:required")}
       >
         <KeycloakTextInput
           id="attributeConsumingServiceName"
           data-testid="attributeConsumingServiceName"
-          isReadOnly={readOnly}
+          readOnly={readOnly}
           {...register("config.attributeConsumingServiceName")}
         />
       </FormGroup>
@@ -604,7 +610,7 @@ export const DescriptorSettings = ({ readOnly }: DescriptorSettingsProps) => {
     <ExpandableSection
       className="keycloak__discovery-settings__metadata"
       toggleText={isExpanded ? t("hideMetaData") : t("showMetaData")}
-      onToggle={(isOpen) => setIsExpanded(isOpen)}
+      onToggle={(_event, isOpen) => setIsExpanded(isOpen)}
       isExpanded={isExpanded}
     >
       <Fields readOnly={readOnly} />

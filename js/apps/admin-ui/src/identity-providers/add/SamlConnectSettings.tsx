@@ -28,7 +28,7 @@ export const SamlConnectSettings = () => {
     register,
     setError,
     clearErrors,
-    formState: { errors },
+    // formState: { errors },
   } = useFormContext<FormFields>();
 
   const setupForm = (result: IdentityProviderRepresentation) => {
@@ -90,8 +90,9 @@ export const SamlConnectSettings = () => {
           />
         }
         isRequired
-        helperTextInvalid={t("common:required")}
-        validated={errors.config?.entityId ? "error" : "default"}
+        // TODO: Use FormHelperText, HelperText, and HelperTextItem directly inside children. helperText, helperTextInvalid and validated props have been removed.
+        // helperTextInvalid={t("common:required")}
+        // validated={errors.config?.entityId ? "error" : "default"}
       >
         <KeycloakTextInput
           data-testid="serviceProviderEntityId"
@@ -114,8 +115,9 @@ export const SamlConnectSettings = () => {
                 fieldLabelId="identity-providers:importConfig"
               />
             }
-            validated={errors.discoveryError ? "error" : "default"}
-            helperTextInvalid={errors.discoveryError?.message}
+            // TODO: Use FormHelperText, HelperText, and HelperTextItem directly inside children. helperText, helperTextInvalid and validated props have been removed.
+            // validated={errors.discoveryError ? "error" : "default"}
+            // helperTextInvalid={errors.discoveryError?.message}
           >
             <FileUploadForm
               id="kc-import-config"

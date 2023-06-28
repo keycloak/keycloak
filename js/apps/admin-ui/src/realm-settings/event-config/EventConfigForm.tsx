@@ -32,7 +32,7 @@ export const EventConfigForm = ({
     control,
     watch,
     setValue,
-    formState: { isDirty },
+    // formState: { isDirty },
   } = form;
   const eventKey = type === "admin" ? "adminEventsEnabled" : "eventsEnabled";
   const eventsEnabled: boolean = watch(eventKey);
@@ -69,7 +69,7 @@ export const EventConfigForm = ({
               label={t("common:on")}
               labelOff={t("common:off")}
               isChecked={field.value}
-              onChange={(value) => {
+              onChange={(_event, value) => {
                 if (!value) {
                   toggleDisableDialog();
                 } else {

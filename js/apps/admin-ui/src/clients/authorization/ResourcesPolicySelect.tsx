@@ -4,7 +4,11 @@ import type {
   Clients,
   PolicyQuery,
 } from "@keycloak/keycloak-admin-client/lib/resources/clients";
-import { Select, SelectOption, SelectVariant } from "@patternfly/react-core";
+import {
+  Select,
+  SelectOption,
+  SelectVariant,
+} from "@patternfly/react-core/deprecated";
 import { useState } from "react";
 import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -61,7 +65,7 @@ export const ResourcesPolicySelect = ({
 
   const {
     control,
-    formState: { errors },
+    // formState: { errors },
   } = useFormContext<PolicyRepresentation>();
   const [items, setItems] = useState<Policies[]>([]);
   const [search, setSearch] = useState("");
@@ -125,7 +129,7 @@ export const ResourcesPolicySelect = ({
         <Select
           toggleId={name}
           variant={variant}
-          onToggle={setOpen}
+          onToggle={(_event, val) => setOpen(val)}
           onFilter={(_, filter) => {
             setSearch(filter);
             return toSelectOptions();

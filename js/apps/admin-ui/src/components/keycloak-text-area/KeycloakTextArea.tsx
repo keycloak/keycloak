@@ -15,10 +15,16 @@ export const KeycloakTextArea = forwardRef<
   HTMLTextAreaElement,
   KeycloakTextAreaProps
 >(({ onChange, ...props }, ref) => {
-  const onChangeForward: TextAreaProps["onChange"] = (_, event) =>
+  const onChangeForward: TextAreaProps["onChange"] = (event) =>
     onChange?.(event);
 
-  return <TextArea {...props} ref={ref} onChange={onChangeForward} />;
+  return (
+    <TextArea
+      {...props}
+      ref={ref}
+      onChange={(event, _) => onChangeForward(event, _)}
+    />
+  );
 });
 
 // We need to fake the displayName to match what PatternFly expects.

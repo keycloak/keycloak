@@ -18,7 +18,7 @@ export const NameDescription = ({
   const { t } = useTranslation("clients");
   const {
     register,
-    formState: { errors },
+    // formState: { errors },
   } = useFormContext();
 
   return (
@@ -26,10 +26,11 @@ export const NameDescription = ({
       <FormGroup
         label={t("common:name")}
         fieldId="kc-name"
-        helperTextInvalid={t("common:required")}
-        validated={
-          errors.name ? ValidatedOptions.error : ValidatedOptions.default
-        }
+        // TODO: Use FormHelperText, HelperText, and HelperTextItem directly inside children. helperText, helperTextInvalid and validated props have been removed.
+        // helperTextInvalid={t("common:required")}
+        // validated={
+        //   errors.name ? ValidatedOptions.error : ValidatedOptions.default
+        // }
         isRequired
         labelIcon={
           <HelpItem
@@ -57,10 +58,11 @@ export const NameDescription = ({
             fieldLabelId="description"
           />
         }
-        validated={
-          errors.description ? ValidatedOptions.error : ValidatedOptions.default
-        }
-        helperTextInvalid={t("common:maxLength", { length: 255 })}
+        // TODO: Use FormHelperText, HelperText, and HelperTextItem directly inside children. helperText, helperTextInvalid and validated props have been removed.
+        // validated={
+        //   errors.description ? ValidatedOptions.error : ValidatedOptions.default
+        // }
+        // helperTextInvalid={t("common:maxLength", { length: 255 })}
       >
         <KeycloakTextArea
           isDisabled={isDisabled}

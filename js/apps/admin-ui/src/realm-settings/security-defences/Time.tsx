@@ -16,7 +16,7 @@ export const Time = ({
   const { t } = useTranslation("realm-settings");
   const {
     control,
-    formState: { errors },
+    // formState: { errors },
   } = useFormContext();
   return (
     <FormGroup
@@ -29,10 +29,11 @@ export const Time = ({
           fieldLabelId={`realm-settings:${name}`}
         />
       }
-      validated={
-        errors[name] ? ValidatedOptions.error : ValidatedOptions.default
-      }
-      helperTextInvalid={t("common:required")}
+      // TODO: Use FormHelperText, HelperText, and HelperTextItem directly inside children. helperText, helperTextInvalid and validated props have been removed.
+      // validated={
+      //   errors[name] ? ValidatedOptions.error : ValidatedOptions.default
+      // }
+      // helperTextInvalid={t("common:required")}
     >
       <Controller
         name={name}

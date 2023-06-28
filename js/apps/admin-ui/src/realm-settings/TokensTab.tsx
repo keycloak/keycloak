@@ -5,13 +5,15 @@ import {
   FormGroup,
   NumberInput,
   PageSection,
-  Select,
-  SelectOption,
-  SelectVariant,
   Switch,
   Text,
   TextVariants,
 } from "@patternfly/react-core";
+import {
+  Select,
+  SelectOption,
+  SelectVariant,
+} from "@patternfly/react-core/deprecated";
 import { useEffect, useState } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -22,10 +24,10 @@ import { KeycloakTextInput } from "../components/keycloak-text-input/KeycloakTex
 import { FormPanel } from "../components/scroll-form/FormPanel";
 import {
   TimeSelector,
-  toHumanFormat,
+  // toHumanFormat,
 } from "../components/time-selector/TimeSelector";
 import { useServerInfo } from "../context/server-info/ServerInfoProvider";
-import { useWhoAmI } from "../context/whoami/WhoAmI";
+// import { useWhoAmI } from "../context/whoami/WhoAmI";
 import { convertToFormValues, sortProviders } from "../util";
 
 import "./realm-settings-section.css";
@@ -43,7 +45,7 @@ export const RealmSettingsTokensTab = ({
 }: RealmSettingsSessionsTabProps) => {
   const { t } = useTranslation("realm-settings");
   const serverInfo = useServerInfo();
-  const { whoAmI } = useWhoAmI();
+  // const { whoAmI } = useWhoAmI();
 
   const [defaultSigAlgDrpdwnIsOpen, setDefaultSigAlgDrpdwnOpen] =
     useState(false);
@@ -288,9 +290,10 @@ export const RealmSettingsTokensTab = ({
           <FormGroup
             label={t("accessTokenLifespan")}
             fieldId="accessTokenLifespan"
-            helperText={t("recommendedSsoTimeout", {
-              time: toHumanFormat(ssoSessionIdleTimeout!, whoAmI.getLocale()),
-            })}
+            // TODO: Use FormHelperText, HelperText, and HelperTextItem directly inside children. helperText, helperTextInvalid and validated props have been removed.
+            // helperText={t("recommendedSsoTimeout", {
+            //   time: toHumanFormat(ssoSessionIdleTimeout!, whoAmI.getLocale()),
+            // })}
             labelIcon={
               <HelpItem
                 helpText={t("realm-settings-help:accessTokenLifespan")}
@@ -460,6 +463,7 @@ export const RealmSettingsTokensTab = ({
                   value={field.value!}
                   onChange={field.onChange}
                   units={["minute", "hour", "day"]}
+                  menuAppendTo={}
                 />
               )}
             />

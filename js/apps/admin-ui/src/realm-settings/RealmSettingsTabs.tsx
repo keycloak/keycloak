@@ -2,13 +2,15 @@ import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/r
 import {
   AlertVariant,
   ButtonVariant,
-  DropdownItem,
-  DropdownSeparator,
   PageSection,
   Tab,
   TabTitleText,
   Tooltip,
 } from "@patternfly/react-core";
+import {
+  DropdownItem,
+  DropdownSeparator,
+} from "@patternfly/react-core/deprecated";
 import { useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";

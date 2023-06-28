@@ -1,11 +1,11 @@
 import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
 import type { ClientQuery } from "@keycloak/keycloak-admin-client/lib/resources/clients";
+import { FormGroup } from "@patternfly/react-core";
 import {
-  FormGroup,
   Select,
   SelectOption,
   SelectVariant,
-} from "@patternfly/react-core";
+} from "@patternfly/react-core/deprecated";
 import { useState } from "react";
 import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -32,7 +32,7 @@ export const ClientSelect = ({
   const { t } = useTranslation(namespace);
   const {
     control,
-    formState: { errors },
+    // formState: { errors },
   } = useFormContext();
 
   const [open, setOpen] = useState(false);
@@ -74,8 +74,9 @@ export const ClientSelect = ({
         />
       }
       fieldId={name!}
-      validated={errors[name!] ? "error" : "default"}
-      helperTextInvalid={t("common:required")}
+      // TODO: Use FormHelperText, HelperText, and HelperTextItem directly inside children. helperText, helperTextInvalid and validated props have been removed.
+      // validated={errors[name!] ? "error" : "default"}
+      // helperTextInvalid={t("common:required")}
     >
       <Controller
         name={name!}
@@ -86,7 +87,7 @@ export const ClientSelect = ({
           <Select
             toggleId={name}
             variant={SelectVariant.typeahead}
-            onToggle={(open) => setOpen(open)}
+            onToggle={(_event, open) => setOpen(open)}
             isOpen={open}
             isDisabled={isDisabled}
             selections={field.value}

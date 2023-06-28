@@ -8,12 +8,14 @@ import {
   FormGroup,
   Modal,
   ModalVariant,
-  Select,
-  SelectOption,
-  SelectVariant,
   Text,
   TextContent,
 } from "@patternfly/react-core";
+import {
+  Select,
+  SelectOption,
+  SelectVariant,
+} from "@patternfly/react-core/deprecated";
 import { HelpItem } from "ui-shared";
 import { StoreSettings } from "./StoreSettings";
 import { FileUpload } from "../../components/json-file-upload/patternfly/FileUpload";
@@ -109,7 +111,7 @@ export const ImportKeyDialog = ({
             render={({ field }) => (
               <Select
                 toggleId="archiveFormat"
-                onToggle={setOpenArchiveFormat}
+                onToggle={(_event, val) => setOpenArchiveFormat(val)}
                 onSelect={(_, value) => {
                   field.onChange(value as string);
                   setOpenArchiveFormat(false);

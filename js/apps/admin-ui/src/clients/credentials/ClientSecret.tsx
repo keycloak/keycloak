@@ -6,6 +6,7 @@ import {
   InputGroup,
   Split,
   SplitItem,
+  InputGroupItem,
 } from "@patternfly/react-core";
 import { useState } from "react";
 import { useFormContext } from "react-hook-form";
@@ -46,13 +47,17 @@ const SecretInput = ({
     <Split hasGutter>
       <SplitItem isFilled>
         <InputGroup>
-          <PasswordInput id={id} value={secret} isReadOnly />
-          <CopyToClipboardButton
-            id={id}
-            text={secret}
-            label="clientSecret"
-            variant="control"
-          />
+          <InputGroupItem>
+            <PasswordInput id={id} value={secret} readOnly />
+          </InputGroupItem>
+          <InputGroupItem>
+            <CopyToClipboardButton
+              id={id}
+              text={secret}
+              label="clientSecret"
+              variant="control"
+            />
+          </InputGroupItem>
         </InputGroup>
       </SplitItem>
       <SplitItem>

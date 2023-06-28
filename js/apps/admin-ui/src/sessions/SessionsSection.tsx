@@ -1,10 +1,10 @@
 import UserSessionRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userSessionRepresentation";
+import { PageSection } from "@patternfly/react-core";
 import {
   DropdownItem,
-  PageSection,
   Select,
   SelectOption,
-} from "@patternfly/react-core";
+} from "@patternfly/react-core/deprecated";
 import { FilterIcon } from "@patternfly/react-icons";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";

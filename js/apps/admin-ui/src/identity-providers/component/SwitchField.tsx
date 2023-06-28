@@ -14,7 +14,7 @@ export const SwitchField = ({
   label,
   field,
   fieldType = "string",
-  isReadOnly = false,
+  readOnly = false,
 }: SwitchFieldProps) => {
   const { t } = useTranslation("identity-providers");
   const { control } = useFormContext();
@@ -34,10 +34,10 @@ export const SwitchField = ({
                 ? field.value === "true"
                 : (field.value as boolean)
             }
-            onChange={(value) =>
+            onChange={(_event, value) =>
               field.onChange(fieldType === "string" ? "" + value : value)
             }
-            isDisabled={isReadOnly}
+            isDisabled={readOnly}
             aria-label={label}
           />
         )}

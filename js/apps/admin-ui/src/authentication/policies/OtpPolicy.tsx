@@ -10,12 +10,14 @@ import {
   NumberInput,
   PageSection,
   Radio,
+  Switch,
+  // ValidatedOptions,
+} from "@patternfly/react-core";
+import {
   Select,
   SelectOption,
   SelectVariant,
-  Switch,
-  ValidatedOptions,
-} from "@patternfly/react-core";
+} from "@patternfly/react-core/deprecated";
 import { useEffect, useMemo } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -51,7 +53,11 @@ export const OtpPolicy = ({ realm, realmUpdated }: OtpPolicyProps) => {
     control,
     reset,
     handleSubmit,
-    formState: { isValid, isDirty, errors },
+    formState: {
+      isValid,
+      isDirty,
+      // errors
+    },
   } = useForm<FormFields>({ mode: "onChange", defaultValues: realm });
   const { realm: realmName } = useRealm();
   const { addAlert, addError } = useAlerts();
@@ -243,12 +249,13 @@ export const OtpPolicy = ({ realm, realmUpdated }: OtpPolicyProps) => {
           <FormGroup
             label={t("otpPolicyPeriod")}
             fieldId="otpPolicyPeriod"
-            helperTextInvalid={t("otpPolicyPeriodErrorHint")}
-            validated={
-              errors.otpPolicyPeriod
-                ? ValidatedOptions.error
-                : ValidatedOptions.default
-            }
+            // TODO: Use FormHelperText, HelperText, and HelperTextItem directly inside children. helperText, helperTextInvalid and validated props have been removed.
+            // helperTextInvalid={t("otpPolicyPeriodErrorHint")}
+            // validated={
+            //   errors.otpPolicyPeriod
+            //     ? ValidatedOptions.error
+            //     : ValidatedOptions.default
+            // }
             labelIcon={
               <HelpItem
                 helpText={t("authentication-help:otpPolicyPeriod")}
@@ -271,11 +278,11 @@ export const OtpPolicy = ({ realm, realmUpdated }: OtpPolicyProps) => {
                     value={value}
                     onChange={field.onChange}
                     units={["second", "minute"]}
-                    validated={
-                      errors.otpPolicyPeriod
-                        ? ValidatedOptions.error
-                        : ValidatedOptions.default
-                    }
+                    // validated={
+                    //   errors.otpPolicyPeriod
+                    //     ? ValidatedOptions.error
+                    //     : ValidatedOptions.default
+                    // }
                   />
                 );
               }}
@@ -286,12 +293,13 @@ export const OtpPolicy = ({ realm, realmUpdated }: OtpPolicyProps) => {
           <FormGroup
             label={t("initialCounter")}
             fieldId="initialCounter"
-            helperTextInvalid={t("initialCounterErrorHint")}
-            validated={
-              errors.otpPolicyInitialCounter
-                ? ValidatedOptions.error
-                : ValidatedOptions.default
-            }
+            // TODO: Use FormHelperText, HelperText, and HelperTextItem directly inside children. helperText, helperTextInvalid and validated props have been removed.
+            // helperTextInvalid={t("initialCounterErrorHint")}
+            // validated={
+            //   errors.otpPolicyInitialCounter
+            //     ? ValidatedOptions.error
+            //     : ValidatedOptions.default
+            // }
             labelIcon={
               <HelpItem
                 helpText={t("authentication-help:initialCounter")}

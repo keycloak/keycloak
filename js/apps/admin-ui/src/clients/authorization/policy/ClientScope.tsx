@@ -2,7 +2,7 @@ import type ClientScopeRepresentation from "@keycloak/keycloak-admin-client/lib/
 import { Button, Checkbox, FormGroup } from "@patternfly/react-core";
 import { MinusCircleIcon } from "@patternfly/react-icons";
 import {
-  TableComposable,
+  Table /* data-codemods */,
   Tbody,
   Td,
   Th,
@@ -30,7 +30,7 @@ export const ClientScope = () => {
     control,
     getValues,
     setValue,
-    formState: { errors },
+    // formState: { errors },
   } = useFormContext<{
     clientScopes: RequiredIdValue[];
   }>();
@@ -64,8 +64,9 @@ export const ClientScope = () => {
         />
       }
       fieldId="clientScopes"
-      helperTextInvalid={t("requiredClientScope")}
-      validated={errors.clientScopes ? "error" : "default"}
+      // TODO: Use FormHelperText, HelperText, and HelperTextItem directly inside children. helperText, helperTextInvalid and validated props have been removed.
+      // helperTextInvalid={t("requiredClientScope")}
+      // validated={errors.clientScopes ? "error" : "default"}
       isRequired
     >
       <Controller
@@ -116,7 +117,7 @@ export const ClientScope = () => {
         )}
       />
       {selectedScopes.length > 0 && (
-        <TableComposable variant="compact">
+        <Table variant="compact">
           <Thead>
             <Tr>
               <Th>{t("clientScope")}</Th>
@@ -164,7 +165,7 @@ export const ClientScope = () => {
               </Tr>
             ))}
           </Tbody>
-        </TableComposable>
+        </Table>
       )}
     </FormGroup>
   );

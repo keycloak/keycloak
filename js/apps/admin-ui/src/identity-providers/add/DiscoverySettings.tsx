@@ -2,11 +2,13 @@ import IdentityProviderRepresentation from "@keycloak/keycloak-admin-client/lib/
 import {
   ExpandableSection,
   FormGroup,
+  ValidatedOptions,
+} from "@patternfly/react-core";
+import {
   Select,
   SelectOption,
   SelectVariant,
-  ValidatedOptions,
-} from "@patternfly/react-core";
+} from "@patternfly/react-core/deprecated";
 import { useState } from "react";
 import { Controller, useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -32,7 +34,7 @@ const Fields = ({ readOnly }: DiscoverySettingsProps) => {
   const {
     register,
     control,
-    formState: { errors },
+    // formState: { errors },
   } = useFormContext<IdentityProviderRepresentation>();
 
   const validateSignature = useWatch({
@@ -54,12 +56,13 @@ const Fields = ({ readOnly }: DiscoverySettingsProps) => {
         label={t("authorizationUrl")}
         fieldId="kc-authorization-url"
         isRequired
-        validated={
-          errors.config?.authorizationUrl
-            ? ValidatedOptions.error
-            : ValidatedOptions.default
-        }
-        helperTextInvalid={t("common:required")}
+        // TODO: Use FormHelperText, HelperText, and HelperTextItem directly inside children. helperText, helperTextInvalid and validated props have been removed.
+        // validated={
+        //   errors.config?.authorizationUrl
+        //     ? ValidatedOptions.error
+        //     : ValidatedOptions.default
+        // }
+        // helperTextInvalid={t("common:required")}
       >
         <KeycloakTextInput
           type="url"
@@ -70,7 +73,7 @@ const Fields = ({ readOnly }: DiscoverySettingsProps) => {
               ? ValidatedOptions.error
               : ValidatedOptions.default
           }
-          isReadOnly={readOnly}
+          readOnly={readOnly}
           {...register("config.authorizationUrl", { required: true })}
         />
       </FormGroup>
@@ -79,12 +82,13 @@ const Fields = ({ readOnly }: DiscoverySettingsProps) => {
         label={t("tokenUrl")}
         fieldId="tokenUrl"
         isRequired
-        validated={
-          errors.config?.tokenUrl
-            ? ValidatedOptions.error
-            : ValidatedOptions.default
-        }
-        helperTextInvalid={t("common:required")}
+        // TODO: Use FormHelperText, HelperText, and HelperTextItem directly inside children. helperText, helperTextInvalid and validated props have been removed.
+        // validated={
+        //   errors.config?.tokenUrl
+        //     ? ValidatedOptions.error
+        //     : ValidatedOptions.default
+        // }
+        // helperTextInvalid={t("common:required")}
       >
         <KeycloakTextInput
           type="url"
@@ -95,25 +99,25 @@ const Fields = ({ readOnly }: DiscoverySettingsProps) => {
               ? ValidatedOptions.error
               : ValidatedOptions.default
           }
-          isReadOnly={readOnly}
+          readOnly={readOnly}
           {...register("config.tokenUrl", { required: true })}
         />
       </FormGroup>
       <TextField
         field="config.logoutUrl"
         label="logoutUrl"
-        isReadOnly={readOnly}
+        readOnly={readOnly}
       />
       <TextField
         field="config.userInfoUrl"
         label="userInfoUrl"
-        isReadOnly={readOnly}
+        readOnly={readOnly}
       />
-      <TextField field="config.issuer" label="issuer" isReadOnly={readOnly} />
+      <TextField field="config.issuer" label="issuer" readOnly={readOnly} />
       <SwitchField
         field="config.validateSignature"
         label="validateSignature"
-        isReadOnly={readOnly}
+        readOnly={readOnly}
       />
       {validateSignature === "true" && (
         <>
@@ -121,13 +125,13 @@ const Fields = ({ readOnly }: DiscoverySettingsProps) => {
             field="config.useJwksUrl"
             label="useJwksUrl"
             data-testid="useJwksUrl"
-            isReadOnly={readOnly}
+            readOnly={readOnly}
           />
           {useJwks === "true" ? (
             <TextField
               field="config.jwksUrl"
               label="jwksUrl"
-              isReadOnly={readOnly}
+              readOnly={readOnly}
             />
           ) : (
             <>
@@ -140,7 +144,7 @@ const Fields = ({ readOnly }: DiscoverySettingsProps) => {
               <TextField
                 field="config.publicKeySignatureVerifierKeyId"
                 label="validatingPublicKeyId"
-                isReadOnly={readOnly}
+                readOnly={readOnly}
               />
             </>
           )}
@@ -149,7 +153,7 @@ const Fields = ({ readOnly }: DiscoverySettingsProps) => {
       <SwitchField
         field="config.pkceEnabled"
         label="pkceEnabled"
-        isReadOnly={readOnly}
+        readOnly={readOnly}
       />
       {isPkceEnabled === "true" && (
         <FormGroup

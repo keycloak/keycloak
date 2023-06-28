@@ -6,15 +6,17 @@ import {
   AlertVariant,
   Button,
   ButtonVariant,
-  DropdownItem,
   Form,
   FormGroup,
   PageSection,
+  ValidatedOptions,
+} from "@patternfly/react-core";
+import {
+  DropdownItem,
   Select,
   SelectOption,
   SelectVariant,
-  ValidatedOptions,
-} from "@patternfly/react-core";
+} from "@patternfly/react-core/deprecated";
 import { useState } from "react";
 import { Controller, FormProvider, useForm, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";

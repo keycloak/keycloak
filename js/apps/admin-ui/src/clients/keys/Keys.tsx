@@ -46,7 +46,7 @@ export const Keys = ({ clientId, save, hasConfigureAccess }: KeysProps) => {
     control,
     register,
     getValues,
-    formState: { isDirty },
+    // formState: { isDirty },
   } = useFormContext<FormFields>();
   const { addAlert, addError } = useAlerts();
 
@@ -159,7 +159,7 @@ export const Keys = ({ clientId, save, hasConfigureAccess }: KeysProps) => {
                     label={t("common:on")}
                     labelOff={t("common:off")}
                     isChecked={field.value === "true"}
-                    onChange={(value) => field.onChange(`${value}`)}
+                    onChange={(_event, value) => field.onChange(`${value}`)}
                     aria-label={t("useJwksUrl")}
                   />
                 )}

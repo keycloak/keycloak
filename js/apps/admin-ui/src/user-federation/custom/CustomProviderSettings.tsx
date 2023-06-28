@@ -42,7 +42,7 @@ export default function CustomProviderSettings() {
     reset,
     setValue,
     handleSubmit,
-    formState: { errors, isDirty },
+    // formState: { errors, isDirty },
   } = form;
 
   const { addAlert, addError } = useAlerts();
@@ -127,8 +127,9 @@ export default function CustomProviderSettings() {
                 fieldLabelId="user-federation:uiDisplayName"
               />
             }
-            helperTextInvalid={t("validateName")}
-            validated={errors.name ? "error" : "default"}
+            // TODO: Use FormHelperText, HelperText, and HelperTextItem directly inside children. helperText, helperTextInvalid and validated props have been removed.
+            // helperTextInvalid={t("validateName")}
+            // validated={errors.name ? "error" : "default"}
             fieldId="kc-ui-display-name"
             isRequired
           >

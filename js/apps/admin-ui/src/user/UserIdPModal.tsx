@@ -35,7 +35,7 @@ export const UserIdpModal = ({
   const {
     register,
     handleSubmit,
-    formState: { isValid, errors },
+    // formState: { isValid, errors },
   } = useForm<FederatedIdentityRepresentation>({
     mode: "onChange",
   });
@@ -95,17 +95,18 @@ export const UserIdpModal = ({
             id="identityProvider"
             data-testid="idpNameInput"
             value={capitalize(federatedId)}
-            isReadOnly
+            readOnly
           />
         </FormGroup>
         <FormGroup
           label={t("users:userID")}
           fieldId="userID"
-          helperText={t("users-help:userIdHelperText")}
-          helperTextInvalid={t("common:required")}
-          validated={
-            errors.userId ? ValidatedOptions.error : ValidatedOptions.default
-          }
+          // TODO: Use FormHelperText, HelperText, and HelperTextItem directly inside children. helperText, helperTextInvalid and validated props have been removed.
+          // helperText={t("users-help:userIdHelperText")}
+          // helperTextInvalid={t("common:required")}
+          // validated={
+          //   errors.userId ? ValidatedOptions.error : ValidatedOptions.default
+          // }
           isRequired
         >
           <KeycloakTextInput
@@ -121,11 +122,12 @@ export const UserIdpModal = ({
         <FormGroup
           label={t("users:username")}
           fieldId="username"
-          helperText={t("users-help:usernameHelperText")}
-          helperTextInvalid={t("common:required")}
-          validated={
-            errors.userName ? ValidatedOptions.error : ValidatedOptions.default
-          }
+          // TODO: Use FormHelperText, HelperText, and HelperTextItem directly inside children. helperText, helperTextInvalid and validated props have been removed.
+          // helperText={t("users-help:usernameHelperText")}
+          // helperTextInvalid={t("common:required")}
+          // validated={
+          //   errors.userName ? ValidatedOptions.error : ValidatedOptions.default
+          // }
           isRequired
         >
           <KeycloakTextInput

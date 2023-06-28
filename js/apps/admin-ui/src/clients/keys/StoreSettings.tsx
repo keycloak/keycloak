@@ -17,7 +17,7 @@ export const StoreSettings = ({
   const { t } = useTranslation("clients");
   const {
     register,
-    formState: { errors },
+    // formState: { errors },
   } = useFormContext<KeyStoreConfig>();
 
   return (
@@ -32,8 +32,9 @@ export const StoreSettings = ({
             fieldLabelId="clients:keyAlias"
           />
         }
-        helperTextInvalid={t("common:required")}
-        validated={errors.keyAlias ? "error" : "default"}
+        // TODO: Use FormHelperText, HelperText, and HelperTextItem directly inside children. helperText, helperTextInvalid and validated props have been removed.
+        // helperTextInvalid={t("common:required")}
+        // validated={errors.keyAlias ? "error" : "default"}
       >
         <KeycloakTextInput
           data-testid="keyAlias"
@@ -53,8 +54,9 @@ export const StoreSettings = ({
               fieldLabelId="clients:keyPassword"
             />
           }
-          helperTextInvalid={t("common:required")}
-          validated={errors.keyPassword ? "error" : "default"}
+          // TODO: Use FormHelperText, HelperText, and HelperTextItem directly inside children. helperText, helperTextInvalid and validated props have been removed.
+          // helperTextInvalid={t("common:required")}
+          // validated={errors.keyPassword ? "error" : "default"}
         >
           <PasswordInput
             data-testid="keyPassword"
@@ -92,8 +94,9 @@ export const StoreSettings = ({
             fieldLabelId="clients:storePassword"
           />
         }
-        helperTextInvalid={t("common:required")}
-        validated={errors.storePassword ? "error" : "default"}
+        // TODO: Use FormHelperText, HelperText, and HelperTextItem directly inside children. helperText, helperTextInvalid and validated props have been removed.
+        // helperTextInvalid={t("common:required")}
+        // validated={errors.storePassword ? "error" : "default"}
       >
         <PasswordInput
           data-testid="storePassword"

@@ -5,13 +5,15 @@ import {
   ClipboardCopy,
   FormGroup,
   PageSection,
-  Select,
-  SelectOption,
-  SelectVariant,
   Stack,
   StackItem,
   Switch,
 } from "@patternfly/react-core";
+import {
+  Select,
+  SelectOption,
+  SelectVariant,
+} from "@patternfly/react-core/deprecated";
 import { useEffect, useState } from "react";
 import { Controller, FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -49,7 +51,7 @@ export const RealmSettingsGeneralTab = ({
     control,
     handleSubmit,
     setValue,
-    formState: { isDirty, errors },
+    // formState: { isDirty, errors },
   } = form;
   const isFeatureEnabled = useIsFeatureEnabled();
   const [open, setOpen] = useState(false);
@@ -84,8 +86,9 @@ export const RealmSettingsGeneralTab = ({
           label={t("realmId")}
           fieldId="kc-realm-id"
           isRequired
-          validated={errors.realm ? "error" : "default"}
-          helperTextInvalid={errors.realm?.message}
+          // TODO: Use FormHelperText, HelperText, and HelperTextItem directly inside children. helperText, helperTextInvalid and validated props have been removed.
+          // validated={errors.realm ? "error" : "default"}
+          // helperTextInvalid={errors.realm?.message}
         >
           <Controller
             name="realm"
@@ -244,7 +247,7 @@ export const RealmSettingsGeneralTab = ({
                   label={t("common:on")}
                   labelOff={t("common:off")}
                   isChecked={field.value === "true"}
-                  onChange={(value) => field.onChange(value.toString())}
+                  onChange={(_event, value) => field.onChange(value.toString())}
                   aria-label={t("userProfileEnabled")}
                 />
               )}

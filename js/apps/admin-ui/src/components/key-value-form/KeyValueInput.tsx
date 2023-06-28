@@ -8,6 +8,7 @@ import {
   GridItem,
   HelperText,
   HelperTextItem,
+  EmptyStateFooter,
 } from "@patternfly/react-core";
 import { MinusCircleIcon, PlusCircleIcon } from "@patternfly/react-icons";
 import { Fragment } from "react";
@@ -42,7 +43,7 @@ export const KeyValueInput = ({
   const {
     control,
     register,
-    formState: { errors },
+    // formState: { errors },
   } = useFormContext();
 
   const { fields, append, remove } = useFieldArray({
@@ -160,15 +161,17 @@ export const KeyValueInput = ({
       variant="xs"
     >
       <EmptyStateBody>{t("missingAttributes")}</EmptyStateBody>
-      <Button
-        data-testid={`${name}-add-row`}
-        variant="link"
-        icon={<PlusCircleIcon />}
-        isSmall
-        onClick={appendNew}
-      >
-        {t("addAttribute")}
-      </Button>
+      <EmptyStateFooter>
+        <Button
+          data-testid={`${name}-add-row`}
+          variant="link"
+          icon={<PlusCircleIcon />}
+          size="sm"
+          onClick={appendNew}
+        >
+          {t("addAttribute")}
+        </Button>
+      </EmptyStateFooter>
     </EmptyState>
   );
 };

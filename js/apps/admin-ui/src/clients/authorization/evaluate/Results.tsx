@@ -5,16 +5,24 @@ import {
   Form,
   InputGroup,
   PageSection,
-  Select,
-  SelectOption,
-  SelectVariant,
   TextInput,
   Toolbar,
   ToolbarGroup,
   ToolbarItem,
+  InputGroupItem,
 } from "@patternfly/react-core";
+import {
+  Select,
+  SelectOption,
+  SelectVariant,
+} from "@patternfly/react-core/deprecated";
 import { SearchIcon } from "@patternfly/react-icons";
-import { TableComposable, Th, Thead, Tr } from "@patternfly/react-table";
+import {
+  Table /* data-codemods */,
+  Th,
+  Thead,
+  Tr,
+} from "@patternfly/react-table";
 import { KeyboardEvent, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -88,22 +96,26 @@ export const Results = ({ evaluateResult, refresh, back }: ResultProps) => {
         <ToolbarGroup className="providers-toolbar">
           <ToolbarItem>
             <InputGroup>
-              <TextInput
-                name={"inputGroupName"}
-                id={"inputGroupName"}
-                type="search"
-                aria-label={t("common:search")}
-                placeholder={t("common:search")}
-                onChange={setSearchInput}
-                onKeyDown={handleKeyDown}
-              />
-              <Button
-                variant={ButtonVariant.control}
-                aria-label={t("common:search")}
-                onClick={() => confirmSearchQuery()}
-              >
-                <SearchIcon />
-              </Button>
+              <InputGroupItem isFill>
+                <TextInput
+                  name={"inputGroupName"}
+                  id={"inputGroupName"}
+                  type="search"
+                  aria-label={t("common:search")}
+                  placeholder={t("common:search")}
+                  onChange={(_event, val) => setSearchInput(val)}
+                  onKeyDown={handleKeyDown}
+                />
+              </InputGroupItem>
+              <InputGroupItem>
+                <Button
+                  variant={ButtonVariant.control}
+                  aria-label={t("common:search")}
+                  onClick={() => confirmSearchQuery()}
+                >
+                  <SearchIcon />
+                </Button>
+              </InputGroupItem>
             </InputGroup>
           </ToolbarItem>
           <ToolbarItem>
@@ -145,7 +157,7 @@ export const Results = ({ evaluateResult, refresh, back }: ResultProps) => {
         </ToolbarGroup>
       </Toolbar>
       {!noFilteredData && (
-        <TableComposable aria-label={t("evaluationResults")}>
+        <Table aria-label={t("evaluationResults")}>
           <Thead>
             <Tr>
               <Th />
@@ -163,7 +175,7 @@ export const Results = ({ evaluateResult, refresh, back }: ResultProps) => {
               evaluateResults={evaluateResult.results}
             />
           ))}
-        </TableComposable>
+        </Table>
       )}
       {(noFilteredData || noEvaluatedData) && (
         <>

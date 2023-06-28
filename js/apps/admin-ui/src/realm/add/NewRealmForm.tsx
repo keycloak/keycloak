@@ -35,7 +35,7 @@ export default function NewRealmForm() {
     handleSubmit,
     control,
     setValue,
-    formState: { errors },
+    // formState: { errors },
   } = useForm<RealmRepresentation>({ mode: "onChange" });
 
   const handleFileChange = (obj?: object) => {
@@ -79,8 +79,9 @@ export default function NewRealmForm() {
             label={t("realmName")}
             isRequired
             fieldId="kc-realm-name"
-            validated={errors.realm ? "error" : "default"}
-            helperTextInvalid={errors.realm?.message}
+            // TODO: Use FormHelperText, HelperText, and HelperTextItem directly inside children. helperText, helperTextInvalid and validated props have been removed.// TODO: Use FormHelperText, HelperText, and HelperTextItem directly inside children. helperText, helperTextInvalid and validated props have been removed.
+            // validated={errors.realm ? "error" : "default"}
+            // helperTextInvalid={errors.realm?.message}
           >
             <KeycloakTextInput
               isRequired

@@ -1,12 +1,12 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Controller, useFormContext } from "react-hook-form";
+import { FormGroup } from "@patternfly/react-core";
 import {
-  FormGroup,
   Select,
   SelectOption,
   SelectVariant,
-} from "@patternfly/react-core";
+} from "@patternfly/react-core/deprecated";
 
 import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
 import { HelpItem } from "ui-shared";
@@ -49,7 +49,7 @@ export const SignedJWT = ({ clientAuthenticatorType }: SignedJWTProps) => {
           <Select
             maxHeight={200}
             toggleId="kc-signature-algorithm"
-            onToggle={isOpen}
+            onToggle={(_event, val) => isOpen(val)}
             onSelect={(_, value) => {
               field.onChange(value.toString());
               isOpen(false);

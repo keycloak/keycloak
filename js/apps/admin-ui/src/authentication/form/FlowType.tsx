@@ -1,10 +1,10 @@
 import AuthenticationFlowRepresentation from "@keycloak/keycloak-admin-client/lib/defs/authenticationFlowRepresentation";
+import { FormGroup } from "@patternfly/react-core";
 import {
-  FormGroup,
   Select,
   SelectOption,
   SelectVariant,
-} from "@patternfly/react-core";
+} from "@patternfly/react-core/deprecated";
 import { useState } from "react";
 import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -36,7 +36,7 @@ export const FlowType = () => {
         render={({ field }) => (
           <Select
             toggleId="flowType"
-            onToggle={setOpen}
+            onToggle={(_event, val) => setOpen(val)}
             onSelect={(_, value) => {
               field.onChange(value.toString());
               setOpen(false);

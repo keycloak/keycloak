@@ -1,11 +1,11 @@
 import type UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
 import type { UserQuery } from "@keycloak/keycloak-admin-client/lib/resources/users";
+import { FormGroup } from "@patternfly/react-core";
 import {
-  FormGroup,
   Select,
   SelectOption,
   SelectVariant,
-} from "@patternfly/react-core";
+} from "@patternfly/react-core/deprecated";
 import { debounce } from "lodash-es";
 import { useCallback, useState } from "react";
 import { Controller, useFormContext } from "react-hook-form";
@@ -34,7 +34,7 @@ export const UserSelect = ({
   const {
     control,
     getValues,
-    formState: { errors },
+    // formState: { errors },
   } = useFormContext();
   const values: string[] | undefined = getValues(name!);
 
@@ -85,8 +85,9 @@ export const UserSelect = ({
         <HelpItem helpText={helpText!} fieldLabelId={`clients:${label}`} />
       }
       fieldId={name!}
-      validated={errors[name!] ? "error" : "default"}
-      helperTextInvalid={t("common:required")}
+      // TODO: Use FormHelperText, HelperText, and HelperTextItem directly inside children. helperText, helperTextInvalid and validated props have been removed.
+      // validated={errors[name!] ? "error" : "default"}
+      // helperTextInvalid={t("common:required")}
     >
       <Controller
         name={name!}

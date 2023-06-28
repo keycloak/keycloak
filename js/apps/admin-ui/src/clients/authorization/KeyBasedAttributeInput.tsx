@@ -1,14 +1,14 @@
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Controller, useFieldArray, useFormContext } from "react-hook-form";
+import { Button } from "@patternfly/react-core";
 import {
-  Button,
   Select,
   SelectOption,
   SelectVariant,
-} from "@patternfly/react-core";
+} from "@patternfly/react-core/deprecated";
 import {
-  TableComposable,
+  Table /* data-codemods */,
   Tbody,
   Td,
   Th,
@@ -116,7 +116,7 @@ const ValueInput = ({
                 expandedText: t("common:hide"),
                 collapsedText: t("common:showRemaining"),
               }}
-              onToggle={(open) => toggleValueSelect(rowIndex, open)}
+              onToggle={(_event, open) => toggleValueSelect(rowIndex, open)}
               isOpen={isValueOpenArray[rowIndex]}
               variant={SelectVariant.typeahead}
               typeAheadAriaLabel={t("clients:selectOrTypeAKey")}
@@ -174,7 +174,7 @@ export const KeyBasedAttributeInput = ({
   const watchLastValue = watch(`${name}.${fields.length - 1}.value`, "");
 
   return (
-    <TableComposable
+    <Table
       className="kc-attributes__table"
       aria-label="Role attribute keys and values"
       variant="compact"
@@ -198,7 +198,7 @@ export const KeyBasedAttributeInput = ({
                     toggleId={`${name}.${rowIndex}.key`}
                     className="kc-attribute-key-selectable"
                     name={`${name}.${rowIndex}.key`}
-                    onToggle={(open) => toggleKeySelect(rowIndex, open)}
+                    onToggle={(_event, open) => toggleKeySelect(rowIndex, open)}
                     isOpen={isKeyOpenArray[rowIndex]}
                     variant={SelectVariant.typeahead}
                     typeAheadAriaLabel={t("clients:selectOrTypeAKey")}
@@ -263,6 +263,6 @@ export const KeyBasedAttributeInput = ({
           </Td>
         </Tr>
       </Tbody>
-    </TableComposable>
+    </Table>
   );
 };

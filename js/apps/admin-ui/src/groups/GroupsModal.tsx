@@ -34,7 +34,7 @@ export const GroupsModal = ({
   const {
     register,
     handleSubmit,
-    formState: { errors },
+    // formState: { errors },
   } = useForm({
     defaultValues: { name: rename },
   });
@@ -98,10 +98,11 @@ export const GroupsModal = ({
           name="create-modal-group"
           label={t("common:name")}
           fieldId="create-group-name"
-          helperTextInvalid={t("common:required")}
-          validated={
-            errors.name ? ValidatedOptions.error : ValidatedOptions.default
-          }
+          // TODO: Use FormHelperText, HelperText, and HelperTextItem directly inside children. helperText, helperTextInvalid and validated props have been removed.
+          // helperTextInvalid={t("common:required")}
+          // validated={
+          //   errors.name ? ValidatedOptions.error : ValidatedOptions.default
+          // }
           isRequired
         >
           <KeycloakTextInput

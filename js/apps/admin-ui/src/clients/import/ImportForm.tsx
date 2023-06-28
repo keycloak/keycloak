@@ -121,7 +121,7 @@ export default function ImportForm() {
             <FormGroup label={t("common:type")} fieldId="kc-type">
               <KeycloakTextInput
                 id="kc-type"
-                isReadOnly
+                readOnly
                 {...register("protocol")}
               />
             </FormGroup>

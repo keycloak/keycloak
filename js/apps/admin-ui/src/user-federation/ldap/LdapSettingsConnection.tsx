@@ -3,12 +3,14 @@ import {
   AlertVariant,
   Button,
   FormGroup,
-  Select,
-  SelectOption,
-  SelectVariant,
   Switch,
   ValidatedOptions,
 } from "@patternfly/react-core";
+import {
+  Select,
+  SelectOption,
+  SelectVariant,
+} from "@patternfly/react-core/deprecated";
 import { get, isEqual } from "lodash-es";
 import { useState } from "react";
 import { Controller, UseFormReturn, useWatch } from "react-hook-form";
@@ -113,14 +115,15 @@ export const LdapSettingsConnection = ({
           }
           fieldId="kc-ui-connection-url"
           isRequired
-          validated={
-            (form.formState.errors.config as any)?.connectionUrl?.[0]
-              ? "error"
-              : "default"
-          }
-          helperTextInvalid={
-            (form.formState.errors.config as any)?.connectionUrl?.[0].message
-          }
+          // TODO: Use FormHelperText, HelperText, and HelperTextItem directly inside children. helperText, helperTextInvalid and validated props have been removed.
+          // validated={
+          //   (form.formState.errors.config as any)?.connectionUrl?.[0]
+          //     ? "error"
+          //     : "default"
+          // }
+          // helperTextInvalid={
+          //   (form.formState.errors.config as any)?.connectionUrl?.[0].message
+          // }
         >
           <KeycloakTextInput
             isRequired
@@ -160,7 +163,7 @@ export const LdapSettingsConnection = ({
                 id={"kc-enable-start-tls"}
                 data-testid="enable-start-tls"
                 isDisabled={false}
-                onChange={(value) => field.onChange([`${value}`])}
+                onChange={(_event, value) => field.onChange([`${value}`])}
                 isChecked={field.value[0] === "true"}
                 label={t("common:on")}
                 labelOff={t("common:off")}
@@ -224,7 +227,7 @@ export const LdapSettingsConnection = ({
                 id={"kc-connection-pooling"}
                 data-testid="connection-pooling"
                 isDisabled={false}
-                onChange={(value) => field.onChange([`${value}`])}
+                onChange={(_event, value) => field.onChange([`${value}`])}
                 isChecked={field.value[0] === "true"}
                 label={t("common:on")}
                 labelOff={t("common:off")}
@@ -310,12 +313,12 @@ export const LdapSettingsConnection = ({
                 />
               }
               fieldId="kc-ui-bind-dn"
-              helperTextInvalid={t("validateBindDn")}
-              validated={
-                (form.formState.errors.config as any)?.bindDn
-                  ? ValidatedOptions.error
-                  : ValidatedOptions.default
-              }
+              // helperTextInvalid={t("validateBindDn")}
+              // validated={
+              //   (form.formState.errors.config as any)?.bindDn
+              //     ? ValidatedOptions.error
+              //     : ValidatedOptions.default
+              // }
               isRequired
             >
               <KeycloakTextInput
@@ -339,12 +342,13 @@ export const LdapSettingsConnection = ({
                 />
               }
               fieldId="kc-ui-bind-credentials"
-              helperTextInvalid={t("validateBindCredentials")}
-              validated={
-                (form.formState.errors.config as any)?.bindCredential
-                  ? ValidatedOptions.error
-                  : ValidatedOptions.default
-              }
+              // TODO: Use FormHelperText, HelperText, and HelperTextItem directly inside children. helperText, helperTextInvalid and validated props have been removed.
+              // helperTextInvalid={t("validateBindCredentials")}
+              // validated={
+              //   (form.formState.errors.config as any)?.bindCredential
+              //     ? ValidatedOptions.error
+              //     : ValidatedOptions.default
+              // }
               isRequired
             >
               <PasswordInput

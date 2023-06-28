@@ -9,9 +9,6 @@ import {
   Grid,
   GridItem,
   PageSection,
-  Select,
-  SelectOption,
-  SelectVariant,
   Split,
   SplitItem,
   Tab,
@@ -21,6 +18,11 @@ import {
   Text,
   TextContent,
 } from "@patternfly/react-core";
+import {
+  Select,
+  SelectOption,
+  SelectVariant,
+} from "@patternfly/react-core/deprecated";
 import { QuestionCircleIcon } from "@patternfly/react-icons";
 import { useEffect, useRef, useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";

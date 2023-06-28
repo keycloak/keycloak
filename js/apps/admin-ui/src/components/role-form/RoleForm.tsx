@@ -28,7 +28,7 @@ export const RoleForm = ({
     register,
     control,
     handleSubmit,
-    formState: { errors },
+    // formState: { errors },
   },
   onSubmit,
   cancelLink,
@@ -56,15 +56,16 @@ export const RoleForm = ({
           <FormGroup
             label={t("roleName")}
             fieldId="kc-name"
-            validated={
-              errors.name ? ValidatedOptions.error : ValidatedOptions.default
-            }
-            helperTextInvalid={t("common:required")}
+            // TODO: Use FormHelperText, HelperText, and HelperTextItem directly inside children. helperText, helperTextInvalid and validated props have been removed.
+            // validated={
+            //   errors.name ? ValidatedOptions.error : ValidatedOptions.default
+            // }
+            // helperTextInvalid={t("common:required")}
             isRequired={!editMode}
           >
             <KeycloakTextInput
               id="kc-name"
-              isReadOnly={editMode}
+              readOnly={editMode}
               {...register("name", {
                 required: !editMode,
                 validate: (value) => {
@@ -78,12 +79,13 @@ export const RoleForm = ({
           <FormGroup
             label={t("common:description")}
             fieldId="kc-description"
-            validated={
-              errors.description
-                ? ValidatedOptions.error
-                : ValidatedOptions.default
-            }
-            helperTextInvalid={errors.description?.message}
+            // TODO: Use FormHelperText, HelperText, and HelperTextItem directly inside children. helperText, helperTextInvalid and validated props have been removed.
+            // validated={
+            //   errors.description
+            //     ? ValidatedOptions.error
+            //     : ValidatedOptions.default
+            // }
+            // helperTextInvalid={errors.description?.message}
           >
             <KeycloakTextArea
               id="kc-description"

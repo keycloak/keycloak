@@ -27,7 +27,7 @@ export const AttributesForm = ({
   const { t } = useTranslation("roles");
   const noSaveCancelButtons = !save && !reset;
   const {
-    formState: { isDirty },
+    // formState: { isDirty },
     handleSubmit,
   } = form;
 

@@ -3,14 +3,17 @@ import type UserProfileConfig from "@keycloak/keycloak-admin-client/lib/defs/use
 import {
   Button,
   ButtonVariant,
+  InputGroup,
+  SearchInput,
+  ToolbarItem,
+  InputGroupItem,
+} from "@patternfly/react-core";
+import {
   Dropdown,
   DropdownItem,
   DropdownToggle,
-  InputGroup,
   KebabToggle,
-  SearchInput,
-  ToolbarItem,
-} from "@patternfly/react-core";
+} from "@patternfly/react-core/deprecated";
 import { ReactNode, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useAccess } from "../../context/access/Access";
@@ -72,13 +75,15 @@ export function UserDataTableToolbarItems({
     return (
       <ToolbarItem>
         <InputGroup>
-          <SearchDropdown
-            searchType={searchType}
-            onSelect={(searchType) => {
-              clearAllFilters();
-              setSearchType(searchType);
-            }}
-          />
+          <InputGroupItem>
+            <SearchDropdown
+              searchType={searchType}
+              onSelect={(searchType) => {
+                clearAllFilters();
+                setSearchType(searchType);
+              }}
+            />
+          </InputGroupItem>
           {searchType === "default" && defaultSearchInput()}
           {searchType === "attribute" && attributeSearchInput()}
         </InputGroup>
@@ -123,7 +128,7 @@ export function UserDataTableToolbarItems({
           toggle={
             <DropdownToggle
               data-testid="userAttributeSearchSelectorToggle"
-              onToggle={(isOpen) => {
+              onToggle={(_event, isOpen) => {
                 setSearchDropdownOpen(isOpen);
               }}
               className="keycloak__user_attribute_search_selector_dropdown__toggle"
@@ -164,7 +169,7 @@ export function UserDataTableToolbarItems({
   ) : (
     <ToolbarItem>
       <Dropdown
-        toggle={<KebabToggle onToggle={(open) => setKebabOpen(open)} />}
+        toggle={<KebabToggle onToggle={(_event, open) => setKebabOpen(open)} />}
         isOpen={kebabOpen}
         isPlain
         dropdownItems={[

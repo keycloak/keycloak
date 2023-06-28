@@ -1,10 +1,9 @@
+import { FormGroup, Switch } from "@patternfly/react-core";
 import {
-  FormGroup,
   Select,
   SelectOption,
   SelectVariant,
-  Switch,
-} from "@patternfly/react-core";
+} from "@patternfly/react-core/deprecated";
 import { useState } from "react";
 import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -48,7 +47,7 @@ export const LoginSettingsPanel = ({ access }: { access?: boolean }) => {
           render={({ field }) => (
             <Select
               toggleId="loginTheme"
-              onToggle={setLoginThemeOpen}
+              onToggle={(_event, val) => setLoginThemeOpen(val)}
               onSelect={(_, value) => {
                 field.onChange(value.toString());
                 setLoginThemeOpen(false);
@@ -124,7 +123,7 @@ export const LoginSettingsPanel = ({ access }: { access?: boolean }) => {
               label={t("common:on")}
               labelOff={t("common:off")}
               isChecked={field.value === "true"}
-              onChange={(value) => field.onChange("" + value)}
+              onChange={(_event, value) => field.onChange("" + value)}
               isDisabled={!consentRequired}
               aria-label={t("displayOnClient")}
             />

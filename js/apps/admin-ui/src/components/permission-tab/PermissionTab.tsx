@@ -10,7 +10,7 @@ import {
 } from "@patternfly/react-core";
 import {
   ActionsColumn,
-  TableComposable,
+  Table /* data-codemods */,
   Tbody,
   Td,
   Th,
@@ -149,7 +149,7 @@ export const PermissionsTab = ({ id, type }: PermissionsTabProps) => {
                 label={t("common:on")}
                 labelOff={t("common:off")}
                 isChecked={permission.enabled}
-                onChange={async (enabled) => {
+                onChange={async (_event, enabled) => {
                   if (enabled) {
                     const permission = await togglePermissionEnabled(enabled);
                     setPermission(permission);
@@ -182,10 +182,7 @@ export const PermissionsTab = ({ id, type }: PermissionsTabProps) => {
           </Card>
           <Card isFlat className="keycloak__permission__permission-table">
             <CardBody className="pf-u-p-0">
-              <TableComposable
-                aria-label={t("permissionsList")}
-                variant="compact"
-              >
+              <Table aria-label={t("permissionsList")} variant="compact">
                 <Thead>
                   <Tr>
                     <Th id="permissionsScopeName">
@@ -237,7 +234,7 @@ export const PermissionsTab = ({ id, type }: PermissionsTabProps) => {
                     </Tr>
                   ))}
                 </Tbody>
-              </TableComposable>
+              </Table>
             </CardBody>
           </Card>
         </>

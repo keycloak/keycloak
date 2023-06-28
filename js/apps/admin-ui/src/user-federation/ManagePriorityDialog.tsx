@@ -33,29 +33,27 @@ export const ManagePriorityDialog = ({
   const { t } = useTranslation("user-federation");
   const { addAlert, addError } = useAlerts();
 
-  const [id, setId] = useState("");
-  const [liveText, setLiveText] = useState("");
-  const [order, setOrder] = useState(
-    components.map((component) => component.name!)
-  );
+  // const [id, setId] = useState("");
+  const [liveText] = useState("");
+  const [order] = useState(components.map((component) => component.name!));
 
-  const onDragStart = (id: string) => {
-    setId(id);
-    setLiveText(t("common:onDragStart", { item: id }));
-  };
+  // const onDragStart = (id: string) => {
+  //   setId(id);
+  //   setLiveText(t("common:onDragStart", { item: id }));
+  // };
 
-  const onDragMove = () => {
-    setLiveText(t("common:onDragMove", { item: id }));
-  };
+  // const onDragMove = () => {
+  //   setLiveText(t("common:onDragMove", { item: id }));
+  // };
 
-  const onDragCancel = () => {
-    setLiveText(t("common:onDragCancel"));
-  };
+  // const onDragCancel = () => {
+  //   setLiveText(t("common:onDragCancel"));
+  // };
 
-  const onDragFinish = (providerOrder: string[]) => {
-    setLiveText(t("common:onDragFinish", { list: providerOrder }));
-    setOrder(providerOrder);
-  };
+  // const onDragFinish = (providerOrder: string[]) => {
+  //   setLiveText(t("common:onDragFinish", { list: providerOrder }));
+  //   setOrder(providerOrder);
+  // };
 
   return (
     <Modal
@@ -107,11 +105,6 @@ export const ManagePriorityDialog = ({
         aria-label={t("manageOrderTableAria")}
         data-testid="manageOrderDataList"
         isCompact
-        onDragFinish={onDragFinish}
-        onDragStart={onDragStart}
-        onDragMove={onDragMove}
-        onDragCancel={onDragCancel}
-        itemOrder={order}
       >
         {sortBy(components, "config.priority", "name").map((component) => (
           <DataListItem
