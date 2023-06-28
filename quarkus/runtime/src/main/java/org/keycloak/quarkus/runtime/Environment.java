@@ -35,6 +35,8 @@ import io.quarkus.runtime.configuration.ProfileManager;
 import io.smallrye.config.SmallRyeConfig;
 
 import org.apache.commons.lang3.SystemUtils;
+import org.keycloak.common.Profile;
+import org.keycloak.common.profile.PropertiesFileProfileConfigResolver;
 import org.keycloak.quarkus.runtime.configuration.PersistedConfigSource;
 
 public final class Environment {
@@ -234,5 +236,22 @@ public final class Environment {
 
     public static void setHomeDir(Path path) {
         System.setProperty("kc.home.dir", path.toFile().getAbsolutePath());
+    }
+
+    /**
+     * Do not call this method at runtime.</p>
+     *
+     * The method is marked as {@code synchronized} because build steps are executed in parallel.
+     *
+     * @return the current feature profile instance
+     */
+    public synchronized static Profile getCurrentOrCreateFeatureProfile() {
+        Profile profile = Profile.getInstance();
+
+        if (profile == null) {
+            profile = Profile.configure(new QuarkusProfileConfigResolver(), new PropertiesFileProfileConfigResolver());
+        }
+
+        return profile;
     }
 }

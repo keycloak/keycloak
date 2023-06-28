@@ -1,0 +1,69 @@
+{
+  "name": "account-ui",
+  "scripts": {
+    "dev": "wireit",
+    "build": "wireit",
+    "preview": "wireit",
+    "lint": "wireit"
+  },
+  "dependencies": {
+    "@patternfly/patternfly": "^4.224.2",
+    "@patternfly/react-core": "^4.276.8",
+    "@patternfly/react-icons": "^4.93.6",
+    "@patternfly/react-table": "^4.113.0",
+    "i18next": "^23.2.3",
+    "i18next-http-backend": "^2.2.1",
+    "keycloak-js": "workspace:*",
+    "keycloak-masthead": "workspace:*",
+    "lodash-es": "^4.17.21",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-hook-form": "^7.44.3",
+    "react-i18next": "^13.0.1",
+    "react-router-dom": "6.12.1",
+    "ui-shared": "workspace:*"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.35.1",
+    "@types/lodash-es": "^4.17.7",
+    "@types/react": "^18.2.14",
+    "@types/react-dom": "^18.2.6",
+    "@vitejs/plugin-react-swc": "^3.3.2",
+    "vite": "^4.3.9",
+    "vite-plugin-checker": "^0.6.1"
+  },
+  "wireit": {
+    "dev": {
+      "command": "vite --host",
+      "dependencies": [
+        "../../libs/ui-shared:build",
+        "../../libs/keycloak-masthead:build",
+        "../../libs/keycloak-js:build"
+      ]
+    },
+    "preview": {
+      "command": "vite preview",
+      "dependencies": [
+        "../../libs/ui-shared:build",
+        "../../libs/keycloak-masthead:build",
+        "../../libs/keycloak-js:build"
+      ]
+    },
+    "build": {
+      "command": "vite build",
+      "dependencies": [
+        "../../libs/ui-shared:build",
+        "../../libs/keycloak-masthead:build",
+        "../../libs/keycloak-js:build"
+      ]
+    },
+    "lint": {
+      "command": "eslint . --ext js,jsx,mjs,ts,tsx",
+      "dependencies": [
+        "../../libs/ui-shared:build",
+        "../../libs/keycloak-masthead:build",
+        "../../libs/keycloak-js:build"
+      ]
+    }
+  }
+}

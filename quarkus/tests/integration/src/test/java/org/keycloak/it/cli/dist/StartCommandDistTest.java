@@ -30,6 +30,7 @@ import org.keycloak.it.junit5.extension.DistributionTest;
 
 import io.quarkus.test.junit.main.Launch;
 import io.quarkus.test.junit.main.LaunchResult;
+import org.keycloak.it.junit5.extension.RawDistOnly;
 import org.keycloak.it.utils.KeycloakDistribution;
 
 @DistributionTest
@@ -99,4 +100,40 @@ public class StartCommandDistTest {
         cliResult.assertError("Unknown option: '--cache'");
     }
 
+    @Test
+    @RawDistOnly(reason = "Containers are immutable")
+    void testWarningWhenOverridingBuildOptionsDuringStart(KeycloakDistribution dist) {
+        CLIResult cliResult = dist.run("build", "--db=postgres", "--cache=local", "--features=preview");
+        cliResult.assertBuild();
+        cliResult = dist.run("start", "--hostname=localhost", "--http-enabled=true");
+        cliResult.assertMessage("The previous optimized build will be overridden with the following build options:");
+        cliResult.assertMessage("- cache=local > cache=ispn"); // back to the default value
+        cliResult.assertMessage("- db=postgres > db=dev-file"); // back to the default value
+        cliResult.assertMessage("- features=preview > features=<unset>"); // no default value, the <unset> is shown
+        cliResult.assertMessage("To avoid that, run the 'build' command again and then start the optimized server instance using the '--optimized' flag.");
+        cliResult.assertStarted();
+        // should not show warning if the re-augmentation did not happen through the build command
+        // an optimized server image should ideally be created by running a build
+        cliResult = dist.run("start", "--db=dev-mem", "--hostname=localhost", "--http-enabled=true");
+        cliResult.assertNoMessage("The previous optimized build will be overridden with the following build options:");
+        cliResult.assertStarted();
+        dist.run("build", "--db=postgres");
+        cliResult = dist.run("start", "--hostname=localhost", "--http-enabled=true");
+        cliResult.assertMessage("- db=postgres > db=dev-file");
+        cliResult.assertNoMessage("- cache=local > cache=ispn");
+        cliResult.assertNoMessage("- features=preview > features=<unset>");
+        cliResult.assertStarted();
+        dist.run("build", "--db=postgres");
+        cliResult = dist.run("start", "--db=dev-mem", "--hostname=localhost", "--http-enabled=true");
+        cliResult.assertMessage("- db=postgres > db=dev-mem"); // option overridden during the start
+        cliResult.assertStarted();
+        dist.run("build", "--db=dev-mem", "--cache=local");
+        cliResult = dist.run("start", "--db=dev-mem", "--hostname=localhost", "--http-enabled=true");
+        cliResult.assertNoMessage("- db=postgres > db=postgres"); // option did not change not need to show
+        cliResult.assertMessage("- cache=local > cache=ispn");
+        cliResult.assertStarted();
+        dist.run("build", "--db=dev-mem", "--cache=local");
+        cliResult = dist.run("start", "--db=dev-mem", "--cache=local", "--hostname=localhost", "--http-enabled=true");
+        cliResult.assertNoMessage("The previous optimized build will be overridden with the following build options:"); // no message, same values provided during auto-build
+    }
 }

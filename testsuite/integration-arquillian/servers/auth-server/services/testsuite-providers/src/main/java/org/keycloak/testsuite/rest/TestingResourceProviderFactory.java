@@ -26,6 +26,7 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.services.resource.RealmResourceProvider;
 import org.keycloak.services.resource.RealmResourceProviderFactory;
 import org.keycloak.timer.TimerProvider;
+import org.keycloak.truststore.TruststoreProvider;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -34,9 +35,11 @@ public class TestingResourceProviderFactory implements RealmResourceProviderFact
 
     private Map<String, TimerProvider.TimerTaskContext> suspendedTimerTasks = new ConcurrentHashMap<>();
 
+    protected TruststoreProvider truststoreProvider;
+
     @Override
     public RealmResourceProvider create(KeycloakSession session) {
-        return new TestingResourceProvider(session, suspendedTimerTasks);
+        return new TestingResourceProvider(session, this, suspendedTimerTasks);
     }
 
     @Override

@@ -1,6 +1,8 @@
 package org.keycloak.testsuite.arquillian.containers;
 
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -10,8 +12,10 @@ import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
+import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -63,6 +67,28 @@ public class KeycloakQuarkusServerDeployableContainer extends AbstractQuarkusDep
         }
     }
 
+    private void executeCommand(File wrkDir, String command, String... args) throws IOException {
+        final List<String> commands = new ArrayList<>();
+        commands.add(getCommand());
+        commands.add("-v");
+        commands.add(command);
+        if (args != null) {
+            commands.addAll(Arrays.asList(args));
+        }
+        ProcessBuilder pb = new ProcessBuilder(commands);
+        Process p = pb.directory(wrkDir).inheritIO().start();
+        try {
+            if (!p.waitFor(60, TimeUnit.SECONDS)) {
+                throw new IOException("Command " + command + " did not finished in 60 seconds");
+            }
+            if (p.exitValue() != 0) {
+                throw new IOException("Command " + command + " was executed with exit status " + p.exitValue());
+            }
+        } catch (InterruptedException e) {
+            throw new IOException(e);
+        }
+    }
+
     private void importRealm() throws IOException, URISyntaxException {
         if (suiteContext.get().isAuthServerMigrationEnabled() && configuration.getImportFile() != null) {
             final String importFileName = configuration.getImportFile();
@@ -74,14 +100,37 @@ public class KeycloakQuarkusServerDeployableContainer extends AbstractQuarkusDep
 
             final Path path = Paths.get(url.toURI());
             final File wrkDir = configuration.getProvidersPath().resolve("bin").toFile();
-            final List<String> commands = new ArrayList<>();
 
-            commands.add(getCommand());
-            commands.add("import");
-            commands.add("--file=" + wrkDir.toPath().relativize(path));
+            Path keycloakConf = Paths.get(wrkDir.toURI()).getParent().resolve("conf").resolve("keycloak.conf");
 
-            final ProcessBuilder pb = new ProcessBuilder(commands);
-            pb.directory(wrkDir).inheritIO().start();
+            // there are several issues with import in initial quarkus versions, so better use the keycloak.conf file
+            StoreProvider storeProvider = StoreProvider.getCurrentProvider();
+            List<String> storageOptions = storeProvider.getStoreOptionsToKeycloakConfImport();
+            Path keycloakConfBkp = null;
+            try {
+                if (!storageOptions.isEmpty()) {
+                    keycloakConfBkp = keycloakConf.getParent().resolve("keycloak.conf.bkp");
+                    Files.copy(keycloakConf, keycloakConfBkp);
+                    // write the options to the file
+                    try ( BufferedWriter w = new BufferedWriter(new FileWriter(keycloakConf.toFile(), true))) {
+                        for (String s : storageOptions) {
+                            w.write(System.lineSeparator());
+                            w.write(s);
+                        }
+                    }
+
+                    // execute build command to set the storage options if needed
+                    executeCommand(wrkDir, "build");
+                }
+
+                // execute the import
+                executeCommand(wrkDir, "import", "--file=" + wrkDir.toPath().relativize(path));
+            } finally {
+                // restore initial keycloak.conf if modified for import
+                if (keycloakConfBkp != null && Files.exists(keycloakConfBkp)) {
+                    Files.move(keycloakConfBkp, keycloakConf, StandardCopyOption.REPLACE_EXISTING);
+                }
+            }
         }
     }
 

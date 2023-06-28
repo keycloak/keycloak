@@ -18,7 +18,7 @@
     <encoding media-type="application/x-protostream"/>
     <locking isolation="REPEATABLE_READ" />
     <transaction mode="FULL_XA"/>
-    <indexing>
+    <indexing storage="local-heap">
         <indexed-entities>
             <indexed-entity>kc.HotRodRoleEntity</indexed-entity>
         </indexed-entities>

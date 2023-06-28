@@ -7,7 +7,7 @@ title="Configuring outgoing HTTP requests"
 summary="How to configure the client used for outgoing HTTP requests."
 includedOptions="">
 
-Keycloak often needs to make requests to the applications and services that it secures. Keycloak manages these outgoing connections using an HTTP client. This guide shows how to configure the client, connection pool, proxy environment settings, timeouts, and more.
+Keycloak often needs to make requests to the applications and services that it secures. Keycloak manages these outgoing connections using an HTTP client. This {section} shows how to configure the client, connection pool, proxy environment settings, timeouts, and more.
 
 == Client Configuration Command
 The HTTP client that Keycloak uses for outgoing communication is highly configurable. To configure the Keycloak outgoing HTTP client, enter this command:
@@ -80,7 +80,7 @@ For example, consider the following regex:
 
 [source]
 ----
-*\.(google|googleapis)\.com
+.*\.(google|googleapis)\.com
 ----
 
 You apply a regex-based hostname pattern by entering this command:

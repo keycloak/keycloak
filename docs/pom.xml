@@ -33,4 +33,19 @@
         <module>maven-plugin</module>
         <module>guides</module>
     </modules>
+
+    <profiles>
+        <profile>
+            <id>documentation</id>
+            <modules>
+                <module>documentation</module>
+            </modules>
+        </profile>
+        <profile>
+            <id>all</id>
+            <modules>
+                <module>documentation</module>
+            </modules>
+        </profile>
+    </profiles>
 </project>

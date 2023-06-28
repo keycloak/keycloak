@@ -1,0 +1,72 @@
+
+=== Augmenting external storage
+
+The `PropertyFileUserStorageProvider` example is really limited.  While we will be able to log in with users stored
+in a property file, we won't be able to do much else.  If users loaded by this provider need special role or group
+mappings to fully access particular applications there is no way for us to add additional role mappings to these users.
+You also can't modify or add additional important attributes like email, first and last name.
+
+For these types of situations, {project_name} allows you to augment your external store by storing extra information
+in {project_name}'s database.  This is called federated user storage and is encapsulated within the
+`org.keycloak.storage.federated.UserFederatedStorageProvider` class.
+
+.UserFederatedStorageProvider
+[source,java]
+----
+package org.keycloak.storage.federated;
+
+public interface UserFederatedStorageProvider extends Provider,
+        UserAttributeFederatedStorage,
+        UserBrokerLinkFederatedStorage,
+        UserConsentFederatedStorage,
+        UserNotBeforeFederatedStorage,
+        UserGroupMembershipFederatedStorage,
+        UserRequiredActionsFederatedStorage,
+        UserRoleMappingsFederatedStorage,
+        UserFederatedUserCredentialStore {
+    ...
+
+}
+----
+
+The `UserFederatedStorageProvider` instance is available on the `UserStorageUtil.userFederatedStorage(KeycloakSession)` method.
+It has all different kinds of methods for storing attributes, group and role mappings, different credential types,
+and required actions.  If your external store's datamodel  cannot support the full {project_name} feature
+set, then this service can fill in the gaps.
+
+{project_name} comes with a helper class `org.keycloak.storage.adapter.AbstractUserAdapterFederatedStorage`
+that will delegate every single `UserModel` method except get/set of username to user federated storage.  Override
+the methods you need to override to delegate to your external storage representations.  It is strongly
+suggested you read the javadoc of this class as it has smaller protected methods you may want to override.  Specifically
+surrounding group membership and role mappings.
+
+==== Augmentation example
+
+In our `PropertyFileUserStorageProvider` example, we just need a simple change to our provider to use the
+`AbstractUserAdapterFederatedStorage`.
+
+.PropertyFileUserStorageProvider
+[source,java]
+----
+    protected UserModel createAdapter(RealmModel realm, String username) {
+        return new AbstractUserAdapterFederatedStorage(session, realm, model) {
+            @Override
+            public String getUsername() {
+                return username;
+            }
+
+            @Override
+            public void setUsername(String username) {
+                String pw = (String)properties.remove(username);
+                if (pw != null) {
+                    properties.put(username, pw);
+                    save();
+                }
+            }
+        };
+    }
+----
+
+We instead define an anonymous class implementation of  `AbstractUserAdapterFederatedStorage`.  The `setUsername()`
+method makes changes to the properties file and saves it.
+

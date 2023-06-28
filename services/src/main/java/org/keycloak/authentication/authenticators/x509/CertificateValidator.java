@@ -585,7 +585,7 @@ public class CertificateValidator {
 
         TruststoreProvider truststoreProvider = session.getProvider(TruststoreProvider.class);
         if (truststoreProvider == null || truststoreProvider.getTruststore() == null) {
-            logger.error("Cannot validate client certificate trust: Truststore not available");
+            throw new GeneralSecurityException("Cannot validate client certificate trust: Truststore not available. Please make sure to correctly configure truststore provider in order to be able to revalidate certificate trust");
         }
         else
         {

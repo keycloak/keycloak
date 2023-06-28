@@ -29,11 +29,12 @@ import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.api.model.apps.StatefulSetBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.quarkus.logging.Log;
+
 import org.keycloak.common.util.CollectionUtil;
 import org.keycloak.operator.Config;
 import org.keycloak.operator.Constants;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
-import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusBuilder;
+import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusAggregator;
 import org.keycloak.operator.crds.v2alpha1.deployment.ValueOrSecret;
 
 import java.nio.charset.StandardCharsets;
@@ -41,6 +42,7 @@ import java.util.ArrayList;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -50,7 +52,7 @@ import java.util.stream.Collectors;
 
 import static org.keycloak.operator.crds.v2alpha1.CRDUtils.isTlsConfigured;
 
-public class KeycloakDeployment extends OperatorManagedResource implements StatusUpdater<KeycloakStatusBuilder> {
+public class KeycloakDeployment extends OperatorManagedResource implements StatusUpdater<KeycloakStatusAggregator> {
 
     private final Config operatorConfig;
     private final KeycloakDistConfigurator distConfigurator;
@@ -85,32 +87,15 @@ public class KeycloakDeployment extends OperatorManagedResource implements Statu
 
     @Override
     public Optional<HasMetadata> getReconciledResource() {
-        StatefulSet baseDeployment = new StatefulSetBuilder(this.baseDeployment).build(); // clone not to change the base template
-        StatefulSet reconciledDeployment;
         if (existingDeployment == null) {
             Log.info("No existing Deployment found, using the default");
-            reconciledDeployment = baseDeployment;
         }
         else {
-            Log.info("Existing Deployment found, updating specs");
-            reconciledDeployment = new StatefulSetBuilder(existingDeployment).build();
+            Log.info("Existing Deployment found, handling migration");
 
-            // don't overwrite metadata, just specs
-            reconciledDeployment.setSpec(baseDeployment.getSpec());
-
-            // don't fully overwrite annotations in pod templates to support rolling restarts (K8s sets some extra annotation to track restart)
-            // instead, merge it
-            if (existingDeployment.getSpec() != null && existingDeployment.getSpec().getTemplate() != null) {
-                mergeMaps(
-                        Optional.ofNullable(existingDeployment.getSpec().getTemplate().getMetadata()).map(m -> m.getAnnotations()).orElse(null),
-                        Optional.ofNullable(reconciledDeployment.getSpec().getTemplate().getMetadata()).map(m -> m.getAnnotations()).orElse(null),
-                        annotations -> reconciledDeployment.getSpec().getTemplate().getMetadata().setAnnotations(annotations));
-            }
-
-            migrateDeployment(existingDeployment, reconciledDeployment);
+            migrateDeployment(existingDeployment, baseDeployment);
         }
-
-        return Optional.of(reconciledDeployment);
+        return Optional.of(baseDeployment);
     }
 
     private StatefulSet fetchExistingDeployment() {
@@ -122,7 +107,7 @@ public class KeycloakDeployment extends OperatorManagedResource implements Statu
                 .get();
     }
 
-    public void validatePodTemplate(KeycloakStatusBuilder status) {
+    public void validatePodTemplate(KeycloakStatusAggregator status) {
         if (keycloakCR.getSpec() == null ||
                 keycloakCR.getSpec().getUnsupported() == null ||
                 keycloakCR.getSpec().getUnsupported().getPodTemplate() == null) {
@@ -378,7 +363,12 @@ public class KeycloakDeployment extends OperatorManagedResource implements Statu
         baseDeployment.getMetadata().setNamespace(getNamespace());
         baseDeployment.getSpec().getSelector().setMatchLabels(Constants.DEFAULT_LABELS);
         baseDeployment.getSpec().setReplicas(keycloakCR.getSpec().getInstances());
-        baseDeployment.getSpec().getTemplate().getMetadata().setLabels(Constants.DEFAULT_LABELS);
+
+        Map<String, String> labels = new LinkedHashMap<>(Constants.DEFAULT_LABELS);
+        if (operatorConfig.keycloak().podLabels() != null) {
+            labels.putAll(operatorConfig.keycloak().podLabels());
+        }
+        baseDeployment.getSpec().getTemplate().getMetadata().setLabels(labels);
 
         Container container = baseDeployment.getSpec().getTemplate().getSpec().getContainers().get(0);
         var customImage = Optional.ofNullable(keycloakCR.getSpec().getImage());
@@ -398,23 +388,26 @@ public class KeycloakDeployment extends OperatorManagedResource implements Statu
 
         // probes
         var tlsConfigured = isTlsConfigured(keycloakCR);
-        var userRelativePath = readConfigurationValue(Constants.KEYCLOAK_HTTP_RELATIVE_PATH_KEY);
-        var kcRelativePath = (userRelativePath == null) ? "" : userRelativePath;
         var protocol = !tlsConfigured ? "HTTP" : "HTTPS";
         var kcPort = KeycloakService.getServicePort(keycloakCR);
+
+        // Relative path ends with '/'
+        var kcRelativePath = Optional.ofNullable(readConfigurationValue(Constants.KEYCLOAK_HTTP_RELATIVE_PATH_KEY))
+                .map(path -> !path.endsWith("/") ? path + "/" : path)
+                .orElse("/");
 
         container.getReadinessProbe().setHttpGet(
             new HTTPGetActionBuilder()
                 .withScheme(protocol)
                 .withPort(new IntOrString(kcPort))
-                .withPath(kcRelativePath + "/health/ready")
+                .withPath(kcRelativePath + "health/ready")
                 .build()
         );
         container.getLivenessProbe().setHttpGet(
             new HTTPGetActionBuilder()
                 .withScheme(protocol)
                 .withPort(new IntOrString(kcPort))
-                .withPath(kcRelativePath + "/health/live")
+                .withPath(kcRelativePath + "health/live")
                 .build()
         );
 
@@ -429,19 +422,18 @@ public class KeycloakDeployment extends OperatorManagedResource implements Statu
 
     private List<EnvVar> getEnvVars() {
         // default config values
-        List<ValueOrSecret> serverConfig = Constants.DEFAULT_DIST_CONFIG.entrySet().stream()
-                .map(e -> new ValueOrSecret(e.getKey(), e.getValue()))
-                .collect(Collectors.toList());
+        List<ValueOrSecret> serverConfigsList = new ArrayList<>(Constants.DEFAULT_DIST_CONFIG_LIST);
 
         // merge with the CR; the values in CR take precedence
         if (keycloakCR.getSpec().getAdditionalOptions() != null) {
-            serverConfig.removeAll(keycloakCR.getSpec().getAdditionalOptions());
-            serverConfig.addAll(keycloakCR.getSpec().getAdditionalOptions());
+            Set<String> inCr = keycloakCR.getSpec().getAdditionalOptions().stream().map(v -> v.getName()).collect(Collectors.toSet());
+            serverConfigsList.removeIf(v -> inCr.contains(v.getName()));
+            serverConfigsList.addAll(keycloakCR.getSpec().getAdditionalOptions());
         }
 
         // set env vars
         serverConfigSecretsNames = new HashSet<>();
-        List<EnvVar> envVars = serverConfig.stream()
+        List<EnvVar> envVars = serverConfigsList.stream()
                 .map(v -> {
                     var envBuilder = new EnvVarBuilder().withName(KeycloakDistConfigurator.getKeycloakOptionEnvVarName(v.getName()));
                     var secret = v.getSecret();
@@ -489,17 +481,22 @@ public class KeycloakDeployment extends OperatorManagedResource implements Statu
         return envVars;
     }
 
-    public void updateStatus(KeycloakStatusBuilder status) {
+    @Override
+    public void updateStatus(KeycloakStatusAggregator status) {
+        status.apply(b -> b.withSelector(Constants.DEFAULT_LABELS_AS_STRING));
         validatePodTemplate(status);
         if (existingDeployment == null) {
             status.addNotReadyMessage("No existing StatefulSet found, waiting for creating a new one");
             return;
         }
 
-        if (existingDeployment.getStatus() == null
-                || existingDeployment.getStatus().getReadyReplicas() == null
-                || existingDeployment.getStatus().getReadyReplicas() < keycloakCR.getSpec().getInstances()) {
-            status.addNotReadyMessage("Waiting for more replicas");
+        if (existingDeployment.getStatus() == null) {
+            status.addNotReadyMessage("Waiting for deployment status");
+        } else {
+            status.apply(b -> b.withInstances(existingDeployment.getStatus().getReadyReplicas()));
+            if (Optional.ofNullable(existingDeployment.getStatus().getReadyReplicas()).orElse(0) < keycloakCR.getSpec().getInstances()) {
+                status.addNotReadyMessage("Waiting for more replicas");
+            }
         }
 
         if (migrationInProgress) {

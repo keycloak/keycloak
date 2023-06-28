@@ -8,7 +8,7 @@ title="Advanced configuration"
 summary="How to tune advanced aspects of the Keycloak CR">
 
 == Advanced configuration
-This guide describes how to use Custom Resources (CRs) for advanced configuration of your Keycloak deployment.
+This {section} describes how to use Custom Resources (CRs) for advanced configuration of your Keycloak deployment.
 
 === Server configuration details
 

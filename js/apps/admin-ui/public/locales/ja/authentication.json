@@ -1,0 +1,51 @@
+{
+  "title": "認証",
+  "flows": "フロー",
+  "requiredActions": "必須アクション",
+  "policies": "ポリシー",
+  "passwordPolicy": "パスワード・ポリシー",
+  "otpPolicy": "OTPポリシー",
+  "webauthnPolicy": "WebAuthnポリシー",
+  "webauthnPasswordlessPolicy": "WebAuthnパスワードレス・ポリシー",
+  "webAuthnPolicyRpEntityName": "リライング・パーティー・エンティティー名",
+  "otpType": "OTPタイプ",
+  "policyType": {
+    "totp": "タイムベース",
+    "hotp": "カウンターベース"
+  },
+  "otpHashAlgorithm": "OTPハッシュ・アルゴリズム",
+  "otpPolicyDigits": "桁数",
+  "lookAhead": "先読みウィンドウ",
+  "otpPolicyPeriod": "OTPトークンの期間",
+  "initialCounter": "初期カウンター",
+  "webAuthnPolicySignatureAlgorithms": "署名アルゴリズム",
+  "webAuthnPolicyRpId": "リライング・パーティー・エンティティーID",
+  "webAuthnPolicyAttestationConveyancePreference": "期待する構成証明伝達",
+  "attestationPreference": {
+    "none": "none"
+  },
+  "webAuthnPolicyAuthenticatorAttachment": "オーセンティケーター・アタッチメント",
+  "webAuthnPolicyRequireResidentKey": "常駐鍵が必要",
+  "webAuthnPolicyUserVerificationRequirement": "ユーザー検証要件",
+  "webAuthnPolicyCreateTimeout": "タイムアウト",
+  "webAuthnPolicyAvoidSameAuthenticatorRegister": "オーセンティケーターの重複登録回避",
+  "webAuthnPolicyAcceptableAaguids": "許容可能なAAGUID",
+  "default": "DEFAULT",
+  "flow": {
+    "browserFlow": "ブラウザーフロー",
+    "registrationFlow": "登録フロー",
+    "directGrantFlow": "ダイレクト・グラント・フロー"
+  },
+  "edit": "編集",
+  "flowType": "フロータイプ",
+  "flow-type": {
+    "basic-flow": "generic",
+    "form-flow": "form"
+  },
+  "addExecution": "エグゼキューションを追加",
+  "requirement": "必要条件",
+  "requirements": {
+    "DISABLED": "無効"
+  },
+  "alias": "エイリアス"
+}

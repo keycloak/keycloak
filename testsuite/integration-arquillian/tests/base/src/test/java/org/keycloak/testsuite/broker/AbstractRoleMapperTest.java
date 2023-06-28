@@ -9,7 +9,6 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.in;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
-import static org.keycloak.testsuite.broker.BrokerTestTools.getConsumerRoot;
 
 import org.hamcrest.Matchers;
 import org.junit.Before;
@@ -25,9 +24,11 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.RoleBuilder;
 
+import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -77,7 +78,7 @@ public abstract class AbstractRoleMapperTest extends AbstractIdentityProviderMap
     }
 
     @Test
-    public void tryToCreateBrokeredUserWithNonExistingClientRoleDoesNotBreakLogin() {
+    public void tryToCreateBrokeredUserWithNonExistingClientRoleDoesNotBreakLogin() throws IOException {
         String clientRoleStringWithMissingRole = createClientRoleString(CLIENT_ID, "does-not-exist");
         setup(clientRoleStringWithMissingRole);
 
@@ -88,7 +89,7 @@ public abstract class AbstractRoleMapperTest extends AbstractIdentityProviderMap
      * This test checks that the mapper can also be applied to realm roles (other tests mostly use client roles).
      */
     @Test
-    public void mapperCanBeAppliedToRealmRoles() {
+    public void mapperCanBeAppliedToRealmRoles() throws IOException {
         setup(REALM_ROLE);
 
         logInAsUserInIDPForFirstTimeAndAssertSuccess();
@@ -97,7 +98,7 @@ public abstract class AbstractRoleMapperTest extends AbstractIdentityProviderMap
     }
 
     @Test
-    public void mapperStillWorksWhenClientRoleIsRenamed() {
+    public void mapperStillWorksWhenClientRoleIsRenamed() throws IOException {
         setup(CLIENT_ROLE_MAPPER_REPRESENTATION);
 
         String newRoleName = "new-name-" + CLIENT_ROLE;
@@ -116,7 +117,7 @@ public abstract class AbstractRoleMapperTest extends AbstractIdentityProviderMap
     }
 
     @Test
-    public void mapperStillWorksWhenClientIdIsChanged() {
+    public void mapperStillWorksWhenClientIdIsChanged() throws IOException {
         setup(CLIENT_ROLE_MAPPER_REPRESENTATION);
 
         String newClientId = "new-name-" + CLIENT_ID;
@@ -129,13 +130,15 @@ public abstract class AbstractRoleMapperTest extends AbstractIdentityProviderMap
         // mapper(s) should have been updated to the new client role name
         assertMappersAreConfiguredWithRole(expectedNewClientRoleName);
 
+        AccountHelper.logout(adminClient.realm(bc.providerRealmName()), bc.getUserLogin());
+
         logInAsUserInIDPForFirstTimeAndAssertSuccess();
 
         assertThatRoleHasBeenAssignedInConsumerRealm(newClientId, CLIENT_ROLE);
     }
 
     @Test
-    public void mapperStillWorksWhenRealmRoleIsRenamed() {
+    public void mapperStillWorksWhenRealmRoleIsRenamed() throws IOException {
         setup(REALM_ROLE);
 
         String newRoleName = "new-name-" + REALM_ROLE;
@@ -196,7 +199,8 @@ public abstract class AbstractRoleMapperTest extends AbstractIdentityProviderMap
         if (createAfterFirstLogin) {
             createMapperInIdp(syncMode, CLIENT_ROLE_MAPPER_REPRESENTATION);
         }
-        logoutFromRealm(getConsumerRoot(), bc.consumerRealmName());
+        AccountHelper.logout(adminClient.realm(bc.consumerRealmName()), bc.getUserLogin());
+        AccountHelper.logout(adminClient.realm(bc.providerRealmName()), bc.getUserLogin());
 
         updateUser();
 
@@ -222,7 +226,7 @@ public abstract class AbstractRoleMapperTest extends AbstractIdentityProviderMap
         userResource.roles().realmLevel().add(Collections.singletonList(role));
     }
 
-    private void assertLoginSucceedsWithoutRoleAssignment() {
+    private void assertLoginSucceedsWithoutRoleAssignment() throws IOException {
         logInAsUserInIDPForFirstTimeAndAssertSuccess();
 
         assertThatNoRolesHaveBeenAssignedInConsumerRealm();

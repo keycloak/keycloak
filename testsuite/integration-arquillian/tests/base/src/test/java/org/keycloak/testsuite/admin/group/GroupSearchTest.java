@@ -3,7 +3,9 @@ package org.keycloak.testsuite.admin.group;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasSize;
 import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
 
 import java.util.Arrays;
@@ -12,7 +14,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import org.hamcrest.Matchers;
 import org.jboss.arquillian.container.test.api.ContainerController;
 import org.jboss.arquillian.test.api.ArquillianResource;
 import org.junit.Before;
@@ -102,34 +103,34 @@ public class GroupSearchTest extends AbstractGroupTest {
     }
 
     @Test
-    public void testQuerySearch() throws Exception {
-        configureSearchableAttributes(ATTR_URL_NAME, ATTR_ORG_NAME, ATTR_QUOTES_NAME);
+    public void querySearch() throws Exception {
+        configureSearchableAttributes();
         try (Creator<GroupResource> groupCreator1 = Creator.create(testRealmResource(), group1);
              Creator<GroupResource> groupCreator2 = Creator.create(testRealmResource(), group2);
              Creator<GroupResource> groupCreator3 = Creator.create(testRealmResource(), group3)) {
-            search(String.format("%s:%s", ATTR_ORG_NAME, ATTR_ORG_VAL), GROUP1);
-            search(String.format("%s:%s", ATTR_URL_NAME, ATTR_URL_VAL), GROUP1, GROUP2);
-            search(String.format("%s:%s %s:%s", ATTR_ORG_NAME, ATTR_ORG_VAL, ATTR_URL_NAME, ATTR_URL_VAL),
+            search(buildSearchQuery(ATTR_ORG_NAME, ATTR_ORG_VAL), GROUP1);
+            search(buildSearchQuery(ATTR_URL_NAME, ATTR_URL_VAL), GROUP1, GROUP2);
+            search(buildSearchQuery(ATTR_ORG_NAME, ATTR_ORG_VAL, ATTR_URL_NAME, ATTR_URL_VAL),
                     GROUP1);
-            search(String.format("%s:%s %s:%s", ATTR_ORG_NAME, "wrong val", ATTR_URL_NAME, ATTR_URL_VAL));
-            search(String.format("%s:%s", ATTR_QUOTES_NAME_ESCAPED, ATTR_QUOTES_VAL_ESCAPED), GROUP3);
+            search(buildSearchQuery(ATTR_ORG_NAME, "wrong val", ATTR_URL_NAME, ATTR_URL_VAL));
+            search(buildSearchQuery(ATTR_QUOTES_NAME_ESCAPED, ATTR_QUOTES_VAL_ESCAPED), GROUP3);
 
             // "filtered" attribute won't take effect when JPA is used
             String[] expectedRes = isLegacyJpaStore() ? new String[]{GROUP1, GROUP2} : new String[]{GROUP2};
-            search(String.format("%s:%s %s:%s", ATTR_URL_NAME, ATTR_URL_VAL, ATTR_FILTERED_NAME, ATTR_FILTERED_VAL), expectedRes);
+            search(buildSearchQuery(ATTR_URL_NAME, ATTR_URL_VAL, ATTR_FILTERED_NAME, ATTR_FILTERED_VAL), expectedRes);
         } finally {
             resetSearchableAttributes();
         }
     }
 
     @Test
-    public void testNestedGroupQuerySearch() throws Exception {
-        configureSearchableAttributes(ATTR_URL_NAME, ATTR_ORG_NAME, ATTR_QUOTES_NAME);
+    public void nestedGroupQuerySearch() throws Exception {
+        configureSearchableAttributes();
         try (Creator<GroupResource> parentGroupCreator = Creator.create(testRealmResource(), parentGroup)) {
             parentGroupCreator.resource().subGroup(childGroup);
             // query for the child group by org name
             GroupsResource search = testRealmResource().groups();
-            String searchQuery = String.format("%s:%s", ATTR_ORG_NAME, "childOrg");
+            String searchQuery = buildSearchQuery(ATTR_ORG_NAME, "childOrg");
             List<GroupRepresentation> found = search.query(searchQuery);
 
             assertThat(found.size(), is(1));
@@ -143,15 +144,86 @@ public class GroupSearchTest extends AbstractGroupTest {
         }
     }
 
+    @Test
+    public void nestedGroupQuerySearchNoHierarchy() throws Exception {
+        configureSearchableAttributes();
+        try (Creator<GroupResource> parentGroupCreator = Creator.create(testRealmResource(), parentGroup)) {
+            parentGroupCreator.resource().subGroup(childGroup);
+
+            GroupRepresentation testGroup = new GroupRepresentation();
+            testGroup.setName("test_child");
+            parentGroupCreator.resource().subGroup(testGroup);
+
+            // query for the child group by org name
+            GroupsResource search = testRealmResource().groups();
+            String searchQuery = buildSearchQuery(ATTR_ORG_NAME, "childOrg");
+            List<GroupRepresentation> found = search.query(searchQuery, false);
+
+            assertThat(found.size(), is(1));
+            assertThat(found.get(0).getName(), is(equalTo(CHILD_GROUP)));
+
+            String path = found.get(0).getPath();
+            assertThat(path, is(String.format("/%s/%s", PARENT_GROUP, CHILD_GROUP)));
+        } finally {
+            resetSearchableAttributes();
+        }
+    }
+
+    @Test
+    public void queryPaging() throws Exception {
+        configureSearchableAttributes();
+        try (Creator<GroupResource> group1Creator = Creator.create(testRealmResource(), group1);
+             Creator<GroupResource> group2Creator = Creator.create(testRealmResource(), group2)) {
+            String searchQuery = buildSearchQuery(ATTR_URL_NAME, ATTR_URL_VAL);
+
+            List<GroupRepresentation> firstPage = testRealmResource().groups()
+                    .query(searchQuery, true, 0, 1, true);
+            assertThat(firstPage, hasSize(1));
+            GroupRepresentation firstGroup = firstPage.get(0);
+            assertThat(firstGroup.getName(), is(equalTo(GROUP1)));
+
+            List<GroupRepresentation> secondPage = testRealmResource().groups()
+                    .query(searchQuery, true, 1, 1, true);
+            assertThat(secondPage, hasSize(1));
+            GroupRepresentation secondGroup = secondPage.get(0);
+            assertThat(secondGroup.getName(), is(equalTo(GROUP2)));
+
+            List<GroupRepresentation> thirdPage = testRealmResource().groups()
+                    .query(searchQuery, true, 2, 1, true);
+            assertThat(thirdPage, is(empty()));
+        } finally {
+            resetSearchableAttributes();
+        }
+    }
+
+    @Test
+    public void queryFullRepresentation() throws Exception {
+        configureSearchableAttributes();
+        try (Creator<GroupResource> group1Creator = Creator.create(testRealmResource(), group1)) {
+            List<GroupRepresentation> found = testRealmResource().groups()
+                    .query(buildSearchQuery(ATTR_ORG_NAME, ATTR_ORG_VAL), true, 0, 100, false);
+
+            assertThat(found, hasSize(1));
+            GroupRepresentation group = found.get(0);
+            assertThat(group.getName(), is(equalTo(GROUP1)));
+            // attributes are not contained in group representation, only in full representation
+            assertThat(group.getAttributes(), is(equalTo(group1.getAttributes())));
+        } finally {
+            resetSearchableAttributes();
+        }
+    }
+
     private void search(String searchQuery, String... expectedGroupIds) {
         GroupsResource search = testRealmResource().groups();
         List<String> found = search.query(searchQuery).stream()
                 .map(GroupRepresentation::getName)
                 .collect(Collectors.toList());
+        assertThat(found, hasSize(expectedGroupIds.length));
         assertThat(found, containsInAnyOrder(expectedGroupIds));
     }
 
-    void configureSearchableAttributes(String... searchableAttributes) throws Exception {
+    void configureSearchableAttributes() throws Exception {
+        String[] searchableAttributes = new String[]{ATTR_URL_NAME, ATTR_ORG_NAME, ATTR_QUOTES_NAME};
         log.infov("Configuring searchableAttributes");
         if (suiteContext.getAuthServerInfo().isUndertow()) {
             controller.stop(suiteContext.getAuthServerInfo().getQualifier());
@@ -188,6 +260,32 @@ public class GroupSearchTest extends AbstractGroupTest {
             throw new RuntimeException("Don't know how to config");
         }
         reconnectAdminClient();
+    }
+
+    private static String buildSearchQuery(String firstAttrName, String firstAttrValue, String... furtherAttrKeysAndValues) {
+        if (furtherAttrKeysAndValues.length % 2 != 0) {
+            throw new IllegalArgumentException("Invalid length of furtherAttrKeysAndValues. Must be even, but is: " + furtherAttrKeysAndValues.length);
+        }
+
+        String keyValueSep = ":";
+        String attributesSep = " ";
+
+        StringBuilder sb = new StringBuilder();
+        sb.append(firstAttrName).append(keyValueSep).append(firstAttrValue);
+
+        if (furtherAttrKeysAndValues.length != 0) {
+            for (int i = 0; i < furtherAttrKeysAndValues.length; i++) {
+                if (i % 2 == 0) {
+                    sb.append(attributesSep);
+                } else {
+                    sb.append(keyValueSep);
+                }
+
+                sb.append(furtherAttrKeysAndValues[i]);
+            }
+        }
+
+        return sb.toString();
     }
 
     private boolean isLegacyJpaStore() {

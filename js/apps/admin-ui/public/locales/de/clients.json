@@ -1,0 +1,25 @@
+{
+  "copy": "Kopieren",
+  "webOrigins": "Web Origins",
+  "keys": "Keys",
+  "credentials": "Passwörter",
+  "roles": "Rollen",
+  "password": "Passwort",
+  "settings": "Einstellungen",
+  "type": "Typ",
+  "users": "Benutzer",
+  "user": "Benutzer",
+  "clientList": "Clients",
+  "created": "Erstellt",
+  "lastUpdated": "Zuletzt aktualisiert",
+  "authentication": "Authentifizierung",
+  "realmRoles": "Realm-Rollen",
+  "selectMethodType": {
+    "import": "Importieren"
+  },
+  "clear": "Zurücksetzen",
+  "certificate": "Zertifikat",
+  "tokenLifespan": {
+    "expires": "Läuft ab in"
+  }
+}

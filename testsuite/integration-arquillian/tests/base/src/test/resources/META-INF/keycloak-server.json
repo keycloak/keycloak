@@ -52,7 +52,12 @@
     },
 
     "globalLock": {
-        "provider": "${keycloak.globalLock.provider:dblock}"
+        "provider": "${keycloak.globalLock.provider:dblock}",
+        "map": {
+            "storage": {
+                "provider": "${keycloak.lock.map.storage.provider,keycloak.mapStorage.provider.default:concurrenthashmap}"
+            }
+        }
     },
 
     "realm": {
@@ -169,7 +174,6 @@
             "user": "${keycloak.map.storage.connectionsJpa.user:}",
             "password": "${keycloak.map.storage.connectionsJpa.password:}",
             "driver": "org.postgresql.Driver",
-            "driverDialect": "org.keycloak.models.map.storage.jpa.hibernate.dialect.JsonbPostgreSQL95Dialect",
             "showSql": "${keycloak.map.storage.connectionsJpa,showSql:false}"
         },
         "file": {
@@ -364,6 +368,12 @@
         "files-plaintext": {
             "dir": "target/dependency/vault",
             "enabled": "${keycloak.vault.files-plaintext.provider.enabled:false}"
+        },
+        "files-keystore": {
+            "file": "target/dependency/vault/myks",
+            "pass": "keystorepassword",
+            "type": "PKCS12",
+            "enabled": "${keycloak.vault.files-keystore.provider.enabled:false}"
         }
     },
 

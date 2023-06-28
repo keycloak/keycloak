@@ -36,9 +36,9 @@ import org.keycloak.models.RealmProvider;
 import org.keycloak.models.RealmSpi;
 import org.keycloak.models.RoleProvider;
 import org.keycloak.models.RoleSpi;
+import org.keycloak.models.SingleUseObjectProvider;
 import org.keycloak.models.ThemeManager;
 import org.keycloak.models.TokenManager;
-import org.keycloak.models.UserCredentialManager;
 import org.keycloak.models.UserLoginFailureProvider;
 import org.keycloak.models.UserProvider;
 import org.keycloak.models.UserSessionProvider;
@@ -265,91 +265,18 @@ public class ImportKeycloakSession implements KeycloakSession {
     }
 
     @Override
+    public SingleUseObjectProvider singleUseObjects() {
+        throw new ModelException("not supported yet");
+    }
+
+    @Override
     public void close() {
         session.close();
     }
 
     @Override
-    @Deprecated
-    public UserProvider userCache() {
-        throw new ModelException("not supported");
-    }
-
-    @Override
     public UserProvider users() {
         return userProvider;
-    }
-
-    @Override
-    @Deprecated
-    public ClientProvider clientStorageManager() {
-        throw new ModelException("not supported");
-    }
-
-    @Override
-    @Deprecated
-    public ClientScopeProvider clientScopeStorageManager() {
-        throw new ModelException("not supported");
-    }
-
-    @Override
-    @Deprecated
-    public RoleProvider roleStorageManager() {
-        throw new ModelException("not supported");
-    }
-
-    @Override
-    @Deprecated
-    public GroupProvider groupStorageManager() {
-        throw new ModelException("not supported");
-    }
-
-    @Override
-    @Deprecated
-    public UserProvider userStorageManager() {
-        throw new ModelException("not supported");
-    }
-
-    @Override
-    @Deprecated
-    public UserCredentialManager userCredentialManager() {
-        throw new ModelException("not supported");
-    }
-
-    @Override
-    @Deprecated
-    public UserProvider userLocalStorage() {
-        throw new ModelException("not supported");
-    }
-
-    @Override
-    @Deprecated
-    public RealmProvider realmLocalStorage() {
-        throw new ModelException("not supported");
-    }
-
-    @Override
-    @Deprecated
-    public ClientProvider clientLocalStorage() {
-        throw new ModelException("not supported");
-    }
-
-    @Override
-    @Deprecated
-    public ClientScopeProvider clientScopeLocalStorage() {
-        throw new ModelException("not supported");
-    }
-
-    @Override
-    @Deprecated
-    public GroupProvider groupLocalStorage() {
-        throw new ModelException("not supported");
-    }
-
-    @Override
-    @Deprecated
-    public RoleProvider roleLocalStorage() {
-        throw new ModelException("not supported");
     }
 
     @Override

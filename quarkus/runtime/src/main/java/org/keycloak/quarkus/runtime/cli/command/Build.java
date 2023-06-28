@@ -22,6 +22,7 @@ import static org.keycloak.quarkus.runtime.Environment.isDevMode;
 import static org.keycloak.quarkus.runtime.cli.Picocli.println;
 import static org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource.getAllCliArgs;
 
+import org.keycloak.config.OptionCategory;
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.Messages;
 
@@ -31,6 +32,8 @@ import io.quarkus.bootstrap.runner.RunnerClassLoader;
 import io.quarkus.runtime.configuration.ProfileManager;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
+
+import java.util.List;
 
 @Command(name = Build.NAME,
         header = "Creates a new and optimized server image.",
@@ -79,6 +82,16 @@ public final class Build extends AbstractCommand implements Runnable {
         } finally {
             cleanTempResources();
         }
+    }
+
+    @Override
+    public boolean includeBuildTime() {
+        return true;
+    }
+
+    public List<OptionCategory> getOptionCategories() {
+        // all options should work for the build command, otherwise re-augmentation might fail due to unknown options
+        return super.getOptionCategories();
     }
 
     private void exitWithErrorIfDevProfileIsSetAndNotStartDev() {

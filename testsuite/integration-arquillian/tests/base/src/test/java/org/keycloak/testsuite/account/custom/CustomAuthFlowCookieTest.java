@@ -16,18 +16,11 @@
  */
 package org.keycloak.testsuite.account.custom;
 
-import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.models.AuthenticationExecutionModel.Requirement;
-import org.keycloak.representations.idm.ClientRepresentation;
-import org.keycloak.testsuite.admin.ApiUtil;
-
-import java.util.Arrays;
-
-import javax.ws.rs.core.Response;
 
 import static org.junit.Assert.assertEquals;
-import static org.keycloak.testsuite.util.OAuthClient.APP_ROOT;
+
 
 /**
  *
@@ -35,29 +28,11 @@ import static org.keycloak.testsuite.util.OAuthClient.APP_ROOT;
  */
 public class CustomAuthFlowCookieTest extends AbstractCustomAccountManagementTest {
 
-    @Before
-    @Override
-    public void beforeTest() {
-        super.beforeTest();
-
-        ClientRepresentation testApp = new ClientRepresentation();
-        testApp.setClientId("test-app");
-        testApp.setEnabled(true);
-        testApp.setBaseUrl(APP_ROOT);
-        testApp.setRedirectUris(Arrays.asList(new String[]{APP_ROOT + "/*"}));
-        testApp.setAdminUrl(APP_ROOT + "/logout");
-        testApp.setSecret("password");
-        Response response = testRealmResource().clients().create(testApp);
-        assertEquals(201, response.getStatus());
-        getCleanup().addClientUuid(ApiUtil.getCreatedId(response));
-        response.close();
-    }
-
     @Test
     public void cookieAlternative() {
         //test default setting of cookie provider
-        //login to account management
-        testRealmAccountManagementPage.navigateTo();
+        //login
+        driver.navigate().to(oauth.getLoginFormUrl());
         testRealmLoginPage.form().login(testUser);
         
         //check SSO is working
@@ -71,11 +46,11 @@ public class CustomAuthFlowCookieTest extends AbstractCustomAccountManagementTes
         //disable cookie 
         updateRequirement("browser", "auth-cookie", Requirement.DISABLED);
         
-        //login to account management
-        testRealmAccountManagementPage.navigateTo();
+        //login
+        driver.navigate().to(oauth.getLoginFormUrl());
         testRealmLoginPage.form().login(testUser);
         
-        //SSO shouln't work
+        //SSO shouldn't work
         //navigate to different client of the same realm and verify user is not logged in
         oauth.openLoginForm();
         assertEquals("Sign in to test", driver.getTitle());

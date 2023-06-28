@@ -1,0 +1,53 @@
+{
+  "name": "ui-shared",
+  "type": "module",
+  "main": "./dist/ui-shared.js",
+  "types": "./dist/ui-shared.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/ui-shared.js",
+      "types": "./dist/ui-shared.d.ts"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "wireit",
+    "lint": "wireit"
+  },
+  "wireit": {
+    "build": {
+      "command": "vite build",
+      "files": [
+        "src/**",
+        "package.json",
+        "tsconfig.json",
+        "vite.config.ts"
+      ],
+      "output": [
+        "dist/**"
+      ]
+    },
+    "lint": {
+      "command": "eslint . --ext js,jsx,mjs,ts,tsx"
+    }
+  },
+  "dependencies": {
+    "@patternfly/react-core": "^4.276.8",
+    "@patternfly/react-icons": "^4.93.6",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-hook-form": "7.44.3"
+  },
+  "devDependencies": {
+    "@types/react": "^18.2.14",
+    "@types/react-dom": "^18.2.6",
+    "@vitejs/plugin-react-swc": "^3.3.2",
+    "rollup-plugin-peer-deps-external": "^2.2.4",
+    "vite": "^4.3.9",
+    "vite-plugin-checker": "^0.6.1",
+    "vite-plugin-dts": "^2.3.0",
+    "vitest": "^0.32.2"
+  }
+}

@@ -8,7 +8,7 @@ title="Running Keycloak in a container"
 summary="Learn how to run Keycloak from a container image"
 includedOptions="db db-url db-username db-password features hostname https-key-store-file https-key-store-password health-enabled metrics-enabled">
 
-Keycloak handles containerized environments such as Kubernetes or OpenShift as first-class citizens. This guide describes how to optimize and run the Keycloak container image to provide the best experience running a Keycloak container.
+Keycloak handles containerized environments such as Kubernetes or OpenShift as first-class citizens. This {section} describes how to optimize and run the Keycloak container image to provide the best experience running a Keycloak container.
 
 == Creating a customized and optimized container image
 The default Keycloak container image ships ready to be configured and optimized.
@@ -59,7 +59,7 @@ To install custom providers, you just need to define a step to include the JAR f
 [source, dockerfile]
 ----
 # A example build step that downloads a JAR file from a URL and adds it to the providers directory
-ADD <MY_PROVIDER_JAR_URL> /opt/keycloak/providers/myprovider.jar
+ADD --chown=keycloak:keycloak <MY_PROVIDER_JAR_URL> /opt/keycloak/providers/myprovider.jar
 ----
 
 === Installing additional RPM packages

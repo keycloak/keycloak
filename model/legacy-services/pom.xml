@@ -44,8 +44,8 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>com.openshift</groupId>
-            <artifactId>openshift-restclient-java</artifactId>
+            <groupId>org.jboss.resteasy</groupId>
+            <artifactId>resteasy-core</artifactId>
         </dependency>
     </dependencies>
 

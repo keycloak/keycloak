@@ -17,7 +17,7 @@
 package org.keycloak.services.resources.admin;
 
 import org.jboss.resteasy.annotations.cache.NoCache;
-import javax.ws.rs.NotFoundException;
+import jakarta.ws.rs.NotFoundException;
 import org.keycloak.common.util.ObjectUtil;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
@@ -31,16 +31,16 @@ import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 import org.keycloak.utils.SearchQueryUtils;
 
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DefaultValue;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DefaultValue;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
@@ -79,12 +79,13 @@ public class GroupsResource {
                                                  @QueryParam("exact") @DefaultValue("false") Boolean exact,
                                                  @QueryParam("first") Integer firstResult,
                                                  @QueryParam("max") Integer maxResults,
-                                                 @QueryParam("briefRepresentation") @DefaultValue("true") boolean briefRepresentation) {
+                                                 @QueryParam("briefRepresentation") @DefaultValue("true") boolean briefRepresentation,
+                                                 @QueryParam("populateHierarchy") @DefaultValue("true") boolean populateHierarchy) {
         auth.groups().requireList();
 
         if (Objects.nonNull(searchQuery)) {
             Map<String, String> attributes = SearchQueryUtils.getFields(searchQuery);
-            return ModelToRepresentation.searchGroupsByAttributes(session, realm, !briefRepresentation, attributes, firstResult, maxResults);
+            return ModelToRepresentation.searchGroupsByAttributes(session, realm, !briefRepresentation, populateHierarchy, attributes, firstResult, maxResults);
         } else if (Objects.nonNull(search)) {
             return ModelToRepresentation.searchForGroupByName(session, realm, !briefRepresentation, search.trim(), exact, firstResult, maxResults);
         } else if(Objects.nonNull(firstResult) && Objects.nonNull(maxResults)) {
@@ -147,7 +148,7 @@ public class GroupsResource {
         String groupName = rep.getName();
 
         if (ObjectUtil.isBlank(groupName)) {
-            return ErrorResponse.error("Group name is missing", Response.Status.BAD_REQUEST);
+            throw ErrorResponse.error("Group name is missing", Response.Status.BAD_REQUEST);
         }
 
         try {
@@ -156,7 +157,9 @@ public class GroupsResource {
                 if (child == null) {
                     throw new NotFoundException("Could not find child by id");
                 }
-                realm.moveGroup(child, null);
+                if (child.getParentId() != null) {
+                    realm.moveGroup(child, null);
+                }
                 adminEvent.operation(OperationType.UPDATE).resourcePath(session.getContext().getUri());
             } else {
                 child = realm.createGroup(groupName);
@@ -169,7 +172,7 @@ public class GroupsResource {
                 adminEvent.operation(OperationType.CREATE).resourcePath(session.getContext().getUri(), child.getId());
             }
         } catch (ModelDuplicateException mde) {
-            return ErrorResponse.exists("Top level group named '" + groupName + "' already exists.");
+            throw ErrorResponse.exists("Top level group named '" + groupName + "' already exists.");
         }
 
         adminEvent.representation(rep).success();

@@ -33,7 +33,8 @@
         <script.suffix>sh</script.suffix>
 
         <!--app container versions-->
-        <eap.version>7.4.0.GA-redhat-00005</eap.version>
+        <eap.version>7.4.9.GA-redhat-00003</eap.version>
+        <eap6.version>7.5.21.Final-redhat-1</eap6.version>
         <eap71.version>7.1.5.GA-redhat-00002</eap71.version>
         <jboss.as.version>7.1.1.Final</jboss.as.version>
 
@@ -52,6 +53,7 @@
     </properties>
 
     <modules>
+        <module>adapter-spi</module>
         <module>auth-server</module>
         <module>app-server</module>
         <module>cache-server</module>

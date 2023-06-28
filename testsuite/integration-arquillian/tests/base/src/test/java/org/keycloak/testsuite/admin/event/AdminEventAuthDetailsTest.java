@@ -88,6 +88,15 @@ public class AdminEventAuthDetailsTest extends AbstractAuthTest {
         testRealms.add(realm.build());
     }
 
+    @Override
+    public void importTestRealms() {
+        super.importTestRealms();
+        client1Uuid = adminClient.realm("test").clients().findByClientId("client1").get(0).getId();
+        admin1Id = adminClient.realm("test").users().search("admin1", true).get(0).getId();
+        admin2Id = adminClient.realm("test").users().search("admin2", true).get(0).getId();
+        appUserId = adminClient.realm("test").users().search("app-user", true).get(0).getId();
+    }
+
     @Before
     public void initConfig() {
         RealmResource masterRealm = adminClient.realm(MASTER);

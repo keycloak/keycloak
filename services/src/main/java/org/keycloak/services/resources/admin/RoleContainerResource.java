@@ -18,7 +18,7 @@
 package org.keycloak.services.resources.admin;
 
 import org.jboss.resteasy.annotations.cache.NoCache;
-import javax.ws.rs.NotFoundException;
+import jakarta.ws.rs.NotFoundException;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.ClientModel;
@@ -41,20 +41,20 @@ import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluato
 import org.keycloak.services.resources.admin.permissions.AdminPermissionManagement;
 import org.keycloak.services.resources.admin.permissions.AdminPermissions;
 
-import javax.ws.rs.BadRequestException;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.DefaultValue;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriInfo;
+import jakarta.ws.rs.BadRequestException;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.DefaultValue;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.PUT;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.UriInfo;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -164,7 +164,7 @@ public class RoleContainerResource extends RoleResource {
                     for (String roleName : compositeRealmRoles) {
                         RoleModel realmRole = realm.getRole(roleName);
                         if (realmRole == null) {
-                            return ErrorResponse.error("Realm Role with name " + roleName + " does not exist", Response.Status.NOT_FOUND);
+                            throw ErrorResponse.error("Realm Role with name " + roleName + " does not exist", Response.Status.NOT_FOUND);
                         }
                         realmRoles.add(realmRole);
                     }
@@ -185,7 +185,7 @@ public class RoleContainerResource extends RoleResource {
                         for (String roleName : clientRoleNames) {
                             RoleModel clientRole = client.getRole(roleName);
                             if (clientRole == null) {
-                                return ErrorResponse.error("Client Role with name " + roleName + " does not exist", Response.Status.NOT_FOUND);
+                                throw ErrorResponse.error("Client Role with name " + roleName + " does not exist", Response.Status.NOT_FOUND);
                             }
                             clientRoles.add(clientRole);
                         }
@@ -198,7 +198,7 @@ public class RoleContainerResource extends RoleResource {
 
             return Response.created(uriInfo.getAbsolutePathBuilder().path(role.getName()).build()).build();
         } catch (ModelDuplicateException e) {
-            return ErrorResponse.exists("Role with name " + rep.getName() + " already exists");
+            throw ErrorResponse.exists("Role with name " + rep.getName() + " already exists");
         }
     }
 
@@ -237,8 +237,8 @@ public class RoleContainerResource extends RoleResource {
         if (role == null) {
             throw new NotFoundException("Could not find role");
         } else if (realm.getDefaultRole().getId().equals(role.getId())) {
-            throw new ErrorResponseException(ErrorResponse.error(roleName + " is default role of the realm and cannot be removed.", 
-                    Response.Status.BAD_REQUEST));
+            throw ErrorResponse.error(roleName + " is default role of the realm and cannot be removed.",
+                    Response.Status.BAD_REQUEST);
         }
         deleteRole(role);
 
@@ -281,7 +281,7 @@ public class RoleContainerResource extends RoleResource {
 
             return Response.noContent().build();
         } catch (ModelDuplicateException e) {
-            return ErrorResponse.exists("Role with name " + rep.getName() + " already exists");
+            throw ErrorResponse.exists("Role with name " + rep.getName() + " already exists");
         }
     }
 

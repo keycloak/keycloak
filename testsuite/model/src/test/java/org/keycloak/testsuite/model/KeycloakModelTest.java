@@ -30,8 +30,6 @@ import org.keycloak.common.profile.PropertiesProfileConfigResolver;
 import org.keycloak.common.util.Time;
 import org.keycloak.component.ComponentFactoryProviderFactory;
 import org.keycloak.component.ComponentFactorySpi;
-import org.keycloak.device.DeviceRepresentationProviderFactoryImpl;
-import org.keycloak.device.DeviceRepresentationSpi;
 import org.keycloak.events.EventStoreSpi;
 import org.keycloak.executors.DefaultExecutorsProviderFactory;
 import org.keycloak.executors.ExecutorsSpi;
@@ -279,9 +277,9 @@ public abstract class KeycloakModelTest {
           Stream.of(basicParameters),
           Stream.of(System.getProperty("keycloak.model.parameters", "").split("\\s*,\\s*"))
             .filter(s -> s != null && ! s.trim().isEmpty())
-            .map(cn -> { try { return Class.forName(cn.indexOf('.') >= 0 ? cn : ("org.keycloak.testsuite.model.parameters." + cn)); } catch (Exception e) { LOG.error("Cannot find " + cn); return null; }})
+            .map(cn -> { try { return Class.forName(cn.indexOf('.') >= 0 ? cn : ("org.keycloak.testsuite.model.parameters." + cn)); } catch (Exception e) { throw new RuntimeException("Cannot find class " + cn, e); }})
             .filter(Objects::nonNull)
-            .map(c -> { try { return c.getDeclaredConstructor().newInstance(); } catch (Exception e) { LOG.error("Cannot instantiate " + c); return null; }} )
+            .map(c -> { try { return c.getDeclaredConstructor().newInstance(); } catch (Exception e) { throw new RuntimeException("Cannot instantiate class " + c, e); }} )
             .filter(KeycloakModelParameters.class::isInstance)
             .map(KeycloakModelParameters.class::cast)
           )
@@ -346,9 +344,14 @@ public abstract class KeycloakModelTest {
                 return "KeycloakSessionFactory " + factoryIndex + " (from " + threadName + " thread)";
             }
         };
-        res.init();
-        res.publish(new PostMigrationEvent(res));
-        return res;
+        try {
+            res.init();
+            res.publish(new PostMigrationEvent(res));
+            return res;
+        } catch (RuntimeException ex) {
+            res.close();
+            throw ex;
+        }
     }
 
     /**

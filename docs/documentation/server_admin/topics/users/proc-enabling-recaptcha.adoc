@@ -1,0 +1,51 @@
+// Module included in the following assemblies:
+//
+// server_admin/topics/users.adoc
+
+[id="proc-enabling-recaptcha_{context}"]
+= Enabling reCAPTCHA
+
+[role="_abstract"]
+To safeguard registration against bots, {project_name} has integration with Google reCAPTCHA.
+
+Once reCAPTCHA is enabled, you can edit `register.ftl` in your login theme to configure the placement and styling of the reCAPTCHA button on the registration page. 
+
+.Procedure
+. Enter the following URL in a browser:
++
+[source,bash,subs=+attributes]
+----
+https://developers.google.com/recaptcha/
+----
+
+. Create an API key to get your reCAPTCHA site key and secret. Note the reCAPTCHA site key and secret for future use in this procedure.
++
+NOTE: The localhost works by default. You do not have to specify a domain.
++
+. Navigate to the {project_name} admin console.
+. Click *Authentication* in the menu. 
+. Click the *Flows* tab.
+. Select *Registration* from the list.
+. Set the *reCAPTCHA* requirement to *Required*. This enables
+reCAPTCHA.
+. Click the *gear icon* ⚙️ on the *reCAPTCHA* row.
+. Click the *Config* link.
+
++
+.Recaptcha config page
+image:images/recaptcha-config.png[]
+
+.. Enter the *Recaptcha Site Key* generated from the Google reCAPTCHA website.
+.. Enter the *Recaptcha Secret* generated from the Google reCAPTCHA website.
+. Authorize Google to use the registration page as an iframe.
++
+NOTE: In {project_name}, websites cannot include a login page dialog in an iframe. This restriction is to prevent clickjacking attacks. You need to change the default HTTP response headers that is set in {project_name}.
++
+.. Click *Realm Settings* in the menu. 
+.. Click the *Security Defenses* tab.  
+.. Enter `https://www.google.com` in the field for the *X-Frame-Options* header.
+.. Enter `https://www.google.com` in the field for the *Content-Security-Policy* header.
+
+[role="_additional-resources"]
+.Additional resources
+* For more information on extending and creating themes, see the link:{developerguide_link}[{developerguide_name}].

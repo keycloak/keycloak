@@ -19,7 +19,7 @@ package org.keycloak.models.jpa.entities;
 
 import org.hibernate.annotations.Nationalized;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.util.Collection;
 import java.util.LinkedList;
 
@@ -68,7 +68,7 @@ public class GroupEntity {
     @OneToMany(
             cascade = CascadeType.REMOVE,
             orphanRemoval = true, mappedBy="group")
-    protected Collection<GroupAttributeEntity> attributes;
+    protected Collection<GroupAttributeEntity> attributes = new LinkedList<>();
 
     public String getId() {
         return id;

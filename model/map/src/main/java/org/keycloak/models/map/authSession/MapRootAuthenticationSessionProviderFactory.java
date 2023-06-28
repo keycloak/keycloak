@@ -67,7 +67,7 @@ public class MapRootAuthenticationSessionProviderFactory extends AbstractMapProv
 
     @Override
     public MapRootAuthenticationSessionProvider createNew(KeycloakSession session) {
-        return new MapRootAuthenticationSessionProvider(session, getStorage(session), authSessionsLimit);
+        return new MapRootAuthenticationSessionProvider(session, getMapStorage(session), authSessionsLimit);
     }
 
     @Override

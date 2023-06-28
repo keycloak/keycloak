@@ -1,0 +1,190 @@
+
+=== Add/Remove user and query capability interfaces
+
+One thing we have not done with our example is allow it to add and remove users or change passwords. Users defined in our example are
+also not queryable or viewable in the Admin Console. To add these enhancements, our example provider must implement
+the `UserQueryMethodsProvider` (or `UserQueryProvider`) and `UserRegistrationProvider` interfaces.
+
+==== Implementing UserRegistrationProvider
+
+Use this procedure to implement adding and removing users from the particular store, we first have to be able to save our properties
+file to disk.
+
+.PropertyFileUserStorageProvider
+[source,java]
+----
+    public void save() {
+        String path = model.getConfig().getFirst("path");
+        path = EnvUtil.replace(path);
+        try {
+            FileOutputStream fos = new FileOutputStream(path);
+            properties.store(fos, "");
+            fos.close();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+----
+
+Then, the implementation of the `addUser()` and `removeUser()` methods becomes simple.
+
+.PropertyFileUserStorageProvider
+[source,java]
+----
+    public static final String UNSET_PASSWORD="#$!-UNSET-PASSWORD";
+
+    @Override
+    public UserModel addUser(RealmModel realm, String username) {
+        synchronized (properties) {
+            properties.setProperty(username, UNSET_PASSWORD);
+            save();
+        }
+        return createAdapter(realm, username);
+    }
+
+    @Override
+    public boolean removeUser(RealmModel realm, UserModel user) {
+        synchronized (properties) {
+            if (properties.remove(user.getUsername()) == null) return false;
+            save();
+            return true;
+        }
+    }
+----
+
+Notice that when adding a user we set the password value of the property map to be `UNSET_PASSWORD`.  We do this as
+we can't have null values for a property in the property value. We also have to modify the `CredentialInputValidator`
+methods to reflect this.
+
+The `addUser()` method will be called if the provider implements the `UserRegistrationProvider` interface. If your provider has
+a configuration switch to turn off adding a user, returning `null` from this method will skip the provider and call
+the next one.
+
+.PropertyFileUserStorageProvider
+[source,java]
+----
+    @Override
+    public boolean isValid(RealmModel realm, UserModel user, CredentialInput input) {
+        if (!supportsCredentialType(input.getType()) || !(input instanceof UserCredentialModel)) return false;
+
+        UserCredentialModel cred = (UserCredentialModel)input;
+        String password = properties.getProperty(user.getUsername());
+        if (password == null || UNSET_PASSWORD.equals(password)) return false;
+        return password.equals(cred.getValue());
+    }
+----
+
+Since we can now save our property file, it also makes sense to allow password updates.
+
+.PropertyFileUserStorageProvider
+[source,java]
+----
+    @Override
+    public boolean updateCredential(RealmModel realm, UserModel user, CredentialInput input) {
+        if (!(input instanceof UserCredentialModel)) return false;
+        if (!input.getType().equals(PasswordCredentialModel.TYPE)) return false;
+        UserCredentialModel cred = (UserCredentialModel)input;
+        synchronized (properties) {
+            properties.setProperty(user.getUsername(), cred.getValue());
+            save();
+        }
+        return true;
+    }
+----
+
+We can now also implement disabling a password.
+
+.PropertyFileUserStorageProvider
+[source,java]
+----
+    @Override
+    public void disableCredentialType(RealmModel realm, UserModel user, String credentialType) {
+        if (!credentialType.equals(PasswordCredentialModel.TYPE)) return;
+        synchronized (properties) {
+            properties.setProperty(user.getUsername(), UNSET_PASSWORD);
+            save();
+        }
+
+    }
+
+    private static final Set<String> disableableTypes = new HashSet<>();
+
+    static {
+        disableableTypes.add(PasswordCredentialModel.TYPE);
+    }
+
+    @Override
+    public Stream<String> getDisableableCredentialTypes(RealmModel realm, UserModel user) {
+
+        return disableableTypes.stream();
+    }
+----
+
+With these methods implemented, you'll now be able to change and disable the password for the user in the Admin Console.
+
+==== Implementing UserQueryProvider
+
+`UserQueryProvider` is combination of `UserQueryMethodsProvider` and `UserCountMethodsProvider`. Without implementing `UserQueryMethodsProvider` the Admin Console would not be able to view and manage users that were loaded
+by our example provider. Let's look at implementing this interface.
+
+.PropertyFileUserStorageProvider
+[source,java]
+----
+    @Override
+    public int getUsersCount(RealmModel realm) {
+        return properties.size();
+    }
+
+    @Override
+    public Stream<UserModel> searchForUserStream(RealmModel realm, String search, Integer firstResult, Integer maxResults) {
+        Predicate<String> predicate = "*".equals(search) ? username -> true : username -> username.contains(search);
+        return properties.keySet().stream()
+                .map(String.class::cast)
+                .filter(predicate)
+                .skip(firstResult)
+                .map(username -> getUserByUsername(realm, username))
+                .limit(maxResults);
+    }
+----
+
+The first declaration of `searchForUserStream()` takes a `String` parameter. In this example, the parameter represents a username that you want to search by. This string can be a substring, which explains the choice of  the `String.contains()`
+method when doing the search. Notice the use of `*` to indicate to request a list of all users.
+The method iterates over the key set of the property file, delegating to `getUserByUsername()` to load a user.
+Notice that we are indexing this call based on the `firstResult` and `maxResults` parameter. If your external store does not support pagination, you will have to do similar logic.
+
+.PropertyFileUserStorageProvider
+[source,java]
+----
+    @Override
+    public Stream<UserModel> searchForUserStream(RealmModel realm, Map<String, String> params, Integer firstResult, Integer maxResults) {
+        // only support searching by username
+        String usernameSearchString = params.get("username");
+        if (usernameSearchString != null)
+            return searchForUserStream(realm, usernameSearchString, firstResult, maxResults);
+
+        // if we are not searching by username, return all users
+        return searchForUserStream(realm, "*", firstResult, maxResults);
+    }
+----
+
+The `searchForUserStream()` method that takes a `Map` parameter can search for a user based on first, last name, username, and email.
+Only usernames are stored, so the search is based only on usernames except when the `Map` parameter does not contain the `username` attribute.
+In this case, all users are returned. In that situation, the `searchForUserStream(realm, search, firstResult, maxResults)` is used.
+
+
+.PropertyFileUserStorageProvider
+[source,java]
+----
+    @Override
+    public Stream<UserModel> getGroupMembersStream(RealmModel realm, GroupModel group, Integer firstResult, Integer maxResults) {
+        return Stream.empty();
+    }
+
+    @Override
+    public Stream<UserModel> searchForUserByUserAttributeStream(RealmModel realm, String attrName, String attrValue) {
+        return Stream.empty();
+    }
+----
+
+Groups or attributes are not stored, so the other methods return an empty stream.
+

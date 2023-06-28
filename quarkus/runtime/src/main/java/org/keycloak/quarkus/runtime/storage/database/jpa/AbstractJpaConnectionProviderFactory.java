@@ -21,11 +21,11 @@ import java.lang.annotation.Annotation;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Optional;
-import javax.enterprise.inject.Instance;
-import javax.persistence.EntityManager;
-import javax.persistence.EntityManagerFactory;
-import javax.persistence.FlushModeType;
-import javax.persistence.SynchronizationType;
+import jakarta.enterprise.inject.Instance;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.EntityManagerFactory;
+import jakarta.persistence.FlushModeType;
+import jakarta.persistence.SynchronizationType;
 import org.hibernate.internal.SessionFactoryImpl;
 import org.keycloak.Config;
 import org.keycloak.connections.jpa.JpaConnectionProviderFactory;
@@ -40,7 +40,6 @@ import io.quarkus.hibernate.orm.PersistenceUnit;
 public abstract class AbstractJpaConnectionProviderFactory implements JpaConnectionProviderFactory {
 
     protected Config.Scope config;
-    protected Boolean xaEnabled;
     protected EntityManagerFactory entityManagerFactory;
 
     @Override
@@ -62,7 +61,6 @@ public abstract class AbstractJpaConnectionProviderFactory implements JpaConnect
     @Override
     public void init(Config.Scope config) {
         this.config = config;
-        xaEnabled = "xa".equals(Configuration.getRawValue("kc.transaction-xa-enabled"));
     }
 
     @Override
@@ -101,13 +99,7 @@ public abstract class AbstractJpaConnectionProviderFactory implements JpaConnect
     }
 
     protected EntityManager createEntityManager(EntityManagerFactory emf, KeycloakSession session) {
-        EntityManager entityManager;
-
-        if (xaEnabled) {
-            entityManager = PersistenceExceptionConverter.create(session, emf.createEntityManager(SynchronizationType.SYNCHRONIZED));
-        } else {
-            entityManager = PersistenceExceptionConverter.create(session, emf.createEntityManager());
-        }
+        EntityManager entityManager = PersistenceExceptionConverter.create(session, emf.createEntityManager(SynchronizationType.SYNCHRONIZED));
 
         entityManager.setFlushMode(FlushModeType.AUTO);
 

@@ -321,19 +321,6 @@ public class BackwardsCompatibilityUserStorage implements UserLookupProvider, Us
     }
 
     @Override
-    public Stream<UserModel> getUsersStream(RealmModel realm) {
-        return getUsers(realm, -1, -1).stream();
-    }
-
-    private List<UserModel> getUsers(RealmModel realm, int firstResult, int maxResults) {
-        return users.values()
-                .stream()
-                .skip(firstResult).limit(maxResults)
-                .map(myUser -> createUser(realm, myUser.username))
-                .collect(Collectors.toList());
-    }
-
-    @Override
     public Stream<UserModel> searchForUserStream(RealmModel realm, String search) {
         return searchForUserStream(realm, search, -1, -1);
     }
@@ -346,14 +333,12 @@ public class BackwardsCompatibilityUserStorage implements UserLookupProvider, Us
 
     @Override
     public Stream<UserModel> searchForUserStream(RealmModel realm, Map<String, String> params) {
-        // Assume that this is not supported
-        return Stream.empty();
+        return searchForUserStream(realm, params, null, null);
     }
 
     @Override
     public Stream<UserModel> searchForUserStream(RealmModel realm, Map<String, String> params, Integer firstResult, Integer maxResults) {
-        // Assume that this is not supported
-        return Stream.empty();
+        return searchForUserStream(realm, params.get(UserModel.SEARCH), firstResult, maxResults);
     }
 
     @Override

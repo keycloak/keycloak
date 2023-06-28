@@ -42,9 +42,9 @@ import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.w3c.dom.Document;
 
-import javax.ws.rs.core.Response;
-import javax.xml.soap.SOAPException;
-import javax.xml.soap.SOAPHeaderElement;
+import jakarta.ws.rs.core.Response;
+import jakarta.xml.soap.SOAPException;
+import jakarta.xml.soap.SOAPHeaderElement;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Objects;

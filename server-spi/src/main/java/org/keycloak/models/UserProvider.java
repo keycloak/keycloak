@@ -24,11 +24,6 @@ import org.keycloak.storage.user.UserLookupProvider;
 import org.keycloak.storage.user.UserQueryProvider;
 import org.keycloak.storage.user.UserRegistrationProvider;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -71,42 +66,6 @@ public interface UserProvider extends Provider,
      * @return userModel representing service account of the client
      */
     UserModel getServiceAccount(ClientModel client);
-
-    /**
-     * Obtains the users associated with the specified realm.
-     *
-     * @param realm a reference to the realm being used for the search.
-     * @param includeServiceAccounts {@code true} if service accounts should be included in the result; {@code false} otherwise.
-     * @return a non-null {@link Stream} of users associated withe the realm.
-     *
-     * @deprecated Use {@link UserQueryProvider#searchForUserStream(RealmModel, Map)} with
-     * {@link UserModel#INCLUDE_SERVICE_ACCOUNT} within params instead.
-     */
-    @Deprecated
-    default Stream<UserModel> getUsersStream(RealmModel realm, boolean includeServiceAccounts) {
-        Map<String, String> searchAttributes = new HashMap<>(1);
-        searchAttributes.put(UserModel.INCLUDE_SERVICE_ACCOUNT, Boolean.toString(includeServiceAccounts));
-        return this.searchForUserStream(realm, searchAttributes);
-    }
-
-    /**
-     * Obtains the users associated with the specified realm.
-     *
-     * @param realm a reference to the realm being used for the search.
-     * @param firstResult first result to return. Ignored if negative, zero, or {@code null}.
-     * @param maxResults maximum number of results to return. Ignored if negative or {@code null}.
-     * @param includeServiceAccounts {@code true} if service accounts should be included in the result; {@code false} otherwise.
-     * @return a non-null {@link Stream} of users associated withe the realm.
-     * 
-     * @deprecated Use {@link UserQueryProvider#searchForUserStream(RealmModel, Map, Integer, Integer)} 
-     * with {@link UserModel#INCLUDE_SERVICE_ACCOUNT} within params
-     */
-    @Deprecated
-    default Stream<UserModel> getUsersStream(RealmModel realm, Integer firstResult, Integer maxResults, boolean includeServiceAccounts) {
-        Map<String, String> searchAttributes = new HashMap<>(1);
-        searchAttributes.put(UserModel.INCLUDE_SERVICE_ACCOUNT, Boolean.toString(includeServiceAccounts));
-        return this.searchForUserStream(realm, searchAttributes, firstResult, maxResults);
-    }
 
     /**
      * Adds a new user into the storage.
@@ -337,14 +296,4 @@ public interface UserProvider extends Provider,
      * @param component the component model
      */
     void preRemove(RealmModel realm, ComponentModel component);
-
-    void close();
-
-    /**
-     * @deprecated This interface is no longer necessary, collection-based methods were removed from the parent interface
-     * and therefore the parent interface can be used directly
-     */
-    @Deprecated
-    interface Streams extends UserProvider, UserQueryProvider, UserLookupProvider {
-    }
 }

@@ -24,6 +24,7 @@ import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.DERUTF8String;
+import org.bouncycastle.asn1.x500.AttributeTypeAndValue;
 import org.bouncycastle.asn1.x500.RDN;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x500.style.BCStyle;
@@ -36,9 +37,11 @@ import java.io.ByteArrayInputStream;
 import java.security.Principal;
 import java.security.cert.CertificateParsingException;
 import java.security.cert.X509Certificate;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Function;
 
 /**
@@ -72,7 +75,19 @@ public class BCFIPSUserIdentityExtractorProvider  extends UserIdentityExtractorP
                 RDN[] rnds = name.getRDNs(x500NameStyle);
                 if (rnds != null && rnds.length > 0) {
                     RDN cn = rnds[0];
-                    return IETFUtils.valueToString(cn.getFirst().getValue());
+                    if(cn.isMultiValued()){
+                        AttributeTypeAndValue[] attributeTypeAndValues = cn.getTypesAndValues();
+                        Optional<AttributeTypeAndValue> optionalFirst = Arrays.stream(attributeTypeAndValues).filter(attributeTypeAndValue -> attributeTypeAndValue.getType().getId().equals(x500NameStyle.getId())).findFirst();
+                        if(optionalFirst.isPresent()) {
+                            return IETFUtils.valueToString(optionalFirst.get().getValue());
+                        }
+                        else {
+                            return null;
+                        }
+                    }
+                    else {
+                        return IETFUtils.valueToString(cn.getFirst().getValue());
+                    }
                 }
             }
             return null;

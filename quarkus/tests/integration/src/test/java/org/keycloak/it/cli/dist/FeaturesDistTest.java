@@ -28,7 +28,7 @@ import static org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand.OPTI
 @LegacyStore
 public class FeaturesDistTest {
 
-    private static final String PREVIEW_FEATURES_EXPECTED_LOG = "Preview features enabled: admin-fine-grained-authz, client-secret-rotation, declarative-user-profile, openshift-integration, recovery-codes, scripts, token-exchange, update-email";
+    private static final String PREVIEW_FEATURES_EXPECTED_LOG = "Preview features enabled: account3, admin-fine-grained-authz, client-secret-rotation, declarative-user-profile, recovery-codes, scripts, token-exchange, update-email";
 
     @Test
     public void testEnableOnBuild(KeycloakDistribution dist) {
@@ -55,9 +55,7 @@ public class FeaturesDistTest {
     public void testEnablePreviewFeaturesAndFips(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
 
-        String previewFeaturesWithFipsIncluded = PREVIEW_FEATURES_EXPECTED_LOG.replace("declarative-user-profile", "declarative-user-profile, fips");
-        assertThat(result.getOutput(), CoreMatchers.allOf(
-                containsString(previewFeaturesWithFipsIncluded)));
+        assertPreviewFeaturesEnabled(cliResult);
         cliResult.assertError("Failed to configure FIPS.");
     }
 

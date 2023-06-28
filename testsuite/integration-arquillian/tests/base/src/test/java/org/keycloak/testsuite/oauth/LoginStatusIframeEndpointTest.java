@@ -123,9 +123,6 @@ public class LoginStatusIframeEndpointTest extends AbstractKeycloakTest {
             response = client.execute(get);
 
             assertEquals(200, response.getStatusLine().getStatusCode());
-            s = IOUtils.toString(response.getEntity().getContent(), "UTF-8");
-            assertTrue(s.contains("function getCookie()"));
-
             assertEquals("CP=\"This is not a P3P policy!\"", response.getFirstHeader("P3P").getValue());
             assertNull(response.getFirstHeader(BrowserSecurityHeaders.X_FRAME_OPTIONS.getHeaderName()));
             assertEquals("frame-src 'self'; object-src 'none';", response.getFirstHeader(BrowserSecurityHeaders.CONTENT_SECURITY_POLICY.getHeaderName()).getValue());

@@ -66,12 +66,12 @@ import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.ForbiddenException;
 import org.keycloak.services.ServicesLogger;
+import org.keycloak.services.Urls;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.BruteForceProtector;
 import org.keycloak.services.managers.UserConsentManager;
 import org.keycloak.services.managers.UserSessionManager;
 import org.keycloak.services.resources.LoginActionsService;
-import org.keycloak.services.resources.account.AccountFormService;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 import org.keycloak.services.validation.Validation;
 import org.keycloak.storage.ReadOnlyException;
@@ -80,24 +80,23 @@ import org.keycloak.userprofile.UserProfileProvider;
 import org.keycloak.userprofile.ValidationException;
 import org.keycloak.utils.ProfileHelper;
 
-import javax.ws.rs.BadRequestException;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.DefaultValue;
-import javax.ws.rs.GET;
-import javax.ws.rs.NotFoundException;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.Status;
-import javax.ws.rs.core.UriBuilder;
+import jakarta.ws.rs.BadRequestException;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.DefaultValue;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.PUT;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response.Status;
+import jakarta.ws.rs.core.UriBuilder;
 import java.net.URI;
 import java.text.MessageFormat;
 import java.util.ArrayList;
@@ -186,7 +185,7 @@ public class UserResource {
 
             UserProfile profile = session.getProvider(UserProfileProvider.class).create(USER_API, attributes, user);
 
-            Response response = validateUserProfile(profile, user, session);
+            Response response = validateUserProfile(profile, session, auth.adminAuth());
             if (response != null) {
                 return response;
             }
@@ -207,38 +206,46 @@ public class UserResource {
             return Response.noContent().build();
         } catch (ModelDuplicateException e) {
             session.getTransactionManager().setRollbackOnly();
-            return ErrorResponse.exists("User exists with same username or email");
+            throw ErrorResponse.exists("User exists with same username or email");
         } catch (ReadOnlyException re) {
             session.getTransactionManager().setRollbackOnly();
-            return ErrorResponse.error("User is read only!", Status.BAD_REQUEST);
+            throw ErrorResponse.error("User is read only!", Status.BAD_REQUEST);
         } catch (ModelException me) {
             logger.warn("Could not update user!", me);
             session.getTransactionManager().setRollbackOnly();
-            return ErrorResponse.error("Could not update user!", Status.BAD_REQUEST);
-        } catch (ForbiddenException fe) {
+            throw ErrorResponse.error("Could not update user!", Status.BAD_REQUEST);
+        } catch (ForbiddenException | ErrorResponseException e) {
             session.getTransactionManager().setRollbackOnly();
-            throw fe;
+            throw e;
         } catch (Exception me) { // JPA
             session.getTransactionManager().setRollbackOnly();
             logger.warn("Could not update user!", me);// may be committed by JTA which can't
-            return ErrorResponse.error("Could not update user!", Status.BAD_REQUEST);
+            throw ErrorResponse.error("Could not update user!", Status.BAD_REQUEST);
         }
     }
 
-    public static Response validateUserProfile(UserProfile profile, UserModel user, KeycloakSession session) {
+    public static Response validateUserProfile(UserProfile profile, KeycloakSession session, AdminAuth adminAuth) {
         try {
             profile.validate();
         } catch (ValidationException pve) {
             List<ErrorRepresentation> errors = new ArrayList<>();
+            AdminMessageFormatter adminMessageFormatter = createAdminMessageFormatter(session, adminAuth);
 
             for (ValidationException.Error error : pve.getErrors()) {
-                errors.add(new ErrorRepresentation(error.getFormattedMessage(new AdminMessageFormatter(session, user))));
+                errors.add(new ErrorRepresentation(error.getFormattedMessage(adminMessageFormatter)));
             }
 
-            return ErrorResponse.errors(errors, Status.BAD_REQUEST);
+            throw ErrorResponse.errors(errors, Status.BAD_REQUEST);
         }
 
         return null;
+    }
+
+    private static AdminMessageFormatter createAdminMessageFormatter(KeycloakSession session, AdminAuth adminAuth) {
+        // the authenticated user is used to resolve the locale for the messages. It can be null.
+        UserModel authenticatedUser = adminAuth == null ? null : adminAuth.getUser();
+
+        return new AdminMessageFormatter(session, authenticatedUser);
     }
 
     public static void updateUserFromRep(UserProfile profile, UserModel user, UserRepresentation rep, KeycloakSession session, boolean isUpdateExistingUser) {
@@ -324,6 +331,14 @@ public class UserResource {
         ProfileHelper.requireFeature(Profile.Feature.IMPERSONATION);
 
         auth.users().requireImpersonate(user);
+
+        if (!user.isEnabled()) {
+            throw ErrorResponse.error("User is disabled", Status.BAD_REQUEST);
+        }
+        if (user.getServiceAccountClientLink() != null) {
+            throw ErrorResponse.error("Service accounts cannot be impersonated", Status.BAD_REQUEST);
+        }
+
         RealmModel authenticatedRealm = auth.adminAuth().getRealm();
         // if same realm logout before impersonation
         boolean sameRealm = false;
@@ -333,6 +348,7 @@ public class UserResource {
             UserSessionModel userSession = lockUserSessionsForModification(session, () -> session.sessions().getUserSession(authenticatedRealm, sessionState));
             AuthenticationManager.expireIdentityCookie(realm, session.getContext().getUri(), session);
             AuthenticationManager.expireRememberMeCookie(realm, session.getContext().getUri(), session);
+            AuthenticationManager.expireAuthSessionCookie(realm, session.getContext().getUri(), session);
             AuthenticationManager.backchannelLogout(session, authenticatedRealm, userSession, session.getContext().getUri(), clientConnection, headers, true);
         }
         EventBuilder event = new EventBuilder(realm, session, clientConnection);
@@ -346,7 +362,7 @@ public class UserResource {
         userSession.setNote(IMPERSONATOR_USERNAME.toString(), impersonator);
 
         AuthenticationManager.createLoginCookie(session, realm, userSession.getUser(), userSession, session.getContext().getUri(), clientConnection);
-        URI redirect = AccountFormService.accountServiceBaseUrl(session.getContext().getUri()).build(realm.getName());
+        URI redirect = Urls.accountBase(session.getContext().getUri().getBaseUri()).build(realm.getName());
         Map<String, Object> result = new HashMap<>();
         result.put("sameRealm", sameRealm);
         result.put("redirect", redirect.toString());
@@ -428,7 +444,7 @@ public class UserResource {
     public Response addFederatedIdentity(final @PathParam("provider") String provider, FederatedIdentityRepresentation rep) {
         auth.users().requireManage(user);
         if (session.users().getFederatedIdentity(realm, user, provider) != null) {
-            return ErrorResponse.exists("User is already linked with provider");
+            throw ErrorResponse.exists("User is already linked with provider");
         }
 
         FederatedIdentityModel socialLink = new FederatedIdentityModel(provider, rep.getUserId(), rep.getUserName());
@@ -578,7 +594,7 @@ public class UserResource {
             adminEvent.operation(OperationType.DELETE).resourcePath(session.getContext().getUri()).success();
             return Response.noContent().build();
         } else {
-            return ErrorResponse.error("User couldn't be deleted", Status.BAD_REQUEST);
+            throw ErrorResponse.error("User couldn't be deleted", Status.BAD_REQUEST);
         }
     }
 
@@ -651,7 +667,7 @@ public class UserResource {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     public Stream<CredentialRepresentation> credentials(){
-        auth.users().requireManage(user);
+        auth.users().requireView(user);
         return user.credentialManager().getStoredCredentialsStream()
                 .map(ModelToRepresentation::toRepresentation)
                 .peek(credentialRepresentation -> credentialRepresentation.setSecretData(null));
@@ -669,9 +685,8 @@ public class UserResource {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     public Stream<String> getConfiguredUserStorageCredentialTypes() {
-        // This has "requireManage" due the compatibility with "credentials()" endpoint. Strictly said, it is reading endpoint, not writing,
-        // so may be revisited if to rather use "requireView" here in the future.
-        auth.users().requireManage(user);
+        // changed to "requireView" as per issue #20783
+        auth.users().requireView(user);
         return user.credentialManager().getConfiguredUserStorageCredentialTypesStream();
     }
 
@@ -788,17 +803,15 @@ public class UserResource {
         auth.users().requireManage(user);
 
         if (user.getEmail() == null) {
-            return ErrorResponse.error("User email missing", Status.BAD_REQUEST);
+            throw ErrorResponse.error("User email missing", Status.BAD_REQUEST);
         }
 
         if (!user.isEnabled()) {
-            throw new WebApplicationException(
-                ErrorResponse.error("User is disabled", Status.BAD_REQUEST));
+            throw ErrorResponse.error("User is disabled", Status.BAD_REQUEST);
         }
 
         if (redirectUri != null && clientId == null) {
-            throw new WebApplicationException(
-                ErrorResponse.error("Client id missing", Status.BAD_REQUEST));
+            throw ErrorResponse.error("Client id missing", Status.BAD_REQUEST);
         }
 
         if (clientId == null) {
@@ -806,28 +819,24 @@ public class UserResource {
         }
 
         if (CollectionUtil.isNotEmpty(actions) && !RequiredActionsValidator.validRequiredActions(session, actions)) {
-            throw new WebApplicationException(
-                ErrorResponse.error("Provided invalid required actions", Status.BAD_REQUEST));
+            throw ErrorResponse.error("Provided invalid required actions", Status.BAD_REQUEST);
         }
 
         ClientModel client = realm.getClientByClientId(clientId);
         if (client == null) {
             logger.debugf("Client %s doesn't exist", clientId);
-            throw new WebApplicationException(
-                ErrorResponse.error("Client doesn't exist", Status.BAD_REQUEST));
+            throw ErrorResponse.error("Client doesn't exist", Status.BAD_REQUEST);
         }
         if (!client.isEnabled()) {
             logger.debugf("Client %s is not enabled", clientId);
-            throw new WebApplicationException(
-                    ErrorResponse.error("Client is not enabled", Status.BAD_REQUEST));
+            throw ErrorResponse.error("Client is not enabled", Status.BAD_REQUEST);
         }
 
         String redirect;
         if (redirectUri != null) {
             redirect = RedirectUtils.verifyRedirectUri(session, redirectUri, client);
             if (redirect == null) {
-                throw new WebApplicationException(
-                    ErrorResponse.error("Invalid redirect uri.", Status.BAD_REQUEST));
+                throw ErrorResponse.error("Invalid redirect uri.", Status.BAD_REQUEST);
             }
         }
 
@@ -856,7 +865,7 @@ public class UserResource {
             return Response.noContent().build();
         } catch (EmailException e) {
             ServicesLogger.LOGGER.failedToSendActionsEmail(e);
-            return ErrorResponse.error("Failed to send execute actions email", Status.INTERNAL_SERVER_ERROR);
+            throw ErrorResponse.error("Failed to send execute actions email", Status.INTERNAL_SERVER_ERROR);
         }
     }
 

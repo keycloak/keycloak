@@ -122,4 +122,18 @@ In this example, the server is accessible using a port other than the default po
 .Keycloak configuration:
 <@kc.start parameters="--hostname-url=https://mykeycloak:8989"/>
 
+== Troubleshooting
+
+To troubleshoot the hostname configuration, you can use a dedicated debug tool which can be enabled as:
+
+.Keycloak configuration:
+<@kc.start parameters="--hostname=mykeycloak --hostname-debug=true"/>
+
+Then after Keycloak started properly, open your browser and go to:
+
+`http://mykeycloak:8080/realms/<your-realm>/hostname-debug`
+
+.By default, this endpoint is disabled (`--hostname-debug=false`)
+
+
 </@tmpl.guide>

@@ -62,6 +62,8 @@ public class Messages {
 
     public static final String MISSING_TOTP = "missingTotpMessage";
 
+    public static final String RESET_OTP_MISSING_ID_ERROR = "error-reset-otp-missing-id";
+
     public static final String MISSING_TOTP_DEVICE_NAME = "missingTotpDeviceNameMessage";
 
     public static final String COOKIE_NOT_FOUND = "cookieNotFoundMessage";
@@ -284,6 +286,8 @@ public class Messages {
 
     // Conditions in Conditional Flow
     public static final String ACCESS_DENIED = "access-denied";
+
+    public static final String ACCESS_DENIED_WHEN_IDP_AUTH = "access-denied-when-idp-auth";
 
     public static final String DELETE_ACCOUNT_LACK_PRIVILEDGES = "deletingAccountForbidden";
     public static final String DELETE_ACCOUNT_ERROR = "errorDeletingAccount";

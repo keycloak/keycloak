@@ -17,9 +17,15 @@ outputs:
   codeql-themes:
     description: Should "codeql-analysis.yml / themes" execute
     value: ${{ steps.changes.outputs.codeql-themes }}
-  docs:
-    description: Should "docs.yml" execute
-    value: ${{ steps.changes.outputs.docs }}
+  guides:
+    description: Should "guides.yml" execute
+    value: ${{ steps.changes.outputs.guides }}
+  documentation:
+    description: Should "documentation.yml" execute
+    value: ${{ steps.changes.outputs.documentation }}
+  sssd:
+    description: Should "sssd.yml" execute
+    value: ${{ steps.changes.outputs.sssd }}
 
 runs:
   using: composite

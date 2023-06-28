@@ -23,7 +23,6 @@ import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.model.ResourceServer.SearchableFields;
 import org.keycloak.authorization.store.ResourceServerStore;
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
@@ -31,7 +30,6 @@ import org.keycloak.models.map.authorization.adapter.MapResourceServerAdapter;
 import org.keycloak.models.map.authorization.entity.MapResourceServerEntity;
 import org.keycloak.models.map.common.DeepCloner;
 import org.keycloak.models.map.common.HasRealmId;
-import org.keycloak.models.map.storage.MapKeycloakTransaction;
 import org.keycloak.models.map.storage.MapStorage;
 import org.keycloak.models.map.storage.ModelCriteriaBuilder.Operator;
 import org.keycloak.models.map.storage.criteria.DefaultModelCriteria;
@@ -50,25 +48,24 @@ public class MapResourceServerStore implements ResourceServerStore {
 
     private static final Logger LOG = Logger.getLogger(MapResourceServerStore.class);
     private final AuthorizationProvider authorizationProvider;
-    final MapKeycloakTransaction<MapResourceServerEntity, ResourceServer> tx;
-    private final boolean txHasRealmId;
+    final MapStorage<MapResourceServerEntity, ResourceServer> store;
+    private final boolean storeHasRealmId;
 
-    public MapResourceServerStore(KeycloakSession session, MapStorage<MapResourceServerEntity, ResourceServer> resourceServerStore, AuthorizationProvider provider) {
-        this.tx = resourceServerStore.createTransaction(session);
+    public MapResourceServerStore(MapStorage<MapResourceServerEntity, ResourceServer> resourceServerStore, AuthorizationProvider provider) {
         this.authorizationProvider = provider;
-        session.getTransactionManager().enlist(tx);
-        this.txHasRealmId = tx instanceof HasRealmId;
+        this.store = resourceServerStore;
+        this.storeHasRealmId = store instanceof HasRealmId;
     }
 
     private Function<MapResourceServerEntity, ResourceServer> entityToAdapterFunc(RealmModel realmModel) {
         return origEntity -> new MapResourceServerAdapter(realmModel, origEntity, authorizationProvider.getStoreFactory());
     }
 
-    private MapKeycloakTransaction<MapResourceServerEntity, ResourceServer> txInRealm(RealmModel realm) {
-        if (txHasRealmId) {
-            ((HasRealmId) tx).setRealmId(realm == null ? null : realm.getId());
+    private MapStorage<MapResourceServerEntity, ResourceServer> storeWithRealm(RealmModel realm) {
+        if (storeHasRealmId) {
+            ((HasRealmId) store).setRealmId(realm == null ? null : realm.getId());
         }
-        return tx;
+        return store;
     }
 
     @Override
@@ -91,7 +88,7 @@ public class MapResourceServerStore implements ResourceServerStore {
         entity.setClientId(clientId);
         entity.setRealmId(realm.getId());
 
-        entity = txInRealm(realm).create(entity);
+        entity = storeWithRealm(realm).create(entity);
         return entity == null ? null : entityToAdapterFunc(realm).apply(entity);
     }
 
@@ -105,7 +102,7 @@ public class MapResourceServerStore implements ResourceServerStore {
         final RealmModel realm = client.getRealm();
         authorizationProvider.getKeycloakSession().invalidate(RESOURCE_SERVER_BEFORE_REMOVE, realm, resourceServer);
 
-        txInRealm(realm).delete(resourceServer.getId());
+        storeWithRealm(realm).delete(resourceServer.getId());
 
         authorizationProvider.getKeycloakSession().invalidate(RESOURCE_SERVER_AFTER_REMOVE, resourceServer);
     }
@@ -118,7 +115,7 @@ public class MapResourceServerStore implements ResourceServerStore {
             return null;
         }
 
-        MapResourceServerEntity entity = txInRealm(realm).read(id);
+        MapResourceServerEntity entity = storeWithRealm(realm).read(id);
         return (entity == null || !Objects.equals(realm.getId(), entity.getRealmId())) ? null : entityToAdapterFunc(realm).apply(entity);
     }
 
@@ -131,7 +128,7 @@ public class MapResourceServerStore implements ResourceServerStore {
         mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, client.getRealm().getId());
 
         final RealmModel realm = client.getRealm();
-        return txInRealm(realm).read(withCriteria(mcb))
+        return storeWithRealm(realm).read(withCriteria(mcb))
                 .map(entityToAdapterFunc(client.getRealm()))
                 .findFirst()
                 .orElse(null);
@@ -143,6 +140,6 @@ public class MapResourceServerStore implements ResourceServerStore {
         DefaultModelCriteria<ResourceServer> mcb = criteria();
         mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId());
 
-        txInRealm(realm).delete(withCriteria(mcb));
+        storeWithRealm(realm).delete(withCriteria(mcb));
     }
 }

@@ -40,25 +40,28 @@ import java.util.Map;
 public class SingleFileImportProvider extends AbstractFileBasedImportProvider {
 
     private static final Logger logger = Logger.getLogger(SingleFileImportProvider.class);
+    private final KeycloakSessionFactory factory;
 
-    private File file;
+    private final File file;
+    private final Strategy strategy;
 
     // Allows to cache representation per provider to avoid parsing them twice
     protected Map<String, RealmRepresentation> realmReps;
 
-    public SingleFileImportProvider(File file) {
+    public SingleFileImportProvider(KeycloakSessionFactory factory, File file, Strategy strategy) {
+        this.factory = factory;
         this.file = file;
+        this.strategy = strategy;
     }
 
-    @Override
-    public void importModel(KeycloakSessionFactory factory, final Strategy strategy) throws IOException {
+    public void importModel() throws IOException {
         logger.infof("Full importing from file %s", this.file.getAbsolutePath());
         checkRealmReps();
 
         KeycloakModelUtils.runJobInTransaction(factory, new ExportImportSessionTask() {
 
             @Override
-            protected void runExportImportTask(KeycloakSession session) throws IOException {
+            protected void runExportImportTask(KeycloakSession session) {
                 ImportUtils.importRealms(session, realmReps.values(), strategy);
             }
 
@@ -76,12 +79,6 @@ public class SingleFileImportProvider extends AbstractFileBasedImportProvider {
             InputStream is = parseFile(file);
             realmReps = ImportUtils.getRealmsFromStream(JsonSerialization.mapper, is);
         }
-    }
-
-    @Override
-    public void importRealm(KeycloakSessionFactory factory, String realmName, Strategy strategy) throws IOException {
-        // TODO: import just that single realm in case that file contains many realms?
-        importModel(factory, strategy);
     }
 
     @Override

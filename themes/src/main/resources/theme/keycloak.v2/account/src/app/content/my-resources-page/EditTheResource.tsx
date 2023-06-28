@@ -81,7 +81,7 @@ export class EditTheResource extends React.Component<EditTheResourceProps, EditT
     }
 
     async savePermission(permission: Permission): Promise<void> {
-        await this.context!.doPut(`/resources/${this.props.resource._id}/permissions`, [permission]);
+        await this.context!.doPut(`/resources/${encodeURIComponent(this.props.resource._id)}/permissions`, [permission]);
         ContentAlert.success(Msg.localize('updateSuccess'));
     }
 

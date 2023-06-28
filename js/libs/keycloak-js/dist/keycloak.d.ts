@@ -195,6 +195,12 @@ export interface KeycloakInitOptions {
 	 * @default 10000
 	 */
 	messageReceiveTimeout?: number
+
+	/**
+	 * When onLoad is 'login-required', sets the 'ui_locales' query param in compliance with section 3.1.2.1
+	 * of the OIDC 1.0 specification.
+	 */
+	locale?: string;
 }
 
 export interface KeycloakLoginOptions {
@@ -277,35 +283,16 @@ export interface KeycloakAccountOptions {
 	 */
 	redirectUri?: string;	
 }
-
-export type KeycloakPromiseCallback<T> = (result: T) => void;
-
-export interface KeycloakPromise<TSuccess, TError> extends Promise<TSuccess> {
-	/**
-	 * Function to call if the promised action succeeds.
-	 * 
-	 * @deprecated Use `.then()` instead.
-	 */
-	success(callback: KeycloakPromiseCallback<TSuccess>): KeycloakPromise<TSuccess, TError>;
-
-	/**
-	 * Function to call if the promised action throws an error.
-	 * 
-	 * @deprecated Use `.catch()` instead.
-	 */
-	error(callback: KeycloakPromiseCallback<TError>): KeycloakPromise<TSuccess, TError>;
-}
-
 export interface KeycloakError {
 	error: string;
 	error_description: string;
 }
 
 export interface KeycloakAdapter {
-	login(options?: KeycloakLoginOptions): KeycloakPromise<void, void>;
-	logout(options?: KeycloakLogoutOptions): KeycloakPromise<void, void>;
-	register(options?: KeycloakRegisterOptions): KeycloakPromise<void, void>;
-	accountManagement(): KeycloakPromise<void, void>;
+	login(options?: KeycloakLoginOptions): Promise<void>;
+	logout(options?: KeycloakLogoutOptions): Promise<void>;
+	register(options?: KeycloakRegisterOptions): Promise<void>;
+	accountManagement(): Promise<void>;
 	redirectUri(options: { redirectUri: string; }, encodeHash: boolean): string;
 }
 
@@ -350,11 +337,6 @@ export interface KeycloakRoles {
  * @deprecated Instead of importing 'KeycloakInstance' you can import 'Keycloak' directly as a type.
  */
 export type KeycloakInstance = Keycloak;
-
-/**
- * @deprecated Construct a Keycloak instance using the `new` keyword instead.
- */
-declare function Keycloak(config?: KeycloakConfig | string): Keycloak;
 
 /**
  * A client for the Keycloak authentication server.
@@ -536,30 +518,30 @@ declare class Keycloak {
 	* @param initOptions Initialization options.
 	* @returns A promise to set functions to be invoked on success or error.
 	*/
-	init(initOptions: KeycloakInitOptions): KeycloakPromise<boolean, KeycloakError>;
+	init(initOptions: KeycloakInitOptions): Promise<boolean>;
 
 	/**
 	* Redirects to login form.
 	* @param options Login options.
 	*/
-	login(options?: KeycloakLoginOptions): KeycloakPromise<void, void>;
+	login(options?: KeycloakLoginOptions): Promise<void>;
 
 	/**
 	* Redirects to logout.
 	* @param options Logout options.
 	*/
-	logout(options?: KeycloakLogoutOptions): KeycloakPromise<void, void>;
+	logout(options?: KeycloakLogoutOptions): Promise<void>;
 
 	/**
 	* Redirects to registration form.
 	* @param options The options used for the registration.
 	*/
-	register(options?: KeycloakRegisterOptions): KeycloakPromise<void, void>;
+	register(options?: KeycloakRegisterOptions): Promise<void>;
 
 	/**
 	* Redirects to the Account Management Console.
 	*/
-	accountManagement(): KeycloakPromise<void, void>;
+	accountManagement(): Promise<void>;
 
 	/**
 	* Returns the URL to login form.
@@ -610,7 +592,7 @@ declare class Keycloak {
 	*   alert('Failed to refresh the token, or the session has expired');
 	* });
 	*/
-	updateToken(minValidity: number): KeycloakPromise<boolean, boolean>;
+	updateToken(minValidity: number): Promise<boolean>;
 
 	/**
 	* Clears authentication state, including tokens. This can be useful if
@@ -637,12 +619,12 @@ declare class Keycloak {
 	* Loads the user's profile.
 	* @returns A promise to set functions to be invoked on success or error.
 	*/
-	loadUserProfile(): KeycloakPromise<KeycloakProfile, void>;
+	loadUserProfile(): Promise<KeycloakProfile>;
 
 	/**
 	* @private Undocumented.
 	*/
-	loadUserInfo(): KeycloakPromise<{}, void>;
+	loadUserInfo(): Promise<{}>;
 }
 
 export default Keycloak;

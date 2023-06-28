@@ -46,7 +46,6 @@ org.keycloak.protocol.ProtocolMapperSpi
 org.keycloak.broker.provider.IdentityProviderSpi
 org.keycloak.broker.provider.IdentityProviderMapperSpi
 org.keycloak.broker.social.SocialProviderSpi
-org.keycloak.forms.account.AccountSpi
 org.keycloak.forms.login.LoginFormsSpi
 org.keycloak.email.EmailSenderSpi
 org.keycloak.email.EmailTemplateSpi

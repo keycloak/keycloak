@@ -6,58 +6,61 @@
 title="Configuring Keycloak"
 summary="Understand how to configure and start Keycloak">
 
-This guide explains the configuration methods for Keycloak and how to start and apply the preferred configuration. It includes configuration guidelines for optimizing Keycloak for faster startup and low memory footprint.
+This {section} explains the configuration methods for Keycloak and how to start and apply the preferred configuration. It includes configuration guidelines for optimizing Keycloak for faster startup and low memory footprint.
 
-== Configuration Sources for Keycloak
-Keycloak loads the configuration from four different configuration sources:
+== Configuring sources for Keycloak
+Keycloak loads the configuration from four sources, which are listed here in order of application. 
 
-* command-line parameters
-* environment variables
-* user-created `.conf` file
-* `keycloak.conf` file located in the `conf` directory.
+. Command-line parameters
+. Environment variables
+. Options defined in a user-created configuration file.
+. Options defined in the `conf/keycloak.conf` file.
+. Sensitive options defined in a user-created Java KeyStore file.
 
-Configuration sources have a descending ordinal: command-line parameters take precedence over environment variables. Environment variables take precedence over options set by using a specific configuration file. Options from a specific config file take precedence over options defined in `conf/keycloak.conf`. When the same configuration key is found in multiple configuration sources, the applied value is taken from the configuration source with the highest ordinal.
+When an option is set in more than one source, the one that comes first in the list determines the value for that option. For example, the value for an option set by a command-line parameter has a higher priority than an environment variable for the same option.
 
-=== Example: Configuring the db-url-host parameter.
+=== Example: Configuring the db-url-host parameter
+
+The following example shows how the `db-url` value is set in four configuration sources:
 
 |===
 |*Source* | *Format*
 
-|CLI
-|--db-url=cliValue
+|Command line parameters
+|`--db-url=cliValue`
 
-|Environment Variable
-|KC_DB_URL=envVarValue
+|Environment variable
+|`KC_DB_URL=envVarValue`
 
 |Configuration file
-|db-url=confFileValue
+|`db-url=confFileValue`
+
+|Java KeyStore file
+|`kc.db-url=keystoreValue`
 |===
 
-In the example above, the `db-url` value is set in all three configuration sources. The actual value that is used at startup would be the `cliValue`. If `--db-url=cliValue` is not used, the used value would be `KC_DB_URL=envVarValue`, and last but not least the `db-url=confFileValue` would be used when no environment variable with the same Key is present. When this value is specified in a user defined configuration file and in `conf/keycloak.conf`, the value from the user defined configuration file takes precedence.
+Based on the priority of application, the value that is used at startup is `cliValue`, because the command line is the highest priority.
 
-== Configuration Format
-The configuration follows a "unified-per-source" format, that is easily translatable from one configuration source to another:
+If `--db-url=cliValue` had not been used, the applied value would be `KC_DB_URL=envVarValue`. If the value were not applied by either the command line or an environment variable, `db-url=confFileValue` would be used. However, if this value had been set in a user defined configuration file, that value would take precedence over the `conf/keycloak.conf` file. If none of the previous values were applied, the value `kc.db-url=confFileValue` would be used due to the lowest priority among the available configuration sources.
 
-.Command-line parameter format
-Values for the command-line are following the `--<key-with-dashes>=<value>` format. For some values, there's also a `-<abbreviation>=value` shorthand.
+== Formats for configuration
+The configuration uses a _unified-per-source_ format, which simplifies translation of a key/value pair from one configuration source to another.
 
-.Environment variable format
-Values for environment variables are following the uppercased `KC_<key_with_underscores>=<value>` format.
+Command-line parameter format:: Values for the command-line use the `--_<key-with-dashes>_=_<value>_` format. For some values, an `-_<abbreviation>_=_<value>_` shorthand also exists.
 
-.Configuration file format
-Values that go into the configuration file are following the `<key-with-dashes>=<value>` format.
+Environment variable format:: Values for environment variables use the uppercased `KC++_++__<key_with_underscores>__=_<value>_` format.
 
-You can easily translate a Key/Value pair from one configuration source to the other.
+Configuration file format:: Values that go into the configuration file use the `_<key-with-dashes>_=_<value>_` format.
 
-At the end of each configuration guide, look for the _Relevant
-options_ heading for a table with the three relevant configuration
+KeyStore configuration file format:: Values that go into the KeyStore configuration file use the `kc._<key-with-dashes>_` format. `_<value>_` is then a password stored in the KeyStore.
+
+At the end of each configuration {section}, look for the _Relevant
+options_ heading, which defines the applicable configuration
 formats. For all configuration options, see <@links.server
-id="all-config"/>.
+id="all-config"/>. Choose the configuration source and format that applies to your use case.
 
-The configuration source and the corresponding format you should use is use-case specific.
-
-=== Example - Configure `db-url-host` on different configuration sources:
-The following example shows how the configuration for the db url host looks for all three configuration sources:
+=== Example - Alternative formats based on configuration source
+The following example shows the configuration format for `db-url-host` for three configuration sources:
 
 .command-line parameter
 <@kc.start parameters="--db-url-host=mykeycloakdb"/>
@@ -74,145 +77,171 @@ export KC_DB_URL_HOST=mykeycloakdb
 db-url-host=mykeycloakdb
 ----
 
-=== Using environment variables for configuration values
-It is possible to use placeholders to resolve an environment specific value from environment variables inside the keycloak.conf file by using the `${r"++${ENV_VAR}++"}` syntax:
+=== Formats for command-line parameters
+
+Keycloak is packed with many command line parameters for configuration. To see the available configuration formats, enter the following command:
+
+<@kc.start parameters="--help"/>
+
+Alternatively, see <@links.server id="all-config"/> for all server options.
+
+=== Formats for environment variables
+You can use placeholders to resolve an environment specific value from environment variables inside the `keycloak.conf` file by using the `${r"++${ENV_VAR}++"}` syntax:
 
 [source]
 ----
 db-url-host=${r"${MY_DB_HOST}"}
 ----
 
-To specify a fallback value in case the environment variable can not be resolved, use a `:`:
+In case the environment variable cannot be resolved, you can specify a fallback value. Use a `:` (colon) as shown here before `mydb`:
 [source, bash]
 ----
 db-url-host=${r"${MY_DB_HOST:mydb}"}
 ----
 
-=== Configuring the server using a specific configuration file
+=== Format to include a specific configuration file
 
 By default, the server always fetches configuration options from the `conf/keycloak.conf` file. For a new installation, this file holds only commented settings as an idea of what you want to set when running in production.
 
-You can also specify an explicit configuration file location using the `[-cf|--config-file]` option by invoking the following command:
+You can also specify an explicit configuration file location using the `[-cf|--config-file]` option by entering the following command:
 
 <@kc.start rootParameters="--config-file=/path/to/myconfig.conf"/>
 
-=== Using the command-line help
-Keycloak is packed with a CLI that helps you to configure Keycloak. To find out about the available configuration, invoke the following command:
+=== Setting sensitive options using a Java KeyStore file
 
-<@kc.start parameters="--help"/>
+Thanks to Keystore Configuration Source you can directly load properties from a Java KeyStore using the `[--config-keystore]` and `[--config-keystore-password]` options.
+Optionally, you can specify the KeyStore type using the `[--config-keystore-type]` option. By default, the KeyStore type is `PKCS12`.
 
-Alternatively, you can find all server options at <@links.server id="all-config"/>.
+The secrets in a KeyStore need to be stored using the `PBE` (password-based encryption) key algorithm, where a key is derived from a KeyStore password.
+You can generate such a KeyStore using the following `keytool` command:
+[source, bash]
+----
+keytool -importpass -alias kc.db-password -keystore keystore.p12 -storepass keystorepass -storetype PKCS12 -v
+----
+After executing the command, you will be prompted to *Enter the password to be stored*, which represents a value of the `kc.db-password` property above.
 
-=== Using raw Quarkus properties
-In most cases, the available configuration options should suffice to configure the server.
-However, you might need to use properties directly from the underlying Quarkus framework to enable a specific behavior or capability that is missing in the keycloak configuration.
+When the KeyStore is created, you can start the server using the following parameters:
 
-If possible, avoid using properties directly from Quarkus. These are considered unsupported by Keycloak. If your need is essential, consider opening an https://github.com/keycloak/keycloak/issues/new?assignees=&labels=kind%2Fenhancement%2Cstatus%2Ftriage&template=enhancement.yml[enhancement request] first and help us
-to improve Keycloak's configuration to fit your needs.
+<@kc.start parameters="--config-keystore=/path/to/keystore.p12 --config-keystore-password=storepass --config-keystore-type=PKCS12"/>
 
-If that's not possible, you can configure the server using raw Quarkus properties:
+=== Format for raw Quarkus properties
+In most cases, the available configuration options should suffice to configure the server. 
+However, for a specific behavior or capability that is missing in the Keycloak configuration, you can use properties from the underlying Quarkus framework.
 
-* Create a `quarkus.properties` file in the `conf` directory and define any property you need.
+If possible, avoid using properties directly from Quarkus, because they are unsupported by Keycloak. If your need is essential, consider opening an https://github.com/keycloak/keycloak/issues/new?assignees=&labels=kind%2Fenhancement%2Cstatus%2Ftriage&template=enhancement.yml[enhancement request] first. This approach helps us improve the configuration of Keycloak to fit your needs.
 
-For a complete list of Quarkus properties, see the https://quarkus.io/guides/all-config[Quarkus documentation]. Be aware that Keycloak uses a https://github.com/keycloak/keycloak/blob/main/quarkus/runtime/pom.xml#L17[subset] of quarkus extensions, so not all properties will be available.
+If an enhancement request is not possible, you can configure the server using raw Quarkus properties:
 
-When a quarkus property is a runtime property (no lock icon shown in the quarkus guide), it is also handled as runtime property for Keycloak. When a quarkus property is a build time property, you have to invoke a `build` for the property to be applied. See the sections below for further information around the build command.
+. Create a `quarkus.properties` file in the `conf` directory.
+. Define the required properties in that file.
++
+You can use only a https://github.com/keycloak/keycloak/blob/main/quarkus/runtime/pom.xml#L17[subset] of the Quarkus extensions that are defined in the https://quarkus.io/guides/all-config[Quarkus documentation]. Also, note these differences for Quarkus properties:
 
-Note that some quarkus properties are mapped by the Keycloak configuration, for example `quarkus.http.port` and similar properties that are needed to configure Keycloak. If the property is used by Keycloak, defining the same underlying property key in  `quarkus.properties` will have no effect, as the keycloak configuration value takes precedence over the quarkus property value.
+* A lock icon for a Quarkus property in the https://quarkus.io/guides/all-config[Quarkus documentation] indicates a build time property. You run the `build` command to apply this property. For details about the build command, see the subsequent sections on optimizing Keycloak.
+* No lock icon for a property in the Quarkus guide indicates a runtime property for Quarkus and Keycloak. 
+
+. Use the `[-cf|--config-file]` command line parameter to include that file.
+
+Similarly, you can also store Quarkus properies in a Java KeyStore.
+
+Note that some Quarkus properties are already mapped in the Keycloak configuration, such as `quarkus.http.port` and similar essential properties. If the property is used by Keycloak, defining that property key in `quarkus.properties` has no effect. The Keycloak configuration value takes precedence over the Quarkus property value.
 
 == Starting Keycloak
-Keycloak can be started in two operating modes, `development mode` and `production mode`. Both modes offer a different set of defaults for the environment they are intended to be used.
+You can start Keycloak in `development mode` or `production mode`. Each mode offers different defaults for the intended environment.
 
 === Starting Keycloak in development mode
-The development mode is targeted for people trying out Keycloak the first time and get it up and running quickly. It also offers convenient defaults for developers, for example to develop a new Keycloak theme.
+Use development mode to try out Keycloak for the first time to get it up and running quickly. This mode offers convenient defaults for developers, such as for developing a new Keycloak theme.
 
-The development mode is started by invoking the following command:
+To start in development mode, enter the following command:
 
 <@kc.startdev parameters=""/>
 
 .Defaults
-The development mode sets the following default configuration:
+Development mode sets the following default configuration:
 
 * HTTP is enabled
 * Strict hostname resolution is disabled
 * Cache is set to local (No distributed cache mechanism used for high availability)
-* Theme- and Template-caching is disabled
+* Theme-caching and template-caching is disabled
 
 === Starting Keycloak in production mode
-The production mode is targeted for deployments of Keycloak into production environments and follows a "secure by default" principle.
+Use production mode for deployments of Keycloak in production environments. This mode follows a _secure by default_ principle.
 
-The production mode is started by invoking the following command:
+To start in production mode, enter the following command:
 
 <@kc.start parameters=""/>
 
-Without further configuration, this command will not start Keycloak and show you an error instead. This is done on purpose, because Keycloak follows a "secure by default" principle in this mode and expects to have a hostname setup and a HTTPS/TLS setup available when started in production mode.
+Without further configuration, this command will not start Keycloak and show you an error instead. This response is done on purpose, because Keycloak follows a _secure by default_ principle. Production mode expects a hostname to be set up and an HTTPS/TLS setup to be available when started.
 
 .Defaults
-The production mode sets the following defaults:
+Production mode sets the following defaults:
 
 * HTTP is disabled as transport layer security (HTTPS) is essential
 * Hostname configuration is expected
 * HTTPS/TLS configuration is expected
 
-Make sure to follow the steps outlined in <@links.server id="configuration-production"/> before deploying Keycloak to production environments.
+Before deploying Keycloak in a production environment, make sure to follow the steps outlined in <@links.server id="configuration-production"/>.
 
-By default, example configuration options for the production mode are commented out in the default `conf/keycloak.conf` file. These give you an idea about the main configuration to consider when running Keycloak in production.
+By default, example configuration options for the production mode are commented out in the default `conf/keycloak.conf` file. These options give you an idea about the main configuration to consider when running Keycloak in production.
 
-== Setup of the initial admin user
-The initial admin user can be added manually using the web frontend. It needs to be accessed using a local connection (localhost) or using environment variables:
+== Creating the initial admin user
+You can create the initial admin user by using the web frontend, which you access using a local connection (localhost). You can instead create this user by using environment variables. Set `KEYCLOAK_ADMIN=_<username>_` for the initial admin username and `KEYCLOAK_ADMIN_PASSWORD=_<password>_` for the initial admin password.
 
-To add the initial admin user using environment variables, set `KEYCLOAK_ADMIN=<username>` for the initial admin username and `KEYCLOAK_ADMIN_PASSWORD=<password>` for the initial admin password.
 Keycloak parses these values at first startup to create an initial user with administrative rights.
-Once the first user with administrative rights exists, you can use the admin UI or the command line tool `kcadm.[sh|bat]` to create additional users.
+Once the first user with administrative rights exists, you can use the Admin Console or the command line tool `kcadm.[sh|bat]` to create additional users.
 
 If the initial administrator already exists and the environment variables are still present at startup, an error message stating the failed creation of the initial administrator is shown in the logs. Keycloak ignores the values and starts up correctly.
 
 == Optimize the Keycloak startup
-It is highly recommended to optimize Keycloak for better startup times and memory consumption before deploying into production environments. This section shows you how to apply a set of optimizations for Keycloak to get the best performance and runtime behavior possible.
+We recommend optimizing Keycloak to provide faster startup and better memory consumption before deploying Keycloak in a production environment. This section describes how to apply Keycloak optimizations for the best performance and runtime behavior.
 
-=== Create an optimized Keycloak build
-By default, when the `start` or `start-dev` commands are used, Keycloak runs a `build` command under the covers for convenience reasons.
-This `build` command performs a set of optimizations to achieve an optimized startup- and runtime-behavior. The build process can take some time, usually a few seconds. Especially when running Keycloak in containerized environments like Kubernetes or OpenShift, startup time is important.
-So in order to avoid the time that gets lost when running a `build` as part of Keycloaks first startup, it is possible and recommended to invoke a `build` explicitly before starting up, for example as a separate step in a CI/CD pipeline.
+=== Creating an optimized Keycloak build
+By default, when you use the `start` or `start-dev` command, Keycloak runs a `build` command under the covers for convenience reasons.
+
+This `build` command performs a set of optimizations for the startup and runtime behavior. The build process can take a few seconds. Especially when running Keycloak in containerized environments such as Kubernetes or OpenShift, startup time is important. To avoid losing that time, run a `build` explicity before starting up, such as a separate step in a CI/CD pipeline.
 
 ==== First step: Run a build explicitly
-To run a `build`, invoke the following command:
+To run a `build`, enter the following command:
 
 <@kc.build parameters="<build-options>"/>
 
-As you may notice, the command above shows `build options` that should be invoked. Keycloak distinguishes between **build options**, that are usable when invoking the `build` command, and **configuration options**, that are usable when starting up the server.
+This command shows `build options` that you enter. Keycloak distinguishes between **build options**, that are usable when running the `build` command, and **configuration options**, that are usable when starting up the server.
 
-For a non-optimized startup of Keycloak, this distinction has no effect, but when a build is invoked beforehand, there's only a subset of Options available to the build command. The reason is, that build options get persisted into Keycloaks classpath, so configuration for e.g. credentials like `db-password` must not get persisted for security reasons.
+For a non-optimized startup of Keycloak, this distinction has no effect. However, if you run a build before the startup, only a subset of options is available to the build command. The restriction is due to the build options getting persisted into an optimized Keycloak image. For example, configuration for credentials such as `db-password` (which is a configuration option) must not get persisted for security reasons.
+
+[WARNING]
+All build options are persisted in a plain text. Do not store any sensitive data as the build options. This applies across all the available configuration sources, including the KeyStore Config Source. Hence, we also do not recommend to store any build options in a Java keystore. Also, when it comes to the configuration options, we recommend to use the KeyStore Config Source primarily for storing sensitive data. For non-sensitive data you can use the remaining configuration sources.
 
 Build options are marked in <@links.server id="all-config"/> with a tool icon.
-Find available build options either by looking at the https://www.keycloak.org/server/all-config?f=build[All configuration page with build options selected] or by invoking the following command:
+To find available build options, see https://www.keycloak.org/server/all-config?f=build[All configuration page with build options selected] or enter the following command:
 
 <@kc.build parameters="--help"/>
 
-.Example: Run the `build` command to set the database to PostgreSQL before startup:
+.Example: Run a `build` to set the database to PostgreSQL before startup
 <@kc.build parameters="--db=postgres"/>
 
 ==== Second step: Start Keycloak using `--optimized`
-After a successful build, you can start Keycloak and turn off the default startup behavior by invoking the following command:
+After a successful build, you can start Keycloak and turn off the default startup behavior by entering the following command:
 
 <@kc.start parameters="--optimized <configuration-options>"/>
 
-The `--optimized` parameter tells Keycloak to assume a pre-built, already optimized Keycloak image is used. As a result, Keycloak avoids checking for and running a build directly at startup to save the time to walk through this process.
+The `--optimized` parameter tells Keycloak to assume a pre-built, already optimized Keycloak image is used. As a result, Keycloak avoids checking for and running a build directly at startup, which saves time.
 
-You can invoke all configuration options at startup; these options are the ones in <@links.server id="all-config"/> that are **not** marked with a tool icon.
+You can enter all configuration options at startup; these options are the ones in <@links.server id="all-config"/> that are **not** marked with a tool icon.
 
-If a build option is found at startup with an equal value to the value used when invoking the `build`, it gets silently ignored when using the `--optimized` flag. If it has a different value than the value used when a build was invoked, a warning is shown in the logs and the previously built value is used. In order for this value to take effect, you have to run a new `build` before starting.
-
-The following example shows how to create an optimized build, then start Keycloak using the --optimized parameter:
+* If a build option is found at startup with a value that is equal to the value used when entering the `build`, that option gets silently ignored when you use the `--optimized` parameter.
+* If that option has a different value than the value used when a build was entered, a warning appers in the logs and the previously built value is used. For this value to take effect, run a new `build` before starting.
 
 .Create an optimized build
-Set build option for the postgresql database vendor using the build command
 
+The following example shows the creation of an optimized build followed by the use of the `--optimized` parameter when starting Keycloak.
+
+. Set the build option for the PostgreSQL database vendor using the build command
++
     <@kc.build parameters="--db=postgres"/>
 
-.Set the runtime configuration options to keycloak.conf
-Set configuration options for postgres inside `conf/keycloak.conf`
-
+. Set the runtime configuration options for postgres in the `conf/keycloak.conf` file.
++
 [source]
 ----
 db-url-host=keycloak-postgres
@@ -222,23 +251,23 @@ hostname=mykeycloak.acme.com
 https-certificate-file
 ----
 
-.Start the server with the optimized parameter
-
+. Start the server with the optimized parameter
++
     <@kc.start parameters="--optimized"/>
 
-Most optimizations to startup and runtime behavior can be achieved by using the `build` command. By using the `keycloak.conf` file as a source for configuration options, Keycloak avoids some steps at startup that are needed when invoking the configuration using the command line, for example initialising the CLI itself. As a result, the server starts up even faster.
+You can achieve most optimizations to startup and runtime behavior by using the `build` command. Also, by using the `keycloak.conf` file as a configuration source, you avoid some steps at startup that would otherwise require command line parameters, such as initializing the CLI itself. As a result, the server starts up even faster.
 
 == Underlying concepts
-This section gives an overview around the underlying concepts Keycloak uses, especially when it comes to optimizing the startup.
+This section gives an overview of the underlying concepts Keycloak uses, especially when it comes to optimizing the startup.
 
-Keycloak uses the Quarkus framework and it's re-augmentation/mutable-jar approach under the covers. This process is started when a `build` is invoked.
+Keycloak uses the Quarkus framework and a re-augmentation/mutable-jar approach under the covers. This process is started when a `build` command is run.
 
 The following are some optimizations performed by the `build` command:
 
-* A new closed-world assumption about installed providers is created, meaning that no need exists to re-create the registry and initialize the factories at every Keycloak startup
-* Configuration files are pre-parsed to reduce I/O when starting the server
-* Database specific resources are configured and prepared to run against a certain database vendor
-* By persisting build options into the server image, the server does not perform any additional step to interpret configuration options and (re)configure itself
+* A new closed-world assumption about installed providers is created, meaning that no need exists to re-create the registry and initialize the factories at every Keycloak startup.
+* Configuration files are pre-parsed to reduce I/O when starting the server.
+* Database specific resources are configured and prepared to run against a certain database vendor.
+* By persisting build options into the server image, the server does not perform any additional step to interpret configuration options and (re)configure itself.
 
 You can read more at the specific https://quarkus.io/guides/reaugmentation[Quarkus guide]
 

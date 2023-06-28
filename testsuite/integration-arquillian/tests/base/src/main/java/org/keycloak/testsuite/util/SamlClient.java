@@ -65,17 +65,17 @@ import org.keycloak.testsuite.util.saml.StepWithCheckers;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 
-import javax.ws.rs.core.MultivaluedHashMap;
-import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.Response;
-import javax.xml.soap.MessageFactory;
-import javax.xml.soap.SOAPBody;
-import javax.xml.soap.SOAPEnvelope;
-import javax.xml.soap.SOAPException;
-import javax.xml.soap.SOAPHeader;
-import javax.xml.soap.SOAPHeaderElement;
-import javax.xml.soap.SOAPMessage;
-import javax.xml.ws.soap.SOAPFaultException;
+import jakarta.ws.rs.core.MultivaluedHashMap;
+import jakarta.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.core.Response;
+import jakarta.xml.soap.MessageFactory;
+import jakarta.xml.soap.SOAPBody;
+import jakarta.xml.soap.SOAPEnvelope;
+import jakarta.xml.soap.SOAPException;
+import jakarta.xml.soap.SOAPHeader;
+import jakarta.xml.soap.SOAPHeaderElement;
+import jakarta.xml.soap.SOAPMessage;
+import jakarta.xml.ws.soap.SOAPFaultException;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -87,6 +87,8 @@ import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.UUID;
@@ -705,13 +707,26 @@ public class SamlClient {
             // if the public key is passed verify the signature of the redirect URI
             try {
                 KeyLocator locator = new KeyLocator() {
+
+                    private final Key key = org.keycloak.testsuite.util.KeyUtils.publicKeyFromString(realmPublicKey);
+
                     @Override
                     public Key getKey(String kid) throws KeyManagementException {
-                        return org.keycloak.testsuite.util.KeyUtils.publicKeyFromString(realmPublicKey);
+                        return this.key;
+                    }
+
+                    @Override
+                    public Key getKey(Key key) throws KeyManagementException {
+                        return this.key;
                     }
 
                     @Override
                     public void refreshKeyCache() {
+                    }
+
+                    @Override
+                    public Iterator<Key> iterator() {
+                        return Collections.singleton(this.key).iterator();
                     }
                 };
                 SamlProtocolUtils.verifyRedirectSignature(documentHolder, locator, encodedParams,

@@ -1,0 +1,3 @@
+.keycloak-admin--keycloak-card__footer-text {
+  --pf-l-flex--spacer: var(--pf-l-flex--spacer--lg);
+}

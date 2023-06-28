@@ -1,0 +1,20 @@
+{
+  "title": "Hendelser",
+  "adminEvents": "administratorhendelser",
+  "time": "Tid",
+  "user": "Bruker",
+  "username": "Brukers navn",
+  "email": "E-postadresse",
+  "eventType": "Hendelsestype",
+  "ipAddress": "IP-adresse",
+  "client": "klient",
+  "realm": "Sikkerhetsdomene",
+  "resourcePath": "Filsti for ressurs",
+  "resourceType": "Ressurstype",
+  "resourceTypes": "Ressurstyper",
+  "operationType": "Operasjonstype",
+  "operationTypes": "Operasjonstyper",
+  "auth": "Auth",
+  "value": "Verdi",
+  "representation": "Representasjon"
+}

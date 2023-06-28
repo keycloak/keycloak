@@ -19,14 +19,6 @@
 
     <target name="all">
         <delete dir="target/test-apps"/>
-        <copy todir="target/test-apps/photoz" overwrite="true">
-            <fileset dir="../photoz">
-                <exclude name="**/target/**"/>
-                <exclude name="**/*.iml"/>
-                <exclude name="**/*.unconfigured"/>
-                <exclude name="**/subsystem-config.xml"/>
-            </fileset>
-        </copy>
         <copy todir="target/test-apps/hello-world-authz-service" overwrite="true">
             <fileset dir="../hello-world-authz-service">
                 <exclude name="**/target/**"/>
@@ -53,6 +45,14 @@
         </copy>
         <copy todir="target/test-apps/cors" overwrite="true">
             <fileset dir="../cors">
+                <exclude name="**/target/**"/>
+                <exclude name="**/*.iml"/>
+                <exclude name="**/*.unconfigured"/>
+                <exclude name="**/subsystem-config.xml"/>
+            </fileset>
+        </copy>
+        <copy todir="target/test-apps/fuse" overwrite="true">
+            <fileset dir="../fuse">
                 <exclude name="**/target/**"/>
                 <exclude name="**/*.iml"/>
                 <exclude name="**/*.unconfigured"/>

@@ -17,13 +17,9 @@
 
 package org.keycloak.testsuite.account.custom;
 
-import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
 import org.keycloak.testsuite.AbstractAuthTest;
-import org.keycloak.testsuite.auth.page.account.AccountManagement;
-import org.keycloak.testsuite.auth.page.account.fragment.AccountManagementPatternFlyAlert;
 
-import static org.junit.Assert.assertTrue;
 import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
 
 /**
@@ -32,31 +28,16 @@ import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
  */
 public abstract class AbstractAccountManagementTest extends AbstractAuthTest {
 
-    @Page
-    protected AccountManagement testRealmAccountManagementPage;
-
-    @Page
-    protected AccountManagementPatternFlyAlert alert;
-
     @Override
     public void setDefaultPageUriParameters() {
         super.setDefaultPageUriParameters();
         testRealmPage.setAuthRealm(TEST);
-        testRealmAccountManagementPage.setAuthRealm(TEST);
     }
 
     @Before
     public void beforeAbstractAccountTest() {
         // make user test user exists in test realm
         createTestUserWithAdminClient();
-    }
-
-    public void assertAlertSuccess() {
-        assertTrue(alert.isSuccess());
-    }
-
-    public void assertAlertError() {
-        assertTrue(alert.isError());
     }
 
 }

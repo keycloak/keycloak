@@ -20,12 +20,15 @@ package org.keycloak.models.map.storage.jpa.hibernate.listeners;
 import org.hibernate.FlushMode;
 import org.hibernate.HibernateException;
 import org.hibernate.engine.spi.ActionQueue;
+import org.hibernate.engine.spi.PersistenceContext;
+import org.hibernate.engine.spi.SessionEventListenerManager;
 import org.hibernate.event.internal.DefaultAutoFlushEventListener;
 import org.hibernate.event.spi.AutoFlushEvent;
 import org.hibernate.event.spi.EventSource;
 import org.hibernate.internal.CoreMessageLogger;
+import org.hibernate.stat.spi.StatisticsImplementor;
 import org.jboss.logging.Logger;
-import org.keycloak.models.map.storage.jpa.JpaMapKeycloakTransaction;
+import org.keycloak.models.map.storage.jpa.JpaMapStorage;
 
 /**
  * Extends Hibernate's {@link DefaultAutoFlushEventListener} to always flush queued inserts to allow correct handling
@@ -35,7 +38,7 @@ import org.keycloak.models.map.storage.jpa.JpaMapKeycloakTransaction;
  * This class copies over all functionality of the base class that can't be overwritten via inheritance.
  * This is being tracked as part of <a href="https://github.com/keycloak/keycloak/issues/11666">keycloak/keycloak#11666</a>.
  * <p />
- * This also clears the JPA map store query level cache for the {@link JpaMapKeycloakTransaction} whenever there is some data written to the database.
+ * This also clears the JPA map store query level cache for the {@link JpaMapStorage} whenever there is some data written to the database.
  */
 public class JpaAutoFlushListener extends DefaultAutoFlushEventListener {
 
@@ -45,8 +48,9 @@ public class JpaAutoFlushListener extends DefaultAutoFlushEventListener {
 
     public void onAutoFlush(AutoFlushEvent event) throws HibernateException {
         final EventSource source = event.getSession();
+        final SessionEventListenerManager eventListenerManager = source.getEventListenerManager();
         try {
-            source.getEventListenerManager().partialFlushStart();
+            eventListenerManager.partialFlushStart();
 
             if (flushMightBeNeeded(source)) {
                 // Need to get the number of collection removals before flushing to executions
@@ -65,17 +69,18 @@ public class JpaAutoFlushListener extends DefaultAutoFlushEventListener {
 
                     postPostFlush(source);
 
-                    if (source.getFactory().getStatistics().isStatisticsEnabled()) {
-                        source.getFactory().getStatistics().flush();
+                    final StatisticsImplementor statistics = source.getFactory().getStatistics();
+                    if (statistics.isStatisticsEnabled()) {
+                        statistics.flush();
                     }
                 } else {
-                    LOG.trace("Don't need to execute flush");
+                    LOG.trace("No need to execute flush");
                     event.setFlushRequired(false);
                     actionQueue.clearFromFlushNeededCheck(oldSize);
                 }
             }
         } finally {
-            source.getEventListenerManager().partialFlushEnd(
+            eventListenerManager.partialFlushEnd(
                     event.getNumberOfEntitiesProcessed(),
                     event.getNumberOfEntitiesProcessed()
             );
@@ -84,22 +89,24 @@ public class JpaAutoFlushListener extends DefaultAutoFlushEventListener {
 
     private boolean flushIsReallyNeeded(AutoFlushEvent event, final EventSource source) {
         boolean flushIsReallyNeeded = source.getHibernateFlushMode() == FlushMode.ALWAYS
-                // START OF FIX for auto-flush-mode on inserts that might later be deleted in same transaction
+                // START OF FIX for auto-flush-mode on inserts that might later be deleted in the same transaction
                 || source.getActionQueue().numberOfInsertions() > 0
                 // END OF FIX
                 || source.getActionQueue().areTablesToBeUpdated(event.getQuerySpaces());
+        // START OF HOOK: clear query cache when data is flushed to the database
         if (flushIsReallyNeeded) {
             // clear the per-session query cache, as changing an entity might change any of the cached query results
-            JpaMapKeycloakTransaction.clearQueryCache(source.getSession());
+            JpaMapStorage.clearQueryCache(source.getSession());
         }
+        // END OF HOOK
         return flushIsReallyNeeded;
     }
 
     private boolean flushMightBeNeeded(final EventSource source) {
+        final PersistenceContext persistenceContext = source.getPersistenceContextInternal();
         return !source.getHibernateFlushMode().lessThan(FlushMode.AUTO)
-                && source.getDontFlushFromFind() == 0
-                && (source.getPersistenceContext().getNumberOfManagedEntities() > 0 ||
-                source.getPersistenceContext().getCollectionEntriesSize() > 0);
+                && (persistenceContext.getNumberOfManagedEntities() > 0
+                || persistenceContext.getCollectionEntriesSize() > 0);
     }
 
 }

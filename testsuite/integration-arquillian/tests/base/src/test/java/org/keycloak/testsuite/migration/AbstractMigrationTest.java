@@ -59,6 +59,7 @@ import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.authorization.DecisionStrategy;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
@@ -69,6 +70,7 @@ import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.exportimport.ExportImportUtil;
 import org.keycloak.testsuite.runonserver.RunHelpers;
 import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.theme.DefaultThemeSelectorProvider;
 import org.keycloak.util.TokenUtil;
 
 import java.io.IOException;
@@ -84,6 +86,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import static net.bytebuddy.matcher.ElementMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.containsInAnyOrder;
@@ -150,6 +154,26 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
         assertNames(masterRealm.clients().get(id).roles().list(), "master-test-client-role");
         assertNames(masterRealm.users().search("", 0, 5), "admin", "master-test-user");
         assertNames(masterRealm.groups().groups(), "master-test-group");
+    }
+
+    protected void testRhssoThemes(RealmResource realm) {
+        // check themes are removed
+        RealmRepresentation rep = realm.toRepresentation();
+        Assert.assertNull("Login theme was not modified", rep.getLoginTheme());
+        Assert.assertNull("Email theme was not modified", rep.getEmailTheme());
+        Assert.assertNull("Account theme was not modified", rep.getAccountTheme());
+        // check the client theme is also removed
+        List<ClientRepresentation> client = realm.clients().findByClientId("migration-saml-client");
+        Assert.assertNotNull("migration-saml-client client is missing", client);
+        Assert.assertEquals("migration-saml-client client is missing", 1, client.size());
+        Assert.assertNull("migration-saml-client login theme was not removed", client.get(0).getAttributes().get(DefaultThemeSelectorProvider.LOGIN_THEME_KEY));
+    }
+
+    protected void testHttpChallengeFlow(RealmResource realm) {
+        log.info("testing 'http challenge' flow not present");
+        Assert.assertFalse(realm.flows().getFlows()
+                .stream()
+                .anyMatch(authFlow -> authFlow.getAlias().equalsIgnoreCase("http challenge")));
     }
 
     /**
@@ -320,11 +344,21 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
         testPostLogoutRedirectUrisSet(migrationRealm);
     }
 
-   protected void testMigrationTo20_0_0() {
+    protected void testMigrationTo20_0_0() {
         testViewGroups(masterRealm);
         testViewGroups(migrationRealm);
     }
 
+    protected void testMigrationTo21_0_2() {
+        testTermsAndConditionsMigrated(masterRealm);
+        testTermsAndConditionsMigrated(migrationRealm);
+        testTermsAndConditionsMigrated(migrationRealm2);
+    }
+
+    protected void testMigrationTo22_0_0() {
+        testRhssoThemes(migrationRealm);
+        testHttpChallengeFlow(migrationRealm);
+    }
 
     protected void testDeleteAccount(RealmResource realm) {
         ClientRepresentation accountClient = realm.clients().findByClientId(ACCOUNT_MANAGEMENT_CLIENT_ID).get(0);
@@ -503,6 +537,32 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
         ClientResource accountResource = realm.clients().get(accountClient.getId());
         RoleRepresentation viewAppRole = accountResource.roles().get(VIEW_GROUPS).toRepresentation();
         assertNotNull(viewAppRole);
+    }
+
+    protected void testTermsAndConditionsMigrated(RealmResource realmResource) {
+        final String legacyTermsAndConditionsAlias = "terms_and_conditions";
+        // Test realm RequiredAction migrated
+        RealmRepresentation realm = realmResource.toRepresentation();
+        List<RequiredActionProviderRepresentation> requiredActions = realm.getRequiredActions();
+
+        if (requiredActions != null && !requiredActions.isEmpty()) {
+            assertThat(requiredActions.stream()
+                    .map(RequiredActionProviderRepresentation::getAlias)
+                    .collect(Collectors.toList()), not(hasItem(legacyTermsAndConditionsAlias)));
+            assertThat(requiredActions.stream()
+                    .map(RequiredActionProviderRepresentation::getProviderId)
+                    .collect(Collectors.toList()), not(hasItem(legacyTermsAndConditionsAlias)));
+        }
+
+        List<UserRepresentation> users = realmResource.users().list(null, null);
+
+        if (users != null && !users.isEmpty()) {
+            // Test users required actions migrated
+            assertThat(users.stream()
+                            .flatMap(user -> user.getRequiredActions().stream())
+                            .collect(Collectors.toList()),
+                    not(hasItem(legacyTermsAndConditionsAlias)));
+        }
     }
 
     protected void testRoleManageAccountLinks(RealmResource... realms) {
@@ -970,6 +1030,14 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
 
     protected void testMigrationTo20_x() {
         testMigrationTo20_0_0();
+    }
+
+    protected void testMigrationTo21_x() {
+        testMigrationTo21_0_2();
+    }
+
+    protected void testMigrationTo22_x() {
+        testMigrationTo22_0_0();
     }
 
     protected void testMigrationTo7_x(boolean supportedAuthzServices) {

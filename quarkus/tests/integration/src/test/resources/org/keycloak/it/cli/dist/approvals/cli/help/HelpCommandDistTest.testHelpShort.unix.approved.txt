@@ -7,8 +7,6 @@ Usage:
 kc.sh [OPTIONS] [COMMAND]
 
 Use this command-line tool to manage your Keycloak cluster.
-Make sure the command is available on your "PATH" or prefix it with "./" (e.g.:
-"./kc.sh") to execute from the current folder.
 
 Options:
 

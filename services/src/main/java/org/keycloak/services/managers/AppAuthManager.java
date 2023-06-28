@@ -16,7 +16,7 @@
  */
 package org.keycloak.services.managers;
 
-import javax.ws.rs.NotAuthorizedException;
+import jakarta.ws.rs.NotAuthorizedException;
 
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.util.ObjectUtil;
@@ -24,8 +24,8 @@ import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.UriInfo;
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.UriInfo;
 import java.util.regex.Pattern;
 
 /**

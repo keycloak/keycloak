@@ -79,9 +79,9 @@ import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 
-import javax.ws.rs.client.Entity;
-import javax.ws.rs.core.Form;
-import javax.ws.rs.core.UriBuilder;
+import jakarta.ws.rs.client.Entity;
+import jakarta.ws.rs.core.Form;
+import jakarta.ws.rs.core.UriBuilder;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
@@ -308,6 +308,13 @@ public class OAuthClient {
     public AuthorizationEndpointResponse doLogin(String username, String password) {
         openLoginForm();
         fillLoginForm(username, password);
+
+        return new AuthorizationEndpointResponse(this);
+    }
+
+    public AuthorizationEndpointResponse doSilentLogin() {
+        openLoginForm();
+        WaitUtils.waitForPageToLoad();
 
         return new AuthorizationEndpointResponse(this);
     }

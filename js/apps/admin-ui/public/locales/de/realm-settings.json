@@ -1,0 +1,51 @@
+{
+  "events": "Ereignisse",
+  "email": "Email",
+  "from": "Von",
+  "host": "Host",
+  "port": "Port",
+  "authentication": "Authentifizierung",
+  "enableSSL": "SSL aktivieren",
+  "username": "Benutzername",
+  "password": "Passwort",
+  "keys": "Keys",
+  "active": "Aktiv",
+  "type": "Typ",
+  "certificate": "Zertifikat",
+  "userRegistration": "Benutzerregistrierung",
+  "userRegistrationHelpText": "Aktiviere/deaktiviere die Seite zur Benutzerregistrierung. Auf der Loginseite wird ein entsprechender Link angezeigt.",
+  "rememberMe": "Angemeldet bleiben",
+  "rememberMeHelpText": "Zeigt eine Auswahlbox auf der Loginseite, die es dem Benutzer erlaubt, zwischen Browser-Neustarts eingeloggt zu bleiben, bis die Session abläuft.",
+  "emailAsUsername": "E-Mail-Adresse als Benutzername",
+  "loginWithEmail": "Anmeldung mit E-Mail",
+  "loginWithEmailHelpText": "Erlaubt Benutzern, sich mit ihrer E-Mail-Adresse anzumelden.",
+  "verifyEmail": "E-Mail verifizieren",
+  "editUsername": "Benutzername editierbar",
+  "htmlDisplayName": "HTML-Anzeigename",
+  "endpoints": "Endpoints",
+  "localization": "Internationalisierung",
+  "sessions": "Sessions",
+  "clientProfileDescription": "Beschreibung",
+  "delete": "Löschen",
+  "save": "Speichern",
+  "attributes": "Attribute",
+  "status": "Status",
+  "supportedLocales": "Unterstützte Sprachen",
+  "user": "Benutzer",
+  "validatorDialogColNames": {
+    "colName": "Rollenname"
+  },
+  "eventTypes": {
+    "LOGOUT": {
+      "name": "Ausloggen"
+    },
+    "REGISTER": {
+      "name": "Registrieren"
+    },
+    "RESET_PASSWORD": {
+      "name": "Passwort zurücksetzen"
+    }
+  },
+  "defaultRoles": "Standardrollen",
+  "defaultGroups": "Standardgruppen"
+}

@@ -1,0 +1,6 @@
+{
+  "temporaryLocked": "The user may have been locked due to failing to login too many times.",
+  "emailVerified": "Has the user's email been verified?",
+  "requiredUserActions": "Require an action when the user logs in. 'Verify email' sends an email to the user to verify their email address. 'Update profile' requires user to enter in new personal information. 'Update password' requires user to enter in a new password. 'Configure OTP' requires setup of a mobile password generator.",
+  "groups": "Groups user is a member of. Select a listed group and click the Leave button to leave the group."
+}

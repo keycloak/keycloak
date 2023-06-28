@@ -20,40 +20,73 @@ package org.keycloak.protocol.saml;
 import org.apache.xml.security.encryption.XMLCipher;
 import org.keycloak.crypto.Algorithm;
 
-import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 /**
  * This enum provides mapping between Keycloak provided encryption algorithms and algorithms from xmlsec.
  * It is used to make sure we are using keys generated for given algorithm only with that algorithm.
  */
 public enum SAMLEncryptionAlgorithms {
-    RSA_OAEP(XMLCipher.RSA_OAEP, Algorithm.RSA_OAEP),
-    RSA1_5(XMLCipher.RSA_v1dot5, Algorithm.RSA1_5);
+    RSA_OAEP(Algorithm.RSA_OAEP, XMLCipher.RSA_OAEP, XMLCipher.RSA_OAEP_11),
+    RSA1_5(Algorithm.RSA1_5, XMLCipher.RSA_v1dot5);
 
-    private String xmlEncIdentifier;
-    private String keycloakIdentifier;
-    private static final Map<String, SAMLEncryptionAlgorithms> forXMLEncIdentifier = Arrays.stream(values()).collect(Collectors.toMap(SAMLEncryptionAlgorithms::getXmlEncIdentifier, Function.identity()));
-    private static final Map<String, SAMLEncryptionAlgorithms> forKeycloakIdentifier = Arrays.stream(values()).collect(Collectors.toMap(SAMLEncryptionAlgorithms::getKeycloakIdentifier, Function.identity()));
+    private final String[] xmlEncIdentifier;
+    private final String keycloakIdentifier;
+    private static final Map<String, SAMLEncryptionAlgorithms> forKeycloakIdentifier;
+    private static final Map<String, SAMLEncryptionAlgorithms> forXMLEncIdentifier;
 
-    SAMLEncryptionAlgorithms(String xmlEncIdentifier, String keycloakIdentifier) {
+    static {
+        Map<String, SAMLEncryptionAlgorithms> forKeycloakIdentifierTmp = new HashMap<>();
+        Map<String, SAMLEncryptionAlgorithms> forXMLEncIdentifierTmp = new HashMap<>();
+        for (SAMLEncryptionAlgorithms alg: values()) {
+            forKeycloakIdentifierTmp.put(alg.getKeycloakIdentifier(), alg);
+            for (String xmlAlg : alg.getXmlEncIdentifiers()) {
+                forXMLEncIdentifierTmp.put(xmlAlg, alg);
+            }
+        }
+        forKeycloakIdentifier = Collections.unmodifiableMap(forKeycloakIdentifierTmp);
+        forXMLEncIdentifier = Collections.unmodifiableMap(forXMLEncIdentifierTmp);
+    }
+
+    SAMLEncryptionAlgorithms(String keycloakIdentifier, String... xmlEncIdentifier) {
+        assert xmlEncIdentifier.length > 0 : "xmlEncIdentifier should contain at least one identifier";
         this.xmlEncIdentifier = xmlEncIdentifier;
         this.keycloakIdentifier = keycloakIdentifier;
     }
 
-    public String getXmlEncIdentifier() {
+    /**
+     * Getter for all the XML encoding identifiers.
+     * There should be at least one.
+     * @return The array of XML encoding identifiers
+     */
+    public String[] getXmlEncIdentifiers() {
         return xmlEncIdentifier;
     }
+
+    /**
+     * Getter for the keycloak identifier.
+     * @return The keycloak identifier.
+     */
     public String getKeycloakIdentifier() {
         return keycloakIdentifier;
     }
 
+    /**
+     * Returns the SAMLEncryptionAlgorithms that contains the xml enc identifier.
+     * @param xmlEncIdentifier The Xml encoding identifier
+     * @return The associated SAMLEncryptionAlgorithms or null
+     */
     public static SAMLEncryptionAlgorithms forXMLEncIdentifier(String xmlEncIdentifier) {
         return forXMLEncIdentifier.get(xmlEncIdentifier);
     }
 
+    /**
+     * Returns the SAMLEncryptionAlgorithms for the keycloak identifier.
+     * @param keycloakIdentifier The keycloak identifier
+     * @return The associated SAMLEncryptionAlgorithms or null
+     */
     public static SAMLEncryptionAlgorithms forKeycloakIdentifier(String keycloakIdentifier) {
         return forKeycloakIdentifier.get(keycloakIdentifier);
     }

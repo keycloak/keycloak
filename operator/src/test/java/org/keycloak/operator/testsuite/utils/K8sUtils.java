@@ -22,17 +22,22 @@ import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientException;
-import io.fabric8.kubernetes.client.extended.run.RunConfigBuilder;
+import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.utils.KubernetesResourceUtil;
 import io.fabric8.kubernetes.client.utils.Serialization;
 import io.quarkus.logging.Log;
 import org.awaitility.Awaitility;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusCondition;
+import org.keycloak.operator.testsuite.integration.BaseOperatorTest;
 
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 /**
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
@@ -43,7 +48,9 @@ public final class K8sUtils {
     }
 
     public static Keycloak getDefaultKeycloakDeployment() {
-        return getResourceFromFile("example-keycloak.yaml", Keycloak.class);
+        Keycloak kc = getResourceFromFile("example-keycloak.yaml", Keycloak.class);
+        kc.getMetadata().setNamespace(BaseOperatorTest.getCurrentNamespace());
+        return kc;
     }
 
     public static Secret getDefaultTlsSecret() {
@@ -55,12 +62,28 @@ public final class K8sUtils {
         deployKeycloak(client, kc, waitUntilReady, true);
     }
 
-    public static void deployKeycloak(KubernetesClient client, Keycloak kc, boolean waitUntilReady, boolean deployTlsSecret) {
-        client.resources(Keycloak.class).inNamespace(kc.getMetadata().getNamespace()).createOrReplace(kc);
+    public static List<HasMetadata> set(KubernetesClient client, InputStream stream) {
+        return client.load(stream).items().stream().map(i -> set(client, i)).collect(Collectors.toList());
+    }
 
-        if (deployTlsSecret) {
-            client.secrets().inNamespace(kc.getMetadata().getNamespace()).createOrReplace(getDefaultTlsSecret());
+    public static <T extends HasMetadata> T set(KubernetesClient client, T hasMetadata) {
+        Resource<T> resource = client.resource(hasMetadata);
+        try {
+            return resource.patch();
+        } catch (KubernetesClientException e) {
+            if (e.getCode() == HttpURLConnection.HTTP_NOT_FOUND) {
+                return resource.create();
+            }
+            throw e;
         }
+    }
+
+    public static void deployKeycloak(KubernetesClient client, Keycloak kc, boolean waitUntilReady, boolean deployTlsSecret) {
+        if (deployTlsSecret) {
+            set(client, getDefaultTlsSecret());
+        }
+
+        set(client, kc);
 
         if (waitUntilReady) {
             waitForKeycloakToBeReady(client, kc);
@@ -97,13 +120,12 @@ public final class K8sUtils {
         var podName = KubernetesResourceUtil.sanitizeName("curl-" + UUID.randomUUID());
         try {
             Pod curlPod = k8sclient.run().inNamespace(namespace)
-                    .withRunConfig(new RunConfigBuilder()
+                    .withNewRunConfig()
                             .withArgs(args)
                             .withName(podName)
                             .withImage("curlimages/curl:7.78.0")
                             .withRestartPolicy("Never")
-                            .build())
-                    .done();
+                            .done();
             Log.info("Waiting for curl Pod to finish running");
             Awaitility.await().atMost(3, TimeUnit.MINUTES)
                     .until(() -> {

@@ -111,18 +111,18 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 
-import javax.ws.rs.Consumes;
-import javax.ws.rs.FormParam;
-import javax.ws.rs.GET;
-import javax.ws.rs.NotFoundException;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.container.AsyncResponse;
-import javax.ws.rs.container.Suspended;
-import javax.ws.rs.core.*;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.FormParam;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.container.AsyncResponse;
+import jakarta.ws.rs.container.Suspended;
+import jakarta.ws.rs.core.*;
 import javax.xml.crypto.dsig.XMLSignature;
 import javax.xml.stream.XMLStreamWriter;
 import java.io.ByteArrayInputStream;
@@ -140,7 +140,7 @@ import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.stream.Collectors;
 
-import javax.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.core.MultivaluedMap;
 import javax.xml.parsers.ParserConfigurationException;
 
 import static org.keycloak.common.util.StackUtil.getShortStackTrace;
@@ -1126,7 +1126,7 @@ public class SamlService extends AuthorizationEndpointBase {
 
 
     private SingleUseObjectProvider getSingleUseStore() {
-        return session.getProvider(SingleUseObjectProvider.class);
+        return session.singleUseObjects();
     }
 
     /**

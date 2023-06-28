@@ -23,6 +23,7 @@ import org.keycloak.broker.provider.IdentityProviderFactory;
 import org.keycloak.broker.social.SocialIdentityProvider;
 import org.keycloak.common.Profile;
 import org.keycloak.component.ComponentFactory;
+import org.keycloak.crypto.ClientSignatureVerifierProvider;
 import org.keycloak.events.EventType;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
@@ -54,10 +55,10 @@ import org.keycloak.representations.info.SystemInfoRepresentation;
 import org.keycloak.representations.info.ThemeInfoRepresentation;
 import org.keycloak.theme.Theme;
 
-import javax.ws.rs.GET;
-import javax.ws.rs.Produces;
-import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.core.MediaType;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.WebApplicationException;
+import jakarta.ws.rs.core.MediaType;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
@@ -96,7 +97,21 @@ public class ServerInfoAdminResource {
         info.setSystemInfo(SystemInfoRepresentation.create(session.getKeycloakSessionFactory().getServerStartupTimestamp()));
         info.setMemoryInfo(MemoryInfoRepresentation.create());
         info.setProfileInfo(ProfileInfoRepresentation.create());
-        info.setCryptoInfo(CryptoInfoRepresentation.create());
+
+        // True - asymmetric algorithms, false - symmetric algorithms
+        Map<Boolean, List<String>> algorithms = session.getAllProviders(ClientSignatureVerifierProvider.class).stream()
+                        .collect(
+                                Collectors.toMap(
+                                        ClientSignatureVerifierProvider::isAsymmetricAlgorithm,
+                                        clientSignatureVerifier -> Collections.singletonList(clientSignatureVerifier.getAlgorithm()),
+                                        (l1, l2) -> listCombiner(l1, l2)
+                                                .stream()
+                                                .sorted()
+                                                .collect(Collectors.toList()),
+                                        HashMap::new
+                                )
+                        );
+        info.setCryptoInfo(CryptoInfoRepresentation.create(algorithms.get(false), algorithms.get(true)));
 
         setSocialProviders(info);
         setIdentityProviders(info);
@@ -210,6 +225,13 @@ public class ServerInfoAdminResource {
         if (filterAccountV2 || filterAdminV2) {
             filteredNames.remove("keycloak.v2");
             filteredNames.remove("rh-sso.v2");
+        }
+
+        boolean filterAccountV3 = (type == Theme.Type.ACCOUNT) && 
+            !Profile.isFeatureEnabled(Profile.Feature.ACCOUNT3);
+
+        if (filterAccountV3) {
+            filteredNames.remove("keycloak.v3");
         }
         
         return filteredNames;

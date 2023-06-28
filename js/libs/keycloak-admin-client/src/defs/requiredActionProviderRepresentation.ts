@@ -7,7 +7,7 @@ export enum RequiredActionAlias {
   UPDATE_PROFILE = "UPDATE_PROFILE",
   CONFIGURE_TOTP = "CONFIGURE_TOTP",
   UPDATE_PASSWORD = "UPDATE_PASSWORD",
-  terms_and_conditions = "terms_and_conditions",
+  TERMS_AND_CONDITIONS = "TERMS_AND_CONDITIONS",
 }
 
 export default interface RequiredActionProviderRepresentation {

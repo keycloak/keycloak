@@ -45,7 +45,7 @@ import io.quarkus.test.junit.main.LaunchResult;
 @LegacyStore
 public class QuarkusPropertiesDistTest {
 
-    private static final String QUARKUS_BUILDTIME_HIBERNATE_METRICS_KEY = "quarkus.hibernate-orm.metrics.enabled";
+    private static final String QUARKUS_BUILDTIME_HIBERNATE_METRICS_KEY = "quarkus.datasource.metrics.enabled";
     private static final String QUARKUS_RUNTIME_CONSOLE_LOGLVL_KEY = "quarkus.log.console.level";
 
     @Test
@@ -104,16 +104,6 @@ public class QuarkusPropertiesDistTest {
 
     @Test
     @BeforeStartDistribution(UpdateHibernateMetricsFromQuarkusProps.class)
-    @Launch({ "start", "--http-enabled=true", "--hostname-strict=false" })
-    @Order(7)
-    void testBuildRunTimeMismatchOnQuarkusBuildPropWarning(LaunchResult result) {
-        CLIResult cliResult = (CLIResult) result;
-        cliResult.assertNoBuild();
-        cliResult.assertBuildRuntimeMismatchWarning(QUARKUS_BUILDTIME_HIBERNATE_METRICS_KEY);
-    }
-
-    @Test
-    @BeforeStartDistribution(UpdateHibernateMetricsFromQuarkusProps.class)
     @Launch({ "build", "--metrics-enabled=true" })
     @Order(8)
     void buildFirstWithUnknownQuarkusBuildProperty(LaunchResult result) {
@@ -130,6 +120,45 @@ public class QuarkusPropertiesDistTest {
         cliResult.assertNoBuild();
         when().get("/metrics").then().statusCode(200)
                 .body(containsString("jvm_gc_"));
+    }
+
+    @Test
+    @Launch({ "start", "--http-enabled=true", "--hostname-strict=false", "--config-keystore=keystore" })
+    @Order(10)
+    void testMissingSmallRyeKeyStorePasswordProperty(LaunchResult result) {
+        CLIResult cliResult = (CLIResult) result;
+        cliResult.assertError("config-keystore-password must be specified");
+        cliResult.assertNoBuild();
+    }
+
+    @Test
+    @Launch({ "start", "--http-enabled=true", "--hostname-strict=false", "--config-keystore-password=secret" })
+    @Order(11)
+    void testMissingSmallRyeKeyStorePathProperty(LaunchResult result) {
+        CLIResult cliResult = (CLIResult) result;
+        cliResult.assertError("config-keystore must be specified");
+        cliResult.assertNoBuild();
+    }
+
+    @Test
+    @Launch({ "start", "--http-enabled=true", "--hostname-strict=false", "--config-keystore=/invalid/path",
+            "--config-keystore-password=secret" })
+    @Order(12)
+    void testInvalidSmallRyeKeyStorePathProperty(LaunchResult result) {
+        CLIResult cliResult = (CLIResult) result;
+        cliResult.assertError("java.lang.IllegalArgumentException: config-keystore path does not exist: /invalid/path");
+        cliResult.assertNoBuild();
+    }
+
+    @Test
+    @Launch({ "start", "--http-enabled=true", "--hostname-strict=false",
+            "--config-keystore=../../../../src/test/resources/keystore", "--config-keystore-password=secret" })
+    @Order(13)
+    void testSmallRyeKeyStoreConfigSource(LaunchResult result) {
+        // keytool -importpass -alias kc.log-level -keystore keystore -storepass secret -storetype PKCS12 -v (with "debug" as the stored password)
+        CLIResult cliResult = (CLIResult) result;
+        assertTrue(cliResult.getOutput().contains("DEBUG"));
+        cliResult.assertBuild();
     }
 
     public static class UpdateConsoleLogLevelToWarnFromQuarkusProps implements Consumer<KeycloakDistribution> {

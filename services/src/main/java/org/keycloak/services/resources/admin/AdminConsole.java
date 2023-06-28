@@ -21,7 +21,7 @@ import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.keycloak.http.HttpRequest;
 import org.keycloak.http.HttpResponse;
-import javax.ws.rs.NotFoundException;
+import jakarta.ws.rs.NotFoundException;
 import org.keycloak.Config;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.Version;
@@ -47,12 +47,12 @@ import org.keycloak.theme.freemarker.FreeMarkerProvider;
 import org.keycloak.urls.UrlType;
 import org.keycloak.utils.MediaType;
 
-import javax.ws.rs.GET;
-import javax.ws.rs.OPTIONS;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.OPTIONS;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.Response;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -227,7 +227,10 @@ public class AdminConsole {
         boolean createRealm = false;
         if (realm.equals(masterRealm)) {
             logger.debug("setting up realm access for a master realm user");
-            createRealm = user.hasRole(masterRealm.getRole(AdminRoles.CREATE_REALM));
+            RoleModel createRealmRole = masterRealm.getRole(AdminRoles.CREATE_REALM);
+            if (createRealmRole != null) {
+                createRealm = user.hasRole(createRealmRole);
+            }
             addMasterRealmAccess(user, realmAccess);
         } else {
             logger.debug("setting up realm access for a realm user");
@@ -344,6 +347,7 @@ public class AdminConsole {
             map.put("masterRealm", Config.getAdminRealm());
             map.put("resourceVersion", Version.RESOURCES_VERSION);
             map.put("loginRealm", realm.getName());
+            map.put("clientId", Constants.ADMIN_CONSOLE_CLIENT_ID);
             map.put("properties", theme.getProperties());
 
             FreeMarkerProvider freeMarkerUtil = session.getProvider(FreeMarkerProvider.class);
