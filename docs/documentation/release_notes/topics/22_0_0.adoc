@@ -94,6 +94,17 @@ The are additional fields available in the keycloak.status to facilitate keycloa
 
 In scenarios where advanced management is needed you may now directly update most fields on operator managed resources that have not been set by the operator directly. This can be used as an alternative to the unsupported stanza of the Keycloak spec. Like the unsupported stanza these direct modifications are not considered supported. If your modifications prevent the operator from being able to manage the resource, there Keycloak CR will show this error condition and the operator will log it.
 
+= Account Console v1 removal
+
+The old Account Console (v1) is now completely removed. This version of the Account Console was marked as deprecated
+in Keycloak 12.
+
+The initial plan was to remove it much sooner, but it was retained for two reasons: 
+
+* We wanted to provide
+sufficient time for users to migrate to Account Console v2. 
+* Our tests  heavily used Account Console v1.  Updating the tests to rely on the Account APIs instead of the console required significant time.
+
 = Account Console v3 promoted to preview
 
 In version 21.1.0 of Keycloak the new Account Console (version 3) was introduced as an experimental feature. Starting this version it has been promoted to a preview feature.
@@ -123,3 +134,12 @@ otherwise the user can not authenticate through this broker.
 
 The option is disabled by default, when it is enabled we can specify the name of the JWT token claim to filter and the value to match 
 (supports regular expression format).
+
+= LDAPS-only Truststore option removed
+
+LDAP option to use truststore SPI `Only for ldaps` has been removed. This parameter is used to
+select truststore for TLS-secured LDAP connection: either internal Keycloak truststore is
+picked (`Always`), or the global JVM one (`Never`).
+
+Deployments where `Only for ldaps` was used will automatically behave as if `Always` option was
+selected for TLS-secured LDAP connections.
