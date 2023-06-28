@@ -342,7 +342,7 @@ public class UserMapStorage implements UserLookupProvider, UserStorageProvider, 
     }
 
     @Override
-    public Stream<UserModel> getGroupMembersStream(RealmModel realm, GroupModel group, Integer firstResult, Integer maxResults) {
+    public Stream<UserModel> getGroupMembersStream(RealmModel realm, GroupModel group, Integer firstResult, Integer maxResults, Boolean validated) {
         return getMembershipStream(realm, group, firstResult == null ? -1 : firstResult, maxResults == null ? -1 : maxResults)
           .map(userName -> createUser(realm, userName));
     }

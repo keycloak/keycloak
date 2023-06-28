@@ -62,6 +62,7 @@ export function UserDataTable() {
   const [activeFilters, setActiveFilters] = useState<UserAttribute[]>([]);
   const [profile, setProfile] = useState<UserProfileConfig>({});
   const [query, setQuery] = useState("");
+  const [validated, setValidated] = useState(true);
 
   const [key, setKey] = useState(0);
   const refresh = () => setKey(key + 1);
@@ -105,7 +106,11 @@ export function UserDataTable() {
     </Link>
   );
 
-  const loader = async (first?: number, max?: number, search?: string) => {
+  const loader = async (
+    first?: number,
+    max?: number,
+    search?: string
+  ) => {
     const params: { [name: string]: string | number } = {
       first: first!,
       max: max!,
@@ -115,6 +120,10 @@ export function UserDataTable() {
     const searchParam = search || searchUser || "";
     if (searchParam) {
       params.search = searchParam;
+    }
+
+    if (!validated) {
+      params.validated = "false";
     }
 
     if (!listUsers && !searchParam) {
@@ -286,6 +295,8 @@ export function UserDataTable() {
         setSearchUser={setSearchUser}
         activeFilters={activeFilters}
         setActiveFilters={setActiveFilters}
+        validated={validated}
+        toggleValidated={() => setValidated(!validated)}
         refresh={refresh}
         profile={profile}
         clearAllFilters={clearAllFilters}

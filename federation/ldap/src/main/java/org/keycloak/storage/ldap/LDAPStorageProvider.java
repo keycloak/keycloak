@@ -366,7 +366,7 @@ public class LDAPStorageProvider implements UserStorageProvider,
     }
 
     @Override
-    public Stream<UserModel> getGroupMembersStream(RealmModel realm, GroupModel group, Integer firstResult, Integer maxResults) {
+    public Stream<UserModel> getGroupMembersStream(RealmModel realm, GroupModel group, Integer firstResult, Integer maxResults, Boolean validated) {
         int first = firstResult == null ? 0 : firstResult;
         int max = maxResults == null ? DEFAULT_MAX_RESULTS : maxResults;
 
@@ -380,7 +380,7 @@ public class LDAPStorageProvider implements UserStorageProvider,
     }
 
     @Override
-    public Stream<UserModel> getRoleMembersStream(RealmModel realm, RoleModel role, Integer firstResult, Integer maxResults) {
+    public Stream<UserModel> getRoleMembersStream(RealmModel realm, RoleModel role, Integer firstResult, Integer maxResults, Boolean validated) {
         int first = firstResult == null ? 0 : firstResult;
         int max = maxResults == null ? DEFAULT_MAX_RESULTS : maxResults;
 

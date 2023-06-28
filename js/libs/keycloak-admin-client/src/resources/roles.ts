@@ -58,7 +58,7 @@ export class Roles extends Resource<{ realm?: string }> {
   });
 
   public findUsersWithRole = this.makeRequest<
-    { name: string; first?: number; max?: number },
+    { name: string; first?: number; max?: number; validated?: boolean },
     UserRepresentation[]
   >({
     method: "GET",

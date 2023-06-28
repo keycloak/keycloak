@@ -254,13 +254,13 @@ public class FailableHardcodedStorageProvider implements UserStorageProvider, Us
     }
 
     @Override
-    public Stream<UserModel> getGroupMembersStream(RealmModel realm, GroupModel group, Integer firstResult, Integer maxResults) {
+    public Stream<UserModel> getGroupMembersStream(RealmModel realm, GroupModel group, Integer firstResult, Integer maxResults, Boolean validated) {
         checkForceFail();
         return Stream.empty();
     }
 
     @Override
-    public Stream<UserModel> getGroupMembersStream(RealmModel realm, GroupModel group) {
+    public Stream<UserModel> getGroupMembersStream(RealmModel realm, GroupModel group, Boolean validated) {
         checkForceFail();
         return Stream.empty();
     }

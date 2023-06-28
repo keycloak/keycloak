@@ -43,6 +43,7 @@ public interface UserModel extends RoleMapperModel {
     String GROUPS = "keycloak.session.realm.users.query.groups";
     String SEARCH = "keycloak.session.realm.users.query.search";
     String EXACT = "keycloak.session.realm.users.query.exact";
+    String VALIDATED = "keycloak.session.realm.users.query.validated";
     String DISABLED_REASON = "disabledReason";
 
     Comparator<UserModel> COMPARE_BY_USERNAME = Comparator.comparing(UserModel::getUsername, String.CASE_INSENSITIVE_ORDER);

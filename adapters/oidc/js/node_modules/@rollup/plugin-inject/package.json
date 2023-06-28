@@ -1,0 +1,73 @@
+{
+  "name": "@rollup/plugin-inject",
+  "version": "4.0.4",
+  "publishConfig": {
+    "access": "public"
+  },
+  "description": "Scan modules for global variables and injects `import` statements where necessary",
+  "license": "MIT",
+  "repository": {
+    "url": "rollup/plugins",
+    "directory": "packages/inject"
+  },
+  "author": "Rich Harris <richard.a.harris@gmail.com>",
+  "homepage": "https://github.com/rollup/plugins/tree/master/packages/inject#readme",
+  "bugs": "https://github.com/rollup/plugins/issues",
+  "main": "dist/index.js",
+  "module": "dist/index.es.js",
+  "scripts": {
+    "build": "rollup -c",
+    "ci:coverage": "nyc pnpm test && nyc report --reporter=text-lcov > coverage.lcov",
+    "ci:lint": "pnpm build && pnpm lint",
+    "ci:lint:commits": "commitlint --from=${CIRCLE_BRANCH} --to=${CIRCLE_SHA1}",
+    "ci:test": "pnpm test -- --verbose && pnpm test:ts",
+    "prebuild": "del-cli dist",
+    "prepare": "if [ ! -d 'dist' ]; then pnpm build; fi",
+    "prerelease": "pnpm build",
+    "pretest": "pnpm build",
+    "release": "pnpm plugin:release --workspace-root -- --pkg $npm_package_name",
+    "test": "ava",
+    "test:ts": "tsc index.d.ts test/types.ts --noEmit"
+  },
+  "files": [
+    "dist",
+    "index.d.ts",
+    "README.md",
+    "LICENSE"
+  ],
+  "keywords": [
+    "rollup",
+    "plugin",
+    "inject",
+    "es2015",
+    "npm",
+    "modules"
+  ],
+  "peerDependencies": {
+    "rollup": "^1.20.0 || ^2.0.0"
+  },
+  "dependencies": {
+    "@rollup/pluginutils": "^3.1.0",
+    "estree-walker": "^2.0.1",
+    "magic-string": "^0.25.7"
+  },
+  "devDependencies": {
+    "@rollup/plugin-buble": "^0.21.3",
+    "del-cli": "^3.0.1",
+    "locate-character": "^2.0.5",
+    "rollup": "^2.23.0",
+    "source-map": "^0.7.3",
+    "typescript": "^3.9.7"
+  },
+  "ava": {
+    "babel": {
+      "compileEnhancements": false
+    },
+    "files": [
+      "!**/fixtures/**",
+      "!**/helpers/**",
+      "!**/recipes/**",
+      "!**/types.ts"
+    ]
+  }
+}

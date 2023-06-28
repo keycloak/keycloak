@@ -492,14 +492,14 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
     }
 
     @Override
-    public Stream<UserModel> getGroupMembersStream(RealmModel realm, GroupModel group) {
+    public Stream<UserModel> getGroupMembersStream(RealmModel realm, GroupModel group, Boolean validated) {
         TypedQuery<UserEntity> query = em.createNamedQuery("groupMembership", UserEntity.class);
         query.setParameter("groupId", group.getId());
         return closing(query.getResultStream().map(entity -> new UserAdapter(session, realm, em, entity)));
     }
 
     @Override
-    public Stream<UserModel> getRoleMembersStream(RealmModel realm, RoleModel role) {
+    public Stream<UserModel> getRoleMembersStream(RealmModel realm, RoleModel role, Boolean validated) {
         TypedQuery<UserEntity> query = em.createNamedQuery("usersInRole", UserEntity.class);
         query.setParameter("roleId", role.getId());
         return closing(query.getResultStream().map(entity -> new UserAdapter(session, realm, em, entity)));
@@ -703,7 +703,7 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
     }
 
     @Override
-    public Stream<UserModel> getGroupMembersStream(RealmModel realm, GroupModel group, Integer firstResult, Integer maxResults) {
+    public Stream<UserModel> getGroupMembersStream(RealmModel realm, GroupModel group, Integer firstResult, Integer maxResults, Boolean validated) {
         TypedQuery<UserEntity> query = em.createNamedQuery("groupMembership", UserEntity.class);
         query.setParameter("groupId", group.getId());
 
@@ -711,7 +711,7 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
     }
 
     @Override
-    public Stream<UserModel> getRoleMembersStream(RealmModel realm, RoleModel role, Integer firstResult, Integer maxResults) {
+    public Stream<UserModel> getRoleMembersStream(RealmModel realm, RoleModel role, Integer firstResult, Integer maxResults, Boolean validated) {
         TypedQuery<UserEntity> query = em.createNamedQuery("usersInRole", UserEntity.class);
         query.setParameter("roleId", role.getId());
 
@@ -992,6 +992,7 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
                     predicates.add(builder.equal(federatedIdentitiesJoin.get("userId"), value));
                     break;
                 case UserModel.EXACT:
+                case UserModel.VALIDATED:
                     break;
                 // All unknown attributes will be assumed as custom attributes
                 default:

@@ -457,18 +457,21 @@ public class RoleContainerResource extends RoleResource {
     @NoCache
     public Stream<UserRepresentation> getUsersInRole(final @PathParam("role-name") String roleName,
                                                     @QueryParam("first") Integer firstResult,
-                                                    @QueryParam("max") Integer maxResults) {
+                                                    @QueryParam("max") Integer maxResults,
+                                                     @QueryParam("validated") Boolean validated) {
         
         auth.roles().requireView(roleContainer);
         firstResult = firstResult != null ? firstResult : 0;
         maxResults = maxResults != null ? maxResults : Constants.DEFAULT_MAX_RESULTS;
-        
+
+        boolean validatedB = validated != null && validated;
+
         RoleModel role = roleContainer.getRole(roleName);
         if (role == null) {
             throw new NotFoundException("Could not find role");
         }
 
-        return session.users().getRoleMembersStream(realm, role, firstResult, maxResults)
+        return session.users().getRoleMembersStream(realm, role, firstResult, maxResults, validatedB)
                 .map(user -> ModelToRepresentation.toRepresentation(session, realm, user));
     }
     

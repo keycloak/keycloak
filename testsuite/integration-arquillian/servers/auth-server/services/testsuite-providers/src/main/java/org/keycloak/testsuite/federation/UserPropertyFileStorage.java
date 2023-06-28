@@ -226,12 +226,12 @@ public class UserPropertyFileStorage implements UserLookupProvider, UserStorageP
     }
 
     @Override
-    public Stream<UserModel> getGroupMembersStream(RealmModel realm, GroupModel group, Integer firstResult, Integer maxResults) {
+    public Stream<UserModel> getGroupMembersStream(RealmModel realm, GroupModel group, Integer firstResult, Integer maxResults, Boolean validated) {
         return Stream.empty();
     }
 
     @Override
-    public Stream<UserModel> getGroupMembersStream(RealmModel realm, GroupModel group) {
+    public Stream<UserModel> getGroupMembersStream(RealmModel realm, GroupModel group, Boolean validated) {
         return Stream.empty();
     }
 

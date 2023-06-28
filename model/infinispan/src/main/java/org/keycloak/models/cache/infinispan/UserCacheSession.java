@@ -467,23 +467,23 @@ public class UserCacheSession implements UserCache, OnCreateComponent, OnUpdateC
     }
 
     @Override
-    public Stream<UserModel> getGroupMembersStream(RealmModel realm, GroupModel group, Integer firstResult, Integer maxResults) {
-        return getDelegate().getGroupMembersStream(realm, group, firstResult, maxResults);
+    public Stream<UserModel> getGroupMembersStream(RealmModel realm, GroupModel group, Integer firstResult, Integer maxResults, Boolean validated) {
+        return getDelegate().getGroupMembersStream(realm, group, firstResult, maxResults, validated);
     }
 
     @Override
-    public Stream<UserModel> getGroupMembersStream(RealmModel realm, GroupModel group) {
-        return getDelegate().getGroupMembersStream(realm, group);
+    public Stream<UserModel> getGroupMembersStream(RealmModel realm, GroupModel group, Boolean validated) {
+        return getDelegate().getGroupMembersStream(realm, group, validated);
     }
 
     @Override
-    public Stream<UserModel> getRoleMembersStream(RealmModel realm, RoleModel role, Integer firstResult, Integer maxResults) {
-        return getDelegate().getRoleMembersStream(realm, role, firstResult, maxResults);
+    public Stream<UserModel> getRoleMembersStream(RealmModel realm, RoleModel role, Integer firstResult, Integer maxResults, Boolean validated) {
+        return getDelegate().getRoleMembersStream(realm, role, firstResult, maxResults, validated);
     }
 
     @Override
-    public Stream<UserModel> getRoleMembersStream(RealmModel realm, RoleModel role) {
-        return getDelegate().getRoleMembersStream(realm, role);
+    public Stream<UserModel> getRoleMembersStream(RealmModel realm, RoleModel role, Boolean validated) {
+        return getDelegate().getRoleMembersStream(realm, role, validated);
     }    
 
     @Override

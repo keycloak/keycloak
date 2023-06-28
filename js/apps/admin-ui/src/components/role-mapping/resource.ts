@@ -62,6 +62,7 @@ type UserQuery = {
   enabled?: boolean;
   briefRepresentation?: boolean;
   exact?: boolean;
+  validated?: boolean;
   q?: string;
 };
 
