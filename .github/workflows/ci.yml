@@ -146,13 +146,17 @@ jobs:
   jdk-integration-tests:
     name: Java Distribution IT
     needs: build
-    runs-on: ubuntu-latest
     timeout-minutes: 100
     strategy:
       matrix:
+        os: [ubuntu-latest, windows-latest]
         dist: [temurin]
         version: [11, 19]
+        exclude:
+          - os: windows-latest
+            version: 19
       fail-fast: false
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v3
 
