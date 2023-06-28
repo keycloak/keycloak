@@ -350,3 +350,7 @@ their corresponding replacements.
 * `KeycloakModelUtils#getClientScopeMappings` was removed.
 * Deprecated methods from `KeycloakSession` were removed.
 * `UserQueryProvider#getUsersStream` methods were removed.
+
+= Multiple Keycloak instances
+
+Multiple Keycloak CRs may be created in the same namespace and will be managed independently by the operator.  To allow for this StatefulSets created by older versions of the operator must be re-created.  This will happen automatically when the operator is upgraded and lead to small amount of downtime.

@@ -24,6 +24,8 @@ import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Base64;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
@@ -43,6 +45,14 @@ public final class Utils {
 
     public static String asBase64(String toEncode) {
         return Base64.getEncoder().encodeToString(toEncode.getBytes(StandardCharsets.UTF_8));
+    }
+
+    public static String toSelectorString(Map<String, String> labels) {
+        if (labels == null || labels.isEmpty()) {
+            return null;
+        }
+        return labels.entrySet().stream().map(e -> e.getKey() + "=" + e.getValue())
+                .collect(Collectors.joining(","));
     }
 
 }
