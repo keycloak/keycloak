@@ -640,6 +640,28 @@ public class UserTest extends AbstractAdminTest {
         return ids;
     }
 
+    @Test
+    public void countByAttribute() {
+        createUsers();
+
+        Map<String, String> attributes = new HashMap<>();
+        attributes.put("test1", "test2");
+        assertThat(realm.users().count(null, null, null, null, null, null, null, mapToSearchQuery(attributes)), is(0));
+        
+        attributes = new HashMap<>();
+        attributes.put("test", "test1");
+        assertThat(realm.users().count(null, null, null, null, null, null, null, mapToSearchQuery(attributes)), is(1));
+    
+        attributes = new HashMap<>();
+        attributes.put("test", "test2");
+        attributes.put("attr", "common");
+        assertThat(realm.users().count(null, null, null, null, null, null, null, mapToSearchQuery(attributes)), is(1));
+    
+        attributes = new HashMap<>();
+        attributes.put("attr", "common");
+        assertThat(realm.users().count(null, null, null, null, null, null, null, mapToSearchQuery(attributes)), is(9));
+    }
+
   @Test
   public void countUsersByEnabledFilter() {
 
@@ -666,16 +688,16 @@ public class UserTest extends AbstractAdminTest {
     Boolean disabled = false;
 
     // count all users with @enabledfilter.com
-    assertThat(realm.users().count(null, null, null, "@enabledfilter.com", null, null, null), is(3));
+    assertThat(realm.users().count(null, null, null, "@enabledfilter.com", null, null, null, null), is(3));
 
     // count users that are enabled and have username enabled1
-    assertThat(realm.users().count(null, null, null, "@enabledfilter.com", null, "enabled1", enabled),is(1));
+    assertThat(realm.users().count(null, null, null, "@enabledfilter.com", null, "enabled1", enabled, null),is(1));
 
     // count users that are disabled
-    assertThat(realm.users().count(null, null, null, "@enabledfilter.com", null, null, disabled), is(1));
+    assertThat(realm.users().count(null, null, null, "@enabledfilter.com", null, null, disabled, null), is(1));
 
     // count users that are enabled
-    assertThat(realm.users().count(null, null, null, "@enabledfilter.com", null, null, enabled), is(2));
+    assertThat(realm.users().count(null, null, null, "@enabledfilter.com", null, null, enabled, null), is(2));
   }
 
     @Test

@@ -252,8 +252,10 @@ public class KeycloakDistConfigurator {
                 envVarBuilder.withValue(String.valueOf(value));
             }
 
-
-            envVars.add(envVarBuilder.build());
+            var toAdd = envVarBuilder.build();
+            if (!envVars.stream().anyMatch(envVar -> envVar.getName().equals(toAdd.getName()))) {
+                envVars.add(toAdd);
+            }
 
             return this;
         }

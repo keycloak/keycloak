@@ -1,3 +1,4 @@
+import { v4 as uuid } from "uuid";
 import LoginPage from "../support/pages/LoginPage";
 import SidebarPage from "../support/pages/admin-ui/SidebarPage";
 import UserEventsTab, {
@@ -33,7 +34,7 @@ describe.skip("Events tests", () => {
   const eventsTestUser = {
     eventsTestUserId: "",
     userRepresentation: {
-      username: "events-test" + crypto.randomUUID(),
+      username: "events-test" + uuid(),
       enabled: true,
       credentials: [{ value: "events-test" }],
     },
@@ -268,7 +269,7 @@ describe.skip("Events tests", () => {
   });
 
   describe("Admin events list", () => {
-    const realmName = crypto.randomUUID();
+    const realmName = uuid();
 
     before(() => adminClient.createRealm(realmName));
     after(() => adminClient.deleteRealm(realmName));

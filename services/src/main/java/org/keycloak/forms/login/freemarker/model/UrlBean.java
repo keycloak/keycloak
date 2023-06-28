@@ -132,12 +132,12 @@ public class UrlBean {
         URI uri = getThemeRootUri();
         String commonPath = "";
         try {
-            commonPath = theme.getProperties().getProperty("import");
+            commonPath = theme.getProperties().getProperty("common");
         } catch (IOException ex) {
             logger.warn("Failed to load properties", ex);
         }
         if (commonPath == null || commonPath.isEmpty()) {
-            commonPath = "/common/keycloak";
+            commonPath = "common/keycloak";
         }
         return uri.getPath() + "/" + commonPath;
     }

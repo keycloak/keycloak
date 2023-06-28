@@ -19,6 +19,7 @@ package org.keycloak.testsuite.admin;
 
 import org.junit.Test;
 import org.keycloak.common.Version;
+import org.keycloak.crypto.Algorithm;
 import org.keycloak.keys.Attributes;
 import org.keycloak.keys.GeneratedRsaKeyProviderFactory;
 import org.keycloak.keys.KeyProvider;
@@ -68,6 +69,11 @@ public class ServerInfoTest extends AbstractKeycloakTest {
         assertNotNull(info.getSystemInfo());
         assertNotNull(info.getCryptoInfo());
         Assert.assertNames(info.getCryptoInfo().getSupportedKeystoreTypes(), KeystoreUtils.getSupportedKeystoreTypes());
+        Assert.assertNames(info.getCryptoInfo().getClientSignatureSymmetricAlgorithms(), Algorithm.HS256, Algorithm.HS384, Algorithm.HS512);
+        Assert.assertNames(info.getCryptoInfo().getClientSignatureAsymmetricAlgorithms(),
+                Algorithm.ES256, Algorithm.ES384, Algorithm.ES512,
+                Algorithm.PS256, Algorithm.PS384, Algorithm.PS512,
+                Algorithm.RS256, Algorithm.RS384, Algorithm.RS512);
 
         ComponentTypeRepresentation rsaGeneratedProviderInfo = info.getComponentTypes().get(KeyProvider.class.getName())
                 .stream()

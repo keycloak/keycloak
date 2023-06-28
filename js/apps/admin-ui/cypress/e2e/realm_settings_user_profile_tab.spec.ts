@@ -1,3 +1,4 @@
+import { v4 as uuid } from "uuid";
 import ListingPage from "../support/pages/admin-ui/ListingPage";
 import UserProfile from "../support/pages/admin-ui/manage/realm_settings/UserProfile";
 import Masthead from "../support/pages/admin-ui/Masthead";
@@ -23,7 +24,7 @@ const clickCreateAttributeButton = () =>
   userProfileTab.createAttributeButtonClick();
 
 describe("User profile tabs", () => {
-  const realmName = "Realm_" + crypto.randomUUID();
+  const realmName = "Realm_" + uuid();
   const attributeName = "Test";
 
   before(() =>

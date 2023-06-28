@@ -12,6 +12,8 @@ The difference between a refresh token and an offline token is that an offline t
 
 If you enable <<_offline-session-max-limited, Offline Session Max Limited>>, offline tokens expire after 60 days even if you use the offline token for a refresh token action. You can change this value, <<_offline-session-max, Offline Session Max>>, in the Admin Console. 
 
+When using offline access, client idle and max timeouts can be overridden at the <<_client_advanced_settings_oidc,client level>>. The options *Client Offline Session Idle* and *Client Offline Session Max*, in the client *Advanced Settings* tab, allow you to have a shorter offline timeouts for a specific application. Note that client session values also control the refresh token expiration but they never affect the global offline user SSO session. The option *Client Offline Session Max* is only evaluated in the client if <<_offline-session-max-limited, Offline Session Max Limited>> is *Enabled* at the realm level.
+
 If you enable the <<_revoke-refresh-token, Revoke Refresh Token>> option, you can use each offline token once only. After refresh, you must store the new offline token from the refresh response instead of the previous one.
 
 Users can view and revoke offline tokens that {project_name} grants them in the <<_account-service, User Account Console>>. Administrators can revoke offline tokens for individual users in the Admin Console in the `Consents` tab. Administrators can view all offline tokens issued in the `Offline Access` tab of each client. Administrators can revoke offline tokens by setting a <<_revocation-policy, revocation policy>>.

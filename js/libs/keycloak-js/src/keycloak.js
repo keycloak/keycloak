@@ -176,6 +176,9 @@ function Keycloak (config) {
                     options.prompt = 'none';
                 }
 
+                if (initOptions && initOptions.locale) {
+                    options.locale = initOptions.locale;
+                }
                 kc.login(options).then(function () {
                     initPromise.setSuccess();
                 }).catch(function (error) {

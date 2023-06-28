@@ -1,3 +1,4 @@
+import { v4 as uuid } from "uuid";
 import LoginPage from "../support/pages/LoginPage";
 import Masthead from "../support/pages/admin-ui/Masthead";
 import ListingPage, {
@@ -295,7 +296,7 @@ describe("Client Scopes test", () => {
     });
 
     it("Client scope CRUD test", () => {
-      itemId += "_" + crypto.randomUUID();
+      itemId += "_" + uuid();
 
       // Create
       listingPage.itemExist(itemId, false).goToCreateItem();

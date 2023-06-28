@@ -203,6 +203,7 @@ public class KeycloakIngressTest extends BaseOperatorTest {
 		});
 
         Awaitility.await()
+                .timeout(1, MINUTES)
                 .ignoreExceptions()
                 .untilAsserted(() -> {
                     var i = ingressSelector.get();

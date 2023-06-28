@@ -59,6 +59,8 @@ import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
 import static org.keycloak.testsuite.admin.ApiUtil.createUserWithAdminClient;
 import static org.keycloak.testsuite.admin.ApiUtil.findClientByClientId;
 import static org.keycloak.testsuite.admin.ApiUtil.resetUserPassword;
+
+import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.OAuthClient.AccessTokenResponse;
 import org.keycloak.testsuite.util.OAuthClient.AuthorizationEndpointResponse;
@@ -349,14 +351,14 @@ public class ConsentsTest extends AbstractKeycloakTest {
      */
     @Test
     public void testRetrieveConsentsForUserWithClientsWithGrantedOfflineAccess() throws Exception {
-
         RealmResource providerRealm = adminClient.realm(providerRealmName());
 
         RealmRepresentation providerRealmRep = providerRealm.toRepresentation();
         providerRealmRep.setAccountTheme("keycloak");
         providerRealm.update(providerRealmRep);
+        providerRealm.clients().create(ClientBuilder.create().clientId("test-app").redirectUris("*").addWebOrigin("*").publicClient().build());
 
-        ClientRepresentation providerAccountRep = providerRealm.clients().findByClientId("account").get(0);
+        ClientRepresentation providerAccountRep = providerRealm.clients().findByClientId("test-app").get(0);
 
         // add offline_scope to default account-console client scope
         ClientScopeRepresentation offlineAccessScope = providerRealm.getDefaultOptionalClientScopes().stream()
@@ -372,7 +374,7 @@ public class ConsentsTest extends AbstractKeycloakTest {
         List<UserRepresentation> searchResult = providerRealm.users().search(getUserLogin());
         UserRepresentation user = searchResult.get(0);
 
-        driver.navigate().to(getAccountUrl(providerRealmName()));
+        accountLoginPage.open(providerRealmName());
 
         waitForPage("Sign in to provider");
         log.debug("Logging in");
@@ -382,8 +384,6 @@ public class ConsentsTest extends AbstractKeycloakTest {
         log.debug("Grant consent for offline_access");
         Assert.assertTrue(consentPage.isCurrent());
         consentPage.confirm();
-
-        waitForPage("keycloak account console");
 
         // disable consent required again to enable direct grant token retrieval.
         providerAccountRep.setConsentRequired(false);
@@ -406,36 +406,35 @@ public class ConsentsTest extends AbstractKeycloakTest {
     @Test
     public void testConsentCancel() {
         // setup account client to require consent
+        createAppClientInRealm(providerRealmName());
         RealmResource providerRealm = adminClient.realm(providerRealmName());
-        ClientResource accountClient = findClientByClientId(providerRealm, "account");
+        ClientResource accountClient = findClientByClientId(providerRealm, "test-app");
 
         ClientRepresentation clientRepresentation = accountClient.toRepresentation();
         clientRepresentation.setConsentRequired(true);
         accountClient.update(clientRepresentation);
 
         // setup correct realm
-        accountPage.setAuthRealm(providerRealmName());
+        oauth.realm(providerRealmName());
 
         // navigate to account console and login
-        accountPage.navigateTo();
+        driver.navigate().to(oauth.getLoginFormUrl());
         loginPage.form().login(getUserLogin(), getUserPassword());
 
         consentPage.assertCurrent();
-
         consentPage.cancel();
 
         // check an error page after cancelling the consent
-        errorPage.assertCurrent();
-        assertEquals("No access", errorPage.getError());
+        assertTrue(driver.getTitle().contains("AUTH_RESPONSE"));
+        assertTrue(driver.getCurrentUrl().contains("error=access_denied"));
 
-        // follow the link "back to application"
-        errorPage.clickBackToApplication();
-
+        driver.navigate().to(oauth.getLoginFormUrl());
         loginPage.form().login(getUserLogin(), getUserPassword());
         consentPage.confirm();
 
         // successful login
-        accountPage.assertCurrent();
+        assertFalse(driver.getCurrentUrl().contains("error"));
+        assertTrue("Test user should be successfully logged in.", driver.getTitle().contains("AUTH_RESPONSE"));
     }
 
     @Test
@@ -474,7 +473,7 @@ public class ConsentsTest extends AbstractKeycloakTest {
     public void testConsentWithAdditionalClientAttributes() {
         // setup account client to require consent
         RealmResource providerRealm = adminClient.realm(providerRealmName());
-        ClientResource accountClient = findClientByClientId(providerRealm, "account");
+        ClientResource accountClient = findClientByClientId(providerRealm, "test-app");
 
         ClientRepresentation clientRepresentation = accountClient.toRepresentation();
         clientRepresentation.setConsentRequired(true);
@@ -484,13 +483,14 @@ public class ConsentsTest extends AbstractKeycloakTest {
         accountClient.update(clientRepresentation);
 
         // setup correct realm
-        accountPage.setAuthRealm(providerRealmName());
+        oauth.realm(providerRealmName());
 
         // navigate to account console and login
-        accountPage.navigateTo();
+        driver.navigate().to(oauth.getLoginFormUrl());
         loginPage.form().login(getUserLogin(), getUserPassword());
 
         consentPage.assertCurrent();
+
         assertTrue("logoUri must be presented", driver.findElement(By.xpath("//img[@src='https://www.keycloak.org/resources/images/keycloak_logo_480x108.png']")).isDisplayed());
         assertTrue("policyUri must be presented", driver.findElement(By.xpath("//a[@href='https://www.keycloak.org/policy']")).isDisplayed());
         assertTrue("tosUri must be presented", driver.findElement(By.xpath("//a[@href='https://www.keycloak.org/tos']")).isDisplayed());
@@ -498,7 +498,7 @@ public class ConsentsTest extends AbstractKeycloakTest {
         consentPage.confirm();
 
         // successful login
-        accountPage.assertCurrent();
+        assertTrue("Test user should be successfully logged in.", driver.getTitle().contains("AUTH_RESPONSE"));
     }
 
     private String getAccountUrl(String realmName) {

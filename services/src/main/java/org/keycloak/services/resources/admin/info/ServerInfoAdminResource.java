@@ -23,6 +23,7 @@ import org.keycloak.broker.provider.IdentityProviderFactory;
 import org.keycloak.broker.social.SocialIdentityProvider;
 import org.keycloak.common.Profile;
 import org.keycloak.component.ComponentFactory;
+import org.keycloak.crypto.ClientSignatureVerifierProvider;
 import org.keycloak.events.EventType;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
@@ -96,7 +97,21 @@ public class ServerInfoAdminResource {
         info.setSystemInfo(SystemInfoRepresentation.create(session.getKeycloakSessionFactory().getServerStartupTimestamp()));
         info.setMemoryInfo(MemoryInfoRepresentation.create());
         info.setProfileInfo(ProfileInfoRepresentation.create());
-        info.setCryptoInfo(CryptoInfoRepresentation.create());
+
+        // True - asymmetric algorithms, false - symmetric algorithms
+        Map<Boolean, List<String>> algorithms = session.getAllProviders(ClientSignatureVerifierProvider.class).stream()
+                        .collect(
+                                Collectors.toMap(
+                                        ClientSignatureVerifierProvider::isAsymmetricAlgorithm,
+                                        clientSignatureVerifier -> Collections.singletonList(clientSignatureVerifier.getAlgorithm()),
+                                        (l1, l2) -> listCombiner(l1, l2)
+                                                .stream()
+                                                .sorted()
+                                                .collect(Collectors.toList()),
+                                        HashMap::new
+                                )
+                        );
+        info.setCryptoInfo(CryptoInfoRepresentation.create(algorithms.get(false), algorithms.get(true)));
 
         setSocialProviders(info);
         setIdentityProviders(info);

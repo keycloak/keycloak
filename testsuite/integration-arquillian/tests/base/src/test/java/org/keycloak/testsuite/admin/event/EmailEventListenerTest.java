@@ -17,33 +17,20 @@
 
 package org.keycloak.testsuite.admin.event;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
-import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.TimeUnit;
-import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.common.Profile;
-import org.keycloak.events.EventType;
 import org.keycloak.events.email.EmailEventListenerProviderFactory;
-import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
-import org.keycloak.testsuite.console.page.events.LoginEvents;
 import org.keycloak.testsuite.util.GreenMailRule;
 import org.keycloak.testsuite.util.UserBuilder;
 
-@DisableFeature(value = Profile.Feature.ACCOUNT2, skipRestart = true) // TODO remove this (KEYCLOAK-16228)
 public class EmailEventListenerTest extends AbstractEventTest {
 
     @Rule
@@ -68,12 +55,13 @@ public class EmailEventListenerTest extends AbstractEventTest {
                 .emailVerified(true)
                 .password("alice").build());
 
+        createAppClientInRealm("test");
         realmResource.clearEvents();
     }
 
     @Test
     public void eventAttributesTest() {
-        accountPage.navigateTo();
+        driver.navigate().to(oauth.getLoginFormUrl());
         loginPage.form().login("alice", "invalid");
         loginPage.assertCurrent();
         assertNotNull(greenMail.getLastReceivedMessage());

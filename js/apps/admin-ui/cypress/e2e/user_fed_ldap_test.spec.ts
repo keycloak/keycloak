@@ -23,7 +23,7 @@ const updatedLdapName = `${firstLdapName}-updated`;
 // connection and authentication settings
 const connectionUrlValid = "ldap://localhost:3004";
 const bindTypeSimple = "simple";
-const truststoreSpiOnlyLdaps = "Only for ldaps";
+const truststoreSpiAlways = "Always";
 const connectionTimeoutTwoSecs = "2000";
 const bindDnCnDc = "cn=user,dc=test";
 const bindCredsValid = "user";
@@ -269,7 +269,7 @@ describe("User Federation LDAP tests", () => {
     providersPage.fillLdapConnectionData(
       connectionUrlValid,
       bindTypeSimple,
-      truststoreSpiOnlyLdaps,
+      truststoreSpiAlways,
       connectionTimeoutTwoSecs,
       bindDnCnDc,
       bindCredsValid

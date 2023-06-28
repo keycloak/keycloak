@@ -121,11 +121,6 @@ public class RegisterPage extends AbstractPage {
             }
         }
 
-        try {
-            termsAcceptedInput.clear();
-        } catch (NoSuchElementException e) {
-            // ignore
-        }
         if (termsAccepted != null && termsAccepted) {
             termsAcceptedInput.click();
         }

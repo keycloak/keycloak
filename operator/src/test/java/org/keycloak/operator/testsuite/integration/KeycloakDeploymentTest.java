@@ -109,6 +109,7 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
             deployKeycloak(k8sclient, kc, false);
 
             Awaitility.await()
+                    .timeout(Duration.ofMinutes(2))
                     .during(Duration.ofSeconds(15)) // check if the Deployment is stable
                     .untilAsserted(() -> {
                         var c = k8sclient.apps().statefulSets().inNamespace(namespace).withName(deploymentName).get()
@@ -116,7 +117,7 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
                         assertThat(c.getImage()).isEqualTo("quay.io/keycloak/non-existing-keycloak");
                         assertThat(c.getEnv().stream()
                                 .anyMatch(e -> e.getName().equals(KeycloakDistConfigurator.getKeycloakOptionEnvVarName(dbConf.getName()))
-                                        && e.getValue().equals(dbConf.getValue())))
+                                        && dbConf.getValue().equals(e.getValue())))
                                 .isTrue();
                     });
 
@@ -215,22 +216,33 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
             Log.info("Trying to modify deployment");
 
             var deployment = k8sclient.apps().statefulSets().withName(deploymentName).get();
+
+            // unmanaged changes
             var labels = Map.of("address", "EvergreenTerrace742");
             var flandersEnvVar = new EnvVarBuilder().withName("NEIGHBOR").withValue("Stupid Flanders!").build();
-            var origSpecs = new StatefulSetSpecBuilder(deployment.getSpec()).build(); // deep copy
-
             deployment.getMetadata().getLabels().putAll(labels);
+
+            var expectedSpec = new StatefulSetSpecBuilder(deployment.getSpec()).editTemplate().editSpec()
+                    .editContainer(0).addToEnv(0, flandersEnvVar).endContainer().endSpec().endTemplate().build(); // deep copy
+
+            // managed changes
             deployment.getSpec().getTemplate().getSpec().getContainers().get(0).setEnv(List.of(flandersEnvVar));
-            k8sclient.resource(deployment).forceConflicts().serverSideApply();
+            String originalLabelValue = deployment.getMetadata().getLabels().put(Constants.MANAGED_BY_LABEL, "not-right");
+
+            deployment.getMetadata().setResourceVersion(null);
+            k8sclient.resource(deployment).update();
 
             Awaitility.await()
-                    .atMost(5, MINUTES)
+                    .atMost(1, MINUTES)
                     .pollDelay(1, SECONDS)
                     .ignoreExceptions()
                     .untilAsserted(() -> {
                         var d = k8sclient.apps().statefulSets().withName(deploymentName).get();
-                        assertThat(d.getMetadata().getLabels().entrySet().containsAll(labels.entrySet())).isTrue(); // additional labels should not be overwritten
-                        assertThat(d.getSpec()).isEqualTo(origSpecs); // specs should be reconciled back to original values
+                        // unmanaged changes won't get reverted
+                        assertThat(d.getMetadata().getLabels().entrySet().containsAll(labels.entrySet())).isTrue();
+                        // managed changes should get reverted
+                        assertThat(d.getSpec()).isEqualTo(expectedSpec); // specs should be reconciled expected merged state
+                        assertThat(d.getMetadata().getLabels().get(Constants.MANAGED_BY_LABEL)).isEqualTo(originalLabelValue);
                     });
         } catch (Exception e) {
             savePodLogs();
@@ -560,7 +572,7 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
                     .endMetadata()
                     .addToStringData(keyName, "/barfoo")
                     .build();
-            k8sclient.resource(httpRelativePathSecret).forceConflicts().serverSideApply();
+            K8sUtils.set(k8sclient, httpRelativePathSecret);
 
             kc.getSpec().getAdditionalOptions().add(new ValueOrSecret(Constants.KEYCLOAK_HTTP_RELATIVE_PATH_KEY,
                     new SecretKeySelectorBuilder()
@@ -655,7 +667,7 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
                                                    String secretDescriptorFilename) {
 
         Secret imagePullSecret = getResourceFromFile(secretDescriptorFilename, Secret.class);
-        k8sclient.resource(imagePullSecret).inNamespace(namespace).forceConflicts().serverSideApply();
+        K8sUtils.set(k8sclient, imagePullSecret);
         LocalObjectReference localObjRefAsSecretTmp = new LocalObjectReferenceBuilder().withName(imagePullSecret.getMetadata().getName()).build();
         keycloakCR.getSpec().setImagePullSecrets(Collections.singletonList(localObjRefAsSecretTmp));
     }

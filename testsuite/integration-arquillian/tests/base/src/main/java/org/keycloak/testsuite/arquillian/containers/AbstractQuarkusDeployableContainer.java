@@ -43,6 +43,7 @@ import javax.net.ssl.SSLSession;
 import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
+
 import org.apache.commons.lang3.SystemUtils;
 import org.jboss.arquillian.container.spi.client.container.DeployableContainer;
 import org.jboss.arquillian.container.spi.client.container.DeploymentException;
@@ -87,7 +88,7 @@ public abstract class AbstractQuarkusDeployableContainer implements DeployableCo
             deployArchiveToServer(archive);
             restartServer();
         } catch (Exception e) {
-            throw new DeploymentException(e.getMessage(),e);
+            throw new DeploymentException(e.getMessage(), e);
         }
 
         return new ProtocolMetaData();
@@ -104,7 +105,7 @@ public abstract class AbstractQuarkusDeployableContainer implements DeployableCo
             Files.deleteIfExists(wrkDir.toPath().resolve(archive.getName()));
             restartServer();
         } catch (Exception e) {
-            throw new DeploymentException(e.getMessage(),e);
+            throw new DeploymentException(e.getMessage(), e);
         }
     }
 
@@ -173,18 +174,21 @@ public abstract class AbstractQuarkusDeployableContainer implements DeployableCo
 
         final StoreProvider storeProvider = StoreProvider.getCurrentProvider();
         final Supplier<Boolean> shouldSetUpDb = () -> !restart.get() && !storeProvider.equals(StoreProvider.DEFAULT);
-        final Supplier<String> getClusterConfig = () -> System.getProperty("auth.server.quarkus.cluster.config", "local");
+        final String cacheMode = System.getProperty("auth.server.quarkus.cluster.config", "local");
+
+        if ("local".equals(cacheMode)) {
+            // Save ~2s for each Quarkus startup, when we know ISPN cluster is empty. See https://github.com/keycloak/keycloak/issues/21033
+            commands.add("-Djgroups.join_timeout=10");
+        }
 
         log.debugf("FIPS Mode: %s", configuration.getFipsMode());
 
         // only run build during first execution of the server (if the DB is specified), restarts or when running cluster tests
-        if (restart.get() || shouldSetUpDb.get() || "ha".equals(getClusterConfig.get()) || configuration.getFipsMode() != FipsMode.DISABLED) {
+        if (restart.get() || "ha".equals(cacheMode) || shouldSetUpDb.get() || configuration.getFipsMode() != FipsMode.DISABLED) {
             commands.removeIf("--optimized"::equals);
             commands.add("--http-relative-path=/auth");
 
             if (!storeProvider.isMapStore()) {
-                String cacheMode = getClusterConfig.get();
-
                 if ("local".equals(cacheMode)) {
                     commands.add("--cache=local");
                 } else {
@@ -295,7 +299,7 @@ public abstract class AbstractQuarkusDeployableContainer implements DeployableCo
     }
 
     private SSLSocketFactory createInsecureSslSocketFactory() throws IOException {
-        TrustManager[] trustAllCerts = new TrustManager[] {new X509TrustManager() {
+        TrustManager[] trustAllCerts = new TrustManager[]{new X509TrustManager() {
             public void checkClientTrusted(final X509Certificate[] chain, final String authType) {
             }
 

@@ -1,3 +1,4 @@
+import { v4 as uuid } from "uuid";
 import SidebarPage from "../support/pages/admin-ui/SidebarPage";
 import LoginPage from "../support/pages/LoginPage";
 import RealmSettingsPage from "../support/pages/admin-ui/manage/realm_settings/RealmSettingsPage";
@@ -16,7 +17,7 @@ const realmSettingsPage = new RealmSettingsPage();
 const keysTab = new KeysTab();
 
 describe("Realm settings events tab tests", () => {
-  const realmName = "Realm_" + crypto.randomUUID();
+  const realmName = "Realm_" + uuid();
   const listingPage = new ListingPage();
 
   beforeEach(() => {
@@ -89,10 +90,7 @@ describe("Realm settings events tab tests", () => {
   };
 
   const addBundle = () => {
-    realmSettingsPage.addKeyValuePair(
-      "key_" + crypto.randomUUID(),
-      "value_" + crypto.randomUUID()
-    );
+    realmSettingsPage.addKeyValuePair("key_" + uuid(), "value_" + uuid());
 
     return this;
   };
