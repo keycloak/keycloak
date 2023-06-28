@@ -17,7 +17,9 @@
 
 package org.keycloak.storage.ldap.idm.store.ldap;
 
+import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.ModelException;
+import org.keycloak.storage.ldap.LDAPConfig;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -260,5 +262,19 @@ public class LDAPUtil {
         }
     }
 
+    public static boolean shouldUseTruststoreSpi(LDAPConfig ldapConfig) {
+        boolean useSSL = ldapConfig.getConnectionUrl().toLowerCase().contains("ldaps://");
+        boolean defaultUseTruststore = useSSL || ldapConfig.isStartTls();
 
+        String useTruststoreSpi = ldapConfig.getUseTruststoreSpi();
+        if (useTruststoreSpi == null) {
+            return defaultUseTruststore;
+        }
+
+        if (LDAPConstants.USE_TRUSTSTORE_NEVER.equals(useTruststoreSpi)) {
+            return false;
+        }
+
+        return defaultUseTruststore;
+    }
 }

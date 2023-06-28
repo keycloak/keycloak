@@ -510,8 +510,7 @@ public class LDAPOperationManager {
             authCtx = new InitialLdapContext(env, null);
             if (config.isStartTls()) {
                 SSLSocketFactory sslSocketFactory = null;
-                String useTruststoreSpi = config.getUseTruststoreSpi();
-                if (useTruststoreSpi != null && useTruststoreSpi.equals(LDAPConstants.USE_TRUSTSTORE_ALWAYS)) {
+                if (LDAPUtil.shouldUseTruststoreSpi(config)) {
                     TruststoreProvider provider = session.getProvider(TruststoreProvider.class);
                     sslSocketFactory = provider.getSSLSocketFactory();
                 }
