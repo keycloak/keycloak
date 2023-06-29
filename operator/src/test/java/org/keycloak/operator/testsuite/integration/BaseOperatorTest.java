@@ -100,7 +100,8 @@ public abstract class BaseOperatorTest {
             return "localhost";
         }
     });
-    createCRDs();
+    Log.info("Creating CRDs");
+    createCRDs(k8sclient);
     createNamespace();
     isOpenShift = isOpenShift(k8sclient);
 
@@ -138,15 +139,9 @@ public abstract class BaseOperatorTest {
             .inNamespace(namespace).delete();
   }
 
-  private static void createCRDs() {
-    Log.info("Creating CRDs");
-    try {
-      K8sUtils.set(k8sclient, new FileInputStream(TARGET_KUBERNETES_GENERATED_YML_FOLDER + "keycloaks.k8s.keycloak.org-v1.yml"));
-      K8sUtils.set(k8sclient, new FileInputStream(TARGET_KUBERNETES_GENERATED_YML_FOLDER + "keycloakrealmimports.k8s.keycloak.org-v1.yml"));
-    } catch (Exception e) {
-      Log.warn("Failed to create Keycloak CRD, retrying", e);
-      createCRDs();
-    }
+  static void createCRDs(KubernetesClient client) throws FileNotFoundException {
+    K8sUtils.set(client, new FileInputStream(TARGET_KUBERNETES_GENERATED_YML_FOLDER + "keycloaks.k8s.keycloak.org-v1.yml"));
+    K8sUtils.set(client, new FileInputStream(TARGET_KUBERNETES_GENERATED_YML_FOLDER + "keycloakrealmimports.k8s.keycloak.org-v1.yml"));
   }
 
   private static void registerReconcilers() {
