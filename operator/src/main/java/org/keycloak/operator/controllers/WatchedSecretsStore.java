@@ -90,8 +90,8 @@ public class WatchedSecretsStore extends OperatorManagedResource {
     }
 
     @Override
-    protected void setDefaultLabels(HasMetadata resource) {
-        super.setDefaultLabels(resource);
+    protected void setInstanceLabels(HasMetadata resource) {
+        super.setInstanceLabels(resource);
         resource.getMetadata().getLabels().put(Constants.COMPONENT_LABEL, COMPONENT);
     }
 

@@ -101,11 +101,7 @@ public final class K8sUtils {
                 .timeout(5, TimeUnit.MINUTES)
                 .ignoreExceptions()
                 .untilAsserted(() -> {
-                    var currentKc = client
-                            .resources(Keycloak.class)
-                            .inNamespace(kc.getMetadata().getNamespace())
-                            .withName(kc.getMetadata().getName())
-                            .get();
+                    var currentKc = client.resource(kc).get();
 
                     CRAssert.assertKeycloakStatusCondition(currentKc, KeycloakStatusCondition.READY, true);
                     CRAssert.assertKeycloakStatusCondition(currentKc, KeycloakStatusCondition.HAS_ERRORS, false);
