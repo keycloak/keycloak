@@ -28,7 +28,8 @@ import io.quarkus.test.junit.QuarkusTest;
 import org.junit.jupiter.api.Test;
 import org.keycloak.operator.Config;
 import org.keycloak.operator.controllers.KeycloakDeployment;
-import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
+import org.keycloak.operator.controllers.OperatorManagedResource;
+import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakBuilder;
 import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakSpecBuilder;
 import org.keycloak.operator.crds.v2alpha1.deployment.ValueOrSecret;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.HostnameSpecBuilder;
@@ -67,7 +68,10 @@ public class PodTemplateTest {
                 };
             }
         };
-        var kc = new Keycloak();
+        var kc = new KeycloakBuilder().withNewMetadata().withName("instance").endMetadata().build();
+        existingDeployment = new StatefulSetBuilder(existingDeployment).editOrNewSpec().editOrNewSelector()
+                .addToMatchLabels(OperatorManagedResource.updateWithInstanceLabels(null, kc.getMetadata().getName()))
+                .endSelector().endSpec().build();
 
         var httpSpec = new HttpSpecBuilder().withTlsSecret("example-tls-secret").build();
         var hostnameSpec = new HostnameSpecBuilder().withHostname("example.com").build();
@@ -84,6 +88,7 @@ public class PodTemplateTest {
         kc.setSpec(keycloakSpecBuilder.build());
 
         var deployment = new KeycloakDeployment(null, config, kc, existingDeployment, "dummy-admin");
+
         return (StatefulSet) deployment.getReconciledResource().get();
     }
 
