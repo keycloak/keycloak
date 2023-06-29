@@ -1,0 +1,3 @@
+= Changes in validating schemes for valid redirect URIs
+
+If an application client is using non http(s) custom schemes, from now on the validation requires that a valid redirect pattern explicitly allows that scheme. Example patterns for allowing `custom` scheme are `custom:/test`, `custom:/test/\*` or `custom:*`. For security reasons a general pattern like `*` does not cover them anymore.

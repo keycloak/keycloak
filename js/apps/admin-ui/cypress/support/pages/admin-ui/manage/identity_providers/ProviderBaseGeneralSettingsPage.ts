@@ -82,8 +82,8 @@ export default class ProviderBaseGeneralSettingsPage extends PageObject {
     return this;
   }
 
-  protected assertCommonRequiredFields(requiredFiels: string[]) {
-    requiredFiels.forEach((elementLocator) => {
+  protected assertCommonRequiredFields(requiredFields: string[]) {
+    requiredFields.forEach((elementLocator) => {
       if (elementLocator.includes("#")) {
         cy.get(elementLocator)
           .parent()
