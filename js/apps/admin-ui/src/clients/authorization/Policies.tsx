@@ -128,6 +128,7 @@ export const AuthorizationPolicies = ({ clientId }: PoliciesProps) => {
               variant="warning"
               isInline
               isPlain
+              component="p"
               title={t("deletePolicyWarning")}
               className="pf-u-pt-lg"
             >
