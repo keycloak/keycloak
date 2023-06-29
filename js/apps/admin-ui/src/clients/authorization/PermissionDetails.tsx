@@ -286,6 +286,7 @@ export default function PermissionDetails() {
                   {...register("resourceType", {
                     required: permissionType === "scope",
                   })}
+                  aria-label={t("resourceType")}
                 />
               </FormGroup>
             ) : (
