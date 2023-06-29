@@ -26,7 +26,7 @@ button#kc-join-groups-button {
 
 .join-group-dialog-row-m-disabled {
   pointer-events: none;
-  color: var(--pf-global--disabled-color--200);
+  color: var(--pf-global--Color--200);
 }
 
 .kc-who-will-appear-button {
@@ -163,7 +163,7 @@ article.pf-c-card.pf-m-flat.kc-available-idps > div > div > h1 {
 }
 
 .user-attribute-search-form-key-value {
-  margin-bottom: .5rem;
+  margin-bottom: 0.5rem;
 }
 
 .user-attribute-search-form-left {
