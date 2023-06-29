@@ -21,6 +21,7 @@
   },
   "otpHashAlgorithm": "OTP hash algorithm",
   "otpPolicyDigits": "Number of digits",
+  "lookAround": "Look around window",
   "lookAhead": "Look ahead window",
   "otpPolicyPeriod": "OTP Token period",
   "otpPolicyPeriodErrorHint": "Value needs to be between 1 second and 2 minutes",

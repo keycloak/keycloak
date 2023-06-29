@@ -204,14 +204,14 @@ export const OtpPolicy = ({ realm, realmUpdated }: OtpPolicyProps) => {
           />
         </FormGroup>
         <FormGroup
-          label={t("lookAhead")}
+          label={t("lookAround")}
           labelIcon={
             <HelpItem
-              helpText={t("authentication-help:lookAhead")}
-              fieldLabelId="authentication:lookAhead"
+              helpText={t("authentication-help:lookAround")}
+              fieldLabelId="authentication:lookAround"
             />
           }
-          fieldId="lookAhead"
+          fieldId="lookAround"
         >
           <Controller
             name="otpPolicyLookAheadWindow"
@@ -225,7 +225,7 @@ export const OtpPolicy = ({ realm, realmUpdated }: OtpPolicyProps) => {
 
               return (
                 <NumberInput
-                  id="lookAhead"
+                  id="lookAround"
                   value={value}
                   min={MIN_VALUE}
                   onPlus={() => setValue(value + 1)}
