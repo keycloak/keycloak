@@ -129,6 +129,14 @@ q=<name>:<value> <name>:<value> ...
 
 Where `<name>` and `<value>` represent the attribute name and value, respectively.
 
+= Essential claim configuration in OpenID Connect identity providers
+
+OpenID Connect identity providers support a new configuration to specify that the ID tokens issued by the identity provider must have a specific claim,
+otherwise the user can not authenticate through this broker.
+
+The option is disabled by default; when it is enabled, you can specify the name of the JWT token claim to filter and the value to match 
+(supports regular expression format).
+
 = LDAPS-only Truststore option removed
 
 LDAP option to use truststore SPI `Only for ldaps` has been removed. This parameter is used to

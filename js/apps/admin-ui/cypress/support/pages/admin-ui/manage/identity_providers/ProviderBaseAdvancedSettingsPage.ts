@@ -69,6 +69,9 @@ export default class ProviderBaseGeneralSettingsPage extends PageObject {
   private firstLoginFlowSelect = "#firstBrokerLoginFlowAlias";
   private postLoginFlowSelect = "#postBrokerLoginFlowAlias";
   private syncModeSelect = "#syncMode";
+  private essentialClaimSwitch = "#filteredByClaim";
+  private claimNameInput = "#kc-claim-filter-name";
+  private claimValueInput = "#kc-claim-filter-value";
   private addBtn = "createProvider";
   private saveBtn = "idp-details-save";
   private revertBtn = "idp-details-revert";
@@ -92,6 +95,11 @@ export default class ProviderBaseGeneralSettingsPage extends PageObject {
   public typeScopesInput(text: string) {
     cy.get(this.scopesInput).type(text).blur();
     return this;
+  }
+
+  public ensureAdvancedSettingsAreVisible() {
+    cy.findByTestId("jump-link-general-settings").click();
+    cy.findByTestId("jump-link-advanced-settings").click();
   }
 
   public clickStoreTokensSwitch() {
@@ -126,6 +134,21 @@ export default class ProviderBaseGeneralSettingsPage extends PageObject {
 
   public clickHideOnLoginPageSwitch() {
     cy.get(this.hideOnLoginPageSwitch).parent().click();
+    return this;
+  }
+
+  public clickEssentialClaimSwitch() {
+    cy.get(this.essentialClaimSwitch).parent().click();
+    return this;
+  }
+
+  public typeClaimNameInput(text: string) {
+    cy.get(this.claimNameInput).type(text).blur();
+    return this;
+  }
+
+  public typeClaimValueInput(text: string) {
+    cy.get(this.claimValueInput).type(text).blur();
     return this;
   }
 
@@ -182,7 +205,7 @@ export default class ProviderBaseGeneralSettingsPage extends PageObject {
   }
 
   public assertScopesInputEqual(text: string) {
-    cy.get(this.scopesInput).should("have.text", text).parent();
+    cy.get(this.scopesInput).should("have.value", text).parent();
     return this;
   }
 
@@ -227,6 +250,21 @@ export default class ProviderBaseGeneralSettingsPage extends PageObject {
       cy.get(this.hideOnLoginPageSwitch).parent(),
       isOn
     );
+    return this;
+  }
+
+  public assertEssentialClaimSwitchTurnedOn(isOn: boolean) {
+    super.assertSwitchStateOn(cy.get(this.essentialClaimSwitch).parent(), isOn);
+    return this;
+  }
+
+  public assertClaimInputEqual(text: string) {
+    cy.get(this.claimNameInput).should("have.value", text).parent();
+    return this;
+  }
+
+  public assertClaimValueInputEqual(text: string) {
+    cy.get(this.claimValueInput).should("have.value", text).parent();
     return this;
   }
 
