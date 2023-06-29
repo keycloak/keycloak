@@ -826,7 +826,7 @@ export default class RealmSettingsPage extends CommonPage {
 
   shouldNotHaveExecutorsConfigured() {
     cy.get(this.clientProfileTwo).click();
-    cy.get('h6[class*="kc-emptyExecutors"]').should(
+    cy.get('h2[class*="kc-emptyExecutors"]').should(
       "have.text",
       "No executors configured"
     );
@@ -840,7 +840,7 @@ export default class RealmSettingsPage extends CommonPage {
       .contains("secure-ciba-signed-authn-req")
       .click();
     cy.get(this.addExecutorCancelBtn).click();
-    cy.get('h6[class*="kc-emptyExecutors"]').should(
+    cy.get('h2[class*="kc-emptyExecutors"]').should(
       "have.text",
       "No executors configured"
     );
@@ -950,7 +950,7 @@ export default class RealmSettingsPage extends CommonPage {
     );
     cy.findByTestId(this.modalConfirm).contains("Delete");
     cy.findByTestId(this.modalConfirm).click();
-    cy.get('h6[class*="kc-emptyExecutors"]').should(
+    cy.get('h2[class*="kc-emptyExecutors"]').should(
       "have.text",
       "No executors configured"
     );
@@ -1047,7 +1047,7 @@ export default class RealmSettingsPage extends CommonPage {
 
   shouldNotHaveConditionsConfigured() {
     cy.get(this.clientPolicy).click();
-    cy.get('h6[class*="kc-emptyConditions"]').should(
+    cy.get('h2[class*="kc-emptyConditions"]').should(
       "have.text",
       "No conditions configured"
     );
@@ -1061,7 +1061,7 @@ export default class RealmSettingsPage extends CommonPage {
       .contains("any-client")
       .click();
     cy.findByTestId(this.addConditionCancelBtn).click();
-    cy.get('h6[class*="kc-emptyConditions"]').should(
+    cy.get('h2[class*="kc-emptyConditions"]').should(
       "have.text",
       "No conditions configured"
     );
@@ -1159,7 +1159,7 @@ export default class RealmSettingsPage extends CommonPage {
     );
     cy.findByTestId(this.modalConfirm).contains("Delete");
     cy.findByTestId(this.modalConfirm).click({ force: true });
-    cy.get('h6[class*="kc-emptyConditions"]').should(
+    cy.get('h2[class*="kc-emptyConditions"]').should(
       "have.text",
       "No conditions configured"
     );

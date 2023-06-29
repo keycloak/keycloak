@@ -423,7 +423,7 @@ export default function ClientProfileForm() {
                   <Divider />
                   <Text
                     className="kc-emptyExecutors"
-                    component={TextVariants.h6}
+                    component={TextVariants.h2}
                   >
                     {t("realm-settings:emptyExecutors")}
                   </Text>
