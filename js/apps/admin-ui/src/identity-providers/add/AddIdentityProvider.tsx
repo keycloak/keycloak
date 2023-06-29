@@ -28,13 +28,19 @@ export default function AddIdentityProvider() {
   const { providerId } = useParams<IdentityProviderCreateParams>();
   const form = useForm<IdentityProviderRepresentation>();
   const serverInfo = useServerInfo();
-  const providerInfo = useMemo(
-    () =>
-      serverInfo.componentTypes?.[
-        "org.keycloak.broker.social.SocialIdentityProvider"
-      ]?.find((p) => p.id === providerId),
-    [serverInfo, providerId]
-  );
+
+  const providerInfo = useMemo(() => {
+    const social = serverInfo.componentTypes?.[
+      "org.keycloak.broker.social.SocialIdentityProvider"
+    ]?.find((p) => p.id === providerId);
+    if (!social)
+      return serverInfo.componentTypes?.[
+        "org.keycloak.broker.provider.IdentityProvider"
+      ]?.find((p) => p.id === providerId);
+
+    return social;
+  }, [serverInfo, providerId]);
+
   const {
     handleSubmit,
     formState: { isDirty },
