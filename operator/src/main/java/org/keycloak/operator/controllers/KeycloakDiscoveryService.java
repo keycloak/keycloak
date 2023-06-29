@@ -43,7 +43,7 @@ public class KeycloakDiscoveryService extends OperatorManagedResource implements
               .withProtocol("TCP")
               .withPort(Constants.KEYCLOAK_DISCOVERY_SERVICE_PORT)
               .endPort()
-              .withSelector(Constants.DEFAULT_LABELS)
+              .withSelector(getInstanceLabels())
               .withClusterIP("None")
               .build();
     }
