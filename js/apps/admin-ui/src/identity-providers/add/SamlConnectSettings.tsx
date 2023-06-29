@@ -76,7 +76,7 @@ export const SamlConnectSettings = () => {
 
   return (
     <>
-      <Title headingLevel="h4" size="xl" className="kc-form-panel__title">
+      <Title headingLevel="h2" size="xl" className="kc-form-panel__title">
         {t("samlSettings")}
       </Title>
 
