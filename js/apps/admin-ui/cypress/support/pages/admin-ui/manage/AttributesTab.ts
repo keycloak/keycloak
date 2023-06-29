@@ -14,7 +14,7 @@ export default class AttributesTab {
   }
 
   public addAttribute(key: string, value: string) {
-    cy.findByTestId(this.addAttributeBtn).click();
+    this.addAnAttributeButton();
 
     cy.findAllByTestId(this.keyInput)
       .its("length")
@@ -42,6 +42,7 @@ export default class AttributesTab {
   }
 
   public addAnAttributeButton() {
+    cy.wait(1000);
     cy.findByTestId(this.addAttributeBtn).click();
     return this;
   }
