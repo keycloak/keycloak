@@ -170,4 +170,10 @@ public interface TestOIDCEndpointsApplicationResource {
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
     IntentClientBindCheckExecutor.IntentBindCheckResponse checkIntentClientBound(IntentClientBindCheckExecutor.IntentBindCheckRequest request);
+
+    @GET
+    @Path("/verified-claims")
+    @Produces(MediaType.APPLICATION_JSON)
+    @NoCache
+    Response getVerifiedClaims(@QueryParam("userId") String userId);
 }

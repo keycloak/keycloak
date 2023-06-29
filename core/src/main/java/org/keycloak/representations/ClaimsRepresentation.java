@@ -123,6 +123,10 @@ public class ClaimsRepresentation {
 
         private List<CLAIM_TYPE> values;
 
+        private Map<String, Object> verification;
+
+        private Map<String, Object> claims;
+
         public Boolean getEssential() {
             return essential;
         }
@@ -149,6 +153,22 @@ public class ClaimsRepresentation {
 
         public void setValues(List<CLAIM_TYPE> values) {
             this.values = values;
+        }
+
+        public Map<String, Object> getVerification() {
+            return verification;
+        }
+
+        public void setVerification(Map<String, Object> verification) {
+            this.verification = verification;
+        }
+
+        public Map<String, Object> getClaims() {
+            return claims;
+        }
+
+        public void setClaims(Map<String, Object> claims) {
+            this.claims = claims;
         }
     }
 }

@@ -76,6 +76,7 @@ import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.KeyPair;
@@ -767,5 +768,39 @@ public class TestingOIDCEndpointsApplicationResource {
             response.setIsBound(Boolean.TRUE);
         }
         return response;
+    }
+
+    @GET
+    @Path("/verified-claims")
+    @Produces(MediaType.APPLICATION_JSON)
+    @NoCache
+    public Response getVerifiedClaims(@QueryParam("userId") String userId) throws IOException {
+        Response.ResponseBuilder builder = Response.status(Status.OK);
+        Object userClaim;
+        switch (userId) {
+            case "test-user@localhost":
+                InputStream stream = getClass().getResourceAsStream("/org/keycloak/testsuite/oidc/userClaims.json");
+                userClaim = JsonSerialization.readValue(stream, Map.class).get("verified_claims");
+                break;
+            case "john-doh@localhost":
+                stream = getClass().getResourceAsStream("/org/keycloak/testsuite/oidc/userClaims2.json");
+                userClaim = JsonSerialization.readValue(stream, Map.class).get("verified_claims");
+                break;
+            case "keycloak-user@localhost":
+                userClaim = "";
+                break;
+            case "topgroupuser":
+                userClaim = "{\"verification\":{\"trust_framework\":\"uk_tfida\"}\"claims\":{\"given_name\":\"Sarah\"}}";
+                break;
+            case "level2groupuser":
+                userClaim = "{\"verified_claims\":{\"verification\":{\"trust_framework\":\"uk_tfida\"},\"claims\":{\"given_name\":\"Sarah\"}}}";
+                break;
+            case "rolerichuser":
+                userClaim = "{\"VERIFICATION\":{\"trust_framework\":\"uk_tfida\"},\"claim\":{\"given_name\":\"Sarah\"}}";
+                break;
+            default:
+                return Response.status(Status.BAD_REQUEST).build();
+        }
+        return builder.type(MediaType.APPLICATION_JSON).entity(userClaim).build();
     }
 }

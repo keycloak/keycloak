@@ -65,4 +65,11 @@ public class TestApplicationResourceUrls {
 
         return builder.build().toString();
     }
+
+    public static String getVerifiedClaimsUri() {
+        UriBuilder builder = oidcClientEndpoints()
+                .path(TestOIDCEndpointsApplicationResource.class, "getVerifiedClaims");
+
+        return builder.build().toString();
+    }
 }

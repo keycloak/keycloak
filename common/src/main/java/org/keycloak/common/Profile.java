@@ -45,7 +45,7 @@ public class Profile {
 
         ACCOUNT_API("Account Management REST API", Type.DEFAULT),
         ACCOUNT2("Account Management Console version 2", Type.DEFAULT, Feature.ACCOUNT_API),
-        ACCOUNT3("Account Management Console version 3", Type.EXPERIMENTAL, Feature.ACCOUNT_API),
+        ACCOUNT3("Account Management Console version 3", Type.PREVIEW, Feature.ACCOUNT_API),
 
         ADMIN_FINE_GRAINED_AUTHZ("Fine-Grained Admin Permissions", Type.PREVIEW),
 
@@ -88,7 +88,9 @@ public class Profile {
 
         JS_ADAPTER("Host keycloak.js and keycloak-authz.js through the Keycloak sever", Type.DEFAULT),
 
-        FIPS("FIPS 140-2 mode", Type.DISABLED_BY_DEFAULT);
+        FIPS("FIPS 140-2 mode", Type.DISABLED_BY_DEFAULT),
+
+        IDA("OpenID Connect for Identity Assurance 1.0(OIDC4IDA)", Type.PREVIEW);
 
         private final Type type;
         private String label;

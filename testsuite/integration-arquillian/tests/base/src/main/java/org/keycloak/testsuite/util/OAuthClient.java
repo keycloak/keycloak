@@ -312,6 +312,13 @@ public class OAuthClient {
         return new AuthorizationEndpointResponse(this);
     }
 
+    public AuthorizationEndpointResponse doSilentLogin() {
+        openLoginForm();
+        WaitUtils.waitForPageToLoad();
+
+        return new AuthorizationEndpointResponse(this);
+    }
+
     public AuthorizationEndpointResponse doLoginSocial(String brokerId, String username, String password) {
         openLoginForm();
         WaitUtils.waitForPageToLoad();
@@ -1723,6 +1730,19 @@ public class OAuthClient {
         } else {
             try {
                 this.claims = URLEncoder.encode(JsonSerialization.writeValueAsString(claims), "UTF-8");
+            } catch (IOException ioe) {
+                throw new RuntimeException(ioe);
+            }
+        }
+        return this;
+    }
+
+    public OAuthClient setStringClaims(String claims) {
+        if (claims == null) {
+            this.claims = null;
+        } else {
+            try {
+                this.claims = URLEncoder.encode(claims, "UTF-8");
             } catch (IOException ioe) {
                 throw new RuntimeException(ioe);
             }
