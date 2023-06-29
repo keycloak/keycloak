@@ -16,6 +16,9 @@
  */
 package org.keycloak.services.resources.admin;
 
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
+import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import jakarta.ws.rs.NotFoundException;
 import org.keycloak.common.util.ObjectUtil;
@@ -28,6 +31,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.services.ErrorResponse;
+import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 import org.keycloak.utils.SearchQueryUtils;
 
@@ -51,6 +55,7 @@ import java.util.stream.Stream;
  * @resource Groups
  * @author Bill Burke
  */
+@Extension(name = KeycloakOpenAPI.Profiles.ADMIN, value = "")
 public class GroupsResource {
 
     private final RealmModel realm;
@@ -74,6 +79,8 @@ public class GroupsResource {
     @GET
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.GROUPS)
+    @Operation( summary = "Get group hierarchy.  Only name and ids are returned.")
     public Stream<GroupRepresentation> getGroups(@QueryParam("search") String search,
                                                  @QueryParam("q") String searchQuery,
                                                  @QueryParam("exact") @DefaultValue("false") Boolean exact,
@@ -119,6 +126,8 @@ public class GroupsResource {
     @NoCache
     @Path("count")
     @Produces(MediaType.APPLICATION_JSON)
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.GROUPS)
+    @Operation( summary = "Returns the groups counts.")
     public Map<String, Long> getGroupCount(@QueryParam("search") String search,
                                            @QueryParam("top") @DefaultValue("false") boolean onlyTopGroups) {
         Long results;
@@ -140,6 +149,9 @@ public class GroupsResource {
      */
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.GROUPS)
+    @Operation( summary = "create or add a top level realm groupSet or create child.",
+        description = "This will update the group and set the parent if it exists. Create it and set the parent if the group doesn’t exist.")
     public Response addTopLevelGroup(GroupRepresentation rep) {
         auth.groups().requireManage();
 
