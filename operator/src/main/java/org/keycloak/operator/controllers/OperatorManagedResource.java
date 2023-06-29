@@ -31,7 +31,7 @@ import io.quarkus.logging.Log;
 import org.keycloak.operator.Constants;
 
 import java.util.Collections;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
 
@@ -55,7 +55,7 @@ public abstract class OperatorManagedResource {
     public void createOrUpdateReconciled() {
         getReconciledResource().ifPresent(resource -> {
             try {
-                setDefaultLabels(resource);
+                setInstanceLabels(resource);
                 setOwnerReferences(resource);
 
                 Log.debugf("Creating or updating resource: %s", resource);
@@ -88,10 +88,19 @@ public abstract class OperatorManagedResource {
         });
     }
 
-    protected void setDefaultLabels(HasMetadata resource) {
-        Map<String, String> labels = Optional.ofNullable(resource.getMetadata().getLabels()).orElse(new HashMap<>());
+    protected void setInstanceLabels(HasMetadata resource) {
+        resource.getMetadata().setLabels(updateWithInstanceLabels(resource.getMetadata().getLabels(), cr.getMetadata().getName()));
+    }
+
+    protected Map<String, String> getInstanceLabels() {
+        return updateWithInstanceLabels(null, cr.getMetadata().getName());
+    }
+
+    public static Map<String, String> updateWithInstanceLabels(Map<String, String> labels, String instanceName) {
+        labels = Optional.ofNullable(labels).orElse(new LinkedHashMap<>());
         labels.putAll(Constants.DEFAULT_LABELS);
-        resource.getMetadata().setLabels(labels);
+        labels.put(Constants.INSTANCE_LABEL, instanceName);
+        return labels;
     }
 
     protected void setOwnerReferences(HasMetadata resource) {

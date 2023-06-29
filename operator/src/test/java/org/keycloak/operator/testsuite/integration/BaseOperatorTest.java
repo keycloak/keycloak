@@ -24,6 +24,7 @@ import io.fabric8.kubernetes.client.Config;
 import io.fabric8.kubernetes.client.ConfigBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientBuilder;
+import io.fabric8.kubernetes.client.NamespacedKubernetesClient;
 import io.javaoperatorsdk.operator.Operator;
 import io.javaoperatorsdk.operator.api.config.ConfigurationServiceProvider;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
@@ -166,6 +167,8 @@ public abstract class BaseOperatorTest {
   private static void createNamespace() {
     Log.info("Creating Namespace " + namespace);
     k8sclient.resource(new NamespaceBuilder().withNewMetadata().addToLabels("app","keycloak-test").withName(namespace).endMetadata().build()).create();
+    // ensure that the client defaults to the namespace - eventually most of the test code usage of inNamespace can be removed
+    k8sclient = k8sclient.adapt(NamespacedKubernetesClient.class).inNamespace(namespace);
   }
 
   private static void calculateNamespace() {
