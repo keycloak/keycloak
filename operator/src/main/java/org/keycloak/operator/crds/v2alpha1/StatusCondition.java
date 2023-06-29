@@ -17,6 +17,8 @@
 
 package org.keycloak.operator.crds.v2alpha1;
 
+import io.fabric8.kubernetes.api.model.AnyType;
+
 import java.util.Objects;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -35,7 +37,7 @@ public class StatusCondition {
     }
 
     private String type;
-    private String status = Status.Unknown.name();
+    private AnyType status = new AnyType(Status.Unknown.name());
     private String message;
     private String lastTransitionTime;
     private Long observedGeneration;
@@ -50,11 +52,11 @@ public class StatusCondition {
 
     @JsonIgnore
     public Boolean getStatus() {
-        if (status == null) {
+        if (status == null || status.getValue() == null) {
             return null;
         }
         // account for the legacy boolean string as well
-        switch (status) {
+        switch ((String)status.getValue()) {
         case "false":
         case "False":
             return false;
@@ -68,22 +70,22 @@ public class StatusCondition {
 
     @JsonProperty("status")
     public String getStatusString() {
-        return status;
+        return (String)status.getValue();
     }
 
     @JsonProperty("status")
     public void setStatusString(String status) {
-        this.status = status;
+        this.status = new AnyType(status);
     }
 
     @JsonIgnore
     public void setStatus(Boolean status) {
         if (status == null) {
-            this.status = Status.Unknown.name();
+            this.status = new AnyType(Status.Unknown.name());
         } else if (status) {
-            this.status = Status.True.name();
+            this.status = new AnyType(Status.True.name());
         } else {
-            this.status = Status.False.name();
+            this.status = new AnyType(Status.False.name());
         }
     }
 
