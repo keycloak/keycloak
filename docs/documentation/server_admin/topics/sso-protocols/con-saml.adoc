@@ -4,7 +4,7 @@
 
 === SAML
 [role="_abstract"]
-link:http://saml.xml.org/saml-specifications[SAML 2.0] is a similar specification to OIDC but more mature.  It is descended from SOAP and web service messaging specifications so is generally more verbose than OIDC.  SAML 2.0 is an authentication protocol that exchanges XML documents between authentication servers and applications.  XML signatures and encryption are used to verify requests and responses.
+link:https://saml.xml.org/saml-specifications[SAML 2.0] is a similar specification to OIDC but more mature.  It is descended from SOAP and web service messaging specifications so is generally more verbose than OIDC.  SAML 2.0 is an authentication protocol that exchanges XML documents between authentication servers and applications.  XML signatures and encryption are used to verify requests and responses.
 
 In general, SAML implements two use cases. 
 
