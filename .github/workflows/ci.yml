@@ -151,7 +151,7 @@ jobs:
     strategy:
       matrix:
         dist: [temurin]
-        version: [11, 19]
+        version: [19]
       fail-fast: false
     steps:
       - uses: actions/checkout@v3
