@@ -58,7 +58,7 @@ public class KeycloakRealmImportController implements Reconciler<KeycloakRealmIm
         InformerConfiguration<Job> jobIC = InformerConfiguration
                 .from(Job.class)
                 .withLabelSelector(Constants.DEFAULT_LABELS_AS_STRING)
-                .withNamespaces(context.getControllerConfiguration().getConfigurationService().getClientConfiguration().getNamespace())
+                .withNamespaces(context.getControllerConfiguration().getConfigurationService().getKubernetesClient().getNamespace())
                 .withSecondaryToPrimaryMapper(Mappers.fromOwnerReference())
                 .withOnUpdateFilter(new MetadataAwareOnUpdateFilter<>())
                 .build();
