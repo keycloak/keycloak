@@ -149,3 +149,7 @@ picked (`Always`), or the global JVM one (`Never`).
 
 Deployments where `Only for ldaps` was used will automatically behave as if `Always` option was
 selected for TLS-secured LDAP connections.
+
+= Support for JWE encrypted ID Tokens and UserInfo responses in OpenID Connect providers
+
+The OpenID Connect providers now support https://datatracker.ietf.org/doc/html/rfc7516[Json Web Encryption (JWE)] for the ID Token and the UserInfo response. The providers use the realm keys defined for the selected encryption algorithm to perform the decryption.
