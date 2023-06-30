@@ -88,7 +88,9 @@ In relation to the KeyStore Vault news, we also integrated Quarkus's recently re
 
 = k8s.keycloak.org/v2alpha1 changes
 
-The are additional fields available in the keycloak.status to facilitate keycloak being a scalable resource. There are also additional fields that make the status easier to interpret such as observedGeneration and condition observedGeneration and lastTransitionTime fields. However the condition status field was also changed from a boolean to a string for conformance with standard Kubernetes conditions. Please make sure any of your usage of this field is updated to expect the values "True", "False", or "Unknown", rather than true or false.
+The are additional fields available in the keycloak.status to facilitate keycloak being a scalable resource. There are also additional fields that make the status easier to interpret such as observedGeneration and condition observedGeneration and lastTransitionTime fields. 
+
+The condition status field was changed from a boolean to a string for conformance with standard Kubernetes conditions. In the CRD it will temporarily be represented as accepting any content, but it will only ever be a string.  Please make sure any of your usage of this field is updated to expect the values "True", "False", or "Unknown", rather than true or false.
 
 = Co-management of Operator Resources
 
@@ -126,6 +128,14 @@ q=<name>:<value> <name>:<value> ...
 ```
 
 Where `<name>` and `<value>` represent the attribute name and value, respectively.
+
+= Essential claim configuration in OpenID Connect identity providers
+
+OpenID Connect identity providers support a new configuration to specify that the ID tokens issued by the identity provider must have a specific claim,
+otherwise the user can not authenticate through this broker.
+
+The option is disabled by default; when it is enabled, you can specify the name of the JWT token claim to filter and the value to match 
+(supports regular expression format).
 
 = LDAPS-only Truststore option removed
 

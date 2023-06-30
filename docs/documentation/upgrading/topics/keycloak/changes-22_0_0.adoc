@@ -350,3 +350,11 @@ their corresponding replacements.
 * `KeycloakModelUtils#getClientScopeMappings` was removed.
 * Deprecated methods from `KeycloakSession` were removed.
 * `UserQueryProvider#getUsersStream` methods were removed.
+
+= Multiple Keycloak instances
+
+Multiple Keycloak CRs may be created in the same namespace and will be managed independently by the operator.  To allow for this StatefulSets created by older versions of the operator must be re-created.  This will happen automatically when the operator is upgraded and lead to small amount of downtime.
+
+= k8s.keycloak.org/v2alpha1 changes
+
+The condition status field was changed from a boolean to a string for conformance with standard Kubernetes conditions. In the CRD it will temporarily be represented as accepting any content, but it will only ever be a string.  Please make sure any of your usage of this field is updated to expect the values "True", "False", or "Unknown", rather than true or false.

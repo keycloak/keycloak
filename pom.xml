@@ -188,6 +188,7 @@
              https://issues.redhat.com/browse/KEYCLOAK-17585?focusedCommentId=16002705&page=com.atlassian.jira.plugin.system.issuetabpanels%3Acomment-tabpanel#comment-16002705
         -->
         <microprofile-metrics-api.version>3.0.1</microprofile-metrics-api.version>
+        <microprofile-openapi-api.version>3.1</microprofile-openapi-api.version>
         <testcontainers.version>1.17.5</testcontainers.version>
 
         <!-- Maven Plugins -->
@@ -202,6 +203,8 @@
         <docker.maven.plugin.version>0.40.3</docker.maven.plugin.version>
         <verifier.plugin.version>1.1</verifier.plugin.version>
         <shade.plugin.version>3.4.1</shade.plugin.version>
+        <smallrye.openapi.generator.plugin.version>3.1.2</smallrye.openapi.generator.plugin.version>
+        <openapi.generator.plugin.version>6.3.0</openapi.generator.plugin.version>
 
         <!-- Surefire Settings -->
         <surefire.memory.Xms>512m</surefire.memory.Xms>
@@ -1825,6 +1828,12 @@
                 </exclusions>
             </dependency>
 
+            <dependency>
+                <groupId>org.eclipse.microprofile.openapi</groupId>
+                <artifactId>microprofile-openapi-api</artifactId>
+                <version>${microprofile-openapi-api.version}</version>
+            </dependency>
+
             <!-- used in server-dist build while provisioning the distribution -->
             <dependency>
                 <groupId>org.keycloak</groupId>
@@ -2006,6 +2015,16 @@
                     <groupId>org.wildfly.build</groupId>
                     <artifactId>wildfly-server-provisioning-maven-plugin</artifactId>
                     <version>${wildfly.build-tools.version}</version>
+                </plugin>
+                <plugin>
+                    <groupId>io.smallrye</groupId>
+                    <artifactId>smallrye-open-api-maven-plugin</artifactId>
+                    <version>${smallrye.openapi.generator.plugin.version}</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.openapitools</groupId>
+                    <artifactId>openapi-generator-maven-plugin</artifactId>
+                    <version>${openapi.generator.plugin.version}</version>
                 </plugin>
                 <plugin>
                     <groupId>org.wildfly.galleon-plugins</groupId>
