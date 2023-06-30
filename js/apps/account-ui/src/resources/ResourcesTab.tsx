@@ -200,6 +200,7 @@ export const ResourcesTab = () => {
                     <OverflowMenuGroup groupType="button">
                       <OverflowMenuItem>
                         <Button
+                          data-testid={`share-${resource.name}`}
                           variant="link"
                           onClick={() =>
                             toggleOpen(resource._id, "shareDialogOpen", true)

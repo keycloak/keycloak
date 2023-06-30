@@ -85,6 +85,7 @@ const KeycloakMasthead = ({
               }}
             >
               <KeycloakDropdown
+                data-testid="options-kebab"
                 isKebab
                 dropDownItems={[
                   ...(kebabDropdownItems || dropdownItems),
@@ -100,6 +101,7 @@ const KeycloakMasthead = ({
               }}
             >
               <KeycloakDropdown
+                data-testid="options"
                 dropDownItems={[...dropdownItems, extraItems]}
                 title={
                   hasUsername && keycloak

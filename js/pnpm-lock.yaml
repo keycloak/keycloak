@@ -114,6 +114,9 @@ importers:
         specifier: workspace:*
         version: link:../../libs/ui-shared
     devDependencies:
+      '@keycloak/keycloak-admin-client':
+        specifier: workspace:*
+        version: link:../../libs/keycloak-admin-client
       '@playwright/test':
         specifier: ^1.35.1
         version: 1.35.1
