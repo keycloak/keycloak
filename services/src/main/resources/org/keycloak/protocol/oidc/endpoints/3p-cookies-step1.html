@@ -29,9 +29,15 @@
         }
 
         // Otherwise, check whether unpartitioned cookie access has been granted to another same-site embed.
-        const permission = await navigator.permissions.query({
-          name: "storage-access",
-        });
+        let permission;
+
+        try {
+          permission = await navigator.permissions.query({
+            name: "storage-access",
+          });
+        } catch (error) {
+          return false;
+        }
 
         // If not, signal that there is no support.
         if (permission.state !== "granted") {
