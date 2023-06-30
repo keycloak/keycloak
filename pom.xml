@@ -66,8 +66,7 @@
         <apache.httpcomponents.version>4.5.14</apache.httpcomponents.version>
         <apache.httpcomponents.httpcore.version>4.4.16</apache.httpcomponents.httpcore.version>
         <jboss.dmr.version>1.5.1.Final</jboss.dmr.version>
-        <bouncycastle.version>1.73</bouncycastle.version>
-        <bouncycastle-bcprov-jdk15on.version>1.70</bouncycastle-bcprov-jdk15on.version>
+        <bouncycastle-bcprov-jdk15to18.version>1.75</bouncycastle-bcprov-jdk15to18.version>
 
         <!-- TODO Are these correct versions? -->
         <bouncycastle.fips.version>1.0.2.3</bouncycastle.fips.version>
@@ -376,13 +375,13 @@
             </dependency>
             <dependency>
                 <groupId>org.bouncycastle</groupId>
-                <artifactId>bcprov-jdk15on</artifactId>
-                <version>${bouncycastle-bcprov-jdk15on.version}</version>
+                <artifactId>bcprov-jdk15to18</artifactId>
+                <version>${bouncycastle-bcprov-jdk15to18.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.bouncycastle</groupId>
-                <artifactId>bcpkix-jdk15on</artifactId>
-                <version>${bouncycastle-bcprov-jdk15on.version}</version>
+                <artifactId>bcpkix-jdk15to18</artifactId>
+                <version>${bouncycastle-bcprov-jdk15to18.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.bouncycastle</groupId>

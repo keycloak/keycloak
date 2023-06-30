@@ -30,7 +30,7 @@ final class ClassLoaderPropertyMappers {
 
             if (profile.getFeatures().get(Feature.FIPS)) {
                 return Optional.of(
-                        "org.bouncycastle:bcprov-jdk15on,org.bouncycastle:bcpkix-jdk15on,org.bouncycastle:bcutil-jdk15on,org.keycloak:keycloak-crypto-default");
+                        "org.bouncycastle:bcprov-jdk15to18,org.bouncycastle:bcpkix-jdk15to18,org.bouncycastle:bcutil-jdk15to18,org.keycloak:keycloak-crypto-default");
             }
 
             return Optional.of(
