@@ -41,6 +41,7 @@ import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusCondition;
 import org.keycloak.operator.crds.v2alpha1.deployment.ValueOrSecret;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.HostnameSpecBuilder;
+import org.keycloak.operator.testsuite.utils.CRAssert;
 import org.keycloak.operator.testsuite.utils.K8sUtils;
 
 import java.nio.charset.StandardCharsets;
@@ -548,6 +549,31 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
             assertThat(pods.get(0).getSpec().getContainers().get(0).getArgs()).containsExactly("start", "--optimized");
             assertThat(pods.get(0).getSpec().getImagePullSecrets().size()).isEqualTo(1);
             assertThat(pods.get(0).getSpec().getImagePullSecrets().get(0).getName()).isEqualTo(imagePullSecretName);
+
+        } catch (Exception e) {
+            savePodLogs();
+            throw e;
+        }
+    }
+
+    @Test
+    public void testInvalidCustomImageHasErrorMessage() {
+
+        try {
+            var kc = getDefaultKeycloakDeployment();
+            kc.getSpec().setImage("does-not-exist");
+
+            deployKeycloak(k8sclient, kc, false);
+
+            var crSelector = k8sclient.resource(kc);
+
+            Awaitility.await().atMost(3, MINUTES).pollDelay(1, SECONDS).ignoreExceptions().untilAsserted(() -> {
+                Keycloak current = crSelector.get();
+                CRAssert.assertKeycloakStatusCondition(current, KeycloakStatusCondition.READY, false);
+                CRAssert.assertKeycloakStatusCondition(current, KeycloakStatusCondition.HAS_ERRORS, true,
+                        String.format("Waiting for %s/%s-0 due to ErrImage", k8sclient.getNamespace(),
+                                kc.getMetadata().getName()));
+            });
 
         } catch (Exception e) {
             savePodLogs();

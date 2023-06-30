@@ -17,17 +17,22 @@
 package org.keycloak.operator.controllers;
 
 import io.fabric8.kubernetes.api.model.Container;
+import io.fabric8.kubernetes.api.model.ContainerState;
+import io.fabric8.kubernetes.api.model.ContainerStateWaiting;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.EnvVarBuilder;
 import io.fabric8.kubernetes.api.model.EnvVarSourceBuilder;
 import io.fabric8.kubernetes.api.model.HTTPGetActionBuilder;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.IntOrString;
+import io.fabric8.kubernetes.api.model.PodStatus;
 import io.fabric8.kubernetes.api.model.PodTemplateSpec;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.api.model.apps.StatefulSetBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.readiness.Readiness;
+import io.fabric8.kubernetes.client.utils.Serialization;
 import io.quarkus.logging.Log;
 
 import org.keycloak.common.util.CollectionUtil;
@@ -487,6 +492,7 @@ public class KeycloakDeployment extends OperatorManagedResource implements Statu
         } else {
             status.apply(b -> b.withInstances(existingDeployment.getStatus().getReadyReplicas()));
             if (Optional.ofNullable(existingDeployment.getStatus().getReadyReplicas()).orElse(0) < keycloakCR.getSpec().getInstances()) {
+                checkForPodErrors(status);
                 status.addNotReadyMessage("Waiting for more replicas");
             }
         }
@@ -501,6 +507,33 @@ public class KeycloakDeployment extends OperatorManagedResource implements Statu
         }
 
         distConfigurator.validateOptions(status);
+    }
+
+    private void checkForPodErrors(KeycloakStatusAggregator status) {
+        client.pods().inNamespace(existingDeployment.getMetadata().getNamespace())
+                .withLabel("controller-revision-hash", existingDeployment.getStatus().getUpdateRevision())
+                .withLabels(getInstanceLabels())
+                .list().getItems().stream()
+                .filter(p -> !Readiness.isPodReady(p)
+                        && Optional.ofNullable(p.getStatus()).map(PodStatus::getContainerStatuses).isPresent())
+                .sorted((p1, p2) -> p1.getMetadata().getName().compareTo(p2.getMetadata().getName()))
+                .forEachOrdered(p -> {
+                    Optional.of(p.getStatus()).map(s -> s.getContainerStatuses()).stream().flatMap(List::stream)
+                            .filter(cs -> !Boolean.TRUE.equals(cs.getReady()))
+                            .sorted((cs1, cs2) -> cs1.getName().compareTo(cs2.getName())).forEachOrdered(cs -> {
+                                if (Optional.ofNullable(cs.getState()).map(ContainerState::getWaiting)
+                                        .map(ContainerStateWaiting::getReason).map(String::toLowerCase)
+                                        .filter(s -> s.contains("err") || s.equals("crashloopbackoff")).isPresent()) {
+                                    Log.infof("Found unhealthy container on pod %s/%s: %s",
+                                            p.getMetadata().getNamespace(), p.getMetadata().getName(),
+                                            Serialization.asYaml(cs));
+                                    status.addErrorMessage(
+                                            String.format("Waiting for %s/%s due to %s: %s", p.getMetadata().getNamespace(),
+                                                    p.getMetadata().getName(), cs.getState().getWaiting().getReason(),
+                                                    cs.getState().getWaiting().getMessage()));
+                                }
+                            });
+                });
     }
 
     public Set<String> getConfigSecretsNames() {
@@ -539,7 +572,7 @@ public class KeycloakDeployment extends OperatorManagedResource implements Statu
                 && previousDeployment.getStatus().getReplicas() > 1) {
             // TODO Check if migration is really needed (e.g. based on actual KC version); https://github.com/keycloak/keycloak/issues/10441
             Log.info("Detected changed Keycloak image, assuming Keycloak upgrade. Scaling down the deployment to one instance to perform a safe database migration");
-            Log.infof("original image: %s; new image: %s");
+            Log.infof("original image: %s; new image: %s", previousContainer.getImage(), reconciledContainer.getImage());
 
             reconciledContainer.setImage(previousContainer.getImage());
             reconciledDeployment.getSpec().setReplicas(1);
