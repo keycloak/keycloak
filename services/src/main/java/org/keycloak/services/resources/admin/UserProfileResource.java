@@ -16,6 +16,7 @@
  */
 package org.keycloak.services.resources.admin;
 
+import org.eclipse.microprofile.openapi.annotations.Operation;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.PUT;
@@ -23,16 +24,20 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
+import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
+import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.keycloak.component.ComponentValidationException;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.services.ErrorResponse;
+import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 import org.keycloak.userprofile.UserProfileProvider;
 
 /**
  * @author Vlastimil Elias <velias@redhat.com>
  */
+@Extension(name = KeycloakOpenAPI.Profiles.ADMIN, value = "")
 public class UserProfileResource {
 
     protected final KeycloakSession session;
@@ -48,6 +53,8 @@ public class UserProfileResource {
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.USERS)
+    @Operation()
     public String getConfiguration() {
         auth.requireAnyAdminRole();
         return session.getProvider(UserProfileProvider.class).getConfiguration();
@@ -55,6 +62,8 @@ public class UserProfileResource {
 
     @PUT
     @Consumes(MediaType.APPLICATION_JSON)
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.USERS)
+    @Operation()
     public Response update(String text) {
         auth.realm().requireManageRealm();
         UserProfileProvider t = session.getProvider(UserProfileProvider.class);

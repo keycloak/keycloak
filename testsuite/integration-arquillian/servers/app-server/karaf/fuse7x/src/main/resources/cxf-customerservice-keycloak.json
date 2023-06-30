@@ -1,0 +1,10 @@
+{
+    "realm": "demo",
+    "resource": "builtin-cxf-app",
+    "auth-server-url": "http://localhost:8080/auth",
+    "ssl-required" : "external",
+    "bearer-only": true,
+    "credentials": {
+        "secret": "password"
+    }
+}

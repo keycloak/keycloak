@@ -296,19 +296,6 @@ public class UserMapStorage implements UserLookupProvider, UserStorageProvider, 
     }
 
     @Override
-    public Stream<UserModel> getUsersStream(RealmModel realm) {
-        return userPasswords.keySet().stream()
-          .map(userName -> createUser(realm, userName));
-    }
-
-    @Override
-    public Stream<UserModel> getUsersStream(RealmModel realm, Integer firstResult, Integer maxResults) {
-        Stream<String> userStream = userPasswords.keySet().stream().sorted();
-
-        return paginatedStream(userStream, firstResult, maxResults).map(userName -> createUser(realm, userName));
-    }
-
-    @Override
     public Stream<UserModel> searchForUserStream(RealmModel realm, String search) {
         String tSearch = translateUserName(search);
         return userPasswords.keySet().stream()

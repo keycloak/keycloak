@@ -24,7 +24,7 @@ import io.fabric8.kubernetes.api.model.ServiceSpecBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import org.keycloak.operator.Constants;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
-import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusBuilder;
+import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusAggregator;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.HttpSpec;
 
 import java.util.Optional;
@@ -32,7 +32,7 @@ import java.util.Optional;
 import static org.keycloak.operator.crds.v2alpha1.CRDUtils.getValueFromSubSpec;
 import static org.keycloak.operator.crds.v2alpha1.CRDUtils.isTlsConfigured;
 
-public class KeycloakService extends OperatorManagedResource implements StatusUpdater<KeycloakStatusBuilder> {
+public class KeycloakService extends OperatorManagedResource implements StatusUpdater<KeycloakStatusAggregator> {
 
     private Service existingService;
     private final Keycloak keycloak;
@@ -49,20 +49,13 @@ public class KeycloakService extends OperatorManagedResource implements StatusUp
               .withPort(getServicePort(keycloak))
               .withProtocol(Constants.KEYCLOAK_SERVICE_PROTOCOL)
               .endPort()
-              .withSelector(Constants.DEFAULT_LABELS)
+              .withSelector(getInstanceLabels())
               .build();
     }
 
     @Override
     protected Optional<HasMetadata> getReconciledResource() {
-        var service = fetchExistingService();
-        if (service == null) {
-            service = newService();
-        } else {
-            service.setSpec(getServiceSpec());
-        }
-
-        return Optional.of(service);
+        return Optional.of(newService());
     }
 
     private Service newService() {
@@ -84,19 +77,21 @@ public class KeycloakService extends OperatorManagedResource implements StatusUp
                 .get();
     }
 
-    public void updateStatus(KeycloakStatusBuilder status) {
+    @Override
+    public void updateStatus(KeycloakStatusAggregator status) {
         if (existingService == null) {
             status.addNotReadyMessage("No existing Keycloak Service found, waiting for creating a new one");
             return;
         }
     }
 
+    @Override
     public String getName() {
         return cr.getMetadata().getName() + Constants.KEYCLOAK_SERVICE_SUFFIX;
     }
 
     public static int getServicePort(Keycloak keycloak) {
-        // we assume HTTP when TLS is not configureed
+        // we assume HTTP when TLS is not configured
         if (!isTlsConfigured(keycloak)) {
             return getValueFromSubSpec(keycloak.getSpec().getHttpSpec(), HttpSpec::getHttpPort).orElse(Constants.KEYCLOAK_HTTP_PORT);
         } else {

@@ -253,6 +253,7 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
 
             int l1Lifespan = config.getInt("l1Lifespan", 600000);
             boolean l1Enabled = l1Lifespan > 0;
+            Boolean awaitInitialTransfer = config.getBoolean("awaitInitialTransfer", true);
             sessionConfigBuilder.clustering()
                     .hash()
                         .numOwners(owners)
@@ -260,7 +261,7 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
                     .l1()
                         .enabled(l1Enabled)
                         .lifespan(l1Lifespan)
-                    .stateTransfer().timeout(30, TimeUnit.SECONDS)
+                    .stateTransfer().awaitInitialTransfer(awaitInitialTransfer).timeout(30, TimeUnit.SECONDS)
                     .build();
         }
 

@@ -37,7 +37,7 @@ import org.keycloak.operator.Config;
 import org.keycloak.operator.Constants;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatus;
-import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusBuilder;
+import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusAggregator;
 import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusCondition;
 
 import jakarta.inject.Inject;
@@ -64,6 +64,7 @@ public class KeycloakController implements Reconciler<Keycloak>, EventSourceInit
                 .withLabelSelector(Constants.DEFAULT_LABELS_AS_STRING)
                 .withNamespaces(namespace)
                 .withSecondaryToPrimaryMapper(Mappers.fromOwnerReference())
+                .withOnUpdateFilter(new MetadataAwareOnUpdateFilter<>())
                 .build();
 
         InformerConfiguration<Service> servicesIC = InformerConfiguration
@@ -71,6 +72,7 @@ public class KeycloakController implements Reconciler<Keycloak>, EventSourceInit
                 .withLabelSelector(Constants.DEFAULT_LABELS_AS_STRING)
                 .withNamespaces(namespace)
                 .withSecondaryToPrimaryMapper(Mappers.fromOwnerReference())
+                .withOnUpdateFilter(new MetadataAwareOnUpdateFilter<>())
                 .build();
 
         InformerConfiguration<Ingress> ingressesIC = InformerConfiguration
@@ -78,6 +80,7 @@ public class KeycloakController implements Reconciler<Keycloak>, EventSourceInit
                 .withLabelSelector(Constants.DEFAULT_LABELS_AS_STRING)
                 .withNamespaces(namespace)
                 .withSecondaryToPrimaryMapper(Mappers.fromOwnerReference())
+                .withOnUpdateFilter(new MetadataAwareOnUpdateFilter<>())
                 .build();
 
         EventSource statefulSetEvent = new InformerEventSource<>(statefulSetIC, context);
@@ -92,41 +95,39 @@ public class KeycloakController implements Reconciler<Keycloak>, EventSourceInit
     }
 
     @Override
-    public UpdateControl<Keycloak> reconcile(Keycloak kc, Context context) {
+    public UpdateControl<Keycloak> reconcile(Keycloak kc, Context<Keycloak> context) {
         String kcName = kc.getMetadata().getName();
         String namespace = kc.getMetadata().getNamespace();
 
         Log.infof("--- Reconciling Keycloak: %s in namespace: %s", kcName, namespace);
 
-        var statusBuilder = new KeycloakStatusBuilder();
+        var statusAggregator = new KeycloakStatusAggregator(kc.getStatus(), kc.getMetadata().getGeneration());
 
         var kcAdminSecret = new KeycloakAdminSecret(client, kc);
         kcAdminSecret.createOrUpdateReconciled();
 
-        // TODO use caches in secondary resources; this is a workaround for https://github.com/java-operator-sdk/java-operator-sdk/issues/830
-        // KeycloakDeployment deployment = new KeycloakDeployment(client, config, kc, context.getSecondaryResource(Deployment.class).orElse(null));
-        var kcDeployment = new KeycloakDeployment(client, config, kc, null, kcAdminSecret.getName());
+        var kcDeployment = new KeycloakDeployment(client, config, kc, context.getSecondaryResource(StatefulSet.class).orElse(null), kcAdminSecret.getName());
         var watchedSecrets = new WatchedSecretsStore(kcDeployment.getConfigSecretsNames(), client, kc);
         kcDeployment.createOrUpdateReconciled();
         if (watchedSecrets.changesDetected()) {
             Log.info("Config Secrets modified, restarting deployment");
             kcDeployment.rollingRestart();
         }
-        kcDeployment.updateStatus(statusBuilder);
+        kcDeployment.updateStatus(statusAggregator);
         watchedSecrets.createOrUpdateReconciled();
 
         var kcService = new KeycloakService(client, kc);
-        kcService.updateStatus(statusBuilder);
+        kcService.updateStatus(statusAggregator);
         kcService.createOrUpdateReconciled();
         var kcDiscoveryService = new KeycloakDiscoveryService(client, kc);
-        kcDiscoveryService.updateStatus(statusBuilder);
+        kcDiscoveryService.updateStatus(statusAggregator);
         kcDiscoveryService.createOrUpdateReconciled();
 
         var kcIngress = new KeycloakIngress(client, kc);
-        kcIngress.updateStatus(statusBuilder);
+        kcIngress.updateStatus(statusAggregator);
         kcIngress.createOrUpdateReconciled();
 
-        var status = statusBuilder.build();
+        var status = statusAggregator.build();
 
         Log.info("--- Reconciliation finished successfully");
 
@@ -139,10 +140,8 @@ public class KeycloakController implements Reconciler<Keycloak>, EventSourceInit
             updateControl = UpdateControl.updateStatus(kc);
         }
 
-        if (status
-                .getConditions()
-                .stream()
-                .anyMatch(c -> c.getType().equals(KeycloakStatusCondition.READY) && !c.getStatus())) {
+        if (status.findCondition(KeycloakStatusCondition.READY)
+                .filter(c -> !Boolean.TRUE.equals(c.getStatus())).isPresent()) {
             updateControl.rescheduleAfter(10, TimeUnit.SECONDS);
         }
 
@@ -152,7 +151,7 @@ public class KeycloakController implements Reconciler<Keycloak>, EventSourceInit
     @Override
     public ErrorStatusUpdateControl<Keycloak> updateErrorStatus(Keycloak kc, Context<Keycloak> context, Exception e) {
         Log.error("--- Error reconciling", e);
-        KeycloakStatus status = new KeycloakStatusBuilder()
+        KeycloakStatus status = new KeycloakStatusAggregator(kc.getStatus(), kc.getMetadata().getGeneration())
                 .addErrorMessage("Error performing operations:\n" + e.getMessage())
                 .build();
 

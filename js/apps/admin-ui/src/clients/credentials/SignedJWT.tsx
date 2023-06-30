@@ -10,14 +10,21 @@ import {
 
 import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
 import { HelpItem } from "ui-shared";
-import { convertAttributeNameToForm, sortProviders } from "../../util";
+import { convertAttributeNameToForm } from "../../util";
 import { FormFields } from "../ClientDetails";
 
-export const SignedJWT = () => {
+type SignedJWTProps = {
+  clientAuthenticatorType: string;
+};
+
+export const SignedJWT = ({ clientAuthenticatorType }: SignedJWTProps) => {
   const { control } = useFormContext();
-  const providers = sortProviders(
-    useServerInfo().providers!.clientSignature.providers
-  );
+  const { cryptoInfo } = useServerInfo();
+  const providers =
+    clientAuthenticatorType === "client-jwt"
+      ? cryptoInfo?.clientSignatureAsymmetricAlgorithms ?? []
+      : cryptoInfo?.clientSignatureSymmetricAlgorithms ?? [];
+
   const { t } = useTranslation("clients");
 
   const [open, isOpen] = useState(false);

@@ -77,3 +77,71 @@ If you are extending one of the following SPIs:
 
 See the link:{upgradingguide_link}[{upgradingguide_name}] for more details about how to
 update your custom providers.
+
+= Elytron credential store replacement
+
+The previous and now removed WildFly distribution provided a built-in vault provider that reads secrets from a keystore-backed Elytron credential store. As this is no longer available, we have added a new implementation of the Keycloak Vault SPI called Keycloak KeyStore Vault. As the name suggests, this implementation reads secrets from a Java keystore file. Such secrets can be then used within multiple places of the Administration Console. For further details, see https://www.keycloak.org/server/vault[our guide] and the latest https://www.keycloak.org/docs/latest/server_admin/index.html#_vault-administration[documentation].
+
+= KeyStore Config Source added
+
+In relation to the KeyStore Vault news, we also integrated Quarkus's recently released feature called KeyStore Config Source. This means that among the already existing configuration sources (CLI parameters, environment variables and files), you can now configure your Keycloak server via configuration properties stored in a Java keystore file. You can learn more about this feature in the https://www.keycloak.org/server/configuration[Configuration guide].
+
+= k8s.keycloak.org/v2alpha1 changes
+
+The are additional fields available in the keycloak.status to facilitate keycloak being a scalable resource. There are also additional fields that make the status easier to interpret such as observedGeneration and condition observedGeneration and lastTransitionTime fields. 
+
+The condition status field was changed from a boolean to a string for conformance with standard Kubernetes conditions. In the CRD it will temporarily be represented as accepting any content, but it will only ever be a string.  Please make sure any of your usage of this field is updated to expect the values "True", "False", or "Unknown", rather than true or false.
+
+= Co-management of Operator Resources
+
+In scenarios where advanced management is needed you may now directly update most fields on operator managed resources that have not been set by the operator directly. This can be used as an alternative to the unsupported stanza of the Keycloak spec. Like the unsupported stanza these direct modifications are not considered supported. If your modifications prevent the operator from being able to manage the resource, there Keycloak CR will show this error condition and the operator will log it.
+
+= Account Console v1 removal
+
+The old Account Console (v1) is now completely removed. This version of the Account Console was marked as deprecated
+in Keycloak 12.
+
+The initial plan was to remove it much sooner, but it was retained for two reasons: 
+
+* We wanted to provide
+sufficient time for users to migrate to Account Console v2. 
+* Our tests  heavily used Account Console v1.  Updating the tests to rely on the Account APIs instead of the console required significant time.
+
+= Account Console v3 promoted to preview
+
+In version 21.1.0 of Keycloak the new Account Console (version 3) was introduced as an experimental feature. Starting this version it has been promoted to a preview feature.
+
+= Account Console template variables removed
+
+Two of the variables exposed to the Account Console V2 and V3 templates (`isEventsEnabled` and `isTotpConfigured`) were left unused, and have been removed in this release.
+
+It is possible that if a developer extended the Account Console theme, he or she could make use of these variables. So make sure that these variables are no longer used if you are extending the base theme.
+
+= Support for count users based on custom attributes
+
+The User API now supports querying the number of users based on custom attributes. For that, a new `q` parameter was added to the `/{realm}/users/count` endpoint. 
+
+The `q` parameter expects the following format:
+
+```
+q=<name>:<value> <name>:<value> ...
+```
+
+Where `<name>` and `<value>` represent the attribute name and value, respectively.
+
+= Essential claim configuration in OpenID Connect identity providers
+
+OpenID Connect identity providers support a new configuration to specify that the ID tokens issued by the identity provider must have a specific claim,
+otherwise the user can not authenticate through this broker.
+
+The option is disabled by default; when it is enabled, you can specify the name of the JWT token claim to filter and the value to match 
+(supports regular expression format).
+
+= LDAPS-only Truststore option removed
+
+LDAP option to use truststore SPI `Only for ldaps` has been removed. This parameter is used to
+select truststore for TLS-secured LDAP connection: either internal Keycloak truststore is
+picked (`Always`), or the global JVM one (`Never`).
+
+Deployments where `Only for ldaps` was used will automatically behave as if `Always` option was
+selected for TLS-secured LDAP connections.

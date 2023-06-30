@@ -227,7 +227,10 @@ public class AdminConsole {
         boolean createRealm = false;
         if (realm.equals(masterRealm)) {
             logger.debug("setting up realm access for a master realm user");
-            createRealm = user.hasRole(masterRealm.getRole(AdminRoles.CREATE_REALM));
+            RoleModel createRealmRole = masterRealm.getRole(AdminRoles.CREATE_REALM);
+            if (createRealmRole != null) {
+                createRealm = user.hasRole(createRealmRole);
+            }
             addMasterRealmAccess(user, realmAccess);
         } else {
             logger.debug("setting up realm access for a realm user");
@@ -344,6 +347,7 @@ public class AdminConsole {
             map.put("masterRealm", Config.getAdminRealm());
             map.put("resourceVersion", Version.RESOURCES_VERSION);
             map.put("loginRealm", realm.getName());
+            map.put("clientId", Constants.ADMIN_CONSOLE_CLIENT_ID);
             map.put("properties", theme.getProperties());
 
             FreeMarkerProvider freeMarkerUtil = session.getProvider(FreeMarkerProvider.class);

@@ -5,17 +5,19 @@ import {
   Button,
   PageSection,
 } from "@patternfly/react-core";
+import { useMemo } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
 import { adminClient } from "../../admin-client";
 import { useAlerts } from "../../components/alert/Alerts";
+import { DynamicComponents } from "../../components/dynamic/DynamicComponents";
 import { FormAccess } from "../../components/form/FormAccess";
 import { ViewHeader } from "../../components/view-header/ViewHeader";
 import { useRealm } from "../../context/realm-context/RealmContext";
+import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
 import { toUpperCase } from "../../util";
 import { useParams } from "../../utils/useParams";
-import { ExtendedFieldsForm } from "../component/ExtendedFieldsForm";
 import { toIdentityProvider } from "../routes/IdentityProvider";
 import type { IdentityProviderCreateParams } from "../routes/IdentityProviderCreate";
 import { toIdentityProviders } from "../routes/IdentityProviders";
@@ -25,6 +27,14 @@ export default function AddIdentityProvider() {
   const { t } = useTranslation("identity-providers");
   const { providerId } = useParams<IdentityProviderCreateParams>();
   const form = useForm<IdentityProviderRepresentation>();
+  const serverInfo = useServerInfo();
+  const providerInfo = useMemo(
+    () =>
+      serverInfo.componentTypes?.[
+        "org.keycloak.broker.social.SocialIdentityProvider"
+      ]?.find((p) => p.id === providerId),
+    [serverInfo, providerId]
+  );
   const {
     handleSubmit,
     formState: { isDirty },
@@ -70,7 +80,9 @@ export default function AddIdentityProvider() {
         >
           <FormProvider {...form}>
             <GeneralSettings id={providerId} />
-            <ExtendedFieldsForm providerId={providerId} />
+            {providerInfo && (
+              <DynamicComponents properties={providerInfo.properties} />
+            )}
           </FormProvider>
           <ActionGroup>
             <Button

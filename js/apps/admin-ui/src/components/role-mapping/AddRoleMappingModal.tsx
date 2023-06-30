@@ -11,6 +11,7 @@ import { FilterIcon } from "@patternfly/react-icons";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
+import { useAccess } from "../../context/access/Access";
 import useLocaleSort from "../../utils/useLocaleSort";
 import { ListEmptyState } from "../list-empty-state/ListEmptyState";
 import { KeycloakDataTable } from "../table-toolbar/KeycloakDataTable";
@@ -40,10 +41,14 @@ export const AddRoleMappingModal = ({
   onClose,
 }: AddRoleMappingModalProps) => {
   const { t } = useTranslation(type);
+  const { hasAccess } = useAccess();
+  const canViewRealmRoles = hasAccess("view-realm");
 
   const [searchToggle, setSearchToggle] = useState(false);
 
-  const [filterType, setFilterType] = useState<FilterType>("roles");
+  const [filterType, setFilterType] = useState<FilterType>(
+    canViewRealmRoles ? "roles" : "clients"
+  );
   const [selectedRows, setSelectedRows] = useState<Row[]>([]);
   const [key, setKey] = useState(0);
   const refresh = () => setKey(key + 1);
@@ -137,34 +142,36 @@ export const AddRoleMappingModal = ({
         searchPlaceholderKey="clients:searchByRoleName"
         isPaginated={!(filterType === "roles" && type !== "roles")}
         searchTypeComponent={
-          <ToolbarItem>
-            <Dropdown
-              onSelect={() => {
-                setFilterType(filterType === "roles" ? "clients" : "roles");
-                setSearchToggle(false);
-                refresh();
-              }}
-              data-testid="filter-type-dropdown"
-              toggle={
-                <DropdownToggle
-                  onToggle={setSearchToggle}
-                  icon={<FilterIcon />}
-                >
-                  {filterType === "roles"
-                    ? t("common:filterByRoles")
-                    : t("common:filterByClients")}
-                </DropdownToggle>
-              }
-              isOpen={searchToggle}
-              dropdownItems={[
-                <DropdownItem key="filter-type" data-testid={filterType}>
-                  {filterType === "roles"
-                    ? t("common:filterByClients")
-                    : t("common:filterByRoles")}
-                </DropdownItem>,
-              ]}
-            />
-          </ToolbarItem>
+          canViewRealmRoles && (
+            <ToolbarItem>
+              <Dropdown
+                onSelect={() => {
+                  setFilterType(filterType === "roles" ? "clients" : "roles");
+                  setSearchToggle(false);
+                  refresh();
+                }}
+                data-testid="filter-type-dropdown"
+                toggle={
+                  <DropdownToggle
+                    onToggle={setSearchToggle}
+                    icon={<FilterIcon />}
+                  >
+                    {filterType === "roles"
+                      ? t("common:filterByRoles")
+                      : t("common:filterByClients")}
+                  </DropdownToggle>
+                }
+                isOpen={searchToggle}
+                dropdownItems={[
+                  <DropdownItem key="filter-type" data-testid={filterType}>
+                    {filterType === "roles"
+                      ? t("common:filterByClients")
+                      : t("common:filterByRoles")}
+                  </DropdownItem>,
+                ]}
+              />
+            </ToolbarItem>
+          )
         }
         canSelectAll
         isRadio={isRadio}

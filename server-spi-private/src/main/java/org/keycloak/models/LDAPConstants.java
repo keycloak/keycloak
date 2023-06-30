@@ -59,6 +59,11 @@ public class LDAPConstants {
     public static final String USE_TRUSTSTORE_SPI = "useTruststoreSpi";
     public static final String USE_TRUSTSTORE_ALWAYS = "always";
     public static final String USE_TRUSTSTORE_NEVER = "never";
+
+    /**
+     * @deprecated Use {@link #USE_TRUSTSTORE_ALWAYS} instead.
+     */
+    @Deprecated
     public static final String USE_TRUSTSTORE_LDAPS_ONLY = "ldapsOnly";
 
     public static final String SEARCH_SCOPE = "searchScope";
@@ -156,25 +161,6 @@ public class LDAPConstants {
 
         return ENTRY_UUID;
     }
-
-
-
-    public static void setTruststoreSpiIfNeeded(String useTruststoreSpi, String url, Map<String, Object> env) {
-        boolean shouldSetTruststore;
-        if (useTruststoreSpi != null && useTruststoreSpi.equals(LDAPConstants.USE_TRUSTSTORE_ALWAYS)) {
-            shouldSetTruststore = true;
-        } else if (useTruststoreSpi != null && useTruststoreSpi.equals(LDAPConstants.USE_TRUSTSTORE_NEVER)) {
-            shouldSetTruststore = false;
-        } else {
-            shouldSetTruststore = toLdapUrls(url).stream()
-                            .anyMatch(urlPart -> urlPart.toLowerCase().startsWith("ldaps"));
-        }
-
-        if (shouldSetTruststore) {
-            env.put("java.naming.ldap.factory.socket", "org.keycloak.truststore.SSLSocketFactory");
-        }
-    }
-
 
     /**
      * @see com.sun.jndi.ldap.LdapURL#fromList(String) (Not using it directly to avoid usage of internal Java classes)

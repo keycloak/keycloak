@@ -128,7 +128,6 @@ We still provide two separate Keycloak Admin clients, one with Jakarta EE and th
 We stopped releasing the `org.keycloak:keycloak-admin-client-jakarta` artifact.
 The default one for the Keycloak Admin client with Jakarta EE support is `org.keycloak:keycloak-admin-client` (since version 22.0.0).
 
-We will continue to release the Keycloak Admin client with Java EE support for some time, but we recommend that you migrate to Jakarta EE as soon as possible.
 The new artifact with Java EE support is `org.keycloak:keycloak-admin-client-jee`.
 
 === Jakarta EE support
@@ -152,7 +151,7 @@ The new artifact with Java EE support is `org.keycloak:keycloak-admin-client-jee
 </dependency>
 ----
 
-=== Java EE support _(only temporary support)_
+=== Java EE support
 [source,xml]
 .Before migration:
 ----
@@ -244,6 +243,19 @@ If you used this feature, you should not use the `openshift-integration` feature
 the JAR file from custom extension. You can check the https://github.com/keycloak-extensions/keycloak-openshift-ext/[Openshift extension] and the instructions
 in it's README file for how to deploy the extension to your Keycloak server.
 
+NOTE: The Openshift extension is not officially supported and maintained by Keycloak team. You can use it only at your own risk.
+
+== Http Challenge flow removed
+
+The built-in authentication flow `http challenge` was removed along with the authenticator implementations `no-cookie-redirect`, `basic-auth`, and `basic-auth-otp`.
+The `http challenge` authentication flow was also intended for Openshift integration and therefore it was removed along with other related capabilities as described above.
+Authenticator implementations were moved to the Openshift extension described in the previous paragraph.
+
+If you use the `http challenge` flow as a realm flow or as `First Broker Login` or `Post Broker Login` flow for any of your identity providers, the migration is not possible. Be sure to update
+your realm configuration to eliminate the use of the `http challenge` flow before migration.
+If you use the `http challenge` flow  as `Authentication Flow Binding Override` for any client, the migration would complete, but you could no longer log in to that client.
+After the migration, you would need to re-create the flow and update the configuration of your clients to use the new/differentJson flow.
+
 = Removing thirdparty dependencies
 
 The removal of openshift-integration allows us to remove few thirdparty dependencies from Keycloak distribution. This includes
@@ -323,3 +335,26 @@ You need to add an empty `META-INF/beans.xml` to the JAR file where your custom 
 at runtime.
 
 You should also make sure your JAX-RS methods are declaring the expected media types for input and output by marking them with the `@Consumes` and `@Produces` annotations, respectively.
+
+= Deprecated methods from data providers and models
+
+In earlier versions of Keycloak, provider and model interfaces underwent a cleanup process that involved deprecating certain methods. 
+In this release the methods were removed and some additional methods were deprecated. The Javadoc for these methods from Keycloak 21 included information about 
+their corresponding replacements.
+
+* `RealmModel#searchForGroupByNameStream(String, Integer, Integer)` was removed.
+* `UserProvider#getUsersStream(RealmModel, boolean)` was removed.
+* `UserSessionPersisterProvider#loadUserSessions(int, int, boolean, int, String)` was removed.
+* Interfaces added for Streamification work were removed. Such as `RoleMapperModel.Streams` and similar.
+* `Streams` interfaces in federated storage provider classes were deprecated.
+* `KeycloakModelUtils#getClientScopeMappings` was removed.
+* Deprecated methods from `KeycloakSession` were removed.
+* `UserQueryProvider#getUsersStream` methods were removed.
+
+= Multiple Keycloak instances
+
+Multiple Keycloak CRs may be created in the same namespace and will be managed independently by the operator.  To allow for this StatefulSets created by older versions of the operator must be re-created.  This will happen automatically when the operator is upgraded and lead to small amount of downtime.
+
+= k8s.keycloak.org/v2alpha1 changes
+
+The condition status field was changed from a boolean to a string for conformance with standard Kubernetes conditions. In the CRD it will temporarily be represented as accepting any content, but it will only ever be a string.  Please make sure any of your usage of this field is updated to expect the values "True", "False", or "Unknown", rather than true or false.

@@ -417,7 +417,6 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
      * @return
      */
     private Stream<UserSessionModel> loadUserSessionsWithClientSessions(TypedQuery<PersistentUserSessionEntity> query, String offlineStr, boolean useExact) {
-
         List<PersistentUserSessionAdapter> userSessionAdapters = closing(query.getResultStream()
                 .map(this::toAdapter)
                 .filter(Objects::nonNull))
@@ -463,6 +462,8 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
             onClientRemoved(clientUUID);
         }
 
+        logger.tracef("Loaded %d user sessions (offline=%s, sessionIds=%s)", userSessionAdapters.size(), offlineStr, sessionsById.keySet());
+
         return userSessionAdapters.stream().map(UserSessionModel.class::cast);
     }
 
@@ -471,8 +472,11 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
         PersistentAuthenticatedClientSessionAdapter clientSessAdapter = toAdapter(userSession.getRealm(), userSession, clientSessionEntity);
 
         if (clientSessAdapter.getClient() == null) {
+            logger.tracef("Not adding client session %s / %s since client is null", userSession, clientSessAdapter);
             return false;
         }
+
+        logger.tracef("Adding client session %s / %s", userSession, clientSessAdapter);
 
         String clientId = clientSessionEntity.getClientId();
         if (isExternalClient(clientSessionEntity)) {

@@ -41,7 +41,7 @@ import java.util.stream.Stream;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class InMemoryUserAdapter extends UserModelDefaultMethods.Streams {
+public class InMemoryUserAdapter extends UserModelDefaultMethods {
     private Long createdTimestamp = Time.currentTimeMillis();
     private boolean emailVerified;
     private boolean enabled;

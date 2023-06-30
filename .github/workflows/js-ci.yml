@@ -194,13 +194,24 @@ jobs:
     strategy:
       matrix:
         container: [1, 2, 3, 4, 5]
+        browser: [chrome, firefox]
+        exclude:
+          # Only test with Firefox on scheduled runs
+          - browser: ${{ github.event_name != 'schedule' && 'firefox' || '' }}
     steps:
       - uses: actions/checkout@v3
 
       - name: Install Google Chrome
+        if: matrix.browser == 'chrome'
         uses: browser-actions/setup-chrome@v1
         with:
           chrome-version: stable
+
+      - name: Install Firefox
+        if: matrix.browser == 'firefox'
+        uses: browser-actions/setup-firefox@v1
+        with:
+          firefox-version: latest
 
       - uses: ./.github/actions/pnpm-setup
         with:
@@ -233,7 +244,8 @@ jobs:
           install: false
           record: true
           parallel: true
-          browser: chrome
+          group: ${{ matrix.browser }} 
+          browser: ${{ matrix.browser }} 
           wait-on: http://localhost:8080
           working-directory: js/apps/admin-ui
         env:
@@ -245,7 +257,7 @@ jobs:
       - name: Upload server logs
         uses: actions/upload-artifact@v3
         with:
-          name: server-log-${{ matrix.container }}
+          name: server-log-${{ matrix.container }}-${{ matrix.browser }}
           path: ~/server.log
 
   check-set-status:

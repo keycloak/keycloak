@@ -146,6 +146,7 @@ export default function SessionsSection() {
           key={key}
           loader={loader}
           isSearching={filterType !== "ALL"}
+          isPaginated
           filter={
             <SessionFilter
               filterType={filterType}

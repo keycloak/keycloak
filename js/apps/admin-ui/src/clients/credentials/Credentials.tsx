@@ -185,7 +185,9 @@ export const Credentials = ({ client, save, refresh }: CredentialsProps) => {
               />
             </FormGroup>
             {(clientAuthenticatorType === "client-jwt" ||
-              clientAuthenticatorType === "client-secret-jwt") && <SignedJWT />}
+              clientAuthenticatorType === "client-secret-jwt") && (
+              <SignedJWT clientAuthenticatorType={clientAuthenticatorType} />
+            )}
             {clientAuthenticatorType === "client-jwt" && (
               <FormGroup>
                 <Alert variant="info" isInline title={t("signedJWTConfirm")} />

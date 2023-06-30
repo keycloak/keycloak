@@ -22,8 +22,9 @@ import io.fabric8.kubernetes.api.model.NamespaceBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.client.Config;
 import io.fabric8.kubernetes.client.ConfigBuilder;
-import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.KubernetesClientBuilder;
+import io.fabric8.kubernetes.client.NamespacedKubernetesClient;
 import io.javaoperatorsdk.operator.Operator;
 import io.javaoperatorsdk.operator.api.config.ConfigurationServiceProvider;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
@@ -41,14 +42,16 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestInfo;
 import org.keycloak.operator.Constants;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
+import org.keycloak.operator.testsuite.utils.K8sUtils;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileWriter;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.time.Duration;
 import java.util.UUID;
-import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.keycloak.operator.Utils.isOpenShift;
@@ -85,13 +88,20 @@ public abstract class BaseOperatorTest {
     reconcilers = CDI.current().select(new TypeLiteral<>() {});
     operatorDeployment = ConfigProvider.getConfig().getOptionalValue(OPERATOR_DEPLOYMENT_PROP, OperatorDeployment.class).orElse(OperatorDeployment.local);
     deploymentTarget = ConfigProvider.getConfig().getOptionalValue(QUARKUS_KUBERNETES_DEPLOYMENT_TARGET, String.class).orElse("kubernetes");
-    kubernetesIp = ConfigProvider.getConfig().getOptionalValue(OPERATOR_KUBERNETES_IP, String.class).orElse("localhost");
     customImage = ConfigProvider.getConfig().getOptionalValue(OPERATOR_CUSTOM_IMAGE, String.class).orElse(null);
 
     setDefaultAwaitilityTimings();
     calculateNamespace();
     createK8sClient();
-    createCRDs();
+    kubernetesIp = ConfigProvider.getConfig().getOptionalValue(OPERATOR_KUBERNETES_IP, String.class).orElseGet(() -> {
+        try {
+            return new URL(k8sclient.getConfiguration().getMasterUrl()).getHost();
+        } catch (MalformedURLException e) {
+            return "localhost";
+        }
+    });
+    Log.info("Creating CRDs");
+    createCRDs(k8sclient);
     createNamespace();
     isOpenShift = isOpenShift(k8sclient);
 
@@ -115,13 +125,12 @@ public abstract class BaseOperatorTest {
   }
 
   private static void createK8sClient() {
-    k8sclient = new DefaultKubernetesClient(new ConfigBuilder(Config.autoConfigure(null)).withNamespace(namespace).build());
+    k8sclient = new KubernetesClientBuilder().withConfig(new ConfigBuilder(Config.autoConfigure(null)).withNamespace(namespace).build()).build();
   }
 
   private static void createRBACresourcesAndOperatorDeployment() throws FileNotFoundException {
     Log.info("Creating RBAC and Deployment into Namespace " + namespace);
-    k8sclient.load(new FileInputStream(TARGET_KUBERNETES_GENERATED_YML_FOLDER + deploymentTarget + ".yml"))
-            .inNamespace(namespace).createOrReplace();
+    K8sUtils.set(k8sclient, new FileInputStream(TARGET_KUBERNETES_GENERATED_YML_FOLDER + deploymentTarget + ".yml"));
   }
 
   private static void cleanRBACresourcesAndOperatorDeployment() throws FileNotFoundException {
@@ -130,19 +139,9 @@ public abstract class BaseOperatorTest {
             .inNamespace(namespace).delete();
   }
 
-  private static void createCRDs() {
-    Log.info("Creating CRDs");
-    try {
-      var deploymentCRD = k8sclient.load(new FileInputStream(TARGET_KUBERNETES_GENERATED_YML_FOLDER + "keycloaks.k8s.keycloak.org-v1.yml"));
-      deploymentCRD.createOrReplace();
-      deploymentCRD.waitUntilReady(5, TimeUnit.SECONDS);
-      var realmImportCRD = k8sclient.load(new FileInputStream(TARGET_KUBERNETES_GENERATED_YML_FOLDER + "keycloakrealmimports.k8s.keycloak.org-v1.yml"));
-      realmImportCRD.createOrReplace();
-      realmImportCRD.waitUntilReady(5, TimeUnit.SECONDS);
-    } catch (Exception e) {
-      Log.warn("Failed to create Keycloak CRD, retrying", e);
-      createCRDs();
-    }
+  static void createCRDs(KubernetesClient client) throws FileNotFoundException {
+    K8sUtils.set(client, new FileInputStream(TARGET_KUBERNETES_GENERATED_YML_FOLDER + "keycloaks.k8s.keycloak.org-v1.yml"));
+    K8sUtils.set(client, new FileInputStream(TARGET_KUBERNETES_GENERATED_YML_FOLDER + "keycloakrealmimports.k8s.keycloak.org-v1.yml"));
   }
 
   private static void registerReconcilers() {
@@ -162,7 +161,9 @@ public abstract class BaseOperatorTest {
 
   private static void createNamespace() {
     Log.info("Creating Namespace " + namespace);
-    k8sclient.namespaces().create(new NamespaceBuilder().withNewMetadata().withName(namespace).endMetadata().build());
+    k8sclient.resource(new NamespaceBuilder().withNewMetadata().addToLabels("app","keycloak-test").withName(namespace).endMetadata().build()).create();
+    // ensure that the client defaults to the namespace - eventually most of the test code usage of inNamespace can be removed
+    k8sclient = k8sclient.adapt(NamespacedKubernetesClient.class).inNamespace(namespace);
   }
 
   private static void calculateNamespace() {
@@ -172,7 +173,7 @@ public abstract class BaseOperatorTest {
   protected static void deployDB() {
     // DB
     Log.info("Creating new PostgreSQL deployment");
-    k8sclient.load(BaseOperatorTest.class.getResourceAsStream("/example-postgres.yaml")).inNamespace(namespace).createOrReplace();
+    K8sUtils.set(k8sclient, BaseOperatorTest.class.getResourceAsStream("/example-postgres.yaml"));
 
     // Check DB has deployed and ready
     Log.info("Checking Postgres is running");
@@ -183,7 +184,7 @@ public abstract class BaseOperatorTest {
   }
 
   protected static void deployDBSecret() {
-    k8sclient.secrets().inNamespace(namespace).createOrReplace(getResourceFromFile("example-db-secret.yaml", Secret.class));
+    K8sUtils.set(k8sclient, getResourceFromFile("example-db-secret.yaml", Secret.class));
   }
 
   protected static void deleteDB() {

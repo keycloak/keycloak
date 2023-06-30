@@ -150,8 +150,10 @@ public class ModelToRepresentation {
         return rep;
     }
 
-    public static Stream<GroupRepresentation> searchGroupsByAttributes(KeycloakSession session, RealmModel realm, boolean full, Map<String,String> attributes, Integer first, Integer max) {
-        return session.groups().searchGroupsByAttributes(realm, attributes, first, max)
+    public static Stream<GroupRepresentation> searchGroupsByAttributes(KeycloakSession session, RealmModel realm, boolean full, boolean populateHierarchy, Map<String,String> attributes, Integer first, Integer max) {
+        Stream<GroupModel> groups = session.groups().searchGroupsByAttributes(realm, attributes, first, max);
+        if(populateHierarchy) {
+            groups = groups
                 // We need to return whole group hierarchy when any child group fulfills the attribute search,
                 // therefore for each group from the result, we need to find root group
                 .map(group -> {
@@ -162,16 +164,10 @@ public class ModelToRepresentation {
                 })
 
                 // More child groups of one root can fulfill the search, so we need to filter duplicates
-                .filter(StreamsUtil.distinctByKey(GroupModel::getId))
-
-                // and then turn the result into GroupRepresentations creating whole hierarchy of child groups for each root group
-                .map(g -> toGroupHierarchy(g, full, attributes));
-    }
-
-    @Deprecated
-    public static Stream<GroupRepresentation> searchForGroupByName(RealmModel realm, boolean full, String search, Integer first, Integer max) {
-        return realm.searchForGroupByNameStream(search, first, max)
-            .map(g -> toGroupHierarchy(g, full, search));
+                .filter(StreamsUtil.distinctByKey(GroupModel::getId));
+        }
+        // and then turn the result into GroupRepresentations creating whole hierarchy of child groups for each root group
+        return groups.map(g -> toGroupHierarchy(g, full, attributes));
     }
 
     public static Stream<GroupRepresentation> searchForGroupByName(KeycloakSession session, RealmModel realm, boolean full, String search, Boolean exact, Integer first, Integer max) {

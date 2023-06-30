@@ -58,6 +58,16 @@ Although each type of identity provider has its configuration options, all share
 |GUI Order
 |The sort order of the available identity providers on the login page.
 
+
+|Verify essential claim
+|When *ON*, ID tokens issued by the identity provider must have a specific claim, otherwise, the user can not authenticate through this broker
+
+|Essential claim
+|When *Verify essential claim* is *ON*, the name of the JWT token claim to filter (match is case sensitive)
+
+|Essential claim value
+|When *Verify essential claim* is *ON*, the value of the JWT token claim to match (supports regular expression format)
+
 |First Login Flow
 |The authentication flow {project_name} triggers when users use this identity provider to log into {project_name} for the first time.
 

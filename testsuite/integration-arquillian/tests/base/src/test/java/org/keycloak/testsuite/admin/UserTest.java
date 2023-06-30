@@ -33,8 +33,11 @@ import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.RoleMappingResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.admin.client.resource.UsersResource;
+import org.keycloak.common.Profile;
+import org.keycloak.common.Profile.Feature;
 import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.Base64;
+import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.ObjectUtil;
 import org.keycloak.credential.CredentialModel;
 import org.keycloak.events.admin.OperationType;
@@ -61,8 +64,13 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.services.resources.RealmsResource;
+import org.keycloak.storage.StorageId;
 import org.keycloak.storage.UserStorageProvider;
+import org.keycloak.testsuite.ProfileAssume;
+import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
 import org.keycloak.testsuite.federation.DummyUserFederationProviderFactory;
+import org.keycloak.testsuite.federation.UserMapStorageFactory;
 import org.keycloak.testsuite.page.LoginPasswordUpdatePage;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.InfoPage;
@@ -118,6 +126,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.keycloak.storage.UserStorageProviderModel.IMPORT_ENABLED;
 import static org.keycloak.testsuite.Assert.assertNames;
 import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
 
@@ -631,6 +640,28 @@ public class UserTest extends AbstractAdminTest {
         return ids;
     }
 
+    @Test
+    public void countByAttribute() {
+        createUsers();
+
+        Map<String, String> attributes = new HashMap<>();
+        attributes.put("test1", "test2");
+        assertThat(realm.users().count(null, null, null, null, null, null, null, mapToSearchQuery(attributes)), is(0));
+        
+        attributes = new HashMap<>();
+        attributes.put("test", "test1");
+        assertThat(realm.users().count(null, null, null, null, null, null, null, mapToSearchQuery(attributes)), is(1));
+    
+        attributes = new HashMap<>();
+        attributes.put("test", "test2");
+        attributes.put("attr", "common");
+        assertThat(realm.users().count(null, null, null, null, null, null, null, mapToSearchQuery(attributes)), is(1));
+    
+        attributes = new HashMap<>();
+        attributes.put("attr", "common");
+        assertThat(realm.users().count(null, null, null, null, null, null, null, mapToSearchQuery(attributes)), is(9));
+    }
+
   @Test
   public void countUsersByEnabledFilter() {
 
@@ -657,16 +688,16 @@ public class UserTest extends AbstractAdminTest {
     Boolean disabled = false;
 
     // count all users with @enabledfilter.com
-    assertThat(realm.users().count(null, null, null, "@enabledfilter.com", null, null, null), is(3));
+    assertThat(realm.users().count(null, null, null, "@enabledfilter.com", null, null, null, null), is(3));
 
     // count users that are enabled and have username enabled1
-    assertThat(realm.users().count(null, null, null, "@enabledfilter.com", null, "enabled1", enabled),is(1));
+    assertThat(realm.users().count(null, null, null, "@enabledfilter.com", null, "enabled1", enabled, null),is(1));
 
     // count users that are disabled
-    assertThat(realm.users().count(null, null, null, "@enabledfilter.com", null, null, disabled), is(1));
+    assertThat(realm.users().count(null, null, null, "@enabledfilter.com", null, null, disabled, null), is(1));
 
     // count users that are enabled
-    assertThat(realm.users().count(null, null, null, "@enabledfilter.com", null, null, enabled), is(2));
+    assertThat(realm.users().count(null, null, null, "@enabledfilter.com", null, null, enabled, null), is(2));
   }
 
     @Test
@@ -2828,6 +2859,60 @@ public class UserTest extends AbstractAdminTest {
         String newLabel = "the label";
         user.setCredentialUserLabel(otpCred.getId(), newLabel);
         Assert.assertEquals(newLabel, user.credentials().get(0).getUserLabel());
+    }
+
+    @Test
+    public void testUpdateCredentialLabelForFederatedUser() {
+        ProfileAssume.assumeFeatureDisabled(Feature.MAP_STORAGE);
+
+        // Create user federation
+        ComponentRepresentation memProvider = new ComponentRepresentation();
+        memProvider.setName("memory");
+        memProvider.setProviderId(UserMapStorageFactory.PROVIDER_ID);
+        memProvider.setProviderType(UserStorageProvider.class.getName());
+        memProvider.setConfig(new MultivaluedHashMap<>());
+        memProvider.getConfig().putSingle("priority", Integer.toString(0));
+        memProvider.getConfig().putSingle(IMPORT_ENABLED, Boolean.toString(false));
+
+        RealmResource realm = adminClient.realms().realm(REALM_NAME);
+        Response resp = realm.components().add(memProvider);
+        resp.close();
+        String memProviderId = ApiUtil.getCreatedId(resp);
+        getCleanup().addComponentId(memProviderId);
+
+        assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.componentPath(memProviderId), memProvider, ResourceType.COMPONENT);
+
+        // Create federated user
+        String username = "fed-user1";
+        UserRepresentation userRepresentation = new UserRepresentation();
+        userRepresentation.setUsername(username);
+        userRepresentation.setEmail("feduser1@mail.com");
+        userRepresentation.setRequiredActions(Collections.emptyList());
+        userRepresentation.setEnabled(true);
+        userRepresentation.setFederationLink(memProviderId);
+
+        PasswordCredentialModel pcm = PasswordCredentialModel.createFromValues("my-algorithm", "theSalt".getBytes(), 22, "ABC");
+        CredentialRepresentation hashedPassword = ModelToRepresentation.toRepresentation(pcm);
+        hashedPassword.setCreatedDate(1001L);
+        hashedPassword.setUserLabel("label");
+        hashedPassword.setType(CredentialRepresentation.PASSWORD);
+
+        userRepresentation.setCredentials(Arrays.asList(hashedPassword));
+        String userId = createUser(userRepresentation);
+        Assert.assertFalse(StorageId.isLocalStorage(userId));
+
+        UserResource user = ApiUtil.findUserByUsernameId(realm, username);
+        List<CredentialRepresentation> credentials = user.credentials();
+        Assert.assertNotNull(credentials);
+        Assert.assertEquals(1, credentials.size());
+        Assert.assertEquals("label", credentials.get(0).getUserLabel());
+
+        // Update federated credential user label
+        user.setCredentialUserLabel(credentials.get(0).getId(), "updatedLabel");
+        credentials = user.credentials();
+        Assert.assertNotNull(credentials);
+        Assert.assertEquals(1, credentials.size());
+        Assert.assertEquals("updatedLabel", credentials.get(0).getUserLabel());
     }
 
     @Test

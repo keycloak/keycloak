@@ -53,13 +53,8 @@ public class JpaMapFunctionContributor implements FunctionContributor {
         return fc.getTypeConfiguration().getBasicTypeRegistry().resolve(btr);
     }
 
-    // Since Hibernate 6.2.0 dialect should be accessible via FunctionContributions.getDialect(): https://github.com/hibernate/hibernate-orm/pull/5964/
-    private Dialect getDialect(FunctionContributions fc) {
-        return fc.getTypeConfiguration().getMetadataBuildingContext().getMetadataCollector().getDatabase().getDialect();
-    }
-
     private void contributeDbSpecificFunctions(FunctionContributions fc) {
-        Dialect dialect = getDialect(fc);
+        Dialect dialect = fc.getDialect();
         if (dialect instanceof PostgreSQLDialect) {
             fc.getFunctionRegistry().registerPattern("kc_hash", "sha256(?1::bytea)", getBasicType(fc, StandardBasicTypes.BINARY));
         } else if (dialect instanceof CockroachDialect) {
