@@ -131,11 +131,13 @@ Logging:
 Export:
 
 --dir <dir>          Set the path to a directory where files will be created with the exported data.
---file <file>        Set the path to a file that will be created with the exported data.
+--file <file>        Set the path to a file that will be created with the exported data. To export
+                       more than 500 users, export to a directory with different files instead.
 --realm <realm>      Set the name of the realm to export. If not set, all realms are going to be
                        exported.
 --users <strategy>   Set how users should be exported. Possible values are: skip, realm_file,
                        same_file, different_files. Default: different_files.
 --users-per-file <number>
                      Set the number of users per file. It is used only if 'users' is set to
-                       'different_files'. Default: 50.
+                       'different_files'. Increasing this number leads to exponentially increasing
+                       export times. Default: 50.

@@ -21,7 +21,7 @@ public class ExportOptions {
 
     public static final Option<String> FILE = new OptionBuilder<>("file", String.class)
             .category(OptionCategory.EXPORT)
-            .description("Set the path to a file that will be created with the exported data.")
+            .description("Set the path to a file that will be created with the exported data. To export more than 500 users, export to a directory with different files instead.")
             .buildTime(false)
             .build();
 
@@ -40,7 +40,7 @@ public class ExportOptions {
     public static final Option<Integer> USERS_PER_FILE = new OptionBuilder<>("users-per-file", Integer.class)
             .category(OptionCategory.EXPORT)
             .defaultValue(50)
-            .description("Set the number of users per file. It is used only if 'users' is set to 'different_files'.")
+            .description("Set the number of users per file. It is used only if 'users' is set to 'different_files'. Increasing this number leads to exponentially increasing export times.")
             .buildTime(false)
             .build();
 
