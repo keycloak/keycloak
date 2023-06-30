@@ -57,7 +57,7 @@ public class KeycloakController implements Reconciler<Keycloak>, EventSourceInit
 
     @Override
     public Map<String, EventSource> prepareEventSources(EventSourceContext<Keycloak> context) {
-        String namespace = context.getControllerConfiguration().getConfigurationService().getClientConfiguration().getNamespace();
+        String namespace = context.getControllerConfiguration().getConfigurationService().getKubernetesClient().getNamespace();
 
         InformerConfiguration<StatefulSet> statefulSetIC = InformerConfiguration
                 .from(StatefulSet.class)

@@ -26,7 +26,6 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import io.fabric8.kubernetes.client.NamespacedKubernetesClient;
 import io.javaoperatorsdk.operator.Operator;
-import io.javaoperatorsdk.operator.api.config.ConfigurationServiceProvider;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.quarkiverse.operatorsdk.runtime.QuarkusConfigurationService;
 import io.quarkus.logging.Log;
@@ -154,9 +153,7 @@ public abstract class BaseOperatorTest {
   }
 
   private static void createOperator() {
-    configuration.getClientConfiguration().setNamespace(namespace);
-    ConfigurationServiceProvider.reset();
-    operator = new Operator(k8sclient, configuration);
+    operator = new Operator(overrider -> overrider.withKubernetesClient(k8sclient));
   }
 
   private static void createNamespace() {
