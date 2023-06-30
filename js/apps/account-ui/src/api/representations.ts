@@ -187,7 +187,7 @@ export interface Resource {
   client: Client;
   scopes: Scope[];
   uris: string[];
-  shareRequests: Permission[];
+  shareRequests?: Permission[];
 }
 
 export interface Permission {
