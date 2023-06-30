@@ -30,10 +30,6 @@
     <name>Keycloak REST Services</name>
     <description />
 
-    <properties>
-        <version.swagger.doclet>1.1.2</version.swagger.doclet>
-    </properties>
-
     <dependencies>
         <dependency>
             <groupId>org.keycloak</groupId>
@@ -201,6 +197,10 @@
             <groupId>com.github.ua-parser</groupId>
             <artifactId>uap-java</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.eclipse.microprofile.openapi</groupId>
+            <artifactId>microprofile-openapi-api</artifactId>
+        </dependency>
     </dependencies>
     <build>
         <plugins>
@@ -244,83 +244,57 @@
                         </executions>
                     </plugin>
                     <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-javadoc-plugin</artifactId>
-                        <!-- Reverted version as the new version of maven-javadoc-plugin is not compatible with swagger doclet -->
-                        <version>2.10.3</version>
+                        <groupId>io.smallrye</groupId>
+                        <artifactId>smallrye-open-api-maven-plugin</artifactId>
+                        <configuration>
+                            <scanProfiles>admin</scanProfiles>
+                            <outputDirectory>${project.build.directory}/apidocs-rest/swagger/apidocs</outputDirectory>
+                            <infoTitle>Keycloak Admin REST API</infoTitle>
+                            <infoDescription>This is a REST API reference for the Keycloak Admin REST API.</infoDescription>
+                        </configuration>
                         <executions>
                             <execution>
-                                <id>generate-service-docs</id>
-                                <phase>generate-resources</phase>
-                                <configuration>
-                                    <doclet>com.carma.swagger.doclet.ServiceDoclet</doclet>
-                                    <docletArtifact>
-                                        <groupId>com.carma</groupId>
-                                        <artifactId>swagger-doclet</artifactId>
-                                        <version>${version.swagger.doclet}</version>
-                                    </docletArtifact>
-
-                                    <subpackages>org.keycloak.services.resources.admin:org.keycloak.protocol.oidc</subpackages>
-                                    <detectOfflineLinks>false</detectOfflineLinks>
-                                    <offlineLinks>
-                                        <offlineLink>
-                                            <url>../javadocs</url>
-                                            <location>${project.basedir}/../target/site/apidocs</location>
-                                        </offlineLink>
-                                    </offlineLinks>
-
-                                    <reportOutputDirectory>${project.basedir}/target/apidocs-rest/swagger</reportOutputDirectory>
-                                    <useStandardDocletOptions>false</useStandardDocletOptions>
-                                    <additionalparam> -skipUiFiles -apiVersion 1 -includeResourcePrefixes org.keycloak.services.resources.admin,org.keycloak.protocol.oidc -docBasePath /apidocs -apiBasePath http://localhost:8080/auth -apiInfoFile ${project.basedir}/target/docs/swagger/apiinfo.json</additionalparam>
-                                </configuration>
                                 <goals>
-                                    <goal>javadoc</goal>
+                                    <goal>generate-schema</goal>
                                 </goals>
                             </execution>
                         </executions>
                     </plugin>
-
                     <plugin>
-                        <groupId>io.github.swagger2markup</groupId>
-                        <artifactId>swagger2markup-maven-plugin</artifactId>
-                        <version>1.1.0</version>
-
-                        <!-- Replace the dependencies that aren't in Maven Central -->
-                        <dependencies>
-                            <dependency>
-                                <groupId>ca.szc.thirdparty.nl.jworks.markdown_to_asciidoc</groupId>
-                                <artifactId>markdown_to_asciidoc</artifactId>
-                                <!-- Keep in sync with markup-document-builder's dependency -->
-                                <version>1.0</version>
-                            </dependency>
-                            <dependency>
-                                <groupId>io.github.swagger2markup</groupId>
-                                <artifactId>swagger2markup</artifactId>
-                                <!-- Keep in sync with swagger2markup-maven-plugin's dependency -->
-                                <version>1.1.0</version>
-                                <exclusions>
-                                    <exclusion>
-                                        <groupId>nl.jworks.markdown_to_asciidoc</groupId>
-                                        <artifactId>markdown_to_asciidoc</artifactId>
-                                    </exclusion>
-                                </exclusions>
-                            </dependency>
-                        </dependencies>
-
+                        <groupId>org.openapitools</groupId>
+                        <artifactId>openapi-generator-maven-plugin</artifactId>
                         <executions>
                             <execution>
-                                <id>gen-asciidoc</id>
-                                <phase>process-resources</phase>
+                                <id>generate-ascii-docs</id>
+                                <phase>prepare-package</phase>
                                 <goals>
-                                    <goal>convertSwagger2markup</goal>
+                                    <goal>generate</goal>
                                 </goals>
                                 <configuration>
-                                    <swaggerInput>${project.build.directory}/apidocs-rest/swagger/apidocs/service.json</swaggerInput>
-                                    <outputDir>${project.build.directory}/apidocs-rest/asciidoc/</outputDir>
-                                    <config>
-                                        <swagger2markup.markupLanguage>ASCIIDOC</swagger2markup.markupLanguage>
-                                        <swagger2markup.pathsGroupedBy>TAGS</swagger2markup.pathsGroupedBy>
-                                    </config>
+                                    <globalProperties>
+                                        <apiDocs>true</apiDocs>
+                                        <apiModels>true</apiModels>
+                                        <apiTests>false</apiTests>
+                                        <modelTests>false</modelTests>
+                                        <verbose>false</verbose>
+                                    </globalProperties>
+                                    <inputSpec>${project.build.directory}/apidocs-rest/swagger/apidocs/openapi.yaml</inputSpec>
+                                    <output>${project.basedir}/target/docs/asciidoc/</output>
+                                    <generatorName>asciidoc</generatorName>
+                                    <generateApiDocumentation>true</generateApiDocumentation>
+                                    <generateModelDocumentation>true</generateModelDocumentation>
+                                    <generateSupportingFiles>true</generateSupportingFiles>
+                                    <groupId>${project.groupId}</groupId>
+                                    <artifactId>${project.artifactId}</artifactId>
+                                    <templateDirectory>src/docs/openapi-generator-templates/keycloak-admin-api</templateDirectory>
+                                    <configOptions>
+                                        <useIntroduction>true</useIntroduction>
+                                        <delegatePattern>false</delegatePattern>
+                                        <useMethodAndPath>true</useMethodAndPath>
+                                        <prependFormOrBodyParameters>false</prependFormOrBodyParameters>
+                                        <skipExamples>true</skipExamples>
+                                    </configOptions>
+                                    <skipValidateSpec>true</skipValidateSpec>
                                 </configuration>
                             </execution>
                         </executions>

@@ -16,10 +16,15 @@
  */
 package org.keycloak.services.resources.admin;
 
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
+import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 
 import jakarta.ws.rs.NotFoundException;
+import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
@@ -56,6 +61,7 @@ import java.util.stream.Stream;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
+@Extension(name = KeycloakOpenAPI.Profiles.ADMIN, value = "")
 public class ClientRoleMappingsResource {
     protected static final Logger logger = Logger.getLogger(ClientRoleMappingsResource.class);
 
@@ -92,6 +98,8 @@ public class ClientRoleMappingsResource {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.CLIENT_ROLE_MAPPINGS)
+    @Operation( summary = "Get client-level role mappings for the user, and the app")
     public Stream<RoleRepresentation> getClientRoleMappings() {
         viewPermission.require();
 
@@ -111,7 +119,9 @@ public class ClientRoleMappingsResource {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
-    public Stream<RoleRepresentation> getCompositeClientRoleMappings(@QueryParam("briefRepresentation") @DefaultValue("true") boolean briefRepresentation) {
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.CLIENT_ROLE_MAPPINGS)
+    @Operation( summary = "Get effective client-level role mappings This recurses any composite roles")
+    public Stream<RoleRepresentation> getCompositeClientRoleMappings(@Parameter(description = "if false, return roles with their attributes") @QueryParam("briefRepresentation") @DefaultValue("true") boolean briefRepresentation) {
         viewPermission.require();
 
         Stream<RoleModel> roles = client.getRolesStream();
@@ -129,6 +139,8 @@ public class ClientRoleMappingsResource {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.CLIENT_ROLE_MAPPINGS)
+    @Operation( summary = "Get available client-level roles that can be mapped to the user")
     public Stream<RoleRepresentation> getAvailableClientRoleMappings() {
         viewPermission.require();
 
@@ -145,6 +157,8 @@ public class ClientRoleMappingsResource {
      */
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.CLIENT_ROLE_MAPPINGS)
+    @Operation( summary = "Add client-level roles to the user role mapping")
     public void addClientRoleMapping(List<RoleRepresentation> roles) {
         managePermission.require();
 
@@ -167,12 +181,14 @@ public class ClientRoleMappingsResource {
     }
 
     /**
-         * Delete client-level roles from user role mapping
-         *
-         * @param roles
-         */
+     * Delete client-level roles from user role mapping
+     *
+     * @param roles
+     */
     @DELETE
     @Consumes(MediaType.APPLICATION_JSON)
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.CLIENT_ROLE_MAPPINGS)
+    @Operation( summary = "Delete client-level roles from user role mapping")
     public void deleteClientRoleMapping(List<RoleRepresentation> roles) {
         managePermission.require();
 

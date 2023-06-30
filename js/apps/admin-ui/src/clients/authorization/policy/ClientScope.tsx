@@ -121,7 +121,7 @@ export const ClientScope = () => {
             <Tr>
               <Th>{t("clientScope")}</Th>
               <Th>{t("required")}</Th>
-              <Th />
+              <Th aria-hidden="true" />
             </Tr>
           </Thead>
           <Tbody>
