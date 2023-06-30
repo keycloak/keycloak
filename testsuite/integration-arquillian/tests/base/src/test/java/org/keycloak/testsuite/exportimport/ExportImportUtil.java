@@ -430,6 +430,11 @@ public class ExportImportUtil {
             assertAuthorizationSettingsOtherApp(realmRsc);
             assertAuthorizationSettingsTestAppAuthz(realmRsc);
         }
+
+        // Test Message Bundle
+        Map<String, String> localizations = adminClient.realm(realm.getRealm()).localization().getRealmLocalizationTexts("en");
+        Assert.assertEquals("value1", localizations.get("key1"));
+        Assert.assertEquals("value2", localizations.get("key2"));
     }
 
 

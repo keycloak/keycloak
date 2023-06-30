@@ -252,6 +252,9 @@ public class ExportUtils {
         MultivaluedHashMap<String, ComponentExportRepresentation> components = exportComponents(realm, realm.getId());
         rep.setComponents(components);
 
+        // Message Bundle
+        rep.setLocalizationTexts(realm.getRealmLocalizationTexts());
+
         return rep;
     }
 

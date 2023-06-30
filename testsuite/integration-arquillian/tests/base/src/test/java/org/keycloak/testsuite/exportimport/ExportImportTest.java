@@ -105,10 +105,12 @@ public class ExportImportTest extends AbstractKeycloakTest {
         testRealm1.getSmtpServer().put("password", "secret");
 
         setEventsConfig(testRealm1);
+        setLocalizationTexts(testRealm1);
         testRealms.add(testRealm1);
 
         RealmRepresentation testRealm2 = loadJson(getClass().getResourceAsStream("/model/testrealm.json"), RealmRepresentation.class);
         testRealm2.setId("test-realm");
+        setLocalizationTexts(testRealm2);
         testRealms.add(testRealm2);
     }
 
@@ -144,6 +146,15 @@ public class ExportImportTest extends AbstractKeycloakTest {
                 .email(userName + "@test.com")
                 .password("password")
                 .build();
+    }
+
+    private void setLocalizationTexts(RealmRepresentation realm) {
+        Map<String, Map<String, String>> localizationTexts = new HashMap<>();
+        Map<String, String> enMap = new HashMap<>();
+        enMap.put("key1", "value1");
+        enMap.put("key2", "value2");
+        localizationTexts.put("en", enMap);
+        realm.setLocalizationTexts(localizationTexts);
     }
 
     @After
