@@ -46,10 +46,6 @@ button#kc-join-groups-button {
   margin-right: 0px;
 }
 
-#consents-chip-text.pf-c-chip-text {
-  font-size: var(--pf-c-table--cell--FontSize);
-}
-
 .kc-consents-chip > .pf-c-chip__text {
   font-size: var(--pf-c-table--cell--FontSize);
   max-width: 100%;
