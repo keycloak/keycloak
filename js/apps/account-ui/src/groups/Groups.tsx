@@ -62,7 +62,7 @@ const Groups = () => {
                     label={t("directMembership")}
                     id="directMembership-checkbox"
                     isChecked={directMembership}
-                    onChange={(checked) => setDirectMembership(checked)}
+                    onChange={(_event, checked) => setDirectMembership(checked)}
                   />
                 </DataListCell>,
               ]}

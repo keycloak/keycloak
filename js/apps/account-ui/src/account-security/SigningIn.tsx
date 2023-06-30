@@ -6,15 +6,17 @@ import {
   DataListItem,
   DataListItemCells,
   DataListItemRow,
-  Dropdown,
-  DropdownItem,
-  KebabToggle,
   PageSection,
   Spinner,
   Split,
   SplitItem,
   Title,
 } from "@patternfly/react-core";
+import {
+  Dropdown,
+  DropdownItem,
+  KebabToggle,
+} from "@patternfly/react-core/deprecated";
 import { CSSProperties, useState } from "react";
 import { Trans, useTranslation } from "react-i18next";
 import { ContinueCancelModal, useAlerts } from "ui-shared";
@@ -43,7 +45,7 @@ const MobileLink = ({ title, onClick }: MobileLinkProps) => {
       <Dropdown
         isPlain
         position="right"
-        toggle={<KebabToggle onToggle={setOpen} />}
+        toggle={<KebabToggle onToggle={(_event, val) => setOpen(val)} />}
         className="pf-u-display-none-on-lg"
         isOpen={open}
         dropdownItems={[

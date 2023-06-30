@@ -1,8 +1,5 @@
 import {
   Button,
-  Dropdown,
-  DropdownItem,
-  KebabToggle,
   OverflowMenu,
   OverflowMenuContent,
   OverflowMenuControl,
@@ -12,6 +9,11 @@ import {
   Spinner,
 } from "@patternfly/react-core";
 import {
+  Dropdown,
+  DropdownItem,
+  KebabToggle,
+} from "@patternfly/react-core/deprecated";
+import {
   EditAltIcon,
   ExternalLinkAltIcon,
   Remove2Icon,
@@ -19,7 +21,7 @@ import {
 } from "@patternfly/react-icons";
 import {
   ExpandableRowContent,
-  TableComposable,
+  Table /* data-codemods */,
   Tbody,
   Td,
   Th,
@@ -139,7 +141,7 @@ export const ResourcesTab = () => {
         }
         hasNext={!!links?.next}
       />
-      <TableComposable aria-label={t("resources")}>
+      <Table aria-label={t("resources")}>
         <Thead>
           <Tr>
             <Th />
@@ -213,7 +215,7 @@ export const ResourcesTab = () => {
                           position="right"
                           toggle={
                             <KebabToggle
-                              onToggle={(open) =>
+                              onToggle={(_event, open) =>
                                 toggleOpen(resource._id, "contextOpen", open)
                               }
                             />
@@ -258,7 +260,7 @@ export const ResourcesTab = () => {
                       position="right"
                       toggle={
                         <KebabToggle
-                          onToggle={(open) =>
+                          onToggle={(_event, open) =>
                             toggleOpen(resource._id, "contextOpen", open)
                           }
                         />
@@ -317,7 +319,7 @@ export const ResourcesTab = () => {
             </Tr>
           </Tbody>
         ))}
-      </TableComposable>
+      </Table>
     </>
   );
 };

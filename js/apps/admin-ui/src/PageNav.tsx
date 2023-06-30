@@ -46,7 +46,7 @@ const LeftNav = ({ title, path }: LeftNavProps) => {
         id={"nav-item" + path.replace("/", "-")}
         to={`/${realm}${path}`}
         className={({ isActive }) =>
-          `pf-c-nav__link${isActive ? " pf-m-current" : ""}`
+          `pf-v5-c-nav__link${isActive ? " pf-m-current" : ""}`
         }
       >
         {t(title)}
