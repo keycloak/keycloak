@@ -51,7 +51,6 @@
         <dependency>
             <groupId>io.fabric8</groupId>
             <artifactId>kubernetes-junit-jupiter</artifactId>
-            <version>${kubernetes-client.version}</version>
             <scope>test</scope>
         </dependency>
 

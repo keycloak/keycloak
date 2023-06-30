@@ -43,8 +43,8 @@
         <jboss.snapshots.repo.id>jboss-snapshots-repository</jboss.snapshots.repo.id>
         <jboss.snapshots.repo.url>https://s01.oss.sonatype.org/content/repositories/snapshots/</jboss.snapshots.repo.url>
 
-        <quarkus.version>3.1.2.Final</quarkus.version>
-        <quarkus.build.version>3.1.2.Final</quarkus.build.version>
+        <quarkus.version>3.2.0.CR1</quarkus.version>
+        <quarkus.build.version>3.2.0.CR1</quarkus.build.version>
 
         <project.build-time>${timestamp}</project.build-time>
 
@@ -62,6 +62,7 @@
 
         <!-- Versions used mostly for Undertow server, aligned with WildFly -->
         <jboss.aesh.version>0.66.19</jboss.aesh.version>
+        <apache.httpcomponents.version>4.5.14</apache.httpcomponents.version>
         <jboss.dmr.version>1.5.1.Final</jboss.dmr.version>
         <bouncycastle.version>1.73</bouncycastle.version>
         <bouncycastle-bcprov-jdk15on.version>1.70</bouncycastle-bcprov-jdk15on.version>
@@ -111,6 +112,7 @@
         <elytron.undertow-server.version>1.9.0.Final</elytron.undertow-server.version>
         <jetty94.version>9.4.40.v20210413</jetty94.version>
         <woodstox.version>6.0.3</woodstox.version>
+        <wildfly.common.version>1.6.0.Final</wildfly.common.version>
         <xmlsec.version>2.2.3</xmlsec.version>
         <nashorn.version>15.4</nashorn.version>
         <ua-parser.version>1.5.4</ua-parser.version>
@@ -670,6 +672,11 @@
                 <scope>test</scope>
             </dependency>
             <dependency>
+                <groupId>org.apache.httpcomponents</groupId>
+                <artifactId>httpclient</artifactId>
+                <version>${apache.httpcomponents.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>org.wildfly.core</groupId>
                 <artifactId>wildfly-controller</artifactId>
                 <version>${wildfly.core.version}</version>
@@ -931,6 +938,21 @@
                 <groupId>org.jboss.marshalling</groupId>
                 <artifactId>jboss-marshalling-river</artifactId>
                 <version>${jboss.marshalling.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.liquibase</groupId>
+                <artifactId>liquibase-core</artifactId>
+                <version>${liquibase.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.yaml</groupId>
+                        <artifactId>snakeyaml</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.commons</groupId>
+                        <artifactId>commons-text</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>org.osgi</groupId>
@@ -1814,6 +1836,12 @@
                             <groupId>org.wildfly.core</groupId>
                             <artifactId>wildfly-embedded</artifactId>
                             <version>${wildfly.core.version}</version>
+                        </dependency>
+                        <!-- If you add a dependency on wildfly-embedded you need to bring your own transitives -->
+                        <dependency>
+                            <groupId>org.wildfly.common</groupId>
+                            <artifactId>wildfly-common</artifactId>
+                            <version>${wildfly.common.version}</version>
                         </dependency>
                     </dependencies>
                 </plugin>
