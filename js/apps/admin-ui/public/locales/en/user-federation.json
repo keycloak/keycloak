@@ -80,7 +80,7 @@
   "queryExtensions": "Query Supported Extensions",
   "testAuthentication": "Test authentication",
   "testSuccess": "Successfully connected to LDAP",
-  "testError": "Error when trying to connect to LDAP. See server.log for details. {{error}}",
+  "testError": "Error when trying to connect to LDAP: '{{error}}'",
   "learnMore": "Learn more",
   "managePriorities": "Manage priorities",
   "managePriorityOrder": "Manage priority order",
