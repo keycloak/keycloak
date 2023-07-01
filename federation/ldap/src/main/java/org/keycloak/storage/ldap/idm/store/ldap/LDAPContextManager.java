@@ -123,7 +123,9 @@ public final class LDAPContextManager implements AutoCloseable {
             }
         } catch (Exception e) {
             logger.error("Could not negotiate TLS", e);
-            throw new AuthenticationException("Could not negotiate TLS");
+            NamingException ne = new AuthenticationException("Could not negotiate TLS");
+            ne.setRootCause(e);
+            throw ne;
         }
 
         // throws AuthenticationException when authentication fails
