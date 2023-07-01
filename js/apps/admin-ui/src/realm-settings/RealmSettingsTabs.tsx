@@ -199,14 +199,15 @@ export const RealmSettingsTabs = ({
     }
 
     try {
-      await adminClient.realms.update(
-        { realm: realmName },
-        {
-          ...realm,
-          ...r,
-          id: r.realm,
-        }
-      );
+      const savedRealm = {
+        ...realm,
+        ...r,
+        id: r.realm,
+      };
+
+      // For default value, back end is expecting null instead of empty string
+      if (savedRealm.smtpServer?.port === "") savedRealm.smtpServer.port = null;
+      await adminClient.realms.update({ realm: realmName }, savedRealm);
       addAlert(t("saveSuccess"), AlertVariant.success);
     } catch (error) {
       addError("realm-settings:saveError", error);
@@ -293,7 +294,7 @@ export const RealmSettingsTabs = ({
             data-testid="rs-email-tab"
             {...emailTab}
           >
-            <RealmSettingsEmailTab realm={realm} />
+            <RealmSettingsEmailTab realm={realm} save={save} />
           </Tab>
           <Tab
             title={<TabTitleText>{t("themes")}</TabTitleText>}
