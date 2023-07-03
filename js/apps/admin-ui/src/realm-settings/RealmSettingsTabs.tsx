@@ -199,14 +199,16 @@ export const RealmSettingsTabs = ({
     }
 
     try {
-      const savedRealm = {
+      const savedRealm: RealmRepresentation = {
         ...realm,
         ...r,
         id: r.realm,
       };
 
-      // For default value, back end is expecting null instead of empty string
-      if (savedRealm.smtpServer?.port === "") savedRealm.smtpServer.port = null;
+      // For the default value, null is expected instead of an empty string.
+      if (savedRealm.smtpServer?.port === "") {
+        savedRealm.smtpServer = { ...savedRealm.smtpServer, port: null };
+      }
       await adminClient.realms.update({ realm: realmName }, savedRealm);
       addAlert(t("saveSuccess"), AlertVariant.success);
     } catch (error) {
