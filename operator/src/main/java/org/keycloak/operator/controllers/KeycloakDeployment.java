@@ -24,7 +24,6 @@ import io.fabric8.kubernetes.api.model.EnvVarBuilder;
 import io.fabric8.kubernetes.api.model.EnvVarSourceBuilder;
 import io.fabric8.kubernetes.api.model.HTTPGetActionBuilder;
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.fabric8.kubernetes.api.model.IntOrString;
 import io.fabric8.kubernetes.api.model.PodStatus;
 import io.fabric8.kubernetes.api.model.PodTemplateSpec;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
@@ -333,12 +332,14 @@ public class KeycloakDeployment extends OperatorManagedResource implements Statu
                                 .withName("keycloak")
                                 .withArgs("start")
                                 .addNewPort()
-                                    .withContainerPort(8443)
-                                    .withProtocol("TCP")
+                                    .withName(Constants.KEYCLOAK_HTTPS_PORT_NAME)
+                                    .withContainerPort(Constants.KEYCLOAK_HTTPS_PORT)
+                                    .withProtocol(Constants.KEYCLOAK_SERVICE_PROTOCOL)
                                 .endPort()
                                 .addNewPort()
-                                    .withContainerPort(8080)
-                                    .withProtocol("TCP")
+                                    .withName(Constants.KEYCLOAK_HTTP_PORT_NAME)
+                                    .withContainerPort(Constants.KEYCLOAK_HTTP_PORT)
+                                    .withProtocol(Constants.KEYCLOAK_SERVICE_PROTOCOL)
                                 .endPort()
                                 .withNewReadinessProbe()
                                     .withInitialDelaySeconds(20)
@@ -396,14 +397,14 @@ public class KeycloakDeployment extends OperatorManagedResource implements Statu
         container.getReadinessProbe().setHttpGet(
             new HTTPGetActionBuilder()
                 .withScheme(protocol)
-                .withPort(new IntOrString(kcPort))
+                .withNewPort(kcPort)
                 .withPath(kcRelativePath + "health/ready")
                 .build()
         );
         container.getLivenessProbe().setHttpGet(
             new HTTPGetActionBuilder()
                 .withScheme(protocol)
-                .withPort(new IntOrString(kcPort))
+                .withNewPort(kcPort)
                 .withPath(kcRelativePath + "health/live")
                 .build()
         );

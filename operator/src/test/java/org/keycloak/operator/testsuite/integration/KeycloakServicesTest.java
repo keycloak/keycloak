@@ -62,6 +62,7 @@ public class KeycloakServicesTest extends BaseOperatorTest {
 
         // a managed change
         currentService.getSpec().getPorts().get(0).setProtocol("UDP");
+        currentService.getSpec().getPorts().get(0).setName(null);
 
         currentService.getMetadata().getLabels().putAll(labels);
 
