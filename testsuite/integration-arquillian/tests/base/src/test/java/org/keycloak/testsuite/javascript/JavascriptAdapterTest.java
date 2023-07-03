@@ -885,6 +885,26 @@ public class JavascriptAdapterTest extends AbstractJavascriptTest {
 
     }
 
+    @Test
+    public void testInitTwice() {
+        JSObjectBuilder mockServer = JSObjectBuilder.create()
+                .add("url", authServerContextRootPage + "/auth")
+                .add("realm", REALM_NAME)
+                .add("clientId", CLIENT_ID);
+
+        JSObjectBuilder mockInitOptions = JSObjectBuilder.create()
+                .add("onLoad", "login-required")
+                .add("checkLoginIframe", false);
+
+        JSObjectBuilder kc = createKeycloak(mockServer);
+
+        testExecutor.init(kc, mockInitOptions, this::assertSuccessfullyLoggedIn);
+
+        testExecutor.init(kc, mockInitOptions, (driver) -> {
+            assertThat(driver.getPageSource(), containsString("Keycloak has already been initialized."));
+        });
+    }
+
     protected void assertAdapterIsLoggedIn(WebDriver driver1, Object output, WebElement events) {
         assertTrue(testExecutor.isLoggedIn());
     }
