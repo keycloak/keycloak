@@ -89,7 +89,7 @@ export const PermissionRequest = ({
             </Tr>
           </Thead>
           <Tbody>
-            {resource.shareRequests!.map((shareRequest) => (
+            {resource.shareRequests?.map((shareRequest) => (
               <Tr key={shareRequest.username}>
                 <Td>
                   {shareRequest.firstName} {shareRequest.lastName}{" "}
