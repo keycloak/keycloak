@@ -358,3 +358,10 @@ Multiple Keycloak CRs may be created in the same namespace and will be managed i
 = k8s.keycloak.org/v2alpha1 changes
 
 The condition status field was changed from a boolean to a string for conformance with standard Kubernetes conditions. In the CRD it will temporarily be represented as accepting any content, but it will only ever be a string.  Please make sure any of your usage of this field is updated to expect the values "True", "False", or "Unknown", rather than true or false.
+
+= Keycloak supports IPv4/IPv6 dual stack
+
+Keycloak supports the IPv4/IPv6 dual stack and can be accessible by default via the IPv4 and IPv6 addresses.
+In the older versions of Keycloak, the default approach was to use only IPv4 addresses.
+
+For more details, see https://www.keycloak.org/server/configuration-production#_configure_keycloak_server_with_ipv4_or_ipv6[Configure Keycloak Server with IPv4 or IPv6].
