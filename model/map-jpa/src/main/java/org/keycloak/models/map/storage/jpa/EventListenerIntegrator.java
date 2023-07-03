@@ -30,47 +30,41 @@ import org.keycloak.models.map.storage.jpa.hibernate.listeners.JpaAutoFlushListe
 import org.keycloak.models.map.storage.jpa.hibernate.listeners.JpaEntityVersionListener;
 import org.keycloak.models.map.storage.jpa.hibernate.listeners.JpaOptimisticLockingListener;
 
-import java.util.Objects;
-
 /**
  * Adding listeners to Hibernate's entity manager for the JPA Map store.
  */
 public class EventListenerIntegrator implements Integrator {
 
-    public static String JPA_MAP_STORAGE_ENABLED = "kc.jpa-map-storage-enabled";
-
     @Override
     public void integrate(Metadata metadata, SessionFactoryImplementor sessionFactoryImplementor,
             SessionFactoryServiceRegistry sessionFactoryServiceRegistry) {
-        if (Objects.equals(sessionFactoryImplementor.getProperties().get(JPA_MAP_STORAGE_ENABLED), Boolean.TRUE.toString())) {
-            final EventListenerRegistry eventListenerRegistry =
-                    sessionFactoryServiceRegistry.getService(EventListenerRegistry.class);
+        final EventListenerRegistry eventListenerRegistry =
+                sessionFactoryServiceRegistry.getService(EventListenerRegistry.class);
 
-            if (metadata.getDatabase().getDialect() instanceof CockroachDialect) {
-                // CockroachDB will always use serializable transactions, therefore no optimistic locking is necessary
-                metadata.getEntityBindings().forEach(persistentClass -> {
-                    if (persistentClass instanceof RootClass) {
-                        RootClass root = (RootClass) persistentClass;
-                        root.setOptimisticLockStyle(OptimisticLockStyle.NONE);
-                        root.setVersion(null);
-                        root.setDeclaredVersion(null);
-                    }
-                });
-                // If the version column should be updated with an incrementing number on each change in the future,
-                // implement a listener similar to JpaOptimisticLockingListener to increment it.
-            } else {
-                eventListenerRegistry.appendListeners(EventType.PRE_INSERT, JpaOptimisticLockingListener.INSTANCE);
-                eventListenerRegistry.appendListeners(EventType.PRE_UPDATE, JpaOptimisticLockingListener.INSTANCE);
-                eventListenerRegistry.appendListeners(EventType.PRE_DELETE, JpaOptimisticLockingListener.INSTANCE);
-            }
-
-            eventListenerRegistry.appendListeners(EventType.PRE_INSERT, JpaEntityVersionListener.INSTANCE);
-            eventListenerRegistry.appendListeners(EventType.PRE_UPDATE, JpaEntityVersionListener.INSTANCE);
-            eventListenerRegistry.appendListeners(EventType.PRE_DELETE, JpaEntityVersionListener.INSTANCE);
-
-            // replace auto-flush listener
-            eventListenerRegistry.setListeners(EventType.AUTO_FLUSH, JpaAutoFlushListener.INSTANCE);
+        if (metadata.getDatabase().getDialect() instanceof CockroachDialect) {
+            // CockroachDB will always use serializable transactions, therefore no optimistic locking is necessary
+            metadata.getEntityBindings().forEach(persistentClass -> {
+                if (persistentClass instanceof RootClass) {
+                    RootClass root = (RootClass) persistentClass;
+                    root.setOptimisticLockStyle(OptimisticLockStyle.NONE);
+                    root.setVersion(null);
+                    root.setDeclaredVersion(null);
+                }
+            });
+            // If the version column should be updated with an incrementing number on each change in the future,
+            // implement a listener similar to JpaOptimisticLockingListener to increment it.
+        } else {
+            eventListenerRegistry.appendListeners(EventType.PRE_INSERT, JpaOptimisticLockingListener.INSTANCE);
+            eventListenerRegistry.appendListeners(EventType.PRE_UPDATE, JpaOptimisticLockingListener.INSTANCE);
+            eventListenerRegistry.appendListeners(EventType.PRE_DELETE, JpaOptimisticLockingListener.INSTANCE);
         }
+
+        eventListenerRegistry.appendListeners(EventType.PRE_INSERT, JpaEntityVersionListener.INSTANCE);
+        eventListenerRegistry.appendListeners(EventType.PRE_UPDATE, JpaEntityVersionListener.INSTANCE);
+        eventListenerRegistry.appendListeners(EventType.PRE_DELETE, JpaEntityVersionListener.INSTANCE);
+
+        // replace auto-flush listener
+        eventListenerRegistry.setListeners(EventType.AUTO_FLUSH, JpaAutoFlushListener.INSTANCE);
     }
 
     @Override
