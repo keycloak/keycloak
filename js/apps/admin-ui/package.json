@@ -110,6 +110,6 @@
     "uuid": "^9.0.0",
     "vite": "^4.3.9",
     "vite-plugin-checker": "^0.6.1",
-    "vitest": "^0.32.2"
+    "vitest": "^0.32.4"
   }
 }
