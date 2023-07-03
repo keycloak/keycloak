@@ -21,12 +21,12 @@ export const LocaleSelector = () => {
     (signal) => supportedLocales({ signal }),
     (locales) =>
       setLocales(
-        locales.map(
+        locales.map<Option>(
           (l) =>
             ({
               key: l,
               value: localeToDisplayName(l),
-            } as Option)
+            })
         )
       )
   );
