@@ -115,6 +115,7 @@
   "resourceSharedWith_one": "Resource is shared with <0>{{username}}</0>",
   "resourceSharedWith_other": "Resource is shared with <0>{{username}}</0> and <1>{{other}}</1> other users",
   "resourceSharedWith_zero": "This resource is not shared.",
+  "selectALocale": "Select a locale",
   "selectOne": "Select an option",
   "setUpNew": "Set up {{0}}",
   "share": "Share",

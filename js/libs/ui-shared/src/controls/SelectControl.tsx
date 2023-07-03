@@ -15,7 +15,7 @@ import {
 } from "@patternfly/react-core";
 import { FormLabel } from "./FormLabel";
 
-type Option = {
+export type Option = {
   key: string;
   value: string;
 };
@@ -42,6 +42,7 @@ export const SelectControl = <
   label,
   options,
   controller,
+  variant,
   ...rest
 }: SelectControlProps<T, P>) => {
   const {
@@ -65,13 +66,23 @@ export const SelectControl = <
             {...rest}
             toggleId={name}
             onToggle={(isOpen) => setOpen(isOpen)}
-            selections={value}
+            selections={
+              typeof options[0] !== "string"
+                ? (options as Option[]).find((o) => o.key === value[0])
+                    ?.value || value
+                : value
+            }
             onSelect={(_, v) => {
-              const option = v.toString();
-              if (value.includes(option)) {
-                onChange(value.filter((item: string) => item !== option));
+              if (variant === "typeaheadmulti") {
+                const option = v.toString();
+                if (value.includes(option)) {
+                  onChange(value.filter((item: string) => item !== option));
+                } else {
+                  onChange([...value, option]);
+                }
               } else {
-                onChange([...value, option]);
+                onChange([v]);
+                setOpen(false);
               }
             }}
             onClear={(event) => {
@@ -79,6 +90,7 @@ export const SelectControl = <
               onChange([]);
             }}
             isOpen={open}
+            variant={variant}
             validated={
               errors[name] ? ValidatedOptions.error : ValidatedOptions.default
             }
