@@ -48,6 +48,6 @@
     "vite": "^4.3.9",
     "vite-plugin-checker": "^0.6.1",
     "vite-plugin-dts": "^3.0.2",
-    "vitest": "^0.32.2"
+    "vitest": "^0.32.4"
   }
 }
