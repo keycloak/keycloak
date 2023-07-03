@@ -47,7 +47,9 @@ export type Role = RoleRepresentation & {
 export default function AddMapper() {
   const { t } = useTranslation("identity-providers");
 
-  const form = useForm<IdPMapperRepresentationWithAttributes>();
+  const form = useForm<IdPMapperRepresentationWithAttributes>({
+    shouldUnregister: true,
+  });
   const {
     handleSubmit,
     register,
@@ -86,7 +88,7 @@ export default function AddMapper() {
             id: id!,
             alias: alias!,
           },
-          { ...identityProviderMapper, name: currentMapper?.name! }
+          { ...identityProviderMapper }
         );
         addAlert(t("mapperSaveSuccess"), AlertVariant.success);
       } catch (error) {
