@@ -383,7 +383,6 @@ public class JavascriptAdapterTest extends AbstractJavascriptTest {
                 .update()
         ) {
                 setImplicitFlowForClient();
-                testExecutor.init(defaultArguments().implicitFlow());
 
                 testExecutor.logInAndInit(defaultArguments().implicitFlow(), testUser, this::assertInitAuth);
                 assertThat(driver.getPageSource(), not(containsString("Access token expired")));
