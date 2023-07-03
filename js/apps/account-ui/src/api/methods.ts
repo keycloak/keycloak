@@ -29,7 +29,7 @@ export async function getPersonalInfo({
   return parseResponse<UserRepresentation>(response);
 }
 
-export async function supportedLocales({ signal }: CallOptions = {}): Promise<
+export async function getSupportedLocales({ signal }: CallOptions = {}): Promise<
   string[]
 > {
   const response = await request("/supportedLocales", { signal });
