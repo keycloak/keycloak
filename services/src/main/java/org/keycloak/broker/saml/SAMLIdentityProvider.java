@@ -344,12 +344,17 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
     public Response export(UriInfo uriInfo, RealmModel realm, String format) {
         try
         {
-            URI authnBinding = JBossSAMLURIConstants.SAML_HTTP_REDIRECT_BINDING.getUri();
+            URI authnResponseBinding = JBossSAMLURIConstants.SAML_HTTP_REDIRECT_BINDING.getUri();
 
             if (getConfig().isPostBindingAuthnRequest()) {
-                authnBinding = JBossSAMLURIConstants.SAML_HTTP_POST_BINDING.getUri();
+                authnResponseBinding = JBossSAMLURIConstants.SAML_HTTP_POST_BINDING.getUri();
             }
 
+            URI logoutBinding = JBossSAMLURIConstants.SAML_HTTP_REDIRECT_BINDING.getUri();
+
+            if (getConfig().isPostBindingLogout()) {
+                logoutBinding = JBossSAMLURIConstants.SAML_HTTP_POST_BINDING.getUri();
+            }
             URI endpoint = uriInfo.getBaseUriBuilder()
                     .path("realms").path(realm.getName())
                     .path("broker")
@@ -407,7 +412,7 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
             SAMLMetadataWriter metadataWriter = new SAMLMetadataWriter(writer);
 
             EntityDescriptorType entityDescriptor = SPMetadataDescriptor.buildSPDescriptor(
-                authnBinding, authnBinding, endpoint, endpoint,
+                authnResponseBinding, logoutBinding, endpoint, endpoint,
                 wantAuthnRequestsSigned, wantAssertionsSigned, wantAssertionsEncrypted,
                 entityId, nameIDPolicyFormat, signingKeys, encryptionKeys);
 

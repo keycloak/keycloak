@@ -1,0 +1,25 @@
+name: Scheduled workflows
+
+on: 
+  schedule:
+    - cron: '0 0 * * *'
+  workflow_dispatch:
+
+jobs:
+
+  run-ci:
+    name: Run CI workflow
+    runs-on: ubuntu-latest
+    steps:
+      - name: Run Snyk with main branch
+        run: gh workflow run -R keycloak/keycloak snyk-analysis.yml -r main
+        if: github.event_name != 'schedule' || github.repository == 'keycloak/keycloak'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Run Snyk with latest release branch
+        run: |
+          patch_release=$(gh api repos/keycloak/keycloak/branches | jq -r '.[].name' | sort -r | awk -F'/' '/[0-9.]+$/ {print $NF; exit}')
+          gh workflow run -R keycloak/keycloak snyk-analysis.yml -r "release/$patch_release"
+        if: github.event_name != 'schedule' || github.repository == 'keycloak/keycloak'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

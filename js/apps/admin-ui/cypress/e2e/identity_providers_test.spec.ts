@@ -306,7 +306,7 @@ describe("Identity provider test", () => {
       listingPage.goToItemDetails("github");
 
       githubSettings.fillData("github");
-      cy.findByTestId("save").click();
+      cy.findByTestId("idp-details-save").click();
     });
 
     it("should check input switches and inputs", () => {
@@ -314,7 +314,7 @@ describe("Identity provider test", () => {
       listingPage.goToItemDetails("github");
 
       advancedSettings.typeScopesInput("openid");
-      //advancedSettings.assertScopesInputEqual("openid"); //this line doesn't work
+      advancedSettings.assertScopesInputEqual("openid");
 
       advancedSettings.assertStoreTokensSwitchTurnedOn(false);
       advancedSettings.assertAcceptsPromptNoneForwardFromClientSwitchTurnedOn(
@@ -331,7 +331,11 @@ describe("Identity provider test", () => {
       advancedSettings.clickTrustEmailSwitch();
       advancedSettings.clickAccountLinkingOnlySwitch();
       advancedSettings.clickHideOnLoginPageSwitch();
+      advancedSettings.clickEssentialClaimSwitch();
+      advancedSettings.typeClaimNameInput("claim-name");
+      advancedSettings.typeClaimValueInput("claim-value");
 
+      advancedSettings.ensureAdvancedSettingsAreVisible();
       advancedSettings.assertStoreTokensSwitchTurnedOn(true);
       advancedSettings.assertAcceptsPromptNoneForwardFromClientSwitchTurnedOn(
         true
@@ -340,8 +344,11 @@ describe("Identity provider test", () => {
       advancedSettings.assertTrustEmailSwitchTurnedOn(true);
       advancedSettings.assertAccountLinkingOnlySwitchTurnedOn(true);
       advancedSettings.assertHideOnLoginPageSwitchTurnedOn(true);
+      advancedSettings.assertEssentialClaimSwitchTurnedOn(true);
+      advancedSettings.assertClaimInputEqual("claim-name");
+      advancedSettings.assertClaimValueInputEqual("claim-value");
 
-      cy.findByTestId("save").click();
+      cy.findByTestId("idp-details-save").click();
     });
 
     it("should revert and save options", () => {
@@ -355,11 +362,12 @@ describe("Identity provider test", () => {
       );
       advancedSettings.clickStoreTokensSwitch();
       advancedSettings.clickAcceptsPromptNoneForwardFromClientSwitch();
+      advancedSettings.ensureAdvancedSettingsAreVisible();
       advancedSettings.assertStoreTokensSwitchTurnedOn(false);
       advancedSettings.assertAcceptsPromptNoneForwardFromClientSwitchTurnedOn(
         false
       );
-      cy.findByTestId("revert").click();
+      cy.findByTestId("idp-details-revert").click();
       advancedSettings.assertStoreTokensSwitchTurnedOn(true);
       advancedSettings.assertAcceptsPromptNoneForwardFromClientSwitchTurnedOn(
         true

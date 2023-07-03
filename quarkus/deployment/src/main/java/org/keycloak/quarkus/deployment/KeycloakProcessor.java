@@ -66,7 +66,6 @@ import org.keycloak.common.util.StreamUtil;
 import org.keycloak.config.DatabaseOptions;
 import org.keycloak.config.SecurityOptions;
 import org.keycloak.config.StorageOptions;
-import org.keycloak.config.TransactionOptions;
 import org.keycloak.connections.jpa.DefaultJpaConnectionProviderFactory;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.connections.jpa.JpaConnectionSpi;
@@ -110,6 +109,7 @@ import org.keycloak.url.DefaultHostnameProviderFactory;
 import org.keycloak.url.FixedHostnameProviderFactory;
 import org.keycloak.url.RequestHostnameProviderFactory;
 import org.keycloak.util.JsonSerialization;
+import org.keycloak.vault.FilesKeystoreVaultProviderFactory;
 import org.keycloak.vault.FilesPlainTextVaultProviderFactory;
 
 import jakarta.persistence.Entity;
@@ -145,7 +145,6 @@ import static org.keycloak.quarkus.runtime.KeycloakRecorder.DEFAULT_HEALTH_ENDPO
 import static org.keycloak.quarkus.runtime.KeycloakRecorder.DEFAULT_METRICS_ENDPOINT;
 import static org.keycloak.quarkus.runtime.Providers.getProviderManager;
 import static org.keycloak.quarkus.runtime.configuration.Configuration.getKcConfigValue;
-import static org.keycloak.quarkus.runtime.configuration.Configuration.getOptionalKcBooleanValue;
 import static org.keycloak.quarkus.runtime.configuration.Configuration.getOptionalKcValue;
 import static org.keycloak.quarkus.runtime.configuration.Configuration.getOptionalValue;
 import static org.keycloak.quarkus.runtime.configuration.Configuration.getPropertyNames;
@@ -176,6 +175,7 @@ class KeycloakProcessor {
             DefaultHostnameProviderFactory.class,
             FixedHostnameProviderFactory.class,
             RequestHostnameProviderFactory.class,
+            FilesKeystoreVaultProviderFactory.class,
             FilesPlainTextVaultProviderFactory.class,
             BlacklistPasswordPolicyProviderFactory.class,
             ClasspathThemeResourceProviderFactory.class,
@@ -499,6 +499,11 @@ class KeycloakProcessor {
             properties.put(String.format("kc.provider.file.%s.last-modified", jar.getName()), String.valueOf(jar.lastModified()));
         }
 
+        if (!Environment.isRebuildCheck()) {
+            // not auto-build (e.g.: start without optimized option) but a regular build to create an optimized server image
+            Configuration.markAsOptimized(properties);
+        }
+
         String profile = Environment.getProfile();
 
         if (profile != null) {
@@ -534,6 +539,10 @@ class KeycloakProcessor {
         }
 
         if (value != null && value.getValue() != null) {
+            if (value.getConfigSourceName() == null) {
+                // only persist build options resolved from config sources and not default values
+                return;
+            }
             String rawValue = value.getRawValue();
 
             if (rawValue == null) {

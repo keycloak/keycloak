@@ -12,6 +12,7 @@
   "continue": "Continue",
   "close": "Close",
   "delete": "Delete",
+  "reset": "Reset",
   "remove": "Remove",
   "revoke": "Revoke",
   "search": "Search",
@@ -213,5 +214,6 @@
   "forbidden_one": "Forbidden, permission needed:",
   "forbidden_other": "Forbidden, permissions needed:",
   "noRealmRolesToAssign": "There are no realm roles to assign",
-  "loadingRealms": "Loading realms…"
+  "loadingRealms": "Loading realms…",
+  "customAttribute": "Custom Attribute…"
 }

@@ -20,11 +20,14 @@
   "close": "Close",
   "credentialCreatedAt": "<0>Created</0> {{date}}.",
   "currentSession": "Current session",
+  "deleteAccount": "Delete account",
+  "deleteAccountWarning": "This is irreversible. All your data will be permanently destroyed, and irretrievable.",
   "description": "Description",
   "device-activity": "Device activity",
   "deviceActivity": "Device activity",
   "directMembership": "Direct membership",
   "doCancel": "Cancel",
+  "doDelete": "Delete",
   "doDeny": "Deny",
   "done": "Done",
   "doSave": "Save",
@@ -158,6 +161,5 @@
   "updateSuccess": "Resource successfully updated.",
   "user": "User",
   "username": "Username",
-  "usernamePlaceholder": "Username or email",
-  "welcomeMessage": "Welcome to Keycloak Account Management."
+  "usernamePlaceholder": "Username or email"
 }

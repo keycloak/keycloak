@@ -394,7 +394,7 @@ export const UserCredentials = ({ user }: UserCredentialsProps) => {
           <Divider />
         </>
       )}
-      {groupedUserCredentials.length !== 0 && !hasCredentialTypes && (
+      {groupedUserCredentials.length !== 0 && (
         <PageSection variant={PageSectionVariants.light}>
           <TableComposable variant={"compact"}>
             <Thead>
@@ -405,12 +405,12 @@ export const UserCredentials = ({ user }: UserCredentialsProps) => {
                     fieldLabelId="users:userCredentialsHelpTextLabel"
                   />
                 </Th>
-                <Th />
+                <Th aria-hidden="true" />
                 <Th>{t("type")}</Th>
                 <Th>{t("userLabel")}</Th>
                 <Th>{t("data")}</Th>
-                <Th />
-                <Th />
+                <Th aria-hidden="true" />
+                <Th aria-hidden="true" />
               </Tr>
             </Thead>
             <Tbody
@@ -514,7 +514,7 @@ export const UserCredentials = ({ user }: UserCredentialsProps) => {
               <Tr>
                 <Th>{t("type")}</Th>
                 <Th>{t("providedBy")}</Th>
-                <Th />
+                <Th aria-hidden="true" />
               </Tr>
             </Thead>
             <Tbody>

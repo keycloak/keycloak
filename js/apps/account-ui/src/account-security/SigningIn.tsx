@@ -15,7 +15,6 @@ import {
   SplitItem,
   Title,
 } from "@patternfly/react-core";
-import { TFuncKey } from "i18next";
 import { CSSProperties, useState } from "react";
 import { Trans, useTranslation } from "react-i18next";
 import { ContinueCancelModal, useAlerts } from "ui-shared";
@@ -28,6 +27,7 @@ import {
 import { EmptyRow } from "../components/datalist/EmptyRow";
 import useFormatter from "../components/format/format-date";
 import { Page } from "../components/page/Page";
+import { TFuncKey } from "../i18n";
 import { keycloak } from "../keycloak";
 import { usePromise } from "../utils/usePromise";
 

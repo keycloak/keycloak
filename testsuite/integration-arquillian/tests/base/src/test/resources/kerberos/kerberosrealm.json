@@ -40,17 +40,6 @@
                 "/auth/realms/master/app/*"
             ],
             "secret": "password"
-        },
-        {
-            "clientId": "kerberos-app-challenge",
-            "enabled": true,
-            "adminUrl": "/kerberos-portal/logout",
-            "baseUrl": "/kerberos-portal",
-            "redirectUris": [
-                "/kerberos-portal/*",
-                "/auth/realms/master/app/*"
-            ],
-            "secret": "password"
         }
     ],
     "roles" : {

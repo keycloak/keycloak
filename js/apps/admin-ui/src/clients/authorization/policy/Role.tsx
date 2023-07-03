@@ -117,7 +117,7 @@ export const Role = () => {
             <Tr>
               <Th>{t("roles")}</Th>
               <Th>{t("required")}</Th>
-              <Th />
+              <Th aria-hidden="true" />
             </Tr>
           </Thead>
           <Tbody>

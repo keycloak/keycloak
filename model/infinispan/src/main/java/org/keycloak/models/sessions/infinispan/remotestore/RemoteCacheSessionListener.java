@@ -31,20 +31,21 @@ import org.infinispan.context.Flag;
 import org.jboss.logging.Logger;
 import org.keycloak.connections.infinispan.TopologyInfo;
 import org.keycloak.executors.ExecutorsProvider;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.sessions.infinispan.SessionFunction;
 import org.keycloak.models.sessions.infinispan.changes.SessionEntityWrapper;
 import org.keycloak.models.sessions.infinispan.entities.SessionEntity;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.connections.infinispan.InfinispanUtil;
 import java.util.Random;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.BiFunction;
 
 import org.infinispan.client.hotrod.VersionedValue;
-import org.keycloak.models.utils.KeycloakModelUtils;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -60,8 +61,8 @@ public class RemoteCacheSessionListener<K, V extends SessionEntity>  {
     private RemoteCache<K, SessionEntityWrapper<V>> remoteCache;
     private TopologyInfo topologyInfo;
     private ClientListenerExecutorDecorator<K> executor;
-    private BiFunction<RealmModel, V, Long> lifespanMsLoader;
-    private BiFunction<RealmModel, V, Long> maxIdleTimeMsLoader;
+    private SessionFunction<V> lifespanMsLoader;
+    private SessionFunction<V> maxIdleTimeMsLoader;
     private KeycloakSessionFactory sessionFactory;
 
 
@@ -70,7 +71,7 @@ public class RemoteCacheSessionListener<K, V extends SessionEntity>  {
 
 
     protected void init(KeycloakSession session, Cache<K, SessionEntityWrapper<V>> cache, RemoteCache<K, SessionEntityWrapper<V>> remoteCache,
-                        BiFunction<RealmModel, V, Long> lifespanMsLoader, BiFunction<RealmModel, V, Long> maxIdleTimeMsLoader) {
+                        SessionFunction<V> lifespanMsLoader, SessionFunction<V> maxIdleTimeMsLoader) {
         this.cache = cache;
         this.remoteCache = remoteCache;
 
@@ -135,8 +136,9 @@ public class RemoteCacheSessionListener<K, V extends SessionEntity>  {
         KeycloakModelUtils.runJobInTransaction(sessionFactory, (session -> {
 
             RealmModel realm = session.realms().getRealm(newWrapper.getEntity().getRealmId());
-            long lifespanMs = lifespanMsLoader.apply(realm, newWrapper.getEntity());
-            long maxIdleTimeMs = maxIdleTimeMsLoader.apply(realm, newWrapper.getEntity());
+            ClientModel client = newWrapper.getClientIfNeeded(realm);
+            long lifespanMs = lifespanMsLoader.apply(realm, client, newWrapper.getEntity());
+            long maxIdleTimeMs = maxIdleTimeMsLoader.apply(realm, client, newWrapper.getEntity());
 
             logger.tracef("Calling putIfAbsent for entity '%s' in the cache '%s' . lifespan: %d ms, maxIdleTime: %d ms", key, remoteCache.getName(), lifespanMs, maxIdleTimeMs);
 
@@ -187,8 +189,9 @@ public class RemoteCacheSessionListener<K, V extends SessionEntity>  {
             KeycloakModelUtils.runJobInTransaction(sessionFactory, (session -> {
 
                 RealmModel realm = session.realms().getRealm(sessionWrapper.getEntity().getRealmId());
-                long lifespanMs = lifespanMsLoader.apply(realm, sessionWrapper.getEntity());
-                long maxIdleTimeMs = maxIdleTimeMsLoader.apply(realm, sessionWrapper.getEntity());
+                ClientModel client = sessionWrapper.getClientIfNeeded(realm);
+                long lifespanMs = lifespanMsLoader.apply(realm, client, sessionWrapper.getEntity());
+                long maxIdleTimeMs = maxIdleTimeMsLoader.apply(realm, client, sessionWrapper.getEntity());
 
                 // We received event from remoteCache, so we won't update it back
                 replaced.set(cache.getAdvancedCache().withFlags(Flag.SKIP_CACHE_STORE, Flag.SKIP_CACHE_LOAD, Flag.IGNORE_RETURN_VALUES)
@@ -253,7 +256,7 @@ public class RemoteCacheSessionListener<K, V extends SessionEntity>  {
 
 
     public static <K, V extends SessionEntity> RemoteCacheSessionListener createListener(KeycloakSession session, Cache<K, SessionEntityWrapper<V>> cache, RemoteCache<K, SessionEntityWrapper<V>> remoteCache,
-                                                                                         BiFunction<RealmModel, V, Long> lifespanMsLoader, BiFunction<RealmModel, V, Long> maxIdleTimeMsLoader) {
+                                                                                         SessionFunction<V> lifespanMsLoader, SessionFunction<V> maxIdleTimeMsLoader) {
         /*boolean isCoordinator = InfinispanUtil.isCoordinator(cache);
 
         // Just cluster coordinator will fetch userSessions from remote cache.

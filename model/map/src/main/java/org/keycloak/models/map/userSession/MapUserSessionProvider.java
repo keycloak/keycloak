@@ -88,7 +88,11 @@ public class MapUserSessionProvider implements UserSessionProvider {
                 }
                 return null;
             } else {
-                return new MapUserSessionAdapter(session, realm, origEntity);
+                UserModel userModel = session.users().getUserById(realm, origEntity.getUserId());
+                if (userModel != null) {
+                    return new MapUserSessionAdapter(session, realm, userModel, origEntity);
+                }
+                return null;
             }
         };
     }
@@ -120,11 +124,14 @@ public class MapUserSessionProvider implements UserSessionProvider {
         }
 
         MapAuthenticatedClientSessionEntity entity = createAuthenticatedClientSessionEntityInstance(null, userSession.getId(),
-                realm.getId(), client.getId(), false);
+                realm.getId(), client.getId(), userSession.isOffline());
         String started = entity.getTimestamp() != null ? String.valueOf(TimeAdapter.fromMilliSecondsToSeconds(entity.getTimestamp())) : String.valueOf(0);
         entity.setNote(AuthenticatedClientSessionModel.STARTED_AT_NOTE, started);
+        entity.setNote(AuthenticatedClientSessionModel.USER_SESSION_STARTED_AT_NOTE, String.valueOf(userSession.getStarted()));
+        if (userSession.isRememberMe()) {
+            entity.setNote(AuthenticatedClientSessionModel.USER_SESSION_REMEMBER_ME_NOTE, "true");
+        }
         setClientSessionExpiration(entity, realm, client);
-
         userSessionEntity.addAuthenticatedClientSession(entity);
 
         // We need to load the clientSession through userModel so we return an entity that is included within the
@@ -183,13 +190,19 @@ public class MapUserSessionProvider implements UserSessionProvider {
             return userEntityToAdapterFunc(realm).apply(userSessionEntity);
         }
 
-        DefaultModelCriteria<UserSessionModel> mcb = realmAndOfflineCriteriaBuilder(realm, false)
-                .compare(UserSessionModel.SearchableFields.ID, Operator.EQ, id);
+        // This is an exceptional case where not to use the criteria query:
+        // As the ID is already known, and we expect in almost all cases to have exactly one row being returned,
+        // the provider fetches the instance by ID and does the filtering in the Java code afterward instead
+        // of using the criteria query. When using a criteria query in earlier versions, the store (CockroachDB) would pick
+        // a wrong optimization path and lock too many DB rows which would result in transaction-not-serializable exceptions
+        // on concurrent transactions. This change has been done in the assumption that all stores would be faster
+        // to evaluate the fetch-by-id than a criteria query.
+        userSessionEntity = storeWithRealm(realm).read(id);
+        if (userSessionEntity != null && Objects.equals(userSessionEntity.getRealmId(), realm.getId()) && !userSessionEntity.isOffline()) {
+            return userEntityToAdapterFunc(realm).apply(userSessionEntity);
+        }
 
-        return storeWithRealm(realm).read(withCriteria(mcb))
-                .findFirst()
-                .map(userEntityToAdapterFunc(realm))
-                .orElse(null);
+        return null;
     }
 
     @Override
@@ -310,7 +323,16 @@ public class MapUserSessionProvider implements UserSessionProvider {
 
         LOG.tracef("removeUserSession(%s, %s)%s", realm, session, getShortStackTrace());
 
-        storeWithRealm(realm).delete(withCriteria(mcb));
+        // This is an exceptional case where not to use the criteria query:
+        // As the ID is already known, the provider does the filtering in the Java code and uses delete-by-id
+        // instead of using the criteria query to delete rows.
+        // When using a criteria query in earlier versions, the store (CockroachDB) would pick
+        // a wrong optimization path and lock too many DB rows which would result in transaction-not-serializable exceptions
+        // on concurrent transactions. This change has been done in the assumption that delete-by-id would be faster than
+        // delete-by-criteria for all stores.
+        if (Objects.equals(session.getRealm(), realm) && !session.isOffline()) {
+            storeWithRealm(realm).delete(session.getId());
+        }
     }
 
     @Override
@@ -408,6 +430,7 @@ public class MapUserSessionProvider implements UserSessionProvider {
         MapAuthenticatedClientSessionEntity clientSessionEntity = createAuthenticatedClientSessionInstance(clientSession, offlineUserSession, true);
         int currentTime = Time.currentTime();
         clientSessionEntity.setNote(AuthenticatedClientSessionModel.STARTED_AT_NOTE, String.valueOf(currentTime));
+        clientSessionEntity.setNote(AuthenticatedClientSessionModel.USER_SESSION_STARTED_AT_NOTE, String.valueOf(offlineUserSession.getStarted()));
         clientSessionEntity.setTimestamp(Time.currentTimeMillis());
         RealmModel realm = clientSession.getRealm();
         setClientSessionExpiration(clientSessionEntity, realm, clientSession.getClient());

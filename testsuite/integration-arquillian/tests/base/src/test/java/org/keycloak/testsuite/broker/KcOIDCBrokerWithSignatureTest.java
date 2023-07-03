@@ -45,6 +45,7 @@ import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.client.resources.TestingCacheResource;
 import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
+import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.OAuthClient;
 
 import static org.junit.Assert.assertEquals;
@@ -105,9 +106,9 @@ public class KcOIDCBrokerWithSignatureTest extends AbstractBaseBrokerTest {
 
         // Check that user is able to login
         logInAsUserInIDPForFirstTime();
-        assertLoggedInAccountManagement();
+        appPage.assertCurrent();
 
-        logoutFromRealm(getConsumerRoot(), bc.consumerRealmName());
+        AccountHelper.logout(adminClient.realm(bc.consumerRealmName()), bc.getUserLogin());
 
         // Rotate public keys on the parent broker
         rotateKeys(Algorithm.RS256, "rsa-generated");
@@ -116,13 +117,13 @@ public class KcOIDCBrokerWithSignatureTest extends AbstractBaseBrokerTest {
         logInAsUserInIDP();
         assertErrorPage("Unexpected error when authenticating with identity provider");
 
-        logoutFromRealm(getConsumerRoot(), bc.consumerRealmName());
+        AccountHelper.logout(adminClient.realm(bc.consumerRealmName()), bc.getUserLogin());
 
         // Set time offset. New keys can be downloaded. Check that user is able to login.
         setTimeOffset(20);
 
         logInAsUserInIDPWithReAuthenticate();
-        assertLoggedInAccountManagement();
+        appPage.assertCurrent();
     }
 
     // Configure OIDC identity provider with JWKS URL and validateSignature=true
@@ -153,9 +154,9 @@ public class KcOIDCBrokerWithSignatureTest extends AbstractBaseBrokerTest {
 
         // Check that user is able to login
         logInAsUserInIDPForFirstTime();
-        assertLoggedInAccountManagement();
+        appPage.assertCurrent();
 
-        logoutFromRealm(getConsumerRoot(), bc.consumerRealmName());
+        AccountHelper.logout(adminClient.realm(bc.consumerRealmName()), bc.getUserLogin());
 
         // Rotate public keys on the parent broker
         rotateKeys(Algorithm.RS256, "rsa-generated");
@@ -164,7 +165,7 @@ public class KcOIDCBrokerWithSignatureTest extends AbstractBaseBrokerTest {
         logInAsUserInIDP();
         assertErrorPage("Unexpected error when authenticating with identity provider");
 
-        logoutFromRealm(getConsumerRoot(), bc.consumerRealmName());
+        AccountHelper.logout(adminClient.realm(bc.consumerRealmName()), bc.getUserLogin());
 
         // Even after time offset is user not able to login, because it uses old key hardcoded in identityProvider config
         setTimeOffset(20);
@@ -193,11 +194,11 @@ public class KcOIDCBrokerWithSignatureTest extends AbstractBaseBrokerTest {
                 .update()) {
 
             logInAsUserInIDPForFirstTime();
-            assertLoggedInAccountManagement();
-            logoutFromRealm(getConsumerRoot(), bc.consumerRealmName());
+            appPage.assertCurrent();
+            AccountHelper.logout(adminClient.realm(bc.consumerRealmName()), bc.getUserLogin());
 
             logInAsUserInIDP();
-            logoutFromRealm(getConsumerRoot(), bc.consumerRealmName());
+            AccountHelper.logout(adminClient.realm(bc.consumerRealmName()), bc.getUserLogin());
         }
     }
 
@@ -221,11 +222,11 @@ public class KcOIDCBrokerWithSignatureTest extends AbstractBaseBrokerTest {
                 .update()) {
 
             logInAsUserInIDPForFirstTime();
-            assertLoggedInAccountManagement();
-            logoutFromRealm(getConsumerRoot(), bc.consumerRealmName());
+            appPage.assertCurrent();
+            AccountHelper.logout(adminClient.realm(bc.consumerRealmName()), bc.getUserLogin());
 
             logInAsUserInIDP();
-            logoutFromRealm(getConsumerRoot(), bc.consumerRealmName());
+            AccountHelper.logout(adminClient.realm(bc.consumerRealmName()), bc.getUserLogin());
         }
     }
 
@@ -248,11 +249,11 @@ public class KcOIDCBrokerWithSignatureTest extends AbstractBaseBrokerTest {
                 .update()) {
 
             logInAsUserInIDPForFirstTime();
-            assertLoggedInAccountManagement();
-            logoutFromRealm(getConsumerRoot(), bc.consumerRealmName());
+            appPage.assertCurrent();
+            AccountHelper.logout(adminClient.realm(bc.consumerRealmName()), bc.getUserLogin());
 
             logInAsUserInIDP();
-            logoutFromRealm(getConsumerRoot(), bc.consumerRealmName());
+            AccountHelper.logout(adminClient.realm(bc.consumerRealmName()), bc.getUserLogin());
         }
     }
 
@@ -272,9 +273,9 @@ public class KcOIDCBrokerWithSignatureTest extends AbstractBaseBrokerTest {
 
         // Check that user is able to login
         logInAsUserInIDPForFirstTime();
-        assertLoggedInAccountManagement();
+        appPage.assertCurrent();
 
-        logoutFromRealm(getConsumerRoot(), bc.consumerRealmName());
+        AccountHelper.logout(adminClient.realm(bc.consumerRealmName()), bc.getUserLogin());
 
         // Set key id to an invalid one
         cfg.setPublicKeySignatureVerifierKeyId("invalid-key-id");
@@ -287,22 +288,22 @@ public class KcOIDCBrokerWithSignatureTest extends AbstractBaseBrokerTest {
         cfg.setPublicKeySignatureVerifierKeyId(expectedKeyId);
         updateIdentityProvider(idpRep);
         logInAsUserInIDPWithReAuthenticate();
-        assertLoggedInAccountManagement();
-        logoutFromRealm(getConsumerRoot(), bc.consumerRealmName());
+        appPage.assertCurrent();
+        AccountHelper.logout(adminClient.realm(bc.consumerRealmName()), bc.getUserLogin());
 
         // Set key id to empty
         cfg.setPublicKeySignatureVerifierKeyId("");
         updateIdentityProvider(idpRep);
         logInAsUserInIDP();
-        assertLoggedInAccountManagement();
-        logoutFromRealm(getConsumerRoot(), bc.consumerRealmName());
+        appPage.assertCurrent();
+        AccountHelper.logout(adminClient.realm(bc.consumerRealmName()), bc.getUserLogin());
 
         // Unset key id
         cfg.setPublicKeySignatureVerifierKeyId(null);
         updateIdentityProvider(idpRep);
         logInAsUserInIDP();
-        assertLoggedInAccountManagement();
-        logoutFromRealm(getConsumerRoot(), bc.consumerRealmName());
+        appPage.assertCurrent();
+        AccountHelper.logout(adminClient.realm(bc.consumerRealmName()), bc.getUserLogin());
     }
 
 
@@ -315,7 +316,7 @@ public class KcOIDCBrokerWithSignatureTest extends AbstractBaseBrokerTest {
 
         // Check that user is able to login
         logInAsUserInIDPForFirstTime();
-        assertLoggedInAccountManagement();
+        appPage.assertCurrent();
 
         logoutFromRealm(getConsumerRoot(), bc.consumerRealmName());
 
@@ -342,9 +343,9 @@ public class KcOIDCBrokerWithSignatureTest extends AbstractBaseBrokerTest {
 
         // Check that user is able to login
         logInAsUserInIDPForFirstTime();
-        assertLoggedInAccountManagement();
+        appPage.assertCurrent();
 
-        logoutFromRealm(getConsumerRoot(), bc.consumerRealmName());
+        AccountHelper.logout(adminClient.realm(bc.consumerRealmName()), bc.getUserLogin());
 
         // Check that key is cached
         IdentityProviderRepresentation idpRep = getIdentityProvider();
@@ -378,11 +379,11 @@ public class KcOIDCBrokerWithSignatureTest extends AbstractBaseBrokerTest {
 
             // Check that user is able to login with ES256
             logInAsUserInIDPForFirstTime();
-            assertLoggedInAccountManagement();
-            logoutFromRealm(getConsumerRoot(), bc.consumerRealmName());
+            appPage.assertCurrent();
+            AccountHelper.logout(adminClient.realm(bc.consumerRealmName()), bc.getUserLogin());
 
             logInAsUserInIDP();
-            logoutFromRealm(getConsumerRoot(), bc.consumerRealmName());
+            AccountHelper.logout(adminClient.realm(bc.consumerRealmName()), bc.getUserLogin());
         }
     }
 
@@ -397,11 +398,11 @@ public class KcOIDCBrokerWithSignatureTest extends AbstractBaseBrokerTest {
 
             // Check that user is able to login with PS512
             logInAsUserInIDPForFirstTime();
-            assertLoggedInAccountManagement();
-            logoutFromRealm(getConsumerRoot(), bc.consumerRealmName());
+            appPage.assertCurrent();
+            AccountHelper.logout(adminClient.realm(bc.consumerRealmName()), bc.getUserLogin());
 
             logInAsUserInIDP();
-            logoutFromRealm(getConsumerRoot(), bc.consumerRealmName());
+            AccountHelper.logout(adminClient.realm(bc.consumerRealmName()), bc.getUserLogin());
         }
     }
 
@@ -427,11 +428,11 @@ public class KcOIDCBrokerWithSignatureTest extends AbstractBaseBrokerTest {
 
             // Check that user is able to login with ES256
             logInAsUserInIDPForFirstTime();
-            assertLoggedInAccountManagement();
-            logoutFromRealm(getConsumerRoot(), bc.consumerRealmName());
+            Assert.assertTrue(appPage.isCurrent());
+            AccountHelper.logout(adminClient.realm(bc.consumerRealmName()), bc.getUserLogin());
 
             logInAsUserInIDP();
-            logoutFromRealm(getConsumerRoot(), bc.consumerRealmName());
+            AccountHelper.logout(adminClient.realm(bc.consumerRealmName()), bc.getUserLogin());
         }
     }
 

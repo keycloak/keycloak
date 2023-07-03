@@ -1,5 +1,13 @@
 === Java adapters
 
+ifeval::[{project_community}==true]
+
+WARNING: {project_name} OpenID Connect java adapters are deprecated and may not work with the most recent versions of the particular servers or frameworks. We encourage
+you to migrate to different OIDC adapters usually provided by the particular server/framework or any other party. In case your application is on WildFly/EAP, the
+recommended alternative is Elytron OIDC client.
+
+endif::[]
+
 {project_name} comes with a range of different adapters for Java application. Selecting the correct adapter depends on the target platform.
 
 All Java adapters share a set of common configuration options described in the <<_java_adapter_config,Java Adapters Config>> chapter.

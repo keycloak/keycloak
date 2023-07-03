@@ -11,10 +11,14 @@ import {
   ExpandableSection,
   FormGroup,
   PageSection,
+  Panel,
+  PanelHeader,
+  PanelMainBody,
   Select,
   SelectOption,
   SelectVariant,
   Switch,
+  Title,
 } from "@patternfly/react-core";
 import { useState } from "react";
 import { Controller, FormProvider, useForm, useWatch } from "react-hook-form";
@@ -25,13 +29,12 @@ import { ForbiddenSection } from "../../ForbiddenSection";
 import { adminClient } from "../../admin-client";
 import { useAlerts } from "../../components/alert/Alerts";
 import { ClientSelect } from "../../components/client/ClientSelect";
-import { FormAccess } from "../../components/form-access/FormAccess";
+import { FormAccess } from "../../components/form/FormAccess";
 import {
   KeyValueType,
   keyValueToArray,
 } from "../../components/key-value-form/key-value-convert";
 import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
-import { FormPanel } from "../../components/scroll-form/FormPanel";
 import { UserSelect } from "../../components/users/UserSelect";
 import { useAccess } from "../../context/access/Access";
 import { useRealm } from "../../context/realm-context/RealmContext";
@@ -40,8 +43,6 @@ import { FormFields } from "../ClientDetails";
 import { defaultContextAttributes } from "../utils";
 import { KeyBasedAttributeInput } from "./KeyBasedAttributeInput";
 import { Results } from "./evaluate/Results";
-
-import "./auth-evaluate.css";
 
 interface EvaluateFormInputs
   extends Omit<ResourceEvaluation, "context" | "resources"> {
@@ -81,7 +82,17 @@ export type AttributeForm = Omit<
 
 type Props = ClientSettingsProps & EvaluationResultRepresentation;
 
-export const AuthorizationEvaluate = ({ client }: Props) => {
+export const AuthorizationEvaluate = (props: Props) => {
+  const { hasAccess } = useAccess();
+
+  if (!hasAccess("view-users")) {
+    return <ForbiddenSection permissionNeeded="view-users" />;
+  }
+
+  return <AuthorizationEvaluateContent {...props} />;
+};
+
+const AuthorizationEvaluateContent = ({ client }: Props) => {
   const form = useForm<EvaluateFormInputs>({ mode: "onChange" });
   const {
     control,
@@ -105,10 +116,6 @@ export const AuthorizationEvaluate = ({ client }: Props) => {
     useState<PolicyEvaluationResponse>();
 
   const [clientRoles, setClientRoles] = useState<RoleRepresentation[]>([]);
-
-  const { hasAccess } = useAccess();
-  if (!hasAccess("view-users"))
-    return <ForbiddenSection permissionNeeded="view-users" />;
 
   useFetch(
     () => adminClient.roles.find(),
@@ -193,244 +200,253 @@ export const AuthorizationEvaluate = ({ client }: Props) => {
   return (
     <PageSection>
       <FormProvider {...form}>
-        <FormPanel
-          className="kc-identity-information"
-          title={t("clients:identityInformation")}
-        >
-          <FormAccess isHorizontal role="view-clients">
-            <ClientSelect
-              name="client"
-              label="client"
-              namespace="clients"
-              helpText={"clients-help:client"}
-              defaultValue={client.clientId}
-            />
-            <UserSelect
-              name="user"
-              label="users"
-              helpText={t("clients-help:selectUser")}
-              defaultValue={[]}
-              variant={SelectVariant.typeahead}
-              isRequired={roles?.length === 0}
-            />
-            <FormGroup
-              label={t("roles")}
-              labelIcon={
-                <HelpItem
-                  helpText={t("clients-help:roles")}
-                  fieldLabelId="clients:roles"
-                />
-              }
-              fieldId="realmRole"
-              validated={errors.roleIds ? "error" : "default"}
-              helperTextInvalid={t("common:required")}
-              isRequired={user.length === 0}
-            >
-              <Controller
-                name="roleIds"
-                control={control}
+        <Panel>
+          <PanelHeader>
+            <Title headingLevel="h2">{t("clients:identityInformation")}</Title>
+          </PanelHeader>
+          <PanelMainBody>
+            <FormAccess isHorizontal role="view-clients">
+              <ClientSelect
+                name="client"
+                label="client"
+                namespace="clients"
+                helpText={"clients-help:client"}
+                defaultValue={client.clientId}
+              />
+              <UserSelect
+                name="user"
+                label="users"
+                helpText={t("clients-help:selectUser")}
                 defaultValue={[]}
-                rules={{
-                  validate: (value) =>
-                    (value || "").length > 0 || user.length > 0,
-                }}
-                render={({ field }) => (
-                  <Select
-                    placeholderText={t("selectARole")}
-                    variant={SelectVariant.typeaheadMulti}
-                    toggleId="role"
-                    onToggle={setRoleDropdownOpen}
-                    selections={field.value}
-                    onSelect={(_, v) => {
-                      const option = v.toString();
-                      if (field.value?.includes(option)) {
-                        field.onChange(
-                          field.value.filter((item: string) => item !== option)
-                        );
-                      } else {
-                        field.onChange([...(field.value || []), option]);
-                      }
-                      setRoleDropdownOpen(false);
-                    }}
-                    onClear={(event) => {
-                      event.stopPropagation();
-                      field.onChange([]);
-                    }}
-                    aria-label={t("realmRole")}
-                    isOpen={roleDropdownOpen}
-                  >
-                    {clientRoles.map((role) => (
-                      <SelectOption
-                        selected={role.name === field.value}
-                        key={role.name}
-                        value={role.name}
-                      />
-                    ))}
-                  </Select>
-                )}
+                variant={SelectVariant.typeahead}
+                isRequired={roles?.length === 0}
               />
-            </FormGroup>
-          </FormAccess>
-        </FormPanel>
-        <FormPanel className="kc-permissions" title={t("common:permissions")}>
-          <FormAccess isHorizontal role="view-clients">
-            <FormGroup
-              label={t("applyToResourceType")}
-              fieldId="applyToResourceType"
-              labelIcon={
-                <HelpItem
-                  helpText={t("clients-help:applyToResourceType")}
-                  fieldLabelId="clients:applyToResourceType"
-                />
-              }
-            >
-              <Switch
-                id="applyToResource-switch"
-                label={t("common:on")}
-                labelOff={t("common:off")}
-                isChecked={applyToResourceType}
-                onChange={setApplyToResourceType}
-                aria-label={t("applyToResourceType")}
-              />
-            </FormGroup>
-
-            {!applyToResourceType ? (
               <FormGroup
-                label={t("resourcesAndScopes")}
-                id="resourcesAndScopes"
+                label={t("roles")}
                 labelIcon={
                   <HelpItem
-                    helpText={t("clients-help:contextualAttributes")}
-                    fieldLabelId={`resourcesAndScopes`}
+                    helpText={t("clients-help:roles")}
+                    fieldLabelId="clients:roles"
                   />
                 }
-                fieldId="resourcesAndScopes"
-              >
-                <KeyBasedAttributeInput
-                  selectableValues={resources.map<AttributeType>((item) => ({
-                    name: item.name!,
-                    key: item._id!,
-                  }))}
-                  resources={resources}
-                  name="resources"
-                />
-              </FormGroup>
-            ) : (
-              <>
-                <FormGroup
-                  label={t("resourceType")}
-                  isRequired
-                  labelIcon={
-                    <HelpItem
-                      helpText={t("clients-help:resourceType")}
-                      fieldLabelId="clients:resourceType"
-                    />
-                  }
-                  fieldId="client"
-                  validated={errors.alias ? "error" : "default"}
-                  helperTextInvalid={t("common:required")}
-                >
-                  <KeycloakTextInput
-                    id="alias"
-                    aria-label="resource-type"
-                    data-testid="alias"
-                    {...register("alias", { required: true })}
-                  />
-                </FormGroup>
-                <FormGroup
-                  label={t("authScopes")}
-                  labelIcon={
-                    <HelpItem
-                      helpText={t("clients-help:scopesSelect")}
-                      fieldLabelId="clients:client"
-                    />
-                  }
-                  fieldId="authScopes"
-                >
-                  <Controller
-                    name="authScopes"
-                    defaultValue={[]}
-                    control={control}
-                    render={({ field }) => (
-                      <Select
-                        toggleId="authScopes"
-                        onToggle={setScopesDropdownOpen}
-                        onSelect={(_, v) => {
-                          const option = v.toString();
-                          if (field.value.includes(option)) {
-                            field.onChange(
-                              field.value.filter(
-                                (item: string) => item !== option
-                              )
-                            );
-                          } else {
-                            field.onChange([...field.value, option]);
-                          }
-                          setScopesDropdownOpen(false);
-                        }}
-                        selections={field.value}
-                        variant={SelectVariant.typeaheadMulti}
-                        typeAheadAriaLabel={t("authScopes")}
-                        isOpen={scopesDropdownOpen}
-                      >
-                        {scopes.map((scope) => (
-                          <SelectOption
-                            selected={field.value.includes(scope.name!)}
-                            key={scope.id}
-                            value={scope.name}
-                          />
-                        ))}
-                      </Select>
-                    )}
-                  />
-                </FormGroup>
-              </>
-            )}
-            <ExpandableSection
-              toggleText={t("contextualInfo")}
-              onToggle={() => setIsExpanded(!isExpanded)}
-              isExpanded={isExpanded}
-            >
-              <FormGroup
-                label={t("contextualAttributes")}
-                id="contextualAttributes"
-                labelIcon={
-                  <HelpItem
-                    helpText={t("clients-help:contextualAttributes")}
-                    fieldLabelId={`contextualAttributes`}
-                  />
-                }
+                fieldId="realmRole"
+                validated={errors.roleIds ? "error" : "default"}
                 helperTextInvalid={t("common:required")}
-                fieldId="contextualAttributes"
+                isRequired={user.length === 0}
               >
-                <KeyBasedAttributeInput
-                  selectableValues={defaultContextAttributes}
-                  name="context.attributes"
+                <Controller
+                  name="roleIds"
+                  control={control}
+                  defaultValue={[]}
+                  rules={{
+                    validate: (value) =>
+                      (value || "").length > 0 || user.length > 0,
+                  }}
+                  render={({ field }) => (
+                    <Select
+                      placeholderText={t("selectARole")}
+                      variant={SelectVariant.typeaheadMulti}
+                      toggleId="role"
+                      onToggle={setRoleDropdownOpen}
+                      selections={field.value}
+                      onSelect={(_, v) => {
+                        const option = v.toString();
+                        if (field.value?.includes(option)) {
+                          field.onChange(
+                            field.value.filter(
+                              (item: string) => item !== option
+                            )
+                          );
+                        } else {
+                          field.onChange([...(field.value || []), option]);
+                        }
+                        setRoleDropdownOpen(false);
+                      }}
+                      onClear={(event) => {
+                        event.stopPropagation();
+                        field.onChange([]);
+                      }}
+                      aria-label={t("realmRole")}
+                      isOpen={roleDropdownOpen}
+                    >
+                      {clientRoles.map((role) => (
+                        <SelectOption
+                          selected={role.name === field.value}
+                          key={role.name}
+                          value={role.name}
+                        />
+                      ))}
+                    </Select>
+                  )}
                 />
               </FormGroup>
-            </ExpandableSection>
-          </FormAccess>
-          <ActionGroup>
-            <Button
-              data-testid="authorization-eval"
-              id="authorization-eval"
-              className="pf-u-mr-md"
-              isDisabled={!isValid}
-              onClick={() => evaluate()}
-            >
-              {t("evaluate")}
-            </Button>
-            <Button
-              data-testid="authorization-revert"
-              id="authorization-revert"
-              className="pf-u-mr-md"
-              variant="link"
-              onClick={() => reset()}
-            >
-              {t("common:revert")}
-            </Button>
-          </ActionGroup>
-        </FormPanel>
+            </FormAccess>
+          </PanelMainBody>
+        </Panel>
+        <Panel>
+          <PanelHeader>
+            <Title headingLevel="h2">{t("clients:identityInformation")}</Title>
+          </PanelHeader>
+          <PanelMainBody>
+            <FormAccess isHorizontal role="view-clients">
+              <FormGroup
+                label={t("applyToResourceType")}
+                fieldId="applyToResourceType"
+                labelIcon={
+                  <HelpItem
+                    helpText={t("clients-help:applyToResourceType")}
+                    fieldLabelId="clients:applyToResourceType"
+                  />
+                }
+              >
+                <Switch
+                  id="applyToResource-switch"
+                  label={t("common:on")}
+                  labelOff={t("common:off")}
+                  isChecked={applyToResourceType}
+                  onChange={setApplyToResourceType}
+                  aria-label={t("applyToResourceType")}
+                />
+              </FormGroup>
+
+              {!applyToResourceType ? (
+                <FormGroup
+                  label={t("resourcesAndScopes")}
+                  id="resourcesAndScopes"
+                  labelIcon={
+                    <HelpItem
+                      helpText={t("clients-help:contextualAttributes")}
+                      fieldLabelId={`resourcesAndScopes`}
+                    />
+                  }
+                  fieldId="resourcesAndScopes"
+                >
+                  <KeyBasedAttributeInput
+                    selectableValues={resources.map<AttributeType>((item) => ({
+                      name: item.name!,
+                      key: item._id!,
+                    }))}
+                    resources={resources}
+                    name="resources"
+                  />
+                </FormGroup>
+              ) : (
+                <>
+                  <FormGroup
+                    label={t("resourceType")}
+                    isRequired
+                    labelIcon={
+                      <HelpItem
+                        helpText={t("clients-help:resourceType")}
+                        fieldLabelId="clients:resourceType"
+                      />
+                    }
+                    fieldId="client"
+                    validated={errors.alias ? "error" : "default"}
+                    helperTextInvalid={t("common:required")}
+                  >
+                    <KeycloakTextInput
+                      id="alias"
+                      aria-label="resource-type"
+                      data-testid="alias"
+                      {...register("alias", { required: true })}
+                    />
+                  </FormGroup>
+                  <FormGroup
+                    label={t("authScopes")}
+                    labelIcon={
+                      <HelpItem
+                        helpText={t("clients-help:scopesSelect")}
+                        fieldLabelId="clients:client"
+                      />
+                    }
+                    fieldId="authScopes"
+                  >
+                    <Controller
+                      name="authScopes"
+                      defaultValue={[]}
+                      control={control}
+                      render={({ field }) => (
+                        <Select
+                          toggleId="authScopes"
+                          onToggle={setScopesDropdownOpen}
+                          onSelect={(_, v) => {
+                            const option = v.toString();
+                            if (field.value.includes(option)) {
+                              field.onChange(
+                                field.value.filter(
+                                  (item: string) => item !== option
+                                )
+                              );
+                            } else {
+                              field.onChange([...field.value, option]);
+                            }
+                            setScopesDropdownOpen(false);
+                          }}
+                          selections={field.value}
+                          variant={SelectVariant.typeaheadMulti}
+                          typeAheadAriaLabel={t("authScopes")}
+                          isOpen={scopesDropdownOpen}
+                        >
+                          {scopes.map((scope) => (
+                            <SelectOption
+                              selected={field.value.includes(scope.name!)}
+                              key={scope.id}
+                              value={scope.name}
+                            />
+                          ))}
+                        </Select>
+                      )}
+                    />
+                  </FormGroup>
+                </>
+              )}
+              <ExpandableSection
+                toggleText={t("contextualInfo")}
+                onToggle={() => setIsExpanded(!isExpanded)}
+                isExpanded={isExpanded}
+              >
+                <FormGroup
+                  label={t("contextualAttributes")}
+                  id="contextualAttributes"
+                  labelIcon={
+                    <HelpItem
+                      helpText={t("clients-help:contextualAttributes")}
+                      fieldLabelId={`contextualAttributes`}
+                    />
+                  }
+                  helperTextInvalid={t("common:required")}
+                  fieldId="contextualAttributes"
+                >
+                  <KeyBasedAttributeInput
+                    selectableValues={defaultContextAttributes}
+                    name="context.attributes"
+                  />
+                </FormGroup>
+              </ExpandableSection>
+            </FormAccess>
+          </PanelMainBody>
+        </Panel>
+        <ActionGroup>
+          <Button
+            data-testid="authorization-eval"
+            id="authorization-eval"
+            className="pf-u-mr-md"
+            isDisabled={!isValid}
+            onClick={() => evaluate()}
+          >
+            {t("evaluate")}
+          </Button>
+          <Button
+            data-testid="authorization-revert"
+            id="authorization-revert"
+            className="pf-u-mr-md"
+            variant="link"
+            onClick={() => reset()}
+          >
+            {t("common:revert")}
+          </Button>
+        </ActionGroup>
       </FormProvider>
     </PageSection>
   );

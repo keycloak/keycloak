@@ -24,10 +24,8 @@ import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderEvent;
 import org.keycloak.storage.SearchableModelField;
 
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -668,17 +666,6 @@ public interface RealmModel extends RoleContainerModel {
      * @return Stream of {@link GroupModel}. Never returns {@code null}.
      */
     Stream<GroupModel> getTopLevelGroupsStream(Integer first, Integer max);
-
-    /**
-     * Searches for groups by provided name. Results that match the given filter are returned as a stream.
-     * @param search {@code String} Name of a group to be used as a filter.
-     * @param first {@code Integer} Index of the first desired group. Ignored if negative or {@code null}.
-     * @param max {@code Integer} Maximum number of returned groups. Ignored if negative or {@code null}.
-     * @return Stream of {@link GroupModel}. Never returns {@code null}.
-     * @deprecated Use {@link GroupProvider#searchForGroupByNameStream(RealmModel, String, Boolean, Integer, Integer)} instead.
-     */
-    @Deprecated
-    Stream<GroupModel> searchForGroupByNameStream(String search, Integer first, Integer max);
 
     boolean removeGroup(GroupModel group);
     void moveGroup(GroupModel group, GroupModel toParent);

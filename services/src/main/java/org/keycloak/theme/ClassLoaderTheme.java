@@ -17,13 +17,18 @@
 
 package org.keycloak.theme;
 
+import org.keycloak.models.RealmModel;
+import org.keycloak.services.util.LocaleUtil;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.net.URL;
 import java.nio.charset.Charset;
+import java.util.Collections;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Properties;
 
 /**
@@ -146,6 +151,16 @@ public class ClassLoaderTheme implements Theme {
             }
         }
         return m;
+    }
+
+    @Override
+    public Properties getEnhancedMessages(RealmModel realm, Locale locale) throws IOException {
+        if (locale == null){
+            return null;
+        }
+
+        Map<Locale, Properties> localeMessages = Collections.singletonMap(locale, getMessages(locale));
+        return LocaleUtil.enhancePropertiesWithRealmLocalizationTexts(realm, locale, localeMessages);
     }
 
     @Override

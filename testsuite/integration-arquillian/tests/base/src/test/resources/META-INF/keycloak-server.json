@@ -368,6 +368,12 @@
         "files-plaintext": {
             "dir": "target/dependency/vault",
             "enabled": "${keycloak.vault.files-plaintext.provider.enabled:false}"
+        },
+        "files-keystore": {
+            "file": "target/dependency/vault/myks",
+            "pass": "keystorepassword",
+            "type": "PKCS12",
+            "enabled": "${keycloak.vault.files-keystore.provider.enabled:false}"
         }
     },
 

@@ -164,7 +164,7 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
                 .add()
                 .property().name(LDAPConstants.USE_TRUSTSTORE_SPI)
                 .type(ProviderConfigProperty.STRING_TYPE)
-                .defaultValue("ldapsOnly")
+                .defaultValue("always")
                 .add()
                 .property().name(LDAPConstants.CONNECTION_POOLING)
                 .type(ProviderConfigProperty.BOOLEAN_TYPE)
@@ -221,9 +221,6 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
                 .property().name(KerberosConstants.USE_KERBEROS_FOR_PASSWORD_AUTHENTICATION)
                 .type(ProviderConfigProperty.BOOLEAN_TYPE)
                 .defaultValue("false")
-                .add()
-                .property().name(KerberosConstants.SERVER_PRINCIPAL)
-                .type(ProviderConfigProperty.STRING_TYPE)
                 .add()
                 .build();
     }

@@ -26,6 +26,7 @@ import org.keycloak.testsuite.util.SamlClientBuilder;
 import java.io.IOException;
 import java.net.URI;
 import java.security.Signature;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.logging.Level;
@@ -325,6 +326,23 @@ public class BasicSamlTest extends AbstractSamlTest {
 
             // Corresponds to https://www.w3.org/TR/xmlschema-2/#base64Binary
             assertThat(signature, matchesRegex("^[A-Za-z0-9+/ ]+[= ]*$"));
+        }
+    }
+
+    @Test
+    public void testInvalidAssertionConsumerServiceURL() throws IOException {
+        try (var c = ClientAttributeUpdater.forClient(adminClient, REALM_NAME, SAML_CLIENT_ID_SALES_POST)
+                .setRedirectUris(Collections.singletonList("*"))
+                .update()) {
+
+            String page = new SamlClientBuilder()
+                    .authnRequest(getAuthServerSamlEndpoint(REALM_NAME), SAML_CLIENT_ID_SALES_POST, "javascript:alert('XSS')", Binding.POST)
+                    .build()
+                    .executeAndTransform(response -> {
+                        assertThat(response, statusCodeIsHC(Status.BAD_REQUEST));
+                        return EntityUtils.toString(response.getEntity(), "UTF-8");
+                    });
+            assertThat(page, containsString("Invalid redirect uri"));
         }
     }
 }

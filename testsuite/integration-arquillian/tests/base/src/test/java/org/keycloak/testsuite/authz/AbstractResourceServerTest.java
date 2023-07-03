@@ -19,6 +19,7 @@ package org.keycloak.testsuite.authz;
 import static org.junit.Assert.assertEquals;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
@@ -35,6 +36,7 @@ import org.keycloak.authorization.client.AuthzClient;
 import org.keycloak.authorization.client.resource.ProtectionResource;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.authorization.AuthorizationRequest;
+import org.keycloak.representations.idm.authorization.AuthorizationRequest.Metadata;
 import org.keycloak.representations.idm.authorization.AuthorizationResponse;
 import org.keycloak.representations.idm.authorization.Permission;
 import org.keycloak.representations.idm.authorization.PermissionRequest;
@@ -165,6 +167,31 @@ public abstract class AbstractResourceServerTest extends AbstractAuthzTest {
         return authorization.authorize(authorizationRequest);
     }
 
+    protected AuthorizationResponse authorizeDecision(String accessToken, Boolean matchingUri, PermissionRequest... permissions) {
+        AuthorizationRequest authorizationRequest = new AuthorizationRequest();
+
+        org.keycloak.authorization.client.resource.AuthorizationResource authorization;
+
+        if (accessToken != null) {
+            authorization = getAuthzClient().authorization(accessToken);
+        } else {
+            authorization = getAuthzClient().authorization();
+        }
+
+        for (PermissionRequest permission : permissions)
+            authorizationRequest.addPermission(permission.getResourceId(), new ArrayList<String>(permission.getScopes()));
+
+        Metadata metadata = new Metadata();
+        metadata.setResponseMode("decision");
+        metadata.setPermissionResourceFormat("uri");
+        if (matchingUri != null)
+            metadata.setPermissionResourceMatchingUri(matchingUri);
+
+        authorizationRequest.setMetadata(metadata);
+
+        return authorization.authorize(authorizationRequest);
+    }
+
     protected RealmResource getRealm() {
         return adminClient.realm("authz-test");
     }
@@ -209,6 +236,11 @@ public abstract class AbstractResourceServerTest extends AbstractAuthzTest {
     }
 
     protected ResourceRepresentation addResource(String resourceName, String owner, boolean ownerManagedAccess, String... scopeNames) throws Exception {
+        return addResource(resourceName, owner, null, ownerManagedAccess, scopeNames);
+    }
+
+    protected ResourceRepresentation addResource(String resourceName, String owner, Set<String> uris,
+        boolean ownerManagedAccess, String... scopeNames) throws Exception {
         ClientResource client = getClient(getRealm());
         AuthorizationResource authorization = client.authorization();
         ResourceRepresentation resource = new ResourceRepresentation(resourceName);
@@ -219,6 +251,9 @@ public abstract class AbstractResourceServerTest extends AbstractAuthzTest {
 
         resource.setOwnerManagedAccess(ownerManagedAccess);
         resource.addScope(scopeNames);
+        if (uris != null) {
+            resource.setUris(uris);
+        }
 
         Response response = authorization.resources().create(resource);
         ResourceRepresentation temp = response.readEntity(ResourceRepresentation.class);

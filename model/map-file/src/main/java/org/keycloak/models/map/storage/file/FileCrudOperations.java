@@ -25,6 +25,7 @@ import org.keycloak.models.map.common.AbstractEntity;
 import org.keycloak.models.map.common.ExpirationUtils;
 import org.keycloak.models.map.common.HasRealmId;
 import org.keycloak.models.map.common.StringKeyConverter;
+import org.keycloak.models.map.common.StringKeyConverter.StringKey;
 import org.keycloak.models.map.common.UpdatableEntity;
 import org.keycloak.models.map.realm.MapRealmEntity;
 import org.keycloak.models.map.storage.ModelEntityUtil;
@@ -136,7 +137,7 @@ public abstract class FileCrudOperations<V extends AbstractEntity & UpdatableEnt
 
     // Percent sign + Unix (/) and https://learn.microsoft.com/en-us/windows/win32/fileio/naming-a-file reserved characters
     private static final Pattern RESERVED_CHARACTERS = Pattern.compile("[%<:>\"/\\\\|?*=]");
-    private static final String ID_COMPONENT_SEPARATOR = ":";
+    public static final String ID_COMPONENT_SEPARATOR = ":";
     private static final String ESCAPING_CHARACTER = "=";
     private static final Pattern ID_COMPONENT_SEPARATOR_PATTERN = Pattern.compile(Pattern.quote(ID_COMPONENT_SEPARATOR) + "+");
 
@@ -184,11 +185,11 @@ public abstract class FileCrudOperations<V extends AbstractEntity & UpdatableEnt
             return null;
         }
 
-        String escapedId = determineKeyFromValue(parsedObject, false);
         final String fileNameStr = fileName.getFileName().toString();
         final String idFromFilename = fileNameStr.substring(0, fileNameStr.length() - FILE_SUFFIX.length());
+        String escapedId = determineKeyFromValue(parsedObject, idFromFilename);
         if (escapedId == null) {
-            LOG.debugf("Determined ID from filename: %s%s", idFromFilename);
+            LOG.tracef("Determined ID from filename: %s%s", idFromFilename);
             escapedId = idFromFilename;
         } else if (!escapedId.endsWith(idFromFilename)) {
             LOG.warnf("Id \"%s\" does not conform with filename \"%s\", expected: %s", escapedId, fileNameStr, escapeId(escapedId));
@@ -210,6 +211,23 @@ public abstract class FileCrudOperations<V extends AbstractEntity & UpdatableEnt
         return value;
     }
 
+    public String determineKeyFromValue(V value, String lastIdComponentIfUnset) {
+        String[] proposedId = suggestedPath.apply(value);
+
+        if (proposedId == null || proposedId.length == 0) {
+            return lastIdComponentIfUnset;
+        } else if (proposedId[proposedId.length - 1] == null) {
+            proposedId[proposedId.length - 1] = lastIdComponentIfUnset;
+        }
+
+        String[] escapedProposedId = escapeId(proposedId);
+        final String res = String.join(ID_COMPONENT_SEPARATOR, escapedProposedId);
+        if (LOG.isTraceEnabled()) {
+            LOG.tracef("determineKeyFromValue: got %s (%s) for %s", res, res == null ? null : String.join(" [/] ", proposedId), value);
+        }
+        return res;
+    }
+
     /**
      * Returns escaped ID - relative file name in the file system with path separator {@link #ID_COMPONENT_SEPARATOR}.
      *
@@ -218,22 +236,16 @@ public abstract class FileCrudOperations<V extends AbstractEntity & UpdatableEnt
      * @return
      */
     @Override
-    public String determineKeyFromValue(V value, boolean forCreate) {
+    public String determineKeyFromValue(V value) {
         final boolean randomId;
         String[] proposedId = suggestedPath.apply(value);
 
-        if (!forCreate) {
-            String[] escapedProposedId = escapeId(proposedId);
-            final String res = proposedId == null ? null : String.join(ID_COMPONENT_SEPARATOR, escapedProposedId);
-            if (LOG.isDebugEnabled()) {
-                LOG.debugf("determineKeyFromValue: got %s (%s) for %s", res, res == null ? null : String.join(" [/] ", proposedId), value);
-            }
-            return res;
-        }
-
         if (proposedId == null || proposedId.length == 0) {
             randomId = value.getId() == null;
-            proposedId = new String[]{value.getId() == null ? StringKeyConverter.StringKey.INSTANCE.yieldNewUniqueKey() : value.getId()};
+            proposedId = new String[] { value.getId() == null ? StringKey.INSTANCE.yieldNewUniqueKey() : value.getId() };
+        } else if (proposedId[proposedId.length - 1] == null) {
+            randomId = true;
+            proposedId[proposedId.length - 1] = StringKey.INSTANCE.yieldNewUniqueKey();
         } else {
             randomId = false;
         }
@@ -242,7 +254,7 @@ public abstract class FileCrudOperations<V extends AbstractEntity & UpdatableEnt
         Path sp = getPathForEscapedId(escapedProposedId);   // sp will never be null
 
         final Path parentDir = sp.getParent();
-        if (!Files.isDirectory(parentDir)) {
+        if (! Files.isDirectory(parentDir)) {
             try {
                 Files.createDirectories(parentDir);
             } catch (IOException ex) {
@@ -253,15 +265,15 @@ public abstract class FileCrudOperations<V extends AbstractEntity & UpdatableEnt
         for (int counter = 0; counter < 100; counter++) {
             LOG.tracef("Attempting to create file %s", sp, StackUtil.getShortStackTrace());
             try {
-                touch(sp);
                 final String res = String.join(ID_COMPONENT_SEPARATOR, escapedProposedId);
-                LOG.debugf("determineKeyFromValue: got %s for created %s", res, value);
+                touch(res, sp);
+                LOG.tracef("determineKeyFromValue: got %s for created %s", res, value);
                 return res;
             } catch (FileAlreadyExistsException ex) {
-                if (!randomId) {
+                if (! randomId) {
                     throw new ModelDuplicateException("File " + sp + " already exists!");
                 }
-                final String lastComponent = StringKeyConverter.StringKey.INSTANCE.yieldNewUniqueKey();
+                final String lastComponent = StringKey.INSTANCE.yieldNewUniqueKey();
                 escapedProposedId[escapedProposedId.length - 1] = lastComponent;
                 sp = getPathForEscapedId(escapedProposedId);
             } catch (IOException ex) {
@@ -299,7 +311,7 @@ public abstract class FileCrudOperations<V extends AbstractEntity & UpdatableEnt
 
         // We cannot use Files.find since it throws an UncheckedIOException if it lists a file which is removed concurrently
         // before its BasicAttributes can be retrieved for its BiPredicate parameter
-        try (Stream<Path> dirStream = Files.walk(dataDirectory, entityClass == MapRealmEntity.class ? 1 : 2)) {
+        try (Stream<Path> dirStream = Files.walk(dataDirectory, entityClass == MapRealmEntity.class ? 1 : 3)) {
             // The paths list has to be materialized first, otherwise "dirStream" would be closed
             // before the resulting stream would be read and would return empty result
             paths = dirStream.collect(Collectors.toList());
@@ -396,7 +408,7 @@ public abstract class FileCrudOperations<V extends AbstractEntity & UpdatableEnt
         }
     }
 
-    protected abstract void touch(Path sp) throws IOException;
+    protected abstract void touch(String proposedId, Path sp) throws IOException;
 
     protected abstract boolean removeIfExists(Path sp);
 

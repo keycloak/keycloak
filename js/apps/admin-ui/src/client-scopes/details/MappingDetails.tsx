@@ -21,7 +21,7 @@ import { toClient } from "../../clients/routes/Client";
 import { useAlerts } from "../../components/alert/Alerts";
 import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
 import { DynamicComponents } from "../../components/dynamic/DynamicComponents";
-import { FormAccess } from "../../components/form-access/FormAccess";
+import { FormAccess } from "../../components/form/FormAccess";
 import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 import { ViewHeader } from "../../components/view-header/ViewHeader";
 import { useRealm } from "../../context/realm-context/RealmContext";
@@ -31,8 +31,6 @@ import { useFetch } from "../../utils/useFetch";
 import { useParams } from "../../utils/useParams";
 import { toClientScope } from "../routes/ClientScope";
 import { MapperParams, MapperRoute } from "../routes/Mapper";
-
-import "./mapping-details.css";
 
 export default function MappingDetails() {
   const { t } = useTranslation("client-scopes");
@@ -206,7 +204,6 @@ export default function MappingDetails() {
           isHorizontal
           onSubmit={handleSubmit(save)}
           role="manage-clients"
-          className="keycloak__client-scope-mapping-details__form"
         >
           <FormGroup label={t("common:mapperType")} fieldId="mapperType">
             <KeycloakTextInput
@@ -242,7 +239,10 @@ export default function MappingDetails() {
             />
           </FormGroup>
           <FormProvider {...form}>
-            <DynamicComponents properties={mapping?.properties || []} />
+            <DynamicComponents
+              properties={mapping?.properties || []}
+              isNew={!isUpdating}
+            />
           </FormProvider>
           <ActionGroup>
             <Button variant="primary" type="submit">

@@ -4,7 +4,7 @@ import { FormProvider, useForm } from "react-hook-form";
 import { ActionGroup, Button } from "@patternfly/react-core";
 
 import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
-import { FormAccess } from "../../components/form-access/FormAccess";
+import { FormAccess } from "../../components/form/FormAccess";
 import { HelpLinkTextInput } from "./HelpLinkTextInput";
 import { convertToFormValues } from "../../util";
 
@@ -62,6 +62,10 @@ export const HeadersForm = ({ realm, save }: HeadersFormProps) => {
         <HelpLinkTextInput
           fieldName="browserSecurityHeaders.strictTransportSecurity"
           url="https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Strict-Transport-Security"
+        />
+        <HelpLinkTextInput
+          fieldName="browserSecurityHeaders.referrerPolicy"
+          url="https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Referrer-Policy"
         />
 
         <ActionGroup>

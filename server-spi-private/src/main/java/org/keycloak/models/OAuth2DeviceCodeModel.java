@@ -193,6 +193,8 @@ public class OAuth2DeviceCodeModel {
         Map<String, String> result = new HashMap<>();
 
         result.put(REALM_ID, realm.getId());
+        result.put(CLIENT_ID, clientId);
+
         if (clientNotificationToken != null) {
             result.put(CLIENT_NOTIFICATION_TOKEN_NOTE, clientNotificationToken);
         }
@@ -201,7 +203,6 @@ public class OAuth2DeviceCodeModel {
         }
 
         if (denied == null) {
-            result.put(CLIENT_ID, clientId);
             result.put(EXPIRATION_NOTE, String.valueOf(expiration));
             result.put(POLLING_INTERVAL_NOTE, String.valueOf(pollingInterval));
             result.put(SCOPE_NOTE, scope);

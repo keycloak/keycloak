@@ -134,25 +134,25 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
 
     void initBuiltIns() {
                 ProtocolMapperModel model;
-        model = UserPropertyMapper.createClaimMapper(USERNAME,
+        model = UserAttributeMapper.createClaimMapper(USERNAME,
                 "username",
-                "preferred_username", "String",
+                "preferred_username", String.class.getSimpleName(),
                 true, true);
         builtins.put(USERNAME, model);
 
-        model = UserPropertyMapper.createClaimMapper(EMAIL,
+        model = UserAttributeMapper.createClaimMapper(EMAIL,
                 "email",
                 "email", "String",
                 true, true);
         builtins.put(EMAIL, model);
 
-        model = UserPropertyMapper.createClaimMapper(GIVEN_NAME,
+        model = UserAttributeMapper.createClaimMapper(GIVEN_NAME,
                 "firstName",
                 "given_name", "String",
                 true, true);
         builtins.put(GIVEN_NAME, model);
 
-        model = UserPropertyMapper.createClaimMapper(FAMILY_NAME,
+        model = UserAttributeMapper.createClaimMapper(FAMILY_NAME,
                 "lastName",
                 "family_name", "String",
                 true, true);
@@ -205,7 +205,7 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
         builtins.put(IMPERSONATOR_ID.getDisplayName(), UserSessionNoteMapper.createUserSessionNoteMapper(IMPERSONATOR_ID));
         builtins.put(IMPERSONATOR_USERNAME.getDisplayName(), UserSessionNoteMapper.createUserSessionNoteMapper(IMPERSONATOR_USERNAME));
 
-        model = UserPropertyMapper.createClaimMapper(UPN, "username",
+        model = UserAttributeMapper.createClaimMapper(UPN, "username",
                 "upn", "String",
                 true, true);
         builtins.put(UPN, model);

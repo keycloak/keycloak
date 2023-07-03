@@ -55,7 +55,7 @@ public class HmacOTP {
         return sb.toString();
     }
 
-    public String generateHOTP(String key, int counter) {
+    public String generateHOTP(byte[] key, int counter) {
         String steps = Integer.toHexString(counter).toUpperCase();
 
         // Just get a 16 digit string
@@ -66,6 +66,10 @@ public class HmacOTP {
 
     }
 
+    public String generateHOTP(String key, int counter) {
+        return generateHOTP(key.getBytes(), counter);
+    }
+
     /**
      *
      * @param token
@@ -73,7 +77,7 @@ public class HmacOTP {
      * @param counter
      * @return -1 if not a match.  A positive number means successful validation.  This positive number is also the new value of the counter
      */
-    public int validateHOTP(String token, String key, int counter) {
+    public int validateHOTP(String token, byte[] key, int counter) {
 
         int newCounter = counter;
         for (newCounter = counter; newCounter <= counter + lookAheadWindow; newCounter++) {
@@ -84,6 +88,10 @@ public class HmacOTP {
 
         }
         return -1;
+    }
+
+    public int validateHOTP(String token, String key, int counter) {
+        return validateHOTP(token, key.getBytes(), counter);
     }
 
     /**
@@ -97,7 +105,7 @@ public class HmacOTP {
      * @throws java.security.GeneralSecurityException
      *
      */
-    public String generateOTP(String key, String counter, int returnDigits, String crypto) {
+    public String generateOTP(byte[] key, String counter, int returnDigits, String crypto) {
         String result = null;
         byte[] hash;
 
@@ -112,9 +120,8 @@ public class HmacOTP {
 
         // Adding one byte to get the right conversion
         // byte[] k = hexStr2Bytes(key);
-        byte[] k = key.getBytes();
 
-        hash = hmac_sha1(crypto, k, msg);
+        hash = hmac_sha1(crypto, key, msg);
 
         // put selected bytes into result int
         int offset = hash[hash.length - 1] & 0xf;

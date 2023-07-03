@@ -83,11 +83,6 @@ public interface TestingResource {
     void clearAdminEventQueue();
 
     @GET
-    @Path("/clear-event-store")
-    @Produces(MediaType.APPLICATION_JSON)
-    void clearEventStore();
-
-    @GET
     @Path("/clear-event-store-for-realm")
     @Produces(MediaType.APPLICATION_JSON)
     void clearEventStore(@QueryParam("realmId") String realmId);
@@ -126,11 +121,6 @@ public interface TestingResource {
     @Path("/on-event")
     @Consumes(MediaType.APPLICATION_JSON)
     public void onEvent(final EventRepresentation rep);
-
-    @GET
-    @Path("/clear-admin-event-store")
-    @Produces(MediaType.APPLICATION_JSON)
-    void clearAdminEventStore();
 
     @GET
     @Path("/clear-admin-event-store-for-realm")
@@ -408,4 +398,21 @@ public interface TestingResource {
     @Path("/get-provider-implementation-class")
     @Produces(MediaType.APPLICATION_JSON)
     String getProviderClassName(@QueryParam("providerClass") String providerClass, @QueryParam("providerId") String providerId);
+
+    /**
+     * Temporarily disables truststore SPI from the file. Useful for example to test some error scenarios, which require truststore SPI to be unset (or set incorrectly)
+     */
+    @GET
+    @Path("/disable-truststore-spi")
+    @NoCache
+    void disableTruststoreSpi();
+
+    /**
+     * Re-enable truststore SPI after it was temporarily disabled by {@link #disableTruststoreSpi()}
+     */
+    @GET
+    @Path("/reenable-truststore-spi")
+    @NoCache
+    void reenableTruststoreSpi();
+
 }

@@ -92,7 +92,6 @@ import org.keycloak.theme.freemarker.FreeMarkerProvider;
 import org.keycloak.userprofile.UserProfileContext;
 import org.keycloak.userprofile.UserProfileProvider;
 import org.keycloak.utils.MediaType;
-import org.keycloak.utils.StringUtil;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -260,6 +259,9 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
             case LOGIN_TOTP:
                 attributes.put("otpLogin", new TotpLoginBean(session, realm, user, (String) this.attributes.get(OTPFormAuthenticator.SELECTED_OTP_CREDENTIAL_ID)));
                 break;
+            case LOGIN_RESET_OTP:
+                attributes.put("configuredOtpCredentials", new TotpLoginBean(session, realm, user, (String) this.attributes.get(OTPFormAuthenticator.SELECTED_OTP_CREDENTIAL_ID)));
+                break;
             case REGISTER:
                 if(isDynamicUserProfile()) {
                     page = LoginFormsPages.REGISTER_USER_PROFILE;
@@ -379,14 +381,9 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
      * @return message bundle for other use
      */
     protected Properties handleThemeResources(Theme theme, Locale locale) {
-        Properties messagesBundle = new Properties();
+        Properties messagesBundle;
         try {
-            if(!StringUtil.isNotBlank(realm.getDefaultLocale()))
-            {
-                messagesBundle.putAll(realm.getRealmLocalizationTextsByLocale(realm.getDefaultLocale()));
-            }
-            messagesBundle.putAll(theme.getMessages(locale));
-            messagesBundle.putAll(realm.getRealmLocalizationTextsByLocale(locale.toLanguageTag()));
+            messagesBundle = theme.getEnhancedMessages(realm, locale);
             attributes.put("msg", new MessageFormatterMethod(locale, messagesBundle));
             attributes.put("advancedMsg", new AdvancedMessageFormatterMethod(locale, messagesBundle));
         } catch (IOException e) {
@@ -441,8 +438,6 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
 
         Locale locale = session.getContext().resolveLocale(user);
         Properties messagesBundle = handleThemeResources(theme, locale);
-        Map<String, String> localizationTexts = realm.getRealmLocalizationTextsByLocale(locale.getCountry());
-        messagesBundle.putAll(localizationTexts);
         FormMessage msg = new FormMessage(null, message);
         return formatMessage(msg, messagesBundle, locale);
     }
@@ -557,7 +552,7 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
 
     public Response createLoginPassword(){
         return createResponse(LoginFormsPages.LOGIN_PASSWORD);
-    };
+    }
 
     @Override
     public Response createPasswordReset() {
@@ -566,6 +561,10 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
             authenticationSession.setAuthNote(AbstractUsernameFormAuthenticator.ATTEMPTED_USERNAME, loginHint);
         }
         return createResponse(LoginFormsPages.LOGIN_RESET_PASSWORD);
+    }
+
+    @Override public Response createOtpReset() {
+        return createResponse(LoginFormsPages.LOGIN_RESET_OTP);
     }
 
     @Override
@@ -587,11 +586,19 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
     public Response createRegistration() {
         String loginHint = authenticationSession.getClientNote(OIDCLoginProtocol.LOGIN_HINT_PARAM);
         if (loginHint != null && !loginHint.isEmpty()) {
-            this.formData = new MultivaluedHashMap<>();
+            if (this.formData == null) {
+                this.formData = new MultivaluedHashMap<>();
+            }
             if(this.realm.isRegistrationEmailAsUsername()) {
-                this.formData.putSingle("email", loginHint);
+                String value = this.formData.getFirst("email");
+                if (value == null || value.trim().isEmpty()) {
+                    this.formData.putSingle("email", loginHint);
+                }
             } else {
-                this.formData.putSingle("username", loginHint);
+                String value = this.formData.getFirst("username");
+                if (value == null || value.trim().isEmpty()) {
+                    this.formData.putSingle("username", loginHint);
+                }
             }
         }
 

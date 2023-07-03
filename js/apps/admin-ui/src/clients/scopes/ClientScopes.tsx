@@ -133,6 +133,7 @@ export const ClientScopes = ({
 
   const { hasAccess } = useAccess();
   const isManager = hasAccess("manage-clients") || fineGrainedAccess;
+  const isViewer = hasAccess("view-clients") || fineGrainedAccess;
 
   const loader = async (first?: number, max?: number, search?: string) => {
     const defaultClientScopes =
@@ -177,7 +178,7 @@ export const ClientScopes = ({
     const firstNum = Number(first);
     const page = localeSort(rows.filter(filter), mapByKey("name"));
 
-    if (isManager) {
+    if (isViewer) {
       page.unshift({
         id: DEDICATED_ROW,
         name: t("dedicatedScopeName", { clientName }),
@@ -240,7 +241,7 @@ export const ClientScopes = ({
       <KeycloakDataTable
         key={key}
         loader={loader}
-        ariaLabelKey="clients:clientScopeList"
+        ariaLabelKey={`clients:clientScopeList-${key}`}
         searchPlaceholderKey={
           searchType === "name" ? "clients:searchByName" : undefined
         }

@@ -54,6 +54,16 @@ public interface EntityFieldDelegate<E> extends UpdatableEntity {
         }
 
         @Override
+        public void markUpdatedFlag() {
+            entity.markUpdatedFlag();
+        }
+
+        @Override
+        public void clearUpdatedFlag() {
+            entity.clearUpdatedFlag();
+        }
+
+        @Override
         public String toString() {
             return "&" + String.valueOf(entity);
         }

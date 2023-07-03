@@ -35,7 +35,7 @@ export const ListComponent = ({
       <Controller
         name={convertToName(name!)}
         data-testid={name}
-        defaultValue={defaultValue || ""}
+        defaultValue={defaultValue || options?.[0] || ""}
         control={control}
         render={({ field }) => (
           <Select

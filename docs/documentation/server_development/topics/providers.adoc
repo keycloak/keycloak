@@ -85,7 +85,7 @@ Example service configuration file (`META-INF/services/org.keycloak.theme.ThemeS
 org.acme.provider.MyThemeSelectorProviderFactory
 ----
 
-To configure your provider, see the link:https://www.keycloak.org/server/configuration-provider[Configuring Providers] guide.
+To configure your provider, see the link:https://www.keycloak.org/server/configuration-provider[Configuring Providers] {section}.
 
 For example, to configure a provider you can set options as follows:
 
@@ -127,7 +127,7 @@ public class MyThemeSelectorProvider implements ThemeSelectorProvider {
 
 As mentioned above, it is recommended that your `ProviderFactory` implementations use unique ID. However at the same time, it can be useful to override one of the {project_name} built-in providers.
 The recommended way for this is still ProviderFactory implementation with unique ID and then for instance set the default provider as
-specified in the link:https://www.keycloak.org/server/configuration-provider[Configuring Providers] guide. On the other hand, this may not be always possible.
+specified in the link:https://www.keycloak.org/server/configuration-provider[Configuring Providers] {section}. On the other hand, this may not be always possible.
 
 For instance when you need some customizations to default OpenID Connect protocol behaviour and you want to override
 default {project_name} implementation of `OIDCLoginProtocolFactory` you need to preserve same providerId. As for example admin console, OIDC protocol well-known endpoint and various other things rely on
@@ -256,7 +256,8 @@ the `ScriptModel` to access script metadata
 `realm`::
 the `RealmModel`
 `user`::
-the current `UserModel`
+the current `UserModel`. Note that `user` is available when your script authenticator is configured in the authentication flow in a way that is triggered after
+another authenticator succeeded in establishing user identity and set the user into the authentication session.
 `session`::
 the active `KeycloakSession`
 `authenticationSession`::
@@ -286,6 +287,21 @@ function authenticate(context) {
 
   context.success();
 }
+----
+
+===== Where to add script authenticator
+
+A possible use of script authenticator is to do some checks at the end of the authentication. Note that if you want
+your script authenticator to be always triggered (even for instance during SSO re-authentication with the identity cookie), you may need to add it as REQUIRED at the end
+of the authentication flow and encapsulate the existing authenticators into a separate REQUIRED authentication subflow. This need is because the REQUIRED and ALTERNATIVE executions
+should not be at the same level. For example, the authentication flow configuration should appear as follows:
+[source]
+----
+- User-authentication-subflow REQUIRED
+-- Cookie ALTERNATIVE
+-- Identity-provider-redirect ALTERNATIVE
+...
+- Your-Script-Authenticator REQUIRED
 ----
 
 ==== Create a JAR with the scripts to deploy

@@ -1,3 +1,4 @@
+import { v4 as uuid } from "uuid";
 import LoginPage from "../support/pages/LoginPage";
 import ListingPage, {
   Filter,
@@ -314,7 +315,7 @@ describe("Clients test", () => {
     });
 
     it("Client CRUD test", () => {
-      itemId += "_" + crypto.randomUUID();
+      itemId += "_" + uuid();
 
       // Create
       commonPage.tableUtils().checkRowItemExists(itemId, false);
@@ -481,7 +482,7 @@ describe("Clients test", () => {
 
   describe("Roles tab test", () => {
     const rolesTab = new ClientRolesTab();
-    const client = "client_" + crypto.randomUUID();
+    const client = "client_" + uuid();
 
     before(() =>
       adminClient.createClient({
@@ -687,7 +688,7 @@ describe("Clients test", () => {
       loginPage.logIn();
       keycloakBefore();
       commonPage.sidebar().goToClients();
-      client = "client_" + crypto.randomUUID();
+      client = "client_" + uuid();
       commonPage.tableToolbarUtils().createClient();
       createClientPage
         .selectClientType("openid-connect")

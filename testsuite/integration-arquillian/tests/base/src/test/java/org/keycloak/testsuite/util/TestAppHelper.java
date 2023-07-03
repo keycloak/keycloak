@@ -24,7 +24,6 @@ import org.keycloak.testsuite.pages.LoginTotpPage;
 
 import jakarta.ws.rs.core.Response;
 import java.io.IOException;
-import java.net.URISyntaxException;
 
 public class TestAppHelper {
     private OAuthClient oauth;
@@ -45,7 +44,7 @@ public class TestAppHelper {
         this.appPage = appPage;
     }
 
-    public boolean login(String username, String password) throws URISyntaxException, IOException {
+    public boolean login(String username, String password) {
         startLogin(username, password);
 
         if (loginPage.isCurrent()) {
@@ -70,11 +69,26 @@ public class TestAppHelper {
         refreshToken = tokenResponse.getRefreshToken();
     }
 
-    public boolean login(String username, String password, String otp) throws URISyntaxException, IOException {
+    public boolean login(String username, String password, String otp) {
         startLogin(username, password);
 
         loginTotpPage.login(otp);
         if (loginTotpPage.isCurrent()) {
+            return false;
+        }
+
+        completeLogin();
+
+        return appPage.isCurrent();
+    }
+
+    public boolean login(String username, String password, String realm, String clientId, String idp) {
+        oauth.clientId(clientId);
+        loginPage.open(realm);
+        loginPage.clickSocial(idp);
+        loginPage.login(username, password);
+
+        if (loginPage.isCurrent(realm)) {
             return false;
         }
 

@@ -23,14 +23,14 @@
 
     <cache-container name="keycloak">
         <transport lock-timeout="60000"/>
-        <local-cache name="realms">
+        <local-cache name="realms" simple-cache="true">
             <encoding>
                 <key media-type="application/x-java-object"/>
                 <value media-type="application/x-java-object"/>
             </encoding>
             <memory max-count="10000"/>
         </local-cache>
-        <local-cache name="users">
+        <local-cache name="users" simple-cache="true">
             <encoding>
                 <key media-type="application/x-java-object"/>
                 <value media-type="application/x-java-object"/>
@@ -55,7 +55,7 @@
         <distributed-cache name="loginFailures" owners="2">
             <expiration lifespan="-1"/>
         </distributed-cache>
-        <local-cache name="authorization">
+        <local-cache name="authorization" simple-cache="true">
             <encoding>
                 <key media-type="application/x-java-object"/>
                 <value media-type="application/x-java-object"/>
@@ -65,7 +65,7 @@
         <replicated-cache name="work">
             <expiration lifespan="-1"/>
         </replicated-cache>
-        <local-cache name="keys">
+        <local-cache name="keys" simple-cache="true">
             <encoding>
                 <key media-type="application/x-java-object"/>
                 <value media-type="application/x-java-object"/>

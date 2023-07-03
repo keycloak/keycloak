@@ -3,7 +3,7 @@
 
 This guide will help new contributors use `git` and GitHub for Keycloak documentation submissions and suggestions.
 
-Before you start, please take a look at our writing templates contained in the link:https://github.com/keycloak/keycloak-documentation/tree/main/internal_resources[internal resources directory], which also describes each template file with information about when to use which. We are working to update our documentation to put procedural content, conceptual content, and reference content into separate .adoc files, and we kindly request that new contributions please use these templates.
+Before you start,  check out our writing templates, which are contained in the link:https://github.com/keycloak/keycloak/tree/main/docs/documentation/internal_resources[internal resources directory], This directory also describes each template file and when to use that template. We are working to update our documentation to put procedural content, conceptual content, and reference content into separate .adoc files, and we request that new contributions use these templates.
 
 There are two ways to start. The first is the easiest, but it is less flexible. The second is more powerful, but requires setting up. For either method, you must already have a GitHub account, as described in link:https://github.com/join[Join GitHub].
 

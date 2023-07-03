@@ -58,7 +58,7 @@ public class ConcurrentHashMapStorageProvider implements MapStorageProvider {
         });
     }
 
-    private <V extends AbstractEntity & UpdatableEntity, M> ConcurrentHashMapStorage getMapStorage(Class<?> modelType, CrudOperations<V, M> crud) {
+    private <K, V extends AbstractEntity & UpdatableEntity, M> ConcurrentHashMapStorage getMapStorage(Class<?> modelType, ConcurrentHashMapCrudOperations<K, V, M> crud) {
         if (modelType == SingleUseObjectValueModel.class) {
             return new SingleUseObjectMapStorage(crud, factory.getKeyConverter(modelType), CLONER, MapFieldPredicates.getPredicates(modelType));
         }

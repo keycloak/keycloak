@@ -96,8 +96,7 @@ public final class LdapMapContextManager implements AutoCloseable {
         ldapContext = new InitialLdapContext(connProp, null);
         if (ldapMapConfig.isStartTls()) {
             SSLSocketFactory sslSocketFactory = null;
-            String useTruststoreSpi = ldapMapConfig.getUseTruststoreSpi();
-            if (useTruststoreSpi != null && useTruststoreSpi.equals(LDAPConstants.USE_TRUSTSTORE_ALWAYS)) {
+            if (LdapMapUtil.shouldUseTruststoreSpi(ldapMapConfig)) {
                 TruststoreProvider provider = session.getProvider(TruststoreProvider.class);
                 sslSocketFactory = provider.getSSLSocketFactory();
             }
@@ -204,9 +203,8 @@ public final class LdapMapContextManager implements AutoCloseable {
 
         // when using Start TLS, use default socket factory for LDAP client but pass the TrustStore SSL socket factory later
         // when calling StartTlsResponse.negotiate(trustStoreSSLSocketFactory)
-        if (!ldapMapConfig.isStartTls()) {
-            String useTruststoreSpi = ldapMapConfig.getUseTruststoreSpi();
-            LDAPConstants.setTruststoreSpiIfNeeded(useTruststoreSpi, url, env);
+        if (LdapMapUtil.shouldUseTruststoreSpi(ldapMapConfig)) {
+            env.put("java.naming.ldap.factory.socket", "org.keycloak.truststore.SSLSocketFactory");
         }
 
         String connectionPooling = ldapMapConfig.getConnectionPooling();

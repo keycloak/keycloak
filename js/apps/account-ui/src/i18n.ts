@@ -1,4 +1,4 @@
-import { createInstance } from "i18next";
+import { TFunction, createInstance } from "i18next";
 import HttpBackend from "i18next-http-backend";
 import { initReactI18next } from "react-i18next";
 
@@ -7,6 +7,8 @@ import { joinPath } from "./utils/joinPath";
 
 const DEFAULT_LOCALE = "en";
 const DEFAULT_NAMESPACE = "translation";
+
+export type TFuncKey = Parameters<TFunction>[1];
 
 export const i18n = createInstance({
   defaultNS: DEFAULT_NAMESPACE,

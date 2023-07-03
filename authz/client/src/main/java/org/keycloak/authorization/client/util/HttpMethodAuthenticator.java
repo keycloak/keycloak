@@ -134,6 +134,14 @@ public class HttpMethodAuthenticator<R> {
             if (metadata.getResponseMode() != null) {
                 method.param("response_mode", metadata.getResponseMode());
             }
+
+            if (metadata.getPermissionResourceFormat() != null) {
+                method.param("permission_resource_format", metadata.getPermissionResourceFormat().toString());
+            }
+
+            if (metadata.getPermissionResourceMatchingUri() != null) {
+                method.param("permission_resource_matching_uri", metadata.getPermissionResourceMatchingUri().toString());
+            }
         }
 
         return method;

@@ -18,13 +18,13 @@ package org.keycloak.testsuite.broker;
 
 import static org.keycloak.testsuite.broker.BrokerTestConstants.IDP_OIDC_ALIAS;
 import static org.keycloak.testsuite.broker.BrokerTestTools.createIdentityProvider;
-import static org.keycloak.testsuite.broker.BrokerTestTools.getConsumerRoot;
 
-import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.models.IdentityProviderSyncMode;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.testsuite.broker.oidc.TestKeycloakOidcIdentityProviderFactory;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
 
 /**
  * Test methods for testing a custom OIDC broker
@@ -50,7 +50,8 @@ public class KcCustomOidcBrokerTest extends AbstractInitializedBaseBrokerTest {
 
     @Test
     public void testCustomDisplayIcon() {
-        driver.navigate().to(getAccountUrl(getConsumerRoot(), bc.consumerRealmName()));
-        Assert.assertTrue(driver.getPageSource().contains("my-custom-idp-icon"));
+        oauth.clientId("broker-app");
+        loginPage.open(bc.consumerRealmName());
+        assertThat(driver.getPageSource(), containsString("my-custom-idp-icon"));
     }
 }

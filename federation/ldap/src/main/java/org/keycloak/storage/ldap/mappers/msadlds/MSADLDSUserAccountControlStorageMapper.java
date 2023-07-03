@@ -66,6 +66,10 @@ public class MSADLDSUserAccountControlStorageMapper extends AbstractLDAPStorageM
         // This needs to be read-only and can be set to writable just on demand
         query.addReturningReadOnlyLdapAttribute(LDAPConstants.PWD_LAST_SET);
 
+        // ask msds-user-password-expired in ldap query for required action UPDATE_PASSWORD
+        query.addReturningLdapAttribute(LDAPConstants.MSDS_USER_PASSWORD_EXPIRED);
+        query.addReturningReadOnlyLdapAttribute(LDAPConstants.MSDS_USER_PASSWORD_EXPIRED);
+        
         if (ldapProvider.getEditMode() != UserStorageProvider.EditMode.WRITABLE) {
             query.addReturningReadOnlyLdapAttribute(LDAPConstants.MSDS_USER_ACCOUNT_DISABLED);
         }
@@ -263,9 +267,10 @@ public class MSADLDSUserAccountControlStorageMapper extends AbstractLDAPStorageM
             Stream<String> requiredActions = super.getRequiredActionsStream();
 
             if (ldapProvider.getEditMode() == UserStorageProvider.EditMode.WRITABLE) {
-                if (getPwdLastSet() == 0 || Boolean.parseBoolean(ldapUser.getAttributeAsString(LDAPConstants.MSDS_USER_PASSWORD_EXPIRED))) {
-                    return Stream.concat(requiredActions, Stream.of(RequiredAction.UPDATE_PASSWORD.toString())).distinct();
-                }
+                    // update password only if force or expired and not updated (-1)
+                    if (getPwdLastSet() == 0 || (getPwdLastSet() != -1 && Boolean.parseBoolean(ldapUser.getAttributeAsString(LDAPConstants.MSDS_USER_PASSWORD_EXPIRED)))) {
+                        return Stream.concat(requiredActions, Stream.of(RequiredAction.UPDATE_PASSWORD.toString())).distinct();
+                    }
             }
             return requiredActions;
         }

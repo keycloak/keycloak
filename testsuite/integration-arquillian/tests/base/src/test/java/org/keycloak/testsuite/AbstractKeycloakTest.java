@@ -17,6 +17,7 @@
 package org.keycloak.testsuite;
 
 import io.appium.java_client.AppiumDriver;
+import jakarta.ws.rs.core.Response;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.PropertiesConfiguration;
 import org.jboss.arquillian.container.test.api.RunAsClient;
@@ -40,12 +41,12 @@ import org.keycloak.models.RealmProvider;
 import org.keycloak.models.cache.CacheRealmProvider;
 import org.keycloak.models.cache.UserCache;
 import org.keycloak.models.utils.TimeBasedOTP;
+import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.provider.Provider;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.services.resources.account.AccountFormService;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
 import org.keycloak.testsuite.arquillian.KcArquillian;
@@ -55,7 +56,6 @@ import org.keycloak.testsuite.auth.page.AuthRealm;
 import org.keycloak.testsuite.auth.page.AuthServer;
 import org.keycloak.testsuite.auth.page.AuthServerContextRoot;
 import org.keycloak.testsuite.auth.page.WelcomePage;
-import org.keycloak.testsuite.auth.page.account.Account;
 import org.keycloak.testsuite.auth.page.login.OIDCLogin;
 import org.keycloak.testsuite.auth.page.login.UpdatePassword;
 import org.keycloak.testsuite.client.KeycloakTestingClient;
@@ -145,9 +145,6 @@ public abstract class AbstractKeycloakTest {
     protected AuthRealm masterRealmPage;
 
     @Page
-    protected Account accountPage;
-
-    @Page
     protected OIDCLogin loginPage;
 
     @Page
@@ -194,7 +191,6 @@ public abstract class AbstractKeycloakTest {
         }
 
         oauth.init(driver);
-
     }
 
     public void reconnectAdminClient() throws Exception {
@@ -292,7 +288,7 @@ public abstract class AbstractKeycloakTest {
     protected void deleteAllCookiesForRealm(String realmName) {
         // we can't use /auth/realms/{realmName} because some browsers (e.g. Chrome) apparently don't send cookies
         // to JSON pages and therefore can't delete realms cookies there; a non existing page will do just fine
-        navigateToUri(accountPage.getAuthRoot() + "/realms/" + realmName + "/super-random-page");
+        navigateToUri(oauth.SERVER_ROOT + "/auth/realms/" + realmName + "/super-random-page");
         log.info("deleting cookies in '" + realmName + "' realm");
         driver.manage().deleteAllCookies();
     }
@@ -586,6 +582,23 @@ public abstract class AbstractKeycloakTest {
         return user;
     }
 
+    protected void createAppClientInRealm(String realm) {
+        ClientRepresentation client = new ClientRepresentation();
+        client.setClientId("test-app");
+        client.setName("test-app");
+        client.setSecret("password");
+        client.setEnabled(true);
+        client.setDirectAccessGrantsEnabled(true);
+
+        client.setRedirectUris(Collections.singletonList(oauth.SERVER_ROOT + "/auth/*"));
+        client.setBaseUrl(oauth.SERVER_ROOT + "/auth/realms/" + realm + "/app");
+
+        OIDCAdvancedConfigWrapper.fromClientRepresentation(client).setPostLogoutRedirectUris(Collections.singletonList("+"));
+
+        Response response = adminClient.realm(realm).clients().create(client);
+        response.close();
+    }
+
     public void setRequiredActionEnabled(String realm, String requiredAction, boolean enabled, boolean defaultAction) {
         AuthenticationManagementResource managementResource = adminClient.realm(realm).flows();
 
@@ -707,17 +720,6 @@ public abstract class AbstractKeycloakTest {
 
     public Logger getLogger() {
         return log;
-    }
-
-    protected String getAccountRedirectUrl(String realm) {
-        return AccountFormService
-              .loginRedirectUrl(UriBuilder.fromUri(oauth.AUTH_SERVER_ROOT))
-              .build(realm)
-              .toString();
-    }
-
-    protected String getAccountRedirectUrl() {
-        return getAccountRedirectUrl("test");
     }
 
     protected static InputStream httpsAwareConfigurationStream(InputStream input) throws IOException {

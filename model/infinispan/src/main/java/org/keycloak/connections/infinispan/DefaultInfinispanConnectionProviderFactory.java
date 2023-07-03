@@ -238,6 +238,7 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
 
         ConfigurationBuilder sessionConfigBuilder = createCacheConfigurationBuilder();
         if (clustered) {
+            sessionConfigBuilder.simpleCache(false);
             String sessionsMode = config.get("sessionsMode", "distributed");
             if (sessionsMode.equalsIgnoreCase("replicated")) {
                 sessionConfigBuilder.clustering().cacheMode(async ? CacheMode.REPL_ASYNC : CacheMode.REPL_SYNC);
@@ -252,6 +253,7 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
 
             int l1Lifespan = config.getInt("l1Lifespan", 600000);
             boolean l1Enabled = l1Lifespan > 0;
+            Boolean awaitInitialTransfer = config.getBoolean("awaitInitialTransfer", true);
             sessionConfigBuilder.clustering()
                     .hash()
                         .numOwners(owners)
@@ -259,7 +261,7 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
                     .l1()
                         .enabled(l1Enabled)
                         .lifespan(l1Lifespan)
-                    .stateTransfer().timeout(30, TimeUnit.SECONDS)
+                    .stateTransfer().awaitInitialTransfer(awaitInitialTransfer).timeout(30, TimeUnit.SECONDS)
                     .build();
         }
 
@@ -320,6 +322,7 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
 
         ConfigurationBuilder replicationConfigBuilder = createCacheConfigurationBuilder();
         if (clustered) {
+            replicationConfigBuilder.simpleCache(false);
             replicationConfigBuilder.clustering().cacheMode(async ? CacheMode.REPL_ASYNC : CacheMode.REPL_SYNC);
         }
 
@@ -355,6 +358,7 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
 
         final ConfigurationBuilder actionTokenCacheConfigBuilder = getActionTokenCacheConfig();
         if (clustered) {
+            actionTokenCacheConfigBuilder.simpleCache(false);
             actionTokenCacheConfigBuilder.clustering().cacheMode(async ? CacheMode.REPL_ASYNC : CacheMode.REPL_SYNC);
         }
         if (jdgEnabled) {
@@ -374,6 +378,7 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
 
     private Configuration getRevisionCacheConfig(long maxEntries) {
         ConfigurationBuilder cb = createCacheConfigurationBuilder();
+        cb.simpleCache(false);
         cb.invocationBatching().enable().transaction().transactionMode(TransactionMode.TRANSACTIONAL);
 
         // Use Embedded manager even in managed ( wildfly/eap ) environment. We don't want infinispan to participate in global transaction

@@ -1,3 +1,5 @@
+import { v4 as uuid } from "uuid";
+
 import SidebarPage from "../support/pages/admin-ui/SidebarPage";
 import LoginPage from "../support/pages/LoginPage";
 import CreateUserPage from "../support/pages/admin-ui/manage/users/CreateUserPage";
@@ -39,7 +41,7 @@ describe("User creation", () => {
 
   before(async () => {
     for (let i = 0; i <= 2; i++) {
-      groupName += "_" + crypto.randomUUID();
+      groupName += "_" + uuid();
       await adminClient.createGroup(groupName);
       groupsList = [...groupsList, groupName];
     }
@@ -63,7 +65,7 @@ describe("User creation", () => {
   });
 
   it("Create user test", () => {
-    itemId += "_" + crypto.randomUUID();
+    itemId += "_" + uuid();
     // Create
     createUserPage.goToCreateUser();
 
@@ -75,7 +77,7 @@ describe("User creation", () => {
   });
 
   it("Create user with groups test", () => {
-    itemIdWithGroups += crypto.randomUUID();
+    itemIdWithGroups += uuid();
     // Add user from search bar
     createUserPage.goToCreateUser();
 
@@ -97,7 +99,7 @@ describe("User creation", () => {
   });
 
   it("Create user with credentials test", () => {
-    itemIdWithCred += "_" + crypto.randomUUID();
+    itemIdWithCred += "_" + uuid();
 
     // Add user from search bar
     createUserPage.goToCreateUser();
