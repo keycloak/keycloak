@@ -198,7 +198,6 @@ export default function ClientDetails() {
   const hasManageClients = hasAccess("manage-clients");
   const hasViewClients = hasAccess("view-clients");
   const hasViewUsers = hasAccess("view-users");
-  const hasQueryUsers = hasAccess("query-users");
   const permissionsEnabled =
     isFeatureEnabled(Feature.AdminFineGrainedAuthz) && hasManageAuthorization;
 
@@ -490,7 +489,7 @@ export default function ClientDetails() {
                 isReadOnly={!(hasManageClients || client.access?.configure)}
               />
             </Tab>
-            {!isRealmClient(client) && !client.bearerOnly && hasQueryUsers && (
+            {!isRealmClient(client) && !client.bearerOnly && (
               <Tab
                 id="clientScopes"
                 data-testid="clientScopesTab"
