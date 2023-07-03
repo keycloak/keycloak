@@ -15,7 +15,7 @@ import {
 } from "@patternfly/react-core";
 import { FormLabel } from "./FormLabel";
 
-export type Option = {
+export type SelectOption = {
   key: string;
   value: string;
 };
