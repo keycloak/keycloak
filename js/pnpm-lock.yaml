@@ -305,8 +305,8 @@ importers:
         specifier: ^1.4.2
         version: 1.4.2
       tar-fs:
-        specifier: ^3.0.3
-        version: 3.0.3
+        specifier: ^3.0.4
+        version: 3.0.4
 
   libs/keycloak-admin-client:
     dependencies:
@@ -6301,18 +6301,19 @@ packages:
     engines: {node: '>=6'}
     dev: true
 
-  /tar-fs@3.0.3:
-    resolution: {integrity: sha512-ZK36riGYnFI6LujIBfBRoDfeaaWUkStIFKwtPjnDWCKnsDE9kuQthG09aQjLjpzoRtVElEMZ/AIAURNb7N9mkA==}
+  /tar-fs@3.0.4:
+    resolution: {integrity: sha512-5AFQU8b9qLfZCX9zp2duONhPmZv0hGYiBPJsyUdqMjzq/mqVpy/rEUSeHk1+YitmxugaptgBh5oDGU3VsAJq4w==}
     dependencies:
       mkdirp-classic: 0.5.3
       pump: 3.0.0
-      tar-stream: 3.1.2
+      tar-stream: 3.1.5
     dev: false
 
-  /tar-stream@3.1.2:
-    resolution: {integrity: sha512-rEZHMKQop/sTykFtONCcOxyyLA+9hriHJlECxfh4z+Nfew87XGprDLp9RYFCd7yU+z3ePXfHlPbZrzgSLvc16A==}
+  /tar-stream@3.1.5:
+    resolution: {integrity: sha512-i+IP13ZyzEOOEkuPrvYokgzW3zcL3rdjmIk0O4veDoegHzySYG4xa2NzKb5pYc/8a8K49iBVMyavS6HT72VMSQ==}
     dependencies:
       b4a: 1.6.4
+      fast-fifo: 1.2.0
       streamx: 2.15.0
     dev: false
 
