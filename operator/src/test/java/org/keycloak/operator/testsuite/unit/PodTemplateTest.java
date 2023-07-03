@@ -18,6 +18,7 @@
 package org.keycloak.operator.testsuite.unit;
 
 import io.fabric8.kubernetes.api.model.Container;
+import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.IntOrString;
 import io.fabric8.kubernetes.api.model.PodTemplateSpec;
 import io.fabric8.kubernetes.api.model.PodTemplateSpecBuilder;
@@ -25,6 +26,8 @@ import io.fabric8.kubernetes.api.model.ProbeBuilder;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.api.model.apps.StatefulSetBuilder;
 import io.quarkus.test.junit.QuarkusTest;
+
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.keycloak.operator.Config;
 import org.keycloak.operator.controllers.KeycloakDeployment;
@@ -40,6 +43,7 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -272,6 +276,44 @@ public class PodTemplateTest {
         var envVar = podTemplate.getSpec().getContainers().get(0).getEnv().stream().filter(e -> e.getName().equals(env)).findFirst().get();
         assertEquals(env, envVar.getName());
         assertEquals(value, envVar.getValue());
+    }
+
+    @Test
+    public void testEnvVarConflict() {
+        // Arrange
+        var additionalPodTemplate = new PodTemplateSpecBuilder()
+                .withNewSpec()
+                .addNewContainer()
+                .addNewEnv()
+                .withName("KC_CACHE_STACK")
+                .withValue("template_stack")
+                .endEnv()
+                .addNewEnv()
+                .withName("KC_DB_URL_HOST")
+                .withValue("template_host")
+                .endEnv()
+                .endContainer()
+                .endSpec()
+                .build();
+
+        // Act
+        var podTemplate = getDeployment(additionalPodTemplate, null,
+                s -> s.addNewAdditionalOption("cache.stack", "additional_stack")
+                        .addNewAdditionalOption("http.port", "additional_port").withNewDatabaseSpec().withHost("spec-host")
+                        .endDatabaseSpec())
+                .getSpec().getTemplate();
+
+        // Assert
+        var envVar = podTemplate.getSpec().getContainers().get(0).getEnv();
+        var envVarMap = envVar.stream().collect(Collectors.toMap(EnvVar::getName, Function.identity(), (e1, e2) -> {
+            Assertions.fail("duplicate env" + e1.getName());
+            return e1;
+        }));
+        // template spec takes the most priority for envs - only fields called out in the KeycloakDeployment warning are overriden by the rest of the spec
+        assertThat(envVarMap.get("KC_CACHE_STACK").getValue()).isEqualTo("template_stack");
+        assertThat(envVarMap.get("KC_DB_URL_HOST").getValue()).isEqualTo("template_host");
+        // the main spec takes priority over the additional options
+        assertThat(envVarMap.get("KC_HTTP_PORT").getValue()).isEqualTo("8080");
     }
 
     @Test
