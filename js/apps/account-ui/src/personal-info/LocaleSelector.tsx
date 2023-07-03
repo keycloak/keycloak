@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { Option } from "ui-shared";
 import { SelectControl } from "ui-shared";
-import { supportedLocales } from "../api/methods";
+import { getSupportedLocales } from "../api/methods";
 import { usePromise } from "../utils/usePromise";
 
 const localeToDisplayName = (locale: string) => {
@@ -18,22 +18,19 @@ export const LocaleSelector = () => {
   const [locales, setLocales] = useState<Option[]>([]);
 
   usePromise(
-    (signal) => supportedLocales({ signal }),
+    (signal) => getSupportedLocales({ signal }),
     (locales) =>
       setLocales(
-        locales.map<Option>(
-          (l) =>
-            ({
-              key: l,
-              value: localeToDisplayName(l),
-            })
-        )
+        locales.map<Option>((locale) => ({
+          key: locale,
+          value: localeToDisplayName(locale) || "",
+        }))
       )
   );
 
   return (
     <SelectControl
-      id="locale-select"
+      data-testid="locale-select"
       name="attributes.locale"
       label={t("selectALocale")}
       controller={{ defaultValue: "" }}
