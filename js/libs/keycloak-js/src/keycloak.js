@@ -49,6 +49,12 @@ function Keycloak (config) {
     var logWarn = createLogger(console.warn);
 
     kc.init = function (initOptions) {
+        if (kc.didInitialize) {
+            throw new Error("A 'Keycloak' instance can only be initialized once.");
+        }
+
+        kc.didInitialize = true;
+
         kc.authenticated = false;
 
         callbackStorage = createCallbackStorage();
