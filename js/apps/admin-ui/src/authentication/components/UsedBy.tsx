@@ -16,7 +16,7 @@ import { KeycloakDataTable } from "../../components/table-toolbar/KeycloakDataTa
 import useToggle from "../../utils/useToggle";
 import { AuthenticationType, REALM_FLOWS } from "../AuthenticationSection";
 
-import "./used-by.css";
+import style from "./used-by.module.css";
 
 type UsedByProps = {
   authType: AuthenticationType;
@@ -25,8 +25,7 @@ type UsedByProps = {
 
 const Label = ({ label }: { label: string }) => (
   <>
-    <CheckCircleIcon className="keycloak_authentication-section__usedby" />{" "}
-    {label}
+    <CheckCircleIcon className={style.label} /> {label}
   </>
 );
 
@@ -135,19 +134,12 @@ export const UsedBy = ({ authType: { id, usedBy }, realm }: UsedByProps) => {
               </div>
             }
           >
-            <Button
-              variant="link"
-              className="keycloak__used-by__popover-button"
-            >
+            <Button variant="link" className={style.label}>
               <Label label={t(`used.${usedBy.type}`)} />
             </Button>
           </Popover>
         ) : (
-          <Button
-            variant="link"
-            className="keycloak__used-by__popover-button"
-            onClick={toggle}
-          >
+          <Button variant="link" className={style.label} onClick={toggle}>
             <Label label={t(`used.${usedBy.type}`)} />
           </Button>
         ))}

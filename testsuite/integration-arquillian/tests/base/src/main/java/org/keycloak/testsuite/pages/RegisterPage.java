@@ -56,9 +56,12 @@ public class RegisterPage extends AbstractPage {
 
     @FindBy(id = "password-confirm")
     private WebElement passwordConfirmInput;
-    
+
     @FindBy(id = "department")
     private WebElement departmentInput;
+
+    @FindBy(id = "termsAccepted")
+    private WebElement termsAcceptedInput;
 
     @FindBy(css = "input[type=\"submit\"]")
     private WebElement submitButton;
@@ -77,6 +80,10 @@ public class RegisterPage extends AbstractPage {
     }
 
     public void register(String firstName, String lastName, String email, String username, String password, String passwordConfirm, String department) {
+        register(firstName, lastName, email, username, password, passwordConfirm, department, null);
+    }
+
+    public void register(String firstName, String lastName, String email, String username, String password, String passwordConfirm, String department, Boolean termsAccepted) {
         firstNameInput.clear();
         if (firstName != null) {
             firstNameInput.sendKeys(firstName);
@@ -112,6 +119,10 @@ public class RegisterPage extends AbstractPage {
             if (department != null) {
                 departmentInput.sendKeys(department);
             }
+        }
+
+        if (termsAccepted != null && termsAccepted) {
+            termsAcceptedInput.click();
         }
 
         submitButton.click();
@@ -173,7 +184,7 @@ public class RegisterPage extends AbstractPage {
         }
         return null;
     }
-    
+
     public String getLabelForField(String fieldId) {
         return driver.findElement(By.cssSelector("label[for="+fieldId+"]")).getText();
     }
@@ -218,7 +229,7 @@ public class RegisterPage extends AbstractPage {
         }
     }
 
-    
+
     public boolean isCurrent() {
         return PageUtils.getPageTitle(driver).equals("Register");
     }

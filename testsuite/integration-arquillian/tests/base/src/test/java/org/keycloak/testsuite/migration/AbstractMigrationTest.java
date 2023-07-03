@@ -86,6 +86,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import static net.bytebuddy.matcher.ElementMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.allOf;
@@ -166,6 +167,13 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
         Assert.assertNotNull("migration-saml-client client is missing", client);
         Assert.assertEquals("migration-saml-client client is missing", 1, client.size());
         Assert.assertNull("migration-saml-client login theme was not removed", client.get(0).getAttributes().get(DefaultThemeSelectorProvider.LOGIN_THEME_KEY));
+    }
+
+    protected void testHttpChallengeFlow(RealmResource realm) {
+        log.info("testing 'http challenge' flow not present");
+        Assert.assertFalse(realm.flows().getFlows()
+                .stream()
+                .anyMatch(authFlow -> authFlow.getAlias().equalsIgnoreCase("http challenge")));
     }
 
     /**
@@ -349,6 +357,7 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
 
     protected void testMigrationTo22_0_0() {
         testRhssoThemes(migrationRealm);
+        testHttpChallengeFlow(migrationRealm);
     }
 
     protected void testDeleteAccount(RealmResource realm) {

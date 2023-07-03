@@ -19,6 +19,14 @@ package org.keycloak.operator;
 
 import io.fabric8.kubernetes.client.KubernetesClient;
 
+import java.nio.charset.StandardCharsets;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.Base64;
+import java.util.Map;
+import java.util.stream.Collectors;
+
 /**
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
  */
@@ -26,4 +34,25 @@ public final class Utils {
     public static boolean isOpenShift(KubernetesClient client) {
         return client.supports("operator.openshift.io/v1", "OpenShiftAPIServer");
     }
+
+    /**
+     * Returns the current timestamp in ISO 8601 format, for example "2019-07-23T09:08:12.356Z".
+     * @return the current timestamp in ISO 8601 format, for example "2019-07-23T09:08:12.356Z".
+     */
+    public static String iso8601Now() {
+        return ZonedDateTime.now(ZoneOffset.UTC).format(DateTimeFormatter.ISO_INSTANT);
+    }
+
+    public static String asBase64(String toEncode) {
+        return Base64.getEncoder().encodeToString(toEncode.getBytes(StandardCharsets.UTF_8));
+    }
+
+    public static String toSelectorString(Map<String, String> labels) {
+        if (labels == null || labels.isEmpty()) {
+            return null;
+        }
+        return labels.entrySet().stream().map(e -> e.getKey() + "=" + e.getValue())
+                .collect(Collectors.joining(","));
+    }
+
 }

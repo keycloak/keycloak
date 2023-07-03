@@ -1,7 +1,4 @@
-import type {
-  UserProfileAttribute,
-  UserProfileAttributeRequired,
-} from "@keycloak/keycloak-admin-client/lib/defs/userProfileConfig";
+import type { UserProfileAttribute } from "@keycloak/keycloak-admin-client/lib/defs/userProfileConfig";
 import {
   Form,
   FormGroup,
@@ -16,6 +13,7 @@ import { useTranslation } from "react-i18next";
 import { KeycloakTextInput } from "../components/keycloak-text-input/KeycloakTextInput";
 import { ScrollForm } from "../components/scroll-form/ScrollForm";
 import { useUserProfile } from "../realm-settings/user-profile/UserProfileContext";
+import { isBundleKey, unWrap } from "./utils";
 import useToggle from "../utils/useToggle";
 
 const ROOT_ATTRIBUTES = ["username", "firstName", "lastName", "email"];
@@ -48,7 +46,7 @@ export const UserProfileFields = ({
   return (
     <ScrollForm
       sections={[{ name: "" }, ...(config?.groups || [])].map((g) => ({
-        title: g.name || t("general"),
+        title: g.displayHeader || g.name || t("general"),
         panel: (
           <Form>
             {g.displayDescription && (
@@ -83,17 +81,15 @@ const FormField = ({ attribute, roles }: FormFieldProps) => {
   } = useFormContext();
   const [open, toggle] = useToggle();
 
-  const isBundleKey = (displayName?: string) => displayName?.includes("${");
-  const unWrap = (key: string) => key.substring(2, key.length - 1);
-
   const isSelect = (attribute: UserProfileAttribute) =>
     Object.hasOwn(attribute.validations || {}, "options");
 
   const isRootAttribute = (attr?: string) =>
     attr && ROOT_ATTRIBUTES.includes(attr);
 
-  const isRequired = (required: UserProfileAttributeRequired | undefined) =>
-    Object.keys(required || {}).length !== 0;
+  const isRequired = (attribute: UserProfileAttribute) =>
+    Object.keys(attribute.required || {}).length !== 0 ||
+    ((attribute.validations?.length?.min as number) || 0) > 0;
 
   const fieldName = (attribute: UserProfileAttribute) =>
     `${isRootAttribute(attribute.name) ? "" : "attributes."}${attribute.name}`;
@@ -107,7 +103,7 @@ const FormField = ({ attribute, roles }: FormFieldProps) => {
           : attribute.displayName) || attribute.name
       }
       fieldId={attribute.name}
-      isRequired={isRequired(attribute.required)}
+      isRequired={isRequired(attribute)}
       validated={errors.username ? "error" : "default"}
       helperTextInvalid={t("common:required")}
     >

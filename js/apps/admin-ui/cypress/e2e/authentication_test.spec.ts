@@ -1,3 +1,4 @@
+import { v4 as uuid } from "uuid";
 import { keycloakBefore } from "../support/util/keycloak_hooks";
 import LoginPage from "../support/pages/LoginPage";
 import SidebarPage from "../support/pages/admin-ui/SidebarPage";
@@ -20,7 +21,7 @@ const masthead = new Masthead();
 const sidebarPage = new SidebarPage();
 const commonPage = new CommonPage();
 const listingPage = new ListingPage();
-const realmName = "test" + crypto.randomUUID();
+const realmName = "test" + uuid();
 
 describe("Authentication test", () => {
   const detailPage = new FlowDetails();

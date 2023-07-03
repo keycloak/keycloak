@@ -268,6 +268,7 @@ export const RealmSettingsTabs = ({
         <RoutableTabs
           isBox
           mountOnEnter
+          aria-label="realm-settings-tabs"
           defaultLocation={toRealmSettings({
             realm: realmName,
             tab: "general",

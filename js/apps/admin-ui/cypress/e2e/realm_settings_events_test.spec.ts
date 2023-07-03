@@ -1,3 +1,4 @@
+import { v4 as uuid } from "uuid";
 import SidebarPage from "../support/pages/admin-ui/SidebarPage";
 import LoginPage from "../support/pages/LoginPage";
 import RealmSettingsPage from "../support/pages/admin-ui/manage/realm_settings/RealmSettingsPage";
@@ -16,7 +17,7 @@ const realmSettingsPage = new RealmSettingsPage();
 const keysTab = new KeysTab();
 
 describe("Realm settings events tab tests", () => {
-  const realmName = "Realm_" + crypto.randomUUID();
+  const realmName = "Realm_" + uuid();
   const listingPage = new ListingPage();
 
   beforeEach(() => {
@@ -89,10 +90,7 @@ describe("Realm settings events tab tests", () => {
   };
 
   const addBundle = () => {
-    realmSettingsPage.addKeyValuePair(
-      "key_" + crypto.randomUUID(),
-      "value_" + crypto.randomUUID()
-    );
+    realmSettingsPage.addKeyValuePair("key_" + uuid(), "value_" + uuid());
 
     return this;
   };
@@ -145,38 +143,32 @@ describe("Realm settings events tab tests", () => {
 
     cy.findByTestId("option-aes-generated").click();
     realmSettingsPage.enterUIDisplayName("test_aes-generated");
-    realmSettingsPage.toggleSwitch("active", false);
-    realmSettingsPage.toggleSwitch("enabled", false);
     realmSettingsPage.addProvider();
 
     realmSettingsPage.toggleAddProviderDropdown();
 
     cy.findByTestId("option-ecdsa-generated").click();
     realmSettingsPage.enterUIDisplayName("test_ecdsa-generated");
-    realmSettingsPage.toggleSwitch("enabled", false);
+    realmSettingsPage.toggleSwitch("active", false);
     realmSettingsPage.addProvider();
 
     realmSettingsPage.toggleAddProviderDropdown();
 
     cy.findByTestId("option-hmac-generated").click();
     realmSettingsPage.enterUIDisplayName("test_hmac-generated");
-    realmSettingsPage.toggleSwitch("active", false);
+    realmSettingsPage.toggleSwitch("enabled", false);
     realmSettingsPage.addProvider();
 
     realmSettingsPage.toggleAddProviderDropdown();
 
     cy.findByTestId("option-rsa-generated").click();
     realmSettingsPage.enterUIDisplayName("test_rsa-generated");
-    realmSettingsPage.toggleSwitch("active", false);
-    realmSettingsPage.toggleSwitch("enabled", false);
     realmSettingsPage.addProvider();
 
     realmSettingsPage.toggleAddProviderDropdown();
 
     cy.findByTestId("option-rsa-enc-generated").click();
     realmSettingsPage.enterUIDisplayName("test_rsa-enc-generated");
-    realmSettingsPage.toggleSwitch("active", false);
-    realmSettingsPage.toggleSwitch("enabled", false);
     realmSettingsPage.addProvider();
   });
 

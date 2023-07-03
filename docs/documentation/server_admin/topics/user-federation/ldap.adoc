@@ -76,13 +76,13 @@ Hover the mouse pointer over the tooltips in the Admin Console to see more detai
 
 When you configure a secure connection URL to your LDAP store (for example,`ldaps://myhost.com:636`), {project_name} uses SSL to communicate with the LDAP server. Configure a truststore on the {project_name} server side so that {project_name} can trust the SSL connection to LDAP.
 
-Configure the global truststore for {project_name} with the Truststore SPI. For more information about configuring the global truststore, see the [Configuring a Truststore](https://www.keycloak.org/server/keycloak-truststore) guide. If you do not configure the Truststore SPI, the truststore falls back to the default mechanism provided by Java, which can be the file supplied by the `javax.net.ssl.trustStore` system property or the cacerts file from the JDK if the system property is unset.
+Configure the global truststore for {project_name} with the Truststore SPI. For more information about configuring the global truststore, see the https://www.keycloak.org/server/keycloak-truststore[Configuring a Truststore] {section}. If you do not configure the Truststore SPI, the truststore falls back to the default mechanism provided by Java, which can be the file supplied by the `javax.net.ssl.trustStore` system property or the cacerts file from the JDK if the system property is unset.
 
-The `Use Truststore SPI` configuration property, in the LDAP federation provider configuration, controls the truststore SPI. By default, {project_name} sets the property to `Only for ldaps`, which is adequate for most deployments.  {project_name} uses the Truststore SPI if the connection URL to LDAP starts with `ldaps` only.
+The `Use Truststore SPI` configuration property, in the LDAP federation provider configuration, controls the truststore SPI. By default, {project_name} sets the property to `Always`, which is adequate for most deployments.  {project_name} uses the Truststore SPI if the connection URL to LDAP starts with `ldaps` only.
 
 ==== Synchronizing LDAP users to {project_name}
 
-If you set the *Import Users* option, the LDAP Provider handles importing LDAP users into the {project_name} local database. The first time a user logs in, the LDAP provider imports the LDAP user into the {project_name} database and validates the LDAP password. This first time a user logs in is the only time {project_name} imports the user. If you click the *Users*  menu in the Admin Console and click the *View all users* button, you only see the LDAP users authenticated at least once by {project_name}. {project_name} imports users this way, so this operation does not trigger an import of the entire LDAP user database.
+If you set the *Import Users* option, the LDAP Provider handles importing LDAP users into the {project_name} local database. The first time a user logs in or is returned as part of a user query (e.g. using the search field in the admin console), the LDAP provider imports the LDAP user into the {project_name} database. During authentication, the LDAP password is validated.
 
 If you want to sync all LDAP users into the {project_name} database, configure and enable the *Sync Settings* on the LDAP provider configuration page.
 

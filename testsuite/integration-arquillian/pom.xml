@@ -50,6 +50,7 @@
         <arquillian-wildfly-container.version>3.0.1.Final</arquillian-wildfly-container.version>
         <arquillian-wls-container.version>1.0.1.Final</arquillian-wls-container.version>
         <arquillian-jetty9-container.version>1.0.0.CR3</arquillian-jetty9-container.version>
+        <arquillian-container-karaf.version>2.2.0.Final</arquillian-container-karaf.version>
         <arquillian-infinispan-container.version>1.2.0.Beta3</arquillian-infinispan-container.version>
         <arquillian-tomcat8-container-version>1.1.0.Final</arquillian-tomcat8-container-version>
         <arquillian-tomcat9-container-version>1.1.0.Final</arquillian-tomcat9-container-version>
@@ -212,6 +213,26 @@
                 <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-rest-admin-ui-ext</artifactId>
             </dependency>
+
+            <!-- Fuse adapter tests dependencies -->
+            <dependency>
+		        <groupId>org.jboss.arquillian.container</groupId>
+                <artifactId>arquillian-container-karaf-managed</artifactId>
+                <version>${arquillian-container-karaf.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.jboss.arquillian.container</groupId>
+                <artifactId>arquillian-container-osgi</artifactId>
+                <version>${arquillian-container-karaf.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>com.google.guava</groupId>
+                        <artifactId>guava</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <!-- Fuse adapter tests dependencies END -->
+            
         </dependencies>
     </dependencyManagement>
     
@@ -578,7 +599,7 @@
         <profile>
             <id>db-oracle</id>
             <properties>
-                <docker.database.image>docker.io/gvenzl/oracle-xe:21-slim-faststart</docker.database.image>
+                <docker.database.image>docker.io/miquelsi/oracle-19c:${oracledb.version}</docker.database.image>
                 <docker.database.port>1521</docker.database.port>
                 <docker.database.shmsize>1073741824</docker.database.shmsize>
                 <docker.database.skip>false</docker.database.skip>

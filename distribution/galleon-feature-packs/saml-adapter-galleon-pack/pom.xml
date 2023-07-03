@@ -249,7 +249,7 @@
                         <configuration>
                             <wildfly-channel-resolution-mode>REQUIRED</wildfly-channel-resolution-mode>
                             <generate-channel-manifest>true</generate-channel-manifest>
-                     git        <add-feature-packs-as-required-manifests>false</add-feature-packs-as-required-manifests>
+                            <add-feature-packs-as-required-manifests>false</add-feature-packs-as-required-manifests>
                             <fork-embedded>false</fork-embedded>
                         </configuration>
                     </execution>

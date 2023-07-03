@@ -300,7 +300,7 @@ export default function RealmRoleTabs() {
   };
 
   const isDefaultRole = (name: string | undefined) =>
-    realm?.defaultRole!.name === name;
+    realm?.defaultRole && realm.defaultRole!.name === name;
 
   if (!realm) {
     return <KeycloakSpinner />;

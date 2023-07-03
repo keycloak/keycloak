@@ -167,6 +167,9 @@ public class InfinispanUtil {
         // need to force the encoding to application/x-java-object to avoid unnecessary conversion of keys/values. See WFLY-14356.
         builder.encoding().mediaType(MediaType.APPLICATION_OBJECT_TYPE);
 
+        // needs to be disabled if transaction is enabled
+        builder.simpleCache(true);
+
         return builder;
     }
 

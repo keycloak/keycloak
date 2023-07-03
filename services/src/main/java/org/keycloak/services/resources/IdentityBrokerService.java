@@ -81,7 +81,7 @@ import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.services.managers.BruteForceProtector;
 import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.services.messages.Messages;
-import org.keycloak.services.resources.account.AccountFormService;
+import org.keycloak.services.resources.account.AccountConsole;
 import org.keycloak.services.util.AuthenticationFlowURLHelper;
 import org.keycloak.services.util.BrowserHistoryHelper;
 import org.keycloak.services.util.CacheControlUtil;
@@ -950,7 +950,11 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
             }
         } else {
             this.session.users().addFederatedIdentity(this.realmModel, authenticatedUser, newModel);
+            federatedUser = authenticatedUser;
         }
+
+        updateFederatedIdentity(context, federatedUser);
+
         context.getIdp().authenticationFinished(authSession, context);
 
         AuthenticationManager.setClientScopesInSession(authSession);
@@ -1184,7 +1188,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
         FormMessage errorMessage = new FormMessage(message, parameters);
         try {
             String serializedError = JsonSerialization.writeValueAsString(errorMessage);
-            authSession.setAuthNote(AccountFormService.ACCOUNT_MGMT_FORWARDED_ERROR_NOTE, serializedError);
+            authSession.setAuthNote(AccountConsole.ACCOUNT_MGMT_FORWARDED_ERROR_NOTE, serializedError);
         } catch (IOException ioe) {
             throw new RuntimeException(ioe);
         }

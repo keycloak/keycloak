@@ -18,8 +18,8 @@ export default class UserProfile {
   private newAttributeRequiredWhen = 'input[name="requiredWhen"]';
   private newAttributeEmptyValidators = ".kc-emptyValidators";
   private newAttributeAnnotationBtn = "annotations-add-row";
-  private newAttributeAnnotationKey = "annotations-key";
-  private newAttributeAnnotationValue = "annotations-value";
+  private newAttributeAnnotationKey = "annotations.0.key";
+  private newAttributeAnnotationValue = "annotations.0.value";
   private validatorRolesList = "#validator";
   private validatorsList = 'tbody [data-label="name"]';
   private saveNewAttributeBtn = "attribute-create";
@@ -148,7 +148,7 @@ export default class UserProfile {
   }
 
   typeJSON(text: string) {
-    this.textArea().type(text);
+    this.textArea().type(text, { force: true });
     return this;
   }
 

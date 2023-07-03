@@ -103,13 +103,13 @@ public class LDAPOperationManager {
      */
     public void modifyAttributes(String dn,  NamingEnumeration<Attribute> attributes) {
         try {
-            List<ModificationItem> modItems = new ArrayList<ModificationItem>();
+            List<ModificationItem> modItems = new ArrayList<>();
             while (attributes.hasMore()) {
                 ModificationItem modItem = new ModificationItem(DirContext.REPLACE_ATTRIBUTE, attributes.next());
                 modItems.add(modItem);
             }
 
-            modifyAttributes(dn, modItems.toArray(new ModificationItem[] {}), null);
+            modifyAttributes(dn, modItems.toArray(ModificationItem[]::new), null);
         } catch (NamingException ne) {
             throw new ModelException("Could not modify attributes on entry from DN [" + dn + "]", ne);
         }
@@ -246,7 +246,7 @@ public class LDAPOperationManager {
 
 
     public List<SearchResult> search(final String baseDN, final String filter, Collection<String> returningAttributes, int searchScope) throws NamingException {
-        final List<SearchResult> result = new ArrayList<SearchResult>();
+        final List<SearchResult> result = new ArrayList<>();
         final SearchControls cons = getSearchControls(returningAttributes, searchScope);
 
         try {
@@ -285,7 +285,7 @@ public class LDAPOperationManager {
     }
 
     public List<SearchResult> searchPaginated(final String baseDN, final String filter, final LDAPQuery identityQuery) throws NamingException {
-        final List<SearchResult> result = new ArrayList<SearchResult>();
+        final List<SearchResult> result = new ArrayList<>();
         final SearchControls cons = getSearchControls(identityQuery.getReturningLdapAttributes(), identityQuery.getSearchScope());
 
         // Very 1st page. Pagination context is not yet present
@@ -510,8 +510,7 @@ public class LDAPOperationManager {
             authCtx = new InitialLdapContext(env, null);
             if (config.isStartTls()) {
                 SSLSocketFactory sslSocketFactory = null;
-                String useTruststoreSpi = config.getUseTruststoreSpi();
-                if (useTruststoreSpi != null && useTruststoreSpi.equals(LDAPConstants.USE_TRUSTSTORE_ALWAYS)) {
+                if (LDAPUtil.shouldUseTruststoreSpi(config)) {
                     TruststoreProvider provider = session.getProvider(TruststoreProvider.class);
                     sslSocketFactory = provider.getSSLSocketFactory();
                 }

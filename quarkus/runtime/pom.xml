@@ -97,6 +97,12 @@
             <artifactId>wildfly-elytron</artifactId>
         </dependency>
 
+        <!-- SmallRye -->
+        <dependency>
+            <groupId>io.smallrye.config</groupId>
+            <artifactId>smallrye-config-source-keystore</artifactId>
+        </dependency>
+
         <!-- CLI -->
         <dependency>
             <groupId>info.picocli</groupId>
@@ -656,33 +662,10 @@
             <scope>test</scope>
         </dependency>
 
-        <!-- logging wrapper for log4j-->
-        <dependency>
-            <groupId>org.jboss.logmanager</groupId>
-            <artifactId>log4j-jboss-logmanager</artifactId>
-        </dependency>
-
         <!-- twitter api -->
         <dependency>
             <groupId>org.twitter4j</groupId>
             <artifactId>twitter4j-core</artifactId>
-        </dependency>
-
-        <!-- Openshift -->
-        <dependency>
-            <groupId>com.openshift</groupId>
-            <artifactId>openshift-restclient-java</artifactId>
-            <version>${version.com.openshift.openshift-restclient-java}</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>log4j</groupId>
-                    <artifactId>log4j</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.slf4j</groupId>
-                    <artifactId>slf4j-reload4j</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
     </dependencies>
 
@@ -691,7 +674,7 @@
             <plugin>
                 <groupId>io.quarkus</groupId>
                 <artifactId>quarkus-extension-maven-plugin</artifactId>
-                <version>${quarkus.version}</version>
+                <version>${quarkus.build.version}</version>
                 <executions>
                     <execution>
                         <goals>
@@ -712,7 +695,7 @@
                         <path>
                             <groupId>io.quarkus</groupId>
                             <artifactId>quarkus-extension-processor</artifactId>
-                            <version>${quarkus.version}</version>
+                            <version>${quarkus.build.version}</version>
                         </path>
                     </annotationProcessorPaths>
                 </configuration>

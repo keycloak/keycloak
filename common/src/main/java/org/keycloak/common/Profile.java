@@ -45,7 +45,7 @@ public class Profile {
 
         ACCOUNT_API("Account Management REST API", Type.DEFAULT),
         ACCOUNT2("Account Management Console version 2", Type.DEFAULT, Feature.ACCOUNT_API),
-        ACCOUNT3("Account Management Console version 3", Type.EXPERIMENTAL, Feature.ACCOUNT_API),
+        ACCOUNT3("Account Management Console version 3", Type.PREVIEW, Feature.ACCOUNT_API),
 
         ADMIN_FINE_GRAINED_AUTHZ("Fine-Grained Admin Permissions", Type.PREVIEW),
 
@@ -56,8 +56,6 @@ public class Profile {
         DOCKER("Docker Registry protocol", Type.DISABLED_BY_DEFAULT),
 
         IMPERSONATION("Ability for admins to impersonate users", Type.DEFAULT),
-
-        OPENSHIFT_INTEGRATION("Extension to enable securing OpenShift", Type.PREVIEW),
 
         SCRIPTS("Write custom authenticators using JavaScript", Type.PREVIEW),
 

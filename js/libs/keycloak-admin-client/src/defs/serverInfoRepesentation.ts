@@ -73,4 +73,6 @@ export interface ProtocolMapperTypeRepresentation {
 export interface CryptoInfoRepresentation {
   cryptoProvider: string;
   supportedKeystoreTypes: string[];
+  clientSignatureSymmetricAlgorithms: string[];
+  clientSignatureAsymmetricAlgorithms: string[];
 }

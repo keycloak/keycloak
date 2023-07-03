@@ -30,7 +30,6 @@ import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.admin.client.resource.ClientsResource;
 import org.keycloak.admin.client.resource.UserResource;
-import org.keycloak.common.Profile;
 import org.keycloak.common.util.UriUtils;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
@@ -47,7 +46,6 @@ import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.InfoPage;
@@ -57,7 +55,6 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
@@ -76,7 +73,6 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlEquals;
 
-import org.keycloak.testsuite.auth.page.account.AccountManagement;
 import org.keycloak.testsuite.pages.LogoutConfirmPage;
 import org.keycloak.testsuite.pages.OAuthGrantPage;
 import org.keycloak.testsuite.pages.PageUtils;
@@ -122,9 +118,6 @@ public class RPInitiatedLogoutTest extends AbstractTestRealmKeycloakTest {
 
     @Page
     protected InfoPage infoPage;
-
-    @Page
-    protected AccountManagement accountManagementPage;
 
     @Page
     private ErrorPage errorPage;
@@ -274,14 +267,15 @@ public class RPInitiatedLogoutTest extends AbstractTestRealmKeycloakTest {
 
     //KEYCLOAK-2741
     @Test
-    @DisableFeature(value = Profile.Feature.ACCOUNT2, skipRestart = true) // TODO remove this (KEYCLOAK-16228)
     public void logoutWithRememberMe() throws IOException {
         try (RealmAttributeUpdater update = new RealmAttributeUpdater(testRealm()).setRememberMe(true).update()) {
+            String testUsername = "test-user@localhost";
+            String testUserPassword = "password";
             loginPage.open();
             assertFalse(loginPage.isRememberMeChecked());
             loginPage.setRememberMe(true);
             assertTrue(loginPage.isRememberMeChecked());
-            loginPage.login("test-user@localhost", "password");
+            loginPage.login(testUsername, testUserPassword);
 
             String sessionId = events.expectLogin().assertEvent().getSessionId();
 
@@ -291,17 +285,21 @@ public class RPInitiatedLogoutTest extends AbstractTestRealmKeycloakTest {
             // Assert rememberMe checked and username/email prefilled
             loginPage.open();
             assertTrue(loginPage.isRememberMeChecked());
-            assertEquals("test-user@localhost", loginPage.getUsername());
+            assertEquals(testUsername, loginPage.getUsername());
 
-            loginPage.login("test-user@localhost", "password");
+            loginPage.login(testUsername, testUserPassword);
 
             //log out
-            appPage.openAccount();
-            accountManagementPage.signOut();
+            String logoutUrl = oauth.getLogoutUrl().build();
+            driver.navigate().to(logoutUrl);
+            logoutConfirmPage.assertCurrent();
+            logoutConfirmPage.confirmLogout();
+
+            loginPage.open();
             // Assert rememberMe not checked nor username/email prefilled
             assertTrue(loginPage.isCurrent());
             assertFalse(loginPage.isRememberMeChecked());
-            assertNotEquals("test-user@localhost", loginPage.getUsername());
+            assertNotEquals(testUsername, loginPage.getUsername());
         }
     }
 

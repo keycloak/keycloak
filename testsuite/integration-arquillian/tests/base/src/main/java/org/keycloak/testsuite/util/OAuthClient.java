@@ -312,6 +312,13 @@ public class OAuthClient {
         return new AuthorizationEndpointResponse(this);
     }
 
+    public AuthorizationEndpointResponse doSilentLogin() {
+        openLoginForm();
+        WaitUtils.waitForPageToLoad();
+
+        return new AuthorizationEndpointResponse(this);
+    }
+
     public AuthorizationEndpointResponse doLoginSocial(String brokerId, String username, String password) {
         openLoginForm();
         WaitUtils.waitForPageToLoad();

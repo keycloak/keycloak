@@ -116,12 +116,12 @@
                             <value>href="${resourceUrl}/</value>
                         </replacement>
                         <replacement>
+                            <token><![CDATA[<link rel="icon" type="image/svg+xml" href="${resourceUrl}/favicon.svg" />]]></token>
+                            <value xml:space="preserve"><![CDATA[<link rel="icon" type="${properties.favIconType!"image/svg+xml"}" href="${resourceUrl}${properties.favIcon!"/favicon.svg"}" />]]></value>
+                        </replacement>
+                        <replacement>
                             <token><![CDATA[<title>Keycloak Administration UI</title>]]></token>
-                            <value xml:space="preserve">
-<![CDATA[
-    <title>${properties.title!"Keycloak Administration UI"}</title>
-]]>
-</value>
+                            <value xml:space="preserve"><![CDATA[<title>${properties.title!"Keycloak Administration UI"}</title>]]></value>
                         </replacement>
                         <replacement>
                             <token><![CDATA[</body>]]></token>
@@ -130,13 +130,15 @@
   <script id="environment" type="application/json">
     {
       "loginRealm": "${loginRealm!"master"}",
+      "clientId": "${clientId}",
       "authServerUrl": "${authServerUrl}",
       "authUrl": "${authUrl}",
       "consoleBaseUrl": "${consoleBaseUrl}",
       "resourceUrl": "${resourceUrl}",
       "masterRealm": "${masterRealm}",
       "resourceVersion": "${resourceVersion}",
-      "isRunningAsTheme": true
+      "logo": "${properties.logo!""}",
+      "logoUrl": "${properties.logoUrl!""}"
     }
   </script>
 </body>

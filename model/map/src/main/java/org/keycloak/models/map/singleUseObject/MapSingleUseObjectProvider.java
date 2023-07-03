@@ -144,14 +144,15 @@ public class MapSingleUseObjectProvider implements SingleUseObjectProvider {
         DefaultModelCriteria<SingleUseObjectValueModel> mcb = criteria();
         mcb = mcb.compare(SingleUseObjectValueModel.SearchableFields.OBJECT_KEY, ModelCriteriaBuilder.Operator.EQ, key);
 
-        MapSingleUseObjectEntity singleUseEntity = singleUseObjectTx.read(withCriteria(mcb)).findFirst().orElse(null);
-        if (singleUseEntity != null) {
-            if (isExpired(singleUseEntity, false)) {
-                singleUseObjectTx.delete(singleUseEntity.getId());
-            } else {
-                return singleUseEntity;
-            }
-        }
-        return null;
+        return singleUseObjectTx.read(withCriteria(mcb))
+                .filter(entity -> {
+                    if (isExpired(entity, false)) {
+                        singleUseObjectTx.delete(entity.getId());
+                        return false;
+                    } else {
+                        return true;
+                    }
+                })
+                .findFirst().orElse(null);
     }
  }

@@ -58,8 +58,12 @@ export default class Masthead extends CommonElements {
     return this;
   }
 
+  getDocumentationLink() {
+    return cy.get(this.documentationLink);
+  }
+
   clickDocumentationLink() {
-    cy.get(this.documentationLink)
+    this.getDocumentationLink()
       .find("a")
       .invoke("removeAttr", "target")
       .click();

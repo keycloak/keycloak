@@ -32,6 +32,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.jboss.resteasy.annotations.cache.NoCache;
+import org.keycloak.common.util.Time;
 import org.keycloak.device.DeviceActivityManager;
 import org.keycloak.models.AccountRoles;
 import org.keycloak.models.ClientModel;
@@ -160,7 +161,10 @@ public class SessionResource {
         sessionRep.setIpAddress(s.getIpAddress());
         sessionRep.setStarted(s.getStarted());
         sessionRep.setLastAccess(s.getLastSessionRefresh());
-        sessionRep.setExpires(s.getStarted() + realm.getSsoSessionMaxLifespan());
+        int maxLifespan = s.isRememberMe() && realm.getSsoSessionMaxLifespanRememberMe() > 0
+                ? realm.getSsoSessionMaxLifespanRememberMe() : realm.getSsoSessionMaxLifespan();
+        int expires = s.getStarted() + maxLifespan;
+        sessionRep.setExpires(expires);
         sessionRep.setBrowser(device.getBrowser());
 
         if (isCurrentSession(s)) {

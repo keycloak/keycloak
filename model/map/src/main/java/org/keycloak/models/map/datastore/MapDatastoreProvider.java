@@ -23,7 +23,11 @@ import org.keycloak.models.GroupProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmProvider;
 import org.keycloak.models.RoleProvider;
+import org.keycloak.models.SingleUseObjectProvider;
+import org.keycloak.models.UserLoginFailureProvider;
 import org.keycloak.models.UserProvider;
+import org.keycloak.models.UserSessionProvider;
+import org.keycloak.sessions.AuthenticationSessionProvider;
 import org.keycloak.storage.DatastoreProvider;
 import org.keycloak.storage.ExportImportManager;
 
@@ -37,6 +41,11 @@ public class MapDatastoreProvider implements DatastoreProvider {
 
     @Override
     public void close() {
+    }
+
+    @Override
+    public AuthenticationSessionProvider authSessions() {
+        return session.getProvider(AuthenticationSessionProvider.class);
     }
 
     @Override
@@ -55,6 +64,11 @@ public class MapDatastoreProvider implements DatastoreProvider {
     }
 
     @Override
+    public UserLoginFailureProvider loginFailures() {
+        return session.getProvider(UserLoginFailureProvider.class);
+    }
+
+    @Override
     public RealmProvider realms() {
         return session.getProvider(RealmProvider.class);
     }
@@ -65,8 +79,18 @@ public class MapDatastoreProvider implements DatastoreProvider {
     }
 
     @Override
+    public SingleUseObjectProvider singleUseObjects() {
+        return session.getProvider(SingleUseObjectProvider.class);
+    }
+
+    @Override
     public UserProvider users() {
         return session.getProvider(UserProvider.class);
+    }
+
+    @Override
+    public UserSessionProvider userSessions() {
+        return session.getProvider(UserSessionProvider.class);
     }
 
     @Override

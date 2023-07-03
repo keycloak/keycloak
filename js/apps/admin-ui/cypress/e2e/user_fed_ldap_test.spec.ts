@@ -23,7 +23,7 @@ const updatedLdapName = `${firstLdapName}-updated`;
 // connection and authentication settings
 const connectionUrlValid = "ldap://localhost:3004";
 const bindTypeSimple = "simple";
-const truststoreSpiOnlyLdaps = "Only for ldaps";
+const truststoreSpiAlways = "Always";
 const connectionTimeoutTwoSecs = "2000";
 const bindDnCnDc = "cn=user,dc=test";
 const bindCredsValid = "user";
@@ -93,8 +93,7 @@ const userImportingDisabledFailMessage =
   "User federation provider could not be saved: Can not disable Importing users when LDAP provider mode is UNSYNCED";
 
 const ldapTestSuccessMsg = "Successfully connected to LDAP";
-const ldapTestFailMsg =
-  "Error when trying to connect to LDAP. See server.log for details. LDAP test error";
+const ldapTestFailMsg = "Error when trying to connect to LDAP: 'SocketReset'";
 
 describe("User Federation LDAP tests", () => {
   beforeEach(() => {
@@ -269,7 +268,7 @@ describe("User Federation LDAP tests", () => {
     providersPage.fillLdapConnectionData(
       connectionUrlValid,
       bindTypeSimple,
-      truststoreSpiOnlyLdaps,
+      truststoreSpiAlways,
       connectionTimeoutTwoSecs,
       bindDnCnDc,
       bindCredsValid

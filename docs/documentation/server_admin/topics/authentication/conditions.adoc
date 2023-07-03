@@ -24,7 +24,7 @@ This checks if the other executions in the flow are configured for the user.
 The Execution requirements section includes an example of the OTP form.
 
 `Condition - User Attribute`::
-This checks if the user has set up the required attribute.
+This checks if the user has set up the required attribute: optionally, the check can also evaluate the group attributes.
 There is a possibility to negate output, which means the user should not have the attribute.
 The xref:proc-configuring-user-attributes_{context}[User Attributes] section shows how to add a custom attribute.
 You can provide these fields:
@@ -37,6 +37,9 @@ Name of the attribute to check.
 
 Expected attribute value:::
 Expected value in the attribute.
+
+Include group attributes:::
+If On, the condition checks if any of the joined group has one attribute matching the configured name and value: this option can affect performance
 
 Negate output:::
 You can negate the output.

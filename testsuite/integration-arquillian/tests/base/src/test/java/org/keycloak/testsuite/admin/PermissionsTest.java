@@ -1670,6 +1670,11 @@ public class PermissionsTest extends AbstractKeycloakTest {
                 clients.get(AdminRoles.QUERY_USERS).realm(REALM_NAME).clients().findAll();
             }
         }, clients.get(AdminRoles.QUERY_USERS), true);
+        invoke(new Invocation() {
+            public void invoke(RealmResource realm) {
+                clients.get(AdminRoles.VIEW_USERS).realm(REALM_NAME).users().get(user.getId()).getConfiguredUserStorageCredentialTypes();
+            }
+        }, clients.get(AdminRoles.VIEW_USERS), true);
     }
 
     @Test
@@ -1813,99 +1818,13 @@ public class PermissionsTest extends AbstractKeycloakTest {
 
     @Test
     public void localizations() {
-        invoke(new Invocation() {
-            public void invoke(RealmResource realm) {
-                realm.localization().getRealmSpecificLocales();
-            }
-        }, clients.get("view-realm"), true);
-        invoke(new Invocation() {
-            public void invoke(RealmResource realm) {
-                realm.localization().getRealmSpecificLocales();
-            }
-        }, clients.get("manage-realm"), true);
-        invoke(new Invocation() {
-            public void invoke(RealmResource realm) {
-                realm.localization().getRealmSpecificLocales();
-            }
-        }, clients.get("multi"), true);
-        invoke(new Invocation() {
-            public void invoke(RealmResource realm) {
-                realm.localization().getRealmSpecificLocales();
-            }
-        }, clients.get("master-admin"), true);
-        invoke(new Invocation() {
-            public void invoke(RealmResource realm) {
-                realm.localization().getRealmSpecificLocales();
-            }
-        }, clients.get("none"), false);
-        invoke(new Invocation() {
-            public void invoke(RealmResource realm) {
-                realm.localization().getRealmSpecificLocales();
-            }
-        }, clients.get("REALM2"), false);
+        verifyAnyAdminRoleReqired(realm -> realm.localization().getRealmSpecificLocales());
 
-        invoke(new Invocation() {
-            public void invoke(RealmResource realm) {
-                realm.localization().getRealmLocalizationText("en", "test");
-            }
-        }, clients.get("view-realm"), true);
-        invoke(new Invocation() {
-            public void invoke(RealmResource realm) {
-                realm.localization().getRealmLocalizationText("en", "test");
-            }
-        }, clients.get("manage-realm"), true);
-        invoke(new Invocation() {
-            public void invoke(RealmResource realm) {
-                realm.localization().getRealmLocalizationText("en", "test");
-            }
-        }, clients.get("multi"), true);
-        invoke(new Invocation() {
-            public void invoke(RealmResource realm) {
-                realm.localization().getRealmLocalizationText("en", "test");
-            }
-        }, clients.get("master-admin"), true);
-        invoke(new Invocation() {
-            public void invoke(RealmResource realm) {
-                realm.localization().getRealmLocalizationText("en", "test");
-            }
-        }, clients.get("none"), false);
-        invoke(new Invocation() {
-            public void invoke(RealmResource realm) {
-                realm.localization().getRealmLocalizationText("en", "test");
-            }
-        }, clients.get("REALM2"), false);
+        verifyAnyAdminRoleReqired(realm -> realm.localization().getRealmLocalizationText("en", "test"));
 
-        invoke(new Invocation() {
-            public void invoke(RealmResource realm) {
-                realm.localization().getRealmLocalizationTexts("en", false);
-            }
-        }, clients.get("view-realm"), true);
-        invoke(new Invocation() {
-            public void invoke(RealmResource realm) {
-                realm.localization().getRealmLocalizationTexts("en", false);
-            }
-        }, clients.get("manage-realm"), true);
-        invoke(new Invocation() {
-            public void invoke(RealmResource realm) {
-                realm.localization().getRealmLocalizationTexts("en", false);
-            }
-        }, clients.get("multi"), true);
-        invoke(new Invocation() {
-            public void invoke(RealmResource realm) {
-                realm.localization().getRealmLocalizationTexts("en", false);
-            }
-        }, clients.get("master-admin"), true);
-        invoke(new Invocation() {
-            public void invoke(RealmResource realm) {
-                realm.localization().getRealmLocalizationTexts("en", false);
-            }
-        }, clients.get("none"), false);
-        invoke(new Invocation() {
-            public void invoke(RealmResource realm) {
-                realm.localization().getRealmLocalizationTexts("en", false);
-            }
-        }, clients.get("REALM2"), false);
-
+        verifyAnyAdminRoleReqired(realm -> realm.localization().getRealmLocalizationTexts("en"));
+        verifyAnyAdminRoleReqired(realm -> realm.localization().getRealmLocalizationTexts("en", false));
+        
         invoke(new Invocation() {
             public void invoke(RealmResource realm) {
                 realm.localization().createOrUpdateRealmLocalizationTexts("en", Collections.<String, String>emptyMap());
@@ -1983,6 +1902,15 @@ public class PermissionsTest extends AbstractKeycloakTest {
                 realm.localization().deleteRealmLocalizationTexts("en");
             }
         }, clients.get("REALM2"), false);
+    }
+
+    private void verifyAnyAdminRoleReqired(Invocation invocation) {
+        invoke(invocation, clients.get("view-realm"), true);
+        invoke(invocation, clients.get("manage-realm"), true);
+        invoke(invocation, clients.get("multi"), true);
+        invoke(invocation, clients.get("master-admin"), true);
+        invoke(invocation, clients.get("none"), false);
+        invoke(invocation, clients.get("REALM2"), false);
     }
 
     private void invoke(final Invocation invocation, Resource resource, boolean manage) {

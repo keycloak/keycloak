@@ -5,6 +5,8 @@ import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.utils.KubernetesResourceUtil;
+
+import org.keycloak.operator.Utils;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 
 import java.util.Optional;
@@ -35,8 +37,8 @@ public class KeycloakAdminSecret extends OperatorManagedResource {
                 .withNamespace(getNamespace())
                 .endMetadata()
                 .withType("kubernetes.io/basic-auth")
-                .addToStringData("username", "admin")
-                .addToStringData("password", UUID.randomUUID().toString().replace("-", ""))
+                .addToData("username", Utils.asBase64("admin"))
+                .addToData("password", Utils.asBase64(UUID.randomUUID().toString().replace("-", "")))
                 .build();
     }
 

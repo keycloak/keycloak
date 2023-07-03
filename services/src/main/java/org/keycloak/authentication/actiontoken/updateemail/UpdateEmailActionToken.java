@@ -29,10 +29,11 @@ public class UpdateEmailActionToken extends DefaultActionToken {
 	@JsonProperty("newEmail")
 	private String newEmail;
 
-	public UpdateEmailActionToken(String userId, int absoluteExpirationInSecs, String oldEmail, String newEmail){
+	public UpdateEmailActionToken(String userId, int absoluteExpirationInSecs, String oldEmail, String newEmail, String clientId){
 		super(userId, TOKEN_TYPE, absoluteExpirationInSecs, null);
 		this.oldEmail = oldEmail;
 		this.newEmail = newEmail;
+		this.issuedFor = clientId;
 	}
 
 	private UpdateEmailActionToken(){

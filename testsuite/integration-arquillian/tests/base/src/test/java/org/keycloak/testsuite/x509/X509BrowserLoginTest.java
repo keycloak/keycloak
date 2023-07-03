@@ -120,6 +120,28 @@ public class X509BrowserLoginTest extends AbstractX509AuthenticationTest {
     }
 
     @Test
+    public void loginWithRevalidateCertEnabledCertWithIncorrectTruststoreConfig() throws Exception {
+        try {
+            // Simulate disabling of Truststore SPI on server
+            testingClient.testing().disableTruststoreSpi();
+
+            AuthenticatorConfigRepresentation cfg = newConfig("x509-browser-config", createLoginSubjectEmailWithRevalidateCert(true).getConfig());
+            String cfgId = createConfig(browserExecution.getId(), cfg);
+            Assert.assertNotNull(cfgId);
+
+            loginConfirmationPage.open();
+            loginPage.assertCurrent();
+
+            // Verify there is an error message
+            Assert.assertNotNull(loginPage.getError());
+
+            Assert.assertThat(loginPage.getError(), containsString("Certificate validation's failed."));
+        } finally {
+            testingClient.testing().reenableTruststoreSpi();
+        }
+    }
+
+    @Test
     public void loginIgnoreX509IdentityContinueToFormLogin() throws Exception {
         // Set the X509 authenticator configuration
         AuthenticatorConfigRepresentation cfg = newConfig("x509-browser-config", createLoginSubjectEmail2UsernameOrEmailConfig().getConfig());

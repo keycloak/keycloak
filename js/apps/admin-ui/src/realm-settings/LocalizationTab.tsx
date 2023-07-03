@@ -38,7 +38,7 @@ import { HelpItem } from "ui-shared";
 
 import { adminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
-import { FormAccess } from "../components/form-access/FormAccess";
+import { FormAccess } from "../components/form/FormAccess";
 import type { KeyValueType } from "../components/key-value-form/key-value-convert";
 import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
 import { FormPanel } from "../components/scroll-form/FormPanel";
@@ -46,7 +46,7 @@ import { PaginatingTableToolbar } from "../components/table-toolbar/PaginatingTa
 import { useRealm } from "../context/realm-context/RealmContext";
 import { useServerInfo } from "../context/server-info/ServerInfoProvider";
 import { useWhoAmI } from "../context/whoami/WhoAmI";
-import { DEFAULT_LOCALE } from "../i18n";
+import { DEFAULT_LOCALE } from "../i18n/i18n";
 import { convertToFormValues } from "../util";
 import { useFetch } from "../utils/useFetch";
 import { AddMessageBundleModal } from "./AddMessageBundleModal";

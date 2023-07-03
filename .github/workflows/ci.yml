@@ -32,6 +32,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       ci: ${{ steps.conditional.outputs.ci }}
+      sssd: ${{ steps.conditional.outputs.sssd }}
     steps:
       - uses: actions/checkout@v3
 
@@ -150,7 +151,7 @@ jobs:
     strategy:
       matrix:
         dist: [temurin]
-        version: [11, 19]
+        version: [19]
       fail-fast: false
     steps:
       - uses: actions/checkout@v3
@@ -246,7 +247,7 @@ jobs:
     name: Legacy Store IT
     needs: build
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 60
     strategy:
       matrix:
         db: [postgres, mysql, oracle, mssql, mariadb]
@@ -405,7 +406,7 @@ jobs:
     timeout-minutes: 75
     strategy:
       matrix:
-        browser: [chrome]
+        browser: [chrome, firefox]
       fail-fast: false
     steps:
       - uses: actions/checkout@v3
@@ -415,7 +416,7 @@ jobs:
         uses: ./.github/actions/integration-test-setup
 
       - name: Run Account Console IT
-        run: ./mvnw test -Dsurefire.rerunFailingTestsCount=${{ env.SUREFIRE_RERUN_FAILING_COUNT }} -nsu -B -Pauth-server-quarkus -Dtest=**.account2.**,!SigningInTest#passwordlessWebAuthnTest,!SigningInTest#twoFactorWebAuthnTest -Dbrowser=${{ matrix.browser }} "-Dwebdriver.chrome.driver=$CHROMEWEBDRIVER/chromedriver" -f testsuite/integration-arquillian/tests/other/base-ui/pom.xml | misc/log/trimmer.sh
+        run: ./mvnw test -Dsurefire.rerunFailingTestsCount=${{ env.SUREFIRE_RERUN_FAILING_COUNT }} -nsu -B -Pauth-server-quarkus -Dtest=**.account2.**,!SigningInTest#passwordlessWebAuthnTest,!SigningInTest#twoFactorWebAuthnTest -Dbrowser=${{ matrix.browser }} "-Dwebdriver.chrome.driver=$CHROMEWEBDRIVER/chromedriver" "-Dwebdriver.gecko.driver=$GECKOWEBDRIVER/geckodriver" -f testsuite/integration-arquillian/tests/other/base-ui/pom.xml | misc/log/trimmer.sh
 
       - name: Upload JVM Heapdumps
         if: always()
@@ -428,6 +429,39 @@ jobs:
         with:
           job-name: Account Console IT
 
+  forms-integration-tests:
+    name: Forms IT
+    runs-on: ubuntu-latest
+    needs: build
+    timeout-minutes: 75
+    strategy:
+      matrix:
+        browser: [chrome, firefox]
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v3
+
+      - id: integration-test-setup
+        name: Integration test setup
+        uses: ./.github/actions/integration-test-setup
+
+      - name: Run Forms IT
+        run: |
+          TESTS=`testsuite/integration-arquillian/tests/base/testsuites/suite.sh forms`
+          echo "Tests: $TESTS"
+          ./mvnw test -Dsurefire.rerunFailingTestsCount=${{ env.SUREFIRE_RERUN_FAILING_COUNT }} -nsu -B -Pauth-server-quarkus -Dtest=$TESTS -Dbrowser=${{ matrix.browser }} "-Dwebdriver.chrome.driver=$CHROMEWEBDRIVER/chromedriver" "-Dwebdriver.gecko.driver=$GECKOWEBDRIVER/geckodriver" -f testsuite/integration-arquillian/tests/base/pom.xml | misc/log/trimmer.sh
+
+      - name: Upload JVM Heapdumps
+        if: always()
+        uses: ./.github/actions/upload-heapdumps
+
+      - uses: ./.github/actions/upload-flaky-tests
+        name: Upload flaky tests
+        env:
+          GH_TOKEN: ${{ github.token }}
+        with:
+          job-name: Forms IT
+
   webauthn-integration-tests:
     name: WebAuthn IT
     runs-on: ubuntu-latest
@@ -435,7 +469,7 @@ jobs:
     timeout-minutes: 45
     strategy:
       matrix:
-        browser: [chrome]
+        browser: [chrome, firefox]
       fail-fast: false
     steps:
       - uses: actions/checkout@v3
@@ -445,7 +479,7 @@ jobs:
         uses: ./.github/actions/integration-test-setup
 
       - name: Run WebAuthn IT
-        run: ./mvnw test -Dsurefire.rerunFailingTestsCount=${{ env.SUREFIRE_RERUN_FAILING_COUNT }} -nsu -B -Pauth-server-quarkus -Dtest=org.keycloak.testsuite.webauthn.**.*Test -Dbrowser=${{ matrix.browser }} "-Dwebdriver.chrome.driver=$CHROMEWEBDRIVER/chromedriver" -Pwebauthn -f testsuite/integration-arquillian/tests/other/pom.xml | misc/log/trimmer.sh
+        run: ./mvnw test -Dsurefire.rerunFailingTestsCount=${{ env.SUREFIRE_RERUN_FAILING_COUNT }} -nsu -B -Pauth-server-quarkus -Dtest=org.keycloak.testsuite.webauthn.**.*Test -Dbrowser=${{ matrix.browser }} "-Dwebdriver.chrome.driver=$CHROMEWEBDRIVER/chromedriver" "-Dwebdriver.gecko.driver=$GECKOWEBDRIVER/geckodriver" -Pwebauthn -f testsuite/integration-arquillian/tests/other/pom.xml | misc/log/trimmer.sh
 
       - name: Upload JVM Heapdumps
         if: always()
@@ -458,6 +492,80 @@ jobs:
         with:
           job-name: WebAuthn IT
 
+  sssd-unit-tests:
+    name: SSSD
+    runs-on: ubuntu-latest
+    needs:
+      - conditional
+      - build
+    timeout-minutes: 30
+    steps:
+      - name: checkout
+        if: ${{ needs.conditional.outputs.sssd == 'true' }}
+        uses: actions/checkout@v3
+
+      - id: integration-test-setup
+        if: ${{ needs.conditional.outputs.sssd == 'true' }}
+        name: Integration test setup
+        uses: ./.github/actions/integration-test-setup
+
+      - id: weekly-cache-key
+        if: ${{ needs.conditional.outputs.sssd == 'true' }}
+        name: Key for weekly rotation of cache
+        shell: bash
+        run: echo "key=ipa-data-`date -u "+%Y-%U"`" >> $GITHUB_OUTPUT
+
+      - id: cache-maven-repository
+        if: ${{ needs.conditional.outputs.sssd == 'true' }}
+        name: ipa-data cache
+        uses: actions/cache@v3
+        with:
+          path: ~/ipa-data.tar
+          key: ${{ steps.weekly-cache-key.outputs.key }}
+
+      - name: Run tests
+        if: ${{ needs.conditional.outputs.sssd == 'true' }}
+        run: .github/scripts/run-ipa.sh "${{ github.workspace }}"
+
+  migration-tests:
+    name: Migration Tests
+    runs-on: ubuntu-latest
+    needs: build
+    timeout-minutes: 45
+    strategy:
+      matrix:
+        old-version: [19.0.3]
+        database: [postgres, mysql, oracle, mssql, mariadb]
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v3
+
+      - id: integration-test-setup
+        name: Integration test setup
+        uses: ./.github/actions/integration-test-setup
+
+      - name: Run Migration Tests
+        run: |
+          ./mvnw clean install -Dsurefire.rerunFailingTestsCount=${{ env.SUREFIRE_RERUN_FAILING_COUNT }} -B \
+          -Pauth-server-quarkus -Pdb-${{ matrix.database }} -Pauth-server-migration \
+          -Dtest=MigrationTest \
+          -Dmigration.mode=auto \
+          -Dmigrated.auth.server.version=${{ matrix.old-version }} \
+          -Dmigration.import.file.name=migration-realm-${{ matrix.old-version }}.json \
+          -Dauth.server.ssl.required=false \
+          -Dauth.server.db.host=localhost \
+          -f testsuite/integration-arquillian/pom.xml | misc/log/trimmer.sh
+
+      - name: Upload JVM Heapdumps
+        if: always()
+        uses: ./.github/actions/upload-heapdumps
+
+      - uses: ./.github/actions/upload-flaky-tests
+        name: Upload flaky tests
+        env:
+          GH_TOKEN: ${{ github.token }}
+        with:
+          job-name: Migration Tests
 
   check-set-status:
     name: Set check conclusion
@@ -473,7 +581,10 @@ jobs:
       - fips-unit-tests
       - fips-integration-tests
       - account-console-integration-tests
+      - forms-integration-tests
       - webauthn-integration-tests
+      - sssd-unit-tests
+      - migration-tests
     runs-on: ubuntu-latest
     outputs:
       conclusion: ${{ steps.check.outputs.conclusion }}

@@ -18,26 +18,28 @@
 package org.keycloak.theme;
 
 import org.jboss.logging.Logger;
-import org.keycloak.Config;
-import org.keycloak.common.Version;
 import org.keycloak.common.util.StringPropertyReplacer;
 import org.keycloak.common.util.SystemEnvProperties;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
 import org.keycloak.models.ThemeManager;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import org.keycloak.common.Profile;
+import org.keycloak.services.util.LocaleUtil;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -158,7 +160,8 @@ public class DefaultThemeManager implements ThemeManager {
 
         private Properties properties;
 
-        private ConcurrentHashMap<String, ConcurrentHashMap<Locale, Properties>> messages = new ConcurrentHashMap<>();
+        private ConcurrentHashMap<String, ConcurrentHashMap<Locale, Map<Locale, Properties>>> messages =
+                new ConcurrentHashMap<>();
 
         public ExtendingTheme(List<Theme> themes, Set<ThemeResourceProvider> themeResourceProviders) {
             this.themes = themes;
@@ -230,31 +233,44 @@ public class DefaultThemeManager implements ThemeManager {
 
         @Override
         public Properties getMessages(String baseBundlename, Locale locale) throws IOException {
-            if (messages.get(baseBundlename) == null || messages.get(baseBundlename).get(locale) == null) {
-                Properties messages = new Properties();
+            Map<Locale, Properties> messagesByLocale = getMessagesByLocale(baseBundlename, locale);
+            return LocaleUtil.mergeGroupedMessages(locale, messagesByLocale);
+        }
+        
+        @Override
+        public Properties getEnhancedMessages(RealmModel realm, Locale locale) throws IOException {
+            Map<Locale, Properties> messagesByLocale = getMessagesByLocale("messages", locale);
+            return LocaleUtil.enhancePropertiesWithRealmLocalizationTexts(realm, locale, messagesByLocale);
+        }
 
+        private Map<Locale, Properties> getMessagesByLocale(String baseBundlename, Locale locale) throws IOException {
+            if (messages.get(baseBundlename) == null || messages.get(baseBundlename).get(locale) == null) {
                 Locale parent = getParent(locale);
 
-                if (parent != null) {
-                    messages.putAll(getMessages(baseBundlename, parent));
-                }
+                Map<Locale, Properties> parentMessages =
+                        parent == null ? Collections.emptyMap() : getMessagesByLocale(baseBundlename, parent);
 
-                for (ThemeResourceProvider t : themeResourceProviders ){
-                    messages.putAll(t.getMessages(baseBundlename, locale));
+                Properties currentMessages = new Properties();
+                Map<Locale, Properties> groupedMessages = new HashMap<>(parentMessages);
+                groupedMessages.put(locale, currentMessages);
+
+                for (ThemeResourceProvider t : themeResourceProviders) {
+                    currentMessages.putAll(t.getMessages(baseBundlename, locale));
                 }
 
                 ListIterator<Theme> itr = themes.listIterator(themes.size());
                 while (itr.hasPrevious()) {
                     Properties m = itr.previous().getMessages(baseBundlename, locale);
                     if (m != null) {
-                        messages.putAll(m);
+                        currentMessages.putAll(m);
                     }
                 }
-                
-                this.messages.putIfAbsent(baseBundlename, new ConcurrentHashMap<Locale, Properties>());
-                this.messages.get(baseBundlename).putIfAbsent(locale, messages);
 
-                return messages;
+
+                this.messages.putIfAbsent(baseBundlename, new ConcurrentHashMap<>());
+                this.messages.get(baseBundlename).putIfAbsent(locale, groupedMessages);
+
+                return groupedMessages;
             } else {
                 return messages.get(baseBundlename).get(locale);
             }
@@ -291,19 +307,7 @@ public class DefaultThemeManager implements ThemeManager {
     }
 
     private static Locale getParent(Locale locale) {
-        if (Locale.ENGLISH.equals(locale)) {
-            return null;
-        }
-
-        if (locale.getVariant() != null && !locale.getVariant().isEmpty()) {
-            return new Locale(locale.getLanguage(), locale.getCountry());
-        }
-
-        if (locale.getCountry() != null && !locale.getCountry().isEmpty()) {
-            return new Locale(locale.getLanguage());
-        }
-
-        return Locale.ENGLISH;
+        return LocaleUtil.getParentLocale(locale);
     }
 
     private List<ThemeProvider> getProviders() {

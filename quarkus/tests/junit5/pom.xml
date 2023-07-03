@@ -36,6 +36,7 @@
         <kc.quarkus.tests.dist>raw</kc.quarkus.tests.dist>
         <approvaltests.version>14.0.0</approvaltests.version>
         <build-helper-maven-plugin.version>3.3.0</build-helper-maven-plugin.version>
+        <maven-resolver-util.version>1.9.10</maven-resolver-util.version>
     </properties>
 
     <dependencies>
@@ -94,6 +95,11 @@
         <dependency>
             <groupId>org.apache.maven.wagon</groupId>
             <artifactId>wagon-http-shared</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.maven.resolver</groupId>
+            <artifactId>maven-resolver-util</artifactId>
+            <version>${maven-resolver-util.version}</version>
         </dependency>
     </dependencies>
 </project>

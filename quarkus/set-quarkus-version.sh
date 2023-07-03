@@ -49,7 +49,7 @@ fi
 QUARKUS_BOM=$(curl -s "$QUARKUS_BOM_URL")
 
 echo "Setting Quarkus version: $QUARKUS_VERSION"
-$(mvn versions:set-property -f ../pom.xml -Dproperty=quarkus.version -DnewVersion="$QUARKUS_VERSION" 1> /dev/null)
+$(mvn versions:set-property -f ../pom.xml -Dproperty=quarkus.version,quarkus.build.version -DnewVersion="$QUARKUS_VERSION" 1> /dev/null)
 
 DEPENDENCIES_LIST="resteasy jackson-bom hibernate-orm mysql-jdbc postgresql-jdbc microprofile-metrics-api wildfly-common wildfly-elytron"
 

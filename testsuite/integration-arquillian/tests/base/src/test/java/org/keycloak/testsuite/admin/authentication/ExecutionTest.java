@@ -22,7 +22,6 @@ import org.junit.Test;
 import org.keycloak.authentication.AuthenticationFlow;
 import org.keycloak.authentication.authenticators.browser.UsernameFormFactory;
 import org.keycloak.authentication.authenticators.browser.WebAuthnAuthenticatorFactory;
-import org.keycloak.authentication.authenticators.challenge.NoCookieFlowRedirectAuthenticatorFactory;
 import org.keycloak.authentication.authenticators.client.ClientIdAndSecretAuthenticator;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
@@ -330,7 +329,6 @@ public class ExecutionTest extends AbstractAuthenticationTest {
 
         addExecutionCheckReq(newBrowserFlow, UsernameFormFactory.PROVIDER_ID, params, REQUIRED);
         addExecutionCheckReq(newBrowserFlow, WebAuthnAuthenticatorFactory.PROVIDER_ID, params, DISABLED);
-        addExecutionCheckReq(newBrowserFlow, NoCookieFlowRedirectAuthenticatorFactory.PROVIDER_ID, params, REQUIRED);
 
         AuthenticationFlowRepresentation rep = findFlowByAlias(newBrowserFlow, authMgmtResource.getFlows());
         Assert.assertNotNull(rep);

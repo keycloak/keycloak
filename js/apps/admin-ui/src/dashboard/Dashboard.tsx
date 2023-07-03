@@ -45,11 +45,13 @@ import "./dashboard.css";
 const EmptyDashboard = () => {
   const { t } = useTranslation("dashboard");
   const { realm } = useRealm();
+  const brandImage = environment.logo ? environment.logo : "/icon.svg";
+
   return (
     <PageSection variant="light">
       <EmptyState variant="large">
         <Brand
-          src={environment.resourceUrl + "/icon.svg"}
+          src={environment.resourceUrl + brandImage}
           alt="Keycloak icon"
           className="keycloak__dashboard_icon"
         />

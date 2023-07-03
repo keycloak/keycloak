@@ -17,6 +17,10 @@
 
 package org.keycloak.services.resources.admin;
 
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
+import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import jakarta.ws.rs.NotFoundException;
 import org.keycloak.events.admin.OperationType;
@@ -30,6 +34,7 @@ import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.idm.ClientMappingsRepresentation;
 import org.keycloak.representations.idm.MappingsRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
+import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 import org.keycloak.services.util.ScopeMappedUtil;
 
@@ -58,6 +63,7 @@ import java.util.stream.Stream;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
+@Extension(name = KeycloakOpenAPI.Profiles.ADMIN, value = "")
 public class ScopeMappedResource {
     protected RealmModel realm;
     protected AdminPermissionEvaluator auth;
@@ -91,6 +97,8 @@ public class ScopeMappedResource {
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
     @Deprecated
+    @Tag(name= KeycloakOpenAPI.Admin.Tags.SCOPE_MAPPINGS)
+    @Operation(summary = "Get all scope mappings for the client", deprecated = true)
     public MappingsRepresentation getScopeMappings() {
         viewPermission.require();
 
@@ -127,6 +135,8 @@ public class ScopeMappedResource {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.SCOPE_MAPPINGS)
+    @Operation(summary = "Get realm-level roles associated with the client's scope")
     public Stream<RoleRepresentation> getRealmScopeMappings() {
         viewPermission.require();
 
@@ -147,6 +157,8 @@ public class ScopeMappedResource {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.SCOPE_MAPPINGS)
+    @Operation(summary = "Get realm-level roles that are available to attach to this client's scope")
     public Stream<RoleRepresentation> getAvailableRealmScopeMappings() {
         viewPermission.require();
 
@@ -175,7 +187,10 @@ public class ScopeMappedResource {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
-    public Stream<RoleRepresentation> getCompositeRealmScopeMappings(@QueryParam("briefRepresentation") @DefaultValue("true") boolean briefRepresentation) {
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.SCOPE_MAPPINGS)
+    @Operation(summary = "Get effective realm-level roles associated with the client’s scope What this does is recurse any composite roles associated with the client’s scope and adds the roles to this lists.",
+        description = "The method is really to show a comprehensive total view of realm-level roles associated with the client.")
+    public Stream<RoleRepresentation> getCompositeRealmScopeMappings(@Parameter(description = "if false, return roles with their attributes") @QueryParam("briefRepresentation") @DefaultValue("true") boolean briefRepresentation) {
         viewPermission.require();
 
         if (scopeContainer == null) {
@@ -197,6 +212,8 @@ public class ScopeMappedResource {
     @Path("realm")
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.SCOPE_MAPPINGS)
+    @Operation(summary = "Add a set of realm-level roles to the client's scope")
     public void addRealmScopeMappings(List<RoleRepresentation> roles) {
         managePermission.require();
 
@@ -223,6 +240,8 @@ public class ScopeMappedResource {
     @Path("realm")
     @DELETE
     @Consumes(MediaType.APPLICATION_JSON)
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.SCOPE_MAPPINGS)
+    @Operation(summary = "Remove a set of realm-level roles from the client's scope")
     public void deleteRealmScopeMappings(List<RoleRepresentation> roles) {
         managePermission.require();
 

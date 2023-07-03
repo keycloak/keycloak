@@ -62,6 +62,7 @@ import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.equalTo;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -400,6 +401,7 @@ public class PartialImportTest extends AbstractAuthTest {
             Assert.assertEquals(realmId, adminEvent.getRealmId());
             Assert.assertEquals(OperationType.CREATE.name(), adminEvent.getOperationType());
             Assert.assertTrue(adminEvent.getResourcePath().startsWith("users/"));
+            assertThat(adminEvent.getResourceType(), equalTo(org.keycloak.events.admin.ResourceType.REALM.name()));
             String userId = adminEvent.getResourcePath().substring(6);
             userIds.add(userId);
         }

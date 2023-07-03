@@ -5,10 +5,9 @@ import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.not;
-import static org.keycloak.testsuite.broker.BrokerTestTools.getConsumerRoot;
 
+import org.junit.Assert;
 import org.junit.Before;
-import org.junit.Test;
 import org.keycloak.admin.client.CreatedResponseUtil;
 import org.keycloak.broker.provider.ConfigConstants;
 import org.keycloak.models.IdentityProviderMapperSyncMode;
@@ -18,11 +17,13 @@ import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
 import jakarta.ws.rs.core.Response;
+import org.keycloak.testsuite.util.AccountHelper;
 
 /**
  * @author <a href="mailto:artur.baltabayev@bosch.io">Artur Baltabayev</a>,
@@ -62,7 +63,7 @@ public abstract class AbstractGroupMapperTest extends AbstractIdentityProviderMa
 
     protected UserRepresentation loginAsUserTwiceWithMapper(
             IdentityProviderMapperSyncMode syncMode, boolean createAfterFirstLogin,
-            Map<String, List<String>> userConfig, String groupPath) {
+            Map<String, List<String>> userConfig, String groupPath) throws IOException {
         final IdentityProviderRepresentation idp = setupIdentityProvider();
         if (!createAfterFirstLogin) {
             createMapperInIdp(idp, syncMode, groupPath);
@@ -81,12 +82,12 @@ public abstract class AbstractGroupMapperTest extends AbstractIdentityProviderMa
         if (createAfterFirstLogin) {
             createMapperInIdp(idp, syncMode, groupPath);
         }
-        logoutFromRealm(getConsumerRoot(), bc.consumerRealmName());
+        AccountHelper.logout(adminClient.realm(bc.consumerRealmName()), bc.getUserLogin());
 
         updateUser();
 
         logInAsUserInIDP();
-        assertLoggedInAccountManagement();
+        appPage.assertCurrent();
 
         user = findUser(bc.consumerRealmName(), bc.getUserLogin(), bc.getUserEmail());
         return user;

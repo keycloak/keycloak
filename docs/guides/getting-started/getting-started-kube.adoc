@@ -33,7 +33,7 @@ As a first step, create the Keycloak deployment and service by entering the foll
 
 [source,bash,subs="attributes+"]
 ----
-kubectl create -f https://raw.githubusercontent.com/keycloak/keycloak-quickstarts/latest/kubernetes-examples/keycloak.yaml
+kubectl create -f https://raw.githubusercontent.com/keycloak/keycloak-quickstarts/latest/kubernetes/keycloak.yaml
 ----
 
 This command starts Keycloak on Kubernetes and creates an initial admin user with the username `admin` and password
@@ -45,7 +45,7 @@ Now create an Ingress for Keycloak by entering the following command:
 
 [source,bash,subs="attributes+"]
 ----
-wget -q -O - https://raw.githubusercontent.com/keycloak/keycloak-quickstarts/latest/kubernetes-examples/keycloak-ingress.yaml | \
+wget -q -O - https://raw.githubusercontent.com/keycloak/keycloak-quickstarts/latest/kubernetes/keycloak-ingress.yaml | \
 sed "s/KEYCLOAK_HOST/keycloak.$(minikube ip).nip.io/" | \
 kubectl create -f -
 ----

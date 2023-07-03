@@ -42,7 +42,7 @@
             <plugin>
                 <groupId>io.quarkus</groupId>
                 <artifactId>quarkus-maven-plugin</artifactId>
-                <version>${quarkus.version}</version>
+                <version>${quarkus.build.version}</version>
                 <configuration>
                     <finalName>keycloak</finalName>
                     <systemProperties>

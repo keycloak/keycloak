@@ -74,6 +74,9 @@ import jakarta.ws.rs.core.UriInfo;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
 
 import static org.keycloak.utils.LockObjectsForModification.lockUserSessionsForModification;
 
@@ -387,6 +390,30 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
             
             if (!identity.getId().equals(idToken.getSubject())) {
                 throw new IdentityBrokerException("Mismatch between the subject in the id_token and the subject from the user_info endpoint");
+            }
+
+            if (getConfig().isFilteredByClaims()) {
+                String filterName = getConfig().getClaimFilterName();
+                String filterValue = getConfig().getClaimFilterValue();
+
+                logger.tracef("Filtering user %s by %s=%s", idToken.getOtherClaims().get(getusernameClaimNameForIdToken()), filterName, filterValue);
+                if (idToken.getOtherClaims().containsKey(filterName)) {
+                    Object claimObject = idToken.getOtherClaims().get(filterName);
+                    List<String> claimValues = new ArrayList<>();
+                    if (claimObject instanceof List) {
+                        ((List<?>)claimObject).forEach(v->claimValues.add(Objects.toString(v)));
+                    } else {
+                        claimValues.add(Objects.toString(claimObject));
+                    }
+                    logger.tracef("Found claim %s with values %s", filterName, claimValues);
+                    if (!claimValues.stream().anyMatch(v->v.matches(filterValue))) {
+                        logger.warnf("Claim %s has values \"%s\" that does not match the expected filter \"%s\"", filterName, claimValues, filterValue);
+                        throw new IdentityBrokerException(String.format("Unmatched claim value for %s.", filterName));
+                    }
+                } else {
+                    logger.debugf("Claim %s was not found", filterName);
+                    throw new IdentityBrokerException(String.format("Claim %s not found", filterName));
+                }
             }
 
             identity.getContextData().put(BROKER_NONCE_PARAM, idToken.getOtherClaims().get(OIDCLoginProtocol.NONCE_PARAM));

@@ -6,14 +6,14 @@ import {
 } from "keycloak-masthead";
 import { Suspense, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { Outlet } from "react-router-dom";
+import { Outlet, useHref } from "react-router-dom";
 import { AlertProvider } from "ui-shared";
 
+import { ExternalLinkSquareAltIcon } from "@patternfly/react-icons";
 import { environment } from "../environment";
 import { keycloak } from "../keycloak";
 import { joinPath } from "../utils/joinPath";
 import { PageNav } from "./PageNav";
-import { ExternalLinkSquareAltIcon } from "@patternfly/react-icons";
 
 import style from "./Root.module.css";
 
@@ -37,6 +37,12 @@ const ReferrerLink = () => {
 
 export const Root = () => {
   const { t } = useTranslation();
+  const brandImage = environment.logo || "logo.svg";
+  const logoUrl = environment.logoUrl ? environment.logoUrl : "/";
+  const internalLogoHref = useHref(logoUrl);
+
+  // User can indicate that he wants an internal URL by starting it with "/"
+  const indexHref = logoUrl.startsWith("/") ? internalLogoHref : logoUrl;
 
   const translations = useMemo<Translations>(
     () => ({
@@ -57,7 +63,8 @@ export const Root = () => {
             features={{ hasManageAccount: false }}
             showNavToggle
             brand={{
-              src: joinPath(environment.resourceUrl, "logo.svg"),
+              href: indexHref,
+              src: joinPath(environment.resourceUrl, brandImage),
               alt: t("logo"),
               className: style.brand,
             }}

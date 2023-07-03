@@ -17,6 +17,7 @@
 
 package org.keycloak.protocol.oidc;
 
+import java.util.Collections;
 import java.util.HashMap;
 import org.jboss.logging.Logger;
 import org.keycloak.http.HttpRequest;
@@ -47,6 +48,7 @@ import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.Constants;
 import org.keycloak.models.ImpersonationSessionNote;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.SingleUseObjectProvider;
@@ -55,7 +57,9 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.UserSessionProvider;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.models.utils.SessionExpirationUtils;
 import org.keycloak.models.utils.RoleUtils;
+import org.keycloak.protocol.ProtocolMapper;
 import org.keycloak.protocol.ProtocolMapperUtils;
 import org.keycloak.protocol.oidc.mappers.OIDCAccessTokenMapper;
 import org.keycloak.protocol.oidc.mappers.OIDCAccessTokenResponseMapper;
@@ -90,8 +94,13 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.TimeUnit;
+import java.util.function.BiConsumer;
+import java.util.function.BinaryOperator;
+import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
+import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -569,7 +578,7 @@ public class TokenManager {
         }
 
         clientSession.setNote(Constants.LEVEL_OF_AUTHENTICATION, String.valueOf(new AcrStore(authSession).getLevelOfAuthenticationFromCurrentAuthentication()));
-        clientSession.setTimestamp(Time.currentTime());
+        clientSession.setTimestamp(userSession.getLastSessionRefresh());
 
         // Remove authentication session now
         new AuthenticationSessionManager(session).removeAuthenticationSession(userSession.getRealm(), authSession, true);
@@ -740,36 +749,36 @@ public class TokenManager {
 
     public AccessToken transformAccessToken(KeycloakSession session, AccessToken token,
                                             UserSessionModel userSession, ClientSessionContext clientSessionCtx) {
-
-        AtomicReference<AccessToken> finalToken = new AtomicReference<>(token);
-        ProtocolMapperUtils.getSortedProtocolMappers(session, clientSessionCtx)
-                .filter(mapper -> mapper.getValue() instanceof OIDCAccessTokenMapper)
-                .forEach(mapper -> finalToken.set(((OIDCAccessTokenMapper) mapper.getValue())
-                        .transformAccessToken(finalToken.get(), mapper.getKey(), session, userSession, clientSessionCtx)));
-        return finalToken.get();
+        return ProtocolMapperUtils.getSortedProtocolMappers(session, clientSessionCtx, mapper -> mapper.getValue() instanceof OIDCAccessTokenMapper)
+                .collect(new TokenCollector<AccessToken>(token) {
+                    @Override
+                    protected AccessToken applyMapper(AccessToken token, Map.Entry<ProtocolMapperModel, ProtocolMapper> mapper) {
+                        return ((OIDCAccessTokenMapper) mapper.getValue()).transformAccessToken(token, mapper.getKey(), session, userSession, clientSessionCtx);
+                    }
+                });
     }
 
     public AccessTokenResponse transformAccessTokenResponse(KeycloakSession session, AccessTokenResponse accessTokenResponse,
             UserSessionModel userSession, ClientSessionContext clientSessionCtx) {
 
-        AtomicReference<AccessTokenResponse> finalResponseToken = new AtomicReference<>(accessTokenResponse);
-        ProtocolMapperUtils.getSortedProtocolMappers(session, clientSessionCtx)
-                .filter(mapper -> mapper.getValue() instanceof OIDCAccessTokenResponseMapper)
-                .forEach(mapper -> finalResponseToken.set(((OIDCAccessTokenResponseMapper) mapper.getValue())
-                        .transformAccessTokenResponse(finalResponseToken.get(), mapper.getKey(), session, userSession, clientSessionCtx)));
-
-        return finalResponseToken.get();
+        return ProtocolMapperUtils.getSortedProtocolMappers(session, clientSessionCtx, mapper -> mapper.getValue() instanceof OIDCAccessTokenResponseMapper)
+                .collect(new TokenCollector<AccessTokenResponse>(accessTokenResponse) {
+                    @Override
+                    protected AccessTokenResponse applyMapper(AccessTokenResponse token, Map.Entry<ProtocolMapperModel, ProtocolMapper> mapper) {
+                        return ((OIDCAccessTokenResponseMapper) mapper.getValue()).transformAccessTokenResponse(token, mapper.getKey(), session, userSession, clientSessionCtx);
+                    }
+                });
     }
 
     public AccessToken transformUserInfoAccessToken(KeycloakSession session, AccessToken token,
-                                            UserSessionModel userSession, ClientSessionContext clientSessionCtx) {
-
-        AtomicReference<AccessToken> finalToken = new AtomicReference<>(token);
-        ProtocolMapperUtils.getSortedProtocolMappers(session, clientSessionCtx)
-                .filter(mapper -> mapper.getValue() instanceof UserInfoTokenMapper)
-                .forEach(mapper -> finalToken.set(((UserInfoTokenMapper) mapper.getValue())
-                        .transformUserInfoToken(finalToken.get(), mapper.getKey(), session, userSession, clientSessionCtx)));
-        return finalToken.get();
+                                                    UserSessionModel userSession, ClientSessionContext clientSessionCtx) {
+        return ProtocolMapperUtils.getSortedProtocolMappers(session, clientSessionCtx, mapper -> mapper.getValue() instanceof UserInfoTokenMapper)
+                .collect(new TokenCollector<AccessToken>(token) {
+                    @Override
+                    protected AccessToken applyMapper(AccessToken token, Map.Entry<ProtocolMapperModel, ProtocolMapper> mapper) {
+                        return ((UserInfoTokenMapper) mapper.getValue()).transformUserInfoToken(token, mapper.getKey(), session, userSession, clientSessionCtx);
+                    }
+                });
     }
 
     public Map<String, Object> generateUserInfoClaims(AccessToken userInfo, UserModel userModel) {
@@ -863,14 +872,51 @@ public class TokenManager {
         return claims;
     }
 
-    public void transformIDToken(KeycloakSession session, IDToken token,
-                                      UserSessionModel userSession, ClientSessionContext clientSessionCtx) {
+    private abstract static class TokenCollector<T> implements Collector<Map.Entry<ProtocolMapperModel, ProtocolMapper>, TokenCollector<T>, T> {
 
-        AtomicReference<IDToken> finalToken = new AtomicReference<>(token);
-        ProtocolMapperUtils.getSortedProtocolMappers(session, clientSessionCtx)
-                .filter(mapper -> mapper.getValue() instanceof OIDCIDTokenMapper)
-                .forEach(mapper -> finalToken.set(((OIDCIDTokenMapper) mapper.getValue())
-                        .transformIDToken(finalToken.get(), mapper.getKey(), session, userSession, clientSessionCtx)));
+        private T token;
+
+        public TokenCollector(T token) {
+            this.token = token;
+        }
+
+        @Override
+        public Supplier<TokenCollector<T>> supplier() {
+            return () -> this;
+        }
+
+        @Override
+        public Function<TokenCollector<T>, T> finisher() {
+            return idTokenWrapper -> idTokenWrapper.token;
+        }
+
+        @Override
+        public Set<Collector.Characteristics> characteristics() {
+            return Collections.emptySet();
+        }
+
+        @Override
+        public BinaryOperator<TokenCollector<T>> combiner() {
+            return (tMutableWrapper, tMutableWrapper2) -> { throw new IllegalStateException("can't combine"); };
+        }
+
+        @Override
+        public BiConsumer<TokenCollector<T>, Map.Entry<ProtocolMapperModel, ProtocolMapper>> accumulator() {
+            return (idToken, mapper) -> idToken.token = applyMapper(idToken.token, mapper);
+        }
+
+        protected abstract T applyMapper(T token, Map.Entry<ProtocolMapperModel, ProtocolMapper> mapper);
+
+    }
+
+    public IDToken transformIDToken(KeycloakSession session, IDToken token,
+                                    UserSessionModel userSession, ClientSessionContext clientSessionCtx) {
+        return ProtocolMapperUtils.getSortedProtocolMappers(session, clientSessionCtx, mapper -> mapper.getValue() instanceof OIDCIDTokenMapper)
+                .collect(new TokenCollector<IDToken>(token) {
+                    protected IDToken applyMapper(IDToken token, Map.Entry<ProtocolMapperModel, ProtocolMapper> mapper) {
+                        return ((OIDCIDTokenMapper) mapper.getValue()).transformIDToken(token, mapper.getKey(), session, userSession, clientSessionCtx);
+                    }
+                });
     }
 
     protected AccessToken initToken(RealmModel realm, ClientModel client, UserModel user, UserSessionModel session,
@@ -930,56 +976,23 @@ public class TokenManager {
             }
         }
 
-        int expiration;
+        long expiration;
         if (tokenLifespan == -1) {
-            expiration = userSession.getStarted() + (userSession.isRememberMe() && realm.getSsoSessionMaxLifespanRememberMe() > 0 ?
-                    realm.getSsoSessionMaxLifespanRememberMe() : realm.getSsoSessionMaxLifespan());
+            expiration = TimeUnit.SECONDS.toMillis(userSession.getStarted() +
+                    (userSession.isRememberMe() && realm.getSsoSessionMaxLifespanRememberMe() > 0
+                            ? realm.getSsoSessionMaxLifespanRememberMe()
+                            : realm.getSsoSessionMaxLifespan()));
         } else {
-            expiration = Time.currentTime() + tokenLifespan;
+            expiration = Time.currentTimeMillis() + TimeUnit.SECONDS.toMillis(tokenLifespan);
         }
 
-        if (userSession.isOffline() || offlineTokenRequested) {
-            if (realm.isOfflineSessionMaxLifespanEnabled()) {
-                int sessionExpires = userSession.getStarted() + realm.getOfflineSessionMaxLifespan();
-                expiration = expiration <= sessionExpires ? expiration : sessionExpires;
+        long sessionExpires = SessionExpirationUtils.calculateClientSessionMaxLifespanTimestamp(
+                userSession.isOffline() || offlineTokenRequested, userSession.isRememberMe(),
+                TimeUnit.SECONDS.toMillis(clientSession.getStarted()), TimeUnit.SECONDS.toMillis(userSession.getStarted()),
+                realm, client);
+        expiration = sessionExpires > 0? Math.min(expiration, sessionExpires) : expiration;
 
-                int clientOfflineSessionMaxLifespan;
-                String clientOfflineSessionMaxLifespanPerClient = client
-                    .getAttribute(OIDCConfigAttributes.CLIENT_OFFLINE_SESSION_MAX_LIFESPAN);
-                if (clientOfflineSessionMaxLifespanPerClient != null
-                    && !clientOfflineSessionMaxLifespanPerClient.trim().isEmpty()) {
-                    clientOfflineSessionMaxLifespan = Integer.parseInt(clientOfflineSessionMaxLifespanPerClient);
-                } else {
-                    clientOfflineSessionMaxLifespan = realm.getClientOfflineSessionMaxLifespan();
-                }
-
-                if (clientOfflineSessionMaxLifespan > 0) {
-                    int clientOfflineSessionExpiration = userSession.getStarted() + clientOfflineSessionMaxLifespan;
-                    return expiration < clientOfflineSessionExpiration ? expiration : clientOfflineSessionExpiration;
-                }
-            }
-        } else {
-            int sessionExpires = userSession.getStarted()
-                + (userSession.isRememberMe() && realm.getSsoSessionMaxLifespanRememberMe() > 0
-                    ? realm.getSsoSessionMaxLifespanRememberMe()
-                    : realm.getSsoSessionMaxLifespan());
-            expiration = expiration <= sessionExpires ? expiration : sessionExpires;
-
-            int clientSessionMaxLifespan;
-            String clientSessionMaxLifespanPerClient = client.getAttribute(OIDCConfigAttributes.CLIENT_SESSION_MAX_LIFESPAN);
-            if (clientSessionMaxLifespanPerClient != null && !clientSessionMaxLifespanPerClient.trim().isEmpty()) {
-                clientSessionMaxLifespan = Integer.parseInt(clientSessionMaxLifespanPerClient);
-            } else {
-                clientSessionMaxLifespan = realm.getClientSessionMaxLifespan();
-            }
-
-            if (clientSessionMaxLifespan > 0) {
-                int clientSessionExpiration = clientSession.getTimestamp() + clientSessionMaxLifespan;
-                return expiration < clientSessionExpiration ? expiration : clientSessionExpiration;
-            }
-        }
-
-        return expiration;
+        return (int) TimeUnit.MILLISECONDS.toSeconds(expiration);
     }
 
 
@@ -1059,93 +1072,30 @@ public class TokenManager {
                 refreshToken = new RefreshToken(accessToken);
                 refreshToken.type(TokenUtil.TOKEN_TYPE_OFFLINE);
                 if (realm.isOfflineSessionMaxLifespanEnabled())
-                    refreshToken.expiration(getOfflineExpiration());
+                    refreshToken.expiration(getExpiration(true));
                 sessionManager.createOrUpdateOfflineSession(clientSessionCtx.getClientSession(), userSession);
             } else {
                 refreshToken = new RefreshToken(accessToken);
-                refreshToken.expiration(getRefreshExpiration());
+                refreshToken.expiration(getExpiration(false));
             }
             refreshToken.id(KeycloakModelUtils.generateId());
             refreshToken.issuedNow();
             return this;
         }
 
-        private int getRefreshExpiration() {
-            int sessionExpires = userSession.getStarted()
-                + (userSession.isRememberMe() && realm.getSsoSessionMaxLifespanRememberMe() > 0
-                    ? realm.getSsoSessionMaxLifespanRememberMe()
-                    : realm.getSsoSessionMaxLifespan());
+        private int getExpiration(boolean offline) {
+            long expiration = SessionExpirationUtils.calculateClientSessionIdleTimestamp(
+                    offline, userSession.isRememberMe(),
+                    TimeUnit.SECONDS.toMillis(clientSessionCtx.getClientSession().getTimestamp()),
+                    realm, client);
+            long lifespan = SessionExpirationUtils.calculateClientSessionMaxLifespanTimestamp(
+                    offline, userSession.isRememberMe(),
+                    TimeUnit.SECONDS.toMillis(clientSessionCtx.getClientSession().getStarted()),
+                    TimeUnit.SECONDS.toMillis(userSession.getStarted()),
+                    realm, client);
+            expiration = lifespan > 0? Math.min(expiration, lifespan) : expiration;
 
-            int clientSessionMaxLifespan;
-            String clientSessionMaxLifespanPerClient = client.getAttribute(OIDCConfigAttributes.CLIENT_SESSION_MAX_LIFESPAN);
-            if (clientSessionMaxLifespanPerClient != null && !clientSessionMaxLifespanPerClient.trim().isEmpty()) {
-                clientSessionMaxLifespan = Integer.parseInt(clientSessionMaxLifespanPerClient);
-            } else {
-                clientSessionMaxLifespan = realm.getClientSessionMaxLifespan();
-            }
-
-            if (clientSessionMaxLifespan > 0) {
-                int clientSessionMaxExpiration = userSession.getStarted() + clientSessionMaxLifespan;
-                sessionExpires = sessionExpires < clientSessionMaxExpiration ? sessionExpires : clientSessionMaxExpiration;
-            }
-
-            int expiration = Time.currentTime() + (userSession.isRememberMe() && realm.getSsoSessionIdleTimeoutRememberMe() > 0
-                ? realm.getSsoSessionIdleTimeoutRememberMe()
-                : realm.getSsoSessionIdleTimeout());
-
-            int clientSessionIdleTimeout;
-            String clientSessionIdleTimeoutPerClient = client.getAttribute(OIDCConfigAttributes.CLIENT_SESSION_IDLE_TIMEOUT);
-            if (clientSessionIdleTimeoutPerClient != null && !clientSessionIdleTimeoutPerClient.trim().isEmpty()) {
-                clientSessionIdleTimeout = Integer.parseInt(clientSessionIdleTimeoutPerClient);
-            } else {
-                clientSessionIdleTimeout = realm.getClientSessionIdleTimeout();
-            }
-
-            if (clientSessionIdleTimeout > 0) {
-                int clientSessionIdleExpiration = Time.currentTime() + clientSessionIdleTimeout;
-                expiration = expiration < clientSessionIdleExpiration ? expiration : clientSessionIdleExpiration;
-            }
-
-            return expiration <= sessionExpires ? expiration : sessionExpires;
-        }
-
-        private int getOfflineExpiration() {
-            int sessionExpires = userSession.getStarted() + realm.getOfflineSessionMaxLifespan();
-
-            int clientOfflineSessionMaxLifespan;
-            String clientOfflineSessionMaxLifespanPerClient = client
-                .getAttribute(OIDCConfigAttributes.CLIENT_OFFLINE_SESSION_MAX_LIFESPAN);
-            if (clientOfflineSessionMaxLifespanPerClient != null
-                && !clientOfflineSessionMaxLifespanPerClient.trim().isEmpty()) {
-                clientOfflineSessionMaxLifespan = Integer.parseInt(clientOfflineSessionMaxLifespanPerClient);
-            } else {
-                clientOfflineSessionMaxLifespan = realm.getClientOfflineSessionMaxLifespan();
-            }
-
-            if (clientOfflineSessionMaxLifespan > 0) {
-                int clientOfflineSessionMaxExpiration = userSession.getStarted() + clientOfflineSessionMaxLifespan;
-                sessionExpires = sessionExpires < clientOfflineSessionMaxExpiration ? sessionExpires
-                    : clientOfflineSessionMaxExpiration;
-            }
-
-            int expiration = Time.currentTime() + realm.getOfflineSessionIdleTimeout();
-
-            int clientOfflineSessionIdleTimeout;
-            String clientOfflineSessionIdleTimeoutPerClient = client
-                .getAttribute(OIDCConfigAttributes.CLIENT_OFFLINE_SESSION_IDLE_TIMEOUT);
-            if (clientOfflineSessionIdleTimeoutPerClient != null
-                && !clientOfflineSessionIdleTimeoutPerClient.trim().isEmpty()) {
-                clientOfflineSessionIdleTimeout = Integer.parseInt(clientOfflineSessionIdleTimeoutPerClient);
-            } else {
-                clientOfflineSessionIdleTimeout = realm.getClientOfflineSessionIdleTimeout();
-            }
-
-            if (clientOfflineSessionIdleTimeout > 0) {
-                int clientOfflineSessionIdleExpiration = Time.currentTime() + clientOfflineSessionIdleTimeout;
-                expiration = expiration < clientOfflineSessionIdleExpiration ? expiration : clientOfflineSessionIdleExpiration;
-            }
-
-            return expiration <= sessionExpires ? expiration : sessionExpires;
+            return (int) TimeUnit.MILLISECONDS.toSeconds(expiration);
         }
 
         public AccessTokenResponseBuilder generateIDToken() {
@@ -1175,7 +1125,7 @@ public class TokenManager {
             }
 
             if (isIdTokenAsDetachedSignature == false) {
-                transformIDToken(session, idToken, userSession, clientSessionCtx);
+                idToken = transformIDToken(session, idToken, userSession, clientSessionCtx);
             }
             return this;
         }
@@ -1257,7 +1207,7 @@ public class TokenManager {
             if (userNotBefore > notBefore) notBefore = userNotBefore;
             res.setNotBeforePolicy(notBefore);
 
-            transformAccessTokenResponse(session, res, userSession, clientSessionCtx);
+            res = transformAccessTokenResponse(session, res, userSession, clientSessionCtx);
 
             // OIDC Financial API Read Only Profile : scope MUST be returned in the response from Token Endpoint
             String responseScope = clientSessionCtx.getScopeString();
@@ -1342,7 +1292,7 @@ public class TokenManager {
 
         @Override
         public boolean test(JsonWebToken token) {
-            SingleUseObjectProvider singleUseStore = session.getProvider(SingleUseObjectProvider.class);
+            SingleUseObjectProvider singleUseStore = session.singleUseObjects();
             return !singleUseStore.contains(token.getId() + SingleUseObjectProvider.REVOKED_KEY);
         }
     }

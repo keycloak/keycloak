@@ -23,10 +23,16 @@ import io.fabric8.kubernetes.api.model.LocalObjectReferenceBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.fabric8.kubernetes.api.model.SecretKeySelectorBuilder;
+import io.fabric8.kubernetes.api.model.Service;
+import io.fabric8.kubernetes.api.model.ServicePort;
+import io.fabric8.kubernetes.api.model.apps.StatefulSet;
+import io.fabric8.kubernetes.api.model.apps.StatefulSetBuilder;
 import io.fabric8.kubernetes.api.model.apps.StatefulSetSpecBuilder;
 import io.quarkus.logging.Log;
 import io.quarkus.test.junit.QuarkusTest;
+
 import org.awaitility.Awaitility;
+import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.keycloak.operator.Constants;
@@ -37,6 +43,7 @@ import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusCondition;
 import org.keycloak.operator.crds.v2alpha1.deployment.ValueOrSecret;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.HostnameSpecBuilder;
+import org.keycloak.operator.testsuite.utils.CRAssert;
 import org.keycloak.operator.testsuite.utils.K8sUtils;
 
 import java.nio.charset.StandardCharsets;
@@ -78,9 +85,13 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
             Log.info("Checking Keycloak pod has ready replicas == 1");
             assertThat(k8sclient.apps().statefulSets().inNamespace(namespace).withName(deploymentName).get().getStatus().getReadyReplicas()).isEqualTo(1);
 
+            Log.info("Checking observedGeneration is the same as the spec");
+            Keycloak latest = k8sclient.resource(kc).get();
+            assertThat(latest.getMetadata().getGeneration()).isEqualTo(latest.getStatus().getObservedGeneration());
+
             // Delete CR
             Log.info("Deleting Keycloak CR and watching cleanup");
-            k8sclient.resources(Keycloak.class).delete(kc);
+            k8sclient.resource(kc).delete();
             Awaitility.await()
                     .untilAsserted(() -> assertThat(k8sclient.apps().statefulSets().inNamespace(namespace).withName(deploymentName).get()).isNull());
         } catch (Exception e) {
@@ -104,6 +115,7 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
             deployKeycloak(k8sclient, kc, false);
 
             Awaitility.await()
+                    .timeout(Duration.ofMinutes(2))
                     .during(Duration.ofSeconds(15)) // check if the Deployment is stable
                     .untilAsserted(() -> {
                         var c = k8sclient.apps().statefulSets().inNamespace(namespace).withName(deploymentName).get()
@@ -111,7 +123,7 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
                         assertThat(c.getImage()).isEqualTo("quay.io/keycloak/non-existing-keycloak");
                         assertThat(c.getEnv().stream()
                                 .anyMatch(e -> e.getName().equals(KeycloakDistConfigurator.getKeycloakOptionEnvVarName(dbConf.getName()))
-                                        && e.getValue().equals(dbConf.getValue())))
+                                        && dbConf.getValue().equals(e.getValue())))
                                 .isTrue();
                     });
 
@@ -145,11 +157,19 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
             deployKeycloak(k8sclient, defaultKCDeploy, false);
 
             assertThat(
-                    Constants.DEFAULT_DIST_CONFIG.get(valueSecretHealthProp.getName())
+                    Constants.DEFAULT_DIST_CONFIG_LIST.stream()
+                                                      .filter(oneValueOrSecret -> oneValueOrSecret.getName().equalsIgnoreCase(valueSecretHealthProp.getName()))
+                                                      .findFirst()
+                                                      .get()
+                                                      .getValue()
             ).isEqualTo("true"); // just a sanity check default values did not change
 
             assertThat(
-                    Constants.DEFAULT_DIST_CONFIG.get(valueSecretProxyProp.getName())
+                    Constants.DEFAULT_DIST_CONFIG_LIST.stream()
+                                                      .filter(oneValueOrSecret -> oneValueOrSecret.getName().equalsIgnoreCase(valueSecretProxyProp.getName()))
+                                                      .findFirst()
+                                                      .get()
+                                                      .getValue()
             ).isEqualTo("passthrough"); // just a sanity check default values did not change
 
             Awaitility.await()
@@ -190,7 +210,21 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
         try {
             var kc = getDefaultKeycloakDeployment();
             var deploymentName = kc.getMetadata().getName();
-            deployKeycloak(k8sclient, kc, true);
+
+            // create a dummy StatefulSet representing the pre-multiinstance state that we'll be forced to delete
+            StatefulSet statefulSet = new StatefulSetBuilder().withMetadata(kc.getMetadata()).editMetadata()
+                    .addToLabels(Constants.DEFAULT_LABELS).endMetadata().withNewSpec().withNewSelector()
+                    .withMatchLabels(Constants.DEFAULT_LABELS).endSelector().withServiceName("foo").withReplicas(0)
+                    .withNewTemplate().withNewMetadata().withLabels(Constants.DEFAULT_LABELS).endMetadata()
+                    .withNewSpec().addNewContainer().withName("pause").withImage("registry.k8s.io/pause:3.1")
+                    .endContainer().endSpec().endTemplate().endSpec().build();
+            k8sclient.resource(statefulSet).create();
+
+            // start will not be successful because the statefulSet is in the way
+            deployKeycloak(k8sclient, kc, false);
+            // once the statefulset is owned by the keycloak it will be picked up by the informer
+            k8sclient.resource(statefulSet).accept(s -> s.addOwnerReference(k8sclient.resource(kc).get()));
+            waitForKeycloakToBeReady(k8sclient, kc);
 
             Log.info("Trying to delete deployment");
             assertThat(k8sclient.apps().statefulSets().withName(deploymentName).delete()).isNotNull();
@@ -202,22 +236,33 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
             Log.info("Trying to modify deployment");
 
             var deployment = k8sclient.apps().statefulSets().withName(deploymentName).get();
+
+            // unmanaged changes
             var labels = Map.of("address", "EvergreenTerrace742");
             var flandersEnvVar = new EnvVarBuilder().withName("NEIGHBOR").withValue("Stupid Flanders!").build();
-            var origSpecs = new StatefulSetSpecBuilder(deployment.getSpec()).build(); // deep copy
-
             deployment.getMetadata().getLabels().putAll(labels);
+
+            var expectedSpec = new StatefulSetSpecBuilder(deployment.getSpec()).editTemplate().editSpec()
+                    .editContainer(0).addToEnv(0, flandersEnvVar).endContainer().endSpec().endTemplate().build(); // deep copy
+
+            // managed changes
             deployment.getSpec().getTemplate().getSpec().getContainers().get(0).setEnv(List.of(flandersEnvVar));
-            k8sclient.apps().statefulSets().createOrReplace(deployment);
+            String originalLabelValue = deployment.getMetadata().getLabels().put(Constants.MANAGED_BY_LABEL, "not-right");
+
+            deployment.getMetadata().setResourceVersion(null);
+            k8sclient.resource(deployment).update();
 
             Awaitility.await()
-                    .atMost(5, MINUTES)
+                    .atMost(1, MINUTES)
                     .pollDelay(1, SECONDS)
                     .ignoreExceptions()
                     .untilAsserted(() -> {
                         var d = k8sclient.apps().statefulSets().withName(deploymentName).get();
-                        assertThat(d.getMetadata().getLabels().entrySet().containsAll(labels.entrySet())).isTrue(); // additional labels should not be overwritten
-                        assertThat(d.getSpec()).isEqualTo(origSpecs); // specs should be reconciled back to original values
+                        // unmanaged changes won't get reverted
+                        assertThat(d.getMetadata().getLabels().entrySet().containsAll(labels.entrySet())).isTrue();
+                        // managed changes should get reverted
+                        assertThat(d.getSpec()).isEqualTo(expectedSpec); // specs should be reconciled expected merged state
+                        assertThat(d.getMetadata().getLabels().get(Constants.MANAGED_BY_LABEL)).isEqualTo(originalLabelValue);
                     });
         } catch (Exception e) {
             savePodLogs();
@@ -514,6 +559,31 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
     }
 
     @Test
+    public void testInvalidCustomImageHasErrorMessage() {
+
+        try {
+            var kc = getDefaultKeycloakDeployment();
+            kc.getSpec().setImage("does-not-exist");
+
+            deployKeycloak(k8sclient, kc, false);
+
+            var crSelector = k8sclient.resource(kc);
+
+            Awaitility.await().atMost(3, MINUTES).pollDelay(1, SECONDS).ignoreExceptions().untilAsserted(() -> {
+                Keycloak current = crSelector.get();
+                CRAssert.assertKeycloakStatusCondition(current, KeycloakStatusCondition.READY, false);
+                CRAssert.assertKeycloakStatusCondition(current, KeycloakStatusCondition.HAS_ERRORS, true,
+                        String.format("Waiting for %s/%s-0 due to ErrImage", k8sclient.getNamespace(),
+                                kc.getMetadata().getName()));
+            });
+
+        } catch (Exception e) {
+            savePodLogs();
+            throw e;
+        }
+    }
+
+    @Test
     public void testHttpRelativePathWithPlainValue() {
         try {
             var kc = getDefaultKeycloakDeployment();
@@ -547,7 +617,7 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
                     .endMetadata()
                     .addToStringData(keyName, "/barfoo")
                     .build();
-            k8sclient.secrets().inNamespace(namespace).createOrReplace(httpRelativePathSecret);
+            K8sUtils.set(k8sclient, httpRelativePathSecret);
 
             kc.getSpec().getAdditionalOptions().add(new ValueOrSecret(Constants.KEYCLOAK_HTTP_RELATIVE_PATH_KEY,
                     new SecretKeySelectorBuilder()
@@ -614,22 +684,50 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
         }
     }
 
+    @Test
+    public void testPreconfiguredPodLabels() {
+        Assumptions.assumeTrue(operatorDeployment == OperatorDeployment.local,
+                "Skipping the test when Operator deployed remotely to keep stuff simple, it's just SmallRye, we don't need to retest it");
+
+        try {
+            var kc = getDefaultKeycloakDeployment();
+            deployKeycloak(k8sclient, kc, true);
+
+            // labels are set in test/resources/application.properties
+            var labels = k8sclient.apps().statefulSets().inNamespace(namespace).withName(kc.getMetadata().getName()).get()
+                    .getSpec().getTemplate().getMetadata().getLabels();
+
+            var expected = Map.of(
+                    "test.label", "foobar",
+                    "testLabelWithExpression", "my-value"
+            );
+            assertThat(labels).containsAllEntriesOf(expected);
+        } catch (Exception e) {
+            savePodLogs();
+            throw e;
+        }
+    }
+
     private void handleFakeImagePullSecretCreation(Keycloak keycloakCR,
                                                    String secretDescriptorFilename) {
 
         Secret imagePullSecret = getResourceFromFile(secretDescriptorFilename, Secret.class);
-        k8sclient.secrets().inNamespace(namespace).createOrReplace(imagePullSecret);
+        K8sUtils.set(k8sclient, imagePullSecret);
         LocalObjectReference localObjRefAsSecretTmp = new LocalObjectReferenceBuilder().withName(imagePullSecret.getMetadata().getName()).build();
         keycloakCR.getSpec().setImagePullSecrets(Collections.singletonList(localObjRefAsSecretTmp));
     }
 
     private void assertKeycloakAccessibleViaService(Keycloak kc, boolean https, int port) {
-        var service = new KeycloakService(k8sclient, kc);
         Awaitility.await()
                 .ignoreExceptions()
                 .untilAsserted(() -> {
                     String protocol = https ? "https" : "http";
-                    String url = protocol + "://" + service.getName() + "." + namespace + ":" + port;
+
+                    String serviceName = KeycloakService.getServiceName(kc);
+                    assertThat(k8sclient.resources(Service.class).withName(serviceName).require().getSpec().getPorts()
+                            .stream().map(ServicePort::getName).anyMatch(protocol::equals));
+
+                    String url = protocol + "://" + serviceName + "." + namespace + ":" + port;
                     Log.info("Checking url: " + url);
 
                     var curlOutput = K8sUtils.inClusterCurl(k8sclient, namespace, url);

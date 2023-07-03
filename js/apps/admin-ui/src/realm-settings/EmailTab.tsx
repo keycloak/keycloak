@@ -18,7 +18,7 @@ import { Link } from "react-router-dom";
 import { HelpItem } from "ui-shared";
 import { adminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
-import { FormAccess } from "../components/form-access/FormAccess";
+import { FormAccess } from "../components/form/FormAccess";
 import { KeycloakTextInput } from "../components/keycloak-text-input/KeycloakTextInput";
 import { PasswordInput } from "../components/password-input/PasswordInput";
 import { FormPanel } from "../components/scroll-form/FormPanel";
@@ -344,6 +344,7 @@ export const RealmSettingsEmailTab = ({
               ) : (
                 <Alert
                   variant="warning"
+                  component="h2"
                   isInline
                   title={t("testConnectionHint.withoutEmail", {
                     userName: currentUser.username,

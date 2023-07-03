@@ -146,4 +146,15 @@ public interface GroupsResource {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     List<GroupRepresentation> query(@QueryParam("q") String searchQuery);
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    List<GroupRepresentation> query(@QueryParam("q") String searchQuery, @QueryParam("populateHierarchy") boolean populateHierarchy);
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    List<GroupRepresentation> query(@QueryParam("q") String searchQuery,
+            @QueryParam("populateHierarchy") boolean populateHierarchy, @QueryParam("first") Integer first,
+            @QueryParam("max") Integer max, @QueryParam("briefRepresentation") boolean briefRepresentation);
+
 }
