@@ -17,13 +17,13 @@
 package org.keycloak.forms.login.freemarker.model;
 
 import org.keycloak.authentication.otp.OTPApplicationProvider;
+import org.keycloak.authentication.requiredactions.UpdateTotp;
 import org.keycloak.credential.CredentialModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OTPPolicy;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.credential.OTPCredentialModel;
-import org.keycloak.models.utils.HmacOTP;
 import org.keycloak.utils.TotpUtils;
 
 import jakarta.ws.rs.core.UriBuilder;
@@ -61,7 +61,8 @@ public class TotpBean {
         } else {
             otpCredentials = Collections.EMPTY_LIST;
         }
-        this.totpSecret = HmacOTP.generateSecret(20);
+
+        this.totpSecret = session.getContext().getAuthenticationSession().getAuthNote(UpdateTotp.TOTP_SECRET);
         this.totpSecretEncoded = TotpUtils.encode(totpSecret);
         this.totpSecretQrCode = TotpUtils.qrCode(totpSecret, realm, user);
 
@@ -84,9 +85,7 @@ public class TotpBean {
         return totpSecretEncoded;
     }
 
-    public String getTotpSecretQrCode() {
-        return totpSecretQrCode;
-    }
+    public String getTotpSecretQrCode() { return totpSecretQrCode; }
 
     public String getManualUrl() {
         return uriBuilder.replaceQueryParam("session_code").replaceQueryParam("mode", "manual")

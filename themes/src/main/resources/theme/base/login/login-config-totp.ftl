@@ -18,7 +18,7 @@
             <#if mode?? && mode = "manual">
                 <li>
                     <p>${msg("loginTotpManualStep2")}</p>
-                    <p><span id="kc-totp-secret-key">${totpSecretEncoded}</span></p>
+                    <p><span id="kc-totp-secret-key">${totp.totpSecretEncoded}</span></p>
                     <p><a href="${totp.qrUrl}" id="mode-barcode">${msg("loginTotpScanBarcode")}</a></p>
                 </li>
                 <li>
@@ -39,7 +39,7 @@
             <#else>
                 <li>
                     <p>${msg("loginTotpStep2")}</p>
-                    <img id="kc-totp-secret-qr-code" src="data:image/png;base64, ${totpSecretQrCode}" alt="Figure: Barcode"><br/>
+                    <img id="kc-totp-secret-qr-code" src="data:image/png;base64, ${totp.totpSecretQrCode}" alt="Figure: Barcode"><br/>
                     <p><a href="${totp.manualUrl}" id="mode-manual">${msg("loginTotpUnableToScan")}</a></p>
                 </li>
             </#if>

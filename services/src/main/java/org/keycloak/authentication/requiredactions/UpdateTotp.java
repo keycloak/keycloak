@@ -54,10 +54,7 @@ public class UpdateTotp implements RequiredActionProvider, RequiredActionFactory
 
     public static final String MODE = "mode";
     public static final String TOTP_SECRET = "totpSecret";
-    public static final String TOTP_SECRET_QR_CODE = "totpSecretQrCode";
-    public static final String TOTP_SECRET_ENCODED = "totpSecretEncoded";
 
-    private static final String INVALID_AUTHENTICATION_SESSION = "invalid_authentication_session";
     private static final String NULL_TOTP_SECRET = "null_totp_secret";
 
     private static final int HMAC_OTP_LENGTH = 20;
@@ -73,16 +70,12 @@ public class UpdateTotp implements RequiredActionProvider, RequiredActionFactory
 
     @Override
     public void requiredActionChallenge(RequiredActionContext context) {
-        if (context.getAuthenticationSession() != null &&
-                context.getAuthenticationSession().getAuthNote(TOTP_SECRET) == null) {
+        if (context.getAuthenticationSession().getAuthNote(TOTP_SECRET) == null) {
             context.getAuthenticationSession().setAuthNote(TOTP_SECRET, HmacOTP.generateSecret(HMAC_OTP_LENGTH));
         }
 
-        String totpSecret = context.getAuthenticationSession().getAuthNote(TOTP_SECRET);
         Response challenge = context.form()
                 .setAttribute(MODE, context.getUriInfo().getQueryParameters().getFirst(MODE))
-                .setAttribute(TOTP_SECRET_QR_CODE, TotpUtils.qrCode(totpSecret, context.getRealm(), context.getUser()))
-                .setAttribute(TOTP_SECRET_ENCODED, TotpUtils.encode(totpSecret))
                 .createResponse(UserModel.RequiredAction.CONFIGURE_TOTP);
         context.challenge(challenge);
     }
@@ -93,13 +86,6 @@ public class UpdateTotp implements RequiredActionProvider, RequiredActionFactory
         event.event(EventType.UPDATE_TOTP);
 
         Response challenge;
-        if (context.getAuthenticationSession() == null) {
-            challenge = context.form()
-                    .addError(new FormMessage(Validation.FIELD_OTP_CODE, INVALID_AUTHENTICATION_SESSION)).createResponse(UserModel.RequiredAction.CONFIGURE_TOTP);
-            event.error(INVALID_AUTHENTICATION_SESSION);
-            context.challenge(challenge);
-            return;
-        }
 
         String totpSecret = context.getAuthenticationSession().getAuthNote(TOTP_SECRET);
         if (totpSecret == null) {
@@ -114,16 +100,12 @@ public class UpdateTotp implements RequiredActionProvider, RequiredActionFactory
         String challengeResponse = formData.getFirst("totp").trim();
         String userLabel = formData.getFirst("userLabel");
         String mode = formData.getFirst(MODE);
-        String totpSecretQrCode = TotpUtils.qrCode(totpSecret, context.getRealm(), context.getUser());
-        String totpSecretEncoded = TotpUtils.encode(totpSecret);
 
         OTPPolicy policy = context.getRealm().getOTPPolicy();
         OTPCredentialModel credentialModel = OTPCredentialModel.createFromPolicy(context.getRealm(), totpSecret, userLabel);
         if (Validation.isBlank(challengeResponse)) {
             challenge = context.form()
                     .setAttribute(MODE, mode)
-                    .setAttribute(TOTP_SECRET_QR_CODE, totpSecretQrCode)
-                    .setAttribute(TOTP_SECRET_ENCODED, totpSecretEncoded)
                     .addError(new FormMessage(Validation.FIELD_OTP_CODE, Messages.MISSING_TOTP))
                     .createResponse(UserModel.RequiredAction.CONFIGURE_TOTP);
             event.error("blank_totp_code");
@@ -134,8 +116,6 @@ public class UpdateTotp implements RequiredActionProvider, RequiredActionFactory
         if (!validateOTPCredential(context, challengeResponse, credentialModel, policy)) {
             challenge = context.form()
                     .setAttribute(MODE, mode)
-                    .setAttribute(TOTP_SECRET_QR_CODE, totpSecretQrCode)
-                    .setAttribute(TOTP_SECRET_ENCODED, totpSecretEncoded)
                     .addError(new FormMessage(Validation.FIELD_OTP_CODE, Messages.INVALID_TOTP))
                     .createResponse(UserModel.RequiredAction.CONFIGURE_TOTP);
             event.error("invalid_totp_code");
@@ -150,8 +130,6 @@ public class UpdateTotp implements RequiredActionProvider, RequiredActionFactory
         if (otpCredentials.count() >= 1 && Validation.isBlank(userLabel)) {
             challenge = context.form()
                     .setAttribute(MODE, mode)
-                    .setAttribute(TOTP_SECRET_QR_CODE, totpSecretQrCode)
-                    .setAttribute(TOTP_SECRET_ENCODED, totpSecretEncoded)
                     .addError(new FormMessage(Validation.FIELD_OTP_LABEL, Messages.MISSING_TOTP_DEVICE_NAME))
                     .createResponse(UserModel.RequiredAction.CONFIGURE_TOTP);
             event.error("missing_totp_device_name");
@@ -162,8 +140,6 @@ public class UpdateTotp implements RequiredActionProvider, RequiredActionFactory
         if (!CredentialHelper.createOTPCredential(context.getSession(), context.getRealm(), context.getUser(), challengeResponse, credentialModel)) {
             challenge = context.form()
                     .setAttribute(MODE, mode)
-                    .setAttribute(TOTP_SECRET_QR_CODE, totpSecretQrCode)
-                    .setAttribute(TOTP_SECRET_ENCODED, totpSecretEncoded)
                     .addError(new FormMessage(Validation.FIELD_OTP_CODE, Messages.INVALID_TOTP))
                     .createResponse(UserModel.RequiredAction.CONFIGURE_TOTP);
             event.error("invalid_totp_code");
