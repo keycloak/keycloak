@@ -543,5 +543,7 @@
     "never": "Never expires"
   },
   "mappers": "Mappers",
-  "sessions": "Sessions"
+  "sessions": "Sessions",
+  "unsavedChangesTitle": "Unsaved changes",
+  "unsavedChangesConfirm": "You have unsaved changes. Do you really want to leave the page?"
 }
