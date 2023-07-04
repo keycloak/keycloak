@@ -97,7 +97,7 @@ public class UpdateTotp implements RequiredActionProvider, RequiredActionFactory
         }
 
         MultivaluedMap<String, String> formData = context.getHttpRequest().getDecodedFormParameters();
-        String challengeResponse = formData.getFirst("totp").trim();
+        String challengeResponse = formData.getFirst("totp");
         String userLabel = formData.getFirst("userLabel");
         String mode = formData.getFirst(MODE);
 
