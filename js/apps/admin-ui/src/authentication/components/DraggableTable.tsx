@@ -197,7 +197,7 @@ export function DraggableTable<T>({
     >
       <Thead>
         <Tr>
-          <Th />
+          <Th aria-hidden="true" />
           {columns.map((column) => (
             <Th key={column.name} info={thInfo(column)}>
               {t(column.displayKey || column.name)}

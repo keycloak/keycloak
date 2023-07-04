@@ -24,7 +24,7 @@ if [[ "true" == "$1" ]]; then
 
   printf "%b" "password\n" | kinit admin
   ipa group-add --desc='test group' testgroup
-  ipa user-add emily --first=Emily --last=Jones --email=emily@jones.com --random
+  ipa user-add emily --first=Emily --last=Jones --email=Emily@jones.com --random
   ipa group-add-member testgroup --users=emily
   ipa user-add bart --first=bart --last=bart --email= --random
   ipa user-add david --first=david --last=david --random

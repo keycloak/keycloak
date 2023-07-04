@@ -142,7 +142,7 @@ export const ResourcesTab = () => {
       <TableComposable aria-label={t("resources")}>
         <Thead>
           <Tr>
-            <Th />
+            <Th aria-hidden="true" />
             <Th>{t("resourceName")}</Th>
             <Th>{t("application")}</Th>
             <Th>{t("permissionRequests")}</Th>

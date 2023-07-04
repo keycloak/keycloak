@@ -212,12 +212,12 @@ export const AuthorizationPolicies = ({ clientId }: PoliciesProps) => {
               <TableComposable aria-label={t("resources")} variant="compact">
                 <Thead>
                   <Tr>
-                    <Th />
+                    <Th aria-hidden="true" />
                     <Th>{t("common:name")}</Th>
                     <Th>{t("common:type")}</Th>
                     <Th>{t("dependentPermission")}</Th>
                     <Th>{t("common:description")}</Th>
-                    <Th />
+                    <Th aria-hidden="true" />
                   </Tr>
                 </Thead>
                 {policies.map((policy, rowIndex) => (

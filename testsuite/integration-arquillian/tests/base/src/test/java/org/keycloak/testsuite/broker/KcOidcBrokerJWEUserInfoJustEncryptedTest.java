@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2023 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,15 +14,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.theme.beans;
+package org.keycloak.testsuite.broker;
+
+import org.keycloak.jose.jwe.JWEConstants;
 
 /**
- * Enum with types of messages.
+ * <p>Extension of the KcOidcBrokerJWETest test to use a different key algorithm (RSA1_5),
+ * the default content encryption algorithm (A128CBC-HS256) and the default signature
+ * algorithm (RS256 for id token and none/unsigned for user info).</p>
  *
- * @author Vlastimil Elias (velias at redhat dot com)
+ * @author rmartinc
  */
-public enum MessageType {
+public class KcOidcBrokerJWEUserInfoJustEncryptedTest extends KcOidcBrokerJWETest {
 
-    SUCCESS, WARNING, INFO, ERROR
-
+    public KcOidcBrokerJWEUserInfoJustEncryptedTest() {
+        super(JWEConstants.RSA1_5, null, null);
+    }
 }

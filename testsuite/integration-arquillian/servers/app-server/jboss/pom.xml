@@ -571,6 +571,7 @@
                                     <arguments>
                                         <argument>${cli.jboss-cli.arg}</argument>
                                         <argument>--file=${app.server.jboss.home}/docs/examples/enable-elytron-se17.cli</argument>
+                                        <argument>${cli.win.working.dir}</argument>
                                     </arguments>
                                 </configuration>
                             </execution>
@@ -591,6 +592,7 @@
                                     <arguments>
                                         <argument>${cli.jboss-cli.arg}</argument>
                                         <argument>--file=${app.server.jboss.home}/docs/examples/enable-elytron-se17.cli</argument>
+                                        <argument>${cli.win.working.dir}</argument>
                                         <argument>-Dconfig=standalone-ha.xml</argument>
                                     </arguments>
                                 </configuration>

@@ -17,6 +17,8 @@ KcAdmTest
 KcAdmCreateTest
 SAMLServletAdapterTest
 SamlSignatureTest
+KcOidcBrokerJWETest
+KcOidcBrokerJWEUserInfoJustEncryptedTest
 KcSamlBrokerTest
 KcSamlFirstBrokerLoginTest
 KcSamlEncryptedIdTest

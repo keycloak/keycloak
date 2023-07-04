@@ -129,9 +129,8 @@ public class CacheManagerFactory {
     private void configureTransportStack(ConfigurationBuilderHolder builder) {
         String transportStack = Configuration.getRawValue("kc.cache-stack");
 
-        if (transportStack != null) {
-            builder.getGlobalConfigurationBuilder().transport().defaultTransport()
-                    .addProperty("configurationFile", "default-configs/default-jgroups-" + transportStack + ".xml");
+        if (transportStack != null && !transportStack.isBlank()) {
+            builder.getGlobalConfigurationBuilder().transport().defaultTransport().stack(transportStack);
         }
     }
 }

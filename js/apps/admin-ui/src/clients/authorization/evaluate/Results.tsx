@@ -148,11 +148,11 @@ export const Results = ({ evaluateResult, refresh, back }: ResultProps) => {
         <TableComposable aria-label={t("evaluationResults")}>
           <Thead>
             <Tr>
-              <Th />
+              <Th aria-hidden="true" />
               <Th>{t("resource")}</Th>
               <Th>{t("overallResults")}</Th>
               <Th>{t("scopes")}</Th>
-              <Th />
+              <Th aria-hidden="true" />
             </Tr>
           </Thead>
           {filteredResources.map((resource, rowIndex) => (
