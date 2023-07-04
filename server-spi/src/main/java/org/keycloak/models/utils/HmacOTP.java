@@ -36,12 +36,12 @@ public class HmacOTP {
     private static final int[] DIGITS_POWER = {1, 10, 100, 1000, 10000, 100000, 1000000, 10000000, 100000000};
     protected final String algorithm;
     protected final int numberDigits;
-    protected final int lookAheadWindow;
+    protected final int lookAroundWindow;
 
     public HmacOTP(int numberDigits, String algorithm, int delayWindow) {
         this.numberDigits = numberDigits;
         this.algorithm = algorithm;
-        this.lookAheadWindow = delayWindow;
+        this.lookAroundWindow = delayWindow;
     }
 
     public static String generateSecret(int length) {
@@ -80,7 +80,7 @@ public class HmacOTP {
     public int validateHOTP(String token, byte[] key, int counter) {
 
         int newCounter = counter;
-        for (newCounter = counter; newCounter <= counter + lookAheadWindow; newCounter++) {
+        for (newCounter = counter; newCounter <= counter + lookAroundWindow; newCounter++) {
             String candidate = generateHOTP(key, newCounter);
             if (candidate.equals(token)) {
                 return newCounter + 1;
