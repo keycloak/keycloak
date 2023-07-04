@@ -7,6 +7,7 @@ import { useTranslation } from "react-i18next";
 import { adminClient } from "../../admin-client";
 import { useAlerts } from "../../components/alert/Alerts";
 import { ConfirmDialogModal } from "../../components/confirm-dialog/ConfirmDialog";
+import environment from "../../environment";
 import { LifespanField } from "./LifespanField";
 import { RequiredActionMultiSelect } from "./RequiredActionMultiSelect";
 
@@ -56,6 +57,7 @@ export const ResetCredentialDialog = ({
         id: userId,
         actions,
         lifespan,
+        clientId: environment.clientId,
       });
       addAlert(t("credentialResetEmailSuccess"), AlertVariant.success);
       onClose();
