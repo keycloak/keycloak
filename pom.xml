@@ -129,7 +129,7 @@
         <elytron.undertow-server.version>1.9.0.Final</elytron.undertow-server.version>
         <jetty94.version>9.4.40.v20210413</jetty94.version>
         <woodstox.version>6.0.3</woodstox.version>
-        <xmlsec.version>2.2.3</xmlsec.version>
+        <xmlsec.version>3.0.2</xmlsec.version>
         <wildfly.common.version>1.6.0.Final</wildfly.common.version>
         <nashorn.version>15.4</nashorn.version>
         <ua-parser.version>1.5.4</ua-parser.version>
