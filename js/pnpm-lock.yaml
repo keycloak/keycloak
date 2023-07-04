@@ -359,25 +359,25 @@ importers:
     devDependencies:
       '@rollup/plugin-commonjs':
         specifier: ^25.0.2
-        version: 25.0.2(rollup@3.25.2)
+        version: 25.0.2(rollup@3.26.0)
       '@rollup/plugin-inject':
         specifier: ^5.0.3
-        version: 5.0.3(rollup@3.25.2)
+        version: 5.0.3(rollup@3.26.0)
       '@rollup/plugin-node-resolve':
         specifier: ^15.1.0
-        version: 15.1.0(rollup@3.25.2)
+        version: 15.1.0(rollup@3.26.0)
       '@rollup/plugin-terser':
         specifier: ^0.4.3
-        version: 0.4.3(rollup@3.25.2)
+        version: 0.4.3(rollup@3.26.0)
       '@rollup/plugin-typescript':
         specifier: ^11.1.2
-        version: 11.1.2(rollup@3.25.2)(tslib@2.6.0)(typescript@5.1.3)
+        version: 11.1.2(rollup@3.26.0)(tslib@2.6.0)(typescript@5.1.3)
       es6-promise:
         specifier: ^4.2.8
         version: 4.2.8
       rollup:
-        specifier: ^3.25.2
-        version: 3.25.2
+        specifier: ^3.26.0
+        version: 3.26.0
 
   libs/keycloak-masthead:
     dependencies:
@@ -408,7 +408,7 @@ importers:
         version: 3.3.2(vite@4.3.9)
       rollup-plugin-peer-deps-external:
         specifier: ^2.2.4
-        version: 2.2.4(rollup@3.25.2)
+        version: 2.2.4(rollup@3.26.0)
       vite:
         specifier: ^4.3.9
         version: 4.3.9(@types/node@20.3.3)
@@ -448,7 +448,7 @@ importers:
         version: 3.3.2(vite@4.3.9)
       rollup-plugin-peer-deps-external:
         specifier: ^2.2.4
-        version: 2.2.4(rollup@3.25.2)
+        version: 2.2.4(rollup@3.26.0)
       vite:
         specifier: ^4.3.9
         version: 4.3.9(@types/node@20.3.3)
@@ -1306,7 +1306,7 @@ packages:
     engines: {node: '>=14'}
     dev: false
 
-  /@rollup/plugin-commonjs@25.0.2(rollup@3.25.2):
+  /@rollup/plugin-commonjs@25.0.2(rollup@3.26.0):
     resolution: {integrity: sha512-NGTwaJxIO0klMs+WSFFtBP7b9TdTJ3K76HZkewT8/+yHzMiUGVQgaPtLQxNVYIgT5F7lxkEyVID+yS3K7bhCow==}
     engines: {node: '>=14.0.0'}
     peerDependencies:
@@ -1315,16 +1315,16 @@ packages:
       rollup:
         optional: true
     dependencies:
-      '@rollup/pluginutils': 5.0.2(rollup@3.25.2)
+      '@rollup/pluginutils': 5.0.2(rollup@3.26.0)
       commondir: 1.0.1
       estree-walker: 2.0.2
       glob: 8.1.0
       is-reference: 1.2.1
       magic-string: 0.27.0
-      rollup: 3.25.2
+      rollup: 3.26.0
     dev: true
 
-  /@rollup/plugin-inject@5.0.3(rollup@3.25.2):
+  /@rollup/plugin-inject@5.0.3(rollup@3.26.0):
     resolution: {integrity: sha512-411QlbL+z2yXpRWFXSmw/teQRMkXcAAC8aYTemc15gwJRpvEVDQwoe+N/HTFD8RFG8+88Bme9DK2V9CVm7hJdA==}
     engines: {node: '>=14.0.0'}
     peerDependencies:
@@ -1333,13 +1333,13 @@ packages:
       rollup:
         optional: true
     dependencies:
-      '@rollup/pluginutils': 5.0.2(rollup@3.25.2)
+      '@rollup/pluginutils': 5.0.2(rollup@3.26.0)
       estree-walker: 2.0.2
       magic-string: 0.27.0
-      rollup: 3.25.2
+      rollup: 3.26.0
     dev: true
 
-  /@rollup/plugin-node-resolve@15.1.0(rollup@3.25.2):
+  /@rollup/plugin-node-resolve@15.1.0(rollup@3.26.0):
     resolution: {integrity: sha512-xeZHCgsiZ9pzYVgAo9580eCGqwh/XCEUM9q6iQfGNocjgkufHAqC3exA+45URvhiYV8sBF9RlBai650eNs7AsA==}
     engines: {node: '>=14.0.0'}
     peerDependencies:
@@ -1348,16 +1348,16 @@ packages:
       rollup:
         optional: true
     dependencies:
-      '@rollup/pluginutils': 5.0.2(rollup@3.25.2)
+      '@rollup/pluginutils': 5.0.2(rollup@3.26.0)
       '@types/resolve': 1.20.2
       deepmerge: 4.3.1
       is-builtin-module: 3.2.1
       is-module: 1.0.0
       resolve: 1.22.2
-      rollup: 3.25.2
+      rollup: 3.26.0
     dev: true
 
-  /@rollup/plugin-terser@0.4.3(rollup@3.25.2):
+  /@rollup/plugin-terser@0.4.3(rollup@3.26.0):
     resolution: {integrity: sha512-EF0oejTMtkyhrkwCdg0HJ0IpkcaVg1MMSf2olHb2Jp+1mnLM04OhjpJWGma4HobiDTF0WCyViWuvadyE9ch2XA==}
     engines: {node: '>=14.0.0'}
     peerDependencies:
@@ -1366,13 +1366,13 @@ packages:
       rollup:
         optional: true
     dependencies:
-      rollup: 3.25.2
+      rollup: 3.26.0
       serialize-javascript: 6.0.1
       smob: 1.4.0
       terser: 5.18.0
     dev: true
 
-  /@rollup/plugin-typescript@11.1.2(rollup@3.25.2)(tslib@2.6.0)(typescript@5.1.3):
+  /@rollup/plugin-typescript@11.1.2(rollup@3.26.0)(tslib@2.6.0)(typescript@5.1.3):
     resolution: {integrity: sha512-0ghSOCMcA7fl1JM+0gYRf+Q/HWyg+zg7/gDSc+fRLmlJWcW5K1I+CLRzaRhXf4Y3DRyPnnDo4M2ktw+a6JcDEg==}
     engines: {node: '>=14.0.0'}
     peerDependencies:
@@ -1385,14 +1385,14 @@ packages:
       tslib:
         optional: true
     dependencies:
-      '@rollup/pluginutils': 5.0.2(rollup@3.25.2)
+      '@rollup/pluginutils': 5.0.2(rollup@3.26.0)
       resolve: 1.22.2
-      rollup: 3.25.2
+      rollup: 3.26.0
       tslib: 2.6.0
       typescript: 5.1.3
     dev: true
 
-  /@rollup/pluginutils@5.0.2(rollup@3.25.2):
+  /@rollup/pluginutils@5.0.2(rollup@3.26.0):
     resolution: {integrity: sha512-pTd9rIsP92h+B6wWwFbW8RkZv4hiR/xKsqre4SIuAOaOEQRxi0lqLke9k2/7WegC85GgUs9pjmOjCUi3In4vwA==}
     engines: {node: '>=14.0.0'}
     peerDependencies:
@@ -1404,7 +1404,7 @@ packages:
       '@types/estree': 1.0.1
       estree-walker: 2.0.2
       picomatch: 2.3.1
-      rollup: 3.25.2
+      rollup: 3.26.0
     dev: true
 
   /@rushstack/node-core-library@3.59.4(@types/node@20.3.3):
@@ -5867,16 +5867,16 @@ packages:
       glob: 7.2.3
     dev: true
 
-  /rollup-plugin-peer-deps-external@2.2.4(rollup@3.25.2):
+  /rollup-plugin-peer-deps-external@2.2.4(rollup@3.26.0):
     resolution: {integrity: sha512-AWdukIM1+k5JDdAqV/Cxd+nejvno2FVLVeZ74NKggm3Q5s9cbbcOgUPGdbxPi4BXu7xGaZ8HG12F+thImYu/0g==}
     peerDependencies:
       rollup: '*'
     dependencies:
-      rollup: 3.25.2
+      rollup: 3.26.0
     dev: true
 
-  /rollup@3.25.2:
-    resolution: {integrity: sha512-VLnkxZMDr3jpxgtmS8pQZ0UvhslmF4ADq/9w4erkctbgjCqLW9oa89fJuXEs4ZmgyoF7Dm8rMDKSS5b5u2hHUg==}
+  /rollup@3.26.0:
+    resolution: {integrity: sha512-YzJH0eunH2hr3knvF3i6IkLO/jTjAEwU4HoMUbQl4//Tnl3ou0e7P5SjxdDr8HQJdeUJShlbEHXrrnEHy1l7Yg==}
     engines: {node: '>=14.18.0', npm: '>=8.0.0'}
     hasBin: true
     optionalDependencies:
@@ -6702,7 +6702,7 @@ packages:
       typescript: '*'
     dependencies:
       '@microsoft/api-extractor': 7.36.0(@types/node@20.3.3)
-      '@rollup/pluginutils': 5.0.2(rollup@3.25.2)
+      '@rollup/pluginutils': 5.0.2(rollup@3.26.0)
       '@rushstack/node-core-library': 3.59.4(@types/node@20.3.3)
       '@vue/language-core': 1.8.3(typescript@5.1.3)
       debug: 4.3.4(supports-color@8.1.1)
@@ -6710,7 +6710,7 @@ packages:
       typescript: 5.1.3
       vue-tsc: 1.8.3(typescript@5.1.3)
     optionalDependencies:
-      rollup: 3.25.2
+      rollup: 3.26.0
       vite: 4.3.9(@types/node@20.3.3)
     transitivePeerDependencies:
       - '@types/node'
@@ -6750,7 +6750,7 @@ packages:
       '@types/node': 20.3.3
       esbuild: 0.17.19
       postcss: 8.4.24
-      rollup: 3.25.2
+      rollup: 3.26.0
     optionalDependencies:
       fsevents: 2.3.2
     dev: true
