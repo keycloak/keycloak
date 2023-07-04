@@ -198,7 +198,7 @@
         <jmeter.analysis.plugin.version>1.0.4</jmeter.analysis.plugin.version>
         <osgi.bundle.plugin.version>2.4.0</osgi.bundle.plugin.version>
         <wildfly.plugin.version>2.0.1.Final</wildfly.plugin.version>
-        <nexus.staging.plugin.version>1.6.5</nexus.staging.plugin.version>
+        <nexus.staging.plugin.version>1.6.13</nexus.staging.plugin.version>
         <frontend.plugin.version>1.12.1</frontend.plugin.version>
         <docker.maven.plugin.version>0.40.3</docker.maven.plugin.version>
         <verifier.plugin.version>1.1</verifier.plugin.version>
