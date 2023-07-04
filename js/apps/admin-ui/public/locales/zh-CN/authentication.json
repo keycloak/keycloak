@@ -21,7 +21,6 @@
   },
   "otpHashAlgorithm": "OTP哈希算法",
   "otpPolicyDigits": "位数",
-  "lookAhead": "前瞻窗口",
   "otpPolicyPeriod": "OTP 令牌周期",
   "otpPolicyPeriodErrorHint": "时间需要在 1 秒到 2 分钟之间",
   "otpPolicyCodeReusable": "可重复使用的令牌",

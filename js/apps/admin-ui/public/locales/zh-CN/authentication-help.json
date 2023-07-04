@@ -12,7 +12,6 @@
   "webAuthnPolicyRpEntityName": "便于阅读的 WebAuthn依赖方的服务器名称",
   "otpHashAlgorithm": "应该使用什么哈希算法来生成 OTP。",
   "otpPolicyDigits": "OTP 应该有多少位数？",
-  "lookAhead": "如果令牌生成器和服务器不同步或计数器不同步，服务器应该向前查看多久？",
   "otpPolicyPeriod": "OTP 令牌应该多少秒有效？默认为 30 秒。",
   "otpPolicyCodeReusable": "验证成功后可以再次使用相同的 OTP 代码。",
   "supportedApplications": "已知适用于当前 OTP 策略的应用程序",
