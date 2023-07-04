@@ -30,15 +30,20 @@ export default function AddIdentityProvider() {
   const serverInfo = useServerInfo();
 
   const providerInfo = useMemo(() => {
-    const social = serverInfo.componentTypes?.[
-      "org.keycloak.broker.social.SocialIdentityProvider"
-    ]?.find((p) => p.id === providerId);
-    if (!social)
-      return serverInfo.componentTypes?.[
-        "org.keycloak.broker.provider.IdentityProvider"
-      ]?.find((p) => p.id === providerId);
+    const namespaces = [
+      "org.keycloak.broker.social.SocialIdentityProvider",
+      "org.keycloak.broker.provider.IdentityProvider",
+    ];
 
-    return social;
+    for (const namespace of namespaces) {
+      const social = serverInfo.componentTypes?.[namespace]?.find(
+        ({ id }) => id === providerId
+      );
+
+      if (social) {
+        return social;
+      }
+    }
   }, [serverInfo, providerId]);
 
   const {
