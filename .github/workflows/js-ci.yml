@@ -46,7 +46,6 @@ jobs:
           distribution: temurin
           java-version: 17
           check-latest: true
-          cache: maven
 
       - name: Build Keycloak
         run: |
