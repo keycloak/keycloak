@@ -137,7 +137,7 @@
 
         <!-- Databases - also published to db.adoc as "Tested Version" -->
         <mysql.version>8.0</mysql.version>
-        <mysql-jdbc.version>8.0.30</mysql-jdbc.version>
+        <mysql-jdbc.version>8.0.33</mysql-jdbc.version>
         <postgresql.version>15</postgresql.version>
         <postgresql-jdbc.version>42.6.0</postgresql-jdbc.version>
         <mariadb.version>10.11</mariadb.version>
@@ -667,7 +667,7 @@
             <!-- Needed for picketlink perf test -->
             <dependency>
                 <groupId>mysql</groupId>
-                <artifactId>mysql-connector-java</artifactId>
+                <artifactId>mysql-connector-j</artifactId>
                 <version>${mysql-jdbc.version}</version>
                 <scope>test</scope>
             </dependency>
