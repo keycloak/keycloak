@@ -487,12 +487,12 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
         // set policy to 8 digits
         RealmRepresentation realmRep = adminClient.realm("test").toRepresentation();
         RealmBuilder.edit(realmRep)
-                .otpLookAheadWindow(1)
-                .otpDigits(8)
-                .otpPeriod(30)
-                .otpType(OTPCredentialModel.TOTP)
-                .otpAlgorithm(HmacOTP.HMAC_SHA1)
-                .otpInitialCounter(0);
+                    .otpLookAheadWindow(1)
+                    .otpDigits(8)
+                    .otpPeriod(30)
+                    .otpType(OTPCredentialModel.TOTP)
+                    .otpAlgorithm(HmacOTP.HMAC_SHA1)
+                    .otpInitialCounter(0);
         adminClient.realm("test").update(realmRep);
 
 
@@ -542,12 +542,12 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
     public void setupOtpPolicyChangedHotp() {
         RealmRepresentation realmRep = adminClient.realm("test").toRepresentation();
         RealmBuilder.edit(realmRep)
-                .otpLookAheadWindow(0)
-                .otpDigits(6)
-                .otpPeriod(30)
-                .otpType(OTPCredentialModel.HOTP)
-                .otpAlgorithm(HmacOTP.HMAC_SHA1)
-                .otpInitialCounter(0);
+                    .otpLookAheadWindow(0)
+                    .otpDigits(6)
+                    .otpPeriod(30)
+                    .otpType(OTPCredentialModel.HOTP)
+                    .otpAlgorithm(HmacOTP.HMAC_SHA1)
+                    .otpInitialCounter(0);
         adminClient.realm("test").update(realmRep);
 
 
@@ -562,7 +562,7 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
         totpPage.configure(otpgen.generateHOTP(totpSecret, 0));
         String uri = driver.getCurrentUrl();
         String sessionId = events.expectRequiredAction(EventType.UPDATE_TOTP).assertEvent()
-                .getDetails().get(Details.CODE_ID);
+            .getDetails().get(Details.CODE_ID);
 
         assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
@@ -590,12 +590,12 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
         // test lookAheadWindow
         realmRep = adminClient.realm("test").toRepresentation();
         RealmBuilder.edit(realmRep)
-                .otpLookAheadWindow(5)
-                .otpDigits(6)
-                .otpPeriod(30)
-                .otpType(OTPCredentialModel.HOTP)
-                .otpAlgorithm(HmacOTP.HMAC_SHA1)
-                .otpInitialCounter(0);
+                    .otpLookAheadWindow(5)
+                    .otpDigits(6)
+                    .otpPeriod(30)
+                    .otpType(OTPCredentialModel.HOTP)
+                    .otpAlgorithm(HmacOTP.HMAC_SHA1)
+                    .otpInitialCounter(0);
         adminClient.realm("test").update(realmRep);
 
 
