@@ -233,6 +233,7 @@ jobs:
         env:
           KEYCLOAK_ADMIN: admin
           KEYCLOAK_ADMIN_PASSWORD: admin
+          JAVA_OPTS_APPEND: -Djava.net.preferIPv4Stack=true
 
       - name: Start LDAP server
         run: pnpm --filter=${{ env.WORKSPACE }} run cy:ldap-server &
