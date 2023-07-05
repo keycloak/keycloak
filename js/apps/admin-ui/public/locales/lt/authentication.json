@@ -12,7 +12,6 @@
   },
   "otpHashAlgorithm": "OTP maišos algoritmas",
   "otpPolicyDigits": "Skaitmenų skaičius",
-  "lookAhead": "Neatitikimo langas",
   "otpPolicyPeriod": "OTP rakto galiojimo intervalas",
   "initialCounter": "Pradinė skaitliuko reikšmė",
   "attestationPreference": {

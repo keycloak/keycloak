@@ -81,7 +81,7 @@ public class TimeBasedOTP extends HmacOTP {
     public boolean validateTOTP(String token, byte[] secret) {
         long currentInterval = this.clock.getCurrentInterval();
 
-        for (int i = 0; i <= (lookAheadWindow * 2); i++) {
+        for (int i = 0; i <= (lookAroundWindow * 2); i++) {
             long delta = clockSkewIndexToDelta(i);
             long adjustedInterval = currentInterval + delta;
 

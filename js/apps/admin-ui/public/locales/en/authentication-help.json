@@ -12,7 +12,7 @@
   "webAuthnPolicyRpEntityName": "Human-readable server name as WebAuthn Relying Party",
   "otpHashAlgorithm": "What hashing algorithm should be used to generate the OTP.",
   "otpPolicyDigits": "How many digits should the OTP have?",
-  "lookAhead": "How far ahead should the server look just in case the token generator and server are out of time sync or counter sync?",
+  "lookAround": "How far around should the server look just in case the token generator and server are out of time sync or counter sync?",
   "otpPolicyPeriod": "How many seconds should an OTP token be valid? Defaults to 30 seconds.",
   "otpPolicyCodeReusable": "Possibility to use the same OTP code again after successful authentication.",
   "supportedApplications": "Applications that are known to work with the current OTP policy",

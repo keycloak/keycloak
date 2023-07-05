@@ -15,7 +15,6 @@
   },
   "otpHashAlgorithm": "OTPハッシュ・アルゴリズム",
   "otpPolicyDigits": "桁数",
-  "lookAhead": "先読みウィンドウ",
   "otpPolicyPeriod": "OTPトークンの期間",
   "initialCounter": "初期カウンター",
   "webAuthnPolicySignatureAlgorithms": "署名アルゴリズム",
