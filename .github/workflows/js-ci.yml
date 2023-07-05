@@ -46,6 +46,7 @@ jobs:
           distribution: temurin
           java-version: 17
           check-latest: true
+          cache: maven
 
       - name: Build Keycloak
         run: |
@@ -224,6 +225,14 @@ jobs:
         uses: actions/download-artifact@v3
         with:
           name: keycloak
+
+      - name: Setup Java
+        uses: actions/setup-java@v3
+        with:
+          distribution: temurin
+          java-version: 17
+          check-latest: true
+          cache: maven
 
       - name: Start Keycloak Server
         run: |
