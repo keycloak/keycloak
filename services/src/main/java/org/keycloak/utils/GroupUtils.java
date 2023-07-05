@@ -11,14 +11,18 @@ import org.keycloak.services.resources.admin.permissions.GroupPermissionEvaluato
 public class GroupUtils {
     // Moved out from org.keycloak.admin.ui.rest.GroupsResource
     public static GroupRepresentation toGroupHierarchy(GroupPermissionEvaluator groupsEvaluator, GroupModel group, final String search, boolean exact) {
-        GroupRepresentation rep = ModelToRepresentation.toRepresentation(group, true);
+        return toGroupHierarchy(groupsEvaluator, group, search, exact, true);
+    }
+
+    public static GroupRepresentation toGroupHierarchy(GroupPermissionEvaluator groupsEvaluator, GroupModel group, final String search, boolean exact, boolean full) {
+        GroupRepresentation rep = ModelToRepresentation.toRepresentation(group, full);
         rep.setSubGroups(group.getSubGroupsStream().filter(g ->
                 groupMatchesSearchOrIsPathElement(
                         g, search
                 )
         ).map(subGroup ->
             ModelToRepresentation.toGroupHierarchy(
-                    subGroup, true, search, exact
+                    subGroup, full, search, exact
             )
 
         ).collect(Collectors.toList()));
