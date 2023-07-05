@@ -51,7 +51,6 @@ import java.util.stream.Stream;
  */
 public class UpdateTotp implements RequiredActionProvider, RequiredActionFactory, CredentialRegistrator {
 
-    public static final String MODE = "mode";
     public static final String TOTP_SECRET = "totpSecret";
 
     @Override
@@ -68,7 +67,7 @@ public class UpdateTotp implements RequiredActionProvider, RequiredActionFactory
         generateSecretIfNotPresentInSession(context);
 
         Response challenge = context.form()
-                .setAttribute(MODE, context.getUriInfo().getQueryParameters().getFirst(MODE))
+                .setAttribute("mode", context.getUriInfo().getQueryParameters().getFirst("mode"))
                 .createResponse(UserModel.RequiredAction.CONFIGURE_TOTP);
         context.challenge(challenge);
     }
@@ -94,13 +93,13 @@ public class UpdateTotp implements RequiredActionProvider, RequiredActionFactory
         String challengeResponse = formData.getFirst("totp");
         String totpSecret = getCurrentTotpSecret(context);
         String userLabel = formData.getFirst("userLabel");
-        String mode = formData.getFirst(MODE);
+        String mode = formData.getFirst("mode");
 
         OTPPolicy policy = context.getRealm().getOTPPolicy();
         OTPCredentialModel credentialModel = OTPCredentialModel.createFromPolicy(context.getRealm(), totpSecret, userLabel);
         if (Validation.isBlank(challengeResponse)) {
             challenge = context.form()
-                    .setAttribute(MODE, mode)
+                    .setAttribute("mode", mode)
                     .addError(new FormMessage(Validation.FIELD_OTP_CODE, Messages.MISSING_TOTP))
                     .createResponse(UserModel.RequiredAction.CONFIGURE_TOTP);
             event.error("blank_totp_code");
@@ -110,7 +109,7 @@ public class UpdateTotp implements RequiredActionProvider, RequiredActionFactory
 
         if (!validateOTPCredential(context, challengeResponse, credentialModel, policy)) {
             challenge = context.form()
-                    .setAttribute(MODE, mode)
+                    .setAttribute("mode", mode)
                     .addError(new FormMessage(Validation.FIELD_OTP_CODE, Messages.INVALID_TOTP))
                     .createResponse(UserModel.RequiredAction.CONFIGURE_TOTP);
             event.error("invalid_totp_code");
@@ -124,7 +123,7 @@ public class UpdateTotp implements RequiredActionProvider, RequiredActionFactory
             : Stream.empty();
         if (otpCredentials.count() >= 1 && Validation.isBlank(userLabel)) {
             challenge = context.form()
-                    .setAttribute(MODE, mode)
+                    .setAttribute("mode", mode)
                     .addError(new FormMessage(Validation.FIELD_OTP_LABEL, Messages.MISSING_TOTP_DEVICE_NAME))
                     .createResponse(UserModel.RequiredAction.CONFIGURE_TOTP);
             event.error("missing_totp_device_name");
@@ -134,7 +133,7 @@ public class UpdateTotp implements RequiredActionProvider, RequiredActionFactory
 
         if (!CredentialHelper.createOTPCredential(context.getSession(), context.getRealm(), context.getUser(), challengeResponse, credentialModel)) {
             challenge = context.form()
-                    .setAttribute(MODE, mode)
+                    .setAttribute("mode", mode)
                     .addError(new FormMessage(Validation.FIELD_OTP_CODE, Messages.INVALID_TOTP))
                     .createResponse(UserModel.RequiredAction.CONFIGURE_TOTP);
             event.error("invalid_totp_code");
