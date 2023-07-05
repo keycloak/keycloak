@@ -15,13 +15,13 @@ This {section} explains how to configure the Keycloak server to store data in a 
 The server has built-in support for different databases. You can query the available databases by viewing the expected values for the `db` configuration option. The following table lists the supported databases and their tested versions.
 
 |===
-|Database | Tested Version
+|Database | Option value | Tested Version
 
-|mariadb| 10
-|mssql| 2016
-|mysql| 8
-|oracle| 12c
-|postgres| 15
+|MariaDB Server | `mariadb` | ${properties["mariadb.version"]}
+|Microsoft SQL Server | `mssql` | ${properties["mssql.version"]?replace("-latest","")}
+|MySQL | `mysql` | ${properties["mysql.version"]}
+|Oracle Database | `oracle` | ${properties["oracledb.version"]}
+|PostgreSQL | `postgres` | ${properties["postgresql.version"]}
 |===
 
 By default, the server uses the `dev-file` database. This is the default database that the server will use to persist data and
@@ -131,16 +131,18 @@ Unicode is supported for a PostgreSQL database when the database character set i
 
 . Check the default character set for a PostgreSQL cluster by entering the following SQL command.
 +
-```
+[source]
+----
 show server_encoding;
-```
+----
 
 . If the default character set is not UTF 8, create the database with the UTF8 as the default character set using a command such as:
 
 +
-```
+[source]
+----
 create database keycloak with encoding 'UTF8';
-```
+----
 
 == Changing database locking timeout in a cluster configuration
 
