@@ -157,7 +157,7 @@
         <twitter4j.version>4.1.2</twitter4j.version>
         <jna.version>4.5.1</jna.version>
 
-        <!-- Databases -->
+        <!-- Databases - also published to db.adoc as "Tested Version" -->
         <mysql.version>8.0</mysql.version>
         <mysql-jdbc.version>8.0.30</mysql-jdbc.version>
         <postgresql.version>15</postgresql.version>
