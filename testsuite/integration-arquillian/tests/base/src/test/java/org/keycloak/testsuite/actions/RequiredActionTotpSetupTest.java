@@ -87,7 +87,7 @@ public class RequiredActionTotpSetupTest extends AbstractTestRealmKeycloakTest {
                 stream().filter(execution -> execution.getDisplayName().equals("Browser - Conditional OTP"))
                 .forEach(execution ->
                 {execution.setRequirement(AuthenticationExecutionModel.Requirement.REQUIRED.name());
-                    adminClient.realm("test").flows().updateExecutions("browser", execution);});
+                adminClient.realm("test").flows().updateExecutions("browser", execution);});
 
         ApiUtil.removeUserByUsername(testRealm(), "test-user@localhost");
         UserRepresentation user = UserBuilder.create().enabled(true)
