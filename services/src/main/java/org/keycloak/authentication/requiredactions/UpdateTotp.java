@@ -38,6 +38,7 @@ import org.keycloak.models.utils.FormMessage;
 import org.keycloak.models.utils.HmacOTP;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.validation.Validation;
+import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.utils.CredentialHelper;
 
 import jakarta.ws.rs.core.MultivaluedMap;
@@ -57,8 +58,6 @@ public class UpdateTotp implements RequiredActionProvider, RequiredActionFactory
 
     private static final String NULL_TOTP_SECRET = "null_totp_secret";
 
-    private static final int HMAC_OTP_LENGTH = 20;
-
     @Override
     public InitiatedActionSupport initiatedActionSupport() {
         return InitiatedActionSupport.SUPPORTED;
@@ -70,14 +69,22 @@ public class UpdateTotp implements RequiredActionProvider, RequiredActionFactory
 
     @Override
     public void requiredActionChallenge(RequiredActionContext context) {
-        if (context.getAuthenticationSession().getAuthNote(TOTP_SECRET) == null) {
-            context.getAuthenticationSession().setAuthNote(TOTP_SECRET, HmacOTP.generateSecret(HMAC_OTP_LENGTH));
-        }
+        generateSecretIfNotPresentInSession(context);
 
         Response challenge = context.form()
                 .setAttribute(MODE, context.getUriInfo().getQueryParameters().getFirst(MODE))
                 .createResponse(UserModel.RequiredAction.CONFIGURE_TOTP);
         context.challenge(challenge);
+    }
+
+    private void generateSecretIfNotPresentInSession(RequiredActionContext context) {
+        if (getCurrentTotpSecret(context) == null) {
+            context.getAuthenticationSession().setAuthNote(TOTP_SECRET, HmacOTP.generateSecret(20));
+        }
+    }
+
+    private String getCurrentTotpSecret(RequiredActionContext context) {
+        return context.getAuthenticationSession().getAuthNote(TOTP_SECRET);
     }
 
     @Override
@@ -87,17 +94,9 @@ public class UpdateTotp implements RequiredActionProvider, RequiredActionFactory
 
         Response challenge;
 
-        String totpSecret = context.getAuthenticationSession().getAuthNote(TOTP_SECRET);
-        if (totpSecret == null) {
-            challenge = context.form()
-                    .addError(new FormMessage(Validation.FIELD_OTP_CODE, NULL_TOTP_SECRET)).createResponse(UserModel.RequiredAction.CONFIGURE_TOTP);
-            event.error(NULL_TOTP_SECRET);
-            context.challenge(challenge);
-            return;
-        }
-
         MultivaluedMap<String, String> formData = context.getHttpRequest().getDecodedFormParameters();
         String challengeResponse = formData.getFirst("totp");
+        String totpSecret = getCurrentTotpSecret(context);
         String userLabel = formData.getFirst("userLabel");
         String mode = formData.getFirst(MODE);
 

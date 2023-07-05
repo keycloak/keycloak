@@ -24,6 +24,7 @@ import org.keycloak.models.OTPPolicy;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.credential.OTPCredentialModel;
+import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.utils.TotpUtils;
 
 import jakarta.ws.rs.core.UriBuilder;
@@ -62,7 +63,14 @@ public class TotpBean {
             otpCredentials = Collections.EMPTY_LIST;
         }
 
-        this.totpSecret = session.getContext().getAuthenticationSession().getAuthNote(UpdateTotp.TOTP_SECRET);
+        AuthenticationSessionModel authenticationSession = session.getContext().getAuthenticationSession();
+
+        this.totpSecret = authenticationSession.getAuthNote(UpdateTotp.TOTP_SECRET);
+
+        if (totpSecret == null) {
+            throw new RuntimeException("Cannot create backing bean, the TOTP secret is not set");
+        }
+
         this.totpSecretEncoded = TotpUtils.encode(totpSecret);
         this.totpSecretQrCode = TotpUtils.qrCode(totpSecret, realm, user);
 
