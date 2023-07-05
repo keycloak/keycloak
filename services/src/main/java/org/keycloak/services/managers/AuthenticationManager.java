@@ -1072,6 +1072,7 @@ public class AuthenticationManager {
                 infoPage.setAttribute(Constants.SKIP_LINK, true);
             }
             Response response = infoPage
+                    .setDetachedAuthSession()
                     .createInfoPage();
 
             new AuthenticationSessionManager(session).removeAuthenticationSession(authSession.getRealm(), authSession, true);
