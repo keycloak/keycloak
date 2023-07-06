@@ -115,6 +115,7 @@
   "resourceSharedWith_one": "تم مشاركة المورد مع <0>{{username}}</0>",
   "resourceSharedWith_other": "تم مشاركة المورد مع <0>{{username}}</0> و <1>{{other}}</1> آخرين",
   "resourceSharedWith_zero": "لم يتم مشاركة هذا المورد.",
+  "selectALocale": "اختر لغة",
   "selectOne": "حدد خيارًا",
   "setUpNew": "إعداد {{0}}",
   "share": "مشاركة",
