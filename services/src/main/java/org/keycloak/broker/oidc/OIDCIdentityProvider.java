@@ -27,7 +27,6 @@ import org.keycloak.broker.provider.AuthenticationRequest;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.provider.ExchangeExternalToken;
 import org.keycloak.broker.provider.IdentityBrokerException;
-import org.keycloak.broker.provider.IdentityBrokerUnmatchedEssentialClaimException;
 import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.SecretGenerator;
@@ -413,11 +412,13 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
                     logger.tracef("Found claim %s with values %s", filterName, claimValues);
                     if (!claimValues.stream().anyMatch(v->v.matches(filterValue))) {
                         logger.warnf("Claim %s has values \"%s\" that does not match the expected filter \"%s\"", filterName, claimValues, filterValue);
-                        throw new IdentityBrokerUnmatchedEssentialClaimException(String.format("Unmatched claim value for %s.", filterName));
+                        throw new IdentityBrokerException(String.format("Unmatched claim value for %s.", filterName)).
+                            withMessageCode(Messages.IDENTITY_PROVIDER_UNMATCHED_ESSENTIAL_CLAIM_ERROR);
                     }
                 } else {
                     logger.debugf("Claim %s was not found", filterName);
-                    throw new IdentityBrokerUnmatchedEssentialClaimException(String.format("Claim %s not found", filterName));
+                    throw new IdentityBrokerException(String.format("Claim %s not found", filterName)).
+                        withMessageCode(Messages.IDENTITY_PROVIDER_UNMATCHED_ESSENTIAL_CLAIM_ERROR);
                 }
             }
 
@@ -433,7 +434,7 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
             }
 
             return identity;
-        } catch (IdentityBrokerUnmatchedEssentialClaimException e) {
+        } catch (IdentityBrokerException e) {
             throw e;
         } catch (Exception e) {
             throw new IdentityBrokerException("Could not fetch attributes from userinfo endpoint.", e);
