@@ -9,6 +9,7 @@ List of organization names below is based on information collected using Keycloa
 * Accenture
 * Actinver
 * Akvo Foundation
+* AlmaLinux Foundation
 * Appier
 * Associazione Rousseau
 * BISPRO

@@ -188,7 +188,7 @@ export default function LdapMapperDetails() {
                         key="fedSync"
                         onClick={() => sync("fedToKeycloak")}
                       >
-                        {t("syncLDAPGroupsToKeycloak")}
+                        {t(mapper?.metadata.fedToKeycloakSyncMessage)}
                       </DropdownItem>,
                     ]
                   : []),
@@ -200,7 +200,7 @@ export default function LdapMapperDetails() {
                           sync("keycloakToFed");
                         }}
                       >
-                        {t("syncKeycloakGroupsToLDAP")}
+                        {t(mapper?.metadata.keycloakToFedSyncMessage)}
                       </DropdownItem>,
                     ]
                   : []),

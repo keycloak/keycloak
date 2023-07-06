@@ -157,7 +157,7 @@
         <twitter4j.version>4.1.2</twitter4j.version>
         <jna.version>4.5.1</jna.version>
 
-        <!-- Databases -->
+        <!-- Databases - also published to db.adoc as "Tested Version" -->
         <mysql.version>8.0</mysql.version>
         <mysql-jdbc.version>8.0.30</mysql-jdbc.version>
         <postgresql.version>15</postgresql.version>
@@ -168,7 +168,7 @@
         <mssql-jdbc.version>9.2.0.jre8</mssql-jdbc.version>
         <!-- this is the oracle driver version also used in the Quarkus BOM -->
         <oracledb.version>19.3</oracledb.version>
-        <oracle-jdbc.version>21.5.0.0</oracle-jdbc.version>
+        <oracle-jdbc.version>23.2.0.0</oracle-jdbc.version>
 
         <!-- Test -->
         <greenmail.version>2.1.0-alpha-1</greenmail.version>
