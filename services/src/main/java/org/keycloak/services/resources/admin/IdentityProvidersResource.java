@@ -42,6 +42,8 @@ import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
+import org.keycloak.utils.ReservedCharValidator;
+import org.keycloak.utils.StringUtil;
 
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.Consumes;
@@ -50,6 +52,7 @@ import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
@@ -57,10 +60,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 import static jakarta.ws.rs.core.Response.Status.BAD_REQUEST;
-import org.keycloak.utils.ReservedCharValidator;
 
 /**
  * @resource Identity Providers
@@ -71,8 +74,8 @@ public class IdentityProvidersResource {
 
     private final RealmModel realm;
     private final KeycloakSession session;
-    private AdminPermissionEvaluator auth;
-    private AdminEventBuilder adminEvent;
+    private final AdminPermissionEvaluator auth;
+    private final AdminEventBuilder adminEvent;
 
     public IdentityProvidersResource(RealmModel realm, KeycloakSession session, AdminPermissionEvaluator auth, AdminEventBuilder adminEvent) {
         this.realm = realm;
@@ -82,7 +85,7 @@ public class IdentityProvidersResource {
     }
 
     /**
-     * Get identity providers
+     * Get the identity provider factory for a provider id.
      *
      * @param providerId Provider id
      * @return
@@ -92,8 +95,8 @@ public class IdentityProvidersResource {
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.IDENTITY_PROVIDERS)
-    @Operation( summary = "Get identity providers")
-    public Response getIdentityProviders(@Parameter(description = "Provider id") @PathParam("provider_id") String providerId) {
+    @Operation( summary = "Get the identity provider factory for that provider id")
+    public Response getIdentityProviders(@Parameter(description = "The provider id to get the factory") @PathParam("provider_id") String providerId) {
         this.auth.realm().requireViewIdentityProviders();
         IdentityProviderFactory providerFactory = getProviderFactoryById(providerId);
         if (providerFactory != null) {
@@ -166,21 +169,73 @@ public class IdentityProvidersResource {
     }
 
     /**
-     * Get identity providers
+     * List identity providers.
      *
-     * @return
+     * @param search Filter to search specific providers by name. Search can be prefixed (name*), contains (*name*) or exact (\"name\"). Default prefixed.
+     * @param firstResult Pagination offset
+     * @param maxResults Maximum results size (defaults to 100)
+     * @return The list of providers.
      */
     @GET
     @Path("instances")
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.IDENTITY_PROVIDERS)
-    @Operation( summary = "Get identity providers")
-    public Stream<IdentityProviderRepresentation> getIdentityProviders() {
+    @Operation(summary = "List identity providers")
+    public Stream<IdentityProviderRepresentation> getIdentityProviders(
+            @Parameter(description = "Filter specific providers by name. Search can be prefix (name*), contains (*name*) or exact (\"name\"). Default prefixed.") @QueryParam("search") String search,
+            @Parameter(description = "Pagination offset") @QueryParam("first") Integer firstResult,
+            @Parameter(description = "Maximum results size (defaults to 100)") @QueryParam("max") Integer maxResults) {
         this.auth.realm().requireViewIdentityProviders();
 
+        if (firstResult == null) {
+            firstResult = 0;
+        }
+        if (maxResults == null) {
+            maxResults = 100;
+        }
+
         return realm.getIdentityProvidersStream()
+                .filter(predicateByName(search))
+                .skip(firstResult)
+                .limit(maxResults)
                 .map(provider -> StripSecretsUtils.strip(ModelToRepresentation.toRepresentation(realm, provider)));
+    }
+
+    /**
+     * Count identity providers.
+     *
+     * @param search Filter to search specific providers by name. Search can be prefixed (name*), contains (*name*) or exact (\"name\"). Default prefixed.
+     * @return Integer count of providers.
+     */
+    @GET
+    @Path("instances/count")
+    @NoCache
+    @Produces(MediaType.APPLICATION_JSON)
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.IDENTITY_PROVIDERS)
+    @Operation( summary = "Count identity providers")
+    public Integer countIdentityProviders(
+            @Parameter(description = "Filter to search specific providers by name. Search can be prefixed (name*), contains (*name*) or exact (\"name\"). Default prefixed.") @QueryParam("search") String search) {
+        this.auth.realm().requireViewIdentityProviders();
+
+        return Math.toIntExact(this.realm.getIdentityProvidersStream().filter(predicateByName(search)).count());
+    }
+
+    private Predicate<IdentityProviderModel> predicateByName(final String search) {
+        if (StringUtil.isBlank(search)) {
+            return (m) -> true;
+        } else if (search.startsWith("\"") && search.endsWith("\"")) {
+            final String name = search.substring(1, search.length() - 1);
+            return (m) -> m.getAlias().equals(name);
+        } else if (search.startsWith("*") && search.endsWith("*")) {
+            final String name = search.substring(1, search.length() - 1);
+            return (m) -> m.getAlias().contains(name);
+        } else if (search.endsWith("*")) {
+            final String name = search.substring(0, search.length() - 1);
+            return (m) -> m.getAlias().startsWith(name);
+        } else {
+            return (m) -> m.getAlias().startsWith(search);
+        }
     }
 
     /**

@@ -131,12 +131,33 @@ public class IdentityProviderTest extends AbstractAdminTest {
       + "LXrAUVcsR73oTngrhRfwUSmPrjjK0kjcRb6HL9V/+wh3R/6mEd59U08ExT8N38rhmn0CI3ehMdebReprP7U8=";
 
     @Test
-    public void testFindAll() {
+    public void testFind() {
+        create(createRep("github", "github"));
         create(createRep("google", "google"));
-
         create(createRep("facebook", "facebook"));
+        create(createRep("linkedin", "linkedin"));
+        create(createRep("twitter", "twitter"));
 
-        Assert.assertNames(realm.identityProviders().findAll(), "google", "facebook");
+        Assert.assertEquals((Integer) 5, realm.identityProviders().count(null));
+        Assert.assertNames(realm.identityProviders().findAll(), "github", "google", "facebook", "linkedin", "twitter");
+
+        Assert.assertNames(realm.identityProviders().find(null, 0, 2), "github", "google");
+        Assert.assertNames(realm.identityProviders().find(null, 2, 2), "facebook", "linkedin");
+        Assert.assertNames(realm.identityProviders().find(null, 4, 2), "twitter");
+
+        Assert.assertEquals((Integer) 2, realm.identityProviders().count("g"));
+        Assert.assertNames(realm.identityProviders().find("g", 0, 5), "github", "google");
+
+        Assert.assertEquals((Integer) 2, realm.identityProviders().count("g*"));
+        Assert.assertNames(realm.identityProviders().find("g*", 0, 5), "github", "google");
+        Assert.assertNames(realm.identityProviders().find("g*", 0, 1), "github");
+        Assert.assertNames(realm.identityProviders().find("g*", 1, 1), "google");
+
+        Assert.assertEquals((Integer) 2, realm.identityProviders().count("*oo*"));
+        Assert.assertNames(realm.identityProviders().find("*oo*", 0, 5), "google", "facebook");
+
+        Assert.assertEquals((Integer) 1, realm.identityProviders().count("\"twitter\""));
+        Assert.assertNames(realm.identityProviders().find("\"twitter\"", 0, 5), "twitter");
     }
 
     @Test
