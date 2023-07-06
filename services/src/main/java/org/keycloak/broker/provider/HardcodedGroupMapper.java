@@ -73,7 +73,7 @@ public class HardcodedGroupMapper extends AbstractClaimToGroupMapper {
 
     @Override
     public boolean supportsSyncMode(IdentityProviderSyncMode syncMode) {
-        return IDENTITY_PROVIDER_SYNC_MODES.contains(syncMode);
+        return EnumSet.allOf(IdentityProviderSyncMode.class).contains(syncMode);
     }
 
     @Override
