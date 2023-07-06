@@ -83,7 +83,7 @@ public class HardcodedGroupMapper extends AbstractClaimToGroupMapper {
 
     @Override
     public String[] getCompatibleProviders() {
-        return COMPATIBLE_PROVIDERS;
+        return new String[] {ANY_PROVIDER};
     }
 
     @Override
