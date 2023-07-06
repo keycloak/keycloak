@@ -6,7 +6,7 @@ updates:
     rebase-strategy: disabled
     schedule:
       interval: daily
-      time: 00:00
+      time: "00:00"
       timezone: Etc/GMT
     labels:
       - area/dependencies
@@ -15,7 +15,7 @@ updates:
     directory: /themes/src/main/resources/theme/keycloak/common/resources
     schedule:
       interval: daily
-      time: 00:00
+      time: "00:00"
       timezone: Etc/GMT
     open-pull-requests-limit: 999
     rebase-strategy: disabled
@@ -33,7 +33,7 @@ updates:
     versioning-strategy: increase
     schedule:
       interval: daily
-      time: 00:00
+      time: "00:00"
       timezone: Etc/GMT
     labels:
       - area/dependencies
