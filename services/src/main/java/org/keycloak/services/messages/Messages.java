@@ -180,6 +180,8 @@ public class Messages {
     public static final String STALE_VERIFY_EMAIL_LINK = "staleEmailVerificationLink";
 
     public static final String IDENTITY_PROVIDER_UNEXPECTED_ERROR = "identityProviderUnexpectedErrorMessage";
+    
+    public static final String IDENTITY_PROVIDER_UNMATCHED_ESSENTIAL_CLAIM_ERROR = "federatedIdentityUnmatchedEssentialClaimMessage";
 
     public static final String IDENTITY_PROVIDER_MISSING_STATE_ERROR = "identityProviderMissingStateMessage";
 

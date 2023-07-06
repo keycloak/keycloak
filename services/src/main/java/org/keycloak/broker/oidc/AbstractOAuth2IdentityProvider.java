@@ -28,6 +28,7 @@ import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.provider.ExchangeExternalToken;
 import org.keycloak.broker.provider.ExchangeTokenToIdentityProviderToken;
 import org.keycloak.broker.provider.IdentityBrokerException;
+import org.keycloak.broker.provider.IdentityBrokerUnmatchedEssentialClaimException;
 import org.keycloak.broker.provider.IdentityProvider;
 import org.keycloak.broker.provider.util.IdentityBrokerState;
 import org.keycloak.broker.provider.util.SimpleHttp;
@@ -518,6 +519,8 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
                 }
             } catch (WebApplicationException e) {
                 return e.getResponse();
+            } catch (IdentityBrokerUnmatchedEssentialClaimException e) {
+                return errorIdentityProviderLogin(Messages.IDENTITY_PROVIDER_UNMATCHED_ESSENTIAL_CLAIM_ERROR);
             } catch (Exception e) {
                 logger.error("Failed to make identity provider oauth callback", e);
             }
