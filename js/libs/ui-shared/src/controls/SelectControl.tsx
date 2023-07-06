@@ -15,7 +15,7 @@ import {
 } from "@patternfly/react-core";
 import { FormLabel } from "./FormLabel";
 
-export type SelectOption = {
+export type SelectControlOption = {
   key: string;
   value: string;
 };
@@ -30,7 +30,7 @@ export type SelectControlProps<
   UseControllerProps<T, P> & {
     name: string;
     label?: string;
-    options: string[] | Option[];
+    options: string[] | SelectControlOption[];
     controller: Omit<ControllerProps, "name" | "render">;
   };
 
@@ -68,8 +68,9 @@ export const SelectControl = <
             onToggle={(isOpen) => setOpen(isOpen)}
             selections={
               typeof options[0] !== "string"
-                ? (options as Option[]).find((o) => o.key === value[0])
-                    ?.value || value
+                ? (options as SelectControlOption[]).find(
+                    (o) => o.key === value[0]
+                  )?.value || value
                 : value
             }
             onSelect={(_, v) => {
