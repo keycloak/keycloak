@@ -166,7 +166,7 @@ Alternatively, you can delete the provider from the `Providers` table.
 .Procedure
 . Click *Clients* in the menu.
 . Click *security-admin-console*.
-. Scroll down to the *Capability config* section.
+. Scroll down to the *Access settings* section.
 . Fill in the *Admin URL* field.
 . Click the *Advanced* tab.
 . Click *Set to now* in the *Revocation* section.
