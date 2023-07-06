@@ -28,4 +28,8 @@ public interface ClientSignatureVerifierProvider extends Provider {
     @Override
     default void close() {
     }
+
+    String getAlgorithm();
+
+    boolean isAsymmetricAlgorithm();
 }

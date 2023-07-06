@@ -12,7 +12,6 @@
   },
   "otpHashAlgorithm": "Алгоритм хеша OTP",
   "otpPolicyDigits": "Количество цифр",
-  "lookAhead": "Окно вперед",
   "otpPolicyPeriod": "Период токена OTP",
   "initialCounter": "Начальное значение счетчика",
   "attestationPreference": {

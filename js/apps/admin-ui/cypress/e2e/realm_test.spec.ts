@@ -1,3 +1,4 @@
+import { v4 as uuid } from "uuid";
 import LoginPage from "../support/pages/LoginPage";
 import SidebarPage from "../support/pages/admin-ui/SidebarPage";
 import CreateRealmPage from "../support/pages/admin-ui/CreateRealmPage";
@@ -14,9 +15,9 @@ const createRealmPage = new CreateRealmPage();
 const realmSettings = new RealmSettings();
 const modalUtils = new ModalUtils();
 
-const testRealmName = "Test-realm-" + crypto.randomUUID();
-const newRealmName = "New-Test-realm-" + crypto.randomUUID();
-const editedRealmName = "Edited-Test-realm-" + crypto.randomUUID();
+const testRealmName = "Test-realm-" + uuid();
+const newRealmName = "New-Test-realm-" + uuid();
+const editedRealmName = "Edited-Test-realm-" + uuid();
 const testDisabledName = "Test-Disabled";
 
 describe("Realm tests", () => {

@@ -1,6 +1,6 @@
 === Other OpenID Connect libraries
 
-{project_name} can be secured by supplied adapters that are usually easier to use and provide better integration with {project_name}. However, if an adapter is not available for your programming language, framework, or platform you might opt to use a generic OpenID Connect Relying Party (RP) library instead. This chapter describes details specific to {project_name} and does not contain specific protocol details. For more information see the https://openid.net/connect/[OpenID Connect specifications] and https://datatracker.ietf.org/doc/html/rfc6749[OAuth2 specification].
+{project_name} can be secured by supplied adapters that are usually easier to use and provide better integration with {project_name}. However, if an adapter is not available for your programming language, framework, or platform you might opt to use a generic OpenID Connect Relying Party (RP) library instead. This chapter describes details specific to {project_name} and does not contain specific protocol details. For more information see the https://openid.net/developers/how-connect-works/[OpenID Connect specifications] and https://datatracker.ietf.org/doc/html/rfc6749[OAuth2 specification].
 
 ==== Endpoints
 
@@ -242,10 +242,11 @@ In production for web applications always use `https` for all redirect URIs. Do 
 There's also a few special redirect URIs:
 
 [[_installed_applications_url]]
-`$$http://localhost$$`::
+`$$http://127.0.0.1$$`::
 
   This redirect URI is useful for native applications and allows the native application to create a web server on a random port that can be used to obtain the
-  authorization code. This redirect uri allows any port.
+  authorization code. This redirect uri allows any port. Note that per https://datatracker.ietf.org/doc/html/rfc8252#section-8.3[OAuth 2.0 for Native Apps] the use of
+  `localhost` is *not* recommended and the IP literal `127.0.0.1` should be used instead.
 
 [[_installed_applications_urn]]
 `urn:ietf:wg:oauth:2.0:oob`::

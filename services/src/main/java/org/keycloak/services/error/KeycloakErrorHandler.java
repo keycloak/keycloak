@@ -16,7 +16,7 @@ import org.keycloak.theme.Theme;
 import org.keycloak.theme.beans.LocaleBean;
 import org.keycloak.theme.beans.MessageBean;
 import org.keycloak.theme.beans.MessageFormatterMethod;
-import org.keycloak.theme.beans.MessageType;
+import org.keycloak.forms.login.MessageType;
 import org.keycloak.theme.freemarker.FreeMarkerProvider;
 import org.keycloak.utils.MediaType;
 import org.keycloak.utils.MediaTypeMatcher;

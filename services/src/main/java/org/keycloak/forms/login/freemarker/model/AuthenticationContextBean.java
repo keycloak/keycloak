@@ -60,6 +60,10 @@ public class AuthenticationContextBean {
     // NOTE: This is called "attemptedUsername" as we won't necessarily display the username of the user, but the "attempted username", which he
     // used on the login screen (which could be eventually email or something else)
     public String getAttemptedUsername() {
+        if (context == null) {
+            return null;
+        }
+
         String username = context.getAuthenticationSession().getAuthNote(AbstractUsernameFormAuthenticator.ATTEMPTED_USERNAME);
 
         // Fallback to real username of the user just if attemptedUsername doesn't exist

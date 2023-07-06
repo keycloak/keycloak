@@ -15,7 +15,6 @@ import {
   AttributesForm,
 } from "../components/key-value-form/AttributeForm";
 import {
-  KeyValueType,
   arrayToKeyValue,
   keyValueToArray,
 } from "../components/key-value-form/key-value-convert";
@@ -33,10 +32,7 @@ export const UserAttributes = ({ user: defaultUser }: UserAttributesProps) => {
   const { config } = useUserProfile();
 
   const convertAttributes = () => {
-    return arrayToKeyValue<UserRepresentation>(user.attributes!).filter(
-      (a: KeyValueType) =>
-        !config?.attributes?.some((attribute) => attribute.name === a.key)
-    );
+    return arrayToKeyValue<UserRepresentation>(user.attributes!);
   };
 
   useEffect(() => {

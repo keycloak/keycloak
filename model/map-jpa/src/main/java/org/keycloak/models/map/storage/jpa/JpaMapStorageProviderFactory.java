@@ -420,9 +420,6 @@ public class JpaMapStorageProviderFactory implements
             logger.warnf("Database %s used without lockTimeout option configured. This can result in deadlock where one connection waits for a pessimistic write lock forever.", databaseShortName);
         }
 
-        // Pass on the property to 'EventListenerIntegrator' to activate the necessary event listeners for JPA map storage
-        properties.put(EventListenerIntegrator.JPA_MAP_STORAGE_ENABLED, Boolean.TRUE.toString());
-
         logger.trace("Creating EntityManagerFactory");
         ParsedPersistenceXmlDescriptor descriptor = PersistenceXmlParser.locateIndividualPersistenceUnit(
                 JpaMapStorageProviderFactory.class.getClassLoader()

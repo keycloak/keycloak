@@ -29,6 +29,10 @@ export class Groups extends Resource<{ realm?: string }> {
     returnResourceIdInLocationHeader: { field: "id" },
   });
 
+  public updateRoot = this.makeRequest<GroupRepresentation, void>({
+    method: "POST",
+  });
+
   /**
    * Single user
    */
@@ -67,8 +71,8 @@ export class Groups extends Resource<{ realm?: string }> {
   /**
    * Set or create child.
    * This will just set the parent if it exists. Create it and set the parent if the group doesn’t exist.
+   * @deprecated Use `createChildGroup` or `updateChildGroup` instead.
    */
-
   public setOrCreateChild = this.makeUpdateRequest<
     { id: string },
     GroupRepresentation,
@@ -78,6 +82,34 @@ export class Groups extends Resource<{ realm?: string }> {
     path: "/{id}/children",
     urlParamKeys: ["id"],
     returnResourceIdInLocationHeader: { field: "id" },
+  });
+
+  /**
+   * Creates a child group on the specified parent group. If the group already exists, then an error is returned.
+   */
+  public createChildGroup = this.makeUpdateRequest<
+    { id: string },
+    Omit<GroupRepresentation, "id">,
+    { id: string }
+  >({
+    method: "POST",
+    path: "/{id}/children",
+    urlParamKeys: ["id"],
+    returnResourceIdInLocationHeader: { field: "id" },
+  });
+
+  /**
+   * Updates a child group on the specified parent group. If the group doesn’t exist, then an error is returned.
+   * Can be used to move a group from one parent to another.
+   */
+  public updateChildGroup = this.makeUpdateRequest<
+    { id: string },
+    GroupRepresentation,
+    void
+  >({
+    method: "POST",
+    path: "/{id}/children",
+    urlParamKeys: ["id"],
   });
 
   /**

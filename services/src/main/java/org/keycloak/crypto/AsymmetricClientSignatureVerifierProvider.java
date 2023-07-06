@@ -35,4 +35,13 @@ public class AsymmetricClientSignatureVerifierProvider implements ClientSignatur
         return new ClientAsymmetricSignatureVerifierContext(session, client, input);
     }
 
+    @Override
+    public String getAlgorithm() {
+        return algorithm;
+    }
+
+    @Override
+    public boolean isAsymmetricAlgorithm() {
+        return true;
+    }
 }

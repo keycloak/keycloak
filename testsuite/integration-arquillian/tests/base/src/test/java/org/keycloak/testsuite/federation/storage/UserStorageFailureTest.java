@@ -311,13 +311,13 @@ public class UserStorageFailureTest extends AbstractTestRealmKeycloakTest {
             UserModel local = session.users().getUserByUsername(realm, LOCAL_USER);
             Assert.assertNotNull(local);
             Stream<UserModel> result;
-            result = session.users().searchForUserStream(realm, LOCAL_USER);
+            result = session.users().searchForUserStream(realm, Map.of(UserModel.SEARCH, LOCAL_USER));
             Assert.assertEquals(1, result.count());
-            result = session.users().searchForUserStream(realm, FailableHardcodedStorageProvider.username);
+            result = session.users().searchForUserStream(realm, Map.of(UserModel.SEARCH, FailableHardcodedStorageProvider.username));
             Assert.assertEquals(1, result.count());
-            result = session.users().searchForUserStream(realm, LOCAL_USER, 0, 2);
+            result = session.users().searchForUserStream(realm, Map.of(UserModel.SEARCH, LOCAL_USER), 0, 2);
             Assert.assertEquals(1, result.count());
-            result = session.users().searchForUserStream(realm, FailableHardcodedStorageProvider.username, 0, 2);
+            result = session.users().searchForUserStream(realm, Map.of(UserModel.SEARCH, FailableHardcodedStorageProvider.username), 0, 2);
             Assert.assertEquals(1, result.count());
             Map<String, String> localParam = new HashMap<>();
             localParam.put("username", LOCAL_USER);

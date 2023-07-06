@@ -13,6 +13,7 @@ import { useTranslation } from "react-i18next";
 import { KeycloakTextInput } from "../components/keycloak-text-input/KeycloakTextInput";
 import { ScrollForm } from "../components/scroll-form/ScrollForm";
 import { useUserProfile } from "../realm-settings/user-profile/UserProfileContext";
+import { isBundleKey, unWrap } from "./utils";
 import useToggle from "../utils/useToggle";
 
 const ROOT_ATTRIBUTES = ["username", "firstName", "lastName", "email"];
@@ -79,9 +80,6 @@ const FormField = ({ attribute, roles }: FormFieldProps) => {
     control,
   } = useFormContext();
   const [open, toggle] = useToggle();
-
-  const isBundleKey = (displayName?: string) => displayName?.includes("${");
-  const unWrap = (key: string) => key.substring(2, key.length - 1);
 
   const isSelect = (attribute: UserProfileAttribute) =>
     Object.hasOwn(attribute.validations || {}, "options");

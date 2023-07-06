@@ -71,7 +71,7 @@ export async function deleteConsent(id: string) {
 }
 
 export async function deleteSession(id?: string) {
-  return request(`"/sessions${id ? `/${id}` : ""}`, {
+  return request(`/sessions${id ? `/${id}` : ""}`, {
     method: "DELETE",
   });
 }

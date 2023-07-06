@@ -80,8 +80,7 @@ public final class LDAPContextManager implements AutoCloseable {
         ldapContext = new InitialLdapContext(connProp, null);
         if (ldapConfig.isStartTls()) {
             SSLSocketFactory sslSocketFactory = null;
-            String useTruststoreSpi = ldapConfig.getUseTruststoreSpi();
-            if (useTruststoreSpi != null && useTruststoreSpi.equals(LDAPConstants.USE_TRUSTSTORE_ALWAYS)) {
+            if (LDAPUtil.shouldUseTruststoreSpi(ldapConfig)) {
                 TruststoreProvider provider = session.getProvider(TruststoreProvider.class);
                 sslSocketFactory = provider.getSSLSocketFactory();
             }
@@ -124,7 +123,9 @@ public final class LDAPContextManager implements AutoCloseable {
             }
         } catch (Exception e) {
             logger.error("Could not negotiate TLS", e);
-            throw new AuthenticationException("Could not negotiate TLS");
+            NamingException ne = new AuthenticationException("Could not negotiate TLS");
+            ne.setRootCause(e);
+            throw ne;
         }
 
         // throws AuthenticationException when authentication fails
@@ -191,9 +192,8 @@ public final class LDAPContextManager implements AutoCloseable {
 
         // when using Start TLS, use default socket factory for LDAP client but pass the TrustStore SSL socket factory later
         // when calling StartTlsResponse.negotiate(trustStoreSSLSocketFactory)
-        if (!ldapConfig.isStartTls()) {
-            String useTruststoreSpi = ldapConfig.getUseTruststoreSpi();
-            LDAPConstants.setTruststoreSpiIfNeeded(useTruststoreSpi, url, env);
+        if (LDAPUtil.shouldUseTruststoreSpi(ldapConfig)) {
+            env.put("java.naming.ldap.factory.socket", "org.keycloak.truststore.SSLSocketFactory");
         }
 
         String connectionPooling = ldapConfig.getConnectionPooling();

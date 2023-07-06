@@ -99,13 +99,21 @@ public class KeycloakIdentity implements Identity {
                         values.add(valueIterator.next().asText());
                     }
                 } else {
-                    String value = fieldValue.asText();
+                    // If the claim is key value pair then just take it as is to attributes.
+                    if(!fieldValue.isObject()) {
+                        String value = fieldValue.asText();
 
-                    if (StringUtil.isNullOrEmpty(value)) {
-                        continue;
+                        if (StringUtil.isNullOrEmpty(value)) {
+                            continue;
+                        }
+                        values.add(value);
                     }
-
-                    values.add(value);
+                    // otherwise, the claim is a JSON object, turn it into json String, so it'll be able to evaluate it later
+                    // in the regex policy evaluator
+                    else
+                    {
+                        values.add(fieldValue.toString());
+                    }
                 }
 
                 if (!values.isEmpty()) {

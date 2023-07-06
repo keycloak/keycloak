@@ -21,7 +21,7 @@ The server has built-in support for different databases. You can query the avail
 |mssql| 2016
 |mysql| 8
 |oracle| 12c
-|postgres| 10
+|postgres| 15
 |===
 
 By default, the server uses the `dev-file` database. This is the default database that the server will use to persist data and

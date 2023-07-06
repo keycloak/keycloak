@@ -1,3 +1,4 @@
+import { v4 as uuid } from "uuid";
 import GroupModal from "../support/pages/admin-ui/manage/groups/GroupModal";
 import GroupDetailPage from "../support/pages/admin-ui/manage/groups/group_details/GroupDetailPage";
 import AttributesTab from "../support/pages/admin-ui/manage/AttributesTab";
@@ -55,7 +56,7 @@ describe("Group test", () => {
     loginPage.logIn();
     keycloakBefore();
     sidebarPage.goToGroups();
-    groupName = groupNamePrefix + crypto.randomUUID();
+    groupName = groupNamePrefix + uuid();
     groupNames.push(groupName);
   });
 

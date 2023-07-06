@@ -81,7 +81,7 @@ class AdminClient {
       if (!parentGroup) {
         parentGroup = await this.client.groups.create({ name: group });
       } else {
-        parentGroup = await this.client.groups.setOrCreateChild(
+        parentGroup = await this.client.groups.createChildGroup(
           { id: parentGroup.id },
           { name: group }
         );

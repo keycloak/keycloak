@@ -1,3 +1,4 @@
+import { v4 as uuid } from "uuid";
 import { keycloakBefore } from "../support/util/keycloak_hooks";
 import adminClient from "../support/util/AdminClient";
 import LoginPage from "../support/pages/LoginPage";
@@ -20,7 +21,7 @@ describe("Client authentication subtab", () => {
   const clientDetailsPage = new ClientDetailsPage();
   const policiesSubTab = new PoliciesTab();
   const permissionsSubTab = new PermissionsTab();
-  const clientId = "client-authentication-" + crypto.randomUUID();
+  const clientId = "client-authentication-" + uuid();
 
   before(() =>
     adminClient.createClient({

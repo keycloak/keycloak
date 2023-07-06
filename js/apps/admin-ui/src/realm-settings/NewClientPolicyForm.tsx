@@ -601,6 +601,7 @@ export default function NewClientPolicyForm() {
                                       />
                                       <Button
                                         variant="link"
+                                        aria-label="remove-condition"
                                         isInline
                                         icon={
                                           <TrashIcon
@@ -631,7 +632,7 @@ export default function NewClientPolicyForm() {
                   <Divider />
                   <Text
                     className="kc-emptyConditions"
-                    component={TextVariants.h6}
+                    component={TextVariants.h2}
                   >
                     {t("realm-settings:emptyConditions")}
                   </Text>
@@ -707,6 +708,7 @@ export default function NewClientPolicyForm() {
                                     />
                                     <Button
                                       variant="link"
+                                      aria-label="remove-client-profile"
                                       isInline
                                       icon={
                                         <TrashIcon
@@ -736,7 +738,7 @@ export default function NewClientPolicyForm() {
                   <Divider />
                   <Text
                     className="kc-emptyClientProfiles"
-                    component={TextVariants.h6}
+                    component={TextVariants.h2}
                   >
                     {t("realm-settings:emptyProfiles")}
                   </Text>

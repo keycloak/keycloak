@@ -43,7 +43,7 @@ export const ScrollForm = ({
 
   return (
     <Grid hasGutter {...rest}>
-      <GridItem span={8}>
+      <GridItem md={8} sm={12}>
         {shownSections.map(({ title, panel }) => {
           const scrollId = spacesToHyphens(title.toLowerCase());
 
@@ -66,7 +66,7 @@ export const ScrollForm = ({
           );
         })}
       </GridItem>
-      <GridItem span={4}>
+      <GridItem md={4} sm={12} order={{ default: "-1", md: "1" }}>
         <PageSection className="kc-scroll-form--sticky">
           <JumpLinks
             isVertical

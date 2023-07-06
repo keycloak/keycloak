@@ -1,0 +1,9 @@
+{
+    "realm": "demo",
+    "resource": "external-config",
+    "auth-server-url": "http://localhost:8080/auth",
+    "ssl-required" : "external",
+    "credentials": {
+        "secret": "password"
+    }
+}

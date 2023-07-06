@@ -47,12 +47,4 @@ public interface UserCache extends UserProvider {
      *
      */
     void clear();
-
-    /**
-     * @deprecated This interface is no longer necessary, collection-based methods were removed from the parent interface
-     * and therefore the parent interface can be used directly
-     */
-    @Deprecated
-    interface Streams extends UserCache, UserProvider.Streams {
-    }
 }

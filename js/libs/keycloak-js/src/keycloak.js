@@ -49,6 +49,12 @@ function Keycloak (config) {
     var logWarn = createLogger(console.warn);
 
     kc.init = function (initOptions) {
+        if (kc.didInitialize) {
+            throw new Error("A 'Keycloak' instance can only be initialized once.");
+        }
+
+        kc.didInitialize = true;
+
         kc.authenticated = false;
 
         callbackStorage = createCallbackStorage();
@@ -176,6 +182,9 @@ function Keycloak (config) {
                     options.prompt = 'none';
                 }
 
+                if (initOptions && initOptions.locale) {
+                    options.locale = initOptions.locale;
+                }
                 kc.login(options).then(function () {
                     initPromise.setSuccess();
                 }).catch(function (error) {

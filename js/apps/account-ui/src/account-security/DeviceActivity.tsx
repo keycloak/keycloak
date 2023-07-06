@@ -18,22 +18,22 @@ import {
   Tooltip,
 } from "@patternfly/react-core";
 import {
-  SyncAltIcon,
-  MobileAltIcon,
   DesktopIcon,
+  MobileAltIcon,
+  SyncAltIcon,
 } from "@patternfly/react-icons";
-import { TFuncKey } from "i18next";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { ContinueCancelModal, useAlerts } from "ui-shared";
 import { deleteSession, getDevices } from "../api/methods";
 import {
+  ClientRepresentation,
   DeviceRepresentation,
   SessionRepresentation,
-  ClientRepresentation,
 } from "../api/representations";
-import { useAlerts, ContinueCancelModal } from "ui-shared";
 import useFormatter from "../components/formatter/format-date";
 import { Page } from "../components/page/Page";
+import { TFuncKey } from "../i18n";
 import { keycloak } from "../keycloak";
 import { usePromise } from "../utils/usePromise";
 

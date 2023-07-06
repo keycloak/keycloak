@@ -5,16 +5,18 @@ updates:
     open-pull-requests-limit: 999
     rebase-strategy: disabled
     schedule:
-      interval: weekly
-      day: saturday
+      interval: daily
+      time: "00:00"
+      timezone: Etc/GMT
     labels:
       - area/dependencies
       - area/ci
   - package-ecosystem: npm
     directory: /themes/src/main/resources/theme/keycloak/common/resources
     schedule:
-      interval: weekly
-      day: saturday
+      interval: daily
+      time: "00:00"
+      timezone: Etc/GMT
     open-pull-requests-limit: 999
     rebase-strategy: disabled
     labels:
@@ -23,4 +25,19 @@ updates:
       - team/ui
     ignore:
       - dependency-name: bootstrap
+        update-types: ["version-update:semver-major"]
+  - package-ecosystem: npm
+    directory: js
+    open-pull-requests-limit: 999
+    rebase-strategy: disabled
+    versioning-strategy: increase
+    schedule:
+      interval: daily
+      time: "00:00"
+      timezone: Etc/GMT
+    labels:
+      - area/dependencies
+      - team/ui
+    ignore:
+      - dependency-name: react-error-boundary
         update-types: ["version-update:semver-major"]
