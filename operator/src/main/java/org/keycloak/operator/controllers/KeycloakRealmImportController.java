@@ -42,9 +42,6 @@ import jakarta.inject.Inject;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-import static io.javaoperatorsdk.operator.api.reconciler.Constants.WATCH_CURRENT_NAMESPACE;
-
-@ControllerConfiguration(namespaces = WATCH_CURRENT_NAMESPACE)
 public class KeycloakRealmImportController implements Reconciler<KeycloakRealmImport>, EventSourceInitializer<KeycloakRealmImport>, ErrorStatusHandler<KeycloakRealmImport> {
 
     @Inject
