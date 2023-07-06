@@ -10,8 +10,6 @@
   "addLdapWizardTitle": "Add LDAP user federation provider",
   "syncChangedUsers": "Sync changed users",
   "syncAllUsers": "Sync all users",
-  "syncLDAPGroupsToKeycloak": "Sync LDAP groups to Keycloak",
-  "syncKeycloakGroupsToLDAP": "Sync Keycloak groups to LDAP",
   "syncLDAPGroupsSuccessful": "Data successfully synced {{result}}",
   "syncLDAPGroupsError": "Data could not be synced due {{error}}",
   "unlinkUsers": "Unlink users",
@@ -173,5 +171,9 @@
   "providerType": "Provider Type",
   "parentId": "Parent ID",
   "kerberosPrincipal": "Kerberos Principal",
-  "kerberosKeyTab": "Kerberos Key Tab"
+  "kerberosKeyTab": "Kerberos Key Tab",
+  "sync-ldap-roles-to-keycloak": "Sync LDAP roles to Keycloak",
+  "sync-keycloak-roles-to-ldap": "Sync Keycloak roles to LDAP",
+  "sync-ldap-groups-to-keycloak": "Sync LDAP groups to Keycloak",
+  "sync-keycloak-groups-to-ldap": "Sync Keycloak groups to LDAP"
 }

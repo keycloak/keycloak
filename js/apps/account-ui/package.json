@@ -11,7 +11,7 @@
     "@patternfly/react-core": "^4.276.8",
     "@patternfly/react-icons": "^4.93.6",
     "@patternfly/react-table": "^4.113.0",
-    "i18next": "^23.2.6",
+    "i18next": "^23.2.7",
     "i18next-http-backend": "^2.2.1",
     "keycloak-js": "workspace:*",
     "keycloak-masthead": "workspace:*",
@@ -29,7 +29,7 @@
     "@types/react": "^18.2.14",
     "@types/react-dom": "^18.2.6",
     "@vitejs/plugin-react-swc": "^3.3.2",
-    "vite": "^4.3.9",
+    "vite": "^4.4.0",
     "vite-plugin-checker": "^0.6.1"
   },
   "wireit": {

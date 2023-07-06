@@ -226,6 +226,12 @@ jobs:
         with:
           name: keycloak
 
+      - name: Setup Java
+        uses: actions/setup-java@v3
+        with:
+          distribution: temurin
+          java-version: 17
+
       - name: Start Keycloak Server
         run: |
           tar xfvz keycloak-999.0.0-SNAPSHOT.tar.gz
