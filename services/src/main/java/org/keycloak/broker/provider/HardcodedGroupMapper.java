@@ -17,31 +17,23 @@
 
 package org.keycloak.broker.provider;
 
-import org.jboss.logging.Logger;
 import org.keycloak.broker.oidc.mappers.AbstractClaimToGroupMapper;
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderSyncMode;
 import org.keycloak.provider.ProviderConfigProperty;
 
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
+import java.util.EnumSet;
 import java.util.List;
-import java.util.Set;
 
 /**
  * @author <a href="mailto:dmartino@redhat.com">Daniele Martinoli</a>
  * @version $Revision: 1 $
  */
 public class HardcodedGroupMapper extends AbstractClaimToGroupMapper {
-    protected static final List<ProviderConfigProperty> configProperties = new ArrayList<>();
-
-    private static final Logger LOG = Logger.getLogger(HardcodedGroupMapper.class);
-
-    private static final Set<IdentityProviderSyncMode> IDENTITY_PROVIDER_SYNC_MODES =
-            new HashSet<>(Arrays.asList(IdentityProviderSyncMode.values()));
-
-    static {
+    @Override
+    public List<ProviderConfigProperty> getConfigProperties() {
+        List<ProviderConfigProperty> configProperties = new ArrayList<>();
         ProviderConfigProperty property;
         property = new ProviderConfigProperty();
         property.setName(ConfigConstants.GROUP);
@@ -49,10 +41,6 @@ public class HardcodedGroupMapper extends AbstractClaimToGroupMapper {
         property.setHelpText("Group to assign the user.");
         property.setType(ProviderConfigProperty.GROUP_TYPE);
         configProperties.add(property);
-    }
-
-    @Override
-    public List<ProviderConfigProperty> getConfigProperties() {
         return configProperties;
     }
 
@@ -65,9 +53,6 @@ public class HardcodedGroupMapper extends AbstractClaimToGroupMapper {
     public String getDisplayType() {
         return "Hardcoded Group";
     }
-
-    public static final String[] COMPATIBLE_PROVIDERS = {ANY_PROVIDER};
-
 
     public static final String PROVIDER_ID = "oidc-hardcoded-group-idp-mapper";
 
