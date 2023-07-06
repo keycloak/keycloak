@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import type { SelectOption } from "ui-shared";
+import type { SelectControlOption } from "ui-shared";
 import { SelectControl } from "ui-shared";
 import { getSupportedLocales } from "../api/methods";
 import { usePromise } from "../utils/usePromise";
@@ -15,13 +15,13 @@ const localeToDisplayName = (locale: string) => {
 
 export const LocaleSelector = () => {
   const { t } = useTranslation();
-  const [locales, setLocales] = useState<SelectOption[]>([]);
+  const [locales, setLocales] = useState<SelectControlOption[]>([]);
 
   usePromise(
     (signal) => getSupportedLocales({ signal }),
     (locales) =>
       setLocales(
-        locales.map<Option>((locale) => ({
+        locales.map<SelectControlOption>((locale) => ({
           key: locale,
           value: localeToDisplayName(locale) || "",
         }))
