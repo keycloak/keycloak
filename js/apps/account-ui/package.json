@@ -5,7 +5,8 @@
     "dev": "wireit",
     "build": "wireit",
     "preview": "wireit",
-    "lint": "wireit"
+    "lint": "wireit",
+    "test": "wireit"
   },
   "dependencies": {
     "@patternfly/patternfly": "^4.224.2",
@@ -68,6 +69,12 @@
         "../../libs/ui-shared:build",
         "../../libs/keycloak-masthead:build",
         "../../libs/keycloak-js:build",
+        "../../libs/keycloak-admin-client:build"
+      ]
+    },
+    "test": {
+      "command": "playwright test",
+      "dependencies": [
         "../../libs/keycloak-admin-client:build"
       ]
     }
