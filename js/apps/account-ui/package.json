@@ -40,7 +40,8 @@
       "dependencies": [
         "../../libs/ui-shared:build",
         "../../libs/keycloak-masthead:build",
-        "../../libs/keycloak-js:build"
+        "../../libs/keycloak-js:build",
+        "../../libs/keycloak-admin-client:build"
       ]
     },
     "preview": {
@@ -48,7 +49,8 @@
       "dependencies": [
         "../../libs/ui-shared:build",
         "../../libs/keycloak-masthead:build",
-        "../../libs/keycloak-js:build"
+        "../../libs/keycloak-js:build",
+        "../../libs/keycloak-admin-client:build"
       ]
     },
     "build": {
@@ -56,7 +58,8 @@
       "dependencies": [
         "../../libs/ui-shared:build",
         "../../libs/keycloak-masthead:build",
-        "../../libs/keycloak-js:build"
+        "../../libs/keycloak-js:build",
+        "../../libs/keycloak-admin-client:build"
       ]
     },
     "lint": {
@@ -64,7 +67,8 @@
       "dependencies": [
         "../../libs/ui-shared:build",
         "../../libs/keycloak-masthead:build",
-        "../../libs/keycloak-js:build"
+        "../../libs/keycloak-js:build",
+        "../../libs/keycloak-admin-client:build"
       ]
     }
   }
