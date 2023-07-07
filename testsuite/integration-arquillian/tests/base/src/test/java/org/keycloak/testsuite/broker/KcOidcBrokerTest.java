@@ -553,6 +553,9 @@ public final class KcOidcBrokerTest extends AbstractAdvancedBrokerTest {
         WaitUtils.waitForPageToLoad();
 
         loginFetchingUserFromUserEndpoint(true);
+        Assert.assertEquals("The ID token issued by the identity provider does not match the configured essential claim. Please contact your administrator.",
+            loginPage.getInstruction());
+
 
         List<UserRepresentation> users = realmsResouce().realm(bc.consumerRealmName()).users().search(bc.getUserLogin());
         assertThat(users, Matchers.empty());
