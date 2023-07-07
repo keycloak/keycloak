@@ -92,11 +92,6 @@
             <artifactId>quarkus-logging-gelf</artifactId>
         </dependency>
 
-        <dependency>
-            <groupId>org.wildfly.security</groupId>
-            <artifactId>wildfly-elytron</artifactId>
-        </dependency>
-
         <!-- SmallRye -->
         <dependency>
             <groupId>io.smallrye.config</groupId>

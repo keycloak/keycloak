@@ -62,16 +62,12 @@
 
         <!-- Versions used mostly for Undertow server, aligned with WildFly -->
         <jboss.aesh.version>0.66.19</jboss.aesh.version>
-        <aesh.version>2.4</aesh.version>
         <apache.httpcomponents.version>4.5.14</apache.httpcomponents.version>
-        <apache.httpcomponents.httpcore.version>4.4.16</apache.httpcomponents.httpcore.version>
         <jboss.dmr.version>1.5.1.Final</jboss.dmr.version>
         <bouncycastle-bcprov-jdk15on.version>1.70</bouncycastle-bcprov-jdk15on.version>
 
         <!-- TODO Are these correct versions? -->
-        <bouncycastle.fips.version>1.0.2.3</bouncycastle.fips.version>
         <bouncycastle.pkixfips.version>1.0.7</bouncycastle.pkixfips.version>
-        <bouncycastle.tlsfips.version>1.0.14.1</bouncycastle.tlsfips.version>
 
         <cxf.version>3.3.10</cxf.version>
         <cxf.jetty.version>3.3.10</cxf.jetty.version>
@@ -79,32 +75,20 @@
         <cxf.undertow.version>3.3.10</cxf.undertow.version>
         <dom4j.version>2.1.3</dom4j.version>
         <h2.version>2.1.214</h2.version>
-        <hibernate-orm.version>6.2.5.Final</hibernate-orm.version>
         <hibernate-orm.plugin.version>6.2.5.Final</hibernate-orm.plugin.version>
-        <hibernate.c3p0.version>${hibernate-orm.version}</hibernate.c3p0.version>
+        <hibernate.c3p0.version>6.2.5.Final</hibernate.c3p0.version>
         <infinispan.version>14.0.10.Final</infinispan.version>
         <infinispan.protostream.processor.version>4.6.2.Final</infinispan.protostream.processor.version>
-        <jackson.version>2.15.2</jackson.version>
-        <jackson.databind.version>${jackson.version}</jackson.databind.version>
-        <jackson.annotations.version>${jackson.version}</jackson.annotations.version>
 
         <!--JAKARTA-->
-        <jakarta.persistence.version>3.1.0</jakarta.persistence.version>
         <jakarta.mail.version>2.1.1</jakarta.mail.version>
         <angus.mail.version>2.0.1</angus.mail.version>
-        <jakarta.servlet.version>6.0.0</jakarta.servlet.version>
-        <jakarta.ws.rs.version>3.1.0</jakarta.ws.rs.version>
         <jakarta.xml.ws.version>4.0.0</jakarta.xml.ws.version>
-        <jakarta.xml.bind.version>4.0.0</jakarta.xml.bind.version>
-        <jakarta.transaction.version>2.0.1</jakarta.transaction.version>
-        <jakarta.activation.version>2.1.2</jakarta.activation.version>
         <jakarta.xml.soap.version>3.0.0</jakarta.xml.soap.version>
 
         <servlet.api.30.version>1.0.2.Final</servlet.api.30.version>
         <jboss-jaxrs-api_2.1_spec>2.0.2.Final</jboss-jaxrs-api_2.1_spec>
         <jboss-servlet-api_4.0_spec>2.0.0.Final</jboss-servlet-api_4.0_spec>
-        <jboss.logging.version>3.5.1.Final</jboss.logging.version>
-        <jboss.logging.tools.version>2.2.1.Final</jboss.logging.tools.version>
         <jboss.logmanager>2.1.19.Final</jboss.logmanager>
         <jboss.marshalling.version>2.0.11.Final</jboss.marshalling.version>
         <jboss.spec.javax.xml.bind.jboss-jaxb-api_2.3_spec.version>2.0.1.Final</jboss.spec.javax.xml.bind.jboss-jaxb-api_2.3_spec.version>
@@ -114,13 +98,11 @@
         <resteasy.version>6.2.4.Final</resteasy.version>
         <resteasy.undertow.version>${resteasy.version}</resteasy.undertow.version>
         <owasp.html.sanitizer.version>20220608.1</owasp.html.sanitizer.version>
-        <slf4j-api.version>2.0.6</slf4j-api.version>
         <slf4j.version>2.0.6</slf4j.version>
         <sun.istack.version>3.0.10</sun.istack.version>
         <sun.saaj.version>2.0.1</sun.saaj.version>
         <sun.xml.bind.version>2.3.3-b02</sun.xml.bind.version>
         <sun.xml.ws.version>4.0.0</sun.xml.ws.version>
-        <javax.annotation-api.version>1.3.2</javax.annotation-api.version>
         <sun.activation.version>1.2.2</sun.activation.version>
         <org.glassfish.jaxb.xsom.version>2.3.3-b02</org.glassfish.jaxb.xsom.version>
         <undertow.version>2.2.24.Final</undertow.version>
@@ -129,8 +111,8 @@
         <elytron.undertow-server.version>1.9.0.Final</elytron.undertow-server.version>
         <jetty94.version>9.4.40.v20210413</jetty94.version>
         <woodstox.version>6.0.3</woodstox.version>
-        <xmlsec.version>2.2.3</xmlsec.version>
         <wildfly.common.version>1.6.0.Final</wildfly.common.version>
+        <xmlsec.version>2.2.3</xmlsec.version>
         <nashorn.version>15.4</nashorn.version>
         <ua-parser.version>1.5.4</ua-parser.version>
         <picketbox.version>5.0.3.Final</picketbox.version>
@@ -140,13 +122,10 @@
 
         <!-- Others -->
         <commons-lang.version>2.6</commons-lang.version>
-        <commons-lang3.version>3.12.0</commons-lang3.version>
-        <commons-io.version>2.11.0</commons-io.version>
         <apacheds.version>2.0.0.AM26</apacheds.version>
         <apacheds.codec.version>2.0.0</apacheds.codec.version>
         <google.zxing.version>3.4.0</google.zxing.version>
         <freemarker.version>2.3.31</freemarker.version>
-        <javaparser.version>3.24.2</javaparser.version>
 
         <jetty9.version>${jetty94.version}</jetty9.version>
         <liquibase.version>4.20.0</liquibase.version>
@@ -155,7 +134,6 @@
         <servlet.api.30.version>1.0.2.Final</servlet.api.30.version>
         <servlet.api.40.version>2.0.0.Final</servlet.api.40.version>
         <twitter4j.version>4.1.2</twitter4j.version>
-        <jna.version>4.5.1</jna.version>
 
         <!-- Databases - also published to db.adoc as "Tested Version" -->
         <mysql.version>8.0</mysql.version>
@@ -183,11 +161,6 @@
         <subethasmtp.version>3.1.7</subethasmtp.version>
         <awaitility.version>4.1.1</awaitility.version>
         <assertj-core.version>3.22.0</assertj-core.version>
-        <!-- KEYCLOAK-17585 Prevent microprofile-metrics-api upgrades from version "2.3" due to:
-             https://issues.redhat.com/browse/KEYCLOAK-17585?focusedCommentId=16002705&page=com.atlassian.jira.plugin.system.issuetabpanels%3Acomment-tabpanel#comment-16002705
-        -->
-        <microprofile-metrics-api.version>3.0.1</microprofile-metrics-api.version>
-        <microprofile-openapi-api.version>3.1</microprofile-openapi-api.version>
         <testcontainers.version>1.17.5</testcontainers.version>
 
         <!-- Maven Plugins -->
@@ -312,6 +285,13 @@
 
         <dependencies>
             <dependency>
+                <groupId>io.quarkus.platform</groupId>
+                <artifactId>quarkus-bom</artifactId>
+                <version>${quarkus.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
                 <groupId>com.thoughtworks.xstream</groupId>
                 <artifactId>xstream</artifactId>
                 <version>${xstream.version}</version>
@@ -386,16 +366,6 @@
             </dependency>
             <dependency>
                 <groupId>org.bouncycastle</groupId>
-                <artifactId>bc-fips</artifactId>
-                <version>${bouncycastle.fips.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.bouncycastle</groupId>
-                <artifactId>bctls-fips</artifactId>
-                <version>${bouncycastle.tlsfips.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.bouncycastle</groupId>
                 <artifactId>bcpkix-fips</artifactId>
                 <version>${bouncycastle.pkixfips.version}</version>
             </dependency>
@@ -418,34 +388,9 @@
                 <version>${angus.mail.version}</version>
             </dependency>
             <dependency>
-                <groupId>jakarta.ws.rs</groupId>
-                <artifactId>jakarta.ws.rs-api</artifactId>
-                <version>${jakarta.ws.rs.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>jakarta.transaction</groupId>
-                <artifactId>jakarta.transaction-api</artifactId>
-                <version>${jakarta.transaction.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>jakarta.activation</groupId>
-                <artifactId>jakarta.activation-api</artifactId>
-                <version>${jakarta.activation.version}</version>
-            </dependency>
-            <dependency>
                 <groupId>jakarta.xml.ws</groupId>
                 <artifactId>jakarta.xml.ws-api</artifactId>
                 <version>${jakarta.xml.ws.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>jakarta.xml.bind</groupId>
-                <artifactId>jakarta.xml.bind-api</artifactId>
-                <version>${jakarta.xml.bind.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>jakarta.servlet</groupId>
-                <artifactId>jakarta.servlet-api</artifactId>
-                <version>${jakarta.servlet.version}</version>
             </dependency>
             <dependency>
                 <groupId>jakarta.xml.soap</groupId>
@@ -533,60 +478,10 @@
                 <version>${undertow.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.fasterxml.jackson.core</groupId>
-                <artifactId>jackson-core</artifactId>
-                <version>${jackson.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.fasterxml.jackson.core</groupId>
-                <artifactId>jackson-databind</artifactId>
-                <version>${jackson.databind.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.fasterxml.jackson.core</groupId>
-                <artifactId>jackson-annotations</artifactId>
-                <version>${jackson.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.fasterxml.jackson.module</groupId>
-                <artifactId>jackson-module-jaxb-annotations</artifactId>
-                <version>${jackson.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.fasterxml.jackson.datatype</groupId>
-                <artifactId>jackson-datatype-jdk8</artifactId>
-                <version>${jackson.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.fasterxml.jackson.jaxrs</groupId>
-                <artifactId>jackson-jaxrs-json-provider</artifactId>
-                <version>${jackson.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.fasterxml.jackson.jaxrs</groupId>
-                <artifactId>jackson-jaxrs-base</artifactId>
-                <version>${jackson.version}</version>
-            </dependency>
-            <dependency>
                 <groupId>org.picketlink</groupId>
                 <artifactId>picketlink-wildfly-common</artifactId>
                 <version>${picketlink.version}</version>
                 <scope>test</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.jboss.logging</groupId>
-                <artifactId>jboss-logging</artifactId>
-                <version>${jboss.logging.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.jboss.logging</groupId>
-                <artifactId>jboss-logging-annotations</artifactId>
-                <version>${jboss.logging.tools.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.jboss.logging</groupId>
-                <artifactId>jboss-logging-processor</artifactId>
-                <version>${jboss.logging.tools.version}</version>
             </dependency>
             <dependency>
                 <groupId>log4j</groupId>
@@ -616,20 +511,10 @@
                 <scope>test</scope>
             </dependency>
             <dependency>
-                <groupId>jakarta.persistence</groupId>
-                <artifactId>jakarta.persistence-api</artifactId>
-                <version>${jakarta.persistence.version}</version>
-            </dependency>
-            <dependency>
                 <groupId>com.h2database</groupId>
                 <artifactId>h2</artifactId>
                 <version>${h2.version}</version>
                 <scope>test</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.hibernate.orm</groupId>
-                <artifactId>hibernate-core</artifactId>
-                <version>${hibernate-orm.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.hibernate.orm</groupId>
@@ -773,12 +658,6 @@
                 <version>${xml-apis.version}</version>
                 <scope>test</scope>
             </dependency>
-            <!-- Older 1.5.10 binding required by embedded ApacheDS -->
-            <dependency>
-                <groupId>org.slf4j</groupId>
-                <artifactId>slf4j-api</artifactId>
-                <version>${slf4j-api.version}</version>
-            </dependency>
             <dependency>
                 <groupId>org.slf4j</groupId>
                 <artifactId>slf4j-reload4j</artifactId>
@@ -796,22 +675,6 @@
                 <groupId>org.apache.httpcomponents</groupId>
                 <artifactId>httpclient</artifactId>
                 <version>${apache.httpcomponents.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.httpcomponents</groupId>
-                <artifactId>httpcore</artifactId>
-                <version>${apache.httpcomponents.httpcore.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.httpcomponents</groupId>
-                <artifactId>httpmime</artifactId>
-                <version>${apache.httpcomponents.version}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>commons-logging</groupId>
-                        <artifactId>commons-logging</artifactId>
-                    </exclusion>
-                </exclusions>
             </dependency>
             <dependency>
                 <groupId>org.wildfly.core</groupId>
@@ -951,16 +814,6 @@
                 <groupId>org.wildfly</groupId>
                 <artifactId>wildfly-clustering-infinispan-marshalling</artifactId>
                 <version>${wildfly.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.wildfly.security</groupId>
-                <artifactId>wildfly-elytron</artifactId>
-                <version>${wildfly-elytron.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.wildfly.common</groupId>
-                <artifactId>wildfly-common</artifactId>
-                <version>${wildfly.common.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.wildfly.security.elytron-web</groupId>
@@ -1131,11 +984,6 @@
                 <artifactId>aesh</artifactId>
                 <version>${jboss.aesh.version}</version>
             </dependency>
-            <dependency>
-                <groupId>org.aesh</groupId>
-                <artifactId>aesh</artifactId>
-                <version>${aesh.version}</version>
-            </dependency>
 
             <!-- keycloak -->
             <dependency>
@@ -1179,11 +1027,6 @@
                 <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-sssd-federation</artifactId>
                 <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>net.java.dev.jna</groupId>
-                <artifactId>jna</artifactId>
-                <version>${jna.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
@@ -1791,47 +1634,9 @@
                 <version>${org.apache.kerby.kerby-asn1.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.fasterxml.jackson.dataformat</groupId>
-                <artifactId>jackson-dataformat-cbor</artifactId>
-                <version>${jackson.version}</version>
-            </dependency>
-            <dependency>
                 <groupId>commons-lang</groupId>
                 <artifactId>commons-lang</artifactId>
                 <version>${commons-lang.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.commons</groupId>
-                <artifactId>commons-lang3</artifactId>
-                <version>${commons-lang3.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>commons-io</groupId>
-                <artifactId>commons-io</artifactId>
-                <version>${commons-io.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.github.javaparser</groupId>
-                <artifactId>javaparser-core</artifactId>
-                <version>${javaparser.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.eclipse.microprofile.metrics</groupId>
-                <artifactId>microprofile-metrics-api</artifactId>
-                <version>${microprofile-metrics-api.version}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>org.osgi</groupId>
-                        <artifactId>org.osgi.annotation.versioning</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-
-            <dependency>
-                <groupId>org.eclipse.microprofile.openapi</groupId>
-                <artifactId>microprofile-openapi-api</artifactId>
-                <version>${microprofile-openapi-api.version}</version>
             </dependency>
 
             <!-- used in server-dist build while provisioning the distribution -->
@@ -1901,11 +1706,6 @@
                 <groupId>org.jboss.spec.javax.servlet</groupId>
                 <artifactId>jboss-servlet-api_4.0_spec</artifactId>
                 <version>${jboss-servlet-api_4.0_spec}</version>
-            </dependency>
-            <dependency>
-                <groupId>javax.annotation</groupId>
-                <artifactId>javax.annotation-api</artifactId>
-                <version>${javax.annotation-api.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
