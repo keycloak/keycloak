@@ -149,7 +149,18 @@ public class IdentityProviderTest extends AbstractAdminTest {
         Response response = realm.identityProviders().create(newIdentityProvider);
         Assert.assertEquals(400, response.getStatus());
     }
-    
+
+    @Test
+    public void testCreateWithBlankAlias() {
+        IdentityProviderRepresentation newIdentityProvider = createRep("", "display name", "oidc");
+
+        newIdentityProvider.getConfig().put("clientId", "clientId");
+        newIdentityProvider.getConfig().put("clientSecret", "some secret value");
+
+        Response response = realm.identityProviders().create(newIdentityProvider);
+        Assert.assertEquals(400, response.getStatus());
+    }
+
     @Test
     public void testCreate() {
         IdentityProviderRepresentation newIdentityProvider = createRep("new-identity-provider", "oidc");
@@ -511,11 +522,18 @@ public class IdentityProviderTest extends AbstractAdminTest {
         return createRep(id, providerId,true, null);
     }
 
+    private IdentityProviderRepresentation createRep(String id, String alias, String providerId) {
+        return createRep(id, alias, providerId,true, null);
+    }
+
     private IdentityProviderRepresentation createRep(String id, String providerId,boolean enabled, Map<String, String> config) {
+        return createRep(id, id, providerId,true, null);
+    }
+    private IdentityProviderRepresentation createRep(String id, String displayName, String providerId,boolean enabled, Map<String, String> config) {
         IdentityProviderRepresentation idp = new IdentityProviderRepresentation();
 
         idp.setAlias(id);
-        idp.setDisplayName(id);
+        idp.setDisplayName(displayName);
         idp.setProviderId(providerId);
         idp.setEnabled(enabled);
         if (config != null) {
