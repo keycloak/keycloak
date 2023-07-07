@@ -959,6 +959,25 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
     }
 
     @Test
+    public void resetPasswordBeforeUserIsDisabled() throws IOException, MessagingException {
+        initiateResetPasswordFromResetPasswordPage("login-test");
+        
+        assertEquals(1, greenMail.getReceivedMessages().length);
+        MimeMessage message = greenMail.getReceivedMessages()[0];
+        String changePasswordUrl = MailUtils.getPasswordResetEmailLink(message);
+        events.expectRequiredAction(EventType.SEND_RESET_PASSWORD).session((String)null).user(userId).detail(Details.USERNAME, "login-test").detail(Details.EMAIL, "login@test.com").assertEvent();
+        
+        UserRepresentation user = findUser("login-test");
+        user.setEnabled(false);
+        updateUser(user);
+
+        driver.navigate().to(changePasswordUrl.trim());
+
+        errorPage.assertCurrent();
+        assertEquals("Account is disabled, contact your administrator.", errorPage.getError());
+    }
+
+    @Test
     public void resetPasswordWithPasswordHistoryPolicy() throws IOException, MessagingException {
         //Block passwords that are equal to previous passwords. Default value is 3.
         setPasswordPolicy("passwordHistory");
