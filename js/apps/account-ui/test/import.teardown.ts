@@ -1,6 +1,4 @@
 import { test as setup } from "@playwright/test";
-import adminClient from "./AdminClient";
+import { deleteRealm } from "./admin-client";
 
-setup("delete realm", async () => {
-  await adminClient.deleteRealm("photoz");
-});
+setup("delete realm", () => deleteRealm("photoz"));
