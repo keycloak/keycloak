@@ -45,6 +45,7 @@ public class KeycloakDiscoveryService extends OperatorManagedResource implements
               .endPort()
               .withSelector(getInstanceLabels())
               .withClusterIP("None")
+              .withPublishNotReadyAddresses(Boolean.TRUE)
               .build();
     }
 
