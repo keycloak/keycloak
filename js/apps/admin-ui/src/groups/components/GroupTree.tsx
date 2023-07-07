@@ -14,7 +14,7 @@ import {
 } from "@patternfly/react-core";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 
 import { adminClient } from "../../admin-client";
 import { useAlerts } from "../../components/alert/Alerts";
@@ -130,6 +130,9 @@ export const GroupTree = ({
   const [exact, setExact] = useState(false);
   const [activeItem, setActiveItem] = useState<TreeViewDataItem>();
 
+  const [searchParams] = useSearchParams();
+  const lazy = searchParams.get("lazy") || "false";
+
   const [key, setKey] = useState(0);
   const refresh = () => {
     setKey(key + 1);
@@ -169,6 +172,7 @@ export const GroupTree = ({
             first: `${first}`,
             max: `${max + 1}`,
             exact: `${exact}`,
+            lazy,
           },
           search === "" ? null : { search },
         ),
@@ -248,7 +252,10 @@ export const GroupTree = ({
             setSubGroups(subGroups);
 
             if (canViewDetails || subGroups.at(-1)?.access?.view) {
-              navigate(toGroups({ realm, id: item.id }));
+              navigate({
+                ...toGroups({ realm, id: item.id }),
+                search: `?lazy=${lazy}`,
+              });
             } else {
               addAlert(t("noViewRights"), AlertVariant.warning);
               navigate(toGroups({ realm }));

@@ -5,6 +5,7 @@ import java.util.stream.Stream;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.GET;
+import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 
@@ -52,7 +53,8 @@ public class GroupsResource {
     )
     public final Stream<GroupRepresentation> listGroups(@QueryParam("search") @DefaultValue("") final String search, @QueryParam("first")
     @DefaultValue("0") int first, @QueryParam("max") @DefaultValue("10") int max, @QueryParam("global") @DefaultValue("true") boolean global,
-                                                        @QueryParam("exact") @DefaultValue("false") boolean exact) {
+                                                        @QueryParam("exact") @DefaultValue("false") boolean exact,
+                                                        @QueryParam("lazy") @DefaultValue("true") boolean lazy) {
         GroupPermissionEvaluator groupsEvaluator = auth.groups();
         groupsEvaluator.requireList();
         final Stream<GroupModel> stream;
@@ -66,4 +68,36 @@ public class GroupsResource {
         return stream.filter(group -> canViewGlobal || groupsEvaluator.canView(group))
                 .map(group -> GroupUtils.toGroupHierarchy(groupsEvaluator, group, search, exact));
     }
+    }
+
+    @GET
+    @Path("/subgroup")
+    @Consumes({"application/json"})
+    @Produces({"application/json"})
+    @Operation(
+            summary = "List all sub groups with fine grained authorisation and pagination",
+            description = "This endpoint returns a list of groups with fine grained authorisation"
+    )
+    @APIResponse(
+            responseCode = "200",
+            description = "",
+            content = {@Content(
+                    schema = @Schema(
+                            implementation = GroupRepresentation.class,
+                            type = SchemaType.ARRAY
+                    )
+            )}
+    )
+    public final Stream<GroupRepresentation> subgroups(@QueryParam("id") final String groupId, @QueryParam("search")
+    @DefaultValue("") final String search, @QueryParam("first") @DefaultValue("0") int first, @QueryParam("max") @DefaultValue("10") int max) {
+        GroupPermissionEvaluator groupsEvaluator = auth.groups();
+        groupsEvaluator.requireList();
+        GroupModel group = realm.getGroupById(groupId);
+        if (group == null) {
+            return Stream.empty();
+        }
+
+        return group.getSubGroupsStream()
+                .filter(g -> groupMatchesSearchOrIsPathElement(g, search))
+                .map(g -> toGroupHierarchy(g, "", true, true)).skip(first).limit(max);
 }
