@@ -29,9 +29,11 @@ import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.keycloak.OAuth2Constants;
 import org.keycloak.models.Constants;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -54,6 +56,7 @@ import org.keycloak.testsuite.pages.VerifyEmailPage;
 import org.keycloak.testsuite.util.BrowserTabUtil;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.GreenMailRule;
+import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.UserBuilder;
 import org.openqa.selenium.NoSuchElementException;
 
@@ -161,6 +164,42 @@ public class MultipleTabsLoginTest extends AbstractTestRealmKeycloakTest {
 
         infoPage.clickBackToApplicationLink();
         appPage.assertCurrent();
+    }
+
+    @Test
+    public void testLoginAfterLogoutFromDifferentTab() {
+        try (BrowserTabUtil util = BrowserTabUtil.getInstanceAndSetEnv(driver)) {
+            // login in the first tab
+            oauth.openLoginForm();
+            loginPage.login("login-test", "password");
+            updatePasswordPage.assertCurrent();
+            String tab1WindowHandle = util.getActualWindowHandle();
+            updatePasswordPage.changePassword("password", "password");
+            updateProfilePage.prepareUpdate().firstName("John").lastName("Doe3")
+                    .email("john@doe3.com").submit();
+            appPage.assertCurrent();
+            String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+            OAuthClient.AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, "password");
+            AccessToken accessToken = oauth.verifyToken(tokenResponse.getAccessToken());
+
+            // seamless login in the second tab, user already authenticated
+            util.newTab(oauth.getLoginFormUrl());
+            oauth.openLoginForm();
+            appPage.assertCurrent();
+            events.clear();
+            // logout in the second tab
+            oauth.idTokenHint(tokenResponse.getIdToken()).openLogout();
+            events.expectLogout(accessToken.getSessionState()).user(userId).session(accessToken.getSessionState()).assertEvent();
+            // re-login in the second tab
+            oauth.openLoginForm();
+            loginPage.login("login-test", "password");
+            appPage.assertCurrent();
+
+            // seamless authentication in the first tab
+            util.switchToTab(tab1WindowHandle);
+            oauth.openLoginForm();
+            appPage.assertCurrent();
+        }
     }
 
     @Test
