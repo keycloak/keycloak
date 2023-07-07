@@ -38,7 +38,6 @@ public class ResetPassword extends AbstractSetRequiredActionAuthenticator {
                 (context.getExecution().isConditional() &&
                         configuredFor(context))) {
             context.getAuthenticationSession().addRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD);
-            context.getAuthenticationSession().setClientNote(Constants.KC_ACTION_EXECUTING, UserModel.RequiredAction.UPDATE_PASSWORD.name());
         }
         context.success();
     }
