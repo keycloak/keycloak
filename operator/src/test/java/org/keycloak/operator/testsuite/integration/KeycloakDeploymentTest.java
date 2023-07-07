@@ -23,6 +23,8 @@ import io.fabric8.kubernetes.api.model.LocalObjectReferenceBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.fabric8.kubernetes.api.model.SecretKeySelectorBuilder;
+import io.fabric8.kubernetes.api.model.Service;
+import io.fabric8.kubernetes.api.model.ServicePort;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.api.model.apps.StatefulSetBuilder;
 import io.fabric8.kubernetes.api.model.apps.StatefulSetSpecBuilder;
@@ -716,12 +718,16 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
     }
 
     private void assertKeycloakAccessibleViaService(Keycloak kc, boolean https, int port) {
-        var service = new KeycloakService(k8sclient, kc);
         Awaitility.await()
                 .ignoreExceptions()
                 .untilAsserted(() -> {
                     String protocol = https ? "https" : "http";
-                    String url = protocol + "://" + service.getName() + "." + namespace + ":" + port;
+
+                    String serviceName = KeycloakService.getServiceName(kc);
+                    assertThat(k8sclient.resources(Service.class).withName(serviceName).require().getSpec().getPorts()
+                            .stream().map(ServicePort::getName).anyMatch(protocol::equals));
+
+                    String url = protocol + "://" + serviceName + "." + namespace + ":" + port;
                     Log.info("Checking url: " + url);
 
                     var curlOutput = K8sUtils.inClusterCurl(k8sclient, namespace, url);

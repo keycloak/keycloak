@@ -121,7 +121,6 @@ import java.io.InputStream;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.Enumeration;
@@ -129,7 +128,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.function.Consumer;
@@ -166,7 +164,7 @@ class KeycloakProcessor {
     private static final Map<String, Function<ScriptProviderMetadata, ProviderFactory>> DEPLOYEABLE_SCRIPT_PROVIDERS = new HashMap<>();
     private static final String KEYCLOAK_SCRIPTS_JSON_PATH = "META-INF/keycloak-scripts.json";
 
-    private static final List<Class<? extends ProviderFactory>> IGNORED_PROVIDER_FACTORY = Arrays.asList(
+    private static final List<Class<? extends ProviderFactory>> IGNORED_PROVIDER_FACTORY = List.of(
             JBossJtaTransactionManagerLookup.class,
             DefaultJpaConnectionProviderFactory.class,
             DefaultLiquibaseConnectionProvider.class,
@@ -318,12 +316,6 @@ class KeycloakProcessor {
 
         final Optional<String> lockTimeoutConfigValue = getOptionalValue("spi-map-storage-jpa-lock-timeout");
         lockTimeoutConfigValue.ifPresent(v -> unitProperties.setProperty(AvailableSettings.JAKARTA_LOCK_TIMEOUT, v));
-
-        final ConfigValue storage = getKcConfigValue(StorageOptions.STORAGE.getKey());
-        if (storage != null && Objects.equals(storage.getValue(), StorageOptions.StorageType.jpa.name())) {
-            // if JPA map storage is enabled, pass on the property to 'EventListenerIntegrator' to activate the necessary event listeners for JPA map storage
-            unitProperties.setProperty(EventListenerIntegrator.JPA_MAP_STORAGE_ENABLED, Boolean.TRUE.toString());
-        }
 
         unitProperties.setProperty(AvailableSettings.QUERY_STARTUP_CHECKING, Boolean.FALSE.toString());
 

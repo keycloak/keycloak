@@ -44,9 +44,11 @@ public class KeycloakService extends OperatorManagedResource implements StatusUp
     }
 
     private ServiceSpec getServiceSpec() {
+        String name = isTlsConfigured(keycloak) ? Constants.KEYCLOAK_HTTPS_PORT_NAME : Constants.KEYCLOAK_HTTP_PORT_NAME;
         return new ServiceSpecBuilder()
               .addNewPort()
               .withPort(getServicePort(keycloak))
+              .withName(name)
               .withProtocol(Constants.KEYCLOAK_SERVICE_PROTOCOL)
               .endPort()
               .withSelector(getInstanceLabels())
@@ -87,7 +89,11 @@ public class KeycloakService extends OperatorManagedResource implements StatusUp
 
     @Override
     public String getName() {
-        return cr.getMetadata().getName() + Constants.KEYCLOAK_SERVICE_SUFFIX;
+        return getServiceName(cr);
+    }
+
+    public static String getServiceName(HasMetadata keycloak) {
+        return keycloak.getMetadata().getName() + Constants.KEYCLOAK_SERVICE_SUFFIX;
     }
 
     public static int getServicePort(Keycloak keycloak) {

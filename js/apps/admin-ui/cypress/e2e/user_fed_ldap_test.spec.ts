@@ -93,8 +93,7 @@ const userImportingDisabledFailMessage =
   "User federation provider could not be saved: Can not disable Importing users when LDAP provider mode is UNSYNCED";
 
 const ldapTestSuccessMsg = "Successfully connected to LDAP";
-const ldapTestFailMsg =
-  "Error when trying to connect to LDAP. See server.log for details. LDAP test error";
+const ldapTestFailMsg = "Error when trying to connect to LDAP: 'SocketReset'";
 
 describe("User Federation LDAP tests", () => {
   beforeEach(() => {

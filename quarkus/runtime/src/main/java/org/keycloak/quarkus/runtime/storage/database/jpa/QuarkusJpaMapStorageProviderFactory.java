@@ -17,17 +17,19 @@
 
 package org.keycloak.quarkus.runtime.storage.database.jpa;
 
+import static org.keycloak.config.StorageOptions.STORAGE;
+import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX;
+
 import java.lang.annotation.Annotation;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Optional;
 import jakarta.enterprise.inject.Instance;
-import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
 import org.hibernate.internal.SessionFactoryImpl;
-import org.hibernate.internal.SessionImpl;
-import org.keycloak.config.StorageOptions;
+import org.keycloak.config.StorageOptions.StorageType;
 import org.keycloak.models.map.storage.jpa.JpaMapStorageProviderFactory;
+import org.keycloak.quarkus.runtime.configuration.Configuration;
 
 import io.quarkus.arc.Arc;
 import io.quarkus.hibernate.orm.PersistenceUnit;
@@ -36,7 +38,7 @@ public class QuarkusJpaMapStorageProviderFactory extends JpaMapStorageProviderFa
 
     @Override
     public String getId() {
-        return StorageOptions.StorageType.jpa.getProvider();
+        return StorageType.jpa.getProvider();
     }
 
     @Override
@@ -81,4 +83,8 @@ public class QuarkusJpaMapStorageProviderFactory extends JpaMapStorageProviderFa
         return Optional.empty();
     }
 
+    @Override
+    public boolean isSupported() {
+        return StorageType.jpa.name().equals(Configuration.getOptionalValue(NS_KEYCLOAK_PREFIX + STORAGE.getKey()).orElse(null));
+    }
 }

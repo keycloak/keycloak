@@ -36,21 +36,19 @@ Keycloak runs on top of JGroups and Infinispan, which provide a reliable, high-a
 
 To find out more about using multiple nodes, the different caches and an appropriate stack for your environment, see <@links.server id="caching"/>.
 
-== Configure Keycloak Server with IPv6 or IPv4
-
+== Configure Keycloak Server with IPv4 or IPv6
 The system properties `java.net.preferIPv4Stack` and `java.net.preferIPv6Addresses` are used to configure the JVM for use with IPv4 or IPv6 addresses.
 
-By default, Keycloak is configured to prefer IPv4 addresses. In order to run with IPv6 addresses,
-you need to specify `java.net.preferIPv4Stack=false` (the JVM default) and `java.net.preferIPv6Addresses=true`.
-The latter ensures that any hostname to IP address conversions always return IPv6 address variants.
+By default, Keycloak is accessible via IPv4 and IPv6 addresses at the same time.
+In order to run only with IPv4 addresses, you need to specify the property `java.net.preferIPv4Stack=true`.
+The latter ensures that any hostname to IP address conversions always return IPv4 address variants.
 
-These system properties are conveniently set by the `JAVA_OPTS` environment variable. For example, to change the IP stack preference from its default of IPv4 to IPv6, set an environment variable as follows:
+These system properties are conveniently set by the `JAVA_OPTS_APPEND` environment variable.
+For example, to change the IP stack preference to IPv4, set an environment variable as follows:
 
 [source, bash]
 ----
-export JAVA_OPTS="-Xms64m -Xmx512m -XX:MetaspaceSize=96M -XX:MaxMetaspaceSize=256m -Dfile.encoding=UTF-8 -Djava.net.preferIPv4Stack=false -Djava.net.preferIPv6Addresses=true"
+export JAVA_OPTS_APPEND="-Djava.net.preferIPv4Stack=true"
 ----
-
-Note that when setting the `JAVA_OPTS` you are replacing the default JVM settings. Make sure to adjust them accordingly to your need.
 
 </@tmpl.guide>

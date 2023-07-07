@@ -19,6 +19,10 @@ package org.keycloak.services.resources;
 import org.jboss.logging.Logger;
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.ResponseSessionTask;
+import org.keycloak.forms.login.LoginFormsProvider;
+import org.keycloak.forms.login.MessageType;
+import org.keycloak.forms.login.freemarker.DetachedInfoStateChecker;
+import org.keycloak.forms.login.freemarker.DetachedInfoStateCookie;
 import org.keycloak.http.HttpRequest;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.TokenVerifier;
@@ -121,6 +125,8 @@ public class LoginActionsService {
     public static final String POST_BROKER_LOGIN_PATH = "post-broker-login";
 
     public static final String RESTART_PATH = "restart";
+
+    public static final String DETACHED_INFO_PATH = "detached-info";
 
     public static final String FORWARDED_ERROR_MESSAGE_NOTE = "forwardedErrorMessage";
 
@@ -241,6 +247,50 @@ public class LoginActionsService {
         URI redirectUri = getLastExecutionUrl(flowPath, null, authSession.getClient().getClientId(), tabId);
         logger.debugf("Flow restart requested. Redirecting to %s", redirectUri);
         return Response.status(Response.Status.FOUND).location(redirectUri).build();
+    }
+
+    /**
+     * protocol independent "detached info" page. Shown when locale is changed by user on info/error page
+     * after authenticationSession was already removed.
+     *
+     * @return
+     */
+    @Path(DETACHED_INFO_PATH)
+    @GET
+    public Response detachedInfo(@QueryParam(DetachedInfoStateChecker.STATE_CHECKER_PARAM) String stateCheckerParam) {
+        DetachedInfoStateCookie cookie;
+        try {
+            cookie = new DetachedInfoStateChecker(session, realm).verifyStateCheckerParameter(stateCheckerParam);
+            logger.tracef("Detached info endpoint invoked and cookie successfully verified. StateCheckerParam=%s, StateCookie=%s", stateCheckerParam, cookie);
+        } catch (VerificationException ve) {
+            logger.warn(ve.getMessage());
+            return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.EXPIRED_ACTION_TOKEN_NO_SESSION);
+        }
+
+        processLocaleParam(null);
+
+        boolean skipLink = true;
+        if (cookie.getClientUuid() != null) {
+            ClientModel client = session.clients().getClientById(realm, cookie.getClientUuid());
+            if (client != null) {
+                session.getContext().setClient(client);
+                skipLink = client.equals(SystemClientUtil.getSystemClient(realm));
+            }
+        }
+
+        MessageType type = Enum.valueOf(MessageType.class, cookie.getMessageType());
+        Response.Status statusObj = cookie.getStatus() == null ? Response.Status.BAD_REQUEST : Response.Status.fromStatusCode(cookie.getStatus());
+        Object[] paramsAsObject = cookie.getMessageParameters() == null ? null : cookie.getMessageParameters().toArray();
+
+        LoginFormsProvider loginForm = session.getProvider(LoginFormsProvider.class)
+                .setDetachedAuthSession()
+                .setMessage(type, cookie.getMessageKey(), paramsAsObject);
+
+        if (skipLink) {
+            loginForm.setAttribute(Constants.SKIP_LINK, true);
+        }
+
+        return type == MessageType.ERROR ? loginForm.createErrorPage(statusObj) : loginForm.createInfoPage();
     }
 
 

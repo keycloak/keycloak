@@ -17,13 +17,14 @@
 package org.keycloak.operator.controllers;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.api.model.networking.v1.Ingress;
 import io.fabric8.kubernetes.api.model.networking.v1.IngressBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.fabric8.kubernetes.api.model.networking.v1.Ingress;
+
 import org.keycloak.operator.Constants;
-import org.keycloak.operator.crds.v2alpha1.deployment.spec.IngressSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusAggregator;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.IngressSpec;
 
 import java.util.HashMap;
 import java.util.Optional;
@@ -80,7 +81,7 @@ public class KeycloakIngress extends OperatorManagedResource implements StatusUp
                     .withIngressClassName(optionalSpec.map(IngressSpec::getIngressClassName).orElse(null))
                     .withNewDefaultBackend()
                         .withNewService()
-                            .withName(keycloak.getMetadata().getName() + Constants.KEYCLOAK_SERVICE_SUFFIX)
+                            .withName(KeycloakService.getServiceName(keycloak))
                             .withNewPort()
                                 .withNumber(port)
                                 .withName("") // for SSA to clear the name if already set
@@ -94,7 +95,7 @@ public class KeycloakIngress extends OperatorManagedResource implements StatusUp
                                 .withPathType("ImplementationSpecific")
                                 .withNewBackend()
                                     .withNewService()
-                                        .withName(keycloak.getMetadata().getName() + Constants.KEYCLOAK_SERVICE_SUFFIX)
+                                        .withName(KeycloakService.getServiceName(keycloak))
                                         .withNewPort()
                                             .withNumber(port)
                                             .withName("") // for SSA to clear the name if already set

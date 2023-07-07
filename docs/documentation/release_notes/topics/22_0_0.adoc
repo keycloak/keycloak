@@ -1,3 +1,7 @@
+= Java 11 support for Keycloak server removed
+
+Running the Keycloak server with Java 11 is removed now. Java 11 was deprecated in Keycloak 21 with the announced plan to be removed in Keycloak 22.
+
 = Transition from Java EE to Jakarta EE
 
 Keycloak migrated its codebase from Java EE (Enterprise Edition) to its successor Jakarta EE, which brings various changes into Keycloak.
@@ -145,3 +149,7 @@ picked (`Always`), or the global JVM one (`Never`).
 
 Deployments where `Only for ldaps` was used will automatically behave as if `Always` option was
 selected for TLS-secured LDAP connections.
+
+= Support for JWE encrypted ID Tokens and UserInfo responses in OpenID Connect providers
+
+The OpenID Connect providers now support https://datatracker.ietf.org/doc/html/rfc7516[Json Web Encryption (JWE)] for the ID Token and the UserInfo response. The providers use the realm keys defined for the selected encryption algorithm to perform the decryption.

@@ -901,6 +901,19 @@ public class RPInitiatedLogoutTest extends AbstractTestRealmKeycloakTest {
 
             infoPage.assertCurrent();
             Assert.assertEquals("Odhlášení bylo úspěšné", infoPage.getInfo()); // Logout success message
+
+            // Change locale on the info page (AuthenticationSession does not exists on server at this point)
+            infoPage.openLanguage("English");
+            Assert.assertEquals("You are logged out", infoPage.getInfo()); // Logout success message
+
+            // Change locale again
+            infoPage.openLanguage("Čeština");
+            Assert.assertEquals("Odhlášení bylo úspěšné", infoPage.getInfo()); // Logout success message
+
+            // Refresh page
+            driver.navigate().refresh();
+            Assert.assertEquals("Odhlášení bylo úspěšné", infoPage.getInfo()); // Logout success message
+
             infoPage.clickBackToApplicationLinkCs();
             WaitUtils.waitForPageToLoad();
             MatcherAssert.assertThat(driver.getCurrentUrl(), endsWith("/app/auth"));

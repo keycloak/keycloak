@@ -29,6 +29,13 @@ export async function getPersonalInfo({
   return parseResponse<UserRepresentation>(response);
 }
 
+export async function getSupportedLocales({
+  signal,
+}: CallOptions = {}): Promise<string[]> {
+  const response = await request("/supportedLocales", { signal });
+  return parseResponse<string[]>(response);
+}
+
 export async function savePersonalInfo(
   info: UserRepresentation
 ): Promise<void> {
@@ -71,7 +78,7 @@ export async function deleteConsent(id: string) {
 }
 
 export async function deleteSession(id?: string) {
-  return request(`"/sessions${id ? `/${id}` : ""}`, {
+  return request(`/sessions${id ? `/${id}` : ""}`, {
     method: "DELETE",
   });
 }

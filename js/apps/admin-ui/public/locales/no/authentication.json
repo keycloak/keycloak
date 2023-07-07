@@ -12,7 +12,6 @@
   },
   "otpHashAlgorithm": "OTP hash-algoritme",
   "otpPolicyDigits": "Antall siffer",
-  "lookAhead": "Look Ahead Window",
   "otpPolicyPeriod": "Engangskode token",
   "initialCounter": "Initiell teller",
   "attestationPreference": {

@@ -141,7 +141,7 @@ export const Group = () => {
               <Tr>
                 <Th>{t("groups")}</Th>
                 <Th>{t("extendToChildren")}</Th>
-                <Th />
+                <Th aria-hidden="true" />
               </Tr>
             </Thead>
             <Tbody>

@@ -101,7 +101,7 @@ export const AttributeValidations = () => {
               <Tr>
                 <Th>{t("validatorColNames.colName")}</Th>
                 <Th>{t("validatorColNames.colConfig")}</Th>
-                <Th />
+                <Th aria-hidden="true" />
               </Tr>
             </Thead>
             <Tbody>

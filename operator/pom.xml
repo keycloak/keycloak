@@ -15,15 +15,6 @@
     <artifactId>keycloak-operator</artifactId>
 
     <properties>
-        <!--
-            Override versions based on Quarkus dependencies.
-            Make sure to update these dependencies when Quarkus version changes.
-            See https://github.com/quarkusio/quarkus/blob/<versionTag>/bom/application/pom.xml
-            for reference
-        -->
-        <wildfly.common.version>1.5.4.Final-format-001</wildfly.common.version>
-        <kubernetes-client.version>6.6.2</kubernetes-client.version>
-
         <compiler-plugin.version>3.8.1</compiler-plugin.version>
         <maven.compiler.parameters>true</maven.compiler.parameters>
         <maven.compiler.release>11</maven.compiler.release>
@@ -31,17 +22,15 @@
         <maven.compiler.target>11</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-        <quarkus.operator.sdk.version>6.1.1</quarkus.operator.sdk.version>
-        <quarkus.operator.build.version>3.1.1.Final</quarkus.operator.build.version>
         <quarkus.container-image.group>keycloak</quarkus.container-image.group>
     </properties>
-    
+
     <dependencyManagement>
         <dependencies>
             <dependency>
-                <groupId>io.quarkiverse.operatorsdk</groupId>
+                <groupId>io.quarkus.platform</groupId>
                 <artifactId>quarkus-operator-sdk-bom</artifactId>
-                <version>${quarkus.operator.sdk.version}</version>
+                <version>${quarkus.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
@@ -54,17 +43,14 @@
         <dependency>
             <groupId>io.fabric8</groupId>
             <artifactId>crd-generator-api</artifactId>
-            <version>${kubernetes-client.version}</version>
         </dependency>
         <dependency>
             <groupId>io.fabric8</groupId>
             <artifactId>crd-generator-apt</artifactId>
-            <version>${kubernetes-client.version}</version>
         </dependency>
         <dependency>
             <groupId>io.fabric8</groupId>
             <artifactId>kubernetes-junit-jupiter</artifactId>
-            <version>${kubernetes-client.version}</version>
             <scope>test</scope>
         </dependency>
 
@@ -158,7 +144,7 @@
             <plugin>
                 <groupId>io.quarkus</groupId>
                 <artifactId>quarkus-maven-plugin</artifactId>
-                <version>${quarkus.operator.build.version}</version>
+                <version>${quarkus.build.version}</version>
             </plugin>
             <plugin>
                 <artifactId>maven-compiler-plugin</artifactId>
@@ -170,7 +156,7 @@
             <plugin>
                 <groupId>io.quarkus</groupId>
                 <artifactId>quarkus-maven-plugin</artifactId>
-                <version>${quarkus.operator.build.version}</version>
+                <version>${quarkus.build.version}</version>
                 <executions>
                     <execution>
                     <goals>
@@ -260,7 +246,7 @@
                     </systemPropertyVariables>
                 </configuration>
             </plugin>
-            
+
             <plugin>
                 <artifactId>maven-antrun-plugin</artifactId>
                 <executions>

@@ -6,6 +6,7 @@ import { useTranslation } from "react-i18next";
 import { KeycloakTextInput } from "ui-shared";
 import { UserProfileAttributeMetadata } from "../api/representations";
 import { TFuncKey } from "../i18n";
+import { LocaleSelector } from "./LocaleSelector";
 import { fieldName, isBundleKey, unWrap } from "./PersonalInfo";
 
 type FormFieldProps = {
@@ -25,6 +26,7 @@ export const FormField = ({ attribute }: FormFieldProps) => {
   const isSelect = (attribute: UserProfileAttributeMetadata) =>
     Object.hasOwn(attribute.validators, "options");
 
+  if (attribute.name === "locale") return <LocaleSelector />;
   return (
     <FormGroup
       key={attribute.name}
