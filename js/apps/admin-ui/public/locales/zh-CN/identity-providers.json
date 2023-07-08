@@ -103,7 +103,7 @@
   "issuer": "发行人",
   "scopes": "范围",
   "prompt": "提示",
-  "prompt": {
+  "prompts": {
     "unspecified": "未指定",
     "none": "无",
     "consent": "许可",
@@ -156,7 +156,7 @@
     "inherit": "继承",
     "import": "导入",
     "legacy": "引用",
-    "force": "强制",
+    "force": "强制"
   },
   "syncModeOverride": "同步模式覆盖",
   "mapperType": "映射器类型",

@@ -18,8 +18,8 @@
   "usersDNHelp": "您的用户所在的 LDAP 树的完整 DN。此 DN 是 LDAP 用户的父级。它可能是例如 'ou=users,dc=example,dc=com' 假设您的典型用户将具有 DN像 'uid='john',ou=users,dc=example,dc=com'。",
   "usernameLdapAttributeHelp": "LDAP 属性的名称，映射为 Keycloak 用户名。对于许多 LDAP 服务器供应商，它可以是 'uid'。对于 Active directory，它可以是 'sAMAccountName' 或 'cn'。应该为您要从 LDAP 导入 Keycloak 的所有 LDAP 用户记录。",
   "rdnLdapAttributeHelp": "LDAP 属性的名称，用作典型用户 DN 的 RDN（顶级属性）。通常它与用户名 LDAP 属性相同，但不是必需的。例如对于 Active directory，它很常见当用户名属性可能是“sAMAccountName”时使用“cn”作为 RDN 属性。",
-  "uuidLdapAttributeHelp": "LDAP 属性的名称，用作 LDAP 中对象的唯一对象标识符 (UUID)。对于许多 LDAP 服务器供应商，它是 'entryUUID'；但有些是不同的。例如，对于 Active directory它应该是“objectGUID”。如果您的 LDAP 服务器不支持 UUID 的概念，您可以使用任何其他应该在树中的 LDAP 用户中唯一的属性。例如“uid”或“entryDN”。
-  “userObjectClassesHelp”：“LDAP 中用户的 LDAP objectClass 属性的所有值，以英文逗号分隔。例如：'inetOrgPerson，organizationalPerson'。新创建的 Keycloak 用户将与所有这些对象类一起写入 L​​DAP，并找到现有的 LDAP 用户记录只要它们包含所有这些对象类。",
+  "uuidLdapAttributeHelp": "LDAP 属性的名称，用作 LDAP 中对象的唯一对象标识符 (UUID)。对于许多 LDAP 服务器供应商，它是 'entryUUID'；但有些是不同的。例如，对于 Active directory它应该是“objectGUID”。如果您的 LDAP 服务器不支持 UUID 的概念，您可以使用任何其他应该在树中的 LDAP 用户中唯一的属性。例如“uid”或“entryDN”。",
+  "userObjectClassesHelp": "LDAP 中用户的 LDAP objectClass 属性的所有值，以英文逗号分隔。例如：'inetOrgPerson，organizationalPerson'。新创建的 Keycloak 用户将与所有这些对象类一起写入 L​​DAP，并找到现有的 LDAP 用户记录只要它们包含所有这些对象类。",
   "userLdapFilterHelp": "额外的 LDAP 过滤器，用于过滤搜索到的用户。如果您不需要额外的过滤器，请将此留空。确保它以 '(' 开头并以 ')' 结尾。",
   "searchScopeHelp": "对于一个级别，搜索仅适用于用户 DN 指定的 DN 中的用户。对于子树，搜索适用于整个子树。有关更多详细信息，请参阅 LDAP 文档。",
   "readTimeoutHelp": "LDAP 读取超时，以毫秒为单位。此超时适用于 LDAP 读取操作。",
@@ -105,5 +105,5 @@
   "roleHelp": "授予用户的角色。单击“选择角色”按钮浏览角色，或直接在文本框中键入。要引用应用程序角色，语法为 appname.approle，即 myapp.myrole。",
   "groupHelp": "要添加用户的群组。填写群组的完整路径，包括路径。例如：'/root-group/child-group'。",
   "ldapAttributeNameHelp": "LDAP 属性的名称，将在注册期间添加到新用户",
-  "ldapAttributeValueHelp": "LDAP 属性的值，将在注册期间添加到新用户。您可以硬编码任何值，如 'foo'，但您也可以使用一些特殊标记。目前唯一支持的标记是 '${ RANDOM}'，它将被一些随机生成的字符串替换。",
+  "ldapAttributeValueHelp": "LDAP 属性的值，将在注册期间添加到新用户。您可以硬编码任何值，如 'foo'，但您也可以使用一些特殊标记。目前唯一支持的标记是 '${ RANDOM}'，它将被一些随机生成的字符串替换。"
 }

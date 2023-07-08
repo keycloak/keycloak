@@ -17,7 +17,7 @@
   "otpType": "一次性密码类型",
   "policyType": {
     "totp": "基于时间",
-    "hotp": "基于计数器",
+    "hotp": "基于计数器"
   },
   "otpHashAlgorithm": "OTP哈希算法",
   "otpPolicyDigits": "位数",
@@ -38,7 +38,7 @@
   "cibaBackchannelTokenDeliveryMode": "反向通道令牌交付模式",
   "cibaBackhannelTokenDeliveryModes": {
     "poll": "计票",
-    "ping": "发送回显信息",
+    "ping": "发送回显信息"
   },
   "cibaExpiresIn": "过期时间",
   "cibaInterval": "间隔",
