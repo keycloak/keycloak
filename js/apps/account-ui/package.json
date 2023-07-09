@@ -31,7 +31,7 @@
     "@types/react-dom": "^18.2.6",
     "@vitejs/plugin-react-swc": "^3.3.2",
     "@keycloak/keycloak-admin-client": "workspace:*",
-    "vite": "^4.4.1",
+    "vite": "^4.4.2",
     "vite-plugin-checker": "^0.6.1"
   },
   "wireit": {
