@@ -198,7 +198,7 @@ public class AdminConsole {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
-    public Response whoAmI() {
+    public Response whoAmI(@QueryParam("currentRealm") String currentRealm) {
         RealmManager realmManager = new RealmManager(session);
         AuthenticationManager.AuthResult authResult = new AppAuthManager.BearerTokenAuthenticator(session)
                 .setRealm(realm)
@@ -231,7 +231,7 @@ public class AdminConsole {
             if (createRealmRole != null) {
                 createRealm = user.hasRole(createRealmRole);
             }
-            addMasterRealmAccess(user, realmAccess);
+            addMasterRealmAccess(user, currentRealm, realmAccess);
         } else {
             logger.debug("setting up realm access for a realm user");
             addRealmAccess(realm, user, realmAccess);
@@ -251,11 +251,9 @@ public class AdminConsole {
         getRealmAdminAccess(realm, realmAdminApp, user, realmAdminAccess);
     }
 
-    private void addMasterRealmAccess(UserModel user, Map<String, Set<String>> realmAdminAccess) {
-        session.realms().getRealmsStream().forEach(realm -> {
-            ClientModel realmAdminApp = realm.getMasterAdminClient();
-            getRealmAdminAccess(realm, realmAdminApp, user, realmAdminAccess);
-        });
+    private void addMasterRealmAccess(UserModel user, String currentRealm, Map<String, Set<String>> realmAdminAccess) {
+        final RealmModel realm = session.realms().getRealmByName(currentRealm);
+        getRealmAdminAccess(realm, realm.getMasterAdminClient(), user, realmAdminAccess);
     }
 
     private static <T> HashSet<T> union(Set<T> set1, Set<T> set2) {
