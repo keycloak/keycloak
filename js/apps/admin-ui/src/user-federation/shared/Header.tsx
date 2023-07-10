@@ -94,7 +94,7 @@ export const Header = ({
                   {t("deleteProvider")}
                 </DropdownItem>,
               ]}
-              isEnabled={field.value?.[0] === "true"}
+              isEnabled={field.value?.[0] === "true" || field.value === "true"}
               onToggle={(value) => {
                 if (!value) {
                   toggleDisableDialog();
