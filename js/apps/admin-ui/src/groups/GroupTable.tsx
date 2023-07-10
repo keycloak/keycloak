@@ -43,7 +43,7 @@ export const GroupTable = ({
   const location = useLocation();
   const id = getLastId(location.pathname);
   const [searchParams] = useSearchParams();
-  const lazy = searchParams.get("lazy") || "false";
+  const lazy = searchParams.has("lazy");
 
   const { hasAccess } = useAccess();
   const isManager = hasAccess("manage-users") || currentGroup()?.access?.manage;
@@ -65,7 +65,7 @@ export const GroupTable = ({
       groupsData = await fetchAdminUI<GroupRepresentation[]>("ui-ext/groups", {
         ...params,
         global: "false",
-        lazy,
+        lazy: `${lazy}`,
       });
     }
 
@@ -196,7 +196,7 @@ export const GroupTable = ({
               canViewDetails ? (
                 <Link
                   key={group.id}
-                  to={`${location.pathname}/${group.id}?lazy=${lazy}`}
+                  to={`${location.pathname}/${group.id}?${lazy ? "lazy" : ""}`}
                 >
                   {group.name}
                 </Link>

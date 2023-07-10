@@ -57,8 +57,8 @@ export default function GroupsSection() {
   const id = getLastId(location.pathname);
 
   const [searchParams] = useSearchParams();
-  const lazy = searchParams.get("lazy") || "false";
-  const [open, toggle] = useToggle(lazy === "false");
+  const lazy = searchParams.has("lazy");
+  const [open, toggle] = useToggle(!lazy);
   const [key, setKey] = useState(0);
   const refresh = () => setKey(key + 1);
 

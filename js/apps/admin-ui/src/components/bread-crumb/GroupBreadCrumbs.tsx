@@ -12,7 +12,7 @@ export const GroupBreadCrumbs = () => {
   const { realm } = useRealm();
   const location = useLocation();
   const [searchParams] = useSearchParams();
-  const lazy = searchParams.get("lazy") || "false";
+  const lazy = searchParams.has("lazy");
 
   useEffect(() => {
     const { pathname } = location;
@@ -37,7 +37,7 @@ export const GroupBreadCrumbs = () => {
                   location.pathname.substring(
                     0,
                     location.pathname.indexOf(group.id!) + group.id!.length
-                  ) + `?lazy=${lazy}`
+                  ) + `?${lazy ? "lazy" : ""}`
                 }
                 onClick={() => remove(group)}
               >

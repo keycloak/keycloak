@@ -131,7 +131,7 @@ export const GroupTree = ({
   const [activeItem, setActiveItem] = useState<TreeViewDataItem>();
 
   const [searchParams] = useSearchParams();
-  const lazy = searchParams.get("lazy") || "false";
+  const lazy = searchParams.has("lazy");
 
   const [key, setKey] = useState(0);
   const refresh = () => {
@@ -172,7 +172,7 @@ export const GroupTree = ({
             first: `${first}`,
             max: `${max + 1}`,
             exact: `${exact}`,
-            lazy,
+            lazy: `${lazy}`,
           },
           search === "" ? null : { search },
         ),
