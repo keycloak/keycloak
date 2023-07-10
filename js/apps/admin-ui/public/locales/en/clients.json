@@ -519,7 +519,7 @@
   "browserFlow": "Browser Flow",
   "directGrant": "Direct Grant Flow",
   "jwksUrlConfig": "JWKS URL configs",
-  "keysIntro": "If \"Use JWKS URL switch\" is on, you need to fill a valid JWKS URL. After saving, admin can download keys from the JWKS URL or keys will be downloaded automatically by Keycloak server when see the stuff signed by the unknown KID",
+  "keysIntro": "If \"Use JWKS URL switch\" is on, you need to fill a valid JWKS URL. After saving, admin can download keys from the JWKS URL or keys will be downloaded automatically by Keycloak server when an unknown KID is seen during client authentication.",
   "useJwksUrl": "Use JWKS URL",
   "certificate": "Certificate",
   "jwksUrl": "JWKS URL",
