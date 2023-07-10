@@ -31,14 +31,14 @@ public class StripSecretsUtilsTest {
 
     @Test
     public void checkStrippedRotatedSecret() {
-        ClientRepresentation stripped = StripSecretsUtils.strip(createClient("unmasked_secret"));
+        ClientRepresentation stripped = StripSecretsUtils.stripSecrets(null, createClient("unmasked_secret"));
         assertEquals(ComponentRepresentation.SECRET_VALUE, getRotatedSecret(stripped));
     }
 
     @Test
     public void checkStrippedRotatedSecretVaultUnaffected() {
         String rotatedSecret = "${vault.key}";
-        ClientRepresentation stripped = StripSecretsUtils.strip(createClient(rotatedSecret));
+        ClientRepresentation stripped = StripSecretsUtils.stripSecrets(null, createClient(rotatedSecret));
         assertEquals(rotatedSecret, getRotatedSecret(stripped));
     }
 

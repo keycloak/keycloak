@@ -574,7 +574,7 @@ public class IdentityProviderTest extends AbstractAdminTest {
         getCleanup().addIdentityProviderAlias(idpRep.getAlias());
 
         String secret = idpRep.getConfig() != null ? idpRep.getConfig().get("clientSecret") : null;
-        idpRep = StripSecretsUtils.strip(idpRep);
+        idpRep = StripSecretsUtils.stripSecrets(null, idpRep);
 
         assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.identityProviderPath(idpRep.getAlias()), idpRep, ResourceType.IDENTITY_PROVIDER);
 

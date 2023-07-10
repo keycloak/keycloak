@@ -243,7 +243,7 @@ public class UserTest extends AbstractAdminTest {
             createdId = ApiUtil.getCreatedId(response);
         }
 
-        StripSecretsUtils.strip(userRep);
+        StripSecretsUtils.stripSecrets(null, userRep);
 
         if (assertAdminEvent) {
             assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.userResourcePath(createdId), userRep,
