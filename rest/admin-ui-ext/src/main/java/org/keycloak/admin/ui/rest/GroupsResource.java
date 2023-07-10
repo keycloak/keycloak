@@ -66,8 +66,7 @@ public class GroupsResource {
 
         boolean canViewGlobal = groupsEvaluator.canView();
         return stream.filter(group -> canViewGlobal || groupsEvaluator.canView(group))
-                .map(group -> GroupUtils.toGroupHierarchy(groupsEvaluator, group, search, exact));
-    }
+                .map(group -> GroupUtils.toGroupHierarchy(groupsEvaluator, group, search, exact, lazy));
     }
 
     @GET
@@ -98,6 +97,6 @@ public class GroupsResource {
         }
 
         return group.getSubGroupsStream()
-                .filter(g -> groupMatchesSearchOrIsPathElement(g, search))
-                .map(g -> toGroupHierarchy(g, "", true, true)).skip(first).limit(max);
+                .map(g -> GroupUtils.toGroupHierarchy(groupsEvaluator, g, search, false, false)).skip(first).limit(max);
+    }
 }

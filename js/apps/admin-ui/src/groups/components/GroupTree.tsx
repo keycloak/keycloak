@@ -172,7 +172,7 @@ export const GroupTree = ({
             first: `${first}`,
             max: `${max + 1}`,
             exact: `${exact}`,
-            lazy: `${lazy}`,
+            lazy: `${search === "" && lazy}`,
           },
           search === "" ? null : { search },
         ),
@@ -254,7 +254,7 @@ export const GroupTree = ({
             if (canViewDetails || subGroups.at(-1)?.access?.view) {
               navigate({
                 ...toGroups({ realm, id: item.id }),
-                search: `?lazy=${lazy}`,
+                search: `?${lazy ? "lazy" : ""}`,
               });
             } else {
               addAlert(t("noViewRights"), AlertVariant.warning);
