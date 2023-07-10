@@ -20,6 +20,7 @@ package org.keycloak.testsuite.admin.event;
 import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.representations.idm.AdminEventRepresentation;
 import org.keycloak.representations.idm.AuthDetailsRepresentation;
@@ -27,7 +28,10 @@ import org.keycloak.representations.idm.RealmEventsConfigRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.util.UserBuilder;
+import org.keycloak.util.JsonSerialization;
 
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 
@@ -41,6 +45,7 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertNull;
 import static org.keycloak.testsuite.auth.page.AuthRealm.MASTER;
 
 /**
@@ -65,6 +70,7 @@ public class AdminEventTest extends AbstractEventTest {
 
     private String createUser(String username) {
         UserRepresentation user = createUserRepresentation(username, username + "@foo.com", "foo", "bar", true);
+        UserBuilder.edit(user).password("password");
         String userId = ApiUtil.createUserWithAdminClient(testRealmResource(), user);
         getCleanup().addUserId(userId);
         return userId;
@@ -258,5 +264,24 @@ public class AdminEventTest extends AbstractEventTest {
         assertThat(deleteEvent.getRealmId(), is(equalTo(masterRealmId)));
         assertThat(deleteEvent.getResourceType(), is(equalTo("REALM")));
         assertThat(deleteEvent.getResourcePath(), is(equalTo("test-realm")));
+    }
+
+    @Test
+    public void testStripOutUserSensitiveData() throws IOException {
+        configRep.setAdminEventsDetailsEnabled(Boolean.TRUE);
+        configRep.setAdminEventsEnabled(Boolean.TRUE);
+        saveConfig();
+
+        UserResource user = testRealmResource().users().get(createUser("sensitive"));
+        List<AdminEventRepresentation> events = events();
+        UserRepresentation eventUserRep = JsonSerialization.readValue(events.get(0).getRepresentation(), UserRepresentation.class);
+        assertNull(eventUserRep.getCredentials());
+
+        UserRepresentation userRep = user.toRepresentation();
+        UserBuilder.edit(userRep).password("password");
+        user.update(userRep);
+        events = events();
+        eventUserRep = JsonSerialization.readValue(events.get(0).getRepresentation(), UserRepresentation.class);
+        assertNull(eventUserRep.getCredentials());
     }
 }

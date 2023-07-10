@@ -29,6 +29,8 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.utils.StripSecretsUtils;
+import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.util.JsonSerialization;
 
@@ -250,6 +252,11 @@ public class AdminEventBuilder {
         if (value == null || value.equals("")) {
             return this;
         }
+
+        if (value instanceof UserRepresentation) {
+            StripSecretsUtils.strip((UserRepresentation) value);
+        }
+
         try {
             adminEvent.setRepresentation(JsonSerialization.writeValueAsString(value));
         } catch (IOException e) {

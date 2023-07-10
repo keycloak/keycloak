@@ -167,7 +167,7 @@ public class UsersResource {
             RepresentationToModel.createGroups(rep, realm, user);
 
             RepresentationToModel.createCredentials(rep, session, realm, user, true);
-            adminEvent.operation(OperationType.CREATE).resourcePath(session.getContext().getUri(), user.getId()).representation(StripSecretsUtils.strip(rep)).success();
+            adminEvent.operation(OperationType.CREATE).resourcePath(session.getContext().getUri(), user.getId()).representation(rep).success();
 
             if (session.getTransactionManager().isActive()) {
                 session.getTransactionManager().commit();
