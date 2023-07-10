@@ -21,6 +21,7 @@ import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import jakarta.ws.rs.NotFoundException;
+
 import org.keycloak.common.util.ObjectUtil;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
@@ -33,6 +34,8 @@ import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
+import org.keycloak.services.resources.admin.permissions.GroupPermissionEvaluator;
+import org.keycloak.utils.GroupUtils;
 import org.keycloak.utils.SearchQueryUtils;
 
 import jakarta.ws.rs.Consumes;
@@ -88,18 +91,24 @@ public class GroupsResource {
                                                  @QueryParam("max") Integer maxResults,
                                                  @QueryParam("briefRepresentation") @DefaultValue("true") boolean briefRepresentation,
                                                  @QueryParam("populateHierarchy") @DefaultValue("true") boolean populateHierarchy) {
-        auth.groups().requireList();
+        GroupPermissionEvaluator groupsEvaluator = auth.groups();
+        groupsEvaluator.requireList();
 
+        Stream<GroupModel> stream = null;
         if (Objects.nonNull(searchQuery)) {
             Map<String, String> attributes = SearchQueryUtils.getFields(searchQuery);
-            return ModelToRepresentation.searchGroupsByAttributes(session, realm, !briefRepresentation, populateHierarchy, attributes, firstResult, maxResults);
+            stream = ModelToRepresentation.searchGroupModelsByAttributes(session, realm, !briefRepresentation, populateHierarchy, attributes, firstResult, maxResults);
         } else if (Objects.nonNull(search)) {
-            return ModelToRepresentation.searchForGroupByName(session, realm, !briefRepresentation, search.trim(), exact, firstResult, maxResults);
+            stream = ModelToRepresentation.searchForGroupModelByName(session, realm, !briefRepresentation, search.trim(), exact, firstResult, maxResults);
         } else if(Objects.nonNull(firstResult) && Objects.nonNull(maxResults)) {
-            return ModelToRepresentation.toGroupHierarchy(realm, !briefRepresentation, firstResult, maxResults);
+            stream = ModelToRepresentation.toGroupModelHierarchy(realm, !briefRepresentation, firstResult, maxResults);
         } else {
-            return ModelToRepresentation.toGroupHierarchy(realm, !briefRepresentation);
+            stream = realm.getTopLevelGroupsStream();
         }
+
+        boolean canViewGlobal = groupsEvaluator.canView();
+        return stream.filter(group -> canViewGlobal || groupsEvaluator.canView(group))
+                .map(group -> GroupUtils.toGroupHierarchy(groupsEvaluator, group, search, exact, !briefRepresentation));
     }
 
     /**
