@@ -144,7 +144,7 @@ public class ComponentResource {
 
                 model = realmModel.addComponentModel(model);
 
-                adminEvent.operation(OperationType.CREATE).resourcePath(kcSession.getContext().getUri(), model.getId()).representation(StripSecretsUtils.strip(kcSession, rep)).success();
+                adminEvent.operation(OperationType.CREATE).resourcePath(kcSession.getContext().getUri(), model.getId()).representation(rep).success();
                 return Response.created(kcSession.getContext().getUri().getAbsolutePathBuilder().path(model.getId()).build()).build();
             } catch (ComponentValidationException e) {
                 return localizedErrorResponse(e);
@@ -185,7 +185,7 @@ public class ComponentResource {
                     throw new NotFoundException("Could not find component");
                 }
                 RepresentationToModel.updateComponent(kcSession, rep, model, false);
-                adminEvent.operation(OperationType.UPDATE).resourcePath(kcSession.getContext().getUri()).representation(StripSecretsUtils.strip(kcSession, rep)).success();
+                adminEvent.operation(OperationType.UPDATE).resourcePath(kcSession.getContext().getUri()).representation(rep).success();
                 realmModel.updateComponent(model);
                 return Response.noContent().build();
             } catch (ComponentValidationException e) {

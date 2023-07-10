@@ -180,7 +180,7 @@ public class IdentityProvidersResource {
         this.auth.realm().requireViewIdentityProviders();
 
         return realm.getIdentityProvidersStream()
-                .map(provider -> StripSecretsUtils.strip(ModelToRepresentation.toRepresentation(realm, provider)));
+                .map(provider -> ModelToRepresentation.toRepresentation(session, realm, provider));
     }
 
     /**
@@ -205,7 +205,7 @@ public class IdentityProvidersResource {
 
             representation.setInternalId(identityProvider.getInternalId());
             adminEvent.operation(OperationType.CREATE).resourcePath(session.getContext().getUri(), identityProvider.getAlias())
-                    .representation(StripSecretsUtils.strip(representation)).success();
+                    .representation(representation).success();
             
             return Response.created(session.getContext().getUri().getAbsolutePathBuilder().path(representation.getAlias()).build()).build();
         } catch (IllegalArgumentException e) {

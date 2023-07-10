@@ -17,6 +17,8 @@
 
 package org.keycloak.models.utils;
 
+import static org.keycloak.models.utils.StripSecretsUtils.stripSecrets;
+
 import org.jboss.logging.Logger;
 import org.keycloak.authentication.otp.OTPApplicationProvider;
 import org.keycloak.authorization.AuthorizationProvider;
@@ -535,7 +537,7 @@ public class ModelToRepresentation {
         }
 
         List<IdentityProviderRepresentation> identityProviders = realm.getIdentityProvidersStream()
-                .map(provider -> toRepresentation(realm, provider)).collect(Collectors.toList());
+                .map(provider -> toRepresentation(session, realm, provider)).collect(Collectors.toList());
         rep.setIdentityProviders(identityProviders);
 
         List<IdentityProviderMapperRepresentation> identityProviderMappers = realm.getIdentityProviderMappersStream()
@@ -557,7 +559,7 @@ public class ModelToRepresentation {
         rep.getAttributes().putAll(stripRealmAttributesIncludedAsFields(realm.getAttributes()));
 
         if (!internal) {
-            rep = StripSecretsUtils.strip(rep);
+            rep = stripSecrets(session, rep);
         }
 
         return rep;
@@ -794,7 +796,7 @@ public class ModelToRepresentation {
         return rep;
     }
 
-    public static IdentityProviderRepresentation toRepresentation(RealmModel realm, IdentityProviderModel identityProviderModel) {
+    public static IdentityProviderRepresentation toRepresentation(KeycloakSession session, RealmModel realm, IdentityProviderModel identityProviderModel) {
         IdentityProviderRepresentation providerRep = new IdentityProviderRepresentation();
 
         providerRep.setInternalId(identityProviderModel.getInternalId());
@@ -828,7 +830,7 @@ public class ModelToRepresentation {
             providerRep.setPostBrokerLoginFlowAlias(flow.getAlias());
         }
 
-        return providerRep;
+        return stripSecrets(session, providerRep);
     }
 
     public static ProtocolMapperRepresentation toRepresentation(ProtocolMapperModel model) {
@@ -947,7 +949,7 @@ public class ModelToRepresentation {
     public static ComponentRepresentation toRepresentation(KeycloakSession session, ComponentModel component, boolean internal) {
         ComponentRepresentation rep = toRepresentationWithoutConfig(component);
         if (!internal) {
-            rep = StripSecretsUtils.strip(session, rep);
+            return stripSecrets(session, rep);
         }
         return rep;
     }

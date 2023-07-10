@@ -57,7 +57,6 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
-import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.Config;
 import org.keycloak.KeyPairVerifier;
 import org.keycloak.authentication.CredentialRegistrator;
@@ -451,7 +450,7 @@ public class RealmAdminResource {
             // This populates the map in DefaultKeycloakContext to be used when treating the event
             session.getContext().getUri();
 
-            adminEvent.operation(OperationType.UPDATE).representation(StripSecretsUtils.strip(rep)).success();
+            adminEvent.operation(OperationType.UPDATE).representation(rep).success();
             
             if (rep.isDuplicateEmailsAllowed() != null && rep.isDuplicateEmailsAllowed() != wasDuplicateEmailsAllowed) {
                 session.invalidate(InvalidationHandler.ObjectType.REALM, realm.getId());
