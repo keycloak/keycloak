@@ -21,11 +21,7 @@ updates:
     rebase-strategy: disabled
     labels:
       - area/dependencies
-      - area/admin/ui
       - team/ui
-    ignore:
-      - dependency-name: bootstrap
-        update-types: ["version-update:semver-major"]
   - package-ecosystem: npm
     directory: js
     open-pull-requests-limit: 999
