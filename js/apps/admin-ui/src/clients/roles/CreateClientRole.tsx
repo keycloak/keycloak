@@ -46,7 +46,7 @@ export default function CreateClientRole() {
           clientId: clientId!,
           id: createdRole.id!,
           tab: "details",
-        })
+        }),
       );
     } catch (error) {
       addError("roles:roleCreateError", error);

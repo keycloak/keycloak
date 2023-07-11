@@ -99,7 +99,7 @@ describe("User Fed LDAP mapper tests", () => {
       truststoreSpiAlways,
       connectionTimeoutTwoSecs,
       bindDnCnDc,
-      bindCredsValid
+      bindCredsValid,
     );
     providersPage.toggleSwitch(providersPage.enableStartTls);
     providersPage.toggleSwitch(providersPage.connectionPooling);
@@ -110,7 +110,7 @@ describe("User Fed LDAP mapper tests", () => {
       firstUserLdapAtt,
       firstRdnLdapAtt,
       firstUuidLdapAtt,
-      firstUserObjClasses
+      firstUserObjClasses,
     );
     providersPage.save(provider);
     masthead.checkNotificationMessage(providerCreatedSuccess);

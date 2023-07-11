@@ -58,7 +58,7 @@ type RolesListProps = {
   loader?: (
     first?: number,
     max?: number,
-    search?: string
+    search?: string,
   ) => Promise<RoleRepresentation[]>;
 };
 
@@ -84,7 +84,7 @@ export const RolesList = ({
     (realm) => {
       setRealm(realm);
     },
-    []
+    [],
   );
 
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
@@ -150,7 +150,7 @@ export const RolesList = ({
                     ) {
                       addAlert(
                         t("defaultRoleDeleteError"),
-                        AlertVariant.danger
+                        AlertVariant.danger,
                       );
                     } else toggleDeleteDialog();
                   },

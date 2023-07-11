@@ -80,7 +80,7 @@ export default class Masthead extends CommonElements {
       .document()
       .then(({ documentElement }) => documentElement.getBoundingClientRect())
       .then(({ width }) =>
-        cy.get(width < 1024 ? this.userDrpDwnKebab : this.userDrpDwn)
+        cy.get(width < 1024 ? this.userDrpDwnKebab : this.userDrpDwn),
       );
   }
 

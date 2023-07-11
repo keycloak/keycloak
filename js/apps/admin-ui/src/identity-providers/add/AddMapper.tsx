@@ -88,7 +88,7 @@ export default function AddMapper() {
             id: id!,
             alias: alias!,
           },
-          { ...identityProviderMapper }
+          { ...identityProviderMapper },
         );
         addAlert(t("mapperSaveSuccess"), AlertVariant.success);
       } catch (error) {
@@ -108,7 +108,7 @@ export default function AddMapper() {
             alias,
             providerId: providerId,
             id: createdMapper.id,
-          })
+          }),
         );
       } catch (error) {
         addError(t("mapperCreateError"), error);
@@ -131,7 +131,7 @@ export default function AddMapper() {
         });
         addAlert(t("deleteMapperSuccess"), AlertVariant.success);
         navigate(
-          toIdentityProvider({ providerId, alias, tab: "mappers", realm })
+          toIdentityProvider({ providerId, alias, tab: "mappers", realm }),
         );
       } catch (error) {
         addError("identity-providers:deleteErrorError", error);
@@ -149,7 +149,7 @@ export default function AddMapper() {
       const mappers = localeSort(Object.values(mapperTypes), mapByKey("name"));
       if (mapper) {
         setCurrentMapper(
-          mappers.find(({ id }) => id === mapper.identityProviderMapper)
+          mappers.find(({ id }) => id === mapper.identityProviderMapper),
         );
         setupForm(mapper);
       } else {
@@ -158,7 +158,7 @@ export default function AddMapper() {
 
       setMapperTypes(mappers);
     },
-    []
+    [],
   );
 
   const setupForm = (mapper: IdentityProviderMapperRepresentation) => {

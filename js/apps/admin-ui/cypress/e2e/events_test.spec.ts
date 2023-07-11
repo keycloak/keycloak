@@ -43,13 +43,13 @@ describe.skip("Events tests", () => {
 
   before(async () => {
     const result = await adminClient.createUser(
-      eventsTestUser.userRepresentation
+      eventsTestUser.userRepresentation,
     );
     eventsTestUser.eventsTestUserId = result.id!;
   });
 
   after(() =>
-    adminClient.deleteUser(eventsTestUser.userRepresentation.username)
+    adminClient.deleteUser(eventsTestUser.userRepresentation.username),
   );
 
   describe("User events list", () => {
@@ -175,8 +175,8 @@ describe.skip("Events tests", () => {
         adminClient.loginUser(
           eventsTestUser.userRepresentation.username,
           eventsTestUser.userRepresentation.credentials[0].value,
-          eventsTestUserClientId
-        )
+          eventsTestUserClientId,
+        ),
       );
       userEventsTab
         .searchUserEventByUserId(eventsTestUser.eventsTestUserId)

@@ -69,7 +69,7 @@ const DeviceActivity = () => {
 
   const signOutSession = async (
     session: SessionRepresentation,
-    device: DeviceRepresentation
+    device: DeviceRepresentation,
   ) => {
     try {
       await deleteSession(session.id);
@@ -233,7 +233,7 @@ const DeviceActivity = () => {
                   </Grid>
                 </DataListContent>
               </DataListItemRow>
-            ))
+            )),
           )}
         </DataListItem>
       </DataList>

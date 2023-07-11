@@ -12,7 +12,7 @@ export type PermissionDetailsParams = {
 };
 
 const PermissionDetails = lazy(
-  () => import("../authorization/PermissionDetails")
+  () => import("../authorization/PermissionDetails"),
 );
 
 export const PermissionDetailsRoute: AppRouteObject = {
@@ -25,7 +25,7 @@ export const PermissionDetailsRoute: AppRouteObject = {
 };
 
 export const toPermissionDetails = (
-  params: PermissionDetailsParams
+  params: PermissionDetailsParams,
 ): Partial<Path> => ({
   pathname: generatePath(PermissionDetailsRoute.path, params),
 });

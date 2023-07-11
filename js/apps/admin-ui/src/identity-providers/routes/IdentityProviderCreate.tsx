@@ -20,7 +20,7 @@ export const IdentityProviderCreateRoute: AppRouteObject = {
 };
 
 export const toIdentityProviderCreate = (
-  params: IdentityProviderCreateParams
+  params: IdentityProviderCreateParams,
 ): Partial<Path> => ({
   pathname: generatePath(IdentityProviderCreateRoute.path, params),
 });

@@ -12,7 +12,7 @@ import { FormLabel } from "./FormLabel";
 
 export type TextControlProps<
   T extends FieldValues,
-  P extends FieldPath<T> = FieldPath<T>
+  P extends FieldPath<T> = FieldPath<T>,
 > = UseControllerProps<T, P> &
   TextInputProps & {
     label: string;
@@ -22,9 +22,9 @@ export type TextControlProps<
 
 export const TextControl = <
   T extends FieldValues,
-  P extends FieldPath<T> = FieldPath<T>
+  P extends FieldPath<T> = FieldPath<T>,
 >(
-  props: TextControlProps<T, P>
+  props: TextControlProps<T, P>,
 ) => {
   const { labelIcon, ...rest } = props;
   const required = !!props.rules?.required;

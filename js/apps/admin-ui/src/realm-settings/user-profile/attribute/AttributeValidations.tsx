@@ -51,7 +51,7 @@ export const AttributeValidations = () => {
     continueButtonVariant: ButtonVariant.danger,
     onConfirm: async () => {
       const updatedValidators = validators.filter(
-        (validator) => validator.key !== validatorToDelete
+        (validator) => validator.key !== validatorToDelete,
       );
 
       setValue("validations", [...updatedValidators]);

@@ -61,14 +61,14 @@ export default class MembersTab extends GroupDetailPage {
 
   public assertNotificationUserAddedToTheGroup(amount: number) {
     masthead.checkNotificationMessage(
-      `${amount} user${amount > 1 ? "s" : ""} added to the group`
+      `${amount} user${amount > 1 ? "s" : ""} added to the group`,
     );
     return this;
   }
 
   public assertNotificationUserLeftTheGroup(amount: number) {
     masthead.checkNotificationMessage(
-      `${amount} user${amount > 1 ? "s" : ""} left the group`
+      `${amount} user${amount > 1 ? "s" : ""} left the group`,
     );
     return this;
   }

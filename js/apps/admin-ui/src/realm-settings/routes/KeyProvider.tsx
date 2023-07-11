@@ -20,7 +20,7 @@ export type KeyProviderParams = {
 };
 
 const KeyProviderForm = lazy(
-  () => import("../keys/key-providers/KeyProviderForm")
+  () => import("../keys/key-providers/KeyProviderForm"),
 );
 
 export const KeyProviderFormRoute: AppRouteObject = {

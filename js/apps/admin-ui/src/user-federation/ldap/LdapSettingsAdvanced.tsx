@@ -37,11 +37,11 @@ export const LdapSettingsAdvanced = ({
       const settings = convertFormToSettings(form);
       const ldapOids = await adminClient.realms.ldapServerCapabilities(
         { realm },
-        { ...settings, componentId: id }
+        { ...settings, componentId: id },
       );
       addAlert(t("testSuccess"));
       const passwordModifyOid = ldapOids.filter(
-        (id: { oid: string }) => id.oid === PASSWORD_MODIFY_OID
+        (id: { oid: string }) => id.oid === PASSWORD_MODIFY_OID,
       );
       form.setValue("config.usePasswordModifyExtendedOp", [
         (passwordModifyOid.length > 0).toString(),

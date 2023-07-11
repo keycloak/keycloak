@@ -39,7 +39,7 @@ export const RequiredActionMultiSelect = ({
       });
       setRequiredActions(enabledUserActions);
     },
-    []
+    [],
   );
 
   return (
@@ -69,7 +69,7 @@ export const RequiredActionMultiSelect = ({
               field.onChange(
                 field.value.find((o: string) => o === selectedValue)
                   ? field.value.filter((item: string) => item !== selectedValue)
-                  : [...field.value, selectedValue]
+                  : [...field.value, selectedValue],
               )
             }
             onClear={(event) => {

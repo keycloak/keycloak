@@ -85,7 +85,7 @@ export const PartialImportDialog = (props: PartialImportProps) => {
 
   const [resourcesToImport, setResourcesToImport] = useState(INITIAL_RESOURCES);
   const isAnyResourceChecked = Object.values(resourcesToImport).some(
-    (checked) => checked
+    (checked) => checked,
   );
 
   const resetResourcesToImport = () => {
@@ -125,7 +125,7 @@ export const PartialImportDialog = (props: PartialImportProps) => {
 
   const handleResourceCheckBox = (
     checked: boolean,
-    event: FormEvent<HTMLInputElement>
+    event: FormEvent<HTMLInputElement>,
   ) => {
     const resource = event.currentTarget.name as Resource;
 
@@ -148,7 +148,7 @@ export const PartialImportDialog = (props: PartialImportProps) => {
 
   const handleCollisionSelect = (
     event: ChangeEvent<Element> | ReactMouseEvent<Element, MouseEvent>,
-    option: string | SelectOptionObject
+    option: string | SelectOptionObject,
   ) => {
     setCollisionOption(option as CollisionOption);
     setIsCollisionSelectOpen(false);
@@ -211,13 +211,13 @@ export const PartialImportDialog = (props: PartialImportProps) => {
   };
 
   const clientRolesCount = (
-    clientRoles: Record<string, RoleRepresentation[]>
+    clientRoles: Record<string, RoleRepresentation[]>,
   ) =>
     Object.values(clientRoles).reduce((total, role) => total + role.length, 0);
 
   const resourceDataListItem = (
     resource: Resource,
-    resourceDisplayName: string
+    resourceDisplayName: string,
   ) => {
     return (
       <DataListItem aria-labelledby={`${resource}-list-item`}>
@@ -358,14 +358,14 @@ export const PartialImportDialog = (props: PartialImportProps) => {
                   {targetHasResource("identityProviders") &&
                     resourceDataListItem(
                       "identityProviders",
-                      t("common:identityProviders")
+                      t("common:identityProviders"),
                     )}
                   {targetHasRealmRoles() &&
                     resourceDataListItem("realmRoles", t("common:realmRoles"))}
                   {targetHasClientRoles() &&
                     resourceDataListItem(
                       "clientRoles",
-                      t("common:clientRoles")
+                      t("common:clientRoles"),
                     )}
                 </DataList>
               </StackItem>

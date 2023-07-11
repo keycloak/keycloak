@@ -8,7 +8,7 @@ const POLICY_SEPARATOR = " and ";
 
 export const serializePolicy = (
   policies: PasswordPolicyTypeRepresentation[],
-  submitted: SubmittedValues
+  submitted: SubmittedValues,
 ) =>
   policies
     .map((policy) => `${policy.id}(${submitted[policy.id!]})`)
@@ -20,7 +20,7 @@ type PolicyValue = PasswordPolicyTypeRepresentation & {
 
 export const parsePolicy = (
   value: string,
-  policies: PasswordPolicyTypeRepresentation[]
+  policies: PasswordPolicyTypeRepresentation[],
 ) =>
   value
     .split(POLICY_SEPARATOR)

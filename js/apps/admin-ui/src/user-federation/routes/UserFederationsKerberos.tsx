@@ -16,7 +16,7 @@ export const UserFederationsKerberosRoute: AppRouteObject = {
 };
 
 export const toUserFederationsKerberos = (
-  params: UserFederationsKerberosParams
+  params: UserFederationsKerberosParams,
 ): Partial<Path> => ({
   pathname: generatePath(UserFederationsKerberosRoute.path, params),
 });

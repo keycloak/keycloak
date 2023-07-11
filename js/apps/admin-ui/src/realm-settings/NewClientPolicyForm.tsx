@@ -183,7 +183,7 @@ export default function NewClientPolicyForm() {
     },
     ({ policies, profiles }) => {
       const currentPolicy = policies.policies?.find(
-        (item) => item.name === policyName
+        (item) => item.name === policyName,
       );
 
       const allClientProfiles = [
@@ -199,7 +199,7 @@ export default function NewClientPolicyForm() {
         setShowAddConditionsAndProfilesForm(true);
       }
     },
-    []
+    [],
   );
 
   const setupForm = (policy: ClientPolicyRepresentation) => {
@@ -207,7 +207,7 @@ export default function NewClientPolicyForm() {
   };
 
   const policy = (policies || []).filter(
-    (policy) => policy.name === policyName
+    (policy) => policy.name === policyName,
   );
   const policyConditions = policy[0]?.conditions || [];
   const policyProfiles = policy[0]?.profiles || [];
@@ -229,12 +229,12 @@ export default function NewClientPolicyForm() {
 
     const getAllPolicies = () => {
       const policyNameExists = policies?.some(
-        (policy) => policy.name === createdPolicy.name
+        (policy) => policy.name === createdPolicy.name,
       );
 
       if (policyNameExists) {
         return policies?.map((policy) =>
-          policy.name === createdPolicy.name ? createdPolicy : policy
+          policy.name === createdPolicy.name ? createdPolicy : policy,
         );
       } else if (createdForm.name !== policyName) {
         return policies
@@ -252,7 +252,7 @@ export default function NewClientPolicyForm() {
         policyName
           ? t("realm-settings:updateClientPolicySuccess")
           : t("realm-settings:createClientPolicySuccess"),
-        AlertVariant.success
+        AlertVariant.success,
       );
       navigate(toEditClientPolicy({ realm, policyName: createdForm.name! }));
       setShowAddConditionsAndProfilesForm(true);
@@ -270,7 +270,7 @@ export default function NewClientPolicyForm() {
     continueButtonVariant: ButtonVariant.danger,
     onConfirm: async () => {
       const updatedPolicies = policies?.filter(
-        (policy) => policy.name !== policyName
+        (policy) => policy.name !== policyName,
       );
 
       try {
@@ -282,7 +282,7 @@ export default function NewClientPolicyForm() {
           toClientPolicies({
             realm,
             tab: "policies",
-          })
+          }),
         );
       } catch (error) {
         addError(t("deleteClientPolicyError"), error);
@@ -307,14 +307,14 @@ export default function NewClientPolicyForm() {
             });
             addAlert(t("deleteConditionSuccess"), AlertVariant.success);
             navigate(
-              toEditClientPolicy({ realm, policyName: formValues.name! })
+              toEditClientPolicy({ realm, policyName: formValues.name! }),
             );
           } catch (error) {
             addError(t("deleteConditionError"), error);
           }
         } else {
           const updatedPolicies = policies?.filter(
-            (policy) => policy.name !== policyName
+            (policy) => policy.name !== policyName,
           );
 
           try {
@@ -326,7 +326,7 @@ export default function NewClientPolicyForm() {
               toClientPolicies({
                 realm,
                 tab: "policies",
-              })
+              }),
             );
           } catch (error) {
             addError(t("deleteClientError"), error);
@@ -357,7 +357,7 @@ export default function NewClientPolicyForm() {
         }
       } else {
         const updatedPolicies = policies?.filter(
-          (policy) => policy.name !== policyName
+          (policy) => policy.name !== policyName,
         );
 
         try {
@@ -369,7 +369,7 @@ export default function NewClientPolicyForm() {
             toClientPolicies({
               realm,
               tab: "policies",
-            })
+            }),
           );
         } catch (error) {
           addError(t("deleteClientError"), error);
@@ -400,7 +400,7 @@ export default function NewClientPolicyForm() {
     };
 
     const index = policies?.findIndex(
-      (policy) => createdPolicy.name === policy.name
+      (policy) => createdPolicy.name === policy.name,
     );
 
     if (index === undefined || index === -1) {
@@ -421,7 +421,7 @@ export default function NewClientPolicyForm() {
       navigate(toEditClientPolicy({ realm, policyName: formValues.name! }));
       addAlert(
         t("realm-settings:addClientProfileSuccess"),
-        AlertVariant.success
+        AlertVariant.success,
       );
     } catch (error) {
       addError("realm-settings:addClientProfileError", error);
@@ -515,7 +515,7 @@ export default function NewClientPolicyForm() {
                       toClientPolicies({
                         realm,
                         tab: "policies",
-                      })
+                      }),
                     )
               }
               data-testid="cancelCreatePolicy"
@@ -618,7 +618,7 @@ export default function NewClientPolicyForm() {
                                         }
                                       ></Button>
                                     </>
-                                  )
+                                  ),
                               )}
                             </DataListCell>,
                           ]}
@@ -701,7 +701,7 @@ export default function NewClientPolicyForm() {
                                     <HelpItem
                                       helpText={
                                         clientProfiles.find(
-                                          (profile) => type === profile.name
+                                          (profile) => type === profile.name,
                                         )?.description
                                       }
                                       fieldLabelId={profile}

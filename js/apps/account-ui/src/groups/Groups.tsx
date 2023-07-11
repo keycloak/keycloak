@@ -27,13 +27,13 @@ const Groups = () => {
           getParents(
             el,
             groups,
-            groups.map(({ path }) => path)
-          )
+            groups.map(({ path }) => path),
+          ),
         );
       }
       setGroups(groups);
     },
-    [directMembership]
+    [directMembership],
   );
 
   const getParents = (el: Group, groups: Group[], groupsPaths: string[]) => {

@@ -48,7 +48,7 @@ export const GroupsModal = ({
       } else if (rename) {
         await adminClient.groups.update(
           { id },
-          { ...rename, name: group.name }
+          { ...rename, name: group.name },
         );
       } else {
         await (group.id
@@ -60,7 +60,7 @@ export const GroupsModal = ({
       handleModalToggle();
       addAlert(
         t(rename ? "groupUpdated" : "groupCreated"),
-        AlertVariant.success
+        AlertVariant.success,
       );
     } catch (error) {
       addError("groups:couldNotCreateGroup", error);

@@ -35,7 +35,7 @@ describe("Realm roles test", () => {
     // The error should inform about duplicated name/id (THIS MESSAGE DOES NOT HAVE QUOTES AS THE OTHERS)
     masthead.checkNotificationMessage(
       "Could not create role: Role with name admin already exists",
-      true
+      true,
     );
   });
 
@@ -85,7 +85,7 @@ describe("Realm roles test", () => {
     listingPage.itemExist(defaultRole).deleteItem(defaultRole);
     masthead.checkNotificationMessage(
       "You cannot delete a default role.",
-      true
+      true,
     );
   });
 
@@ -122,7 +122,7 @@ describe("Realm roles test", () => {
     // Add associated client role
     associatedRolesPage.addAssociatedRoleFromSearchBar(
       "manage-account-links",
-      true
+      true,
     );
     masthead.checkNotificationMessage("Associated roles have been added", true);
   });
@@ -159,7 +159,7 @@ describe("Realm roles test", () => {
 
     masthead.checkNotificationMessage(
       "Scope mapping successfully removed",
-      true
+      true,
     );
   });
 
@@ -178,7 +178,7 @@ describe("Realm roles test", () => {
 
     masthead.checkNotificationMessage(
       "Scope mapping successfully removed",
-      true
+      true,
     );
   });
 
@@ -209,7 +209,7 @@ describe("Realm roles test", () => {
 
     masthead.checkNotificationMessage(
       "Scope mapping successfully removed",
-      true
+      true,
     );
     listingPage.removeItem("offline_access");
     sidebarPage.waitForPageLoad();
@@ -218,7 +218,7 @@ describe("Realm roles test", () => {
 
     masthead.checkNotificationMessage(
       "Scope mapping successfully removed",
-      true
+      true,
     );
   });
 
@@ -231,7 +231,7 @@ describe("Realm roles test", () => {
       adminClient.createRealmRole({
         name: editRoleName,
         description,
-      })
+      }),
     );
 
     after(() => adminClient.deleteRealmRole(editRoleName));

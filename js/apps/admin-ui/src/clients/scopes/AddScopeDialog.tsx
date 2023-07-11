@@ -37,7 +37,7 @@ export type AddScopeDialogProps = {
   open: boolean;
   toggleDialog: () => void;
   onAdd: (
-    scopes: { scope: ClientScopeRepresentation; type?: ClientScopeType }[]
+    scopes: { scope: ClientScopeRepresentation; type?: ClientScopeType }[],
   ) => void;
   isClientScopesConditionType?: boolean;
 };

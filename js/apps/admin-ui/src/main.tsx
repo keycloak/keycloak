@@ -22,5 +22,5 @@ render(
   <StrictMode>
     <RouterProvider router={router} />
   </StrictMode>,
-  container
+  container,
 );

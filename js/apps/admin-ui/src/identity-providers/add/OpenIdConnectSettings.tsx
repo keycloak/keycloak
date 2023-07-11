@@ -35,7 +35,7 @@ export const OpenIdConnectSettings = () => {
 
     try {
       const result = await adminClient.identityProviders.importFromUrl(
-        formData
+        formData,
       );
       setupForm(result);
     } catch (error) {

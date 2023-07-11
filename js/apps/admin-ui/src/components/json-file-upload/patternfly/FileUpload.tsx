@@ -37,7 +37,7 @@ export interface FileUploadProps
     event:
       | React.MouseEvent<HTMLButtonElement, MouseEvent> // Clear button was clicked
       | React.ChangeEvent<HTMLElement> // User typed in the TextArea
-      | DropEvent
+      | DropEvent,
   ) => void;
   /** Change event emitted from the hidden \<input type="file" \> field associated with the component  */
   onFileInputChange?: (event: DropEvent, file: File) => void;
@@ -154,7 +154,7 @@ export const FileUpload = ({
   };
 
   const onClearButtonClick = (
-    event: React.MouseEvent<HTMLButtonElement, MouseEvent>
+    event: React.MouseEvent<HTMLButtonElement, MouseEvent>,
   ) => {
     onChange?.("", "", event);
     onClearClick?.(event);

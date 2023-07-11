@@ -36,7 +36,7 @@ export default class UserEventsTab extends PageObject {
   public openSearchUserEventDropdownMenu() {
     super.openDropdownMenu(
       "",
-      cy.findByTestId(this.searchUserEventDrpDwnToggle)
+      cy.findByTestId(this.searchUserEventDrpDwnToggle),
     );
     return this;
   }
@@ -63,7 +63,7 @@ export default class UserEventsTab extends PageObject {
 
   public assertUserSearchDropdownMenuHasLabels() {
     super.assertDropdownMenuHasLabels(
-      Object.values(UserEventsTabSearchFormFieldsLabel)
+      Object.values(UserEventsTabSearchFormFieldsLabel),
     );
     return this;
   }
@@ -161,7 +161,7 @@ export default class UserEventsTab extends PageObject {
   public removeEventTypeChipGroupItem(itemName: string) {
     super.removeChipGroupItem(
       UserEventsTabSearchFormFieldsLabel.EventType,
-      itemName
+      itemName,
     );
     return this;
   }
@@ -170,7 +170,7 @@ export default class UserEventsTab extends PageObject {
     super.assertChipGroupItemExist(
       UserEventsTabSearchFormFieldsLabel.EventType,
       itemName,
-      exist
+      exist,
     );
     return this;
   }
@@ -178,7 +178,7 @@ export default class UserEventsTab extends PageObject {
   public assertUserIdChipGroupExist(exist: boolean) {
     super.assertChipGroupExist(
       UserEventsTabSearchFormFieldsLabel.UserId,
-      exist
+      exist,
     );
     return this;
   }
@@ -186,7 +186,7 @@ export default class UserEventsTab extends PageObject {
   public assertEventTypeChipGroupExist(exist: boolean) {
     super.assertChipGroupExist(
       UserEventsTabSearchFormFieldsLabel.EventType,
-      exist
+      exist,
     );
     return this;
   }
@@ -194,7 +194,7 @@ export default class UserEventsTab extends PageObject {
   public assertClientChipGroupExist(exist: boolean) {
     super.assertChipGroupExist(
       UserEventsTabSearchFormFieldsLabel.Client,
-      exist
+      exist,
     );
     return this;
   }
@@ -202,7 +202,7 @@ export default class UserEventsTab extends PageObject {
   public assertDateFromChipGroupExist(exist: boolean) {
     super.assertChipGroupExist(
       UserEventsTabSearchFormFieldsLabel.DateFrom,
-      exist
+      exist,
     );
     return this;
   }
@@ -210,7 +210,7 @@ export default class UserEventsTab extends PageObject {
   public assertDateToChipGroupExist(exist: boolean) {
     super.assertChipGroupExist(
       UserEventsTabSearchFormFieldsLabel.DateTo,
-      exist
+      exist,
     );
     return this;
   }
@@ -218,7 +218,7 @@ export default class UserEventsTab extends PageObject {
   public assertIpAddressChipGroupExist(exist: boolean) {
     super.assertChipGroupExist(
       UserEventsTabSearchFormFieldsLabel.IpAddress,
-      exist
+      exist,
     );
     return this;
   }

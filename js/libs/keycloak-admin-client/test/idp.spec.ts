@@ -94,7 +94,7 @@ describe("Identity providers", () => {
         alias: idp.alias!,
         providerId: idp.providerId!,
         displayName: "test",
-      }
+      },
     );
     const updatedIdp = await kcAdminClient.identityProviders.findOne({
       alias: currentIdpAlias,
@@ -138,7 +138,7 @@ describe("Identity providers", () => {
         config: {
           "user.attribute": "firstName",
         },
-      }
+      },
     );
 
     const updatedIdpMappers =
@@ -160,14 +160,14 @@ describe("Identity providers", () => {
 
     expect(result).to.be.ok;
     expect(result.authorizationUrl).to.equal(
-      "http://localhost:8180/realms/master/protocol/openid-connect/auth"
+      "http://localhost:8180/realms/master/protocol/openid-connect/auth",
     );
   });
 
   it.skip("Enable fine grained permissions", async () => {
     const permission = await kcAdminClient.identityProviders.updatePermission(
       { alias: currentIdpAlias },
-      { enabled: true }
+      { enabled: true },
     );
     expect(permission).to.include({
       enabled: true,

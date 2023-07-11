@@ -75,7 +75,7 @@ export default function EditUser() {
       setUser(user);
       setBruteForced(bruteForced);
     },
-    [refreshCount]
+    [refreshCount],
   );
 
   if (!user || !bruteForced) {
@@ -115,7 +115,7 @@ const EditUserForm = ({ user, bruteForced, refresh }: EditUserFormProps) => {
       }
       setRealmRepresentattion(realm);
     },
-    []
+    [],
   );
 
   const isFeatureEnabled = useIsFeatureEnabled();
@@ -152,7 +152,7 @@ const EditUserForm = ({ user, bruteForced, refresh }: EditUserFormProps) => {
           ...formUser,
           username: formUser.username?.trim(),
           attributes: { ...user.attributes, ...formUser.attributes },
-        }
+        },
       );
       addAlert(t("userSaved"), AlertVariant.success);
       refresh();
@@ -189,7 +189,7 @@ const EditUserForm = ({ user, bruteForced, refresh }: EditUserFormProps) => {
       try {
         const data = await adminClient.users.impersonation(
           { id: user.id! },
-          { user: user.id!, realm }
+          { user: user.id!, realm },
         );
         if (data.sameRealm) {
           window.location = data.redirect;

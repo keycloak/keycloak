@@ -64,7 +64,7 @@ export default function ScopeDetails() {
       setScope(scope);
       reset({ ...scope });
     },
-    []
+    [],
   );
 
   const onSubmit = async (scope: ScopeRepresentation) => {
@@ -72,7 +72,7 @@ export default function ScopeDetails() {
       if (scopeId) {
         await adminClient.clients.updateAuthorizationScope(
           { id, scopeId },
-          scope
+          scope,
         );
         setScope(scope);
       } else {
@@ -82,13 +82,13 @@ export default function ScopeDetails() {
             name: scope.name!,
             displayName: scope.displayName,
             iconUri: scope.iconUri,
-          }
+          },
         );
         navigate(toAuthorizationTab({ realm, clientId: id, tab: "scopes" }));
       }
       addAlert(
         t((scopeId ? "update" : "create") + "ScopeSuccess"),
-        AlertVariant.success
+        AlertVariant.success,
       );
     } catch (error) {
       addError("clients:scopeSaveError", error);

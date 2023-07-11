@@ -28,7 +28,7 @@ export const X509 = () => {
       >
         <Controller
           name={convertAttributeNameToForm<FormFields>(
-            "attributes.x509.allow.regex.pattern.comparison"
+            "attributes.x509.allow.regex.pattern.comparison",
           )}
           defaultValue="false"
           control={control}
@@ -71,7 +71,7 @@ export const X509 = () => {
           }
           {...register(
             convertAttributeNameToForm("attributes.x509.subjectdn"),
-            { required: true }
+            { required: true },
           )}
         />
       </FormGroup>

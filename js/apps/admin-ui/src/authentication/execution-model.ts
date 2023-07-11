@@ -21,7 +21,7 @@ export class LevelChange extends IndexChange {
   constructor(
     oldIndex: number,
     newIndex: number,
-    parent?: ExpandableExecution
+    parent?: ExpandableExecution,
   ) {
     super(oldIndex, newIndex);
     this.parent = parent;
@@ -46,7 +46,7 @@ export class ExecutionList {
   private transformToExpandableList(
     currentIndex: number,
     currentLevel: number,
-    execution: ExpandableExecution
+    execution: ExpandableExecution,
   ) {
     for (let index = currentIndex; index < this.list.length; index++) {
       const ex = this.list[index];
@@ -82,7 +82,7 @@ export class ExecutionList {
 
   findExecution(
     id: string,
-    list?: ExpandableExecution[]
+    list?: ExpandableExecution[],
   ): ExpandableExecution | undefined {
     let found = (list || this.expandableList).find((ex) => ex.id === id);
     if (!found) {
@@ -113,7 +113,7 @@ export class ExecutionList {
 
   getChange(
     changed: AuthenticationExecutionInfoRepresentation,
-    order: string[]
+    order: string[],
   ) {
     const currentOrder = this.order();
     const newLocIndex = order.findIndex((id) => id === changed.id);
@@ -127,7 +127,7 @@ export class ExecutionList {
         return new LevelChange(
           parent?.executionList?.length || 0,
           newLocation.index!,
-          parent
+          parent,
         );
       }
       return new LevelChange(this.expandableList.length, newLocation.index!);

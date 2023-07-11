@@ -114,7 +114,7 @@ export default function RealmRoleTabs() {
       setAttributes(convertedRole.attributes);
       setRealm(realm);
     },
-    [key]
+    [key],
   );
 
   const onSubmit: SubmitHandler<AttributeForm> = async (formValues) => {
@@ -130,7 +130,7 @@ export default function RealmRoleTabs() {
       } else {
         await adminClient.clients.updateRole(
           { id: clientId, roleName: formValues.name! },
-          roleRepresentation
+          roleRepresentation,
         );
       }
 
@@ -271,7 +271,7 @@ export default function RealmRoleTabs() {
         addAlert(
           t("compositeRoleOff"),
           AlertVariant.success,
-          t("compositesRemovedAlertDescription")
+          t("compositesRemovedAlertDescription"),
         );
         navigate(toTab("details"));
         refresh();
@@ -289,7 +289,7 @@ export default function RealmRoleTabs() {
     try {
       await adminClient.roles.createComposite(
         { roleId: id, realm: realm!.realm },
-        composites
+        composites,
       );
       refresh();
       navigate(toTab("associated-roles"));

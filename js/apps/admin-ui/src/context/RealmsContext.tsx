@@ -17,7 +17,7 @@ type RealmsContextProps = {
 
 export const RealmsContext = createNamedContext<RealmsContextProps | undefined>(
   "RealmsContext",
-  undefined
+  undefined,
 );
 
 export const RealmsProvider = ({ children }: PropsWithChildren) => {
@@ -46,7 +46,7 @@ export const RealmsProvider = ({ children }: PropsWithChildren) => {
       }
     },
     (realms) => updateRealms(realms),
-    [refreshCount]
+    [refreshCount],
   );
 
   const refresh = useCallback(async () => {
@@ -58,7 +58,7 @@ export const RealmsProvider = ({ children }: PropsWithChildren) => {
 
   const value = useMemo<RealmsContextProps>(
     () => ({ realms, refresh }),
-    [realms, refresh]
+    [realms, refresh],
   );
 
   return (

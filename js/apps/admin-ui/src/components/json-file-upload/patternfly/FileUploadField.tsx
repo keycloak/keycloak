@@ -32,7 +32,7 @@ export interface FileUploadFieldProps
     filename: string,
     event:
       | React.ChangeEvent<HTMLTextAreaElement> // User typed in the TextArea
-      | React.MouseEvent<HTMLButtonElement, MouseEvent> // User clicked Clear button
+      | React.MouseEvent<HTMLButtonElement, MouseEvent>, // User clicked Clear button
   ) => void;
   /** Additional classes added to the FileUploadField container element. */
   className?: string;
@@ -75,15 +75,15 @@ export interface FileUploadFieldProps
 
   /** A callback for when the Browse button is clicked. */
   onBrowseButtonClick?: (
-    event: React.MouseEvent<HTMLButtonElement, MouseEvent>
+    event: React.MouseEvent<HTMLButtonElement, MouseEvent>,
   ) => void;
   /** A callback for when the Clear button is clicked. */
   onClearButtonClick?: (
-    event: React.MouseEvent<HTMLButtonElement, MouseEvent>
+    event: React.MouseEvent<HTMLButtonElement, MouseEvent>,
   ) => void;
   /** A callback from when the text area is clicked. Can also be set via the onClick property of FileUpload. */
   onTextAreaClick?: (
-    event: React.MouseEvent<HTMLTextAreaElement, MouseEvent>
+    event: React.MouseEvent<HTMLTextAreaElement, MouseEvent>,
   ) => void;
   /** Flag to show if a file is being dragged over the field */
   isDragActive?: boolean;
@@ -126,7 +126,7 @@ export const FileUploadField = ({
 }: PropsWithChildren<FileUploadFieldProps>) => {
   const onTextAreaChange = (
     newValue: string,
-    event: React.ChangeEvent<HTMLTextAreaElement>
+    event: React.ChangeEvent<HTMLTextAreaElement>,
   ) => {
     onChange?.(newValue, filename, event);
     onTextChange?.(newValue);
@@ -137,7 +137,7 @@ export const FileUploadField = ({
         styles.fileUpload,
         isDragActive && styles.modifiers.dragHover,
         isLoading && styles.modifiers.loading,
-        className
+        className,
       )}
       ref={containerRef}
       {...props}

@@ -88,7 +88,7 @@ const Header = ({ onChange, value, save, toggleDeleteDialog }: HeaderProps) => {
       }
       setProvider(fetchedProvider);
     },
-    []
+    [],
   );
 
   const [toggleDisableDialog, DisableConfirm] = useConfirmDialog({
@@ -110,7 +110,7 @@ const Header = ({ onChange, value, save, toggleDeleteDialog }: HeaderProps) => {
             ? provider.displayName
               ? provider.displayName
               : provider.providerId!
-            : ""
+            : "",
         )}
         divider={false}
         dropdownItems={[
@@ -169,7 +169,7 @@ export default function DetailSettings() {
       serverInfo.componentTypes?.[
         "org.keycloak.broker.social.SocialIdentityProvider"
       ]?.find((p) => p.id === providerId),
-    [serverInfo, providerId]
+    [serverInfo, providerId],
   );
 
   const { addAlert, addError } = useAlerts();
@@ -191,18 +191,18 @@ export default function DetailSettings() {
       if (fetchedProvider.config!.authnContextClassRefs) {
         form.setValue(
           "config.authnContextClassRefs",
-          JSON.parse(fetchedProvider.config?.authnContextClassRefs)
+          JSON.parse(fetchedProvider.config?.authnContextClassRefs),
         );
       }
 
       if (fetchedProvider.config!.authnContextDeclRefs) {
         form.setValue(
           "config.authnContextDeclRefs",
-          JSON.parse(fetchedProvider.config?.authnContextDeclRefs)
+          JSON.parse(fetchedProvider.config?.authnContextDeclRefs),
         );
       }
     },
-    []
+    [],
   );
 
   const toTab = (tab: IdentityProviderTab) =>
@@ -223,11 +223,11 @@ export default function DetailSettings() {
     const p = savedProvider || getValues();
     if (p.config?.authnContextClassRefs)
       p.config.authnContextClassRefs = JSON.stringify(
-        p.config.authnContextClassRefs
+        p.config.authnContextClassRefs,
       );
     if (p.config?.authnContextDeclRefs)
       p.config.authnContextDeclRefs = JSON.stringify(
-        p.config.authnContextDeclRefs
+        p.config.authnContextDeclRefs,
       );
 
     try {
@@ -238,7 +238,7 @@ export default function DetailSettings() {
           config: { ...provider?.config, ...p.config },
           alias,
           providerId,
-        }
+        },
       );
       addAlert(t("updateSuccess"), AlertVariant.success);
     } catch (error) {
@@ -278,7 +278,7 @@ export default function DetailSettings() {
         addAlert(t("deleteMapperSuccess"), AlertVariant.success);
         refresh();
         navigate(
-          toIdentityProvider({ providerId, alias, tab: "mappers", realm })
+          toIdentityProvider({ providerId, alias, tab: "mappers", realm }),
         );
       } catch (error) {
         addError("identity-providers:deleteErrorError", error);
@@ -302,7 +302,7 @@ export default function DetailSettings() {
     const components = loaderMappers.map((loaderMapper) => {
       const mapperType = Object.values(loaderMapperTypes).find(
         (loaderMapperType) =>
-          loaderMapper.identityProviderMapper! === loaderMapperType.id!
+          loaderMapper.identityProviderMapper! === loaderMapperType.id!,
       );
 
       const result: IdPWithMapperAttributes = {
@@ -434,7 +434,7 @@ export default function DetailSettings() {
                         alias: alias!,
                         providerId: provider.providerId!,
                         tab: "mappers",
-                      })
+                      }),
                     )
                   }
                 />

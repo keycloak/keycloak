@@ -48,7 +48,7 @@ describe("Realm settings client policies tab tests", () => {
 
     realmSettingsPage.createNewClientPolicyFromEmptyState(
       "Test",
-      "Test Description"
+      "Test Description",
     );
     masthead.checkNotificationMessage("New policy created");
     cy.wait("@save");
@@ -88,7 +88,7 @@ describe("Realm settings client policies tab tests", () => {
     modalUtils
       .checkModalTitle("Delete condition?")
       .checkModalMessage(
-        "This action will permanently delete client-roles. This cannot be undone."
+        "This action will permanently delete client-roles. This cannot be undone.",
       )
       .checkConfirmButtonText("Delete")
       .cancelButtonContains("Cancel")
@@ -111,7 +111,7 @@ describe("Realm settings client policies tab tests", () => {
     realmSettingsPage.deleteClientPolicyItemFromTable("Test");
     modalUtils
       .checkModalMessage(
-        "This action will permanently delete the policy Test. This cannot be undone."
+        "This action will permanently delete the policy Test. This cannot be undone.",
       )
       .cancelModal();
     realmSettingsPage.checkElementInList("Test");
@@ -135,7 +135,7 @@ describe("Realm settings client policies tab tests", () => {
 
     realmSettingsPage.createNewClientPolicyFromEmptyState(
       "Test",
-      "Test Description"
+      "Test Description",
     );
     masthead.checkNotificationMessage("New policy created");
     cy.wait("@save");
@@ -147,7 +147,7 @@ describe("Realm settings client policies tab tests", () => {
     realmSettingsPage.createNewClientPolicyFromList(
       "Test",
       "Test Again Description",
-      true
+      true,
     );
 
     realmSettingsPage.shouldShowErrorWhenDuplicate();
@@ -169,7 +169,7 @@ describe("Realm settings client policies tab tests", () => {
     cy.intercept("PUT", url).as("save");
     realmSettingsPage.createNewClientPolicyFromEmptyState(
       "Test again",
-      "Test Again Description"
+      "Test Again Description",
     );
     masthead.checkNotificationMessage("New policy created");
     sidebarPage.waitForPageLoad();

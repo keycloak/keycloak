@@ -27,7 +27,7 @@ export default class ProviderOpenshiftGeneralSettings extends ProviderBaseGenera
   public fillData(idpName: string) {
     this.fillCommonFields(idpName);
     cy.findByTestId(this.baseUrlInput).type(
-      idpName + base_url_input_test_value
+      idpName + base_url_input_test_value,
     );
     return this;
   }

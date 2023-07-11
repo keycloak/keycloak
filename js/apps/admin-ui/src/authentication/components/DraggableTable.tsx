@@ -58,7 +58,7 @@ export function DraggableTable<T>({
 
   const itemOrder: string[] = useMemo(
     () => data.map((d) => get(d, keyField)),
-    [data]
+    [data],
   );
 
   const onDragStart = (evt: ReactDragEvent) => {
@@ -150,13 +150,13 @@ export function DraggableTable<T>({
     } else {
       const dragId = curListItem.id;
       const draggingToItemIndex = Array.from(
-        bodyRef.current?.children || []
+        bodyRef.current?.children || [],
       ).findIndex((item) => item.id === dragId);
       if (draggingToItemIndex !== state.draggingToItemIndex) {
         const tempItemOrder = moveItem(
           itemOrder,
           state.draggedItemId,
-          draggingToItemIndex
+          draggingToItemIndex,
         );
         move(tempItemOrder);
 
@@ -241,7 +241,7 @@ export function DraggableTable<T>({
                   items={actions.map(({ isActionable, ...action }) =>
                     isActionable
                       ? { ...action, isDisabled: !isActionable(row) }
-                      : action
+                      : action,
                   )}
                   rowData={row!}
                 />

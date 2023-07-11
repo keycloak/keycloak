@@ -6,7 +6,7 @@ import type { AppRouteObject } from "../../routes";
 export type NewPolicyParams = { realm: string; id: string; policyType: string };
 
 const PolicyDetails = lazy(
-  () => import("../authorization/policy/PolicyDetails")
+  () => import("../authorization/policy/PolicyDetails"),
 );
 
 export const NewPolicyRoute: AppRouteObject = {

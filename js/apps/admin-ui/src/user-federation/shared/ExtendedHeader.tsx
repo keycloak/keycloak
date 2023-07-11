@@ -81,7 +81,7 @@ export const ExtendedHeader = ({
           addAlert(
             t("syncUsersSuccess") +
               `${response.added} users added, ${response.updated} users updated, ${response.removed} users removed, ${response.failed} users failed.`,
-            AlertVariant.success
+            AlertVariant.success,
           );
         }
       }
@@ -103,7 +103,7 @@ export const ExtendedHeader = ({
           addAlert(
             t("syncUsersSuccess") +
               `${response.added} users added, ${response.updated} users updated, ${response.removed} users removed, ${response.failed} users failed.`,
-            AlertVariant.success
+            AlertVariant.success,
           );
         }
       }

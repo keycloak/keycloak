@@ -92,13 +92,13 @@ export const EventsTab = ({ realm }: EventsTabProps) => {
       });
       reload();
     },
-    [key]
+    [key],
   );
 
   const save = async (config: EventsConfigForm) => {
     const updatedEventListener = !isEqual(
       events?.eventsListeners,
-      config.eventsListeners
+      config.eventsListeners,
     );
 
     const { adminEventsExpiration, ...eventConfig } = config;
@@ -108,28 +108,28 @@ export const EventsTab = ({ realm }: EventsTabProps) => {
         {
           ...realm,
           attributes: { ...(realm.attributes || {}), adminEventsExpiration },
-        }
+        },
       );
     }
 
     try {
       await adminClient.realms.updateConfigEvents(
         { realm: realmName },
-        eventConfig
+        eventConfig,
       );
       setupForm({ ...events, ...eventConfig, adminEventsExpiration });
       addAlert(
         updatedEventListener
           ? t("realm-settings:saveEventListenersSuccess")
           : t("realm-settings:eventConfigSuccessfully"),
-        AlertVariant.success
+        AlertVariant.success,
       );
     } catch (error) {
       addError(
         updatedEventListener
           ? t("realm-settings:saveEventListenersError")
           : t("realm-settings:eventConfigError"),
-        error
+        error,
       );
     }
   };
@@ -202,7 +202,7 @@ export const EventsTab = ({ realm }: EventsTabProps) => {
               eventTypes={events?.enabledEventTypes || []}
               onDelete={(value) => {
                 const enabledEventTypes = events?.enabledEventTypes?.filter(
-                  (e) => e !== value.id
+                  (e) => e !== value.id,
                 );
                 addEvents(enabledEventTypes);
                 setEvents({ ...events, enabledEventTypes });

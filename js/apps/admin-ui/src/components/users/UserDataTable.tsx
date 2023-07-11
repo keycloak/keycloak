@@ -82,18 +82,18 @@ export function UserDataTable() {
         return [[], {}, {}] as [
           ComponentRepresentation[],
           RealmRepresentation | undefined,
-          UserProfileConfig
+          UserProfileConfig,
         ];
       }
     },
     ([storageProviders, realm, profile]) => {
       setUserStorage(
-        storageProviders.filter((p) => p.config?.enabled[0] === "true")
+        storageProviders.filter((p) => p.config?.enabled[0] === "true"),
       );
       setRealm(realm);
       setProfile(profile);
     },
-    []
+    [],
   );
 
   const UserDetailLink = (user: UserRepresentation) => (
@@ -215,7 +215,7 @@ export function UserDataTable() {
 
   const clearAllFilters = () => {
     const filtered = [...activeFilters].filter(
-      (chip) => chip.name !== chip.name
+      (chip) => chip.name !== chip.name,
     );
     setActiveFilters(filtered);
     setSearchUser("");
@@ -251,7 +251,7 @@ export function UserDataTable() {
                     event.stopPropagation();
 
                     const filtered = [...activeFilters].filter(
-                      (chip) => chip.name !== entry.name
+                      (chip) => chip.name !== entry.name,
                     );
                     const attributes = createQueryString(filtered);
 

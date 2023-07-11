@@ -58,7 +58,7 @@ const toBase64 = (input: string) =>
 const encodeRFC3986URIComponent = (input: string) =>
   encodeURIComponent(input).replace(
     /[!'()*]/g,
-    (c) => `%${c.charCodeAt(0).toString(16).toUpperCase()}`
+    (c) => `%${c.charCodeAt(0).toString(16).toUpperCase()}`,
   );
 
 // See https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/encodeURIComponent
@@ -102,7 +102,7 @@ export const getToken = async (settings: Settings): Promise<TokenResponse> => {
     // See: https://datatracker.ietf.org/doc/html/rfc2617#section-2
     headers.set(
       "authorization",
-      `Basic ${toBase64(`${username}:${password}`)}`
+      `Basic ${toBase64(`${username}:${password}`)}`,
     );
   }
 

@@ -84,7 +84,7 @@ export default function SessionsSection() {
         max: `${max}`,
         type: filterType,
         search: search || "",
-      }
+      },
     );
     setNoSessions(data.length === 0);
     return data;

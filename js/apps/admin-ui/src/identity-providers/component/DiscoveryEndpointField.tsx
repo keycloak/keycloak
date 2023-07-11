@@ -69,7 +69,7 @@ export const DiscoveryEndpointField = ({
     <>
       <FormGroup
         label={t(
-          id === "oidc" ? "useDiscoveryEndpoint" : "useEntityDescriptor"
+          id === "oidc" ? "useDiscoveryEndpoint" : "useEntityDescriptor",
         )}
         fieldId="kc-discovery-endpoint"
         labelIcon={
@@ -91,14 +91,14 @@ export const DiscoveryEndpointField = ({
             setDiscovery(checked);
           }}
           aria-label={t(
-            id === "oidc" ? "useDiscoveryEndpoint" : "useEntityDescriptor"
+            id === "oidc" ? "useDiscoveryEndpoint" : "useEntityDescriptor",
           )}
         />
       </FormGroup>
       {discovery && (
         <FormGroup
           label={t(
-            id === "oidc" ? "discoveryEndpoint" : "samlEntityDescriptor"
+            id === "oidc" ? "discoveryEndpoint" : "samlEntityDescriptor",
           )}
           fieldId="kc-discovery-endpoint"
           labelIcon={

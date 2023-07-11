@@ -1,14 +1,14 @@
 export default class Select {
   static assertSelectedItem(
     chain: Cypress.Chainable<JQuery<HTMLElement>>,
-    itemName: string
+    itemName: string,
   ) {
     chain.should("have.text", itemName);
   }
 
   static selectItem(
     chain: Cypress.Chainable<JQuery<HTMLElement>>,
-    itemName: string
+    itemName: string,
   ) {
     chain.click();
     this.#getSelectMenu(chain).contains(itemName).click();
