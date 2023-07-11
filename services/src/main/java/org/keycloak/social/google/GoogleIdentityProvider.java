@@ -27,7 +27,6 @@ import org.keycloak.common.ClientConnection;
 import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.JsonWebToken;
 
 import jakarta.ws.rs.core.MultivaluedMap;
@@ -77,10 +76,6 @@ public class GoogleIdentityProvider extends OIDCIdentityProvider implements Soci
     @Override
     protected boolean supportsExternalExchange() {
         return true;
-    }
-
-    @Override
-    protected void processAccessTokenResponse(BrokeredIdentityContext context, AccessTokenResponse response) {
     }
 
     @Override

@@ -4,6 +4,7 @@ import static org.keycloak.testsuite.broker.BrokerTestTools.createIdentityProvid
 
 import java.util.List;
 import java.util.Map;
+import org.keycloak.broker.oidc.OIDCIdentityProviderConfig;
 import org.keycloak.broker.oidc.OIDCIdentityProviderFactory;
 import org.keycloak.models.IdentityProviderSyncMode;
 import org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper;
@@ -27,6 +28,7 @@ public class OidcAccessTokenOnlyClaimsUserAttributeMapperTest extends OidcUserAt
 
                 final Map<String, String> config = idp.getConfig();
                 applyDefaultConfiguration(config, syncMode);
+                config.put(OIDCIdentityProviderConfig.IS_ACCESS_TOKEN_JWT, "true");
 
                 return idp;
             }

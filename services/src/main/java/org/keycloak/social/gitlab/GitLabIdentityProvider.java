@@ -77,10 +77,6 @@ public class GitLabIdentityProvider extends OIDCIdentityProvider  implements Soc
 	}
 
 	@Override
-	protected void processAccessTokenResponse(BrokeredIdentityContext context, AccessTokenResponse response) {
-	}
-
-	@Override
 	protected String getProfileEndpointForValidation(EventBuilder event) {
 		return getUserInfoUrl();
 	}
