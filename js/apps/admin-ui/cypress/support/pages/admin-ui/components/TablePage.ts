@@ -27,7 +27,7 @@ export default class TablePage extends CommonElements {
 
   selectRowItemCheckbox(itemName: string) {
     cy.get(
-      (this.tableInModal ? ".pf-c-modal-box.pf-m-md " : "") + this.tableRowItem
+      (this.tableInModal ? ".pf-c-modal-box.pf-m-md " : "") + this.tableRowItem,
     )
       .contains(itemName)
       .parentsUntil("tbody")
@@ -38,7 +38,7 @@ export default class TablePage extends CommonElements {
 
   clickRowItemLink(itemName: string) {
     cy.get(
-      (this.tableInModal ? ".pf-c-modal-box.pf-m-md " : "") + this.tableRowItem
+      (this.tableInModal ? ".pf-c-modal-box.pf-m-md " : "") + this.tableRowItem,
     )
       .contains(itemName)
       .click();
@@ -47,7 +47,7 @@ export default class TablePage extends CommonElements {
 
   selectRowItemAction(itemName: string, actionItemName: string) {
     cy.get(
-      (this.tableInModal ? ".pf-c-modal-box.pf-m-md " : "") + this.tableRowItem
+      (this.tableInModal ? ".pf-c-modal-box.pf-m-md " : "") + this.tableRowItem,
     )
       .contains(itemName)
       .parentsUntil("tbody")
@@ -63,7 +63,7 @@ export default class TablePage extends CommonElements {
         this.tableRowItem +
         ":nth-child(" +
         row +
-        ")"
+        ")",
     )
       .find("td:nth-child(" + column + ")")
       .type(value);
@@ -76,7 +76,7 @@ export default class TablePage extends CommonElements {
         this.tableRowItem +
         ":nth-child(" +
         row +
-        ")"
+        ")",
     )
       .find("td:nth-child(" + column + ") " + appendChildren)
       .click();
@@ -86,10 +86,10 @@ export default class TablePage extends CommonElements {
   clickRowItemByItemName(
     itemName: string,
     column: number,
-    appendChildren?: string
+    appendChildren?: string,
   ) {
     cy.get(
-      (this.tableInModal ? ".pf-c-modal-box.pf-m-md " : "") + this.tableRowItem
+      (this.tableInModal ? ".pf-c-modal-box.pf-m-md " : "") + this.tableRowItem,
     )
       .find("td:nth-child(" + column + ") " + appendChildren)
       .contains(itemName)
@@ -100,7 +100,7 @@ export default class TablePage extends CommonElements {
   clickHeaderItem(column: number, appendChildren?: string) {
     cy.get(
       (this.tableInModal ? ".pf-c-modal-box.pf-m-md " : "") +
-        this.tableHeaderRowItem
+        this.tableHeaderRowItem,
     )
       .find("td:nth-child(" + column + ") " + appendChildren)
       .click();
@@ -109,7 +109,7 @@ export default class TablePage extends CommonElements {
 
   checkRowItemsEqualTo(amount: number) {
     cy.get(
-      (this.tableInModal ? ".pf-c-modal-box.pf-m-md " : "") + this.tableRowItem
+      (this.tableInModal ? ".pf-c-modal-box.pf-m-md " : "") + this.tableRowItem,
     )
       .its("length")
       .should("be.eq", amount);
@@ -118,7 +118,7 @@ export default class TablePage extends CommonElements {
 
   checkRowItemsGreaterThan(amount: number) {
     cy.get(
-      (this.tableInModal ? ".pf-c-modal-box.pf-m-md " : "") + this.tableRowItem
+      (this.tableInModal ? ".pf-c-modal-box.pf-m-md " : "") + this.tableRowItem,
     )
       .its("length")
       .should("be.gt", amount);
@@ -127,7 +127,7 @@ export default class TablePage extends CommonElements {
 
   checkRowItemExists(itemName: string, exist = true) {
     cy.get(
-      (this.tableInModal ? ".pf-c-modal-box.pf-m-md " : "") + this.tableRowItem
+      (this.tableInModal ? ".pf-c-modal-box.pf-m-md " : "") + this.tableRowItem,
     )
       .contains(itemName)
       .should((!exist ? "not." : "") + "exist");
@@ -136,7 +136,7 @@ export default class TablePage extends CommonElements {
 
   checkRowItemValueByItemName(itemName: string, column: number, value: string) {
     cy.get(
-      (this.tableInModal ? ".pf-c-modal-box.pf-m-md " : "") + this.tableRowItem
+      (this.tableInModal ? ".pf-c-modal-box.pf-m-md " : "") + this.tableRowItem,
     )
       .contains(itemName)
       .parentsUntil("tbody")
@@ -149,14 +149,14 @@ export default class TablePage extends CommonElements {
     row: number,
     column: number,
     value: string,
-    appendChildren?: string
+    appendChildren?: string,
   ) {
     cy.get(
       (this.tableInModal ? ".pf-c-modal-box.pf-m-md " : "") +
         this.tableRowItem +
         ":nth-child(" +
         row +
-        ")"
+        ")",
     )
       .find("td:nth-child(" + column + ") " + appendChildren)
       .should("have.text", value)

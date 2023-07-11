@@ -128,7 +128,7 @@ export const EvaluateScopes = ({ clientId, protocol }: EvaluateScopesProps) => {
   const [key, setKey] = useState("");
   const refresh = () => setKey(`${new Date().getTime()}`);
   const [effectiveRoles, setEffectiveRoles] = useState<RoleRepresentation[]>(
-    []
+    [],
   );
   const [protocolMappers, setProtocolMappers] = useState<
     ProtocolMapperRepresentation[]
@@ -151,7 +151,7 @@ export const EvaluateScopes = ({ clientId, protocol }: EvaluateScopesProps) => {
   useFetch(
     () => adminClient.clients.listOptionalClientScopes({ id: clientId }),
     (optionalClientScopes) => setSelectableScopes(optionalClientScopes),
-    []
+    [],
   );
 
   useFetch(
@@ -180,14 +180,14 @@ export const EvaluateScopes = ({ clientId, protocol }: EvaluateScopesProps) => {
       setEffectiveRoles(effectiveRoles);
       mapperList.map((mapper) => {
         mapper.type = mapperTypes.filter(
-          (type) => type.id === mapper.protocolMapper
+          (type) => type.id === mapper.protocolMapper,
         )[0];
       });
 
       setProtocolMappers(mapperList);
       refresh();
     },
-    [selected]
+    [selected],
   );
 
   useFetch(
@@ -219,7 +219,7 @@ export const EvaluateScopes = ({ clientId, protocol }: EvaluateScopesProps) => {
       setUserInfo(prettyPrintJSON(userInfo));
       setIdToken(prettyPrintJSON(idToken));
     },
-    [form.getValues("user"), selected]
+    [form.getValues("user"), selected],
   );
 
   return (

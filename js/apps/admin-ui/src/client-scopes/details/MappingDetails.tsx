@@ -83,7 +83,7 @@ export default function MappingDetails() {
 
         const mapperTypes = serverInfo.protocolMapperTypes![data!.protocol!];
         const mapping = mapperTypes.find(
-          (type) => type.id === data!.protocolMapper
+          (type) => type.id === data!.protocolMapper,
         );
 
         return {
@@ -104,7 +104,7 @@ export default function MappingDetails() {
         const protocolMappers =
           serverInfo.protocolMapperTypes![model.protocol!];
         const mapping = protocolMappers.find(
-          (mapper) => mapper.id === mapperId
+          (mapper) => mapper.id === mapperId,
         );
         if (!mapping) {
           throw new Error(t("common:notFound"));
@@ -125,7 +125,7 @@ export default function MappingDetails() {
         convertToFormValues(data, setValue);
       }
     },
-    []
+    [],
   );
 
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
@@ -162,11 +162,11 @@ export default function MappingDetails() {
         isOnClientScope
           ? await adminClient.clientScopes.updateProtocolMapper(
               { id, mapperId },
-              { id: mapperId, ...mapping }
+              { id: mapperId, ...mapping },
             )
           : await adminClient.clients.updateProtocolMapper(
               { id, mapperId },
-              { id: mapperId, ...mapping }
+              { id: mapperId, ...mapping },
             );
       } else {
         isOnClientScope

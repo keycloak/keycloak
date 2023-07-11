@@ -57,7 +57,7 @@ export const PermissionsTab = ({ id, type }: PermissionsTabProps) => {
       case "clients":
         return adminClient.clients.updateFineGrainPermission(
           { id: id! },
-          { enabled }
+          { enabled },
         );
       case "users":
         return adminClient.realms.updateUsersManagementPermissions({
@@ -71,7 +71,7 @@ export const PermissionsTab = ({ id, type }: PermissionsTabProps) => {
       case "identityProviders":
         return adminClient.identityProviders.updatePermission(
           { alias: id! },
-          { enabled }
+          { enabled },
         );
     }
   };
@@ -106,7 +106,7 @@ export const PermissionsTab = ({ id, type }: PermissionsTabProps) => {
       setRealmId(clients[0]?.id!);
       setPermission(permission);
     },
-    [id]
+    [id],
   );
 
   const [toggleDisableDialog, DisableConfirm] = useConfirmDialog({
@@ -197,7 +197,7 @@ export const PermissionsTab = ({ id, type }: PermissionsTabProps) => {
                 <Tbody>
                   {localeSort(
                     Object.entries(permission.scopePermissions || {}),
-                    ([name]) => name
+                    ([name]) => name,
                   ).map(([name, id]) => (
                     <Tr key={id}>
                       <Td>
@@ -227,7 +227,7 @@ export const PermissionsTab = ({ id, type }: PermissionsTabProps) => {
                                     id: realmId,
                                     permissionType: "scope",
                                     permissionId: id,
-                                  })
+                                  }),
                                 );
                               },
                             },

@@ -55,7 +55,7 @@ export const KeysProvidersTab = ({
 
   const [searchVal, setSearchVal] = useState("");
   const [filteredComponents, setFilteredComponents] = useState<ComponentData[]>(
-    []
+    [],
   );
 
   const [isCreateModalOpen, handleModalToggle] = useToggle();
@@ -75,7 +75,7 @@ export const KeysProvidersTab = ({
       realmComponents.map((component) => {
         const provider = keyProviderComponentTypes.find(
           (componentType: ComponentTypeRepresentation) =>
-            component.providerId === componentType.id
+            component.providerId === componentType.id,
         );
 
         return {
@@ -83,7 +83,7 @@ export const KeysProvidersTab = ({
           providerDescription: provider?.helpText,
         };
       }),
-    [realmComponents]
+    [realmComponents],
   );
 
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
@@ -115,7 +115,7 @@ export const KeysProvidersTab = ({
       const filteredComponents = components.filter(
         (component) =>
           component.name?.includes(searchVal) ||
-          component.providerId?.includes(searchVal)
+          component.providerId?.includes(searchVal),
       );
       setFilteredComponents(filteredComponents);
     } else {
@@ -216,7 +216,7 @@ export const KeysProvidersTab = ({
                       ).toString(),
                     ],
                   },
-                }
+                },
               );
             });
 

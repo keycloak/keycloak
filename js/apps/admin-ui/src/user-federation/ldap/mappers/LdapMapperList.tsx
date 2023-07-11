@@ -62,11 +62,11 @@ export const LdapMapperList = ({ toCreate, toDetail }: LdapMapperListProps) => {
             name: mapper.name,
             type: mapper.providerId,
           })),
-          mapByKey("name")
-        )
+          mapByKey("name"),
+        ),
       );
     },
-    [key]
+    [key],
   );
 
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({

@@ -20,7 +20,7 @@ export class AdvancedSamlTab extends PageObject {
   checkTermsOfServiceUrl(termsOfServiceUrl: string) {
     cy.findAllByTestId(this.termsOfServiceUrlId).should(
       "have.value",
-      termsOfServiceUrl
+      termsOfServiceUrl,
     );
     return this;
   }

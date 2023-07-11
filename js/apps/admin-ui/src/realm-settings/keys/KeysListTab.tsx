@@ -97,13 +97,13 @@ export const KeysListTab = ({ realmComponents }: KeysListTabProps) => {
       return keysMetaData.keys?.map((key) => {
         const provider = realmComponents.find(
           (component: ComponentRepresentation) =>
-            component.id === key.providerId
+            component.id === key.providerId,
         );
         return { ...key, provider: provider?.name } as KeyData;
       })!;
     },
     setKeyData,
-    []
+    [],
   );
 
   const [togglePublicKeyDialog, PublicKeyDialog] = useConfirmDialog({
@@ -142,7 +142,7 @@ export const KeysListTab = ({ realmComponents }: KeysListTabProps) => {
               setFilteredKeyData(
                 filterType !== FILTER_OPTIONS[0]
                   ? keyData!.filter(({ status }) => status === filterType)
-                  : undefined
+                  : undefined,
               )
             }
           />

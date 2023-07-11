@@ -43,7 +43,7 @@ export default function UserFederationKerberosSettings() {
         throw new Error(t("common:notFound"));
       }
     },
-    []
+    [],
   );
 
   const setupForm = (component: ComponentRepresentation) => {

@@ -51,7 +51,7 @@ describe("Users", () => {
           user: process.env.SMTP_USER,
           password: process.env.SMTP_PWD,
         },
-      }
+      },
     );
   });
 
@@ -119,7 +119,7 @@ describe("Users", () => {
         lastName: "chang",
         requiredActions: [RequiredActionAlias.UPDATE_PASSWORD],
         emailVerified: true,
-      }
+      },
     );
 
     const user = await kcAdminClient.users.findOne({
@@ -219,7 +219,7 @@ describe("Users", () => {
 
     await kcAdminClient.users.updateCredentialLabel(
       { id: userId!, credentialId: credential.id! },
-      "New user label"
+      "New user label",
     );
 
     const credentialsAfterLabelUpdate =
@@ -228,7 +228,7 @@ describe("Users", () => {
       });
 
     expect(credentialsAfterLabelUpdate.map((c) => c.userLabel)).to.include(
-      "New user label"
+      "New user label",
     );
   });
 
@@ -251,7 +251,7 @@ describe("Users", () => {
       await Promise.all(
         groups.map((_group: GroupRepresentation) => {
           return kcAdminClient.groups.del({ id: _group.id! });
-        })
+        }),
       );
 
       const group = await kcAdminClient.groups.findOne({
@@ -341,7 +341,7 @@ describe("Users", () => {
           groupId: "fake-group-id",
         });
         fail(
-          "Expected an error when deleting a fake id not assigned to the user"
+          "Expected an error when deleting a fake id not assigned to the user",
         );
       } catch (e) {
         expect(e).to.be.ok;
@@ -586,7 +586,7 @@ describe("Users", () => {
     it("list users off-line sessions", async () => {
       // @TODO: In order to test it, currentUser has to be logged in
       const userOfflineSessions = await kcAdminClient.users.listOfflineSessions(
-        { id: currentUser.id!, clientId: currentClient.id! }
+        { id: currentUser.id!, clientId: currentClient.id! },
       );
 
       expect(userOfflineSessions).to.be.ok;
@@ -624,7 +624,7 @@ describe("Users", () => {
     it("impersonate user", async () => {
       const result = await kcAdminClient.users.impersonation(
         { id: currentUser.id! },
-        { user: currentUser.id!, realm: kcAdminClient.realmName }
+        { user: currentUser.id!, realm: kcAdminClient.realmName },
       );
       expect(result).to.be.ok;
       await kcAdminClient.auth(credentials);

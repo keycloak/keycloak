@@ -56,7 +56,7 @@ export const UserProfileFields = ({
               <Fragment key={attribute.name}>
                 {(attribute.group || "") === g.name &&
                   (attribute.permissions?.view || DEFAULT_ROLES).some((r) =>
-                    roles.includes(r)
+                    roles.includes(r),
                   ) && <FormField attribute={attribute} roles={roles} />}
               </Fragment>
             ))}
@@ -126,7 +126,7 @@ const FormField = ({ attribute, roles }: FormFieldProps) => {
               isOpen={open}
               isDisabled={
                 !(attribute.permissions?.edit || DEFAULT_ROLES).some((r) =>
-                  roles.includes(r)
+                  roles.includes(r),
                 )
               }
             >
@@ -154,7 +154,7 @@ const FormField = ({ attribute, roles }: FormFieldProps) => {
           id={attribute.name}
           isDisabled={
             !(attribute.permissions?.edit || DEFAULT_ROLES).some((r) =>
-              roles.includes(r)
+              roles.includes(r),
             )
           }
           {...register(fieldName(attribute))}

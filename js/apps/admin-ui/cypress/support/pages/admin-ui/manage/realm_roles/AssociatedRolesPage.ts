@@ -27,7 +27,7 @@ export default class AssociatedRolesPage {
 
     cy.findByTestId(this.compositeRoleBadge).should(
       "contain.text",
-      "Composite"
+      "Composite",
     );
 
     return this;
@@ -86,7 +86,7 @@ export default class AssociatedRolesPage {
   isRemoveAssociatedRolesBtnDisabled() {
     cy.findByTestId(this.removeRolesButton).should(
       "have.class",
-      "pf-m-disabled"
+      "pf-m-disabled",
     );
     return this;
   }

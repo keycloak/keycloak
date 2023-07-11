@@ -22,7 +22,7 @@ export const ClientPoliciesRoute: AppRouteObject = {
 };
 
 export const toClientPolicies = (
-  params: ClientPoliciesParams
+  params: ClientPoliciesParams,
 ): Partial<Path> => ({
   pathname: generatePath(ClientPoliciesRoute.path, params),
 });

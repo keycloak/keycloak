@@ -48,7 +48,7 @@ describe("Masthead tests", () => {
           cy.origin(href, () => {
             cy.get("#header").should(
               "contain.text",
-              "Server Administration Guide"
+              "Server Administration Guide",
             );
           });
         });

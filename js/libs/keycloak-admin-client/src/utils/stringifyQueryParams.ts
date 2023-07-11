@@ -16,6 +16,6 @@ export function stringifyQueryParams(params: Record<string, unknown>) {
       }
 
       return true;
-    })
+    }),
   ).toString();
 }

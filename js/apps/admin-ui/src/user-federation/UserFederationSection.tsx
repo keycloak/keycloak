@@ -67,7 +67,7 @@ export default function UserFederationSection() {
     (userFederations) => {
       setUserFederations(userFederations);
     },
-    [key]
+    [key],
   );
 
   const ufAddProviderDropdownItems = useMemo(
@@ -84,7 +84,7 @@ export default function UserFederationSection() {
             : toUpperCase(p.id)}
         </DropdownItem>
       )),
-    []
+    [],
   );
 
   const lowerButtonProps = {
@@ -211,7 +211,7 @@ export default function UserFederationSection() {
                   key={p.id}
                   onClick={() =>
                     navigate(
-                      toNewCustomUserFederation({ realm, providerId: p.id! })
+                      toNewCustomUserFederation({ realm, providerId: p.id! }),
                     )
                   }
                   data-testid={`${p.id}-card`}

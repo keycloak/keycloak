@@ -65,14 +65,14 @@ type PermissionView = [
   {
     adminView: boolean;
     userView: boolean;
-  }
+  },
 ];
 
 type PermissionEdit = [
   {
     adminEdit: boolean;
     userEdit: boolean;
-  }
+  },
 ];
 
 export const USERNAME_EMAIL = ["username", "email"];
@@ -141,29 +141,29 @@ export default function NewAttributeSettings() {
         ...values
       } =
         config.attributes!.find(
-          (attribute) => attribute.name === attributeName
+          (attribute) => attribute.name === attributeName,
         ) || {};
       convertToFormValues(values, form.setValue);
       Object.entries(
-        flatten<any, any>({ permissions, selector, required }, { safe: true })
+        flatten<any, any>({ permissions, selector, required }, { safe: true }),
       ).map(([key, value]) => form.setValue(key as any, value));
       form.setValue(
         "annotations",
         Object.entries(annotations || {}).map(([key, value]) => ({
           key,
           value,
-        }))
+        })),
       );
       form.setValue(
         "validations",
         Object.entries(validations || {}).map(([key, value]) => ({
           key,
           value,
-        }))
+        })),
       );
       form.setValue("isRequired", required !== undefined);
     },
-    []
+    [],
   );
 
   const save = async (profileConfig: UserProfileAttributeType) => {
@@ -175,12 +175,12 @@ export default function NewAttributeSettings() {
             : currentValidations.value;
         return prevValidations;
       },
-      {} as Record<string, unknown>
+      {} as Record<string, unknown>,
     );
 
     const annotations = profileConfig.annotations.reduce(
       (obj, item) => Object.assign(obj, { [item.key]: item.value }),
-      {}
+      {},
     );
 
     const patchAttributes = () =>
@@ -203,7 +203,9 @@ export default function NewAttributeSettings() {
           profileConfig.isRequired
             ? { required: profileConfig.required }
             : undefined,
-          profileConfig.group ? { group: profileConfig.group } : { group: null }
+          profileConfig.group
+            ? { group: profileConfig.group }
+            : { group: null },
         );
       });
 
@@ -224,7 +226,7 @@ export default function NewAttributeSettings() {
           profileConfig.isRequired
             ? { required: profileConfig.required }
             : undefined,
-          profileConfig.group ? { group: profileConfig.group } : undefined
+          profileConfig.group ? { group: profileConfig.group } : undefined,
         ),
       ] as UserProfileAttribute);
 
@@ -241,7 +243,7 @@ export default function NewAttributeSettings() {
 
       addAlert(
         t("realm-settings:createAttributeSuccess"),
-        AlertVariant.success
+        AlertVariant.success,
       );
     } catch (error) {
       addError("realm-settings:createAttributeError", error);

@@ -120,7 +120,7 @@ describe("User Federation LDAP tests", () => {
       truststoreSpiNever,
       connectionTimeoutTwoSecs,
       bindDnCnOnly,
-      bindCredsInvalid
+      bindCredsInvalid,
     );
     providersPage.fillLdapSearchingData(
       editModeReadOnly,
@@ -131,7 +131,7 @@ describe("User Federation LDAP tests", () => {
       firstUserObjClasses,
       firstUserLdapFilter,
       searchScopeOneLevel,
-      firstReadTimeout
+      firstReadTimeout,
     );
     providersPage.save(provider);
     masthead.checkNotificationMessage(createdSuccessMessage);
@@ -159,7 +159,7 @@ describe("User Federation LDAP tests", () => {
       secondUserLdapAtt,
       secondRdnLdapAtt,
       secondUuidLdapAtt,
-      secondUserObjClasses
+      secondUserObjClasses,
     );
     providersPage.save(provider);
     masthead.checkNotificationMessage(savedSuccessMessage);
@@ -221,7 +221,7 @@ describe("User Federation LDAP tests", () => {
       connectionUrlInvalid,
       bindTypeNone,
       truststoreSpiNever,
-      connectionTimeoutTwoSecs
+      connectionTimeoutTwoSecs,
     );
     providersPage.toggleSwitch(providersPage.enableStartTls);
     providersPage.toggleSwitch(providersPage.connectionPooling);
@@ -234,15 +234,15 @@ describe("User Federation LDAP tests", () => {
     providersPage.clickExistingCard(firstLdapName);
     providersPage.verifyTextField(
       providersPage.connectionUrlInput,
-      connectionUrlInvalid
+      connectionUrlInvalid,
     );
     providersPage.verifyTextField(
       providersPage.connectionTimeoutInput,
-      connectionTimeoutTwoSecs
+      connectionTimeoutTwoSecs,
     );
     providersPage.verifySelect(
       providersPage.truststoreSpiInput,
-      truststoreSpiNever
+      truststoreSpiNever,
     );
     providersPage.verifySelect(providersPage.bindTypeInput, bindTypeNone);
     providersPage.verifyToggle(providersPage.enableStartTls, "on");
@@ -271,7 +271,7 @@ describe("User Federation LDAP tests", () => {
       truststoreSpiAlways,
       connectionTimeoutTwoSecs,
       bindDnCnDc,
-      bindCredsValid
+      bindCredsValid,
     );
     providersPage.toggleSwitch(providersPage.enableStartTls);
     providersPage.toggleSwitch(providersPage.connectionPooling);
@@ -296,11 +296,11 @@ describe("User Federation LDAP tests", () => {
 
     providersPage.fillTextField(
       providersPage.ldapKerberosRealmInput,
-      kerberosRealm
+      kerberosRealm,
     );
     providersPage.fillTextField(
       providersPage.ldapServerPrincipalInput,
-      serverPrincipal
+      serverPrincipal,
     );
     providersPage.fillTextField(providersPage.ldapKeyTabInput, keyTab);
 
@@ -312,11 +312,11 @@ describe("User Federation LDAP tests", () => {
     providersPage.clickExistingCard(firstLdapName);
     providersPage.verifyTextField(
       providersPage.ldapKerberosRealmInput,
-      kerberosRealm
+      kerberosRealm,
     );
     providersPage.verifyTextField(
       providersPage.ldapServerPrincipalInput,
-      serverPrincipal
+      serverPrincipal,
     );
     providersPage.verifyTextField(providersPage.ldapKeyTabInput, keyTab);
     providersPage.verifyToggle(providersPage.allowKerberosAuth, "on");
@@ -336,11 +336,11 @@ describe("User Federation LDAP tests", () => {
     providersPage.fillTextField(providersPage.ldapBatchSizeInput, batchSize);
     providersPage.fillTextField(
       providersPage.ldapFullSyncPeriodInput,
-      fullSyncPeriod
+      fullSyncPeriod,
     );
     providersPage.fillTextField(
       providersPage.ldapUsersSyncPeriodInput,
-      userSyncPeriod
+      userSyncPeriod,
     );
 
     providersPage.save(provider);
@@ -352,11 +352,11 @@ describe("User Federation LDAP tests", () => {
     providersPage.verifyTextField(providersPage.ldapBatchSizeInput, batchSize);
     providersPage.verifyTextField(
       providersPage.ldapFullSyncPeriodInput,
-      fullSyncPeriod
+      fullSyncPeriod,
     );
     providersPage.verifyTextField(
       providersPage.ldapUsersSyncPeriodInput,
-      userSyncPeriod
+      userSyncPeriod,
     );
     providersPage.verifyToggle(providersPage.periodicFullSync, "on");
     providersPage.verifyToggle(providersPage.periodicUsersSync, "on");
@@ -376,7 +376,7 @@ describe("User Federation LDAP tests", () => {
       secondUserObjClasses,
       secondUserLdapFilter,
       searchScopeSubtree,
-      secondReadTimeout
+      secondReadTimeout,
     );
     providersPage.toggleSwitch(providersPage.ldapPagination);
 
@@ -389,39 +389,39 @@ describe("User Federation LDAP tests", () => {
 
     providersPage.verifySelect(
       providersPage.ldapEditModeInput,
-      editModeWritable
+      editModeWritable,
     );
     providersPage.verifyTextField(
       providersPage.ldapUsersDnInput,
-      secondUsersDn
+      secondUsersDn,
     );
     providersPage.verifyTextField(
       providersPage.ldapUserLdapAttInput,
-      secondUserLdapAtt
+      secondUserLdapAtt,
     );
     providersPage.verifyTextField(
       providersPage.ldapRdnLdapAttInput,
-      secondRdnLdapAtt
+      secondRdnLdapAtt,
     );
     providersPage.verifyTextField(
       providersPage.ldapUuidLdapAttInput,
-      secondUuidLdapAtt
+      secondUuidLdapAtt,
     );
     providersPage.verifyTextField(
       providersPage.ldapUserObjClassesInput,
-      secondUserObjClasses
+      secondUserObjClasses,
     );
     providersPage.verifyTextField(
       providersPage.ldapUserLdapFilter,
-      secondUserLdapFilter
+      secondUserLdapFilter,
     );
     providersPage.verifySelect(
       providersPage.ldapSearchScopeInput,
-      searchScopeSubtree
+      searchScopeSubtree,
     );
     providersPage.verifyTextField(
       providersPage.ldapReadTimeout,
-      secondReadTimeout
+      secondReadTimeout,
     );
     providersPage.verifyToggle(providersPage.ldapPagination, "on");
 
@@ -452,7 +452,7 @@ describe("User Federation LDAP tests", () => {
 
     providersPage.verifySelect(
       providersPage.ldapEditModeInput,
-      editModeUnsynced
+      editModeUnsynced,
     );
   });
 
@@ -542,7 +542,7 @@ describe("User Federation LDAP tests", () => {
       truststoreSpiNever,
       connectionTimeoutTwoSecs,
       bindDnCnOnly,
-      bindCredsInvalid
+      bindCredsInvalid,
     );
     providersPage.fillLdapSearchingData(
       editModeWritable,
@@ -550,7 +550,7 @@ describe("User Federation LDAP tests", () => {
       secondUserLdapAtt,
       secondRdnLdapAtt,
       secondUuidLdapAtt,
-      secondUserObjClasses
+      secondUserObjClasses,
     );
     providersPage.save(provider);
     masthead.checkNotificationMessage(createdSuccessMessage);

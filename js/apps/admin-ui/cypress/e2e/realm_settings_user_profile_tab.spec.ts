@@ -30,7 +30,7 @@ describe("User profile tabs", () => {
   before(() =>
     adminClient.createRealm(realmName, {
       attributes: { userProfileEnabled: "true" },
-    })
+    }),
   );
 
   after(() => adminClient.deleteRealm(realmName));
@@ -67,7 +67,7 @@ describe("User profile tabs", () => {
         .createAttribute(attributeName, "Display name")
         .saveAttributeCreation();
       masthead.checkNotificationMessage(
-        "Success! User Profile configuration has been saved."
+        "Success! User Profile configuration has been saved.",
       );
     });
 
@@ -79,7 +79,7 @@ describe("User profile tabs", () => {
         .editAttribute("Edited display name")
         .saveAttributeCreation();
       masthead.checkNotificationMessage(
-        "Success! User Profile configuration has been saved."
+        "Success! User Profile configuration has been saved.",
       );
     });
 
@@ -101,7 +101,7 @@ describe("User profile tabs", () => {
       cy.wrap(null).then(() =>
         adminClient.patchUserProfile(realmName, {
           groups: [{ name: "Test" }],
-        })
+        }),
       );
 
       getUserProfileTab();
@@ -131,7 +131,7 @@ describe("User profile tabs", () => {
       getJsonEditorTab();
       userProfileTab.typeJSON(removedThree).saveJSON();
       masthead.checkNotificationMessage(
-        "User profile settings successfully updated."
+        "User profile settings successfully updated.",
       );
     });
   });

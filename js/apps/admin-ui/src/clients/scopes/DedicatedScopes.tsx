@@ -51,7 +51,7 @@ export default function DedicatedScopes() {
   }
 
   const addMappers = async (
-    mappers: ProtocolMapperTypeRepresentation | ProtocolMapperRepresentation[]
+    mappers: ProtocolMapperTypeRepresentation | ProtocolMapperRepresentation[],
   ): Promise<void> => {
     if (!Array.isArray(mappers)) {
       const mapper = mappers as ProtocolMapperTypeRepresentation;
@@ -60,13 +60,13 @@ export default function DedicatedScopes() {
           realm,
           id: client.id!,
           mapperId: mapper.id!,
-        })
+        }),
       );
     } else {
       try {
         await adminClient.clients.addMultipleProtocolMappers(
           { id: client.id! },
-          mappers as ProtocolMapperRepresentation[]
+          mappers as ProtocolMapperRepresentation[],
         );
         setClient(await adminClient.clients.findOne({ id: client.id! }));
         addAlert(t("common:mappingCreatedSuccess"), AlertVariant.success);
@@ -85,7 +85,7 @@ export default function DedicatedScopes() {
       setClient({
         ...client,
         protocolMappers: client.protocolMappers?.filter(
-          (m) => m.id !== mapper.id
+          (m) => m.id !== mapper.id,
         ),
       });
       addAlert(t("common:mappingDeletedSuccess"), AlertVariant.success);

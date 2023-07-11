@@ -17,7 +17,7 @@ export const IdentityProviderSamlRoute: AppRouteObject = {
 };
 
 export const toIdentityProviderSaml = (
-  params: IdentityProviderSamlParams
+  params: IdentityProviderSamlParams,
 ): Partial<Path> => ({
   pathname: generatePath(IdentityProviderSamlRoute.path, params),
 });

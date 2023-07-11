@@ -37,7 +37,7 @@ export const RealmSettingsLoginTab = ({
         },
         Array.isArray(switches)
           ? switches.reduce((realm, s) => Object.assign(realm, s), realm)
-          : Object.assign(realm, switches)
+          : Object.assign(realm, switches),
       );
       addAlert(t("enableSwitchSuccess", { switch: t(name) }));
       refresh();

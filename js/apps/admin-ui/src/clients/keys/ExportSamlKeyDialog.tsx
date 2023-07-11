@@ -34,11 +34,11 @@ export const ExportSamlKeyDialog = ({
           id: clientId,
           attr: "saml.signing",
         },
-        config
+        config,
       );
       saveAs(
         new Blob([keyStore], { type: "application/octet-stream" }),
-        `keystore.${getFileExtension(config.format ?? "")}`
+        `keystore.${getFileExtension(config.format ?? "")}`,
       );
       addAlert(t("samlKeysExportSuccess"));
       close();

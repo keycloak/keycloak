@@ -37,7 +37,7 @@ export const NewPolicyDialog = ({
   const sortedPolicies = useMemo(
     () =>
       policyProviders ? localeSort(policyProviders, mapByKey("name")) : [],
-    [policyProviders]
+    [policyProviders],
   );
 
   return (

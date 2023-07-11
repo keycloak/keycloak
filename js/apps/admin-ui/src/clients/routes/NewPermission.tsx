@@ -13,7 +13,7 @@ export type NewPermissionParams = {
 };
 
 const PermissionDetails = lazy(
-  () => import("../authorization/PermissionDetails")
+  () => import("../authorization/PermissionDetails"),
 );
 
 export const NewPermissionRoute: AppRouteObject = {

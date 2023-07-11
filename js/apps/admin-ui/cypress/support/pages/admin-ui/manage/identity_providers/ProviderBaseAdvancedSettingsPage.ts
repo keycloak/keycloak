@@ -156,7 +156,7 @@ export default class ProviderBaseGeneralSettingsPage extends PageObject {
     cy.get(this.firstLoginFlowSelect).click();
     super.clickSelectMenuItem(
       loginFlowOption,
-      cy.get(".pf-c-select__menu-item").contains(loginFlowOption)
+      cy.get(".pf-c-select__menu-item").contains(loginFlowOption),
     );
     return this;
   }
@@ -165,18 +165,18 @@ export default class ProviderBaseGeneralSettingsPage extends PageObject {
     cy.get(this.postLoginFlowSelect).click();
     super.clickSelectMenuItem(
       loginFlowOption,
-      cy.get(".pf-c-select__menu-item").contains(loginFlowOption)
+      cy.get(".pf-c-select__menu-item").contains(loginFlowOption),
     );
     return this;
   }
 
   public selectClientAssertSignAlg(
-    clientAssertionSigningAlg: ClientAssertionSigningAlg
+    clientAssertionSigningAlg: ClientAssertionSigningAlg,
   ) {
     cy.get(this.clientAssertionSigningAlg).click();
     super.clickSelectMenuItem(
       clientAssertionSigningAlg,
-      cy.get(".pf-c-select__menu-item").contains(clientAssertionSigningAlg)
+      cy.get(".pf-c-select__menu-item").contains(clientAssertionSigningAlg),
     );
     return this;
   }
@@ -185,7 +185,7 @@ export default class ProviderBaseGeneralSettingsPage extends PageObject {
     cy.get(this.syncModeSelect).click();
     super.clickSelectMenuItem(
       syncModeOption,
-      cy.get(".pf-c-select__menu-item").contains(syncModeOption)
+      cy.get(".pf-c-select__menu-item").contains(syncModeOption),
     );
     return this;
   }
@@ -194,7 +194,7 @@ export default class ProviderBaseGeneralSettingsPage extends PageObject {
     cy.get(this.promptSelect).click();
     super.clickSelectMenuItem(
       promptOption,
-      cy.get(".pf-c-select__menu-item").contains(promptOption).parent()
+      cy.get(".pf-c-select__menu-item").contains(promptOption).parent(),
     );
     return this;
   }
@@ -222,7 +222,7 @@ export default class ProviderBaseGeneralSettingsPage extends PageObject {
   public assertAcceptsPromptNoneForwardFromClientSwitchTurnedOn(isOn: boolean) {
     super.assertSwitchStateOn(
       cy.get(this.acceptsPromptNoneForwardFromClientSwitch).parent(),
-      isOn
+      isOn,
     );
     return this;
   }
@@ -230,7 +230,7 @@ export default class ProviderBaseGeneralSettingsPage extends PageObject {
   public assertDisableUserInfoSwitchTurnedOn(isOn: boolean) {
     super.assertSwitchStateOn(
       cy.get(this.disableUserInfoSwitch).parent(),
-      isOn
+      isOn,
     );
     return this;
   }
@@ -248,7 +248,7 @@ export default class ProviderBaseGeneralSettingsPage extends PageObject {
   public assertHideOnLoginPageSwitchTurnedOn(isOn: boolean) {
     super.assertSwitchStateOn(
       cy.get(this.hideOnLoginPageSwitch).parent(),
-      isOn
+      isOn,
     );
     return this;
   }
@@ -269,14 +269,14 @@ export default class ProviderBaseGeneralSettingsPage extends PageObject {
   }
 
   public assertFirstLoginFlowSelectOptionEqual(
-    loginFlowOption: LoginFlowOption
+    loginFlowOption: LoginFlowOption,
   ) {
     cy.get(this.firstLoginFlowSelect).should("have.text", loginFlowOption);
     return this;
   }
 
   public assertPostLoginFlowSelectOptionEqual(
-    loginFlowOption: LoginFlowOption
+    loginFlowOption: LoginFlowOption,
   ) {
     cy.get(this.postLoginFlowSelect).should("have.text", loginFlowOption);
     return this;
@@ -288,11 +288,11 @@ export default class ProviderBaseGeneralSettingsPage extends PageObject {
   }
 
   public assertClientAssertSigAlgSelectOptionEqual(
-    clientAssertionSigningAlg: ClientAssertionSigningAlg
+    clientAssertionSigningAlg: ClientAssertionSigningAlg,
   ) {
     cy.get(this.clientAssertionSigningAlg).should(
       "have.text",
-      clientAssertionSigningAlg
+      clientAssertionSigningAlg,
     );
     return this;
   }
@@ -305,7 +305,7 @@ export default class ProviderBaseGeneralSettingsPage extends PageObject {
     this.clickSaveBtn();
     masthead.checkNotificationMessage(
       "Could not update the provider The url [" + url + "_url] is malformed",
-      true
+      true,
     );
     this.clickRevertBtn();
     //cy.findByTestId(url + "Url").contains
@@ -382,7 +382,7 @@ export default class ProviderBaseGeneralSettingsPage extends PageObject {
 
     this.clickAcceptsPromptNoneForwardFromClientSwitch();
     super.assertSwitchStateOn(
-      cy.get(this.acceptsPromptNoneForwardFromClientSwitch)
+      cy.get(this.acceptsPromptNoneForwardFromClientSwitch),
     );
     return this;
   }
@@ -413,12 +413,12 @@ export default class ProviderBaseGeneralSettingsPage extends PageObject {
     this.assertHideOnLoginPageSwitchTurnedOn(false);
 
     this.assertFirstLoginFlowSelectOptionEqual(
-      LoginFlowOption.firstBrokerLogin
+      LoginFlowOption.firstBrokerLogin,
     );
     this.assertPostLoginFlowSelectOptionEqual(LoginFlowOption.none);
     this.assertSyncModeSelectOptionEqual(SyncModeOption.import);
     this.assertClientAssertSigAlgSelectOptionEqual(
-      ClientAssertionSigningAlg.algorithmNotSpecified
+      ClientAssertionSigningAlg.algorithmNotSpecified,
     );
     return this;
   }

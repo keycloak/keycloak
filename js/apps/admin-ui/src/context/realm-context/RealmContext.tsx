@@ -12,7 +12,7 @@ type RealmContextType = {
 
 export const RealmContext = createNamedContext<RealmContextType | undefined>(
   "RealmContext",
-  undefined
+  undefined,
 );
 
 export const RealmContextProvider = ({ children }: PropsWithChildren) => {
@@ -24,7 +24,7 @@ export const RealmContextProvider = ({ children }: PropsWithChildren) => {
   const realmParam = routeMatch?.params.realm;
   const realm = useMemo(
     () => realmParam ?? environment.loginRealm,
-    [realmParam]
+    [realmParam],
   );
 
   // Configure admin client to use selected realm when it changes.

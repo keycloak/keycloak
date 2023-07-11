@@ -99,7 +99,7 @@ function NavMenuItem({ menuItem }: NavMenuItemProps) {
   const { pathname } = useLocation();
   const isActive = useMemo(
     () => matchMenuItem(pathname, menuItem),
-    [pathname, menuItem]
+    [pathname, menuItem],
   );
 
   if ("path" in menuItem) {

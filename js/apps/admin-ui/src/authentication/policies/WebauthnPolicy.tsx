@@ -108,7 +108,7 @@ const WebauthnSelect = ({
             onSelect={(_, selectedValue) => {
               if (isMultiSelect) {
                 const changedValue = field.value.find(
-                  (item: string) => item === selectedValue
+                  (item: string) => item === selectedValue,
                 )
                   ? field.value.filter((item: string) => item !== selectedValue)
                   : [...field.value, selectedValue];
@@ -313,7 +313,7 @@ export const WebauthnPolicy = ({
             labelIcon={
               <HelpItem
                 helpText={t(
-                  "authentication-help:webAuthnPolicyAvoidSameAuthenticatorRegister"
+                  "authentication-help:webAuthnPolicyAvoidSameAuthenticatorRegister",
                 )}
                 fieldLabelId="authentication:webAuthnPolicyAvoidSameAuthenticatorRegister"
               />
@@ -341,7 +341,7 @@ export const WebauthnPolicy = ({
             labelIcon={
               <HelpItem
                 helpText={t(
-                  "authentication-help:webAuthnPolicyAcceptableAaguids"
+                  "authentication-help:webAuthnPolicyAcceptableAaguids",
                 )}
                 fieldLabelId="authentication:webAuthnPolicyAcceptableAaguids"
               />

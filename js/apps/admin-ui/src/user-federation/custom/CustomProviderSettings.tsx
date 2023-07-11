@@ -69,7 +69,7 @@ export default function CustomProviderSettings() {
         throw new Error(t("common:notFound"));
       }
     },
-    []
+    [],
   );
 
   useFetch(
@@ -78,7 +78,7 @@ export default function CustomProviderSettings() {
         realm: realmName,
       }),
     (realm) => setParentId(realm?.id!),
-    []
+    [],
   );
 
   const save = async (component: ComponentRepresentation) => {
@@ -88,7 +88,7 @@ export default function CustomProviderSettings() {
         Object.entries(component.config || {}).map(([key, value]) => [
           key,
           Array.isArray(value) ? value : [value],
-        ])
+        ]),
       ),
       providerId,
       providerType: "org.keycloak.storage.UserStorageProvider",

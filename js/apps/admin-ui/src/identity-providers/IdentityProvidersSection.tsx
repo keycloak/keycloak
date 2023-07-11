@@ -75,7 +75,7 @@ export default function IdentityProvidersSection() {
   const { t } = useTranslation("identity-providers");
   const identityProviders = groupBy(
     useServerInfo().identityProviders,
-    "groupName"
+    "groupName",
   );
   const { realm } = useRealm();
   const navigate = useNavigate();
@@ -101,7 +101,7 @@ export default function IdentityProvidersSection() {
     (providers) => {
       setProviders(sortBy(providers, ["config.guiOrder", "alias"]));
     },
-    [key]
+    [key],
   );
 
   const navigateToCreate = (providerId: string) =>
@@ -109,7 +109,7 @@ export default function IdentityProvidersSection() {
       toIdentityProviderCreate({
         realm,
         providerId,
-      })
+      }),
     );
 
   const identityProviderOptions = () =>

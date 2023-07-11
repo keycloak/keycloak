@@ -30,7 +30,7 @@ export const FederatedUserLink = ({ user }: FederatedUserLinkProps) => {
             id: (user.federationLink || user.origin)!,
           }),
     setComponent,
-    []
+    [],
   );
 
   if (!component) return null;

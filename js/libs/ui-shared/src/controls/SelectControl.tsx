@@ -22,7 +22,7 @@ export type SelectControlOption = {
 
 export type SelectControlProps<
   T extends FieldValues,
-  P extends FieldPath<T> = FieldPath<T>
+  P extends FieldPath<T> = FieldPath<T>,
 > = Omit<
   SelectProps,
   "name" | "onToggle" | "selections" | "onSelect" | "onClear" | "isOpen"
@@ -36,7 +36,7 @@ export type SelectControlProps<
 
 export const SelectControl = <
   T extends FieldValues,
-  P extends FieldPath<T> = FieldPath<T>
+  P extends FieldPath<T> = FieldPath<T>,
 >({
   name,
   label,
@@ -69,7 +69,7 @@ export const SelectControl = <
             selections={
               typeof options[0] !== "string"
                 ? (options as SelectControlOption[]).find(
-                    (o) => o.key === value[0]
+                    (o) => o.key === value[0],
                   )?.value || value
                 : value
             }

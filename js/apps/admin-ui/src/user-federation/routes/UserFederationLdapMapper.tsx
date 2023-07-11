@@ -10,7 +10,7 @@ export type UserFederationLdapMapperParams = {
 };
 
 const LdapMapperDetails = lazy(
-  () => import("../ldap/mappers/LdapMapperDetails")
+  () => import("../ldap/mappers/LdapMapperDetails"),
 );
 
 export const UserFederationLdapMapperRoute: AppRouteObject = {
@@ -23,7 +23,7 @@ export const UserFederationLdapMapperRoute: AppRouteObject = {
 };
 
 export const toUserFederationLdapMapper = (
-  params: UserFederationLdapMapperParams
+  params: UserFederationLdapMapperParams,
 ): Partial<Path> => ({
   pathname: generatePath(UserFederationLdapMapperRoute.path, params),
 });

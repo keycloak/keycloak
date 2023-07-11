@@ -94,12 +94,12 @@ export const LogoutPanel = ({
             type="url"
             {...register(
               convertAttributeNameToForm<FormFields>(
-                "attributes.frontchannel.logout.url"
+                "attributes.frontchannel.logout.url",
               ),
               {
                 validate: (uri) =>
                   validateUrl(uri, t("frontchannelUrlInvalid").toString()),
-              }
+              },
             )}
             validated={
               errors.attributes?.[beerify("frontchannel.logout.url")]?.message
@@ -135,12 +135,12 @@ export const LogoutPanel = ({
               type="url"
               {...register(
                 convertAttributeNameToForm<FormFields>(
-                  "attributes.backchannel.logout.url"
+                  "attributes.backchannel.logout.url",
                 ),
                 {
                   validate: (uri) =>
                     validateUrl(uri, t("backchannelUrlInvalid").toString()),
-                }
+                },
               )}
               validated={
                 errors.attributes?.[beerify("backchannel.logout.url")]?.message
@@ -162,7 +162,7 @@ export const LogoutPanel = ({
           >
             <Controller
               name={convertAttributeNameToForm<FormFields>(
-                "attributes.backchannel.logout.session.required"
+                "attributes.backchannel.logout.session.required",
               )}
               defaultValue="true"
               control={control}
@@ -183,7 +183,7 @@ export const LogoutPanel = ({
             labelIcon={
               <HelpItem
                 helpText={t(
-                  "clients-help:backchannelLogoutRevokeOfflineSessions"
+                  "clients-help:backchannelLogoutRevokeOfflineSessions",
                 )}
                 fieldLabelId="clients:backchannelLogoutRevokeOfflineSessions"
               />
@@ -193,7 +193,7 @@ export const LogoutPanel = ({
           >
             <Controller
               name={convertAttributeNameToForm<FormFields>(
-                "attributes.backchannel.logout.revoke.offline.tokens"
+                "attributes.backchannel.logout.revoke.offline.tokens",
               )}
               defaultValue="false"
               control={control}

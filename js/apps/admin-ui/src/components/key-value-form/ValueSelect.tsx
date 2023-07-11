@@ -22,7 +22,7 @@ export const ValueSelect = ({
 
   const defaultItem = useMemo(
     () => selectItems.find((v) => v.key === keyValue),
-    [selectItems, keyValue]
+    [selectItems, keyValue],
   );
 
   return defaultItem?.values ? (

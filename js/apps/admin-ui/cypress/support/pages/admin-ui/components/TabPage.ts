@@ -32,7 +32,7 @@ export default class TabPage extends CommonElements {
   checkTabExists(
     tabName: string,
     exists: boolean,
-    index: number | undefined = 0
+    index: number | undefined = 0,
   ) {
     const condition = exists ? "exist" : "not.exist";
     this.getTab(tabName, index).should(condition);

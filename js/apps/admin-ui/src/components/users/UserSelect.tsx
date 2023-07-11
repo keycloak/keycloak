@@ -55,13 +55,13 @@ export const UserSelect = ({
 
       if (values?.length && !search) {
         return Promise.all(
-          values.map((id: string) => adminClient.users.findOne({ id }))
+          values.map((id: string) => adminClient.users.findOne({ id })),
         );
       }
       return adminClient.users.find(params);
     },
     setUsers,
-    [search]
+    [search],
   );
 
   const convert = (clients: (UserRepresentation | undefined)[]) =>
@@ -117,7 +117,7 @@ export const UserSelect = ({
                   : field.onChange([option]);
               } else {
                 const changedValue = field.value.find(
-                  (v: string) => v === option
+                  (v: string) => v === option,
                 )
                   ? field.value.filter((v: string) => v !== option)
                   : [...field.value, option];

@@ -60,12 +60,12 @@ export const RealmSettingsGeneralTab = ({
     convertToFormValues(realm, setValue);
     if (realm.attributes?.["acr.loa.map"]) {
       const result = Object.entries(
-        JSON.parse(realm.attributes["acr.loa.map"])
+        JSON.parse(realm.attributes["acr.loa.map"]),
       ).flatMap(([key, value]) => ({ key, value }));
       result.concat({ key: "", value: "" });
       setValue(
         convertAttributeNameToForm("attributes.acr.loa.map") as any,
-        result
+        result,
       );
     }
   };
@@ -232,7 +232,7 @@ export const RealmSettingsGeneralTab = ({
             <Controller
               name={
                 convertAttributeNameToForm(
-                  "attributes.userProfileEnabled"
+                  "attributes.userProfileEnabled",
                 ) as any
               }
               control={control}
@@ -265,7 +265,7 @@ export const RealmSettingsGeneralTab = ({
             <StackItem>
               <FormattedLink
                 href={`${addTrailingSlash(
-                  adminClient.baseUrl
+                  adminClient.baseUrl,
                 )}realms/${realmName}/.well-known/openid-configuration`}
                 title={t("openIDEndpointConfiguration")}
               />
@@ -273,7 +273,7 @@ export const RealmSettingsGeneralTab = ({
             <StackItem>
               <FormattedLink
                 href={`${addTrailingSlash(
-                  adminClient.baseUrl
+                  adminClient.baseUrl,
                 )}realms/${realmName}/protocol/saml/descriptor`}
                 title={t("samlIdentityProviderMetadata")}
               />

@@ -46,7 +46,7 @@ export const AttributesGroupTab = () => {
     continueButtonVariant: ButtonVariant.danger,
     onConfirm() {
       const groups = (config?.groups ?? []).filter(
-        (group) => group !== groupToDelete
+        (group) => group !== groupToDelete,
       );
 
       save(
@@ -54,7 +54,7 @@ export const AttributesGroupTab = () => {
         {
           successMessageKey: "realm-settings:deleteSuccess",
           errorMessageKey: "realm-settings:deleteAttributeGroupError",
-        }
+        },
       );
     },
   });

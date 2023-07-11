@@ -90,7 +90,7 @@ describe("Authentication management", () => {
             ...requiredAction,
             enabled: true,
             priority: 10,
-          }
+          },
         );
       expect(response).to.be.empty;
     });
@@ -102,7 +102,7 @@ describe("Authentication management", () => {
         });
       const response =
         await kcAdminClient.authenticationManagement.lowerRequiredActionPriority(
-          { alias: requiredActionProvider.providerId }
+          { alias: requiredActionProvider.providerId },
         );
       expect(response).to.be.empty;
       const requiredActionUpdated =
@@ -110,7 +110,7 @@ describe("Authentication management", () => {
           alias: requiredActionProvider.providerId,
         });
       expect(requiredActionUpdated.priority).to.be.greaterThan(
-        requiredAction.priority
+        requiredAction.priority,
       );
     });
 
@@ -121,7 +121,7 @@ describe("Authentication management", () => {
         });
       const response =
         await kcAdminClient.authenticationManagement.raiseRequiredActionPriority(
-          { alias: requiredActionProvider.providerId }
+          { alias: requiredActionProvider.providerId },
         );
       expect(response).to.be.empty;
       const requiredActionUpdated =
@@ -129,7 +129,7 @@ describe("Authentication management", () => {
           alias: requiredActionProvider.providerId,
         });
       expect(requiredActionUpdated.priority).to.be.lessThan(
-        requiredAction.priority
+        requiredAction.priority,
       );
     });
 
@@ -223,7 +223,7 @@ describe("Authentication management", () => {
       const updatedFlow =
         await kcAdminClient.authenticationManagement.updateFlow(
           { flowId: flow.id! },
-          flow
+          flow,
         );
 
       expect(updatedFlow.description).to.be.eq(description);
@@ -279,7 +279,7 @@ describe("Authentication management", () => {
       expect(flow.id).to.be.ok;
 
       expect(executions.map((execution) => execution.displayName)).includes(
-        "subFlow"
+        "subFlow",
       );
     });
 
@@ -293,7 +293,7 @@ describe("Authentication management", () => {
       execution.requirement = choice;
       await kcAdminClient.authenticationManagement.updateExecution(
         { flow: flowName },
-        execution
+        execution,
       );
 
       executions = await kcAdminClient.authenticationManagement.getExecutions({
@@ -381,7 +381,7 @@ describe("Authentication management", () => {
       });
 
       expect(config.config!.defaultProvider).to.be.eq(
-        extraConfig.defaultProvider
+        extraConfig.defaultProvider,
       );
 
       await kcAdminClient.authenticationManagement.delConfig({

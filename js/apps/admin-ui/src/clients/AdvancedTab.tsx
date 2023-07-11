@@ -22,7 +22,7 @@ export const parseResult = (
   result: GlobalRequestResult,
   prefixKey: string,
   addAlert: AddAlertFunction,
-  t: TFunction
+  t: TFunction,
 ) => {
   const successCount = result.successRequests?.length || 0;
   const failedCount = result.failedRequests?.length || 0;
@@ -32,16 +32,16 @@ export const parseResult = (
   } else if (failedCount > 0) {
     addAlert(
       t(prefixKey + "Success", { successNodes: result.successRequests }),
-      AlertVariant.success
+      AlertVariant.success,
     );
     addAlert(
       t(prefixKey + "Fail", { failedNodes: result.failedRequests }),
-      AlertVariant.danger
+      AlertVariant.danger,
     );
   } else {
     addAlert(
       t(prefixKey + "Success", { successNodes: result.successRequests }),
-      AlertVariant.success
+      AlertVariant.success,
     );
   }
 };
@@ -67,7 +67,7 @@ export const AdvancedTab = ({ save, client }: AdvancedProps) => {
     for (const name of names) {
       setValue(
         convertAttributeNameToForm<FormFields>(`attributes.${name}`),
-        attributes?.[name] || ""
+        attributes?.[name] || "",
       );
     }
   };
@@ -179,7 +179,7 @@ export const AdvancedTab = ({ save, client }: AdvancedProps) => {
                 <Text className="pf-u-pb-lg">
                   {t(
                     "clients-help:advancedSettings" +
-                      toUpperCase(protocol || "")
+                      toUpperCase(protocol || ""),
                   )}
                 </Text>
                 <AdvancedSettings
@@ -210,11 +210,11 @@ export const AdvancedTab = ({ save, client }: AdvancedProps) => {
                   reset={() => {
                     setValue(
                       "authenticationFlowBindingOverrides.browser",
-                      authenticationFlowBindingOverrides?.browser
+                      authenticationFlowBindingOverrides?.browser,
                     );
                     setValue(
                       "authenticationFlowBindingOverrides.direct_grant",
-                      authenticationFlowBindingOverrides?.direct_grant
+                      authenticationFlowBindingOverrides?.direct_grant,
                     );
                   }}
                 />

@@ -36,7 +36,7 @@ export const getTimeUnit = (value: number | undefined = 0) =>
       value % time.multiplier === 0 && v.multiplier < time.multiplier
         ? time
         : v,
-    allTimes[0]
+    allTimes[0],
   );
 
 export const toHumanFormat = (value: number, locale: string) => {
@@ -62,7 +62,7 @@ export const TimeSelector = ({
 
   const defaultMultiplier = useMemo(
     () => allTimes.find((time) => time.unit === units[0])?.multiplier,
-    [units]
+    [units],
   );
 
   const [timeValue, setTimeValue] = useState<"" | number>("");
@@ -71,7 +71,7 @@ export const TimeSelector = ({
 
   const times = useMemo(() => {
     const filteredUnits = units.map(
-      (unit) => allTimes.find((time) => time.unit === unit)!
+      (unit) => allTimes.find((time) => time.unit === unit)!,
     );
     if (
       !filteredUnits.every((u) => u.multiplier === multiplier) &&
@@ -96,7 +96,7 @@ export const TimeSelector = ({
 
   const updateTimeout = (
     timeout: "" | number,
-    times: number | undefined = multiplier
+    times: number | undefined = multiplier,
   ) => {
     if (timeout !== "") {
       onChange?.(timeout * (times || 1));

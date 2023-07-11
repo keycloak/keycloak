@@ -74,14 +74,14 @@ export default function EditClientScope() {
     (clientScope) => {
       setClientScope(clientScope);
     },
-    [key, id]
+    [key, id],
   );
 
   async function determineScopeType(clientScope: ClientScopeRepresentation) {
     const defaultScopes =
       await adminClient.clientScopes.listDefaultClientScopes();
     const hasDefaultScope = defaultScopes.find(
-      (defaultScope) => defaultScope.name === clientScope.name
+      (defaultScope) => defaultScope.name === clientScope.name,
     );
 
     if (hasDefaultScope) {
@@ -91,7 +91,7 @@ export default function EditClientScope() {
     const optionalScopes =
       await adminClient.clientScopes.listDefaultOptionalClientScopes();
     const hasOptionalScope = optionalScopes.find(
-      (optionalScope) => optionalScope.name === clientScope.name
+      (optionalScope) => optionalScope.name === clientScope.name,
     );
 
     return hasOptionalScope ? ClientScope.optional : AllClientScopes.none;
@@ -103,7 +103,7 @@ export default function EditClientScope() {
         realm,
         id,
         tab,
-      })
+      }),
     );
 
   const settingsTab = useTab("settings");
@@ -155,7 +155,7 @@ export default function EditClientScope() {
         {
           id,
         },
-        realmRoles
+        realmRoles,
       );
       await Promise.all(
         rows
@@ -166,9 +166,9 @@ export default function EditClientScope() {
                 id,
                 client: row.client!.id!,
               },
-              [row.role as RoleMappingPayload]
-            )
-          )
+              [row.role as RoleMappingPayload],
+            ),
+          ),
       );
       addAlert(t("roleMappingUpdatedSuccess"), AlertVariant.success);
     } catch (error) {
@@ -177,7 +177,7 @@ export default function EditClientScope() {
   };
 
   const addMappers = async (
-    mappers: ProtocolMapperTypeRepresentation | ProtocolMapperRepresentation[]
+    mappers: ProtocolMapperTypeRepresentation | ProtocolMapperRepresentation[],
   ): Promise<void> => {
     if (!Array.isArray(mappers)) {
       const mapper = mappers as ProtocolMapperTypeRepresentation;
@@ -186,13 +186,13 @@ export default function EditClientScope() {
           realm,
           id: clientScope!.id!,
           mapperId: mapper.id!,
-        })
+        }),
       );
     } else {
       try {
         await adminClient.clientScopes.addMultipleProtocolMappers(
           { id: clientScope!.id! },
-          mappers as ProtocolMapperRepresentation[]
+          mappers as ProtocolMapperRepresentation[],
         );
         refresh();
         addAlert(t("common:mappingCreatedSuccess"), AlertVariant.success);

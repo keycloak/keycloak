@@ -87,7 +87,7 @@ export const AddStepModal = ({ name, type, onSelect }: AddStepModalProps) => {
       }
     },
     (providers) => setProviders(providers),
-    []
+    [],
   );
 
   const page = useMemo(
@@ -95,10 +95,10 @@ export const AddStepModal = ({ name, type, onSelect }: AddStepModalProps) => {
       localeSort(providers ?? [], mapByKey("displayName"))
         .filter(
           (p) =>
-            p.displayName?.includes(search) || p.description?.includes(search)
+            p.displayName?.includes(search) || p.description?.includes(search),
         )
         .slice(first, first + max + 1),
-    [providers, search, first, max]
+    [providers, search, first, max],
   );
 
   return (

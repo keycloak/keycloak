@@ -48,7 +48,7 @@ const PersonalInfo = () => {
     (personalInfo) => {
       setUserProfileMetadata(personalInfo.userProfileMetadata);
       reset(personalInfo);
-    }
+    },
   );
 
   const onSubmit = async (user: UserRepresentation) => {
@@ -61,7 +61,7 @@ const PersonalInfo = () => {
       (error as FieldError[]).forEach((e) => {
         const params = Object.assign(
           {},
-          e.params.map((p) => (isBundleKey(p) ? unWrap(p) : p))
+          e.params.map((p) => (isBundleKey(p) ? unWrap(p) : p)),
         );
         setError(fieldName(e.field) as keyof UserRepresentation, {
           message: t(e.errorMessage as TFuncKey, {

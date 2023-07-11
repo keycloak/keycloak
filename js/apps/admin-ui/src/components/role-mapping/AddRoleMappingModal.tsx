@@ -47,7 +47,7 @@ export const AddRoleMappingModal = ({
   const [searchToggle, setSearchToggle] = useState(false);
 
   const [filterType, setFilterType] = useState<FilterType>(
-    canViewRealmRoles ? "roles" : "clients"
+    canViewRealmRoles ? "roles" : "clients",
   );
   const [selectedRows, setSelectedRows] = useState<Row[]>([]);
   const [key, setKey] = useState(0);
@@ -59,7 +59,7 @@ export const AddRoleMappingModal = ({
   const loader = async (
     first?: number,
     max?: number,
-    search?: string
+    search?: string,
   ): Promise<Row[]> => {
     const params: Record<string, string | number> = {
       first: first!,
@@ -83,7 +83,7 @@ export const AddRoleMappingModal = ({
   const clientRolesLoader = async (
     first?: number,
     max?: number,
-    search?: string
+    search?: string,
   ): Promise<Row[]> => {
     const roles = await getAvailableClientRoles({
       id,
@@ -99,7 +99,7 @@ export const AddRoleMappingModal = ({
         role: { id: e.id, name: e.role, description: e.description },
         id: e.id,
       })),
-      ({ client: { clientId }, role: { name } }) => `${clientId}${name}`
+      ({ client: { clientId }, role: { name } }) => `${clientId}${name}`,
     );
   };
 

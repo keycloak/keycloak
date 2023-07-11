@@ -43,7 +43,7 @@ export const LdapSettingsKerberosIntegration = ({
           labelIcon={
             <HelpItem
               helpText={t(
-                "user-federation-help:allowKerberosAuthenticationHelp"
+                "user-federation-help:allowKerberosAuthenticationHelp",
               )}
               fieldLabelId="user-federation:allowKerberosAuthentication"
             />
@@ -222,7 +222,7 @@ export const LdapSettingsKerberosIntegration = ({
           labelIcon={
             <HelpItem
               helpText={t(
-                "user-federation-help:useKerberosForPasswordAuthenticationHelp"
+                "user-federation-help:useKerberosForPasswordAuthenticationHelp",
               )}
               fieldLabelId="user-federation:useKerberosForPasswordAuthentication"
             />

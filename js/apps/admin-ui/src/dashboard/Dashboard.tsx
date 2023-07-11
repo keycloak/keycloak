@@ -89,9 +89,9 @@ const Dashboard = () => {
     () =>
       localeSort(
         serverInfo.profileInfo?.disabledFeatures ?? [],
-        (item) => item
+        (item) => item,
       ),
-    [serverInfo.profileInfo]
+    [serverInfo.profileInfo],
   );
 
   const enabledFeatures = useMemo(
@@ -100,15 +100,15 @@ const Dashboard = () => {
         filter(
           union(
             serverInfo.profileInfo?.experimentalFeatures,
-            serverInfo.profileInfo?.previewFeatures
+            serverInfo.profileInfo?.previewFeatures,
           ),
           (feature) => {
             return !isDeprecatedFeature(feature);
-          }
+          },
         ),
-        (item) => item
+        (item) => item,
       ),
-    [serverInfo.profileInfo]
+    [serverInfo.profileInfo],
   );
 
   const useTab = (tab: DashboardTab) =>
@@ -116,7 +116,7 @@ const Dashboard = () => {
       toDashboard({
         realm,
         tab,
-      })
+      }),
     );
 
   const infoTab = useTab("info");

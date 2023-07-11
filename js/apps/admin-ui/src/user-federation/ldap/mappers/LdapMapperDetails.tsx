@@ -73,7 +73,7 @@ export default function LdapMapperDetails() {
 
       if (fetchedMapper) setupForm(fetchedMapper);
     },
-    []
+    [],
   );
 
   const setupForm = (mapper: ComponentRepresentation) => {
@@ -90,7 +90,7 @@ export default function LdapMapperDetails() {
           result[key] = Array.isArray(value) ? value : [value];
           return result;
         },
-        {} as Record<string, string | string[]>
+        {} as Record<string, string | string[]>,
       ),
     };
 
@@ -98,7 +98,7 @@ export default function LdapMapperDetails() {
       if (mapperId === "new") {
         await adminClient.components.create(map);
         navigate(
-          toUserFederationLdap({ realm, id: mapper.parentId!, tab: "mappers" })
+          toUserFederationLdap({ realm, id: mapper.parentId!, tab: "mappers" }),
         );
       } else {
         await adminClient.components.update({ id: mapperId }, map);
@@ -108,16 +108,16 @@ export default function LdapMapperDetails() {
         t(
           mapperId === "new"
             ? "common:mappingCreatedSuccess"
-            : "common:mappingUpdatedSuccess"
+            : "common:mappingUpdatedSuccess",
         ),
-        AlertVariant.success
+        AlertVariant.success,
       );
     } catch (error) {
       addError(
         mapperId === "new"
           ? "common:mappingCreatedError"
           : "common:mappingUpdatedError",
-        error
+        error,
       );
     }
   };
@@ -132,7 +132,7 @@ export default function LdapMapperDetails() {
       addAlert(
         t("syncLDAPGroupsSuccessful", {
           result: result.status,
-        })
+        }),
       );
     } catch (error) {
       addError("user-federation:syncLDAPGroupsError", error);
@@ -350,7 +350,7 @@ export default function LdapMapperDetails() {
                   : navigate(
                       `/${realm}/user-federation/ldap/${
                         mapping!.parentId
-                      }/mappers`
+                      }/mappers`,
                     )
               }
               data-testid="ldap-mapper-cancel"

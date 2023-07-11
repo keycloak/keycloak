@@ -59,7 +59,7 @@ type WhoAmIProps = {
 
 export const WhoAmIContext = createNamedContext<WhoAmIProps | undefined>(
   "WhoAmIContext",
-  undefined
+  undefined,
 );
 
 export const useWhoAmI = () => useRequiredContext(WhoAmIContext);
@@ -74,7 +74,7 @@ export const WhoAmIContextProvider = ({ children }: PropsWithChildren) => {
       const whoAmI = new WhoAmI(me);
       setWhoAmI(whoAmI);
     },
-    [key]
+    [key],
   );
 
   return (
