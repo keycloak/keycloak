@@ -56,7 +56,7 @@ const GroupTreeContextMenu = ({
       {renameOpen && (
         <GroupsModal
           id={group.id}
-          rename={group.name}
+          rename={group}
           refresh={() => {
             refresh();
           }}

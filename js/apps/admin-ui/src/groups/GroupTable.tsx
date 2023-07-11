@@ -97,7 +97,7 @@ export const GroupTable = ({
       {rename && (
         <GroupsModal
           id={rename.id}
-          rename={rename.name}
+          rename={rename}
           refresh={() => {
             refresh();
             viewRefresh();
