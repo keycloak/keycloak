@@ -76,7 +76,7 @@ For example, let's assume we want to overwrite the https://github.com/keycloak/k
 
 With this release, we have removed the legacy Promise API methods from the Keycloak JS adapter. This means that calling `.success()` and `.error()` on promises returned from the adapter is no longer possible.
 
-= Required to be instantiated with the `new` operator
+== Required to be instantiated with the `new` operator
 
 In a previous release we started to actively log deprecation warnings when the Keycloak JS adapter is constructed without the `new` operator. Starting this release doing so will throw an exception instead. This is to align with the expected behavior of https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Classes[JavaScript classes], which will allow further refactoring of the adapter in the future.
 
@@ -88,7 +88,7 @@ In a previous release we started to actively log deprecation warnings when the K
 After the upgrade to Jakarta EE, artifacts for Keycloak Admin clients were renamed to more descriptive names with consideration for long-term maintainability.
 We still provide two separate Keycloak Admin clients, one with Jakarta EE and the other with Java EE support.
 
-= Support for count users based on custom attributes
+== Support for count users based on custom attributes
 
 The User API now supports querying the number of users based on custom attributes. For that, a new `q` parameter was added to the `/{realm}/users/count` endpoint.
 
