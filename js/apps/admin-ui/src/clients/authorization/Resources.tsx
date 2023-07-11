@@ -185,14 +185,14 @@ export const AuthorizationResources = ({ clientId }: ResourcesProps) => {
             <TableComposable aria-label={t("resources")} variant="compact">
               <Thead>
                 <Tr>
-                  <Th />
+                  <Th aria-hidden="true" />
                   <Th>{t("common:name")}</Th>
                   <Th>{t("displayName")}</Th>
                   <Th>{t("common:type")}</Th>
                   <Th>{t("owner")}</Th>
                   <Th>{t("uris")}</Th>
-                  <Th />
-                  <Th />
+                  <Th aria-hidden="true" />
+                  <Th aria-hidden="true" />
                 </Tr>
               </Thead>
               {resources.map((resource, rowIndex) => (

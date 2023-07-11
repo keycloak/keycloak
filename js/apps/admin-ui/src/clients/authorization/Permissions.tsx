@@ -266,12 +266,12 @@ export const AuthorizationPermissions = ({ clientId }: PermissionsProps) => {
             <TableComposable aria-label={t("resources")} variant="compact">
               <Thead>
                 <Tr>
-                  <Th />
+                  <Th aria-hidden="true" />
                   <Th>{t("common:name")}</Th>
                   <Th>{t("common:type")}</Th>
                   <Th>{t("associatedPolicy")}</Th>
                   <Th>{t("common:description")}</Th>
-                  <Th />
+                  <Th aria-hidden="true" />
                 </Tr>
               </Thead>
               {permissions.map((permission, rowIndex) => (
