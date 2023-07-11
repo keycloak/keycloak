@@ -1,7 +1,7 @@
 import type { AccessType } from "@keycloak/keycloak-admin-client/lib/defs/whoAmIRepresentation";
 import type { TFunction } from "i18next";
 import type { ComponentType } from "react";
-import type { NonIndexRouteObject, RouteObject } from "react-router";
+import type { NonIndexRouteObject, RouteObject } from "react-router-dom";
 
 import { App } from "./App";
 import { PageNotFoundSection } from "./PageNotFoundSection";
