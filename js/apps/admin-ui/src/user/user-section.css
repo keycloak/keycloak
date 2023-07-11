@@ -20,10 +20,6 @@ button#kc-join-groups-button {
   margin-right: var(--pf-global--spacer--sm);
 }
 
-.join-group-dialog-row-disabled {
-  cursor: not-allowed;
-}
-
 .join-group-dialog-row-m-disabled {
   pointer-events: none;
   color: var(--pf-global--Color--200);
