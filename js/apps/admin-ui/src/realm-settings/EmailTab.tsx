@@ -87,7 +87,7 @@ export const RealmSettingsEmailTab = ({
       toggleTest();
       await adminClient.realms.testSMTPConnection(
         { realm: realm.realm! },
-        serverSettings
+        serverSettings,
       );
       addAlert(t("testConnectionSuccess"), AlertVariant.success);
     } catch (error) {

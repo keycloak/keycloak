@@ -42,6 +42,6 @@ const PasswordInputBase = ({
 export const PasswordInput = forwardRef(
   (props: PasswordInputProps, ref: Ref<HTMLInputElement>) => (
     <PasswordInputBase {...props} innerRef={ref as MutableRefObject<any>} />
-  )
+  ),
 );
 PasswordInput.displayName = "PasswordInput";

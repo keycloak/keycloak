@@ -43,7 +43,7 @@ export default class CreateProviderPage {
 
   checkAddButtonDisabled(disabled = true) {
     cy.findByTestId(this.addButton).should(
-      !disabled ? "not." : "" + "be.disabled"
+      !disabled ? "not." : "" + "be.disabled",
     );
     return this;
   }
@@ -125,7 +125,7 @@ export default class CreateProviderPage {
   shouldBeSuccessful() {
     cy.findByTestId(this.discoveryEndpoint).should(
       "have.class",
-      "pf-m-success"
+      "pf-m-success",
     );
     return this;
   }

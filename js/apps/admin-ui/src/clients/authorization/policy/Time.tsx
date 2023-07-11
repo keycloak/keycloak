@@ -42,7 +42,7 @@ const DateTime = ({ name }: { name: string }) => {
   const parseTime = (
     value: string,
     hour?: number | null,
-    minute?: number | null
+    minute?: number | null,
   ): string => {
     const parts = value.match(DATE_TIME_FORMAT);
     if (minute !== undefined && minute !== null) {

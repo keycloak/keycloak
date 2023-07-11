@@ -36,7 +36,7 @@ export default class ProviderGoogleGeneralSettings extends ProviderBaseGeneralSe
   public assertRequestRefreshTokenSwitchTurnedOn(isOn: boolean) {
     super.assertSwitchStateOn(
       cy.findByTestId(this.requestRefreshTokenSwitch),
-      isOn
+      isOn,
     );
     return this;
   }

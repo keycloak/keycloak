@@ -29,9 +29,9 @@ describe("Realm tests", () => {
   after(() =>
     Promise.all(
       [testRealmName, newRealmName, editedRealmName].map((realm) =>
-        adminClient.deleteRealm(realm)
-      )
-    )
+        adminClient.deleteRealm(realm),
+      ),
+    ),
   );
 
   it("should fail creating Master realm", () => {
@@ -39,7 +39,7 @@ describe("Realm tests", () => {
     createRealmPage.fillRealmName("master").createRealm();
 
     masthead.checkNotificationMessage(
-      "Could not create realm Conflict detected. See logs for details"
+      "Could not create realm Conflict detected. See logs for details",
     );
     createRealmPage.cancelRealmCreation();
   });

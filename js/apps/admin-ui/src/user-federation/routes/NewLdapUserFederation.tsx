@@ -6,7 +6,7 @@ import type { AppRouteObject } from "../../routes";
 export type NewLdapUserFederationParams = { realm: string };
 
 const CreateUserFederationLdapSettings = lazy(
-  () => import("../CreateUserFederationLdapSettings")
+  () => import("../CreateUserFederationLdapSettings"),
 );
 
 export const NewLdapUserFederationRoute: AppRouteObject = {
@@ -20,7 +20,7 @@ export const NewLdapUserFederationRoute: AppRouteObject = {
 };
 
 export const toNewLdapUserFederation = (
-  params: NewLdapUserFederationParams
+  params: NewLdapUserFederationParams,
 ): Partial<Path> => ({
   pathname: generatePath(NewLdapUserFederationRoute.path, params),
 });

@@ -142,7 +142,7 @@ describe("i18n tests", () => {
     addLocalization(
       "en",
       "user-federation:addProvider_other",
-      "addProvider_other en: {{provider}}"
+      "addProvider_other en: {{provider}}",
     );
     updateUserLocale("en");
 
@@ -159,20 +159,22 @@ describe("i18n tests", () => {
 
   function updateUserLocale(locale: string) {
     cy.wrap(null).then(() =>
-      adminClient.updateUser(usernameI18nId, { attributes: { locale: locale } })
+      adminClient.updateUser(usernameI18nId, {
+        attributes: { locale: locale },
+      }),
     );
   }
 
   function addCommonRealmSettingsLocalizationText(
     locale: string,
-    value: string
+    value: string,
   ) {
     addLocalization(locale, "common:realmSettings", value);
   }
 
   function addLocalization(locale: string, key: string, value: string) {
     cy.wrap(null).then(() =>
-      adminClient.addLocalizationText(locale, key, value)
+      adminClient.addLocalizationText(locale, key, value),
     );
   }
 });

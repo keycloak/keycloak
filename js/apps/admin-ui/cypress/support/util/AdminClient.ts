@@ -83,7 +83,7 @@ class AdminClient {
       } else {
         parentGroup = await this.client.groups.createChildGroup(
           { id: parentGroup.id },
-          { name: group }
+          { name: group },
         );
       }
       createdGroups.push(parentGroup);
@@ -107,7 +107,7 @@ class AdminClient {
 
     if (!createdUser) {
       throw new Error(
-        "Unable to create user, created user could not be found."
+        "Unable to create user, created user could not be found.",
       );
     }
 
@@ -177,7 +177,7 @@ class AdminClient {
 
   async addDefaultClientScopeInClient(
     clientScopeName: string,
-    clientId: string
+    clientId: string,
   ) {
     await this.login();
     const scope = await this.client.clientScopes.findOneByName({
@@ -192,7 +192,7 @@ class AdminClient {
 
   async removeDefaultClientScopeInClient(
     clientScopeName: string,
-    clientId: string
+    clientId: string,
   ) {
     await this.login();
     const scope = await this.client.clientScopes.findOneByName({
@@ -211,7 +211,7 @@ class AdminClient {
     const currentProfile = await this.client.users.getProfile({ realm });
 
     await this.client.users.updateProfile(
-      merge(currentProfile, payload, { realm })
+      merge(currentProfile, payload, { realm }),
     );
   }
 
@@ -247,7 +247,7 @@ class AdminClient {
 
   async unlinkAccountIdentityProvider(
     username: string,
-    idpDisplayName: string
+    idpDisplayName: string,
   ) {
     await this.login();
     const user = await this.client.users.find({ username });
@@ -282,7 +282,7 @@ class AdminClient {
     await this.login();
     await this.client.realms.addLocalization(
       { realm: this.client.realmName, selectedLocale: locale, key: key },
-      value
+      value,
     );
   }
 
@@ -296,8 +296,8 @@ class AdminClient {
         this.client.realms.deleteRealmLocalizationTexts({
           realm: this.client.realmName,
           selectedLocale: locale,
-        })
-      )
+        }),
+      ),
     );
   }
 }

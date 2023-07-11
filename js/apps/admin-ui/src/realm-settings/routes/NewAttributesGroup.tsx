@@ -8,7 +8,7 @@ export type NewAttributesGroupParams = {
 };
 
 const AttributesGroupDetails = lazy(
-  () => import("../user-profile/AttributesGroupDetails")
+  () => import("../user-profile/AttributesGroupDetails"),
 );
 
 export const NewAttributesGroupRoute: AppRouteObject = {
@@ -21,7 +21,7 @@ export const NewAttributesGroupRoute: AppRouteObject = {
 };
 
 export const toNewAttributesGroup = (
-  params: NewAttributesGroupParams
+  params: NewAttributesGroupParams,
 ): Partial<Path> => ({
   pathname: generatePath(NewAttributesGroupRoute.path, params),
 });

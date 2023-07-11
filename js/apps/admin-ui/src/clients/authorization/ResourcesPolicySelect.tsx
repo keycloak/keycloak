@@ -70,7 +70,7 @@ export const ResourcesPolicySelect = ({
   const functions = typeMapping[name];
 
   const convert = (
-    p: PolicyRepresentation | ResourceRepresentation
+    p: PolicyRepresentation | ResourceRepresentation,
   ): Policies => ({
     id: "_id" in p ? p._id : "id" in p ? p.id : undefined,
     name: p.name,
@@ -80,7 +80,7 @@ export const ResourcesPolicySelect = ({
     async () => {
       const params: PolicyQuery = Object.assign(
         { id: clientId, first: 0, max: 10, permission: "false" },
-        search === "" ? null : { name: search }
+        search === "" ? null : { name: search },
       );
       return (
         await Promise.all([
@@ -96,16 +96,16 @@ export const ResourcesPolicySelect = ({
         .flat()
         .filter(
           (r): r is PolicyRepresentation | ResourceRepresentation =>
-            typeof r !== "string"
+            typeof r !== "string",
         )
         .map(convert)
         .filter(
           ({ id }, index, self) =>
-            index === self.findIndex(({ id: otherId }) => id === otherId)
+            index === self.findIndex(({ id: otherId }) => id === otherId),
         );
     },
     setItems,
-    [search]
+    [search],
   );
 
   const toSelectOptions = () =>
@@ -139,7 +139,7 @@ export const ResourcesPolicySelect = ({
             const option = selectedValue.toString();
             if (variant === SelectVariant.typeaheadMulti) {
               const changedValue = field.value?.find(
-                (p: string) => p === option
+                (p: string) => p === option,
               )
                 ? field.value.filter((p: string) => p !== option)
                 : [...field.value!, option];

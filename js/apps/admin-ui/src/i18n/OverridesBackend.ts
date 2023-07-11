@@ -14,7 +14,7 @@ export class OverridesBackend extends HttpBackend {
     url: string,
     callback: ReadCallback,
     languages?: string | string[],
-    namespaces?: string | string[]
+    namespaces?: string | string[],
   ) {
     try {
       const [data, overrides] = await Promise.all([
@@ -38,7 +38,7 @@ export class OverridesBackend extends HttpBackend {
   #applyOverrides(
     namespace: string,
     data: ResourceKey,
-    overrides: ParsedOverrides
+    overrides: ParsedOverrides,
   ) {
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (typeof data === "string" || !overrides[namespace]) {
@@ -135,7 +135,7 @@ export class OverridesBackend extends HttpBackend {
   #loadUrlPromisified(
     url: string,
     languages?: string | string[],
-    namespaces?: string | string[]
+    namespaces?: string | string[],
   ) {
     return new Promise<ResourceKey>((resolve, reject) => {
       const callback: ReadCallback = (error, data) => {
@@ -147,8 +147,8 @@ export class OverridesBackend extends HttpBackend {
           return reject(
             new Error(
               "Unable to load URL, data returned is of an unsupported type.",
-              { cause: error }
-            )
+              { cause: error },
+            ),
           );
         }
 

@@ -40,7 +40,7 @@ export default function CreateInitialAccessToken() {
     try {
       const access = await adminClient.realms.createClientsInitialAccess(
         { realm },
-        clientToken
+        clientToken,
       );
       setToken(access.token!);
     } catch (error) {
@@ -123,7 +123,7 @@ export default function CreateInitialAccessToken() {
                   onMinus={() => field.onChange(field.value - 1)}
                   onChange={(event) => {
                     const value = Number(
-                      (event.target as HTMLInputElement).value
+                      (event.target as HTMLInputElement).value,
                     );
                     field.onChange(value < 1 ? 1 : value);
                   }}

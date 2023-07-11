@@ -37,7 +37,7 @@ export const InlineLabelEdit = ({
           id: userId,
           credentialId: credential.id!,
         },
-        userLabel.userLabel || ""
+        userLabel.userLabel || "",
       );
       addAlert(t("updateCredentialUserLabelSuccess"), AlertVariant.success);
       toggle();

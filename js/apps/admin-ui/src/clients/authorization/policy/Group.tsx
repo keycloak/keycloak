@@ -42,14 +42,14 @@ export const Group = () => {
 
   const [open, setOpen] = useState(false);
   const [selectedGroups, setSelectedGroups] = useState<GroupRepresentation[]>(
-    []
+    [],
   );
 
   useFetch(
     () => {
       if (values && values.length > 0)
         return Promise.all(
-          values.map((g) => adminClient.groups.findOne({ id: g.id }))
+          values.map((g) => adminClient.groups.findOne({ id: g.id })),
         );
       return Promise.resolve([]);
     },
@@ -57,7 +57,7 @@ export const Group = () => {
       const filteredGroup = groups.filter((g) => g) as GroupRepresentation[];
       setSelectedGroups(filteredGroup);
     },
-    []
+    [],
   );
 
   return (

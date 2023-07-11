@@ -87,7 +87,7 @@ export class Users extends Resource<{ realm?: string }> {
     {
       method: "PUT",
       path: "/profile",
-    }
+    },
   );
 
   /**
@@ -248,7 +248,7 @@ export class Users extends Resource<{ realm?: string }> {
       method: "PUT",
       path: "/{id}/groups/{groupId}",
       urlParamKeys: ["id", "groupId"],
-    }
+    },
   );
 
   public delFromGroup = this.makeRequest<

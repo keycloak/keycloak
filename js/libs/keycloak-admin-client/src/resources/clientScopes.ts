@@ -88,7 +88,7 @@ export class ClientScopes extends Resource<{ realm?: string }> {
       method: "PUT",
       path: "/default-optional-client-scopes/{id}",
       urlParamKeys: ["id"],
-    }
+    },
   );
 
   public delDefaultOptionalClientScope = this.makeRequest<{ id: string }, void>(
@@ -96,7 +96,7 @@ export class ClientScopes extends Resource<{ realm?: string }> {
       method: "DELETE",
       path: "/default-optional-client-scopes/{id}",
       urlParamKeys: ["id"],
-    }
+    },
   );
 
   /**

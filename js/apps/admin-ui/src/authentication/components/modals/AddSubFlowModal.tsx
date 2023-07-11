@@ -56,7 +56,7 @@ export const AddSubFlowModal = ({
   useFetch(
     () => adminClient.authenticationManagement.getFormProviders(),
     setFormProviders,
-    []
+    [],
   );
 
   useEffect(() => {

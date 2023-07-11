@@ -84,7 +84,7 @@ export default function ClientProfileForm() {
       serverInfo.componentTypes?.[
         "org.keycloak.services.clientpolicy.executor.ClientPolicyExecutorProvider"
       ],
-    []
+    [],
   );
   const [executorToDelete, setExecutorToDelete] = useState<{
     idx: number;
@@ -103,21 +103,21 @@ export default function ClientProfileForm() {
         profiles: profiles.profiles?.filter((p) => p.name !== profileName),
       });
       const globalProfile = profiles.globalProfiles?.find(
-        (p) => p.name === profileName
+        (p) => p.name === profileName,
       );
       const profile = profiles.profiles?.find((p) => p.name === profileName);
       setIsGlobalProfile(globalProfile !== undefined);
       setValue("name", globalProfile?.name ?? profile?.name ?? "");
       setValue(
         "description",
-        globalProfile?.description ?? profile?.description ?? ""
+        globalProfile?.description ?? profile?.description ?? "",
       );
       setValue(
         "executors",
-        globalProfile?.executors ?? profile?.executors ?? []
+        globalProfile?.executors ?? profile?.executors ?? [],
       );
     },
-    [key]
+    [key],
   );
 
   const save = async (form: ClientProfileForm) => {
@@ -133,7 +133,7 @@ export default function ClientProfileForm() {
         editMode
           ? t("realm-settings:updateClientProfileSuccess")
           : t("realm-settings:createClientProfileSuccess"),
-        AlertVariant.success
+        AlertVariant.success,
       );
 
       navigate(toClientProfile({ realm, profileName: form.name }));
@@ -142,7 +142,7 @@ export default function ClientProfileForm() {
         editMode
           ? "realm-settings:updateClientProfileError"
           : "realm-settings:createClientProfileError",
-        error
+        error,
       );
     }
   };
@@ -361,7 +361,7 @@ export default function ClientProfileForm() {
                                 )}
                                 {executorTypes
                                   ?.filter(
-                                    (type) => type.id === executor.executor
+                                    (type) => type.id === executor.executor,
                                   )
                                   .map((type) => (
                                     <Fragment key={type.id}>

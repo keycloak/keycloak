@@ -65,7 +65,7 @@ export default function ExecutorForm() {
   const setupForm = (profiles: ClientProfileRepresentation[]) => {
     const profile = profiles.find((profile) => profile.name === profileName);
     const executor = profile?.executors?.find(
-      (executor) => executor.executor === executorName
+      (executor) => executor.executor === executorName,
     );
     if (executor) reset({ config: executor.configuration });
   };
@@ -80,7 +80,7 @@ export default function ExecutorForm() {
       setupForm(profiles.profiles!);
       setupForm(profiles.globalProfiles!);
     },
-    []
+    [],
   );
 
   const save = async () => {
@@ -97,7 +97,7 @@ export default function ExecutorForm() {
 
       if (editMode) {
         const profileExecutor = profile.executors!.find(
-          (executor) => executor.executor === executorName
+          (executor) => executor.executor === executorName,
         );
         profileExecutor!.configuration = {
           ...profileExecutor!.configuration,
@@ -122,7 +122,7 @@ export default function ExecutorForm() {
         editMode
           ? t("realm-settings:updateExecutorSuccess")
           : t("realm-settings:addExecutorSuccess"),
-        AlertVariant.success
+        AlertVariant.success,
       );
 
       navigate(toClientProfile({ realm, profileName }));
@@ -131,17 +131,17 @@ export default function ExecutorForm() {
         editMode
           ? "realm-settings:updateExecutorError"
           : "realm-settings:addExecutorError",
-        error
+        error,
       );
     }
   };
 
   const globalProfile = globalProfiles.find(
-    (globalProfile) => globalProfile.name === profileName
+    (globalProfile) => globalProfile.name === profileName,
   );
 
   const profileExecutorType = executorTypes?.find(
-    (executor) => executor.id === executorName
+    (executor) => executor.id === executorName,
   );
 
   const editedProfileExecutors =
@@ -152,7 +152,7 @@ export default function ExecutorForm() {
           ...property,
           defaultValue: globalDefaultValues,
         };
-      }
+      },
     );
 
   return (
@@ -197,11 +197,11 @@ export default function ExecutorForm() {
                   onSelect={(_, value) => {
                     reset({ ...defaultValues, executor: value.toString() });
                     const selectedExecutor = executorTypes?.filter(
-                      (type) => type.id === value
+                      (type) => type.id === value,
                     );
                     setExecutors(selectedExecutor ?? []);
                     setExecutorProperties(
-                      selectedExecutor?.[0].properties ?? []
+                      selectedExecutor?.[0].properties ?? [],
                     );
                     setSelectExecutorTypeOpen(false);
                   }}

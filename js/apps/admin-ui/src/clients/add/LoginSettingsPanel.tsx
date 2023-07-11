@@ -25,8 +25,8 @@ export const LoginSettingsPanel = ({ access }: { access?: boolean }) => {
   const consentRequired = watch("consentRequired");
   const displayOnConsentScreen: string = watch(
     convertAttributeNameToForm<FormFields>(
-      "attributes.display.on.consent.screen"
-    )
+      "attributes.display.on.consent.screen",
+    ),
   );
 
   return (
@@ -114,7 +114,7 @@ export const LoginSettingsPanel = ({ access }: { access?: boolean }) => {
       >
         <Controller
           name={convertAttributeNameToForm<FormFields>(
-            "attributes.display.on.consent.screen"
+            "attributes.display.on.consent.screen",
           )}
           defaultValue={false}
           control={control}
@@ -145,8 +145,8 @@ export const LoginSettingsPanel = ({ access }: { access?: boolean }) => {
           id="kc-consent-screen-text"
           {...register(
             convertAttributeNameToForm<FormFields>(
-              "attributes.consent.screen.text"
-            )
+              "attributes.consent.screen.text",
+            ),
           )}
           isDisabled={!(consentRequired && displayOnConsentScreen === "true")}
         />

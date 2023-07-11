@@ -26,7 +26,7 @@ export const ResourceDetailsWithResourceIdRoute: AppRouteObject = {
 };
 
 export const toResourceDetails = (
-  params: ResourceDetailsParams
+  params: ResourceDetailsParams,
 ): Partial<Path> => {
   const path = params.resourceId
     ? ResourceDetailsWithResourceIdRoute.path

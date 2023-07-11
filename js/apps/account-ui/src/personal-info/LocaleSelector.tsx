@@ -24,8 +24,8 @@ export const LocaleSelector = () => {
         locales.map<SelectControlOption>((locale) => ({
           key: locale,
           value: localeToDisplayName(locale) || "",
-        }))
-      )
+        })),
+      ),
   );
 
   return (

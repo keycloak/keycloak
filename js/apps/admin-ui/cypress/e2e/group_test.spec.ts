@@ -46,7 +46,7 @@ describe("Group test", () => {
             return { id: user.id!, username: username + index };
           });
         return user;
-      })
+      }),
     );
   });
 
@@ -133,7 +133,7 @@ describe("Group test", () => {
 
     it("Delete groups from search bar", () => {
       cy.wrap(null).then(() =>
-        adminClient.createGroup("group_multiple_deletion_test")
+        adminClient.createGroup("group_multiple_deletion_test"),
       );
       cy.reload();
       groupPage
@@ -151,7 +151,7 @@ describe("Group test", () => {
         range(5).map((index) => {
           adminClient.addUserToGroup(
             users[index].id!,
-            createdGroups[index % 3].id
+            createdGroups[index % 3].id,
           );
         }),
         adminClient.createUser({ username: "new", enabled: true }),
@@ -267,7 +267,7 @@ describe("Group test", () => {
       childGroupsTab
         .createGroup(predefinedGroups[2], false)
         .assertNotificationCouldNotCreateGroupWithDuplicatedName(
-          predefinedGroups[2]
+          predefinedGroups[2],
         );
     });
 
@@ -317,7 +317,7 @@ describe("Group test", () => {
         range(5).map((index) => {
           adminClient.addUserToGroup(
             users[index].id!,
-            createdGroups[index % 3].id
+            createdGroups[index % 3].id,
           );
         }),
         adminClient.createGroup(emptyGroup),

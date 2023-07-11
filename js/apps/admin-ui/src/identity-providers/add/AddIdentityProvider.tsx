@@ -37,7 +37,7 @@ export default function AddIdentityProvider() {
 
     for (const namespace of namespaces) {
       const social = serverInfo.componentTypes?.[namespace]?.find(
-        ({ id }) => id === providerId
+        ({ id }) => id === providerId,
       );
 
       if (social) {
@@ -69,7 +69,7 @@ export default function AddIdentityProvider() {
           providerId,
           alias: providerId,
           tab: "settings",
-        })
+        }),
       );
     } catch (error) {
       addError("identity-providers:createError", error);

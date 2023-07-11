@@ -193,8 +193,8 @@ export const RealmSettingsTabs = ({
         Object.fromEntries(
           (r.attributes["acr.loa.map"] as KeyValueType[])
             .filter(({ key }) => key !== "")
-            .map(({ key, value }) => [key, value])
-        )
+            .map(({ key, value }) => [key, value]),
+        ),
       );
     }
 
@@ -245,7 +245,7 @@ export const RealmSettingsTabs = ({
       toClientPolicies({
         realm: realmName,
         tab,
-      })
+      }),
     );
 
   const clientPoliciesProfilesTab = useClientPoliciesTab("profiles");
@@ -377,7 +377,7 @@ export const RealmSettingsTabs = ({
                   tooltip={
                     <Tooltip
                       content={t(
-                        "realm-settings:clientPoliciesProfilesHelpText"
+                        "realm-settings:clientPoliciesProfilesHelpText",
                       )}
                     />
                   }
@@ -394,7 +394,7 @@ export const RealmSettingsTabs = ({
                   tooltip={
                     <Tooltip
                       content={t(
-                        "realm-settings:clientPoliciesPoliciesHelpText"
+                        "realm-settings:clientPoliciesPoliciesHelpText",
                       )}
                     />
                   }

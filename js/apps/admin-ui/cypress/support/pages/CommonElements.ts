@@ -43,13 +43,13 @@ export default class CommonElements {
 
   checkElementIsDisabled(
     element: Cypress.Chainable<JQuery<HTMLElement>>,
-    disabled: boolean
+    disabled: boolean,
   ) {
     element.then(($btn) => {
       if ($btn.hasClass("pf-m-disabled")) {
         element.should(
           (!disabled ? "not." : "") + "have.class",
-          "pf-m-disabled"
+          "pf-m-disabled",
         );
       } else {
         element.should((!disabled ? "not." : "") + "have.attr", "disabled");

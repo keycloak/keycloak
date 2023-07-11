@@ -52,7 +52,7 @@ export const Root = () => {
       signOut: t("signOut"),
       unknownUser: t("unknownUser"),
     }),
-    [t]
+    [t],
   );
 
   return (

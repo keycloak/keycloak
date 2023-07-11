@@ -65,7 +65,7 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
   const dynamicScope = useWatch({
     control,
     name: convertAttributeNameToForm<ClientScopeDefaultOptionalType>(
-      "attributes.is.dynamic.scope"
+      "attributes.is.dynamic.scope",
     ),
     defaultValue: "false",
   });
@@ -73,9 +73,9 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
   const setDynamicRegex = (value: string, append: boolean) =>
     setValue(
       convertAttributeNameToForm<ClientScopeDefaultOptionalType>(
-        "attributes.dynamic.scope.regexp"
+        "attributes.dynamic.scope.regexp",
       ),
-      append ? `${value}:*` : value
+      append ? `${value}:*` : value,
     );
 
   useEffect(() => {
@@ -123,7 +123,7 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
         <FormProvider {...form}>
           <DefaultSwitchControl
             name={convertAttributeNameToForm<ClientScopeDefaultOptionalType>(
-              "attributes.is.dynamic.scope"
+              "attributes.is.dynamic.scope",
             )}
             label={t("dynamicScope")}
             labelIcon={t("client-scopes-help:dynamicScope")}
@@ -135,7 +135,7 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
           {dynamicScope === "true" && (
             <TextControl
               name={convertAttributeNameToForm<ClientScopeDefaultOptionalType>(
-                "attributes.dynamic.scope.regexp"
+                "attributes.dynamic.scope.regexp",
               )}
               label={t("dynamicScopeFormat")}
               labelIcon={t("client-scopes-help:dynamicScopeFormat")}
@@ -256,7 +256,7 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
       >
         <Controller
           name={convertAttributeNameToForm<ClientScopeDefaultOptionalType>(
-            "attributes.display.on.consent.screen"
+            "attributes.display.on.consent.screen",
           )}
           control={control}
           defaultValue={displayOnConsentScreen}
@@ -286,8 +286,8 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
             id="kc-consent-screen-text"
             {...register(
               convertAttributeNameToForm<ClientScopeDefaultOptionalType>(
-                "attributes.consent.screen.text"
-              )
+                "attributes.consent.screen.text",
+              ),
             )}
           />
         </FormGroup>
@@ -305,7 +305,7 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
       >
         <Controller
           name={convertAttributeNameToForm<ClientScopeDefaultOptionalType>(
-            "attributes.include.in.token.scope"
+            "attributes.include.in.token.scope",
           )}
           control={control}
           defaultValue="true"
@@ -332,7 +332,7 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
       >
         <Controller
           name={convertAttributeNameToForm<ClientScopeDefaultOptionalType>(
-            "attributes.gui.order"
+            "attributes.gui.order",
           )}
           defaultValue=""
           control={control}

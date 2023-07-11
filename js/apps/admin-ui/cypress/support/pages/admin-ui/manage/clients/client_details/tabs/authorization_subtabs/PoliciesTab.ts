@@ -16,7 +16,7 @@ export default class PoliciesTab extends CommonPage {
 
   fillBasePolicyForm(policy: { [key: string]: string }) {
     Object.entries(policy).map(([key, value]) =>
-      cy.findByTestId(key).type(value)
+      cy.findByTestId(key).type(value),
     );
     return this;
   }

@@ -35,7 +35,7 @@ export const UserGroups = ({ user }: UserGroupsProps) => {
   const refresh = () => setKey(key + 1);
 
   const [selectedGroups, setSelectedGroups] = useState<GroupRepresentation[]>(
-    []
+    [],
   );
 
   const [isDirectMembership, setDirectMembership] = useState(true);
@@ -79,7 +79,7 @@ export const UserGroups = ({ user }: UserGroupsProps) => {
           ...paths.map((p) => ({
             name: p,
             path: g.path?.substring(0, g.path.indexOf(p) + p.length),
-          }))
+          })),
         );
       });
 
@@ -109,8 +109,8 @@ export const UserGroups = ({ user }: UserGroupsProps) => {
             adminClient.users.delFromGroup({
               id: user.id!,
               groupId: group.id!,
-            })
-          )
+            }),
+          ),
         );
 
         addAlert(t("removedGroupMembership"), AlertVariant.success);
@@ -133,8 +133,8 @@ export const UserGroups = ({ user }: UserGroupsProps) => {
           adminClient.users.addToGroup({
             id: user.id!,
             groupId: group.id!,
-          })
-        )
+          }),
+        ),
       );
 
       addAlert(t("addedGroupMembership"), AlertVariant.success);
@@ -175,7 +175,7 @@ export const UserGroups = ({ user }: UserGroupsProps) => {
           isDirectMembership
             ? setSelectedGroups(groups)
             : setSelectedGroups(
-                intersectionBy(groups, directMembershipList, "id")
+                intersectionBy(groups, directMembershipList, "id"),
               )
         }
         isRowDisabled={(group) =>

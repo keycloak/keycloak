@@ -6,7 +6,7 @@ import type { AppRouteObject } from "../../routes";
 export type NewKerberosUserFederationParams = { realm: string };
 
 const UserFederationKerberosSettings = lazy(
-  () => import("../UserFederationKerberosSettings")
+  () => import("../UserFederationKerberosSettings"),
 );
 
 export const NewKerberosUserFederationRoute: AppRouteObject = {
@@ -19,7 +19,7 @@ export const NewKerberosUserFederationRoute: AppRouteObject = {
 };
 
 export const toNewKerberosUserFederation = (
-  params: NewKerberosUserFederationParams
+  params: NewKerberosUserFederationParams,
 ): Partial<Path> => ({
   pathname: generatePath(NewKerberosUserFederationRoute.path, params),
 });

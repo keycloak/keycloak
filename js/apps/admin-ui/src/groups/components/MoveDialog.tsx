@@ -18,7 +18,7 @@ const moveToRoot = (source: GroupRepresentation) =>
 
 const moveToGroup = async (
   source: GroupRepresentation,
-  dest: GroupRepresentation
+  dest: GroupRepresentation,
 ) => adminClient.groups.updateChildGroup({ id: dest.id! }, source);
 
 export const MoveDialog = ({ source, onClose, refresh }: MoveDialogProps) => {

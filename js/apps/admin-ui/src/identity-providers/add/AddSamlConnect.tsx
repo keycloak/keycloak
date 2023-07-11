@@ -53,7 +53,7 @@ export default function AddSamlConnect() {
           providerId: id,
           alias: provider.alias!,
           tab: "settings",
-        })
+        }),
       );
     } catch (error: any) {
       addError("identity-providers:createError", error);

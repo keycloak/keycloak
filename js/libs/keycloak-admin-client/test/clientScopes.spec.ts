@@ -183,7 +183,7 @@ describe("Client Scopes", () => {
       const defaultClientScopeList =
         await kcAdminClient.clientScopes.listDefaultClientScopes();
       const defaultClientScope = defaultClientScopeList.find(
-        (scope) => scope.id === id
+        (scope) => scope.id === id,
       )!;
 
       expect(defaultClientScope).to.be.ok;
@@ -200,7 +200,7 @@ describe("Client Scopes", () => {
       const defaultClientScopeList =
         await kcAdminClient.clientScopes.listDefaultClientScopes();
       const defaultClientScope = defaultClientScopeList.find(
-        (scope) => scope.id === id
+        (scope) => scope.id === id,
       );
 
       expect(defaultClientScope).not.to.be.ok;
@@ -223,7 +223,7 @@ describe("Client Scopes", () => {
       const defaultOptionalClientScopeList =
         await kcAdminClient.clientScopes.listDefaultOptionalClientScopes();
       const defaultOptionalClientScope = defaultOptionalClientScopeList.find(
-        (scope) => scope.id === id
+        (scope) => scope.id === id,
       )!;
 
       expect(defaultOptionalClientScope).to.be.ok;
@@ -243,7 +243,7 @@ describe("Client Scopes", () => {
       const defaultOptionalClientScopeList =
         await kcAdminClient.clientScopes.listDefaultOptionalClientScopes();
       const defaultOptionalClientScope = defaultOptionalClientScopeList.find(
-        (scope) => scope.id === id
+        (scope) => scope.id === id,
       );
 
       expect(defaultOptionalClientScope).not.to.be.ok;
@@ -296,7 +296,7 @@ describe("Client Scopes", () => {
         {
           id: id!,
           name: dummyMapper.name!,
-        }
+        },
       ))!;
       expect(mapper).to.be.ok;
       expect(mapper.protocol).to.eq(dummyMapper.protocol);
@@ -307,14 +307,14 @@ describe("Client Scopes", () => {
       const { id } = currentClientScope;
       await kcAdminClient.clientScopes.addProtocolMapper(
         { id: id! },
-        dummyMapper
+        dummyMapper,
       );
 
       const mapper = (await kcAdminClient.clientScopes.findProtocolMapperByName(
         {
           id: id!,
           name: dummyMapper.name!,
-        }
+        },
       ))!;
       expect(mapper).to.be.ok;
       expect(mapper.protocol).to.eq(dummyMapper.protocol);
@@ -325,7 +325,7 @@ describe("Client Scopes", () => {
       const { id } = currentClientScope;
       await kcAdminClient.clientScopes.addProtocolMapper(
         { id: id! },
-        dummyMapper
+        dummyMapper,
       );
 
       const { id: mapperId } =
@@ -347,14 +347,14 @@ describe("Client Scopes", () => {
       const { id } = currentClientScope;
       await kcAdminClient.clientScopes.addProtocolMapper(
         { id: id! },
-        dummyMapper
+        dummyMapper,
       );
 
       const mapper = (await kcAdminClient.clientScopes.findProtocolMapperByName(
         {
           id: id!,
           name: dummyMapper.name!,
-        }
+        },
       ))!;
 
       expect(mapper).to.be.ok;
@@ -365,7 +365,7 @@ describe("Client Scopes", () => {
       const { id } = currentClientScope;
       await kcAdminClient.clientScopes.addProtocolMapper(
         { id: id! },
-        dummyMapper
+        dummyMapper,
       );
 
       const mapperList =
@@ -387,13 +387,13 @@ describe("Client Scopes", () => {
       dummyMapper.config = { "access.token.claim": "true" };
       await kcAdminClient.clientScopes.addProtocolMapper(
         { id: id! },
-        dummyMapper
+        dummyMapper,
       );
       const mapper = (await kcAdminClient.clientScopes.findProtocolMapperByName(
         {
           id: id!,
           name: dummyMapper.name!,
-        }
+        },
       ))!;
 
       expect(mapper.config!["access.token.claim"]).to.eq("true");
@@ -402,7 +402,7 @@ describe("Client Scopes", () => {
 
       await kcAdminClient.clientScopes.updateProtocolMapper(
         { id: id!, mapperId: mapper.id! },
-        mapper
+        mapper,
       );
 
       const updatedMapper =
@@ -418,7 +418,7 @@ describe("Client Scopes", () => {
       const { id } = currentClientScope;
       await kcAdminClient.clientScopes.addProtocolMapper(
         { id: id! },
-        dummyMapper
+        dummyMapper,
       );
 
       const { id: mapperId } =
@@ -494,7 +494,7 @@ describe("Client Scopes", () => {
             id: id!,
             client: clientUniqueId!,
           },
-          filteredRoles
+          filteredRoles,
         );
 
         const roles = await kcAdminClient.clientScopes.listClientScopeMappings({
@@ -553,7 +553,7 @@ describe("Client Scopes", () => {
             id: id!,
             client: clientUniqueId!,
           },
-          rolesBefore
+          rolesBefore,
         );
 
         const rolesAfter =
@@ -598,7 +598,7 @@ describe("Client Scopes", () => {
 
         await kcAdminClient.clientScopes.addRealmScopeMappings(
           { id: id! },
-          filteredRoles
+          filteredRoles,
         );
 
         const roles = await kcAdminClient.clientScopes.listRealmScopeMappings({
@@ -647,7 +647,7 @@ describe("Client Scopes", () => {
           {
             id: id!,
           },
-          rolesBefore
+          rolesBefore,
         );
 
         const rolesAfter =

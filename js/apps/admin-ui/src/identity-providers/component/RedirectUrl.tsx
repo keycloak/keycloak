@@ -11,7 +11,7 @@ export const RedirectUrl = ({ id }: { id: string }) => {
 
   const { realm } = useRealm();
   const callbackUrl = `${addTrailingSlash(
-    adminClient.baseUrl
+    adminClient.baseUrl,
   )}realms/${realm}/broker`;
 
   return (

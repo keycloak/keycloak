@@ -46,10 +46,10 @@ export const ChangeTypeDropdown = ({
                     clientId,
                     row,
                     row.type,
-                    value as ClientScope
+                    value as ClientScope,
                   )
                 : changeScope(row, value as ClientScope);
-            })
+            }),
           );
           setOpen(false);
           refresh();
@@ -61,7 +61,7 @@ export const ChangeTypeDropdown = ({
     >
       {clientScopeTypesSelectOptions(
         t,
-        !clientId ? allClientScopeTypes : undefined
+        !clientId ? allClientScopeTypes : undefined,
       )}
     </Select>
   );

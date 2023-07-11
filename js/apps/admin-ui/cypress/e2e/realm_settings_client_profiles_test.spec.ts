@@ -87,7 +87,7 @@ describe("Realm settings client profiles tab tests", () => {
       .saveClientProfileCreation();
     cy.wait("@save");
     masthead.checkNotificationMessage(
-      "Could not create client profile: 'proposed client profile name duplicated.'"
+      "Could not create client profile: 'proposed client profile name duplicated.'",
     );
   });
 
@@ -158,7 +158,7 @@ describe("Realm settings client profiles tab tests", () => {
       .checkModalMessage(
         "This action will permanently delete the profile " +
           editedProfileName +
-          ". This cannot be undone."
+          ". This cannot be undone.",
       )
       .cancelModal();
     realmSettingsPage.checkElementInList(editedProfileName);

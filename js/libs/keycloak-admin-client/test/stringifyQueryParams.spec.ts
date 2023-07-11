@@ -23,9 +23,9 @@ describe("stringifyQueryParams", () => {
         numZero: 0,
         numNegative: -1,
         str: "Hello World!",
-      })
+      }),
     ).to.equal(
-      "boolTrue=true&boolFalse=false&numPositive=1&numZero=0&numNegative=-1&str=Hello+World%21"
+      "boolTrue=true&boolFalse=false&numPositive=1&numZero=0&numNegative=-1&str=Hello+World%21",
     );
   });
 });

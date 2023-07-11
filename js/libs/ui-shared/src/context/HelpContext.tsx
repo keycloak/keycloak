@@ -10,7 +10,7 @@ type HelpContextProps = {
 
 export const HelpContext = createNamedContext<HelpContextProps | undefined>(
   "HelpContext",
-  undefined
+  undefined,
 );
 
 export const useHelp = () => useRequiredContext(HelpContext);

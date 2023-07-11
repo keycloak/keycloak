@@ -24,7 +24,7 @@ export const AddProviderDialog = ({
   const { t } = useTranslation("clients");
   const serverInfo = useServerInfo();
   const providers = Object.keys(
-    serverInfo.providers?.["client-registration-policy"].providers || []
+    serverInfo.providers?.["client-registration-policy"].providers || [],
   );
 
   const descriptions =
@@ -37,9 +37,9 @@ export const AddProviderDialog = ({
     () =>
       localeSort(
         descriptions?.filter((d) => providers.includes(d.id)) || [],
-        mapByKey("id")
+        mapByKey("id"),
       ),
-    [providers, descriptions]
+    [providers, descriptions],
   );
   return (
     <Modal
@@ -64,7 +64,7 @@ export const AddProviderDialog = ({
                   <DataListCell style={{ fontWeight: 700 }} key={name}>
                     {name}
                   </DataListCell>
-                )
+                ),
               )}
             />
           </DataListItemRow>

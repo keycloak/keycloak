@@ -27,7 +27,7 @@ export const PageBreadCrumbs = () => {
       disableDefaults: true,
       excludePaths: ["/", `/${realm}`],
     }),
-    elementText
+    elementText,
   );
   return crumbs.length > 1 ? (
     <Breadcrumb>

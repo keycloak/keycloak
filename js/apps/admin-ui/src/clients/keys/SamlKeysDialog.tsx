@@ -44,7 +44,7 @@ export const submitForm = async (
   form: SamlKeysDialogForm,
   id: string,
   attr: KeyTypes,
-  callback: (error?: unknown) => void
+  callback: (error?: unknown) => void,
 ) => {
   try {
     const formData = new FormData();
@@ -52,8 +52,8 @@ export const submitForm = async (
     Object.entries(rest).map(([key, value]) =>
       formData.append(
         key === "format" ? "keystoreFormat" : key,
-        value.toString()
-      )
+        value.toString(),
+      ),
     );
     formData.append("file", file);
 
@@ -102,7 +102,7 @@ export const SamlKeysDialog = ({
         new Blob([key.privateKey!], {
           type: "application/octet-stream",
         }),
-        "private.key"
+        "private.key",
       );
 
       addAlert(t("generateSuccess"), AlertVariant.success);

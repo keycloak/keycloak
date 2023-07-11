@@ -172,7 +172,7 @@ export const FineGrainOpenIdConnect = ({
       >
         <Controller
           name={convertAttributeNameToForm<FormFields>(
-            "attributes.access.token.signed.response.alg"
+            "attributes.access.token.signed.response.alg",
           )}
           defaultValue=""
           control={control}
@@ -205,7 +205,7 @@ export const FineGrainOpenIdConnect = ({
       >
         <Controller
           name={convertAttributeNameToForm<FormFields>(
-            "attributes.id.token.signed.response.alg"
+            "attributes.id.token.signed.response.alg",
           )}
           defaultValue=""
           control={control}
@@ -238,7 +238,7 @@ export const FineGrainOpenIdConnect = ({
       >
         <Controller
           name={convertAttributeNameToForm<FormFields>(
-            "attributes.id.token.encrypted.response.alg"
+            "attributes.id.token.encrypted.response.alg",
           )}
           defaultValue=""
           control={control}
@@ -265,7 +265,7 @@ export const FineGrainOpenIdConnect = ({
         labelIcon={
           <HelpItem
             helpText={t(
-              "clients-help:idTokenEncryptionContentEncryptionAlgorithm"
+              "clients-help:idTokenEncryptionContentEncryptionAlgorithm",
             )}
             fieldLabelId="clients:idTokenEncryptionContentEncryptionAlgorithm"
           />
@@ -273,7 +273,7 @@ export const FineGrainOpenIdConnect = ({
       >
         <Controller
           name={convertAttributeNameToForm<FormFields>(
-            "attributes.id.token.encrypted.response.enc"
+            "attributes.id.token.encrypted.response.enc",
           )}
           defaultValue=""
           control={control}
@@ -306,7 +306,7 @@ export const FineGrainOpenIdConnect = ({
       >
         <Controller
           name={convertAttributeNameToForm<FormFields>(
-            "attributes.user.info.response.signature.alg"
+            "attributes.user.info.response.signature.alg",
           )}
           defaultValue=""
           control={control}
@@ -333,7 +333,7 @@ export const FineGrainOpenIdConnect = ({
         labelIcon={
           <HelpItem
             helpText={t(
-              "clients-help:userInfoResponseEncryptionKeyManagementAlgorithm"
+              "clients-help:userInfoResponseEncryptionKeyManagementAlgorithm",
             )}
             fieldLabelId="clients:userInfoResponseEncryptionKeyManagementAlgorithm"
           />
@@ -341,7 +341,7 @@ export const FineGrainOpenIdConnect = ({
       >
         <Controller
           name={convertAttributeNameToForm<FormFields>(
-            "attributes.user.info.encrypted.response.alg"
+            "attributes.user.info.encrypted.response.alg",
           )}
           defaultValue=""
           control={control}
@@ -368,7 +368,7 @@ export const FineGrainOpenIdConnect = ({
         labelIcon={
           <HelpItem
             helpText={t(
-              "clients-help:userInfoResponseEncryptionContentEncryptionAlgorithm"
+              "clients-help:userInfoResponseEncryptionContentEncryptionAlgorithm",
             )}
             fieldLabelId="clients:userInfoResponseEncryptionContentEncryptionAlgorithm"
           />
@@ -376,7 +376,7 @@ export const FineGrainOpenIdConnect = ({
       >
         <Controller
           name={convertAttributeNameToForm<FormFields>(
-            "attributes.user.info.encrypted.response.enc"
+            "attributes.user.info.encrypted.response.enc",
           )}
           defaultValue=""
           control={control}
@@ -409,7 +409,7 @@ export const FineGrainOpenIdConnect = ({
       >
         <Controller
           name={convertAttributeNameToForm<FormFields>(
-            "attributes.request.object.signature.alg"
+            "attributes.request.object.signature.alg",
           )}
           defaultValue=""
           control={control}
@@ -442,7 +442,7 @@ export const FineGrainOpenIdConnect = ({
       >
         <Controller
           name={convertAttributeNameToForm<FormFields>(
-            "attributes.request.object.encryption.alg"
+            "attributes.request.object.encryption.alg",
           )}
           defaultValue=""
           control={control}
@@ -475,7 +475,7 @@ export const FineGrainOpenIdConnect = ({
       >
         <Controller
           name={convertAttributeNameToForm<FormFields>(
-            "attributes.request.object.encryption.enc"
+            "attributes.request.object.encryption.enc",
           )}
           defaultValue=""
           control={control}
@@ -508,7 +508,7 @@ export const FineGrainOpenIdConnect = ({
       >
         <Controller
           name={convertAttributeNameToForm<FormFields>(
-            "attributes.request.object.required"
+            "attributes.request.object.required",
           )}
           defaultValue=""
           control={control}
@@ -558,7 +558,7 @@ export const FineGrainOpenIdConnect = ({
       >
         <Controller
           name={convertAttributeNameToForm<FormFields>(
-            "attributes.authorization.signed.response.alg"
+            "attributes.authorization.signed.response.alg",
           )}
           defaultValue=""
           control={control}
@@ -591,7 +591,7 @@ export const FineGrainOpenIdConnect = ({
       >
         <Controller
           name={convertAttributeNameToForm<FormFields>(
-            "attributes.authorization.encrypted.response.alg"
+            "attributes.authorization.encrypted.response.alg",
           )}
           defaultValue=""
           control={control}
@@ -624,7 +624,7 @@ export const FineGrainOpenIdConnect = ({
       >
         <Controller
           name={convertAttributeNameToForm<FormFields>(
-            "attributes.authorization.encrypted.response.enc"
+            "attributes.authorization.encrypted.response.enc",
           )}
           defaultValue=""
           control={control}

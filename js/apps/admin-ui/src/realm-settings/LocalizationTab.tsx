@@ -96,7 +96,7 @@ export const LocalizationTab = ({ save, realm }: LocalizationTabProps) => {
   const themeTypes = useServerInfo().themes!;
   const allLocales = useMemo(() => {
     const locales = Object.values(themeTypes).flatMap((theme) =>
-      theme.flatMap(({ locales }) => (locales ? locales : []))
+      theme.flatMap(({ locales }) => (locales ? locales : [])),
     );
     return Array.from(new Set(locales));
   }, [themeTypes]);
@@ -158,7 +158,7 @@ export const LocalizationTab = ({ save, realm }: LocalizationTabProps) => {
       if (filter) {
         const filtered = uniqWith(
           searchInBundles(0).concat(searchInBundles(1)),
-          isEqual
+          isEqual,
         );
 
         result = Object.fromEntries(filtered);
@@ -221,14 +221,14 @@ export const LocalizationTab = ({ save, realm }: LocalizationTabProps) => {
 
       return bundles;
     },
-    [tableKey, filter, first, max]
+    [tableKey, filter, first, max],
   );
 
   const handleTextInputChange = (
     newValue: string,
     evt: any,
     rowIndex: number,
-    cellIndex: number
+    cellIndex: number,
   ) => {
     setTableRows((prev) => {
       const newRows = cloneDeep(prev);
@@ -243,7 +243,7 @@ export const LocalizationTab = ({ save, realm }: LocalizationTabProps) => {
   const updateEditableRows = async (
     type: RowEditType,
     rowIndex?: number,
-    validationErrors?: RowErrors
+    validationErrors?: RowErrors,
   ) => {
     if (rowIndex === undefined) {
       return;
@@ -277,7 +277,7 @@ export const LocalizationTab = ({ save, realm }: LocalizationTabProps) => {
               selectMenuLocale || getValues("defaultLocale") || DEFAULT_LOCALE,
             key,
           },
-          value
+          value,
         );
         addAlert(t("updateMessageBundleSuccess"), AlertVariant.success);
       } catch (error) {
@@ -316,7 +316,7 @@ export const LocalizationTab = ({ save, realm }: LocalizationTabProps) => {
             selectMenuLocale || getValues("defaultLocale") || DEFAULT_LOCALE,
           key: pair.key,
         },
-        pair.value
+        pair.value,
       );
 
       adminClient.setConfig({
@@ -414,8 +414,8 @@ export const LocalizationTab = ({ save, realm }: LocalizationTabProps) => {
                         if (field.value.includes(option)) {
                           field.onChange(
                             field.value.filter(
-                              (item: string) => item !== option
-                            )
+                              (item: string) => item !== option,
+                            ),
                           );
                         } else {
                           field.onChange([...field.value, option]);
@@ -464,7 +464,7 @@ export const LocalizationTab = ({ save, realm }: LocalizationTabProps) => {
                           ? localeToDisplayName(field.value)
                           : realm.defaultLocale !== ""
                           ? localeToDisplayName(
-                              realm.defaultLocale || DEFAULT_LOCALE
+                              realm.defaultLocale || DEFAULT_LOCALE,
                             )
                           : t("placeholderText")
                       }
@@ -594,7 +594,7 @@ export const LocalizationTab = ({ save, realm }: LocalizationTabProps) => {
                       title: t("common:delete"),
                       onClick: (_, row) =>
                         deleteKey(
-                          (tableRows[row].cells?.[0] as IRowCell).props.value
+                          (tableRows[row].cells?.[0] as IRowCell).props.value,
                         ),
                     },
                   ]}

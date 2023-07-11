@@ -12,7 +12,7 @@ export type ButtonEdgeProps = EdgeProps & {
   data: {
     onEdgeClick: (
       evt: ReactMouseEvent<HTMLButtonElement, MouseEvent>,
-      id: string
+      id: string,
     ) => void;
   };
 };

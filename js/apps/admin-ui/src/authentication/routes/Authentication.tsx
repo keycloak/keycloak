@@ -24,7 +24,7 @@ export const AuthenticationRouteWithTab: AppRouteObject = {
 };
 
 export const toAuthentication = (
-  params: AuthenticationParams
+  params: AuthenticationParams,
 ): Partial<Path> => {
   const path = params.tab
     ? AuthenticationRouteWithTab.path

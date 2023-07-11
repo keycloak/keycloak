@@ -120,7 +120,7 @@ export function UserDataTableAttributeSearchForm({
 
   const clearActiveFilters = () => {
     const filtered = [...activeFilters].filter(
-      (chip) => chip.name !== chip.name
+      (chip) => chip.name !== chip.name,
     );
     setActiveFilters(filtered);
   };

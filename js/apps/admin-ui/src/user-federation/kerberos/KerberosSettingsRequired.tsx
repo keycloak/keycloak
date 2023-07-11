@@ -44,7 +44,7 @@ export const KerberosSettingsRequired = ({
   useFetch(
     () => adminClient.realms.findOne({ realm }),
     (result) => form.setValue("parentId", result!.id),
-    []
+    [],
   );
 
   return (
@@ -253,7 +253,7 @@ export const KerberosSettingsRequired = ({
           labelIcon={
             <HelpItem
               helpText={t(
-                "user-federation-help:allowPasswordAuthenticationHelp"
+                "user-federation-help:allowPasswordAuthenticationHelp",
               )}
               fieldLabelId="user-federation:allowPasswordAuthentication"
             />

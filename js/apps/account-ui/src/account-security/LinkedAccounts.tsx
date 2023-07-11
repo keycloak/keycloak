@@ -19,12 +19,12 @@ const LinkedAccounts = () => {
 
   const linkedAccounts = useMemo(
     () => accounts.filter((account) => account.connected),
-    [accounts]
+    [accounts],
   );
 
   const unLinkedAccounts = useMemo(
     () => accounts.filter((account) => !account.connected),
-    [accounts]
+    [accounts],
   );
 
   return (

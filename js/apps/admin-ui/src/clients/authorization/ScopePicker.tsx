@@ -38,7 +38,7 @@ export const ScopePicker = ({ clientId }: { clientId: string }) => {
       return adminClient.clients.listAllScopes(params);
     },
     setScopes,
-    [search]
+    [search],
   );
 
   const renderScopes = (scopes?: ScopeRepresentation[]) =>
@@ -85,7 +85,7 @@ export const ScopePicker = ({ clientId }: { clientId: string }) => {
                   ? selectedValue
                   : (selectedValue as Scope).name;
               const changedValue = field.value.find(
-                (o: Scope) => o.name === option
+                (o: Scope) => o.name === option,
               )
                 ? field.value.filter((item: Scope) => item.name !== option)
                 : [...field.value, selectedValue];

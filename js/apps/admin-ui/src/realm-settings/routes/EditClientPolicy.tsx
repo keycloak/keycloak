@@ -20,7 +20,7 @@ export const EditClientPolicyRoute: AppRouteObject = {
 };
 
 export const toEditClientPolicy = (
-  params: EditClientPolicyParams
+  params: EditClientPolicyParams,
 ): Partial<Path> => ({
   pathname: generatePath(EditClientPolicyRoute.path, params),
 });
