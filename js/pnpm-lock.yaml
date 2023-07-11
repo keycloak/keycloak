@@ -296,8 +296,8 @@ importers:
         specifier: workspace:*
         version: link:../../libs/keycloak-admin-client
       '@octokit/rest':
-        specifier: ^19.0.13
-        version: 19.0.13
+        specifier: ^20.0.1
+        version: 20.0.1
       '@types/gunzip-maybe':
         specifier: ^1.4.0
         version: 1.4.0
@@ -983,126 +983,107 @@ packages:
       fastq: 1.15.0
     dev: true
 
-  /@octokit/auth-token@3.0.4:
-    resolution: {integrity: sha512-TWFX7cZF2LXoCvdmJWY7XVPi74aSY0+FfBZNSXEXFkMpjcqsQwDSYVv5FhRFaI0V1ECnwbz4j59T/G+rXNWaIQ==}
-    engines: {node: '>= 14'}
+  /@octokit/auth-token@4.0.0:
+    resolution: {integrity: sha512-tY/msAuJo6ARbK6SPIxZrPBms3xPbfwBrulZe0Wtr/DIY9lje2HeV1uoebShn6mx7SjCHif6EjMvoREj+gZ+SA==}
+    engines: {node: '>= 18'}
     dev: false
 
-  /@octokit/core@4.2.1:
-    resolution: {integrity: sha512-tEDxFx8E38zF3gT7sSMDrT1tGumDgsw5yPG6BBh/X+5ClIQfMH/Yqocxz1PnHx6CHyF6pxmovUTOfZAUvQ0Lvw==}
-    engines: {node: '>= 14'}
+  /@octokit/core@5.0.0:
+    resolution: {integrity: sha512-YbAtMWIrbZ9FCXbLwT9wWB8TyLjq9mxpKdgB3dUNxQcIVTf9hJ70gRPwAcqGZdY6WdJPZ0I7jLaaNDCiloGN2A==}
+    engines: {node: '>= 18'}
     dependencies:
-      '@octokit/auth-token': 3.0.4
-      '@octokit/graphql': 5.0.6
-      '@octokit/request': 6.2.6
-      '@octokit/request-error': 3.0.3
-      '@octokit/types': 9.3.2
+      '@octokit/auth-token': 4.0.0
+      '@octokit/graphql': 7.0.1
+      '@octokit/request': 8.0.4
+      '@octokit/request-error': 5.0.0
+      '@octokit/types': 11.1.0
       before-after-hook: 2.2.3
       universal-user-agent: 6.0.0
-    transitivePeerDependencies:
-      - encoding
     dev: false
 
-  /@octokit/endpoint@7.0.6:
-    resolution: {integrity: sha512-5L4fseVRUsDFGR00tMWD/Trdeeihn999rTMGRMC1G/Ldi1uWlWJzI98H4Iak5DB/RVvQuyMYKqSK/R6mbSOQyg==}
-    engines: {node: '>= 14'}
+  /@octokit/endpoint@9.0.0:
+    resolution: {integrity: sha512-szrQhiqJ88gghWY2Htt8MqUDO6++E/EIXqJ2ZEp5ma3uGS46o7LZAzSLt49myB7rT+Hfw5Y6gO3LmOxGzHijAQ==}
+    engines: {node: '>= 18'}
     dependencies:
-      '@octokit/types': 9.3.2
+      '@octokit/types': 11.1.0
       is-plain-object: 5.0.0
       universal-user-agent: 6.0.0
     dev: false
 
-  /@octokit/graphql@5.0.6:
-    resolution: {integrity: sha512-Fxyxdy/JH0MnIB5h+UQ3yCoh1FG4kWXfFKkpWqjZHw/p+Kc8Y44Hu/kCgNBT6nU1shNumEchmW/sUO1JuQnPcw==}
-    engines: {node: '>= 14'}
+  /@octokit/graphql@7.0.1:
+    resolution: {integrity: sha512-T5S3oZ1JOE58gom6MIcrgwZXzTaxRnxBso58xhozxHpOqSTgDS6YNeEUvZ/kRvXgPrRz/KHnZhtb7jUMRi9E6w==}
+    engines: {node: '>= 18'}
     dependencies:
-      '@octokit/request': 6.2.6
-      '@octokit/types': 9.3.2
+      '@octokit/request': 8.0.4
+      '@octokit/types': 11.1.0
       universal-user-agent: 6.0.0
-    transitivePeerDependencies:
-      - encoding
     dev: false
 
   /@octokit/openapi-types@18.0.0:
     resolution: {integrity: sha512-V8GImKs3TeQRxRtXFpG2wl19V7444NIOTDF24AWuIbmNaNYOQMWRbjcGDXV5B+0n887fgDcuMNOmlul+k+oJtw==}
     dev: false
 
-  /@octokit/plugin-paginate-rest@6.1.2(@octokit/core@4.2.1):
-    resolution: {integrity: sha512-qhrmtQeHU/IivxucOV1bbI/xZyC/iOBhclokv7Sut5vnejAIAEXVcGQeRpQlU39E0WwK9lNvJHphHri/DB6lbQ==}
-    engines: {node: '>= 14'}
+  /@octokit/plugin-paginate-rest@8.0.0(@octokit/core@5.0.0):
+    resolution: {integrity: sha512-2xZ+baZWUg+qudVXnnvXz7qfrTmDeYPCzangBVq/1gXxii/OiS//4shJp9dnCCvj1x+JAm9ji1Egwm1BA47lPQ==}
+    engines: {node: '>= 18'}
     peerDependencies:
-      '@octokit/core': '>=4'
+      '@octokit/core': '>=5'
     dependencies:
-      '@octokit/core': 4.2.1
-      '@octokit/tsconfig': 1.0.2
-      '@octokit/types': 9.3.2
+      '@octokit/core': 5.0.0
+      '@octokit/types': 11.1.0
     dev: false
 
-  /@octokit/plugin-request-log@1.0.4(@octokit/core@4.2.1):
-    resolution: {integrity: sha512-mLUsMkgP7K/cnFEw07kWqXGF5LKrOkD+lhCrKvPHXWDywAwuDUeDwWBpc69XK3pNX0uKiVt8g5z96PJ6z9xCFA==}
+  /@octokit/plugin-request-log@4.0.0(@octokit/core@5.0.0):
+    resolution: {integrity: sha512-2uJI1COtYCq8Z4yNSnM231TgH50bRkheQ9+aH8TnZanB6QilOnx8RMD2qsnamSOXtDj0ilxvevf5fGsBhBBzKA==}
+    engines: {node: '>= 18'}
     peerDependencies:
-      '@octokit/core': '>=3'
+      '@octokit/core': '>=5'
     dependencies:
-      '@octokit/core': 4.2.1
+      '@octokit/core': 5.0.0
     dev: false
 
-  /@octokit/plugin-rest-endpoint-methods@7.2.2(@octokit/core@4.2.1):
-    resolution: {integrity: sha512-bNoDKPtCL3Au0aL1sKfYhJ8uuVJ/Z3B9I2tSs1Ib68Guojv+hk++FH8Sc9ul/YTZ6S5Xr39QwJzoRCJZFKYPLA==}
-    engines: {node: '>= 14'}
+  /@octokit/plugin-rest-endpoint-methods@9.0.0(@octokit/core@5.0.0):
+    resolution: {integrity: sha512-KquMF/VB1IkKNiVnzJKspY5mFgGyLd7HzdJfVEGTJFzqu9BRFNWt+nwTCMuUiWc72gLQhRWYubTwOkQj+w/1PA==}
+    engines: {node: '>= 18'}
     peerDependencies:
-      '@octokit/core': '>=3'
+      '@octokit/core': '>=5'
     dependencies:
-      '@octokit/core': 4.2.1
-      '@octokit/types': 10.0.0
+      '@octokit/core': 5.0.0
+      '@octokit/types': 11.1.0
     dev: false
 
-  /@octokit/request-error@3.0.3:
-    resolution: {integrity: sha512-crqw3V5Iy2uOU5Np+8M/YexTlT8zxCfI+qu+LxUB7SZpje4Qmx3mub5DfEKSO8Ylyk0aogi6TYdf6kxzh2BguQ==}
-    engines: {node: '>= 14'}
+  /@octokit/request-error@5.0.0:
+    resolution: {integrity: sha512-1ue0DH0Lif5iEqT52+Rf/hf0RmGO9NWFjrzmrkArpG9trFfDM/efx00BJHdLGuro4BR/gECxCU2Twf5OKrRFsQ==}
+    engines: {node: '>= 18'}
     dependencies:
-      '@octokit/types': 9.3.2
+      '@octokit/types': 11.1.0
       deprecation: 2.3.1
       once: 1.4.0
     dev: false
 
-  /@octokit/request@6.2.6:
-    resolution: {integrity: sha512-T/waXf/xjie8Qn5IyFYAcI/HXvw9SPkcQWErGP9H471IWRDRCN+Gn/QOptPMAZRT4lJb2bLHxQfCXjU0mJRyng==}
-    engines: {node: '>= 14'}
+  /@octokit/request@8.0.4:
+    resolution: {integrity: sha512-YZ1XeDRil4ejHKoBP8BgROgP4auOH5A9lLZH96l39GKKEmsKOccQxKP5M7m+Punblg1bFw8LrdeKIDwIzQ8afA==}
+    engines: {node: '>= 18'}
     dependencies:
-      '@octokit/endpoint': 7.0.6
-      '@octokit/request-error': 3.0.3
-      '@octokit/types': 9.3.2
+      '@octokit/endpoint': 9.0.0
+      '@octokit/request-error': 5.0.0
+      '@octokit/types': 11.1.0
       is-plain-object: 5.0.0
-      node-fetch: 2.6.11
       universal-user-agent: 6.0.0
-    transitivePeerDependencies:
-      - encoding
     dev: false
 
-  /@octokit/rest@19.0.13:
-    resolution: {integrity: sha512-/EzVox5V9gYGdbAI+ovYj3nXQT1TtTHRT+0eZPcuC05UFSWO3mdO9UY1C0i2eLF9Un1ONJkAk+IEtYGAC+TahA==}
-    engines: {node: '>= 14'}
+  /@octokit/rest@20.0.1:
+    resolution: {integrity: sha512-wROV21RwHQIMNb2Dgd4+pY+dVy1Dwmp85pBrgr6YRRDYRBu9Gb+D73f4Bl2EukZSj5hInq2Tui9o7gAQpc2k2Q==}
+    engines: {node: '>= 18'}
     dependencies:
-      '@octokit/core': 4.2.1
-      '@octokit/plugin-paginate-rest': 6.1.2(@octokit/core@4.2.1)
-      '@octokit/plugin-request-log': 1.0.4(@octokit/core@4.2.1)
-      '@octokit/plugin-rest-endpoint-methods': 7.2.2(@octokit/core@4.2.1)
-    transitivePeerDependencies:
-      - encoding
+      '@octokit/core': 5.0.0
+      '@octokit/plugin-paginate-rest': 8.0.0(@octokit/core@5.0.0)
+      '@octokit/plugin-request-log': 4.0.0(@octokit/core@5.0.0)
+      '@octokit/plugin-rest-endpoint-methods': 9.0.0(@octokit/core@5.0.0)
     dev: false
 
-  /@octokit/tsconfig@1.0.2:
-    resolution: {integrity: sha512-I0vDR0rdtP8p2lGMzvsJzbhdOWy405HcGovrspJ8RRibHnyRgggUSNO5AIox5LmqiwmatHKYsvj6VGFHkqS7lA==}
-    dev: false
-
-  /@octokit/types@10.0.0:
-    resolution: {integrity: sha512-Vm8IddVmhCgU1fxC1eyinpwqzXPEYu0NrYzD3YZjlGjyftdLBTeqNblRC0jmJmgxbJIsQlyogVeGnrNaaMVzIg==}
-    dependencies:
-      '@octokit/openapi-types': 18.0.0
-    dev: false
-
-  /@octokit/types@9.3.2:
-    resolution: {integrity: sha512-D4iHGTdAnEEVsB8fl95m1hiz7D5YiRdQ9b/OEb3BYRVwbLsGHcRVPz+u+BgRLNk0Q0/4iZCBqDN96j2XNxfXrA==}
+  /@octokit/types@11.1.0:
+    resolution: {integrity: sha512-Fz0+7GyLm/bHt8fwEqgvRBWwIV1S6wRRyq+V6exRKLVWaKGsuy6H9QFYeBVDV7rK6fO3XwHgQOPxv+cLj2zpXQ==}
     dependencies:
       '@octokit/openapi-types': 18.0.0
     dev: false
