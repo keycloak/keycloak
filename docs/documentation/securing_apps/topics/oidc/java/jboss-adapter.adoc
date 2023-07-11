@@ -18,9 +18,17 @@ endif::[]
 
 ifeval::[{project_community}==true]
 
-WARNING: We do not regularly test and maintain WildFly/EAP adapters. They may work only with WildFly version 23 or earlier or with JBoss EAP 7. Also note
-that they may work only with JEE applications, but not with Jakarta applications. We recommend that you switch to Elytron OIDC Java adapter to
-secure your applications. This adapter has a similar configuration to Keycloak Java adapters and migrating your applications to it should be smooth.
+[WARNING]
+====
+This adapter is deprecated and will be removed in a future release of Keycloak. No further enhancements or new features
+will be added to this adapter.
+
+We recommend that you switch to the Elytron OIDC library to secure your applications.
+This library has a similar configuration to the Keycloak WildFly adapters, so you can expect a smooth migration of your applications.
+
+For more details about how to integrate {project_name} with JakartaEE applications running on latest Wildfly/EAP, consider looking at the
+{quickstartRepo_link}[Keycloak Quickstart GitHub Repository].
+====
 
 To be able to secure WAR apps deployed on JBoss EAP, WildFly or JBoss AS, you must install and configure the
 {project_name} adapter subsystem. You then have two options to secure your WARs.

@@ -6,16 +6,6 @@ include::topics/auth-services-terminology.adoc[leveloffset=+2]
 
 include::topics/getting-started-overview.adoc[leveloffset=+1]
 
-include::topics/hello-world-overview.adoc[leveloffset=+2]
-
-include::topics/hello-world-create-realm.adoc[leveloffset=+2]
-
-include::topics/hello-world-create-resource-server.adoc[leveloffset=+2]
-
-include::topics/hello-world-deploy.adoc[leveloffset=+2]
-
-include::topics/authorization-quickstarts.adoc[leveloffset=+2]
-
 include::topics/resource-server-overview.adoc[leveloffset=+1]
 
 include::topics/resource-server-create-client.adoc[leveloffset=+2]
@@ -110,7 +100,7 @@ include::topics/service-client-api.adoc[leveloffset=+2]
 
 include::topics/enforcer-overview.adoc[leveloffset=+1]
 
-include::topics/enforcer-keycloak-enforcement-filter.adoc[leveloffset=+2]
+include::topics/enforcer-configuration.adoc[leveloffset=+2]
 
 include::topics/enforcer-claim-information-point.adoc[leveloffset=+2]
 
