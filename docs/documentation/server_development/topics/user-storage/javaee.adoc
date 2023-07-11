@@ -11,6 +11,6 @@ Providers implementations are required to be plain java objects which implement 
 
 You can still implement your custom `UserStorageProvider` class, which is able to integrate an external database by JPA Entity Manager, as shown in this example:
 
-  - https://github.com/keycloak/keycloak-quickstarts/tree/latest/user-storage-jpa
+  - {quickstartRepo_link}/tree/latest/user-storage-jpa
 
 CDI is not supported.

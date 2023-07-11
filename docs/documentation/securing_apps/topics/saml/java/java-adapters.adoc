@@ -1,4 +1,4 @@
 
-=== Java adapters
+=== {project_name} Java adapters
 
 {project_name} comes with a range of different adapters for Java application. Selecting the correct adapter depends on the target platform.

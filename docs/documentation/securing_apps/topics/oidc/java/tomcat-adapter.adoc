@@ -2,6 +2,8 @@
 [[_tomcat_adapter]]
 ==== Tomcat 8 and 9 adapters
 
+include::adapter-deprecation-notice.adoc[]
+
 To be able to secure WAR apps deployed on Tomcat 8, and 9, you install the Keycloak Tomcat adapter into your Tomcat installation. You then perform extra configuration to secure each WAR you deploy to Tomcat.
 
 [[_tomcat_adapter_installation]]

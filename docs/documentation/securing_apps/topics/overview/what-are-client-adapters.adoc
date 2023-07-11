@@ -1,8 +1,0 @@
-=== Client adapters
-
-{project_name} client adapters are libraries that make it very easy to secure applications and services with {project_name}. We call them
-adapters rather than libraries as they provide a tight integration to the underlying platform and framework. This makes our adapters easy to use and they
-require less boilerplate code than what is typically required by a library.
-
-
-
