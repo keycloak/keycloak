@@ -96,11 +96,9 @@ export const RealmSelector = () => {
         })
         .concat(
           realms
-            .filter(
-              (r) => !recentRealms.includes(r.realm!) || r.realm === realm,
-            )
-            .map((r) => {
-              return { name: r.realm!, used: false };
+            .filter((name) => !recentRealms.includes(name) || name === realm),
+            .map((name) => {
+              return { name, used: false };
             }),
         ),
     [recentRealms, realm, realms],
@@ -164,15 +162,15 @@ export const RealmSelector = () => {
         </DropdownToggle>
       }
       dropdownItems={(realms.length !== 0
-        ? realms.map((r) => (
+        ? realms.map((name) => (
             <DropdownItem
-              key={r.realm}
+              key={name}
               component={
                 <Link
-                  to={toDashboard({ realm: r.realm! })}
+                  to={toDashboard({ realm: name })}
                   onClick={() => setOpen(false)}
                 >
-                  <RealmText value={r.realm!} />
+                  <RealmText value={name} />
                 </Link>
               }
             />
@@ -187,7 +185,7 @@ export const RealmSelector = () => {
           {whoAmI.canCreateRealm() && (
             <>
               <Divider key="divider" />
-              <DropdownItem key="add">
+              <DropdownItem key="add" component="div">
                 <AddRealm onClick={() => setOpen(false)} />
               </DropdownItem>
             </>
