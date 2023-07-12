@@ -201,16 +201,16 @@ const SigningIn = () => {
                                 }
                               }}
                             />
-                          ) : (
-                            <Button
-                              variant="secondary"
-                              onClick={() => {
-                                if (container.updateAction)
+                          ) : 
+                            container.updateAction && (
+                              <Button
+                                variant="secondary"
+                                onClick={() => {
                                   login({ action: container.updateAction });
-                              }}
-                            >
-                              {t("update")}
-                            </Button>
+                                }}
+                              >
+                                {t("update")}
+                              </Button>
                           )}
                         </DataListAction>,
                       ]}
