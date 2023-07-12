@@ -75,10 +75,9 @@ public final class Build extends AbstractCommand implements Runnable {
         println(spec.commandLine(), "Updating the configuration and installing your custom providers, if any. Please wait.");
 
         try {
-            beforeReaugmentationOnWindows();
-
             configureBuildClassLoader();
 
+            beforeReaugmentationOnWindows();
             QuarkusEntryPoint.main();
 
             if (!isDevMode()) {
