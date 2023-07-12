@@ -130,7 +130,7 @@ The default one for the Keycloak Admin client with Jakarta EE support is `org.ke
 
 The new artifact with Java EE support is `org.keycloak:keycloak-admin-client-jee`.
 
-=== Jakarta EE support
+== Jakarta EE support
 [source,xml]
 .Before migration:
 ----
@@ -151,7 +151,7 @@ The new artifact with Java EE support is `org.keycloak:keycloak-admin-client-jee
 </dependency>
 ----
 
-=== Java EE support
+== Java EE support
 [source,xml]
 .Before migration:
 ----
