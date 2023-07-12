@@ -122,7 +122,7 @@ const DeviceActivity = () => {
               onClick={() => refresh()}
               icon={<SyncAltIcon />}
             >
-              Refresh
+              {t("refresh")}
             </Button>
           </Tooltip>
 
