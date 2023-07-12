@@ -25,7 +25,7 @@ import {
   CredentialRepresentation,
 } from "../api/representations";
 import { EmptyRow } from "../components/datalist/EmptyRow";
-import useFormatter from "../components/format/format-date";
+import { useFormatDate } from "../utils/useFormatDate";
 import { Page } from "../components/page/Page";
 import { TFuncKey } from "../i18n";
 import { keycloak } from "../keycloak";
@@ -65,7 +65,6 @@ const MobileLink = ({ title, onClick }: MobileLinkProps) => {
 
 const SigningIn = () => {
   const { t } = useTranslation();
-  const { formatDate } = useFormatter();
   const { addAlert, addError } = useAlerts();
   const { login } = keycloak;
 
@@ -96,7 +95,7 @@ const SigningIn = () => {
         <DataListCell key={"created" + credential.id}>
           <Trans i18nKey="credentialCreatedAt">
             <strong className="pf-u-mr-md"></strong>
-            {{ date: formatDate(new Date(credential.createdDate)) }}
+            {{ date: useFormatDate(new Date(credential.createdDate)) }}
           </Trans>
         </DataListCell>,
       );

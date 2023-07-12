@@ -31,7 +31,7 @@ import {
   DeviceRepresentation,
   SessionRepresentation,
 } from "../api/representations";
-import useFormatter from "../components/formatter/format-date";
+import { useFormatTime } from "../utils/useFormatTime";
 import { Page } from "../components/page/Page";
 import { TFuncKey } from "../i18n";
 import { keycloak } from "../keycloak";
@@ -40,7 +40,6 @@ import { usePromise } from "../utils/usePromise";
 const DeviceActivity = () => {
   const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
-  const { formatTime } = useFormatter();
 
   const [devices, setDevices] = useState<DeviceRepresentation[]>();
   const [key, setKey] = useState(0);
@@ -201,7 +200,7 @@ const DeviceActivity = () => {
                             {t("lastAccessedOn")}
                           </DescriptionListTerm>
                           <DescriptionListDescription>
-                            {formatTime(session.lastAccess)}
+                            {useFormatTime(session.lastAccess)}
                           </DescriptionListDescription>
                         </DescriptionListGroup>
                         <DescriptionListGroup>
@@ -217,7 +216,7 @@ const DeviceActivity = () => {
                             {t("started")}
                           </DescriptionListTerm>
                           <DescriptionListDescription>
-                            {formatTime(session.started)}
+                            {useFormatTime(session.started)}
                           </DescriptionListDescription>
                         </DescriptionListGroup>
                         <DescriptionListGroup>
@@ -225,7 +224,7 @@ const DeviceActivity = () => {
                             {t("expires")}
                           </DescriptionListTerm>
                           <DescriptionListDescription>
-                            {formatTime(session.expires)}
+                            {useFormatTime(session.expires)}
                           </DescriptionListDescription>
                         </DescriptionListGroup>
                       </DescriptionList>
