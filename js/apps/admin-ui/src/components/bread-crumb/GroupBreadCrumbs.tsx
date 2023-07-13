@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { Link, useLocation, useSearchParams } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Breadcrumb, BreadcrumbItem } from "@patternfly/react-core";
 
@@ -11,8 +11,6 @@ export const GroupBreadCrumbs = () => {
   const { clear, remove, subGroups } = useSubGroups();
   const { realm } = useRealm();
   const location = useLocation();
-  const [searchParams] = useSearchParams();
-  const lazy = searchParams.has("lazy");
 
   useEffect(() => {
     const { pathname } = location;
@@ -33,12 +31,10 @@ export const GroupBreadCrumbs = () => {
           <BreadcrumbItem key={group.id} isActive={isLastGroup}>
             {!isLastGroup && (
               <Link
-                to={
-                  location.pathname.substring(
-                    0,
-                    location.pathname.indexOf(group.id!) + group.id!.length
-                  ) + `?${lazy ? "lazy" : ""}`
-                }
+                to={location.pathname.substring(
+                  0,
+                  location.pathname.indexOf(group.id!) + group.id!.length
+                )}
                 onClick={() => remove(group)}
               >
                 {group.name}

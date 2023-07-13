@@ -2,7 +2,7 @@ import type GroupRepresentation from "@keycloak/keycloak-admin-client/lib/defs/g
 import { SearchInput, ToolbarItem } from "@patternfly/react-core";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Link, useLocation, useSearchParams } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 
 import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
 import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
@@ -42,8 +42,6 @@ export const GroupTable = ({
 
   const location = useLocation();
   const id = getLastId(location.pathname);
-  const [searchParams] = useSearchParams();
-  const lazy = searchParams.has("lazy");
 
   const { hasAccess } = useAccess();
   const isManager = hasAccess("manage-users") || currentGroup()?.access?.manage;
@@ -65,7 +63,6 @@ export const GroupTable = ({
       groupsData = await fetchAdminUI<GroupRepresentation[]>("ui-ext/groups", {
         ...params,
         global: "false",
-        lazy: `${lazy}`,
       });
     }
 
@@ -194,10 +191,7 @@ export const GroupTable = ({
             displayKey: "groups:groupName",
             cellRenderer: (group) =>
               canViewDetails ? (
-                <Link
-                  key={group.id}
-                  to={`${location.pathname}/${group.id}?${lazy ? "lazy" : ""}`}
-                >
+                <Link key={group.id} to={`${location.pathname}/${group.id}`}>
                   {group.name}
                 </Link>
               ) : (

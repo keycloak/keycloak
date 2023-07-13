@@ -14,16 +14,16 @@ import {
   Tabs,
   Tooltip,
 } from "@patternfly/react-core";
-import { AngleLeftIcon, BarsIcon } from "@patternfly/react-icons";
+import { AngleLeftIcon, TreeIcon } from "@patternfly/react-icons";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 
-import { adminClient } from "../admin-client";
 import { GroupBreadCrumbs } from "../components/bread-crumb/GroupBreadCrumbs";
 import { PermissionsTab } from "../components/permission-tab/PermissionTab";
 import { ViewHeader } from "../components/view-header/ViewHeader";
 import { useAccess } from "../context/access/Access";
+import { fetchAdminUI } from "../context/auth/admin-ui-endpoint";
 import { useRealm } from "../context/realm-context/RealmContext";
 import helpUrls from "../help-urls";
 import { useFetch } from "../utils/useFetch";
@@ -56,9 +56,7 @@ export default function GroupsSection() {
   const location = useLocation();
   const id = getLastId(location.pathname);
 
-  const [searchParams] = useSearchParams();
-  const lazy = searchParams.has("lazy");
-  const [open, toggle] = useToggle(!lazy);
+  const [open, toggle] = useToggle(true);
   const [key, setKey] = useState(0);
   const refresh = () => setKey(key + 1);
 
@@ -88,7 +86,9 @@ export default function GroupsSection() {
         for (const i of ids!) {
           const group =
             i !== "search"
-              ? await adminClient.groups.findOne({ id: i })
+              ? await fetchAdminUI<GroupRepresentation | undefined>(
+                  "ui-ext/groups/" + i
+                )
               : { name: t("searchGroups"), id: "search" };
           if (group) {
             groups.push(group);
@@ -146,7 +146,7 @@ export default function GroupsSection() {
               <Tooltip content={open ? t("common:hide") : t("common:show")}>
                 <Button
                   variant="plain"
-                  icon={open ? <AngleLeftIcon /> : <BarsIcon />}
+                  icon={open ? <AngleLeftIcon /> : <TreeIcon />}
                   onClick={toggle}
                 />
               </Tooltip>
