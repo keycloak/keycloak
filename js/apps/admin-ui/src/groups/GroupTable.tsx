@@ -57,7 +57,7 @@ export const GroupTable = ({
     if (id) {
       groupsData = await fetchAdminUI<GroupRepresentation[]>(
         "ui-ext/groups/subgroup",
-        { ...params, id }
+        { ...params, id },
       );
     } else {
       groupsData = await fetchAdminUI<GroupRepresentation[]>("ui-ext/groups", {

@@ -184,7 +184,11 @@ export const GroupTree = ({
       if (activeItem) {
         subGroups = await fetchAdminUI<GroupRepresentation[]>(
           "ui-ext/groups/subgroup",
-          { id: activeItem.id!, first: `${firstSub}`, max: `${SUBGROUP_COUNT}` }
+          {
+            id: activeItem.id!,
+            first: `${firstSub}`,
+            max: `${SUBGROUP_COUNT}`,
+          },
         );
       }
       return { groups, count, subGroups };
@@ -223,20 +227,20 @@ export const GroupTree = ({
           unionBy(
             data,
             groups.map((g) => mapGroup(g, refresh)),
-            "id"
-          )
+            "id",
+          ),
         );
       }
       setCount(count);
     },
-    [key, first, firstSub, max, search, exact, activeItem]
+    [key, first, firstSub, max, search, exact, activeItem],
   );
 
   const findGroup = (
     groups: GroupRepresentation[] | TreeViewDataItem[],
     id: string,
     path: (GroupRepresentation | TreeViewDataItem)[],
-    found: (GroupRepresentation | TreeViewDataItem)[]
+    found: (GroupRepresentation | TreeViewDataItem)[],
   ) => {
     return groups.map((group) => {
       if (found.length > 0) return;
