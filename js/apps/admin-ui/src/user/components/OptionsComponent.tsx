@@ -33,7 +33,7 @@ export const OptionComponent = (attr: UserProfileAttribute) => {
                   if (isMultiSelect) {
                     if (field.value.includes(option)) {
                       field.onChange(
-                        field.value.filter((item: string) => item !== option)
+                        field.value.filter((item: string) => item !== option),
                       );
                     } else {
                       field.onChange([...field.value, option]);

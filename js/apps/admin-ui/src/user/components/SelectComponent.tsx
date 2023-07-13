@@ -32,7 +32,7 @@ export const SelectComponent = ({
               if (isMultiSelect) {
                 if (field.value.includes(option)) {
                   field.onChange(
-                    field.value.filter((item: string) => item !== option)
+                    field.value.filter((item: string) => item !== option),
                   );
                 } else {
                   field.onChange([...field.value, option]);
@@ -48,7 +48,7 @@ export const SelectComponent = ({
             isOpen={open}
             isDisabled={
               !(attribute.permissions?.edit || DEFAULT_ROLES).some((r) =>
-                roles.includes(r)
+                roles.includes(r),
               )
             }
           >
