@@ -784,23 +784,18 @@ public class MapUserProvider implements UserProvider {
         return r;
     }
 
+    @SuppressWarnings("unchecked")
     private DefaultModelCriteria<UserModel> addSearchToModelCriteria(RealmModel realm, String value,
             DefaultModelCriteria<UserModel> mcb) {
+
+        value = value.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_");
 
         if (value.length() >= 2 && value.charAt(0) == '"' && value.charAt(value.length() - 1) == '"') {
             // exact search
             value = value.substring(1, value.length() - 1);
         } else {
-            if (value.length() >= 2 && value.charAt(0) == '*' && value.charAt(value.length() - 1) == '*') {
-                // infix search
-                value = "%" + value.substring(1, value.length() - 1) + "%";
-            } else {
-                // default to prefix search
-                if (value.length() > 0 && value.charAt(value.length() - 1) == '*') {
-                    value = value.substring(0, value.length() - 1);
-                }
-                value += "%";
-            }
+            value = value.replace("*", "%");
+             if (value.isEmpty() || value.charAt(value.length() - 1) != '%') value += "%";
         }
 
         return mcb.or(

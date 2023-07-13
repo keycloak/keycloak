@@ -1136,11 +1136,23 @@ public class UserTest extends AbstractAdminTest {
     }
 
     @Test
-    public void circumfixSearchNotSupported() {
+    public void circumfixSearch() {
         createUsers();
 
         List<UserRepresentation> users = realm.users().search("u*name", null, null);
-        assertThat(users, hasSize(0));
+        assertThat(users, hasSize(9));
+    }
+
+    @Test
+    public void wildcardSearch() {
+        createUser("0user\\\\0", "email0@emal");
+        createUser("1user\\\\", "email1@emal");
+        createUser("2user\\\\%", "email2@emal");
+        createUser("3user\\\\*", "email3@emal");
+        createUser("4user\\\\_", "email4@emal");
+
+        assertThat(realm.users().search("*", null, null), hasSize(5));
+        assertThat(realm.users().search("*user\\", null, null), hasSize(5));
     }
 
     @Test
