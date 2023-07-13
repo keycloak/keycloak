@@ -29,7 +29,7 @@ const LinkedAccounts = () => {
 
   return (
     <Page
-      title={t("linkedAccountsTitle")}
+      title={t("linkedAccounts")}
       description={t("linkedAccountsIntroMessage")}
     >
       <Stack hasGutter>

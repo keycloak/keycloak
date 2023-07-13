@@ -119,7 +119,7 @@ export const PermissionRequest = ({
                     className="pf-u-ml-sm"
                     variant="danger"
                   >
-                    {t("doDeny")}
+                    {t("deny")}
                   </Button>
                 </Td>
               </Tr>

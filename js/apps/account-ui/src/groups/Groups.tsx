@@ -51,8 +51,8 @@ const Groups = () => {
   };
 
   return (
-    <Page title={t("groupLabel")} description={t("groupDescriptionLabel")}>
-      <DataList id="groups-list" aria-label={t("groupLabel")} isCompact>
+    <Page title={t("groups")} description={t("groupDescriptionLabel")}>
+      <DataList id="groups-list" aria-label={t("groups")} isCompact>
         <DataListItem id="groups-list-header" aria-labelledby="Columns names">
           <DataListItemRow>
             <DataListItemCells
