@@ -97,9 +97,7 @@ export const RealmSelector = () => {
         .concat(
           realms
             .filter((name) => !recentRealms.includes(name) || name === realm)
-            .map((name) => {
-              return { name, used: false };
-            }),
+            .map((name) => ({ name, used: false })),
         ),
     [recentRealms, realm, realms],
   );
