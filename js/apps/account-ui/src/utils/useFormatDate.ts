@@ -7,10 +7,10 @@ const DATE_AND_TIME_FORMAT: Intl.DateTimeFormatOptions = {
 export default function useFormatDate() {
   return {
     formatDate: function (
-    date: Date,
-    options: Intl.DateTimeFormatOptions | undefined = DATE_AND_TIME_FORMAT,
-) {
-    return date.toLocaleString("en", options);
+      date: Date,
+      options: Intl.DateTimeFormatOptions | undefined = DATE_AND_TIME_FORMAT,
+    ) {
+      return date.toLocaleString("en", options);
     },
   };
 }

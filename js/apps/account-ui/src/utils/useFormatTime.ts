@@ -10,10 +10,10 @@ const TIME_FORMAT: Intl.DateTimeFormatOptions = {
 export default function useFormatTime() {
   return {
     formatTime: function (
-    time: number,
-    options: Intl.DateTimeFormatOptions | undefined = TIME_FORMAT,
-) {
-    return new Intl.DateTimeFormat("en", options).format(time * 1000);
+      time: number,
+      options: Intl.DateTimeFormatOptions | undefined = TIME_FORMAT,
+    ) {
+      return new Intl.DateTimeFormat("en", options).format(time * 1000);
     },
   };
 }
