@@ -65,7 +65,7 @@ const MobileLink = ({ title, onClick }: MobileLinkProps) => {
 
 const SigningIn = () => {
   const { t } = useTranslation();
-  const { formatDate } = useFormatDate();
+  const formatDate = useFormatDate();
   const { addAlert, addError } = useAlerts();
   const { login } = keycloak;
 

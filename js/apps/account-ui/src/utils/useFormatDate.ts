@@ -5,12 +5,10 @@ const DATE_AND_TIME_FORMAT: Intl.DateTimeFormatOptions = {
 
 //todo use user local
 export default function useFormatDate() {
-  return {
-    formatDate: function (
-      date: Date,
-      options: Intl.DateTimeFormatOptions | undefined = DATE_AND_TIME_FORMAT,
-    ) {
-      return date.toLocaleString("en", options);
-    },
+  return function formatDate(
+    date: Date,
+    options: Intl.DateTimeFormatOptions = DATE_AND_TIME_FORMAT,
+  ) {
+    return date.toLocaleString("en", options);
   };
 }

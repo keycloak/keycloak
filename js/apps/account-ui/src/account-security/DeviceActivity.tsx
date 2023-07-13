@@ -40,7 +40,7 @@ import { usePromise } from "../utils/usePromise";
 const DeviceActivity = () => {
   const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
-  const { formatTime } = useFormatTime();
+  const formatTime = useFormatTime();
 
   const [devices, setDevices] = useState<DeviceRepresentation[]>();
   const [key, setKey] = useState(0);
