@@ -185,6 +185,13 @@ public class RealmTest extends AbstractAdminTest {
         adminClient.realms().create(rep);
     }
 
+    @Test(expected = BadRequestException.class)
+    public void createRealmRejectBlankName() {
+        RealmRepresentation rep = new RealmRepresentation();
+        rep.setRealm("");
+        adminClient.realms().create(rep);
+    }
+
     /**
      * Checks attributes exposed as fields are not also included as attributes
      */

@@ -16,9 +16,12 @@
  */
 package org.keycloak.services.managers;
 
+import jakarta.ws.rs.core.Response;
+import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.common.Profile;
 import org.keycloak.common.enums.SslRequired;
+import org.keycloak.events.Errors;
 import org.keycloak.models.AccountRoles;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.BrowserSecurityHeaders;
@@ -51,6 +54,7 @@ import org.keycloak.representations.idm.OAuthClientRepresentation;
 import org.keycloak.representations.idm.RealmEventsConfigRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
+import org.keycloak.services.ErrorResponseException;
 import org.keycloak.sessions.AuthenticationSessionProvider;
 import org.keycloak.storage.LegacyStoreMigrateRepresentationEvent;
 import org.keycloak.storage.LegacyStoreSyncEvent;
@@ -61,6 +65,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import org.keycloak.utils.ReservedCharValidator;
+import org.keycloak.utils.StringUtil;
 
 /**
  * Per request object
@@ -69,6 +74,8 @@ import org.keycloak.utils.ReservedCharValidator;
  * @version $Revision: 1 $
  */
 public class RealmManager {
+
+    private static final Logger logger = Logger.getLogger(RealmManager.class);
 
     protected KeycloakSession session;
     protected RealmProvider model;
@@ -619,6 +626,14 @@ public class RealmManager {
         }
 
         return realm;
+    }
+
+    private void validateRealm(RealmRepresentation rep){
+        if(StringUtil.isBlank(rep.getRealm())){
+            String error = "Blank realm name is not allowed";
+            logger.warn(error);
+            throw new ErrorResponseException(Errors.REALM_IMPORT_ERROR, error, Response.Status.BAD_REQUEST);
+        }
     }
 
     private String determineDefaultRoleName(RealmRepresentation rep) {
