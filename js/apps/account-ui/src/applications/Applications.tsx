@@ -224,7 +224,7 @@ const Applications = () => {
                     )}
                     <DescriptionListGroup>
                       <DescriptionListTerm>
-                        {t("accessGrantedOn") + ": "}
+                        {t("accessGrantedOn")}
                       </DescriptionListTerm>
                       <DescriptionListDescription>
                         {new Intl.DateTimeFormat("en", {
@@ -245,9 +245,9 @@ const Applications = () => {
                   <hr />
                   <GridItem>
                     <ContinueCancelModal
-                      buttonTitle="removeButton"
+                      buttonTitle="removeAccess"
                       buttonVariant="secondary"
-                      modalTitle="removeModalTitle"
+                      modalTitle="removeAccess"
                       modalMessage={t("removeModalMessage", [
                         application.clientId,
                       ])}
