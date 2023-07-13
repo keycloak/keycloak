@@ -187,12 +187,13 @@ export const ResourcesTab = ({ isShared = false }: ResourcesTabProps) => {
                 </a>
               </Td>
               <Td dataLabel={t("permissionRequests")}>
-                {resource.shareRequests && resource.shareRequests.length > 0 && (
-                  <PermissionRequest
-                    resource={resource}
-                    refresh={() => refresh()}
-                  />
-                )}
+                {resource.shareRequests &&
+                  resource.shareRequests.length > 0 && (
+                    <PermissionRequest
+                      resource={resource}
+                      refresh={() => refresh()}
+                    />
+                  )}
                 <ShareTheResource
                   resource={resource}
                   permissions={details[resource._id]?.permissions}
