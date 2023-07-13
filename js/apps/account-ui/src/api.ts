@@ -11,7 +11,7 @@ export const fetchResources = async (
 ): Promise<{ data: Resource[]; links: Links }> => {
   const response = await get(
     `/resources${shared ? "/shared-with-me?" : "?"}${
-      shared ? "" : new URLSearchParams(requestParams),
+      shared ? "" : new URLSearchParams(requestParams)
     }`,
     params,
   );
