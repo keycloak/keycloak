@@ -149,13 +149,10 @@ export default function NewAttributeSettings() {
       ).map(([key, value]) => form.setValue(key as any, value));
       form.setValue(
         "annotations",
-        Object.entries(annotations || {}).map(
-          ([key, value]) =>
-            ({
-              key,
-              value,
-            } as IndexedAnnotations),
-        )
+        Object.entries(annotations || {}).map(([key, value]) => ({
+          key,
+          value,
+        })),
       );
       form.setValue(
         "validations",
