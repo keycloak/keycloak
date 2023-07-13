@@ -113,12 +113,20 @@ jobs:
   quarkus-integration-tests:
     name: Quarkus IT
     needs: build
-    runs-on: ubuntu-latest
     timeout-minutes: 115
     strategy:
       matrix:
-        server: [zip, container, storage]
+        os: [ubuntu-latest, windows-latest]
+        server: [sanity-check-zip, zip, container, storage]
+        exclude:
+          - os: windows-latest
+            server: zip
+          - os: windows-latest
+            server: container
+          - os: windows-latest
+            server: storage
       fail-fast: false
+    runs-on: ${{ matrix.os }}
     env:
       MAVEN_OPTS: -Xmx1024m
     steps:
@@ -132,6 +140,7 @@ jobs:
       - name: Run Quarkus integration Tests
         run: |
           declare -A PARAMS
+          PARAMS["sanity-check-zip"]="-Dtest=StartCommandDistTest,StartDevCommandDistTest,BuildAndStartDistTest,ImportAtStartupDistTest"
           PARAMS["zip"]=""
           PARAMS["container"]="-Dkc.quarkus.tests.dist=docker"
           PARAMS["storage"]="-Ptest-database -Dtest=PostgreSQLDistTest,MariaDBDistTest#testSuccessful,MySQLDistTest#testSuccessful,DatabaseOptionsDistTest,JPAStoreDistTest,HotRodStoreDistTest,MixedStoreDistTest,TransactionConfigurationDistTest"
