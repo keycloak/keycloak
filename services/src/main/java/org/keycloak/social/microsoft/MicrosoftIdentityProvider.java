@@ -69,6 +69,10 @@ public class MicrosoftIdentityProvider extends AbstractOAuth2IdentityProvider im
     protected BrokeredIdentityContext doGetFederatedIdentity(String accessToken) {
         try {
             JsonNode profile = SimpleHttp.doGet(PROFILE_URL, session).auth(accessToken).asJson();
+            String error = getJsonProperty(profile, "error");
+            if (error != null) {
+                throw new IdentityBrokerException("Error in Microsoft Graph API response: '" + error + "' payload: " + profile.toString());
+            }
             return extractIdentityFromProfile(null, profile);
         } catch (Exception e) {
             throw new IdentityBrokerException("Could not obtain user profile from Microsoft Graph", e);
