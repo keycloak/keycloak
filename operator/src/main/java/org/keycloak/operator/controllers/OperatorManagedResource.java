@@ -20,7 +20,6 @@ package org.keycloak.operator.controllers;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.api.model.OwnerReferenceBuilder;
-import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.dsl.base.PatchContext;
@@ -40,20 +39,20 @@ import java.util.Optional;
  *
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
  */
-public abstract class OperatorManagedResource {
+public abstract class OperatorManagedResource<T extends HasMetadata> {
     private static final String KEYCLOAK_OPERATOR_FIELD_MANAGER = "keycloak-operator";
     protected KubernetesClient client;
-    protected CustomResource<?, ?> cr;
+    protected HasMetadata cr;
 
-    public OperatorManagedResource(KubernetesClient client, CustomResource<?, ?> cr) {
+    public OperatorManagedResource(KubernetesClient client, HasMetadata cr) {
         this.client = client;
         this.cr = cr;
     }
 
-    protected abstract Optional<HasMetadata> getReconciledResource();
+    protected abstract Optional<T> getReconciledResource();
 
-    public void createOrUpdateReconciled() {
-        getReconciledResource().ifPresent(resource -> {
+    public Optional<T> createOrUpdateReconciled() {
+        return getReconciledResource().map(resource -> {
             try {
                 setInstanceLabels(resource);
                 setOwnerReferences(resource);
@@ -80,6 +79,7 @@ public abstract class OperatorManagedResource {
                     }
                 }
                 Log.debugf("Successfully created or updated resource: %s", resource);
+                return resource;
             } catch (Exception e) {
                 Log.error("Failed to create or update resource");
                 Log.error(Serialization.asYaml(resource));
