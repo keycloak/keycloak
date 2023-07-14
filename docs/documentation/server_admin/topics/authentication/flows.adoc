@@ -181,9 +181,9 @@ At this stage, the form requires a username but no password. We must enable pass
 . Select *Required* for the *Authentication* authentication type to set its requirement to required.
 . Click *+* menu of the *Authentication* sub-flow.
 . Click *Add step*.
-. Select *Webauthn Passwordless Authenticator* from the list.
+. Select *WebAuthn Passwordless Authenticator* from the list.
 . Click *Add*.
-. Select *Alternative* for the *Webauthn Passwordless Authenticator* authentication type to set its requirement to alternative.
+. Select *Alternative* for the *WebAuthn Passwordless Authenticator* authentication type to set its requirement to alternative.
 . Click *+* menu of the *Authentication* sub-flow.
 . Click *Add sub-flow*.
 . Enter `Password with OTP` as name.
@@ -218,9 +218,9 @@ If the user selects the *Try another way* link with `WebAuthn passwordless` auth
 
 [NOTE]
 ====
-Since the WebAuthn Passwordless execution is set to *Alternative* rather than  *Required*, this flow will never ask the user to register a WebAuthn credential. For a user to have a Webauthn credential, an administrator must add a required action to the user. Do this by:
+Since the WebAuthn Passwordless execution is set to *Alternative* rather than  *Required*, this flow will never ask the user to register a WebAuthn credential. For a user to have a WebAuthn credential, an administrator must add a required action to the user. Do this by:
 
-. Enabling the *Webauthn Register Passwordless* required action in the realm (see the xref:webauthn_{context}[WebAuthn] documentation).
+. Enabling the *WebAuthn Register Passwordless* required action in the realm (see the xref:webauthn_{context}[WebAuthn] documentation).
 . Setting the required action using the *Credential Reset* part of a user's xref:ref-user-credentials_{context}[Credentials] management menu.
 
 Creating an advanced flow such as this can have side effects. For example, if you enable the ability to reset the password for users, this would be accessible from the password form. In the default `Reset Credentials` flow, users must enter their username. Since the user has already entered a username earlier in the `Browser Password-less` flow, this action is unnecessary for {project_name} and suboptimal for user experience. To correct this problem, you can:

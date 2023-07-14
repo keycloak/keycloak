@@ -31,7 +31,7 @@ describe("Policies", () => {
     });
   });
 
-  describe("Webauthn policies tabs", () => {
+  describe("WebAuthn policies tabs", () => {
     const webauthnPage = new WebAuthnPolicies();
     beforeEach(() => {
       loginPage.logIn();

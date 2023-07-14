@@ -52,8 +52,8 @@ public class RequiredActionsTest extends AbstractAuthenticationTest {
         addRequiredAction(expected, "VERIFY_EMAIL", "Verify Email", true, false, null);
         addRequiredAction(expected, "delete_account", "Delete Account", false, false, null);
         addRequiredAction(expected, "update_user_locale", "Update User Locale", true, false, null);
-        addRequiredAction(expected, "webauthn-register", "Webauthn Register", true, false, null);
-        addRequiredAction(expected, "webauthn-register-passwordless", "Webauthn Register Passwordless", true, false, null);
+        addRequiredAction(expected, "webauthn-register", "WebAuthn Register", true, false, null);
+        addRequiredAction(expected, "webauthn-register-passwordless", "WebAuthn Register Passwordless", true, false, null);
 
         compareRequiredActions(expected, sort(result));
 

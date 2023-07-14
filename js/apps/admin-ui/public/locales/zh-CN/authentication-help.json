@@ -17,7 +17,7 @@
   "supportedApplications": "已知适用于当前 OTP 策略的应用程序",
   "webauthnIntro": "这个表格是做什么用的？",
   "webAuthnPolicyFormHelp": "WebAuthn 身份验证策略。'WebAuthn Register' 所需操作和'WebAuthn Authenticator' 身份验证器将使用此策略。典型用法是，当 WebAuthn 用于双因素身份验证时。",
-  "webAuthnPolicyPasswordlessFormHelp": "无密码 WebAuthn 身份验证策略。'Webauthn Register Passwordless' 所需操作和'WebAuthn Passwordless Authenticator' 身份验证器将使用此策略。典型用法是，当 WebAuthn 用作第一因素身份验证时。同时具有 ' WebAuthn Policy' 和 'WebAuthn Passwordless Policy' 允许在同一领域中将 WebAuthn 用作第一因素和第二因素身份验证器。",
+  "webAuthnPolicyPasswordlessFormHelp": "无密码 WebAuthn 身份验证策略。'WebAuthn Register Passwordless' 所需操作和'WebAuthn Passwordless Authenticator' 身份验证器将使用此策略。典型用法是，当 WebAuthn 用作第一因素身份验证时。同时具有 ' WebAuthn Policy' 和 'WebAuthn Passwordless Policy' 允许在同一领域中将 WebAuthn 用作第一因素和第二因素身份验证器。",
   "webAuthnPolicySignatureAlgorithms": "身份验证断言应该使用什么签名算法。",
   "webAuthnPolicyRpId": "这是作为 WebAuthn 依赖方的 ID。它必须是源的有效域。",
   "webAuthnPolicyAttestationConveyancePreference": "向身份验证者传达如何生成证明声明的偏好。",

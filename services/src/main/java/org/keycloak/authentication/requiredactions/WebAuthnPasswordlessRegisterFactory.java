@@ -40,7 +40,7 @@ public class WebAuthnPasswordlessRegisterFactory extends WebAuthnRegisterFactory
 
     @Override
     public String getDisplayText() {
-        return "Webauthn Register Passwordless";
+        return "WebAuthn Register Passwordless";
     }
 
 }

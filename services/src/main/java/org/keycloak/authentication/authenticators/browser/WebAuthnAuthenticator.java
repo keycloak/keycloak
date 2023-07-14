@@ -164,7 +164,7 @@ public class WebAuthnAuthenticator implements Authenticator, CredentialValidator
             }
             else {
                 setErrorResponse(context, WEBAUTHN_ERROR_USER_NOT_FOUND,
-                        "Webauthn credential provided doesn't include user id and user id wasn't provided in a previous step");
+                        "WebAuthn credential provided doesn't include user id and user id wasn't provided in a previous step");
                 return;
             }
         } else {

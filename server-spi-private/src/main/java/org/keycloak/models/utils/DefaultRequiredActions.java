@@ -263,7 +263,7 @@ public class DefaultRequiredActions {
             final RequiredActionProviderModel webauthnRegister = new RequiredActionProviderModel();
             webauthnRegister.setEnabled(true);
             webauthnRegister.setAlias(PROVIDER_ID);
-            webauthnRegister.setName("Webauthn Register");
+            webauthnRegister.setName("WebAuthn Register");
             webauthnRegister.setProviderId(PROVIDER_ID);
             webauthnRegister.setDefaultAction(false);
             webauthnRegister.setPriority(70);
@@ -284,7 +284,7 @@ public class DefaultRequiredActions {
             final RequiredActionProviderModel webauthnRegister = new RequiredActionProviderModel();
             webauthnRegister.setEnabled(true);
             webauthnRegister.setAlias(PROVIDER_ID);
-            webauthnRegister.setName("Webauthn Register Passwordless");
+            webauthnRegister.setName("WebAuthn Register Passwordless");
             webauthnRegister.setProviderId(PROVIDER_ID);
             webauthnRegister.setDefaultAction(false);
             webauthnRegister.setPriority(80);

@@ -18,7 +18,7 @@ The setup procedure of WebAuthn support for 2FA is the following:
 
 . Click *Authentication* in the menu.
 . Click the *Required Actions* tab.
-. Toggle the *Webauthn Register* switch to *ON*.
+. Toggle the *WebAuthn Register* switch to *ON*.
 
 Toggle the *Default Action* switch to *ON* if you want all new users to be required to register their WebAuthn credentials.
 
@@ -41,7 +41,7 @@ If you require WebAuthn for all users:
 . Click *Add*.
 . Select *Required* for the *WebAuthn Authenticator* authentication type to set its requirement to required.
 +
-image:images/webauthn-browser-flow-required.png[Webauthn browser flow required]
+image:images/webauthn-browser-flow-required.png[WebAuthn browser flow required]
 +
 . Click the *Action* menu at the top of the screen.
 . Select *Bind flow* from the drop-down list.
@@ -69,7 +69,7 @@ Users can log in with WebAuthn if they have a WebAuthn credential registered onl
 . Drag and drop *WebAuthn Authenticator* into the *Conditional 2FA* flow
 . Select *Alternative* for the *WebAuthn Authenticator* to set its requirement to alternative.
 +
-image:images/webauthn-browser-flow-conditional.png[Webauthn browser flow conditional]
+image:images/webauthn-browser-flow-conditional.png[WebAuthn browser flow conditional]
 
 The user can choose between using WebAuthn and OTP for the second factor:
 
@@ -95,7 +95,7 @@ After registering a WebAuthn authenticator, the user carries out the following o
 
 {project_name} manages WebAuthn credentials similarly to other credentials from xref:ref-user-credentials_{context}[User credential management]:
 
-* {project_name} assigns users a required action to create a WebAuthn credential from the *Reset Actions* list and select *Webauthn Register*.
+* {project_name} assigns users a required action to create a WebAuthn credential from the *Reset Actions* list and select *WebAuthn Register*.
 * Administrators can delete a WebAuthn credential by clicking *Delete*.
 * Administrators can view the credential's data, such as the AAGUID, by selecting *Show data...*.
 * Administrators can set a label for the credential by setting a value in the *User Label* field and saving the data.
@@ -195,13 +195,13 @@ After successful registration, the user's browser asks the user to enter the tex
 
 An administrator typically requires that Security Keys registered by users for the WebAuthn passwordless authentication meet different requirements. For example, the security keys may require users to authenticate to the security key using a PIN, or the security key attests with a stronger certificate authority.
 
-Because of this, {project_name} permits administrators to configure a separate `WebAuthn Passwordless Policy`. There is a required `Webauthn Register Passwordless` action of type  and separate authenticator of type `WebAuthn Passwordless Authenticator`.
+Because of this, {project_name} permits administrators to configure a separate `WebAuthn Passwordless Policy`. There is a required `WebAuthn Register Passwordless` action of type  and separate authenticator of type `WebAuthn Passwordless Authenticator`.
 
 ===== Setup
 
 Set up WebAuthn passwordless support as follows:
 
-. (if not already present) Register a new required action for WebAuthn passwordless support. Use the steps described in <<_webauthn-register, Enable WebAuthn Authenticator Registration>>. Register the `Webauthn Register Passwordless` action.
+. (if not already present) Register a new required action for WebAuthn passwordless support. Use the steps described in <<_webauthn-register, Enable WebAuthn Authenticator Registration>>. Register the `WebAuthn Register Passwordless` action.
 
 . Configure the policy. You can use the steps and configuration options described in <<_webauthn-policy, Managing Policy>>. Perform the configuration in the Admin Console in the tab *WebAuthn Passwordless Policy*. Typically the requirements for the security key will be stronger than for the two-factor policy. For example, you can set the *User Verification Requirement* to *Required* when you configure the passwordless policy.
 
@@ -213,7 +213,7 @@ Set up WebAuthn passwordless support as follows:
 +
 ** The flow contains *WebAuthn Passwordless Authenticator* as the first alternative.
 +
-** The second alternative will be a subflow named *Password And Two-factor Webauthn*, for example. This subflow contains a *Password Form* and a *WebAuthn Authenticator*.
+** The second alternative will be a subflow named *Password And Two-factor WebAuthn*, for example. This subflow contains a *Password Form* and a *WebAuthn Authenticator*.
 
 The final configuration of the flow looks similar to this:
 
@@ -236,7 +236,7 @@ An administrator typically requires that Security Keys registered by users for t
 
 Set up WebAuthn Loginless support as follows:
 
-. (if not already present) Register a new required action for WebAuthn passwordless support. Use the steps described in <<_webauthn-register, Enable WebAuthn Authenticator Registration>>. Register the `Webauthn Register Passwordless` action.
+. (if not already present) Register a new required action for WebAuthn passwordless support. Use the steps described in <<_webauthn-register, Enable WebAuthn Authenticator Registration>>. Register the `WebAuthn Register Passwordless` action.
 
 . Configure the `WebAuthn Passwordless Policy`. Perform the configuration in the Admin Console, `Authentication` section,  in the tab `Policies` ->  `WebAuthn Passwordless Policy`. You have to set *User Verification Requirement* to *required* and *Require Resident Key* to *Yes* when you configure the policy for loginless scenario. Note that since there isn't a dedicated Loginless policy it won't be possible to mix authentication scenarios with user verification=no/resident key=no and loginless scenarios (user verification=yes/resident key=yes). Storage capacity is usually very limited on security keys meaning that you won't be able to store many resident keys on your security key.
 

@@ -1127,7 +1127,7 @@
     },
     {
       "alias": "webauthn-register",
-      "name": "Webauthn Register",
+      "name": "WebAuthn Register",
       "providerId": "webauthn-register",
       "enabled": true,
       "defaultAction": true,
@@ -1136,7 +1136,7 @@
     },
     {
       "alias": "webauthn-register-passwordless",
-      "name": "Webauthn Register Passwordless",
+      "name": "WebAuthn Register Passwordless",
       "providerId": "webauthn-register-passwordless",
       "enabled": true,
       "defaultAction": false,

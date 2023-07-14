@@ -77,7 +77,7 @@ public class WebAuthnRegisterFactory implements RequiredActionFactory, Environme
 
     @Override
     public String getDisplayText() {
-        return "Webauthn Register";
+        return "WebAuthn Register";
     }
 
     @Override
