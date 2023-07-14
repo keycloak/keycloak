@@ -2,9 +2,17 @@
     <#if termsAcceptanceRequired??>
         <div class="form-group">
             <div class="${properties.kcInputWrapperClass!}">
-                ${msg("termsTitle")}
+                <#if msg("customTermsTitle") != "customTermsTitle">
+                    ${msg("customTermsTitle")}
+                <#else>
+                    ${msg("termsTitle")}
+                </#if>
                 <div id="kc-registration-terms-text">
-                    ${kcSanitize(msg("termsText"))?no_esc}
+                    <#if msg("customTermsText") != "customTermsText">
+                        ${kcSanitize(msg("customTermsText"))?no_esc}
+                    <#else>
+                        ${kcSanitize(msg("termsText"))?no_esc}
+                    </#if>
                 </div>
             </div>
         </div>

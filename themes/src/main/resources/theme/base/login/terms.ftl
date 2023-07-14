@@ -1,10 +1,18 @@
 <#import "template.ftl" as layout>
 <@layout.registrationLayout displayMessage=false; section>
     <#if section = "header">
-        ${msg("termsTitle")}
+        <#if msg("customTermsTitle") != "customTermsTitle">
+            ${msg("customTermsTitle")}
+        <#else>
+            ${msg("termsTitle")}
+        </#if>
     <#elseif section = "form">
     <div id="kc-terms-text">
-        ${kcSanitize(msg("termsText"))?no_esc}
+        <#if msg("customTermsText") != "customTermsText">
+            ${kcSanitize(msg("customTermsText"))?no_esc}
+        <#else>
+            ${kcSanitize(msg("termsText"))?no_esc}
+        </#if>
     </div>
     <form class="form-actions" action="${url.loginAction}" method="POST">
         <input class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonLargeClass!}" name="accept" id="kc-accept" type="submit" value="${msg("doAccept")}"/>
