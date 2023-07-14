@@ -22,6 +22,7 @@ import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
 import org.keycloak.common.util.Time;
+import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
@@ -34,6 +35,7 @@ import org.keycloak.models.UserProvider;
 import org.keycloak.models.UserSessionProvider;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.testsuite.model.HotRodServerRule;
 import org.keycloak.testsuite.model.KeycloakModelTest;
 import org.keycloak.testsuite.model.RequireProvider;
 import org.keycloak.testsuite.model.infinispan.InfinispanTestUtil;
@@ -255,6 +257,8 @@ public class SessionTimeoutsTest extends KeycloakModelTest {
                 return new String[]{userSession.getId(), clientSession.getId()};
             });
 
+            allowXSiteReplication(offline);
+
             int offset = 0;
             for (int i = 0; i < refreshTimes; i++) {
                 offset += 1500;
@@ -356,5 +360,22 @@ public class SessionTimeoutsTest extends KeycloakModelTest {
     @Test
     public void testOnlineUserClientIdleTimeoutSmallerThanSessionOneRefresh() {
         testUserClientIdleTimeoutSmallerThanSession(1, false, false);
+    }
+
+    /**
+     * This method introduces a delay to allow replication of clientSession cache on site 1 and site 2.
+     * Without the delay these test fails from time to time. This has no effect when tests run without cross-dc
+     * @param offline boolean Indicates where we work with offline sessions
+     */
+    private void allowXSiteReplication(boolean offline) {
+        HotRodServerRule hotRodServer = getParameters(HotRodServerRule.class).findFirst().orElse(null);
+        if (hotRodServer != null) {
+            String cacheName = offline ? InfinispanConnectionProvider.OFFLINE_CLIENT_SESSION_CACHE_NAME : InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME;
+            while (hotRodServer.getHotRodCacheManager().getCache(cacheName).size() != hotRodServer.getHotRodCacheManager2().getCache(cacheName).size()) {
+                try {
+                    Thread.sleep(5);
+                } catch (InterruptedException e) {}
+            }
+        }
     }
 }
