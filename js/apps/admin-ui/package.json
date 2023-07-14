@@ -98,7 +98,7 @@
     "@types/flat": "^5.0.2",
     "@types/lodash-es": "^4.17.8",
     "@types/react": "^18.2.15",
-    "@types/react-dom": "^18.2.6",
+    "@types/react-dom": "^18.2.7",
     "@types/uuid": "^9.0.2",
     "@vitejs/plugin-react-swc": "^3.3.2",
     "cypress": "^12.17.1",

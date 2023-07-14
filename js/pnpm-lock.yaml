@@ -127,8 +127,8 @@ importers:
         specifier: ^18.2.15
         version: 18.2.15
       '@types/react-dom':
-        specifier: ^18.2.6
-        version: 18.2.6
+        specifier: ^18.2.7
+        version: 18.2.7
       '@vitejs/plugin-react-swc':
         specifier: ^3.3.2
         version: 3.3.2(vite@4.4.3)
@@ -251,8 +251,8 @@ importers:
         specifier: ^18.2.15
         version: 18.2.15
       '@types/react-dom':
-        specifier: ^18.2.6
-        version: 18.2.6
+        specifier: ^18.2.7
+        version: 18.2.7
       '@types/uuid':
         specifier: ^9.0.2
         version: 9.0.2
@@ -401,8 +401,8 @@ importers:
         specifier: ^18.2.15
         version: 18.2.15
       '@types/react-dom':
-        specifier: ^18.2.6
-        version: 18.2.6
+        specifier: ^18.2.7
+        version: 18.2.7
       '@vitejs/plugin-react-swc':
         specifier: ^3.3.2
         version: 3.3.2(vite@4.4.3)
@@ -441,8 +441,8 @@ importers:
         specifier: ^18.2.15
         version: 18.2.15
       '@types/react-dom':
-        specifier: ^18.2.6
-        version: 18.2.6
+        specifier: ^18.2.7
+        version: 18.2.7
       '@vitejs/plugin-react-swc':
         specifier: ^3.3.2
         version: 3.3.2(vite@4.4.3)
@@ -1601,7 +1601,7 @@ packages:
     dependencies:
       '@babel/runtime': 7.22.6
       '@testing-library/dom': 9.3.1
-      '@types/react-dom': 18.2.6
+      '@types/react-dom': 18.2.7
       react: 18.2.0
       react-dom: 18.2.0(react@18.2.0)
     dev: true
@@ -1905,8 +1905,8 @@ packages:
   /@types/prop-types@15.7.5:
     resolution: {integrity: sha512-JCB8C6SnDoQf0cNycqd/35A7MjcnK+ZTqE7judS6o7utxUCg6imJg3QK2qzHKszlTjcj2cn+NwMB2i96ubpj7w==}
 
-  /@types/react-dom@18.2.6:
-    resolution: {integrity: sha512-2et4PDvg6PVCyS7fuTc4gPoksV58bW0RwSxWKcPRcHZf0PRUGq03TKcD/rUHe3azfV6/5/biUBJw+HhCQjaP0A==}
+  /@types/react-dom@18.2.7:
+    resolution: {integrity: sha512-GRaAEriuT4zp9N4p1i8BDBYmEyfo+xQ3yHjJU4eiK5NDa1RmUZG+unZABUTK4/Ox/M+GaHwb6Ow8rUITrtjszA==}
     dependencies:
       '@types/react': 18.2.15
     dev: true
