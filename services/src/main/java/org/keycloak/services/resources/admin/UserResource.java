@@ -71,10 +71,7 @@ import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.ForbiddenException;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.Urls;
-import org.keycloak.services.managers.AuthenticationManager;
-import org.keycloak.services.managers.BruteForceProtector;
-import org.keycloak.services.managers.UserConsentManager;
-import org.keycloak.services.managers.UserSessionManager;
+import org.keycloak.services.managers.*;
 import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.LoginActionsService;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
@@ -146,7 +143,7 @@ public class UserResource {
     protected final KeycloakSession session;
 
     protected final HttpHeaders headers;
-    
+
     public UserResource(KeycloakSession session, UserModel user, AdminPermissionEvaluator auth, AdminEventBuilder adminEvent) {
         this.session = session;
         this.auth = auth;
@@ -156,7 +153,7 @@ public class UserResource {
         this.adminEvent = adminEvent.resource(ResourceType.USER);
         this.headers = session.getContext().getRequestHeaders();
     }
-    
+
     /**
      * Update the user
      *
@@ -372,6 +369,9 @@ public class UserResource {
         String impersonator = adminUser.getUsername();
         userSession.setNote(IMPERSONATOR_ID.toString(), impersonatorId);
         userSession.setNote(IMPERSONATOR_USERNAME.toString(), impersonator);
+
+        AuthenticationSessionManager authenticationSessionManager = new AuthenticationSessionManager(session);
+        authenticationSessionManager.setAuthSessionCookie(userSession.getId(), realm);
 
         AuthenticationManager.createLoginCookie(session, realm, userSession.getUser(), userSession, session.getContext().getUri(), clientConnection);
         URI redirect = Urls.accountBase(session.getContext().getUri().getBaseUri()).build(realm.getName());
