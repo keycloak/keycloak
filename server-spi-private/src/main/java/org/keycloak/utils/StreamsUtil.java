@@ -51,6 +51,7 @@ public class StreamsUtil {
         if (iterator.hasNext()) {
             return StreamSupport.stream(Spliterators.spliteratorUnknownSize(iterator, 0), false);
         } else {
+            stream.close();
             throw ex;
         }
     }
@@ -58,7 +59,7 @@ public class StreamsUtil {
     /**
      * Returns the original stream that is limited with {@link Stream#skip(long) skip} and
      * {@link Stream#limit(long) limit} functions based on values of {@code first} and {@code max} parameters.
-     * 
+     *
      * @param originalStream Stream to be limited.
      * @param first Index of first item to be returned by the stream. Ignored if negative, zero {@code null}.
      * @param max Maximum number of items to be returned by the stream. Ignored if negative or {@code null}.
