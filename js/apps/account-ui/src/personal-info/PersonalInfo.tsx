@@ -89,7 +89,7 @@ const PersonalInfo = () => {
             id="save-btn"
             variant="primary"
           >
-            {t("doSave")}
+            {t("save")}
           </Button>
           <Button
             data-testid="cancel"
@@ -97,7 +97,7 @@ const PersonalInfo = () => {
             variant="link"
             onClick={() => reset()}
           >
-            {t("doCancel")}
+            {t("cancel")}
           </Button>
         </ActionGroup>
         {environment.features.deleteAccountAllowed && (
@@ -117,7 +117,7 @@ const PersonalInfo = () => {
                   }
                   className="delete-button"
                 >
-                  {t("doDelete")}
+                  {t("delete")}
                 </Button>
               }
             >
