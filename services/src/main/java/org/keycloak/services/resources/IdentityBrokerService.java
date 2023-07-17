@@ -580,10 +580,12 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
 
             boolean forwardedPassiveLogin = "true".equals(authenticationSession.getAuthNote(AuthenticationProcessor.FORWARDED_PASSIVE_LOGIN));
 
-            Map<String, String> extractedAuthNotes = extractAuthNotesFromSession(authenticationSession);
+            String userRequestedLocale = authenticationSession.getAuthNote(LocaleSelectorProvider.USER_REQUEST_LOCALE);
             // Redirect to firstBrokerLogin after successful login and ensure that previous authentication state removed
             AuthenticationProcessor.resetFlow(authenticationSession, LoginActionsService.FIRST_BROKER_LOGIN_PATH);
-            extractedAuthNotes.forEach(authenticationSession::setAuthNote);
+            if (userRequestedLocale != null) {
+                authenticationSession.setAuthNote(LocaleSelectorProvider.USER_REQUEST_LOCALE, userRequestedLocale);
+            }
 
             // Set the FORWARDED_PASSIVE_LOGIN note (if needed) after resetting the session so it is not lost.
             if (forwardedPassiveLogin) {
@@ -614,18 +616,6 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
 
             return finishOrRedirectToPostBrokerLogin(authenticationSession, context, false);
         }
-    }
-
-    private Map<String, String> extractAuthNotesFromSession(AuthenticationSessionModel authenticationSession) {
-        return Stream.of(
-            LocaleSelectorProvider.USER_REQUEST_LOCALE,
-            LocaleSelectorProvider.CLIENT_REQUEST_LOCALE
-        )
-            .filter(it -> authenticationSession.getAuthNote(it) != null)
-            .collect(Collectors.toMap(
-                Function.identity(),
-                authenticationSession::getAuthNote
-            ));
     }
 
 
