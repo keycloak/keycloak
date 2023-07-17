@@ -60,7 +60,7 @@ public class DockerError {
 
         final DockerError that = (DockerError) o;
 
-        if (errorCode != that.errorCode) return false;
+        if (!errorCode.equals(that.errorCode)) return false;
         if (message != null ? !message.equals(that.message) : that.message != null) return false;
         return dockerErrorDetails != null ? dockerErrorDetails.equals(that.dockerErrorDetails) : that.dockerErrorDetails == null;
     }

@@ -120,7 +120,7 @@ public class FederatedUserRequiredActionEntity {
 
             Key key = (Key) o;
 
-            if (action != key.action) return false;
+            if (!action.equals(key.action)) return false;
             if (userId != null ? !userId.equals(key.userId != null ? key.userId : null) : key.userId != null) return false;
 
             return true;
