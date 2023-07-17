@@ -22,6 +22,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public final class Constants {
     public static final String CRDS_GROUP = "k8s.keycloak.org";
@@ -34,13 +36,14 @@ public final class Constants {
     public static final String MANAGED_BY_VALUE = "keycloak-operator";
     public static final String COMPONENT_LABEL = "app.kubernetes.io/component";
     public static final String KEYCLOAK_COMPONENT_LABEL = "operator.keycloak.org/component";
+    public static final String KEYCLOAK_WATCHED_SECRET_HASH_ANNOTATION = "operator.keycloak.org/watched-secret-hash";
+    public static final String KEYCLOAK_WATCHING_ANNOTATION = "operator.keycloak.org/watching-secrets";
 
-    public static final Map<String, String> DEFAULT_LABELS = Collections.unmodifiableMap(new TreeMap<>(Map.of(
-            "app", NAME,
-            MANAGED_BY_LABEL, MANAGED_BY_VALUE
-    )));
+    public static final String DEFAULT_LABELS_AS_STRING = "app=keycloak,app.kubernetes.io/managed-by=keycloak-operator";
 
-    public static final String DEFAULT_LABELS_AS_STRING = Utils.toSelectorString(DEFAULT_LABELS);
+    public static final Map<String, String> DEFAULT_LABELS = Collections
+            .unmodifiableMap(Stream.of(DEFAULT_LABELS_AS_STRING.split(",")).map(s -> s.split("="))
+                    .collect(Collectors.toMap(e -> e[0], e -> e[1], (u1, u2) -> u1, TreeMap::new)));
 
     public static final List<ValueOrSecret> DEFAULT_DIST_CONFIG_LIST = List.of(
             new ValueOrSecret("health-enabled", "true"),
