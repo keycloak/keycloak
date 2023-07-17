@@ -183,11 +183,11 @@ export const AuthorizationScopes = ({ clientId }: ScopesProps) => {
             <TableComposable aria-label={t("scopes")} variant="compact">
               <Thead>
                 <Tr>
-                  <Th />
+                  <Th aria-hidden="true" />
                   <Th>{t("common:name")}</Th>
                   <Th>{t("displayName")}</Th>
-                  <Th />
-                  <Th />
+                  <Th aria-hidden="true" />
+                  <Th aria-hidden="true" />
                 </Tr>
               </Thead>
               {scopes.map((scope, rowIndex) => (

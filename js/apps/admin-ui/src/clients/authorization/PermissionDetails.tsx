@@ -272,7 +272,7 @@ export default function PermissionDetails() {
             {applyToResourceTypeFlag ? (
               <FormGroup
                 label={t("resourceType")}
-                fieldId="name"
+                fieldId="resourceType"
                 labelIcon={
                   <HelpItem
                     helpText={t("clients-help:resourceType")}
