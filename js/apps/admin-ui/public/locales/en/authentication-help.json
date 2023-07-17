@@ -33,7 +33,7 @@
     "hashIterations": "The number of times a password is hashed before storage or verification. Default: 27,500.",
     "passwordHistory": "Prevents a recently used password from being reused.",
     "passwordBlacklist": "Prevents the use of a password that is in a blacklist file.",
-    "regexPattern": "Requires that the password matches one or more defined regular expression patterns.",
+    "regexPattern": "Requires that the password matches one or more defined Java regular expression patterns.",
     "length": "The minimum number of characters required for the password.",
     "notUsername": "The password cannot match the username.",
     "notEmail": "The password cannot match the email address of the user.",

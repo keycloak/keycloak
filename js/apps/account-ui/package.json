@@ -12,7 +12,7 @@
     "@patternfly/react-core": "^4.276.8",
     "@patternfly/react-icons": "^4.93.6",
     "@patternfly/react-table": "^4.113.0",
-    "i18next": "^23.2.8",
+    "i18next": "^23.2.11",
     "i18next-http-backend": "^2.2.1",
     "keycloak-js": "workspace:*",
     "keycloak-masthead": "workspace:*",
@@ -26,12 +26,12 @@
   },
   "devDependencies": {
     "@keycloak/keycloak-admin-client": "workspace:*",
-    "@playwright/test": "^1.36.0",
-    "@types/lodash-es": "^4.17.7",
-    "@types/react": "^18.2.14",
-    "@types/react-dom": "^18.2.6",
+    "@playwright/test": "^1.36.1",
+    "@types/lodash-es": "^4.17.8",
+    "@types/react": "^18.2.15",
+    "@types/react-dom": "^18.2.7",
     "@vitejs/plugin-react-swc": "^3.3.2",
-    "vite": "^4.4.3",
+    "vite": "^4.4.4",
     "vite-plugin-checker": "^0.6.1"
   },
   "wireit": {
