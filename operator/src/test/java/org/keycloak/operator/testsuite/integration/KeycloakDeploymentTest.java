@@ -62,7 +62,6 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.keycloak.operator.testsuite.utils.CRAssert.assertKeycloakStatusCondition;
 import static org.keycloak.operator.testsuite.utils.K8sUtils.deployKeycloak;
-import static org.keycloak.operator.testsuite.utils.K8sUtils.getDefaultKeycloakDeployment;
 import static org.keycloak.operator.testsuite.utils.K8sUtils.getResourceFromFile;
 import static org.keycloak.operator.testsuite.utils.K8sUtils.waitForKeycloakToBeReady;
 
@@ -73,7 +72,7 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
         try {
             // CR
             Log.info("Creating new Keycloak CR example");
-            var kc = getDefaultKeycloakDeployment();
+            var kc = getTestKeycloakDeployment(true);
             var deploymentName = kc.getMetadata().getName();
             deployKeycloak(k8sclient, kc, true);
 
@@ -103,7 +102,7 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
     @Test
     public void testCRFields() {
         try {
-            var kc = getDefaultKeycloakDeployment();
+            var kc = getTestKeycloakDeployment(true);
             var deploymentName = kc.getMetadata().getName();
             deployKeycloak(k8sclient, kc, true);
 
@@ -137,7 +136,7 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
     @Test
     public void testConfigInCRTakesPrecedence() {
         try {
-            var defaultKCDeploy = getDefaultKeycloakDeployment();
+            var defaultKCDeploy = getTestKeycloakDeployment(true);
 
             var valueSecretHealthProp = new ValueOrSecret("health-enabled", "false");
             var valueSecretProxyProp = new ValueOrSecret("proxy", "reencrypt");
@@ -209,7 +208,7 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
     @Test
     public void testDeploymentDurability() {
         try {
-            var kc = getDefaultKeycloakDeployment();
+            var kc = getTestKeycloakDeployment(true);
             var deploymentName = kc.getMetadata().getName();
 
             // create a dummy StatefulSet representing the pre-multiinstance state that we'll be forced to delete
@@ -274,7 +273,7 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
     @Test
     public void testTlsUsesCorrectSecret() {
         try {
-            var kc = getDefaultKeycloakDeployment();
+            var kc = getTestKeycloakDeployment(true);
             deployKeycloak(k8sclient, kc, true);
 
             var service = new KeycloakService(k8sclient, kc);
@@ -284,10 +283,10 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
                         String url = "https://" + service.getName() + "." + namespace + ":" + Constants.KEYCLOAK_HTTPS_PORT;
                         Log.info("Checking url: " + url);
 
-                        var curlOutput = K8sUtils.inClusterCurl(k8sclient, namespace, "--insecure", "-s", "-v", url);
+                        var curlOutput = K8sUtils.inClusterCurl(k8sclient, namespace, "--insecure", "-s", "-w", "%{certs}", url);
                         Log.info("Curl Output: " + curlOutput);
 
-                        assertTrue(curlOutput.contains("issuer: O=mkcert development CA; OU=aperuffo@aperuffo-mac (Andrea Peruffo); CN=mkcert aperuffo@aperuffo-mac (Andrea Peruffo)"));
+                        assertTrue(curlOutput.contains("Issuer:O = mkcert development CA, OU = aperuffo@aperuffo-mac (Andrea Peruffo), CN = mkcert aperuffo@aperuffo-mac (Andrea Peruffo)"));
                     });
         } catch (Exception e) {
             savePodLogs();
@@ -298,7 +297,7 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
     @Test
     public void testTlsDisabled() {
         try {
-            var kc = getDefaultKeycloakDeployment();
+            var kc = getTestKeycloakDeployment(true);
             kc.getSpec().getHttpSpec().setTlsSecret(null);
             kc.getSpec().getHttpSpec().setHttpEnabled(true);
             deployKeycloak(k8sclient, kc, true);
@@ -313,7 +312,7 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
     @Test
     public void testHostnameStrict() {
         try {
-            var kc = getDefaultKeycloakDeployment();
+            var kc = getTestKeycloakDeployment(true);
             deployKeycloak(k8sclient, kc, true);
 
             var service = new KeycloakService(k8sclient, kc);
@@ -337,7 +336,7 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
     @Test
     public void testHostnameStrictDisabled() {
         try {
-            var kc = getDefaultKeycloakDeployment();
+            var kc = getTestKeycloakDeployment(true);
             var hostnameSpec = new HostnameSpecBuilder()
                     .withStrict(false)
                     .withStrictBackchannel(false)
@@ -369,7 +368,7 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
         try {
             final int httpsPort = 8543;
             final int httpPort = 8180;
-            var kc = getDefaultKeycloakDeployment();
+            var kc = getTestKeycloakDeployment(true);
             kc.getSpec().getHttpSpec().setHttpsPort(httpsPort);
             kc.getSpec().getHttpSpec().setHttpPort(httpPort);
 
@@ -393,7 +392,7 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
         try {
             final int httpsPort = 8543;
             final int httpPort = 8180;
-            var kc = getDefaultKeycloakDeployment();
+            var kc = getTestKeycloakDeployment(true);
             kc.getSpec().getHttpSpec().setHttpsPort(httpsPort);
             kc.getSpec().getHttpSpec().setHttpPort(httpPort);
             kc.getSpec().getHttpSpec().setTlsSecret(null);
@@ -419,7 +418,7 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
     @Test
     public void testInitialAdminUser() {
         try {
-            var kc = getDefaultKeycloakDeployment();
+            var kc = getTestKeycloakDeployment(true);
             var kcAdminSecret = new KeycloakAdminSecret(k8sclient, kc);
 
             k8sclient
@@ -510,7 +509,7 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
     @EnabledIfSystemProperty(named = OPERATOR_CUSTOM_IMAGE, matches = ".+")
     public void testCustomImage() {
         try {
-            var kc = getDefaultKeycloakDeployment();
+            var kc = getTestKeycloakDeployment(true);
             kc.getSpec().setImage(customImage);
             deployKeycloak(k8sclient, kc, true);
 
@@ -535,7 +534,7 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
         String secretDescriptorFilename = "test-docker-registry-secret.yaml";
 
         try {
-            var kc = getDefaultKeycloakDeployment();
+            var kc = getTestKeycloakDeployment(true);
             kc.getSpec().setImage(customImage);
 
             handleFakeImagePullSecretCreation(kc, secretDescriptorFilename);
@@ -563,7 +562,7 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
     public void testInvalidCustomImageHasErrorMessage() {
 
         try {
-            var kc = getDefaultKeycloakDeployment();
+            var kc = getTestKeycloakDeployment(true);
             kc.getSpec().setImage("does-not-exist");
 
             deployKeycloak(k8sclient, kc, false);
@@ -587,7 +586,8 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
     @Test
     public void testHttpRelativePathWithPlainValue() {
         try {
-            var kc = getDefaultKeycloakDeployment();
+            var kc = getTestKeycloakDeployment(false);
+            kc.getSpec().setImage(null); // doesn't seem to become ready with the custom image
             kc.getSpec().getAdditionalOptions().add(new ValueOrSecret(Constants.KEYCLOAK_HTTP_RELATIVE_PATH_KEY, "/foobar"));
             deployKeycloak(k8sclient, kc, true);
 
@@ -608,7 +608,8 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
     @Test
     public void testHttpRelativePathWithSecretValue() {
         try {
-            var kc = getDefaultKeycloakDeployment();
+            var kc = getTestKeycloakDeployment(false);
+            kc.getSpec().setImage(null); // doesn't seem to become ready with the custom image
             var secretName = "my-http-relative-path";
             var keyName = "rel-path";
             var httpRelativePathSecret = new SecretBuilder()
@@ -644,7 +645,7 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
     @Test
     public void testUpgradeRecreatesPods() {
         try {
-            var kc = getDefaultKeycloakDeployment();
+            var kc = getTestKeycloakDeployment(true);
             kc.getSpec().setInstances(3);
             deployKeycloak(k8sclient, kc, true);
 
@@ -691,7 +692,7 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
                 "Skipping the test when Operator deployed remotely to keep stuff simple, it's just SmallRye, we don't need to retest it");
 
         try {
-            var kc = getDefaultKeycloakDeployment();
+            var kc = getTestKeycloakDeployment(true);
             deployKeycloak(k8sclient, kc, true);
 
             // labels are set in test/resources/application.properties

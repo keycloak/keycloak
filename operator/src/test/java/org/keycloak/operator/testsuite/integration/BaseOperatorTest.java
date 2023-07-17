@@ -20,6 +20,8 @@ package org.keycloak.operator.testsuite.integration;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.NamespaceBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
+import io.fabric8.kubernetes.api.model.PodSpecFluent.ContainersNested;
+import io.fabric8.kubernetes.api.model.PodTemplateSpecFluent.SpecNested;
 import io.fabric8.kubernetes.client.Config;
 import io.fabric8.kubernetes.client.ConfigBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
@@ -41,6 +43,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestInfo;
 import org.keycloak.operator.Constants;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
+import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakSpecBuilder;
+import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakSpecFluent.UnsupportedNested;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.UnsupportedSpecFluent.PodTemplateNested;
 import org.keycloak.operator.testsuite.utils.K8sUtils;
 
 import java.io.File;
@@ -79,7 +84,6 @@ public abstract class BaseOperatorTest {
   protected static String customImage;
   private static Operator operator;
   protected static boolean isOpenShift;
-
 
   @BeforeAll
   public static void before() throws FileNotFoundException {
@@ -263,4 +267,45 @@ public abstract class BaseOperatorTest {
   public static String getCurrentNamespace() {
     return namespace;
   }
+
+  public static String getTestCustomImage() {
+    return customImage;
+  }
+
+  /**
+   * Get the default deployment modified/optimized by operator test settings
+   * @param disableProbes when true the unsupported template will be used to effectively
+   *   disable the probes, which will speed up testing for scenarios that don't interact
+   *   with the underlying keycloak
+   * @return
+   */
+  public static Keycloak getTestKeycloakDeployment(boolean disableProbes) {
+      Keycloak kc = K8sUtils.getDefaultKeycloakDeployment();
+      kc.getMetadata().setNamespace(getCurrentNamespace());
+      String image = getTestCustomImage();
+      if (image != null) {
+          kc.getSpec().setImage(image);
+      }
+      if (disableProbes) {
+          return disableProbes(kc);
+      }
+      return kc;
+  }
+
+  public static Keycloak disableProbes(Keycloak keycloak) {
+      KeycloakSpecBuilder specBuilder = new KeycloakSpecBuilder(keycloak.getSpec());
+      var podTemplateSpecBuilder = specBuilder.editOrNewUnsupported().editOrNewPodTemplate().editOrNewSpec();
+      ContainersNested<SpecNested<PodTemplateNested<UnsupportedNested<KeycloakSpecBuilder>>>> containerBuilder = null;
+      if (podTemplateSpecBuilder.hasContainers()) {
+          containerBuilder = podTemplateSpecBuilder.editContainer(0);
+      } else {
+          containerBuilder = podTemplateSpecBuilder.addNewContainer();
+      }
+      keycloak.setSpec(containerBuilder.withNewLivenessProbe().withNewExec().addToCommand("true").endExec()
+              .endLivenessProbe().withNewReadinessProbe().withNewExec().addToCommand("true").endExec()
+              .endReadinessProbe().withNewStartupProbe().withNewExec().addToCommand("true").endExec()
+              .endStartupProbe().endContainer().endSpec().endPodTemplate().endUnsupported().build());
+      return keycloak;
+  }
+
 }

@@ -54,11 +54,11 @@ public class ClusteringTest extends BaseOperatorTest {
     @Test
     public void testMultipleDeployments() throws InterruptedException {
         // given
-        var kc = K8sUtils.getDefaultKeycloakDeployment();
+        var kc = getTestKeycloakDeployment(true);
 
         // another instance running off the same database
         // - should eventually give this a separate schema
-        var kc1 = K8sUtils.getDefaultKeycloakDeployment();
+        var kc1 = getTestKeycloakDeployment(true);
         kc1.getMetadata().setName("another-example");
         kc1.getSpec().getHostnameSpec().setHostname("another-example.com");
         // this is using the wrong tls-secret, but simply removing http spec renders the pod unstartable
@@ -109,7 +109,7 @@ public class ClusteringTest extends BaseOperatorTest {
     @Test
     public void testKeycloakScaleAsExpected() {
         // given
-        var kc = K8sUtils.getDefaultKeycloakDeployment();
+        var kc = getTestKeycloakDeployment(false);
         var crSelector = k8sclient.resource(kc);
         K8sUtils.deployKeycloak(k8sclient, kc, true);
 
@@ -196,7 +196,7 @@ public class ClusteringTest extends BaseOperatorTest {
     public void testKeycloakCacheIsConnected() throws Exception {
         // given
         Log.info("Setup");
-        var kc = K8sUtils.getDefaultKeycloakDeployment();
+        var kc = getTestKeycloakDeployment(false);
         var crSelector = k8sclient.resource(kc);
         K8sUtils.deployKeycloak(k8sclient, kc, false);
         var targetInstances = 3;
