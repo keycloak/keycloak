@@ -1,2 +1,0 @@
-# encoding: UTF-8
-

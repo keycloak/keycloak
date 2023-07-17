@@ -17,56 +17,36 @@
 
 package org.keycloak.theme;
 
-import org.jboss.logging.Logger;
-
-import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.nio.charset.Charset;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.io.Reader;
+import java.util.Enumeration;
+import java.util.Properties;
+import java.util.PropertyResourceBundle;
 
 /**
  * @author <a href="mailto:wadahiro@gmail.com">Hiroyuki Wada</a>
  */
 public class PropertiesUtil {
 
-    private static final Logger logger = Logger.getLogger(PropertiesUtil.class);
-
-    public static final Pattern DETECT_ENCODING_PATTERN = Pattern.compile("^#\\s*encoding:\\s*([\\w.:-]+)",
-            Pattern.CASE_INSENSITIVE);
-
-    public static final Charset DEFAULT_ENCODING = Charset.forName("ISO-8859-1");
-
     /**
-     * <p>
-     * Detect file encoding from the first line of the property file. If the first line in the file doesn't contain the
-     * comment with the encoding, it uses ISO-8859-1 as default encoding for backwards compatibility.
-     * </p>
-     * <p>
-     * The specified stream is closed before this method returns.
-     * </p>
-     * 
-     * @param in The input stream
-     * @return Encoding
-     * @throws IOException
+     * Read a properties file either UTF-8 or if that doesn't work in ISO-8895-1 format.
+     * This utilizes the functionality present in JDK 9 to automatically detect the encoding of the resource.
+     * A user can specify the standard Java system property <code>java.util.PropertyResourceBundle.encoding</code>
+     * to change this.
+     * <p />
+     * Unfortunately the standard {@link Properties#load(Reader)} doesn't support this automatic decoding,
+     * as it is only been implemented for resource files.
+     *
+     * @see PropertyResourceBundle
      */
-    public static Charset detectEncoding(InputStream in) throws IOException {
-        try (BufferedReader br = new BufferedReader(new InputStreamReader(in, DEFAULT_ENCODING))) {
-            String firstLine = br.readLine();
-            if (firstLine != null) {
-                Matcher matcher = DETECT_ENCODING_PATTERN.matcher(firstLine);
-                if (matcher.find()) {
-                    String encoding = matcher.group(1);
-                    if (Charset.isSupported(encoding)) {
-                        return Charset.forName(encoding);
-                    } else {
-                        logger.warnv("Unsupported encoding: {0}", encoding);
-                    }
-                }
-            }
+    public static void readCharsetAware(Properties properties, InputStream stream) throws IOException {
+        PropertyResourceBundle propertyResourceBundle = new PropertyResourceBundle(stream);
+        Enumeration<String> keys = propertyResourceBundle.getKeys();
+        while(keys.hasMoreElements()) {
+            String s = keys.nextElement();
+            properties.put(s, propertyResourceBundle.getString(s));
         }
-        return DEFAULT_ENCODING;
     }
+
 }

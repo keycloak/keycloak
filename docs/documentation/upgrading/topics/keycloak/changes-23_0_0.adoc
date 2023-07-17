@@ -14,9 +14,19 @@ which can be turned on to prevent adding the `iss` parameter to the authenticati
 
 = Wildcard characters handling
 
-JPA allows wildcards `%` and `_` when searching, while other providers like LDAP allow only `*`. 
-As `*` is a natural wildcard character in LDAP, it works in all places, while with JPA it only 
-worked at the beginning and the end of the search string. Starting with this release the only 
-wildcard character is `*` which work consistently across all providers in all places in the search 
-string. All special characters in a specific provider like `%` and `_` for JPA are escaped. For exact 
+JPA allows wildcards `%` and `_` when searching, while other providers like LDAP allow only `*`.
+As `*` is a natural wildcard character in LDAP, it works in all places, while with JPA it only
+worked at the beginning and the end of the search string. Starting with this release the only
+wildcard character is `*` which work consistently across all providers in all places in the search
+string. All special characters in a specific provider like `%` and `_` for JPA are escaped. For exact
 search, with added quotes e.g. `"w*ord"`, the behavior remains the same as in previous releases.
+
+= Language files for themes default to UTF-8 encoding
+
+This release now follows the standard mechanisms of Java and later, which assumes resource bundle files to be encoded in UTF-8.
+
+Previous versions of Keycloak supported specifying the encoding in the first line with a comment like `# encoding: UTF-8`, which is no longer supported and is ignored.
+
+Message properties files for themes are now read in UTF-8 encoding, with an automatic fallback to ISO-8859-1 encoding.
+If you are using a different encoding, convert the files to UTF-8.
+
