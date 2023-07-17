@@ -78,7 +78,7 @@ public abstract class AbstractGeneratedRsaKeyProviderFactory extends AbstractRsa
     public void validateConfiguration(KeycloakSession session, RealmModel realm, ComponentModel model) throws ComponentValidationException {
         super.validateConfiguration(session, realm, model);
 
-        ConfigurationValidationHelper.check(model).checkList(Attributes.KEY_SIZE_PROPERTY, false);
+        ConfigurationValidationHelper.check(model).checkList(Attributes.KEY_SIZE_PROPERTY.get(), false);
 
         int size = model.get(Attributes.KEY_SIZE_KEY, 2048);
 
@@ -103,6 +103,10 @@ public abstract class AbstractGeneratedRsaKeyProviderFactory extends AbstractRsa
             keyPair = KeyUtils.generateRsaKeyPair(size);
             model.put(Attributes.PRIVATE_KEY_KEY, PemUtils.encodeKey(keyPair.getPrivate()));
         } catch (Throwable t) {
+            getLogger().warnf("Failed to generate keys for key provider '%s' in realm '%s'. Details: %s", model.getName(), realm.getName(), t.getMessage());
+            if (getLogger().isDebugEnabled()) {
+                getLogger().debug(t.getMessage(), t);
+            }
             throw new ComponentValidationException("Failed to generate keys", t);
         }
 
@@ -114,6 +118,10 @@ public abstract class AbstractGeneratedRsaKeyProviderFactory extends AbstractRsa
             Certificate certificate = CertificateUtils.generateV1SelfSignedCertificate(keyPair, realm.getName());
             model.put(Attributes.CERTIFICATE_KEY, PemUtils.encodeCertificate(certificate));
         } catch (Throwable t) {
+            getLogger().warnf("Failed to generate certificate for key provider '%s' in realm '%s'. Details: %s", model.getName(), realm.getName(), t.getMessage());
+            if (getLogger().isDebugEnabled()) {
+                getLogger().debug(t.getMessage(), t);
+            }
             throw new ComponentValidationException("Failed to generate certificate", t);
         }
     }

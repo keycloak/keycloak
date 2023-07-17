@@ -19,9 +19,9 @@ package org.keycloak.models.map.storage.jpa.user;
 import java.util.Arrays;
 import java.util.Collection;
 
-import javax.persistence.criteria.CriteriaBuilder;
-import javax.persistence.criteria.Join;
-import javax.persistence.criteria.JoinType;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.Join;
+import jakarta.persistence.criteria.JoinType;
 
 import org.keycloak.models.UserModel;
 import org.keycloak.models.map.storage.CriterionNotSupportedException;
@@ -167,6 +167,7 @@ public class JpaUserModelCriteriaBuilder extends JpaModelCriteriaBuilder<JpaUser
                         Join<JpaUserEntity, JpaUserAttributeEntity> join = root.join("attributes", JoinType.LEFT);
                         return cb.and(
                                 cb.equal(join.get("name"), value[0]),
+                                hashExpression(cb, join, "value_hash", value[1]),
                                 cb.equal(join.get("value"), value[1])
                         );
                     });

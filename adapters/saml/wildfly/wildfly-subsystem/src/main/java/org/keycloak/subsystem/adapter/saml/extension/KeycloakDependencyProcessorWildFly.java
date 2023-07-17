@@ -22,6 +22,7 @@ import static org.keycloak.subsystem.adapter.saml.extension.Elytron.isElytronEna
 import org.jboss.as.server.deployment.DeploymentPhaseContext;
 import org.jboss.as.server.deployment.module.ModuleDependency;
 import org.jboss.as.server.deployment.module.ModuleSpecification;
+import org.jboss.modules.ModuleClassLoader;
 import org.jboss.modules.ModuleIdentifier;
 import org.jboss.modules.ModuleLoader;
 
@@ -33,11 +34,18 @@ import org.jboss.modules.ModuleLoader;
 public class KeycloakDependencyProcessorWildFly extends KeycloakDependencyProcessor {
 
     private static final ModuleIdentifier KEYCLOAK_ELYTRON_ADAPTER = ModuleIdentifier.create("org.keycloak.keycloak-saml-wildfly-elytron-adapter");
+    private static final ModuleIdentifier KEYCLOAK_ELYTRON_JAKARTA_ADAPTER = ModuleIdentifier.create("org.keycloak.keycloak-saml-wildfly-elytron-jakarta-adapter");
 
     @Override
     protected void addPlatformSpecificModules(DeploymentPhaseContext phaseContext, ModuleSpecification moduleSpecification, ModuleLoader moduleLoader) {
         if (isElytronEnabled(phaseContext)) {
-            moduleSpecification.addSystemDependency(new ModuleDependency(moduleLoader, KEYCLOAK_ELYTRON_ADAPTER, true, false, false, false));
+            ClassLoader classLoader = getClass().getClassLoader();
+            String classLoaderName = (classLoader instanceof ModuleClassLoader ? ((ModuleClassLoader)classLoader).getName() : "");
+            if (classLoaderName.contains("jakarta")) {
+                moduleSpecification.addSystemDependency(new ModuleDependency(moduleLoader, KEYCLOAK_ELYTRON_JAKARTA_ADAPTER, true, false, false, false));
+            } else {
+                moduleSpecification.addSystemDependency(new ModuleDependency(moduleLoader, KEYCLOAK_ELYTRON_ADAPTER, true, false, false, false));
+            }
         } else {
             throw new RuntimeException("Legacy WildFly security layer is no longer supported by the Keycloak WildFly adapter");
         }

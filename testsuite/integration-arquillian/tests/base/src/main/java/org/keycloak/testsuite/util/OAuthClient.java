@@ -79,9 +79,9 @@ import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 
-import javax.ws.rs.client.Entity;
-import javax.ws.rs.core.Form;
-import javax.ws.rs.core.UriBuilder;
+import jakarta.ws.rs.client.Entity;
+import jakarta.ws.rs.core.Form;
+import jakarta.ws.rs.core.UriBuilder;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
@@ -308,6 +308,13 @@ public class OAuthClient {
     public AuthorizationEndpointResponse doLogin(String username, String password) {
         openLoginForm();
         fillLoginForm(username, password);
+
+        return new AuthorizationEndpointResponse(this);
+    }
+
+    public AuthorizationEndpointResponse doSilentLogin() {
+        openLoginForm();
+        WaitUtils.waitForPageToLoad();
 
         return new AuthorizationEndpointResponse(this);
     }
@@ -1893,7 +1900,7 @@ public class OAuthClient {
 
                 Header[] contentTypeHeaders = response.getHeaders("Content-Type");
                 String contentType = (contentTypeHeaders != null && contentTypeHeaders.length > 0) ? contentTypeHeaders[0].getValue() : null;
-                if (!"application/json".equals(contentType)) {
+                if (contentType == null || !contentType.startsWith("application/json")) {
                     Assert.fail("Invalid content type. Status: " + statusCode + ", contentType: " + contentType);
                 }
 
@@ -2087,7 +2094,7 @@ public class OAuthClient {
         }
     }
 
-    private KeyWrapper getRealmPublicKey(String realm, String algoritm, String kid) {
+    private KeyWrapper getRealmPublicKey(String realm, String algorithm, String kid) {
         boolean loadedKeysFromServer = false;
         JSONWebKeySet jsonWebKeySet = publicKeys.get(realm);
         if (jsonWebKeySet == null) {
@@ -2096,17 +2103,17 @@ public class OAuthClient {
             loadedKeysFromServer = true;
         }
 
-        KeyWrapper key = findKey(jsonWebKeySet, algoritm, kid);
+        KeyWrapper key = findKey(jsonWebKeySet, algorithm, kid);
 
         if (key == null && !loadedKeysFromServer) {
             jsonWebKeySet = getRealmKeys(realm);
             publicKeys.put(realm, jsonWebKeySet);
 
-            key = findKey(jsonWebKeySet, algoritm, kid);
+            key = findKey(jsonWebKeySet, algorithm, kid);
         }
 
         if (key == null) {
-            throw new RuntimeException("Public key for realm:" + realm + ", algorithm: " + algoritm + " not found");
+            throw new RuntimeException("Public key for realm:" + realm + ", algorithm: " + algorithm + " not found");
         }
 
         return key;
@@ -2121,9 +2128,9 @@ public class OAuthClient {
         }
     }
 
-    private KeyWrapper findKey(JSONWebKeySet jsonWebKeySet, String algoritm, String kid) {
+    private KeyWrapper findKey(JSONWebKeySet jsonWebKeySet, String algorithm, String kid) {
         for (JWK k : jsonWebKeySet.getKeys()) {
-            if (k.getKeyId().equals(kid) && k.getAlgorithm().equals(algoritm)) {
+            if (k.getKeyId().equals(kid) && k.getAlgorithm().equals(algorithm)) {
                 PublicKey publicKey = JWKParser.create(k).toPublicKey();
 
                 KeyWrapper key = new KeyWrapper();

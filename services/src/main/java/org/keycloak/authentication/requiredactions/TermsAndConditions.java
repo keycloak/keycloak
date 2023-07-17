@@ -22,8 +22,9 @@ import org.keycloak.authentication.*;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.UserModel;
 
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response;
 import java.util.Arrays;
 
 /**
@@ -31,8 +32,8 @@ import java.util.Arrays;
  * @version $Revision: 1 $
  */
 public class TermsAndConditions implements RequiredActionProvider, RequiredActionFactory {
-    public static final String PROVIDER_ID = "terms_and_conditions";
-    public static final String USER_ATTRIBUTE = PROVIDER_ID;
+    public static final String PROVIDER_ID = UserModel.RequiredAction.TERMS_AND_CONDITIONS.name();
+    public static final String USER_ATTRIBUTE = "terms_and_conditions";
 
     @Override
     public RequiredActionProvider create(KeycloakSession session) {
@@ -71,6 +72,12 @@ public class TermsAndConditions implements RequiredActionProvider, RequiredActio
 
     @Override
     public void processAction(RequiredActionContext context) {
+        // Keycloak 21.0.0 changed the user attribute name from lowercase to uppercase
+        // this change was reverted, but it is still possible some attributes created
+        // in Keycloak 21.0.0 will be present in the database, we need to remove it too.
+        // See https://github.com/keycloak/keycloak/issues/17277 for more details
+        context.getUser().removeAttribute(USER_ATTRIBUTE.toUpperCase());
+
         if (context.getHttpRequest().getDecodedFormParameters().containsKey("cancel")) {
             context.getUser().removeAttribute(USER_ATTRIBUTE);
             context.failure();

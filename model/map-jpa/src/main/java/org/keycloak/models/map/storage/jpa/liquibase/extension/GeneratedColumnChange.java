@@ -41,7 +41,8 @@ import liquibase.statement.SqlStatement;
 import liquibase.statement.core.AddColumnStatement;
 
 /**
- * Extension used to a column whose values are generated from a property of a JSON file stored in one of the table's columns.
+ * Extension used to add generated column to the table. Value is either generated from a property of a JSON file stored in one of the table's 
+ * columns or from hash value of existing column.
  * <p/>
  * Example configuration in the changelog:
  * <pre>
@@ -63,14 +64,25 @@ import liquibase.statement.core.AddColumnStatement;
  * of the JSON file stored in column {@code metadata}. If, for example, a particular entry in the table contains the JSON
  * {@code {"name":"duke","alias":"jduke"}} in column {@code metadata}, the value generated for the new column will be {@code jduke}.
  *
+ * <p/>
+ * The configuration below adds new generated column named {@code new_column} with value being a hash of a column {@code column}. 
+ * For more information about the type see {@link KeycloakHashDataType}.
+ * <pre>
+ * &lt;changeSet author="keycloak" id="some_id"&gt;
+ *     ...
+ *     &lt;ext:addGeneratedColumn tableName="test"&gt;
+ *         &lt;ext:column name="new_column" type="kc_hash" hashOf="column"/&gt;
+ *     &lt;/ext:addGeneratedColumn&gt;
+ * &lt;/changeSet&gt;
+ * </pre>
  * @author <a href="mailto:sguilhen@redhat.com">Stefan Guilhen</a>
  */
-@DatabaseChange(name = "addGeneratedColumn", description = "Adds new generated columns to a table. The columns must reference a JSON property inside an existing JSON column.",
+@DatabaseChange(name = "addGeneratedColumn", description = "Adds new generated columns to a table.",
         priority = ChangeMetaData.PRIORITY_DEFAULT, appliesTo = "table")
-public class GeneratedColumnChange extends AbstractChange implements ChangeWithColumns<JsonEnabledColumnConfig> {
+public class GeneratedColumnChange extends AbstractChange implements ChangeWithColumns<AddGeneratedColumnConfig> {
 
     private final ExtendedAddColumnChange delegate;
-    private Map<String, JsonEnabledColumnConfig> configMap = new HashMap<>();
+    private Map<String, AddGeneratedColumnConfig> configMap = new HashMap<>();
 
     public GeneratedColumnChange() {
         this.delegate = new ExtendedAddColumnChange();
@@ -104,19 +116,19 @@ public class GeneratedColumnChange extends AbstractChange implements ChangeWithC
     }
 
     @Override
-    public void addColumn(final JsonEnabledColumnConfig column) {
+    public void addColumn(final AddGeneratedColumnConfig column) {
         this.delegate.addColumn(column);
         this.configMap.put(column.getName(), column);
     }
 
     @Override
     @DatabaseChangeProperty(description = "Generated columns information", requiredForDatabase = "all")
-    public List<JsonEnabledColumnConfig> getColumns() {
-        return this.delegate.getColumns().stream().map(JsonEnabledColumnConfig.class::cast).collect(Collectors.toList());
+    public List<AddGeneratedColumnConfig> getColumns() {
+        return this.delegate.getColumns().stream().map(AddGeneratedColumnConfig.class::cast).collect(Collectors.toList());
     }
 
     @Override
-    public void setColumns(final List<JsonEnabledColumnConfig> columns) {
+    public void setColumns(final List<AddGeneratedColumnConfig> columns) {
         columns.forEach(this.delegate::addColumn);
         this.configMap = this.getColumns().stream()
                 .collect(Collectors.toMap(ColumnConfig::getName, Function.identity()));
@@ -141,10 +153,10 @@ public class GeneratedColumnChange extends AbstractChange implements ChangeWithC
         // convert the regular AddColumnStatements into GeneratedColumnStatements, adding the extension properties.
         if (!delegateStatement.isMultiple()) {
             // single statement - convert it directly.
-            JsonEnabledColumnConfig config = configMap.get(delegateStatement.getColumnName());
+            AddGeneratedColumnConfig config = configMap.get(delegateStatement.getColumnName());
             if (config != null) {
                 return new SqlStatement[] {new GeneratedColumnStatement(delegateStatement, config.getJsonColumn(),
-                        config.getJsonProperty())};
+                        config.getJsonProperty(), config.getHashOf())};
             }
         }
         else {
@@ -152,7 +164,7 @@ public class GeneratedColumnChange extends AbstractChange implements ChangeWithC
             List<GeneratedColumnStatement> generatedColumnStatements = delegateStatement.getColumns().stream()
                     .filter(c -> configMap.containsKey(c.getColumnName()))
                     .map(c -> new GeneratedColumnStatement(c, configMap.get(c.getColumnName()).getJsonColumn(),
-                            configMap.get(c.getColumnName()).getJsonProperty()))
+                            configMap.get(c.getColumnName()).getJsonProperty(), configMap.get(c.getColumnName()).getHashOf()))
                     .collect(Collectors.toList());
 
             // add all GeneratedColumnStatements into a composite statement and return the composite.
@@ -186,7 +198,7 @@ public class GeneratedColumnChange extends AbstractChange implements ChangeWithC
         ValidationErrors validationErrors = new ValidationErrors();
         validationErrors.checkRequiredField("columns", this.delegate.getColumns());
         // validate each generated column.
-        this.delegate.getColumns().stream().map(JsonEnabledColumnConfig.class::cast).forEach(
+        this.delegate.getColumns().stream().map(AddGeneratedColumnConfig.class::cast).forEach(
                 config -> {
                     if (config.isAutoIncrement() != null && config.isAutoIncrement()) {
                         validationErrors.addError("Generated column " + config.getName() + " cannot be auto-incremented");
@@ -195,10 +207,9 @@ public class GeneratedColumnChange extends AbstractChange implements ChangeWithC
                     } else if (config.getDefaultValueObject() != null) {
                         validationErrors.addError("Generated column " + config.getName() + " cannot be configured with a default value");
                     }
-                    // we can expand this check if we decide to allow other types of generated columns in the future - for now
-                    // ensure the column can be properly generated from a json property stored on a json column.
-                    validationErrors.checkRequiredField("jsonColumn", config.getJsonColumn());
-                    validationErrors.checkRequiredField("jsonProperty", config.getJsonProperty());
+                    if (config.getHashOf() == null && (config.getJsonColumn() == null || config.getJsonProperty() == null)) {
+                        validationErrors.addError("Either 'hashOf' or both 'jsonColumn' and 'jsonProperty' is required");
+                    }
                 });
         validationErrors.addAll(super.validate(database));
         return validationErrors;

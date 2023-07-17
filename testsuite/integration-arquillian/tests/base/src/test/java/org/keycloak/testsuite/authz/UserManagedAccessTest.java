@@ -319,14 +319,14 @@ public class UserManagedAccessTest extends AbstractResourceServerTest {
         String realmId = getRealm().toRepresentation().getId();
         String clientId = client.toRepresentation().getClientId();
         events.expectLogin().realm(realmId).client(clientId)
-                .user(isUUID())
+                .user(koloId)
                 .clearDetails()
                 .assertEvent();
         events.expectLogin().realm(realmId).client(clientId)
-                .user(isUUID())
+                .user(koloId)
                 .clearDetails()
                 .assertEvent();
-        events.expect(EventType.PERMISSION_TOKEN_ERROR).realm(realmId).client(clientId).user(isUUID())
+        events.expect(EventType.PERMISSION_TOKEN_ERROR).realm(realmId).client(clientId).user(koloId)
                 .session((String) null)
                 .error("access_denied")
                 .detail("reason", "request_submitted")
@@ -375,14 +375,14 @@ public class UserManagedAccessTest extends AbstractResourceServerTest {
         assertTrue(permissions.isEmpty());
 
         events.expectLogin().realm(realmId).client(clientId)
-                .user(isUUID())
+                .user(koloId)
                 .clearDetails()
                 .assertEvent();
         events.expectLogin().realm(realmId).client(clientId)
-                .user(isUUID())
+                .user(koloId)
                 .clearDetails()
                 .assertEvent();
-        events.expect(EventType.PERMISSION_TOKEN).realm(realmId).client(clientId).user(isUUID())
+        events.expect(EventType.PERMISSION_TOKEN).realm(realmId).client(clientId).user(koloId)
                 .session((String) null)
                 .clearDetails()
                 .assertEvent();

@@ -24,6 +24,7 @@
 
     <security-constraint>
         <web-resource-collection>
+            <web-resource-name>Protected</web-resource-name>
             <url-pattern>/profile.jsp</url-pattern>
         </web-resource-collection>
         <auth-constraint>

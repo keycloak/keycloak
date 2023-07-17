@@ -1,0 +1,14 @@
+[id="proc-setting-required-actions_{context}"]
+= Setting required actions for one user
+
+You can set the actions that are required for any user.
+
+.Procedure
+. Click *Users* in the menu.
+. Select a user from the list.
+. Navigate to the *Required User Actions* list.
++
+image:images/user-required-action.png[]
+. Select all the actions you want to add to the account. 
+. Click the *X* next to the action name to remove it.  
+. Click *Save* after you select which actions to add.

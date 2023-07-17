@@ -28,14 +28,14 @@ import org.hibernate.event.spi.PreUpdateEventListener;
 import org.keycloak.models.map.storage.jpa.JpaChildEntity;
 import org.keycloak.models.map.storage.jpa.JpaRootVersionedEntity;
 
-import javax.persistence.LockModeType;
+import jakarta.persistence.LockModeType;
 import java.util.Objects;
 import org.keycloak.models.map.storage.jpa.JpaRootEntity;
 
 /**
  * Listen on changes on child entities and forces an optimistic locking increment on the closest parent aka root.
  * The assumption is that any parent of a child entity is root entity. Optimistic locking is enforced on child entity
- * which is not the child entity at the same time. This prevents {@link javax.persistence.OptimisticLockException}s
+ * which is not the child entity at the same time. This prevents {@link jakarta.persistence.OptimisticLockException}s
  * when different children in the same parent are being manipulated at the same time by different threads.
  *
  * This support a multiple level parent-child relationship, where only the closest parent is locked.

@@ -31,7 +31,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import javax.ws.rs.NotFoundException;
+import jakarta.ws.rs.NotFoundException;
 
 import org.junit.Test;
 import org.keycloak.admin.client.resource.UsersResource;
@@ -1066,7 +1066,7 @@ public class UserManagedPermissionServiceTest extends AbstractResourceServerTest
         Resource resource = policy.getResources().iterator().next();
         assertEquals("Resource A", resource.getName());
 
-        realm.removeGroup(realm.searchForGroupByNameStream("group_remove", -1, -1).findAny().get());
+        realm.removeGroup(session.groups().searchForGroupByNameStream(realm, "group_remove", false, null, null).findAny().get());
 
         filters = new HashMap<>();
 

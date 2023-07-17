@@ -21,6 +21,7 @@ import org.keycloak.models.GroupModel;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.ModelToRepresentation;
+import org.keycloak.protocol.ProtocolMapperUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.IDToken;
@@ -98,9 +99,9 @@ public class GroupMembershipMapper extends AbstractOIDCProtocolMapper implements
                 ModelToRepresentation::buildGroupPath : GroupModel::getName;
         List<String> membership = userSession.getUser().getGroupsStream().map(toGroupRepresentation).collect(Collectors.toList());
 
-        String protocolClaim = mappingModel.getConfig().get(OIDCAttributeMapperHelper.TOKEN_CLAIM_NAME);
-
-        token.getOtherClaims().put(protocolClaim, membership);
+        // force multivalued as the attribute is not defined for this mapper
+        mappingModel.getConfig().put(ProtocolMapperUtils.MULTIVALUED, "true");
+        OIDCAttributeMapperHelper.mapClaim(token, mappingModel, membership);
     }
 
     public static ProtocolMapperModel create(String name,

@@ -16,46 +16,54 @@
  */
 package org.keycloak.services.resources.admin;
 
-import javax.ws.rs.Consumes;
-import javax.ws.rs.GET;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.PUT;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 
+import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
+import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.keycloak.component.ComponentValidationException;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.services.ErrorResponse;
+import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 import org.keycloak.userprofile.UserProfileProvider;
 
 /**
  * @author Vlastimil Elias <velias@redhat.com>
  */
+@Extension(name = KeycloakOpenAPI.Profiles.ADMIN, value = "")
 public class UserProfileResource {
 
-    @Context
-    protected KeycloakSession session;
+    protected final KeycloakSession session;
 
-    protected RealmModel realm;
-    private AdminPermissionEvaluator auth;
+    protected final RealmModel realm;
+    private final AdminPermissionEvaluator auth;
 
-    public UserProfileResource(RealmModel realm, AdminPermissionEvaluator auth) {
-        this.realm = realm;
+    public UserProfileResource(KeycloakSession session, AdminPermissionEvaluator auth) {
+        this.session = session;
+        this.realm = session.getContext().getRealm();
         this.auth = auth;
     }
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.USERS)
+    @Operation()
     public String getConfiguration() {
-        auth.realm().requireViewRealm();
+        auth.requireAnyAdminRole();
         return session.getProvider(UserProfileProvider.class).getConfiguration();
     }
 
     @PUT
     @Consumes(MediaType.APPLICATION_JSON)
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.USERS)
+    @Operation()
     public Response update(String text) {
         auth.realm().requireManageRealm();
         UserProfileProvider t = session.getProvider(UserProfileProvider.class);
@@ -64,7 +72,7 @@ public class UserProfileResource {
             t.setConfiguration(text);
         } catch (ComponentValidationException e) {
             //show validation result containing details about error
-            return ErrorResponse.error(e.getMessage(), Response.Status.BAD_REQUEST);
+            throw ErrorResponse.error(e.getMessage(), Response.Status.BAD_REQUEST);
         }
 
         return Response.ok(t.getConfiguration()).type(MediaType.APPLICATION_JSON).build();

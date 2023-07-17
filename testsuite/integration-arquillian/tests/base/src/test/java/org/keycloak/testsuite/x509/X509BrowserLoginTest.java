@@ -31,7 +31,7 @@ import org.keycloak.representations.idm.AuthenticatorConfigRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.pages.AppPage;
 
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response;
 
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
@@ -117,6 +117,28 @@ public class X509BrowserLoginTest extends AbstractX509AuthenticationTest {
     @Test
     public void loginWithRevalidateCertEnabledCertIsTrusted() throws Exception {
         x509BrowserLogin(createLoginSubjectEmailWithRevalidateCert(true), userId, "test-user@localhost", "test-user@localhost");
+    }
+
+    @Test
+    public void loginWithRevalidateCertEnabledCertWithIncorrectTruststoreConfig() throws Exception {
+        try {
+            // Simulate disabling of Truststore SPI on server
+            testingClient.testing().disableTruststoreSpi();
+
+            AuthenticatorConfigRepresentation cfg = newConfig("x509-browser-config", createLoginSubjectEmailWithRevalidateCert(true).getConfig());
+            String cfgId = createConfig(browserExecution.getId(), cfg);
+            Assert.assertNotNull(cfgId);
+
+            loginConfirmationPage.open();
+            loginPage.assertCurrent();
+
+            // Verify there is an error message
+            Assert.assertNotNull(loginPage.getError());
+
+            Assert.assertThat(loginPage.getError(), containsString("Certificate validation's failed."));
+        } finally {
+            testingClient.testing().reenableTruststoreSpi();
+        }
     }
 
     @Test

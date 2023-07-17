@@ -51,7 +51,7 @@ public class LdapServerCapabilitiesRealmAdminProvider implements AdminRealmResou
 
     @Override
     public Object getResource(KeycloakSession session, RealmModel realm, AdminPermissionEvaluator auth, AdminEventBuilder adminEvent) {
-        return new LdapServerCapabilitiesResource(realm, auth, adminEvent);
+        return new LdapServerCapabilitiesResource(session, auth, adminEvent);
     }
 
 }

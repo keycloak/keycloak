@@ -26,13 +26,14 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Supplier;
 
 @GenerateEntityImplementations
 @DeepCloner.Root
 public interface MapIdentityProviderEntity extends UpdatableEntity, AbstractEntity {
     static MapIdentityProviderEntity fromModel(IdentityProviderModel model) {
         if (model == null) return null;
-        MapIdentityProviderEntity entity = new MapIdentityProviderEntityImpl();
+        MapIdentityProviderEntity entity = DeepCloner.DUMB_CLONER.newInstance(MapIdentityProviderEntity.class);
         String id = model.getInternalId() == null ? KeycloakModelUtils.generateId() : model.getInternalId();
         entity.setId(id);
         entity.setAlias(model.getAlias());
@@ -50,9 +51,9 @@ public interface MapIdentityProviderEntity extends UpdatableEntity, AbstractEnti
         return entity;
     }
 
-    static IdentityProviderModel toModel(MapIdentityProviderEntity entity) {
+    static IdentityProviderModel toModel(MapIdentityProviderEntity entity, Supplier<IdentityProviderModel> instanceCreator) {
         if (entity == null) return null;
-        IdentityProviderModel model = new IdentityProviderModel();
+        IdentityProviderModel model = instanceCreator.get();
         model.setInternalId(entity.getId());
         model.setAlias(entity.getAlias());
         model.setDisplayName(entity.getDisplayName());

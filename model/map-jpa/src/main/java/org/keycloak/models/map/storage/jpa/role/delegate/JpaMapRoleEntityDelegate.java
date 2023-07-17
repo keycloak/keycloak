@@ -19,13 +19,14 @@ package org.keycloak.models.map.storage.jpa.role.delegate;
 
 import org.keycloak.models.map.common.StringKeyConverter;
 import org.keycloak.models.map.role.MapRoleEntityDelegate;
+import org.keycloak.models.map.storage.jpa.JpaMapStorage;
 import org.keycloak.models.map.storage.jpa.role.entity.JpaRoleCompositeEntity;
 import org.keycloak.models.map.storage.jpa.role.entity.JpaRoleCompositeEntityKey;
 import org.keycloak.models.map.storage.jpa.role.entity.JpaRoleEntity;
 
-import javax.persistence.EntityManager;
-import javax.persistence.Query;
-import javax.persistence.TypedQuery;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.Query;
+import jakarta.persistence.TypedQuery;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -34,18 +35,32 @@ import java.util.stream.Collectors;
  * It will delegate all access to the composite roles to a separate table.
  *
  * For performance reasons, it caches the composite roles within the session if they have already been retrieved.
- * This relies on the behavior of {@link org.keycloak.models.map.storage.jpa.JpaMapKeycloakTransaction} that
+ * This relies on the behavior of {@link JpaMapStorage} that
  * each entity is created only once within each session.
  *
  * @author Alexander Schwartz
  */
 public class JpaMapRoleEntityDelegate extends MapRoleEntityDelegate {
     private final EntityManager em;
+    private final JpaRoleEntity original;
 
     private Set<String> compositeRoles;
 
+    @Override
+    public void setId(String id) {
+        if (super.getId() == null) {
+            super.setId(id);
+            // As the entity will be used when creating the composite roles, it needs to be persisted before that.
+            // The ID not being set indicates a new entity that hasn't been persisted yet, and the ID is the minimum field for persisting it.
+            em.persist(original);
+        } else {
+            super.setId(id);
+        }
+    }
+
     public JpaMapRoleEntityDelegate(JpaRoleEntity original, EntityManager em) {
         super(new JpaRoleDelegateProvider(original, em));
+        this.original = original;
         this.em = em;
     }
 
@@ -64,7 +79,9 @@ public class JpaMapRoleEntityDelegate extends MapRoleEntityDelegate {
         Query query = em.createNamedQuery("deleteAllChildRolesFromCompositeRole");
         query.setParameter("roleId", StringKeyConverter.UUIDKey.INSTANCE.fromString(getId()));
         query.executeUpdate();
-        compositeRoles.forEach(this::addCompositeRole);
+        if (compositeRoles != null) {
+            compositeRoles.forEach(this::addCompositeRole);
+        }
         this.compositeRoles = compositeRoles;
     }
 

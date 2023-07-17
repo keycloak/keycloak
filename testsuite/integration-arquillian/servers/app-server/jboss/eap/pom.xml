@@ -21,7 +21,7 @@
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
         <artifactId>integration-arquillian-servers-app-server-jboss</artifactId>
-        <version>999-SNAPSHOT</version>
+        <version>999.0.0-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -67,6 +67,15 @@
                 <app.server.jboss>eap71</app.server.jboss>
                 <app.server.jboss.version>${eap71.version}</app.server.jboss.version>
                 <app.server.jboss.unpacked.folder.name>jboss-eap-7.1</app.server.jboss.unpacked.folder.name>
+            </properties>
+        </profile>
+        <profile>
+            <id>app-server-eap-java17</id>
+            <activation>
+                <jdk>[17,)</jdk>
+            </activation>
+            <properties>
+                <skip.java17.enablement>false</skip.java17.enablement>
             </properties>
         </profile>
     </profiles>

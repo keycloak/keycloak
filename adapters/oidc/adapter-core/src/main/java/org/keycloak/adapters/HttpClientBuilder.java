@@ -305,7 +305,7 @@ public class HttpClientBuilder {
             HttpClientConnectionManager cm;
 
             if (connectionPoolSize > 0) {
-                PoolingHttpClientConnectionManager tcm = new PoolingHttpClientConnectionManager(sf.build());
+                PoolingHttpClientConnectionManager tcm = new PoolingHttpClientConnectionManager(sf.build(), null, null, null, connectionTTL, connectionTTLUnit);
                 tcm.setMaxTotal(connectionPoolSize);
                 if (maxPooledPerRoute == 0) maxPooledPerRoute = connectionPoolSize;
                 tcm.setDefaultMaxPerRoute(maxPooledPerRoute);
@@ -427,13 +427,11 @@ public class HttpClientBuilder {
                 throw new RuntimeException("Failed to load keystore", e);
             }
         }
-        int size = 10;
-        if (adapterConfig.getConnectionPoolSize() > 0)
-            size = adapterConfig.getConnectionPoolSize();
+
         HttpClientBuilder.HostnameVerificationPolicy policy = HttpClientBuilder.HostnameVerificationPolicy.WILDCARD;
         if (adapterConfig.isAllowAnyHostname())
             policy = HttpClientBuilder.HostnameVerificationPolicy.ANY;
-        connectionPoolSize(size);
+        connectionPoolSize(adapterConfig.getConnectionPoolSize());
         hostnameVerification(policy);
         if (adapterConfig.isDisableTrustManager()) {
             disableTrustManager();

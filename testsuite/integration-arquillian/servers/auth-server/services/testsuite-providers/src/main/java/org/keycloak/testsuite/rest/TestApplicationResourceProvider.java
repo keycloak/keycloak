@@ -18,7 +18,7 @@
 package org.keycloak.testsuite.rest;
 
 import org.jboss.resteasy.annotations.cache.NoCache;
-import org.jboss.resteasy.spi.HttpRequest;
+import org.keycloak.http.HttpRequest;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.common.util.HtmlUtils;
 import org.keycloak.jose.jws.JWSInput;
@@ -35,17 +35,16 @@ import org.keycloak.testsuite.rest.representation.TestAuthenticationChannelReque
 import org.keycloak.testsuite.rest.resource.TestingOIDCEndpointsApplicationResource;
 import org.keycloak.utils.MediaType;
 
-import javax.ws.rs.Consumes;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriBuilder;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.UriBuilder;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
@@ -69,8 +68,7 @@ public class TestApplicationResourceProvider implements RealmResourceProvider {
     private final ConcurrentMap<String, ClientNotificationEndpointRequest> cibaClientNotifications;
     private final ConcurrentMap<String, String> intentClientBindings;
 
-    @Context
-    HttpRequest request;
+    private final HttpRequest request;
 
     public TestApplicationResourceProvider(KeycloakSession session, BlockingQueue<LogoutAction> adminLogoutActions,
             BlockingQueue<LogoutToken> backChannelLogoutTokens,
@@ -91,6 +89,7 @@ public class TestApplicationResourceProvider implements RealmResourceProvider {
         this.authenticationChannelRequests = authenticationChannelRequests;
         this.cibaClientNotifications = cibaClientNotifications;
         this.intentClientBindings = intentClientBindings;
+        this.request = session.getContext().getHttpRequest();
     }
 
     @POST
@@ -174,7 +173,7 @@ public class TestApplicationResourceProvider implements RealmResourceProvider {
     }
 
     @POST
-    @Consumes(javax.ws.rs.core.MediaType.APPLICATION_FORM_URLENCODED)
+    @Consumes(jakarta.ws.rs.core.MediaType.APPLICATION_FORM_URLENCODED)
     @Produces(MediaType.TEXT_HTML_UTF_8)
     @Path("/{action}")
     public Response post(@PathParam("action") String action) {

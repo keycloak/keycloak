@@ -32,6 +32,11 @@ public class SystemPropertiesUtil {
             SecurityActions.setSystemProperty(xmlSec, "true");
         }
 
+        String xmlSecOpenJdk = "com.sun.org.apache.xml.internal.security.ignoreLineBreaks";
+        if (StringUtil.isNullOrEmpty(SecurityActions.getSystemProperty(xmlSecOpenJdk, ""))) {
+            SecurityActions.setSystemProperty(xmlSecOpenJdk, "true");
+        }
+
         // For JAXP Validation
         String schemaFactoryProperty = "javax.xml.validation.SchemaFactory:" + XMLConstants.W3C_XML_SCHEMA_NS_URI;
         if (StringUtil.isNullOrEmpty(SecurityActions.getSystemProperty(schemaFactoryProperty, ""))) {

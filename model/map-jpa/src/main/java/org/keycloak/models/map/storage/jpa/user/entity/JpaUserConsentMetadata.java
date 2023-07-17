@@ -29,7 +29,7 @@ import org.keycloak.models.map.user.MapUserConsentEntityImpl;
 public class JpaUserConsentMetadata extends MapUserConsentEntityImpl implements Serializable {
 
     public JpaUserConsentMetadata() {
-        super();
+        super(DeepCloner.DUMB_CLONER);
     }
 
     public JpaUserConsentMetadata(final DeepCloner cloner) {
@@ -45,4 +45,5 @@ public class JpaUserConsentMetadata extends MapUserConsentEntityImpl implements 
     public void setEntityVersion(Integer entityVersion) {
         this.entityVersion = entityVersion;
     }
+
 }

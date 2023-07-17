@@ -29,7 +29,7 @@ import org.keycloak.models.map.realm.MapRealmEntityImpl;
 public class JpaRealmMetadata extends MapRealmEntityImpl implements Serializable {
 
     public JpaRealmMetadata() {
-        super();
+        super(DeepCloner.DUMB_CLONER);
     }
 
     public JpaRealmMetadata(final DeepCloner cloner) {
@@ -45,4 +45,5 @@ public class JpaRealmMetadata extends MapRealmEntityImpl implements Serializable
     public void setEntityVersion(Integer entityVersion) {
         this.entityVersion = entityVersion;
     }
+
 }

@@ -1,0 +1,18 @@
+[[_enforcer_filter_using_https]]
+= Configuring TLS/HTTPS
+
+When the server is using HTTPS, ensure your policy enforcer is configured as follows:
+
+[source,json]
+----
+{
+  "truststore": "path_to_your_trust_store",
+  "truststore-password": "trust_store_password"
+}
+----
+
+The configuration above enables TLS/HTTPS to the Authorization Client, making possible to access a
+{project_name} Server remotely using the HTTPS scheme.
+
+[NOTE]
+It is strongly recommended that you enable TLS/HTTPS when accessing the {project_name} Server endpoints.

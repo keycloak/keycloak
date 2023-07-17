@@ -18,9 +18,7 @@
 package org.keycloak.models.map.storage.ldap.store;
 
 import org.jboss.logging.Logger;
-import org.keycloak.common.util.UriUtils;
-import org.keycloak.models.Constants;
-import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.map.storage.ldap.config.LdapMapConfig;
 
@@ -257,11 +255,19 @@ public class LdapMapUtil {
         }
     }
 
-    public static void setLDAPHostnameToKeycloakSession(KeycloakSession session, LdapMapConfig ldapConfig) {
-        String hostname = UriUtils.getHost(ldapConfig.getConnectionUrl());
-        session.setAttribute(Constants.SSL_SERVER_HOST_ATTR, hostname);
-        logger.tracef("Setting LDAP server hostname '%s' as KeycloakSession attribute", hostname);
+    public static boolean shouldUseTruststoreSpi(LdapMapConfig ldapConfig) {
+        boolean useSSL = ldapConfig.getConnectionUrl().toLowerCase().contains("ldaps://");
+        boolean defaultUseTruststore = useSSL || ldapConfig.isStartTls();
+
+        String useTruststoreSpi = ldapConfig.getUseTruststoreSpi();
+        if (useTruststoreSpi == null) {
+            return defaultUseTruststore;
+        }
+
+        if (LDAPConstants.USE_TRUSTSTORE_NEVER.equals(useTruststoreSpi)) {
+            return false;
+        }
+
+        return defaultUseTruststore;
     }
-
-
 }

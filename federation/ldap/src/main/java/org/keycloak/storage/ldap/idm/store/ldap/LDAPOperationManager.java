@@ -23,7 +23,6 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.ModelException;
 import org.keycloak.storage.ldap.LDAPConfig;
-import org.keycloak.storage.ldap.LDAPUtils;
 import org.keycloak.storage.ldap.idm.model.LDAPDn;
 import org.keycloak.storage.ldap.idm.query.internal.LDAPQuery;
 import org.keycloak.storage.ldap.idm.store.ldap.extended.PasswordModifyRequest;
@@ -104,13 +103,13 @@ public class LDAPOperationManager {
      */
     public void modifyAttributes(String dn,  NamingEnumeration<Attribute> attributes) {
         try {
-            List<ModificationItem> modItems = new ArrayList<ModificationItem>();
+            List<ModificationItem> modItems = new ArrayList<>();
             while (attributes.hasMore()) {
                 ModificationItem modItem = new ModificationItem(DirContext.REPLACE_ATTRIBUTE, attributes.next());
                 modItems.add(modItem);
             }
 
-            modifyAttributes(dn, modItems.toArray(new ModificationItem[] {}), null);
+            modifyAttributes(dn, modItems.toArray(ModificationItem[]::new), null);
         } catch (NamingException ne) {
             throw new ModelException("Could not modify attributes on entry from DN [" + dn + "]", ne);
         }
@@ -247,7 +246,7 @@ public class LDAPOperationManager {
 
 
     public List<SearchResult> search(final String baseDN, final String filter, Collection<String> returningAttributes, int searchScope) throws NamingException {
-        final List<SearchResult> result = new ArrayList<SearchResult>();
+        final List<SearchResult> result = new ArrayList<>();
         final SearchControls cons = getSearchControls(returningAttributes, searchScope);
 
         try {
@@ -286,7 +285,7 @@ public class LDAPOperationManager {
     }
 
     public List<SearchResult> searchPaginated(final String baseDN, final String filter, final LDAPQuery identityQuery) throws NamingException {
-        final List<SearchResult> result = new ArrayList<SearchResult>();
+        final List<SearchResult> result = new ArrayList<>();
         final SearchControls cons = getSearchControls(identityQuery.getReturningLdapAttributes(), identityQuery.getSearchScope());
 
         // Very 1st page. Pagination context is not yet present
@@ -497,8 +496,6 @@ public class LDAPOperationManager {
         StartTlsResponse tlsResponse = null;
 
         try {
-            LDAPUtils.setLDAPHostnameToKeycloakSession(session, config);
-
             Hashtable<Object, Object> env = LDAPContextManager.getNonAuthConnectionProperties(config);
 
             // Never use connection pool to prevent password caching
@@ -513,8 +510,7 @@ public class LDAPOperationManager {
             authCtx = new InitialLdapContext(env, null);
             if (config.isStartTls()) {
                 SSLSocketFactory sslSocketFactory = null;
-                String useTruststoreSpi = config.getUseTruststoreSpi();
-                if (useTruststoreSpi != null && useTruststoreSpi.equals(LDAPConstants.USE_TRUSTSTORE_ALWAYS)) {
+                if (LDAPUtil.shouldUseTruststoreSpi(config)) {
                     TruststoreProvider provider = session.getProvider(TruststoreProvider.class);
                     sslSocketFactory = provider.getSSLSocketFactory();
                 }

@@ -2,371 +2,308 @@ name: Keycloak CI
 
 on:
   push:
-    branches-ignore: [main]
-  # as the ci.yml contains actions that are required for PRs to be merged, it will always need to run on all PRs
-  pull_request: {}
+    branches-ignore:
+      - main
+      - dependabot/**
+  pull_request:
   schedule:
-    - cron: '0 20,22,0,2,4 * * *'
+    - cron: 0 20,23,2,5 * * *
   workflow_dispatch:
 
 env:
-  DEFAULT_JDK_VERSION: 11
+  DEFAULT_JDK_VERSION: 17
+  DEFAULT_JDK_DIST: temurin
+  SUREFIRE_RERUN_FAILING_COUNT: 2
 
 concurrency:
-  # Only run once for latest commit per ref and cancel other (previous) runs.
-  group: ${{ github.workflow }}-${{ github.ref }}
+  # Only cancel jobs for PR updates
+  group: ci-${{ github.head_ref || github.run_id }}
   cancel-in-progress: true
 
+defaults:
+  run:
+    shell: bash
+
 jobs:
-  build:
-    name: Build
-    if: ${{ ( github.event_name != 'schedule' ) || ( github.event_name == 'schedule' && github.repository == 'keycloak/keycloak' ) }}
+
+  conditional:
+    name: Check conditional workflows and jobs
+    if: github.event_name != 'schedule' || github.repository == 'keycloak/keycloak'
     runs-on: ubuntu-latest
+    outputs:
+      ci: ${{ steps.conditional.outputs.ci }}
+      sssd: ${{ steps.conditional.outputs.sssd }}
     steps:
       - uses: actions/checkout@v3
-      - uses: actions/setup-java@v3
-        with:
-          distribution: 'temurin'
-          java-version: ${{ env.DEFAULT_JDK_VERSION }}
-          cache: 'maven'
-      - name: Update maven settings
-        run: mkdir -p ~/.m2 ; cp .github/settings.xml ~/.m2/
+
+      - id: conditional
+        uses: ./.github/actions/conditional
+
+  build:
+    name: Build
+    if: needs.conditional.outputs.ci == 'true'
+    runs-on: ubuntu-latest
+    needs: conditional
+    steps:
+      - uses: actions/checkout@v3
 
       - name: Build Keycloak
-        run: |
-           ./mvnw clean install -nsu -B -e -DskipTests -Pdistribution
-           ./mvnw clean install -nsu -B -e -f testsuite/integration-arquillian/servers/auth-server -Pauth-server-quarkus
-           ./mvnw clean install -nsu -B -e -f testsuite/integration-arquillian/servers/auth-server -Pauth-server-undertow
-
-      - name: Store Keycloak artifacts
-        id: store-keycloak
-        uses: actions/upload-artifact@v3
-        with:
-          name: keycloak-artifacts.zip
-          retention-days: 1
-          path: |
-            ~/.m2/repository/org/keycloak
-            !~/.m2/repository/org/keycloak/**/*.tar.gz
-
-      - name: Remove keycloak artifacts before caching
-        if: steps.cache.outputs.cache-hit != 'true'
-        run: rm -rf ~/.m2/repository/org/keycloak
-
-# Tests: Regular distribution
+        uses: ./.github/actions/build-keycloak
 
   unit-tests:
-    name: Unit Tests
+    name: Base UT
     runs-on: ubuntu-latest
     needs: build
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v3
-      - uses: actions/setup-java@v3
-        with:
-          distribution: 'temurin'
-          java-version: ${{ env.DEFAULT_JDK_VERSION }}
-          cache: 'maven'
-      - name: Update maven settings
-        run: mkdir -p ~/.m2 ; cp .github/settings.xml ~/.m2/
-      - name: Cleanup org.keycloak artifacts
-        run: rm -rf ~/.m2/repository/org/keycloak >/dev/null || true
-      - name: Download built keycloak
-        id: download-keycloak
-        uses: actions/download-artifact@v3
-        with:
-          path: ~/.m2/repository/org/keycloak/
-          name: keycloak-artifacts.zip
+
+      - id: unit-test-setup
+        name: Unit test setup
+        uses: ./.github/actions/unit-test-setup
+
       - name: Run unit tests
         run: |
-          if ! ./mvnw install -nsu -B -DskipTestsuite -DskipQuarkus -DskipExamples -f pom.xml; then
-            find . -path '*/target/surefire-reports/*.xml' | zip -q reports-unit-tests.zip -@
-            exit 1
-          fi
+          SEP=""
+          PROJECTS=""
+          for i in `find -name '*Test.java' -type f | egrep -v './(testsuite|quarkus|docs)/' | sed 's|/src/test/java/.*||' | sort | uniq | sed 's|./||'`; do
+            PROJECTS="$PROJECTS$SEP$i"
+            SEP=","
+          done
 
-      - name: Analyze Test and/or Coverage Results
-        uses: runforesight/foresight-test-kit-action@v1.3.0
-        if: always() && github.repository == 'keycloak/keycloak'
-        with:
-          api_key: ${{ secrets.FORESIGHT_API_KEY }}
-          test_format: JUNIT
-          test_framework: JUNIT
-          test_path: '**/target/surefire-reports/*.xml'
+          ./mvnw test -nsu -B -pl "$PROJECTS" -am
 
-      - name: Unit test reports
-        uses: actions/upload-artifact@v3
-        if: failure()
-        with:
-          name: reports-unit-tests
-          retention-days: 14
-          path: reports-unit-tests.zip
-          if-no-files-found: ignore
+      - name: Upload JVM Heapdumps
+        if: always()
+        uses: ./.github/actions/upload-heapdumps
 
-  crypto-tests:
-    name: Crypto Tests
-    runs-on: ubuntu-latest
+  base-integration-tests:
+    name: Base IT
     needs: build
-    timeout-minutes: 20
+    runs-on: ubuntu-latest
+    timeout-minutes: 100
+    strategy:
+      matrix:
+        group: [1, 2, 3, 4, 5, 6]
+      fail-fast: false
     steps:
       - uses: actions/checkout@v3
-      - uses: actions/setup-java@v3
-        with:
-          distribution: 'temurin'
-          java-version: ${{ env.DEFAULT_JDK_VERSION }}
-          cache: 'maven'
-      - name: Update maven settings
-        run: mkdir -p ~/.m2 ; cp .github/settings.xml ~/.m2/
-      - name: Cleanup org.keycloak artifacts
-        run: rm -rf ~/.m2/repository/org/keycloak >/dev/null || true
-      - name: Download built keycloak
-        id: download-keycloak
-        uses: actions/download-artifact@v3
-        with:
-          path: ~/.m2/repository/org/keycloak/
-          name: keycloak-artifacts.zip
-      - name: Run crypto tests (BCFIPS non-approved mode)
+
+      - id: integration-test-setup
+        name: Integration test setup
+        uses: ./.github/actions/integration-test-setup
+
+      - name: Run base tests
         run: |
-          if ! ./mvnw install -nsu -B -f crypto/pom.xml -Dcom.redhat.fips=true; then
-            find . -path 'crypto/target/surefire-reports/*.xml' | zip -q reports-crypto-tests.zip -@
-            exit 1
-          fi
+          TESTS=`testsuite/integration-arquillian/tests/base/testsuites/base-suite.sh ${{ matrix.group }}`
+          echo "Tests: $TESTS"
+          ./mvnw test -Dsurefire.rerunFailingTestsCount=${{ env.SUREFIRE_RERUN_FAILING_COUNT }} -nsu -B -Pauth-server-quarkus "-Dwebdriver.chrome.driver=$CHROMEWEBDRIVER/chromedriver" -Dtest=$TESTS -pl testsuite/integration-arquillian/tests/base | misc/log/trimmer.sh
 
-      - name: Run crypto tests (BCFIPS approved mode)
-        run: |
-          if ! ./mvnw install -nsu -B -f crypto/pom.xml -Dcom.redhat.fips=true -Dorg.bouncycastle.fips.approved_only=true; then
-            find . -path 'crypto/target/surefire-reports/*.xml' | zip -q reports-crypto-tests.zip -@
-            exit 1
-          fi          
+      - name: Upload JVM Heapdumps
+        if: always()
+        uses: ./.github/actions/upload-heapdumps
 
-      - name: Crypto test reports
-        uses: actions/upload-artifact@v3
-        if: failure()
+      - uses: ./.github/actions/upload-flaky-tests
+        name: Upload flaky tests
+        env:
+          GH_TOKEN: ${{ github.token }}
         with:
-          name: reports-crypto-tests
-          retention-days: 14
-          path: reports-crypto-tests.zip
-          if-no-files-found: ignore
+          job-name: Base IT
 
-  model-tests:
-    name: Model Tests
-    runs-on: ubuntu-latest
+  quarkus-integration-tests:
+    name: Quarkus IT
     needs: build
-    timeout-minutes: 60
+    runs-on: ubuntu-latest
+    timeout-minutes: 115
+    strategy:
+      matrix:
+        server: [zip, container, storage]
+      fail-fast: false
+    env:
+      MAVEN_OPTS: -Xmx1024m
     steps:
       - uses: actions/checkout@v3
-      - uses: actions/setup-java@v3
-        with:
-          distribution: 'temurin'
-          java-version: ${{ env.DEFAULT_JDK_VERSION }}
-          cache: 'maven'
-      - name: Update maven settings
-        run: mkdir -p ~/.m2 ; cp .github/settings.xml ~/.m2/
-      - name: Cleanup org.keycloak artifacts
-        run: rm -rf ~/.m2/repository/org/keycloak >/dev/null || true
-      - name: Download built keycloak
-        id: download-keycloak
-        uses: actions/download-artifact@v3
-        with:
-          path: ~/.m2/repository/org/keycloak/
-          name: keycloak-artifacts.zip
-      - name: Run model tests
+
+      - id: unit-test-setup
+        name: Unit test setup
+        uses: ./.github/actions/unit-test-setup
+
+      # Not sure why, but needs to re-build otherwise there's some failures starting up
+      - name: Run Quarkus integration Tests
         run: |
-          if ! testsuite/model/test-all-profiles.sh; then
-            find . -path '*/target/surefire-reports*/*.xml' | zip -q reports-model-tests.zip -@
-            exit 1
-          fi
+          declare -A PARAMS
+          PARAMS["zip"]=""
+          PARAMS["container"]="-Dkc.quarkus.tests.dist=docker"
+          PARAMS["storage"]="-Ptest-database -Dtest=PostgreSQLDistTest,MariaDBDistTest#testSuccessful,MySQLDistTest#testSuccessful,DatabaseOptionsDistTest,JPAStoreDistTest,HotRodStoreDistTest,MixedStoreDistTest,TransactionConfigurationDistTest"
 
-      - name: Analyze Test and/or Coverage Results
-        uses: runforesight/foresight-test-kit-action@v1.3.0
-        if: always() && github.repository == 'keycloak/keycloak'
-        with:
-          api_key: ${{ secrets.FORESIGHT_API_KEY }}
-          test_format: JUNIT
-          test_framework: JUNIT
-          test_path: 'testsuite/model/target/surefire-reports/*.xml'
+          ./mvnw install -nsu -B -pl quarkus/tests/integration -am -DskipTests
+          ./mvnw test -nsu -B -pl quarkus/tests/integration ${PARAMS["${{ matrix.server }}"]} | misc/log/trimmer.sh
 
-      - name: Model test reports
-        uses: actions/upload-artifact@v3
-        if: failure()
-        with:
-          name: reports-model-tests
-          retention-days: 14
-          path: reports-model-tests.zip
-          if-no-files-found: ignore
+      - name: Upload JVM Heapdumps
+        if: always()
+        uses: ./.github/actions/upload-heapdumps
 
-  test:
-    name: Base testsuite
+  jdk-integration-tests:
+    name: Java Distribution IT
     needs: build
     runs-on: ubuntu-latest
+    timeout-minutes: 100
+    strategy:
+      matrix:
+        dist: [temurin]
+        version: [19]
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v3
+
+      - id: integration-test-setup
+        name: Integration test setup
+        uses: ./.github/actions/integration-test-setup
+        with:
+          jdk-dist: ${{ matrix.dist }}
+          jdk-version: ${{ matrix.version }}
+
+      - name: Prepare Quarkus distribution with current JDK
+        run: ./mvnw install -nsu -B -e -pl testsuite/integration-arquillian/servers/auth-server/quarkus
+
+      - name: Run base tests
+        run: |
+          TESTS=`testsuite/integration-arquillian/tests/base/testsuites/suite.sh jdk`
+          echo "Tests: $TESTS"
+          ./mvnw test -Dsurefire.rerunFailingTestsCount=${{ env.SUREFIRE_RERUN_FAILING_COUNT }} -nsu -B -Pauth-server-quarkus -Dtest=$TESTS -pl testsuite/integration-arquillian/tests/base | misc/log/trimmer.sh
+
+      - name: Build with JDK
+        run:
+          ./mvnw install -nsu -B -e -DskipTests -DskipExamples
+
+      - name: Upload JVM Heapdumps
+        if: always()
+        uses: ./.github/actions/upload-heapdumps
+
+      - uses: ./.github/actions/upload-flaky-tests
+        name: Upload flaky tests
+        env:
+          GH_TOKEN: ${{ github.token }}
+        with:
+          job-name: Java Distribution IT
+
+  databases-new-store:
+    name: Databases New Store
+    runs-on: ubuntu-latest
+    steps:
+      - id: matrix-db
+        # language=bash
+        run: |
+          # For PRs, run only PostgreSQL, on branches and nightly runs run all databases
+          if [ "${{ github.event_name }}" == "pull_request" ]; then
+            echo 'db=["chm", "hot-rod", "jpa-postgres"]' >> $GITHUB_OUTPUT
+          else
+            echo 'db=["chm", "hot-rod", "jpa-postgres", "jpa-cockroach"]' >> $GITHUB_OUTPUT
+          fi
+    outputs:
+      db: ${{ steps.matrix-db.outputs.db }}
+
+  new-store-integration-tests:
+    name: New Store IT
+    needs: [build, databases-new-store]
+    runs-on: ubuntu-latest
+    # Currently, the run of CockroachDB (only branches and nightly runs) is the longest with 50-60 minutes
     timeout-minutes: 90
     strategy:
       matrix:
-        server: ['quarkus', 'quarkus-map', 'quarkus-map-hot-rod', 'quarkus-map-jpa']
-        tests: ['group1','group2','group3']
+        db: ${{ fromJson(needs.databases-new-store.outputs.db) }}
       fail-fast: false
     steps:
       - uses: actions/checkout@v3
-        with:
-          fetch-depth: 2
 
-      - name: Check whether HEAD^ contains HotRod storage relevant changes
-        run: echo "GIT_HOTROD_RELEVANT_DIFF=$( git diff --name-only HEAD^ | egrep -ic -e '^model/map-hot-rod|^model/map/|^model/build-processor' )" >> $GITHUB_ENV
+      - id: integration-test-setup
+        name: Integration test setup
+        uses: ./.github/actions/integration-test-setup
 
-      - name: Check whether HotRod storage matrix should be executed
-        if: ${{ endsWith(matrix.server, '-map-hot-rod') && env.GIT_HOTROD_RELEVANT_DIFF == 0 }}
-        run: echo "SHOULD_BE_EXECUTED=false" >> $GITHUB_ENV
-
-      - name: Check whether HEAD^ contains JPA map storage relevant changes
-        run: echo "GIT_MAP_JPA_RELEVANT_DIFF=$( git diff --name-only HEAD^ | egrep -ic -e '^model/map-jpa/|^model/map/|^model/build-processor' )" >> $GITHUB_ENV
-
-      - name: Check whether Map-JPA storage matrix should be executed
-        if: ${{ endsWith(matrix.server, '-map-jpa') && env.GIT_MAP_JPA_RELEVANT_DIFF == 0 }}
-        run: echo "SHOULD_BE_EXECUTED=false" >> $GITHUB_ENV
-
-      - name: Cache Maven packages
-        if: ${{ github.event_name != 'pull_request' || env.SHOULD_BE_EXECUTED != 'false' }}
-        uses: actions/cache@v3
-        with:
-          path: ~/.m2/repository
-          key: cache-2-${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
-          restore-keys: cache-1-${{ runner.os }}-m2
-
-      - name: Download built keycloak
-        if: ${{ github.event_name != 'pull_request' || env.SHOULD_BE_EXECUTED != 'false' }}
-        id: download-keycloak
-        uses: actions/download-artifact@v3
-        with:
-          path: ~/.m2/repository/org/keycloak/
-          name: keycloak-artifacts.zip
-
-      # - name: List M2 repo
-      #   run: |
-      #     find ~ -name *dist*.zip
-      #     ls -lR ~/.m2/repository
-
-      - uses: actions/setup-java@v3
-        if: ${{ github.event_name != 'pull_request' || env.SHOULD_BE_EXECUTED != 'false' }}
-        with:
-          distribution: 'temurin'
-          java-version: ${{ env.DEFAULT_JDK_VERSION }}
-      - name: Update maven settings
-        if: ${{ github.event_name != 'pull_request' || env.SHOULD_BE_EXECUTED != 'false' }}
-        run: mkdir -p ~/.m2 ; cp .github/settings.xml ~/.m2/
-      - name: Prepare test providers
-        if: ${{ matrix.server == 'quarkus' || matrix.server == 'quarkus-map' }}
-        run: ./mvnw clean install -nsu -B -e -f testsuite/integration-arquillian/servers/auth-server/services/testsuite-providers -Pauth-server-quarkus
       - name: Run base tests
-        if: ${{ github.event_name != 'pull_request' || env.SHOULD_BE_EXECUTED != 'false' }}
         run: |
-          declare -A PARAMS TESTGROUP
-          PARAMS["quarkus"]="-Pauth-server-quarkus"
-          PARAMS["quarkus-map"]="-Pauth-server-quarkus -Pmap-storage -Dpageload.timeout=90000"
-          PARAMS["quarkus-map-hot-rod"]="-Pauth-server-quarkus -Pmap-storage,map-storage-hot-rod -Dpageload.timeout=90000"
-          PARAMS["quarkus-map-jpa"]="-Pauth-server-quarkus -Pmap-storage,map-storage-jpa -Dpageload.timeout=90000"
-          TESTGROUP["group1"]="-Dtest=!**.crossdc.**,!**.cluster.**,%regex[org.keycloak.testsuite.(a[abc]|ad[a-l]|[^a-q]).*]"   # Tests alphabetically before admin tests and those after "r"
-          TESTGROUP["group2"]="-Dtest=!**.crossdc.**,!**.cluster.**,%regex[org.keycloak.testsuite.(ad[^a-l]|a[^a-d]|b).*]"      # Admin tests and those starting with "b"
-          TESTGROUP["group3"]="-Dtest=!**.crossdc.**,!**.cluster.**,%regex[org.keycloak.testsuite.([c-q]).*]"                   # All the rest
+          declare -A PARAMS
+          PARAMS["chm"]="-Pmap-storage-chm -Dpageload.timeout=90000"
+          PARAMS["hot-rod"]="-Pmap-storage-hot-rod -Dpageload.timeout=90000"
+          PARAMS["jpa-postgres"]="-Pmap-storage-jpa-postgres -Dpageload.timeout=90000"
+          PARAMS["jpa-cockroach"]="-Pmap-storage-jpa-cockroach -Dpageload.timeout=90000"
 
-          ./mvnw clean install -nsu -B ${PARAMS["${{ matrix.server }}"]} ${TESTGROUP["${{ matrix.tests }}"]} -f testsuite/integration-arquillian/tests/base/pom.xml | misc/log/trimmer.sh
+          TESTS=`testsuite/integration-arquillian/tests/base/testsuites/suite.sh database`
+          echo "Tests: $TESTS"
+          ./mvnw test -Dsurefire.rerunFailingTestsCount=${{ env.SUREFIRE_RERUN_FAILING_COUNT }} -nsu -B -Pauth-server-quarkus ${PARAMS["${{ matrix.db }}"]} -Dtest=$TESTS -pl testsuite/integration-arquillian/tests/base | misc/log/trimmer.sh
 
-          TEST_RESULT=${PIPESTATUS[0]}
-          find . -path '*/target/surefire-reports/*.xml' | zip -q reports-${{ matrix.server }}-base-tests-${{ matrix.tests }}.zip -@
-          exit $TEST_RESULT
+      - name: Upload JVM Heapdumps
+        if: always()
+        uses: ./.github/actions/upload-heapdumps
 
-      - name: Analyze Test and/or Coverage Results
-        uses: runforesight/foresight-test-kit-action@v1.3.0
-        if: always() && github.repository == 'keycloak/keycloak'
+      - uses: ./.github/actions/upload-flaky-tests
+        name: Upload flaky tests
+        env:
+          GH_TOKEN: ${{ github.token }}
         with:
-          api_key: ${{ secrets.FORESIGHT_API_KEY }}
-          test_format: JUNIT
-          test_framework: JUNIT
-          test_path: 'testsuite/integration-arquillian/tests/base/target/surefire-reports/*.xml'
+          job-name: New Store IT
 
-      - name: Base test reports
-        uses: actions/upload-artifact@v3
-        if: failure()
-        with:
-          name: reports-${{ matrix.server }}-base-tests-${{ matrix.tests }}
-          retention-days: 14
-          path: reports-${{ matrix.server }}-base-tests-${{ matrix.tests }}.zip
-          if-no-files-found: ignore
-
-  test-fips:
-    name: Base testsuite (fips)
+  legacy-store-integration-tests:
+    name: Legacy Store IT
     needs: build
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 60
     strategy:
       matrix:
-        server: ['bcfips-nonapproved-pkcs12']
-        tests: ['group1']
+        db: [postgres, mysql, oracle, mssql, mariadb]
       fail-fast: false
     steps:
       - uses: actions/checkout@v3
-        with:
-          fetch-depth: 2
 
-      - name: Cache Maven packages
-        uses: actions/cache@v3
-        with:
-          path: ~/.m2/repository
-          key: cache-2-${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
-          restore-keys: cache-1-${{ runner.os }}-m2
+      - id: integration-test-setup
+        name: Integration test setup
+        uses: ./.github/actions/integration-test-setup
 
-      - name: Download built keycloak
-        id: download-keycloak
-        uses: actions/download-artifact@v3
-        with:
-          path: ~/.m2/repository/org/keycloak/
-          name: keycloak-artifacts.zip
-
-      # - name: List M2 repo
-      #   run: |
-      #     find ~ -name *dist*.zip
-      #     ls -lR ~/.m2/repository
-
-      - uses: actions/setup-java@v3
-        with:
-          distribution: 'temurin'
-          java-version: ${{ env.DEFAULT_JDK_VERSION }}
-      - name: Update maven settings
-        run: mkdir -p ~/.m2 ; cp .github/settings.xml ~/.m2/
-      - name: Prepare quarkus distribution with BCFIPS
-        run: ./mvnw clean install -nsu -B -e -f testsuite/integration-arquillian/servers/auth-server/quarkus -Pauth-server-quarkus,auth-server-fips140-2
       - name: Run base tests
         run: |
-          declare -A PARAMS TESTGROUP
-          PARAMS["bcfips-nonapproved-pkcs12"]="-Pauth-server-quarkus,auth-server-fips140-2"
-          # Tests in the package "forms" and some keystore related tests
-          TESTGROUP["group1"]="-Dtest=org.keycloak.testsuite.forms.**,ClientAuthSignedJWTTest,CredentialsTest,JavaKeystoreKeyProviderTest,ServerInfoTest,UserFederationLdapConnectionTest,LDAPUserLoginTest"
-          
-          ./mvnw clean install -nsu -B ${PARAMS["${{ matrix.server }}"]} ${TESTGROUP["${{ matrix.tests }}"]} -f testsuite/integration-arquillian/tests/base/pom.xml | misc/log/trimmer.sh
-          
-          TEST_RESULT=${PIPESTATUS[0]}
-          find . -path '*/target/surefire-reports/*.xml' | zip -q reports-${{ matrix.server }}-base-tests-${{ matrix.tests }}.zip -@
-          exit $TEST_RESULT
+          TESTS=`testsuite/integration-arquillian/tests/base/testsuites/suite.sh database`
+          echo "Tests: $TESTS"
+          ./mvnw test -Dsurefire.rerunFailingTestsCount=${{ env.SUREFIRE_RERUN_FAILING_COUNT }} -nsu -B -Pauth-server-quarkus -Pdb-${{ matrix.db }} -Dtest=$TESTS -pl testsuite/integration-arquillian/tests/base | misc/log/trimmer.sh
 
-      - name: Analyze Test and/or Coverage Results
-        uses: runforesight/foresight-test-kit-action@v1.3.0
-        if: always() && github.repository == 'keycloak/keycloak'
+      - name: Upload JVM Heapdumps
+        if: always()
+        uses: ./.github/actions/upload-heapdumps
+
+      - uses: ./.github/actions/upload-flaky-tests
+        name: Upload flaky tests
+        env:
+          GH_TOKEN: ${{ github.token }}
         with:
-          api_key: ${{ secrets.FORESIGHT_API_KEY }}
-          test_format: JUNIT
-          test_framework: JUNIT
-          test_path: 'testsuite/integration-arquillian/tests/base/target/surefire-reports/*.xml'
+          job-name: Legacy Store IT
 
-      - name: Base test reports
-        uses: actions/upload-artifact@v3
-        if: failure()
+  store-model-tests:
+    name: Store Model Tests
+    runs-on: ubuntu-latest
+    needs: build
+    timeout-minutes: 75
+    steps:
+      - uses: actions/checkout@v3
+
+      - id: integration-test-setup
+        name: Integration test setup
+        uses: ./.github/actions/integration-test-setup
+
+      - name: Run model tests
+        run: testsuite/model/test-all-profiles.sh -Dsurefire.rerunFailingTestsCount=${{ env.SUREFIRE_RERUN_FAILING_COUNT }}
+
+      - name: Upload JVM Heapdumps
+        if: always()
+        uses: ./.github/actions/upload-heapdumps
+
+      - uses: ./.github/actions/upload-flaky-tests
+        name: Upload flaky tests
+        env:
+          GH_TOKEN: ${{ github.token }}
         with:
-          name: reports-${{ matrix.server }}-base-tests-${{ matrix.tests }}
-          retention-days: 14
-          path: reports-${{ matrix.server }}-base-tests-${{ matrix.tests }}.zip
-          if-no-files-found: ignore
+          job-name: Store Model Tests
 
-### Tests: Quarkus distribution
-
-  quarkus-test-cluster:
-    name: Quarkus Test Clustering
+  clustering-integration-tests:
+    name: Legacy Clustering IT
     needs: build
     runs-on: ubuntu-latest
     timeout-minutes: 35
@@ -375,181 +312,302 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - uses: actions/setup-java@v3
-        with:
-          distribution: 'temurin'
-          java-version: ${{ env.DEFAULT_JDK_VERSION }}
-          cache: 'maven'
+      - id: integration-test-setup
+        name: Integration test setup
+        uses: ./.github/actions/integration-test-setup
 
-      - name: Cleanup org.keycloak artifacts
-        run: rm -rf ~/.m2/repository/org/keycloak >/dev/null || true
-
-      - name: Download built keycloak
-        id: download-keycloak
-        uses: actions/download-artifact@v3
-        with:
-          path: ~/.m2/repository/org/keycloak/
-          name: keycloak-artifacts.zip
-      - uses: actions/setup-java@v3
-        with:
-          distribution: 'temurin'
-          java-version: ${{ env.DEFAULT_JDK_VERSION }}
-      - name: Update maven settings
-        run: mkdir -p ~/.m2 ; cp .github/settings.xml ~/.m2/
-      - name: Run Quarkus cluster tests
+      - name: Run cluster tests
         run: |
-          echo '::group::Compiling testsuite'
-          ./mvnw clean install -nsu -B -Pauth-server-quarkus -DskipTests -f testsuite/pom.xml
-          echo '::endgroup::'
-          ./mvnw clean install -nsu -B -Pauth-server-cluster-quarkus -Dsession.cache.owners=2 -Dtest=**.cluster.** -f testsuite/integration-arquillian/pom.xml  | misc/log/trimmer.sh
-          TEST_RESULT=${PIPESTATUS[0]}
-          find . -path '*/target/surefire-reports/*.xml' | zip -q reports-quarkus-cluster-tests.zip -@
-          exit $TEST_RESULT
+          ./mvnw test -Dsurefire.rerunFailingTestsCount=${{ env.SUREFIRE_RERUN_FAILING_COUNT }} -nsu -B -Pauth-server-cluster-quarkus -Dsession.cache.owners=2 -Dtest=**.cluster.** -pl testsuite/integration-arquillian/tests/base  | misc/log/trimmer.sh
 
-      - name: Analyze Test and/or Coverage Results
-        uses: runforesight/foresight-test-kit-action@v1.3.0
-        if: always() && github.repository == 'keycloak/keycloak'
+      - name: Upload JVM Heapdumps
+        if: always()
+        uses: ./.github/actions/upload-heapdumps
+
+      - uses: ./.github/actions/upload-flaky-tests
+        name: Upload flaky tests
+        env:
+          GH_TOKEN: ${{ github.token }}
         with:
-          api_key: ${{ secrets.FORESIGHT_API_KEY }}
-          test_format: JUNIT
-          test_framework: JUNIT
-          test_path: 'testsuite/integration-arquillian/tests/base/target/surefire-reports/*.xml'
+          job-name: Legacy Clustering IT
 
-      - name: Quarkus cluster test reports
-        uses: actions/upload-artifact@v3
-        if: failure()
-        with:
-          name: reports-quarkus-cluster-tests
-          retention-days: 14
-          path: reports-quarkus-cluster-tests.zip
-          if-no-files-found: ignore
-
-  ### Tests: Quarkus distribution
-
-  quarkus-tests:
-    name: Quarkus Tests
-    needs: build
+  fips-unit-tests:
+    name: FIPS UT
     runs-on: ubuntu-latest
-    timeout-minutes: 115
-    env:
-      MAVEN_OPTS: -Xmx1024m
+    needs: build
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v3
-      - uses: actions/setup-java@v3
-        with:
-          distribution: 'temurin'
-          java-version: ${{ env.DEFAULT_JDK_VERSION }}
-          cache: 'maven'
-      - name: Cleanup org.keycloak artifacts
-        run: rm -rf ~/.m2/repository/org/keycloak >/dev/null || true
 
-      - name: Download built keycloak
-        id: download-keycloak
-        uses: actions/download-artifact@v3
-        with:
-          path: ~/.m2/repository/org/keycloak/
-          name: keycloak-artifacts.zip
-      - name: Update maven settings
-        run: mkdir -p ~/.m2 ; cp .github/settings.xml ~/.m2/
-
-      - name: Prepare the local distribution archives
-        run: ./mvnw clean install -DskipTests -Pdistribution
-
-      - name: Run Quarkus Integration Tests
+      - name: Fake fips
         run: |
-          ./mvnw clean install -nsu -B -f quarkus/tests/pom.xml | misc/log/trimmer.sh
-          TEST_RESULT=${PIPESTATUS[0]}
-          find . -path '*/target/surefire-reports/*.xml' | zip -q reports-quarkus-tests.zip -@
-          exit $TEST_RESULT
+          cd .github/fake_fips
+          make
+          sudo insmod fake_fips.ko
 
-      - name: Run Quarkus Storage Tests
-        run: |
-          ./mvnw clean install -nsu -B -f quarkus/tests/pom.xml -Ptest-database -Dtest=PostgreSQLDistTest,MariaDBDistTest#testSuccessful,MySQLDistTest#testSuccessful,DatabaseOptionsDistTest,JPAStoreDistTest,HotRodStoreDistTest,MixedStoreDistTest | misc/log/trimmer.sh
-          TEST_RESULT=${PIPESTATUS[0]}
-          find . -path '*/target/surefire-reports/*.xml' | zip -q reports-quarkus-tests.zip -@
-          exit $TEST_RESULT
-
-      - name: Run Quarkus Tests in Docker
-        run: |
-          ./mvnw clean install -nsu -B -f quarkus/tests/pom.xml -Dkc.quarkus.tests.dist=docker | misc/log/trimmer.sh
-          TEST_RESULT=${PIPESTATUS[0]}
-          exit $TEST_RESULT
-
-      - name: Analyze Test and/or Coverage Results
-        uses: runforesight/foresight-test-kit-action@v1.3.0
-        if: always() && github.repository == 'keycloak/keycloak'
+      - id: unit-test-setup
+        name: Unit test setup
+        uses: ./.github/actions/unit-test-setup
         with:
-          api_key: ${{ secrets.FORESIGHT_API_KEY }}
-          test_format: JUNIT
-          test_framework: JUNIT
-          test_path: 'quarkus/tests/integration/target/surefire-reports/*.xml'
+          jdk-version: 17
 
-      - name: Quarkus test reports
-        uses: actions/upload-artifact@v3
-        if: failure()
+      - name: Run crypto tests
+        run: docker run --rm --workdir /github/workspace -v "${{ github.workspace }}":"/github/workspace" -v "$HOME/.m2":"/root/.m2" registry.access.redhat.com/ubi8/ubi:latest .github/scripts/run-fips-ut.sh
+
+      - name: Upload JVM Heapdumps
+        if: always()
+        uses: ./.github/actions/upload-heapdumps
+
+  fips-integration-tests:
+    name: FIPS IT
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      matrix:
+        mode: [non-strict, strict]
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Fake fips
+        run: |
+          cd .github/fake_fips
+          make
+          sudo insmod fake_fips.ko
+
+      - id: integration-test-setup
+        name: Integration test setup
+        uses: ./.github/actions/integration-test-setup
         with:
-          name: reports-quarkus-tests
-          retention-days: 14
-          path: reports-quarkus-tests.zip
-          if-no-files-found: ignore
+          jdk-version: 17
 
-# NOTE: WebAuthn tests can be enabled once the issue #12621 is resolved
-#
-#  webauthn-test:
-#    name: WebAuthn Tests
-#    needs: build
-#    runs-on: ubuntu-latest
-#    steps:
-#      - uses: actions/checkout@v2
-#        with:
-#          fetch-depth: 2
-#
-#      - name: Check whether this phase should run
-#        run: echo "GIT_DIFF=$[ $( git diff --name-only HEAD^ | egrep -ic 'webauthn|passwordless' ) ]" >> $GITHUB_ENV
-#
-#      - uses: actions/setup-java@v1
-#        if: ${{ github.event_name != 'pull_request' || env.GIT_DIFF != 0 }}
-#        with:
-#          java-version: ${{ env.DEFAULT_JDK_VERSION }}
-#
-#      - name: Update maven settings
-#        if: ${{ github.event_name != 'pull_request' || env.GIT_DIFF != 0 }}
-#        run: mkdir -p ~/.m2 ; cp .github/settings.xml ~/.m2/
-#
-#      - name: Cache Maven packages
-#        if: ${{ github.event_name != 'pull_request' || env.GIT_DIFF != 0 }}
-#        uses: actions/cache@v2
-#        with:
-#          path: ~/.m2/repository
-#          key: cache-1-${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
-#          restore-keys: cache-1-${{ runner.os }}-m2
-#
-#      - name: Cleanup org.keycloak artifacts
-#        if: ${{ github.event_name != 'pull_request' || env.GIT_DIFF != 0 }}
-#        run: rm -rf ~/.m2/repository/org/keycloak >/dev/null || true
-#
-#      - name: Download built keycloak
-#        if: ${{ github.event_name != 'pull_request' || env.GIT_DIFF != 0 }}
-#        id: download-keycloak
-#        uses: actions/download-artifact@v2
-#        with:
-#          path: ~/.m2/repository/org/keycloak/
-#          name: keycloak-artifacts.zip
-#
-#      - name: Run WebAuthn tests
-#        if: ${{ github.event_name != 'pull_request' || env.GIT_DIFF != 0 }}
-#        run: |
-#          mvn clean install -nsu -B -Dbrowser=chrome -Pwebauthn -f testsuite/integration-arquillian/tests/other/pom.xml -Dtest=org.keycloak.testsuite.webauthn.**.*Test | misc/log/trimmer.sh
-#
-#          TEST_RESULT=${PIPESTATUS[0]}
-#          find . -path '*/target/surefire-reports/*.xml' | zip -q reports-webauthn-tests.zip -@
-#          exit $TEST_RESULT
-#
-#      - name: WebAuthn test reports
-#        uses: actions/upload-artifact@v2
-#        if: failure()
-#        with:
-#          name: reports-webauthn-tests
-#          retention-days: 14
-#          path: reports-webauthn-tests.zip
-#          if-no-files-found: ignore
+      - name: Prepare Quarkus distribution with BCFIPS
+        run: ./mvnw install -nsu -B -e -pl testsuite/integration-arquillian/servers/auth-server/quarkus -Pauth-server-quarkus,auth-server-fips140-2
+
+      - name: Run base tests
+        run: docker run --rm --workdir /github/workspace -e "SUREFIRE_RERUN_FAILING_COUNT" -v "${{ github.workspace }}":"/github/workspace" -v "$HOME/.m2":"/root/.m2" registry.access.redhat.com/ubi8/ubi:latest .github/scripts/run-fips-it.sh ${{ matrix.mode }}
+
+      - name: Upload JVM Heapdumps
+        if: always()
+        uses: ./.github/actions/upload-heapdumps
+
+      - uses: ./.github/actions/upload-flaky-tests
+        name: Upload flaky tests
+        env:
+          GH_TOKEN: ${{ github.token }}
+        with:
+          job-name: FIPS IT
+
+  account-console-integration-tests:
+    name: Account Console IT
+    runs-on: ubuntu-latest
+    needs: build
+    timeout-minutes: 75
+    strategy:
+      matrix:
+        browser: [chrome, firefox]
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v3
+
+      - id: integration-test-setup
+        name: Integration test setup
+        uses: ./.github/actions/integration-test-setup
+
+      - name: Run Account Console IT
+        run: ./mvnw test -Dsurefire.rerunFailingTestsCount=${{ env.SUREFIRE_RERUN_FAILING_COUNT }} -nsu -B -Pauth-server-quarkus -Dtest=**.account2.**,!SigningInTest#passwordlessWebAuthnTest,!SigningInTest#twoFactorWebAuthnTest -Dbrowser=${{ matrix.browser }} "-Dwebdriver.chrome.driver=$CHROMEWEBDRIVER/chromedriver" "-Dwebdriver.gecko.driver=$GECKOWEBDRIVER/geckodriver" -f testsuite/integration-arquillian/tests/other/base-ui/pom.xml | misc/log/trimmer.sh
+
+      - name: Upload JVM Heapdumps
+        if: always()
+        uses: ./.github/actions/upload-heapdumps
+
+      - uses: ./.github/actions/upload-flaky-tests
+        name: Upload flaky tests
+        env:
+          GH_TOKEN: ${{ github.token }}
+        with:
+          job-name: Account Console IT
+
+  forms-integration-tests:
+    name: Forms IT
+    runs-on: ubuntu-latest
+    needs: build
+    timeout-minutes: 75
+    strategy:
+      matrix:
+        browser: [chrome, firefox]
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v3
+
+      - id: integration-test-setup
+        name: Integration test setup
+        uses: ./.github/actions/integration-test-setup
+
+      - name: Run Forms IT
+        run: |
+          TESTS=`testsuite/integration-arquillian/tests/base/testsuites/suite.sh forms`
+          echo "Tests: $TESTS"
+          ./mvnw test -Dsurefire.rerunFailingTestsCount=${{ env.SUREFIRE_RERUN_FAILING_COUNT }} -nsu -B -Pauth-server-quarkus -Dtest=$TESTS -Dbrowser=${{ matrix.browser }} "-Dwebdriver.chrome.driver=$CHROMEWEBDRIVER/chromedriver" "-Dwebdriver.gecko.driver=$GECKOWEBDRIVER/geckodriver" -f testsuite/integration-arquillian/tests/base/pom.xml | misc/log/trimmer.sh
+
+      - name: Upload JVM Heapdumps
+        if: always()
+        uses: ./.github/actions/upload-heapdumps
+
+      - uses: ./.github/actions/upload-flaky-tests
+        name: Upload flaky tests
+        env:
+          GH_TOKEN: ${{ github.token }}
+        with:
+          job-name: Forms IT
+
+  webauthn-integration-tests:
+    name: WebAuthn IT
+    runs-on: ubuntu-latest
+    needs: build
+    timeout-minutes: 45
+    strategy:
+      matrix:
+        browser: [chrome, firefox]
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v3
+
+      - id: integration-test-setup
+        name: Integration test setup
+        uses: ./.github/actions/integration-test-setup
+
+      - name: Run WebAuthn IT
+        run: ./mvnw test -Dsurefire.rerunFailingTestsCount=${{ env.SUREFIRE_RERUN_FAILING_COUNT }} -nsu -B -Pauth-server-quarkus -Dtest=org.keycloak.testsuite.webauthn.**.*Test -Dbrowser=${{ matrix.browser }} "-Dwebdriver.chrome.driver=$CHROMEWEBDRIVER/chromedriver" "-Dwebdriver.gecko.driver=$GECKOWEBDRIVER/geckodriver" -Pwebauthn -f testsuite/integration-arquillian/tests/other/pom.xml | misc/log/trimmer.sh
+
+      - name: Upload JVM Heapdumps
+        if: always()
+        uses: ./.github/actions/upload-heapdumps
+
+      - uses: ./.github/actions/upload-flaky-tests
+        name: Upload flaky tests
+        env:
+          GH_TOKEN: ${{ github.token }}
+        with:
+          job-name: WebAuthn IT
+
+  sssd-unit-tests:
+    name: SSSD
+    runs-on: ubuntu-latest
+    needs:
+      - conditional
+      - build
+    timeout-minutes: 30
+    steps:
+      - name: checkout
+        if: ${{ needs.conditional.outputs.sssd == 'true' }}
+        uses: actions/checkout@v3
+
+      - id: integration-test-setup
+        if: ${{ needs.conditional.outputs.sssd == 'true' }}
+        name: Integration test setup
+        uses: ./.github/actions/integration-test-setup
+
+      - id: weekly-cache-key
+        if: ${{ needs.conditional.outputs.sssd == 'true' }}
+        name: Key for weekly rotation of cache
+        shell: bash
+        run: echo "key=ipa-data-`date -u "+%Y-%U"`" >> $GITHUB_OUTPUT
+
+      - id: cache-maven-repository
+        if: ${{ needs.conditional.outputs.sssd == 'true' }}
+        name: ipa-data cache
+        uses: actions/cache@v3
+        with:
+          path: ~/ipa-data.tar
+          key: ${{ steps.weekly-cache-key.outputs.key }}
+
+      - name: Run tests
+        if: ${{ needs.conditional.outputs.sssd == 'true' }}
+        run: .github/scripts/run-ipa.sh "${{ github.workspace }}"
+
+  migration-tests:
+    name: Migration Tests
+    runs-on: ubuntu-latest
+    needs: build
+    timeout-minutes: 45
+    strategy:
+      matrix:
+        old-version: [19.0.3]
+        database: [postgres, mysql, oracle, mssql, mariadb]
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v3
+
+      - id: integration-test-setup
+        name: Integration test setup
+        uses: ./.github/actions/integration-test-setup
+
+      - name: Run Migration Tests
+        run: |
+          ./mvnw clean install -Dsurefire.rerunFailingTestsCount=${{ env.SUREFIRE_RERUN_FAILING_COUNT }} -B \
+          -Pauth-server-quarkus -Pdb-${{ matrix.database }} -Pauth-server-migration \
+          -Dtest=MigrationTest \
+          -Dmigration.mode=auto \
+          -Dmigrated.auth.server.version=${{ matrix.old-version }} \
+          -Dmigration.import.file.name=migration-realm-${{ matrix.old-version }}.json \
+          -Dauth.server.ssl.required=false \
+          -Dauth.server.db.host=localhost \
+          -f testsuite/integration-arquillian/pom.xml | misc/log/trimmer.sh
+
+      - name: Upload JVM Heapdumps
+        if: always()
+        uses: ./.github/actions/upload-heapdumps
+
+      - uses: ./.github/actions/upload-flaky-tests
+        name: Upload flaky tests
+        env:
+          GH_TOKEN: ${{ github.token }}
+        with:
+          job-name: Migration Tests
+
+  check-set-status:
+    name: Set check conclusion
+    needs:
+      - unit-tests
+      - base-integration-tests
+      - quarkus-integration-tests
+      - jdk-integration-tests
+      - new-store-integration-tests
+      - legacy-store-integration-tests
+      - store-model-tests
+      - clustering-integration-tests
+      - fips-unit-tests
+      - fips-integration-tests
+      - account-console-integration-tests
+      - forms-integration-tests
+      - webauthn-integration-tests
+      - sssd-unit-tests
+      - migration-tests
+    runs-on: ubuntu-latest
+    outputs:
+      conclusion: ${{ steps.check.outputs.conclusion }}
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - id: check
+        uses: ./.github/actions/checks-success
+
+  check:
+    name: Status Check - Keycloak CI
+    if: always() && ( github.event_name != 'schedule' || github.repository == 'keycloak/keycloak' )
+    needs:
+      - conditional
+      - check-set-status
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Check status
+        uses: ./.github/actions/checks-job-pass
+        with:
+          required: ${{ needs.conditional.outputs.ci }}
+          conclusion: ${{ needs.check-set-status.outputs.conclusion }}

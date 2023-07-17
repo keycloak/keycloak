@@ -370,7 +370,7 @@ public class UserModelTest extends AbstractTestRealmKeycloakTest {
 
             UserModel user1 = currentSession.users().getUserByUsername(realm, "user1");
 
-            List<UserModel> users = currentSession.users().searchForUserStream(realm, "user", 0, 7)
+            List<UserModel> users = currentSession.users().searchForUserStream(realm, Map.of(UserModel.SEARCH, "user"), 0, 7)
                     .collect(Collectors.toList());
             Assert.assertThat(users, hasSize(1));
             Assert.assertThat(users, contains(user1));
@@ -451,7 +451,7 @@ public class UserModelTest extends AbstractTestRealmKeycloakTest {
 
             // Search
             Assert.assertThat(currentSession.users().getServiceAccount(client), nullValue());
-            List<UserModel> users = currentSession.users().searchForUserStream(realm, "John Doe")
+            List<UserModel> users = currentSession.users().searchForUserStream(realm, Map.of(UserModel.SEARCH, "John Doe", UserModel.INCLUDE_SERVICE_ACCOUNT, "true"))
                     .collect(Collectors.toList());
             Assert.assertThat(users, hasSize(2));
             Assert.assertThat(users, containsInAnyOrder(user1, user2));
@@ -471,7 +471,7 @@ public class UserModelTest extends AbstractTestRealmKeycloakTest {
             ClientModel client = realm.getClientByClientId("foo");
             UserModel searched = currentSession.users().getServiceAccount(client);
             Assert.assertThat(searched, equalTo(user1));
-            List<UserModel> users = currentSession.users().searchForUserStream(realm, "John Doe")
+            List<UserModel> users = currentSession.users().searchForUserStream(realm, Map.of(UserModel.SEARCH, "John Doe", UserModel.INCLUDE_SERVICE_ACCOUNT, "false"))
                     .collect(Collectors.toList());
             Assert.assertThat(users, hasSize(1));
             Assert.assertThat(users, contains(user2));

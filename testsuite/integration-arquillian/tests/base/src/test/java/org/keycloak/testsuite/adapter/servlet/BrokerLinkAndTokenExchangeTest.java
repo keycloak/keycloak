@@ -52,7 +52,6 @@ import org.keycloak.representations.idm.authorization.ClientPolicyRepresentation
 import org.keycloak.representations.idm.authorization.DecisionStrategy;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionManagement;
 import org.keycloak.services.resources.admin.permissions.AdminPermissions;
-import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.adapter.AbstractServletsAdapterTest;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
 import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
@@ -60,7 +59,6 @@ import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.arquillian.annotation.UncaughtServerErrorExpected;
 import org.keycloak.testsuite.broker.BrokerTestTools;
 import org.keycloak.testsuite.page.AbstractPageWithInjectedUrl;
-import org.keycloak.testsuite.pages.AccountUpdateProfilePage;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginUpdateProfilePage;
@@ -70,13 +68,13 @@ import org.keycloak.testsuite.util.WaitUtils;
 import org.keycloak.testsuite.utils.arquillian.ContainerConstants;
 import org.keycloak.util.BasicAuthHelper;
 
-import javax.ws.rs.client.Client;
-import javax.ws.rs.client.Entity;
-import javax.ws.rs.client.WebTarget;
-import javax.ws.rs.core.Form;
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriBuilder;
+import jakarta.ws.rs.client.Client;
+import jakarta.ws.rs.client.Entity;
+import jakarta.ws.rs.client.WebTarget;
+import jakarta.ws.rs.core.Form;
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.UriBuilder;
 import java.io.File;
 import java.net.URL;
 import java.util.LinkedList;
@@ -112,9 +110,6 @@ public class BrokerLinkAndTokenExchangeTest extends AbstractServletsAdapterTest 
 
     @Page
     protected LoginUpdateProfilePage loginUpdateProfilePage;
-
-    @Page
-    protected AccountUpdateProfilePage profilePage;
 
     @Page
     private LoginPage loginPage;
@@ -227,7 +222,7 @@ public class BrokerLinkAndTokenExchangeTest extends AbstractServletsAdapterTest 
         user.setUsername(PARENT3_USERNAME);
         user.setFirstName("first name");
         user.setLastName("last name");
-        user.setEmail("email");
+        user.setEmail("email@keycloak.org");
         user.setEnabled(true);
         createUserAndResetPasswordWithAdminClient(realm, user, "password");        
     }
@@ -749,7 +744,7 @@ public class BrokerLinkAndTokenExchangeTest extends AbstractServletsAdapterTest 
             Assert.assertEquals(PARENT3_USERNAME, token.getPreferredUsername());
             Assert.assertEquals("first name", token.getGivenName());
             Assert.assertEquals("last name", token.getFamilyName());
-            Assert.assertEquals("email", token.getEmail());
+            Assert.assertEquals("email@keycloak.org", token.getEmail());
 
             // cleanup remove the user
             childRealm.users().get(token.getSubject()).remove();

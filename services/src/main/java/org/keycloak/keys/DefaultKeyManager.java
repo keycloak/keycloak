@@ -153,7 +153,7 @@ public class DefaultKeyManager implements KeyManager {
     @Deprecated
     public ActiveRsaKey getActiveRsaKey(RealmModel realm) {
         KeyWrapper key = getActiveKey(realm, KeyUse.SIG, Algorithm.RS256);
-        return new ActiveRsaKey(key.getKid(), (PrivateKey) key.getPrivateKey(), (PublicKey) key.getPublicKey(), key.getCertificate());
+        return new ActiveRsaKey(key);
     }
 
     @Override

@@ -1,8 +1,6 @@
 package org.keycloak.theme;
 
 import org.keycloak.Config;
-import org.keycloak.common.Profile;
-import org.keycloak.common.Version;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 

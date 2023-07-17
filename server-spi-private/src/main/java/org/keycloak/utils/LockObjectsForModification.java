@@ -17,6 +17,7 @@
 
 package org.keycloak.utils;
 
+import org.keycloak.common.Profile;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
@@ -71,6 +72,11 @@ public class LockObjectsForModification {
     }
 
     private static <V> V lockObjectsForModification(KeycloakSession session, Class<?> model, CallableWithoutThrowingAnException<V> callable) {
+        // Only map storage supports locking objects for modification, skip the logic if it is not enabled.
+        if (!Profile.isFeatureEnabled(Profile.Feature.MAP_STORAGE)) {
+            return callable.call();
+        }
+
         if (LockObjectsForModification.isEnabled(session, model)) {
             // If someone nests the call, and it would already be locked, don't try to lock it a second time.
             // Otherwise, the inner unlocking might also unlock the outer lock.

@@ -32,7 +32,7 @@ public class MapRealmProviderFactory extends AbstractMapProviderFactory<MapRealm
 
     @Override
     public MapRealmProvider createNew(KeycloakSession session) {
-        return new MapRealmProvider(session, getStorage(session));
+        return new MapRealmProvider(session, getMapStorage(session));
     }
 
     @Override

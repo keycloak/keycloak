@@ -25,7 +25,7 @@ import org.keycloak.models.DeploymentStateSpi;
 import org.keycloak.models.SingleUseObjectSpi;
 import org.keycloak.models.UserLoginFailureSpi;
 import org.keycloak.models.UserSessionSpi;
-import org.keycloak.models.dblock.NoLockingDBLockProviderFactory;
+import org.keycloak.models.locking.GlobalLockProviderSpi;
 import org.keycloak.models.map.authSession.MapRootAuthenticationSessionProviderFactory;
 import org.keycloak.models.map.authorization.MapAuthorizationStoreFactory;
 import org.keycloak.models.map.client.MapClientProviderFactory;
@@ -40,6 +40,7 @@ import org.keycloak.models.map.role.MapRoleProviderFactory;
 import org.keycloak.models.map.singleUseObject.MapSingleUseObjectProviderFactory;
 import org.keycloak.models.map.storage.MapStorageSpi;
 import org.keycloak.models.map.storage.chm.ConcurrentHashMapStorageProviderFactory;
+import org.keycloak.models.map.lock.MapGlobalLockProviderFactory;
 import org.keycloak.models.map.storage.jpa.JpaMapStorageProviderFactory;
 import org.keycloak.models.map.storage.jpa.liquibase.connection.MapLiquibaseConnectionProviderFactory;
 import org.keycloak.models.map.storage.jpa.liquibase.connection.MapLiquibaseConnectionSpi;
@@ -53,6 +54,9 @@ import org.keycloak.sessions.AuthenticationSessionSpi;
 import org.keycloak.testsuite.model.Config;
 import org.keycloak.testsuite.model.KeycloakModelParameters;
 import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.utility.DockerImageName;
+
+import static org.keycloak.testsuite.model.transaction.StorageTransactionTest.LOCK_TIMEOUT_SYSTEM_PROPERTY;
 
 public class JpaMapStorage extends KeycloakModelParameters {
 
@@ -60,7 +64,7 @@ public class JpaMapStorage extends KeycloakModelParameters {
 
     private static final Boolean START_CONTAINER = Boolean.valueOf(System.getProperty("postgres.start-container", "true"));
     private static final String POSTGRES_DOCKER_IMAGE_NAME = System.getProperty("keycloak.map.storage.postgres.docker.image", "postgres:alpine");
-    private static final PostgreSQLContainer POSTGRES_CONTAINER = new PostgreSQLContainer(POSTGRES_DOCKER_IMAGE_NAME);
+    private static final PostgreSQLContainer POSTGRES_CONTAINER = new PostgreSQLContainer(DockerImageName.parse(POSTGRES_DOCKER_IMAGE_NAME).asCompatibleSubstituteFor("postgres"));
     private static final String POSTGRES_DB_DEFAULT_NAME = System.getProperty("keycloak.map.storage.connectionsJpa.databaseName", "keycloak");
     private static final String POSTGRES_DB_USER = System.getProperty("keycloak.map.storage.connectionsJpa.user", "keycloak");
     private static final String POSTGRES_DB_PASSWORD = System.getProperty("keycloak.map.storage.connectionsJpa.password", "pass");
@@ -77,6 +81,7 @@ public class JpaMapStorage extends KeycloakModelParameters {
             .add(JpaMapStorageProviderFactory.class)
             .add(MapJpaUpdaterProviderFactory.class)
             .add(MapLiquibaseConnectionProviderFactory.class)
+            .add(MapGlobalLockProviderFactory.class)
             .build();
 
     public JpaMapStorage() {
@@ -95,7 +100,7 @@ public class JpaMapStorage extends KeycloakModelParameters {
                 .config("user", POSTGRES_DB_USER)
                 .config("password", POSTGRES_DB_PASSWORD)
                 .config("driver", "org.postgresql.Driver")
-                .config("driverDialect", "org.keycloak.models.map.storage.jpa.hibernate.dialect.JsonbPostgreSQL95Dialect");
+                .config("lockTimeout", "${" + LOCK_TIMEOUT_SYSTEM_PROPERTY + ":}");
 
         cf.spi(AuthenticationSessionSpi.PROVIDER_ID).provider(MapRootAuthenticationSessionProviderFactory.PROVIDER_ID)  .config(STORAGE_CONFIG, JpaMapStorageProviderFactory.PROVIDER_ID)
           .spi("client").provider(MapClientProviderFactory.PROVIDER_ID)                                                 .config(STORAGE_CONFIG, JpaMapStorageProviderFactory.PROVIDER_ID)
@@ -107,12 +112,13 @@ public class JpaMapStorage extends KeycloakModelParameters {
           .spi(StoreFactorySpi.NAME).provider(MapAuthorizationStoreFactory.PROVIDER_ID)                                 .config(STORAGE_CONFIG, JpaMapStorageProviderFactory.PROVIDER_ID)
           .spi("user").provider(MapUserProviderFactory.PROVIDER_ID)                                                     .config(STORAGE_CONFIG, JpaMapStorageProviderFactory.PROVIDER_ID)
           .spi(UserLoginFailureSpi.NAME).provider(MapUserLoginFailureProviderFactory.PROVIDER_ID)                       .config(STORAGE_CONFIG, JpaMapStorageProviderFactory.PROVIDER_ID)
-          .spi("dblock").provider(NoLockingDBLockProviderFactory.PROVIDER_ID)                                           .config(STORAGE_CONFIG, ConcurrentHashMapStorageProviderFactory.PROVIDER_ID)
           .spi(SingleUseObjectSpi.NAME).provider(MapSingleUseObjectProviderFactory.PROVIDER_ID)                         .config(STORAGE_CONFIG, JpaMapStorageProviderFactory.PROVIDER_ID)
           .spi("publicKeyStorage").provider(MapPublicKeyStorageProviderFactory.PROVIDER_ID)                             .config(STORAGE_CONFIG, ConcurrentHashMapStorageProviderFactory.PROVIDER_ID)
           .spi(UserSessionSpi.NAME).provider(MapUserSessionProviderFactory.PROVIDER_ID)                                 .config(STORAGE_CONFIG, JpaMapStorageProviderFactory.PROVIDER_ID)
           .spi(EventStoreSpi.NAME).provider(MapEventStoreProviderFactory.PROVIDER_ID)                                   .config("storage-admin-events.provider", JpaMapStorageProviderFactory.PROVIDER_ID)
-                                                                                                                        .config("storage-auth-events.provider", JpaMapStorageProviderFactory.PROVIDER_ID);
+                                                                                                                        .config("storage-auth-events.provider", JpaMapStorageProviderFactory.PROVIDER_ID)
+          .spi(GlobalLockProviderSpi.GLOBAL_LOCK)                                                                       .config("provider", MapGlobalLockProviderFactory.PROVIDER_ID)
+          .spi(GlobalLockProviderSpi.GLOBAL_LOCK).provider(MapGlobalLockProviderFactory.PROVIDER_ID)                    .config(STORAGE_CONFIG, JpaMapStorageProviderFactory.PROVIDER_ID);
     }
 
     @Override

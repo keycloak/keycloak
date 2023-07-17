@@ -30,17 +30,17 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import javax.persistence.EntityManager;
-import javax.persistence.LockModeType;
-import javax.persistence.TypedQuery;
-import javax.persistence.criteria.CriteriaBuilder;
-import javax.persistence.criteria.CriteriaDelete;
-import javax.persistence.criteria.CriteriaQuery;
-import javax.persistence.criteria.Join;
-import javax.persistence.criteria.Predicate;
-import javax.persistence.criteria.Root;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.LockModeType;
+import jakarta.persistence.TypedQuery;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaDelete;
+import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.Join;
+import jakarta.persistence.criteria.Predicate;
+import jakarta.persistence.criteria.Root;
 
-import org.apache.commons.lang.BooleanUtils;
+import org.hibernate.Session;
 import org.jboss.logging.Logger;
 import org.keycloak.common.util.Time;
 import org.keycloak.connections.jpa.util.JpaUtils;
@@ -166,7 +166,6 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
         if (realm == null) {
             return false;
         }
-        em.refresh(realm);
         final RealmAdapter adapter = new RealmAdapter(session, em, realm);
         session.users().preRemove(adapter);
 
@@ -379,7 +378,7 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
             throw new ModelException("Role not found or trying to remove role from incorrect realm");
         }
         String compositeRoleTable = JpaUtils.getTableNameForNativeQuery("COMPOSITE_ROLE", em);
-        em.createNativeQuery("delete from " + compositeRoleTable + " where CHILD_ROLE = :role").setParameter("role", roleEntity).executeUpdate();
+        em.createNativeQuery("delete from " + compositeRoleTable + " where CHILD_ROLE = :role").setParameter("role", roleEntity.getId()).executeUpdate();
         em.createNamedQuery("deleteClientScopeRoleMappingByRole").setParameter("role", roleEntity).executeUpdate();
 
         em.flush();
@@ -441,10 +440,12 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
         if (toParent != null && group.getId().equals(toParent.getId())) {
             return;
         }
+
+        GroupModel previousParent = group.getParent();
+
         if (group.getParentId() != null) {
             group.getParent().removeChild(group);
         }
-        GroupModel previousParent = group.getParent();
         group.setParent(toParent);
         if (toParent != null) toParent.addChild(group);
         else session.groups().addTopLevelGroup(realm, group);
@@ -786,6 +787,9 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
 
         predicates.add(builder.equal(root.get("realmId"), realm.getId()));
 
+        //noinspection resource
+        String dbProductName = em.unwrap(Session.class).doReturningWork(connection -> connection.getMetaData().getDatabaseProductName());
+
         for (Map.Entry<String, String> entry : filteredAttributes.entrySet()) {
             String key = entry.getKey();
             String value = entry.getValue();
@@ -793,7 +797,19 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
             Join<ClientEntity, ClientAttributeEntity> attributeJoin = root.join("attributes");
 
             Predicate attrNamePredicate = builder.equal(attributeJoin.get("name"), key);
-            Predicate attrValuePredicate = builder.equal(attributeJoin.get("value"), value);
+
+            Predicate attrValuePredicate;
+            if (dbProductName.equals("Oracle")) {
+                // SELECT * FROM client_attributes WHERE ... DBMS_LOB.COMPARE(value, '0') = 0 ...;
+                // Oracle is not able to compare a CLOB with a VARCHAR unless it being converted with TO_CHAR
+                // But for this all values in the table need to be smaller than 4K, otherwise the cast will fail with
+                // "ORA-22835: Buffer too small for CLOB to CHAR" (even if it is in another row).
+                // This leaves DBMS_LOB.COMPARE as the option to compare the CLOB with the value.
+                attrValuePredicate = builder.equal(builder.function("DBMS_LOB.COMPARE", Integer.class, attributeJoin.get("value"), builder.literal(value)), 0);
+            } else {
+                attrValuePredicate = builder.equal(attributeJoin.get("value"), value);
+            }
+
             predicates.add(builder.and(attrNamePredicate, attrValuePredicate));
         }
 
@@ -1041,7 +1057,7 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
 
     private RealmLocalizationTextsEntity getRealmLocalizationTextsEntity(String locale, String realmId) {
         RealmLocalizationTextsEntity.RealmLocalizationTextEntityKey key = new RealmLocalizationTextsEntity.RealmLocalizationTextEntityKey();
-        key.setRealmId(realmId);
+        key.setRealm(em.getReference(RealmEntity.class, realmId));
         key.setLocale(locale);
         return em.find(RealmLocalizationTextsEntity.class, key);
     }
@@ -1064,7 +1080,7 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
         RealmLocalizationTextsEntity entity = getRealmLocalizationTextsEntity(locale, realm.getId());
         if(entity == null) {
             entity = new RealmLocalizationTextsEntity();
-            entity.setRealmId(realm.getId());
+            entity.setRealm(em.getReference(RealmEntity.class, realm.getId()));
             entity.setLocale(locale);
             entity.setTexts(new HashMap<>());
         }
@@ -1077,7 +1093,7 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
         RealmLocalizationTextsEntity entity = new RealmLocalizationTextsEntity();
         entity.setTexts(localizationTexts);
         entity.setLocale(locale);
-        entity.setRealmId(realm.getId());
+        entity.setRealm(em.getReference(RealmEntity.class, realm.getId()));
         em.merge(entity);
     }
 

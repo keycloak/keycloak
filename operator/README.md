@@ -19,6 +19,12 @@ Build the Docker image with:
 mvn clean package -Doperator -Dquarkus.container-image.build=true
 ```
 
+This will build a container image from `src/main/docker/Dockerfile.jvm`, using `docker` by default. `podman` is also supported if you do these steps beforehand:
+
+- Follow [this guide](https://quarkus.io/guides/podman#setting-docker_host-on-linux) to enable the podman user socket
+- Set the `DOCKER_HOST` environment variable to point at this user socket. For example: `DOCKER_HOST=unix:///run/user/1000/podman/podman.sock`.
+- You may also have to set `QUARKUS_DOCKER_EXECUTABLE_NAME=podman`
+
 ## Configuration
 
 The Keycloak image can be configured, when starting the operator, using the Java property:
@@ -88,9 +94,9 @@ To run tests on Mac with `minikube` and the `docker` driver you should run `mini
 -Dtest.operator.kubernetes.ip=localhost
 ```
 
-On Linux or on Mac using `minikube` on a VM, instead you should pass this additional property:
+On Linux or on Mac using `minikube` on a VM, instead you should enable ingress:
 ```bash
--Dtest.operator.kubernetes.ip=$(minikube ip)
+minikube addons enable ingress
 ```
 
 To avoid skipping tests that are depending on custom Keycloak images, you need to build those first:

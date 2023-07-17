@@ -1,0 +1,27 @@
+<#import "/templates/guide.adoc" as tmpl>
+
+<@tmpl.guide
+title="Docker"
+summary="Get started with Keycloak on Docker">
+
+:containerCommand: docker
+
+:links-local: true
+:links-admin-console: http://localhost:8080/admin[Keycloak Admin Console]
+:links-account-console: http://localhost:8080/realms/myrealm/account[Keycloak Account Console]
+
+== Before you start
+
+Make sure you have Docker installed.
+
+include::templates/start-keycloak-container.adoc[]
+
+include::templates/realm-config.adoc[]
+
+include::templates/login-to-account.adoc[]
+
+include::templates/first-app.adoc[]
+
+include::templates/next.adoc[]
+
+</@tmpl.guide>

@@ -21,7 +21,7 @@ package org.keycloak.testsuite.oauth;
 import java.io.Closeable;
 import java.util.Collections;
 
-import javax.ws.rs.NotFoundException;
+import jakarta.ws.rs.NotFoundException;
 
 import org.hamcrest.MatcherAssert;
 import org.jboss.arquillian.graphene.page.Page;
@@ -44,7 +44,6 @@ import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.auth.page.account.AccountManagement;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.InfoPage;
@@ -88,9 +87,6 @@ public class LegacyLogoutTest extends AbstractTestRealmKeycloakTest {
 
     @Page
     protected InfoPage infoPage;
-
-    @Page
-    protected AccountManagement accountManagementPage;
 
     @Page
     private ErrorPage errorPage;

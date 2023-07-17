@@ -34,10 +34,6 @@ public class HotRodProtocolMapperEntity extends AbstractHotRodEntity {
     public String protocol;
     @ProtoField(number = 4)
     public String protocolMapper;
-//    @ProtoField(number = 5, defaultValue = "false")
-//    public boolean consentRequired;
-//    @ProtoField(number = 5)
-//    public String consentText;
     @ProtoField(number = 5)
     public Set<HotRodPair<String, String>> config;
 

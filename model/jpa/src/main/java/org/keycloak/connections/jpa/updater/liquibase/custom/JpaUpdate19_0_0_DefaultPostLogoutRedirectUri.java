@@ -17,11 +17,7 @@
 package org.keycloak.connections.jpa.updater.liquibase.custom;
 
 import liquibase.exception.CustomChangeException;
-import liquibase.statement.core.InsertStatement;
-import liquibase.structure.core.Table;
-
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
+import liquibase.statement.core.RawSqlStatement;
 
 public class JpaUpdate19_0_0_DefaultPostLogoutRedirectUri extends CustomKeycloakTask {
 
@@ -29,20 +25,13 @@ public class JpaUpdate19_0_0_DefaultPostLogoutRedirectUri extends CustomKeycloak
 
     @Override
     protected void generateStatementsImpl() throws CustomChangeException {
-        String sql = "SELECT DISTINCT CLIENT_ID FROM " + getTableName("REDIRECT_URIS");
-
-        try (PreparedStatement statement = jdbcConnection.prepareStatement(sql); ResultSet rs = statement.executeQuery()) {
-            while (rs.next()) {
-                statements.add(
-                        new InsertStatement(null, null, database.correctObjectName("CLIENT_ATTRIBUTES", Table.class))
-                                .addColumnValue("CLIENT_ID", rs.getString(1))
-                                .addColumnValue("NAME", POST_LOGOUT_REDIRECT_URIS)
-                                .addColumnValue("VALUE", "+")
-                );
-            }
-        } catch (Exception e) {
-            throw new CustomChangeException(getTaskId() + ": Exception when extracting data from previous version", e);
-        }
+        final String clientAttributesTable = getTableName("CLIENT_ATTRIBUTES");
+        final String redirectUrisTable = getTableName("REDIRECT_URIS");
+        statements.add(new RawSqlStatement(
+                "INSERT INTO " + clientAttributesTable + " (CLIENT_ID,NAME,VALUE) " +
+                "SELECT DISTINCT CLIENT_ID, '" + POST_LOGOUT_REDIRECT_URIS + "', '+' FROM " + redirectUrisTable + " WHERE CLIENT_ID NOT IN " +
+                "(SELECT CLIENT_ID FROM " + clientAttributesTable + " WHERE NAME = '" + POST_LOGOUT_REDIRECT_URIS + "')"
+        ));
     }
 
     @Override

@@ -66,7 +66,9 @@ public class LegacyDatastoreProviderFactory implements DatastoreProviderFactory,
 
     @Override
     public void close() {
-        onClose.run();
+        if (onClose != null) {
+            onClose.run();
+        }
     }
 
     @Override
@@ -98,8 +100,7 @@ public class LegacyDatastoreProviderFactory implements DatastoreProviderFactory,
     public static void setupScheduledTasks(final KeycloakSessionFactory sessionFactory) {
         long interval = Config.scope("scheduled").getLong("interval", 900L) * 1000;
 
-        KeycloakSession session = sessionFactory.create();
-        try {
+        try (KeycloakSession session = sessionFactory.create()) {
             TimerProvider timer = session.getProvider(TimerProvider.class);
             if (timer != null) {
                 timer.schedule(new ClusterAwareScheduledTaskRunner(sessionFactory, new ClearExpiredEvents(), interval), interval, "ClearExpiredEvents");
@@ -108,8 +109,6 @@ public class LegacyDatastoreProviderFactory implements DatastoreProviderFactory,
                 timer.schedule(new ScheduledTaskRunner(sessionFactory, new ClearExpiredUserSessions()), interval, ClearExpiredUserSessions.TASK_NAME);
                 UserStorageSyncManager.bootstrapPeriodic(sessionFactory, timer);
             }
-        } finally {
-            session.close();
         }
     }
 

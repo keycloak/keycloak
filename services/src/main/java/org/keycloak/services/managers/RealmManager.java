@@ -35,6 +35,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionProvider;
 import org.keycloak.models.utils.DefaultAuthenticationFlows;
 import org.keycloak.models.utils.DefaultClientScopes;
+import org.keycloak.models.utils.DefaultKeyProviders;
 import org.keycloak.models.utils.DefaultRequiredActions;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.RepresentationToModel;
@@ -778,4 +779,23 @@ public class RealmManager {
         }
     }
 
+    public void setDefaultsForNewRealm(RealmModel realm) {
+        // setup defaults
+        setupRealmDefaults(realm);
+        KeycloakModelUtils.setupDefaultRole(realm, Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + realm.getName().toLowerCase());
+        setupRealmAdminManagement(realm);
+        setupAccountManagement(realm);
+        setupBrokerService(realm);
+        setupAdminConsole(realm);
+        setupAdminConsoleLocaleMapper(realm);
+        setupAdminCli(realm);
+        setupAuthenticationFlows(realm);
+        setupRequiredActions(realm);
+        setupOfflineTokens(realm, null);
+        createDefaultClientScopes(realm);
+        setupAuthorizationServices(realm);
+        setupClientRegistrations(realm);
+        session.clientPolicy().setupClientPoliciesOnCreatedRealm(realm);
+        DefaultKeyProviders.createProviders(realm);
+    }
 }

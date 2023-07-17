@@ -19,9 +19,9 @@ package org.keycloak.models.map.storage.jpa.role;
 import java.util.Arrays;
 import java.util.Set;
 import java.util.UUID;
-import javax.persistence.criteria.CriteriaBuilder.In;
-import javax.persistence.criteria.Root;
-import javax.persistence.criteria.Subquery;
+import jakarta.persistence.criteria.CriteriaBuilder.In;
+import jakarta.persistence.criteria.Root;
+import jakarta.persistence.criteria.Subquery;
 
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.RoleModel.SearchableFields;
@@ -76,19 +76,8 @@ public class JpaRoleModelCriteriaBuilder extends JpaModelCriteriaBuilder<JpaRole
                 } else {
                     throw new CriterionNotSupportedException(modelField, op);
                 }
-            case NE:
-                if (modelField == SearchableFields.IS_CLIENT_ROLE) {
-                    
-                    validateValue(value, modelField, op, Boolean.class);
-
-                    return new JpaRoleModelCriteriaBuilder((cb, query, root) ->
-                        ((Boolean) value[0]) ? cb.isNull(root.get("clientId")) : cb.isNotNull(root.get("clientId"))
-                    );
-                } else {
-                    throw new CriterionNotSupportedException(modelField, op);
-                }
             case IN:
-                if (modelField ==SearchableFields.ID) {
+                if (modelField == SearchableFields.ID) {
 
                     Set<UUID> uuids = getUuidsForInOperator(value, modelField);
 
@@ -114,6 +103,13 @@ public class JpaRoleModelCriteriaBuilder extends JpaModelCriteriaBuilder<JpaRole
                 } else {
                     throw new CriterionNotSupportedException(modelField, op);
                 }
+            case NOT_EXISTS:
+                if (modelField == SearchableFields.CLIENT_ID) {
+                    return new JpaRoleModelCriteriaBuilder((cb, query, root) -> cb.isNull(root.get("clientId")));
+                } else {
+                    throw new CriterionNotSupportedException(modelField, op);
+                }
+
             default:
                 throw new CriterionNotSupportedException(modelField, op);
         }

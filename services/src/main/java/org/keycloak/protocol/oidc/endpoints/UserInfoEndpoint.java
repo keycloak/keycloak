@@ -17,8 +17,7 @@
 package org.keycloak.protocol.oidc.endpoints;
 
 import org.jboss.resteasy.annotations.cache.NoCache;
-import org.jboss.resteasy.spi.HttpRequest;
-import org.jboss.resteasy.spi.HttpResponse;
+import org.keycloak.http.HttpRequest;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.TokenCategory;
 import org.keycloak.TokenVerifier;
@@ -60,6 +59,7 @@ import org.keycloak.services.clientpolicy.context.UserInfoRequestContext;
 import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.UserSessionCrossDCManager;
+import org.keycloak.services.managers.UserSessionManager;
 import org.keycloak.services.resources.Cors;
 import org.keycloak.services.util.DefaultClientSessionContext;
 import org.keycloak.services.util.MtlsHoKTokenUtil;
@@ -70,14 +70,14 @@ import org.keycloak.util.TokenUtil;
 import org.keycloak.utils.MediaType;
 import org.keycloak.utils.OAuth2Error;
 
-import javax.ws.rs.GET;
-import javax.ws.rs.OPTIONS;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.OPTIONS;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.MultivaluedMap;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -89,17 +89,11 @@ import java.util.Map;
  */
 public class UserInfoEndpoint {
 
-    @Context
-    private HttpRequest request;
+    private final HttpRequest request;
 
-    @Context
-    private HttpResponse response;
+    private final KeycloakSession session;
 
-    @Context
-    private KeycloakSession session;
-
-    @Context
-    private ClientConnection clientConnection;
+    private final ClientConnection clientConnection;
 
     private final org.keycloak.protocol.oidc.TokenManager tokenManager;
     private final AppAuthManager appAuthManager;
@@ -108,11 +102,14 @@ public class UserInfoEndpoint {
     private Cors cors;
     private String authorization;
 
-    public UserInfoEndpoint(org.keycloak.protocol.oidc.TokenManager tokenManager, RealmModel realm) {
-        this.realm = realm;
+    public UserInfoEndpoint(KeycloakSession session, org.keycloak.protocol.oidc.TokenManager tokenManager) {
+        this.session = session;
+        this.clientConnection = session.getContext().getConnection();
+        this.realm = session.getContext().getRealm();
         this.tokenManager = tokenManager;
         this.appAuthManager = new AppAuthManager();
         this.error = new OAuth2Error().json(false).realm(realm);
+        this.request = session.getContext().getHttpRequest();
     }
 
     @Path("/")
@@ -124,9 +121,10 @@ public class UserInfoEndpoint {
     @Path("/")
     @GET
     @NoCache
-    public Response issueUserInfoGet(@Context final HttpHeaders headers) {
+    @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_JWT})
+    public Response issueUserInfoGet() {
         setupCors();
-        String accessToken = this.appAuthManager.extractAuthorizationHeaderTokenOrReturnNull(headers);
+        String accessToken = this.appAuthManager.extractAuthorizationHeaderTokenOrReturnNull(session.getContext().getRequestHeaders());
         authorization(accessToken);
         return issueUserInfo();
     }
@@ -134,6 +132,7 @@ public class UserInfoEndpoint {
     @Path("/")
     @POST
     @NoCache
+    @Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_JWT})
     public Response issueUserInfoPost() {
         setupCors();
 
@@ -143,10 +142,16 @@ public class UserInfoEndpoint {
         authorization(accessToken);
 
         try {
-            MultivaluedMap<String, String> formParams = request.getDecodedFormParameters();
-            checkAccessTokenDuplicated(formParams);
-            accessToken = formParams.getFirst(OAuth2Constants.ACCESS_TOKEN);
-            authorization(accessToken);
+            
+            String contentType = headers.getHeaderString(HttpHeaders.CONTENT_TYPE);
+            jakarta.ws.rs.core.MediaType mediaType = jakarta.ws.rs.core.MediaType.valueOf(contentType);
+            
+            if (jakarta.ws.rs.core.MediaType.APPLICATION_FORM_URLENCODED_TYPE.isCompatible(mediaType)) {
+                MultivaluedMap<String, String> formParams = request.getDecodedFormParameters();
+                checkAccessTokenDuplicated(formParams);
+                accessToken = formParams.getFirst(OAuth2Constants.ACCESS_TOKEN);
+                authorization(accessToken);  
+            }
         } catch (IllegalArgumentException e) {
             // not application/x-www-form-urlencoded, ignore
         }
@@ -254,7 +259,7 @@ public class UserInfoEndpoint {
 
         AccessToken userInfo = new AccessToken();
 
-        tokenManager.transformUserInfoAccessToken(session, userInfo, userSession, clientSessionCtx);
+        userInfo = tokenManager.transformUserInfoAccessToken(session, userInfo, userSession, clientSessionCtx);
         Map<String, Object> claims = tokenManager.generateUserInfoClaims(userInfo, userModel);
 
         Response.ResponseBuilder responseBuilder;
@@ -336,7 +341,7 @@ public class UserInfoEndpoint {
         if (user == null) {
             throw error.invalidToken("User not found");
         }
-        UserSessionModel userSession = session.sessions().createUserSession(KeycloakModelUtils.generateId(), realm, user, user.getUsername(), clientConnection.getRemoteAddr(),
+        UserSessionModel userSession = new UserSessionManager(session).createUserSession(KeycloakModelUtils.generateId(), realm, user, user.getUsername(), clientConnection.getRemoteAddr(),
                 ServiceAccountConstants.CLIENT_AUTH, false, null, null, UserSessionModel.SessionPersistenceState.TRANSIENT);
         // attach an auth session for the client
         RootAuthenticationSessionModel rootAuthSession = session.authenticationSessions().createRootAuthenticationSession(realm);

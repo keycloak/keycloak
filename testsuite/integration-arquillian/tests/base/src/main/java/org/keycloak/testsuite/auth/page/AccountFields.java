@@ -162,6 +162,9 @@ public class AccountFields extends FieldsBase {
         @FindBy(id = "input-error-username")
         private WebElement usernameError;
 
+        @FindBy(id = "input-error-terms-accepted")
+        private WebElement termsError;
+
         public String getFirstNameError() {
             try {
                 return getTextFromElement(firstNameError);
@@ -197,6 +200,14 @@ public class AccountFields extends FieldsBase {
         public String getUsernameError() {
             try {
                 return getTextFromElement(usernameError);
+            } catch (NoSuchElementException e) {
+                return null;
+            }
+        }
+
+        public String getTermsError(){
+            try {
+                return getTextFromElement(termsError);
             } catch (NoSuchElementException e) {
                 return null;
             }

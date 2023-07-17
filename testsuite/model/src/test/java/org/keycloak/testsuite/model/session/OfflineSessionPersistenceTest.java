@@ -43,12 +43,15 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Random;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -56,7 +59,7 @@ import org.hamcrest.Matchers;
 import org.junit.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.equalTo;
 
 /**
  *
@@ -85,7 +88,7 @@ public class OfflineSessionPersistenceTest extends KeycloakModelTest {
     }
 
     private static RealmModel prepareRealm(KeycloakSession s, String name) {
-        RealmModel realm = s.realms().createRealm(name);
+        RealmModel realm = createRealm(s, name);
         realm.setDefaultRole(s.roles().addRealmRole(realm, Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + realm.getName()));
         realm.setSsoSessionMaxLifespan(10 * 60 * 60);
         realm.setSsoSessionIdleTimeout(1 * 60 * 60);
@@ -345,16 +348,25 @@ public class OfflineSessionPersistenceTest extends KeycloakModelTest {
     @RequireProvider(UserSessionPersisterProvider.class)
     @RequireProvider(value = UserSessionProvider.class, only = InfinispanUserSessionProviderFactory.PROVIDER_ID)
     public void testLazyOfflineUserSessionFetching() {
-        List<String> offlineSessionIds = createOfflineSessions(realmId, userIds);
+        Map<String, Set<String>> offlineSessionIdsDetailed = createOfflineSessionsDetailed(realmId, userIds);
+        Collection<String> offlineSessionIds = offlineSessionIdsDetailed.values().stream().flatMap(Set::stream).collect(Collectors.toCollection(TreeSet::new));
         assertOfflineSessionsExist(realmId, offlineSessionIds);
 
         // Simulate server restart
         reinitializeKeycloakSessionFactory();
 
-        List<String> actualOfflineSessionIds = withRealm(realmId, (session, realm) -> session.users().getUsersStream(realm).flatMap(user ->
-                session.sessions().getOfflineUserSessionsStream(realm, user)).map(UserSessionModel::getId).collect(Collectors.toList()));
+        Map<String, Set<String>> actualOfflineSessionIds = withRealm(realmId, (session, realm) -> session.users()
+          .searchForUserStream(realm, Collections.emptyMap())
+          .collect(Collectors.toMap(
+            UserModel::getId,
+            user -> session.sessions().getOfflineUserSessionsStream(realm, user).map(UserSessionModel::getId).collect(Collectors.toCollection(TreeSet::new))
+          ))
+        );
 
-        assertThat(actualOfflineSessionIds, containsInAnyOrder(offlineSessionIds.toArray()));
+        assertThat("User IDs", actualOfflineSessionIds.keySet(), equalTo(offlineSessionIdsDetailed.keySet()));
+        for (Entry<String, Set<String>> me : offlineSessionIdsDetailed.entrySet()) {
+            assertThat("Session IDs", actualOfflineSessionIds.get(me.getKey()), equalTo(me.getValue()));
+        }
     }
 
     private String createOfflineClientSession(String offlineUserSessionId, String clientId) {
@@ -408,6 +420,16 @@ public class OfflineSessionPersistenceTest extends KeycloakModelTest {
         );
     }
 
+    private Map<String, Set<String>> createOfflineSessionsDetailed(String realmId, List<String> userIds) {
+        return withRealm(realmId, (session, realm) ->
+          userIds.stream()
+            .collect(Collectors.toMap(
+              Function.identity(),
+              userId -> createOfflineSessions(session, realm, userId, us -> {}).map(UserSessionModel::getId).collect(Collectors.toCollection(TreeSet::new))
+            ))
+        );
+    }
+
     /**
      * Creates {@link #OFFLINE_SESSION_COUNT_PER_USER} offline sessions for {@code userId} user.
      */
@@ -419,7 +441,7 @@ public class OfflineSessionPersistenceTest extends KeycloakModelTest {
 
     private UserSessionModel createOfflineSession(KeycloakSession session, RealmModel realm, String userId, int sessionIndex) {
         final UserModel user = session.users().getUserById(realm, userId);
-        UserSessionModel us = session.sessions().createUserSession(realm, user, "un" + sessionIndex, "ip1", "auth", false, null, null);
+        UserSessionModel us = session.sessions().createUserSession(null, realm, user, "un" + sessionIndex, "ip1", "auth", false, null, null, UserSessionModel.SessionPersistenceState.PERSISTENT);
         return session.sessions().createOfflineUserSession(us);
     }
 

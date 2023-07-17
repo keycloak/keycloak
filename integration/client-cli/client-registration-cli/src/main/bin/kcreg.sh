@@ -10,6 +10,10 @@ case "`uname`" in
     FreeBSD)
         RESOLVED_NAME=`readlink -f "$0"`
         ;;
+    OpenBSD)
+        RESOLVED_NAME=`readlink -f "$0"`
+        JAVA_HOME=`/usr/local/bin/javaPathHelper -h keycloak`
+        ;;
     Linux)
         RESOLVED_NAME=`readlink -f "$0"`
         ;;
@@ -28,4 +32,4 @@ if [ "x$JAVA" = "x" ]; then
 fi
 
 DIRNAME=`dirname "$RESOLVED_NAME"`
-"$JAVA" $KC_OPTS -cp $DIRNAME/client/keycloak-client-registration-cli-${project.version}.jar org.keycloak.client.registration.cli.KcRegMain "$@"
+"$JAVA" $KC_OPTS -cp $DIRNAME/client/keycloak-client-registration-cli-${project.version}.jar --add-opens=java.base/java.security=ALL-UNNAMED -Dkc.lib.dir=$DIRNAME/client/lib org.keycloak.client.registration.cli.KcRegMain "$@"

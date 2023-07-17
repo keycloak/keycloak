@@ -134,14 +134,11 @@ public class SAML2Signature {
             dto.setSignatureMethod(signatureMethod);
             dto.setReferenceURI(referenceURI);
             dto.setNextSibling(sibling);
-
-            if (x509Certificate != null) {
-                dto.setX509Certificate(x509Certificate);
-            }
+            dto.setX509Certificate(x509Certificate);
 
             return XMLSignatureUtil.sign(dto, canonicalizationMethodType);
         }
-        return XMLSignatureUtil.sign(doc, keyName, keyPair, digestMethod, signatureMethod, referenceURI, canonicalizationMethodType);
+        return XMLSignatureUtil.sign(doc, keyName, keyPair, digestMethod, signatureMethod, referenceURI, x509Certificate, canonicalizationMethodType);
     }
 
     /**

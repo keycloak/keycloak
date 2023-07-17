@@ -68,8 +68,8 @@ import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.userprofile.UserProfileContext;
 import org.keycloak.validate.validators.EmailValidator;
 
-import javax.ws.rs.ClientErrorException;
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.ClientErrorException;
+import jakarta.ws.rs.core.Response;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
@@ -385,6 +385,10 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
             user.setUsername("updatedUsername");
             user = updateAndGet(user);
             assertEquals("test-user@localhost", user.getUsername());
+
+            user.setEmail("new@localhost");
+            user = updateAndGet(user);
+            assertEquals("new@localhost", user.getUsername());
 
             realmRep.setRegistrationEmailAsUsername(false);
             adminClient.realm("test").update(realmRep);

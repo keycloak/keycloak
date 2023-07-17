@@ -61,19 +61,23 @@ public final class UserProfileMetadata implements Cloneable {
     }
 
     public AttributeMetadata addAttribute(String name, int guiOrder, Predicate<AttributeContext> writeAllowed, Predicate<AttributeContext> readAllowed, AttributeValidatorMetadata... validator) {
-        return addAttribute(new AttributeMetadata(name, guiOrder, ALWAYS_TRUE, writeAllowed, ALWAYS_TRUE, readAllowed).addValidator(Arrays.asList(validator)));
+        return addAttribute(new AttributeMetadata(name, guiOrder, ALWAYS_TRUE, writeAllowed, ALWAYS_TRUE, readAllowed).addValidators(Arrays.asList(validator)));
     }
 
     public AttributeMetadata addAttribute(String name, int guiOrder, Predicate<AttributeContext> writeAllowed, List<AttributeValidatorMetadata> validators) {
-        return addAttribute(new AttributeMetadata(name, guiOrder, ALWAYS_TRUE, writeAllowed, ALWAYS_TRUE, ALWAYS_TRUE).addValidator(validators));
+        return addAttribute(new AttributeMetadata(name, guiOrder, ALWAYS_TRUE, writeAllowed, ALWAYS_TRUE, ALWAYS_TRUE).addValidators(validators));
+    }
+
+    public AttributeMetadata addAttribute(String name, int guiOrder, Predicate<AttributeContext> writeAllowed, Predicate<AttributeContext> required, List<AttributeValidatorMetadata> validators) {
+        return addAttribute(new AttributeMetadata(name, guiOrder, ALWAYS_TRUE, writeAllowed, required, ALWAYS_TRUE).addValidators(validators));
     }
 
     public AttributeMetadata addAttribute(String name, int guiOrder, List<AttributeValidatorMetadata> validators) {
-        return addAttribute(new AttributeMetadata(name, guiOrder).addValidator(validators));
+        return addAttribute(new AttributeMetadata(name, guiOrder).addValidators(validators));
     }
 
     public AttributeMetadata addAttribute(String name, int guiOrder, List<AttributeValidatorMetadata> validator, Predicate<AttributeContext> selector, Predicate<AttributeContext> writeAllowed, Predicate<AttributeContext> required, Predicate<AttributeContext> readAllowed) {
-        return addAttribute(new AttributeMetadata(name, guiOrder, selector, writeAllowed, required, readAllowed).addValidator(validator));
+        return addAttribute(new AttributeMetadata(name, guiOrder, selector, writeAllowed, required, readAllowed).addValidators(validator));
     }
 
     /**

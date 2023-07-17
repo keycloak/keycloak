@@ -59,7 +59,7 @@ public class CreateJsonIndexGenerator extends AbstractSqlGenerator<CreateJsonInd
         ValidationErrors validationErrors = new ValidationErrors();
         validationErrors.checkRequiredField("tableName", createIndexStatement.getTableName());
         validationErrors.checkRequiredField("columns", createIndexStatement.getColumns());
-        Arrays.stream(createIndexStatement.getColumns()).map(JsonEnabledColumnConfig.class::cast)
+        Arrays.stream(createIndexStatement.getColumns()).map(AddGeneratedColumnConfig.class::cast)
                 .forEach(config -> {
                     validationErrors.checkRequiredField("jsonColumn", config.getJsonColumn());
                 });
@@ -98,7 +98,7 @@ public class CreateJsonIndexGenerator extends AbstractSqlGenerator<CreateJsonInd
     protected void handleJsonIndex(final CreateJsonIndexStatement statement, final Database database, final StringBuilder builder) {
         if (database instanceof CockroachDatabase) {
             builder.append(" USING gin (");
-            builder.append(Arrays.stream(statement.getColumns()).map(JsonEnabledColumnConfig.class::cast)
+            builder.append(Arrays.stream(statement.getColumns()).map(AddGeneratedColumnConfig.class::cast)
                     .map(c -> c.getJsonProperty() == null ? c.getJsonColumn() :
                             "(" + c.getJsonColumn() + "->'" + c.getJsonProperty() + "')")
                     .collect(Collectors.joining(", ")))
@@ -106,7 +106,7 @@ public class CreateJsonIndexGenerator extends AbstractSqlGenerator<CreateJsonInd
         }
         else if (database instanceof PostgresDatabase) {
             builder.append(" USING gin (");
-            builder.append(Arrays.stream(statement.getColumns()).map(JsonEnabledColumnConfig.class::cast)
+            builder.append(Arrays.stream(statement.getColumns()).map(AddGeneratedColumnConfig.class::cast)
                     .map(c -> c.getJsonProperty() == null ? c.getJsonColumn() :
                             "(" + c.getJsonColumn() + "->'" + c.getJsonProperty() + "') jsonb_path_ops")
                     .collect(Collectors.joining(", ")))

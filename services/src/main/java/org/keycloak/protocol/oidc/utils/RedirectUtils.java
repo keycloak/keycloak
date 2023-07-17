@@ -18,6 +18,8 @@
 package org.keycloak.protocol.oidc.utils;
 
 import org.jboss.logging.Logger;
+import org.keycloak.common.util.Encode;
+import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.common.util.UriUtils;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
@@ -30,8 +32,8 @@ import org.keycloak.services.util.ResolveRelative;
 
 import java.net.URI;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.stream.Collectors;
 
 /**
@@ -64,7 +66,8 @@ public class RedirectUtils {
 
     public static Set<String> resolveValidRedirects(KeycloakSession session, String rootUrl, Set<String> validRedirects) {
         // If the valid redirect URI is relative (no scheme, host, port) then use the request's scheme, host, and port
-        Set<String> resolveValidRedirects = new HashSet<>();
+        // the set is ordered by length to get the longest match first
+        Set<String> resolveValidRedirects = new TreeSet<>((String s1, String s2) -> s1.length() == s2.length()? s1.compareTo(s2) : s1.length() < s2.length()? 1 : -1);
         for (String validRedirect : validRedirects) {
             if (validRedirect.startsWith("/")) {
                 validRedirect = relativeToAbsoluteURI(session, rootUrl, validRedirect);
@@ -91,19 +94,6 @@ public class RedirectUtils {
         KeycloakUriInfo uriInfo = session.getContext().getUri();
         RealmModel realm = session.getContext().getRealm();
 
-        if (redirectUri != null) {
-            try {
-                URI uri = URI.create(redirectUri);
-                redirectUri = uri.normalize().toString();
-            } catch (IllegalArgumentException cause) {
-                logger.debug("Invalid redirect uri", cause);
-                return null;
-            } catch (Exception cause) {
-                logger.debug("Unexpected error when parsing redirect uri", cause);
-                return null;
-            }
-        }
-
         if (redirectUri == null) {
             if (!requireRedirectUri) {
                 redirectUri = getSingleValidRedirectUri(validRedirects);
@@ -117,14 +107,18 @@ public class RedirectUtils {
             logger.debug("No Redirect URIs supplied");
             redirectUri = null;
         } else {
-            redirectUri = lowerCaseHostname(redirectUri);
+            // Make the validations against fully decoded and normalized redirect-url. This also allows wildcards (case when client configured "Valid redirect-urls" contain wildcards)
+            String decodedRedirectUri = decodeRedirectUri(redirectUri);
+            URI decodedRedirect = toUri(decodedRedirectUri);
+            decodedRedirectUri = getNormalizedRedirectUri(decodedRedirect);
+            if (decodedRedirectUri == null) return null;
 
-            String r = redirectUri;
+            String r = decodedRedirectUri;
             Set<String> resolveValidRedirects = resolveValidRedirects(session, rootUrl, validRedirects);
 
-            boolean valid = matchesRedirects(resolveValidRedirects, r);
+            String valid = matchesRedirects(resolveValidRedirects, r, true);
 
-            if (!valid && (r.startsWith(Constants.INSTALLED_APP_URL) || r.startsWith(Constants.INSTALLED_APP_LOOPBACK)) && r.indexOf(':', Constants.INSTALLED_APP_URL.length()) >= 0) {
+            if (valid == null && (r.startsWith(Constants.INSTALLED_APP_URL) || r.startsWith(Constants.INSTALLED_APP_LOOPBACK)) && r.indexOf(':', Constants.INSTALLED_APP_URL.length()) >= 0) {
                 int i = r.indexOf(':', Constants.INSTALLED_APP_URL.length());
 
                 StringBuilder sb = new StringBuilder();
@@ -137,12 +131,32 @@ public class RedirectUtils {
 
                 r = sb.toString();
 
-                valid = matchesRedirects(resolveValidRedirects, r);
+                valid = matchesRedirects(resolveValidRedirects, r, true);
             }
-            if (valid && redirectUri.startsWith("/")) {
+
+            // Return the original redirectUri, which can be partially encoded - for example http://localhost:8280/foo/bar%20bar%2092%2F72/3 . Just make sure it is normalized
+            URI redirect = toUri(redirectUri);
+            redirectUri = getNormalizedRedirectUri(redirect);
+
+            // We try to check validity also for original (encoded) redirectUrl, but just in case it exactly matches some "Valid Redirect URL" specified for client (not wildcards allowed)
+            if (valid == null) {
+                valid = matchesRedirects(resolveValidRedirects, redirectUri, false);
+            }
+
+            if (valid != null && redirectUri.startsWith("/")) {
                 redirectUri = relativeToAbsoluteURI(session, rootUrl, redirectUri);
             }
-            redirectUri = valid ? redirectUri : null;
+
+            String scheme = decodedRedirect.getScheme();
+            if (valid != null && scheme != null) {
+                // check the scheme is valid, it should be http(s) or explicitly allowed by the validation
+                if (!valid.startsWith(scheme + ":") && !"http".equalsIgnoreCase(scheme) && !"https".equalsIgnoreCase(scheme)) {
+                    logger.debugf("Invalid URI because scheme is not allowed: %s", redirectUri);
+                    valid = null;
+                }
+            }
+
+            redirectUri = valid != null ? redirectUri : null;
         }
 
         if (Constants.INSTALLED_APP_URN.equals(redirectUri)) {
@@ -150,6 +164,65 @@ public class RedirectUtils {
         } else {
             return redirectUri;
         }
+    }
+
+    private static URI toUri(String redirectUri) {
+        URI uri = null;
+        if (redirectUri != null) {
+        try {
+                uri = URI.create(redirectUri);
+            } catch (IllegalArgumentException cause) {
+                logger.debug("Invalid redirect uri", cause);
+            } catch (Exception cause) {
+                logger.debug("Unexpected error when parsing redirect uri", cause);
+            }
+        }
+        return uri;
+    }
+
+    private static String getNormalizedRedirectUri(URI uri) {
+        String redirectUri = null;
+        if (uri != null) {
+            redirectUri = uri.normalize().toString();
+            redirectUri = lowerCaseHostname(redirectUri);
+        }
+        return redirectUri;
+    }
+
+    // Decode redirectUri. We don't decode query and fragment as those can be encoded in the original URL.
+    // URL can be decoded multiple times (in case it was encoded multiple times, or some of it's parts were encoded multiple times)
+    private static String decodeRedirectUri(String redirectUri) {
+        if (redirectUri == null) return null;
+        int MAX_DECODING_COUNT = 5; // Max count of attempts for decoding URL (in case it was encoded multiple times)
+
+        try {
+            KeycloakUriBuilder uriBuilder = KeycloakUriBuilder.fromUri(redirectUri).preserveDefaultPort();
+            String origQuery = uriBuilder.getQuery();
+            String origFragment = uriBuilder.getFragment();
+            String encodedRedirectUri = uriBuilder
+                    .replaceQuery(null)
+                    .fragment(null)
+                    .buildAsString();
+            String decodedRedirectUri = null;
+
+            for (int i = 0; i < MAX_DECODING_COUNT; i++) {
+                decodedRedirectUri = Encode.decode(encodedRedirectUri);
+                if (decodedRedirectUri.equals(encodedRedirectUri)) {
+                    // URL is decoded. We can return it (after attach original query and fragment)
+                    return KeycloakUriBuilder.fromUri(decodedRedirectUri).preserveDefaultPort()
+                            .replaceQuery(origQuery)
+                            .fragment(origFragment)
+                            .buildAsString();
+                } else {
+                    // Next attempt
+                    encodedRedirectUri = decodedRedirectUri;
+                }
+            }
+        } catch (IllegalArgumentException iae) {
+            logger.debugf("Illegal redirect URI used: %s, Details: %s", redirectUri, iae.getMessage());
+        }
+        logger.debugf("Was not able to decode redirect URI: %s", redirectUri);
+        return null;
     }
 
     private static String lowerCaseHostname(String redirectUri) {
@@ -175,22 +248,24 @@ public class RedirectUtils {
         return sb.toString();
     }
 
-    private static boolean matchesRedirects(Set<String> validRedirects, String redirect) {
+    // return the String that matched the redirect or null if not matched
+    private static String matchesRedirects(Set<String> validRedirects, String redirect, boolean allowWildcards) {
+        logger.tracef("matchesRedirects: redirect URL to check: %s, allow wildcards: %b, Configured valid redirect URLs: %s", redirect, allowWildcards, validRedirects);
         for (String validRedirect : validRedirects) {
-            if (validRedirect.endsWith("*") && !validRedirect.contains("?")) {
+            if (validRedirect.endsWith("*") && !validRedirect.contains("?") && allowWildcards) {
                 // strip off the query component - we don't check them when wildcards are effective
                 String r = redirect.contains("?") ? redirect.substring(0, redirect.indexOf("?")) : redirect;
                 // strip off *
                 int length = validRedirect.length() - 1;
                 validRedirect = validRedirect.substring(0, length);
-                if (r.startsWith(validRedirect)) return true;
+                if (r.startsWith(validRedirect)) return validRedirect;
                 // strip off trailing '/'
                 if (length - 1 > 0 && validRedirect.charAt(length - 1) == '/') length--;
                 validRedirect = validRedirect.substring(0, length);
-                if (validRedirect.equals(r)) return true;
-            } else if (validRedirect.equals(redirect)) return true;
+                if (validRedirect.equals(r)) return validRedirect;
+            } else if (validRedirect.equals(redirect)) return validRedirect;
         }
-        return false;
+        return null;
     }
 
     private static String getSingleValidRedirectUri(Collection<String> validRedirects) {
