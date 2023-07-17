@@ -118,7 +118,7 @@ public class DefaultLocaleSelectorProvider implements LocaleSelectorProvider {
             return null;
         }
 
-        String locale = session.getAuthNote(LocaleSelectorProvider.CLIENT_REQUEST_LOCALE);
+        String locale = session.getClientNote(LocaleSelectorProvider.CLIENT_REQUEST_LOCALE);
         if (locale == null) {
             return null;
         }
