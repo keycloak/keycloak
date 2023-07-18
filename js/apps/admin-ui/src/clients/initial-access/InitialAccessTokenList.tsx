@@ -98,7 +98,7 @@ export const InitialAccessTokenList = () => {
             cellRenderer: (row) =>
               formatDate(
                 new Date(row.timestamp! * 1000 + row.expiration! * 1000),
-                FORMAT_DATE_AND_TIME
+                FORMAT_DATE_AND_TIME,
               ),
           },
           {

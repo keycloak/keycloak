@@ -9,7 +9,7 @@ export default function useSetTimeout() {
       didUnmountRef.current = true;
       clearAll();
     },
-    []
+    [],
   );
 
   function clearAll() {

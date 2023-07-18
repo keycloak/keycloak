@@ -38,7 +38,7 @@ export type Row = {
 export const mapRoles = (
   assignedRoles: Row[],
   effectiveRoles: Row[],
-  hide: boolean
+  hide: boolean,
 ) => [
   ...(hide
     ? assignedRoles.map((row) => ({
@@ -126,7 +126,7 @@ export const RoleMapping = ({
         client.mappings.map((role: RoleRepresentation) => ({
           client: { clientId: client.client, ...client },
           role,
-        }))
+        })),
       )
       .flat();
 
@@ -134,7 +134,7 @@ export const RoleMapping = ({
       ...mapRoles(
         [...realmRolesMapping, ...clientMapping],
         [...effectiveClientRoles, ...effectiveRoles],
-        hide
+        hide,
       ),
     ];
   };

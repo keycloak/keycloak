@@ -75,7 +75,7 @@ export default class AdvancedTab extends PageObject {
       new Date().toLocaleString("en-US", {
         dateStyle: "long",
         timeStyle: "short",
-      })
+      }),
     );
 
     return this;
@@ -89,7 +89,7 @@ export default class AdvancedTab extends PageObject {
   checkTestClusterAvailability(active: boolean) {
     cy.get(this.testClusterAvailability).should(
       (active ? "not." : "") + "have.class",
-      "pf-m-disabled"
+      "pf-m-disabled",
     );
     return this;
   }
@@ -132,7 +132,7 @@ export default class AdvancedTab extends PageObject {
   checkAccessTokenSignatureAlgorithm(algorithm: string) {
     cy.get(this.accessTokenSignatureAlgorithmInput).should(
       "have.text",
-      algorithm
+      algorithm,
     );
     return this;
   }
@@ -175,7 +175,7 @@ export default class AdvancedTab extends PageObject {
       .parent()
       .click();
     this.assertSwitchStateOn(
-      cy.get(this.useRefreshTokenForClientCredentialsGrantSwitch)
+      cy.get(this.useRefreshTokenForClientCredentialsGrantSwitch),
     );
     cy.get(this.useLowerCaseBearerTypeSwitch).parent().click();
     this.assertSwitchStateOn(cy.get(this.useLowerCaseBearerTypeSwitch));
@@ -191,7 +191,7 @@ export default class AdvancedTab extends PageObject {
       .parent()
       .click();
     this.assertSwitchStateOff(
-      cy.get(this.useRefreshTokenForClientCredentialsGrantSwitch)
+      cy.get(this.useRefreshTokenForClientCredentialsGrantSwitch),
     );
   }
 
@@ -220,7 +220,7 @@ export default class AdvancedTab extends PageObject {
     cy.get(this.oAuthMutualSwitch).scrollIntoView();
     this.assertSwitchStateOn(cy.get(this.oAuthMutualSwitch));
     this.assertSwitchStateOn(
-      cy.get(this.pushedAuthorizationRequestRequiredSwitch)
+      cy.get(this.pushedAuthorizationRequestRequiredSwitch),
     );
     return this;
   }
@@ -228,7 +228,7 @@ export default class AdvancedTab extends PageObject {
   checkAdvancedSwitchesOff() {
     this.assertSwitchStateOff(cy.get(this.oAuthMutualSwitch));
     this.assertSwitchStateOff(
-      cy.get(this.pushedAuthorizationRequestRequiredSwitch)
+      cy.get(this.pushedAuthorizationRequestRequiredSwitch),
     );
     return this;
   }

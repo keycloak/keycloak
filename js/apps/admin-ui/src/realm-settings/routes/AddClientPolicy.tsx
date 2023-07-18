@@ -17,7 +17,7 @@ export const AddClientPolicyRoute: AppRouteObject = {
 };
 
 export const toAddClientPolicy = (
-  params: AddClientPolicyParams
+  params: AddClientPolicyParams,
 ): Partial<Path> => ({
   pathname: generatePath(AddClientPolicyRoute.path, params),
 });

@@ -256,7 +256,7 @@ public class LogoutEndpoint {
         AuthenticationSessionModel logoutSession = AuthenticationManager.createOrJoinLogoutSession(session, realm, new AuthenticationSessionManager(session), null, true);
         session.getContext().setAuthenticationSession(logoutSession);
         if (uiLocales != null) {
-            logoutSession.setAuthNote(LocaleSelectorProvider.CLIENT_REQUEST_LOCALE, uiLocales);
+            logoutSession.setClientNote(LocaleSelectorProvider.CLIENT_REQUEST_LOCALE, uiLocales);
         }
         if (validatedRedirectUri != null) {
             logoutSession.setAuthNote(OIDCLoginProtocol.LOGOUT_REDIRECT_URI, validatedRedirectUri);

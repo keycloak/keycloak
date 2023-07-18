@@ -113,11 +113,11 @@ export const AuthorizationPermissions = ({ clientId }: PermissionsProps) => {
             associatedPolicies,
             isExpanded: false,
           };
-        })
+        }),
       );
     },
     setPermissions,
-    [key, search, first, max]
+    [key, search, first, max],
   );
 
   useFetch(
@@ -135,7 +135,7 @@ export const AuthorizationPermissions = ({ clientId }: PermissionsProps) => {
       ]);
       return {
         policies: policies.filter(
-          (p) => p.type === "resource" || p.type === "scope"
+          (p) => p.type === "resource" || p.type === "scope",
         ),
         resources: resources.length !== 1,
         scopes: scopes.length !== 1,
@@ -145,7 +145,7 @@ export const AuthorizationPermissions = ({ clientId }: PermissionsProps) => {
       setPolicyProviders(policies);
       setDisabledCreate({ resources, scopes });
     },
-    []
+    [],
   );
 
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
@@ -223,7 +223,7 @@ export const AuthorizationPermissions = ({ clientId }: PermissionsProps) => {
                             realm,
                             id: clientId,
                             permissionType: "resource",
-                          })
+                          }),
                         )
                       }
                     >
@@ -241,7 +241,7 @@ export const AuthorizationPermissions = ({ clientId }: PermissionsProps) => {
                             realm,
                             id: clientId,
                             permissionType: "scope",
-                          })
+                          }),
                         )
                       }
                     >
@@ -266,12 +266,12 @@ export const AuthorizationPermissions = ({ clientId }: PermissionsProps) => {
             <TableComposable aria-label={t("resources")} variant="compact">
               <Thead>
                 <Tr>
-                  <Th />
+                  <Th aria-hidden="true" />
                   <Th>{t("common:name")}</Th>
                   <Th>{t("common:type")}</Th>
                   <Th>{t("associatedPolicy")}</Th>
                   <Th>{t("common:description")}</Th>
-                  <Th />
+                  <Th aria-hidden="true" />
                 </Tr>
               </Thead>
               {permissions.map((permission, rowIndex) => (
@@ -285,7 +285,7 @@ export const AuthorizationPermissions = ({ clientId }: PermissionsProps) => {
                           const rows = permissions.map((p, index) =>
                             index === rowIndex
                               ? { ...p, isExpanded: !p.isExpanded }
-                              : p
+                              : p,
                           );
                           setPermissions(rows);
                         },

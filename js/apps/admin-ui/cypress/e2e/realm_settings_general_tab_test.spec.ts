@@ -32,13 +32,13 @@ describe("Realm settings general tab tests", () => {
     sidebarPage.goToRealmSettings();
     realmSettingsPage.toggleSwitch(
       realmSettingsPage.managedAccessSwitch,
-      false
+      false,
     );
     realmSettingsPage.save(realmSettingsPage.generalSaveBtn);
     masthead.checkNotificationMessage("Realm successfully updated", true);
     realmSettingsPage.toggleSwitch(
       realmSettingsPage.managedAccessSwitch,
-      false
+      false,
     );
     realmSettingsPage.save(realmSettingsPage.generalSaveBtn);
     masthead.checkNotificationMessage("Realm successfully updated", true);
@@ -127,8 +127,8 @@ describe("Realm settings general tab tests", () => {
         "have.attr",
         "href",
         `${Cypress.env(
-          "KEYCLOAK_SERVER"
-        )}/realms/${realmName}/.well-known/openid-configuration`
+          "KEYCLOAK_SERVER",
+        )}/realms/${realmName}/.well-known/openid-configuration`,
       )
       .should("have.attr", "target", "_blank")
       .should("have.attr", "rel", "noreferrer noopener");
@@ -152,8 +152,8 @@ describe("Realm settings general tab tests", () => {
         "have.attr",
         "href",
         `${Cypress.env(
-          "KEYCLOAK_SERVER"
-        )}/realms/${realmName}/protocol/saml/descriptor`
+          "KEYCLOAK_SERVER",
+        )}/realms/${realmName}/protocol/saml/descriptor`,
       )
       .should("have.attr", "target", "_blank")
       .should("have.attr", "rel", "noreferrer noopener");

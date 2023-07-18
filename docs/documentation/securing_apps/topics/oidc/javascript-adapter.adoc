@@ -1,5 +1,5 @@
 [[_javascript_adapter]]
-=== JavaScript adapter
+=== {project_name} JavaScript adapter
 
 {project_name} comes with a client-side JavaScript library called `keycloak-js` that can be used to secure web applications. The adapter also comes with built-in support for Cordova applications.
 

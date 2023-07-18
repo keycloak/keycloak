@@ -119,7 +119,7 @@ export default function SessionsTable({
     ];
 
     return defaultColumns.filter(
-      ({ name }) => !hiddenColumns.includes(name as ColumnName)
+      ({ name }) => !hiddenColumns.includes(name as ColumnName),
     );
   }, [realm, hiddenColumns]);
 

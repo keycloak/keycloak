@@ -38,7 +38,7 @@ export const Role = () => {
     async () => {
       if (values && values.length > 0) {
         const roles = await Promise.all(
-          values.map((r) => adminClient.roles.findOneById({ id: r.id }))
+          values.map((r) => adminClient.roles.findOneById({ id: r.id })),
         );
         return Promise.all(
           roles.map(async (role) => ({
@@ -48,13 +48,13 @@ export const Role = () => {
                   id: role?.containerId!,
                 })
               : undefined,
-          }))
+          })),
         );
       }
       return Promise.resolve([]);
     },
     setSelectedRoles,
-    []
+    [],
   );
 
   return (
@@ -153,7 +153,7 @@ export const Role = () => {
                       ]);
                       setSelectedRoles([
                         ...selectedRoles.filter(
-                          (s) => s.role.id !== row.role.id
+                          (s) => s.role.id !== row.role.id,
                         ),
                       ]);
                     }}

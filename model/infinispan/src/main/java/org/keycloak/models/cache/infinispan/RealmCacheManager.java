@@ -19,6 +19,7 @@ package org.keycloak.models.cache.infinispan;
 
 import org.infinispan.Cache;
 import org.jboss.logging.Logger;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.cache.infinispan.events.InvalidationEvent;
 import org.keycloak.models.cache.infinispan.entities.Revisioned;
 import org.keycloak.models.cache.infinispan.events.RealmCacheInvalidationEvent;
@@ -28,6 +29,8 @@ import org.keycloak.models.cache.infinispan.stream.InClientPredicate;
 import org.keycloak.models.cache.infinispan.stream.InRealmPredicate;
 
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.BiFunction;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -35,6 +38,8 @@ import java.util.Set;
 public class RealmCacheManager extends CacheManager {
 
     private static final Logger logger = Logger.getLogger(RealmCacheManager.class);
+
+    private final ConcurrentHashMap<String, String> cacheInteractions = new ConcurrentHashMap<>();
 
     @Override
     protected Logger getLogger() {
@@ -109,7 +114,6 @@ public class RealmCacheManager extends CacheManager {
         addInvalidations(InClientPredicate.create().client(clientUUID), invalidations);
     }
 
-
     @Override
     protected void addInvalidationsFromEvent(InvalidationEvent event, Set<String> invalidations) {
         invalidations.add(event.getId());
@@ -117,4 +121,23 @@ public class RealmCacheManager extends CacheManager {
         ((RealmCacheInvalidationEvent) event).addInvalidations(this, invalidations);
     }
 
+    /**
+     * Compute a cached realm and ensure that this happens only once with the current Keycloak instance.
+     * Use this to avoid concurrent preparations of a realm in parallel threads. This helps to break the load on
+     * a stampede after a server has started, were a lot of requests come in for the same realm that hasn't been cached yet.
+     * Instead of each request loading the realm in parallel, this lets the first request load the realm, and all
+     * other requests will use the cached realm, which is much more efficient.
+     */
+    public RealmAdapter computeSerialized(KeycloakSession session, String id, BiFunction<String, KeycloakSession, RealmAdapter> compute) {
+        // this locking is only to ensure that if there is a computation for the same id in the "synchronized" block below,
+        // it will have the same object instance to lock the current execution until the other is finished.
+        Object lock = cacheInteractions.computeIfAbsent(id, s -> id);
+        try {
+            synchronized (lock) {
+                return compute.apply(id, session);
+            }
+        } finally {
+            cacheInteractions.remove(lock);
+        }
+    }
 }

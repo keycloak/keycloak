@@ -41,7 +41,7 @@ export const BindFlowDialog = ({ flowAlias, onClose }: BindFlowDialogProps) => {
     try {
       await adminClient.realms.update(
         { realm },
-        { ...realmRep, [bindingType]: flowAlias }
+        { ...realmRep, [bindingType]: flowAlias },
       );
       addAlert(t("updateFlowSuccess"), AlertVariant.success);
     } catch (error) {

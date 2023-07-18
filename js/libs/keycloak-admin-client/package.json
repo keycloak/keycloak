@@ -45,9 +45,9 @@
   "devDependencies": {
     "@faker-js/faker": "^8.0.2",
     "@types/chai": "^4.3.5",
-    "@types/lodash-es": "^4.17.7",
+    "@types/lodash-es": "^4.17.8",
     "@types/mocha": "^10.0.1",
-    "@types/node": "^20.4.0",
+    "@types/node": "^20.4.2",
     "chai": "^4.3.7",
     "mocha": "^10.2.0",
     "ts-node": "^10.9.1"

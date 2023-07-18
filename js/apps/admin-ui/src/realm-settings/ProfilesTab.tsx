@@ -65,7 +65,7 @@ export default function ProfilesTab() {
         (globalProfiles) => ({
           ...globalProfiles,
           global: true,
-        })
+        }),
       );
 
       const profiles = allProfiles.profiles?.map((profiles) => ({
@@ -77,13 +77,13 @@ export default function ProfilesTab() {
       setTableProfiles(allClientProfiles || []);
       setCode(JSON.stringify(allClientProfiles, null, 2));
     },
-    [key]
+    [key],
   );
 
   const loader = async () => tableProfiles ?? [];
 
   const normalizeProfile = (
-    profile: ClientProfile
+    profile: ClientProfile,
   ): ClientProfileRepresentation => omit(profile, "global");
 
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
@@ -96,10 +96,11 @@ export default function ProfilesTab() {
     onConfirm: async () => {
       const updatedProfiles = tableProfiles
         ?.filter(
-          (profile) => profile.name !== selectedProfile?.name && !profile.global
+          (profile) =>
+            profile.name !== selectedProfile?.name && !profile.global,
         )
         .map<ClientProfileRepresentation>((profile) =>
-          normalizeProfile(profile)
+          normalizeProfile(profile),
         );
 
       try {
@@ -153,7 +154,7 @@ export default function ProfilesTab() {
         });
         addAlert(
           t("realm-settings:updateClientProfilesSuccess"),
-          AlertVariant.success
+          AlertVariant.success,
         );
         setKey(key + 1);
       } catch (error) {

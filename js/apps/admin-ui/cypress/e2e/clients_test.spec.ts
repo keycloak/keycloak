@@ -61,7 +61,7 @@ describe("Clients test", () => {
         await adminClient.createClientScope(clientScope);
         await adminClient.addDefaultClientScopeInClient(
           clientScopeName + i,
-          clientId
+          clientId,
         );
       }
       clientScope.name = clientScopeNameDefaultType;
@@ -310,7 +310,7 @@ describe("Clients test", () => {
       commonPage
         .masthead()
         .checkNotificationMessage(
-          "Could not create client: 'Client account already exists'"
+          "Could not create client: 'Client account already exists'",
         );
     });
 
@@ -459,7 +459,7 @@ describe("Clients test", () => {
       cy.findByTestId("importClient").click();
       cy.findByTestId("realm-file").selectFile(
         "cypress/fixtures/partial-import-test-data/import-identical-client.json",
-        { action: "drag-drop" }
+        { action: "drag-drop" },
       );
 
       cy.wait(1000);
@@ -470,7 +470,7 @@ describe("Clients test", () => {
         .masthead()
         .checkNotificationMessage(
           "Could not import client: Client identical already exists",
-          true
+          true,
         );
     });
 
@@ -489,7 +489,7 @@ describe("Clients test", () => {
         clientId: client,
         protocol: "openid-connect",
         publicClient: false,
-      })
+      }),
     );
 
     beforeEach(() => {
@@ -563,7 +563,7 @@ describe("Clients test", () => {
         .masthead()
         .checkNotificationMessage(
           `Could not create role: Role with name ${itemId} already exists`,
-          true
+          true,
         );
     });
 
@@ -595,7 +595,7 @@ describe("Clients test", () => {
       // Add associated client role
       associatedRolesPage.addAssociatedRoleFromSearchBar(
         "manage-account",
-        true
+        true,
       );
       commonPage
         .masthead()
@@ -606,7 +606,7 @@ describe("Clients test", () => {
       // Add associated client role
       associatedRolesPage.addAssociatedRoleFromSearchBar(
         "manage-consent",
-        true
+        true,
       );
       commonPage
         .masthead()
@@ -807,7 +807,7 @@ describe("Clients test", () => {
         authorizationServicesEnabled: true,
         serviceAccountsEnabled: true,
         standardFlowEnabled: true,
-      })
+      }),
     );
 
     beforeEach(() => {
@@ -968,7 +968,7 @@ describe("Clients test", () => {
         protocol: "openid-connect",
         clientId: keysName,
         publicClient: false,
-      })
+      }),
     );
 
     beforeEach(() => {
@@ -991,7 +991,7 @@ describe("Clients test", () => {
       commonPage
         .masthead()
         .checkNotificationMessage(
-          "New key pair and certificate generated successfully"
+          "New key pair and certificate generated successfully",
         );
     });
   });
@@ -1036,7 +1036,7 @@ describe("Clients test", () => {
         protocol: "openid-connect",
         publicClient: false,
         bearerOnly: true,
-      })
+      }),
     );
 
     beforeEach(() => {

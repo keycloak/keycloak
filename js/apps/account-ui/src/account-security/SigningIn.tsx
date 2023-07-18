@@ -76,7 +76,7 @@ const SigningIn = () => {
   usePromise((signal) => getCredentials({ signal }), setCredentials, [key]);
 
   const credentialRowCells = (
-    credMetadata: CredentialMetadataRepresentation
+    credMetadata: CredentialMetadataRepresentation,
   ) => {
     const credential = credMetadata.credential;
     const maxWidth = { "--pf-u-max-width--MaxWidth": "300px" } as CSSProperties;
@@ -98,7 +98,7 @@ const SigningIn = () => {
             <strong className="pf-u-mr-md"></strong>
             {{ date: formatDate(new Date(credential.createdDate)) }}
           </Trans>
-        </DataListCell>
+        </DataListCell>,
       );
     }
     return items;
@@ -188,7 +188,7 @@ const SigningIn = () => {
                                   addAlert(
                                     t("successRemovedMessage", {
                                       userLabel: label(meta.credential),
-                                    })
+                                    }),
                                   );
                                   refresh();
                                 } catch (error) {
@@ -196,7 +196,7 @@ const SigningIn = () => {
                                     t("errorRemovedMessage", {
                                       userLabel: label(meta.credential),
                                       error,
-                                    }).toString()
+                                    }).toString(),
                                   );
                                 }
                               }}

@@ -33,7 +33,7 @@ export const SamlConnectSettings = () => {
 
   const setupForm = (result: IdentityProviderRepresentation) => {
     Object.entries(result).map(([key, value]) =>
-      setValue(`config.${key}`, value)
+      setValue(`config.${key}`, value),
     );
   };
 
@@ -49,13 +49,13 @@ export const SamlConnectSettings = () => {
     try {
       const response = await fetch(
         `${addTrailingSlash(
-          adminClient.baseUrl
+          adminClient.baseUrl,
         )}admin/realms/${realm}/identity-provider/import-config`,
         {
           method: "POST",
           body: formData,
           headers: getAuthorizationHeaders(await adminClient.getAccessToken()),
-        }
+        },
       );
       if (response.ok) {
         const result = await response.json();

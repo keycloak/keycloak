@@ -2,6 +2,17 @@
 [[_spring_security_adapter]]
 ==== Spring Security adapter
 
+[WARNING]
+====
+This adapter is deprecated and will be removed in a future release of Keycloak. No further enhancements or new features
+will be added to this adapter.
+
+We recommend that you leverage the OAuth2/OpenID Connect support from Spring Security.
+
+For more details about how to integrate {project_name} with Spring Boot applications, consider looking at the
+{quickstartRepo_link}[Keycloak Quickstart GitHub Repository].
+====
+
 To secure an application with Spring Security and Keycloak, add this adapter as a dependency to your project.
 You then have to provide some extra beans in your Spring Security configuration file and add the Keycloak security filter to your pipeline.
 

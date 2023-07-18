@@ -11,7 +11,7 @@ type AccessContextProps = {
 
 export const AccessContext = createNamedContext<AccessContextProps | undefined>(
   "AccessContext",
-  undefined
+  undefined,
 );
 
 export const useAccess = () => useRequiredContext(AccessContext);

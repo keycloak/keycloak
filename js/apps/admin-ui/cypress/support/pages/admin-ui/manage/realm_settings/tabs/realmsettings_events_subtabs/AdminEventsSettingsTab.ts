@@ -40,7 +40,7 @@ export default class AdminEventsSettingsTab extends PageObject {
     { waitForRealm, waitForConfig } = {
       waitForRealm: true,
       waitForConfig: false,
-    }
+    },
   ) {
     waitForRealm && cy.intercept("/admin/realms/*").as("saveRealm");
     waitForConfig &&

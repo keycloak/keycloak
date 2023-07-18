@@ -55,7 +55,7 @@ export const PartialExportDialog = ({
         new Blob([prettyPrintJSON(realmExport)], {
           type: "application/json",
         }),
-        "realm-export.json"
+        "realm-export.json",
       );
 
       addAlert(t("exportSuccess"), AlertVariant.success);

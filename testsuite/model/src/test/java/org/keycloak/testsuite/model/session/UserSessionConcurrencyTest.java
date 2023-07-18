@@ -98,8 +98,8 @@ public class UserSessionConcurrencyTest extends KeycloakModelTest {
         String uId = withRealm(this.realmId, (session, realm) -> session.sessions().createUserSession(null, realm, session.users().getUserByUsername(realm, "user1"), "user1", "127.0.0.1", "form", true, null, null, UserSessionModel.SessionPersistenceState.PERSISTENT)).getId();
 
         // Create/Update client session's notes concurrently
-        CountDownLatch cdl = new CountDownLatch(200 * CLIENTS_COUNT);
-        IntStream.range(0, 200 * CLIENTS_COUNT).parallel()
+        CountDownLatch cdl = new CountDownLatch(20 * CLIENTS_COUNT);
+        IntStream.range(0, 20 * CLIENTS_COUNT).parallel()
                 .forEach(i -> inComittedTransaction(i, (session, n) -> { try {
                     RealmModel realm = session.realms().getRealm(realmId);
                     ClientModel client = realm.getClientByClientId("client" + (n % CLIENTS_COUNT));

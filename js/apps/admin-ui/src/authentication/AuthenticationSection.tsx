@@ -103,12 +103,12 @@ export default function AuthenticationSection() {
   const loader = async () => {
     const flowsRequest = await fetch(
       `${addTrailingSlash(
-        adminClient.baseUrl
+        adminClient.baseUrl,
       )}admin/realms/${realmName}/ui-ext/authentication-management/flows`,
       {
         method: "GET",
         headers: getAuthorizationHeaders(await adminClient.getAccessToken()),
-      }
+      },
     );
     const flows = await flowsRequest.json();
 
@@ -118,7 +118,7 @@ export default function AuthenticationSection() {
 
     return sortBy(
       localeSort<AuthenticationType>(flows, mapByKey("alias")),
-      (flow) => flow.usedBy?.type
+      (flow) => flow.usedBy?.type,
     );
   };
 

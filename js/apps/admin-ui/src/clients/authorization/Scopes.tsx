@@ -83,7 +83,7 @@ export const AuthorizationScopes = ({ clientId }: ScopesProps) => {
       setScopes(scopes.map((s) => ({ ...s, isLoaded: false })));
       setCollapsed(scopes.map((s) => ({ id: s.id!, isExpanded: false })));
     },
-    [key, search, first, max]
+    [key, search, first, max],
   );
 
   const getScope = (id: string) => scopes?.find((scope) => scope.id === id)!;
@@ -116,14 +116,14 @@ export const AuthorizationScopes = ({ clientId }: ScopesProps) => {
             permissions,
             isLoaded: true,
           };
-        })
+        }),
       );
     },
     (resourcesScopes) => {
       let result = [...(scopes || [])];
       resourcesScopes.forEach((resourceScope) => {
         const index = scopes?.findIndex(
-          (scope) => resourceScope.id === scope.id
+          (scope) => resourceScope.id === scope.id,
         )!;
         result = [
           ...result.slice(0, index),
@@ -134,7 +134,7 @@ export const AuthorizationScopes = ({ clientId }: ScopesProps) => {
 
       setScopes(result);
     },
-    [collapsed]
+    [collapsed],
   );
 
   if (!scopes) {
@@ -183,11 +183,11 @@ export const AuthorizationScopes = ({ clientId }: ScopesProps) => {
             <TableComposable aria-label={t("scopes")} variant="compact">
               <Thead>
                 <Tr>
-                  <Th />
+                  <Th aria-hidden="true" />
                   <Th>{t("common:name")}</Th>
                   <Th>{t("displayName")}</Th>
-                  <Th />
-                  <Th />
+                  <Th aria-hidden="true" />
+                  <Th aria-hidden="true" />
                 </Tr>
               </Thead>
               {scopes.map((scope, rowIndex) => (

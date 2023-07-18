@@ -71,8 +71,8 @@ export const ResourcesTab = () => {
       await Promise.all(
         result.data.map(
           async (r) =>
-            (r.shareRequests = await getPermissionRequests(r._id, { signal }))
-        )
+            (r.shareRequests = await getPermissionRequests(r._id, { signal })),
+        ),
       );
       return result;
     },
@@ -80,7 +80,7 @@ export const ResourcesTab = () => {
       setResources(data);
       setLinks(links);
     },
-    [params, key]
+    [params, key],
   );
 
   if (!resources) {
@@ -102,7 +102,7 @@ export const ResourcesTab = () => {
           ({
             username,
             scopes: [],
-          } as Permission)
+          }) as Permission,
       )!;
       await updatePermissions(resource._id, permissions);
       setDetails({});
@@ -115,7 +115,7 @@ export const ResourcesTab = () => {
   const toggleOpen = async (
     id: string,
     field: keyof PermissionDetail,
-    open: boolean
+    open: boolean,
   ) => {
     const permissions = await fetchPermissions(id);
 
@@ -162,7 +162,7 @@ export const ResourcesTab = () => {
                     toggleOpen(
                       resource._id,
                       "rowOpen",
-                      !details[resource._id]?.rowOpen
+                      !details[resource._id]?.rowOpen,
                     ),
                 }}
               />

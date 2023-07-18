@@ -9,7 +9,7 @@ export type NewClientPolicyConditionParams = {
 };
 
 const NewClientPolicyCondition = lazy(
-  () => import("../NewClientPolicyCondition")
+  () => import("../NewClientPolicyCondition"),
 );
 
 export const NewClientPolicyConditionRoute: AppRouteObject = {
@@ -22,7 +22,7 @@ export const NewClientPolicyConditionRoute: AppRouteObject = {
 };
 
 export const toNewClientPolicyCondition = (
-  params: NewClientPolicyConditionParams
+  params: NewClientPolicyConditionParams,
 ): Partial<Path> => ({
   pathname: generatePath(NewClientPolicyConditionRoute.path, params),
 });

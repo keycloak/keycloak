@@ -15,7 +15,7 @@ export const KeySelect = ({ selectItems, ...rest }: KeySelectProp) => {
   const [open, toggle] = useToggle();
   const { field } = useController(rest);
   const [custom, setCustom] = useState(
-    !selectItems.map(({ key }) => key).includes(field.value)
+    !selectItems.map(({ key }) => key).includes(field.value),
   );
 
   return (

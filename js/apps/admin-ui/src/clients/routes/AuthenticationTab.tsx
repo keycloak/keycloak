@@ -30,7 +30,7 @@ export const AuthorizationRoute: AppRouteObject = {
 };
 
 export const toAuthorizationTab = (
-  params: AuthorizationParams
+  params: AuthorizationParams,
 ): Partial<Path> => ({
   pathname: generatePath(AuthorizationRoute.path, params),
 });

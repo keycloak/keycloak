@@ -54,7 +54,7 @@ export const MultiValuedListComponent = ({
               const option = v.toString();
               if (field.value.includes(option)) {
                 field.onChange(
-                  field.value.filter((item: string) => item !== option)
+                  field.value.filter((item: string) => item !== option),
                 );
               } else {
                 field.onChange([...field.value, option]);

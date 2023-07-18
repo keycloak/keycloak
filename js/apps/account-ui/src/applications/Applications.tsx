@@ -44,13 +44,13 @@ const Applications = () => {
   usePromise(
     (signal) => getApplications({ signal }),
     (clients) => setApplications(clients.map((c) => ({ ...c, open: false }))),
-    [key]
+    [key],
   );
 
   const toggleOpen = (clientId: string) => {
     setApplications([
       ...applications!.map((a) =>
-        a.clientId === clientId ? { ...a, open: !a.open } : a
+        a.clientId === clientId ? { ...a, open: !a.open } : a,
       ),
     ]);
   };
@@ -224,7 +224,7 @@ const Applications = () => {
                     )}
                     <DescriptionListGroup>
                       <DescriptionListTerm>
-                        {t("accessGrantedOn") + ": "}
+                        {t("accessGrantedOn")}
                       </DescriptionListTerm>
                       <DescriptionListDescription>
                         {new Intl.DateTimeFormat("en", {
@@ -245,9 +245,9 @@ const Applications = () => {
                   <hr />
                   <GridItem>
                     <ContinueCancelModal
-                      buttonTitle="removeButton"
+                      buttonTitle="removeAccess"
                       buttonVariant="secondary"
-                      modalTitle="removeModalTitle"
+                      modalTitle="removeAccess"
                       modalMessage={t("removeModalMessage", [
                         application.clientId,
                       ])}

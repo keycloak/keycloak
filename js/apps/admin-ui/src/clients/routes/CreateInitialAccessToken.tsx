@@ -6,7 +6,7 @@ import type { AppRouteObject } from "../../routes";
 export type CreateInitialAccessTokenParams = { realm: string };
 
 const CreateInitialAccessToken = lazy(
-  () => import("../initial-access/CreateInitialAccessToken")
+  () => import("../initial-access/CreateInitialAccessToken"),
 );
 
 export const CreateInitialAccessTokenRoute: AppRouteObject = {
@@ -19,7 +19,7 @@ export const CreateInitialAccessTokenRoute: AppRouteObject = {
 };
 
 export const toCreateInitialAccessToken = (
-  params: CreateInitialAccessTokenParams
+  params: CreateInitialAccessTokenParams,
 ): Partial<Path> => ({
   pathname: generatePath(CreateInitialAccessTokenRoute.path, params),
 });

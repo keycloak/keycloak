@@ -36,7 +36,7 @@ const LoginFlow = ({
     () => adminClient.authenticationManagement.getFlows(),
     (flows) =>
       setFlows(flows.filter((flow) => flow.providerId === "basic-flow")),
-    []
+    [],
   );
 
   return (

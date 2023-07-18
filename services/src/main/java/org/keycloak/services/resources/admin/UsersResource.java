@@ -167,7 +167,7 @@ public class UsersResource {
             RepresentationToModel.createGroups(rep, realm, user);
 
             RepresentationToModel.createCredentials(rep, session, realm, user, true);
-            adminEvent.operation(OperationType.CREATE).resourcePath(session.getContext().getUri(), user.getId()).representation(StripSecretsUtils.strip(rep)).success();
+            adminEvent.operation(OperationType.CREATE).resourcePath(session.getContext().getUri(), user.getId()).representation(rep).success();
 
             if (session.getTransactionManager().isActive()) {
                 session.getTransactionManager().commit();
@@ -241,7 +241,7 @@ public class UsersResource {
      *
      * Returns a stream of users, filtered according to query parameters.
      *
-     * @param search A String contained in username, first or last name, or email
+     * @param search A String contained in username, first or last name, or email. Default search behavior is prefix-based (e.g., <code>foo</code> or <code>foo*</code>). Use <code>*foo*</code> for infix search and <code>"foo"</code> for exact search.
      * @param last A String contained in lastName, or the complete lastName, if param "exact" is true
      * @param first A String contained in firstName, or the complete firstName, if param "exact" is true
      * @param email A String contained in email, or the complete email, if param "exact" is true
@@ -263,7 +263,7 @@ public class UsersResource {
     @Tag(name = KeycloakOpenAPI.Admin.Tags.USERS)
     @Operation( summary = "Get users Returns a stream of users, filtered according to query parameters.")
     public Stream<UserRepresentation> getUsers(
-            @Parameter(description = "A String contained in username, first or last name, or email") @QueryParam("search") String search,
+            @Parameter(description = "A String contained in username, first or last name, or email. Default search behavior is prefix-based (e.g., foo or foo*). Use *foo* for infix search and \"foo\" for exact search.") @QueryParam("search") String search,
             @Parameter(description = "A String contained in lastName, or the complete lastName, if param \"exact\" is true") @QueryParam("lastName") String last,
             @Parameter(description = "A String contained in firstName, or the complete firstName, if param \"exact\" is true") @QueryParam("firstName") String first,
             @Parameter(description = "A String contained in email, or the complete email, if param \"exact\" is true") @QueryParam("email") String email,
@@ -363,7 +363,7 @@ public class UsersResource {
      * {@code email} or {@code username} those criteria are matched against their
      * respective fields on a user entity. Combined with a logical and.
      *
-     * @param search   arbitrary search string for all the fields below
+     * @param search   arbitrary search string for all the fields below. Default search behavior is prefix-based (e.g., <code>foo</code> or <code>foo*</code>). Use <code>*foo*</code> for infix search and <code>"foo"</code> for exact search.
      * @param last     last name filter
      * @param first    first name filter
      * @param email    email filter
@@ -383,7 +383,7 @@ public class UsersResource {
                     "2. If {@code search} is specified other criteria such as {@code last} will be ignored even though you set them. The {@code search} string will be matched against the first and last name, the username and the email of a user. <p> " +
                     "3. If {@code search} is unspecified but any of {@code last}, {@code first}, {@code email} or {@code username} those criteria are matched against their respective fields on a user entity. Combined with a logical and.")
     public Integer getUsersCount(
-            @Parameter(description = "arbitrary search string for all the fields below") @QueryParam("search") String search,
+            @Parameter(description = "arbitrary search string for all the fields below. Default search behavior is prefix-based (e.g., foo or foo*). Use *foo* for infix search and \"foo\" for exact search.") @QueryParam("search") String search,
             @Parameter(description = "last name filter") @QueryParam("lastName") String last,
             @Parameter(description = "first name filter") @QueryParam("firstName") String first,
             @Parameter(description = "email filter") @QueryParam("email") String email,

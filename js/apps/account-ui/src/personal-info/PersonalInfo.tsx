@@ -48,7 +48,7 @@ const PersonalInfo = () => {
     (personalInfo) => {
       setUserProfileMetadata(personalInfo.userProfileMetadata);
       reset(personalInfo);
-    }
+    },
   );
 
   const onSubmit = async (user: UserRepresentation) => {
@@ -61,7 +61,7 @@ const PersonalInfo = () => {
       (error as FieldError[]).forEach((e) => {
         const params = Object.assign(
           {},
-          e.params.map((p) => (isBundleKey(p) ? unWrap(p) : p))
+          e.params.map((p) => (isBundleKey(p) ? unWrap(p) : p)),
         );
         setError(fieldName(e.field) as keyof UserRepresentation, {
           message: t(e.errorMessage as TFuncKey, {
@@ -89,7 +89,7 @@ const PersonalInfo = () => {
             id="save-btn"
             variant="primary"
           >
-            {t("doSave")}
+            {t("save")}
           </Button>
           <Button
             data-testid="cancel"
@@ -97,7 +97,7 @@ const PersonalInfo = () => {
             variant="link"
             onClick={() => reset()}
           >
-            {t("doCancel")}
+            {t("cancel")}
           </Button>
         </ActionGroup>
         {environment.features.deleteAccountAllowed && (
@@ -117,7 +117,7 @@ const PersonalInfo = () => {
                   }
                   className="delete-button"
                 >
-                  {t("doDelete")}
+                  {t("delete")}
                 </Button>
               }
             >

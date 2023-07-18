@@ -29,6 +29,7 @@ import org.keycloak.representations.idm.authorization.DecisionStrategy;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionManagement;
 import org.keycloak.services.resources.admin.permissions.AdminPermissions;
 import org.keycloak.testsuite.AbstractKeycloakTest;
+import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.arquillian.annotation.UncaughtServerErrorExpected;
 import org.keycloak.testsuite.auth.page.login.UpdateAccount;
 import org.keycloak.testsuite.pages.AppPage;
@@ -97,6 +98,7 @@ import com.google.common.collect.ImmutableMap;
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
  */
+@EnableFeature(Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ)
 public class SocialLoginTest extends AbstractKeycloakTest {
 
     public static final String SOCIAL_CONFIG = "social.config";

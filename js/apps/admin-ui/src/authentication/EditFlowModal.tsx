@@ -32,7 +32,7 @@ export const EditFlowModal = ({ flow, toggleDialog }: EditFlowModalProps) => {
     try {
       await adminClient.authenticationManagement.updateFlow(
         { flowId: flow.id! },
-        { ...flow, ...formValues }
+        { ...flow, ...formValues },
       );
       addAlert(t("updateFlowSuccess"), AlertVariant.success);
     } catch (error) {

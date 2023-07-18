@@ -19,7 +19,7 @@ import { useErrorHandler } from "react-error-boundary";
 export function useFetch<T>(
   adminClientCall: () => Promise<T>,
   callback: (param: T) => void,
-  deps?: DependencyList
+  deps?: DependencyList,
 ) {
   const onError = useErrorHandler();
 

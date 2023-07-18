@@ -525,7 +525,7 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
                 onMinus={() => field.onChange(v - 1)}
                 onChange={(event) => {
                   const value = Number(
-                    (event.target as HTMLInputElement).value
+                    (event.target as HTMLInputElement).value,
                   );
                   field.onChange(value < 0 ? 0 : value);
                 }}
@@ -564,7 +564,7 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
                 onMinus={() => field.onChange(v - 1)}
                 onChange={(event) => {
                   const value = Number(
-                    (event.target as HTMLInputElement).value
+                    (event.target as HTMLInputElement).value,
                   );
                   field.onChange(value < 0 ? 0 : value);
                 }}

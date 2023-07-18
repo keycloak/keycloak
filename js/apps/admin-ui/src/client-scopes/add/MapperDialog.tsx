@@ -33,7 +33,7 @@ export type AddMapperDialogModalProps = {
   protocol: string;
   filter?: ProtocolMapperRepresentation[];
   onConfirm: (
-    value: ProtocolMapperTypeRepresentation | ProtocolMapperRepresentation[]
+    value: ProtocolMapperTypeRepresentation | ProtocolMapperRepresentation[],
   ) => void;
 };
 
@@ -57,7 +57,7 @@ export const AddMapperDialog = (props: AddMapperDialogProps) => {
     () =>
       localeSort(builtInMappers, mapByKey("name")).map((mapper) => {
         const mapperType = protocolMappers.filter(
-          (type) => type.id === mapper.protocolMapper
+          (type) => type.id === mapper.protocolMapper,
         )[0];
         return {
           item: mapper,
@@ -65,7 +65,7 @@ export const AddMapperDialog = (props: AddMapperDialogProps) => {
           description: mapperType.helpText,
         };
       }),
-    [builtInMappers, protocolMappers]
+    [builtInMappers, protocolMappers],
   );
   const [rows, setRows] = useState(allRows);
 
@@ -77,7 +77,7 @@ export const AddMapperDialog = (props: AddMapperDialogProps) => {
 
   const sortedProtocolMappers = useMemo(
     () => localeSort(protocolMappers, mapByKey("name")),
-    [protocolMappers]
+    [protocolMappers],
   );
 
   const isBuiltIn = !!props.filter;

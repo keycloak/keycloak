@@ -51,7 +51,7 @@ export const ClientSelect = ({
       return adminClient.clients.find(params);
     },
     (clients) => setClients(clients),
-    [search]
+    [search],
   );
 
   const convert = (clients: ClientRepresentation[]) => [

@@ -100,6 +100,8 @@ public class KeycloakServicesTest extends BaseOperatorTest {
         Log.info("Trying to modify the service");
 
         var currentDiscoveryService = discoveryServiceSelector.get();
+        // check publishNotReadyAddresses is set
+        assertThat(currentDiscoveryService.getSpec().getPublishNotReadyAddresses()).isTrue();
         var labels = Map.of("address", "EvergreenTerrace742");
         // ignoring current IP/s
         currentDiscoveryService.getSpec().setClusterIP(null);

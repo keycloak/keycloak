@@ -121,10 +121,11 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
                         var c = k8sclient.apps().statefulSets().inNamespace(namespace).withName(deploymentName).get()
                                 .getSpec().getTemplate().getSpec().getContainers().get(0);
                         assertThat(c.getImage()).isEqualTo("quay.io/keycloak/non-existing-keycloak");
+                        // additionalOptions should not override the first-class
                         assertThat(c.getEnv().stream()
                                 .anyMatch(e -> e.getName().equals(KeycloakDistConfigurator.getKeycloakOptionEnvVarName(dbConf.getName()))
                                         && dbConf.getValue().equals(e.getValue())))
-                                .isTrue();
+                                .isFalse();
                     });
 
         } catch (Exception e) {

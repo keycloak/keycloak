@@ -99,7 +99,7 @@ export default function ClientScopesSection() {
 
   const [searchType, setSearchType] = useState<SearchType>("name");
   const [searchTypeType, setSearchTypeType] = useState<AllClientScopes>(
-    AllClientScopes.none
+    AllClientScopes.none,
   );
   const [searchProtocol, setSearchProtocol] = useState<ProtocolType>("all");
   const localeSort = useLocaleSort();
@@ -129,11 +129,11 @@ export default function ClientScopesSection() {
         const row: Row = {
           ...scope,
           type: defaultScopes.find(
-            (defaultScope) => defaultScope.name === scope.name
+            (defaultScope) => defaultScope.name === scope.name,
           )
             ? ClientScope.default
             : optionalScopes.find(
-                (optionalScope) => optionalScope.name === scope.name
+                (optionalScope) => optionalScope.name === scope.name,
               )
             ? ClientScope.optional
             : AllClientScopes.none,
@@ -144,7 +144,7 @@ export default function ClientScopesSection() {
 
     return localeSort(transformed, mapByKey("name")).slice(
       first,
-      Number(first) + Number(max)
+      Number(first) + Number(max),
     );
   };
 
@@ -164,7 +164,7 @@ export default function ClientScopesSection() {
           } catch (error: any) {
             console.warn(
               "could not remove scope",
-              error.response?.data?.errorMessage || error
+              error.response?.data?.errorMessage || error,
             );
           }
           await adminClient.clientScopes.del({ id: scope.id! });

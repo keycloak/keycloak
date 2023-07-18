@@ -15,7 +15,7 @@ export default class ProviderFacebookGeneralSettings extends ProviderBaseGeneral
   public assertAdditionalUsersProfileFieldsInputEqual(value: string) {
     cy.findByTestId(this.additionalUsersProfileFieldsInput).should(
       "have.value",
-      value
+      value,
     );
     return this;
   }
@@ -23,7 +23,7 @@ export default class ProviderFacebookGeneralSettings extends ProviderBaseGeneral
   public fillData(idpName: string) {
     this.fillCommonFields(idpName);
     this.typeAdditionalUsersProfileFieldsInput(
-      idpName + additionalUsersProfile_input_test_value
+      idpName + additionalUsersProfile_input_test_value,
     );
     return this;
   }
@@ -31,7 +31,7 @@ export default class ProviderFacebookGeneralSettings extends ProviderBaseGeneral
   public assertFilledDataEqual(idpName: string) {
     this.assertCommonFilledDataEqual(idpName);
     this.assertAdditionalUsersProfileFieldsInputEqual(
-      idpName + additionalUsersProfile_input_test_value
+      idpName + additionalUsersProfile_input_test_value,
     );
     return this;
   }

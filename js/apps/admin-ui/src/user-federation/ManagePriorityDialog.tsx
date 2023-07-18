@@ -36,7 +36,7 @@ export const ManagePriorityDialog = ({
   const [id, setId] = useState("");
   const [liveText, setLiveText] = useState("");
   const [order, setOrder] = useState(
-    components.map((component) => component.name!)
+    components.map((component) => component.name!),
   );
 
   const onDragStart = (id: string) => {
@@ -73,7 +73,7 @@ export const ManagePriorityDialog = ({
               component.config!.priority = [index.toString()];
               return adminClient.components.update(
                 { id: component.id! },
-                component
+                component,
               );
             });
 

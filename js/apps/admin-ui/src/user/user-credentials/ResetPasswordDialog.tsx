@@ -102,14 +102,14 @@ export const ResetPasswordDialog = ({
             id: user.id!,
             credentialId: credentialLabel.id!,
           },
-          t("defaultPasswordLabel")
+          t("defaultPasswordLabel"),
         );
       }
       addAlert(
         isResetPassword
           ? t("resetCredentialsSuccess")
           : t("savePasswordSuccess"),
-        AlertVariant.success
+        AlertVariant.success,
       );
       refresh();
     } catch (error) {
@@ -117,7 +117,7 @@ export const ResetPasswordDialog = ({
         isResetPassword
           ? "users:resetPasswordError"
           : "users:savePasswordError",
-        error
+        error,
       );
     }
 

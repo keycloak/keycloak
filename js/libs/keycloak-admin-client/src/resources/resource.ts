@@ -9,7 +9,7 @@ export default class Resource<ParamType = {}> {
       path?: string;
       getUrlParams?: () => Record<string, any>;
       getBaseUrl?: () => string;
-    } = {}
+    } = {},
   ) {
     this.agent = new Agent({
       client,
@@ -18,10 +18,10 @@ export default class Resource<ParamType = {}> {
   }
 
   public makeRequest = <PayloadType = any, ResponseType = any>(
-    args: RequestArgs
+    args: RequestArgs,
   ): ((
     payload?: PayloadType & ParamType,
-    options?: Pick<RequestArgs, "catchNotFound">
+    options?: Pick<RequestArgs, "catchNotFound">,
   ) => Promise<ResponseType>) => {
     return this.agent.request(args);
   };
@@ -30,12 +30,12 @@ export default class Resource<ParamType = {}> {
   public makeUpdateRequest = <
     QueryType = any,
     PayloadType = any,
-    ResponseType = any
+    ResponseType = any,
   >(
-    args: RequestArgs
+    args: RequestArgs,
   ): ((
     query: QueryType & ParamType,
-    payload: PayloadType
+    payload: PayloadType,
   ) => Promise<ResponseType>) => {
     return this.agent.updateRequest(args);
   };

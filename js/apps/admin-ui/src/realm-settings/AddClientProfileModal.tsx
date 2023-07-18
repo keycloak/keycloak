@@ -48,7 +48,7 @@ export const AddClientProfileModal = (props: AddClientProfileModalProps) => {
         (globalProfiles) => ({
           ...globalProfiles,
           global: true,
-        })
+        }),
       );
 
       const profiles = allProfiles.profiles?.map((profiles) => ({
@@ -58,7 +58,7 @@ export const AddClientProfileModal = (props: AddClientProfileModalProps) => {
 
       setTableProfiles([...(globalProfiles ?? []), ...(profiles ?? [])]);
     },
-    []
+    [],
   );
 
   const loader = async () =>

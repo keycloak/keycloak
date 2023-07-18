@@ -151,6 +151,13 @@ public class ModelToRepresentation {
     }
 
     public static Stream<GroupRepresentation> searchGroupsByAttributes(KeycloakSession session, RealmModel realm, boolean full, boolean populateHierarchy, Map<String,String> attributes, Integer first, Integer max) {
+        Stream<GroupModel> groups = searchGroupModelsByAttributes(session, realm, full, populateHierarchy, attributes, first, max);
+        // and then turn the result into GroupRepresentations creating whole hierarchy of child groups for each root group
+        return groups.map(g -> toGroupHierarchy(g, full, attributes));
+
+    }
+
+    public static Stream<GroupModel> searchGroupModelsByAttributes(KeycloakSession session, RealmModel realm, boolean full, boolean populateHierarchy, Map<String,String> attributes, Integer first, Integer max) {
         Stream<GroupModel> groups = session.groups().searchGroupsByAttributes(realm, attributes, first, max);
         if(populateHierarchy) {
             groups = groups
@@ -166,13 +173,16 @@ public class ModelToRepresentation {
                 // More child groups of one root can fulfill the search, so we need to filter duplicates
                 .filter(StreamsUtil.distinctByKey(GroupModel::getId));
         }
-        // and then turn the result into GroupRepresentations creating whole hierarchy of child groups for each root group
-        return groups.map(g -> toGroupHierarchy(g, full, attributes));
+        return groups;
     }
 
     public static Stream<GroupRepresentation> searchForGroupByName(KeycloakSession session, RealmModel realm, boolean full, String search, Boolean exact, Integer first, Integer max) {
-        return session.groups().searchForGroupByNameStream(realm, search, exact, first, max)
-                .map(g -> toGroupHierarchy(g, full, search, exact));
+        return searchForGroupModelByName(session, realm, full, search, exact, first, max)
+            .map(g -> toGroupHierarchy(g, full, search, exact));
+    }
+
+    public static Stream<GroupModel> searchForGroupModelByName(KeycloakSession session, RealmModel realm, boolean full, String search, Boolean exact, Integer first, Integer max) {
+        return session.groups().searchForGroupByNameStream(realm, search, exact, first, max);
     }
 
     public static Stream<GroupRepresentation> searchForGroupByName(UserModel user, boolean full, String search, Integer first, Integer max) {
@@ -181,8 +191,12 @@ public class ModelToRepresentation {
     }
 
     public static Stream<GroupRepresentation> toGroupHierarchy(RealmModel realm, boolean full, Integer first, Integer max) {
-        return realm.getTopLevelGroupsStream(first, max)
-                .map(g -> toGroupHierarchy(g, full));
+        return toGroupModelHierarchy(realm, full, first, max) 
+            .map(g -> toGroupHierarchy(g, full));
+    }
+
+    public static Stream<GroupModel> toGroupModelHierarchy(RealmModel realm, boolean full, Integer first, Integer max) {
+        return realm.getTopLevelGroupsStream(first, max);
     }
 
     public static Stream<GroupRepresentation> toGroupHierarchy(UserModel user, boolean full, Integer first, Integer max) {

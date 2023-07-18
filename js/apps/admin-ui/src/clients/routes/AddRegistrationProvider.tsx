@@ -28,7 +28,7 @@ export const EditRegistrationProviderRoute: AppRouteObject = {
 };
 
 export const toRegistrationProvider = (
-  params: RegistrationProviderParams
+  params: RegistrationProviderParams,
 ): Partial<Path> => {
   const path = params.id
     ? EditRegistrationProviderRoute.path

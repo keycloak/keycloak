@@ -17,7 +17,7 @@ export const UserFederationRoute: AppRouteObject = {
 };
 
 export const toUserFederation = (
-  params: UserFederationParams
+  params: UserFederationParams,
 ): Partial<Path> => ({
   pathname: generatePath(UserFederationRoute.path, params),
 });

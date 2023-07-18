@@ -41,7 +41,7 @@ const UsedByModal = ({ id, isSpecificClient, onClose }: UsedByModalProps) => {
   const loader = async (
     first?: number,
     max?: number,
-    search?: string
+    search?: string,
   ): Promise<{ name: string }[]> => {
     const result = await fetchUsedBy({
       id,
@@ -99,7 +99,7 @@ export const UsedBy = ({ authType: { id, usedBy }, realm }: UsedByProps) => {
   const [open, toggle] = useToggle();
 
   const key = Object.entries(realm).find(
-    (e) => e[1] === usedBy?.values[0]
+    (e) => e[1] === usedBy?.values[0],
   )?.[0];
 
   return (
@@ -123,7 +123,7 @@ export const UsedBy = ({ authType: { id, usedBy }, realm }: UsedByProps) => {
                   "appliedBy" +
                     (usedBy.type === "SPECIFIC_CLIENTS"
                       ? "Clients"
-                      : "Providers")
+                      : "Providers"),
                 )}{" "}
                 {usedBy.values.map((used, index) => (
                   <>

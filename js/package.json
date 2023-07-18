@@ -4,25 +4,25 @@
     "prepare": "cd .. && husky install js/.husky"
   },
   "devDependencies": {
-    "@types/node": "^20.4.0",
-    "@typescript-eslint/eslint-plugin": "^5.61.0",
-    "@typescript-eslint/parser": "^5.61.0",
-    "eslint": "^8.44.0",
+    "@types/node": "^20.4.2",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0",
+    "eslint": "^8.45.0",
     "eslint-config-prettier": "^8.8.0",
     "eslint-import-resolver-typescript": "^3.5.5",
     "eslint-plugin-cypress": "^2.13.3",
     "eslint-plugin-import": "^2.27.5",
     "eslint-plugin-lodash": "^7.4.0",
     "eslint-plugin-mocha": "^10.1.0",
-    "eslint-plugin-prettier": "^4.2.1",
+    "eslint-plugin-prettier": "^5.0.0",
     "eslint-plugin-react": "^7.32.2",
     "eslint-plugin-react-hooks": "^4.6.0",
     "husky": "^8.0.3",
     "lint-staged": "^13.2.3",
-    "prettier": "^2.8.8",
+    "prettier": "^3.0.0",
     "tslib": "^2.6.0",
     "typescript": "^5.1.6",
-    "wireit": "^0.9.5"
+    "wireit": "^0.10.0"
   },
   "packageManager": "pnpm@8.6.2",
   "lint-staged": {

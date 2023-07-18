@@ -45,7 +45,7 @@ export type PromiseResolvedFn<T> = (value: T) => void;
 export function usePromise<T>(
   factory: PromiseFactoryFn<T>,
   callback: PromiseResolvedFn<T>,
-  deps: DependencyList = []
+  deps: DependencyList = [],
 ) {
   useEffect(() => {
     const controller = new AbortController();

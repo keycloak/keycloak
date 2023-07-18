@@ -44,7 +44,7 @@ export const DedicatedScope = ({
           {
             id: client.id!,
           },
-          realmRoles
+          realmRoles,
         ),
         ...rows
           .filter((row) => row.client !== undefined)
@@ -54,8 +54,8 @@ export const DedicatedScope = ({
                 id: client.id!,
                 client: row.client!.id!,
               },
-              [row.role as RoleMappingPayload]
-            )
+              [row.role as RoleMappingPayload],
+            ),
           ),
       ]);
 

@@ -69,7 +69,7 @@ const DeviceActivity = () => {
 
   const signOutSession = async (
     session: SessionRepresentation,
-    device: DeviceRepresentation
+    device: DeviceRepresentation,
   ) => {
     try {
       await deleteSession(session.id);
@@ -104,7 +104,7 @@ const DeviceActivity = () => {
 
   return (
     <Page
-      title={t("device-activity")}
+      title={t("deviceActivity")}
       description={t("signedInDevicesExplanation")}
     >
       <Split hasGutter className="pf-u-mb-lg">
@@ -122,7 +122,7 @@ const DeviceActivity = () => {
               onClick={() => refresh()}
               icon={<SyncAltIcon />}
             >
-              Refresh
+              {t("refreshPage")}
             </Button>
           </Tooltip>
 
@@ -173,8 +173,8 @@ const DeviceActivity = () => {
                     >
                       {!session.current && (
                         <ContinueCancelModal
-                          buttonTitle={t("doSignOut")}
-                          modalTitle={t("doSignOut")}
+                          buttonTitle={t("signOut")}
+                          modalTitle={t("signOut")}
                           buttonVariant="secondary"
                           modalMessage={t("signOutWarning")}
                           onContinue={() => signOutSession(session, device)}
@@ -233,7 +233,7 @@ const DeviceActivity = () => {
                   </Grid>
                 </DataListContent>
               </DataListItemRow>
-            ))
+            )),
           )}
         </DataListItem>
       </DataList>

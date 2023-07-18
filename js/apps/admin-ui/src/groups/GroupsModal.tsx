@@ -18,7 +18,7 @@ import { KeycloakTextInput } from "../components/keycloak-text-input/KeycloakTex
 
 type GroupsModalProps = {
   id?: string;
-  rename?: string;
+  rename?: GroupRepresentation;
   handleModalToggle: () => void;
   refresh: (group?: GroupRepresentation) => void;
 };
@@ -36,7 +36,7 @@ export const GroupsModal = ({
     handleSubmit,
     formState: { errors },
   } = useForm({
-    defaultValues: { name: rename },
+    defaultValues: { name: rename?.name },
   });
 
   const submitForm = async (group: GroupRepresentation) => {
@@ -46,18 +46,21 @@ export const GroupsModal = ({
       if (!id) {
         await adminClient.groups.create(group);
       } else if (rename) {
-        await adminClient.groups.update({ id }, group);
+        await adminClient.groups.update(
+          { id },
+          { ...rename, name: group.name },
+        );
       } else {
         await (group.id
           ? adminClient.groups.updateChildGroup({ id }, group)
           : adminClient.groups.createChildGroup({ id }, group));
       }
 
-      refresh(rename ? group : undefined);
+      refresh(rename ? { ...rename, name: group.name } : undefined);
       handleModalToggle();
       addAlert(
         t(rename ? "groupUpdated" : "groupCreated"),
-        AlertVariant.success
+        AlertVariant.success,
       );
     } catch (error) {
       addError("groups:couldNotCreateGroup", error);

@@ -20,6 +20,7 @@ package org.keycloak.operator.testsuite.integration;
 import io.fabric8.junit.jupiter.api.KubernetesTest;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.dsl.Resource;
 
 import org.junit.jupiter.api.BeforeAll;
@@ -30,8 +31,10 @@ import org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImport;
 import java.io.FileNotFoundException;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImportBuilder;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @KubernetesTest
 public class CRDTest {
@@ -48,6 +51,20 @@ public class CRDTest {
     @Test
     public void testRealmImport() {
         roundTrip("/test-serialization-realmimport-cr.yml", KeycloakRealmImport.class);
+    }
+
+    @Test
+    public void testRealmImportWithoutRequiredFields() {
+        KeycloakRealmImport cr = new KeycloakRealmImportBuilder()
+                .withNewMetadata()
+                    .withName("invalid-realm")
+                .endMetadata()
+                .withNewSpec()
+                .endSpec()
+                .build();
+
+        var eMsg = assertThrows(KubernetesClientException.class, () -> client.resource(cr).create()).getMessage();
+        assertThat(eMsg).contains("spec.keycloakCRName: Required value", "spec.realm: Required value");
     }
 
     @Test

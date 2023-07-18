@@ -76,7 +76,7 @@ export const ExecutionConfigModal = ({
       setConfigDescription(configDescription);
       setConfig(config);
     },
-    []
+    [],
   );
 
   useEffect(() => {
@@ -101,7 +101,7 @@ export const ExecutionConfigModal = ({
           config: changedConfig.config,
         };
         const { id } = await adminClient.authenticationManagement.createConfig(
-          newConfig
+          newConfig,
         );
         setConfig({ ...newConfig.config, id, alias: newConfig.alias });
       }

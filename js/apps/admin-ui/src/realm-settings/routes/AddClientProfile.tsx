@@ -20,7 +20,7 @@ export const AddClientProfileRoute: AppRouteObject = {
 };
 
 export const toAddClientProfile = (
-  params: AddClientProfileParams
+  params: AddClientProfileParams,
 ): Partial<Path> => ({
   pathname: generatePath(AddClientProfileRoute.path, params),
 });

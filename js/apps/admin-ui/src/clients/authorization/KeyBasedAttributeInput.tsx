@@ -69,7 +69,7 @@ const ValueInput = ({
 
     if (selectableValues) {
       values = defaultContextAttributes.find(
-        (attr) => attr.key === getValues().context?.[rowIndex]?.key
+        (attr) => attr.key === getValues().context?.[rowIndex]?.key,
       )?.values;
     }
 
@@ -78,7 +78,7 @@ const ValueInput = ({
 
   const renderSelectOptionType = () => {
     const scopeValues = resources?.find(
-      (resource) => resource.name === getValues().resources?.[rowIndex]?.key
+      (resource) => resource.name === getValues().resources?.[rowIndex]?.key,
     )?.scopes;
 
     if (attributeValues?.length && !resources) {

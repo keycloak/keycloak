@@ -54,7 +54,7 @@ export const DefaultsGroupsTab = () => {
       setDefaultGroups(groups);
       setKey(key + 1);
     },
-    [load]
+    [load],
   );
 
   const loader = () => Promise.resolve(defaultGroups!);
@@ -66,12 +66,12 @@ export const DefaultsGroupsTab = () => {
           adminClient.realms.removeDefaultGroup({
             realm,
             id: group.id!,
-          })
-        )
+          }),
+        ),
       );
       addAlert(
         t("groupRemove", { count: selectedRows.length }),
-        AlertVariant.success
+        AlertVariant.success,
       );
       setSelectedRows([]);
     } catch (error) {
@@ -87,12 +87,12 @@ export const DefaultsGroupsTab = () => {
           adminClient.realms.addDefaultGroup({
             realm,
             id: group.id!,
-          })
-        )
+          }),
+        ),
       );
       addAlert(
         t("defaultGroupAdded", { count: groups.length }),
-        AlertVariant.success
+        AlertVariant.success,
       );
     } catch (error) {
       addError("realm-settings:defaultGroupAddedError", error);

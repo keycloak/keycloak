@@ -42,7 +42,7 @@ export const DetailCell = ({ id, clientId, uris }: DetailCellProps) => {
       setScope(scopes);
       setPermissions(permissions);
     },
-    []
+    [],
   );
 
   if (!permissions || !scope) {

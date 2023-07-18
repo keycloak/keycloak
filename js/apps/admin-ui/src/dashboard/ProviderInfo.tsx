@@ -22,9 +22,9 @@ export const ProviderInfo = () => {
   const providerInfo = useMemo(
     () =>
       Object.entries(serverInfo.providers || []).filter(([key]) =>
-        key.includes(filter)
+        key.includes(filter),
       ),
-    [filter]
+    [filter],
   );
 
   const toggleOpen = (option: string) => {
@@ -78,14 +78,14 @@ export const ProviderInfo = () => {
                                         <Td>{key}</Td>
                                         <Td>{value}</Td>
                                       </Tr>
-                                    )
+                                    ),
                                   )}
                                 </Tbody>
                               </TableComposable>
                             </ExpandableSection>
                           ) : null}
                         </li>
-                      )
+                      ),
                     )}
                   </ul>
                 </Td>

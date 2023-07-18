@@ -29,7 +29,7 @@ export const Policies = () => {
     (realm) => {
       setRealm(realm);
     },
-    []
+    [],
   );
 
   if (!realm) {

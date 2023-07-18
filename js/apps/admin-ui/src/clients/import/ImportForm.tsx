@@ -55,7 +55,7 @@ export default function ImportForm() {
   };
 
   async function parseFileContents(
-    contents: string
+    contents: string,
   ): Promise<ClientRepresentation> {
     if (!isXml(contents)) {
       return JSON.parse(contents);
@@ -63,18 +63,18 @@ export default function ImportForm() {
 
     const response = await fetch(
       `${addTrailingSlash(
-        adminClient.baseUrl
+        adminClient.baseUrl,
       )}admin/realms/${realm}/client-description-converter`,
       {
         method: "POST",
         body: contents,
         headers: getAuthorizationHeaders(await adminClient.getAccessToken()),
-      }
+      },
     );
 
     if (!response.ok) {
       throw new Error(
-        `Server responded with invalid status: ${response.statusText}`
+        `Server responded with invalid status: ${response.statusText}`,
       );
     }
 

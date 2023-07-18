@@ -51,7 +51,7 @@ export const RequiredActions = () => {
       ];
     },
     (actions) => setActions(actions),
-    [key]
+    [key],
   );
 
   const isUnregisteredAction = (data: DataType): boolean => {
@@ -60,14 +60,14 @@ export const RequiredActions = () => {
 
   const updateAction = async (
     action: DataType,
-    field: "enabled" | "defaultAction"
+    field: "enabled" | "defaultAction",
   ) => {
     try {
       if (field in action) {
         action[field] = !action[field];
         await adminClient.authenticationManagement.updateRequiredAction(
           { alias: action.alias! },
-          action
+          action,
         );
       } else if (isUnregisteredAction(action)) {
         await adminClient.authenticationManagement.registerRequiredAction({
@@ -84,7 +84,7 @@ export const RequiredActions = () => {
 
   const executeMove = async (
     action: RequiredActionProviderRepresentation,
-    times: number
+    times: number,
   ) => {
     try {
       const alias = action.alias!;
@@ -93,13 +93,13 @@ export const RequiredActions = () => {
           await adminClient.authenticationManagement.lowerRequiredActionPriority(
             {
               alias,
-            }
+            },
           );
         } else {
           await adminClient.authenticationManagement.raiseRequiredActionPriority(
             {
               alias,
-            }
+            },
           );
         }
       }

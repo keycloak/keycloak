@@ -22,7 +22,7 @@ export const IdentityProviderAddMapperRoute: AppRouteObject = {
 };
 
 export const toIdentityProviderAddMapper = (
-  params: IdentityProviderAddMapperParams
+  params: IdentityProviderAddMapperParams,
 ): Partial<Path> => ({
   pathname: generatePath(IdentityProviderAddMapperRoute.path, params),
 });

@@ -28,7 +28,7 @@ export const DedicatedScopeDetailsWithTabRoute: AppRouteObject = {
 };
 
 export const toDedicatedScope = (
-  params: DedicatedScopeDetailsParams
+  params: DedicatedScopeDetailsParams,
 ): Partial<Path> => {
   const path = params.tab
     ? DedicatedScopeDetailsWithTabRoute.path

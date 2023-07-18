@@ -32,7 +32,7 @@ type FlowRowProps = {
   onRowChange: (execution: ExpandableExecution) => void;
   onAddExecution: (
     execution: ExpandableExecution,
-    type: AuthenticationProviderRepresentation
+    type: AuthenticationProviderRepresentation,
   ) => void;
   onAddFlow: (execution: ExpandableExecution, flow: Flow) => void;
   onDelete: (execution: ExpandableExecution) => void;

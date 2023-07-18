@@ -111,7 +111,7 @@ export const ExtendedNonDiscoverySettings = () => {
                   onMinus={() => field.onChange(v - 1)}
                   onChange={(event) => {
                     const value = Number(
-                      (event.target as HTMLInputElement).value
+                      (event.target as HTMLInputElement).value,
                     );
                     field.onChange(value < 0 ? 0 : value);
                   }}

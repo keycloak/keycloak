@@ -74,7 +74,7 @@
         <cxf.jaxrs.version>3.3.10</cxf.jaxrs.version>
         <cxf.undertow.version>3.3.10</cxf.undertow.version>
         <dom4j.version>2.1.3</dom4j.version>
-        <h2.version>2.1.214</h2.version>
+        <h2.version>2.2.220</h2.version>
         <hibernate-orm.plugin.version>6.2.5.Final</hibernate-orm.plugin.version>
         <hibernate.c3p0.version>6.2.5.Final</hibernate.c3p0.version>
         <infinispan.version>14.0.10.Final</infinispan.version>
@@ -116,7 +116,6 @@
         <nashorn.version>15.4</nashorn.version>
         <ua-parser.version>1.5.4</ua-parser.version>
         <picketbox.version>5.0.3.Final</picketbox.version>
-        <google.guava.version>32.0.1-jre</google.guava.version>
         <xstream.version>1.4.20</xstream.version>
         <org.snakeyaml.snakeyaml-engine.version>2.6</org.snakeyaml.snakeyaml-engine.version>
 
@@ -137,7 +136,7 @@
 
         <!-- Databases - also published to db.adoc as "Tested Version" -->
         <mysql.version>8.0</mysql.version>
-        <mysql-jdbc.version>8.0.30</mysql-jdbc.version>
+        <mysql-jdbc.version>8.0.33</mysql-jdbc.version>
         <postgresql.version>15</postgresql.version>
         <postgresql-jdbc.version>42.6.0</postgresql-jdbc.version>
         <mariadb.version>10.11</mariadb.version>
@@ -575,12 +574,6 @@
                 </exclusions>
             </dependency>
 
-            <dependency>
-                <groupId>com.google.guava</groupId>
-                <artifactId>guava</artifactId>
-                <version>${google.guava.version}</version>
-            </dependency>
-
             <!-- Email Test Servers -->
             <dependency>
                 <groupId>com.icegreen</groupId>
@@ -667,7 +660,7 @@
             <!-- Needed for picketlink perf test -->
             <dependency>
                 <groupId>mysql</groupId>
-                <artifactId>mysql-connector-java</artifactId>
+                <artifactId>mysql-connector-j</artifactId>
                 <version>${mysql-jdbc.version}</version>
                 <scope>test</scope>
             </dependency>

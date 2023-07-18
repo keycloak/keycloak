@@ -59,14 +59,14 @@ const KeycloakMasthead = ({
         onClick={() => keycloak?.accountManagement()}
       >
         {t("manageAccount")}
-      </DropdownItem>
+      </DropdownItem>,
     );
   }
   if (hasLogout) {
     extraItems.push(
       <DropdownItem key="signOut" onClick={() => keycloak?.logout()}>
         {t("signOut")}
-      </DropdownItem>
+      </DropdownItem>,
     );
   }
 

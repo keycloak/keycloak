@@ -24,7 +24,7 @@ export default function UsersSection() {
       toUsers({
         realm: realmName,
         tab,
-      })
+      }),
     );
 
   const listTab = useTab("list");

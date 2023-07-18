@@ -79,15 +79,15 @@ export default function NewClientPolicyCondition() {
 
       if (conditionName) {
         const currentPolicy = policies.policies?.find(
-          (item) => item.name === policyName
+          (item) => item.name === policyName,
         );
 
         const typeAndConfigData = currentPolicy?.conditions?.find(
-          (item) => item.condition === conditionName
+          (item) => item.condition === conditionName,
         );
 
         const currentCondition = conditionTypes?.find(
-          (condition) => condition.id === conditionName
+          (condition) => condition.id === conditionName,
         );
 
         setConditionData(typeAndConfigData!);
@@ -95,7 +95,7 @@ export default function NewClientPolicyCondition() {
         setupForm(typeAndConfigData!);
       }
     },
-    []
+    [],
   );
 
   const save = async (configPolicy: ConfigProperty) => {
@@ -122,7 +122,7 @@ export default function NewClientPolicyCondition() {
         };
 
         const index = conditions.findIndex(
-          (condition) => conditionName === condition.condition
+          (condition) => conditionName === condition.condition,
         );
 
         if (index === -1) {
@@ -162,7 +162,7 @@ export default function NewClientPolicyCondition() {
         conditionName
           ? t("realm-settings:updateClientConditionSuccess")
           : t("realm-settings:createClientConditionSuccess"),
-        AlertVariant.success
+        AlertVariant.success,
       );
     } catch (error) {
       addError("realm-settings:createClientConditionError", error);
@@ -189,7 +189,7 @@ export default function NewClientPolicyCondition() {
                 helpText={
                   conditionType
                     ? `realm-settings-help:${camelCase(
-                        conditionType.replace(/-/g, " ")
+                        conditionType.replace(/-/g, " "),
                       )}`
                     : "realm-settings-help:conditions"
                 }
@@ -212,7 +212,7 @@ export default function NewClientPolicyCondition() {
                   onSelect={(_, value) => {
                     field.onChange(value);
                     setConditionProperties(
-                      (value as ComponentTypeRepresentation).properties
+                      (value as ComponentTypeRepresentation).properties,
                     );
                     setConditionType((value as ComponentTypeRepresentation).id);
                     setCondition([
@@ -232,8 +232,8 @@ export default function NewClientPolicyCondition() {
                       selected={condition.id === field.value}
                       description={t(
                         `realm-settings-help:${camelCase(
-                          condition.id.replace(/-/g, " ")
-                        )}`
+                          condition.id.replace(/-/g, " "),
+                        )}`,
                       )}
                       key={condition.id}
                       value={condition}

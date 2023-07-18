@@ -80,7 +80,7 @@ export const AuthorizationEvaluateResource = ({
                         outerPolicy={outerPolicy as PolicyResultRepresentation}
                         resource={resource}
                       />
-                    )
+                    ),
                   )}
                 </TableComposable>
               </DescriptionList>

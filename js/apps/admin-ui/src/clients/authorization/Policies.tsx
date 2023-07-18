@@ -110,11 +110,11 @@ export const AuthorizationPolicies = ({ clientId }: PoliciesProps) => {
     },
     ([providers, ...policies]) => {
       setPolicyProviders(
-        providers.filter((p) => p.type !== "resource" && p.type !== "scope")
+        providers.filter((p) => p.type !== "resource" && p.type !== "scope"),
       );
       setPolicies(policies);
     },
-    [key, search, first, max]
+    [key, search, first, max],
   );
 
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
@@ -174,7 +174,7 @@ export const AuthorizationPolicies = ({ clientId }: PoliciesProps) => {
               policyProviders={policyProviders}
               onSelect={(p) =>
                 navigate(
-                  toCreatePolicy({ id: clientId, realm, policyType: p.type! })
+                  toCreatePolicy({ id: clientId, realm, policyType: p.type! }),
                 )
               }
               toggleDialog={toggleDialog}
@@ -231,7 +231,7 @@ export const AuthorizationPolicies = ({ clientId }: PoliciesProps) => {
                             const rows = policies.map((policy, index) =>
                               index === rowIndex
                                 ? { ...policy, isExpanded: !policy.isExpanded }
-                                : policy
+                                : policy,
                             );
                             setPolicies(rows);
                           },
@@ -317,11 +317,11 @@ export const AuthorizationPolicies = ({ clientId }: PoliciesProps) => {
           {newDialog && (
             <NewPolicyDialog
               policyProviders={policyProviders?.filter(
-                (p) => p.type !== "aggregate"
+                (p) => p.type !== "aggregate",
               )}
               onSelect={(p) =>
                 navigate(
-                  toCreatePolicy({ id: clientId, realm, policyType: p.type! })
+                  toCreatePolicy({ id: clientId, realm, policyType: p.type! }),
                 )
               }
               toggleDialog={toggleDialog}

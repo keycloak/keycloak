@@ -33,8 +33,8 @@ export const GroupRoleMapping = ({ id, name }: GroupRoleMappingProps) => {
               id,
               clientUniqueId: row.client!.id!,
               roles: [row.role as RoleMappingPayload],
-            })
-          )
+            }),
+          ),
       );
       addAlert(t("roleMappingUpdatedSuccess"), AlertVariant.success);
     } catch (error) {

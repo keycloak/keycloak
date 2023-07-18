@@ -50,7 +50,7 @@ const CacheFields = ({ form }: { form: UseFormReturn }) => {
     hourOptions.push(
       <SelectOption key={index} value={[`${index}`]}>
         {hourDisplay}
-      </SelectOption>
+      </SelectOption>,
     );
   }
 
@@ -69,7 +69,7 @@ const CacheFields = ({ form }: { form: UseFormReturn }) => {
     minuteOptions.push(
       <SelectOption key={index} value={[`${index}`]}>
         {minuteDisplay}
-      </SelectOption>
+      </SelectOption>,
     );
   }
 
