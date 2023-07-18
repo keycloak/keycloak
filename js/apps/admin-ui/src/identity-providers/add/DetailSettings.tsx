@@ -164,13 +164,22 @@ export default function DetailSettings() {
   const [selectedMapper, setSelectedMapper] =
     useState<IdPWithMapperAttributes>();
   const serverInfo = useServerInfo();
-  const providerInfo = useMemo(
-    () =>
-      serverInfo.componentTypes?.[
-        "org.keycloak.broker.social.SocialIdentityProvider"
-      ]?.find((p) => p.id === providerId),
-    [serverInfo, providerId],
-  );
+  const providerInfo = useMemo(() => {
+    const namespaces = [
+      "org.keycloak.broker.social.SocialIdentityProvider",
+      "org.keycloak.broker.provider.IdentityProvider",
+    ];
+
+    for (const namespace of namespaces) {
+      const social = serverInfo.componentTypes?.[namespace]?.find(
+        ({ id }) => id === providerId,
+      );
+
+      if (social) {
+        return social;
+      }
+    }
+  }, [serverInfo, providerId]);
 
   const { addAlert, addError } = useAlerts();
   const navigate = useNavigate();
