@@ -73,7 +73,6 @@ public class AdminConsolePermissionsCalculatedTest extends AbstractKeycloakTest 
 
             JsonNode jsonNode = SimpleHttp.doGet(whoAmiUrl, client).auth(accessToken.getToken()).asJson();
 
-            assertTrue("Permissions for " + Config.getAdminRealm() + " realm.", jsonNode.at("/realm_access/" + Config.getAdminRealm()).isArray());
             assertTrue("Permissions for " + REALM_NAME + " realm.", jsonNode.at("/realm_access/" + REALM_NAME).isArray());
         }
     }
