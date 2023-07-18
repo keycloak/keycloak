@@ -38,4 +38,8 @@ runs:
     - id: extract-maven-artifacts
       name: Extract Keycloak Maven artifacts
       shell: bash
-      run: tar -C ~/ --use-compress-program unzstd -xf m2-keycloak.tzts
+      run: |
+        if [ "$RUNNER_OS" == "Windows" ]; then
+          choco install zstandard
+        fi
+        tar -C ~/ --use-compress-program="zstd -d" -xf m2-keycloak.tzts
