@@ -301,14 +301,10 @@ const GroupRow = ({
 
   return (
     <DataListItem
-      className={`join-group-dialog-row-${
-        isRowDisabled(group) ? "disabled" : ""
-      }`}
       aria-labelledby={group.name}
       key={group.id}
       id={group.id}
       onClick={(e) => {
-        if (isRowDisabled(group)) return;
         if (type === "selectOne") {
           onSelect(group.id!);
         } else if (
@@ -369,7 +365,7 @@ const GroupRow = ({
           isPlainButtonAction
         >
           {((hasSubgroups(group) && canBrowse) || type === "selectOne") && (
-            <Button isDisabled variant="link" aria-label={t("common:select")}>
+            <Button variant="link" aria-label={t("common:select")}>
               <AngleRightIcon />
             </Button>
           )}
