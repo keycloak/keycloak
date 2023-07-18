@@ -104,13 +104,14 @@ public class FlowTest extends AbstractAuthenticationTest {
 
         // test that built-in flow cannot be deleted
         List<AuthenticationFlowRepresentation> flows = authMgmtResource.getFlows();
-        for (AuthenticationFlowRepresentation flow : flows) {
-            try {
-                authMgmtResource.deleteFlow(flow.getId());
-                Assert.fail("deleteFlow should fail for built in flow");
-            } catch (BadRequestException e) {
-                break;
-            }
+        AuthenticationFlowRepresentation builtInFlow = flows.stream().filter(AuthenticationFlowRepresentation::isBuiltIn).findAny().orElse(null);
+        Assert.assertNotNull("No built in flow in the realm", builtInFlow);
+        try {
+            authMgmtResource.deleteFlow(builtInFlow.getId());
+            Assert.fail("deleteFlow should fail for built in flow");
+        } catch (BadRequestException e) {
+            OAuth2ErrorRepresentation error = e.getResponse().readEntity(OAuth2ErrorRepresentation.class);
+            Assert.assertEquals("Can't delete built in flow", error.getError());
         }
 
         // try create new flow using alias of already existing flow
