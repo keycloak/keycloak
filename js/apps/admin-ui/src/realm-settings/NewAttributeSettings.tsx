@@ -151,7 +151,7 @@ export default function NewAttributeSettings() {
         "annotations",
         Object.entries(annotations || {}).map(([key, value]) => ({
           key,
-          value,
+          value: value as Record<string, unknown>,
         })),
       );
       form.setValue(
