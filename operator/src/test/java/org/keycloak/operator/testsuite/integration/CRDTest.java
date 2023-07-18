@@ -26,6 +26,7 @@ import io.fabric8.kubernetes.client.dsl.Resource;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
+import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusAggregator;
 import org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImport;
 
 import java.io.FileNotFoundException;
@@ -70,6 +71,15 @@ public class CRDTest {
     @Test
     public void testKeycloak() {
         roundTrip("/test-serialization-keycloak-cr.yml", Keycloak.class);
+
+        // ensure that server side apply works
+        var kc = client.resources(Keycloak.class).withName("test-serialization-kc").get();
+        kc.setStatus(new KeycloakStatusAggregator(1L).build());
+        kc = client.resource(kc).updateStatus();
+        kc.getMetadata().setManagedFields(null);
+        kc.getMetadata().getAnnotations().put("x", "y");
+        kc = client.resource(kc).serverSideApply();
+        assertThat(kc.getMetadata().getAnnotations()).containsEntry("x", "y");
     }
 
     private <T extends HasMetadata> void roundTrip(String resourceFile, Class<T> type) {
