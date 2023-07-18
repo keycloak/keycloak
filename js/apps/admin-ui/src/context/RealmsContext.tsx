@@ -1,16 +1,14 @@
 import { NetworkError } from "@keycloak/keycloak-admin-client";
-import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
-import { sortBy } from "lodash-es";
 import { PropsWithChildren, useCallback, useMemo, useState } from "react";
 import { createNamedContext, useRequiredContext } from "ui-shared";
 
-import { adminClient } from "../admin-client";
 import { keycloak } from "../keycloak";
 import { useFetch } from "../utils/useFetch";
+import { fetchAdminUI } from "./auth/admin-ui-endpoint";
 
 type RealmsContextProps = {
   /** A list of all the realms. */
-  realms: RealmRepresentation[];
+  realms: string[];
   /** Refreshes the realms with the latest information. */
   refresh: () => Promise<void>;
 };
@@ -21,11 +19,11 @@ export const RealmsContext = createNamedContext<RealmsContextProps | undefined>(
 );
 
 export const RealmsProvider = ({ children }: PropsWithChildren) => {
-  const [realms, setRealms] = useState<RealmRepresentation[]>([]);
+  const [realms, setRealms] = useState<string[]>([]);
   const [refreshCount, setRefreshCount] = useState(0);
 
-  function updateRealms(realms: RealmRepresentation[]) {
-    setRealms(sortBy(realms, "realm"));
+  function updateRealms(realms: string[]) {
+    setRealms(realms.sort());
   }
 
   useFetch(
@@ -36,7 +34,7 @@ export const RealmsProvider = ({ children }: PropsWithChildren) => {
       }
 
       try {
-        return await adminClient.realms.find({ briefRepresentation: true });
+        return await fetchAdminUI<string[]>("ui-ext/realms", {});
       } catch (error) {
         if (error instanceof NetworkError && error.response.status < 500) {
           return [];
