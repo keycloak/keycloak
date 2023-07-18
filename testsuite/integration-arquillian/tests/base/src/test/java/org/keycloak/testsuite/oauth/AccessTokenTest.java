@@ -21,9 +21,12 @@ import com.fasterxml.jackson.core.TreeNode;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.TextNode;
+import org.apache.http.HttpEntity;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.ContentType;
+import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.message.BasicNameValuePair;
@@ -1428,6 +1431,27 @@ public class AccessTokenTest extends AbstractKeycloakTest {
             assertEquals(400, response.getStatusCode());
             assertEquals("invalid_request", response.getError());
             assertEquals("duplicated parameter", response.getErrorDescription());
+        }
+    }
+
+    @Test
+    public void missingGrantType() throws Exception {
+        oauth.doLogin("test-user@localhost", "password");
+
+        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+
+        try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
+            HttpPost post = new HttpPost(oauth.getAccessTokenUrl());
+
+            String authorization = BasicAuthHelper.createHeader(OAuth2Constants.CLIENT_ID, "password");
+            post.setHeader("Authorization", authorization);
+
+            post.setEntity(new StringEntity("{\"lala\":1}", ContentType.APPLICATION_FORM_URLENCODED));
+
+            OAuthClient.AccessTokenResponse response = new OAuthClient.AccessTokenResponse(client.execute(post));
+            assertEquals(400, response.getStatusCode());
+            assertEquals("invalid_request", response.getError());
+            assertEquals("Invalid or empty form parameters", response.getErrorDescription());
         }
     }
 

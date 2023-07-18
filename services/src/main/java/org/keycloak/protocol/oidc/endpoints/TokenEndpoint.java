@@ -201,6 +201,11 @@ public class TokenEndpoint {
         }
 
         formParams = formParameters;
+
+        // This handles the scenario where user forgets to convert urlencoded data to string.
+        if(formParams.size() == 1 && formParams.entrySet().iterator().next().getValue().get(0).isEmpty()) {
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "Invalid or empty form parameters", Status.BAD_REQUEST);
+        }
         grantType = formParams.getFirst(OIDCLoginProtocol.GRANT_TYPE_PARAM);
 
         // https://tools.ietf.org/html/rfc6749#section-5.1
