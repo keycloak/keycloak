@@ -7,7 +7,7 @@ export default class CreateProviderPage {
   private discoveryEndpoint = "discoveryEndpoint";
   private authorizationUrl = "authorizationUrl";
   private addButton = "createProvider";
-  private saveButton = "save";
+  private saveButton = "idp-details-save";
   private ssoServiceUrl = "sso-service-url";
   private authnContextClassRefs = "classref-field";
   private authnContextDeclRefs = "declref-field";
@@ -43,7 +43,7 @@ export default class CreateProviderPage {
 
   checkAddButtonDisabled(disabled = true) {
     cy.findByTestId(this.addButton).should(
-      !disabled ? "not." : "" + "be.disabled"
+      !disabled ? "not." : "" + "be.disabled",
     );
     return this;
   }
@@ -125,7 +125,7 @@ export default class CreateProviderPage {
   shouldBeSuccessful() {
     cy.findByTestId(this.discoveryEndpoint).should(
       "have.class",
-      "pf-m-success"
+      "pf-m-success",
     );
     return this;
   }

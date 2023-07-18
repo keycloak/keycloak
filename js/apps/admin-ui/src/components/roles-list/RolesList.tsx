@@ -4,14 +4,15 @@ import { AlertVariant, Button, ButtonVariant } from "@patternfly/react-core";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, To, useNavigate } from "react-router-dom";
+import { HelpItem } from "ui-shared";
 
-import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
+import { adminClient } from "../../admin-client";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { toRealmSettings } from "../../realm-settings/routes/RealmSettings";
 import { emptyFormatter, upperCaseFormatter } from "../../util";
+import { useFetch } from "../../utils/useFetch";
 import { useAlerts } from "../alert/Alerts";
 import { useConfirmDialog } from "../confirm-dialog/ConfirmDialog";
-import { HelpItem } from "ui-shared";
 import { KeycloakSpinner } from "../keycloak-spinner/KeycloakSpinner";
 import { ListEmptyState } from "../list-empty-state/ListEmptyState";
 import { Action, KeycloakDataTable } from "../table-toolbar/KeycloakDataTable";
@@ -32,7 +33,6 @@ const RoleDetailLink = ({
 }: RoleDetailLinkProps) => {
   const { t } = useTranslation(messageBundle);
   const { realm } = useRealm();
-
   return role.name !== defaultRoleName ? (
     <Link to={toDetail(role.id!)}>{role.name}</Link>
   ) : (
@@ -58,7 +58,7 @@ type RolesListProps = {
   loader?: (
     first?: number,
     max?: number,
-    search?: string
+    search?: string,
   ) => Promise<RoleRepresentation[]>;
 };
 
@@ -73,7 +73,6 @@ export const RolesList = ({
 }: RolesListProps) => {
   const { t } = useTranslation(messageBundle);
   const navigate = useNavigate();
-  const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
   const { realm: realmName } = useRealm();
   const [realm, setRealm] = useState<RealmRepresentation>();
@@ -85,7 +84,7 @@ export const RolesList = ({
     (realm) => {
       setRealm(realm);
     },
-    []
+    [],
   );
 
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
@@ -107,7 +106,7 @@ export const RolesList = ({
           ]);
         }
         setSelectedRole(undefined);
-        addAlert(t("roleDeletedSuccess"), AlertVariant.success);
+        addAlert(t("roles:roleDeletedSuccess"), AlertVariant.success);
       } catch (error) {
         addError("roles:roleDeleteError", error);
       }
@@ -145,10 +144,13 @@ export const RolesList = ({
                   title: t("common:delete"),
                   onRowClick: (role) => {
                     setSelectedRole(role);
-                    if (role.name === realm!.defaultRole!.name) {
+                    if (
+                      realm!.defaultRole &&
+                      role.name === realm!.defaultRole!.name
+                    ) {
                       addAlert(
                         t("defaultRoleDeleteError"),
-                        AlertVariant.danger
+                        AlertVariant.danger,
                       );
                     } else toggleDeleteDialog();
                   },

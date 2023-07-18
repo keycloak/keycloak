@@ -10,12 +10,10 @@ import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
 import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
-import { FormAccess } from "../../components/form-access/FormAccess";
+import { FormAccess } from "../../components/form/FormAccess";
 import { HelpItem } from "ui-shared";
 import { convertAttributeNameToForm } from "../../util";
 import { FormFields } from "../ClientDetails";
-
-import "./capability-config.css";
 
 type CapabilityConfigProps = {
   unWrap?: boolean;
@@ -71,9 +69,9 @@ export const CapabilityConfig = ({
                       setValue("serviceAccountsEnabled", false);
                       setValue(
                         convertAttributeNameToForm<FormFields>(
-                          "attributes.oidc.ciba.grant.enabled"
+                          "attributes.oidc.ciba.grant.enabled",
                         ),
-                        false
+                        false,
                       );
                     }
                   }}
@@ -121,7 +119,7 @@ export const CapabilityConfig = ({
             label={t("authenticationFlow")}
             fieldId="kc-flow"
           >
-            <Grid id="authenticationFlowGrid">
+            <Grid id="authenticationFlowGrid" hasGutter>
               <GridItem lg={4} sm={6}>
                 <Controller
                   name="standardFlowEnabled"
@@ -236,7 +234,7 @@ export const CapabilityConfig = ({
                       />
                       <HelpItem
                         helpText={t(
-                          "clients-help:oauthDeviceAuthorizationGrant"
+                          "clients-help:oauthDeviceAuthorizationGrant",
                         )}
                         fieldLabelId="clients:oauthDeviceAuthorizationGrant"
                       />
@@ -247,7 +245,7 @@ export const CapabilityConfig = ({
               <GridItem lg={8} sm={6}>
                 <Controller
                   name={convertAttributeNameToForm<FormFields>(
-                    "attributes.oidc.ciba.grant.enabled"
+                    "attributes.oidc.ciba.grant.enabled",
                   )}
                   defaultValue={false}
                   control={control}
@@ -289,7 +287,7 @@ export const CapabilityConfig = ({
           >
             <Controller
               name={convertAttributeNameToForm<FormFields>(
-                "attributes.saml.encrypt"
+                "attributes.saml.encrypt",
               )}
               control={control}
               defaultValue={false}
@@ -319,7 +317,7 @@ export const CapabilityConfig = ({
           >
             <Controller
               name={convertAttributeNameToForm<FormFields>(
-                "attributes.saml.client.signature"
+                "attributes.saml.client.signature",
               )}
               control={control}
               defaultValue={false}

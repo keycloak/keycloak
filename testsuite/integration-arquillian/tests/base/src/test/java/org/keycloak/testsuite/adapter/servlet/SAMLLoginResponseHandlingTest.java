@@ -32,7 +32,7 @@ import org.keycloak.testsuite.utils.arquillian.ContainerConstants;
 import org.openqa.selenium.By;
 import org.w3c.dom.Document;
 
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response;
 import java.net.URI;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -225,7 +225,7 @@ public class SAMLLoginResponseHandlingTest extends AbstractSAMLServletAdapterTes
 
                 try (Response response = protocolMappersResource.createMapper(mapper)) {
                     String createdId = getCreatedId(response);
-                    getCleanup().addCleanup((Runnable) () -> {
+                    getCleanup().addCleanup(() -> {
                         protocolMappersResource.delete(createdId);
                         mapper.setConfig(origConfig);
                         protocolMappersResource.createMapper(mapper).close();

@@ -1,6 +1,4 @@
-import { useState } from "react";
-import { useTranslation } from "react-i18next";
-import { useFormContext } from "react-hook-form";
+import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
 import {
   Alert,
   Button,
@@ -9,15 +7,17 @@ import {
   Split,
   SplitItem,
 } from "@patternfly/react-core";
+import { useState } from "react";
+import { useFormContext } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 
-import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
-import { PasswordInput } from "../../components/password-input/PasswordInput";
-import { CopyToClipboardButton } from "../scopes/CopyToClipboardButton";
-import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
-import { useAdminClient } from "../../context/auth/AdminClient";
+import { adminClient } from "../../admin-client";
 import { useAlerts } from "../../components/alert/Alerts";
-import useFormatDate from "../../utils/useFormatDate";
+import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
+import { PasswordInput } from "../../components/password-input/PasswordInput";
 import { useAccess } from "../../context/access/Access";
+import useFormatDate from "../../utils/useFormatDate";
+import { CopyToClipboardButton } from "../scopes/CopyToClipboardButton";
 
 export type ClientSecretProps = {
   client: ClientRepresentation;
@@ -86,11 +86,10 @@ const ExpireDateFormatter = ({ time }: { time: number }) => {
 
 export const ClientSecret = ({ client, secret, toggle }: ClientSecretProps) => {
   const { t } = useTranslation("clients");
-  const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
 
   const [secretRotated, setSecretRotated] = useState<string | undefined>(
-    client.attributes?.["client.secret.rotated"]
+    client.attributes?.["client.secret.rotated"],
   );
   const secretExpirationTime: number =
     client.attributes?.["client.secret.expiration.time"];

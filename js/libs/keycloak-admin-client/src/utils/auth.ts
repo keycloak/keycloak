@@ -48,6 +48,24 @@ export interface TokenResponse {
   idToken?: string;
 }
 
+// See: https://developer.mozilla.org/en-US/docs/Glossary/Base64
+const bytesToBase64 = (bytes: Uint8Array) =>
+  btoa(Array.from(bytes, (byte) => String.fromCodePoint(byte)).join(""));
+const toBase64 = (input: string) =>
+  bytesToBase64(new TextEncoder().encode(input));
+
+// See: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/encodeURIComponent#encoding_for_rfc3986
+const encodeRFC3986URIComponent = (input: string) =>
+  encodeURIComponent(input).replace(
+    /[!'()*]/g,
+    (c) => `%${c.charCodeAt(0).toString(16).toUpperCase()}`,
+  );
+
+// See https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/encodeURIComponent
+// Specifically, the section on encoding `application/x-www-form-urlencoded`.
+const encodeFormURIComponent = (data: string) =>
+  encodeRFC3986URIComponent(data).replaceAll("%20", "+");
+
 export const getToken = async (settings: Settings): Promise<TokenResponse> => {
   // Construct URL
   const baseUrl = settings.baseUrl || defaultBaseUrl;
@@ -77,9 +95,14 @@ export const getToken = async (settings: Settings): Promise<TokenResponse> => {
   const headers = new Headers(options.headers);
 
   if (credentials.clientSecret) {
+    // See: https://datatracker.ietf.org/doc/html/rfc6749#section-2.3.1
+    const username = encodeFormURIComponent(credentials.clientId);
+    const password = encodeFormURIComponent(credentials.clientSecret);
+
+    // See: https://datatracker.ietf.org/doc/html/rfc2617#section-2
     headers.set(
-      "Authorization",
-      atob(credentials.clientId + ":" + credentials.clientSecret)
+      "authorization",
+      `Basic ${toBase64(`${username}:${password}`)}`,
     );
   }
 

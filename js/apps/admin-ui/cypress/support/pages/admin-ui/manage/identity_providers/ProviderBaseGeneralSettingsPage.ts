@@ -82,8 +82,8 @@ export default class ProviderBaseGeneralSettingsPage extends PageObject {
     return this;
   }
 
-  protected assertCommonRequiredFields(requiredFiels: string[]) {
-    requiredFiels.forEach((elementLocator) => {
+  protected assertCommonRequiredFields(requiredFields: string[]) {
+    requiredFields.forEach((elementLocator) => {
       if (elementLocator.includes("#")) {
         cy.get(elementLocator)
           .parent()
@@ -122,12 +122,12 @@ export default class ProviderBaseGeneralSettingsPage extends PageObject {
   protected assertCommonFilledDataEqual(idpName: string) {
     cy.get(this.clientIdInput).should(
       "have.value",
-      this.testData["ClientId"] + idpName
+      this.testData["ClientId"] + idpName,
     );
     cy.get(this.clientSecretInput).should("contain.value", "****");
     cy.get(this.displayOrderInput).should(
       "have.value",
-      this.testData["DisplayOrder"]
+      this.testData["DisplayOrder"],
     );
     return this;
   }

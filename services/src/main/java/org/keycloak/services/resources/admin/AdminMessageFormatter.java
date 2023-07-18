@@ -27,7 +27,6 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.theme.Theme;
-import org.keycloak.utils.StringUtil;
 
 /**
  * Message formatter for Admin GUI/API messages. 
@@ -48,13 +47,8 @@ public class AdminMessageFormatter implements BiFunction<String, Object[], Strin
         try {
             KeycloakContext context = session.getContext();
             locale = context.resolveLocale(user);
-            messages = new Properties();
-            messages.putAll(getTheme(session).getMessages(locale));
             RealmModel realm = context.getRealm();
-            if(StringUtil.isNotBlank(realm.getDefaultLocale())) {
-                messages.putAll(realm.getRealmLocalizationTextsByLocale(realm.getDefaultLocale()));
-            }
-            messages.putAll(realm.getRealmLocalizationTextsByLocale(locale.toLanguageTag()));
+            messages = getTheme(session).getEnhancedMessages(realm, locale);
         } catch (IOException cause) {
             throw new RuntimeException("Failed to configure error messages", cause);
         }

@@ -1,7 +1,5 @@
-import { useState } from "react";
-import { Link, useLocation } from "react-router-dom";
-import { useTranslation } from "react-i18next";
-import { uniqBy } from "lodash-es";
+import type GroupRepresentation from "@keycloak/keycloak-admin-client/lib/defs/groupRepresentation";
+import type UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
 import {
   AlertVariant,
   Button,
@@ -11,25 +9,26 @@ import {
   KebabToggle,
   ToolbarItem,
 } from "@patternfly/react-core";
+import { uniqBy } from "lodash-es";
+import { useState } from "react";
+import { useTranslation } from "react-i18next";
+import { Link, useLocation } from "react-router-dom";
 
-import type GroupRepresentation from "@keycloak/keycloak-admin-client/lib/defs/groupRepresentation";
-import type UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
+import { adminClient } from "../admin-client";
+import { useAlerts } from "../components/alert/Alerts";
+import { GroupPath } from "../components/group/GroupPath";
+import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
 import {
   Action,
   KeycloakDataTable,
 } from "../components/table-toolbar/KeycloakDataTable";
-import { useAdminClient } from "../context/auth/AdminClient";
-import { useRealm } from "../context/realm-context/RealmContext";
-import { useAlerts } from "../components/alert/Alerts";
-import { emptyFormatter } from "../util";
-
-import { getLastId } from "./groupIdUtils";
-import { useSubGroups } from "./SubGroupsContext";
-import { MemberModal } from "./MembersModal";
-import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
-import { GroupPath } from "../components/group/GroupPath";
-import { toUser } from "../user/routes/User";
 import { useAccess } from "../context/access/Access";
+import { useRealm } from "../context/realm-context/RealmContext";
+import { toUser } from "../user/routes/User";
+import { emptyFormatter } from "../util";
+import { MemberModal } from "./MembersModal";
+import { useSubGroups } from "./SubGroupsContext";
+import { getLastId } from "./groupIdUtils";
 
 type MembersOf = UserRepresentation & {
   membership: GroupRepresentation[];
@@ -59,7 +58,6 @@ const UserDetailLink = (user: MembersOf) => {
 
 export const Members = () => {
   const { t } = useTranslation("groups");
-  const { adminClient } = useAdminClient();
 
   const { addAlert, addError } = useAlerts();
   const location = useLocation();
@@ -101,14 +99,14 @@ export const Members = () => {
       const subGroups = getSubGroups(currentGroup()?.subGroups!);
       for (const group of subGroups) {
         members = members.concat(
-          await adminClient.groups.listMembers({ id: group.id! })
+          await adminClient.groups.listMembers({ id: group.id! }),
         );
       }
       members = uniqBy(members, (member) => member.username);
     }
 
     const memberOfPromises = await Promise.all(
-      members.map((member) => getMembership(member.id!))
+      members.map((member) => getMembership(member.id!)),
     );
     return members.map((member: UserRepresentation, i) => {
       return { ...member, membership: memberOfPromises[i] };
@@ -176,13 +174,13 @@ export const Members = () => {
                               adminClient.users.delFromGroup({
                                 id: user.id!,
                                 groupId: id!,
-                              })
-                            )
+                              }),
+                            ),
                           );
                           setIsKebabOpen(false);
                           addAlert(
                             t("usersLeft", { count: selectedRows.length }),
-                            AlertVariant.success
+                            AlertVariant.success,
                           );
                         } catch (error) {
                           addError("groups:usersLeftError", error);
@@ -212,7 +210,7 @@ export const Members = () => {
                       });
                       addAlert(
                         t("usersLeft", { count: 1 }),
-                        AlertVariant.success
+                        AlertVariant.success,
                       );
                     } catch (error) {
                       addError("groups:usersLeftError", error);

@@ -9,15 +9,15 @@ import {
 } from "@patternfly/react-core";
 import { Controller, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
+import { HelpItem } from "ui-shared";
 
+import { adminClient } from "../../admin-client";
 import { useAlerts } from "../../components/alert/Alerts";
 import {
   ConfirmDialogModal,
   useConfirmDialog,
 } from "../../components/confirm-dialog/ConfirmDialog";
-import { HelpItem } from "ui-shared";
 import { PasswordInput } from "../../components/password-input/PasswordInput";
-import { useAdminClient } from "../../context/auth/AdminClient";
 import useToggle from "../../utils/useToggle";
 
 type ResetPasswordDialogProps = {
@@ -52,6 +52,8 @@ export const ResetPasswordDialog = ({
     formState: { isValid, errors },
     watch,
     handleSubmit,
+    clearErrors,
+    setError,
   } = useForm<CredentialsForm>({
     defaultValues: credFormDefaultValues,
     mode: "onChange",
@@ -59,8 +61,8 @@ export const ResetPasswordDialog = ({
 
   const [confirm, toggle] = useToggle(true);
   const password = watch("password", "");
+  const passwordConfirmation = watch("passwordConfirmation", "");
 
-  const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
 
   const [toggleConfirmSaveModal, ConfirmSaveModal] = useConfirmDialog({
@@ -100,14 +102,14 @@ export const ResetPasswordDialog = ({
             id: user.id!,
             credentialId: credentialLabel.id!,
           },
-          t("defaultPasswordLabel")
+          t("defaultPasswordLabel"),
         );
       }
       addAlert(
         isResetPassword
           ? t("resetCredentialsSuccess")
           : t("savePasswordSuccess"),
-        AlertVariant.success
+        AlertVariant.success,
       );
       refresh();
     } catch (error) {
@@ -115,13 +117,14 @@ export const ResetPasswordDialog = ({
         isResetPassword
           ? "users:resetPasswordError"
           : "users:savePasswordError",
-        error
+        error,
       );
     }
 
     onClose();
   };
 
+  const { onChange, ...rest } = register("password", { required: true });
   return (
     <>
       <ConfirmSaveModal />
@@ -158,7 +161,17 @@ export const ResetPasswordDialog = ({
             <PasswordInput
               data-testid="passwordField"
               id="password"
-              {...register("password", { required: true })}
+              onChange={(e) => {
+                onChange(e);
+                if (passwordConfirmation !== e.currentTarget.value) {
+                  setError("passwordConfirmation", {
+                    message: t("confirmPasswordDoesNotMatch").toString(),
+                  });
+                } else {
+                  clearErrors("passwordConfirmation");
+                }
+              }}
+              {...rest}
             />
           </FormGroup>
           <FormGroup

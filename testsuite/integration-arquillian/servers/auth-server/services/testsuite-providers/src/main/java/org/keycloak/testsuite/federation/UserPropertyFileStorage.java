@@ -54,8 +54,8 @@ import static org.keycloak.utils.StreamsUtil.paginatedStream;
  */
 public class UserPropertyFileStorage implements UserLookupProvider, UserStorageProvider, UserQueryProvider, CredentialInputValidator {
 
-    public static final String SEARCH_METHOD = "searchForUserStream(RealmMode, String, Integer, Integer)";
-    public static final String COUNT_SEARCH_METHOD = "getUsersCount(RealmModel, String)";
+    public static final String SEARCH_METHOD = "searchForUserStream(RealmMode, Map, Integer, Integer)";
+    public static final String COUNT_SEARCH_METHOD = "getUsersCount(RealmModel, Map)";
 
     protected Properties userPasswords;
     protected ComponentModel model;
@@ -107,10 +107,10 @@ public class UserPropertyFileStorage implements UserLookupProvider, UserStorageP
     }
 
     @Override
-    public int getUsersCount(RealmModel realm, String search) {
+    public int getUsersCount(RealmModel realm, Map<String, String> params) {
         addCall(COUNT_SEARCH_METHOD);
         
-        return (int) searchForUser(realm, search, null, null, username -> username.contains(search)).count();
+        return (int) searchForUser(realm, params.get(UserModel.SEARCH), null, null, username -> username.contains(params.get(UserModel.SEARCH))).count();
     }
 
     @Override
@@ -150,6 +150,7 @@ public class UserPropertyFileStorage implements UserLookupProvider, UserStorageP
         }
     }
 
+    @Override
     public UserModel getUserByUsername(RealmModel realm, String username) {
         if (!userPasswords.containsKey(username)) return null;
 
@@ -202,33 +203,25 @@ public class UserPropertyFileStorage implements UserLookupProvider, UserStorageP
         return userPasswords.size();
     }
 
-    @Override
-    public Stream<UserModel> getUsersStream(RealmModel realm) {
-        return userPasswords.keySet().stream()
-                .map(username -> createUser(realm, (String) username));
-    }
-
-    @Override
-    public Stream<UserModel> getUsersStream(RealmModel realm, Integer firstResult, Integer maxResults) {
-        if (maxResults != null && maxResults == 0) return Stream.empty();
-        return paginatedStream(userPasswords.keySet().stream(), firstResult, maxResults)
-                .map(username -> createUser(realm, (String) username));
-    }
-
-    @Override
-    public Stream<UserModel> searchForUserStream(RealmModel realm, String search, Integer firstResult, Integer maxResults) {
-        addCall(SEARCH_METHOD, firstResult, maxResults);
-        return searchForUser(realm, search, firstResult, maxResults, username -> username.contains(search));
-    }
+//    @Override
+//    public Stream<UserModel> searchForUserStream(RealmModel realm, String search, Integer firstResult, Integer maxResults) {
+//        addCall(SEARCH_METHOD, firstResult, maxResults);
+//        return searchForUser(realm, search, firstResult, maxResults, username -> username.contains(search));
+//    }
 
     @Override
     public Stream<UserModel> searchForUserStream(RealmModel realm, Map<String, String> attributes, Integer firstResult, Integer maxResults) {
+        addCall(SEARCH_METHOD, firstResult, maxResults);
         String search = Optional.ofNullable(attributes.get(UserModel.USERNAME))
                 .orElseGet(()-> attributes.get(UserModel.SEARCH));
-        if (search == null) return Stream.empty();
-        Predicate<String> p = Boolean.valueOf(attributes.getOrDefault(UserModel.EXACT, Boolean.FALSE.toString()))
-                ? username -> username.equals(search)
-                : username -> username.contains(search);
+        Predicate<String> p;
+        if (search == null) {
+            p = x -> true;
+        } else {
+            p = Boolean.parseBoolean(attributes.getOrDefault(UserModel.EXACT, Boolean.FALSE.toString()))
+                    ? username -> username.equals(search)
+                    : username -> username.contains(search);
+        }
         return searchForUser(realm, search, firstResult, maxResults, p);
     }
 

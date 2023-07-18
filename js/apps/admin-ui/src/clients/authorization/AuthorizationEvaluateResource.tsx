@@ -62,13 +62,13 @@ export const AuthorizationEvaluateResource = ({
                 <TableComposable aria-label={t("evaluationResults")}>
                   <Thead>
                     <Tr>
-                      <Th />
+                      <Th aria-hidden="true" />
                       <Th>{t("permission")}</Th>
                       <Th>{t("results")}</Th>
                       <Th>{t("decisionStrategy")}</Th>
                       <Th>{t("grantedScopes")}</Th>
                       <Th>{t("deniedScopes")}</Th>
-                      <Th />
+                      <Th aria-hidden="true" />
                     </Tr>
                   </Thead>
                   {Object.values(evaluateResults[rowIndex].policies).map(
@@ -80,7 +80,7 @@ export const AuthorizationEvaluateResource = ({
                         outerPolicy={outerPolicy as PolicyResultRepresentation}
                         resource={resource}
                       />
-                    )
+                    ),
                   )}
                 </TableComposable>
               </DescriptionList>

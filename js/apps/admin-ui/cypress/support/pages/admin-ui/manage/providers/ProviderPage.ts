@@ -139,7 +139,7 @@ export default class ProviderPage {
   verifyChangedHourInput(expected: string, unexpected: string) {
     expect(cy.get(this.cacheHourInput).contains(expected).should("exist"));
     expect(
-      cy.get(this.cacheHourInput).contains(unexpected).should("not.exist")
+      cy.get(this.cacheHourInput).contains(unexpected).should("not.exist"),
     );
     return this;
   }
@@ -161,7 +161,7 @@ export default class ProviderPage {
     name: string,
     realm: string,
     principal: string,
-    keytab: string
+    keytab: string,
   ) {
     if (name) {
       cy.findByTestId(this.kerberosNameInput).clear().type(name);
@@ -229,7 +229,7 @@ export default class ProviderPage {
     truststoreSpi?: string,
     connectionTimeout?: string,
     bindDn?: string,
-    bindCreds?: string
+    bindCreds?: string,
   ) {
     cy.findByTestId(this.connectionUrlInput).clear().type(connectionUrl);
 
@@ -263,7 +263,7 @@ export default class ProviderPage {
     userObjClasses?: string,
     userLdapFilter?: string,
     searchScope?: string,
-    readTimeout?: string
+    readTimeout?: string,
   ) {
     cy.get(this.ldapEditModeInput).click();
     cy.get(this.ldapEditModeList).contains(editMode).click();
@@ -427,6 +427,11 @@ export default class ProviderPage {
   clickNewCard(providerType: string) {
     cy.findByTestId(`${providerType}-card`).click();
     cy.wait(1000);
+    return this;
+  }
+
+  assertCardContainsText(providerType: string, expectedText: string) {
+    cy.findByTestId(`${providerType}-card`).should("contain", expectedText);
     return this;
   }
 

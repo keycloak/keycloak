@@ -24,8 +24,10 @@ export const LoginSettings = ({
   const { realm } = useRealm();
 
   const idpInitiatedSsoUrlName: string = watch(
-    "attributes.saml_idp_initiated_sso_url_name"
+    "attributes.saml_idp_initiated_sso_url_name",
   );
+
+  const standardFlowEnabled = watch("standardFlowEnabled");
   return (
     <>
       <FormGroup
@@ -62,45 +64,49 @@ export const LoginSettings = ({
           {...rest}
         />
       </FormGroup>
-      <FormGroup
-        label={t("validRedirectUri")}
-        fieldId="kc-redirect"
-        labelIcon={
-          <HelpItem
-            helpText={t("clients-help:validRedirectURIs")}
-            fieldLabelId="clients:validRedirectUri"
-          />
-        }
-      >
-        <MultiLineInput
-          id="kc-redirect"
-          name="redirectUris"
-          aria-label={t("validRedirectUri")}
-          addButtonLabel="clients:addRedirectUri"
-          {...rest}
-        />
-      </FormGroup>
-      <FormGroup
-        label={t("validPostLogoutRedirectUri")}
-        fieldId="kc-postLogoutRedirect"
-        labelIcon={
-          <HelpItem
-            helpText={t("clients-help:validPostLogoutRedirectURIs")}
-            fieldLabelId="clients:validPostLogoutRedirectUri"
-          />
-        }
-      >
-        <MultiLineInput
-          id="kc-postLogoutRedirect"
-          name={convertAttributeNameToForm(
-            "attributes.post.logout.redirect.uris"
-          )}
-          aria-label={t("validPostLogoutRedirectUri")}
-          addButtonLabel="clients:addPostLogoutRedirectUri"
-          stringify
-          {...rest}
-        />
-      </FormGroup>
+      {standardFlowEnabled && (
+        <>
+          <FormGroup
+            label={t("validRedirectUri")}
+            fieldId="kc-redirect"
+            labelIcon={
+              <HelpItem
+                helpText={t("clients-help:validRedirectURIs")}
+                fieldLabelId="clients:validRedirectUri"
+              />
+            }
+          >
+            <MultiLineInput
+              id="kc-redirect"
+              name="redirectUris"
+              aria-label={t("validRedirectUri")}
+              addButtonLabel="clients:addRedirectUri"
+              {...rest}
+            />
+          </FormGroup>
+          <FormGroup
+            label={t("validPostLogoutRedirectUri")}
+            fieldId="kc-postLogoutRedirect"
+            labelIcon={
+              <HelpItem
+                helpText={t("clients-help:validPostLogoutRedirectURIs")}
+                fieldLabelId="clients:validPostLogoutRedirectUri"
+              />
+            }
+          >
+            <MultiLineInput
+              id="kc-postLogoutRedirect"
+              name={convertAttributeNameToForm(
+                "attributes.post.logout.redirect.uris",
+              )}
+              aria-label={t("validPostLogoutRedirectUri")}
+              addButtonLabel="clients:addPostLogoutRedirectUri"
+              stringify
+              {...rest}
+            />
+          </FormGroup>{" "}
+        </>
+      )}
       {protocol === "saml" && (
         <>
           <FormGroup
@@ -163,7 +169,7 @@ export const LoginSettings = ({
           </FormGroup>
         </>
       )}
-      {protocol !== "saml" && (
+      {protocol !== "saml" && standardFlowEnabled && (
         <FormGroup
           label={t("webOrigins")}
           fieldId="kc-web-origins"

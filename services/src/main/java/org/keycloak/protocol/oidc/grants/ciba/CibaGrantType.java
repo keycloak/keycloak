@@ -18,9 +18,9 @@
 
 package org.keycloak.protocol.oidc.grants.ciba;
 
-import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriBuilder;
+import jakarta.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.UriBuilder;
 
 import org.jboss.logging.Logger;
 import org.keycloak.OAuthErrorException;
@@ -161,17 +161,11 @@ public class CibaGrantType {
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT, cpe.getErrorDetail(), Response.Status.BAD_REQUEST);
         }
 
-        OAuth2DeviceCodeModel deviceCode = DeviceGrantType.getDeviceByDeviceCode(session, realm, request.getId());
+        OAuth2DeviceCodeModel deviceCode = DeviceGrantType.getDeviceByDeviceCode(session, realm, client, event, request.getId());
 
         if (deviceCode == null) {
             // Auth Req ID has not put onto cache, no need to remove Auth Req ID.
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT, "Invalid " + AUTH_REQ_ID, Response.Status.BAD_REQUEST);
-        }
-
-        if (!request.getIssuedFor().equals(client.getClientId())) {
-            logDebug("invalid client.", request);
-            // the client sending this Auth Req ID does not match the client to which keycloak had issued Auth Req ID.
-            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_GRANT, "unauthorized client", Response.Status.BAD_REQUEST);
         }
 
         if (deviceCode.isExpired()) {

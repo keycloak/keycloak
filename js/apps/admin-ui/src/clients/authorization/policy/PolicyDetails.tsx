@@ -12,12 +12,13 @@ import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
 
+import { adminClient } from "../../../admin-client";
 import { useAlerts } from "../../../components/alert/Alerts";
 import { useConfirmDialog } from "../../../components/confirm-dialog/ConfirmDialog";
-import { FormAccess } from "../../../components/form-access/FormAccess";
+import { FormAccess } from "../../../components/form/FormAccess";
 import { KeycloakSpinner } from "../../../components/keycloak-spinner/KeycloakSpinner";
 import { ViewHeader } from "../../../components/view-header/ViewHeader";
-import { useAdminClient, useFetch } from "../../../context/auth/AdminClient";
+import { useFetch } from "../../../utils/useFetch";
 import { useParams } from "../../../utils/useParams";
 import { toAuthorizationTab } from "../../routes/AuthenticationTab";
 import {
@@ -67,10 +68,10 @@ export default function PolicyDetails() {
   const form = useForm();
   const { reset, handleSubmit } = form;
 
-  const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
 
   const [policy, setPolicy] = useState<PolicyRepresentation>();
+  const isDisabled = policyType === "js";
 
   useFetch(
     async () => {
@@ -102,7 +103,7 @@ export default function PolicyDetails() {
       reset({ ...policy, policies });
       setPolicy(policy);
     },
-    [id, policyType, policyId]
+    [id, policyType, policyId],
   );
 
   const onSubmit = async (policy: Policy) => {
@@ -117,12 +118,12 @@ export default function PolicyDetails() {
       if (policyId) {
         await adminClient.clients.updatePolicy(
           { id, type: policyType, policyId },
-          policy
+          policy,
         );
       } else {
         const result = await adminClient.clients.createPolicy(
           { id, type: policyType },
-          policy
+          policy,
         );
         navigate(
           toPolicyDetails({
@@ -130,12 +131,12 @@ export default function PolicyDetails() {
             id,
             policyType,
             policyId: result.id!,
-          })
+          }),
         );
       }
       addAlert(
         t((policyId ? "update" : "create") + "PolicySuccess"),
-        AlertVariant.success
+        AlertVariant.success,
       );
     } catch (error) {
       addError("clients:policySaveError", error);
@@ -164,9 +165,13 @@ export default function PolicyDetails() {
     return <KeycloakSpinner />;
   }
 
-  const ComponentType = isValidComponentType(policyType)
-    ? COMPONENTS[policyType]
-    : COMPONENTS["js"];
+  function getComponentType() {
+    return isValidComponentType(policyType)
+      ? COMPONENTS[policyType]
+      : COMPONENTS["js"];
+  }
+
+  const ComponentType = getComponentType();
 
   return (
     <>
@@ -198,13 +203,14 @@ export default function PolicyDetails() {
           role="view-clients"
         >
           <FormProvider {...form}>
-            <NameDescription prefix="policy" />
+            <NameDescription isDisabled={isDisabled} prefix="policy" />
             <ComponentType />
-            <LogicSelector />
+            <LogicSelector isDisabled={isDisabled} />
           </FormProvider>
           <ActionGroup>
             <div className="pf-u-mt-md">
               <Button
+                isDisabled={isDisabled}
                 variant={ButtonVariant.primary}
                 className="pf-u-mr-md"
                 type="submit"

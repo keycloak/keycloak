@@ -86,13 +86,13 @@ import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.CommonClientSessionModel;
 import org.w3c.dom.Document;
 
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriBuilder;
-import javax.ws.rs.core.UriInfo;
-import javax.xml.soap.SOAPException;
-import javax.xml.soap.SOAPMessage;
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.UriBuilder;
+import jakarta.ws.rs.core.UriInfo;
+import jakarta.xml.soap.SOAPException;
+import jakarta.xml.soap.SOAPMessage;
 import java.io.IOException;
 import java.net.URI;
 import java.security.PrivateKey;
@@ -207,7 +207,7 @@ public class SamlProtocol implements LoginProtocol {
 
     private SingleUseObjectProvider getSingleUseStore() {
         if (singleUseStore == null) {
-            singleUseStore = session.getProvider(SingleUseObjectProvider.class);
+            singleUseStore = session.singleUseObjects();
         }
         return singleUseStore;
     }

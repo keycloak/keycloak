@@ -22,10 +22,10 @@ import static org.keycloak.utils.LockObjectsForModification.lockUserSessionsForM
 
 import java.net.URI;
 
-import javax.ws.rs.core.Cookie;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriBuilder;
-import javax.ws.rs.core.UriInfo;
+import jakarta.ws.rs.core.Cookie;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.UriBuilder;
+import jakarta.ws.rs.core.UriInfo;
 
 import org.jboss.logging.Logger;
 import org.keycloak.http.HttpRequest;
@@ -222,6 +222,7 @@ public class SessionCodeChecks {
         ClientModel client = authSession.getClient();
         if (client == null) {
             event.error(Errors.CLIENT_NOT_FOUND);
+            session.getProvider(LoginFormsProvider.class).setDetachedAuthSession();
             response = ErrorPage.error(session, authSession, Response.Status.BAD_REQUEST, Messages.UNKNOWN_LOGIN_REQUESTER);
             clientCode.removeExpiredClientSession();
             return false;
@@ -232,6 +233,7 @@ public class SessionCodeChecks {
 
         if (checkClientDisabled(client)) {
             event.error(Errors.CLIENT_DISABLED);
+            session.getProvider(LoginFormsProvider.class).setDetachedAuthSession();
             response = ErrorPage.error(session, authSession, Response.Status.BAD_REQUEST, Messages.LOGIN_REQUESTER_NOT_ENABLED);
             clientCode.removeExpiredClientSession();
             return false;

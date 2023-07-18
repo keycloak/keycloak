@@ -15,18 +15,21 @@ in {project_name}'s database.  This is called federated user storage and is enca
 ----
 package org.keycloak.storage.federated;
 
-public interface UserFederatedStorageProvider extends Provider {
+public interface UserFederatedStorageProvider extends Provider,
+        UserAttributeFederatedStorage,
+        UserBrokerLinkFederatedStorage,
+        UserConsentFederatedStorage,
+        UserNotBeforeFederatedStorage,
+        UserGroupMembershipFederatedStorage,
+        UserRequiredActionsFederatedStorage,
+        UserRoleMappingsFederatedStorage,
+        UserFederatedUserCredentialStore {
+    ...
 
-    Set<GroupModel> getGroups(RealmModel realm, String userId);
-    void joinGroup(RealmModel realm, String userId, GroupModel group);
-    void leaveGroup(RealmModel realm, String userId, GroupModel group);
-    List<String> getMembership(RealmModel realm, GroupModel group, int firstResult, int max);
-
-...
-
+}
 ----
 
-The `UserFederatedStorageProvider` instance is available on the `KeycloakSession.userFederatedStorage()` method.
+The `UserFederatedStorageProvider` instance is available on the `UserStorageUtil.userFederatedStorage(KeycloakSession)` method.
 It has all different kinds of methods for storing attributes, group and role mappings, different credential types,
 and required actions.  If your external store's datamodel  cannot support the full {project_name} feature
 set, then this service can fill in the gaps.

@@ -1,3 +1,5 @@
+import type GroupRepresentation from "@keycloak/keycloak-admin-client/lib/defs/groupRepresentation";
+import type UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
 import {
   AlertVariant,
   Button,
@@ -7,21 +9,20 @@ import {
 } from "@patternfly/react-core";
 import { QuestionCircleIcon } from "@patternfly/react-icons";
 import { cellWidth } from "@patternfly/react-table";
-import type GroupRepresentation from "@keycloak/keycloak-admin-client/lib/defs/groupRepresentation";
-import type UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
-import { intersectionBy, sortBy } from "lodash-es";
-import { useEffect, useState } from "react";
+import { intersectionBy, sortBy, uniqBy } from "lodash-es";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useHelp } from "ui-shared";
+
+import { adminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import { GroupPath } from "../components/group/GroupPath";
 import { GroupPickerDialog } from "../components/group/GroupPickerDialog";
-import { useHelp } from "ui-shared";
 import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
 import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
-import { useAdminClient } from "../context/auth/AdminClient";
-import { emptyFormatter } from "../util";
 import { useAccess } from "../context/access/Access";
+import { emptyFormatter } from "../util";
 
 type UserGroupsProps = {
   user: UserRepresentation;
@@ -31,12 +32,11 @@ export const UserGroups = ({ user }: UserGroupsProps) => {
   const { t } = useTranslation("users");
   const { addAlert, addError } = useAlerts();
   const [key, setKey] = useState(0);
-  const refresh = () => setKey(new Date().getTime());
+  const refresh = () => setKey(key + 1);
 
   const [selectedGroups, setSelectedGroups] = useState<GroupRepresentation[]>(
-    []
+    [],
   );
-  const [search, setSearch] = useState("");
 
   const [isDirectMembership, setDirectMembership] = useState(true);
   const [directMembershipList, setDirectMembershipList] = useState<
@@ -49,7 +49,6 @@ export const UserGroups = ({ user }: UserGroupsProps) => {
   const { hasAccess } = useAccess();
   const isManager = hasAccess("manage-users");
 
-  const { adminClient } = useAdminClient();
   const alphabetize = (groupsList: GroupRepresentation[]) => {
     return sortBy(groupsList, (group) => group.path?.toUpperCase());
   };
@@ -63,7 +62,6 @@ export const UserGroups = ({ user }: UserGroupsProps) => {
     const searchParam = search || "";
     if (searchParam) {
       params.search = searchParam;
-      setSearch(searchParam);
     }
 
     const joinedUserGroups = await adminClient.users.listGroups({
@@ -71,102 +69,22 @@ export const UserGroups = ({ user }: UserGroupsProps) => {
       id: user.id!,
     });
 
-    const allCreatedGroups = await adminClient.groups.find();
+    setDirectMembershipList([...joinedUserGroups]);
 
-    const getAllPaths = joinedUserGroups.reduce(
-      (acc: string[], cur) => (cur.path && acc.push(cur.path), acc),
-      []
-    );
-    const parentGroupNames: string[] = [];
-    const allGroupMembership: string[] = [];
-    const slicedGroups: string[] = [];
-    const rootLevelGroups: GroupRepresentation[] = [...allCreatedGroups];
-    let allPaths: GroupRepresentation[] = [];
+    const indirect: GroupRepresentation[] = [];
+    if (!isDirectMembership)
+      joinedUserGroups.forEach((g) => {
+        const paths = g.path?.substring(1).split("/").slice(0, -1) || [];
+        indirect.push(
+          ...paths.map((p) => ({
+            name: p,
+            path: g.path?.substring(0, g.path.indexOf(p) + p.length),
+          })),
+        );
+      });
 
-    const getAllSubgroupPaths = (
-      o: any,
-      f: any,
-      context: GroupRepresentation[]
-    ): GroupRepresentation[] => {
-      f(o, context);
-      if (typeof o !== "object") return context;
-      if (Array.isArray(o))
-        return o.forEach((e) => getAllSubgroupPaths(e, f, context)), context;
-      for (const prop in o) getAllSubgroupPaths(o[prop], f, context);
-      return context;
-    };
-
-    const arr = getAllSubgroupPaths(
-      rootLevelGroups,
-      (
-        x: GroupRepresentation | undefined,
-        context: GroupRepresentation[][]
-      ) => {
-        if (x?.subGroups) context.push(x.subGroups);
-      },
-      []
-    );
-
-    const allSubgroups: GroupRepresentation[] = [].concat(...(arr as any));
-
-    allPaths = [...rootLevelGroups, ...allSubgroups];
-
-    getAllPaths.forEach((item) => {
-      const paths = item.split("/");
-      const groups: string[] = [];
-
-      paths.reduce((acc, value) => {
-        const path = acc + "/" + value;
-        groups.push(path);
-        return path;
-      }, "");
-
-      for (let i = 1; i < groups.length; i++) {
-        slicedGroups.push(groups[i].substring(1));
-      }
-    });
-
-    allGroupMembership.push(...slicedGroups);
-
-    allPaths.forEach((item) => {
-      if (item.subGroups!.length !== 0) {
-        allPaths.push(...item!.subGroups!);
-      }
-    });
-
-    allPaths = allPaths.filter((group) =>
-      allGroupMembership.includes(group.path as any)
-    );
-
-    const topLevelGroups = allCreatedGroups.filter((value) =>
-      parentGroupNames.includes(value.name!)
-    );
-
-    const subgroupArray: any[] = [];
-
-    topLevelGroups.forEach((group) => subgroupArray.push(group.subGroups));
-
-    const directMembership = joinedUserGroups!.filter(
-      (value) => !topLevelGroups.includes(value)
-    );
-
-    setDirectMembershipList(directMembership);
-
-    const filterDupesfromGroups = allPaths.filter(
-      (thing, index, self) =>
-        index === self.findIndex((t) => t.name === thing.name)
-    );
-
-    if (!isDirectMembership) {
-      return alphabetize(filterDupesfromGroups);
-    }
-
-    return alphabetize(directMembership);
+    return alphabetize(uniqBy([...joinedUserGroups, ...indirect], "path"));
   };
-
-  useEffect(() => {
-    refresh();
-  }, [isDirectMembership]);
 
   const toggleModal = () => {
     setOpen(!open);
@@ -191,14 +109,15 @@ export const UserGroups = ({ user }: UserGroupsProps) => {
             adminClient.users.delFromGroup({
               id: user.id!,
               groupId: group.id!,
-            })
-          )
+            }),
+          ),
         );
-        refresh();
+
         addAlert(t("removedGroupMembership"), AlertVariant.success);
       } catch (error) {
         addError("users:removedGroupMembershipError", error);
       }
+      refresh();
     },
   });
 
@@ -208,20 +127,21 @@ export const UserGroups = ({ user }: UserGroupsProps) => {
   };
 
   const addGroups = async (groups: GroupRepresentation[]): Promise<void> => {
-    const newGroups = groups;
+    try {
+      await Promise.all(
+        groups.map((group) =>
+          adminClient.users.addToGroup({
+            id: user.id!,
+            groupId: group.id!,
+          }),
+        ),
+      );
 
-    newGroups.forEach(async (group) => {
-      try {
-        await adminClient.users.addToGroup({
-          id: user.id!,
-          groupId: group.id!,
-        });
-        refresh();
-        addAlert(t("addedGroupMembership"), AlertVariant.success);
-      } catch (error) {
-        addError("users:addedGroupMembershipError", error);
-      }
-    });
+      addAlert(t("addedGroupMembership"), AlertVariant.success);
+    } catch (error) {
+      addError("users:addedGroupMembershipError", error);
+    }
+    refresh();
   };
 
   return (
@@ -237,10 +157,9 @@ export const UserGroups = ({ user }: UserGroupsProps) => {
           }}
           canBrowse={isManager}
           onClose={() => setOpen(false)}
-          onConfirm={(groups) => {
-            addGroups(groups || []);
+          onConfirm={async (groups = []) => {
+            await addGroups(groups);
             setOpen(false);
-            refresh();
           }}
         />
       )}
@@ -256,7 +175,7 @@ export const UserGroups = ({ user }: UserGroupsProps) => {
           isDirectMembership
             ? setSelectedGroups(groups)
             : setSelectedGroups(
-                intersectionBy(groups, directMembershipList, "id")
+                intersectionBy(groups, directMembershipList, "id"),
               )
         }
         isRowDisabled={(group) =>
@@ -277,7 +196,10 @@ export const UserGroups = ({ user }: UserGroupsProps) => {
               label={t("directMembership")}
               key="direct-membership-check"
               id="kc-direct-membership-checkbox"
-              onChange={() => setDirectMembership(!isDirectMembership)}
+              onChange={() => {
+                setDirectMembership(!isDirectMembership);
+                refresh();
+              }}
               isChecked={isDirectMembership}
               className="direct-membership-check"
             />
@@ -350,17 +272,13 @@ export const UserGroups = ({ user }: UserGroupsProps) => {
           },
         ]}
         emptyState={
-          !search ? (
-            <ListEmptyState
-              hasIcon={true}
-              message={t("noGroups")}
-              instructions={t("noGroupsText")}
-              primaryActionText={t("joinGroup")}
-              onPrimaryAction={toggleModal}
-            />
-          ) : (
-            ""
-          )
+          <ListEmptyState
+            hasIcon
+            message={t("noGroups")}
+            instructions={t("noGroupsText")}
+            primaryActionText={t("joinGroup")}
+            onPrimaryAction={toggleModal}
+          />
         }
       />
     </>

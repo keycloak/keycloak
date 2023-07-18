@@ -19,31 +19,38 @@ package org.keycloak.testsuite.admin.authentication;
 
 import org.junit.Assert;
 import org.junit.Test;
+import org.keycloak.authentication.authenticators.browser.IdentityProviderAuthenticatorFactory;
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.StreamUtil;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
+import org.keycloak.models.utils.DefaultAuthenticationFlows;
 import org.keycloak.representations.idm.AuthenticationExecutionExportRepresentation;
 import org.keycloak.representations.idm.AuthenticationExecutionInfoRepresentation;
 import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
+import org.keycloak.representations.idm.AuthenticatorConfigRepresentation;
 import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
 import org.keycloak.testsuite.ProfileAssume;
+import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.util.AdminEventPaths;
 import org.keycloak.testsuite.util.ContainerAssume;
 
-import javax.ws.rs.BadRequestException;
-import javax.ws.rs.ClientErrorException;
-import javax.ws.rs.InternalServerErrorException;
-import javax.ws.rs.NotFoundException;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.Status;
+import jakarta.ws.rs.BadRequestException;
+import jakarta.ws.rs.ClientErrorException;
+import jakarta.ws.rs.InternalServerErrorException;
+import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response.Status;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 import static org.hamcrest.Matchers.containsString;
 import static org.junit.Assert.assertEquals;
@@ -503,5 +510,70 @@ public class FlowTest extends AbstractAuthenticationTest {
         e = Assert.assertThrows(BadRequestException.class, () -> authMgmtResource.removeExecution(executions.get(0).getId()));
         error = e.getResponse().readEntity(OAuth2ErrorRepresentation.class);
         Assert.assertEquals("It is illegal to remove execution from a built in flow", error.getError());
+    }
+
+    @Test
+    public void testExecutionConfigDuplicated() {
+        AuthenticationFlowRepresentation existingFlow = null;
+
+        for (AuthenticationFlowRepresentation flow : authMgmtResource.getFlows()) {
+            if (flow.getAlias().equals(DefaultAuthenticationFlows.BROWSER_FLOW)) {
+                existingFlow = flow;
+            }
+        }
+
+        Assert.assertNotNull(existingFlow);
+
+        List<AuthenticationExecutionInfoRepresentation> executions = authMgmtResource.getExecutions(existingFlow.getAlias());
+        AuthenticationExecutionInfoRepresentation executionWithConfig = null;
+
+        for (AuthenticationExecutionInfoRepresentation execution : executions) {
+            if (IdentityProviderAuthenticatorFactory.PROVIDER_ID.equals(execution.getProviderId())) {
+                executionWithConfig = execution;
+            }
+        }
+
+        Assert.assertNotNull(executionWithConfig);
+
+        AuthenticatorConfigRepresentation executionConfig = new AuthenticatorConfigRepresentation();
+
+        executionConfig.setAlias("test-execution-config");
+        executionConfig.setConfig(Map.of("key", "value"));
+
+        try (Response response = authMgmtResource.newExecutionConfig(executionWithConfig.getId(), executionConfig)) {
+            getCleanup().addAuthenticationConfigId(ApiUtil.getCreatedId(response));
+            assertAdminEvents.assertEvent(testRealmId, OperationType.CREATE, AdminEventPaths.authAddExecutionConfigPath(executionWithConfig.getId()), executionConfig, ResourceType.AUTH_EXECUTION);
+        }
+
+        String newFlowName = "Duplicated of " + DefaultAuthenticationFlows.BROWSER_FLOW;
+        Map<String, String> copyFlowParams = Map.of("newName", newFlowName);
+        authMgmtResource.copy(existingFlow.getAlias(), copyFlowParams).close();
+        assertAdminEvents.assertEvent(testRealmId, OperationType.CREATE, AdminEventPaths.authCopyFlowPath("browser"), copyFlowParams, ResourceType.AUTH_FLOW);
+
+        AuthenticationFlowRepresentation newFlow = null;
+
+        for (AuthenticationFlowRepresentation flow : authMgmtResource.getFlows()) {
+            if (flow.getAlias().equals(newFlowName)) {
+                newFlow = flow;
+            }
+        }
+
+        Set<String> existingExecutionConfigIds = authMgmtResource.getExecutions(existingFlow.getAlias())
+                .stream().map(AuthenticationExecutionInfoRepresentation::getAuthenticationConfig)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+
+        assertFalse(existingExecutionConfigIds.isEmpty());
+
+        Set<String> newExecutionConfigIds = authMgmtResource.getExecutions(newFlow.getAlias())
+                .stream().map(AuthenticationExecutionInfoRepresentation::getAuthenticationConfig)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+
+        assertFalse(newExecutionConfigIds.isEmpty());
+
+        for (String executionConfigId : newExecutionConfigIds) {
+            Assert.assertFalse("Execution config not duplicated", existingExecutionConfigIds.contains(executionConfigId));
+        }
     }
 }

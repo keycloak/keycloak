@@ -1,4 +1,3 @@
-// @ts-nocheck
 import {
   FormGroup,
   Select,
@@ -10,13 +9,14 @@ import { isEqual } from "lodash-es";
 import { useState } from "react";
 import { Controller, UseFormReturn, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-
-import { FormAccess } from "../../components/form-access/FormAccess";
 import { HelpItem } from "ui-shared";
+
+import { adminClient } from "../../admin-client";
+import { FormAccess } from "../../components/form/FormAccess";
 import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 import { WizardSectionHeader } from "../../components/wizard-section-header/WizardSectionHeader";
-import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
 import { useRealm } from "../../context/realm-context/RealmContext";
+import { useFetch } from "../../utils/useFetch";
 
 export type KerberosSettingsRequiredProps = {
   form: UseFormReturn;
@@ -32,7 +32,6 @@ export const KerberosSettingsRequired = ({
   const { t } = useTranslation("user-federation");
   const { t: helpText } = useTranslation("user-federation-help");
 
-  const { adminClient } = useAdminClient();
   const { realm } = useRealm();
 
   const [isEditModeDropdownOpen, setIsEditModeDropdownOpen] = useState(false);
@@ -45,7 +44,7 @@ export const KerberosSettingsRequired = ({
   useFetch(
     () => adminClient.realms.findOne({ realm }),
     (result) => form.setValue("parentId", result!.id),
-    []
+    [],
   );
 
   return (
@@ -71,7 +70,7 @@ export const KerberosSettingsRequired = ({
           fieldId="kc-ui-display-name"
           isRequired
           validated={form.formState.errors.name ? "error" : "default"}
-          helperTextInvalid={form.formState.errors.name?.message}
+          helperTextInvalid={(form.formState.errors.name as any)?.message}
         >
           {/* These hidden fields are required so data object written back matches data retrieved */}
           <KeycloakTextInput
@@ -119,12 +118,12 @@ export const KerberosSettingsRequired = ({
           fieldId="kc-kerberos-realm"
           isRequired
           validated={
-            form.formState.errors.config?.kerberosRealm?.[0]
+            (form.formState.errors.config as any)?.kerberosRealm?.[0]
               ? "error"
               : "default"
           }
           helperTextInvalid={
-            form.formState.errors.config?.kerberosRealm?.[0].message
+            (form.formState.errors.config as any)?.kerberosRealm?.[0].message
           }
         >
           <KeycloakTextInput
@@ -132,7 +131,7 @@ export const KerberosSettingsRequired = ({
             id="kc-kerberos-realm"
             data-testid="kerberos-realm"
             validated={
-              form.formState.errors.config?.kerberosRealm?.[0]
+              (form.formState.errors.config as any)?.kerberosRealm?.[0]
                 ? "error"
                 : "default"
             }
@@ -156,12 +155,12 @@ export const KerberosSettingsRequired = ({
           fieldId="kc-server-principal"
           isRequired
           validated={
-            form.formState.errors.config?.serverPrincipal?.[0]
+            (form.formState.errors.config as any)?.serverPrincipal?.[0]
               ? "error"
               : "default"
           }
           helperTextInvalid={
-            form.formState.errors.config?.serverPrincipal?.[0].message
+            (form.formState.errors.config as any)?.serverPrincipal?.[0].message
           }
         >
           <KeycloakTextInput
@@ -169,7 +168,7 @@ export const KerberosSettingsRequired = ({
             id="kc-server-principal"
             data-testid="kerberos-principal"
             validated={
-              form.formState.errors.config?.serverPrincipal?.[0]
+              (form.formState.errors.config as any)?.serverPrincipal?.[0]
                 ? "error"
                 : "default"
             }
@@ -193,16 +192,22 @@ export const KerberosSettingsRequired = ({
           fieldId="kc-key-tab"
           isRequired
           validated={
-            form.formState.errors.config?.keyTab?.[0] ? "error" : "default"
+            (form.formState.errors.config as any)?.keyTab?.[0]
+              ? "error"
+              : "default"
           }
-          helperTextInvalid={form.formState.errors.config?.keyTab?.[0].message}
+          helperTextInvalid={
+            (form.formState.errors.config as any)?.keyTab?.[0].message
+          }
         >
           <KeycloakTextInput
             isRequired
             id="kc-key-tab"
             data-testid="kerberos-keytab"
             validated={
-              form.formState.errors.config?.keyTab?.[0] ? "error" : "default"
+              (form.formState.errors.config as any)?.keyTab?.[0]
+                ? "error"
+                : "default"
             }
             {...form.register("config.keyTab.0", {
               required: {
@@ -248,7 +253,7 @@ export const KerberosSettingsRequired = ({
           labelIcon={
             <HelpItem
               helpText={t(
-                "user-federation-help:allowPasswordAuthenticationHelp"
+                "user-federation-help:allowPasswordAuthenticationHelp",
               )}
               fieldLabelId="user-federation:allowPasswordAuthentication"
             />

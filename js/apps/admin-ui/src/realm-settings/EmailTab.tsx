@@ -11,18 +11,16 @@ import {
   PageSection,
   Switch,
 } from "@patternfly/react-core";
-import { useState } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
-
-import { useAlerts } from "../components/alert/Alerts";
-import { FormAccess } from "../components/form-access/FormAccess";
 import { HelpItem } from "ui-shared";
+import { adminClient } from "../admin-client";
+import { useAlerts } from "../components/alert/Alerts";
+import { FormAccess } from "../components/form/FormAccess";
 import { KeycloakTextInput } from "../components/keycloak-text-input/KeycloakTextInput";
 import { PasswordInput } from "../components/password-input/PasswordInput";
 import { FormPanel } from "../components/scroll-form/FormPanel";
-import { useAdminClient } from "../context/auth/AdminClient";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { toUser } from "../user/routes/User";
 import { emailRegexPattern } from "../util";
@@ -33,18 +31,18 @@ import "./realm-settings-section.css";
 
 type RealmSettingsEmailTabProps = {
   realm: RealmRepresentation;
+  save: (realm: RealmRepresentation) => void;
 };
 
 export const RealmSettingsEmailTab = ({
-  realm: initialRealm,
+  realm,
+  save,
 }: RealmSettingsEmailTabProps) => {
   const { t } = useTranslation("realm-settings");
-  const { adminClient } = useAdminClient();
   const { realm: realmName } = useRealm();
   const { addAlert, addError } = useAlerts();
   const currentUser = useCurrentUser();
 
-  const [realm, setRealm] = useState(initialRealm);
   const {
     register,
     control,
@@ -65,21 +63,6 @@ export const RealmSettingsEmailTab = ({
     name: "smtpServer.auth",
     defaultValue: "",
   });
-
-  const save = async (form: RealmRepresentation) => {
-    try {
-      const savedRealm = { ...realm, ...form };
-
-      // For default value, back end is expecting null instead of empty string
-      if (savedRealm.smtpServer?.port === "") savedRealm.smtpServer.port = null;
-
-      await adminClient.realms.update({ realm: realmName }, savedRealm);
-      setRealm(savedRealm);
-      addAlert(t("saveSuccess"), AlertVariant.success);
-    } catch (error) {
-      addError("realm-settings:saveError", error);
-    }
-  };
 
   const testConnection = async () => {
     const toNumber = (value: string) => Number(value);
@@ -104,7 +87,7 @@ export const RealmSettingsEmailTab = ({
       toggleTest();
       await adminClient.realms.testSMTPConnection(
         { realm: realm.realm! },
-        serverSettings
+        serverSettings,
       );
       addAlert(t("testConnectionSuccess"), AlertVariant.success);
     } catch (error) {
@@ -346,6 +329,7 @@ export const RealmSettingsEmailTab = ({
               ) : (
                 <Alert
                   variant="warning"
+                  component="h2"
                   isInline
                   title={t("testConnectionHint.withoutEmail", {
                     userName: currentUser.username,

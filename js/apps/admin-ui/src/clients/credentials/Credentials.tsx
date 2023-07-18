@@ -21,18 +21,16 @@ import {
 import { useState } from "react";
 import { Controller, useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-
+import { HelpItem } from "ui-shared";
+import { adminClient } from "../../admin-client";
 import { useAlerts } from "../../components/alert/Alerts";
 import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
-import { FormAccess } from "../../components/form-access/FormAccess";
-import { HelpItem } from "ui-shared";
-import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
+import { FormAccess } from "../../components/form/FormAccess";
+import { useFetch } from "../../utils/useFetch";
+import { FormFields } from "../ClientDetails";
 import { ClientSecret } from "./ClientSecret";
 import { SignedJWT } from "./SignedJWT";
 import { X509 } from "./X509";
-
-import "./credentials.css";
-import { FormFields } from "../ClientDetails";
 
 type AccessToken = {
   registrationAccessToken: string;
@@ -46,7 +44,6 @@ export type CredentialsProps = {
 
 export const Credentials = ({ client, save, refresh }: CredentialsProps) => {
   const { t } = useTranslation("clients");
-  const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
   const clientId = client.id!;
 
@@ -82,12 +79,12 @@ export const Credentials = ({ client, save, refresh }: CredentialsProps) => {
       setProviders(providers);
       setSecret(secret.value!);
     },
-    []
+    [],
   );
 
   async function regenerate<T>(
     call: (clientId: string) => Promise<T>,
-    message: string
+    message: string,
   ): Promise<T | undefined> {
     try {
       const data = await call(clientId);
@@ -102,7 +99,7 @@ export const Credentials = ({ client, save, refresh }: CredentialsProps) => {
     const secret = await regenerate<CredentialRepresentation>(
       (clientId) =>
         adminClient.clients.generateNewClientSecret({ id: clientId }),
-      "clientSecret"
+      "clientSecret",
     );
     setSecret(secret?.value || "");
     refresh();
@@ -120,7 +117,7 @@ export const Credentials = ({ client, save, refresh }: CredentialsProps) => {
     const accessToken = await regenerate<AccessToken>(
       (clientId) =>
         adminClient.clients.generateRegistrationAccessToken({ id: clientId }),
-      "accessToken"
+      "accessToken",
     );
     setAccessToken(accessToken?.registrationAccessToken || "");
   };
@@ -188,14 +185,13 @@ export const Credentials = ({ client, save, refresh }: CredentialsProps) => {
               />
             </FormGroup>
             {(clientAuthenticatorType === "client-jwt" ||
-              clientAuthenticatorType === "client-secret-jwt") && <SignedJWT />}
+              clientAuthenticatorType === "client-secret-jwt") && (
+              <SignedJWT clientAuthenticatorType={clientAuthenticatorType} />
+            )}
             {clientAuthenticatorType === "client-jwt" && (
-              <Alert
-                variant="info"
-                isInline
-                className="kc-signedJWTAlert"
-                title={t("signedJWTConfirm")}
-              />
+              <FormGroup>
+                <Alert variant="info" isInline title={t("signedJWTConfirm")} />
+              </FormGroup>
             )}
             {clientAuthenticatorType === "client-x509" && <X509 />}
             <ActionGroup>

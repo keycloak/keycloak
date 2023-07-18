@@ -102,17 +102,17 @@ import org.keycloak.utils.ProfileHelper;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
-import javax.ws.rs.Consumes;
-import javax.ws.rs.InternalServerErrorException;
-import javax.ws.rs.OPTIONS;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.MultivaluedHashMap;
-import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.Status;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.InternalServerErrorException;
+import jakarta.ws.rs.OPTIONS;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.MultivaluedHashMap;
+import jakarta.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response.Status;
 import javax.xml.namespace.QName;
 
 import java.io.IOException;
@@ -173,18 +173,22 @@ public class TokenEndpoint {
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     @POST
     public Response processGrantRequest() {
-        // grant request needs to be run in a retriable transaction as concurrent execution of this action can lead to
-        // exceptions on DBs with SERIALIZABLE isolation level.
-        return KeycloakModelUtils.runJobInRetriableTransaction(session.getKeycloakSessionFactory(), new ResponseSessionTask(session) {
-            @Override
-            public Response runInternal(KeycloakSession session) {
-                // create another instance of the endpoint to isolate each run.
-                TokenEndpoint other = new TokenEndpoint(session, new TokenManager(),
-                        new EventBuilder(session.getContext().getRealm(), session, clientConnection));
-                // process the request in the created instance.
-                return other.processGrantRequestInternal();
-            }
-        }, 10, 100);
+        if (Profile.isFeatureEnabled(Profile.Feature.MAP_STORAGE)) {
+            // grant request needs to be run in a retriable transaction as concurrent execution of this action can lead to
+            // exceptions on DBs with SERIALIZABLE isolation level.
+            return KeycloakModelUtils.runJobInRetriableTransaction(session.getKeycloakSessionFactory(), new ResponseSessionTask(session) {
+                @Override
+                public Response runInternal(KeycloakSession session) {
+                    // create another instance of the endpoint to isolate each run.
+                    TokenEndpoint other = new TokenEndpoint(session, tokenManager,
+                            new EventBuilder(session.getContext().getRealm(), session, clientConnection));
+                    // process the request in the created instance.
+                    return other.processGrantRequestInternal();
+                }
+            }, 10, 100);
+        } else {
+            return processGrantRequestInternal();
+        }
     }
 
     private Response processGrantRequestInternal() {
@@ -956,17 +960,9 @@ public class TokenEndpoint {
 
         if (permissions != null) {
             event.detail(Details.PERMISSION, String.join("|", permissions));
-            for (String permission : permissions) {
-                String[] parts = permission.split("#");
-                String resource = parts[0];
-
-                if (parts.length == 1) {
-                    authorizationRequest.addPermission(resource);
-                } else {
-                    String[] scopes = parts[1].split(",");
-                    authorizationRequest.addPermission(parts[0], scopes);
-                }
-            }
+            String permissionResourceFormat = formParams.getFirst("permission_resource_format");
+            boolean permissionResourceMatchingUri = Boolean.parseBoolean(formParams.getFirst("permission_resource_matching_uri"));
+            authorizationRequest.addPermissions(permissions, permissionResourceFormat, permissionResourceMatchingUri);
         }
 
         Metadata metadata = new Metadata();

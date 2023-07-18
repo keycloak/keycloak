@@ -2,7 +2,7 @@ import { ActionGroup, Button, FormGroup, Switch } from "@patternfly/react-core";
 import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
-import { FormAccess } from "../../components/form-access/FormAccess";
+import { FormAccess } from "../../components/form/FormAccess";
 import { HelpItem } from "ui-shared";
 import { convertAttributeNameToForm } from "../../util";
 import { FormFields } from "../ClientDetails";
@@ -33,7 +33,7 @@ export const OpenIdConnectCompatibilityModes = ({
         labelIcon={
           <HelpItem
             helpText={t(
-              "clients-help:excludeSessionStateFromAuthenticationResponse"
+              "clients-help:excludeSessionStateFromAuthenticationResponse",
             )}
             fieldLabelId="clients:excludeSessionStateFromAuthenticationResponse"
           />
@@ -41,7 +41,7 @@ export const OpenIdConnectCompatibilityModes = ({
       >
         <Controller
           name={convertAttributeNameToForm<FormFields>(
-            "attributes.exclude.session.state.from.auth.response"
+            "attributes.exclude.session.state.from.auth.response",
           )}
           defaultValue=""
           control={control}
@@ -70,7 +70,7 @@ export const OpenIdConnectCompatibilityModes = ({
       >
         <Controller
           name={convertAttributeNameToForm<FormFields>(
-            "attributes.use.refresh.tokens"
+            "attributes.use.refresh.tokens",
           )}
           defaultValue="true"
           control={control}
@@ -93,7 +93,7 @@ export const OpenIdConnectCompatibilityModes = ({
         labelIcon={
           <HelpItem
             helpText={t(
-              "clients-help:useRefreshTokenForClientCredentialsGrant"
+              "clients-help:useRefreshTokenForClientCredentialsGrant",
             )}
             fieldLabelId="clients:useRefreshTokenForClientCredentialsGrant"
           />
@@ -101,7 +101,7 @@ export const OpenIdConnectCompatibilityModes = ({
       >
         <Controller
           name={convertAttributeNameToForm<FormFields>(
-            "attributes.client_credentials.use_refresh_token"
+            "attributes.client_credentials.use_refresh_token",
           )}
           defaultValue="false"
           control={control}
@@ -130,7 +130,7 @@ export const OpenIdConnectCompatibilityModes = ({
       >
         <Controller
           name={convertAttributeNameToForm<FormFields>(
-            "attributes.token.response.type.bearer.lower-case"
+            "attributes.token.response.type.bearer.lower-case",
           )}
           defaultValue="false"
           control={control}

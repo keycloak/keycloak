@@ -9,7 +9,7 @@ import { isEqual } from "lodash-es";
 import { Controller, UseFormReturn, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
-import { FormAccess } from "../../components/form-access/FormAccess";
+import { FormAccess } from "../../components/form/FormAccess";
 import { HelpItem } from "ui-shared";
 import { WizardSectionHeader } from "../../components/wizard-section-header/WizardSectionHeader";
 import useToggle from "../../utils/useToggle";
@@ -50,7 +50,7 @@ const CacheFields = ({ form }: { form: UseFormReturn }) => {
     hourOptions.push(
       <SelectOption key={index} value={[`${index}`]}>
         {hourDisplay}
-      </SelectOption>
+      </SelectOption>,
     );
   }
 
@@ -69,7 +69,7 @@ const CacheFields = ({ form }: { form: UseFormReturn }) => {
     minuteOptions.push(
       <SelectOption key={index} value={[`${index}`]}>
         {minuteDisplay}
-      </SelectOption>
+      </SelectOption>,
     );
   }
 

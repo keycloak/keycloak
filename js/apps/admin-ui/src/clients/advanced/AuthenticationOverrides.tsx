@@ -11,9 +11,11 @@ import { useState } from "react";
 import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
-import { FormAccess } from "../../components/form-access/FormAccess";
+import { FormAccess } from "../../components/form/FormAccess";
 import { HelpItem } from "ui-shared";
-import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
+
+import { adminClient } from "../../admin-client";
+import { useFetch } from "../../utils/useFetch";
 
 type AuthenticationOverridesProps = {
   save: () => void;
@@ -28,7 +30,6 @@ export const AuthenticationOverrides = ({
   reset,
   hasConfigureAccess,
 }: AuthenticationOverridesProps) => {
-  const { adminClient } = useAdminClient();
   const { t } = useTranslation("clients");
   const [flows, setFlows] = useState<JSX.Element[]>([]);
   const [browserFlowOpen, setBrowserFlowOpen] = useState(false);
@@ -54,7 +55,7 @@ export const AuthenticationOverrides = ({
         )),
       ]);
     },
-    []
+    [],
   );
 
   return (

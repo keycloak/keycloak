@@ -23,17 +23,17 @@ import org.hibernate.annotations.FetchMode;
 import org.hibernate.annotations.Nationalized;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
-import javax.persistence.Access;
-import javax.persistence.AccessType;
-import javax.persistence.CascadeType;
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.NamedQueries;
-import javax.persistence.NamedQuery;
-import javax.persistence.OneToMany;
-import javax.persistence.Table;
-import javax.persistence.UniqueConstraint;
+import jakarta.persistence.Access;
+import jakarta.persistence.AccessType;
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.NamedQueries;
+import jakarta.persistence.NamedQuery;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import java.util.Collection;
 import java.util.LinkedList;
 
@@ -94,22 +94,22 @@ public class UserEntity {
     @OneToMany(cascade = CascadeType.REMOVE, orphanRemoval = true, mappedBy="user")
     @Fetch(FetchMode.SELECT)
     @BatchSize(size = 20)
-    protected Collection<UserAttributeEntity> attributes;
+    protected Collection<UserAttributeEntity> attributes = new LinkedList<>();
 
     @OneToMany(cascade = CascadeType.REMOVE, orphanRemoval = true, mappedBy="user")
     @Fetch(FetchMode.SELECT)
     @BatchSize(size = 20)
-    protected Collection<UserRequiredActionEntity> requiredActions;
+    protected Collection<UserRequiredActionEntity> requiredActions = new LinkedList<>();
 
     @OneToMany(cascade = CascadeType.REMOVE, orphanRemoval = true, mappedBy="user")
     @Fetch(FetchMode.SELECT)
     @BatchSize(size = 20)
-    protected Collection<CredentialEntity> credentials;
+    protected Collection<CredentialEntity> credentials = new LinkedList<>();
 
     @OneToMany(cascade = CascadeType.REMOVE, orphanRemoval = true, mappedBy="user")
     @Fetch(FetchMode.SELECT)
     @BatchSize(size = 20)
-    protected Collection<FederatedIdentityEntity> federatedIdentities;
+    protected Collection<FederatedIdentityEntity> federatedIdentities = new LinkedList<>();
 
     @Column(name="FEDERATION_LINK")
     protected String federationLink;

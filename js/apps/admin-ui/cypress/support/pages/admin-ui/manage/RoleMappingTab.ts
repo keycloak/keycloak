@@ -30,7 +30,7 @@ export default class RoleMappingTab {
 
   assignRole(notEmpty = true) {
     cy.findByTestId(
-      notEmpty ? this.assignEmptyRoleBtn(this.type) : this.assignRoleBtn
+      notEmpty ? this.assignEmptyRoleBtn(this.type) : this.assignRoleBtn,
     ).click();
     return this;
   }

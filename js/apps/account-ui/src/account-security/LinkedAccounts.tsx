@@ -19,17 +19,17 @@ const LinkedAccounts = () => {
 
   const linkedAccounts = useMemo(
     () => accounts.filter((account) => account.connected),
-    [accounts]
+    [accounts],
   );
 
   const unLinkedAccounts = useMemo(
     () => accounts.filter((account) => !account.connected),
-    [accounts]
+    [accounts],
   );
 
   return (
     <Page
-      title={t("linkedAccountsTitle")}
+      title={t("linkedAccounts")}
       description={t("linkedAccountsIntroMessage")}
     >
       <Stack hasGutter>

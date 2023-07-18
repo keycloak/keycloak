@@ -153,7 +153,7 @@ public class LoginActionsServiceChecks {
         }
 
         if (! user.isEnabled()) {
-            throw new ExplainedVerificationException(Errors.USER_DISABLED, Messages.INVALID_USER);
+            throw new ExplainedVerificationException(Errors.USER_DISABLED, Messages.ACCOUNT_DISABLED);
         }
 
         if (userSetter != null) {
@@ -300,7 +300,7 @@ public class LoginActionsServiceChecks {
     }
 
     public static <T extends JsonWebToken & SingleUseObjectKeyModel> void checkTokenWasNotUsedYet(T token, ActionTokenContext<T> context) throws VerificationException {
-        SingleUseObjectProvider singleUseObjectProvider = context.getSession().getProvider(SingleUseObjectProvider.class);
+        SingleUseObjectProvider singleUseObjectProvider = context.getSession().singleUseObjects();
 
         if (singleUseObjectProvider.get(token.serializeKey()) != null) {
             throw new ExplainedTokenVerificationException(token, Errors.EXPIRED_CODE, Messages.EXPIRED_ACTION);

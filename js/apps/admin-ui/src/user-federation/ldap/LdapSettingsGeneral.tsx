@@ -8,13 +8,14 @@ import {
 import { useState } from "react";
 import { Controller, UseFormReturn } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-
-import { FormAccess } from "../../components/form-access/FormAccess";
 import { HelpItem } from "ui-shared";
+
+import { adminClient } from "../../admin-client";
+import { FormAccess } from "../../components/form/FormAccess";
 import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 import { WizardSectionHeader } from "../../components/wizard-section-header/WizardSectionHeader";
-import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
 import { useRealm } from "../../context/realm-context/RealmContext";
+import { useFetch } from "../../utils/useFetch";
 
 export type LdapSettingsGeneralProps = {
   form: UseFormReturn<ComponentRepresentation>;
@@ -31,14 +32,12 @@ export const LdapSettingsGeneral = ({
 }: LdapSettingsGeneralProps) => {
   const { t } = useTranslation("user-federation");
   const { t: helpText } = useTranslation("user-federation-help");
-
-  const { adminClient } = useAdminClient();
   const { realm } = useRealm();
 
   useFetch(
     () => adminClient.realms.findOne({ realm }),
     (result) => form.setValue("parentId", result!.id),
-    []
+    [],
   );
   const [isVendorDropdownOpen, setIsVendorDropdownOpen] = useState(false);
 
@@ -50,7 +49,7 @@ export const LdapSettingsGeneral = ({
         form.setValue("config.uuidLDAPAttribute[0]", "objectGUID");
         form.setValue(
           "config.userObjectClasses[0]",
-          "person, organizationalPerson, user"
+          "person, organizationalPerson, user",
         );
         break;
       case "rhds":
@@ -59,7 +58,7 @@ export const LdapSettingsGeneral = ({
         form.setValue("config.uuidLDAPAttribute[0]", "nsuniqueid");
         form.setValue(
           "config.userObjectClasses[0]",
-          "inetOrgPerson, organizationalPerson"
+          "inetOrgPerson, organizationalPerson",
         );
         break;
       case "tivoli":
@@ -68,7 +67,7 @@ export const LdapSettingsGeneral = ({
         form.setValue("config.uuidLDAPAttribute[0]", "uniqueidentifier");
         form.setValue(
           "config.userObjectClasses[0]",
-          "inetOrgPerson, organizationalPerson"
+          "inetOrgPerson, organizationalPerson",
         );
         break;
       case "edirectory":
@@ -77,7 +76,7 @@ export const LdapSettingsGeneral = ({
         form.setValue("config.uuidLDAPAttribute[0]", "guid");
         form.setValue(
           "config.userObjectClasses[0]",
-          "inetOrgPerson, organizationalPerson"
+          "inetOrgPerson, organizationalPerson",
         );
         break;
       case "other":
@@ -86,7 +85,7 @@ export const LdapSettingsGeneral = ({
         form.setValue("config.uuidLDAPAttribute[0]", "entryUUID");
         form.setValue(
           "config.userObjectClasses[0]",
-          "inetOrgPerson, organizationalPerson"
+          "inetOrgPerson, organizationalPerson",
         );
         break;
       default:

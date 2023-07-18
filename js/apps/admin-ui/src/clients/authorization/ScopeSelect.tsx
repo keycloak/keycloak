@@ -1,10 +1,11 @@
-import { useRef, useState } from "react";
-import { useTranslation } from "react-i18next";
-import { Controller, useFormContext } from "react-hook-form";
-import { Select, SelectOption, SelectVariant } from "@patternfly/react-core";
-
 import type ScopeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/scopeRepresentation";
-import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
+import { Select, SelectOption, SelectVariant } from "@patternfly/react-core";
+import { useRef, useState } from "react";
+import { Controller, useFormContext } from "react-hook-form";
+import { useTranslation } from "react-i18next";
+
+import { adminClient } from "../../admin-client";
+import { useFetch } from "../../utils/useFetch";
 
 type ScopeSelectProps = {
   clientId: string;
@@ -18,7 +19,6 @@ export const ScopeSelect = ({
   preSelected,
 }: ScopeSelectProps) => {
   const { t } = useTranslation("clients");
-  const { adminClient } = useAdminClient();
 
   const {
     control,
@@ -29,7 +29,7 @@ export const ScopeSelect = ({
 
   const [scopes, setScopes] = useState<ScopeRepresentation[]>([]);
   const [selectedScopes, setSelectedScopes] = useState<ScopeRepresentation[]>(
-    []
+    [],
   );
   const [search, setSearch] = useState("");
   const [open, setOpen] = useState(false);
@@ -50,8 +50,8 @@ export const ScopeSelect = ({
         return adminClient.clients.listAllScopes(
           Object.assign(
             { id: clientId, deep: false },
-            search === "" ? null : { name: search }
-          )
+            search === "" ? null : { name: search },
+          ),
         );
       }
 
@@ -69,10 +69,10 @@ export const ScopeSelect = ({
       setScopes(scopes);
       if (!search)
         setSelectedScopes(
-          scopes.filter((s: ScopeRepresentation) => values?.includes(s.id!))
+          scopes.filter((s: ScopeRepresentation) => values?.includes(s.id!)),
         );
     },
-    [resourceId, search]
+    [resourceId, search],
   );
 
   return (

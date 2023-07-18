@@ -17,6 +17,7 @@
 
 package org.keycloak.operator.crds.v2alpha1.deployment.spec;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 import io.sundr.builder.annotations.Buildable;
 import org.keycloak.operator.Constants;
@@ -24,6 +25,7 @@ import org.keycloak.operator.Constants;
 /**
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
  */
+@JsonInclude(JsonInclude.Include.NON_NULL)
 @Buildable(editableEnabled = false, builderPackage = "io.fabric8.kubernetes.api.builder")
 public class HttpSpec {
     @JsonPropertyDescription("A secret containing the TLS configuration for HTTPS. Reference: https://kubernetes.io/docs/concepts/configuration/secret/#tls-secrets.")

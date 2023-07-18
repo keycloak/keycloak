@@ -50,8 +50,8 @@ import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.testsuite.utils.tls.TLSUtils;
 import org.keycloak.util.JsonSerialization;
 
-import javax.ws.rs.NotFoundException;
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.core.Response;
 import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
@@ -65,8 +65,8 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-import javax.ws.rs.ClientErrorException;
-import javax.ws.rs.core.Response.Status;
+import jakarta.ws.rs.ClientErrorException;
+import jakarta.ws.rs.core.Response.Status;
 import static org.hamcrest.Matchers.*;
 
 import org.junit.Rule;
@@ -80,6 +80,7 @@ import static org.junit.Assert.assertTrue;
 
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.models.AdminRoles;
+import org.keycloak.models.GroupModel;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
@@ -182,16 +183,27 @@ public class GroupTest extends AbstractGroupTest {
         assertSameNameNotAllowed(response,"Top level group named 'top' already exists.");
         response.close();
 
+        // allow moving the group to top level (nothing is done)
+        response = realm.groups().add(topGroup);
+        assertEquals(Response.Status.NO_CONTENT, response.getStatusInfo());
+        response.close();
+
         GroupRepresentation level2Group = new GroupRepresentation();
         level2Group.setName("level2");
         response = realm.groups().group(topGroup.getId()).subGroup(level2Group);
         assertEquals(201, response.getStatus()); // created status
+        level2Group.setId(ApiUtil.getCreatedId(response));
         response.close();
 
         GroupRepresentation anotherlevel2Group = new GroupRepresentation();
         anotherlevel2Group.setName("level2");
         response = realm.groups().group(topGroup.getId()).subGroup(anotherlevel2Group);
         assertSameNameNotAllowed(response,"Sibling group named 'level2' already exists.");
+        response.close();
+
+        // allow moving the group to the same parent (nothing is done)
+        response = realm.groups().group(topGroup.getId()).subGroup(level2Group);
+        assertEquals(Response.Status.NO_CONTENT, response.getStatusInfo());
         response.close();
     }
 
@@ -278,18 +290,19 @@ public class GroupTest extends AbstractGroupTest {
     @Test
     @UncaughtServerErrorExpected
     public void doNotAllowSameGroupNameAtTopLevelInDatabase() throws Exception {
-        final String id = KeycloakModelUtils.generateId();
-        testingClient.server().run(session -> {
+        final String id = testingClient.server().fetch(session -> {
             RealmModel realm = session.realms().getRealmByName("test");
-            realm.createGroup(id, "test-group");
-        });
+            GroupModel g = realm.createGroup("test-group");
+            return g.getId();
+        }, String.class);
         getCleanup().addGroupId(id);
         // unique key should work even in top groups
         expectedException.expect(RunOnServerException.class);
         expectedException.expectMessage(ModelDuplicateException.class.getName());
         testingClient.server().run(session -> {
             RealmModel realm = session.realms().getRealmByName("test");
-            realm.createGroup("test-group");
+            GroupModel g = realm.createGroup("test-group");
+            realm.removeGroup(g);
         });
     }
 

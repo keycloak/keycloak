@@ -24,7 +24,7 @@ import { KeycloakDataTable } from "../../components/table-toolbar/KeycloakDataTa
 import useLocaleSort, { mapByKey } from "../../utils/useLocaleSort";
 
 type Row = {
-  name: string;
+  id: string;
   description: string;
   item: ProtocolMapperRepresentation;
 };
@@ -33,7 +33,7 @@ export type AddMapperDialogModalProps = {
   protocol: string;
   filter?: ProtocolMapperRepresentation[];
   onConfirm: (
-    value: ProtocolMapperTypeRepresentation | ProtocolMapperRepresentation[]
+    value: ProtocolMapperTypeRepresentation | ProtocolMapperRepresentation[],
   ) => void;
 };
 
@@ -57,15 +57,15 @@ export const AddMapperDialog = (props: AddMapperDialogProps) => {
     () =>
       localeSort(builtInMappers, mapByKey("name")).map((mapper) => {
         const mapperType = protocolMappers.filter(
-          (type) => type.id === mapper.protocolMapper
+          (type) => type.id === mapper.protocolMapper,
         )[0];
         return {
           item: mapper,
-          name: mapper.name!,
+          id: mapper.name!,
           description: mapperType.helpText,
         };
       }),
-    [builtInMappers, protocolMappers]
+    [builtInMappers, protocolMappers],
   );
   const [rows, setRows] = useState(allRows);
 
@@ -77,7 +77,7 @@ export const AddMapperDialog = (props: AddMapperDialogProps) => {
 
   const sortedProtocolMappers = useMemo(
     () => localeSort(protocolMappers, mapByKey("name")),
-    [protocolMappers]
+    [protocolMappers],
   );
 
   const isBuiltIn = !!props.filter;
@@ -191,7 +191,7 @@ export const AddMapperDialog = (props: AddMapperDialogProps) => {
           searchPlaceholderKey="common:searchForMapper"
           columns={[
             {
-              name: "name",
+              name: "id",
               displayKey: "common:name",
             },
             {

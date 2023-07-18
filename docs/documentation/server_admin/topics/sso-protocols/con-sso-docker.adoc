@@ -6,7 +6,7 @@
 
 [NOTE]
 ====
-Docker authentication is disabled by default. To enable docker authentication, see the https://www.keycloak.org/server/features[Enabling and disabling features] guide.
+Docker authentication is disabled by default. To enable docker authentication, see the https://www.keycloak.org/server/features[Enabling and disabling features] {section}.
 ====
 [role="_abstract"]
 link:https://docs.docker.com/registry/spec/auth/[Docker Registry V2 Authentication] is a protocol, similar to OIDC, that authenticates users against Docker registries.  {project_name}'s implementation of this protocol lets Docker clients use a {project_name} authentication server authenticate against a registry. This protocol uses standard token and signature mechanisms but it does deviate from a true OIDC implementation. It deviates by using a very specific JSON format for requests and responses as well as mapping repository names and permissions to the OAuth scope mechanism.

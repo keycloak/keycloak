@@ -81,16 +81,16 @@ describe("OIDC identity provider test", () => {
       providerBaseAdvancedSettingsPage.assertOIDCPKCESwitch();
       //Client Authentication
       providerBaseAdvancedSettingsPage.assertOIDCClientAuthentication(
-        ClientAuthentication.basicAuth
+        ClientAuthentication.basicAuth,
       );
       providerBaseAdvancedSettingsPage.assertOIDCClientAuthentication(
-        ClientAuthentication.jwt
+        ClientAuthentication.jwt,
       );
       providerBaseAdvancedSettingsPage.assertOIDCClientAuthentication(
-        ClientAuthentication.jwtPrivKey
+        ClientAuthentication.jwtPrivKey,
       );
       providerBaseAdvancedSettingsPage.assertOIDCClientAuthentication(
-        ClientAuthentication.post
+        ClientAuthentication.post,
       );
       //Client assertion signature algorithm
       Object.entries(ClientAssertionSigningAlg).forEach(([, value]) => {
@@ -103,7 +103,7 @@ describe("OIDC identity provider test", () => {
       providerBaseAdvancedSettingsPage.selectPromptOption(PromptSelect.login);
       providerBaseAdvancedSettingsPage.selectPromptOption(PromptSelect.select);
       providerBaseAdvancedSettingsPage.selectPromptOption(
-        PromptSelect.unspecified
+        PromptSelect.unspecified,
       );
       //Advanced Settings
       providerBaseAdvancedSettingsPage.assertAdvancedSettings();

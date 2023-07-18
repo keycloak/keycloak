@@ -19,12 +19,12 @@ import {
 import { useEffect, useMemo } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-
-import { useAlerts } from "../../components/alert/Alerts";
-import { FormAccess } from "../../components/form-access/FormAccess";
 import { HelpItem } from "ui-shared";
+
+import { adminClient } from "../../admin-client";
+import { useAlerts } from "../../components/alert/Alerts";
+import { FormAccess } from "../../components/form/FormAccess";
 import { TimeSelector } from "../../components/time-selector/TimeSelector";
-import { useAdminClient } from "../../context/auth/AdminClient";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import useLocaleSort from "../../utils/useLocaleSort";
 import useToggle from "../../utils/useToggle";
@@ -53,7 +53,6 @@ export const OtpPolicy = ({ realm, realmUpdated }: OtpPolicyProps) => {
     handleSubmit,
     formState: { isValid, isDirty, errors },
   } = useForm<FormFields>({ mode: "onChange", defaultValues: realm });
-  const { adminClient } = useAdminClient();
   const { realm: realmName } = useRealm();
   const { addAlert, addError } = useAlerts();
   const localeSort = useLocaleSort();
@@ -71,7 +70,7 @@ export const OtpPolicy = ({ realm, realmUpdated }: OtpPolicyProps) => {
 
   const supportedApplications = useMemo(() => {
     const labels = (realm.otpSupportedApplications ?? []).map((key) =>
-      t(`otpSupportedApplications.${key}`)
+      t(`otpSupportedApplications.${key}`),
     );
 
     return localeSort(labels, (label) => label);
@@ -205,14 +204,14 @@ export const OtpPolicy = ({ realm, realmUpdated }: OtpPolicyProps) => {
           />
         </FormGroup>
         <FormGroup
-          label={t("lookAhead")}
+          label={t("lookAround")}
           labelIcon={
             <HelpItem
-              helpText={t("authentication-help:lookAhead")}
-              fieldLabelId="authentication:lookAhead"
+              helpText={t("authentication-help:lookAround")}
+              fieldLabelId="authentication:lookAround"
             />
           }
-          fieldId="lookAhead"
+          fieldId="lookAround"
         >
           <Controller
             name="otpPolicyLookAheadWindow"
@@ -226,7 +225,7 @@ export const OtpPolicy = ({ realm, realmUpdated }: OtpPolicyProps) => {
 
               return (
                 <NumberInput
-                  id="lookAhead"
+                  id="lookAround"
                   value={value}
                   min={MIN_VALUE}
                   onPlus={() => setValue(value + 1)}

@@ -9,7 +9,7 @@ import { useState } from "react";
 import { Controller, Path, PathValue, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
-import { FormAccess } from "../../components/form-access/FormAccess";
+import { FormAccess } from "../../components/form/FormAccess";
 import { HelpItem } from "ui-shared";
 import { convertAttributeNameToForm } from "../../util";
 import { FormFields } from "../ClientDetails";
@@ -121,15 +121,19 @@ export const SamlConfig = () => {
       />
       <Toggle
         name={convertAttributeNameToForm(
-          "attributes.saml.onetimeuse.condition"
+          "attributes.saml.onetimeuse.condition",
         )}
         label="includeOneTimeUseCondition"
       />
       <Toggle
         name={convertAttributeNameToForm(
-          "attributes.saml.server.signature.keyinfo.ext"
+          "attributes.saml.server.signature.keyinfo.ext",
         )}
         label="optimizeLookup"
+      />
+      <Toggle
+        name={convertAttributeNameToForm("attributes.saml.allow.ecp.flow")}
+        label="allowEcpFlow"
       />
     </FormAccess>
   );

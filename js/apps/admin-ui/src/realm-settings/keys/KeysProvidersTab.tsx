@@ -17,10 +17,10 @@ import { KeyboardEvent, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 
+import { adminClient } from "../../admin-client";
 import { DraggableTable } from "../../authentication/components/DraggableTable";
 import { useAlerts } from "../../components/alert/Alerts";
 import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
-import { useAdminClient } from "../../context/auth/AdminClient";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
 import { KEY_PROVIDER_TYPE } from "../../util";
@@ -51,12 +51,11 @@ export const KeysProvidersTab = ({
 }: KeysProvidersTabProps) => {
   const { t } = useTranslation("realm-settings");
   const { addAlert, addError } = useAlerts();
-  const { adminClient } = useAdminClient();
   const { realm } = useRealm();
 
   const [searchVal, setSearchVal] = useState("");
   const [filteredComponents, setFilteredComponents] = useState<ComponentData[]>(
-    []
+    [],
   );
 
   const [isCreateModalOpen, handleModalToggle] = useToggle();
@@ -76,7 +75,7 @@ export const KeysProvidersTab = ({
       realmComponents.map((component) => {
         const provider = keyProviderComponentTypes.find(
           (componentType: ComponentTypeRepresentation) =>
-            component.providerId === componentType.id
+            component.providerId === componentType.id,
         );
 
         return {
@@ -84,7 +83,7 @@ export const KeysProvidersTab = ({
           providerDescription: provider?.helpText,
         };
       }),
-    [realmComponents]
+    [realmComponents],
   );
 
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
@@ -116,7 +115,7 @@ export const KeysProvidersTab = ({
       const filteredComponents = components.filter(
         (component) =>
           component.name?.includes(searchVal) ||
-          component.providerId?.includes(searchVal)
+          component.providerId?.includes(searchVal),
       );
       setFilteredComponents(filteredComponents);
     } else {
@@ -217,7 +216,7 @@ export const KeysProvidersTab = ({
                       ).toString(),
                     ],
                   },
-                }
+                },
               );
             });
 

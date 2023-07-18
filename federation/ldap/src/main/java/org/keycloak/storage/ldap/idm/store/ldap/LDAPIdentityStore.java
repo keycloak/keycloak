@@ -295,15 +295,12 @@ public class LDAPIdentityStore implements IdentityStore {
     @Override
     public int countQueryResults(LDAPQuery identityQuery) {
         int limit = identityQuery.getLimit();
-        int offset = identityQuery.getOffset();
 
         identityQuery.setLimit(0);
-        identityQuery.setOffset(0);
 
         int resultCount = identityQuery.getResultList().size();
 
         identityQuery.setLimit(limit);
-        identityQuery.setOffset(offset);
 
         return resultCount;
     }

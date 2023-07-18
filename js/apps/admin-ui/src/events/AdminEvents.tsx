@@ -19,24 +19,24 @@ import {
   SelectVariant,
 } from "@patternfly/react-core";
 import {
-  cellWidth,
   Table,
   TableBody,
   TableHeader,
   TableVariant,
+  cellWidth,
 } from "@patternfly/react-table";
 import { pickBy } from "lodash-es";
 import { PropsWithChildren, useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
+import { adminClient } from "../admin-client";
 import { KeycloakTextInput } from "../components/keycloak-text-input/KeycloakTextInput";
 import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
 import {
   Action,
   KeycloakDataTable,
 } from "../components/table-toolbar/KeycloakDataTable";
-import { useAdminClient } from "../context/auth/AdminClient";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { useServerInfo } from "../context/server-info/ServerInfoProvider";
 import { prettyPrintJSON } from "../util";
@@ -94,7 +94,6 @@ const DisplayDialog = ({
 
 export const AdminEvents = () => {
   const { t } = useTranslation("events");
-  const { adminClient } = useAdminClient();
   const { realm } = useRealm();
   const serverInfo = useServerInfo();
   const formatDate = useFormatDate();
@@ -167,7 +166,7 @@ export const AdminEvents = () => {
 
   function removeFilterValue(
     key: keyof AdminEventSearchForm,
-    valueToRemove: string
+    valueToRemove: string,
   ) {
     const formValues = getValues();
     const fieldValue = formValues[key];
@@ -182,7 +181,7 @@ export const AdminEvents = () => {
   function commitFilters() {
     const newFilters: Partial<AdminEventSearchForm> = pickBy(
       getValues(),
-      (value) => value !== "" || (Array.isArray(value) && value.length > 0)
+      (value) => value !== "" || (Array.isArray(value) && value.length > 0),
     );
 
     setActiveFilters(newFilters);
@@ -264,7 +263,7 @@ export const AdminEvents = () => {
                               onClick={(resource) => {
                                 resource.stopPropagation();
                                 field.onChange(
-                                  field.value.filter((val) => val !== chip)
+                                  field.value.filter((val) => val !== chip),
                                 );
                               }}
                             >
@@ -325,7 +324,7 @@ export const AdminEvents = () => {
                               onClick={(operation) => {
                                 operation.stopPropagation();
                                 field.onChange(
-                                  field.value.filter((val) => val !== chip)
+                                  field.value.filter((val) => val !== chip),
                                 );
                               }}
                             >
@@ -466,7 +465,7 @@ export const AdminEvents = () => {
               {Object.entries(activeFilters).map((filter) => {
                 const [key, value] = filter as [
                   keyof AdminEventSearchForm,
-                  string | string[]
+                  string | string[],
                 ];
 
                 return (
@@ -511,7 +510,7 @@ export const AdminEvents = () => {
       representationEvent?.representation
         ? prettyPrintJSON(JSON.parse(representationEvent.representation))
         : "",
-    [representationEvent?.representation]
+    [representationEvent?.representation],
   );
 
   return (

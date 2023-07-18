@@ -16,6 +16,7 @@ import { TextComponent } from "./TextComponent";
 
 export type ComponentProps = Omit<ConfigPropertyRepresentation, "type"> & {
   isDisabled?: boolean;
+  isNew?: boolean;
   stringify?: boolean;
 };
 

@@ -60,17 +60,20 @@ public class UserSessionAdapter implements UserSessionModel {
 
     private final RealmModel realm;
 
+    private final UserModel user;
+
     private final UserSessionEntity entity;
 
     private final boolean offline;
 
     private SessionPersistenceState persistenceState;
 
-    public UserSessionAdapter(KeycloakSession session, InfinispanUserSessionProvider provider, 
+    public UserSessionAdapter(KeycloakSession session, UserModel user, InfinispanUserSessionProvider provider,
                               InfinispanChangelogBasedTransaction<String, UserSessionEntity> userSessionUpdateTx,
                               InfinispanChangelogBasedTransaction<UUID, AuthenticatedClientSessionEntity> clientSessionUpdateTx,
                               RealmModel realm, UserSessionEntity entity, boolean offline) {
         this.session = session;
+        this.user = user;
         this.provider = provider;
         this.userSessionUpdateTx = userSessionUpdateTx;
         this.clientSessionUpdateTx = clientSessionUpdateTx;
@@ -138,20 +141,20 @@ public class UserSessionAdapter implements UserSessionModel {
         if (removedClientUUIDS.size() >= MINIMUM_INACTIVE_CLIENT_SESSIONS_TO_CLEANUP) {
             // Update user session
             UserSessionUpdateTask task = new UserSessionUpdateTask() {
-                @Override		
-                public void runUpdate(UserSessionEntity entity) {		
-                    removedClientUUIDS.forEach(entity.getAuthenticatedClientSessions()::remove);		
-                }		
-            };		
+                @Override
+                public void runUpdate(UserSessionEntity entity) {
+                    removedClientUUIDS.forEach(entity.getAuthenticatedClientSessions()::remove);
+                }
+            };
             update(task);
         }
 
         // do not iterate the removedClientUUIDS and remove the clientSession directly as the addTask can manipulate
         // the collection being iterated, and that can lead to unpredictable behaviour (e.g. NPE)
         List<UUID> clientSessionUuids = removedClientUUIDS.stream()
-          .map(entity.getAuthenticatedClientSessions()::get)
-          .filter(Objects::nonNull)
-          .collect(Collectors.toList());
+                .map(entity.getAuthenticatedClientSessions()::get)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
 
         clientSessionUuids.forEach(clientSessionId -> this.clientSessionUpdateTx.addTask(clientSessionId, Tasks.removeSync()));
     }
@@ -174,8 +177,9 @@ public class UserSessionAdapter implements UserSessionModel {
     public String getBrokerUserId() {
         return entity.getBrokerUserId();
     }
+
     public UserModel getUser() {
-        return session.users().getUserById(realm, entity.getUser());
+        return this.user;
     }
 
     @Override
@@ -339,8 +343,12 @@ public class UserSessionAdapter implements UserSessionModel {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || !(o instanceof UserSessionModel)) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || !(o instanceof UserSessionModel)) {
+            return false;
+        }
 
         UserSessionModel that = (UserSessionModel) o;
         return that.getId().equals(getId());

@@ -21,7 +21,7 @@ export default class SidebarPage extends CommonElements {
     cy.findByTestId(this.realmsDrpDwn).click();
     cy.get('[data-testid="realmSelector"] li').should(
       "have.length",
-      length + 1 // account for button
+      length + 1, // account for button
     );
     cy.findByTestId(this.realmsDrpDwn).click({ force: true });
   }
@@ -141,5 +141,9 @@ export default class SidebarPage extends CommonElements {
   waitForPageLoad() {
     cy.get('[role="progressbar"]').should("not.exist");
     return this;
+  }
+
+  checkRealmSettingsLinkContainsText(expectedText: string) {
+    cy.get(this.realmSettingsBtn).should("contain", expectedText);
   }
 }

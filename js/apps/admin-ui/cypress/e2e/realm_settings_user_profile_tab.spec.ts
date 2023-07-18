@@ -1,3 +1,4 @@
+import { v4 as uuid } from "uuid";
 import ListingPage from "../support/pages/admin-ui/ListingPage";
 import UserProfile from "../support/pages/admin-ui/manage/realm_settings/UserProfile";
 import Masthead from "../support/pages/admin-ui/Masthead";
@@ -23,13 +24,13 @@ const clickCreateAttributeButton = () =>
   userProfileTab.createAttributeButtonClick();
 
 describe("User profile tabs", () => {
-  const realmName = "Realm_" + crypto.randomUUID();
+  const realmName = "Realm_" + uuid();
   const attributeName = "Test";
 
   before(() =>
     adminClient.createRealm(realmName, {
       attributes: { userProfileEnabled: "true" },
-    })
+    }),
   );
 
   after(() => adminClient.deleteRealm(realmName));
@@ -66,7 +67,7 @@ describe("User profile tabs", () => {
         .createAttribute(attributeName, "Display name")
         .saveAttributeCreation();
       masthead.checkNotificationMessage(
-        "Success! User Profile configuration has been saved."
+        "Success! User Profile configuration has been saved.",
       );
     });
 
@@ -78,7 +79,7 @@ describe("User profile tabs", () => {
         .editAttribute("Edited display name")
         .saveAttributeCreation();
       masthead.checkNotificationMessage(
-        "Success! User Profile configuration has been saved."
+        "Success! User Profile configuration has been saved.",
       );
     });
 
@@ -100,7 +101,7 @@ describe("User profile tabs", () => {
       cy.wrap(null).then(() =>
         adminClient.patchUserProfile(realmName, {
           groups: [{ name: "Test" }],
-        })
+        }),
       );
 
       getUserProfileTab();
@@ -130,7 +131,7 @@ describe("User profile tabs", () => {
       getJsonEditorTab();
       userProfileTab.typeJSON(removedThree).saveJSON();
       masthead.checkNotificationMessage(
-        "User profile settings successfully updated."
+        "User profile settings successfully updated.",
       );
     });
   });

@@ -20,13 +20,13 @@ import {
   ExternalLinkAltIcon,
   InfoAltIcon,
 } from "@patternfly/react-icons";
-import { TFuncKey } from "i18next";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { ContinueCancelModal, useAlerts } from "ui-shared";
 import { deleteConsent, getApplications } from "../api/methods";
 import { ClientRepresentation } from "../api/representations";
-import { useAlerts, ContinueCancelModal } from "ui-shared";
 import { Page } from "../components/page/Page";
+import { TFuncKey } from "../i18n";
 import { usePromise } from "../utils/usePromise";
 
 type Application = ClientRepresentation & {
@@ -44,13 +44,13 @@ const Applications = () => {
   usePromise(
     (signal) => getApplications({ signal }),
     (clients) => setApplications(clients.map((c) => ({ ...c, open: false }))),
-    [key]
+    [key],
   );
 
   const toggleOpen = (clientId: string) => {
     setApplications([
       ...applications!.map((a) =>
-        a.clientId === clientId ? { ...a, open: !a.open } : a
+        a.clientId === clientId ? { ...a, open: !a.open } : a,
       ),
     ]);
   };
@@ -224,7 +224,7 @@ const Applications = () => {
                     )}
                     <DescriptionListGroup>
                       <DescriptionListTerm>
-                        {t("accessGrantedOn") + ": "}
+                        {t("accessGrantedOn")}
                       </DescriptionListTerm>
                       <DescriptionListDescription>
                         {new Intl.DateTimeFormat("en", {
@@ -245,9 +245,9 @@ const Applications = () => {
                   <hr />
                   <GridItem>
                     <ContinueCancelModal
-                      buttonTitle="removeButton"
+                      buttonTitle="removeAccess"
                       buttonVariant="secondary"
-                      modalTitle="removeModalTitle"
+                      modalTitle="removeAccess"
                       modalMessage={t("removeModalMessage", [
                         application.clientId,
                       ])}

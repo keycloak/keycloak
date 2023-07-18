@@ -1,11 +1,12 @@
-import { useTranslation } from "react-i18next";
-import { FormGroup, PageSection, Switch } from "@patternfly/react-core";
-import { FormAccess } from "../components/form-access/FormAccess";
-import { HelpItem } from "ui-shared";
-import { FormPanel } from "../components/scroll-form/FormPanel";
 import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
-import { useAdminClient } from "../context/auth/AdminClient";
+import { FormGroup, PageSection, Switch } from "@patternfly/react-core";
+import { useTranslation } from "react-i18next";
+import { HelpItem } from "ui-shared";
+
+import { adminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
+import { FormAccess } from "../components/form/FormAccess";
+import { FormPanel } from "../components/scroll-form/FormPanel";
 import { useRealm } from "../context/realm-context/RealmContext";
 
 type RealmSettingsLoginTabProps = {
@@ -22,7 +23,6 @@ export const RealmSettingsLoginTab = ({
   const { t } = useTranslation("realm-settings");
 
   const { addAlert, addError } = useAlerts();
-  const { adminClient } = useAdminClient();
   const { realm: realmName } = useRealm();
 
   const updateSwitchValue = async (switches: SwitchType | SwitchType[]) => {
@@ -37,7 +37,7 @@ export const RealmSettingsLoginTab = ({
         },
         Array.isArray(switches)
           ? switches.reduce((realm, s) => Object.assign(realm, s), realm)
-          : Object.assign(realm, switches)
+          : Object.assign(realm, switches),
       );
       addAlert(t("enableSwitchSuccess", { switch: t(name) }));
       refresh();

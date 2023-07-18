@@ -10,32 +10,32 @@ import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useParams } from "react-router-dom";
 
+import { adminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
 import { KeycloakSpinner } from "../components/keycloak-spinner/KeycloakSpinner";
 import {
   RoutableTabs,
   useRoutableTab,
 } from "../components/routable-tabs/RoutableTabs";
-import { useAdminClient, useFetch } from "../context/auth/AdminClient";
 import { useRealm } from "../context/realm-context/RealmContext";
+import { useFetch } from "../utils/useFetch";
+import {
+  LdapComponentRepresentation,
+  UserFederationLdapForm,
+  serializeFormData,
+} from "./UserFederationLdapForm";
 import { LdapMapperList } from "./ldap/mappers/LdapMapperList";
 import {
-  toUserFederationLdap,
   UserFederationLdapParams,
   UserFederationLdapTab,
+  toUserFederationLdap,
 } from "./routes/UserFederationLdap";
 import { toUserFederationLdapMapper } from "./routes/UserFederationLdapMapper";
 import { ExtendedHeader } from "./shared/ExtendedHeader";
-import {
-  LdapComponentRepresentation,
-  serializeFormData,
-  UserFederationLdapForm,
-} from "./UserFederationLdapForm";
 
 export default function UserFederationLdapSettings() {
   const { t } = useTranslation("user-federation");
   const form = useForm<LdapComponentRepresentation>({ mode: "onChange" });
-  const { adminClient } = useAdminClient();
   const { realm } = useRealm();
   const { id } = useParams<UserFederationLdapParams>();
   const { addAlert, addError } = useAlerts();
@@ -54,7 +54,7 @@ export default function UserFederationLdapSettings() {
       setComponent(component);
       setupForm(component);
     },
-    [id, refreshCount]
+    [id, refreshCount],
   );
 
   const useTab = (tab: UserFederationLdapTab) =>
@@ -67,12 +67,12 @@ export default function UserFederationLdapSettings() {
     form.reset(component);
     form.setValue(
       "config.periodicChangedUsersSync",
-      component.config?.["changedSyncPeriod"]?.[0] !== "-1"
+      component.config?.["changedSyncPeriod"]?.[0] !== "-1",
     );
 
     form.setValue(
       "config.periodicFullSync",
-      component.config?.["fullSyncPeriod"]?.[0] !== "-1"
+      component.config?.["fullSyncPeriod"]?.[0] !== "-1",
     );
   };
 
@@ -80,7 +80,7 @@ export default function UserFederationLdapSettings() {
     try {
       await adminClient.components.update(
         { id: id! },
-        serializeFormData(formData)
+        serializeFormData(formData),
       );
       addAlert(t("saveSuccess"), AlertVariant.success);
       refresh();

@@ -57,7 +57,7 @@ export default class AdminEventsTab extends PageObject {
 
   public assertAdminSearchDropdownMenuHasLabels() {
     super.assertDropdownMenuHasLabels(
-      Object.values(AdminEventsTabSearchFormFieldsLabel)
+      Object.values(AdminEventsTabSearchFormFieldsLabel),
     );
     return this;
   }
@@ -204,7 +204,7 @@ export default class AdminEventsTab extends PageObject {
   public assertResourceTypesChipGroupExist(exist: boolean) {
     super.assertChipGroupExist(
       AdminEventsTabSearchFormFieldsLabel.ResourceTypes,
-      exist
+      exist,
     );
     return this;
   }
@@ -212,7 +212,7 @@ export default class AdminEventsTab extends PageObject {
   public assertOperationTypesChipGroupExist(exist: boolean) {
     super.assertChipGroupExist(
       AdminEventsTabSearchFormFieldsLabel.OperationTypes,
-      exist
+      exist,
     );
     return this;
   }
@@ -220,19 +220,19 @@ export default class AdminEventsTab extends PageObject {
   public assertResourcePathChipGroupExist(exist: boolean) {
     super.assertChipGroupExist(
       AdminEventsTabSearchFormFieldsLabel.ResourcePath,
-      exist
+      exist,
     );
     return this;
   }
 
   public assertResourcePathChipGroupItemExist(
     itemName: string,
-    exist: boolean
+    exist: boolean,
   ) {
     super.assertChipGroupItemExist(
       AdminEventsTabSearchFormFieldsLabel.ResourcePath,
       itemName,
-      exist
+      exist,
     );
     return this;
   }
@@ -240,7 +240,7 @@ export default class AdminEventsTab extends PageObject {
   public assertRealmChipGroupExist(exist: boolean) {
     super.assertChipGroupExist(
       AdminEventsTabSearchFormFieldsLabel.Realm,
-      exist
+      exist,
     );
     return this;
   }
@@ -248,7 +248,7 @@ export default class AdminEventsTab extends PageObject {
   public assertClientChipGroupExist(exist: boolean) {
     super.assertChipGroupExist(
       AdminEventsTabSearchFormFieldsLabel.Client,
-      exist
+      exist,
     );
     return this;
   }
@@ -261,7 +261,7 @@ export default class AdminEventsTab extends PageObject {
   public assertIpAddressChipGroupExist(exist: boolean) {
     super.assertChipGroupExist(
       AdminEventsTabSearchFormFieldsLabel.IpAddress,
-      exist
+      exist,
     );
     return this;
   }
@@ -269,7 +269,7 @@ export default class AdminEventsTab extends PageObject {
   public assertDateFromChipGroupExist(exist: boolean) {
     super.assertChipGroupExist(
       AdminEventsTabSearchFormFieldsLabel.DateFrom,
-      exist
+      exist,
     );
     return this;
   }
@@ -277,7 +277,7 @@ export default class AdminEventsTab extends PageObject {
   public assertDateToChipGroupExist(exist: boolean) {
     super.assertChipGroupExist(
       AdminEventsTabSearchFormFieldsLabel.DateTo,
-      exist
+      exist,
     );
     return this;
   }

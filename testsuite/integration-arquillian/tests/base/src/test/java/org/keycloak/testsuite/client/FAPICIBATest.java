@@ -370,7 +370,7 @@ public class FAPICIBATest extends AbstractClientPoliciesTest {
             clientRep.setClientAuthenticatorType(X509ClientAuthenticator.PROVIDER_ID);
             OIDCAdvancedConfigWrapper clientConfig = OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep);
             clientConfig.setRequestUris(Collections.singletonList(TestApplicationResourceUrls.clientRequestUri()));
-            clientConfig.setTlsClientAuthSubjectDn("EMAILADDRESS=contact@keycloak.org, CN=Keycloak Intermediate CA, OU=Keycloak, O=Red Hat, ST=MA, C=US");
+            clientConfig.setTlsClientAuthSubjectDn(MutualTLSUtils.DEFAULT_KEYSTORE_SUBJECT_DN);
             clientConfig.setAllowRegexPatternComparison(false);
             setClientAuthMethodNeutralSettings(clientRep);
         });
@@ -414,7 +414,7 @@ public class FAPICIBATest extends AbstractClientPoliciesTest {
             clientRep.setClientAuthenticatorType(X509ClientAuthenticator.PROVIDER_ID);
             OIDCAdvancedConfigWrapper clientConfig = OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep);
             clientConfig.setRequestUris(Collections.singletonList(TestApplicationResourceUrls.clientRequestUri()));
-            clientConfig.setTlsClientAuthSubjectDn("EMAILADDRESS=contact@keycloak.org, CN=Keycloak Intermediate CA, OU=Keycloak, O=Red Hat, ST=MA, C=US");
+            clientConfig.setTlsClientAuthSubjectDn(MutualTLSUtils.DEFAULT_KEYSTORE_SUBJECT_DN);
             clientConfig.setAllowRegexPatternComparison(false);
             setClientAuthMethodNeutralSettings(clientRep);
         });
@@ -444,7 +444,7 @@ public class FAPICIBATest extends AbstractClientPoliciesTest {
             clientRep.setClientAuthenticatorType(X509ClientAuthenticator.PROVIDER_ID);
             OIDCAdvancedConfigWrapper clientConfig = OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep);
             clientConfig.setRequestUris(Collections.singletonList(TestApplicationResourceUrls.clientRequestUri()));
-            clientConfig.setTlsClientAuthSubjectDn("EMAILADDRESS=contact@keycloak.org, CN=Keycloak Intermediate CA, OU=Keycloak, O=Red Hat, ST=MA, C=US");
+            clientConfig.setTlsClientAuthSubjectDn(MutualTLSUtils.DEFAULT_KEYSTORE_SUBJECT_DN);
             clientConfig.setAllowRegexPatternComparison(false);
             setClientAuthMethodNeutralSettings(clientRep);
         });
@@ -622,12 +622,12 @@ public class FAPICIBATest extends AbstractClientPoliciesTest {
 
     private void verifyBackchannelAuthenticationTokenRequest(OAuthClient.AccessTokenResponse tokenRes, String clientId, String username) {
         assertThat(tokenRes.getStatusCode(), is(equalTo(200)));
-        events.expectAuthReqIdToToken(null, null).clearDetails().user(AssertEvents.isUUID()).client(clientId).assertEvent();
 
         AccessToken accessToken = oauth.verifyToken(tokenRes.getAccessToken());
         assertThat(accessToken.getIssuedFor(), is(equalTo(clientId)));
         Assert.assertNotNull(accessToken.getCertConf().getCertThumbprint());
 
+        events.expectAuthReqIdToToken(null, null).clearDetails().user(accessToken.getSubject()).client(clientId).assertEvent();
 
         RefreshToken refreshToken = oauth.parseRefreshToken(tokenRes.getRefreshToken());
         assertThat(refreshToken.getIssuedFor(), is(equalTo(clientId)));

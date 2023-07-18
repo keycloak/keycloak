@@ -1,16 +1,15 @@
-import { useState } from "react";
-
-import type { TFunction } from "i18next";
-import { useTranslation } from "react-i18next";
+import type ClientScopeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientScopeRepresentation";
 import {
   DropdownItem,
   Select,
   SelectOption,
   SelectProps,
 } from "@patternfly/react-core";
+import type { TFunction } from "i18next";
+import { useState } from "react";
+import { useTranslation } from "react-i18next";
 
-import type ClientScopeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientScopeRepresentation";
-import type KeycloakAdminClient from "@keycloak/keycloak-admin-client";
+import { adminClient } from "../../admin-client";
 import { toUpperCase } from "../../util";
 
 export enum ClientScope {
@@ -33,7 +32,7 @@ export const allClientScopeTypes = Object.keys({
 
 export const clientScopeTypesSelectOptions = (
   t: TFunction,
-  scopeTypes: string[] | undefined = clientScopeTypes
+  scopeTypes: string[] | undefined = clientScopeTypes,
 ) =>
   scopeTypes.map((type) => (
     <SelectOption key={type} value={type}>
@@ -43,7 +42,7 @@ export const clientScopeTypesSelectOptions = (
 
 export const clientScopeTypesDropdown = (
   t: TFunction,
-  onClick: (scope: ClientScopeType) => void
+  onClick: (scope: ClientScopeType) => void,
 ) =>
   clientScopeTypes.map((type) => (
     <DropdownItem key={type} onClick={() => onClick(type as ClientScopeType)}>
@@ -77,7 +76,7 @@ export const CellDropdown = ({
       selections={[type]}
       onSelect={(_, value) => {
         onSelect(
-          all ? (value as ClientScopeType) : (value as AllClientScopeType)
+          all ? (value as ClientScopeType) : (value as AllClientScopeType),
         );
         setOpen(false);
       }}
@@ -85,7 +84,7 @@ export const CellDropdown = ({
     >
       {clientScopeTypesSelectOptions(
         t,
-        all ? allClientScopeTypes : clientScopeTypes
+        all ? allClientScopeTypes : clientScopeTypes,
       )}
     </Select>
   );
@@ -96,25 +95,23 @@ export type ClientScopeDefaultOptionalType = ClientScopeRepresentation & {
 };
 
 export const changeScope = async (
-  adminClient: KeycloakAdminClient,
   clientScope: ClientScopeDefaultOptionalType,
-  changeTo: AllClientScopeType
+  changeTo: AllClientScopeType,
 ) => {
-  await removeScope(adminClient, clientScope);
-  await addScope(adminClient, clientScope, changeTo);
+  await removeScope(clientScope);
+  await addScope(clientScope, changeTo);
 };
 
-const castAdminClient = (adminClient: KeycloakAdminClient) =>
+const castAdminClient = () =>
   adminClient.clientScopes as unknown as {
     [index: string]: Function;
   };
 
 export const removeScope = async (
-  adminClient: KeycloakAdminClient,
-  clientScope: ClientScopeDefaultOptionalType
+  clientScope: ClientScopeDefaultOptionalType,
 ) => {
   if (clientScope.type !== AllClientScopes.none)
-    await castAdminClient(adminClient)[
+    await castAdminClient()[
       `delDefault${
         clientScope.type === ClientScope.optional ? "Optional" : ""
       }ClientScope`
@@ -124,12 +121,11 @@ export const removeScope = async (
 };
 
 const addScope = async (
-  adminClient: KeycloakAdminClient,
   clientScope: ClientScopeDefaultOptionalType,
-  type: AllClientScopeType
+  type: AllClientScopeType,
 ) => {
   if (type !== AllClientScopes.none)
-    await castAdminClient(adminClient)[
+    await castAdminClient()[
       `addDefault${type === ClientScope.optional ? "Optional" : ""}ClientScope`
     ]({
       id: clientScope.id!,
@@ -137,23 +133,21 @@ const addScope = async (
 };
 
 export const changeClientScope = async (
-  adminClient: KeycloakAdminClient,
   clientId: string,
   clientScope: ClientScopeRepresentation,
   type: AllClientScopeType,
-  changeTo: ClientScopeType
+  changeTo: ClientScopeType,
 ) => {
   if (type !== "none") {
-    await removeClientScope(adminClient, clientId, clientScope, type);
+    await removeClientScope(clientId, clientScope, type);
   }
-  await addClientScope(adminClient, clientId, clientScope, changeTo);
+  await addClientScope(clientId, clientScope, changeTo);
 };
 
 export const removeClientScope = async (
-  adminClient: KeycloakAdminClient,
   clientId: string,
   clientScope: ClientScopeRepresentation,
-  type: ClientScope
+  type: ClientScope,
 ) => {
   const methodName = `del${toUpperCase(type)}ClientScope` as const;
 
@@ -164,10 +158,9 @@ export const removeClientScope = async (
 };
 
 export const addClientScope = async (
-  adminClient: KeycloakAdminClient,
   clientId: string,
   clientScope: ClientScopeRepresentation,
-  type: ClientScopeType
+  type: ClientScopeType,
 ) => {
   const methodName = `add${toUpperCase(type)}ClientScope` as const;
 

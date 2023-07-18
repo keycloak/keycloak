@@ -1,21 +1,21 @@
-import { useCallback, useState } from "react";
-import { useTranslation } from "react-i18next";
-import { Controller, useFormContext } from "react-hook-form";
+import type UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
+import type { UserQuery } from "@keycloak/keycloak-admin-client/lib/resources/users";
 import {
-  SelectOption,
   FormGroup,
   Select,
+  SelectOption,
   SelectVariant,
 } from "@patternfly/react-core";
 import { debounce } from "lodash-es";
-
-import type UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
-import type { UserQuery } from "@keycloak/keycloak-admin-client/lib/resources/users";
-import type { ComponentProps } from "../dynamic/components";
-
-import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
+import { useCallback, useState } from "react";
+import { Controller, useFormContext } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 import { HelpItem } from "ui-shared";
+
+import { adminClient } from "../../admin-client";
+import { useFetch } from "../../utils/useFetch";
 import useToggle from "../../utils/useToggle";
+import type { ComponentProps } from "../dynamic/components";
 
 type UserSelectProps = ComponentProps & {
   variant?: SelectVariant;
@@ -42,7 +42,6 @@ export const UserSelect = ({
   const [users, setUsers] = useState<(UserRepresentation | undefined)[]>([]);
   const [search, setSearch] = useState("");
 
-  const { adminClient } = useAdminClient();
   const debounceFn = useCallback(debounce(setSearch, 1000), []);
 
   useFetch(
@@ -56,13 +55,13 @@ export const UserSelect = ({
 
       if (values?.length && !search) {
         return Promise.all(
-          values.map((id: string) => adminClient.users.findOne({ id }))
+          values.map((id: string) => adminClient.users.findOne({ id })),
         );
       }
       return adminClient.users.find(params);
     },
     setUsers,
-    [search]
+    [search],
   );
 
   const convert = (clients: (UserRepresentation | undefined)[]) =>
@@ -118,7 +117,7 @@ export const UserSelect = ({
                   : field.onChange([option]);
               } else {
                 const changedValue = field.value.find(
-                  (v: string) => v === option
+                  (v: string) => v === option,
                 )
                   ? field.value.filter((v: string) => v !== option)
                   : [...field.value, option];

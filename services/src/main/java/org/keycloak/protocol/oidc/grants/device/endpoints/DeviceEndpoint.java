@@ -58,16 +58,16 @@ import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.util.TokenUtil;
 
-import javax.ws.rs.Consumes;
-import javax.ws.rs.GET;
-import javax.ws.rs.OPTIONS;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.OPTIONS;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.core.Response;
 
 import java.util.Map;
 
@@ -164,14 +164,16 @@ public class DeviceEndpoint extends AuthorizationEndpointBase implements RealmRe
         // To inform "expired_token" to the client, the lifespan of the cache provider is longer than device code
         int lifespanSeconds = expiresIn + interval + 10;
 
-        SingleUseObjectProvider singleUseStore = session.getProvider(SingleUseObjectProvider.class);
+        SingleUseObjectProvider singleUseStore = session.singleUseObjects();
 
         singleUseStore.put(deviceCode.serializeKey(), lifespanSeconds, deviceCode.toMap());
         singleUseStore.put(userCode.serializeKey(), lifespanSeconds, userCode.serializeValue());
 
         try {
-            String deviceUrl = realm.getAttribute(SHORT_VERIFICATION_URI) != null ? realm.getAttribute(SHORT_VERIFICATION_URI) : DeviceGrantType.oauth2DeviceVerificationUrl(session.getContext().getUri()).build(realm.getName())
-                .toString();
+            String deviceUrl = realm.getAttribute(SHORT_VERIFICATION_URI);
+            if (deviceUrl == null || deviceUrl.isEmpty()) {
+                deviceUrl = DeviceGrantType.oauth2DeviceVerificationUrl(session.getContext().getUri()).build(realm.getName()).toString();
+            }
 
             OAuth2DeviceAuthorizationResponse response = new OAuth2DeviceAuthorizationResponse();
             response.setDeviceCode(deviceCode.getDeviceCode());
@@ -292,7 +294,7 @@ public class DeviceEndpoint extends AuthorizationEndpointBase implements RealmRe
     }
 
     public static OAuth2DeviceCodeModel getDeviceByUserCode(KeycloakSession session, RealmModel realm, String userCode) {
-        SingleUseObjectProvider singleUseStore = session.getProvider(SingleUseObjectProvider.class);
+        SingleUseObjectProvider singleUseStore = session.singleUseObjects();
         Map<String, String> notes = singleUseStore.get(OAuth2DeviceUserCodeModel.createKey(realm, userCode));
 
         if (notes != null) {

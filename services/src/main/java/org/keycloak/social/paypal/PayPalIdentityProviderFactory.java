@@ -21,6 +21,10 @@ import org.keycloak.broker.provider.AbstractIdentityProviderFactory;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.broker.social.SocialIdentityProviderFactory;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.provider.ProviderConfigProperty;
+import org.keycloak.provider.ProviderConfigurationBuilder;
+
+import java.util.List;
 
 /**
  * @author Petter Lysne
@@ -47,5 +51,15 @@ public class PayPalIdentityProviderFactory extends AbstractIdentityProviderFacto
     @Override
     public String getId() {
         return PROVIDER_ID;
+    }
+
+    @Override
+    public List<ProviderConfigProperty> getConfigProperties() {
+        return ProviderConfigurationBuilder.create()
+                .property().name("sandbox")
+                .type(ProviderConfigProperty.BOOLEAN_TYPE)
+                .label("Target Sandbox")
+                .helpText("Target PayPal's sandbox environment")
+                .add().build();
     }
 }

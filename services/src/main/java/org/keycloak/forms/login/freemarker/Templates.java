@@ -34,6 +34,8 @@ public class Templates {
                 return "login-password.ftl";
             case LOGIN_TOTP:
                 return "login-otp.ftl";
+            case LOGIN_RESET_OTP:
+                return "login-reset-otp.ftl";
             case LOGIN_CONFIG_TOTP:
                 return "login-config-totp.ftl";
             case LOGIN_RECOVERY_AUTHN_CODES_INPUT:

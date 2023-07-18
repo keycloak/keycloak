@@ -15,16 +15,16 @@ import { HelpIcon } from "@patternfly/react-icons";
 import { ReactNode, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
-import { HelpHeader } from "./components/help-enabler/HelpHeader";
 import { useHelp } from "ui-shared";
-import { useAdminClient } from "./context/auth/AdminClient";
+
+import { HelpHeader } from "./components/help-enabler/HelpHeader";
 import { useRealm } from "./context/realm-context/RealmContext";
 import { useWhoAmI } from "./context/whoami/WhoAmI";
 import { toDashboard } from "./dashboard/routes/Dashboard";
 import environment from "./environment";
+import { keycloak } from "./keycloak";
 
 const ManageAccountDropdownItem = () => {
-  const { keycloak } = useAdminClient();
   const { t } = useTranslation();
   return (
     <DropdownItem
@@ -38,7 +38,6 @@ const ManageAccountDropdownItem = () => {
 };
 
 const SignOutDropdownItem = () => {
-  const { keycloak } = useAdminClient();
   const { t } = useTranslation();
   return (
     <DropdownItem
@@ -134,8 +133,7 @@ export const Header = () => {
   const { realm } = useRealm();
 
   const headerTools = () => {
-    const adminClient = useAdminClient();
-    const picture = adminClient.keycloak.tokenParsed?.picture;
+    const picture = keycloak.tokenParsed?.picture;
     return (
       <PageHeaderTools>
         <PageHeaderToolsGroup
@@ -174,13 +172,18 @@ export const Header = () => {
     );
   };
 
+  const logo = environment.logo ? environment.logo : "/logo.svg";
+  const logoUrl = environment.logoUrl
+    ? environment.logoUrl
+    : toDashboard({ realm });
+
   return (
     <PageHeader
       showNavToggle
       logo={
-        <Link to={toDashboard({ realm })}>
+        <Link to={logoUrl}>
           <Brand
-            src={environment.resourceUrl + "/logo.svg"}
+            src={environment.resourceUrl + logo}
             id="masthead-logo"
             alt="Logo"
             className="keycloak__pageheader_brand"

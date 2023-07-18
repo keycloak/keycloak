@@ -9,10 +9,10 @@ import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
 
+import { adminClient } from "../../admin-client";
 import { useAlerts } from "../../components/alert/Alerts";
-import { FormAccess } from "../../components/form-access/FormAccess";
+import { FormAccess } from "../../components/form/FormAccess";
 import { ViewHeader } from "../../components/view-header/ViewHeader";
-import { useAdminClient } from "../../context/auth/AdminClient";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { toAuthentication } from "../routes/Authentication";
 import { toFlow } from "../routes/Flow";
@@ -23,7 +23,6 @@ export default function CreateFlow() {
   const { t } = useTranslation("authentication");
   const navigate = useNavigate();
   const { realm } = useRealm();
-  const { adminClient } = useAdminClient();
   const { addAlert } = useAlerts();
   const form = useForm<AuthenticationFlowRepresentation>();
   const { handleSubmit } = form;
@@ -33,7 +32,7 @@ export default function CreateFlow() {
 
     try {
       const { id } = await adminClient.authenticationManagement.createFlow(
-        flow
+        flow,
       );
       addAlert(t("flowCreatedSuccess"), AlertVariant.success);
       navigate(
@@ -41,14 +40,14 @@ export default function CreateFlow() {
           realm,
           id: id!,
           usedBy: "notInUse",
-        })
+        }),
       );
     } catch (error: any) {
       addAlert(
         t("flowCreateError", {
           error: error.response?.data?.errorMessage || error,
         }),
-        AlertVariant.danger
+        AlertVariant.danger,
       );
     }
   };

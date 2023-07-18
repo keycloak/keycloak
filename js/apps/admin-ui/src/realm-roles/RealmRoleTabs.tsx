@@ -13,6 +13,7 @@ import { SubmitHandler, useForm, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useLocation, useMatch, useNavigate } from "react-router-dom";
 
+import { adminClient } from "../admin-client";
 import { toClient } from "../clients/routes/Client";
 import {
   ClientRoleParams,
@@ -41,8 +42,8 @@ import {
   useRoutableTab,
 } from "../components/routable-tabs/RoutableTabs";
 import { ViewHeader } from "../components/view-header/ViewHeader";
-import { useAdminClient, useFetch } from "../context/auth/AdminClient";
 import { useRealm } from "../context/realm-context/RealmContext";
+import { useFetch } from "../utils/useFetch";
 import useIsFeatureEnabled, { Feature } from "../utils/useIsFeatureEnabled";
 import { useParams } from "../utils/useParams";
 import { UsersInRoleTab } from "./UsersInRoleTab";
@@ -57,8 +58,6 @@ export default function RealmRoleTabs() {
   });
   const { control, reset, setValue } = form;
   const navigate = useNavigate();
-
-  const { adminClient } = useAdminClient();
 
   const { id, clientId } = useParams<ClientRoleParams>();
   const { pathname } = useLocation();
@@ -115,7 +114,7 @@ export default function RealmRoleTabs() {
       setAttributes(convertedRole.attributes);
       setRealm(realm);
     },
-    [key]
+    [key],
   );
 
   const onSubmit: SubmitHandler<AttributeForm> = async (formValues) => {
@@ -131,7 +130,7 @@ export default function RealmRoleTabs() {
       } else {
         await adminClient.clients.updateRole(
           { id: clientId, roleName: formValues.name! },
-          roleRepresentation
+          roleRepresentation,
         );
       }
 
@@ -272,7 +271,7 @@ export default function RealmRoleTabs() {
         addAlert(
           t("compositeRoleOff"),
           AlertVariant.success,
-          t("compositesRemovedAlertDescription")
+          t("compositesRemovedAlertDescription"),
         );
         navigate(toTab("details"));
         refresh();
@@ -290,7 +289,7 @@ export default function RealmRoleTabs() {
     try {
       await adminClient.roles.createComposite(
         { roleId: id, realm: realm!.realm },
-        composites
+        composites,
       );
       refresh();
       navigate(toTab("associated-roles"));
@@ -301,7 +300,7 @@ export default function RealmRoleTabs() {
   };
 
   const isDefaultRole = (name: string | undefined) =>
-    realm?.defaultRole!.name === name;
+    realm?.defaultRole && realm.defaultRole!.name === name;
 
   if (!realm) {
     return <KeycloakSpinner />;

@@ -11,15 +11,8 @@
 :api-management!:
 :on-prem:
 
-ifeval::["{project_buildType}" == "latest"]
-:project_versionLinks: latest
-endif::[]
-ifeval::["{project_buildType}" == "archive"]
-:project_versionLinks: {project_versionDoc}
-endif::[]
-
 :project_images: keycloak-images
-:project_doc_base_url: https://www.keycloak.org/docs/{project_versionLinks}
+:project_doc_base_url: https://www.keycloak.org/docs/{project_version}
 :project_doc_base_url_latest: https://www.keycloak.org/docs/latest
 :project_dirref: KEYCLOAK_HOME
 :project_openshift_product_name: Keycloak for OpenShift
@@ -48,6 +41,7 @@ endif::[]
 :adapterguide_name_short: Securing Apps
 :adapterguide_link: {project_doc_base_url}/securing_apps/
 :adapterguide_link_js_adapter: {adapterguide_link}#_javascript_adapter
+:adapterguide_link_nodejs_adapter: {adapterguide_link}#_nodejs_adapter
 :adapterguide_link_latest: {project_doc_base_url_latest}/securing_apps/
 :adapterguide_logout_link: {adapterguide_link}#_java_adapter_logout
 :adminguide_name: Server Administration Guide
@@ -61,7 +55,7 @@ endif::[]
 :adminguide_clearcache_name: Clearing Server Caches
 :adminguide_clearcache_link: {adminguide_link}#_clear-cache
 :apidocs_name: API Documentation
-:apidocs_link: https://www.keycloak.org/docs/{project_versionDoc}/api_documentation/
+:apidocs_link: https://www.keycloak.org/docs/{project_version}/api_documentation/
 :developerguide_name: Server Developer Guide
 :developerguide_name_short: Server Developer
 :developerguide_link: {project_doc_base_url}/server_development/
@@ -85,9 +79,9 @@ endif::[]
 :releasenotes_link_latest: {project_doc_base_url_latest}/release_notes/
 
 :apidocs_javadocs_name: JavaDocs Documentation
-:apidocs_javadocs_link: https://www.keycloak.org/docs-api/{project_versionDoc}/javadocs/
+:apidocs_javadocs_link: https://www.keycloak.org/docs-api/{project_version}/javadocs/
 :apidocs_adminrest_name: Administration REST API
-:apidocs_adminrest_link: https://www.keycloak.org/docs-api/{project_versionDoc}/rest-api/
+:apidocs_adminrest_link: https://www.keycloak.org/docs-api/{project_version}/rest-api/
 
 :appserver_name: WildFly
 :appserver_dirref: WILDFLY_HOME
@@ -121,3 +115,6 @@ endif::[]
 :subsystem_infinispan_xml_urn: urn:jboss:domain:infinispan:12.0
 :subsystem_datasources_xml_urn: urn:jboss:domain:datasources:6.0
 :saml_adapter_xsd_urn: https://www.keycloak.org/schema/keycloak_saml_adapter_1_10.xsd
+
+:section: guide
+:sections: guides

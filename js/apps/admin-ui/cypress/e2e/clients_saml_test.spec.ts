@@ -50,7 +50,7 @@ describe("Clients SAML tests", () => {
       cy.findByTestId("forceNameIdFormat").click({
         force: true,
       });
-      cy.findByTestId("settingsSave").click();
+      cy.findByTestId("settings-save").click();
       masthead.checkNotificationMessage("Client successfully updated");
     });
   });
@@ -89,7 +89,7 @@ describe("Clients SAML tests", () => {
 
     it("should disable client signature", () => {
       cy.intercept(
-        "admin/realms/master/clients/*/certificates/saml.signing"
+        "admin/realms/master/clients/*/certificates/saml.signing",
       ).as("load");
       cy.findByTestId("clientSignature").click({ force: true });
 
@@ -106,7 +106,7 @@ describe("Clients SAML tests", () => {
 
       cy.findByTestId("generate").click();
       masthead.checkNotificationMessage(
-        "New key pair and certificate generated successfully"
+        "New key pair and certificate generated successfully",
       );
 
       modalUtils.confirmModal();

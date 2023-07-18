@@ -41,7 +41,7 @@ export const EventConfigForm = ({
     titleKey: "realm-settings:events-disable-title",
     messageKey: "realm-settings:events-disable-confirm",
     continueButtonLabel: "realm-settings:confirm",
-    onConfirm: () => setValue(eventKey, false),
+    onConfirm: () => setValue(eventKey, false, { shouldDirty: true }),
   });
 
   return (

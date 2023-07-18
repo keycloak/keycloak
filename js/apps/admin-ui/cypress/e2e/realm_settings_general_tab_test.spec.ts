@@ -1,3 +1,4 @@
+import { v4 as uuid } from "uuid";
 import SidebarPage from "../support/pages/admin-ui/SidebarPage";
 import LoginPage from "../support/pages/LoginPage";
 import RealmSettingsPage from "../support/pages/admin-ui/manage/realm_settings/RealmSettingsPage";
@@ -11,7 +12,7 @@ const masthead = new Masthead();
 const realmSettingsPage = new RealmSettingsPage();
 
 describe("Realm settings general tab tests", () => {
-  const realmName = "Realm_" + crypto.randomUUID();
+  const realmName = "Realm_" + uuid();
 
   beforeEach(() => {
     loginPage.logIn();
@@ -31,13 +32,13 @@ describe("Realm settings general tab tests", () => {
     sidebarPage.goToRealmSettings();
     realmSettingsPage.toggleSwitch(
       realmSettingsPage.managedAccessSwitch,
-      false
+      false,
     );
     realmSettingsPage.save(realmSettingsPage.generalSaveBtn);
     masthead.checkNotificationMessage("Realm successfully updated", true);
     realmSettingsPage.toggleSwitch(
       realmSettingsPage.managedAccessSwitch,
-      false
+      false,
     );
     realmSettingsPage.save(realmSettingsPage.generalSaveBtn);
     masthead.checkNotificationMessage("Realm successfully updated", true);
@@ -126,8 +127,8 @@ describe("Realm settings general tab tests", () => {
         "have.attr",
         "href",
         `${Cypress.env(
-          "KEYCLOAK_SERVER"
-        )}/realms/${realmName}/.well-known/openid-configuration`
+          "KEYCLOAK_SERVER",
+        )}/realms/${realmName}/.well-known/openid-configuration`,
       )
       .should("have.attr", "target", "_blank")
       .should("have.attr", "rel", "noreferrer noopener");
@@ -151,8 +152,8 @@ describe("Realm settings general tab tests", () => {
         "have.attr",
         "href",
         `${Cypress.env(
-          "KEYCLOAK_SERVER"
-        )}/realms/${realmName}/protocol/saml/descriptor`
+          "KEYCLOAK_SERVER",
+        )}/realms/${realmName}/protocol/saml/descriptor`,
       )
       .should("have.attr", "target", "_blank")
       .should("have.attr", "rel", "noreferrer noopener");

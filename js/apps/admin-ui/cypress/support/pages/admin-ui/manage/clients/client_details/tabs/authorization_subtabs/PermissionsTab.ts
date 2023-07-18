@@ -19,6 +19,7 @@ export default class PermissionsTab extends CommonPage {
       .parent()
       .parent()
       .findByText(name)
+      .parent()
       .click();
     return this;
   }

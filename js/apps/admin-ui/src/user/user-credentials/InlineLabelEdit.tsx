@@ -4,9 +4,9 @@ import { CheckIcon, PencilAltIcon, TimesIcon } from "@patternfly/react-icons";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
+import { adminClient } from "../../admin-client";
 import { useAlerts } from "../../components/alert/Alerts";
 import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
-import { useAdminClient } from "../../context/auth/AdminClient";
 
 type UserLabelForm = {
   userLabel: string;
@@ -28,7 +28,6 @@ export const InlineLabelEdit = ({
   const { t } = useTranslation("users");
   const { register, handleSubmit } = useForm<UserLabelForm>();
 
-  const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
 
   const saveUserLabel = async (userLabel: UserLabelForm) => {
@@ -38,7 +37,7 @@ export const InlineLabelEdit = ({
           id: userId,
           credentialId: credential.id!,
         },
-        userLabel.userLabel || ""
+        userLabel.userLabel || "",
       );
       addAlert(t("updateCredentialUserLabelSuccess"), AlertVariant.success);
       toggle();

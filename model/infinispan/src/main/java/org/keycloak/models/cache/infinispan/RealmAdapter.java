@@ -748,32 +748,6 @@ public class RealmAdapter implements CachedRealmModel {
     }
 
     @Override
-    @Deprecated
-    public Stream<String> getDefaultRolesStream() {
-        if (isUpdated()) return updated.getDefaultRolesStream();
-        return getDefaultRole().getCompositesStream().filter(this::isRealmRole).map(RoleModel::getName);
-    }
-
-    private boolean isRealmRole(RoleModel role) {
-        return ! role.isClientRole();
-    }
-
-    @Override
-    @Deprecated
-    public void addDefaultRole(String name) {
-        getDelegateForUpdate();
-        updated.addDefaultRole(name);
-    }
-
-    @Override
-    @Deprecated
-    public void removeDefaultRoles(String... defaultRoles) {
-        getDelegateForUpdate();
-        updated.removeDefaultRoles(defaultRoles);
-
-    }
-
-    @Override
     public void addToDefaultRoles(RoleModel role) {
         getDelegateForUpdate();
         updated.addToDefaultRoles(role);
@@ -1473,12 +1447,6 @@ public class RealmAdapter implements CachedRealmModel {
     }
 
     @Override
-    @Deprecated
-    public Stream<GroupModel> searchForGroupByNameStream(String search, Integer first, Integer max) {
-        return cacheSession.searchForGroupByNameStream( this, search, false, first, max);
-    }
-
-    @Override
     public boolean removeGroup(GroupModel group) {
         return cacheSession.removeGroup(this, group);
     }
@@ -1486,13 +1454,7 @@ public class RealmAdapter implements CachedRealmModel {
     @Override
     public Stream<ClientScopeModel> getClientScopesStream() {
         if (isUpdated()) return updated.getClientScopesStream();
-        return cached.getClientScopes().stream().map(scope -> {
-            ClientScopeModel model = cacheSession.getClientScopeById(this, scope);
-            if (model == null) {
-                throw new IllegalStateException("Cached clientScope not found: " + scope);
-            }
-            return model;
-        });
+        return cacheSession.getClientScopesStream(this);
     }
 
     @Override

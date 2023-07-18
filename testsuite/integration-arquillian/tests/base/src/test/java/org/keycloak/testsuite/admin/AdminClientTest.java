@@ -19,8 +19,8 @@
 package org.keycloak.testsuite.admin;
 
 import java.util.List;
-import javax.ws.rs.NotAuthorizedException;
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.NotAuthorizedException;
+import jakarta.ws.rs.core.Response;
 import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
@@ -43,6 +43,7 @@ import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.ClientScopeBuilder;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
+import java.util.Objects;
 
 /**
  * Test for the various "Advanced" scenarios of java admin-client
@@ -78,11 +79,9 @@ public class AdminClientTest extends AbstractKeycloakTest {
         RealmBuilder realm = RealmBuilder.create().name(realmName)
                 .testEventListener();
 
-        clientUUID = KeycloakModelUtils.generateId();
         clientId = "service-account-cl";
         clientSecret = "secret1";
         ClientRepresentation enabledAppWithSkipRefreshToken = ClientBuilder.create()
-                .id(clientUUID)
                 .clientId(clientId)
                 .secret(clientSecret)
                 .serviceAccountsEnabled(true)
@@ -92,7 +91,6 @@ public class AdminClientTest extends AbstractKeycloakTest {
         userId = KeycloakModelUtils.generateId();
         userName = ServiceAccountConstants.SERVICE_ACCOUNT_USER_PREFIX + enabledAppWithSkipRefreshToken.getClientId();
         UserBuilder serviceAccountUser = UserBuilder.create()
-                .id(userId)
                 .username(userName)
                 .serviceAccountId(enabledAppWithSkipRefreshToken.getClientId())
                 .role(Constants.REALM_MANAGEMENT_CLIENT_ID, AdminRoles.REALM_ADMIN);
@@ -106,6 +104,15 @@ public class AdminClientTest extends AbstractKeycloakTest {
         realm.user(defaultUser);
 
         testRealms.add(realm.build());
+    }
+
+    @Override
+    public void importRealm(RealmRepresentation realm) {
+        super.importRealm(realm);
+        if (Objects.equals(realm.getRealm(), realmName)) {
+            clientUUID = adminClient.realm(realmName).clients().findByClientId(clientId).get(0).getId();
+            userId = adminClient.realm(realmName).users().searchByUsername(userName, true).get(0).getId();
+        }
     }
 
     @Test
@@ -173,8 +180,7 @@ public class AdminClientTest extends AbstractKeycloakTest {
 
         // we need to create custom scope after import, otherwise the default scopes are missing.
         final String scopeName = "myScope";
-        final String scopeId = KeycloakModelUtils.generateId();
-        createScope(testRealm, scopeName, scopeId);
+        String scopeId = createScope(testRealm, scopeName, KeycloakModelUtils.generateId());
         testRealm.clients().get(clientUUID).addOptionalClientScope(scopeId);
 
         // with scope
@@ -198,11 +204,13 @@ public class AdminClientTest extends AbstractKeycloakTest {
         client.update(clientRep);
     }
 
-    private void createScope(RealmResource testRealm, String scopeName, String scopeId) {
+    private String createScope(RealmResource testRealm, String scopeName, String scopeId) {
         final ClientScopeRepresentation testScope =
             ClientScopeBuilder.create().name(scopeName).protocol("openid-connect").build();
         testScope.setId(scopeId);
-        final Response scope = testRealm.clientScopes().create(testScope);
-        Assert.assertEquals(201, scope.getStatus());
+        try (Response response = testRealm.clientScopes().create(testScope)) {
+            Assert.assertEquals(201, response.getStatus());
+            return ApiUtil.getCreatedId(response);
+        }
     }
 }

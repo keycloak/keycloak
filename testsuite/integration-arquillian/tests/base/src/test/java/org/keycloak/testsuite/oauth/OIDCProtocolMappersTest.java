@@ -31,10 +31,12 @@ import org.keycloak.common.util.UriUtils;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.models.AccountRoles;
 import org.keycloak.models.ClientScopeModel;
+import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
 import org.keycloak.protocol.oidc.mappers.AddressMapper;
 import org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper;
+import org.keycloak.protocol.oidc.mappers.UserPropertyMapper;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AddressClaimSet;
 import org.keycloak.representations.IDToken;
@@ -55,11 +57,12 @@ import org.keycloak.testsuite.updaters.ProtocolMappersUpdater;
 import org.keycloak.testsuite.util.AdminClientUtil;
 import org.keycloak.testsuite.util.ClientManager;
 import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.OAuthClient.AccessTokenResponse;
 import org.keycloak.testsuite.util.ProtocolMapperUtil;
 import org.keycloak.testsuite.util.UserInfoClientUtil;
 
-import javax.ws.rs.client.Client;
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.client.Client;
+import jakarta.ws.rs.core.Response;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
@@ -68,6 +71,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.anyOf;
@@ -84,10 +88,12 @@ import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.keycloak.OAuth2Constants.SCOPE_PROFILE;
 import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
 import static org.keycloak.testsuite.admin.ApiUtil.findClientByClientId;
 import static org.keycloak.testsuite.admin.ApiUtil.findClientResourceByClientId;
 import static org.keycloak.testsuite.admin.ApiUtil.findUserByUsernameId;
+import static org.keycloak.testsuite.admin.ApiUtil.getCreatedId;
 import static org.keycloak.testsuite.util.ProtocolMapperUtil.createAddressMapper;
 import static org.keycloak.testsuite.util.ProtocolMapperUtil.createClaimMapper;
 import static org.keycloak.testsuite.util.ProtocolMapperUtil.createHardcodedClaim;
@@ -405,6 +411,99 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
             }
         }
         events.clear();
+    }
+
+    @Test
+    public void testClaimFromUserPropertyMapperWithOptionalProfileScope() {
+        RealmResource realm = adminClient.realm("test");
+        UserResource userResource = findUserByUsernameId(realm, "test-user@localhost");
+        UserRepresentation user = userResource.toRepresentation();
+        ClientResource client = findClientResourceByClientId(realm, "test-app");
+        Optional<ClientScopeRepresentation> profileScope = realm.clientScopes().findAll().stream().filter(scope -> SCOPE_PROFILE.equals(scope.getName())).findAny();
+
+        assertTrue(profileScope.isPresent());
+
+        String mapperId = null;
+
+        try (Response response = client.getProtocolMappers().createMapper(ModelToRepresentation.toRepresentation(UserPropertyMapper.createClaimMapper(
+                "test-property-mapper",
+                "email",
+                "claim-name",
+                String.class.getSimpleName(),
+                true,
+                true
+        )))) {
+            mapperId = getCreatedId(response);
+            List<ClientScopeRepresentation> defaultClientScopes = client.getDefaultClientScopes();
+
+            assertTrue(defaultClientScopes.contains(profileScope.get()));
+
+            client.removeDefaultClientScope(profileScope.get().getId());
+            client.addOptionalClientScope(profileScope.get().getId());
+
+            oauth.scope(SCOPE_PROFILE);
+
+            OAuthClient.AuthorizationEndpointResponse authzEndpointResponse = oauth.doLogin("test-user@localhost", "password");
+            AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(authzEndpointResponse.getCode(), "password");
+
+            assertTrue(tokenResponse.getScope().contains("profile"));
+
+            IDToken idToken = oauth.verifyIDToken(tokenResponse.getIdToken());
+            assertEquals(user.getEmail(), idToken.getOtherClaims().get("claim-name"));
+
+            AccessToken accessToken = oauth.verifyToken(tokenResponse.getAccessToken());
+            assertEquals(user.getEmail(), accessToken.getOtherClaims().get("claim-name"));
+        } finally {
+            if (mapperId != null) {
+                client.getProtocolMappers().delete(mapperId);
+            }
+            client.removeOptionalClientScope(profileScope.get().getId());
+            client.addDefaultClientScope(profileScope.get().getId());
+        }
+    }
+
+    @Test
+    public void testClaimFromUserPropertyMapperWithDefaultProfileScope() {
+        RealmResource realm = adminClient.realm("test");
+        UserResource userResource = findUserByUsernameId(realm, "test-user@localhost");
+        UserRepresentation user = userResource.toRepresentation();
+        ClientResource client = findClientResourceByClientId(realm, "test-app");
+        Optional<ClientScopeRepresentation> profileScope = realm.clientScopes().findAll().stream().filter(scope -> SCOPE_PROFILE.equals(scope.getName())).findAny();
+
+        assertTrue(profileScope.isPresent());
+
+        String mapperId = null;
+
+        try (Response response = client.getProtocolMappers().createMapper(ModelToRepresentation.toRepresentation(UserPropertyMapper.createClaimMapper(
+                "test-property-mapper",
+                "email",
+                "claim-name",
+                String.class.getSimpleName(),
+                true,
+                true
+        )))) {
+            mapperId = getCreatedId(response);
+            List<ClientScopeRepresentation> defaultClientScopes = client.getDefaultClientScopes();
+
+            assertTrue(defaultClientScopes.contains(profileScope.get()));
+
+            oauth.scope(SCOPE_PROFILE);
+
+            OAuthClient.AuthorizationEndpointResponse authzEndpointResponse = oauth.doLogin("test-user@localhost", "password");
+            AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(authzEndpointResponse.getCode(), "password");
+
+            assertTrue(tokenResponse.getScope().contains("profile"));
+
+            IDToken idToken = oauth.verifyIDToken(tokenResponse.getIdToken());
+            assertEquals(user.getEmail(), idToken.getOtherClaims().get("claim-name"));
+
+            AccessToken accessToken = oauth.verifyToken(tokenResponse.getAccessToken());
+            assertEquals(user.getEmail(), accessToken.getOtherClaims().get("claim-name"));
+        } finally {
+            if (mapperId != null) {
+                client.getProtocolMappers().delete(mapperId);
+            }
+        }
     }
 
     @Test

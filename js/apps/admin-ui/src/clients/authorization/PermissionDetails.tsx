@@ -16,16 +16,17 @@ import { useState } from "react";
 import { Controller, FormProvider, useForm, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
+import { HelpItem } from "ui-shared";
 
+import { adminClient } from "../../admin-client";
 import { useAlerts } from "../../components/alert/Alerts";
 import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
-import { FormAccess } from "../../components/form-access/FormAccess";
-import { HelpItem } from "ui-shared";
+import { FormAccess } from "../../components/form/FormAccess";
 import { KeycloakSpinner } from "../../components/keycloak-spinner/KeycloakSpinner";
 import { KeycloakTextArea } from "../../components/keycloak-text-area/KeycloakTextArea";
 import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 import { ViewHeader } from "../../components/view-header/ViewHeader";
-import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
+import { useFetch } from "../../utils/useFetch";
 import { toUpperCase } from "../../util";
 import { useParams } from "../../utils/useParams";
 import { toAuthorizationTab } from "../routes/AuthenticationTab";
@@ -60,7 +61,6 @@ export default function PermissionDetails() {
     NewPermissionParams & PermissionDetailsParams
   >();
 
-  const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
   const [permission, setPermission] = useState<PolicyRepresentation>();
   const [applyToResourceTypeFlag, setApplyToResourceTypeFlag] = useState(false);
@@ -105,12 +105,12 @@ export default function PermissionDetails() {
       reset({ ...permission, resources, policies, scopes });
       if (permission && "resourceType" in permission) {
         setApplyToResourceTypeFlag(
-          !!(permission as { resourceType: string }).resourceType
+          !!(permission as { resourceType: string }).resourceType,
         );
       }
       setPermission({ ...permission, resources, policies });
     },
-    []
+    [],
   );
 
   const save = async (permission: PolicyRepresentation) => {
@@ -118,12 +118,12 @@ export default function PermissionDetails() {
       if (permissionId) {
         await adminClient.clients.updatePermission(
           { id, type: permissionType, permissionId },
-          permission
+          permission,
         );
       } else {
         const result = await adminClient.clients.createPermission(
           { id, type: permissionType },
-          permission
+          permission,
         );
         navigate(
           toPermissionDetails({
@@ -131,12 +131,12 @@ export default function PermissionDetails() {
             id,
             permissionType,
             permissionId: result.id!,
-          })
+          }),
         );
       }
       addAlert(
         t((permissionId ? "update" : "create") + "PermissionSuccess"),
-        AlertVariant.success
+        AlertVariant.success,
       );
     } catch (error) {
       addError("clients:permissionSaveError", error);
@@ -159,7 +159,7 @@ export default function PermissionDetails() {
         });
         addAlert(t("permissionDeletedSuccess"), AlertVariant.success);
         navigate(
-          toAuthorizationTab({ realm, clientId: id, tab: "permissions" })
+          toAuthorizationTab({ realm, clientId: id, tab: "permissions" }),
         );
       } catch (error) {
         addError("clients:permissionDeletedError", error);
@@ -272,7 +272,7 @@ export default function PermissionDetails() {
             {applyToResourceTypeFlag ? (
               <FormGroup
                 label={t("resourceType")}
-                fieldId="name"
+                fieldId="resourceType"
                 labelIcon={
                   <HelpItem
                     helpText={t("clients-help:resourceType")}

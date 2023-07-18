@@ -1,7 +1,6 @@
 import type IdentityProviderMapperRepresentation from "@keycloak/keycloak-admin-client/lib/defs/identityProviderMapperRepresentation";
 import type IdentityProviderRepresentation from "@keycloak/keycloak-admin-client/lib/defs/identityProviderRepresentation";
 import {
-  ActionGroup,
   AlertVariant,
   Button,
   ButtonVariant,
@@ -13,14 +12,17 @@ import {
   TabTitleText,
   ToolbarItem,
 } from "@patternfly/react-core";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Controller, FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
 
+import { adminClient } from "../../admin-client";
 import { useAlerts } from "../../components/alert/Alerts";
 import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
-import { FormAccess } from "../../components/form-access/FormAccess";
+import { DynamicComponents } from "../../components/dynamic/DynamicComponents";
+import { FixedButtonsGroup } from "../../components/form/FixedButtonGroup";
+import { FormAccess } from "../../components/form/FormAccess";
 import { KeycloakSpinner } from "../../components/keycloak-spinner/KeycloakSpinner";
 import { ListEmptyState } from "../../components/list-empty-state/ListEmptyState";
 import { PermissionsTab } from "../../components/permission-tab/PermissionTab";
@@ -34,12 +36,12 @@ import {
   KeycloakDataTable,
 } from "../../components/table-toolbar/KeycloakDataTable";
 import { ViewHeader } from "../../components/view-header/ViewHeader";
-import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
 import { useRealm } from "../../context/realm-context/RealmContext";
+import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
 import { toUpperCase } from "../../util";
+import { useFetch } from "../../utils/useFetch";
 import useIsFeatureEnabled, { Feature } from "../../utils/useIsFeatureEnabled";
 import { useParams } from "../../utils/useParams";
-import { ExtendedFieldsForm } from "../component/ExtendedFieldsForm";
 import { toIdentityProviderAddMapper } from "../routes/AddMapper";
 import { toIdentityProviderEditMapper } from "../routes/EditMapper";
 import {
@@ -76,7 +78,6 @@ type IdPWithMapperAttributes = IdentityProviderMapperRepresentation & {
 const Header = ({ onChange, value, save, toggleDeleteDialog }: HeaderProps) => {
   const { t } = useTranslation("identity-providers");
   const { alias: displayName } = useParams<{ alias: string }>();
-  const { adminClient } = useAdminClient();
   const [provider, setProvider] = useState<IdentityProviderRepresentation>();
 
   useFetch(
@@ -87,7 +88,7 @@ const Header = ({ onChange, value, save, toggleDeleteDialog }: HeaderProps) => {
       }
       setProvider(fetchedProvider);
     },
-    []
+    [],
   );
 
   const [toggleDisableDialog, DisableConfirm] = useConfirmDialog({
@@ -109,7 +110,7 @@ const Header = ({ onChange, value, save, toggleDeleteDialog }: HeaderProps) => {
             ? provider.displayName
               ? provider.displayName
               : provider.providerId!
-            : ""
+            : "",
         )}
         divider={false}
         dropdownItems={[
@@ -162,8 +163,15 @@ export default function DetailSettings() {
   const [provider, setProvider] = useState<IdentityProviderRepresentation>();
   const [selectedMapper, setSelectedMapper] =
     useState<IdPWithMapperAttributes>();
+  const serverInfo = useServerInfo();
+  const providerInfo = useMemo(
+    () =>
+      serverInfo.componentTypes?.[
+        "org.keycloak.broker.social.SocialIdentityProvider"
+      ]?.find((p) => p.id === providerId),
+    [serverInfo, providerId],
+  );
 
-  const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
   const navigate = useNavigate();
   const { realm } = useRealm();
@@ -183,18 +191,18 @@ export default function DetailSettings() {
       if (fetchedProvider.config!.authnContextClassRefs) {
         form.setValue(
           "config.authnContextClassRefs",
-          JSON.parse(fetchedProvider.config?.authnContextClassRefs)
+          JSON.parse(fetchedProvider.config?.authnContextClassRefs),
         );
       }
 
       if (fetchedProvider.config!.authnContextDeclRefs) {
         form.setValue(
           "config.authnContextDeclRefs",
-          JSON.parse(fetchedProvider.config?.authnContextDeclRefs)
+          JSON.parse(fetchedProvider.config?.authnContextDeclRefs),
         );
       }
     },
-    []
+    [],
   );
 
   const toTab = (tab: IdentityProviderTab) =>
@@ -215,11 +223,11 @@ export default function DetailSettings() {
     const p = savedProvider || getValues();
     if (p.config?.authnContextClassRefs)
       p.config.authnContextClassRefs = JSON.stringify(
-        p.config.authnContextClassRefs
+        p.config.authnContextClassRefs,
       );
     if (p.config?.authnContextDeclRefs)
       p.config.authnContextDeclRefs = JSON.stringify(
-        p.config.authnContextDeclRefs
+        p.config.authnContextDeclRefs,
       );
 
     try {
@@ -230,7 +238,7 @@ export default function DetailSettings() {
           config: { ...provider?.config, ...p.config },
           alias,
           providerId,
-        }
+        },
       );
       addAlert(t("updateSuccess"), AlertVariant.success);
     } catch (error) {
@@ -270,7 +278,7 @@ export default function DetailSettings() {
         addAlert(t("deleteMapperSuccess"), AlertVariant.success);
         refresh();
         navigate(
-          toIdentityProvider({ providerId, alias, tab: "mappers", realm })
+          toIdentityProvider({ providerId, alias, tab: "mappers", realm }),
         );
       } catch (error) {
         addError("identity-providers:deleteErrorError", error);
@@ -294,7 +302,7 @@ export default function DetailSettings() {
     const components = loaderMappers.map((loaderMapper) => {
       const mapperType = Object.values(loaderMapperTypes).find(
         (loaderMapperType) =>
-          loaderMapper.identityProviderMapper! === loaderMapperType.id!
+          loaderMapper.identityProviderMapper! === loaderMapperType.id!,
       );
 
       const result: IdPWithMapperAttributes = {
@@ -322,7 +330,9 @@ export default function DetailSettings() {
           {!isOIDC && !isSAML && (
             <>
               <GeneralSettings create={false} id={alias} />
-              <ExtendedFieldsForm providerId={alias} />
+              {providerInfo && (
+                <DynamicComponents properties={providerInfo.properties} />
+              )}
             </>
           )}
           {isOIDC && <OIDCGeneralSettings id={alias} />}
@@ -372,20 +382,7 @@ export default function DetailSettings() {
         >
           <AdvancedSettings isOIDC={isOIDC!} isSAML={isSAML!} />
 
-          <ActionGroup className="keycloak__form_actions">
-            <Button data-testid={"save"} type="submit">
-              {t("common:save")}
-            </Button>
-            <Button
-              data-testid={"revert"}
-              variant="link"
-              onClick={() => {
-                reset();
-              }}
-            >
-              {t("common:revert")}
-            </Button>
-          </ActionGroup>
+          <FixedButtonsGroup name="idp-details" isSubmit reset={reset} />
         </FormAccess>
       ),
     },
@@ -437,7 +434,7 @@ export default function DetailSettings() {
                         alias: alias!,
                         providerId: provider.providerId!,
                         tab: "mappers",
-                      })
+                      }),
                     )
                   }
                 />

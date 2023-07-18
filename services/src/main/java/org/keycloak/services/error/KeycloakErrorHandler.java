@@ -16,16 +16,16 @@ import org.keycloak.theme.Theme;
 import org.keycloak.theme.beans.LocaleBean;
 import org.keycloak.theme.beans.MessageBean;
 import org.keycloak.theme.beans.MessageFormatterMethod;
-import org.keycloak.theme.beans.MessageType;
+import org.keycloak.forms.login.MessageType;
 import org.keycloak.theme.freemarker.FreeMarkerProvider;
 import org.keycloak.utils.MediaType;
 import org.keycloak.utils.MediaTypeMatcher;
 
-import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.ext.ExceptionMapper;
+import jakarta.ws.rs.WebApplicationException;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.ext.ExceptionMapper;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Locale;
@@ -71,7 +71,7 @@ public class KeycloakErrorHandler implements ExceptionMapper<Throwable> {
             error.setError(getErrorCode(throwable));
             
             return Response.status(statusCode)
-                    .header(HttpHeaders.CONTENT_TYPE, javax.ws.rs.core.MediaType.APPLICATION_JSON_TYPE.toString())
+                    .header(HttpHeaders.CONTENT_TYPE, jakarta.ws.rs.core.MediaType.APPLICATION_JSON_TYPE.toString())
                     .entity(error)
                     .build();
         }

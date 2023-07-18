@@ -1,6 +1,4 @@
-import { useState } from "react";
-import { useTranslation } from "react-i18next";
-import { sortBy } from "lodash-es";
+import type IdentityProviderRepresentation from "@keycloak/keycloak-admin-client/lib/defs/identityProviderRepresentation";
 import {
   Button,
   ButtonVariant,
@@ -13,11 +11,14 @@ import {
   DataListItemRow,
   Modal,
   ModalVariant,
-  TextContent,
   Text,
+  TextContent,
 } from "@patternfly/react-core";
-import type IdentityProviderRepresentation from "@keycloak/keycloak-admin-client/lib/defs/identityProviderRepresentation";
-import { useAdminClient } from "../context/auth/AdminClient";
+import { sortBy } from "lodash-es";
+import { useState } from "react";
+import { useTranslation } from "react-i18next";
+
+import { adminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
 
 type ManageOrderDialogProps = {
@@ -30,13 +31,12 @@ export const ManageOrderDialog = ({
   onClose,
 }: ManageOrderDialogProps) => {
   const { t } = useTranslation("identity-providers");
-  const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
 
   const [alias, setAlias] = useState("");
   const [liveText, setLiveText] = useState("");
   const [order, setOrder] = useState(
-    providers.map((provider) => provider.alias!)
+    providers.map((provider) => provider.alias!),
   );
 
   const onDragStart = (id: string) => {

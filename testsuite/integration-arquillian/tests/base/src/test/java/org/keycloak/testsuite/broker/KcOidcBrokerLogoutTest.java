@@ -9,13 +9,13 @@ import org.keycloak.representations.IDToken;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.util.CookieHelper;
 import org.keycloak.testsuite.AssertEvents;
+import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.OAuthClient;
 
 import static org.junit.Assert.assertEquals;
 import static org.keycloak.testsuite.broker.BrokerTestConstants.REALM_CONS_NAME;
 import static org.keycloak.testsuite.broker.BrokerTestConstants.REALM_PROV_NAME;
 import static org.keycloak.testsuite.broker.BrokerTestTools.getConsumerRoot;
-import static org.keycloak.testsuite.broker.BrokerTestTools.getProviderRoot;
 import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
 
 public class KcOidcBrokerLogoutTest extends AbstractKcOidcBrokerLogoutTest {
@@ -31,31 +31,43 @@ public class KcOidcBrokerLogoutTest extends AbstractKcOidcBrokerLogoutTest {
     @Test
     public void logoutWithoutInitiatingIdpLogsOutOfIdp() {
         logInAsUserInIDPForFirstTime();
-        assertLoggedInAccountManagement();
+        appPage.assertCurrent();
 
-        logoutFromRealm(getConsumerRoot(), bc.consumerRealmName());
-        driver.navigate().to(getAccountUrl(getProviderRoot(), REALM_PROV_NAME));
+        AccountHelper.logout(adminClient.realm(bc.consumerRealmName()), bc.getUserLogin());
+        AccountHelper.logout(adminClient.realm(bc.providerRealmName()), bc.getUserLogin());
+
+        oauth.clientId("account");
+        oauth.redirectUri(getConsumerRoot() + "/auth/realms/" + REALM_PROV_NAME + "/account");
+        loginPage.open(REALM_PROV_NAME);
+
         waitForPage(driver, "sign in to provider", true);
     }
 
     @Test
     public void logoutWithActualIdpAsInitiatingIdpDoesNotLogOutOfIdp() {
         logInAsUserInIDPForFirstTime();
-        assertLoggedInAccountManagement();
+        appPage.assertCurrent();
 
-        logoutFromRealm(getConsumerRoot(), bc.consumerRealmName(), "kc-oidc-idp");
-        driver.navigate().to(getAccountUrl(getProviderRoot(), REALM_PROV_NAME));
+        AccountHelper.logout(adminClient.realm(bc.consumerRealmName()), bc.getUserLogin());
+        AccountHelper.logout(adminClient.realm(bc.providerRealmName()), bc.getUserLogin());
 
-        waitForAccountManagementTitle();
+        oauth.clientId("broker-app");
+        loginPage.open(bc.providerRealmName());
+        waitForPage(driver, "sign in to provider", true);
     }
 
     @Test
     public void logoutWithOtherIdpAsInitiatinIdpLogsOutOfIdp() {
         logInAsUserInIDPForFirstTime();
-        assertLoggedInAccountManagement();
+        appPage.assertCurrent();
 
-        logoutFromRealm(getConsumerRoot(), bc.consumerRealmName(), "something-else");
-        driver.navigate().to(getAccountUrl(getProviderRoot(), REALM_PROV_NAME));
+        AccountHelper.logout(adminClient.realm(bc.consumerRealmName()), bc.getUserLogin());
+        AccountHelper.logout(adminClient.realm(bc.providerRealmName()), bc.getUserLogin());
+
+        oauth.clientId("account");
+        oauth.redirectUri(getConsumerRoot() + "/auth/realms/" + REALM_PROV_NAME + "/account");
+        loginPage.open(REALM_PROV_NAME);
+
         waitForPage(driver, "sign in to provider", true);
     }
 
@@ -81,8 +93,12 @@ public class KcOidcBrokerLogoutTest extends AbstractKcOidcBrokerLogoutTest {
         driver.manage().deleteCookieNamed(AuthenticationManager.KEYCLOAK_IDENTITY_COOKIE);
         driver.manage().deleteCookieNamed(AuthenticationManager.KEYCLOAK_IDENTITY_COOKIE + CookieHelper.LEGACY_COOKIE);
 
-        logoutFromRealm(getConsumerRoot(), bc.consumerRealmName(), null, idToken);
-        driver.navigate().to(getAccountUrl(getProviderRoot(), REALM_PROV_NAME));
+        AccountHelper.logout(adminClient.realm(bc.consumerRealmName()), bc.getUserLogin());
+        AccountHelper.logout(adminClient.realm(bc.providerRealmName()), bc.getUserLogin());
+
+        oauth.clientId("account");
+        oauth.redirectUri(getConsumerRoot() + "/auth/realms/" + REALM_PROV_NAME + "/account");
+        loginPage.open(REALM_PROV_NAME);
 
         waitForPage(driver, "sign in to provider", true);
     }
@@ -118,7 +134,10 @@ public class KcOidcBrokerLogoutTest extends AbstractKcOidcBrokerLogoutTest {
         );
 
         // user should be logged out successfully from the IDP even though the id_token_hint is expired
-        driver.navigate().to(getAccountUrl(getProviderRoot(), REALM_PROV_NAME));
+        oauth.clientId("account");
+        oauth.redirectUri(getConsumerRoot() + "/auth/realms/" + REALM_PROV_NAME + "/account");
+        loginPage.open(REALM_PROV_NAME);
+
         waitForPage(driver, "sign in to provider", true);
     }
 }

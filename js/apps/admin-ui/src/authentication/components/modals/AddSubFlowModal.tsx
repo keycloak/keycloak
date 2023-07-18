@@ -14,10 +14,11 @@ import {
 import { useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-
 import { HelpItem } from "ui-shared";
+
+import { adminClient } from "../../../admin-client";
 import { KeycloakTextInput } from "../../../components/keycloak-text-input/KeycloakTextInput";
-import { useAdminClient, useFetch } from "../../../context/auth/AdminClient";
+import { useFetch } from "../../../utils/useFetch";
 
 type AddSubFlowProps = {
   name: string;
@@ -51,12 +52,11 @@ export const AddSubFlowModal = ({
   const [openProvider, setOpenProvider] = useState(false);
   const [formProviders, setFormProviders] =
     useState<AuthenticationProviderRepresentation[]>();
-  const { adminClient } = useAdminClient();
 
   useFetch(
     () => adminClient.authenticationManagement.getFormProviders(),
     setFormProviders,
-    []
+    [],
   );
 
   useEffect(() => {

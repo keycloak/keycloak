@@ -40,12 +40,12 @@ export const PermissionRequest = ({
 
   const approveDeny = async (
     shareRequest: Permission,
-    approve: boolean = false
+    approve: boolean = false,
   ) => {
     try {
       const permissions = await fetchPermission({}, resource._id);
       const { scopes, username } = permissions.find(
-        (p) => p.username === shareRequest.username
+        (p) => p.username === shareRequest.username,
       )!;
 
       await updateRequest(
@@ -53,7 +53,7 @@ export const PermissionRequest = ({
         username,
         approve
           ? [...(scopes as string[]), ...(shareRequest.scopes as string[])]
-          : scopes
+          : scopes,
       );
       addAlert(t("shareSuccess"));
       toggle();
@@ -119,7 +119,7 @@ export const PermissionRequest = ({
                     className="pf-u-ml-sm"
                     variant="danger"
                   >
-                    {t("doDeny")}
+                    {t("deny")}
                   </Button>
                 </Td>
               </Tr>

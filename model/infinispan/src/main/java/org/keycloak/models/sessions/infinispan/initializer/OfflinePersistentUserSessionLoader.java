@@ -94,7 +94,7 @@ public class OfflinePersistentUserSessionLoader implements SessionLoader<Offline
     public OfflinePersistentWorkerResult loadSessions(KeycloakSession session, OfflinePersistentLoaderContext loaderContext, OfflinePersistentWorkerContext ctx) {
         int first = ctx.getWorkerId() * sessionsPerSegment;
 
-        log.tracef("Loading sessions for segment=%d lastSessionId=%s", ctx.getSegment(), ctx.getLastSessionId());
+        log.tracef("Loading sessions for segment=%d lastSessionId=%s first=%d", ctx.getSegment(), ctx.getLastSessionId(), (Object) first);
 
         UserSessionPersisterProvider persister = session.getProvider(UserSessionPersisterProvider.class);
         List<UserSessionModel> sessions = persister

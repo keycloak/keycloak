@@ -39,8 +39,8 @@ import org.keycloak.services.util.MtlsHoKTokenUtil;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.core.Response;
 
 public class HolderOfKeyEnforcerExecutor implements ClientPolicyExecutorProvider<HolderOfKeyEnforcerExecutor.Configuration> {
 

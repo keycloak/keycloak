@@ -1,13 +1,14 @@
+import type ComponentRepresentation from "@keycloak/keycloak-admin-client/lib/defs/componentRepresentation";
+import type UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
 import { Button } from "@patternfly/react-core";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 
-import type ComponentRepresentation from "@keycloak/keycloak-admin-client/lib/defs/componentRepresentation";
-import type UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
+import { adminClient } from "../admin-client";
 import { useAccess } from "../context/access/Access";
-import { useAdminClient, useFetch } from "../context/auth/AdminClient";
 import { useRealm } from "../context/realm-context/RealmContext";
-import { toUserFederationLdap } from "../user-federation/routes/UserFederationLdap";
+import { toCustomUserFederation } from "../user-federation/routes/CustomUserFederation";
+import { useFetch } from "../utils/useFetch";
 
 type FederatedUserLinkProps = {
   user: UserRepresentation;
@@ -16,7 +17,6 @@ type FederatedUserLinkProps = {
 export const FederatedUserLink = ({ user }: FederatedUserLinkProps) => {
   const access = useAccess();
   const { realm } = useRealm();
-  const { adminClient } = useAdminClient();
 
   const [component, setComponent] = useState<ComponentRepresentation>();
 
@@ -30,7 +30,7 @@ export const FederatedUserLink = ({ user }: FederatedUserLinkProps) => {
             id: (user.federationLink || user.origin)!,
           }),
     setComponent,
-    []
+    [],
   );
 
   if (!component) return null;
@@ -42,8 +42,9 @@ export const FederatedUserLink = ({ user }: FederatedUserLinkProps) => {
       component={(props) => (
         <Link
           {...props}
-          to={toUserFederationLdap({
+          to={toCustomUserFederation({
             id: component.id!,
+            providerId: component.providerId!,
             realm,
           })}
         />

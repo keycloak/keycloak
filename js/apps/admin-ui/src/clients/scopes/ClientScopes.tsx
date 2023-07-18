@@ -1,6 +1,4 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
-import { useTranslation } from "react-i18next";
+import type ClientScopeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientScopeRepresentation";
 import {
   AlertVariant,
   Button,
@@ -10,39 +8,40 @@ import {
   KebabToggle,
   ToolbarItem,
 } from "@patternfly/react-core";
-import type ClientScopeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientScopeRepresentation";
+import { useState } from "react";
+import { useTranslation } from "react-i18next";
+import { Link } from "react-router-dom";
 
-import { useAdminClient } from "../../context/auth/AdminClient";
-import { ListEmptyState } from "../../components/list-empty-state/ListEmptyState";
-import { AddScopeDialog } from "./AddScopeDialog";
+import { adminClient } from "../../admin-client";
+import { ChangeTypeDropdown } from "../../client-scopes/ChangeTypeDropdown";
 import {
-  ClientScope,
-  CellDropdown,
-  AllClientScopes,
+  SearchDropdown,
+  SearchToolbar,
+  SearchType,
+  nameFilter,
+  typeFilter,
+} from "../../client-scopes/details/SearchFilter";
+import { useAlerts } from "../../components/alert/Alerts";
+import {
   AllClientScopeType,
-  changeClientScope,
+  AllClientScopes,
+  CellDropdown,
+  ClientScope,
   addClientScope,
+  changeClientScope,
   removeClientScope,
 } from "../../components/client-scope/ClientScopeTypes";
-import { useAlerts } from "../../components/alert/Alerts";
+import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
+import { ListEmptyState } from "../../components/list-empty-state/ListEmptyState";
 import {
   Action,
   KeycloakDataTable,
 } from "../../components/table-toolbar/KeycloakDataTable";
-import {
-  nameFilter,
-  SearchDropdown,
-  SearchToolbar,
-  SearchType,
-  typeFilter,
-} from "../../client-scopes/details/SearchFilter";
-import { ChangeTypeDropdown } from "../../client-scopes/ChangeTypeDropdown";
-
-import { toDedicatedScope } from "../routes/DedicatedScopeDetails";
+import { useAccess } from "../../context/access/Access";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import useLocaleSort, { mapByKey } from "../../utils/useLocaleSort";
-import { useAccess } from "../../context/access/Access";
-import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
+import { toDedicatedScope } from "../routes/DedicatedScopeDetails";
+import { AddScopeDialog } from "./AddScopeDialog";
 
 import "./client-scopes.css";
 
@@ -73,7 +72,6 @@ const TypeSelector = ({
   ...scope
 }: TypeSelectorProps) => {
   const { t } = useTranslation("clients");
-  const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
 
   const { hasAccess } = useAccess();
@@ -89,11 +87,10 @@ const TypeSelector = ({
       onSelect={async (value) => {
         try {
           await changeClientScope(
-            adminClient,
             clientId,
             scope,
             scope.type,
-            value as ClientScope
+            value as ClientScope,
           );
           addAlert(t("clientScopeSuccess"), AlertVariant.success);
           refresh();
@@ -112,7 +109,6 @@ export const ClientScopes = ({
   fineGrainedAccess,
 }: ClientScopesProps) => {
   const { t } = useTranslation("clients");
-  const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
   const { realm } = useRealm();
   const localeSort = useLocaleSort();
@@ -120,7 +116,7 @@ export const ClientScopes = ({
   const [searchType, setSearchType] = useState<SearchType>("name");
 
   const [searchTypeType, setSearchTypeType] = useState<AllClientScopes>(
-    AllClientScopes.none
+    AllClientScopes.none,
   );
 
   const [addDialogOpen, setAddDialogOpen] = useState(false);
@@ -137,6 +133,7 @@ export const ClientScopes = ({
 
   const { hasAccess } = useAccess();
   const isManager = hasAccess("manage-clients") || fineGrainedAccess;
+  const isViewer = hasAccess("view-clients") || fineGrainedAccess;
 
   const loader = async (first?: number, max?: number, search?: string) => {
     const defaultClientScopes =
@@ -173,7 +170,7 @@ export const ClientScopes = ({
     setRest(
       clientScopes
         .filter((scope) => !names.includes(scope.name))
-        .filter((scope) => scope.protocol === protocol)
+        .filter((scope) => scope.protocol === protocol),
     );
 
     const filter =
@@ -181,7 +178,7 @@ export const ClientScopes = ({
     const firstNum = Number(first);
     const page = localeSort(rows.filter(filter), mapByKey("name"));
 
-    if (isManager) {
+    if (isViewer) {
       page.unshift({
         id: DEDICATED_ROW,
         name: t("dedicatedScopeName", { clientName }),
@@ -204,10 +201,9 @@ export const ClientScopes = ({
     onConfirm: async () => {
       try {
         await removeClientScope(
-          adminClient,
           clientId,
           selectedRows[0],
-          selectedRows[0].type as ClientScope
+          selectedRows[0].type as ClientScope,
         );
         addAlert(t("clientScopeRemoveSuccess"), AlertVariant.success);
         refresh();
@@ -230,13 +226,8 @@ export const ClientScopes = ({
               await Promise.all(
                 scopes.map(
                   async (scope) =>
-                    await addClientScope(
-                      adminClient,
-                      clientId,
-                      scope.scope,
-                      scope.type!
-                    )
-                )
+                    await addClientScope(clientId, scope.scope, scope.type!),
+                ),
               );
               addAlert(t("clientScopeSuccess"), AlertVariant.success);
               refresh();
@@ -250,7 +241,7 @@ export const ClientScopes = ({
       <KeycloakDataTable
         key={key}
         loader={loader}
-        ariaLabelKey="clients:clientScopeList"
+        ariaLabelKey={`clients:clientScopeList-${key}`}
         searchPlaceholderKey={
           searchType === "name" ? "clients:searchByName" : undefined
         }
@@ -306,12 +297,11 @@ export const ClientScopes = ({
                             await Promise.all(
                               selectedRows.map((row) =>
                                 removeClientScope(
-                                  adminClient,
                                   clientId,
                                   { ...row },
-                                  row.type as ClientScope
-                                )
-                              )
+                                  row.type as ClientScope,
+                                ),
+                              ),
                             );
 
                             setKebabOpen(false);

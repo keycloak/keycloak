@@ -8,7 +8,7 @@ import {
 import { useTranslation } from "react-i18next";
 
 export const useConfirmDialog = (
-  props: ConfirmDialogProps
+  props: ConfirmDialogProps,
 ): [() => void, () => ReactElement] => {
   const [show, setShow] = useState(false);
 

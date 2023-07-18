@@ -15,23 +15,23 @@ import { useStorageItem } from "./useStorageItem";
 export function useStoredState<S>(
   storageArea: Storage,
   keyName: string,
-  defaultValue: S
+  defaultValue: S,
 ): [S, Dispatch<S>] {
   const defaultValueSerialized = useMemo(
     () => JSON.stringify(defaultValue),
-    [defaultValue]
+    [defaultValue],
   );
 
   const [storedValue, setStoredValue] = useStorageItem(
     storageArea,
     keyName,
-    defaultValueSerialized
+    defaultValueSerialized,
   );
 
   const value = useMemo<S>(() => JSON.parse(storedValue), [storedValue]);
   const setValue = useCallback(
     (value: S) => setStoredValue(JSON.stringify(value)),
-    []
+    [],
   );
 
   return [value, setValue];

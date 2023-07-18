@@ -1,16 +1,17 @@
-import { useState } from "react";
-import { useTranslation } from "react-i18next";
-import { Controller, useFormContext } from "react-hook-form";
+import type ScopeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/scopeRepresentation";
 import {
   FormGroup,
   Select,
   SelectOption,
   SelectVariant,
 } from "@patternfly/react-core";
-
-import type ScopeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/scopeRepresentation";
-import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
+import { useState } from "react";
+import { Controller, useFormContext } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 import { HelpItem } from "ui-shared";
+
+import { adminClient } from "../../admin-client";
+import { useFetch } from "../../utils/useFetch";
 
 type Scope = {
   id: string;
@@ -25,8 +26,6 @@ export const ScopePicker = ({ clientId }: { clientId: string }) => {
   const [scopes, setScopes] = useState<ScopeRepresentation[]>();
   const [search, setSearch] = useState("");
 
-  const { adminClient } = useAdminClient();
-
   useFetch(
     () => {
       const params = {
@@ -39,7 +38,7 @@ export const ScopePicker = ({ clientId }: { clientId: string }) => {
       return adminClient.clients.listAllScopes(params);
     },
     setScopes,
-    [search]
+    [search],
   );
 
   const renderScopes = (scopes?: ScopeRepresentation[]) =>
@@ -86,7 +85,7 @@ export const ScopePicker = ({ clientId }: { clientId: string }) => {
                   ? selectedValue
                   : (selectedValue as Scope).name;
               const changedValue = field.value.find(
-                (o: Scope) => o.name === option
+                (o: Scope) => o.name === option,
               )
                 ? field.value.filter((item: Scope) => item.name !== option)
                 : [...field.value, selectedValue];

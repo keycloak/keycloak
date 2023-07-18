@@ -11,6 +11,7 @@ import { sortBy } from "lodash-es";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
+import { adminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
@@ -18,7 +19,6 @@ import {
   Action,
   KeycloakDataTable,
 } from "../components/table-toolbar/KeycloakDataTable";
-import { useAdminClient } from "../context/auth/AdminClient";
 import { emptyFormatter } from "../util";
 import useFormatDate from "../utils/useFormatDate";
 import { useParams } from "../utils/useParams";
@@ -31,7 +31,6 @@ export const UserConsents = () => {
   const formatDate = useFormatDate();
   const [key, setKey] = useState(0);
 
-  const { adminClient } = useAdminClient();
   const { id } = useParams<{ id: string }>();
   const alphabetize = (consentsList: UserConsentRepresentation[]) => {
     return sortBy(consentsList, (client) => client.clientId?.toUpperCase());
@@ -51,12 +50,7 @@ export const UserConsents = () => {
     return (
       <ChipGroup className="kc-consents-chip-group">
         {grantedClientScopes!.map((currentChip) => (
-          <Chip
-            key={currentChip}
-            isReadOnly
-            className="kc-consents-chip"
-            id="consents-chip-text"
-          >
+          <Chip key={currentChip} isReadOnly className="kc-consents-chip">
             {currentChip}
           </Chip>
         ))}

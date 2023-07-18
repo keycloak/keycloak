@@ -50,31 +50,33 @@
                 <executions>
                     <execution>
                         <goals>
-                            <goal>install-node-and-npm</goal>
+                            <goal>install-node-and-pnpm</goal>
                         </goals>
                     </execution>
                     <execution>
-                        <id>npm-ci</id>
+                        <id>pnpm-install</id>
                         <goals>
-                            <goal>npm</goal>
+                            <goal>pnpm</goal>
                         </goals>
                         <configuration>
-                            <arguments>ci --ignore-scripts</arguments>
+                            <arguments>install --frozen-lockfile --ignore-scripts</arguments>
                         </configuration>
                     </execution>
                     <execution>
-                        <id>npm-build</id>
+                        <id>run-build</id>
                         <goals>
-                            <goal>npm</goal>
+                            <goal>pnpm</goal>
                         </goals>
                         <configuration>
-                            <arguments>run build --workspace=keycloak-js</arguments>
+                            <arguments>run build</arguments>
                         </configuration>
                     </execution>
                 </executions>
                 <configuration>
                     <nodeVersion>${node.version}</nodeVersion>
-                    <workingDirectory>${js.projectDir}</workingDirectory>
+                    <pnpmVersion>${pnpm.version}</pnpmVersion>
+                    <installDirectory>${js.projectDir}</installDirectory>
+                    <workingDirectory>${js.projectDir}/libs/keycloak-js</workingDirectory>
                 </configuration>
             </plugin>
         </plugins>

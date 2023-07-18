@@ -1,10 +1,10 @@
-import { useTranslation } from "react-i18next";
-import { ButtonVariant } from "@patternfly/react-core";
-
 import type GroupRepresentation from "@keycloak/keycloak-admin-client/lib/defs/groupRepresentation";
-import { ConfirmDialogModal } from "../../components/confirm-dialog/ConfirmDialog";
-import { useAdminClient } from "../../context/auth/AdminClient";
+import { ButtonVariant } from "@patternfly/react-core";
+import { useTranslation } from "react-i18next";
+
+import { adminClient } from "../../admin-client";
 import { useAlerts } from "../../components/alert/Alerts";
+import { ConfirmDialogModal } from "../../components/confirm-dialog/ConfirmDialog";
 
 type DeleteConfirmProps = {
   selectedRows: GroupRepresentation[];
@@ -20,7 +20,6 @@ export const DeleteGroup = ({
   refresh,
 }: DeleteConfirmProps) => {
   const { t } = useTranslation("groups");
-  const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
 
   const multiDelete = async () => {

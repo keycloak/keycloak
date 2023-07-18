@@ -32,9 +32,9 @@ import org.keycloak.models.jpa.entities.*;
 import org.keycloak.models.utils.ComponentUtil;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
-import javax.persistence.EntityManager;
-import javax.persistence.LockModeType;
-import javax.persistence.TypedQuery;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.LockModeType;
+import jakarta.persistence.TypedQuery;
 import java.util.*;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
@@ -686,38 +686,6 @@ public class RealmAdapter implements LegacyRealmModel, JpaModel<RealmEntity> {
     @Override
     public Stream<RequiredCredentialModel> getRequiredCredentialsStream() {
         return realm.getRequiredCredentials().stream().map(this::toRequiredCredentialModel);
-    }
-
-    @Override
-    @Deprecated
-    public Stream<String> getDefaultRolesStream() {
-        return getDefaultRole().getCompositesStream().filter(this::isRealmRole).map(RoleModel::getName);
-    }
-
-    private boolean isRealmRole(RoleModel role) {
-        return ! role.isClientRole();
-    }
-
-    @Override
-    @Deprecated
-    public void addDefaultRole(String name) {
-        getDefaultRole().addCompositeRole(getOrAddRoleId(name));
-    }
-
-    private RoleModel getOrAddRoleId(String name) {
-        RoleModel role = getRole(name);
-        if (role == null) {
-            role = addRole(name);
-        }
-        return role;
-    }
-
-    @Override
-    @Deprecated
-    public void removeDefaultRoles(String... defaultRoles) {
-        for (String defaultRole : defaultRoles) {
-            getDefaultRole().removeCompositeRole(getRole(defaultRole));
-        }
     }
 
     @Override
@@ -1956,12 +1924,6 @@ public class RealmAdapter implements LegacyRealmModel, JpaModel<RealmEntity> {
     }
 
     @Override
-    @Deprecated
-    public Stream<GroupModel> searchForGroupByNameStream(String search, Integer first, Integer max) {
-        return session.groups().searchForGroupByNameStream(this, search, false, first, max);
-    }
-
-    @Override
     public boolean removeGroup(GroupModel group) {
         return session.groups().removeGroup(this, group);
     }
@@ -2209,7 +2171,7 @@ public class RealmAdapter implements LegacyRealmModel, JpaModel<RealmEntity> {
         }
         else {
             RealmLocalizationTextsEntity realmLocalizationTextsEntity = new RealmLocalizationTextsEntity();
-            realmLocalizationTextsEntity.setRealmId(realm.getId());
+            realmLocalizationTextsEntity.setRealm(realm);
             realmLocalizationTextsEntity.setLocale(locale);
             realmLocalizationTextsEntity.setTexts(localizationTexts);
 

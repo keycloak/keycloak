@@ -8,9 +8,10 @@ import {
 import { useState } from "react";
 import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-
 import { HelpItem } from "ui-shared";
-import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
+
+import { adminClient } from "../../admin-client";
+import { useFetch } from "../../utils/useFetch";
 
 type RequiredActionMultiSelectProps = {
   name: string;
@@ -24,7 +25,6 @@ export const RequiredActionMultiSelect = ({
   help,
 }: RequiredActionMultiSelectProps) => {
   const { t } = useTranslation("users");
-  const { adminClient } = useAdminClient();
   const { control } = useFormContext();
   const [open, setOpen] = useState(false);
   const [requiredActions, setRequiredActions] = useState<
@@ -39,7 +39,7 @@ export const RequiredActionMultiSelect = ({
       });
       setRequiredActions(enabledUserActions);
     },
-    []
+    [],
   );
 
   return (
@@ -69,7 +69,7 @@ export const RequiredActionMultiSelect = ({
               field.onChange(
                 field.value.find((o: string) => o === selectedValue)
                   ? field.value.filter((item: string) => item !== selectedValue)
-                  : [...field.value, selectedValue]
+                  : [...field.value, selectedValue],
               )
             }
             onClear={(event) => {

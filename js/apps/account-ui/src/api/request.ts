@@ -12,21 +12,15 @@ export type RequestOptions = {
 
 export async function request(
   path: string,
-  { signal, method, searchParams, body }: RequestOptions = {}
+  { signal, method, searchParams, body }: RequestOptions = {},
 ): Promise<Response> {
   const url = new URL(
-    joinPath(
-      environment.authServerUrl,
-      "realms",
-      environment.loginRealm,
-      "account",
-      path
-    )
+    joinPath(environment.authUrl, "realms", environment.realm, "account", path),
   );
 
   if (searchParams) {
     Object.entries(searchParams).forEach(([key, value]) =>
-      url.searchParams.set(key, value)
+      url.searchParams.set(key, value),
     );
   }
 

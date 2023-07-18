@@ -24,8 +24,8 @@ import org.keycloak.provider.Provider;
 import org.keycloak.rar.AuthorizationDetails;
 import org.keycloak.sessions.AuthenticationSessionModel;
 
-import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.core.Response;
 import java.net.URI;
 import java.util.List;
 
@@ -61,6 +61,8 @@ public interface LoginFormsProvider extends Provider {
     Response createLoginUsername();
 
     Response createLoginPassword();
+
+    Response  createOtpReset();
 
     Response createPasswordReset();
 
@@ -136,6 +138,14 @@ public interface LoginFormsProvider extends Provider {
     LoginFormsProvider setSuccess(String message, Object ... parameters);
 
     LoginFormsProvider setInfo(String message, Object ... parameters);
+
+    LoginFormsProvider setMessage(MessageType type, String message, Object... parameters);
+
+    /**
+     * Used when authenticationSession was already removed for this browser session and hence we don't have any
+     * authenticationSession or user data. Would just repeat previous info/error page after language is changed
+     */
+    LoginFormsProvider setDetachedAuthSession();
 
     LoginFormsProvider setUser(UserModel user);
 

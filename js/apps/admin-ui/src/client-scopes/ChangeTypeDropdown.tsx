@@ -1,17 +1,16 @@
+import { AlertVariant, Select } from "@patternfly/react-core";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { AlertVariant, Select } from "@patternfly/react-core";
 
+import type { Row } from "../clients/scopes/ClientScopes";
+import { useAlerts } from "../components/alert/Alerts";
 import {
+  ClientScope,
   allClientScopeTypes,
   changeClientScope,
   changeScope,
-  ClientScope,
   clientScopeTypesSelectOptions,
 } from "../components/client-scope/ClientScopeTypes";
-import type { Row } from "../clients/scopes/ClientScopes";
-import { useAdminClient } from "../context/auth/AdminClient";
-import { useAlerts } from "../components/alert/Alerts";
 
 type ChangeTypeDropdownProps = {
   clientId?: string;
@@ -27,7 +26,6 @@ export const ChangeTypeDropdown = ({
   const { t } = useTranslation("client-scopes");
   const [open, setOpen] = useState(false);
 
-  const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
 
   return (
@@ -45,14 +43,13 @@ export const ChangeTypeDropdown = ({
             selectedRows.map((row) => {
               return clientId
                 ? changeClientScope(
-                    adminClient,
                     clientId,
                     row,
                     row.type,
-                    value as ClientScope
+                    value as ClientScope,
                   )
-                : changeScope(adminClient, row, value as ClientScope);
-            })
+                : changeScope(row, value as ClientScope);
+            }),
           );
           setOpen(false);
           refresh();
@@ -64,7 +61,7 @@ export const ChangeTypeDropdown = ({
     >
       {clientScopeTypesSelectOptions(
         t,
-        !clientId ? allClientScopeTypes : undefined
+        !clientId ? allClientScopeTypes : undefined,
       )}
     </Select>
   );

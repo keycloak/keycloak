@@ -17,19 +17,20 @@ import { useState } from "react";
 import { Controller, FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
+import { HelpItem } from "ui-shared";
 
+import { adminClient } from "../../admin-client";
 import { useAlerts } from "../../components/alert/Alerts";
 import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
-import { FormAccess } from "../../components/form-access/FormAccess";
-import { HelpItem } from "ui-shared";
+import { FormAccess } from "../../components/form/FormAccess";
 import type { KeyValueType } from "../../components/key-value-form/key-value-convert";
 import { KeyValueInput } from "../../components/key-value-form/KeyValueInput";
 import { KeycloakSpinner } from "../../components/keycloak-spinner/KeycloakSpinner";
 import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 import { MultiLineInput } from "../../components/multi-line-input/MultiLineInput";
 import { ViewHeader } from "../../components/view-header/ViewHeader";
-import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
 import { convertFormValuesToObject, convertToFormValues } from "../../util";
+import { useFetch } from "../../utils/useFetch";
 import { useParams } from "../../utils/useParams";
 import { toAuthorizationTab } from "../routes/AuthenticationTab";
 import { ResourceDetailsParams, toResourceDetails } from "../routes/Resource";
@@ -52,7 +53,6 @@ export default function ResourceDetails() {
   const [permissions, setPermission] =
     useState<ResourceServerRepresentation[]>();
 
-  const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
   const form = useForm<SubmittedResource>({
     mode: "onChange",
@@ -92,7 +92,7 @@ export default function ResourceDetails() {
       setResource(resource);
       setupForm(resource);
     },
-    []
+    [],
   );
 
   const submit = async (submitted: SubmittedResource) => {
@@ -107,13 +107,13 @@ export default function ResourceDetails() {
       } else {
         const result = await adminClient.clients.createResource(
           { id },
-          resource
+          resource,
         );
         navigate(toResourceDetails({ realm, id, resourceId: result._id! }));
       }
       addAlert(
         t((resourceId ? "update" : "create") + "ResourceSuccess"),
-        AlertVariant.success
+        AlertVariant.success,
       );
     } catch (error) {
       addError("clients:resourceSaveError", error);

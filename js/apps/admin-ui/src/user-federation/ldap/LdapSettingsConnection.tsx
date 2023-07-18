@@ -1,4 +1,3 @@
-// @ts-nocheck
 import type TestLdapConnectionRepresentation from "@keycloak/keycloak-admin-client/lib/defs/testLdapConnection";
 import {
   AlertVariant,
@@ -14,14 +13,14 @@ import { get, isEqual } from "lodash-es";
 import { useState } from "react";
 import { Controller, UseFormReturn, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-
-import { useAlerts } from "../../components/alert/Alerts";
-import { FormAccess } from "../../components/form-access/FormAccess";
 import { HelpItem } from "ui-shared";
+
+import { adminClient } from "../../admin-client";
+import { useAlerts } from "../../components/alert/Alerts";
+import { FormAccess } from "../../components/form/FormAccess";
 import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 import { PasswordInput } from "../../components/password-input/PasswordInput";
 import { WizardSectionHeader } from "../../components/wizard-section-header/WizardSectionHeader";
-import { useAdminClient } from "../../context/auth/AdminClient";
 import { useRealm } from "../../context/realm-context/RealmContext";
 
 export type LdapSettingsConnectionProps = {
@@ -62,7 +61,6 @@ export const LdapSettingsConnection = ({
 }: LdapSettingsConnectionProps) => {
   const { t } = useTranslation("user-federation");
   const { t: helpText } = useTranslation("user-federation-help");
-  const { adminClient } = useAdminClient();
   const { realm } = useRealm();
   const { addAlert, addError } = useAlerts();
   const edit = !!id;
@@ -72,7 +70,7 @@ export const LdapSettingsConnection = ({
       const settings = convertFormToSettings(form);
       await adminClient.realms.testLDAPConnection(
         { realm },
-        { ...settings, action: testType, componentId: id }
+        { ...settings, action: testType, componentId: id },
       );
       addAlert(t("testSuccess"), AlertVariant.success);
     } catch (error) {
@@ -97,7 +95,7 @@ export const LdapSettingsConnection = ({
         <WizardSectionHeader
           title={t("connectionAndAuthenticationSettings")}
           description={helpText(
-            "ldapConnectionAndAuthorizationSettingsDescription"
+            "ldapConnectionAndAuthorizationSettingsDescription",
           )}
           showDescription={showSectionDescription}
         />
@@ -108,7 +106,7 @@ export const LdapSettingsConnection = ({
           labelIcon={
             <HelpItem
               helpText={t(
-                "user-federation-help:consoleDisplayConnectionUrlHelp"
+                "user-federation-help:consoleDisplayConnectionUrlHelp",
               )}
               fieldLabelId="user-federation:connectionURL"
             />
@@ -116,12 +114,12 @@ export const LdapSettingsConnection = ({
           fieldId="kc-ui-connection-url"
           isRequired
           validated={
-            form.formState.errors.config?.connectionUrl?.[0]
+            (form.formState.errors.config as any)?.connectionUrl?.[0]
               ? "error"
               : "default"
           }
           helperTextInvalid={
-            form.formState.errors.config?.connectionUrl?.[0].message
+            (form.formState.errors.config as any)?.connectionUrl?.[0].message
           }
         >
           <KeycloakTextInput
@@ -130,7 +128,7 @@ export const LdapSettingsConnection = ({
             id="kc-ui-connection-url"
             data-testid="ldap-connection-url"
             validated={
-              form.formState.errors.config?.connectionUrl?.[0]
+              (form.formState.errors.config as any)?.connectionUrl?.[0]
                 ? "error"
                 : "default"
             }
@@ -185,7 +183,7 @@ export const LdapSettingsConnection = ({
           <Controller
             name="config.useTruststoreSpi[0]"
             control={form.control}
-            defaultValue="ldapsOnly"
+            defaultValue="always"
             render={({ field }) => (
               <Select
                 toggleId="kc-use-truststore-spi"
@@ -200,7 +198,6 @@ export const LdapSettingsConnection = ({
                 selections={field.value}
               >
                 <SelectOption value="always">{t("always")}</SelectOption>
-                <SelectOption value="ldapsOnly">{t("onlyLdaps")}</SelectOption>
                 <SelectOption value="never">{t("never")}</SelectOption>
               </Select>
             )}
@@ -314,7 +311,7 @@ export const LdapSettingsConnection = ({
               fieldId="kc-ui-bind-dn"
               helperTextInvalid={t("validateBindDn")}
               validated={
-                form.formState.errors.config?.bindDn
+                (form.formState.errors.config as any)?.bindDn
                   ? ValidatedOptions.error
                   : ValidatedOptions.default
               }
@@ -325,7 +322,7 @@ export const LdapSettingsConnection = ({
                 id="kc-ui-bind-dn"
                 data-testid="ldap-bind-dn"
                 validated={
-                  form.formState.errors.config?.bindDn
+                  (form.formState.errors.config as any)?.bindDn
                     ? ValidatedOptions.error
                     : ValidatedOptions.default
                 }
@@ -343,7 +340,7 @@ export const LdapSettingsConnection = ({
               fieldId="kc-ui-bind-credentials"
               helperTextInvalid={t("validateBindCredentials")}
               validated={
-                form.formState.errors.config?.bindCredential
+                (form.formState.errors.config as any)?.bindCredential
                   ? ValidatedOptions.error
                   : ValidatedOptions.default
               }
@@ -355,7 +352,7 @@ export const LdapSettingsConnection = ({
                 id="kc-ui-bind-credentials"
                 data-testid="ldap-bind-credentials"
                 validated={
-                  form.formState.errors.config?.bindCredential
+                  (form.formState.errors.config as any)?.bindCredential
                     ? ValidatedOptions.error
                     : ValidatedOptions.default
                 }

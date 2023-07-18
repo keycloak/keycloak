@@ -67,7 +67,7 @@ A list of *Active* keys appears.
 The certificate appears in text form.
 . Save the certificate to a file and enclose it in these lines.
 +
-[Source,Bash,Subs=+Attributes]
+[source,bash,subs=+attributes]
 ----
 ----Begin Certificate---- 
 <Output>
@@ -77,19 +77,19 @@ The certificate appears in text form.
 
 . Remove the current RSA public key certificate from the keystore.
 +
-[Source,Bash,Subs=+Attributes]
+[source,bash,subs=+attributes]
 ----
 keytool -delete -keystore <keystore>.jks -storepass <password> -alias <key>
 ----
 . Import the new certificate into the keystore
 +
-[Source,Bash,Subs=+Attributes]
+[source,bash,subs=+attributes]
 ----
 keytool -importcert -file domain.crt -keystore <keystore>.jks -storepass <password>  -alias <key>
 ----
 . Rebuild the application.
 +
-[Source,Bash,Subs=+Attributes]
+[source,bash,subs=+attributes]
 ----
 mvn clean install wildfly:deploy
 ----
@@ -166,7 +166,7 @@ Alternatively, you can delete the provider from the `Providers` table.
 .Procedure
 . Click *Clients* in the menu.
 . Click *security-admin-console*.
-. Scroll down to the *Capability config* section.
+. Scroll down to the *Access settings* section.
 . Fill in the *Admin URL* field.
 . Click the *Advanced* tab.
 . Click *Set to now* in the *Revocation* section.

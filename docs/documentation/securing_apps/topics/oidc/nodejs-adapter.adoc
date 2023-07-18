@@ -1,5 +1,5 @@
 [[_nodejs_adapter]]
-=== Node.js adapter
+=== {project_name} Node.js adapter
 
 {project_name} provides a Node.js adapter built on top of https://github.com/senchalabs/connect[Connect] to protect server-side JavaScript apps - the goal was to be flexible enough to integrate with frameworks like https://expressjs.com/[Express.js].
 
@@ -370,4 +370,4 @@ to the `middleware()` call:
 
 ==== Complete example 
 
-A complete example using the Node.js adapter usage can be found in {quickstartRepo_link}/tree/latest/service-nodejs/[Keycloak quickstarts for Node.js]
+A complete example using the Node.js adapter usage can be found in {quickstartRepo_link}/tree/latest/nodejs/resource-server[Keycloak quickstarts for Node.js]

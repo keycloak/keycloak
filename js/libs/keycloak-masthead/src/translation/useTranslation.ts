@@ -5,7 +5,7 @@ import { useTranslations } from "./TranslationsContext";
 
 export type TranslateFunction = (
   key: keyof Translations,
-  args?: Record<string, string>
+  args?: Record<string, string>,
 ) => Translations[typeof key];
 
 export const useTranslation = () => {
@@ -20,10 +20,10 @@ export const useTranslation = () => {
 
       return Object.entries(args).reduce(
         (formatted, [key, value]) => formatted.replaceAll(`{{${key}}}`, value),
-        translation
+        translation,
       );
     },
-    [translations]
+    [translations],
   );
 
   return useMemo(() => ({ t: translate }), [translate]);

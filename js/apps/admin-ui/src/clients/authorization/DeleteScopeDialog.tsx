@@ -1,11 +1,11 @@
-import { useTranslation } from "react-i18next";
+import type ScopeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/scopeRepresentation";
 import { Alert, AlertVariant } from "@patternfly/react-core";
+import { useTranslation } from "react-i18next";
 
-import type { PermissionScopeRepresentation } from "./Scopes";
+import { adminClient } from "../../admin-client";
 import { useAlerts } from "../../components/alert/Alerts";
 import { ConfirmDialogModal } from "../../components/confirm-dialog/ConfirmDialog";
-import { useAdminClient } from "../../context/auth/AdminClient";
-import type ScopeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/scopeRepresentation";
+import type { PermissionScopeRepresentation } from "./Scopes";
 
 type DeleteScopeDialogProps = {
   clientId: string;
@@ -26,7 +26,6 @@ export const DeleteScopeDialog = ({
   toggleDialog,
 }: DeleteScopeDialogProps) => {
   const { t } = useTranslation("clients");
-  const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
 
   return (

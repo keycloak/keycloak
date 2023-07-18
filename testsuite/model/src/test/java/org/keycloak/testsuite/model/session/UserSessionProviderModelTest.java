@@ -263,6 +263,7 @@ public class UserSessionProviderModelTest extends KeycloakModelTest {
             RemoteCache<String, HotRodUserSessionEntity> remoteCache = provider.getRemoteCache(ModelEntityUtil.getModelName(UserSessionModel.class));
             HotRodUserSessionEntity userSessionEntity = new HotRodUserSessionEntity();
             userSessionEntity.id = UUID.randomUUID().toString();
+            userSessionEntity.realmId = realmId;
             remoteCache.put(userSessionEntity.id, userSessionEntity);
         }));
 

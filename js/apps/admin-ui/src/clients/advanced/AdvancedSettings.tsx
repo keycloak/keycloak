@@ -12,14 +12,16 @@ import { useState } from "react";
 import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
-import { FormAccess } from "../../components/form-access/FormAccess";
+import { FormAccess } from "../../components/form/FormAccess";
 import { HelpItem } from "ui-shared";
+
+import { adminClient } from "../../admin-client";
 import { KeyValueInput } from "../../components/key-value-form/KeyValueInput";
 import { MultiLineInput } from "../../components/multi-line-input/MultiLineInput";
 import { TimeSelector } from "../../components/time-selector/TimeSelector";
-import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { convertAttributeNameToForm } from "../../util";
+import { useFetch } from "../../utils/useFetch";
 import { FormFields } from "../ClientDetails";
 import { TokenLifespan } from "./TokenLifespan";
 
@@ -41,12 +43,11 @@ export const AdvancedSettings = ({
 
   const [realm, setRealm] = useState<RealmRepresentation>();
   const { realm: realmName } = useRealm();
-  const { adminClient } = useAdminClient();
 
   useFetch(
     () => adminClient.realms.findOne({ realm: realmName }),
     setRealm,
-    []
+    [],
   );
 
   const { control } = useFormContext();
@@ -69,7 +70,7 @@ export const AdvancedSettings = ({
         >
           <Controller
             name={convertAttributeNameToForm<FormFields>(
-              "attributes.saml.assertion.lifespan"
+              "attributes.saml.assertion.lifespan",
             )}
             defaultValue=""
             control={control}
@@ -88,7 +89,7 @@ export const AdvancedSettings = ({
           <TokenLifespan
             id="accessTokenLifespan"
             name={convertAttributeNameToForm(
-              "attributes.access.token.lifespan"
+              "attributes.access.token.lifespan",
             )}
             defaultValue={realm?.accessTokenLifespan}
             units={["minute", "day", "hour"]}
@@ -97,7 +98,7 @@ export const AdvancedSettings = ({
           <TokenLifespan
             id="clientSessionIdle"
             name={convertAttributeNameToForm(
-              "attributes.client.session.idle.timeout"
+              "attributes.client.session.idle.timeout",
             )}
             defaultValue={realm?.clientSessionIdleTimeout}
             units={["minute", "day", "hour"]}
@@ -106,7 +107,7 @@ export const AdvancedSettings = ({
           <TokenLifespan
             id="clientSessionMax"
             name={convertAttributeNameToForm(
-              "attributes.client.session.max.lifespan"
+              "attributes.client.session.max.lifespan",
             )}
             defaultValue={realm?.clientSessionMaxLifespan}
             units={["minute", "day", "hour"]}
@@ -115,7 +116,7 @@ export const AdvancedSettings = ({
           <TokenLifespan
             id="clientOfflineSessionIdle"
             name={convertAttributeNameToForm(
-              "attributes.client.offline.session.idle.timeout"
+              "attributes.client.offline.session.idle.timeout",
             )}
             defaultValue={realm?.offlineSessionIdleTimeout}
             units={["minute", "day", "hour"]}
@@ -124,7 +125,7 @@ export const AdvancedSettings = ({
           <TokenLifespan
             id="clientOfflineSessionMax"
             name={convertAttributeNameToForm(
-              "attributes.client.offline.session.max.lifespan"
+              "attributes.client.offline.session.max.lifespan",
             )}
             defaultValue={realm?.offlineSessionMaxLifespan}
             units={["minute", "day", "hour"]}
@@ -143,7 +144,7 @@ export const AdvancedSettings = ({
           >
             <Controller
               name={convertAttributeNameToForm<FormFields>(
-                "attributes.tls.client.certificate.bound.access.tokens"
+                "attributes.tls.client.certificate.bound.access.tokens",
               )}
               defaultValue={false}
               control={control}
@@ -172,7 +173,7 @@ export const AdvancedSettings = ({
           >
             <Controller
               name={convertAttributeNameToForm<FormFields>(
-                "attributes.pkce.code.challenge.method"
+                "attributes.pkce.code.challenge.method",
               )}
               defaultValue=""
               control={control}
@@ -209,7 +210,7 @@ export const AdvancedSettings = ({
           >
             <Controller
               name={convertAttributeNameToForm<FormFields>(
-                "attributes.require.pushed.authorization.requests"
+                "attributes.require.pushed.authorization.requests",
               )}
               defaultValue="false"
               control={control}

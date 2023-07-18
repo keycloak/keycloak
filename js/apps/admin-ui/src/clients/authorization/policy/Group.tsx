@@ -1,22 +1,23 @@
-import { useState } from "react";
-import { useTranslation } from "react-i18next";
-import { useFormContext, Controller } from "react-hook-form";
+import type GroupRepresentation from "@keycloak/keycloak-admin-client/lib/defs/groupRepresentation";
+import { Button, Checkbox, FormGroup } from "@patternfly/react-core";
 import { MinusCircleIcon } from "@patternfly/react-icons";
-import { FormGroup, Button, Checkbox } from "@patternfly/react-core";
 import {
   TableComposable,
-  Thead,
-  Tr,
-  Th,
   Tbody,
   Td,
+  Th,
+  Thead,
+  Tr,
 } from "@patternfly/react-table";
-
-import type GroupRepresentation from "@keycloak/keycloak-admin-client/lib/defs/groupRepresentation";
+import { useState } from "react";
+import { Controller, useFormContext } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 import { HelpItem } from "ui-shared";
-import { useAdminClient, useFetch } from "../../../context/auth/AdminClient";
+
+import { adminClient } from "../../../admin-client";
 import { GroupPickerDialog } from "../../../components/group/GroupPickerDialog";
 import { KeycloakTextInput } from "../../../components/keycloak-text-input/KeycloakTextInput";
+import { useFetch } from "../../../utils/useFetch";
 
 type GroupForm = {
   groups?: GroupValue[];
@@ -41,16 +42,14 @@ export const Group = () => {
 
   const [open, setOpen] = useState(false);
   const [selectedGroups, setSelectedGroups] = useState<GroupRepresentation[]>(
-    []
+    [],
   );
-
-  const { adminClient } = useAdminClient();
 
   useFetch(
     () => {
       if (values && values.length > 0)
         return Promise.all(
-          values.map((g) => adminClient.groups.findOne({ id: g.id }))
+          values.map((g) => adminClient.groups.findOne({ id: g.id })),
         );
       return Promise.resolve([]);
     },
@@ -58,7 +57,7 @@ export const Group = () => {
       const filteredGroup = groups.filter((g) => g) as GroupRepresentation[];
       setSelectedGroups(filteredGroup);
     },
-    []
+    [],
   );
 
   return (
@@ -142,7 +141,7 @@ export const Group = () => {
               <Tr>
                 <Th>{t("groups")}</Th>
                 <Th>{t("extendToChildren")}</Th>
-                <Th />
+                <Th aria-hidden="true" />
               </Tr>
             </Thead>
             <Tbody>

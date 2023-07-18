@@ -38,7 +38,7 @@ export const CredentialRow = ({
     }
 
     const credentialData: Record<string, unknown> = JSON.parse(
-      credential.credentialData
+      credential.credentialData,
     );
     return localeSort(Object.entries(credentialData), ([key]) => key).map<
       [string, string]

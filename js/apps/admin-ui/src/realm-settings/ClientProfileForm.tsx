@@ -26,17 +26,18 @@ import { Fragment, useMemo, useState } from "react";
 import { useFieldArray, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
+import { HelpItem } from "ui-shared";
 
+import { adminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
-import { FormAccess } from "../components/form-access/FormAccess";
-import { HelpItem } from "ui-shared";
+import { FormAccess } from "../components/form/FormAccess";
 import { KeycloakSpinner } from "../components/keycloak-spinner/KeycloakSpinner";
 import { KeycloakTextArea } from "../components/keycloak-text-area/KeycloakTextArea";
 import { KeycloakTextInput } from "../components/keycloak-text-input/KeycloakTextInput";
 import { ViewHeader } from "../components/view-header/ViewHeader";
-import { useAdminClient, useFetch } from "../context/auth/AdminClient";
 import { useServerInfo } from "../context/server-info/ServerInfoProvider";
+import { useFetch } from "../utils/useFetch";
 import { useParams } from "../utils/useParams";
 import { toAddExecutor } from "./routes/AddExecutor";
 import { toClientPolicies } from "./routes/ClientPolicies";
@@ -74,7 +75,6 @@ export default function ClientProfileForm() {
   });
 
   const { addAlert, addError } = useAlerts();
-  const { adminClient } = useAdminClient();
   const [profiles, setProfiles] = useState<ClientProfilesRepresentation>();
   const [isGlobalProfile, setIsGlobalProfile] = useState(false);
   const { realm, profileName } = useParams<ClientProfileParams>();
@@ -84,7 +84,7 @@ export default function ClientProfileForm() {
       serverInfo.componentTypes?.[
         "org.keycloak.services.clientpolicy.executor.ClientPolicyExecutorProvider"
       ],
-    []
+    [],
   );
   const [executorToDelete, setExecutorToDelete] = useState<{
     idx: number;
@@ -103,21 +103,21 @@ export default function ClientProfileForm() {
         profiles: profiles.profiles?.filter((p) => p.name !== profileName),
       });
       const globalProfile = profiles.globalProfiles?.find(
-        (p) => p.name === profileName
+        (p) => p.name === profileName,
       );
       const profile = profiles.profiles?.find((p) => p.name === profileName);
       setIsGlobalProfile(globalProfile !== undefined);
       setValue("name", globalProfile?.name ?? profile?.name ?? "");
       setValue(
         "description",
-        globalProfile?.description ?? profile?.description ?? ""
+        globalProfile?.description ?? profile?.description ?? "",
       );
       setValue(
         "executors",
-        globalProfile?.executors ?? profile?.executors ?? []
+        globalProfile?.executors ?? profile?.executors ?? [],
       );
     },
-    [key]
+    [key],
   );
 
   const save = async (form: ClientProfileForm) => {
@@ -133,7 +133,7 @@ export default function ClientProfileForm() {
         editMode
           ? t("realm-settings:updateClientProfileSuccess")
           : t("realm-settings:createClientProfileSuccess"),
-        AlertVariant.success
+        AlertVariant.success,
       );
 
       navigate(toClientProfile({ realm, profileName: form.name }));
@@ -142,7 +142,7 @@ export default function ClientProfileForm() {
         editMode
           ? "realm-settings:updateClientProfileError"
           : "realm-settings:createClientProfileError",
-        error
+        error,
       );
     }
   };
@@ -361,7 +361,7 @@ export default function ClientProfileForm() {
                                 )}
                                 {executorTypes
                                   ?.filter(
-                                    (type) => type.id === executor.executor
+                                    (type) => type.id === executor.executor,
                                   )
                                   .map((type) => (
                                     <Fragment key={type.id}>
@@ -423,7 +423,7 @@ export default function ClientProfileForm() {
                   <Divider />
                   <Text
                     className="kc-emptyExecutors"
-                    component={TextVariants.h6}
+                    component={TextVariants.h2}
                   >
                     {t("realm-settings:emptyExecutors")}
                   </Text>

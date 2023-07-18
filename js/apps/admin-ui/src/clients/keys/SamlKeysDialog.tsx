@@ -1,7 +1,5 @@
-import { useState } from "react";
-import { saveAs } from "file-saver";
-import { useTranslation } from "react-i18next";
-import { FormProvider, useForm } from "react-hook-form";
+import type CertificateRepresentation from "@keycloak/keycloak-admin-client/lib/defs/certificateRepresentation";
+import type KeyStoreConfig from "@keycloak/keycloak-admin-client/lib/defs/keystoreConfig";
 import {
   AlertVariant,
   Button,
@@ -19,16 +17,17 @@ import {
   TextContent,
   Title,
 } from "@patternfly/react-core";
-
-import type CertificateRepresentation from "@keycloak/keycloak-admin-client/lib/defs/certificateRepresentation";
-import type KeyStoreConfig from "@keycloak/keycloak-admin-client/lib/defs/keystoreConfig";
-import type { KeyTypes } from "./SamlKeys";
+import { saveAs } from "file-saver";
+import { useState } from "react";
+import { FormProvider, useForm } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 import { HelpItem } from "ui-shared";
-import { useAdminClient } from "../../context/auth/AdminClient";
+
+import { adminClient } from "../../admin-client";
 import { useAlerts } from "../../components/alert/Alerts";
-import { KeyForm } from "./GenerateKeyDialog";
 import { Certificate } from "./Certificate";
-import type KeycloakAdminClient from "@keycloak/keycloak-admin-client";
+import { KeyForm } from "./GenerateKeyDialog";
+import type { KeyTypes } from "./SamlKeys";
 
 type SamlKeysDialogProps = {
   id: string;
@@ -45,8 +44,7 @@ export const submitForm = async (
   form: SamlKeysDialogForm,
   id: string,
   attr: KeyTypes,
-  adminClient: KeycloakAdminClient,
-  callback: (error?: unknown) => void
+  callback: (error?: unknown) => void,
 ) => {
   try {
     const formData = new FormData();
@@ -54,8 +52,8 @@ export const submitForm = async (
     Object.entries(rest).map(([key, value]) =>
       formData.append(
         key === "format" ? "keystoreFormat" : key,
-        value.toString()
-      )
+        value.toString(),
+      ),
     );
     formData.append("file", file);
 
@@ -81,11 +79,10 @@ export const SamlKeysDialog = ({
     formState: { isValid },
   } = form;
 
-  const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
 
   const submit = (form: SamlKeysDialogForm) => {
-    submitForm(form, id, attr, adminClient, (error) => {
+    submitForm(form, id, attr, (error) => {
       if (error) {
         addError("clients:importError", error);
       } else {
@@ -105,7 +102,7 @@ export const SamlKeysDialog = ({
         new Blob([key.privateKey!], {
           type: "application/octet-stream",
         }),
-        "private.key"
+        "private.key",
       );
 
       addAlert(t("generateSuccess"), AlertVariant.success);

@@ -25,15 +25,17 @@ import { QuestionCircleIcon } from "@patternfly/react-icons";
 import { useEffect, useRef, useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
+import { HelpItem, useHelp } from "ui-shared";
 
-import { useHelp, HelpItem } from "ui-shared";
+import { adminClient } from "../../admin-client";
 import { KeycloakDataTable } from "../../components/table-toolbar/KeycloakDataTable";
 import { UserSelect } from "../../components/users/UserSelect";
-import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
 import { prettyPrintJSON } from "../../util";
+import { useFetch } from "../../utils/useFetch";
 import { GeneratedCodeTab } from "./GeneratedCodeTab";
+import { useAccess } from "../../context/access/Access";
 
 import "./evaluate.css";
 
@@ -113,7 +115,6 @@ export const EvaluateScopes = ({ clientId, protocol }: EvaluateScopesProps) => {
   const prefix = "openid";
   const { t } = useTranslation("clients");
   const { enabled } = useHelp();
-  const { adminClient } = useAdminClient();
   const { realm } = useRealm();
   const mapperTypes = useServerInfo().protocolMapperTypes![protocol];
 
@@ -127,7 +128,7 @@ export const EvaluateScopes = ({ clientId, protocol }: EvaluateScopesProps) => {
   const [key, setKey] = useState("");
   const refresh = () => setKey(`${new Date().getTime()}`);
   const [effectiveRoles, setEffectiveRoles] = useState<RoleRepresentation[]>(
-    []
+    [],
   );
   const [protocolMappers, setProtocolMappers] = useState<
     ProtocolMapperRepresentation[]
@@ -144,10 +145,13 @@ export const EvaluateScopes = ({ clientId, protocol }: EvaluateScopesProps) => {
 
   const form = useForm();
 
+  const { hasAccess } = useAccess();
+  const hasViewUsers = hasAccess("view-users");
+
   useFetch(
     () => adminClient.clients.listOptionalClientScopes({ id: clientId }),
     (optionalClientScopes) => setSelectableScopes(optionalClientScopes),
-    []
+    [],
   );
 
   useFetch(
@@ -176,14 +180,14 @@ export const EvaluateScopes = ({ clientId, protocol }: EvaluateScopesProps) => {
       setEffectiveRoles(effectiveRoles);
       mapperList.map((mapper) => {
         mapper.type = mapperTypes.filter(
-          (type) => type.id === mapper.protocolMapper
+          (type) => type.id === mapper.protocolMapper,
         )[0];
       });
 
       setProtocolMappers(mapperList);
       refresh();
     },
-    [selected]
+    [selected],
   );
 
   useFetch(
@@ -215,7 +219,7 @@ export const EvaluateScopes = ({ clientId, protocol }: EvaluateScopesProps) => {
       setUserInfo(prettyPrintJSON(userInfo));
       setIdToken(prettyPrintJSON(idToken));
     },
-    [form.getValues("user"), selected]
+    [form.getValues("user"), selected],
   );
 
   return (
@@ -273,16 +277,18 @@ export const EvaluateScopes = ({ clientId, protocol }: EvaluateScopesProps) => {
               </SplitItem>
             </Split>
           </FormGroup>
-          <FormProvider {...form}>
-            <UserSelect
-              name="user"
-              label="users"
-              helpText={t("clients-help:user")}
-              defaultValue=""
-              variant={SelectVariant.typeahead}
-              isRequired
-            />
-          </FormProvider>
+          {hasViewUsers && (
+            <FormProvider {...form}>
+              <UserSelect
+                name="user"
+                label="users"
+                helpText={t("clients-help:user")}
+                defaultValue=""
+                variant={SelectVariant.typeahead}
+                isRequired
+              />
+            </FormProvider>
+          )}
         </Form>
       </PageSection>
 

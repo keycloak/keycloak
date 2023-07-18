@@ -70,14 +70,14 @@ import org.keycloak.util.TokenUtil;
 import org.keycloak.utils.MediaType;
 import org.keycloak.utils.OAuth2Error;
 
-import javax.ws.rs.GET;
-import javax.ws.rs.OPTIONS;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.OPTIONS;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.MultivaluedMap;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -142,7 +142,11 @@ public class UserInfoEndpoint {
         authorization(accessToken);
 
         try {
-            if (MediaType.APPLICATION_FORM_URLENCODED.equalsIgnoreCase(headers.getHeaderString(HttpHeaders.CONTENT_TYPE))) {
+            
+            String contentType = headers.getHeaderString(HttpHeaders.CONTENT_TYPE);
+            jakarta.ws.rs.core.MediaType mediaType = jakarta.ws.rs.core.MediaType.valueOf(contentType);
+            
+            if (jakarta.ws.rs.core.MediaType.APPLICATION_FORM_URLENCODED_TYPE.isCompatible(mediaType)) {
                 MultivaluedMap<String, String> formParams = request.getDecodedFormParameters();
                 checkAccessTokenDuplicated(formParams);
                 accessToken = formParams.getFirst(OAuth2Constants.ACCESS_TOKEN);
@@ -255,7 +259,7 @@ public class UserInfoEndpoint {
 
         AccessToken userInfo = new AccessToken();
 
-        tokenManager.transformUserInfoAccessToken(session, userInfo, userSession, clientSessionCtx);
+        userInfo = tokenManager.transformUserInfoAccessToken(session, userInfo, userSession, clientSessionCtx);
         Map<String, Object> claims = tokenManager.generateUserInfoClaims(userInfo, userModel);
 
         Response.ResponseBuilder responseBuilder;

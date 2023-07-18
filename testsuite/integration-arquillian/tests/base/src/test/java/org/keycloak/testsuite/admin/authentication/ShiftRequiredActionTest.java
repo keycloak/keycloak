@@ -19,7 +19,7 @@ package org.keycloak.testsuite.admin.authentication;
 
 import java.util.List;
 
-import javax.ws.rs.NotFoundException;
+import jakarta.ws.rs.NotFoundException;
 
 import org.junit.Assert;
 import org.junit.Test;

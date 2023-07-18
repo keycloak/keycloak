@@ -16,11 +16,12 @@
  */
 package org.keycloak.services.resources.admin;
 
+import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.jboss.logging.Logger;
 import org.keycloak.http.HttpRequest;
 import org.keycloak.http.HttpResponse;
-import javax.ws.rs.NotFoundException;
-import javax.ws.rs.NotAuthorizedException;
+import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.NotAuthorizedException;
 import org.keycloak.common.Profile;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
@@ -38,16 +39,16 @@ import org.keycloak.services.resources.admin.permissions.AdminPermissions;
 import org.keycloak.theme.Theme;
 import org.keycloak.urls.UrlType;
 
-import javax.ws.rs.GET;
-import javax.ws.rs.HttpMethod;
-import javax.ws.rs.OPTIONS;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriBuilder;
-import javax.ws.rs.core.UriInfo;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.HttpMethod;
+import jakarta.ws.rs.OPTIONS;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.UriBuilder;
+import jakarta.ws.rs.core.UriInfo;
 import java.io.IOException;
 import java.util.Locale;
 import java.util.Properties;
@@ -86,6 +87,7 @@ public class AdminRoot {
      * @return
      */
     @GET
+    @Operation(hidden = true)
     public Response masterRealmAdminConsoleRedirect() {
 
         if (!isAdminConsoleEnabled()) {
@@ -106,6 +108,7 @@ public class AdminRoot {
      */
     @Path("index.{html:html}") // expression is actually "index.html" but this is a hack to get around jax-doclet bug
     @GET
+    @Operation(hidden = true)
     public Response masterRealmAdminConsoleRedirectHtml() {
 
         if (!isAdminConsoleEnabled()) {
@@ -141,6 +144,7 @@ public class AdminRoot {
      * @return
      */
     @Path("{realm}/console")
+    @Operation(hidden = true)
     public AdminConsole getAdminConsole(final @PathParam("realm") String name) {
 
         if (!isAdminConsoleEnabled()) {
@@ -200,7 +204,7 @@ public class AdminRoot {
      * @return
      */
     @Path("realms")
-    public Object getRealmsAdmin() {
+    public RealmsAdminResource getRealmsAdmin() {
         HttpRequest request = getHttpRequest();
 
         if (!isAdminApiEnabled()) {
@@ -208,7 +212,7 @@ public class AdminRoot {
         }
 
         if (request.getHttpMethod().equals(HttpMethod.OPTIONS)) {
-            return new AdminCorsPreflightService(request);
+            return new RealmsAdminResourcePreflight(session, null, tokenManager, request);
         }
 
         AdminAuth auth = authenticateRealmAdminRequest(session.getContext().getRequestHeaders());
@@ -226,6 +230,7 @@ public class AdminRoot {
 
     @Path("{any:.*}")
     @OPTIONS
+    @Operation(hidden = true)
     public Object preFlight() {
         HttpRequest request = getHttpRequest();
 

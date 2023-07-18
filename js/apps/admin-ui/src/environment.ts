@@ -1,6 +1,8 @@
 export type Environment = {
-  /** The realm which should be used when signing into the application. */
+  /** The realm used to authenticate the user to the Admin Console. */
   loginRealm: string;
+  /** The identifier of the client used to authenticate the user to the Admin Console. */
+  clientId: string;
   /** The URL to the root of the auth server. */
   authServerUrl: string;
   /** The URL to the path of the auth server where client requests can be sent. */
@@ -13,8 +15,10 @@ export type Environment = {
   masterRealm: string;
   /** The version hash of the auth server. */
   resourceVersion: string;
-  /** Indicates if the application is running as a Keycloak theme. */
-  isRunningAsTheme: boolean;
+  /** Indicates the src for the Brand image */
+  logo: string;
+  /** Indicates the url to be followed when Brand image is clicked */
+  logoUrl: string;
 };
 
 // During development the realm can be passed as a query parameter when redirecting back from Keycloak.
@@ -23,13 +27,15 @@ const realm = new URLSearchParams(window.location.search).get("realm");
 // The default environment, used during development.
 const defaultEnvironment: Environment = {
   loginRealm: realm ?? "master",
+  clientId: "security-admin-console-v2",
   authServerUrl: "http://localhost:8180",
   authUrl: "http://localhost:8180",
   consoleBaseUrl: "/admin/master/console/",
   resourceUrl: ".",
   masterRealm: "master",
   resourceVersion: "unknown",
-  isRunningAsTheme: false,
+  logo: "/logo.svg",
+  logoUrl: "",
 };
 
 // Merge the default and injected environment variables together.

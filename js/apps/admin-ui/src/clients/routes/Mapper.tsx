@@ -10,7 +10,7 @@ export type MapperParams = {
 };
 
 const MappingDetails = lazy(
-  () => import("../../client-scopes/details/MappingDetails")
+  () => import("../../client-scopes/details/MappingDetails"),
 );
 
 export const MapperRoute: AppRouteObject = {

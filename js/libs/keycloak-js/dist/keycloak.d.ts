@@ -195,6 +195,12 @@ export interface KeycloakInitOptions {
 	 * @default 10000
 	 */
 	messageReceiveTimeout?: number
+
+	/**
+	 * When onLoad is 'login-required', sets the 'ui_locales' query param in compliance with section 3.1.2.1
+	 * of the OIDC 1.0 specification.
+	 */
+	locale?: string;
 }
 
 export interface KeycloakLoginOptions {
@@ -331,11 +337,6 @@ export interface KeycloakRoles {
  * @deprecated Instead of importing 'KeycloakInstance' you can import 'Keycloak' directly as a type.
  */
 export type KeycloakInstance = Keycloak;
-
-/**
- * @deprecated Construct a Keycloak instance using the `new` keyword instead.
- */
-declare function Keycloak(config?: KeycloakConfig | string): Keycloak;
 
 /**
  * A client for the Keycloak authentication server.

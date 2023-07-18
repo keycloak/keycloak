@@ -11,7 +11,7 @@ Contributing to Keycloak Documentation
 
 See our [Contributor's Guide](internal_resources/contributing.adoc). The directory also includes a set of templates and other resources to help you get started.
 
-If you want to file a bug report or tell us about any other issue with this documentation, you are invited to please use our [issue tracker](https://issues.redhat.com/projects/KEYCLOAK/).
+If you want to file a bug report or tell us about any other issue with this documentation, you are invited to please use our [issue tracker](https://github.com/keycloak/keycloak/issues/).
 
 
 Building Keycloak Documentation
@@ -34,13 +34,13 @@ To build Keycloak Documentation run:
 
 Or to build a specific guide run:
 
-    mvn clean install -pl doc/documentation/GUIDE_DIR -Pdocumentation
+    mvn clean install -pl docs/documentation/GUIDE_DIR -Pdocumentation
     
 By default, an archive version of the documentation is built. To build the latest build run:
 
     mvn clean install ... -Platest,documentation
 
-You can then view the documentation by opening `doc/documentation/GUIDE_DIR/target/generated-docs/index.html`.
+You can then view the documentation by opening `docs/documentation/GUIDE_DIR/target/generated-docs/index.html`.
 
 
 License

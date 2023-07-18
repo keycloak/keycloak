@@ -1,10 +1,10 @@
 import { PropsWithChildren, useEffect, useMemo } from "react";
 import { useMatch } from "react-router-dom";
+import { createNamedContext, useRequiredContext } from "ui-shared";
 
+import { adminClient } from "../../admin-client";
 import { DashboardRouteWithRealm } from "../../dashboard/routes/Dashboard";
 import environment from "../../environment";
-import { createNamedContext, useRequiredContext } from "ui-shared";
-import { useAdminClient } from "../auth/AdminClient";
 
 type RealmContextType = {
   realm: string;
@@ -12,11 +12,10 @@ type RealmContextType = {
 
 export const RealmContext = createNamedContext<RealmContextType | undefined>(
   "RealmContext",
-  undefined
+  undefined,
 );
 
 export const RealmContextProvider = ({ children }: PropsWithChildren) => {
-  const { adminClient } = useAdminClient();
   const routeMatch = useMatch({
     path: DashboardRouteWithRealm.path,
     end: false,
@@ -25,7 +24,7 @@ export const RealmContextProvider = ({ children }: PropsWithChildren) => {
   const realmParam = routeMatch?.params.realm;
   const realm = useMemo(
     () => realmParam ?? environment.loginRealm,
-    [realmParam]
+    [realmParam],
   );
 
   // Configure admin client to use selected realm when it changes.

@@ -45,4 +45,5 @@ public class JpaUserConsentMetadata extends MapUserConsentEntityImpl implements 
     public void setEntityVersion(Integer entityVersion) {
         this.entityVersion = entityVersion;
     }
+
 }

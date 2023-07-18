@@ -15,12 +15,12 @@ import {
 import { useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-
-import { useAlerts } from "../../components/alert/Alerts";
-import { FormAccess } from "../../components/form-access/FormAccess";
 import { HelpItem } from "ui-shared";
+
+import { adminClient } from "../../admin-client";
+import { useAlerts } from "../../components/alert/Alerts";
+import { FormAccess } from "../../components/form/FormAccess";
 import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
-import { useAdminClient } from "../../context/auth/AdminClient";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { convertFormValuesToObject, convertToFormValues } from "../../util";
 
@@ -49,7 +49,6 @@ export const CibaPolicy = ({ realm, realmUpdated }: CibaPolicyProps) => {
     setValue,
     formState: { errors, isValid, isDirty },
   } = useForm<FormFields>({ mode: "onChange" });
-  const { adminClient } = useAdminClient();
   const { realm: realmName } = useRealm();
   const { addAlert, addError } = useAlerts();
   const [
@@ -68,7 +67,7 @@ export const CibaPolicy = ({ realm, realmUpdated }: CibaPolicyProps) => {
     try {
       await adminClient.realms.update(
         { realm: realmName },
-        convertFormValuesToObject(formValues)
+        convertFormValuesToObject(formValues),
       );
 
       const updatedRealm = await adminClient.realms.findOne({
@@ -96,7 +95,7 @@ export const CibaPolicy = ({ realm, realmUpdated }: CibaPolicyProps) => {
           labelIcon={
             <HelpItem
               helpText={t(
-                "authentication-help:cibaBackchannelTokenDeliveryMode"
+                "authentication-help:cibaBackchannelTokenDeliveryMode",
               )}
               fieldLabelId="authentication:cibaBackchannelTokenDeliveryMode"
             />

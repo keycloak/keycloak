@@ -1,17 +1,18 @@
+import type ComponentRepresentation from "@keycloak/keycloak-admin-client/lib/defs/componentRepresentation";
+import { Tab, TabTitleText } from "@patternfly/react-core";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Tab, TabTitleText } from "@patternfly/react-core";
 
-import type ComponentRepresentation from "@keycloak/keycloak-admin-client/lib/defs/componentRepresentation";
-import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
-import { useRealm } from "../../context/realm-context/RealmContext";
-import { KEY_PROVIDER_TYPE } from "../../util";
+import { adminClient } from "../../admin-client";
+import { KeycloakSpinner } from "../../components/keycloak-spinner/KeycloakSpinner";
 import {
   RoutableTabs,
   useRoutableTab,
 } from "../../components/routable-tabs/RoutableTabs";
+import { useRealm } from "../../context/realm-context/RealmContext";
+import { KEY_PROVIDER_TYPE } from "../../util";
+import { useFetch } from "../../utils/useFetch";
 import { KeySubTab, toKeysTab } from "../routes/KeysTab";
-import { KeycloakSpinner } from "../../components/keycloak-spinner/KeycloakSpinner";
 import { KeysListTab } from "./KeysListTab";
 import { KeysProvidersTab } from "./KeysProvidersTab";
 
@@ -31,7 +32,6 @@ const sortByPriority = (components: ComponentRepresentation[]) => {
 export const KeysTab = () => {
   const { t } = useTranslation("realm-settings");
 
-  const { adminClient } = useAdminClient();
   const { realm: realmName } = useRealm();
 
   const [realmComponents, setRealmComponents] =
@@ -48,7 +48,7 @@ export const KeysTab = () => {
         realm: realmName,
       }),
     (components) => setRealmComponents(sortByPriority(components)),
-    [key]
+    [key],
   );
 
   const useTab = (tab: KeySubTab) =>

@@ -17,7 +17,7 @@ export const NewClientScopeRoute: AppRouteObject = {
 };
 
 export const toNewClientScope = (
-  params: NewClientScopeParams
+  params: NewClientScopeParams,
 ): Partial<Path> => ({
   pathname: generatePath(NewClientScopeRoute.path, params),
 });

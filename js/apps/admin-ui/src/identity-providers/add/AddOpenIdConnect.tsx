@@ -9,10 +9,10 @@ import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 
+import { adminClient } from "../../admin-client";
 import { useAlerts } from "../../components/alert/Alerts";
-import { FormAccess } from "../../components/form-access/FormAccess";
+import { FormAccess } from "../../components/form/FormAccess";
 import { ViewHeader } from "../../components/view-header/ViewHeader";
-import { useAdminClient } from "../../context/auth/AdminClient";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { toIdentityProvider } from "../routes/IdentityProvider";
 import { toIdentityProviders } from "../routes/IdentityProviders";
@@ -39,7 +39,6 @@ export default function AddOpenIdConnect() {
     formState: { isDirty },
   } = form;
 
-  const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
   const { realm } = useRealm();
 
@@ -57,7 +56,7 @@ export default function AddOpenIdConnect() {
           providerId: id,
           alias: provider.alias!,
           tab: "settings",
-        })
+        }),
       );
     } catch (error) {
       addError("identity-providers:createError", error);
@@ -68,7 +67,7 @@ export default function AddOpenIdConnect() {
     <>
       <ViewHeader
         titleKey={t(
-          isKeycloak ? "addKeycloakOpenIdProvider" : "addOpenIdProvider"
+          isKeycloak ? "addKeycloakOpenIdProvider" : "addOpenIdProvider",
         )}
       />
       <PageSection variant="light">

@@ -23,7 +23,7 @@ const createRealm = async (kcAdminClient: KeycloakAdminClient) => {
 
 const deleteRealm = async (
   kcAdminClient: KeycloakAdminClient,
-  currentRealmName: string
+  currentRealmName: string,
 ) => {
   await kcAdminClient.realms.del({ realm: currentRealmName });
   const realm = await kcAdminClient.realms.findOne({
@@ -114,7 +114,7 @@ describe("Realms", () => {
       { realm: currentRealmName },
       {
         displayName: "test",
-      }
+      },
     );
     const realm = await kcAdminClient.realms.findOne({
       realm: currentRealmName,
@@ -153,7 +153,7 @@ describe("Realms", () => {
 
       await kcAdminClient.realms.createClientsInitialAccess(
         { realm: currentRealmName },
-        { count: 1, expiration: 0 }
+        { count: 1, expiration: 0 },
       );
     });
 
@@ -172,14 +172,14 @@ describe("Realms", () => {
     it("del client initial access", async () => {
       const access = await kcAdminClient.realms.createClientsInitialAccess(
         { realm: currentRealmName },
-        { count: 1, expiration: 0 }
+        { count: 1, expiration: 0 },
       );
       expect(
         (
           await kcAdminClient.realms.getClientsInitialAccess({
             realm: currentRealmName,
           })
-        ).length
+        ).length,
       ).to.be.eq(2);
 
       await kcAdminClient.realms.delClientsInitialAccess({
@@ -280,7 +280,7 @@ describe("Realms", () => {
       config.eventsEnabled = true;
       await kcAdminClient.realms.updateConfigEvents(
         { realm: currentRealmName },
-        config
+        config,
       );
 
       const newConfig = await kcAdminClient.realms.getConfigEvents({
@@ -413,8 +413,8 @@ describe("Realms", () => {
             connectionTimeout: "",
             connectionUrl: "1",
             startTls: "",
-            useTruststoreSpi: "ldapsOnly",
-          }
+            useTruststoreSpi: "always",
+          },
         );
         fail("exception should have been thrown");
       } catch (error) {
@@ -435,7 +435,7 @@ describe("Realms", () => {
             from: "cdd1641ff4-1781a4@inbox.mailtrap.io",
             host: "localhost",
             port: 3025,
-          }
+          },
         );
         fail("exception should have been thrown");
       } catch (error) {
@@ -455,8 +455,8 @@ describe("Realms", () => {
             connectionTimeout: "",
             connectionUrl: "1",
             startTls: "",
-            useTruststoreSpi: "ldapsOnly",
-          }
+            useTruststoreSpi: "always",
+          },
         );
         fail("exception should have been thrown");
       } catch (error) {
@@ -478,7 +478,7 @@ describe("Realms", () => {
     it.skip("should add localization", async () => {
       await kcAdminClient.realms.addLocalization(
         { realm: currentRealmName, selectedLocale: "nl", key: "theKey" },
-        "value"
+        "value",
       );
     });
 

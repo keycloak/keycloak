@@ -62,6 +62,8 @@ public class Messages {
 
     public static final String MISSING_TOTP = "missingTotpMessage";
 
+    public static final String RESET_OTP_MISSING_ID_ERROR = "error-reset-otp-missing-id";
+
     public static final String MISSING_TOTP_DEVICE_NAME = "missingTotpDeviceNameMessage";
 
     public static final String COOKIE_NOT_FOUND = "cookieNotFoundMessage";
@@ -178,6 +180,8 @@ public class Messages {
     public static final String STALE_VERIFY_EMAIL_LINK = "staleEmailVerificationLink";
 
     public static final String IDENTITY_PROVIDER_UNEXPECTED_ERROR = "identityProviderUnexpectedErrorMessage";
+    
+    public static final String IDENTITY_PROVIDER_UNMATCHED_ESSENTIAL_CLAIM_ERROR = "federatedIdentityUnmatchedEssentialClaimMessage";
 
     public static final String IDENTITY_PROVIDER_MISSING_STATE_ERROR = "identityProviderMissingStateMessage";
 

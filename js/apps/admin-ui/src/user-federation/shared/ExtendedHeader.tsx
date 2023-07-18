@@ -1,16 +1,16 @@
-import { useParams } from "react-router-dom";
-import { useTranslation } from "react-i18next";
 import {
   AlertVariant,
   DropdownItem,
   DropdownSeparator,
 } from "@patternfly/react-core";
+import { useFormContext, useWatch } from "react-hook-form";
+import { useTranslation } from "react-i18next";
+import { useParams } from "react-router-dom";
 
+import { adminClient } from "../../admin-client";
 import { useAlerts } from "../../components/alert/Alerts";
 import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
-import { useAdminClient } from "../../context/auth/AdminClient";
 import { Header } from "./Header";
-import { useFormContext, useWatch } from "react-hook-form";
 
 type ExtendedHeaderProps = {
   provider: string;
@@ -27,7 +27,6 @@ export const ExtendedHeader = ({
 }: ExtendedHeaderProps) => {
   const { t } = useTranslation("user-federation");
   const { id } = useParams<{ id: string }>();
-  const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
 
   const { control } = useFormContext();
@@ -82,7 +81,7 @@ export const ExtendedHeader = ({
           addAlert(
             t("syncUsersSuccess") +
               `${response.added} users added, ${response.updated} users updated, ${response.removed} users removed, ${response.failed} users failed.`,
-            AlertVariant.success
+            AlertVariant.success,
           );
         }
       }
@@ -104,7 +103,7 @@ export const ExtendedHeader = ({
           addAlert(
             t("syncUsersSuccess") +
               `${response.added} users added, ${response.updated} users updated, ${response.removed} users removed, ${response.failed} users failed.`,
-            AlertVariant.success
+            AlertVariant.success,
           );
         }
       }

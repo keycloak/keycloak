@@ -1,3 +1,4 @@
+import type GroupRepresentation from "@keycloak/keycloak-admin-client/lib/defs/groupRepresentation";
 import {
   AlertVariant,
   Button,
@@ -8,17 +9,16 @@ import {
   ModalVariant,
   ValidatedOptions,
 } from "@patternfly/react-core";
-import { useTranslation } from "react-i18next";
 import { useForm } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 
-import type GroupRepresentation from "@keycloak/keycloak-admin-client/lib/defs/groupRepresentation";
-import { useAdminClient } from "../context/auth/AdminClient";
+import { adminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
 import { KeycloakTextInput } from "../components/keycloak-text-input/KeycloakTextInput";
 
 type GroupsModalProps = {
   id?: string;
-  rename?: string;
+  rename?: GroupRepresentation;
   handleModalToggle: () => void;
   refresh: (group?: GroupRepresentation) => void;
 };
@@ -30,14 +30,13 @@ export const GroupsModal = ({
   refresh,
 }: GroupsModalProps) => {
   const { t } = useTranslation("groups");
-  const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
   const {
     register,
     handleSubmit,
     formState: { errors },
   } = useForm({
-    defaultValues: { name: rename },
+    defaultValues: { name: rename?.name },
   });
 
   const submitForm = async (group: GroupRepresentation) => {
@@ -47,16 +46,21 @@ export const GroupsModal = ({
       if (!id) {
         await adminClient.groups.create(group);
       } else if (rename) {
-        await adminClient.groups.update({ id }, group);
+        await adminClient.groups.update(
+          { id },
+          { ...rename, name: group.name },
+        );
       } else {
-        await adminClient.groups.setOrCreateChild({ id }, group);
+        await (group.id
+          ? adminClient.groups.updateChildGroup({ id }, group)
+          : adminClient.groups.createChildGroup({ id }, group));
       }
 
-      refresh(rename ? group : undefined);
+      refresh(rename ? { ...rename, name: group.name } : undefined);
       handleModalToggle();
       addAlert(
         t(rename ? "groupUpdated" : "groupCreated"),
-        AlertVariant.success
+        AlertVariant.success,
       );
     } catch (error) {
       addError("groups:couldNotCreateGroup", error);

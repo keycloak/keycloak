@@ -45,4 +45,5 @@ public class JpaSingleUseObjectMetadata extends MapSingleUseObjectEntityImpl imp
     public void setEntityVersion(Integer entityVersion) {
         this.entityVersion = entityVersion;
     }
+
 }

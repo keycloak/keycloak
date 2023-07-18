@@ -1,18 +1,17 @@
-import { useTranslation } from "react-i18next";
 import { ClipboardCopy, FormGroup } from "@patternfly/react-core";
-
+import { useTranslation } from "react-i18next";
 import { HelpItem } from "ui-shared";
+
+import { adminClient } from "../../admin-client";
 import { useRealm } from "../../context/realm-context/RealmContext";
-import { useAdminClient } from "../../context/auth/AdminClient";
 import { addTrailingSlash } from "../../util";
 
 export const RedirectUrl = ({ id }: { id: string }) => {
   const { t } = useTranslation("identity-providers");
 
-  const { adminClient } = useAdminClient();
   const { realm } = useRealm();
   const callbackUrl = `${addTrailingSlash(
-    adminClient.baseUrl
+    adminClient.baseUrl,
   )}realms/${realm}/broker`;
 
   return (

@@ -1,6 +1,4 @@
-import type KeycloakAdminClient from "@keycloak/keycloak-admin-client";
 import { Page } from "@patternfly/react-core";
-import type Keycloak from "keycloak-js";
 import { PropsWithChildren, Suspense } from "react";
 import { ErrorBoundary } from "react-error-boundary";
 import { Outlet } from "react-router-dom";
@@ -15,7 +13,6 @@ import { KeycloakSpinner } from "./components/keycloak-spinner/KeycloakSpinner";
 import { RealmsProvider } from "./context/RealmsContext";
 import { RecentRealmsProvider } from "./context/RecentRealms";
 import { AccessContextProvider } from "./context/access/Access";
-import { AdminClientContext } from "./context/auth/AdminClient";
 import { RealmContextProvider } from "./context/realm-context/RealmContext";
 import { ServerInfoProvider } from "./context/server-info/ServerInfoProvider";
 import { WhoAmIContextProvider } from "./context/whoami/WhoAmI";
@@ -24,38 +21,27 @@ import { AuthWall } from "./root/AuthWall";
 
 export const mainPageContentId = "kc-main-content-page-container";
 
-export type AdminClientProps = {
-  keycloak: Keycloak;
-  adminClient: KeycloakAdminClient;
-};
-
-const AppContexts = ({
-  children,
-  keycloak,
-  adminClient,
-}: PropsWithChildren<AdminClientProps>) => (
-  <AdminClientContext.Provider value={{ keycloak, adminClient }}>
-    <WhoAmIContextProvider>
-      <RealmsProvider>
-        <RealmContextProvider>
-          <RecentRealmsProvider>
-            <AccessContextProvider>
-              <Help>
-                <AlertProvider>
-                  <SubGroups>{children}</SubGroups>
-                </AlertProvider>
-              </Help>
-            </AccessContextProvider>
-          </RecentRealmsProvider>
-        </RealmContextProvider>
-      </RealmsProvider>
-    </WhoAmIContextProvider>
-  </AdminClientContext.Provider>
+const AppContexts = ({ children }: PropsWithChildren) => (
+  <WhoAmIContextProvider>
+    <RealmsProvider>
+      <RealmContextProvider>
+        <RecentRealmsProvider>
+          <AccessContextProvider>
+            <Help>
+              <AlertProvider>
+                <SubGroups>{children}</SubGroups>
+              </AlertProvider>
+            </Help>
+          </AccessContextProvider>
+        </RecentRealmsProvider>
+      </RealmContextProvider>
+    </RealmsProvider>
+  </WhoAmIContextProvider>
 );
 
-export const App = ({ keycloak, adminClient }: AdminClientProps) => {
+export const App = () => {
   return (
-    <AppContexts keycloak={keycloak} adminClient={adminClient}>
+    <AppContexts>
       <Page
         header={<Header />}
         isManagedSidebar

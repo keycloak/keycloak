@@ -38,6 +38,14 @@ This parameter is *optional*. A string representing a set of one or more resourc
 in order to request permission for multiple resource and scopes. This parameter is an extension to `urn:ietf:params:oauth:grant-type:uma-ticket` grant type in order to allow clients to send authorization requests without a
 permission ticket. The format of the string must be: `RESOURCE_ID#SCOPE_ID`. For instance: `Resource A#Scope A`, `Resource A#Scope A, Scope B, Scope C`, `Resource A`, `#Scope A`.
 +
+* **permission_resource_format**
++
+This parameter is *optional*. A string representing a format indicating the resource in the `permission` parameter. Possible values are `id` and `uri`. `id` indicates the format is `RESOURCE_ID`. `uri` indicates the format is `URI`. If not specified, the default is `id`.
++
+* **permission_resource_matching_uri**
++
+This parameter is *optional*. A boolean value that indicates whether to use path matching when representing resources in URI format in the `permission` parameter. If not specified, the default is false.
++
 * **audience**
 +
 This parameter is *optional*. The client identifier of the resource server to which the client is seeking access. This parameter is mandatory

@@ -61,7 +61,7 @@ should be replaced with the `CLIENT_ID` searchable field used with the operators
 = FIPS 140-2 preview support
 
 FIPS 140-2 support in Keycloak, which was experimental in the previous release, is now promoted to preview. There were many fixes and improvements to create this preview version.
-For the details, see the https://www.keycloak.org/guides#server[FIPS documentation]. Feedback is welcome!
+For the details, see the https://www.keycloak.org/server/fips[FIPS documentation]. Feedback is welcome!
 
 Thanks again to https://github.com/david-rh[David Anderson], https://github.com/sudeepd[Sudeep Das] and https://github.com/isaacjensen[Isaac Jensen]
 for their huge help with this feature.
@@ -72,7 +72,7 @@ In addition to recognize the non-standard `X-Forwarded-*` to fetch information
 added by proxies that would otherwise be altered or lost when proxy servers are involved in the path of the request, Keycloak
 can now leverage the standard `Forwarded` header for the same purpose.
 
-For more details, see the https://www.keycloak.org/server/reverseproxy[Using a reverse proxy] guide.
+For more details, see the https://www.keycloak.org/server/reverseproxy[Using a reverse proxy] {section}.
 
 Please, make sure your proxy is also overriding the `Forwarded` header when making requests to Keycloak nodes.
 
@@ -82,7 +82,7 @@ To enhance security, the https://quay.io/repository/keycloak/keycloak?tab=info[K
 
 The change to UBI9 will not have any impact on most users. In rare cases the glibc error https://github.com/keycloak/keycloak/issues/17290[CPU does not support x86-64-v2] may appear. `+x86-64-v2+` has been available from processors since 2009. You're most likely to encounter this issue when your virtualization environment is misconfigured.
 
-The change from `+-minimal+` to `+-micro+` has more potential impact. Users making simple customizations to the image won't notice any difference, however any user that installs RPMs will need to change how they do that. The https://www.keycloak.org/server/containers[container guide] has been updated to show you how.
+The change from `+-minimal+` to `+-micro+` has more potential impact. Users making simple customizations to the image won't notice any difference, however any user that installs RPMs will need to change how they do that. The https://www.keycloak.org/server/containers[Running Keycloak in a container] {section} has been updated to show you how.
 
 As a result of these changes, there has been an 82% reduction in known CVEs affecting the Keycloak Container Image!
 

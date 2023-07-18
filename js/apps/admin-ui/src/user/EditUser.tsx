@@ -1,3 +1,4 @@
+import RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
 import type UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
 import {
   AlertVariant,
@@ -11,7 +12,7 @@ import { useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
-
+import { adminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import { KeycloakSpinner } from "../components/keycloak-spinner/KeycloakSpinner";
@@ -21,9 +22,10 @@ import {
 } from "../components/routable-tabs/RoutableTabs";
 import { ViewHeader } from "../components/view-header/ViewHeader";
 import { useAccess } from "../context/access/Access";
-import { useAdminClient, useFetch } from "../context/auth/AdminClient";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { UserProfileProvider } from "../realm-settings/user-profile/UserProfileContext";
+import { useFetch } from "../utils/useFetch";
+import useIsFeatureEnabled, { Feature } from "../utils/useIsFeatureEnabled";
 import { useParams } from "../utils/useParams";
 import { useUpdateEffect } from "../utils/useUpdateEffect";
 import { UserAttributes } from "./UserAttributes";
@@ -44,7 +46,6 @@ import { toUsers } from "./routes/Users";
 import "./user-section.css";
 
 export default function EditUser() {
-  const { adminClient } = useAdminClient();
   const { realm } = useRealm();
   const { id } = useParams<UserParams>();
   const { t } = useTranslation("users");
@@ -74,7 +75,7 @@ export default function EditUser() {
       setUser(user);
       setBruteForced(bruteForced);
     },
-    [refreshCount]
+    [refreshCount],
   );
 
   if (!user || !bruteForced) {
@@ -95,7 +96,6 @@ type EditUserFormProps = {
 const EditUserForm = ({ user, bruteForced, refresh }: EditUserFormProps) => {
   const { t } = useTranslation("users");
   const { realm } = useRealm();
-  const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
   const navigate = useNavigate();
   const { hasAccess } = useAccess();
@@ -103,6 +103,25 @@ const EditUserForm = ({ user, bruteForced, refresh }: EditUserFormProps) => {
     mode: "onChange",
     defaultValues: user,
   });
+
+  const [realmRepresentation, setRealmRepresentattion] =
+    useState<RealmRepresentation>();
+
+  useFetch(
+    () => adminClient.realms.findOne({ realm }),
+    (realm) => {
+      if (!realm) {
+        throw new Error(t("common:notFound"));
+      }
+      setRealmRepresentattion(realm);
+    },
+    [],
+  );
+
+  const isFeatureEnabled = useIsFeatureEnabled();
+  const isUserProfileEnabled =
+    isFeatureEnabled(Feature.DeclarativeUserProfile) &&
+    realmRepresentation?.attributes?.userProfileEnabled === "true";
 
   const toTab = (tab: UserTab) =>
     toUser({
@@ -133,7 +152,7 @@ const EditUserForm = ({ user, bruteForced, refresh }: EditUserFormProps) => {
           ...formUser,
           username: formUser.username?.trim(),
           attributes: { ...user.attributes, ...formUser.attributes },
-        }
+        },
       );
       addAlert(t("userSaved"), AlertVariant.success);
       refresh();
@@ -170,7 +189,7 @@ const EditUserForm = ({ user, bruteForced, refresh }: EditUserFormProps) => {
       try {
         const data = await adminClient.users.impersonation(
           { id: user.id! },
-          { user: user.id!, realm }
+          { user: user.id!, realm },
         );
         if (data.sameRealm) {
           window.location = data.redirect;
@@ -225,16 +244,23 @@ const EditUserForm = ({ user, bruteForced, refresh }: EditUserFormProps) => {
                 {...settingsTab}
               >
                 <PageSection variant="light">
-                  <UserForm save={save} user={user} bruteForce={bruteForced} />
+                  <UserForm
+                    save={save}
+                    user={user}
+                    bruteForce={bruteForced}
+                    realm={realmRepresentation}
+                  />
                 </PageSection>
               </Tab>
-              <Tab
-                data-testid="attributes"
-                title={<TabTitleText>{t("common:attributes")}</TabTitleText>}
-                {...attributesTab}
-              >
-                <UserAttributes user={user} />
-              </Tab>
+              {!isUserProfileEnabled && (
+                <Tab
+                  data-testid="attributes"
+                  title={<TabTitleText>{t("common:attributes")}</TabTitleText>}
+                  {...attributesTab}
+                >
+                  <UserAttributes user={user} />
+                </Tab>
+              )}
               <Tab
                 data-testid="credentials"
                 isHidden={!user.access?.view}

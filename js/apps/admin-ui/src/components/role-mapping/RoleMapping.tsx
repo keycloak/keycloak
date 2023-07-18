@@ -1,5 +1,6 @@
-import { useState } from "react";
-import { useTranslation } from "react-i18next";
+import type KeycloakAdminClient from "@keycloak/keycloak-admin-client";
+import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
+import type RoleRepresentation from "@keycloak/keycloak-admin-client/lib/defs/roleRepresentation";
 import {
   AlertVariant,
   Badge,
@@ -9,17 +10,15 @@ import {
   ToolbarItem,
 } from "@patternfly/react-core";
 import { cellWidth } from "@patternfly/react-table";
+import { useState } from "react";
+import { useTranslation } from "react-i18next";
 
-import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
-import type RoleRepresentation from "@keycloak/keycloak-admin-client/lib/defs/roleRepresentation";
-import type KeycloakAdminClient from "@keycloak/keycloak-admin-client";
-import { AddRoleMappingModal } from "./AddRoleMappingModal";
-import { Action, KeycloakDataTable } from "../table-toolbar/KeycloakDataTable";
 import { emptyFormatter, upperCaseFormatter } from "../../util";
 import { useAlerts } from "../alert/Alerts";
 import { useConfirmDialog } from "../confirm-dialog/ConfirmDialog";
-import { useAdminClient } from "../../context/auth/AdminClient";
 import { ListEmptyState } from "../list-empty-state/ListEmptyState";
+import { Action, KeycloakDataTable } from "../table-toolbar/KeycloakDataTable";
+import { AddRoleMappingModal } from "./AddRoleMappingModal";
 import { deleteMapping, getEffectiveRoles, getMapping } from "./queries";
 import { getEffectiveClientRoles } from "./resource";
 
@@ -39,7 +38,7 @@ export type Row = {
 export const mapRoles = (
   assignedRoles: Row[],
   effectiveRoles: Row[],
-  hide: boolean
+  hide: boolean,
 ) => [
   ...(hide
     ? assignedRoles.map((row) => ({
@@ -88,7 +87,6 @@ export const RoleMapping = ({
   save,
 }: RoleMappingProps) => {
   const { t } = useTranslation(type);
-  const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
 
   const [key, setKey] = useState(0);
@@ -107,11 +105,10 @@ export const RoleMapping = ({
     let effectiveRoles: Row[] = [];
     let effectiveClientRoles: Row[] = [];
     if (!hide) {
-      effectiveRoles = await getEffectiveRoles(adminClient, type, id);
+      effectiveRoles = await getEffectiveRoles(type, id);
 
       effectiveClientRoles = (
         await getEffectiveClientRoles({
-          adminClient,
           type,
           id,
         })
@@ -121,7 +118,7 @@ export const RoleMapping = ({
       }));
     }
 
-    const roles = await getMapping(adminClient, type, id);
+    const roles = await getMapping(type, id);
     const realmRolesMapping =
       roles.realmMappings?.map((role) => ({ role })) || [];
     const clientMapping = Object.values(roles.clientMappings || {})
@@ -129,7 +126,7 @@ export const RoleMapping = ({
         client.mappings.map((role: RoleRepresentation) => ({
           client: { clientId: client.client, ...client },
           role,
-        }))
+        })),
       )
       .flat();
 
@@ -137,7 +134,7 @@ export const RoleMapping = ({
       ...mapRoles(
         [...realmRolesMapping, ...clientMapping],
         [...effectiveClientRoles, ...effectiveRoles],
-        hide
+        hide,
       ),
     ];
   };
@@ -149,7 +146,7 @@ export const RoleMapping = ({
     continueButtonVariant: ButtonVariant.danger,
     onConfirm: async () => {
       try {
-        await Promise.all(deleteMapping(adminClient, type, id, selected));
+        await Promise.all(deleteMapping(type, id, selected));
         addAlert(t("clients:clientScopeRemoveSuccess"), AlertVariant.success);
         refresh();
       } catch (error) {

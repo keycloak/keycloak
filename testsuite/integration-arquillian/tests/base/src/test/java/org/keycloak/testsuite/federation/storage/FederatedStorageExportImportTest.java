@@ -40,7 +40,7 @@ import org.keycloak.storage.UserStorageUtil;
 import org.keycloak.testsuite.AbstractAuthTest;
 
 import java.io.Closeable;
-import javax.ws.rs.NotFoundException;
+import jakarta.ws.rs.NotFoundException;
 import java.io.File;
 import java.util.LinkedList;
 import java.util.List;

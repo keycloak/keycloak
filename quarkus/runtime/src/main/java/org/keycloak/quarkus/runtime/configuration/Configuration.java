@@ -21,7 +21,7 @@ import static org.keycloak.quarkus.runtime.Environment.getProfileOrDefault;
 import static org.keycloak.quarkus.runtime.cli.Picocli.ARG_PREFIX;
 
 import java.util.Optional;
-import java.util.function.Function;
+import java.util.Properties;
 
 import io.smallrye.config.ConfigValue;
 import io.smallrye.config.SmallRyeConfig;
@@ -32,6 +32,8 @@ import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
 
+import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX;
+
 /**
  * The entry point for accessing the server configuration
  */
@@ -39,6 +41,7 @@ public final class Configuration {
 
     public static final char OPTION_PART_SEPARATOR_CHAR = '-';
     public static final String OPTION_PART_SEPARATOR = String.valueOf(OPTION_PART_SEPARATOR_CHAR);
+    private static final String KC_OPTIMIZED = NS_KEYCLOAK_PREFIX + "optimized";
 
     private Configuration() {
 
@@ -77,6 +80,14 @@ public final class Configuration {
     }
 
     public static Iterable<String> getPropertyNames() {
+        return getPropertyNames(false);
+    }
+
+    public static Iterable<String> getPropertyNames(boolean onlyPersisted) {
+        if (onlyPersisted) {
+            return PersistedConfigSource.getInstance().getPropertyNames();
+        }
+
         return getConfig().getPropertyNames();
     }
 
@@ -84,17 +95,20 @@ public final class Configuration {
         return getConfig().getConfigValue(propertyName);
     }
 
+    public static ConfigValue getKcConfigValue(String propertyName) {
+        return getConfigValue(NS_KEYCLOAK_PREFIX.concat(propertyName));
+    }
+
     public static Optional<String> getOptionalValue(String name) {
         return getConfig().getOptionalValue(name, String.class);
     }
 
+    public static Optional<String> getOptionalKcValue(String propertyName) {
+        return getOptionalValue(NS_KEYCLOAK_PREFIX.concat(propertyName));
+    }
+
     public static Optional<Boolean> getOptionalBooleanValue(String name) {
-        return getConfig().getOptionalValue(name, String.class).map(new Function<String, Boolean>() {
-            @Override
-            public Boolean apply(String s) {
-                return Boolean.parseBoolean(s);
-            }
-        });
+        return getOptionalValue(name).map(Boolean::parseBoolean);
     }
 
     public static String getMappedPropertyName(String key) {
@@ -179,5 +193,24 @@ public final class Configuration {
         }
 
         return value;
+    }
+
+    public static boolean isOptimized() {
+        return Configuration.getRawPersistedProperty(KC_OPTIMIZED).isPresent();
+    }
+
+    public static void markAsOptimized(Properties properties) {
+        properties.put(Configuration.KC_OPTIMIZED, Boolean.TRUE.toString());
+    }
+
+    public static ConfigValue getCurrentBuiltTimeProperty(String name) {
+        PersistedConfigSource persistedConfigSource = PersistedConfigSource.getInstance();
+
+        try {
+            persistedConfigSource.enable(false);
+            return getConfigValue(name);
+        } finally {
+            persistedConfigSource.enable(true);
+        }
     }
 }

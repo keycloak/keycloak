@@ -2,9 +2,9 @@
 #
 # To test a pattern run '.github/actions/conditional/conditional.sh <remote name> <branch>'
 
-.github/actions/                            ci operator js codeql-java codeql-themes guides documentation
+.github/actions/                            ci operator js codeql-java codeql-themes guides documentation sssd
 
-.github/workflows/ci.yml                    ci
+.github/workflows/ci.yml                    ci sssd
 .github/workflows/operator-ci.yml           operator
 .github/workflows/js-ci.yml                 js
 .github/workflows/codeql-analysis.yml       codeql-java codeql-themes
@@ -14,6 +14,7 @@
 */src/main/                                 ci operator
 */src/test/                                 ci operator
 pom.xml                                     ci operator
+federation/sssd/                            ci sssd
 
 docs/guides/                                guides
 docs/documentation/                         documentation

@@ -1,22 +1,23 @@
-import { useState } from "react";
-import { useTranslation } from "react-i18next";
-import { useFormContext, Controller } from "react-hook-form";
-import { FormGroup, Button, Checkbox } from "@patternfly/react-core";
+import { Button, Checkbox, FormGroup } from "@patternfly/react-core";
 import { MinusCircleIcon } from "@patternfly/react-icons";
 import {
   TableComposable,
-  Thead,
-  Tr,
-  Th,
   Tbody,
   Td,
+  Th,
+  Thead,
+  Tr,
 } from "@patternfly/react-table";
-
-import { Row, ServiceRole } from "../../../components/role-mapping/RoleMapping";
-import type { RequiredIdValue } from "./ClientScope";
+import { useState } from "react";
+import { Controller, useFormContext } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 import { HelpItem } from "ui-shared";
-import { useAdminClient, useFetch } from "../../../context/auth/AdminClient";
+
+import { adminClient } from "../../../admin-client";
 import { AddRoleMappingModal } from "../../../components/role-mapping/AddRoleMappingModal";
+import { Row, ServiceRole } from "../../../components/role-mapping/RoleMapping";
+import { useFetch } from "../../../utils/useFetch";
+import type { RequiredIdValue } from "./ClientScope";
 
 export const Role = () => {
   const { t } = useTranslation("clients");
@@ -33,13 +34,11 @@ export const Role = () => {
   const [open, setOpen] = useState(false);
   const [selectedRoles, setSelectedRoles] = useState<Row[]>([]);
 
-  const { adminClient } = useAdminClient();
-
   useFetch(
     async () => {
       if (values && values.length > 0) {
         const roles = await Promise.all(
-          values.map((r) => adminClient.roles.findOneById({ id: r.id }))
+          values.map((r) => adminClient.roles.findOneById({ id: r.id })),
         );
         return Promise.all(
           roles.map(async (role) => ({
@@ -49,13 +48,13 @@ export const Role = () => {
                   id: role?.containerId!,
                 })
               : undefined,
-          }))
+          })),
         );
       }
       return Promise.resolve([]);
     },
     setSelectedRoles,
-    []
+    [],
   );
 
   return (
@@ -118,7 +117,7 @@ export const Role = () => {
             <Tr>
               <Th>{t("roles")}</Th>
               <Th>{t("required")}</Th>
-              <Th />
+              <Th aria-hidden="true" />
             </Tr>
           </Thead>
           <Tbody>
@@ -154,7 +153,7 @@ export const Role = () => {
                       ]);
                       setSelectedRoles([
                         ...selectedRoles.filter(
-                          (s) => s.role.id !== row.role.id
+                          (s) => s.role.id !== row.role.id,
                         ),
                       ]);
                     }}

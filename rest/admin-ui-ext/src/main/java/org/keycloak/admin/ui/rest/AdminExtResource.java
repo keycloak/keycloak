@@ -5,7 +5,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.services.resources.admin.AdminEventBuilder;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 
-import javax.ws.rs.Path;
+import jakarta.ws.rs.Path;
 
 public final class AdminExtResource {
     private KeycloakSession session;
@@ -50,4 +50,8 @@ public final class AdminExtResource {
         return new SessionsResource(session, realm, auth);
     }
 
+    @Path("/realms")
+    public RealmResource realms() {
+        return new RealmResource(session);
+    }
 }

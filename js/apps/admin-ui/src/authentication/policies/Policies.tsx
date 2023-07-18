@@ -3,9 +3,10 @@ import { Tab, Tabs, TabTitleText } from "@patternfly/react-core";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
+import { adminClient } from "../../admin-client";
 import { KeycloakSpinner } from "../../components/keycloak-spinner/KeycloakSpinner";
-import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
 import { useRealm } from "../../context/realm-context/RealmContext";
+import { useFetch } from "../../utils/useFetch";
 import { CibaPolicy } from "./CibaPolicy";
 import { OtpPolicy } from "./OtpPolicy";
 import { PasswordPolicy } from "./PasswordPolicy";
@@ -14,7 +15,6 @@ import { WebauthnPolicy } from "./WebauthnPolicy";
 export const Policies = () => {
   const { t } = useTranslation("authentication");
   const [subTab, setSubTab] = useState(1);
-  const { adminClient } = useAdminClient();
   const { realm: realmName } = useRealm();
   const [realm, setRealm] = useState<RealmRepresentation>();
 
@@ -29,7 +29,7 @@ export const Policies = () => {
     (realm) => {
       setRealm(realm);
     },
-    []
+    [],
   );
 
   if (!realm) {

@@ -21,19 +21,9 @@ if (typeof Promise === 'undefined') {
     throw Error('Keycloak requires an environment that supports Promises. Make sure that you include the appropriate polyfill.');
 }
 
-var loggedConstructorDeprecation = false;
-
-function logConstructorDeprecation() {
-    if (!loggedConstructorDeprecation) {
-        loggedConstructorDeprecation = true;
-        console.warn('[KEYCLOAK] Instantiation using the `Keycloak` function has been deprecated and support will be removed in future versions. Use the `new` operator to create an instance instead.');
-    }
-}
-
 function Keycloak (config) {
     if (!(this instanceof Keycloak)) {
-        logConstructorDeprecation();
-        return new Keycloak(config);
+        throw new Error("The 'Keycloak' constructor must be invoked with 'new'.")
     }
 
     var kc = this;
@@ -59,6 +49,12 @@ function Keycloak (config) {
     var logWarn = createLogger(console.warn);
 
     kc.init = function (initOptions) {
+        if (kc.didInitialize) {
+            throw new Error("A 'Keycloak' instance can only be initialized once.");
+        }
+
+        kc.didInitialize = true;
+
         kc.authenticated = false;
 
         callbackStorage = createCallbackStorage();
@@ -186,6 +182,9 @@ function Keycloak (config) {
                     options.prompt = 'none';
                 }
 
+                if (initOptions && initOptions.locale) {
+                    options.locale = initOptions.locale;
+                }
                 kc.login(options).then(function () {
                     initPromise.setSuccess();
                 }).catch(function (error) {
@@ -197,6 +196,7 @@ function Keycloak (config) {
                 var ifrm = document.createElement("iframe");
                 var src = kc.createLoginUrl({prompt: 'none', redirectUri: kc.silentCheckSsoRedirectUri});
                 ifrm.setAttribute("src", src);
+                ifrm.setAttribute("sandbox", "allow-scripts allow-same-origin");
                 ifrm.setAttribute("title", "keycloak-silent-check-sso");
                 ifrm.style.display = "none";
                 document.body.appendChild(ifrm);
@@ -1212,6 +1212,7 @@ function Keycloak (config) {
 
         var src = kc.endpoints.checkSessionIframe();
         iframe.setAttribute('src', src );
+        iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin');
         iframe.setAttribute('title', 'keycloak-session-iframe' );
         iframe.style.display = 'none';
         document.body.appendChild(iframe);
@@ -1284,6 +1285,7 @@ function Keycloak (config) {
         if (loginIframe.enable || kc.silentCheckSsoRedirectUri) {
             var iframe = document.createElement('iframe');
             iframe.setAttribute('src', kc.endpoints.thirdPartyCookiesIframe());
+            iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin');
             iframe.setAttribute('title', 'keycloak-3p-check-iframe' );
             iframe.style.display = 'none';
             document.body.appendChild(iframe);

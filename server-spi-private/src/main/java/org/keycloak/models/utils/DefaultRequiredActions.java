@@ -23,6 +23,7 @@ import org.keycloak.models.RequiredActionProviderModel;
 import org.keycloak.models.UserModel;
 
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
@@ -291,6 +292,13 @@ public class DefaultRequiredActions {
         }
     }
 
+    private static final HashSet<String> REQUIRED_ACTIONS = new HashSet<>();
+    static {
+        for (UserModel.RequiredAction value : UserModel.RequiredAction.values()) {
+            REQUIRED_ACTIONS.add(value.name());
+        }
+    }
+
     /**
      * Checks whether given {@code providerId} case insensitively matches any of {@link UserModel.RequiredAction} enum
      * and if yes, it returns the value in correct form.
@@ -303,10 +311,13 @@ public class DefaultRequiredActions {
      *         of {@link UserModel.RequiredAction}
      */
     public static String getDefaultRequiredActionCaseInsensitively(String providerId) {
-        try {
-            return UserModel.RequiredAction.valueOf(providerId.toUpperCase()).name();
-        } catch (IllegalArgumentException iae) {
-            return providerId;
+        if (providerId == null) {
+            return null;
         }
+        String upperCase = providerId.toUpperCase();
+        if (REQUIRED_ACTIONS.contains(upperCase)) {
+            return upperCase;
+        }
+        return providerId;
     }
 }

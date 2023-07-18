@@ -66,8 +66,9 @@
             <type>pom</type>
         </dependency>
         <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-undertow-adapter</artifactId>
+            <groupId>org.keycloak.testsuite</groupId>
+            <artifactId>keycloak-undertow-adapter-jakarta</artifactId>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>org.keycloak.testsuite</groupId>
@@ -77,6 +78,10 @@
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-servlet-filter-adapter</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>commons-io</groupId>
+            <artifactId>commons-io</artifactId>
         </dependency>
     </dependencies>
 

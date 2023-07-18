@@ -10,16 +10,16 @@ import { useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
+import { HelpItem } from "ui-shared";
 
 import { useAlerts } from "../../components/alert/Alerts";
 import { DynamicComponents } from "../../components/dynamic/DynamicComponents";
-import { FormAccess } from "../../components/form-access/FormAccess";
-import { HelpItem } from "ui-shared";
+import { FormAccess } from "../../components/form/FormAccess";
 import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
-import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
 import { convertFormValuesToObject, convertToFormValues } from "../../util";
+import { useFetch } from "../../utils/useFetch";
 import { useParams } from "../../utils/useParams";
 import type { CustomUserFederationRouteParams } from "../routes/CustomUserFederation";
 import { toUserFederation } from "../routes/UserFederation";
@@ -27,6 +27,7 @@ import { ExtendedHeader } from "../shared/ExtendedHeader";
 import { SettingsCache } from "../shared/SettingsCache";
 import { SyncSettings } from "./SyncSettings";
 
+import { adminClient } from "../../admin-client";
 import "./custom-provider-settings.css";
 
 export default function CustomProviderSettings() {
@@ -44,7 +45,6 @@ export default function CustomProviderSettings() {
     formState: { errors, isDirty },
   } = form;
 
-  const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
   const { realm: realmName } = useRealm();
   const [parentId, setParentId] = useState("");
@@ -69,7 +69,7 @@ export default function CustomProviderSettings() {
         throw new Error(t("common:notFound"));
       }
     },
-    []
+    [],
   );
 
   useFetch(
@@ -78,7 +78,7 @@ export default function CustomProviderSettings() {
         realm: realmName,
       }),
     (realm) => setParentId(realm?.id!),
-    []
+    [],
   );
 
   const save = async (component: ComponentRepresentation) => {
@@ -88,7 +88,7 @@ export default function CustomProviderSettings() {
         Object.entries(component.config || {}).map(([key, value]) => [
           key,
           Array.isArray(value) ? value : [value],
-        ])
+        ]),
       ),
       providerId,
       providerType: "org.keycloak.storage.UserStorageProvider",

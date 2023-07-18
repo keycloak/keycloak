@@ -3,7 +3,7 @@
 
 [WARNING]
 ====
-This functionality depends on APIs bundled in the `keycloak-model-legacy` module.
+This functionality depends on APIs bundled in the `keycloak-model-legacy` and `keycloak-model-legacy-private` modules.
 It will soon be replaced with the new map storage API which provides a uniform way to access both local and external information about users and other entities, and the old APIs will be removed eventually.
 ====
 
@@ -25,10 +25,10 @@ There are two sample projects in link:{quickstartRepo_link}[{quickstartRepo_name
 |===
 |Name |Description
 
-| {quickstartRepo_link}/tree/latest/user-storage-jpa[user-storage-jpa]
+| {quickstartRepo_link}/tree/latest/extension/user-storage-jpa[user-storage-jpa]
 | Demonstrates implementing a user storage provider using EJB and JPA.
 
-| {quickstartRepo_link}/tree/latest/user-storage-simple[user-storage-simple]
+| {quickstartRepo_link}/tree/latest/extension/user-storage-simple[user-storage-simple]
 | Demonstrates implementing a user storage provider using a simple properties file that contains username/password key pairs.
 
 |===

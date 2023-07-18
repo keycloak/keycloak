@@ -18,22 +18,22 @@ import {
   Tooltip,
 } from "@patternfly/react-core";
 import {
-  SyncAltIcon,
-  MobileAltIcon,
   DesktopIcon,
+  MobileAltIcon,
+  SyncAltIcon,
 } from "@patternfly/react-icons";
-import { TFuncKey } from "i18next";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { ContinueCancelModal, useAlerts } from "ui-shared";
 import { deleteSession, getDevices } from "../api/methods";
 import {
+  ClientRepresentation,
   DeviceRepresentation,
   SessionRepresentation,
-  ClientRepresentation,
 } from "../api/representations";
-import { useAlerts, ContinueCancelModal } from "ui-shared";
 import useFormatter from "../components/formatter/format-date";
 import { Page } from "../components/page/Page";
+import { TFuncKey } from "../i18n";
 import { keycloak } from "../keycloak";
 import { usePromise } from "../utils/usePromise";
 
@@ -69,7 +69,7 @@ const DeviceActivity = () => {
 
   const signOutSession = async (
     session: SessionRepresentation,
-    device: DeviceRepresentation
+    device: DeviceRepresentation,
   ) => {
     try {
       await deleteSession(session.id);
@@ -104,7 +104,7 @@ const DeviceActivity = () => {
 
   return (
     <Page
-      title={t("device-activity")}
+      title={t("deviceActivity")}
       description={t("signedInDevicesExplanation")}
     >
       <Split hasGutter className="pf-u-mb-lg">
@@ -122,7 +122,7 @@ const DeviceActivity = () => {
               onClick={() => refresh()}
               icon={<SyncAltIcon />}
             >
-              Refresh
+              {t("refreshPage")}
             </Button>
           </Tooltip>
 
@@ -173,8 +173,8 @@ const DeviceActivity = () => {
                     >
                       {!session.current && (
                         <ContinueCancelModal
-                          buttonTitle={t("doSignOut")}
-                          modalTitle={t("doSignOut")}
+                          buttonTitle={t("signOut")}
+                          modalTitle={t("signOut")}
                           buttonVariant="secondary"
                           modalMessage={t("signOutWarning")}
                           onContinue={() => signOutSession(session, device)}
@@ -233,7 +233,7 @@ const DeviceActivity = () => {
                   </Grid>
                 </DataListContent>
               </DataListItemRow>
-            ))
+            )),
           )}
         </DataListItem>
       </DataList>

@@ -6,7 +6,15 @@
     title="Importing and Exporting Realms"
     summary="An overview about how to import and export realms">
 
-In this guide, you are going to understand the different approaches for importing and exporting realms using JSON files.
+In this {section}, you are going to understand the different approaches for importing and exporting realms using JSON files.
+
+[NOTE]
+====
+Exporting and importing into single files can produce large files, so if your database contains more than 500 users, export to a directory and not a single file.
+Using a directory performs better as the directory provider uses a separate transaction for each "page" (a file of users).
+The default count of users per file and per transaction is fifty.
+Increasing this to a larger number leads to an exponentially increasing execution time.
+====
 
 == Providing options for database connection parameters
 

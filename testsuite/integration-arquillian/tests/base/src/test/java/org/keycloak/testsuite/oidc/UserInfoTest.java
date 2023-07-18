@@ -84,14 +84,14 @@ import org.keycloak.util.JsonSerialization;
 import org.keycloak.util.TokenUtil;
 import org.keycloak.utils.MediaType;
 
-import javax.ws.rs.client.Client;
-import javax.ws.rs.client.Entity;
-import javax.ws.rs.client.WebTarget;
-import javax.ws.rs.core.Form;
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.Status;
-import javax.ws.rs.core.UriBuilder;
+import jakarta.ws.rs.client.Client;
+import jakarta.ws.rs.client.Entity;
+import jakarta.ws.rs.client.WebTarget;
+import jakarta.ws.rs.core.Form;
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response.Status;
+import jakarta.ws.rs.core.UriBuilder;
 import java.io.IOException;
 import java.net.URI;
 import java.security.PrivateKey;
@@ -199,6 +199,28 @@ public class UserInfoTest extends AbstractKeycloakTest {
 
             WebTarget userInfoTarget = UserInfoClientUtil.getUserInfoWebTarget(client);
             Response response = userInfoTarget.request()
+                    .post(Entity.form(form));
+
+            testSuccessfulUserInfoResponse(response);
+
+        } finally {
+            client.close();
+        }
+    }
+    
+    @Test
+    public void testSuccess_postMethod_charset_body() throws Exception {
+        Client client = AdminClientUtil.createResteasyClient();
+
+        try {
+            AccessTokenResponse accessTokenResponse = executeGrantAccessTokenRequest(client);
+
+            Form form = new Form();
+            form.param("access_token", accessTokenResponse.getToken());
+
+            WebTarget userInfoTarget = UserInfoClientUtil.getUserInfoWebTarget(client);
+            Response response = userInfoTarget.request()
+                    .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_FORM_URLENCODED_TYPE.withCharset("utf-8"))
                     .post(Entity.form(form));
 
             testSuccessfulUserInfoResponse(response);

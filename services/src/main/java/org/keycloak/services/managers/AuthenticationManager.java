@@ -90,12 +90,12 @@ import org.keycloak.sessions.CommonClientSessionModel;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
 import org.keycloak.util.TokenUtil;
 
-import javax.ws.rs.core.Cookie;
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.NewCookie;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriBuilder;
-import javax.ws.rs.core.UriInfo;
+import jakarta.ws.rs.core.Cookie;
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.NewCookie;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.UriBuilder;
+import jakarta.ws.rs.core.UriInfo;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URLDecoder;
@@ -281,13 +281,16 @@ public class AuthenticationManager {
             backchannelLogoutResponse.setLocalLogoutSucceeded(true);
             return backchannelLogoutResponse;
         }
-        UserModel user = userSession.getUser();
         if (userSession.getState() != UserSessionModel.State.LOGGING_OUT) {
             userSession.setState(UserSessionModel.State.LOGGING_OUT);
         }
 
-        logger.debugv("Logging out: {0} ({1}) offline: {2}", user.getUsername(), userSession.getId(),
-                userSession.isOffline());
+        if (logger.isDebugEnabled()) {
+            UserModel user = userSession.getUser();
+            logger.debugv("Logging out: {0} ({1}) offline: {2}", user.getUsername(), userSession.getId(),
+                    userSession.isOffline());
+        }
+
         boolean expireUserSessionCookieSucceeded =
                 expireUserSessionCookie(session, userSession, realm, uriInfo, headers, connection);
 
@@ -1052,7 +1055,7 @@ public class AuthenticationManager {
         if (actionTokenKeyToInvalidate != null) {
             SingleUseObjectKeyModel actionTokenKey = DefaultActionTokenKey.from(actionTokenKeyToInvalidate);
             if (actionTokenKey != null) {
-                SingleUseObjectProvider singleUseObjectProvider = session.getProvider(SingleUseObjectProvider.class);
+                SingleUseObjectProvider singleUseObjectProvider = session.singleUseObjects();
                 singleUseObjectProvider.put(actionTokenKeyToInvalidate, actionTokenKey.getExpiration() - Time.currentTime(), null); // Token is invalidated
             }
         }
@@ -1069,6 +1072,7 @@ public class AuthenticationManager {
                 infoPage.setAttribute(Constants.SKIP_LINK, true);
             }
             Response response = infoPage
+                    .setDetachedAuthSession()
                     .createInfoPage();
 
             new AuthenticationSessionManager(session).removeAuthenticationSession(authSession.getRealm(), authSession, true);

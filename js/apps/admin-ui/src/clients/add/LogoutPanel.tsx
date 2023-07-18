@@ -1,15 +1,21 @@
 import { FormGroup, Switch, ValidatedOptions } from "@patternfly/react-core";
 import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-
-import { FormAccess } from "../../components/form-access/FormAccess";
 import { HelpItem } from "ui-shared";
+
+import { FixedButtonsGroup } from "../../components/form/FixedButtonGroup";
+import { FormAccess } from "../../components/form/FormAccess";
 import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 import { useAccess } from "../../context/access/Access";
 import { beerify, convertAttributeNameToForm } from "../../util";
-import { SaveReset } from "../advanced/SaveReset";
-import type { ClientSettingsProps } from "../ClientSettings";
 import { FormFields } from "../ClientDetails";
+import type { ClientSettingsProps } from "../ClientSettings";
+
+const validateUrl = (uri: string | undefined, error: string) =>
+  ((uri?.startsWith("https://") || uri?.startsWith("http://")) &&
+    !uri.includes("*")) ||
+  uri === "" ||
+  error;
 
 export const LogoutPanel = ({
   save,
@@ -88,15 +94,12 @@ export const LogoutPanel = ({
             type="url"
             {...register(
               convertAttributeNameToForm<FormFields>(
-                "attributes.frontchannel.logout.url"
+                "attributes.frontchannel.logout.url",
               ),
               {
                 validate: (uri) =>
-                  ((uri.startsWith("https://") || uri.startsWith("http://")) &&
-                    !uri.includes("*")) ||
-                  uri === "" ||
-                  t("frontchannelUrlInvalid").toString(),
-              }
+                  validateUrl(uri, t("frontchannelUrlInvalid").toString()),
+              },
             )}
             validated={
               errors.attributes?.[beerify("frontchannel.logout.url")]?.message
@@ -132,16 +135,12 @@ export const LogoutPanel = ({
               type="url"
               {...register(
                 convertAttributeNameToForm<FormFields>(
-                  "attributes.backchannel.logout.url"
+                  "attributes.backchannel.logout.url",
                 ),
                 {
                   validate: (uri) =>
-                    ((uri.startsWith("https://") ||
-                      uri.startsWith("http://")) &&
-                      !uri.includes("*")) ||
-                    uri === "" ||
-                    t("backchannelUrlInvalid").toString(),
-                }
+                    validateUrl(uri, t("backchannelUrlInvalid").toString()),
+                },
               )}
               validated={
                 errors.attributes?.[beerify("backchannel.logout.url")]?.message
@@ -163,7 +162,7 @@ export const LogoutPanel = ({
           >
             <Controller
               name={convertAttributeNameToForm<FormFields>(
-                "attributes.backchannel.logout.session.required"
+                "attributes.backchannel.logout.session.required",
               )}
               defaultValue="true"
               control={control}
@@ -184,7 +183,7 @@ export const LogoutPanel = ({
             labelIcon={
               <HelpItem
                 helpText={t(
-                  "clients-help:backchannelLogoutRevokeOfflineSessions"
+                  "clients-help:backchannelLogoutRevokeOfflineSessions",
                 )}
                 fieldLabelId="clients:backchannelLogoutRevokeOfflineSessions"
               />
@@ -194,7 +193,7 @@ export const LogoutPanel = ({
           >
             <Controller
               name={convertAttributeNameToForm<FormFields>(
-                "attributes.backchannel.logout.revoke.offline.tokens"
+                "attributes.backchannel.logout.revoke.offline.tokens",
               )}
               defaultValue="false"
               control={control}
@@ -212,8 +211,7 @@ export const LogoutPanel = ({
           </FormGroup>
         </>
       )}
-      <SaveReset
-        className="keycloak__form_actions"
+      <FixedButtonsGroup
         name="settings"
         save={save}
         reset={reset}

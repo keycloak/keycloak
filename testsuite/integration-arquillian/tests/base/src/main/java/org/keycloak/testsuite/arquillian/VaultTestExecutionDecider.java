@@ -42,16 +42,6 @@ public class VaultTestExecutionDecider implements TestExecutionDecider {
         // if test was annotated with EnableVault, check if it has selected the elytron credential store provider.
         if (testContext.getTestClass().isAnnotationPresent(EnableVault.class)) {
             EnableVault.PROVIDER_ID providerId = testContext.getTestClass().getAnnotation(EnableVault.class).providerId();
-            if (providerId == EnableVault.PROVIDER_ID.ELYTRON_CS_KEYSTORE) {
-                // if the auth server is undertow, skip the test.
-                SuiteContext suiteContext = testContext.getSuiteContext();
-                if (suiteContext != null && suiteContext.getAuthServerInfo() != null && suiteContext.getAuthServerInfo().isUndertow()) {
-                    return ExecutionDecision.dontExecute("@EnableVault with Elytron credential store provider not supported on Undertow, skipping");
-                }
-                if (suiteContext != null && suiteContext.getAuthServerInfo() != null && suiteContext.getAuthServerInfo().isQuarkus()) {
-                    return ExecutionDecision.dontExecute("@EnableVault with Elytron credential store provider not supported on Quarkus, skipping");
-                }
-            }
         }
         return ExecutionDecision.execute();
     }

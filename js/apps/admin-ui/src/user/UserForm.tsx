@@ -15,14 +15,14 @@ import { useState } from "react";
 import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
-
-import { useAlerts } from "../components/alert/Alerts";
-import { FormAccess } from "../components/form-access/FormAccess";
-import { GroupPickerDialog } from "../components/group/GroupPickerDialog";
 import { HelpItem } from "ui-shared";
+
+import { adminClient } from "../admin-client";
+import { useAlerts } from "../components/alert/Alerts";
+import { FormAccess } from "../components/form/FormAccess";
+import { GroupPickerDialog } from "../components/group/GroupPickerDialog";
 import { KeycloakTextInput } from "../components/keycloak-text-input/KeycloakTextInput";
 import { useAccess } from "../context/access/Access";
-import { useAdminClient, useFetch } from "../context/auth/AdminClient";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { emailRegexPattern } from "../util";
 import useFormatDate from "../utils/useFormatDate";
@@ -39,6 +39,7 @@ export type BruteForced = {
 export type UserFormProps = {
   user?: UserRepresentation;
   bruteForce?: BruteForced;
+  realm?: RealmRepresentation;
   save: (user: UserRepresentation) => void;
   onGroupsUpdate?: (groups: GroupRepresentation[]) => void;
 };
@@ -79,6 +80,7 @@ const EmailVerified = () => {
 
 export const UserForm = ({
   user,
+  realm,
   bruteForce: { isBruteForceProtected, isLocked } = {
     isBruteForceProtected: false,
     isLocked: false,
@@ -92,7 +94,6 @@ export const UserForm = ({
   const isFeatureEnabled = useIsFeatureEnabled();
 
   const navigate = useNavigate();
-  const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
   const { hasAccess } = useAccess();
   const isManager = hasAccess("manage-users");
@@ -107,22 +108,10 @@ export const UserForm = ({
   } = useFormContext();
   const watchUsernameInput = watch("username");
   const [selectedGroups, setSelectedGroups] = useState<GroupRepresentation[]>(
-    []
+    [],
   );
   const [open, setOpen] = useState(false);
   const [locked, setLocked] = useState(isLocked);
-  const [realm, setRealm] = useState<RealmRepresentation>();
-
-  useFetch(
-    () => adminClient.realms.findOne({ realm: realmName }),
-    (realm) => {
-      if (!realm) {
-        throw new Error(t("common:notFound"));
-      }
-      setRealm(realm);
-    },
-    []
-  );
 
   const unLockUser = async () => {
     try {

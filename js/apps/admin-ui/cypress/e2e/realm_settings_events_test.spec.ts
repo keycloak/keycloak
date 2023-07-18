@@ -1,3 +1,4 @@
+import { v4 as uuid } from "uuid";
 import SidebarPage from "../support/pages/admin-ui/SidebarPage";
 import LoginPage from "../support/pages/LoginPage";
 import RealmSettingsPage from "../support/pages/admin-ui/manage/realm_settings/RealmSettingsPage";
@@ -16,7 +17,7 @@ const realmSettingsPage = new RealmSettingsPage();
 const keysTab = new KeysTab();
 
 describe("Realm settings events tab tests", () => {
-  const realmName = "Realm_" + crypto.randomUUID();
+  const realmName = "Realm_" + uuid();
   const listingPage = new ListingPage();
 
   beforeEach(() => {
@@ -89,10 +90,7 @@ describe("Realm settings events tab tests", () => {
   };
 
   const addBundle = () => {
-    realmSettingsPage.addKeyValuePair(
-      "key_" + crypto.randomUUID(),
-      "value_" + crypto.randomUUID()
-    );
+    realmSettingsPage.addKeyValuePair("key_" + uuid(), "value_" + uuid());
 
     return this;
   };
@@ -110,13 +108,13 @@ describe("Realm settings events tab tests", () => {
     realmSettingsPage.clearEvents("user");
     modalUtils
       .checkModalMessage(
-        "If you clear all events of this realm, all records will be permanently cleared in the database"
+        "If you clear all events of this realm, all records will be permanently cleared in the database",
       )
       .confirmModal();
     masthead.checkNotificationMessage("The user events have been cleared");
     const events = ["Client info", "Client info error"];
     cy.intercept("GET", `/admin/realms/${realmName}/events/config`).as(
-      "fetchConfig"
+      "fetchConfig",
     );
     realmSettingsPage.addUserEvents(events).clickAdd();
     masthead.checkNotificationMessage("Successfully saved configuration");
@@ -145,38 +143,32 @@ describe("Realm settings events tab tests", () => {
 
     cy.findByTestId("option-aes-generated").click();
     realmSettingsPage.enterUIDisplayName("test_aes-generated");
-    realmSettingsPage.toggleSwitch("active", false);
-    realmSettingsPage.toggleSwitch("enabled", false);
     realmSettingsPage.addProvider();
 
     realmSettingsPage.toggleAddProviderDropdown();
 
     cy.findByTestId("option-ecdsa-generated").click();
     realmSettingsPage.enterUIDisplayName("test_ecdsa-generated");
-    realmSettingsPage.toggleSwitch("enabled", false);
+    realmSettingsPage.toggleSwitch("active", false);
     realmSettingsPage.addProvider();
 
     realmSettingsPage.toggleAddProviderDropdown();
 
     cy.findByTestId("option-hmac-generated").click();
     realmSettingsPage.enterUIDisplayName("test_hmac-generated");
-    realmSettingsPage.toggleSwitch("active", false);
+    realmSettingsPage.toggleSwitch("enabled", false);
     realmSettingsPage.addProvider();
 
     realmSettingsPage.toggleAddProviderDropdown();
 
     cy.findByTestId("option-rsa-generated").click();
     realmSettingsPage.enterUIDisplayName("test_rsa-generated");
-    realmSettingsPage.toggleSwitch("active", false);
-    realmSettingsPage.toggleSwitch("enabled", false);
     realmSettingsPage.addProvider();
 
     realmSettingsPage.toggleAddProviderDropdown();
 
     cy.findByTestId("option-rsa-enc-generated").click();
     realmSettingsPage.enterUIDisplayName("test_rsa-enc-generated");
-    realmSettingsPage.toggleSwitch("active", false);
-    realmSettingsPage.toggleSwitch("enabled", false);
     realmSettingsPage.addProvider();
   });
 
@@ -262,7 +254,7 @@ describe("Realm settings events tab tests", () => {
     cy.get("#kc-l-supported-locales").click();
 
     cy.intercept("GET", `/admin/realms/${realmName}/localization/en*`).as(
-      "load"
+      "load",
     );
 
     cy.findByTestId("localization-tab-save").click();
@@ -271,7 +263,7 @@ describe("Realm settings events tab tests", () => {
     addBundle();
 
     masthead.checkNotificationMessage(
-      "Success! The message bundle has been added."
+      "Success! The message bundle has been added.",
     );
     realmSettingsPage.setDefaultLocale("dansk");
     cy.findByTestId("localization-tab-save").click();
@@ -323,46 +315,46 @@ describe("Realm settings events tab tests", () => {
 
     cy.findByTestId(realmSettingsPage.ssoSessionIdleInput).should(
       "have.value",
-      1
+      1,
     );
     cy.findByTestId(realmSettingsPage.ssoSessionMaxInput).should(
       "have.value",
-      2
+      2,
     );
     cy.findByTestId(realmSettingsPage.ssoSessionIdleRememberMeInput).should(
       "have.value",
-      3
+      3,
     );
     cy.findByTestId(realmSettingsPage.ssoSessionMaxRememberMeInput).should(
       "have.value",
-      4
+      4,
     );
 
     cy.findByTestId(realmSettingsPage.clientSessionIdleInput).should(
       "have.value",
-      5
+      5,
     );
     cy.findByTestId(realmSettingsPage.clientSessionMaxInput).should(
       "have.value",
-      6
+      6,
     );
 
     cy.findByTestId(realmSettingsPage.offlineSessionIdleInput).should(
       "have.value",
-      7
+      7,
     );
     cy.findByTestId(realmSettingsPage.offlineSessionMaxSwitch).should(
       "have.value",
-      "on"
+      "on",
     );
 
     cy.findByTestId(realmSettingsPage.loginTimeoutInput).should(
       "have.value",
-      9
+      9,
     );
     cy.findByTestId(realmSettingsPage.loginActionTimeoutInput).should(
       "have.value",
-      10
+      10,
     );
   });
 
@@ -384,42 +376,42 @@ describe("Realm settings events tab tests", () => {
 
     cy.findByTestId(realmSettingsPage.accessTokenLifespanInput).should(
       "have.value",
-      1
+      1,
     );
     cy.findByTestId(realmSettingsPage.accessTokenLifespanImplicitInput).should(
       "have.value",
-      2
+      2,
     );
     cy.findByTestId(realmSettingsPage.clientLoginTimeoutInput).should(
       "have.value",
-      3
+      3,
     );
     cy.findByTestId(realmSettingsPage.userInitiatedActionLifespanInput).should(
       "have.value",
-      4
+      4,
     );
 
     cy.findByTestId(realmSettingsPage.defaultAdminInitatedInput).should(
       "have.value",
-      5
+      5,
     );
     cy.findByTestId(realmSettingsPage.emailVerificationInput).should(
       "have.value",
-      6
+      6,
     );
 
     cy.findByTestId(realmSettingsPage.idpEmailVerificationInput).should(
       "have.value",
-      7
+      7,
     );
     cy.findByTestId(realmSettingsPage.forgotPasswordInput).should(
       "have.value",
-      8
+      8,
     );
 
     cy.findByTestId(realmSettingsPage.executeActionsInput).should(
       "have.value",
-      9
+      9,
     );
   });
 });

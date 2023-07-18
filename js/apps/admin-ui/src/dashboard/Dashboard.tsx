@@ -45,11 +45,13 @@ import "./dashboard.css";
 const EmptyDashboard = () => {
   const { t } = useTranslation("dashboard");
   const { realm } = useRealm();
+  const brandImage = environment.logo ? environment.logo : "/icon.svg";
+
   return (
     <PageSection variant="light">
       <EmptyState variant="large">
         <Brand
-          src={environment.resourceUrl + "/icon.svg"}
+          src={environment.resourceUrl + brandImage}
           alt="Keycloak icon"
           className="keycloak__dashboard_icon"
         />
@@ -87,9 +89,9 @@ const Dashboard = () => {
     () =>
       localeSort(
         serverInfo.profileInfo?.disabledFeatures ?? [],
-        (item) => item
+        (item) => item,
       ),
-    [serverInfo.profileInfo]
+    [serverInfo.profileInfo],
   );
 
   const enabledFeatures = useMemo(
@@ -98,15 +100,15 @@ const Dashboard = () => {
         filter(
           union(
             serverInfo.profileInfo?.experimentalFeatures,
-            serverInfo.profileInfo?.previewFeatures
+            serverInfo.profileInfo?.previewFeatures,
           ),
           (feature) => {
             return !isDeprecatedFeature(feature);
-          }
+          },
         ),
-        (item) => item
+        (item) => item,
       ),
-    [serverInfo.profileInfo]
+    [serverInfo.profileInfo],
   );
 
   const useTab = (tab: DashboardTab) =>
@@ -114,7 +116,7 @@ const Dashboard = () => {
       toDashboard({
         realm,
         tab,
-      })
+      }),
     );
 
   const infoTab = useTab("info");

@@ -15,13 +15,13 @@ import {
 import { useEffect, useState } from "react";
 import { Controller, FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-
-import { FormattedLink } from "../components/external-link/FormattedLink";
-import { FormAccess } from "../components/form-access/FormAccess";
 import { HelpItem } from "ui-shared";
+
+import { adminClient } from "../admin-client";
+import { FormattedLink } from "../components/external-link/FormattedLink";
+import { FormAccess } from "../components/form/FormAccess";
 import { KeyValueInput } from "../components/key-value-form/KeyValueInput";
 import { KeycloakTextInput } from "../components/keycloak-text-input/KeycloakTextInput";
-import { useAdminClient } from "../context/auth/AdminClient";
 import { useRealm } from "../context/realm-context/RealmContext";
 import {
   addTrailingSlash,
@@ -35,14 +35,15 @@ type RealmSettingsGeneralTabProps = {
   save: (realm: RealmRepresentation) => void;
 };
 
+type FormFields = Omit<RealmRepresentation, "groups">;
+
 export const RealmSettingsGeneralTab = ({
   realm,
   save,
 }: RealmSettingsGeneralTabProps) => {
   const { t } = useTranslation("realm-settings");
-  const { adminClient } = useAdminClient();
   const { realm: realmName } = useRealm();
-  const form = useForm<RealmRepresentation>();
+  const form = useForm<FormFields>();
   const {
     register,
     control,
@@ -59,12 +60,12 @@ export const RealmSettingsGeneralTab = ({
     convertToFormValues(realm, setValue);
     if (realm.attributes?.["acr.loa.map"]) {
       const result = Object.entries(
-        JSON.parse(realm.attributes["acr.loa.map"])
+        JSON.parse(realm.attributes["acr.loa.map"]),
       ).flatMap(([key, value]) => ({ key, value }));
       result.concat({ key: "", value: "" });
       setValue(
         convertAttributeNameToForm("attributes.acr.loa.map") as any,
-        result
+        result,
       );
     }
   };
@@ -231,7 +232,7 @@ export const RealmSettingsGeneralTab = ({
             <Controller
               name={
                 convertAttributeNameToForm(
-                  "attributes.userProfileEnabled"
+                  "attributes.userProfileEnabled",
                 ) as any
               }
               control={control}
@@ -264,7 +265,7 @@ export const RealmSettingsGeneralTab = ({
             <StackItem>
               <FormattedLink
                 href={`${addTrailingSlash(
-                  adminClient.baseUrl
+                  adminClient.baseUrl,
                 )}realms/${realmName}/.well-known/openid-configuration`}
                 title={t("openIDEndpointConfiguration")}
               />
@@ -272,7 +273,7 @@ export const RealmSettingsGeneralTab = ({
             <StackItem>
               <FormattedLink
                 href={`${addTrailingSlash(
-                  adminClient.baseUrl
+                  adminClient.baseUrl,
                 )}realms/${realmName}/protocol/saml/descriptor`}
                 title={t("samlIdentityProviderMetadata")}
               />

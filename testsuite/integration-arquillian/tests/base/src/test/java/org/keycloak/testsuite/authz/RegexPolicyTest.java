@@ -16,13 +16,12 @@
  */
 package org.keycloak.testsuite.authz;
 
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.fail;
-
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.AuthorizationResource;
@@ -36,15 +35,13 @@ import org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper;
 import org.keycloak.protocol.oidc.mappers.UserAttributeMapper;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.representations.idm.authorization.AuthorizationRequest;
-import org.keycloak.representations.idm.authorization.AuthorizationResponse;
-import org.keycloak.representations.idm.authorization.PermissionRequest;
-import org.keycloak.representations.idm.authorization.RegexPolicyRepresentation;
-import org.keycloak.representations.idm.authorization.ResourcePermissionRepresentation;
-import org.keycloak.representations.idm.authorization.ResourceRepresentation;
+import org.keycloak.representations.idm.authorization.*;
 import org.keycloak.testsuite.util.ClientBuilder;
+import org.keycloak.testsuite.util.GroupBuilder;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
+
+import static org.junit.Assert.*;
 
 /**
  * @author <a href="mailto:yoshiyuki.tabata.jy@hitachi.com">Yoshiyuki Tabata</a>
@@ -71,6 +68,34 @@ public class RegexPolicyTest extends AbstractAuthzTest {
         claims.put("claim.name", "json-complex");
         ProtocolMapperRepresentation userAttrJsonComplexProtocolMapper = addClaimMapper("userAttrJsonComplex", claims);
 
+        ProtocolMapperRepresentation userAttributesProtocolMapper = new ProtocolMapperRepresentation();
+        userAttributesProtocolMapper.setName("canWriteItems");
+        userAttributesProtocolMapper.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
+        userAttributesProtocolMapper.setProtocolMapper(UserAttributeMapper.PROVIDER_ID);
+        Map<String, String> PMUserConfig = new HashMap<>();
+        PMUserConfig.put(OIDCAttributeMapperHelper.TOKEN_CLAIM_NAME,"customPermissions.canCreateItems");
+        PMUserConfig.put(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN,"true");
+        PMUserConfig.put(OIDCAttributeMapperHelper.INCLUDE_IN_USERINFO,"true");
+        PMUserConfig.put(OIDCAttributeMapperHelper.INCLUDE_IN_ID_TOKEN,"true");
+        PMUserConfig.put("user.attribute","canCreateItems");
+        PMUserConfig.put("aggregate.attrs","false");
+        PMUserConfig.put("multivalued","false");
+        userAttributesProtocolMapper.setConfig(PMUserConfig);
+
+        ProtocolMapperRepresentation groupAttributesProtocolMapper = new ProtocolMapperRepresentation();
+        groupAttributesProtocolMapper.setName("Group_Mapper");
+        groupAttributesProtocolMapper.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
+        groupAttributesProtocolMapper.setProtocolMapper(UserAttributeMapper.PROVIDER_ID);
+        Map<String, String> PMgroupConfig = new HashMap<>();
+        PMgroupConfig.put(OIDCAttributeMapperHelper.TOKEN_CLAIM_NAME,"attributes.values");
+        PMgroupConfig.put(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN,"true");
+        PMgroupConfig.put(OIDCAttributeMapperHelper.INCLUDE_IN_ID_TOKEN,"true");
+        PMgroupConfig.put(OIDCAttributeMapperHelper.INCLUDE_IN_USERINFO,"true");
+        PMgroupConfig.put("user.attribute","attribute");
+        PMgroupConfig.put("aggregate.attrs","false");
+        PMgroupConfig.put("multivalued","false");
+        groupAttributesProtocolMapper.setConfig(PMgroupConfig);
+
         //        For JSON-based claims, you can use dot notation for nesting and square brackets to access array fields by index. For example, contact.address[0].country.
 
         testRealms.add(RealmBuilder.create().name("authz-test")
@@ -79,10 +104,17 @@ public class RegexPolicyTest extends AbstractAuthzTest {
                     .addAttribute("json-complex", "{\"userinfo\": {\"tenant\": \"abc\"}, \"some-array\": [\"foo\",\"bar\"]}"))
             .user(UserBuilder.create().username("taro").password("password").addAttribute("foo", "faa").addAttribute("bar",
                 "bbarbar"))
+            .user(UserBuilder.create().username("my-user").password("password").addAttribute("canCreateItems","true"))
+            .user(UserBuilder.create().username("my-user2").password("password").addAttribute("canCreateItems","false"))
+            .user(UserBuilder.create().username("my-user3").password("password").addAttribute("otherClaim","something"))
+            .group(GroupBuilder.create().name("ADMIN").singleAttribute("attribute","example").build())
+            .user(UserBuilder.create().username("admin").password("password").addGroups("ADMIN"))
+
+
             .client(ClientBuilder.create().clientId("resource-server-test").secret("secret").authorizationServicesEnabled(true)
                 .redirectUris("http://localhost/resource-server-test").directAccessGrants()
-                .protocolMapper(userAttrFooProtocolMapper, userAttrBarProtocolMapper, userAttrJsonProtocolMapper, userAttrJsonComplexProtocolMapper))
-            .build());
+                .protocolMapper(userAttrFooProtocolMapper, userAttrBarProtocolMapper, userAttrJsonProtocolMapper, userAttrJsonComplexProtocolMapper,userAttributesProtocolMapper,groupAttributesProtocolMapper))
+                .build());
     }
 
     @Before
@@ -92,18 +124,34 @@ public class RegexPolicyTest extends AbstractAuthzTest {
         createResource("Resource C");
         createResource("Resource D");
         createResource("Resource E");
+        createResource("Resource ITEM");
+        ScopeRepresentation scopeRead = new ScopeRepresentation();
+        scopeRead.setName("read");
+        ScopeRepresentation scopeDelete = new ScopeRepresentation();
+        scopeDelete.setName("delete");
+        getClient().authorization().scopes().scopes().add(scopeRead);
+        getClient().authorization().scopes().scopes().add(scopeDelete);
+
+        createResourceWithScopes("service",Set.of(scopeRead));
 
         createRegexPolicy("Regex foo Policy", "foo", "foo");
         createRegexPolicy("Regex bar Policy", "bar", "^bar.+$");
         createRegexPolicy("Regex json-simple Policy", "userinfo.tenant", "^abc$");
         createRegexPolicy("Regex json-complex Policy", "json-complex.userinfo.tenant", "^abc$");
         createRegexPolicy("Regex json-array Policy", "json-complex.some-array[1]", "bar");
+        createRegexPolicy("Regex user attribute to json-Complex Policy", "customPermissions.canCreateItems", "true");
+        createRegexPolicyExtended("attribute-policy","attributes.values","^example$",Logic.POSITIVE);
 
         createResourcePermission("Resource A Permission", "Resource A", "Regex foo Policy");
         createResourcePermission("Resource B Permission", "Resource B", "Regex bar Policy");
         createResourcePermission("Resource C Permission", "Resource C", "Regex json-simple Policy");
         createResourcePermission("Resource D Permission", "Resource D", "Regex json-complex Policy");
         createResourcePermission("Resource E Permission", "Resource E", "Regex json-array Policy");
+
+        createResourcePermission("Resource ITEM Permission", "Resource ITEM", "Regex user attribute to json-Complex Policy");
+        createResourceScopesPermissionExtended("read-permission","service",DecisionStrategy.UNANIMOUS,"read","attribute-policy");
+
+
     }
 
     private void createResource(String name) {
@@ -112,6 +160,14 @@ public class RegexPolicyTest extends AbstractAuthzTest {
 
         authorization.resources().create(resource).close();
     }
+
+    private void createResourceWithScopes(String name, Set<ScopeRepresentation> scopes) {
+        AuthorizationResource authorization = getClient().authorization();
+        ResourceRepresentation resource = new ResourceRepresentation(name);
+        resource.setScopes(scopes);
+        authorization.resources().create(resource).close();
+    }
+
 
     private void createRegexPolicy(String name, String targetClaim, String pattern) {
         RegexPolicyRepresentation policy = new RegexPolicyRepresentation();
@@ -122,6 +178,15 @@ public class RegexPolicyTest extends AbstractAuthzTest {
 
         getClient().authorization().policies().regex().create(policy).close();
     }
+private void createRegexPolicyExtended(String name, String targetClaim, String pattern,Logic logic) {
+        RegexPolicyRepresentation policy = new RegexPolicyRepresentation();
+
+        policy.setName(name);
+        policy.setTargetClaim(targetClaim);
+        policy.setPattern(pattern);
+        policy.setLogic(logic);
+        getClient().authorization().policies().regex().create(policy).close();
+    }
 
     private void createResourcePermission(String name, String resource, String... policies) {
         ResourcePermissionRepresentation permission = new ResourcePermissionRepresentation();
@@ -130,6 +195,15 @@ public class RegexPolicyTest extends AbstractAuthzTest {
         permission.addResource(resource);
         permission.addPolicy(policies);
 
+        getClient().authorization().permissions().resource().create(permission).close();
+    }
+    private void createResourceScopesPermissionExtended(String name, String resource, DecisionStrategy strategy,String scope,String... policies) {
+        ResourcePermissionRepresentation permission = new ResourcePermissionRepresentation();
+        permission.setName(name);
+        permission.addResource(resource);
+        permission.addPolicy(policies);
+        permission.addScope(scope);
+        permission.setDecisionStrategy(strategy);
         getClient().authorization().permissions().resource().create(permission).close();
     }
 
@@ -183,6 +257,72 @@ public class RegexPolicyTest extends AbstractAuthzTest {
         response = authzClient.authorization("marta", "password").authorize(new AuthorizationRequest(ticket));
         assertNotNull(response.getToken());
     }
+
+    @Test
+    public void testWithExpectedUserAttributeValueMappedToComplexJsonClaim() {
+        AuthzClient authzClient = getAuthzClient();
+        PermissionRequest request = new PermissionRequest("Resource ITEM");
+        String ticket = authzClient.protection().permission().create(request).getTicket();
+        AuthorizationRequest theRequest = new AuthorizationRequest(ticket);
+        AuthorizationResponse response = authzClient.authorization("my-user", "password").authorize(theRequest);
+        assertNotNull(response.getToken());
+
+    }
+
+        @Test
+    public void testWithExpectedUserAttributeValueMappedToComplexJsonClaimPermissions() {
+        AuthzClient authzClient = getAuthzClient();
+        PermissionRequest request = new PermissionRequest("service","read");
+        String ticket = authzClient.protection().permission().create(request).getTicket();
+        AuthorizationRequest theRequest = new AuthorizationRequest(ticket);
+        AuthorizationRequest.Metadata metadata = new AuthorizationRequest.Metadata();
+        metadata.setResponseMode("permissions");
+        metadata.setIncludeResourceName(true);
+        metadata.setPermissionResourceFormat("uri");
+        theRequest.setMetadata(metadata);
+        List<Permission> permissions = authzClient.authorization("admin", "password").getPermissions(theRequest);
+        assertNotNull(permissions);
+       Assert.assertTrue(((Map)permissions.get(0)).get("rsname").equals("service"));
+       Assert.assertTrue(((List)(((Map)permissions.get(0)).get("scopes"))).get(0).equals("read"));
+
+
+
+    }
+
+
+
+    @Test
+    public void testWithNotExpectedUserAttributeValueMappedToComplexJsonClaim() {
+        AuthzClient authzClient = getAuthzClient();
+        PermissionRequest request = new PermissionRequest("Resource ITEM");
+        String ticket = authzClient.protection().permission().create(request).getTicket();
+        AuthorizationResponse response= null;
+        try {
+
+            response = authzClient.authorization("my-user2", "password").authorize(new AuthorizationRequest(ticket));
+            fail("failed because it should thrown an exception with 403 Forbidden Status");
+        } catch (AuthorizationDeniedException e) {
+
+        }
+    }
+
+    @Test
+    public void testWithAbsentUserAttributeThusNotMappedToComplexJsonClaim() {
+        AuthzClient authzClient = getAuthzClient();
+        PermissionRequest request = new PermissionRequest("Resource ITEM");
+        String ticket = authzClient.protection().permission().create(request).getTicket();
+            AuthorizationResponse response=null;
+            try {
+                response = authzClient.authorization("my-user3", "password").authorize(new AuthorizationRequest(ticket));
+                fail("failed because it should thrown an exception with 403 Forbidden Status");
+            } catch (AuthorizationDeniedException e) {
+
+            }
+
+
+    }
+
+
 
     @Test
     public void testWithoutExpectedUserAttribute() {

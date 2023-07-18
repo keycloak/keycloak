@@ -45,22 +45,30 @@ export type PromiseResolvedFn<T> = (value: T) => void;
 export function usePromise<T>(
   factory: PromiseFactoryFn<T>,
   callback: PromiseResolvedFn<T>,
-  deps: DependencyList = []
+  deps: DependencyList = [],
 ) {
   useEffect(() => {
     const controller = new AbortController();
     const { signal } = controller;
 
     async function handlePromise() {
-      const value = await factory(signal);
+      // Try to resolve the Promise, if it fails, check if it was aborted.
+      try {
+        callback(await factory(signal));
+      } catch (error) {
+        // Ignore errors caused by aborting the Promise.
+        if (error instanceof Error && error.name === "AbortError") {
+          return;
+        }
 
-      if (!signal.aborted) {
-        callback(value);
+        // Rethrow other errors.
+        throw error;
       }
     }
 
     handlePromise();
 
+    // Abort the Promise when the component unmounts, or the dependencies change.
     return () => controller.abort();
   }, deps);
 }

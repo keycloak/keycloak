@@ -41,7 +41,7 @@ export const AttributesTab = () => {
 
   const executeMove = async (
     attribute: UserProfileAttribute,
-    newIndex: number
+    newIndex: number,
   ) => {
     const fromIndex = config?.attributes!.findIndex((attr) => {
       return attr.name === attribute.name;
@@ -57,12 +57,12 @@ export const AttributesTab = () => {
       {
         successMessageKey: "realm-settings:updatedUserProfileSuccess",
         errorMessageKey: "realm-settings:updatedUserProfileError",
-      }
+      },
     );
   };
 
   const updatedAttributes = config?.attributes!.filter(
-    (attribute) => attribute.name !== attributeToDelete
+    (attribute) => attribute.name !== attributeToDelete,
   );
 
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
@@ -78,7 +78,7 @@ export const AttributesTab = () => {
         {
           successMessageKey: "realm-settings:deleteAttributeSuccess",
           errorMessageKey: "realm-settings:deleteAttributeError",
-        }
+        },
       );
       setAttributeToDelete("");
     },
@@ -118,7 +118,9 @@ export const AttributesTab = () => {
                 setData(
                   filter === "allGroups"
                     ? config.attributes
-                    : config.attributes?.filter((attr) => attr.group === filter)
+                    : config.attributes?.filter(
+                        (attr) => attr.group === filter,
+                      ),
                 );
                 toggleIsFilterTypeDropdownOpen();
               }}
@@ -178,7 +180,7 @@ export const AttributesTab = () => {
                 toAttribute({
                   realm: realmName,
                   attributeName: component.name,
-                })
+                }),
               );
             },
           },

@@ -3,7 +3,7 @@
 
 One thing we have not done with our example is allow it to add and remove users or change passwords. Users defined in our example are
 also not queryable or viewable in the Admin Console. To add these enhancements, our example provider must implement
-the `UserQueryProvider` and `UserRegistrationProvider` interfaces.
+the `UserQueryMethodsProvider` (or `UserQueryProvider`) and `UserRegistrationProvider` interfaces.
 
 ==== Implementing UserRegistrationProvider
 
@@ -82,7 +82,7 @@ Since we can now save our property file, it also makes sense to allow password u
     @Override
     public boolean updateCredential(RealmModel realm, UserModel user, CredentialInput input) {
         if (!(input instanceof UserCredentialModel)) return false;
-        if (!input.getType().equals(CredentialModel.PASSWORD)) return false;
+        if (!input.getType().equals(PasswordCredentialModel.TYPE)) return false;
         UserCredentialModel cred = (UserCredentialModel)input;
         synchronized (properties) {
             properties.setProperty(user.getUsername(), cred.getValue());
@@ -99,7 +99,7 @@ We can now also implement disabling a password.
 ----
     @Override
     public void disableCredentialType(RealmModel realm, UserModel user, String credentialType) {
-        if (!credentialType.equals(CredentialModel.PASSWORD)) return;
+        if (!credentialType.equals(PasswordCredentialModel.TYPE)) return;
         synchronized (properties) {
             properties.setProperty(user.getUsername(), UNSET_PASSWORD);
             save();
@@ -110,13 +110,13 @@ We can now also implement disabling a password.
     private static final Set<String> disableableTypes = new HashSet<>();
 
     static {
-        disableableTypes.add(CredentialModel.PASSWORD);
+        disableableTypes.add(PasswordCredentialModel.TYPE);
     }
 
     @Override
-    public Set<String> getDisableableCredentialTypes(RealmModel realm, UserModel user) {
+    public Stream<String> getDisableableCredentialTypes(RealmModel realm, UserModel user) {
 
-        return disableableTypes;
+        return disableableTypes.stream();
     }
 ----
 
@@ -124,7 +124,7 @@ With these methods implemented, you'll now be able to change and disable the pas
 
 ==== Implementing UserQueryProvider
 
-Without implementing `UserQueryProvider` the Admin Console would not be able to view and manage users that were loaded
+`UserQueryProvider` is combination of `UserQueryMethodsProvider` and `UserCountMethodsProvider`. Without implementing `UserQueryMethodsProvider` the Admin Console would not be able to view and manage users that were loaded
 by our example provider. Let's look at implementing this interface.
 
 .PropertyFileUserStorageProvider
@@ -136,95 +136,55 @@ by our example provider. Let's look at implementing this interface.
     }
 
     @Override
-    public List<UserModel> getUsers(RealmModel realm) {
-        return getUsers(realm, 0, Integer.MAX_VALUE);
-    }
-
-    @Override
-    public List<UserModel> getUsers(RealmModel realm, int firstResult, int maxResults) {
-        List<UserModel> users = new LinkedList<>();
-        int i = 0;
-        for (Object obj : properties.keySet()) {
-            if (i++ < firstResult) continue;
-            String username = (String)obj;
-            UserModel user = getUserByUsername(username, realm);
-            users.add(user);
-            if (users.size() >= maxResults) break;
-        }
-        return users;
+    public Stream<UserModel> searchForUserStream(RealmModel realm, String search, Integer firstResult, Integer maxResults) {
+        Predicate<String> predicate = "*".equals(search) ? username -> true : username -> username.contains(search);
+        return properties.keySet().stream()
+                .map(String.class::cast)
+                .filter(predicate)
+                .skip(firstResult)
+                .map(username -> getUserByUsername(realm, username))
+                .limit(maxResults);
     }
 ----
 
-The `getUsers()` method iterates over the key set of the property file, delegating to `getUserByUsername()` to load a user.
+The first declaration of `searchForUserStream()` takes a `String` parameter. In this example, the parameter represents a username that you want to search by. This string can be a substring, which explains the choice of  the `String.contains()`
+method when doing the search. Notice the use of `*` to indicate to request a list of all users.
+The method iterates over the key set of the property file, delegating to `getUserByUsername()` to load a user.
 Notice that we are indexing this call based on the `firstResult` and `maxResults` parameter. If your external store does not support pagination, you will have to do similar logic.
 
 .PropertyFileUserStorageProvider
 [source,java]
 ----
     @Override
-    public List<UserModel> searchForUser(String search, RealmModel realm) {
-        return searchForUser(search, realm, 0, Integer.MAX_VALUE);
-    }
-
-    @Override
-    public List<UserModel> searchForUser(String search, RealmModel realm, int firstResult, int maxResults) {
-        List<UserModel> users = new LinkedList<>();
-        int i = 0;
-        for (Object obj : properties.keySet()) {
-            String username = (String)obj;
-            if (!username.contains(search)) continue;
-            if (i++ < firstResult) continue;
-            UserModel user = getUserByUsername(username, realm);
-            users.add(user);
-            if (users.size() >= maxResults) break;
-        }
-        return users;
-    }
-----
-
-The first declaration of `searchForUser()` takes a `String` parameter. This is supposed to be a string that you use to
-search username and email attributes to find the user. This string can be a substring, which is why we use the `String.contains()`
-method when doing our search.
-
-.PropertyFileUserStorageProvider
-[source,java]
-----
-    @Override
-    public List<UserModel> searchForUser(Map<String, String> params, RealmModel realm) {
-        return searchForUser(params, realm, 0, Integer.MAX_VALUE);
-    }
-
-    @Override
-    public List<UserModel> searchForUser(Map<String, String> params, RealmModel realm, int firstResult, int maxResults) {
+    public Stream<UserModel> searchForUserStream(RealmModel realm, Map<String, String> params, Integer firstResult, Integer maxResults) {
         // only support searching by username
         String usernameSearchString = params.get("username");
-        if (usernameSearchString == null) return Collections.EMPTY_LIST;
-        return searchForUser(usernameSearchString, realm, firstResult, maxResults);
+        if (usernameSearchString != null)
+            return searchForUserStream(realm, usernameSearchString, firstResult, maxResults);
+
+        // if we are not searching by username, return all users
+        return searchForUserStream(realm, "*", firstResult, maxResults);
     }
 ----
 
-The `searchForUser()` method that takes a `Map` parameter can search for a user based on first, last name, username, and email.
-We only store usernames, so we only search based on usernames. We delegate to `searchForUser()` for this.
+The `searchForUserStream()` method that takes a `Map` parameter can search for a user based on first, last name, username, and email.
+Only usernames are stored, so the search is based only on usernames except when the `Map` parameter does not contain the `username` attribute.
+In this case, all users are returned. In that situation, the `searchForUserStream(realm, search, firstResult, maxResults)` is used.
 
 
 .PropertyFileUserStorageProvider
 [source,java]
 ----
     @Override
-    public List<UserModel> getGroupMembers(RealmModel realm, GroupModel group, int firstResult, int maxResults) {
-        return Collections.EMPTY_LIST;
+    public Stream<UserModel> getGroupMembersStream(RealmModel realm, GroupModel group, Integer firstResult, Integer maxResults) {
+        return Stream.empty();
     }
 
     @Override
-    public List<UserModel> getGroupMembers(RealmModel realm, GroupModel group) {
-        return Collections.EMPTY_LIST;
-    }
-
-    @Override
-    public List<UserModel> searchForUserByUserAttribute(String attrName, String attrValue, RealmModel realm) {
-        return Collections.EMPTY_LIST;
+    public Stream<UserModel> searchForUserByUserAttributeStream(RealmModel realm, String attrName, String attrValue) {
+        return Stream.empty();
     }
 ----
 
-We do not store groups or attributes, so the other methods return an empty list.
+Groups or attributes are not stored, so the other methods return an empty stream.
 

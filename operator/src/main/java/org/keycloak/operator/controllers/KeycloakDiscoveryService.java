@@ -24,11 +24,11 @@ import io.fabric8.kubernetes.api.model.ServiceSpecBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import org.keycloak.operator.Constants;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
-import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusBuilder;
+import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusAggregator;
 
 import java.util.Optional;
 
-public class KeycloakDiscoveryService extends OperatorManagedResource implements StatusUpdater<KeycloakStatusBuilder> {
+public class KeycloakDiscoveryService extends OperatorManagedResource implements StatusUpdater<KeycloakStatusAggregator> {
 
     private Service existingService;
 
@@ -40,23 +40,18 @@ public class KeycloakDiscoveryService extends OperatorManagedResource implements
     private ServiceSpec getServiceSpec() {
       return new ServiceSpecBuilder()
               .addNewPort()
+              .withProtocol("TCP")
               .withPort(Constants.KEYCLOAK_DISCOVERY_SERVICE_PORT)
               .endPort()
-              .withSelector(Constants.DEFAULT_LABELS)
+              .withSelector(getInstanceLabels())
               .withClusterIP("None")
+              .withPublishNotReadyAddresses(Boolean.TRUE)
               .build();
     }
 
     @Override
     protected Optional<HasMetadata> getReconciledResource() {
-        var service = fetchExistingService();
-        if (service == null) {
-            service = newService();
-        } else {
-            service.setSpec(getServiceSpec());
-        }
-
-        return Optional.of(service);
+        return Optional.of(newService());
     }
 
     private Service newService() {
@@ -78,7 +73,8 @@ public class KeycloakDiscoveryService extends OperatorManagedResource implements
                 .get();
     }
 
-    public void updateStatus(KeycloakStatusBuilder status) {
+    @Override
+    public void updateStatus(KeycloakStatusAggregator status) {
         if (existingService == null) {
             status.addNotReadyMessage("No existing Discovery Service found, waiting for creating a new one");
             return;

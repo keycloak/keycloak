@@ -1,6 +1,4 @@
-import { useState } from "react";
-import { useTranslation } from "react-i18next";
-import { sortBy } from "lodash-es";
+import type ComponentRepresentation from "@keycloak/keycloak-admin-client/lib/defs/componentRepresentation";
 import {
   Button,
   ButtonVariant,
@@ -13,11 +11,14 @@ import {
   DataListItemRow,
   Modal,
   ModalVariant,
-  TextContent,
   Text,
+  TextContent,
 } from "@patternfly/react-core";
-import type ComponentRepresentation from "@keycloak/keycloak-admin-client/lib/defs/componentRepresentation";
-import { useAdminClient } from "../context/auth/AdminClient";
+import { sortBy } from "lodash-es";
+import { useState } from "react";
+import { useTranslation } from "react-i18next";
+
+import { adminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
 
 type ManagePriorityDialogProps = {
@@ -30,13 +31,12 @@ export const ManagePriorityDialog = ({
   onClose,
 }: ManagePriorityDialogProps) => {
   const { t } = useTranslation("user-federation");
-  const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
 
   const [id, setId] = useState("");
   const [liveText, setLiveText] = useState("");
   const [order, setOrder] = useState(
-    components.map((component) => component.name!)
+    components.map((component) => component.name!),
   );
 
   const onDragStart = (id: string) => {
@@ -73,7 +73,7 @@ export const ManagePriorityDialog = ({
               component.config!.priority = [index.toString()];
               return adminClient.components.update(
                 { id: component.id! },
-                component
+                component,
               );
             });
 

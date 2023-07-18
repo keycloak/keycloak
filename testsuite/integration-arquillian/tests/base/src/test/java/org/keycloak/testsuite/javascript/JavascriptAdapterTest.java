@@ -7,11 +7,9 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.ClientResource;
-import org.keycloak.common.Profile;
 import org.keycloak.common.util.Retry;
 import org.keycloak.common.util.UriUtils;
 import org.keycloak.events.Details;
-import org.keycloak.events.EventType;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.ClaimsRepresentation;
 import org.keycloak.representations.IDToken;
@@ -23,15 +21,14 @@ import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.SuiteContext;
-import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
-import org.keycloak.testsuite.auth.page.account.Applications;
 import org.keycloak.testsuite.auth.page.login.OAuthGrant;
 import org.keycloak.testsuite.auth.page.login.UpdatePassword;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.util.JavascriptBrowser;
-import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
+import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.javascript.JSObjectBuilder;
 import org.keycloak.testsuite.util.javascript.JavascriptStateValidator;
 import org.keycloak.testsuite.util.javascript.JavascriptTestExecutor;
@@ -81,10 +78,6 @@ public class JavascriptAdapterTest extends AbstractJavascriptTest {
 
     @Page
     @JavascriptBrowser
-    private Applications applicationsPage;
-
-    @Page
-    @JavascriptBrowser
     private OAuthGrant oAuthGrantPage;
 
     @Page
@@ -104,7 +97,7 @@ public class JavascriptAdapterTest extends AbstractJavascriptTest {
 
         jsDriverTestRealmLoginPage.setAuthRealm(REALM_NAME);
         oAuthGrantPage.setAuthRealm(REALM_NAME);
-        applicationsPage.setAuthRealm(REALM_NAME);
+        oauth.realm(REALM_NAME);
 
         jsDriver.navigate().to(oauth.getLoginFormUrl());
         waitForPageToLoad();
@@ -145,7 +138,7 @@ public class JavascriptAdapterTest extends AbstractJavascriptTest {
     public void testJSConsoleAuth() {
         testExecutor.init(defaultArguments(), this::assertInitNotAuth)
                 .login(this::assertOnLoginPage)
-                .loginForm( UserBuilder.create().username("user").password("invalid-password").build(),
+                .loginForm(UserBuilder.create().username("user").password("invalid-password").build(),
                         (driver1, output, events) -> assertCurrentUrlDoesntStartWith(testAppUrl, driver1))
                 .loginForm(UserBuilder.create().username("invalid-user").password("password").build(),
                         (driver1, output, events) -> assertCurrentUrlDoesntStartWith(testAppUrl, driver1))
@@ -290,7 +283,6 @@ public class JavascriptAdapterTest extends AbstractJavascriptTest {
     }
 
     @Test
-    @DisableFeature(value = Profile.Feature.ACCOUNT2, skipRestart = true) // TODO remove this (KEYCLOAK-16228)
     public void grantBrowserBasedApp() {
         Assume.assumeTrue("This test doesn't work with phantomjs", !"phantomjs".equals(System.getProperty("js.browser")));
 
@@ -318,14 +310,11 @@ public class JavascriptAdapterTest extends AbstractJavascriptTest {
 
             testExecutor.init(defaultArguments(), this::assertInitAuth);
 
-            applicationsPage.navigateTo();
+            driver.navigate().to(oauth.getLoginFormUrl());
             events.expectCodeToToken(codeId, loginEvent.getSessionId()).client(CLIENT_ID).assertEvent();
 
-            applicationsPage.revokeGrantForApplication(CLIENT_ID);
-            events.expect(EventType.REVOKE_GRANT)
-                  .client("account")
-                  .detail(Details.REVOKED_CLIENT, CLIENT_ID)
-                  .assertEvent();
+            AccountHelper.revokeConsents(adminClient.realm(REALM_NAME), testUser.getUsername(),CLIENT_ID);
+            Assert.assertTrue(AccountHelper.getUserConsents(adminClient.realm(REALM_NAME), testUser.getUsername()).isEmpty());
 
             jsDriver.navigate().to(testAppUrl);
             testExecutor.configure() // need to configure because we refreshed page
@@ -394,7 +383,6 @@ public class JavascriptAdapterTest extends AbstractJavascriptTest {
                 .update()
         ) {
                 setImplicitFlowForClient();
-                testExecutor.init(defaultArguments().implicitFlow());
 
                 testExecutor.logInAndInit(defaultArguments().implicitFlow(), testUser, this::assertInitAuth);
                 assertThat(driver.getPageSource(), not(containsString("Access token expired")));

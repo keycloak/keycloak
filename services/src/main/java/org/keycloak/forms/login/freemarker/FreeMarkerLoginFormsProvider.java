@@ -29,11 +29,11 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
-import javax.ws.rs.core.MultivaluedHashMap;
-import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriBuilder;
-import javax.ws.rs.core.UriInfo;
+import jakarta.ws.rs.core.MultivaluedHashMap;
+import jakarta.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.UriBuilder;
+import jakarta.ws.rs.core.UriInfo;
 import org.jboss.logging.Logger;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.authentication.AuthenticationFlowContext;
@@ -86,13 +86,12 @@ import org.keycloak.theme.beans.AdvancedMessageFormatterMethod;
 import org.keycloak.theme.beans.LocaleBean;
 import org.keycloak.theme.beans.MessageBean;
 import org.keycloak.theme.beans.MessageFormatterMethod;
-import org.keycloak.theme.beans.MessageType;
+import org.keycloak.forms.login.MessageType;
 import org.keycloak.theme.beans.MessagesPerFieldBean;
 import org.keycloak.theme.freemarker.FreeMarkerProvider;
 import org.keycloak.userprofile.UserProfileContext;
 import org.keycloak.userprofile.UserProfileProvider;
 import org.keycloak.utils.MediaType;
-import org.keycloak.utils.StringUtil;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -113,6 +112,7 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
     protected MessageType messageType = MessageType.ERROR;
 
     protected MultivaluedMap<String, String> formData;
+    protected boolean detachedAuthSession = false;
 
     protected KeycloakSession session;
     /** authenticationSession can be null for some renderings, mainly error pages */
@@ -260,6 +260,9 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
             case LOGIN_TOTP:
                 attributes.put("otpLogin", new TotpLoginBean(session, realm, user, (String) this.attributes.get(OTPFormAuthenticator.SELECTED_OTP_CREDENTIAL_ID)));
                 break;
+            case LOGIN_RESET_OTP:
+                attributes.put("configuredOtpCredentials", new TotpLoginBean(session, realm, user, (String) this.attributes.get(OTPFormAuthenticator.SELECTED_OTP_CREDENTIAL_ID)));
+                break;
             case REGISTER:
                 if(isDynamicUserProfile()) {
                     page = LoginFormsPages.REGISTER_USER_PROFILE;
@@ -379,14 +382,9 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
      * @return message bundle for other use
      */
     protected Properties handleThemeResources(Theme theme, Locale locale) {
-        Properties messagesBundle = new Properties();
+        Properties messagesBundle;
         try {
-            if(!StringUtil.isNotBlank(realm.getDefaultLocale()))
-            {
-                messagesBundle.putAll(realm.getRealmLocalizationTextsByLocale(realm.getDefaultLocale()));
-            }
-            messagesBundle.putAll(theme.getMessages(locale));
-            messagesBundle.putAll(realm.getRealmLocalizationTextsByLocale(locale.toLanguageTag()));
+            messagesBundle = theme.getEnhancedMessages(realm, locale);
             attributes.put("msg", new MessageFormatterMethod(locale, messagesBundle));
             attributes.put("advancedMsg", new AdvancedMessageFormatterMethod(locale, messagesBundle));
         } catch (IOException e) {
@@ -441,8 +439,6 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
 
         Locale locale = session.getContext().resolveLocale(user);
         Properties messagesBundle = handleThemeResources(theme, locale);
-        Map<String, String> localizationTexts = realm.getRealmLocalizationTextsByLocale(locale.getCountry());
-        messagesBundle.putAll(localizationTexts);
         FormMessage msg = new FormMessage(null, message);
         return formatMessage(msg, messagesBundle, locale);
     }
@@ -495,6 +491,22 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
                         case LOGOUT_CONFIRM:
                             b = UriBuilder.fromUri(Urls.logoutConfirm(baseUri, realm.getName()));
                             break;
+                        case INFO:
+                        case ERROR:
+                            if (isDetachedAuthenticationSession()) {
+                                FormMessage formMessage = getFirstMessage();
+                                if (formMessage == null) {
+                                    throw new IllegalStateException("Not able to create info/error page with detached authentication session as no info/error message available");
+                                }
+
+                                DetachedInfoStateCookie cookie = new DetachedInfoStateChecker(session, realm).generateAndSetCookie(
+                                        formMessage.getMessage(), messageType.toString(), status == null ? null : status.getStatusCode(),
+                                        client == null ? null : client.getId(), formMessage.getParameters());
+
+                                b = UriBuilder.fromUri(Urls.loginActionsDetachedInfo(baseUri, realm.getName()))
+                                        .queryParam(DetachedInfoStateChecker.STATE_CHECKER_PARAM, cookie.getRenderedUrlState());
+                                break;
+                            }
                         default:
                             b = UriBuilder.fromUri(baseUri).path(uriInfo.getPath());
                             break;
@@ -557,7 +569,7 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
 
     public Response createLoginPassword(){
         return createResponse(LoginFormsPages.LOGIN_PASSWORD);
-    };
+    }
 
     @Override
     public Response createPasswordReset() {
@@ -566,6 +578,10 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
             authenticationSession.setAuthNote(AbstractUsernameFormAuthenticator.ATTEMPTED_USERNAME, loginHint);
         }
         return createResponse(LoginFormsPages.LOGIN_RESET_PASSWORD);
+    }
+
+    @Override public Response createOtpReset() {
+        return createResponse(LoginFormsPages.LOGIN_RESET_OTP);
     }
 
     @Override
@@ -587,11 +603,19 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
     public Response createRegistration() {
         String loginHint = authenticationSession.getClientNote(OIDCLoginProtocol.LOGIN_HINT_PARAM);
         if (loginHint != null && !loginHint.isEmpty()) {
-            this.formData = new MultivaluedHashMap<>();
+            if (this.formData == null) {
+                this.formData = new MultivaluedHashMap<>();
+            }
             if(this.realm.isRegistrationEmailAsUsername()) {
-                this.formData.putSingle("email", loginHint);
+                String value = this.formData.getFirst("email");
+                if (value == null || value.trim().isEmpty()) {
+                    this.formData.putSingle("email", loginHint);
+                }
             } else {
-                this.formData.putSingle("username", loginHint);
+                String value = this.formData.getFirst("username");
+                if (value == null || value.trim().isEmpty()) {
+                    this.formData.putSingle("username", loginHint);
+                }
             }
         }
 
@@ -696,17 +720,24 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
         return createResponse(LoginFormsPages.LOGOUT_CONFIRM);
     }
 
-    protected void setMessage(MessageType type, String message, Object... parameters) {
+    @Override
+    public LoginFormsProvider setMessage(MessageType type, String message, Object... parameters) {
         messageType = type;
         messages = new ArrayList<>();
         messages.add(new FormMessage(null, message, parameters));
+        return this;
+    }
+
+    private FormMessage getFirstMessage() {
+        if (messages != null && !messages.isEmpty()) {
+            return messages.get(0);
+        }
+        return null;
     }
 
     protected String getFirstMessageUnformatted() {
-        if (messages != null && !messages.isEmpty()) {
-            return messages.get(0).getMessage();
-        }
-        return null;
+        FormMessage formMessage = getFirstMessage();
+        return formMessage == null ? null : formMessage.getMessage();
     }
 
     protected String formatMessage(FormMessage message, Properties messagesBundle, Locale locale) {
@@ -774,6 +805,16 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
     public FreeMarkerLoginFormsProvider setInfo(String message, Object... parameters) {
         setMessage(MessageType.INFO, message, parameters);
         return this;
+    }
+
+    @Override
+    public LoginFormsProvider setDetachedAuthSession() {
+        detachedAuthSession = true;
+        return this;
+    }
+
+    private boolean isDetachedAuthenticationSession() {
+        return detachedAuthSession || authenticationSession == null;
     }
 
     @Override

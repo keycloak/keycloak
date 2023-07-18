@@ -16,7 +16,7 @@ import { useEffect, useState } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
-import { FormAccess } from "../components/form-access/FormAccess";
+import { FormAccess } from "../components/form/FormAccess";
 import { HelpItem } from "ui-shared";
 import { KeycloakTextInput } from "../components/keycloak-text-input/KeycloakTextInput";
 import { FormPanel } from "../components/scroll-form/FormPanel";
@@ -49,7 +49,7 @@ export const RealmSettingsTokensTab = ({
     useState(false);
 
   const defaultSigAlgOptions = sortProviders(
-    serverInfo.providers!["signature"].providers
+    serverInfo.providers!["signature"].providers,
   );
 
   const form = useForm<RealmRepresentation>();
@@ -265,7 +265,7 @@ export const RealmSettingsTokensTab = ({
                     onMinus={() => field.onChange(field.value! - 1)}
                     onChange={(event) =>
                       field.onChange(
-                        Number((event.target as HTMLInputElement).value)
+                        Number((event.target as HTMLInputElement).value),
                       )
                     }
                   />
@@ -325,7 +325,7 @@ export const RealmSettingsTokensTab = ({
             labelIcon={
               <HelpItem
                 helpText={t(
-                  "realm-settings-help:accessTokenLifespanImplicitFlow"
+                  "realm-settings-help:accessTokenLifespanImplicitFlow",
                 )}
                 fieldLabelId="realm-settings:accessTokenLifespanImplicitFlow"
               />
@@ -443,7 +443,7 @@ export const RealmSettingsTokensTab = ({
             labelIcon={
               <HelpItem
                 helpText={t(
-                  "realm-settings-help:defaultAdminInitiatedActionLifespan"
+                  "realm-settings-help:defaultAdminInitiatedActionLifespan",
                 )}
                 fieldLabelId="realm-settings:defaultAdminInitiated"
               />

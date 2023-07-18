@@ -1,19 +1,19 @@
-import { useState } from "react";
-import { useTranslation } from "react-i18next";
+import type UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
 import {
   AlertVariant,
   Button,
   Modal,
   ModalVariant,
 } from "@patternfly/react-core";
-
-import type UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
-import { useAdminClient } from "../context/auth/AdminClient";
-import { useAlerts } from "../components/alert/Alerts";
-import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
-import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
-import { emptyFormatter } from "../util";
 import { differenceBy } from "lodash-es";
+import { useState } from "react";
+import { useTranslation } from "react-i18next";
+
+import { adminClient } from "../admin-client";
+import { useAlerts } from "../components/alert/Alerts";
+import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
+import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
+import { emptyFormatter } from "../util";
 
 type MemberModalProps = {
   groupId: string;
@@ -22,7 +22,6 @@ type MemberModalProps = {
 
 export const MemberModal = ({ groupId, onClose }: MemberModalProps) => {
   const { t } = useTranslation("groups");
-  const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
   const [selectedRows, setSelectedRows] = useState<UserRepresentation[]>([]);
 
@@ -58,13 +57,13 @@ export const MemberModal = ({ groupId, onClose }: MemberModalProps) => {
             try {
               await Promise.all(
                 selectedRows.map((user) =>
-                  adminClient.users.addToGroup({ id: user.id!, groupId })
-                )
+                  adminClient.users.addToGroup({ id: user.id!, groupId }),
+                ),
               );
               onClose();
               addAlert(
                 t("usersAdded", { count: selectedRows.length }),
-                AlertVariant.success
+                AlertVariant.success,
               );
             } catch (error) {
               addError("groups:usersAddedError", error);

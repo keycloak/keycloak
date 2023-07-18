@@ -20,11 +20,9 @@ import java.io.Closeable;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
-import java.util.UUID;
-import javax.ws.rs.client.Client;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriBuilder;
-
+import jakarta.ws.rs.client.Client;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.UriBuilder;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Assert;
@@ -59,7 +57,6 @@ import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
-import org.keycloak.testsuite.pages.AccountUpdateProfilePage;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
 import org.keycloak.testsuite.pages.ErrorPage;
@@ -76,8 +73,8 @@ import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.TokenSignatureUtil;
 import org.keycloak.testsuite.util.UserBuilder;
-import org.keycloak.testsuite.util.WaitUtils;
 import org.openqa.selenium.Cookie;
+import org.keycloak.testsuite.util.AccountHelper;
 import org.openqa.selenium.JavascriptExecutor;
 
 import static org.hamcrest.Matchers.containsString;
@@ -101,22 +98,18 @@ public class LoginTest extends AbstractTestRealmKeycloakTest {
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
         UserRepresentation user = UserBuilder.create()
-                                             .id(UUID.randomUUID().toString())
                                              .username("login-test")
                                              .email("login@test.com")
                                              .enabled(true)
                                              .password("password")
                                              .build();
-        userId = user.getId();
 
         UserRepresentation user2 = UserBuilder.create()
-                                              .id(UUID.randomUUID().toString())
                                               .username("login-test2")
                                               .email("login2@test.com")
                                               .enabled(true)
                                               .password("password")
                                               .build();
-        user2Id = user2.getId();
 
         UserRepresentation admin = UserBuilder.create()
                 .username("admin")
@@ -146,9 +139,6 @@ public class LoginTest extends AbstractTestRealmKeycloakTest {
     protected ErrorPage errorPage;
 
     @Page
-    protected AccountUpdateProfilePage profilePage;
-
-    @Page
     protected LoginPasswordUpdatePage updatePasswordPage;
 
     @Page
@@ -160,6 +150,13 @@ public class LoginTest extends AbstractTestRealmKeycloakTest {
     private static String userId;
 
     private static String user2Id;
+
+    @Override
+    public void importTestRealms() {
+        super.importTestRealms();
+        userId = testRealm().users().search("login-test", Boolean.TRUE).get(0).getId();
+        user2Id = testRealm().users().search("login-test2", Boolean.TRUE).get(0).getId();
+    }
 
     @Test
     public void testBrowserSecurityHeaders() {
@@ -359,31 +356,25 @@ public class LoginTest extends AbstractTestRealmKeycloakTest {
     }
 
     @Test
-    @DisableFeature(value = Profile.Feature.ACCOUNT2, skipRestart = true) // TODO remove this (KEYCLOAK-16228)
     public void loginDifferentUserAfterDisabledUserThrownOut() {
-        String userId = adminClient.realm("test").users().search("test-user@localhost").get(0).getId();
+        String userId = AccountHelper.getUserRepresentation(adminClient.realm("test"), "test-user@localhost").getId();
+
         try {
-            //profilePage.open();
             loginPage.open();
             loginPage.login("test-user@localhost", "password");
 
-            //accountPage.assertCurrent();
             appPage.assertCurrent();
             appPage.openAccount();
 
-            profilePage.assertCurrent();
-
             setUserEnabled(userId, false);
 
-            // force refresh token which results in redirecting to login page
-            profilePage.updateUsername("notPermitted");
-            WaitUtils.waitForPageToLoad();
-
+            loginPage.open();
             loginPage.assertCurrent();
 
             // try to log in as different user
             loginPage.login("keycloak-user@localhost", "password");
-            profilePage.assertCurrent();
+
+            appPage.assertCurrent();
         } finally {
             setUserEnabled(userId, true);
         }
@@ -591,8 +582,6 @@ public class LoginTest extends AbstractTestRealmKeycloakTest {
         events.expectLogin().user(userId).detail(Details.USERNAME, "login-test").assertEvent().getSessionId();
     }
 
-
-
     @Test
     public void loginLoginHint() {
         String loginFormUrl = oauth.getLoginFormUrl() + "&login_hint=login-test";
@@ -771,9 +760,7 @@ public class LoginTest extends AbstractTestRealmKeycloakTest {
         }
     }
 
-
     // Login timeout scenarios
-
     // KEYCLOAK-1037
     @Test
     public void loginExpiredCode() {
@@ -907,7 +894,6 @@ public class LoginTest extends AbstractTestRealmKeycloakTest {
     }
 
     @Test
-    @DisableFeature(value = Profile.Feature.ACCOUNT2, skipRestart = true) // TODO remove this (KEYCLOAK-16228)
     public void loginRememberMeExpiredIdle() throws Exception {
         try (Closeable c = new RealmAttributeUpdater(adminClient.realm("test"))
           .setSsoSessionIdleTimeoutRememberMe(1)
@@ -930,13 +916,12 @@ public class LoginTest extends AbstractTestRealmKeycloakTest {
             setTimeOffset(2 + SessionTimeoutHelper.IDLE_TIMEOUT_WINDOW_SECONDS);
 
             // trying to open the account page with an expired idle timeout should redirect back to the login page.
-            appPage.openAccount();
+            loginPage.open();
             loginPage.assertCurrent();
         }
     }
 
     @Test
-    @DisableFeature(value = Profile.Feature.ACCOUNT2, skipRestart = true) // TODO remove this (KEYCLOAK-16228)
     public void loginRememberMeExpiredMaxLifespan() throws Exception {
         try (Closeable c = new RealmAttributeUpdater(adminClient.realm("test"))
           .setSsoSessionMaxLifespanRememberMe(1)
@@ -959,7 +944,7 @@ public class LoginTest extends AbstractTestRealmKeycloakTest {
             setTimeOffset(2);
 
             // trying to open the account page with an expired lifespan should redirect back to the login page.
-            appPage.openAccount();
+            loginPage.open();
             loginPage.assertCurrent();
         }
     }

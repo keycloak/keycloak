@@ -1,6 +1,4 @@
-import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { Trans, useTranslation } from "react-i18next";
+import type { ManagementPermissionReference } from "@keycloak/keycloak-admin-client/lib/defs/managementPermissionReference";
 import {
   Card,
   CardBody,
@@ -19,13 +17,16 @@ import {
   Thead,
   Tr,
 } from "@patternfly/react-table";
+import { useState } from "react";
+import { Trans, useTranslation } from "react-i18next";
+import { Link, useNavigate } from "react-router-dom";
+import { HelpItem } from "ui-shared";
 
-import type { ManagementPermissionReference } from "@keycloak/keycloak-admin-client/lib/defs/managementPermissionReference";
-import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
-import { useRealm } from "../../context/realm-context/RealmContext";
+import { adminClient } from "../../admin-client";
 import { toPermissionDetails } from "../../clients/routes/PermissionDetails";
 import { KeycloakSpinner } from "../../components/keycloak-spinner/KeycloakSpinner";
-import { HelpItem } from "ui-shared";
+import { useRealm } from "../../context/realm-context/RealmContext";
+import { useFetch } from "../../utils/useFetch";
 import useLocaleSort from "../../utils/useLocaleSort";
 import { useConfirmDialog } from "../confirm-dialog/ConfirmDialog";
 
@@ -46,7 +47,6 @@ type PermissionsTabProps = {
 export const PermissionsTab = ({ id, type }: PermissionsTabProps) => {
   const { t } = useTranslation("common");
   const navigate = useNavigate();
-  const { adminClient } = useAdminClient();
   const { realm } = useRealm();
   const [realmId, setRealmId] = useState("");
   const [permission, setPermission] = useState<ManagementPermissionReference>();
@@ -57,7 +57,7 @@ export const PermissionsTab = ({ id, type }: PermissionsTabProps) => {
       case "clients":
         return adminClient.clients.updateFineGrainPermission(
           { id: id! },
-          { enabled }
+          { enabled },
         );
       case "users":
         return adminClient.realms.updateUsersManagementPermissions({
@@ -71,7 +71,7 @@ export const PermissionsTab = ({ id, type }: PermissionsTabProps) => {
       case "identityProviders":
         return adminClient.identityProviders.updatePermission(
           { alias: id! },
-          { enabled }
+          { enabled },
         );
     }
   };
@@ -106,7 +106,7 @@ export const PermissionsTab = ({ id, type }: PermissionsTabProps) => {
       setRealmId(clients[0]?.id!);
       setPermission(permission);
     },
-    [id]
+    [id],
   );
 
   const [toggleDisableDialog, DisableConfirm] = useConfirmDialog({
@@ -197,7 +197,7 @@ export const PermissionsTab = ({ id, type }: PermissionsTabProps) => {
                 <Tbody>
                   {localeSort(
                     Object.entries(permission.scopePermissions || {}),
-                    ([name]) => name
+                    ([name]) => name,
                   ).map(([name, id]) => (
                     <Tr key={id}>
                       <Td>
@@ -227,7 +227,7 @@ export const PermissionsTab = ({ id, type }: PermissionsTabProps) => {
                                     id: realmId,
                                     permissionType: "scope",
                                     permissionId: id,
-                                  })
+                                  }),
                                 );
                               },
                             },

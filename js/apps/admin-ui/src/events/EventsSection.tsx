@@ -33,6 +33,7 @@ import { Controller, useForm } from "react-hook-form";
 import { Trans, useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 
+import { adminClient } from "../admin-client";
 import { KeycloakTextInput } from "../components/keycloak-text-input/KeycloakTextInput";
 import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
 import {
@@ -41,11 +42,11 @@ import {
 } from "../components/routable-tabs/RoutableTabs";
 import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
 import { ViewHeader } from "../components/view-header/ViewHeader";
-import { useAdminClient, useFetch } from "../context/auth/AdminClient";
 import { useRealm } from "../context/realm-context/RealmContext";
 import helpUrls from "../help-urls";
 import { toRealmSettings } from "../realm-settings/routes/RealmSettings";
 import { toUser } from "../user/routes/User";
+import { useFetch } from "../utils/useFetch";
 import useFormatDate, { FORMAT_DATE_AND_TIME } from "../utils/useFormatDate";
 import { AdminEvents } from "./AdminEvents";
 import { EventsTab, toEvents } from "./routes/Events";
@@ -126,7 +127,6 @@ const UserDetailLink = (event: EventRepresentation) => {
 
 export default function EventsSection() {
   const { t } = useTranslation("events");
-  const { adminClient } = useAdminClient();
   const { realm } = useRealm();
   const formatDate = useFormatDate();
   const [key, setKey] = useState(0);
@@ -161,7 +161,7 @@ export default function EventsSection() {
   useFetch(
     () => adminClient.realms.getConfigEvents({ realm }),
     (events) => setEvents(events),
-    []
+    [],
   );
 
   function loader(first?: number, max?: number) {
@@ -199,7 +199,7 @@ export default function EventsSection() {
 
   function removeFilterValue(
     key: keyof UserEventSearchForm,
-    valueToRemove: EventType
+    valueToRemove: EventType,
   ) {
     const formValues = getValues();
     const fieldValue = formValues[key];
@@ -214,7 +214,7 @@ export default function EventsSection() {
   function commitFilters() {
     const newFilters: Partial<UserEventSearchForm> = pickBy(
       getValues(),
-      (value) => value !== "" || (Array.isArray(value) && value.length > 0)
+      (value) => value !== "" || (Array.isArray(value) && value.length > 0),
     );
 
     setActiveFilters(newFilters);
@@ -308,18 +308,20 @@ export default function EventsSection() {
                               onClick={(event) => {
                                 event.stopPropagation();
                                 field.onChange(
-                                  field.value.filter((val) => val !== chip)
+                                  field.value.filter((val) => val !== chip),
                                 );
                               }}
                             >
-                              {chip}
+                              {t(`realm-settings:eventTypes.${chip}.name`)}
                             </Chip>
                           ))}
                         </ChipGroup>
                       }
                     >
                       {events?.enabledEventTypes?.map((option) => (
-                        <SelectOption key={option} value={option} />
+                        <SelectOption key={option} value={option}>
+                          {t(`realm-settings:eventTypes.${option}.name`)}
+                        </SelectOption>
                       ))}
                     </Select>
                   )}
@@ -416,7 +418,7 @@ export default function EventsSection() {
               {Object.entries(activeFilters).map((filter) => {
                 const [key, value] = filter as [
                   keyof UserEventSearchForm,
-                  string | EventType[]
+                  string | EventType[],
                 ];
 
                 return (
@@ -435,7 +437,7 @@ export default function EventsSection() {
                           key={entry}
                           onClick={() => removeFilterValue(key, entry)}
                         >
-                          {entry}
+                          {t(`realm-settings:eventTypes.${entry}.name`)}
                         </Chip>
                       ))
                     )}

@@ -17,7 +17,7 @@
 
 package org.keycloak.testsuite.crossdc;
 
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response;
 
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.junit.Test;

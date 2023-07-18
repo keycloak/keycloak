@@ -19,9 +19,7 @@ package org.keycloak.testsuite.ui.account2;
 
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
-import org.keycloak.models.utils.SessionTimeoutHelper;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.ui.account2.page.DeviceActivityPage;
 import org.keycloak.testsuite.ui.account2.page.PersonalInfoPage;
@@ -36,7 +34,7 @@ import static org.keycloak.testsuite.util.WaitUtils.pause;
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
  */
 public class SessionTest extends AbstractAccountTest {
-    public static final int SSO_SESSION_IDLE_TIMEOUT = 1;
+    public static final int SSO_SESSION_IDLE_TIMEOUT = 10;
     public static final int ACCESS_TOKEN_LIFESPAN = 10;
 
     @Page
@@ -51,8 +49,8 @@ public class SessionTest extends AbstractAccountTest {
         RealmRepresentation realm = testRealms.get(0);
 
         // in seconds
-        realm.setSsoSessionIdleTimeout(1);
-        realm.setAccessTokenLifespan(10);
+        realm.setSsoSessionIdleTimeout(SSO_SESSION_IDLE_TIMEOUT);
+        realm.setAccessTokenLifespan(ACCESS_TOKEN_LIFESPAN);
     }
 
     @Before
@@ -107,6 +105,6 @@ public class SessionTest extends AbstractAccountTest {
     private void waitForSessionToExpire() {
         // +3 to add some toleration
         log.info("Waiting for SSO session to expire");
-        pause((SSO_SESSION_IDLE_TIMEOUT + SessionTimeoutHelper.IDLE_TIMEOUT_WINDOW_SECONDS + 3) * 1000);
+        pause((SSO_SESSION_IDLE_TIMEOUT + 3) * 1000);
     }
 }

@@ -53,7 +53,7 @@ export default class GroupDetailPage extends GroupPage {
     super.openDropdownMenu("", cy.findByTestId(this.actionDrpDwnButton));
     super.clickDropdownMenuItem(
       "",
-      cy.findByTestId(this.actionDrpDwnItemRenameGroup)
+      cy.findByTestId(this.actionDrpDwnItemRenameGroup),
     );
     return this;
   }
@@ -62,7 +62,7 @@ export default class GroupDetailPage extends GroupPage {
     super.openDropdownMenu("", cy.findByTestId(this.actionDrpDwnButton));
     super.clickDropdownMenuItem(
       "",
-      cy.findByTestId(this.actionDrpDwnItemDeleteGroup)
+      cy.findByTestId(this.actionDrpDwnItemDeleteGroup),
     );
     modalUtils.confirmModal();
     return this;

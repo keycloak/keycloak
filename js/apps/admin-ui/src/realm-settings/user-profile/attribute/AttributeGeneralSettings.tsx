@@ -13,12 +13,13 @@ import { isEqual } from "lodash-es";
 import { useState } from "react";
 import { Controller, useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-
-import { FormAccess } from "../../../components/form-access/FormAccess";
 import { HelpItem } from "ui-shared";
+
+import { adminClient } from "../../../admin-client";
+import { FormAccess } from "../../../components/form/FormAccess";
 import { KeycloakSpinner } from "../../../components/keycloak-spinner/KeycloakSpinner";
 import { KeycloakTextInput } from "../../../components/keycloak-text-input/KeycloakTextInput";
-import { useAdminClient, useFetch } from "../../../context/auth/AdminClient";
+import { useFetch } from "../../../utils/useFetch";
 import { useParams } from "../../../utils/useParams";
 import { USERNAME_EMAIL } from "../../NewAttributeSettings";
 import type { AttributeParams } from "../../routes/Attribute";
@@ -33,7 +34,6 @@ const REQUIRED_FOR = [
 
 export const AttributeGeneralSettings = () => {
   const { t } = useTranslation("realm-settings");
-  const { adminClient } = useAdminClient();
   const form = useFormContext();
   const [clientScopes, setClientScopes] =
     useState<ClientScopeRepresentation[]>();
@@ -171,7 +171,7 @@ export const AttributeGeneralSettings = () => {
                 if (value) {
                   form.setValue(
                     "selector.scopes",
-                    clientScopes.map((s) => s.name)
+                    clientScopes.map((s) => s.name),
                   );
                 } else {
                   form.setValue("selector.scopes", []);
@@ -191,7 +191,7 @@ export const AttributeGeneralSettings = () => {
                 } else {
                   form.setValue(
                     "selector.scopes",
-                    clientScopes.map((s) => s.name)
+                    clientScopes.map((s) => s.name),
                   );
                 }
               }}
@@ -321,7 +321,7 @@ export const AttributeGeneralSettings = () => {
                     if (value) {
                       form.setValue(
                         "required.scopes",
-                        clientScopes.map((s) => s.name)
+                        clientScopes.map((s) => s.name),
                       );
                     } else {
                       form.setValue("required.scopes", []);
@@ -341,7 +341,7 @@ export const AttributeGeneralSettings = () => {
                     } else {
                       form.setValue(
                         "required.scopes",
-                        clientScopes.map((s) => s.name)
+                        clientScopes.map((s) => s.name),
                       );
                     }
                   }}
@@ -372,7 +372,7 @@ export const AttributeGeneralSettings = () => {
                         if (field.value) {
                           changedValue = field.value.includes(option)
                             ? field.value.filter(
-                                (item: string) => item !== option
+                                (item: string) => item !== option,
                               )
                             : [...field.value, option];
                         } else {

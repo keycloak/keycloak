@@ -1,3 +1,4 @@
+import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
 import { Language } from "@patternfly/react-code-editor";
 import {
   ActionGroup,
@@ -11,14 +12,12 @@ import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
 
-import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
-
+import { adminClient } from "../../admin-client";
 import { useAlerts } from "../../components/alert/Alerts";
-import { FormAccess } from "../../components/form-access/FormAccess";
+import { FormAccess } from "../../components/form/FormAccess";
 import { FileUploadForm } from "../../components/json-file-upload/FileUploadForm";
 import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 import { ViewHeader } from "../../components/view-header/ViewHeader";
-import { useAdminClient } from "../../context/auth/AdminClient";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import {
   addTrailingSlash,
@@ -26,9 +25,9 @@ import {
   convertToFormValues,
 } from "../../util";
 import { getAuthorizationHeaders } from "../../utils/getAuthorizationHeaders";
-import { CapabilityConfig } from "../add/CapabilityConfig";
 import { ClientDescription } from "../ClientDescription";
 import { FormFields } from "../ClientDetails";
+import { CapabilityConfig } from "../add/CapabilityConfig";
 import { toClient } from "../routes/Client";
 import { toClients } from "../routes/Clients";
 
@@ -37,7 +36,6 @@ const isXml = (text: string) => text.match(/(<.[^(><.)]+>)/g);
 export default function ImportForm() {
   const { t } = useTranslation("clients");
   const navigate = useNavigate();
-  const { adminClient } = useAdminClient();
   const { realm } = useRealm();
   const form = useForm<FormFields>();
   const { register, handleSubmit, setValue } = form;
@@ -57,7 +55,7 @@ export default function ImportForm() {
   };
 
   async function parseFileContents(
-    contents: string
+    contents: string,
   ): Promise<ClientRepresentation> {
     if (!isXml(contents)) {
       return JSON.parse(contents);
@@ -65,18 +63,18 @@ export default function ImportForm() {
 
     const response = await fetch(
       `${addTrailingSlash(
-        adminClient.baseUrl
+        adminClient.baseUrl,
       )}admin/realms/${realm}/client-description-converter`,
       {
         method: "POST",
         body: contents,
         headers: getAuthorizationHeaders(await adminClient.getAccessToken()),
-      }
+      },
     );
 
     if (!response.ok) {
       throw new Error(
-        `Server responded with invalid status: ${response.statusText}`
+        `Server responded with invalid status: ${response.statusText}`,
       );
     }
 

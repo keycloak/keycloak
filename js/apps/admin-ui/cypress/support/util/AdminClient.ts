@@ -5,6 +5,7 @@ import type ClientScopeRepresentation from "@keycloak/keycloak-admin-client/lib/
 import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
 import type UserProfileConfig from "@keycloak/keycloak-admin-client/lib/defs/userProfileConfig";
 import type RoleRepresentation from "@keycloak/keycloak-admin-client/lib/defs/roleRepresentation";
+import type { RoleMappingPayload } from "@keycloak/keycloak-admin-client/lib/defs/roleRepresentation";
 import { merge } from "lodash-es";
 
 class AdminClient {
@@ -41,6 +42,11 @@ class AdminClient {
     await this.client.realms.update({ realm }, payload);
   }
 
+  async getRealm(realm: string) {
+    await this.login();
+    return await this.client.realms.findOne({ realm });
+  }
+
   async deleteRealm(realm: string) {
     await this.login();
     await this.client.realms.del({ realm });
@@ -75,9 +81,9 @@ class AdminClient {
       if (!parentGroup) {
         parentGroup = await this.client.groups.create({ name: group });
       } else {
-        parentGroup = await this.client.groups.setOrCreateChild(
+        parentGroup = await this.client.groups.createChildGroup(
           { id: parentGroup.id },
-          { name: group }
+          { name: group },
         );
       }
       createdGroups.push(parentGroup);
@@ -101,7 +107,7 @@ class AdminClient {
 
     if (!createdUser) {
       throw new Error(
-        "Unable to create user, created user could not be found."
+        "Unable to create user, created user could not be found.",
       );
     }
 
@@ -128,6 +134,17 @@ class AdminClient {
     await this.login();
     const user = await this.createUser({ username, enabled: true });
     await this.client.users.addToGroup({ id: user.id!, groupId });
+  }
+
+  async addRealmRoleToUser(userId: string, roleName: string) {
+    await this.login();
+
+    const realmRole = await this.client.roles.findOneByName({ name: roleName });
+
+    await this.client.users.addRealmRoleMappings({
+      id: userId,
+      roles: [realmRole as RoleMappingPayload],
+    });
   }
 
   async deleteUser(username: string) {
@@ -160,7 +177,7 @@ class AdminClient {
 
   async addDefaultClientScopeInClient(
     clientScopeName: string,
-    clientId: string
+    clientId: string,
   ) {
     await this.login();
     const scope = await this.client.clientScopes.findOneByName({
@@ -175,7 +192,7 @@ class AdminClient {
 
   async removeDefaultClientScopeInClient(
     clientScopeName: string,
-    clientId: string
+    clientId: string,
   ) {
     await this.login();
     const scope = await this.client.clientScopes.findOneByName({
@@ -194,7 +211,7 @@ class AdminClient {
     const currentProfile = await this.client.users.getProfile({ realm });
 
     await this.client.users.updateProfile(
-      merge(currentProfile, payload, { realm })
+      merge(currentProfile, payload, { realm }),
     );
   }
 
@@ -230,7 +247,7 @@ class AdminClient {
 
   async unlinkAccountIdentityProvider(
     username: string,
-    idpDisplayName: string
+    idpDisplayName: string,
   ) {
     await this.login();
     const user = await this.client.users.find({ username });
@@ -259,6 +276,29 @@ class AdminClient {
       federatedIdentityId: idp?.id!,
       federatedIdentity: fedIdentity,
     });
+  }
+
+  async addLocalizationText(locale: string, key: string, value: string) {
+    await this.login();
+    await this.client.realms.addLocalization(
+      { realm: this.client.realmName, selectedLocale: locale, key: key },
+      value,
+    );
+  }
+
+  async removeAllLocalizationTexts() {
+    await this.login();
+    const localesWithTexts = await this.client.realms.getRealmSpecificLocales({
+      realm: this.client.realmName,
+    });
+    await Promise.all(
+      localesWithTexts.map((locale) =>
+        this.client.realms.deleteRealmLocalizationTexts({
+          realm: this.client.realmName,
+          selectedLocale: locale,
+        }),
+      ),
+    );
   }
 }
 

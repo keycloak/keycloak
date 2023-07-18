@@ -11,16 +11,17 @@ import {
 import { Controller, FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
+import { HelpItem } from "ui-shared";
 
+import { adminClient } from "../../../admin-client";
 import { useAlerts } from "../../../components/alert/Alerts";
 import { DynamicComponents } from "../../../components/dynamic/DynamicComponents";
-import { FormAccess } from "../../../components/form-access/FormAccess";
-import { HelpItem } from "ui-shared";
+import { FormAccess } from "../../../components/form/FormAccess";
 import { KeycloakTextInput } from "../../../components/keycloak-text-input/KeycloakTextInput";
 import { ViewHeader } from "../../../components/view-header/ViewHeader";
-import { useAdminClient, useFetch } from "../../../context/auth/AdminClient";
 import { useServerInfo } from "../../../context/server-info/ServerInfoProvider";
 import { KEY_PROVIDER_TYPE } from "../../../util";
+import { useFetch } from "../../../utils/useFetch";
 import { useParams } from "../../../utils/useParams";
 import { KeyProviderParams, ProviderType } from "../../routes/KeyProvider";
 import { toKeysTab } from "../../routes/KeysTab";
@@ -37,7 +38,6 @@ export const KeyProviderForm = ({
 }: KeyProviderFormProps) => {
   const { t } = useTranslation("realm-settings");
   const { id } = useParams<{ id: string }>();
-  const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
 
   const serverInfo = useServerInfo();
@@ -59,7 +59,7 @@ export const KeyProviderForm = ({
     if (component.config)
       Object.entries(component.config).forEach(
         ([key, value]) =>
-          (component.config![key] = Array.isArray(value) ? value : [value])
+          (component.config![key] = Array.isArray(value) ? value : [value]),
       );
     try {
       if (id) {
@@ -68,7 +68,7 @@ export const KeyProviderForm = ({
           {
             ...component,
             providerType: KEY_PROVIDER_TYPE,
-          }
+          },
         );
         addAlert(t("saveProviderSuccess"), AlertVariant.success);
       } else {
@@ -94,7 +94,7 @@ export const KeyProviderForm = ({
         reset({ ...result });
       }
     },
-    []
+    [],
   );
 
   return (

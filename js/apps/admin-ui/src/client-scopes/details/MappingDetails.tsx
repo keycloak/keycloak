@@ -14,28 +14,26 @@ import { useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Link, useMatch, useNavigate } from "react-router-dom";
+import { HelpItem } from "ui-shared";
 
+import { adminClient } from "../../admin-client";
 import { toClient } from "../../clients/routes/Client";
 import { useAlerts } from "../../components/alert/Alerts";
 import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
 import { DynamicComponents } from "../../components/dynamic/DynamicComponents";
-import { FormAccess } from "../../components/form-access/FormAccess";
-import { HelpItem } from "ui-shared";
+import { FormAccess } from "../../components/form/FormAccess";
 import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 import { ViewHeader } from "../../components/view-header/ViewHeader";
-import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
 import { convertFormValuesToObject, convertToFormValues } from "../../util";
+import { useFetch } from "../../utils/useFetch";
 import { useParams } from "../../utils/useParams";
 import { toClientScope } from "../routes/ClientScope";
 import { MapperParams, MapperRoute } from "../routes/Mapper";
 
-import "./mapping-details.css";
-
 export default function MappingDetails() {
   const { t } = useTranslation("client-scopes");
-  const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
 
   const { id, mapperId } = useParams<MapperParams>();
@@ -85,7 +83,7 @@ export default function MappingDetails() {
 
         const mapperTypes = serverInfo.protocolMapperTypes![data!.protocol!];
         const mapping = mapperTypes.find(
-          (type) => type.id === data!.protocolMapper
+          (type) => type.id === data!.protocolMapper,
         );
 
         return {
@@ -106,7 +104,7 @@ export default function MappingDetails() {
         const protocolMappers =
           serverInfo.protocolMapperTypes![model.protocol!];
         const mapping = protocolMappers.find(
-          (mapper) => mapper.id === mapperId
+          (mapper) => mapper.id === mapperId,
         );
         if (!mapping) {
           throw new Error(t("common:notFound"));
@@ -127,7 +125,7 @@ export default function MappingDetails() {
         convertToFormValues(data, setValue);
       }
     },
-    []
+    [],
   );
 
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
@@ -164,11 +162,11 @@ export default function MappingDetails() {
         isOnClientScope
           ? await adminClient.clientScopes.updateProtocolMapper(
               { id, mapperId },
-              { id: mapperId, ...mapping }
+              { id: mapperId, ...mapping },
             )
           : await adminClient.clients.updateProtocolMapper(
               { id, mapperId },
-              { id: mapperId, ...mapping }
+              { id: mapperId, ...mapping },
             );
       } else {
         isOnClientScope
@@ -206,7 +204,6 @@ export default function MappingDetails() {
           isHorizontal
           onSubmit={handleSubmit(save)}
           role="manage-clients"
-          className="keycloak__client-scope-mapping-details__form"
         >
           <FormGroup label={t("common:mapperType")} fieldId="mapperType">
             <KeycloakTextInput
@@ -242,7 +239,10 @@ export default function MappingDetails() {
             />
           </FormGroup>
           <FormProvider {...form}>
-            <DynamicComponents properties={mapping?.properties || []} />
+            <DynamicComponents
+              properties={mapping?.properties || []}
+              isNew={!isUpdating}
+            />
           </FormProvider>
           <ActionGroup>
             <Button variant="primary" type="submit">

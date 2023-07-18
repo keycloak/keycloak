@@ -36,6 +36,7 @@ public class UrlBean {
     private URI baseURI;
     private Theme theme;
     private String realm;
+    private URI themeRootUri;
 
     public UrlBean(RealmModel realm, Theme theme, URI baseURI, URI actionUri) {
         this.realm = realm != null ? realm.getName() : null;
@@ -74,14 +75,6 @@ public class UrlBean {
         return Urls.realmRegisterPage(baseURI, realm).toString();
     }
 
-    public String getLoginUpdatePasswordUrl() {
-        return Urls.loginActionUpdatePassword(baseURI, realm).toString();
-    }
-
-    public String getLoginUpdateTotpUrl() {
-        return Urls.loginActionUpdateTotp(baseURI, realm).toString();
-    }
-
     public String getLoginUpdateProfileUrl() {
         return Urls.loginActionUpdateProfile(baseURI, realm).toString();
     }
@@ -103,7 +96,7 @@ public class UrlBean {
     }
 
     public String getResourcesUrl() {
-        return Urls.themeRoot(baseURI).toString() + "/" + theme.getType().toString().toLowerCase() +"/" + theme.getName();
+        return getThemeRootUri().toString() + "/" + theme.getType().toString().toLowerCase() +"/" + theme.getName();
     }
 
     public String getOauthAction() {
@@ -123,21 +116,28 @@ public class UrlBean {
     }
 
     public String getResourcesPath() {
-        URI uri = Urls.themeRoot(baseURI);
+        URI uri = getThemeRootUri();
         return uri.getPath() + "/" + theme.getType().toString().toLowerCase() +"/" + theme.getName();
     }
 
     public String getResourcesCommonPath() {
-        URI uri = Urls.themeRoot(baseURI);
+        URI uri = getThemeRootUri();
         String commonPath = "";
         try {
-            commonPath = theme.getProperties().getProperty("import");
+            commonPath = theme.getProperties().getProperty("common");
         } catch (IOException ex) {
             logger.warn("Failed to load properties", ex);
         }
         if (commonPath == null || commonPath.isEmpty()) {
-            commonPath = "/common/keycloak";
+            commonPath = "common/keycloak";
         }
         return uri.getPath() + "/" + commonPath;
+    }
+
+    private URI getThemeRootUri() {
+        if (themeRootUri == null) {
+            themeRootUri = Urls.themeRoot(baseURI);
+        }
+        return themeRootUri;
     }
 }

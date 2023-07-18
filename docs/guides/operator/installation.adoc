@@ -9,7 +9,7 @@ priority=10
 summary="How to install the Keycloak Operator on Kubernetes and OpenShift">
 
 == Installing the Keycloak Operator
-This guide describes how to install the Keycloak Operator in a Kubernetes or OpenShift cluster.
+This {section} describes how to install the Keycloak Operator in a Kubernetes or OpenShift cluster.
 
 === Installing by using the Operator Lifecycle Manager
 

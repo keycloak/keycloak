@@ -68,7 +68,7 @@ export const AddValidatorDialog = ({
         <Form id="add-validator" onSubmit={handleSubmit(save)}>
           <ValidatorSelect
             selectedValidators={selectedValidators.map(
-              (validator) => validator.key
+              (validator) => validator.key,
             )}
             onChange={setSelectedValidator}
           />

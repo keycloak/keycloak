@@ -1,6 +1,6 @@
 package org.keycloak.testsuite.adapter.servlet;
 
-import javax.ws.rs.core.UriBuilder;
+import jakarta.ws.rs.core.UriBuilder;
 import java.util.List;
 import java.util.Map;
 import java.util.LinkedHashMap;
@@ -13,6 +13,7 @@ import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
+import org.keycloak.representations.RefreshToken;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.adapter.AbstractServletsAdapterTest;
@@ -91,7 +92,8 @@ public class OfflineServletsAdapterTest extends AbstractServletsAdapterTest {
 
     @Override
     protected boolean isImportAfterEachMethod() {
-        return false;
+        // For proper cleanup of test methods
+        return true;
     }
 
     @Test
@@ -111,12 +113,13 @@ public class OfflineServletsAdapterTest extends AbstractServletsAdapterTest {
 
             assertCurrentUrlStartsWith(offlineTokenPage);
 
-            assertThat(offlineTokenPage.getRefreshToken(), notNullValue());
-            assertThat(TokenUtil.TOKEN_TYPE_OFFLINE, is(offlineTokenPage.getRefreshToken().getType()));
-            assertThat(offlineTokenPage.getRefreshToken().getExp(), nullValue());
+            RefreshToken refreshToken = offlineTokenPage.getRefreshToken();
+            assertThat(refreshToken, notNullValue());
+            assertThat(TokenUtil.TOKEN_TYPE_OFFLINE, is(refreshToken.getType()));
+            assertThat(refreshToken.getExp(), nullValue());
 
             String accessTokenId = offlineTokenPage.getAccessToken().getId();
-            String refreshTokenId = offlineTokenPage.getRefreshToken().getId();
+            String refreshTokenId = refreshToken.getId();
 
             // online user session will be expired and removed
             setAdapterAndServerTimeOffset(9999);
@@ -166,8 +169,9 @@ public class OfflineServletsAdapterTest extends AbstractServletsAdapterTest {
             loginPage.login(DEFAULT_USERNAME, DEFAULT_PASSWORD);
             assertCurrentUrlStartsWith(offlineTokenPage);
 
-            assertThat(offlineTokenPage.getRefreshToken(), notNullValue());
-            assertThat(offlineTokenPage.getRefreshToken().getType(), is(TokenUtil.TOKEN_TYPE_OFFLINE));
+            final RefreshToken refreshToken = offlineTokenPage.getRefreshToken();
+            assertThat(refreshToken, notNullValue());
+            assertThat(refreshToken.getType(), is(TokenUtil.TOKEN_TYPE_OFFLINE));
 
             // Assert refresh works with increased time
             setAdapterAndServerTimeOffset(9999);
@@ -229,8 +233,10 @@ public class OfflineServletsAdapterTest extends AbstractServletsAdapterTest {
             oauthGrantPage.accept();
 
             assertCurrentUrlStartsWith(offlineTokenPage);
-            assertThat(offlineTokenPage.getRefreshToken(), notNullValue());
-            assertThat(offlineTokenPage.getRefreshToken().getType(), is(TokenUtil.TOKEN_TYPE_OFFLINE));
+
+            RefreshToken refreshToken = offlineTokenPage.getRefreshToken();
+            assertThat(refreshToken, notNullValue());
+            assertThat(refreshToken.getType(), is(TokenUtil.TOKEN_TYPE_OFFLINE));
 
             // Check that the client scopes have been granted by the user
             List<Map<String, Object>> userConsents = AccountHelper.getUserConsents(adminClient.realm(TEST), DEFAULT_USERNAME);
@@ -272,6 +278,8 @@ public class OfflineServletsAdapterTest extends AbstractServletsAdapterTest {
             AccountHelper.logout(adminClient.realm(TEST), DEFAULT_USERNAME);
         }
         setTimeOffset(0);
+        // Improve stability of the cleanup and have more time for synchronizing auth and app server living in different JVMs
+        pause(400);
     }
     
 }

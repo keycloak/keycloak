@@ -9,6 +9,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, To, useNavigate, useParams } from "react-router-dom";
 
+import { adminClient } from "../../../admin-client";
 import { useAlerts } from "../../../components/alert/Alerts";
 import { useConfirmDialog } from "../../../components/confirm-dialog/ConfirmDialog";
 import { ListEmptyState } from "../../../components/list-empty-state/ListEmptyState";
@@ -16,7 +17,7 @@ import {
   Action,
   KeycloakDataTable,
 } from "../../../components/table-toolbar/KeycloakDataTable";
-import { useAdminClient, useFetch } from "../../../context/auth/AdminClient";
+import { useFetch } from "../../../utils/useFetch";
 import useLocaleSort, { mapByKey } from "../../../utils/useLocaleSort";
 
 export type LdapMapperListProps = {
@@ -35,7 +36,6 @@ const MapperLink = ({ toDetail, ...mapper }: MapperLinkProps) => (
 export const LdapMapperList = ({ toCreate, toDetail }: LdapMapperListProps) => {
   const navigate = useNavigate();
   const { t } = useTranslation("user-federation");
-  const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
   const [key, setKey] = useState(0);
   const refresh = () => setKey(key + 1);
@@ -62,11 +62,11 @@ export const LdapMapperList = ({ toCreate, toDetail }: LdapMapperListProps) => {
             name: mapper.name,
             type: mapper.providerId,
           })),
-          mapByKey("name")
-        )
+          mapByKey("name"),
+        ),
       );
     },
-    [key]
+    [key],
   );
 
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({

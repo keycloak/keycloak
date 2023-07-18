@@ -17,9 +17,8 @@
 
 package org.keycloak.quarkus.runtime.transaction;
 
-import javax.enterprise.inject.spi.CDI;
-import javax.transaction.TransactionManager;
-
+import jakarta.enterprise.inject.spi.CDI;
+import jakarta.transaction.TransactionManager;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.models.KeycloakSessionFactory;
@@ -39,7 +38,7 @@ public class QuarkusJtaTransactionManagerLookup implements JtaTransactionManager
                     tm = CDI.current().select(TransactionManager.class).get();
                     logger.tracev("TransactionManager = {0}", tm);
                     if (tm == null) {
-                        logger.debug("Could not locate JTA TransactionManager. JTA transactions not supported.");
+                        throw new RuntimeException("You must provide JTA TransactionManager as the default transaction type is JTA");
                     }
                 }
             }

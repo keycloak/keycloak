@@ -18,26 +18,24 @@
 
 package org.keycloak.authorization.jpa.entities;
 
-import javax.persistence.Access;
-import javax.persistence.AccessType;
-import javax.persistence.CascadeType;
-import javax.persistence.CollectionTable;
-import javax.persistence.Column;
-import javax.persistence.ElementCollection;
-import javax.persistence.Entity;
-import javax.persistence.FetchType;
-import javax.persistence.Id;
-import javax.persistence.JoinColumn;
-import javax.persistence.JoinTable;
-import javax.persistence.ManyToMany;
-import javax.persistence.ManyToOne;
-import javax.persistence.NamedQueries;
-import javax.persistence.NamedQuery;
-import javax.persistence.OneToMany;
-import javax.persistence.Table;
-import javax.persistence.UniqueConstraint;
+import jakarta.persistence.Access;
+import jakarta.persistence.AccessType;
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.CollectionTable;
+import jakarta.persistence.Column;
+import jakarta.persistence.ElementCollection;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.ManyToMany;
+import jakarta.persistence.NamedQueries;
+import jakarta.persistence.NamedQuery;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -67,7 +65,7 @@ import org.hibernate.annotations.FetchMode;
                 @NamedQuery(name="findResourceIdByTypeNoOwner", query="select r from ResourceEntity r left join fetch r.scopes s where  r.resourceServer = :serverId  and r.type = :type"),
                 @NamedQuery(name="findResourceIdByTypeInstance", query="select r from ResourceEntity r left join fetch r.scopes s where  r.resourceServer = :serverId and r.type = :type and r.owner <> :serverId"),
                 @NamedQuery(name="findResourceIdByServerId", query="select r.id from ResourceEntity r where  r.resourceServer = :serverId "),
-                @NamedQuery(name="findResourceIdByScope", query="select r from ResourceEntity r inner join r.scopes s where r.resourceServer = :serverId and (s.resourceServer = :serverId and s.id in (:scopeIds))"),
+                @NamedQuery(name="findResourceIdByScope", query="select r from ResourceEntity r inner join r.scopes s where r.resourceServer = :serverId and (s.resourceServer.id = :serverId and s.id in (:scopeIds))"),
                 @NamedQuery(name="deleteResourceByResourceServer", query="delete from ResourceEntity r where r.resourceServer = :serverId")
         }
 )
@@ -110,14 +108,10 @@ public class ResourceEntity {
     @BatchSize(size = 20)
     private List<ScopeEntity> scopes;
 
-    @ManyToMany(fetch = FetchType.LAZY, cascade = {})
-    @JoinTable(name = "RESOURCE_POLICY", joinColumns = @JoinColumn(name = "RESOURCE_ID"), inverseJoinColumns = @JoinColumn(name = "POLICY_ID"))
-    private List<PolicyEntity> policies;
-
     @OneToMany(cascade = CascadeType.REMOVE, orphanRemoval = true, mappedBy="resource", fetch = FetchType.LAZY)
     @Fetch(FetchMode.SELECT)
     @BatchSize(size = 20)
-    private Collection<ResourceAttributeEntity> attributes;
+    private Collection<ResourceAttributeEntity> attributes = new LinkedList<>();
 
     public String getId() {
         return id;
@@ -199,18 +193,6 @@ public class ResourceEntity {
 
     public boolean isOwnerManagedAccess() {
         return ownerManagedAccess;
-    }
-
-    public List<PolicyEntity> getPolicies() {
-        if (policies == null) {
-            policies = new LinkedList<>();
-        }
-        return this.policies;
-    }
-
-
-    public void setPolicies(List<PolicyEntity> policies) {
-        this.policies = policies;
     }
 
     public Collection<ResourceAttributeEntity> getAttributes() {

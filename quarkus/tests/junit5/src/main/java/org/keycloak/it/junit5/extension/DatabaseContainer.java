@@ -22,10 +22,10 @@ import java.time.Duration;
 import org.keycloak.it.utils.KeycloakDistribution;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.JdbcDatabaseContainer;
+import org.testcontainers.containers.MSSQLServerContainer;
 import org.testcontainers.containers.MariaDBContainer;
 import org.testcontainers.containers.MySQLContainer;
 import org.testcontainers.containers.PostgreSQLContainer;
-import org.testcontainers.utility.DockerImageName;
 import org.testcontainers.utility.DockerImageName;
 
 public class DatabaseContainer {
@@ -59,7 +59,6 @@ public class DatabaseContainer {
             dist.setProperty("db-password", getPassword());
             dist.setProperty("db-url", getJdbcUrl());
         }
-
     }
 
     private String getJdbcUrl() {
@@ -67,10 +66,16 @@ public class DatabaseContainer {
     }
 
     String getUsername() {
+        if (container instanceof MSSQLServerContainer) {
+            return ((JdbcDatabaseContainer) container).getUsername();
+        }
         return "keycloak";
     }
 
     String getPassword() {
+        if (container instanceof MSSQLServerContainer) {
+            return ((JdbcDatabaseContainer) container).getPassword();
+        }
         return DEFAULT_PASSWORD;
     }
 
@@ -79,7 +84,11 @@ public class DatabaseContainer {
         container = null;
     }
 
-    private GenericContainer<?> configureJdbcContainer(JdbcDatabaseContainer jdbcDatabaseContainer) {
+    private JdbcDatabaseContainer configureJdbcContainer(JdbcDatabaseContainer jdbcDatabaseContainer) {
+        if (jdbcDatabaseContainer instanceof MSSQLServerContainer) {
+            return jdbcDatabaseContainer;
+        }
+
         return jdbcDatabaseContainer
                 .withDatabaseName("keycloak")
                 .withUsername(getUsername())
@@ -94,24 +103,27 @@ public class DatabaseContainer {
     }
 
     private GenericContainer<?> createContainer() {
-        String POSTGRES_IMAGE = System.getProperty("kc.db.postgresql.container.image", "postgres:alpine");
-        String MARIADB_IMAGE = System.getProperty("kc.db.mariadb.container.image", "mariadb:10.5.9");
-        String MYSQL_IMAGE = System.getProperty("kc.db.mysql.container.image", "mysql:latest");
+        String POSTGRES_IMAGE = System.getProperty("kc.db.postgresql.container.image");
+        String MARIADB_IMAGE = System.getProperty("kc.db.mariadb.container.image");
+        String MYSQL_IMAGE = System.getProperty("kc.db.mysql.container.image");
         String INFINISPAN_IMAGE = System.getProperty("kc.infinispan.container.image");
-
-        DockerImageName POSTGRES = DockerImageName.parse(POSTGRES_IMAGE).asCompatibleSubstituteFor("postgres");
-        DockerImageName MARIADB = DockerImageName.parse(MARIADB_IMAGE).asCompatibleSubstituteFor("mariadb");
-        DockerImageName MYSQL = DockerImageName.parse(MYSQL_IMAGE).asCompatibleSubstituteFor("mysql");
+        String MSSQL_IMAGE = System.getProperty("kc.db.mssql.container.image");
 
         switch (alias) {
             case "postgres":
-                return configureJdbcContainer(new PostgreSQLContainer(POSTGRES));
+                DockerImageName POSTGRES = DockerImageName.parse(POSTGRES_IMAGE).asCompatibleSubstituteFor("postgres");
+                return configureJdbcContainer(new PostgreSQLContainer<>(POSTGRES));
             case "mariadb":
-                return configureJdbcContainer(new MariaDBContainer(MARIADB));
+                DockerImageName MARIADB = DockerImageName.parse(MARIADB_IMAGE).asCompatibleSubstituteFor("mariadb");
+                return configureJdbcContainer(new MariaDBContainer<>(MARIADB));
             case "mysql":
-                return configureJdbcContainer(new MySQLContainer(MYSQL));
+                DockerImageName MYSQL = DockerImageName.parse(MYSQL_IMAGE).asCompatibleSubstituteFor("mysql");
+                return configureJdbcContainer(new MySQLContainer<>(MYSQL));
+            case "mssql":
+                DockerImageName MSSQL = DockerImageName.parse(MSSQL_IMAGE).asCompatibleSubstituteFor("sqlserver");
+                return configureJdbcContainer(new MSSQLServerContainer<>(MSSQL));
             case "infinispan":
-                return configureInfinispanUser(new GenericContainer(INFINISPAN_IMAGE))
+                return configureInfinispanUser(new GenericContainer<>(INFINISPAN_IMAGE))
                         .withExposedPorts(11222);
             default:
                 throw new RuntimeException("Unsupported database: " + alias);

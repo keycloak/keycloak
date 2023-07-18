@@ -25,7 +25,7 @@ const LeftNav = ({ title, path }: LeftNavProps) => {
   const { hasAccess } = useAccess();
   const { realm } = useRealm();
   const route = routes.find(
-    (route) => route.path.replace(/\/:.+?(\?|(?:(?!\/).)*|$)/g, "") === path
+    (route) => route.path.replace(/\/:.+?(\?|(?:(?!\/).)*|$)/g, "") === path,
   );
 
   const accessAllowed =
@@ -76,13 +76,13 @@ export const PageNav = () => {
     "query-groups",
     "query-users",
     "query-clients",
-    "view-events"
+    "view-events",
   );
 
   const showConfigure = hasSomeAccess(
     "view-realm",
     "query-clients",
-    "view-identity-providers"
+    "view-identity-providers",
   );
 
   const isOnAddRealm = !!useMatch(AddRealmRoute.path);

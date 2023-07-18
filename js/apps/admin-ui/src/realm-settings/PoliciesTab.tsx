@@ -18,6 +18,7 @@ import { Controller, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
 
+import { adminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import { KeycloakSpinner } from "../components/keycloak-spinner/KeycloakSpinner";
@@ -26,9 +27,9 @@ import {
   Action,
   KeycloakDataTable,
 } from "../components/table-toolbar/KeycloakDataTable";
-import { useAdminClient, useFetch } from "../context/auth/AdminClient";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { prettyPrintJSON } from "../util";
+import { useFetch } from "../utils/useFetch";
 import { toAddClientPolicy } from "./routes/AddClientPolicy";
 import { toClientPolicies } from "./routes/ClientPolicies";
 import { toEditClientPolicy } from "./routes/EditClientPolicy";
@@ -37,7 +38,6 @@ import "./realm-settings-section.css";
 
 export const PoliciesTab = () => {
   const { t } = useTranslation("realm-settings");
-  const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
   const { realm } = useRealm();
   const navigate = useNavigate();
@@ -60,7 +60,7 @@ export const PoliciesTab = () => {
         setTablePolicies(policies.policies || []),
         setCode(prettyPrintJSON(policies.policies));
     },
-    [key]
+    [key],
   );
 
   const loader = async () => policies ?? [];
@@ -76,7 +76,7 @@ export const PoliciesTab = () => {
           ...policy,
           enabled,
         };
-      }
+      },
     );
 
     try {
@@ -86,7 +86,7 @@ export const PoliciesTab = () => {
       navigate(toClientPolicies({ realm, tab: "policies" }));
       addAlert(
         t("realm-settings:updateClientPolicySuccess"),
-        AlertVariant.success
+        AlertVariant.success,
       );
     } catch (error) {
       addError("realm-settings:updateClientPolicyError", error);
@@ -155,7 +155,7 @@ export const PoliciesTab = () => {
         });
         addAlert(
           t("realm-settings:updateClientPoliciesSuccess"),
-          AlertVariant.success
+          AlertVariant.success,
         );
         refresh();
       } catch (error) {
@@ -176,7 +176,7 @@ export const PoliciesTab = () => {
     continueButtonVariant: ButtonVariant.danger,
     onConfirm: async () => {
       const updatedPolicies = policies?.filter(
-        (policy) => policy.name !== selectedPolicy?.name
+        (policy) => policy.name !== selectedPolicy?.name,
       );
 
       try {

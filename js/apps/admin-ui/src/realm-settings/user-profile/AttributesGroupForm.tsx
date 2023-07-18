@@ -12,7 +12,7 @@ import { FormProvider, SubmitHandler, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate, useParams } from "react-router-dom";
 
-import { FormAccess } from "../../components/form-access/FormAccess";
+import { FormAccess } from "../../components/form/FormAccess";
 import { HelpItem } from "ui-shared";
 import type { KeyValueType } from "../../components/key-value-form/key-value-convert";
 import { KeyValueInput } from "../../components/key-value-form/KeyValueInput";
@@ -39,7 +39,7 @@ function transformAnnotations(input: KeyValueType[]): Record<string, unknown> {
   return Object.fromEntries(
     input
       .filter((annotation) => annotation.key.length > 0)
-      .map((annotation) => [annotation.key, annotation.value] as const)
+      .map((annotation) => [annotation.key, annotation.value] as const),
   );
 }
 
@@ -64,7 +64,7 @@ export default function AttributesGroupForm() {
 
   const matchingGroup = useMemo(
     () => config?.groups?.find(({ name }) => name === params.name),
-    [config?.groups]
+    [config?.groups],
   );
 
   useEffect(() => {

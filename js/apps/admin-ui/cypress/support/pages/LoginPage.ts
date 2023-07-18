@@ -37,7 +37,7 @@ export default class LoginPage {
         validate() {
           cy.get('[role="progressbar"]').should("not.exist");
         },
-      }
+      },
     );
   }
 }

@@ -15,11 +15,11 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 
+import { adminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import { FormPanel } from "../components/scroll-form/FormPanel";
 import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
-import { useAdminClient } from "../context/auth/AdminClient";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { useServerInfo } from "../context/server-info/ServerInfoProvider";
 import { toIdentityProvider } from "../identity-providers/routes/IdentityProvider";
@@ -37,7 +37,6 @@ export const UserIdentityProviderLinks = ({
   const [federatedId, setFederatedId] = useState("");
   const [isLinkIdPModalOpen, setIsLinkIdPModalOpen] = useState(false);
 
-  const { adminClient } = useAdminClient();
   const { realm } = useRealm();
   const { addAlert, addError } = useAlerts();
   const { t } = useTranslation("users");
@@ -58,7 +57,7 @@ export const UserIdentityProviderLinks = ({
     })) as WithProviderId[];
     for (const element of allFedIds) {
       element.providerId = allProviders.find(
-        (item) => item.alias === element.identityProvider
+        (item) => item.alias === element.identityProvider,
       )?.providerId!;
     }
 
@@ -75,11 +74,11 @@ export const UserIdentityProviderLinks = ({
 
   const availableIdPsLoader = async () => {
     const linkedNames = (await getFederatedIdentities()).map(
-      (x) => x.identityProvider
+      (x) => x.identityProvider,
     );
 
     return (await getAvailableIdPs())?.filter(
-      (item) => !linkedNames.includes(item.alias)
+      (item) => !linkedNames.includes(item.alias),
     )!;
   };
 
@@ -123,7 +122,7 @@ export const UserIdentityProviderLinks = ({
 
   const badgeRenderer1 = (idp: FederatedIdentityRepresentation) => {
     const groupName = identityProviders?.find(
-      (provider) => provider["id"] === idp.identityProvider
+      (provider) => provider["id"] === idp.identityProvider,
     )?.groupName!;
     return (
       <Label color={groupName === "Social" ? "blue" : "orange"}>
@@ -136,7 +135,7 @@ export const UserIdentityProviderLinks = ({
 
   const badgeRenderer2 = (idp: IdentityProviderRepresentation) => {
     const groupName = identityProviders?.find(
-      (provider) => provider["id"] === idp.providerId
+      (provider) => provider["id"] === idp.providerId,
     )?.groupName!;
     return (
       <Label color={groupName === "User-defined" ? "orange" : "blue"}>

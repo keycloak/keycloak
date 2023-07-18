@@ -78,12 +78,11 @@ public class ClientModelTest extends AbstractKeycloakTest {
 
 
     private ClientModel setUpClient(RealmModel realm) {
-        ClientModel client = realm.addClient("application");
+        ClientModel client = realm.addClient("app-name");
         client.setName("Application");
         client.setDescription("Description");
         client.setBaseUrl("http://base");
         client.setManagementUrl("http://management");
-        client.setClientId("app-name");
         client.setProtocol("openid-connect");
         client.addRole("role-1");
         client.addRole("role-2");
@@ -293,21 +292,22 @@ public class ClientModelTest extends AbstractKeycloakTest {
     @ModelTest
     public void testAddApplicationWithId(KeycloakSession session) {
         final String id = KeycloakModelUtils.generateId();
-        KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession sessionAppWithId1) -> {
+        String newClientId = KeycloakModelUtils.runJobInTransactionWithResult(session.getKeycloakSessionFactory(), (KeycloakSession sessionAppWithId1) -> {
             currentSession = sessionAppWithId1;
             RealmModel realm = currentSession.realms().getRealmByName(realmName);
 
             client = realm.addClient(id, "application2");
+            return client.getId();
         });
 
         KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession sessionAppWithId2) -> {
             currentSession = sessionAppWithId2;
             RealmModel realm = currentSession.realms().getRealmByName(realmName);
 
-            client = currentSession.clients().getClientById(realm, id);
+            client = currentSession.clients().getClientById(realm, newClientId);
             assertThat("Client 'app-123' is NULL!!", client, notNullValue());
 
-            currentSession.clients().removeClient(realm, client.getId());
+            currentSession.clients().removeClient(realm, newClientId);
         });
     }
 

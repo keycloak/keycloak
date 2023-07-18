@@ -16,11 +16,12 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DefaultValue;
-import javax.ws.rs.GET;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DefaultValue;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
+
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -62,41 +63,36 @@ public class SessionsResource {
                                                        @DefaultValue("0") int first, @QueryParam("max") @DefaultValue("10") int max) {
         auth.realm().requireViewRealm();
 
-        Stream<SessionId> clientIds = Stream.<SessionId>builder().build();
-        long clientSessionsCount = 0L;
+        Stream<SessionId> sessionIdStream = Stream.<SessionId>builder().build();
         if (type == ALL || type == REGULAR) {
             final Map<String, Long> clientSessionStats = session.sessions().getActiveClientSessionStats(realm, false);
-            clientSessionsCount = clientSessionStats.values().stream().reduce(0L, Long::sum);
-            clientIds = Stream.concat(clientIds, clientSessionStats
+            sessionIdStream = Stream.concat(sessionIdStream, clientSessionStats
                     .keySet().stream().map(i -> new SessionId(i, REGULAR)));
         }
         if (type == ALL || type == OFFLINE) {
-            clientIds = Stream.concat(clientIds, session.sessions().getActiveClientSessionStats(realm, true)
+            sessionIdStream = Stream.concat(sessionIdStream, session.sessions().getActiveClientSessionStats(realm, true)
                     .keySet().stream().map(i -> new SessionId(i, OFFLINE)));
         }
 
-
-        final List<SessionId> sessionIds = clientIds.skip(first).limit(max).collect(Collectors.toList());
-        Stream<SessionRepresentation> result = Stream.<SessionRepresentation>builder().build();
-        for (SessionId sessionId : sessionIds) {
+        Stream<SessionRepresentation> result = sessionIdStream.flatMap((sessionId) -> {
             ClientModel clientModel = realm.getClientById(sessionId.getClientId());
             switch (sessionId.getType()) {
                 case REGULAR:
-                    result = Stream.concat(result, session.sessions().getUserSessionsStream(realm, clientModel)
-                            .map(s -> toUserSessionRepresentation(s, sessionId.getClientId(), REGULAR)));
-                    break;
+                    return session.sessions().getUserSessionsStream(realm, clientModel)
+                            .map(s -> toUserSessionRepresentation(s, sessionId.getClientId(), REGULAR));
                 case OFFLINE:
-                    result = Stream.concat(result, session.sessions()
-                            .getOfflineUserSessionsStream(realm, clientModel, Math.max((int) (first - clientSessionsCount), 0), max)
-                            .map(s -> toUserSessionRepresentation(s, sessionId.getClientId(), OFFLINE)));
-                    break;
+                    return session.sessions()
+                            .getOfflineUserSessionsStream(realm, clientModel, null, null)
+                            .map(s -> toUserSessionRepresentation(s, sessionId.getClientId(), OFFLINE));
             }
-        }
+            return Stream.<SessionRepresentation>builder().build();
+        }).distinct();
 
         if (!search.equals("")) {
-            return result.filter(s -> s.getUsername().contains(search) || s.getIpAddress().contains(search));
+            result = result.filter(s -> s.getUsername().contains(search) || s.getIpAddress().contains(search)
+                    || s.getClients().values().stream().anyMatch(c -> c.contains(search)));
         }
-        return result;
+        return result.skip(first).limit(max);
     }
 
     private SessionRepresentation toUserSessionRepresentation(final UserSessionModel userSession, String clientId, SessionType type) {
