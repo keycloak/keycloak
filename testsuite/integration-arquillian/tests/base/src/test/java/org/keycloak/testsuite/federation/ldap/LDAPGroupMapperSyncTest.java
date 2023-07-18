@@ -36,6 +36,7 @@ import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.SynchronizationResultRepresentation;
 import org.keycloak.storage.ldap.LDAPStorageProvider;
 import org.keycloak.storage.ldap.LDAPUtils;
+import org.keycloak.storage.ldap.idm.model.LDAPDn;
 import org.keycloak.storage.ldap.idm.model.LDAPObject;
 import org.keycloak.storage.ldap.mappers.membership.LDAPGroupMapperMode;
 import org.keycloak.storage.ldap.mappers.membership.MembershipType;
@@ -94,6 +95,11 @@ public class LDAPGroupMapperSyncTest extends AbstractLDAPTest {
             LDAPUtils.addMember(ctx.getLdapProvider(), MembershipType.DN, LDAPConstants.MEMBER, "not-used", group1, group11);
             LDAPUtils.addMember(ctx.getLdapProvider(), MembershipType.DN, LDAPConstants.MEMBER, "not-used", group1, group12);
 
+            LDAPObject nonExistentChild = new LDAPObject();
+            LDAPDn nonExistentChildDn = group1.getDn().getParentDn();
+            nonExistentChildDn.addFirst(LDAPConstants.UID, "non-existent-child");
+            nonExistentChild.setDn(nonExistentChildDn);
+            LDAPUtils.addMember(ctx.getLdapProvider(), MembershipType.DN, LDAPConstants.MEMBER, "not-used", group1, nonExistentChild);
         });
     }
 
