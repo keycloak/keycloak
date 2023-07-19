@@ -41,9 +41,11 @@ export const GroupAttributes = () => {
 
   const save = async (attributeForm: AttributeForm) => {
     try {
-      const group = currentGroup;
       const attributes = convertFormValuesToObject(attributeForm).attributes;
-      await adminClient.groups.update({ id: id! }, { ...group, attributes });
+      await adminClient.groups.update(
+        { id: id! },
+        { ...currentGroup, attributes },
+      );
 
       addAlert(t("groupUpdated"), AlertVariant.success);
     } catch (error) {
