@@ -12,6 +12,8 @@ env:
   DEFAULT_JDK_VERSION: 17
   DEFAULT_JDK_DIST: temurin
   SUREFIRE_RERUN_FAILING_COUNT: 2
+  RELEASE_BRANCHES: |
+    refs/heads/release/22.0
 
 concurrency:
   # Only cancel jobs for PR updates
@@ -74,6 +76,15 @@ jobs:
         if: always()
         uses: ./.github/actions/upload-heapdumps
 
+      - name: Surefire reports
+        uses: ./.github/actions/surefire-reports
+        with:
+          testrun-name: surefire-unit-tests
+          reports-path: |
+            **/target/surefire-reports/TEST*.xml
+            **/**/target/surefire-reports/TEST*.xml
+            **/**/**/target/surefire-reports/TEST*.xml
+
   base-integration-tests:
     name: Base IT
     needs: build
@@ -106,6 +117,12 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         with:
           job-name: Base IT
+
+      - name: Surefire reports
+        uses: ./.github/actions/surefire-reports
+        with:
+          testrun-name: surefire-base-tests-${{ matrix.group }}
+          reports-path: testsuite/integration-arquillian/tests/base/target/surefire-reports/TEST*.xml
 
   quarkus-integration-tests:
     name: Quarkus IT
@@ -148,6 +165,12 @@ jobs:
       - name: Upload JVM Heapdumps
         if: always()
         uses: ./.github/actions/upload-heapdumps
+
+      - name: Surefire reports
+        uses: ./.github/actions/surefire-reports
+        with:
+          testrun-name: surefire-quarkus-tests-${{ matrix.os }}-${{ matrix.server }}
+          reports-path: quarkus/tests/integration/target/surefire-reports/TEST*.xml
 
   jdk-integration-tests:
     name: Java Distribution IT
@@ -193,6 +216,12 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         with:
           job-name: Java Distribution IT
+
+      - name: Surefire reports
+        uses: ./.github/actions/surefire-reports
+        with:
+          testrun-name: surefire-jdk-tests-${{ matrix.os }}-${{ matrix.dist }}-${{ matrix.version }}
+          reports-path: testsuite/integration-arquillian/tests/base/target/surefire-reports/TEST*.xml
 
   databases-new-store:
     name: Databases New Store
@@ -250,6 +279,12 @@ jobs:
         with:
           job-name: New Store IT
 
+      - name: Surefire reports
+        uses: ./.github/actions/surefire-reports
+        with:
+          testrun-name: surefire-new-store-tests-${{ matrix.db }}
+          reports-path: testsuite/integration-arquillian/tests/base/target/surefire-reports/TEST*.xml
+
   legacy-store-integration-tests:
     name: Legacy Store IT
     needs: build
@@ -283,6 +318,12 @@ jobs:
         with:
           job-name: Legacy Store IT
 
+      - name: Surefire reports
+        uses: ./.github/actions/surefire-reports
+        with:
+          testrun-name: surefire-legacy-store-tests-${{ matrix.db }}
+          reports-path: testsuite/integration-arquillian/tests/base/target/surefire-reports/TEST*.xml
+
   store-model-tests:
     name: Store Model Tests
     runs-on: ubuntu-latest
@@ -308,6 +349,12 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         with:
           job-name: Store Model Tests
+
+      - name: Surefire reports
+        uses: ./.github/actions/surefire-reports
+        with:
+          testrun-name: surefire-model-tests
+          reports-path: testsuite/model/target/surefire-reports*/TEST*.xml
 
   clustering-integration-tests:
     name: Legacy Clustering IT
@@ -338,6 +385,12 @@ jobs:
         with:
           job-name: Legacy Clustering IT
 
+      - name: Surefire reports
+        uses: ./.github/actions/surefire-reports
+        with:
+          testrun-name: surefire-cluster-tests
+          reports-path: testsuite/integration-arquillian/tests/base/target/surefire-reports/TEST*.xml
+
   fips-unit-tests:
     name: FIPS UT
     runs-on: ubuntu-latest
@@ -364,6 +417,14 @@ jobs:
       - name: Upload JVM Heapdumps
         if: always()
         uses: ./.github/actions/upload-heapdumps
+
+      - name: Surefire reports
+        uses: ./.github/actions/surefire-reports
+        with:
+          testrun-name: surefire-fips-unit-tests
+          reports-path: |
+            crypto/default/target/surefire-reports/TEST*.xml
+            crypto/fips1402/target/surefire-reports/TEST*.xml
 
   fips-integration-tests:
     name: FIPS IT
@@ -406,6 +467,12 @@ jobs:
         with:
           job-name: FIPS IT
 
+      - name: Surefire reports
+        uses: ./.github/actions/surefire-reports
+        with:
+          testrun-name: surefire-fips-tests-${{ matrix.mode }}
+          reports-path: testsuite/integration-arquillian/tests/base/target/surefire-reports/TEST*.xml
+
   account-console-integration-tests:
     name: Account Console IT
     runs-on: ubuntu-latest
@@ -435,6 +502,12 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         with:
           job-name: Account Console IT
+
+      - name: Surefire reports
+        uses: ./.github/actions/surefire-reports
+        with:
+          testrun-name: surefire-account-tests-${{ matrix.browser }}
+          reports-path: testsuite/integration-arquillian/tests/other/base-ui/target/surefire-reports/TEST*.xml
 
   forms-integration-tests:
     name: Forms IT
@@ -469,6 +542,12 @@ jobs:
         with:
           job-name: Forms IT
 
+      - name: Surefire reports
+        uses: ./.github/actions/surefire-reports
+        with:
+          testrun-name: surefire-forms-tests-${{ matrix.browser }}
+          reports-path: testsuite/integration-arquillian/tests/base/target/surefire-reports/TEST*.xml
+
   webauthn-integration-tests:
     name: WebAuthn IT
     runs-on: ubuntu-latest
@@ -498,6 +577,12 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         with:
           job-name: WebAuthn IT
+
+      - name: Surefire reports
+        uses: ./.github/actions/surefire-reports
+        with:
+          testrun-name: surefire-webauthn-tests-${{ matrix.browser }}
+          reports-path: testsuite/integration-arquillian/tests/other/webauthn/target/surefire-reports/TEST*.xml
 
   sssd-unit-tests:
     name: SSSD
@@ -533,6 +618,12 @@ jobs:
       - name: Run tests
         if: ${{ needs.conditional.outputs.sssd == 'true' }}
         run: .github/scripts/run-ipa.sh "${{ github.workspace }}"
+
+      - name: Surefire reports
+        uses: ./.github/actions/surefire-reports
+        with:
+          testrun-name: surefire-sssd-tests
+          reports-path: testsuite/integration-arquillian/tests/other/sssd/target/surefire-reports/TEST*.xml
 
   migration-tests:
     name: Migration Tests
@@ -573,6 +664,12 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         with:
           job-name: Migration Tests
+
+      - name: Surefire reports
+        uses: ./.github/actions/surefire-reports
+        with:
+          testrun-name: surefire-migration-tests-${{ matrix.old-version }}-${{ matrix.database }}
+          reports-path: testsuite/integration-arquillian/tests/base/target/surefire-reports/TEST*.xml
 
   check-set-status:
     name: Set check conclusion
