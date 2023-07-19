@@ -27,6 +27,7 @@ import { deleteConsent, getApplications } from "../api/methods";
 import { ClientRepresentation } from "../api/representations";
 import { Page } from "../components/page/Page";
 import { TFuncKey } from "../i18n";
+import { formatDate } from "../utils/formatDate";
 import { usePromise } from "../utils/usePromise";
 
 type Application = ClientRepresentation & {
@@ -227,14 +228,7 @@ const Applications = () => {
                         {t("accessGrantedOn")}
                       </DescriptionListTerm>
                       <DescriptionListDescription>
-                        {new Intl.DateTimeFormat("en", {
-                          year: "numeric",
-                          month: "long",
-                          day: "numeric",
-                          hour: "numeric",
-                          minute: "numeric",
-                          second: "numeric",
-                        }).format(application.consent.createdDate)}
+                        {formatDate(new Date(application.consent.createdDate))}
                       </DescriptionListDescription>
                     </DescriptionListGroup>
                   </>
