@@ -173,14 +173,13 @@ const SigningIn = () => {
                         >
                           {container.removeable ? (
                             <ContinueCancelModal
-                              buttonTitle="remove"
-                              buttonVariant="danger"
+                              buttonTitle={t("delete")}
                               modalTitle={t("removeCred", [
                                 label(meta.credential),
                               ])}
-                              modalMessage={t("stopUsingCred", [
-                                label(meta.credential),
-                              ])}
+                              continueLabel={t("confirm")}
+                              cancelLabel={t("cancel")}
+                              buttonVariant="danger"
                               onContinue={async () => {
                                 try {
                                   await deleteCredentials(meta.credential);
@@ -199,7 +198,9 @@ const SigningIn = () => {
                                   );
                                 }
                               }}
-                            />
+                            >
+                              {t("stopUsingCred", [label(meta.credential)])}
+                            </ContinueCancelModal>
                           ) : (
                             <Button
                               variant="secondary"
