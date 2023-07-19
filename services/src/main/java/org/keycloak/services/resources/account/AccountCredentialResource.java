@@ -11,12 +11,16 @@ import org.keycloak.credential.CredentialProvider;
 import org.keycloak.credential.CredentialProviderFactory;
 import org.keycloak.credential.CredentialTypeMetadata;
 import org.keycloak.credential.CredentialTypeMetadataContext;
+import org.keycloak.events.Details;
+import org.keycloak.events.EventBuilder;
+import org.keycloak.events.EventType;
 import org.keycloak.models.AccountRoles;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.credential.OTPCredentialModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.account.CredentialMetadataRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
@@ -61,11 +65,13 @@ public class AccountCredentialResource {
     private final UserModel user;
     private final RealmModel realm;
     private Auth auth;
+    private final EventBuilder event;
 
-    public AccountCredentialResource(KeycloakSession session, UserModel user, Auth auth) {
+    public AccountCredentialResource(KeycloakSession session, UserModel user, Auth auth, EventBuilder event) {
         this.session = session;
         this.user = user;
         this.auth = auth;
+        this.event = event;
         realm = session.getContext().getRealm();
     }
 
@@ -297,11 +303,17 @@ public class AccountCredentialResource {
                 user.credentialManager().disableCredentialType(credentialType);
                 return;
             }
-
             throw new NotFoundException("Credential not found");
         }
         checkIfCanBeRemoved(credential.getType());
         user.credentialManager().removeStoredCredentialById(credentialId);
+
+        if (OTPCredentialModel.TYPE.equals(credential.getType())) {
+            event.event(EventType.REMOVE_TOTP)
+                    .detail(Details.SELECTED_CREDENTIAL_ID, credentialId)
+                    .detail(Details.CREDENTIAL_USER_LABEL, credential.getUserLabel());
+            event.success();
+        }
     }
 
 

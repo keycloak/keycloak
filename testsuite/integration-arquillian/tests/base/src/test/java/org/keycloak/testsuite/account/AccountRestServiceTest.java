@@ -44,6 +44,7 @@ import org.keycloak.models.credential.OTPCredentialModel;
 import org.keycloak.models.credential.PasswordCredentialModel;
 import org.keycloak.models.credential.WebAuthnCredentialModel;
 import org.keycloak.models.utils.DefaultAuthenticationFlows;
+import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.account.ClientRepresentation;
 import org.keycloak.representations.account.ConsentRepresentation;
 import org.keycloak.representations.account.ConsentScopeRepresentation;
@@ -787,6 +788,79 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
                 .findFirst()
                 .get();
         Assert.assertTrue(ObjectUtil.isEqualOrBothNull(otpCredential.getUserLabel(), otpCredentialLoaded.getUserLabel()));
+    }
+
+    @Test
+    public void testRemoveCredentialWithNonOtpCredentialTriggeringNoEvent() throws IOException {
+
+        List<AccountCredentialResource.CredentialContainer> credentials = getCredentials();
+
+        UserResource user = ApiUtil.findUserByUsernameId(testRealm(), "test-user@localhost");
+        assertEquals(1, user.credentials().size());
+
+        // Add non-OTP credential to the user through admin REST API
+        CredentialRepresentation nonOtpCredential = ModelToRepresentation.toRepresentation(
+                WebAuthnCredentialModel.create(WebAuthnCredentialModel.TYPE_TWOFACTOR, "foo", "foo", "foo", "foo", "foo", 2L, "foo"));
+        org.keycloak.representations.idm.UserRepresentation userRep = UserBuilder.edit(user.toRepresentation())
+                .secret(nonOtpCredential)
+                .build();
+        user.update(userRep);
+
+        credentials = getCredentials();
+        Assert.assertEquals(2, credentials.size());
+        Assert.assertTrue(credentials.get(1).isRemoveable());
+
+        // Remove credential
+        CredentialRepresentation credential = user.credentials().stream()
+                .filter(credentialRep -> WebAuthnCredentialModel.TYPE_TWOFACTOR.equals(credentialRep.getType()))
+                .findFirst()
+                .get();
+        Assert.assertNotNull(credential);
+        user.removeCredential(credential.getId());
+
+        events.poll();
+        events.assertEmpty();
+    }
+
+    @Test
+    public void testRemoveCredentialWithOtpCredentialTriggeringEvent() throws IOException {
+
+        List<AccountCredentialResource.CredentialContainer> credentials = getCredentials();
+
+        UserResource user = ApiUtil.findUserByUsernameId(testRealm(), "test-user@localhost");
+        assertEquals(1, user.credentials().size());
+
+        // Add OTP credential to the user through admin REST API
+        org.keycloak.representations.idm.UserRepresentation userRep = UserBuilder.edit(user.toRepresentation())
+                .totpSecret("totpSecret")
+                .build();
+        userRep.getCredentials().get(0).setUserLabel("totpCredentialUserLabel");
+        user.update(userRep);
+
+        credentials = getCredentials();
+        Assert.assertEquals(2, credentials.size());
+        Assert.assertTrue(credentials.get(1).isRemoveable());
+
+        // Remove credential
+        CredentialRepresentation otpCredential = user.credentials().stream()
+                .filter(credentialRep -> OTPCredentialModel.TYPE.equals(credentialRep.getType()))
+                .findFirst()
+                .get();
+        SimpleHttp.Response response = SimpleHttp
+                .doDelete(getAccountUrl("credentials/" + otpCredential.getId()), httpClient)
+                .acceptJson()
+                .auth(tokenUtil.getToken())
+                .asResponse();
+        assertEquals(204, response.getStatus());
+
+        events.poll();
+        events.expect(EventType.REMOVE_TOTP)
+                .client("account")
+                .user(user.toRepresentation().getId())
+                .detail(Details.SELECTED_CREDENTIAL_ID, otpCredential.getId())
+                .detail(Details.CREDENTIAL_USER_LABEL, "totpCredentialUserLabel")
+                .assertEvent();
+        events.assertEmpty();
     }
 
     // Send REST request to get all credential containers and credentials of current user
@@ -1688,7 +1762,7 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
             testRealm().update(realmRep);
         }
     }
-  
+
     @EnableFeature(Profile.Feature.UPDATE_EMAIL)
     public void testEmailWhenUpdateEmailEnabled() throws Exception {
         reconnectAdminClient();
