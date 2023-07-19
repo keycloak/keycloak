@@ -16,19 +16,19 @@
  */
 package org.keycloak.operator.controllers;
 
-import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.ContainerState;
 import io.fabric8.kubernetes.api.model.ContainerStateWaiting;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.EnvVarBuilder;
 import io.fabric8.kubernetes.api.model.EnvVarSourceBuilder;
-import io.fabric8.kubernetes.api.model.HTTPGetActionBuilder;
-import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.api.model.PodSpec;
+import io.fabric8.kubernetes.api.model.PodSpecFluent.ContainersNested;
 import io.fabric8.kubernetes.api.model.PodStatus;
 import io.fabric8.kubernetes.api.model.PodTemplateSpec;
-import io.fabric8.kubernetes.api.model.ResourceRequirements;
+import io.fabric8.kubernetes.api.model.PodTemplateSpecFluent.SpecNested;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.api.model.apps.StatefulSetBuilder;
+import io.fabric8.kubernetes.api.model.apps.StatefulSetSpecFluent.TemplateNested;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.readiness.Readiness;
 import io.fabric8.kubernetes.client.utils.Serialization;
@@ -39,24 +39,28 @@ import org.keycloak.operator.Config;
 import org.keycloak.operator.Constants;
 import org.keycloak.operator.Utils;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
+import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusAggregator;
 import org.keycloak.operator.crds.v2alpha1.deployment.ValueOrSecret;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.UnsupportedSpec;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Base64;
-import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.Consumer;
+import java.util.TreeSet;
+import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.keycloak.operator.crds.v2alpha1.CRDUtils.isTlsConfigured;
 
-public class KeycloakDeployment extends OperatorManagedResource implements StatusUpdater<KeycloakStatusAggregator> {
+public class KeycloakDeployment extends OperatorManagedResource<StatefulSet> implements StatusUpdater<KeycloakStatusAggregator> {
 
     private final Config operatorConfig;
     private final KeycloakDistConfigurator distConfigurator;
@@ -67,6 +71,7 @@ public class KeycloakDeployment extends OperatorManagedResource implements Statu
     private final String adminSecretName;
 
     private Set<String> serverConfigSecretsNames;
+    private WatchedSecrets watchedSecrets;
 
     private boolean migrationInProgress;
 
@@ -77,12 +82,19 @@ public class KeycloakDeployment extends OperatorManagedResource implements Statu
         this.adminSecretName = adminSecretName;
         this.existingDeployment = existingDeployment;
         this.baseDeployment = createBaseDeployment();
-        this.distConfigurator = configureDist();
-        mergePodTemplate(this.baseDeployment.getSpec().getTemplate());
+        this.distConfigurator = new KeycloakDistConfigurator(keycloakCR, baseDeployment, client);
+        this.distConfigurator.configureDistOptions();
+        // after the distConfiguration, we can add the remaining default / additionalConfig
+        addRemainingEnvVars();
+    }
+
+    public void setWatchedSecrets(WatchedSecrets watchedSecrets) {
+        this.watchedSecrets = watchedSecrets;
     }
 
     @Override
-    public Optional<HasMetadata> getReconciledResource() {
+    public Optional<StatefulSet> getReconciledResource() {
+        StatefulSet baseDeployment = new StatefulSetBuilder(this.baseDeployment).build(); // clone not to change the base template
         if (existingDeployment == null) {
             Log.info("No existing Deployment found, using the default");
         }
@@ -96,6 +108,12 @@ public class KeycloakDeployment extends OperatorManagedResource implements Statu
 
             migrateDeployment(existingDeployment, baseDeployment);
         }
+
+        var configSecretsNames = getConfigSecretsNames();
+        if (!configSecretsNames.isEmpty() && watchedSecrets != null) {
+            watchedSecrets.annotateDeployment(configSecretsNames, keycloakCR, baseDeployment);
+        }
+
         return Optional.of(baseDeployment);
     }
 
@@ -103,39 +121,42 @@ public class KeycloakDeployment extends OperatorManagedResource implements Statu
         return Optional.ofNullable(statefulSet).map(s -> getInstanceLabels().equals(s.getSpec().getSelector().getMatchLabels())).orElse(true);
     }
 
+    @Override
+    public Optional<StatefulSet> createOrUpdateReconciled() {
+        var ret = super.createOrUpdateReconciled();
+        // after the change to the statefulset has been "committed", start watching
+        if (watchedSecrets != null) {
+            ret.map(StatefulSet.class::cast).ifPresent(watchedSecrets::addLabelsToWatchedSecrets);
+        }
+        return ret;
+    }
+
     public void validatePodTemplate(KeycloakStatusAggregator status) {
-        if (keycloakCR.getSpec() == null ||
-                keycloakCR.getSpec().getUnsupported() == null ||
-                keycloakCR.getSpec().getUnsupported().getPodTemplate() == null) {
+        var spec = getPodTemplateSpec();
+        if (spec.isEmpty()) {
             return;
         }
-        var overlayTemplate = this.keycloakCR.getSpec().getUnsupported().getPodTemplate();
+        var overlayTemplate = spec.orElseThrow();
 
-        if (overlayTemplate.getMetadata() != null &&
-            overlayTemplate.getMetadata().getName() != null) {
-            status.addWarningMessage("The name of the podTemplate cannot be modified");
+        if (overlayTemplate.getMetadata() != null) {
+            if (overlayTemplate.getMetadata().getName() != null) {
+                status.addWarningMessage("The name of the podTemplate cannot be modified");
+            }
+            if (overlayTemplate.getMetadata().getNamespace() != null) {
+                status.addWarningMessage("The namespace of the podTemplate cannot be modified");
+            }
         }
 
-        if (overlayTemplate.getMetadata() != null &&
-            overlayTemplate.getMetadata().getNamespace() != null) {
-            status.addWarningMessage("The namespace of the podTemplate cannot be modified");
-        }
-
-        if (overlayTemplate.getSpec() != null &&
-            overlayTemplate.getSpec().getContainers() != null &&
-            overlayTemplate.getSpec().getContainers().size() > 0 &&
-            overlayTemplate.getSpec().getContainers().get(0) != null &&
-            overlayTemplate.getSpec().getContainers().get(0).getName() != null) {
-            status.addWarningMessage("The name of the keycloak container cannot be modified");
-        }
-
-        if (overlayTemplate.getSpec() != null &&
-            overlayTemplate.getSpec().getContainers() != null &&
-            overlayTemplate.getSpec().getContainers().size() > 0 &&
-            overlayTemplate.getSpec().getContainers().get(0) != null &&
-            overlayTemplate.getSpec().getContainers().get(0).getImage() != null) {
-            status.addWarningMessage("The image of the keycloak container cannot be modified using podTemplate");
-        }
+        Optional.ofNullable(overlayTemplate.getSpec()).map(PodSpec::getContainers).flatMap(l -> l.stream().findFirst())
+                .ifPresent(container -> {
+                    if (container.getName() != null) {
+                        status.addWarningMessage("The name of the keycloak container cannot be modified");
+                    }
+                    if (container.getImage() != null) {
+                        status.addWarningMessage(
+                                "The image of the keycloak container cannot be modified using podTemplate");
+                    }
+                });
 
         if (overlayTemplate.getSpec() != null &&
             CollectionUtil.isNotEmpty(overlayTemplate.getSpec().getImagePullSecrets())) {
@@ -143,246 +164,70 @@ public class KeycloakDeployment extends OperatorManagedResource implements Statu
         }
     }
 
-    private <T, V> void mergeMaps(Map<T, V> map1, Map<T, V> map2, Consumer<Map<T, V>> consumer) {
-        var map = new HashMap<T, V>();
-        Optional.ofNullable(map1).ifPresent(e -> map.putAll(e));
-        Optional.ofNullable(map2).ifPresent(e -> map.putAll(e));
-        consumer.accept(map);
-    }
-
-    private <T> void mergeLists(List<T> list1, List<T> list2, Consumer<List<T>> consumer) {
-        var list = new ArrayList<T>();
-        Optional.ofNullable(list1).ifPresent(e -> list.addAll(e));
-        Optional.ofNullable(list2).ifPresent(e -> list.addAll(e));
-        consumer.accept(list);
-    }
-
-    private <T> void mergeField(T value, Consumer<T> consumer) {
-        if (value != null && (!(value instanceof List) || ((List<?>) value).size() > 0)) {
-            consumer.accept(value);
-        }
-    }
-
-    private void mergePodTemplate(PodTemplateSpec baseTemplate) {
-        if (keycloakCR.getSpec() == null ||
-            keycloakCR.getSpec().getUnsupported() == null ||
-            keycloakCR.getSpec().getUnsupported().getPodTemplate() == null) {
-            return;
-        }
-
-        var overlayTemplate = keycloakCR.getSpec().getUnsupported().getPodTemplate();
-
-        mergeMaps(
-                Optional.ofNullable(baseTemplate.getMetadata()).map(m -> m.getLabels()).orElse(null),
-                Optional.ofNullable(overlayTemplate.getMetadata()).map(m -> m.getLabels()).orElse(null),
-                labels -> baseTemplate.getMetadata().setLabels(labels));
-
-        mergeMaps(
-                Optional.ofNullable(baseTemplate.getMetadata()).map(m -> m.getAnnotations()).orElse(null),
-                Optional.ofNullable(overlayTemplate.getMetadata()).map(m -> m.getAnnotations()).orElse(null),
-                annotations -> baseTemplate.getMetadata().setAnnotations(annotations));
-
-        var baseSpec = baseTemplate.getSpec();
-        var overlaySpec = overlayTemplate.getSpec();
-
-        var containers = new ArrayList<Container>();
-        var overlayContainers =
-                (overlaySpec == null || overlaySpec.getContainers() == null) ?
-                        new ArrayList<Container>() : overlaySpec.getContainers();
-        if (overlayContainers.size() >= 1) {
-            var keycloakBaseContainer = baseSpec.getContainers().get(0);
-            var keycloakOverlayContainer = overlayContainers.get(0);
-            mergeField(keycloakOverlayContainer.getCommand(), v -> keycloakBaseContainer.setCommand(v));
-            mergeField(keycloakOverlayContainer.getReadinessProbe(), v -> keycloakBaseContainer.setReadinessProbe(v));
-            mergeField(keycloakOverlayContainer.getLivenessProbe(), v -> keycloakBaseContainer.setLivenessProbe(v));
-            mergeField(keycloakOverlayContainer.getStartupProbe(), v -> keycloakBaseContainer.setStartupProbe(v));
-            mergeField(keycloakOverlayContainer.getArgs(), v -> keycloakBaseContainer.setArgs(v));
-            mergeField(keycloakOverlayContainer.getImagePullPolicy(), v -> keycloakBaseContainer.setImagePullPolicy(v));
-            mergeField(keycloakOverlayContainer.getLifecycle(), v -> keycloakBaseContainer.setLifecycle(v));
-            mergeField(keycloakOverlayContainer.getSecurityContext(), v -> keycloakBaseContainer.setSecurityContext(v));
-            mergeField(keycloakOverlayContainer.getWorkingDir(), v -> keycloakBaseContainer.setWorkingDir(v));
-
-            var resources = new ResourceRequirements();
-            mergeMaps(
-                    Optional.ofNullable(keycloakBaseContainer.getResources()).map(r -> r.getRequests()).orElse(null),
-                    Optional.ofNullable(keycloakOverlayContainer.getResources()).map(r -> r.getRequests()).orElse(null),
-                    requests -> resources.setRequests(requests));
-            mergeMaps(
-                    Optional.ofNullable(keycloakBaseContainer.getResources()).map(l -> l.getLimits()).orElse(null),
-                    Optional.ofNullable(keycloakOverlayContainer.getResources()).map(l -> l.getLimits()).orElse(null),
-                    limits -> resources.setLimits(limits));
-            keycloakBaseContainer.setResources(resources);
-
-            mergeLists(
-                    keycloakBaseContainer.getPorts(),
-                    keycloakOverlayContainer.getPorts(),
-                    p -> keycloakBaseContainer.setPorts(p));
-            mergeLists(
-                    keycloakBaseContainer.getEnvFrom(),
-                    keycloakOverlayContainer.getEnvFrom(),
-                    e -> keycloakBaseContainer.setEnvFrom(e));
-            mergeLists(
-                    keycloakBaseContainer.getEnv(),
-                    keycloakOverlayContainer.getEnv(),
-                    e -> keycloakBaseContainer.setEnv(e));
-            mergeLists(
-                    keycloakBaseContainer.getVolumeMounts(),
-                    keycloakOverlayContainer.getVolumeMounts(),
-                    vm -> keycloakBaseContainer.setVolumeMounts(vm));
-            mergeLists(
-                    keycloakBaseContainer.getVolumeDevices(),
-                    keycloakOverlayContainer.getVolumeDevices(),
-                    vd -> keycloakBaseContainer.setVolumeDevices(vd));
-
-            containers.add(keycloakBaseContainer);
-
-            // Skip keycloak container and add the rest
-            for (int i = 1; i < overlayContainers.size(); i++) {
-                containers.add(overlayContainers.get(i));
-            }
-
-            baseSpec.setContainers(containers);
-        }
-
-        if (overlaySpec != null) {
-            mergeField(overlaySpec.getActiveDeadlineSeconds(), ads -> baseSpec.setActiveDeadlineSeconds(ads));
-            mergeField(overlaySpec.getAffinity(), a -> baseSpec.setAffinity(a));
-            mergeField(overlaySpec.getAutomountServiceAccountToken(), a -> baseSpec.setAutomountServiceAccountToken(a));
-            mergeField(overlaySpec.getDnsConfig(), dc -> baseSpec.setDnsConfig(dc));
-            mergeField(overlaySpec.getDnsPolicy(), dp -> baseSpec.setDnsPolicy(dp));
-            mergeField(overlaySpec.getEnableServiceLinks(), esl -> baseSpec.setEnableServiceLinks(esl));
-            mergeField(overlaySpec.getHostIPC(), h -> baseSpec.setHostIPC(h));
-            mergeField(overlaySpec.getHostname(), h -> baseSpec.setHostname(h));
-            mergeField(overlaySpec.getHostNetwork(), h -> baseSpec.setHostNetwork(h));
-            mergeField(overlaySpec.getHostPID(), h -> baseSpec.setHostPID(h));
-            mergeField(overlaySpec.getNodeName(), n -> baseSpec.setNodeName(n));
-            mergeField(overlaySpec.getNodeSelector(), ns -> baseSpec.setNodeSelector(ns));
-            mergeField(overlaySpec.getPreemptionPolicy(), pp -> baseSpec.setPreemptionPolicy(pp));
-            mergeField(overlaySpec.getPriority(), p -> baseSpec.setPriority(p));
-            mergeField(overlaySpec.getPriorityClassName(), pcn -> baseSpec.setPriorityClassName(pcn));
-            mergeField(overlaySpec.getRestartPolicy(), rp -> baseSpec.setRestartPolicy(rp));
-            mergeField(overlaySpec.getRuntimeClassName(), rcn -> baseSpec.setRuntimeClassName(rcn));
-            mergeField(overlaySpec.getSchedulerName(), sn -> baseSpec.setSchedulerName(sn));
-            mergeField(overlaySpec.getSecurityContext(), sc -> baseSpec.setSecurityContext(sc));
-            mergeField(overlaySpec.getServiceAccount(), sa -> baseSpec.setServiceAccount(sa));
-            mergeField(overlaySpec.getServiceAccountName(), san -> baseSpec.setServiceAccountName(san));
-            mergeField(overlaySpec.getSetHostnameAsFQDN(), h -> baseSpec.setSetHostnameAsFQDN(h));
-            mergeField(overlaySpec.getShareProcessNamespace(), spn -> baseSpec.setShareProcessNamespace(spn));
-            mergeField(overlaySpec.getSubdomain(), s -> baseSpec.setSubdomain(s));
-            mergeField(overlaySpec.getTerminationGracePeriodSeconds(), t -> baseSpec.setTerminationGracePeriodSeconds(t));
-
-            mergeLists(
-                    baseSpec.getImagePullSecrets(),
-                    overlaySpec.getImagePullSecrets(),
-                    ips -> baseSpec.setImagePullSecrets(ips));
-            mergeLists(
-                    baseSpec.getHostAliases(),
-                    overlaySpec.getHostAliases(),
-                    ha -> baseSpec.setHostAliases(ha));
-            mergeLists(
-                    baseSpec.getEphemeralContainers(),
-                    overlaySpec.getEphemeralContainers(),
-                    ec -> baseSpec.setEphemeralContainers(ec));
-            mergeLists(
-                    baseSpec.getInitContainers(),
-                    overlaySpec.getInitContainers(),
-                    ic -> baseSpec.setInitContainers(ic));
-            mergeLists(
-                    baseSpec.getReadinessGates(),
-                    overlaySpec.getReadinessGates(),
-                    rg -> baseSpec.setReadinessGates(rg));
-            mergeLists(
-                    baseSpec.getTolerations(),
-                    overlaySpec.getTolerations(),
-                    t -> baseSpec.setTolerations(t));
-            mergeLists(
-                    baseSpec.getTopologySpreadConstraints(),
-                    overlaySpec.getTopologySpreadConstraints(),
-                    tpc -> baseSpec.setTopologySpreadConstraints(tpc));
-
-            mergeLists(
-                    baseSpec.getVolumes(),
-                    overlaySpec.getVolumes(),
-                    v -> baseSpec.setVolumes(v));
-
-            mergeMaps(
-                    baseSpec.getOverhead(),
-                    overlaySpec.getOverhead(),
-                    o -> baseSpec.setOverhead(o));
-        }
+    private Optional<PodTemplateSpec> getPodTemplateSpec() {
+        return Optional.ofNullable(keycloakCR.getSpec()).map(KeycloakSpec::getUnsupported).map(UnsupportedSpec::getPodTemplate);
     }
 
     private StatefulSet createBaseDeployment() {
-        StatefulSet baseDeployment = new StatefulSetBuilder()
-                .withNewMetadata()
-                .endMetadata()
-                .withNewSpec()
-                    .withNewSelector()
-                        .addToMatchLabels("app", "")
-                    .endSelector()
-                    .withNewTemplate()
-                        .withNewMetadata()
-                            .addToLabels("app", "")
-                        .endMetadata()
-                        .withNewSpec()
-                            .withRestartPolicy("Always")
-                            .withTerminationGracePeriodSeconds(30L)
-                            .withDnsPolicy("ClusterFirst")
-                            .addNewContainer()
-                                .withName("keycloak")
-                                .withArgs("start")
-                                .addNewPort()
-                                    .withName(Constants.KEYCLOAK_HTTPS_PORT_NAME)
-                                    .withContainerPort(Constants.KEYCLOAK_HTTPS_PORT)
-                                    .withProtocol(Constants.KEYCLOAK_SERVICE_PROTOCOL)
-                                .endPort()
-                                .addNewPort()
-                                    .withName(Constants.KEYCLOAK_HTTP_PORT_NAME)
-                                    .withContainerPort(Constants.KEYCLOAK_HTTP_PORT)
-                                    .withProtocol(Constants.KEYCLOAK_SERVICE_PROTOCOL)
-                                .endPort()
-                                .withNewReadinessProbe()
-                                    .withInitialDelaySeconds(20)
-                                    .withPeriodSeconds(2)
-                                    .withFailureThreshold(250)
-                                .endReadinessProbe()
-                                .withNewLivenessProbe()
-                                    .withInitialDelaySeconds(20)
-                                    .withPeriodSeconds(2)
-                                    .withFailureThreshold(150)
-                                .endLivenessProbe()
-                            .endContainer()
-                        .endSpec()
-                    .endTemplate()
-                .endSpec()
-                .build();
-
-        baseDeployment.getMetadata().setName(getName());
-        baseDeployment.getMetadata().setNamespace(getNamespace());
-        baseDeployment.getSpec().getSelector().setMatchLabels(getInstanceLabels());
-        baseDeployment.getSpec().setReplicas(keycloakCR.getSpec().getInstances());
-
         Map<String, String> labels = getInstanceLabels();
         if (operatorConfig.keycloak().podLabels() != null) {
             labels.putAll(operatorConfig.keycloak().podLabels());
         }
-        baseDeployment.getSpec().getTemplate().getMetadata().setLabels(labels);
 
-        Container container = baseDeployment.getSpec().getTemplate().getSpec().getContainers().get(0);
+        /* Create a builder for the statefulset, note that the pod template spec is used as the basis
+         * over that some values are forced, others will let the template override, others merge
+         */
+
+        StatefulSetBuilder baseDeploymentBuilder = new StatefulSetBuilder()
+                .withNewMetadata()
+                    .withName(getName())
+                    .withNamespace(getNamespace())
+                .endMetadata()
+                .withNewSpec()
+                    .withNewSelector()
+                        .withMatchLabels(getInstanceLabels())
+                    .endSelector()
+                    .withNewTemplateLike(getPodTemplateSpec().orElseGet(PodTemplateSpec::new))
+                        .editOrNewMetadata().addToLabels(labels).endMetadata()
+                        .editOrNewSpec().withImagePullSecrets(keycloakCR.getSpec().getImagePullSecrets()).endSpec()
+                    .endTemplate()
+                    .withReplicas(keycloakCR.getSpec().getInstances())
+                .endSpec();
+
+        var specBuilder = baseDeploymentBuilder.editSpec().editTemplate().editOrNewSpec();
+
+        if (!specBuilder.hasRestartPolicy()) {
+            specBuilder.withRestartPolicy("Always");
+        }
+        if (!specBuilder.hasTerminationGracePeriodSeconds()) {
+            specBuilder.withTerminationGracePeriodSeconds(30L);
+        }
+        if (!specBuilder.hasDnsPolicy()) {
+            specBuilder.withDnsPolicy("ClusterFirst");
+        }
+
+        // there isn't currently an editOrNewFirstContainer, so we need to do this manually
+        ContainersNested<SpecNested<TemplateNested<io.fabric8.kubernetes.api.model.apps.StatefulSetFluent.SpecNested<StatefulSetBuilder>>>> containerBuilder = null;
+        if (specBuilder.buildContainers().isEmpty()) {
+            containerBuilder = specBuilder.addNewContainer();
+        } else {
+            containerBuilder = specBuilder.editFirstContainer();
+        }
+
+        containerBuilder.withName("keycloak");
+
         var customImage = Optional.ofNullable(keycloakCR.getSpec().getImage());
-        container.setImage(customImage.orElse(operatorConfig.keycloak().image()));
+        containerBuilder.withImage(customImage.orElse(operatorConfig.keycloak().image()));
 
+        if (!containerBuilder.hasImagePullPolicy()) {
+            containerBuilder.withImagePullPolicy(operatorConfig.keycloak().imagePullPolicy());
+        }
+        if (Optional.ofNullable(containerBuilder.getArgs()).orElse(List.of()).isEmpty()) {
+            containerBuilder.withArgs("start");
+        }
         if (customImage.isPresent()) {
-            container.getArgs().add("--optimized");
+            containerBuilder.addToArgs("--optimized");
         }
-
-        if (CollectionUtil.isNotEmpty(keycloakCR.getSpec().getImagePullSecrets())) {
-            baseDeployment.getSpec().getTemplate().getSpec().setImagePullSecrets(keycloakCR.getSpec().getImagePullSecrets());
-        }
-
-        container.setImagePullPolicy(operatorConfig.keycloak().imagePullPolicy());
-
-        container.setEnv(getEnvVars());
 
         // probes
         var tlsConfigured = isTlsConfigured(keycloakCR);
@@ -394,28 +239,59 @@ public class KeycloakDeployment extends OperatorManagedResource implements Statu
                 .map(path -> !path.endsWith("/") ? path + "/" : path)
                 .orElse("/");
 
-        container.getReadinessProbe().setHttpGet(
-            new HTTPGetActionBuilder()
+        if (!containerBuilder.hasReadinessProbe()) {
+            containerBuilder.withNewReadinessProbe()
+                .withInitialDelaySeconds(20)
+                .withPeriodSeconds(2)
+                .withFailureThreshold(250)
+                .withNewHttpGet()
                 .withScheme(protocol)
                 .withNewPort(kcPort)
                 .withPath(kcRelativePath + "health/ready")
-                .build()
-        );
-        container.getLivenessProbe().setHttpGet(
-            new HTTPGetActionBuilder()
+                .endHttpGet()
+                .endReadinessProbe();
+        }
+        if (!containerBuilder.hasLivenessProbe()) {
+            containerBuilder.withNewLivenessProbe()
+                .withInitialDelaySeconds(20)
+                .withPeriodSeconds(2)
+                .withFailureThreshold(150)
+                .withNewHttpGet()
                 .withScheme(protocol)
                 .withNewPort(kcPort)
                 .withPath(kcRelativePath + "health/live")
-                .build()
-        );
+                .endHttpGet()
+                .endLivenessProbe();
+        }
+
+        // add in ports - there's no merging being done here
+        StatefulSet baseDeployment = containerBuilder
+            .addNewPort()
+                .withName(Constants.KEYCLOAK_HTTPS_PORT_NAME)
+                .withContainerPort(Constants.KEYCLOAK_HTTPS_PORT)
+                .withProtocol(Constants.KEYCLOAK_SERVICE_PROTOCOL)
+            .endPort()
+            .addNewPort()
+                .withName(Constants.KEYCLOAK_HTTP_PORT_NAME)
+                .withContainerPort(Constants.KEYCLOAK_HTTP_PORT)
+                .withProtocol(Constants.KEYCLOAK_SERVICE_PROTOCOL)
+            .endPort()
+            .endContainer().endSpec().endTemplate().endSpec().build();
 
         return baseDeployment;
     }
 
-    private KeycloakDistConfigurator configureDist() {
-        final KeycloakDistConfigurator config = new KeycloakDistConfigurator(keycloakCR, baseDeployment, client);
-        config.configureDistOptions();
-        return config;
+    private void addRemainingEnvVars() {
+        // add in the remaining envVars, but only if they are not already set
+        var envVars = getEnvVars();
+        var env = baseDeployment.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv();
+        if (env != null && !env.isEmpty()) {
+            // this is also a final rationalization of whatever was added first by any previous manipulation wins
+            envVars = new ArrayList<>(Stream.concat(env.stream(), envVars.stream())
+                    .collect(Collectors.toMap(EnvVar::getName, Function.identity(), (e1, e2) -> e1, LinkedHashMap::new))
+                    .values());
+        }
+        baseDeployment.getSpec().getTemplate().getSpec().getContainers().get(0).setEnv(envVars);
     }
 
     private List<EnvVar> getEnvVars() {
@@ -537,22 +413,15 @@ public class KeycloakDeployment extends OperatorManagedResource implements Statu
                 });
     }
 
-    public Set<String> getConfigSecretsNames() {
-        Set<String> ret = new HashSet<>(serverConfigSecretsNames);
+    public List<String> getConfigSecretsNames() {
+        TreeSet<String> ret = new TreeSet<>(serverConfigSecretsNames);
         ret.addAll(distConfigurator.getSecretNames());
-        return ret;
+        return new ArrayList<>(ret);
     }
 
     @Override
     public String getName() {
         return keycloakCR.getMetadata().getName();
-    }
-
-    public void rollingRestart() {
-        client.apps().statefulSets()
-                .inNamespace(getNamespace())
-                .withName(getName())
-                .rolling().restart();
     }
 
     public void migrateDeployment(StatefulSet previousDeployment, StatefulSet reconciledDeployment) {

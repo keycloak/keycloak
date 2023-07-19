@@ -84,7 +84,7 @@ public class ClusteringTest extends BaseOperatorTest {
 
         // the main resources are ready, check for the expected dependents
         checkInstanceCount(1, StatefulSet.class, kc, kc1);
-        checkInstanceCount(2, Secret.class, kc, kc1);
+        checkInstanceCount(1, Secret.class, kc, kc1);
         checkInstanceCount(1, Ingress.class, kc, kc1);
         checkInstanceCount(2, Service.class, kc, kc1);
 

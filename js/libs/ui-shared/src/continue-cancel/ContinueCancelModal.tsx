@@ -3,26 +3,24 @@ import { Button, ButtonProps, Modal, ModalProps } from "@patternfly/react-core";
 
 export type ContinueCancelModalProps = Omit<ModalProps, "ref" | "children"> & {
   modalTitle: string;
-  modalMessage?: string;
+  continueLabel: string;
+  cancelLabel: string;
   buttonTitle: string | ReactNode;
   buttonVariant?: ButtonProps["variant"];
   isDisabled?: boolean;
   onContinue: () => void;
-  continueLabel?: string;
-  cancelLabel?: string;
   component?: React.ElementType<any> | React.ComponentType<any>;
   children?: ReactNode;
 };
 
 export const ContinueCancelModal = ({
   modalTitle,
-  modalMessage,
+  continueLabel,
+  cancelLabel,
   buttonTitle,
   isDisabled,
   buttonVariant,
   onContinue,
-  continueLabel = "continue",
-  cancelLabel = "doCancel",
   component = Button,
   children,
   ...rest
@@ -67,7 +65,7 @@ export const ContinueCancelModal = ({
           </Button>,
         ]}
       >
-        {modalMessage ? modalMessage : children}
+        {children}
       </Modal>
     </>
   );

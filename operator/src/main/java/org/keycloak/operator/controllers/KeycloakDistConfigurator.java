@@ -149,8 +149,8 @@ public class KeycloakDistConfigurator {
                 .withMountPath(Constants.CERTIFICATES_FOLDER)
                 .build();
 
-        deployment.getSpec().getTemplate().getSpec().getVolumes().add(volume);
-        kcContainer.getVolumeMounts().add(volumeMount);
+        deployment.getSpec().getTemplate().getSpec().getVolumes().add(0, volume);
+        kcContainer.getVolumeMounts().add(0, volumeMount);
     }
 
     public void configureDatabase() {
