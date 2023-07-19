@@ -474,6 +474,7 @@ public class ModelToRepresentation {
                 .stream()
                 .filter(p -> p.supports(otpPolicy))
                 .map(OTPApplicationProvider::getName)
+                .sorted(String::compareTo)
                 .collect(Collectors.toList()));
 
         WebAuthnPolicy webAuthnPolicy = realm.getWebAuthnPolicy();

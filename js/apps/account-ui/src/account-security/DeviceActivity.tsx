@@ -31,16 +31,15 @@ import {
   DeviceRepresentation,
   SessionRepresentation,
 } from "../api/representations";
-import useFormatter from "../components/formatter/format-date";
 import { Page } from "../components/page/Page";
 import { TFuncKey } from "../i18n";
 import { keycloak } from "../keycloak";
+import { formatDate } from "../utils/formatDate";
 import { usePromise } from "../utils/usePromise";
 
 const DeviceActivity = () => {
   const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
-  const { formatTime } = useFormatter();
 
   const [devices, setDevices] = useState<DeviceRepresentation[]>();
   const [key, setKey] = useState(0);
@@ -130,9 +129,12 @@ const DeviceActivity = () => {
             <ContinueCancelModal
               buttonTitle={t("signOutAllDevices")}
               modalTitle={t("signOutAllDevices")}
-              modalMessage={t("signOutAllDevicesWarning")}
+              continueLabel={t("confirm")}
+              cancelLabel={t("cancel")}
               onContinue={() => signOutAll()}
-            />
+            >
+              {t("signOutAllDevicesWarning")}
+            </ContinueCancelModal>
           )}
         </SplitItem>
       </Split>
@@ -175,10 +177,13 @@ const DeviceActivity = () => {
                         <ContinueCancelModal
                           buttonTitle={t("signOut")}
                           modalTitle={t("signOut")}
+                          continueLabel={t("confirm")}
+                          cancelLabel={t("cancel")}
                           buttonVariant="secondary"
-                          modalMessage={t("signOutWarning")}
                           onContinue={() => signOutSession(session, device)}
-                        />
+                        >
+                          {t("signOutWarning")}
+                        </ContinueCancelModal>
                       )}
                     </GridItem>
                     <GridItem span={11}>
@@ -201,7 +206,7 @@ const DeviceActivity = () => {
                             {t("lastAccessedOn")}
                           </DescriptionListTerm>
                           <DescriptionListDescription>
-                            {formatTime(session.lastAccess)}
+                            {formatDate(new Date(session.lastAccess * 1000))}
                           </DescriptionListDescription>
                         </DescriptionListGroup>
                         <DescriptionListGroup>
@@ -217,7 +222,7 @@ const DeviceActivity = () => {
                             {t("started")}
                           </DescriptionListTerm>
                           <DescriptionListDescription>
-                            {formatTime(session.started)}
+                            {formatDate(new Date(session.started * 1000))}
                           </DescriptionListDescription>
                         </DescriptionListGroup>
                         <DescriptionListGroup>
@@ -225,7 +230,7 @@ const DeviceActivity = () => {
                             {t("expires")}
                           </DescriptionListTerm>
                           <DescriptionListDescription>
-                            {formatTime(session.expires)}
+                            {formatDate(new Date(session.expires * 1000))}
                           </DescriptionListDescription>
                         </DescriptionListGroup>
                       </DescriptionList>
