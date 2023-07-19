@@ -239,15 +239,15 @@ const Applications = () => {
                   <hr />
                   <GridItem>
                     <ContinueCancelModal
-                      buttonTitle="removeAccess"
+                      buttonTitle={t("removeAccess")}
+                      modalTitle={t("removeAccess")}
+                      continueLabel={t("confirm")}
+                      cancelLabel={t("cancel")}
                       buttonVariant="secondary"
-                      modalTitle="removeAccess"
-                      modalMessage={t("removeModalMessage", [
-                        application.clientId,
-                      ])}
-                      continueLabel="confirmButton"
-                      onContinue={() => removeConsent(application.clientId)} // required
-                    />
+                      onContinue={() => removeConsent(application.clientId)}
+                    >
+                      {t("removeModalMessage", [application.clientId])}
+                    </ContinueCancelModal>
                   </GridItem>
                   <GridItem>
                     <InfoAltIcon /> {t("infoMessage")}
