@@ -541,6 +541,45 @@ public class JavascriptAdapterTest extends AbstractJavascriptTest {
         });
     }
 
+    /**
+     * Test for {@code acr_values} handling via {@code loginOptions}: <pre>{@code
+     * Keycloak keycloak = new Keycloak(); keycloak.login({...., acrValues: "1"})
+     * }</pre>
+     */
+    @Test
+    public void testAcrValuesInLoginOptionsShouldBeConsideredByLoginUrl() {
+
+        testExecutor.configure().init(defaultArguments());
+        JSObjectBuilder loginOptions = JSObjectBuilder.create();
+
+        testExecutor.login(loginOptions, (JavascriptStateValidator) (driver, output, events) -> {
+            try {
+                String queryString = new URL(driver.getCurrentUrl()).getQuery();
+                String acrValues = UriUtils.decodeQueryString(queryString).getFirst(OIDCLoginProtocol.ACR_PARAM);
+                Assert.assertNull(acrValues);
+            } catch (IOException ioe) {
+                throw new AssertionError(ioe);
+            }
+        });
+
+        // Test given "acrValues" option will be translated into the "acr_values" parameter passed to Keycloak server
+        jsDriver.navigate().to(testAppUrl);
+        testExecutor.configure().init(defaultArguments());
+
+        loginOptions = JSObjectBuilder.create().acrValues("2fa");
+
+        testExecutor.login(loginOptions, (JavascriptStateValidator) (driver, output, events) -> {
+            try {
+                String queryString = new URL(driver.getCurrentUrl()).getQuery();
+                String acrValuesParam = UriUtils.decodeQueryString(queryString).getFirst(OIDCLoginProtocol.ACR_PARAM);
+                Assert.assertNotNull(acrValuesParam);
+                assertThat(acrValuesParam, is("2fa"));
+            } catch (IOException ioe) {
+                throw new AssertionError(ioe);
+            }
+        });
+    }
+
     @Test
     public void testUpdateToken() {
         XMLHttpRequest request = XMLHttpRequest.create()
