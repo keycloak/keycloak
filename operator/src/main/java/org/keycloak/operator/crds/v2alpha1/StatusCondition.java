@@ -24,6 +24,8 @@ import java.util.Objects;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.TextNode;
 
 /**
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
@@ -37,7 +39,7 @@ public class StatusCondition {
     }
 
     private String type;
-    private AnyType status = new AnyType(Status.Unknown.name());
+    private JsonNode status = TextNode.valueOf(Status.Unknown.name());
     private String message;
     private String lastTransitionTime;
     private Long observedGeneration;
@@ -52,11 +54,11 @@ public class StatusCondition {
 
     @JsonIgnore
     public Boolean getStatus() {
-        if (status == null || status.getValue() == null) {
+        if (status == null || status.isNull()) {
             return null;
         }
         // account for the legacy boolean string as well
-        switch ((String)status.getValue()) {
+        switch (status.asText()) {
         case "false":
         case "False":
             return false;
@@ -70,22 +72,25 @@ public class StatusCondition {
 
     @JsonProperty("status")
     public String getStatusString() {
-        return (String)status.getValue();
+        if (status == null || status.isNull()) {
+            return null;
+        }
+        return status.asText();
     }
 
     @JsonProperty("status")
     public void setStatusString(String status) {
-        this.status = new AnyType(status);
+        this.status = TextNode.valueOf(status);
     }
 
     @JsonIgnore
     public void setStatus(Boolean status) {
         if (status == null) {
-            this.status = new AnyType(Status.Unknown.name());
+            this.status = TextNode.valueOf(Status.Unknown.name());
         } else if (status) {
-            this.status = new AnyType(Status.True.name());
+            this.status = TextNode.valueOf(Status.True.name());
         } else {
-            this.status = new AnyType(Status.False.name());
+            this.status = TextNode.valueOf(Status.False.name());
         }
     }
 
