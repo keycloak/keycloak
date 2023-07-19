@@ -1014,7 +1014,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
     }
 
     private void setBasicUserAttributes(BrokeredIdentityContext context, UserModel federatedUser) {
-        setDiffAttrToConsumer(federatedUser.getEmail(), context.getEmail(), federatedUser::setEmail);
+        setDiffAttrToConsumer(federatedUser.getEmail(), context.getEmail(), email -> setEmail(context, federatedUser, email));
         setDiffAttrToConsumer(federatedUser.getFirstName(), context.getFirstName(), federatedUser::setFirstName);
         setDiffAttrToConsumer(federatedUser.getLastName(), context.getLastName(), federatedUser::setLastName);
     }
@@ -1023,6 +1023,18 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
         String actualValueNotNull = Optional.ofNullable(actualValue).orElse("");
         if (newValue != null && !newValue.equals(actualValueNotNull)) {
             consumer.accept(newValue);
+        }
+    }
+
+    private void setEmail(BrokeredIdentityContext context, UserModel federatedUser, String newEmail) {
+        federatedUser.setEmail(newEmail);
+        // change email verified depending if it is trusted or not
+        if (context.getIdpConfig().isTrustEmail() && !Boolean.parseBoolean(context.getAuthenticationSession().getAuthNote(AbstractIdpAuthenticator.UPDATE_PROFILE_EMAIL_CHANGED))) {
+            logger.tracef("Email verified automatically after updating user '%s' through Identity provider '%s' ", federatedUser.getUsername(), context.getIdpConfig().getAlias());
+            federatedUser.setEmailVerified(true);
+        } else {
+            logger.tracef("Email verified reset to false after updating user '%s' through Identity provider '%s' ", federatedUser.getUsername(), context.getIdpConfig().getAlias());
+            federatedUser.setEmailVerified(false);
         }
     }
 
