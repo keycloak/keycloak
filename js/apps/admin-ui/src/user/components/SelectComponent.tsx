@@ -15,8 +15,8 @@ export const SelectComponent = ({
   const { control } = useFormContext();
   const [open, setOpen] = useState(false);
 
-  const isMultiSelect = attribute.annotations?.["inputType"] === "multiselect";
-  const options = (attribute.validations?.options as Options).options || [];
+  const options =
+    (attribute.validations?.options as Options | undefined)?.options || [];
   return (
     <UserProfileGroup {...attribute}>
       <Controller
@@ -29,7 +29,7 @@ export const SelectComponent = ({
             onToggle={(b) => setOpen(b)}
             onSelect={(_, value) => {
               const option = value.toString();
-              if (isMultiSelect) {
+              if (Array.isArray(field.value)) {
                 if (field.value.includes(option)) {
                   field.onChange(
                     field.value.filter((item: string) => item !== option),
@@ -43,7 +43,7 @@ export const SelectComponent = ({
               }
             }}
             selections={field.value ? field.value : t("common:choose")}
-            variant={isMultiSelect ? "typeaheadmulti" : "single"}
+            variant={Array.isArray(field.value) ? "typeaheadmulti" : "single"}
             aria-label={t("common:selectOne")}
             isOpen={open}
             isDisabled={
