@@ -40,7 +40,7 @@ Most of the time, it should be enough to set the `hostname` option in order to c
 When using the `hostname` option the server is going to resolve the HTTP scheme, port, and path, automatically so that:
 
 * `https` scheme is used unless you set `hostname-strict-https=false`
-* Use the standard HTTP ports (e.g.: `80` and `443`) if a `proxy` is set or use the port you set to the `hostname-port` option
+* if the `proxy` option is set, the proxy will use the default ports (i.e.: 80 and 443).  If the proxy uses a different port, it needs to be specified via the `hostname-port` configuration option
 
 However, if you want to set not only the host but also a scheme, port, and path, you can set the `hostname-url` option:
 
@@ -48,6 +48,11 @@ However, if you want to set not only the host but also a scheme, port, and path,
 
 This option gives you more flexibility as you can set the different parts of the URL from a single option. Note that
 the `hostname` and `hostname-url` are mutually exclusive.
+
+[NOTE]
+====
+By `hostname` and `proxy` configuration options you affect only the static resources URLs, redirect URIs, OIDC well-known endpoints, etc. In order to change, where/on which port the server actually listens on, you need to use the `http/tls` configuration options (e.g. `http-host`, `https-port`, etc.). For more details, see <@links.server id="enabletls"/> and <@links.server id="all-config"/>.
+====
 
 === Backend
 
@@ -70,6 +75,7 @@ The server exposes the administration console and static resources using a speci
 
 By default, the URLs for the administration console are also based on the incoming request. However, you can set a specific host or base URL if you want
 to restrict access to the administration console using a specific URL. Similarly to how you set the frontend URLs, you can use the `hostname-admin` and `hostname-admin-url` options to achieve that.
+Note that if HTTPS is enabled (`http-enabled` configuration option is set to false, which is the default setting for the production mode), the Keycloak server automatically assumes you want to use HTTPS URLs. The admin console then tries to contact Keycloak over HTTPS and HTTPS URLs are also used for its configured redirect/web origin URLs. It is not recommended for production, but you can use HTTP URL as `hostname-admin-url` to override this behaviour.
 
 Most of the time, it should be enough to set the `hostname-admin` option in order to change only the *host* of the administration console URLs:
 
@@ -121,6 +127,18 @@ In this example, the server is accessible using a port other than the default po
 
 .Keycloak configuration:
 <@kc.start parameters="--hostname-url=https://mykeycloak:8989"/>
+
+=== Exposing Keycloak behind a TLS reencrypt proxy using different ports
+
+In this example, the server is running behind a proxy and both the server and the proxy are using their own certificates, so the communication between Keycloak and the proxy is encrypted. Because we want the proxy to use its own certificate, the proxy mode `reencrypt` will be used. We need to keep in mind that the proxy configuration options (as well as hostname configuration options) are not changing the ports on which the server actually is listening on (it changes only the ports of static resources like JavaScript and CSS links, OIDC well-known endpoints, redirect URIs, etc.). Therefore, we need to use HTTP configuration options to change the Keycloak server to internally listen on a different port, e.g. 8543. The proxy will be listening on the port 8443 (the port visible while accessing the console via a browser). The example hostname `my-keycloak.org` will be used for the server and similarly the admin console will be accessible via the `admin.my-keycloak.org` subdomain.
+
+.Keycloak configuration:
+<@kc.start parameters="--proxy=reencrypt --https-port=8543 --hostname-url=https://my-keycloak.org:8443 --hostname-admin-url=https://admin.my-keycloak.org:8443"/>
+
+Note: there is currently no difference between the `passthrough` and `reencrypt` modes. For now, this is meant for future-proof configuration compatibility. The only difference is that when the `edge` proxy mode is used, HTTP is implicitly enabled (again as mentioned above, this does not affect the server behaviour).
+
+WARNING: Usage any of the proxy modes makes Keycloak rely on Forwarded and X-Forwarded-* headers.
+Misconfiguration may leave Keycloak exposed to security issues. For more details, see <@links.server id="reverseproxy"/>.
 
 == Troubleshooting
 
