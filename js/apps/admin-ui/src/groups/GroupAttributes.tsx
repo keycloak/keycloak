@@ -47,6 +47,7 @@ export const GroupAttributes = () => {
         { ...currentGroup, attributes },
       );
 
+      setCurrentGroup({ ...currentGroup, attributes });
       addAlert(t("groupUpdated"), AlertVariant.success);
     } catch (error) {
       addError("groups:groupUpdateError", error);
@@ -59,7 +60,7 @@ export const GroupAttributes = () => {
         form={form}
         save={save}
         fineGrainedAccess={currentGroup?.access?.manage}
-        reset={() => form.reset(currentGroup?.attributes)}
+        reset={() => convertToFormValues(currentGroup!, form.setValue)}
       />
     </PageSection>
   );
