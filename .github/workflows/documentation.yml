@@ -6,8 +6,6 @@ on:
       - main
       - dependabot/**
   pull_request:
-  schedule:
-    - cron: 0 5 * * *
   workflow_dispatch:
 
 env:
@@ -27,7 +25,6 @@ jobs:
 
   conditional:
     name: Check conditional workflows and jobs
-    if: github.event_name != 'schedule' || github.repository == 'keycloak/keycloak'
     runs-on: ubuntu-latest
     outputs:
       documentation: ${{ steps.conditional.outputs.documentation }}
@@ -125,7 +122,7 @@ jobs:
 
   check:
     name: Status Check - Keycloak Documentation
-    if: always() && ( github.event_name != 'schedule' || github.repository == 'keycloak/keycloak' )
+    if: always()
     needs:
       - conditional
       - check-set-status
