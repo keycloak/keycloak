@@ -13,6 +13,7 @@ import type CredentialRepresentation from "@keycloak/keycloak-admin-client/lib/d
 import useToggle from "../../utils/useToggle";
 import useLocaleSort from "../../utils/useLocaleSort";
 import { CredentialDataDialog } from "./CredentialDataDialog";
+import useFormatDate from "../../utils/useFormatDate";
 
 type CredentialRowProps = {
   credential: CredentialRepresentation;
@@ -27,6 +28,7 @@ export const CredentialRow = ({
   toggleDelete,
   children,
 }: CredentialRowProps) => {
+  const formatDate = useFormatDate();
   const { t } = useTranslation("users");
   const [showData, toggleShow] = useToggle();
   const [kebabOpen, toggleKebab] = useToggle();
@@ -63,6 +65,7 @@ export const CredentialRow = ({
       )}
 
       <Td>{children}</Td>
+      <Td>{formatDate(new Date(credential.createdDate!))}</Td>
       <Td>
         <Button
           className="kc-showData-btn"

@@ -25,10 +25,10 @@ import {
   CredentialRepresentation,
 } from "../api/representations";
 import { EmptyRow } from "../components/datalist/EmptyRow";
-import useFormatter from "../components/format/format-date";
 import { Page } from "../components/page/Page";
 import { TFuncKey } from "../i18n";
 import { keycloak } from "../keycloak";
+import { formatDate } from "../utils/formatDate";
 import { usePromise } from "../utils/usePromise";
 
 type MobileLinkProps = {
@@ -65,7 +65,6 @@ const MobileLink = ({ title, onClick }: MobileLinkProps) => {
 
 const SigningIn = () => {
   const { t } = useTranslation();
-  const { formatDate } = useFormatter();
   const { addAlert, addError } = useAlerts();
   const { login } = keycloak;
 
@@ -174,14 +173,13 @@ const SigningIn = () => {
                         >
                           {container.removeable ? (
                             <ContinueCancelModal
-                              buttonTitle="remove"
-                              buttonVariant="danger"
+                              buttonTitle={t("delete")}
                               modalTitle={t("removeCred", [
                                 label(meta.credential),
                               ])}
-                              modalMessage={t("stopUsingCred", [
-                                label(meta.credential),
-                              ])}
+                              continueLabel={t("confirm")}
+                              cancelLabel={t("cancel")}
+                              buttonVariant="danger"
                               onContinue={async () => {
                                 try {
                                   await deleteCredentials(meta.credential);
@@ -200,7 +198,9 @@ const SigningIn = () => {
                                   );
                                 }
                               }}
-                            />
+                            >
+                              {t("stopUsingCred", [label(meta.credential)])}
+                            </ContinueCancelModal>
                           ) : (
                             <Button
                               variant="secondary"

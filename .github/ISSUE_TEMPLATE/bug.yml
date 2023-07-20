@@ -17,6 +17,7 @@ body:
       label: Area
       description: Affected area
       options:
+        - 
         - account/api
         - account/ui
         - adapter/fuse
