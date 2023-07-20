@@ -257,7 +257,7 @@ jobs:
     name: Legacy Store IT
     needs: build
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 75
     strategy:
       matrix:
         db: [postgres, mysql, oracle, mssql, mariadb]
