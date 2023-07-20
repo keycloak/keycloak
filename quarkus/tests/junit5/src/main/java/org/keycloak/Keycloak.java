@@ -259,8 +259,8 @@ public class Keycloak {
                 .addExclusion("org.jboss.logmanager", "log4j-jboss-logmanager");
 
         if (fipsEnabled) {
-            serverDependency.addExclusion("org.bouncycastle", "bcprov-jdk15on");
-            serverDependency.addExclusion("org.bouncycastle", "bcpkix-jdk15on");
+            serverDependency.addExclusion("org.bouncycastle", "bcprov-jdk18on");
+            serverDependency.addExclusion("org.bouncycastle", "bcpkix-jdk18on");
             serverDependency.addExclusion("org.keycloak", "keycloak-crypto-default");
         } else {
             serverDependency.addExclusion("org.keycloak", "keycloak-crypto-fips1402");
