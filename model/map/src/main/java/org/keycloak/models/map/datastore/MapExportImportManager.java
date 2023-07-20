@@ -17,6 +17,8 @@
 
 package org.keycloak.models.map.datastore;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.common.enums.SslRequired;
@@ -106,6 +108,7 @@ import org.keycloak.util.JsonSerialization;
 import org.keycloak.utils.ReservedCharValidator;
 import org.keycloak.validation.ValidationUtil;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -481,6 +484,7 @@ public class MapExportImportManager implements ExportImportManager {
         return role;
     }
 
+    @Override
     public void exportRealm(RealmModel realm, ExportOptions options, ExportAdapter callback) {
         throw new ModelException("exporting for map storage is currently not supported");
     }
@@ -491,11 +495,28 @@ public class MapExportImportManager implements ExportImportManager {
           might want to add the file name or the media type as a method parameter to switch between different implementations. */
 
         RealmRepresentation rep;
+        byte[] inputData = null;
         try {
-            rep = JsonSerialization.readValue(requestBody, RealmRepresentation.class);
+            // read input data to be able to re-try later
+            try (requestBody) {
+                inputData = requestBody.readAllBytes();
+            }
+            rep = JsonSerialization.readValue(new ByteArrayInputStream(inputData), RealmRepresentation.class);
         } catch (IOException e) {
-            throw new ModelException("unable to read contents from stream", e);
+            /* This is a re-try when unrecognized property is being imported, it may happen e.g. when using admin client of newer version 
+               in heterogenous cluster (during zero-downtime upgrade) and the request lands into older version of kc. */
+            if (e instanceof UnrecognizedPropertyException && inputData != null) {
+                try {
+                    rep = JsonSerialization.mapper.copy().disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES).readValue(new ByteArrayInputStream(inputData), RealmRepresentation.class);
+                    logger.warnf("%s during an import!", e.getMessage().indexOf(",") > 0 ? e.getMessage().substring(0, e.getMessage().indexOf(",")) : "Unrecognized field");
+                } catch (IOException ex) {
+                    throw new ModelException("unable to read contents from stream", ex);
+                }
+            } else {
+                throw new ModelException("unable to read contents from stream", e);
+            }
         }
+
         logger.debugv("importRealm: {0}", rep.getRealm());
 
         if (!useNewImportMethod) {
