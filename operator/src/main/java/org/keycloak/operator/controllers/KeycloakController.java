@@ -60,12 +60,12 @@ public class KeycloakController implements Reconciler<Keycloak>, EventSourceInit
 
     @Override
     public Map<String, EventSource> prepareEventSources(EventSourceContext<Keycloak> context) {
-        String namespace = context.getControllerConfiguration().getConfigurationService().getKubernetesClient().getNamespace();
+        var namespaces = context.getControllerConfiguration().getNamespaces();
 
         InformerConfiguration<StatefulSet> statefulSetIC = InformerConfiguration
                 .from(StatefulSet.class)
                 .withLabelSelector(Constants.DEFAULT_LABELS_AS_STRING)
-                .withNamespaces(namespace)
+                .withNamespaces(namespaces)
                 .withSecondaryToPrimaryMapper(Mappers.fromOwnerReference())
                 .withOnUpdateFilter(new MetadataAwareOnUpdateFilter<>())
                 .build();
@@ -73,7 +73,7 @@ public class KeycloakController implements Reconciler<Keycloak>, EventSourceInit
         InformerConfiguration<Service> servicesIC = InformerConfiguration
                 .from(Service.class)
                 .withLabelSelector(Constants.DEFAULT_LABELS_AS_STRING)
-                .withNamespaces(namespace)
+                .withNamespaces(namespaces)
                 .withSecondaryToPrimaryMapper(Mappers.fromOwnerReference())
                 .withOnUpdateFilter(new MetadataAwareOnUpdateFilter<>())
                 .build();
@@ -81,7 +81,7 @@ public class KeycloakController implements Reconciler<Keycloak>, EventSourceInit
         InformerConfiguration<Ingress> ingressesIC = InformerConfiguration
                 .from(Ingress.class)
                 .withLabelSelector(Constants.DEFAULT_LABELS_AS_STRING)
-                .withNamespaces(namespace)
+                .withNamespaces(namespaces)
                 .withSecondaryToPrimaryMapper(Mappers.fromOwnerReference())
                 .withOnUpdateFilter(new MetadataAwareOnUpdateFilter<>())
                 .build();

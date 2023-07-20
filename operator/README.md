@@ -55,6 +55,12 @@ Compile the project and generate the Docker image with JIB:
 mvn clean package -Doperator -Dquarkus.container-image.build=true -Dquarkus.kubernetes.deployment-target=minikube
 ```
 
+Create the keycloak namespace:
+
+```bash
+kubectl create ns keycloak
+```
+
 Install the CRD definition and the operator in the cluster in the `keycloak` namespace:
 
 ```bash

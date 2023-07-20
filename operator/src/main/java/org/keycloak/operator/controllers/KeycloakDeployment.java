@@ -471,7 +471,7 @@ public class KeycloakDeployment extends OperatorManagedResource<StatefulSet> imp
                     if (secretSelector == null) {
                         throw new IllegalStateException("Secret " + serverConfigValue.get().getName() + " not defined");
                     }
-                    var secret = client.secrets().inNamespace(keycloakCR.getMetadata().getNamespace()).withName(secretSelector.getName()).get();
+                    var secret = client.secrets().inNamespace(getNamespace()).withName(secretSelector.getName()).get();
                     if (secret == null) {
                         throw new IllegalStateException("Secret " + secretSelector.getName() + " not found in cluster");
                     }

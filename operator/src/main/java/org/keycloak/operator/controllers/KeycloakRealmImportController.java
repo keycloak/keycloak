@@ -55,10 +55,12 @@ public class KeycloakRealmImportController implements Reconciler<KeycloakRealmIm
 
     @Override
     public Map<String, EventSource> prepareEventSources(EventSourceContext<KeycloakRealmImport> context) {
+        var namespaces = context.getControllerConfiguration().getNamespaces();
+
         InformerConfiguration<Job> jobIC = InformerConfiguration
                 .from(Job.class)
                 .withLabelSelector(Constants.DEFAULT_LABELS_AS_STRING)
-                .withNamespaces(context.getControllerConfiguration().getConfigurationService().getKubernetesClient().getNamespace())
+                .withNamespaces(namespaces)
                 .withSecondaryToPrimaryMapper(Mappers.fromOwnerReference())
                 .withOnUpdateFilter(new MetadataAwareOnUpdateFilter<>())
                 .build();
