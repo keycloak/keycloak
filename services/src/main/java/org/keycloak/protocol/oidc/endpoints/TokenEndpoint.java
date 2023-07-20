@@ -490,7 +490,7 @@ public class TokenEndpoint {
         }
 
         checkAndBindMtlsHoKToken(responseBuilder, useRefreshToken);
-        checkAndBindDPoPToken(responseBuilder, useRefreshToken && (client.isPublicClient() || client.isBearerOnly()), Profile.isFeatureEnabled(Profile.Feature.DPOP));
+        checkAndBindDPoPToken(responseBuilder, useRefreshToken && client.isPublicClient(), Profile.isFeatureEnabled(Profile.Feature.DPOP));
 
         if (TokenUtil.isOIDCRequest(scopeParam)) {
             responseBuilder.generateIDToken().generateAccessTokenHash();
@@ -521,10 +521,6 @@ public class TokenEndpoint {
             res = responseBuilder.build();
         }
 
-        if (clientConfig.isUseDPoP()) {
-            res.setTokenType(DPoPUtil.DPOP_TOKEN_TYPE);
-        }
-
         event.success();
 
         return cors.builder(Response.ok(res).type(MediaType.APPLICATION_JSON_TYPE)).build();
@@ -553,7 +549,11 @@ public class TokenEndpoint {
 
         if (clientConfig.isUseDPoP()) {
             DPoPUtil.bindToken(responseBuilder.getAccessToken(), dPoP);
-            // TODO do not bind refresh tokens issued to confidential clients, see 5. DPoP Access Token Request
+            // TODO Probably uncomment as the accessToken type "DPoP" will have more sense than "Bearer". It will require some changes in the introspection endpoint too...
+            // responseBuilder.getAccessToken().type(DPoPUtil.DPOP_TOKEN_TYPE);
+            responseBuilder.responseTokenType(DPoPUtil.DPOP_TOKEN_TYPE);
+
+            // Bind refresh tokens for public clients, See "Section 5. DPoP Access Token Request" from DPoP specification
             if (useRefreshToken) {
                 DPoPUtil.bindToken(responseBuilder.getRefreshToken(), dPoP);
             }
@@ -593,11 +593,6 @@ public class TokenEndpoint {
                 AuthenticatedClientSessionModel clientSession = userSession.getAuthenticatedClientSessionByClient(client.getId());
                 updateClientSession(clientSession);
                 updateUserSessionFromClientAuth(userSession);
-            }
-
-            // KEYCLOAK-15169 OAuth 2.0 Demonstrating Proof-of-Possession at the Application Layer (DPoP)
-            if (clientConfig.isUseDPoP()) {
-                res.setTokenType(DPoPUtil.DPOP_TOKEN_TYPE);
             }
         } catch (OAuthErrorException e) {
             logger.trace(e.getMessage(), e);

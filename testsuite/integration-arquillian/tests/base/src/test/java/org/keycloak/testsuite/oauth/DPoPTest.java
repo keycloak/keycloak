@@ -18,6 +18,7 @@
 package org.keycloak.testsuite.oauth;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.keycloak.jose.jwk.JWKUtil.toIntegerBytes;
 
@@ -107,8 +108,8 @@ public class DPoPTest extends AbstractTestRealmKeycloakTest {
     public void beforeDPoPTest() throws Exception {
         ecKeyPair = generateEcdsaKey("secp256r1");
         rsaKeyPair = KeyUtils.generateRsaKeyPair(2048);
-        jwkRsa = createRsaJwk(Algorithm.PS256, rsaKeyPair.getPublic());
-        jwkEc = createEcJwk(Algorithm.ES256, "secp256r1", ecKeyPair.getPublic());
+        jwkRsa = createRsaJwk(rsaKeyPair.getPublic());
+        jwkEc = createEcJwk(ecKeyPair.getPublic());
         jwsRsaHeader = new JWSHeader(org.keycloak.jose.jws.Algorithm.PS256, DPOP_JWT_HEADER_TYPE, jwkRsa.getKeyId(), jwkRsa);
         jwsEcHeader = new JWSHeader(org.keycloak.jose.jws.Algorithm.ES256, DPOP_JWT_HEADER_TYPE, jwkEc.getKeyId(), jwkEc);
 
@@ -129,11 +130,6 @@ public class DPoPTest extends AbstractTestRealmKeycloakTest {
 
         oauth.clientId(TEST_PUBLIC_CLIENT_ID);
         oauth.doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
-
-        // EC: ES256 -> secp256r1, ES384 -> secp384r1, ES512 -> secp521r1
-        KeyPair ecKeyPair = generateEcdsaKey("secp256r1");
-
-        JWK jwkEc = createEcJwk(Algorithm.ES256, "secp256r1", ecKeyPair.getPublic());
         JWSHeader jwsEcHeader = new JWSHeader(org.keycloak.jose.jws.Algorithm.ES256, DPOP_JWT_HEADER_TYPE, jwkEc.getKeyId(), jwkEc);
         String dpopProofEcEncoded = generateSignedDPoPProof(UUID.randomUUID().toString(), HttpMethod.POST.toString(), oauth.getAccessTokenUrl(), Long.valueOf(Time.currentTime()), Algorithm.ES256, jwsEcHeader, ecKeyPair.getPrivate());
 
@@ -174,7 +170,7 @@ public class DPoPTest extends AbstractTestRealmKeycloakTest {
 
         KeyPair rsaKeyPair = KeyUtils.generateRsaKeyPair(2048);
 
-        JWK jwkRsa = createRsaJwk(Algorithm.PS256, rsaKeyPair.getPublic());
+        JWK jwkRsa = createRsaJwk(rsaKeyPair.getPublic());
         JWSHeader jwsRsaHeader = new JWSHeader(org.keycloak.jose.jws.Algorithm.PS256, DPOP_JWT_HEADER_TYPE, jwkRsa.getKeyId(), jwkRsa);
         String dpopProofRsaEncoded = generateSignedDPoPProof(UUID.randomUUID().toString(), HttpMethod.POST.toString(), oauth.getAccessTokenUrl(), Long.valueOf(Time.currentTime()), Algorithm.PS256, jwsRsaHeader, rsaKeyPair.getPrivate());
 
@@ -189,7 +185,8 @@ public class DPoPTest extends AbstractTestRealmKeycloakTest {
         String jkt = JWKSUtils.computeThumbprint(jwkRsa);
         assertEquals(jkt, accessToken.getConfirmation().getKeyThumbprint());
         RefreshToken refreshToken = oauth.parseRefreshToken(response.getRefreshToken());
-        assertEquals(null, refreshToken.getConfirmation());
+        // For confidential client, DPoP is not bind to refresh token (See "section 5 DPoP Access Token Request" of DPoP specification)
+        assertNull(refreshToken.getConfirmation());
 
         String tokenResponse = oauth.introspectTokenWithClientCredential(TEST_CONFIDENTIAL_CLIENT_ID, TEST_CONFIDENTIAL_CLIENT_SECRET, "access_token", response.getAccessToken());
         Assert.assertNotNull(tokenResponse);
@@ -206,7 +203,7 @@ public class DPoPTest extends AbstractTestRealmKeycloakTest {
 
         // token refresh
         rsaKeyPair = KeyUtils.generateRsaKeyPair(2048);
-        jwkRsa = createRsaJwk(Algorithm.PS256, rsaKeyPair.getPublic());
+        jwkRsa = createRsaJwk(rsaKeyPair.getPublic());
         jwsRsaHeader = new JWSHeader(org.keycloak.jose.jws.Algorithm.PS256, DPOP_JWT_HEADER_TYPE, jwkRsa.getKeyId(), jwkRsa);
         dpopProofRsaEncoded = generateSignedDPoPProof(UUID.randomUUID().toString(), HttpMethod.POST.toString(), oauth.getAccessTokenUrl(), Long.valueOf(Time.currentTime()), Algorithm.PS256, jwsRsaHeader, rsaKeyPair.getPrivate());
 
@@ -403,7 +400,7 @@ public class DPoPTest extends AbstractTestRealmKeycloakTest {
         assertEquals(errorDescription, response.getErrorDescription());
     }
 
-    private JWK createRsaJwk(String algorithm, Key publicKey) {
+    private JWK createRsaJwk(Key publicKey) {
         RSAPublicKey rsaKey = (RSAPublicKey) publicKey;
 
         RSAPublicJWK k = new RSAPublicJWK();
@@ -414,7 +411,7 @@ public class DPoPTest extends AbstractTestRealmKeycloakTest {
         return k;
     }
 
-    private JWK createEcJwk(String algorithm, String ecDomainParamName, Key publicKey) {
+    private JWK createEcJwk(Key publicKey) {
         ECPublicKey ecKey = (ECPublicKey) publicKey;
 
         int fieldSize = ecKey.getParams().getCurve().getField().getFieldSize();
@@ -457,7 +454,7 @@ public class DPoPTest extends AbstractTestRealmKeycloakTest {
             byte[] signatureByteArray = signature.sign();
             return data + "." + Base64Url.encode(signatureByteArray);
         } catch (NoSuchAlgorithmException | InvalidKeyException | SignatureException e) {
-            return null;
+            throw new RuntimeException(e);
         }
     }
 

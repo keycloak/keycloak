@@ -57,12 +57,6 @@ public class JWSHeader implements JOSEHeader {
         this.contentType = contentType;
     }
 
-    public JWSHeader(Algorithm algorithm, String type, String contentType, String keyId) {
-        this.algorithm = algorithm;
-        this.type = type;
-        this.keyId = keyId;
-    }
-
     public JWSHeader(Algorithm algorithm, String type, String keyId, JWK key) {
         this.algorithm = algorithm;
         this.type = type;
