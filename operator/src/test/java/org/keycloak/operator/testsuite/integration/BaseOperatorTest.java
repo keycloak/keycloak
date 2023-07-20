@@ -168,7 +168,7 @@ public class BaseOperatorTest implements QuarkusTestAfterEachCallback {
 
     for (Reconciler<?> reconciler : reconcilers) {
       Log.info("Register and apply : " + reconciler.getClass().getName());
-      operator.register(reconciler);
+      operator.register(reconciler, overrider -> overrider.settingNamespace(namespace));
     }
   }
 

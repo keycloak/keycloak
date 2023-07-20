@@ -46,9 +46,7 @@ import java.util.concurrent.TimeUnit;
 
 import jakarta.inject.Inject;
 
-import static io.javaoperatorsdk.operator.api.reconciler.Constants.WATCH_CURRENT_NAMESPACE;
-
-@ControllerConfiguration(namespaces = WATCH_CURRENT_NAMESPACE,
+@ControllerConfiguration(
     dependents = {
         @Dependent(type = KeycloakAdminSecretDependentResource.class),
         @Dependent(type = KeycloakIngressDependentResource.class, reconcilePrecondition = KeycloakIngressDependentResource.EnabledCondition.class),
@@ -68,12 +66,12 @@ public class KeycloakController implements Reconciler<Keycloak>, EventSourceInit
 
     @Override
     public Map<String, EventSource> prepareEventSources(EventSourceContext<Keycloak> context) {
-        String namespace = context.getControllerConfiguration().getConfigurationService().getKubernetesClient().getNamespace();
+        var namespaces = context.getControllerConfiguration().getNamespaces();
 
         InformerConfiguration<StatefulSet> statefulSetIC = InformerConfiguration
                 .from(StatefulSet.class)
                 .withLabelSelector(Constants.DEFAULT_LABELS_AS_STRING)
-                .withNamespaces(namespace)
+                .withNamespaces(namespaces)
                 .withSecondaryToPrimaryMapper(Mappers.fromOwnerReference())
                 .withOnUpdateFilter(new MetadataAwareOnUpdateFilter<>())
                 .build();
@@ -81,7 +79,7 @@ public class KeycloakController implements Reconciler<Keycloak>, EventSourceInit
         InformerConfiguration<Service> servicesIC = InformerConfiguration
                 .from(Service.class)
                 .withLabelSelector(Constants.DEFAULT_LABELS_AS_STRING)
-                .withNamespaces(namespace)
+                .withNamespaces(namespaces)
                 .withSecondaryToPrimaryMapper(Mappers.fromOwnerReference())
                 .withOnUpdateFilter(new MetadataAwareOnUpdateFilter<>())
                 .build();

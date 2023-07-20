@@ -190,14 +190,41 @@ jobs:
       - name: Deploy an example Keycloak and wait for it to be ready
         working-directory: operator
         run: |
-          kubectl apply -f src/main/resources/example-postgres.yaml
+          kubectl apply -f src/test/resources/example-postgres.yaml
           ./scripts/check-crds-installed.sh
-          kubectl apply -f src/main/resources/example-db-secret.yaml
-          kubectl apply -f src/main/resources/example-tls-secret.yaml
-          kubectl apply -f src/main/resources/example-keycloak.yaml
-          kubectl apply -f src/main/resources/example-realm.yaml
+          kubectl apply -f src/test/resources/example-db-secret.yaml
+          kubectl apply -f src/test/resources/example-tls-secret.yaml
+          kubectl apply -f src/test/resources/example-keycloak.yaml
+          kubectl apply -f src/test/resources/example-realm.yaml
           # Wait for the CRs to be ready
           ./scripts/check-examples-installed.sh
+          
+      - name: Single namespace cleanup
+        working-directory: operator
+        run: |
+          kubectl delete -f src/test/resources/example-postgres.yaml
+          kubectl delete -f src/test/resources/example-db-secret.yaml
+          kubectl delete -f src/test/resources/example-tls-secret.yaml
+          kubectl delete -f src/test/resources/example-keycloak.yaml
+          kubectl delete -f src/test/resources/example-realm.yaml
+      
+      - name: Arrange OLM test installation for all namespaces
+        working-directory: operator
+        run: |
+          kubectl patch csv keycloak-operator.v86400000.0.0 --type merge --patch '{"spec": {"installModes": [{"type": "AllNamespaces","supported": true}]}}'
+          kubectl patch operatorgroup og --type json --patch '[{"op":"remove","path":"/spec/targetNamespaces"}]'
+       
+      - name: Deploy an example Keycloak in a different namespace and wait for it to be ready
+        working-directory: operator
+        run: |
+          kubectl create ns keycloak
+          kubectl apply -f src/test/resources/example-postgres.yaml -n keycloak
+          kubectl apply -f src/test/resources/example-db-secret.yaml -n keycloak
+          kubectl apply -f src/test/resources/example-tls-secret.yaml -n keycloak
+          kubectl apply -f src/test/resources/example-keycloak.yaml -n keycloak
+          kubectl apply -f src/test/resources/example-realm.yaml -n keycloak
+          # Wait for the CRs to be ready
+          ./scripts/check-examples-installed.sh keycloak
 
   check:
     name: Status Check - Keycloak Operator CI
