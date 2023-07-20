@@ -128,7 +128,6 @@ Theme properties are set in the file `<THEME TYPE>/theme.properties` in the them
 * import - Import resources from another theme
 * common - Override the common resource path. The default value is `common/keycloak` when not specified. This value would be used as value of suffix of `${url.resourcesCommonPath}`, which is used typically in freemarker templates (prefix of `${url.resoucesCommonPath}` value is theme root uri).
 * styles - Space-separated list of styles to include
-* locales - Comma-separated list of supported locales
 
 There are a list of properties that can be used to change the css class used for certain element types. For a list of these properties look at the theme.properties
 file in the corresponding type of the keycloak theme (`themes/keycloak/<THEME TYPE>/theme.properties`).
@@ -269,8 +268,7 @@ Texts of these message bundles can be overwritten by realm-specific values. The 
 
 . Create the file `<THEME TYPE>/messages/messages_<LOCALE>.properties` in the directory of your theme.
 
-. Add this file to the `locales` property in `<THEME TYPE>/theme.properties`.
-For a language to be available to users the realms `login`, `account` and `email`, the theme has to support the language, so you need to add your language for those theme types.
+. Add the translated properties to this file
 +
 For example, to add Norwegian translations to the `mytheme` theme create the file `themes/mytheme/login/messages/messages_no.properties` with the
 following content:
@@ -283,17 +281,8 @@ password=Passord
 +
 If you omit a translation for messages, they will use English.
 
-. Edit `themes/mytheme/login/theme.properties` and add:
-+
-[source]
-----
-locales=en,no
-----
-
 . Add the same for the `account` and `email` theme types. To do this create `themes/mytheme/account/messages/messages_no.properties` and
 `themes/mytheme/email/messages/messages_no.properties`. Leaving these files empty will result in the English messages being used.
-
-. Copy `themes/mytheme/login/theme.properties` to `themes/mytheme/account/theme.properties` and `themes/mytheme/email/theme.properties`.
 
 . Add a translation for the language selector. This is done by adding a message to the English translation. To do this add the following to
 `themes/mytheme/account/messages/messages_en.properties` and `themes/mytheme/login/messages/messages_en.properties`:
