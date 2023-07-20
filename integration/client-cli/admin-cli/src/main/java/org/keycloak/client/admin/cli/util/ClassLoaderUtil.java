@@ -38,7 +38,7 @@ public class ClassLoaderUtil {
 
         // Detect if BC FIPS jars are present in the "client/lib" directory
         boolean bcFipsJarPresent = Stream.of(jarsInDir).anyMatch(file -> file.getName().startsWith("bc-fips"));
-        String[] validJarPrefixes = bcFipsJarPresent ?  new String[] {"keycloak-crypto-fips1402", "bc-fips", "bctls-fips"} : new String[] {"keycloak-crypto-default", "bcprov-jdk15on"};
+        String[] validJarPrefixes = bcFipsJarPresent ?  new String[] {"keycloak-crypto-fips1402", "bc-fips", "bctls-fips"} : new String[] {"keycloak-crypto-default", "bcprov-jdk18on"};
         URL[] usedJars = Stream.of(jarsInDir)
                 .filter(file -> {
                     for (String prefix : validJarPrefixes) {

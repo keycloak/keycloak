@@ -1,4 +1,3 @@
-import RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
 import { PropsWithChildren, useEffect, useMemo } from "react";
 
 import {
@@ -44,13 +43,12 @@ export const RecentRealmsProvider = ({ children }: PropsWithChildren) => {
 
 export const useRecentRealms = () => useRequiredContext(RecentRealmsContext);
 
-function filterRealmNames(realms: RealmRepresentation[], realmNames: string[]) {
+function filterRealmNames(realms: string[], storedRealms: string[]) {
   // If no realms have been set yet we can't filter out any non-existent realm names.
   if (realms.length === 0) {
-    return realmNames;
+    return storedRealms;
   }
 
   // Only keep realm names that actually still exist.
-  const exisingRealmNames = realms.map(({ realm }) => realm!);
-  return realmNames.filter((realm) => exisingRealmNames.includes(realm));
+  return storedRealms.filter((realm) => realms.includes(realm));
 }
