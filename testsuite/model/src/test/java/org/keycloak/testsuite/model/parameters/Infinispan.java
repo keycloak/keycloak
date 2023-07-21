@@ -95,23 +95,19 @@ public class Infinispan extends KeycloakModelParameters {
 
     @Override
     public void updateConfig(Config cf) {
-        Config.ProviderConfig provider = cf.spi("connectionsInfinispan").provider("default");
-        provider = provider.config("embedded", "true")
+        cf.spi("connectionsInfinispan")
+                .provider("default")
+                .config("embedded", "true")
                 .config("clustered", "true")
                 .config("useKeycloakTimeService", "true")
-                .config("nodeName", "node-" + NODE_COUNTER.incrementAndGet());
-
-        String preloading = System.getProperty("keycloak.userSessions.infinispan.preloadOfflineSessionsFromDatabase");
-        if (preloading != null && "true".equals(preloading)) {
-            provider.config("awaitInitialTransfer", "false");
-        }
-        cf.spi(UserLoginFailureSpi.NAME)
-            .provider(InfinispanUserLoginFailureProviderFactory.PROVIDER_ID)
-              .config("stalledTimeoutInSeconds", "10")
-          .spi(UserSessionSpi.NAME)
-            .provider(InfinispanUserSessionProviderFactory.PROVIDER_ID)
-              .config("sessionPreloadStalledTimeoutInSeconds", "10")
-          ;
+                .config("nodeName", "node-" + NODE_COUNTER.incrementAndGet())
+                .spi(UserLoginFailureSpi.NAME)
+                .provider(InfinispanUserLoginFailureProviderFactory.PROVIDER_ID)
+                .config("stalledTimeoutInSeconds", "10")
+                .spi(UserSessionSpi.NAME)
+                .provider(InfinispanUserSessionProviderFactory.PROVIDER_ID)
+                .config("sessionPreloadStalledTimeoutInSeconds", "10")
+        ;
     }
 
     public Infinispan() {
