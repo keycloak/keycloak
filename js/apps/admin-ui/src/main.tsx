@@ -2,6 +2,7 @@ import "@patternfly/react-core/dist/styles/base.css";
 import "@patternfly/patternfly/patternfly-addons.css";
 
 import { StrictMode } from "react";
+// eslint-disable-next-line react/no-deprecated
 import { render } from "react-dom";
 import { createHashRouter, RouterProvider } from "react-router-dom";
 
