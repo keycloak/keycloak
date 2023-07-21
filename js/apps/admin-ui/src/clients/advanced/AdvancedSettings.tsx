@@ -179,7 +179,7 @@ export const AdvancedSettings = ({
             >
               <Controller
                 name={convertAttributeNameToForm<FormFields>(
-                  "attributes.dpop.bound.access.tokens"
+                  "attributes.dpop.bound.access.tokens",
                 )}
                 defaultValue={false}
                 control={control}

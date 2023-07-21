@@ -174,11 +174,6 @@ public class OIDCAdvancedConfigWrapper extends AbstractClientConfigWrapper {
         setAttribute(OIDCConfigAttributes.EXCLUDE_ISSUER_FROM_AUTH_RESPONSE, val);
     }
 
-    public boolean isDPoPEnabled() {
-        String mode = getAttribute(OIDCConfigAttributes.DPOP_ENABLED);
-        return Boolean.parseBoolean(mode);
-    }
-
     public boolean isUseDPoP() {
         String mode = getAttribute(OIDCConfigAttributes.DPOP_BOUND_ACCESS_TOKENS);
         return Boolean.parseBoolean(mode);
