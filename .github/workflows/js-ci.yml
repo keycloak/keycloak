@@ -6,8 +6,6 @@ on:
       - main
       - dependabot/**
   pull_request:
-  schedule:
-    - cron: 0 20,23,2,5 * * *
   workflow_dispatch:
 
 concurrency:
@@ -22,7 +20,6 @@ defaults:
 jobs:
   conditional:
     name: Check conditional workflows and jobs
-    if: github.event_name != 'schedule' || github.repository == 'keycloak/keycloak'
     runs-on: ubuntu-latest
     outputs:
       js-ci: ${{ steps.conditional.outputs.js }}
@@ -197,7 +194,7 @@ jobs:
         browser: [chrome, firefox]
         exclude:
           # Only test with Firefox on scheduled runs
-          - browser: ${{ github.event_name != 'schedule' && 'firefox' || '' }}
+          - browser: ${{ github.event_name != 'workflow_dispatch' && 'firefox' || '' }}
     steps:
       - uses: actions/checkout@v3
 
@@ -287,7 +284,7 @@ jobs:
 
   check:
     name: Status Check - Keycloak JavaScript CI
-    if: always() && ( github.event_name != 'schedule' || github.repository == 'keycloak/keycloak' )
+    if: always()
     needs:
       - conditional
       - check-set-status
