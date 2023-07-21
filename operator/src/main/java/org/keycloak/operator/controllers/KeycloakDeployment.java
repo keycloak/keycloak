@@ -223,7 +223,7 @@ public class KeycloakDeployment extends OperatorManagedResource<StatefulSet> imp
             containerBuilder.withImagePullPolicy(operatorConfig.keycloak().imagePullPolicy());
         }
         if (Optional.ofNullable(containerBuilder.getArgs()).orElse(List.of()).isEmpty()) {
-            containerBuilder.withArgs("start");
+            containerBuilder.withArgs("--verbose", "start");
         }
         if (customImage.isPresent()) {
             containerBuilder.addToArgs("--optimized");
