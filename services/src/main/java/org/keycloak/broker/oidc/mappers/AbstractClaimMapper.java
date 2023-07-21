@@ -19,7 +19,9 @@ package org.keycloak.broker.oidc.mappers;
 
 import static org.keycloak.utils.JsonUtils.splitClaimPath;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import java.util.List;
+import java.util.Map;
+
 import org.keycloak.broker.oidc.KeycloakOIDCIdentityProvider;
 import org.keycloak.broker.oidc.OIDCIdentityProvider;
 import org.keycloak.broker.provider.AbstractIdentityProviderMapper;
@@ -30,8 +32,7 @@ import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.util.JsonSerialization;
 
-import java.util.List;
-import java.util.Map;
+import com.fasterxml.jackson.databind.JsonNode;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -83,23 +84,22 @@ public abstract class AbstractClaimMapper extends AbstractIdentityProviderMapper
         }
         {  // search ID Token
             Object rawIdToken = context.getContextData().get(OIDCIdentityProvider.VALIDATED_ID_TOKEN);
-            JsonWebToken idToken;
+            JsonWebToken idToken = null;
 
             if (rawIdToken instanceof String) {
                 try {
                     idToken = new JWSInput(rawIdToken.toString()).readJsonContent(JsonWebToken.class);
                 } catch (JWSInputException e) {
-                    return null;
+                    // ignore, try userinfo
                 }
             } else if (rawIdToken instanceof JsonWebToken) {
                 idToken = (JsonWebToken) rawIdToken;
-            } else {
-                return null;
             }
 
-            Object value = getClaimValue(idToken, claim);
-            if (value != null)
-                return value;
+            if (idToken != null) {
+                Object value = getClaimValue(idToken, claim);
+                if (value != null) return value;
+            }
         }
         {
             // Search the OIDC UserInfo claim set (if any)
