@@ -46,6 +46,13 @@ export default function AddIdentityProvider() {
     }
   }, [serverInfo, providerId]);
 
+  const isSocialIdentityProvider = useMemo(() => {
+    const namespace = "org.keycloak.broker.social.SocialIdentityProvider";
+    const componentTypes = serverInfo.componentTypes?.[namespace] ?? [];
+
+    return componentTypes.some(({ id }) => id === providerId);
+  }, [serverInfo, providerId]);
+
   const {
     handleSubmit,
     formState: { isDirty },
@@ -90,7 +97,10 @@ export default function AddIdentityProvider() {
           onSubmit={handleSubmit(onSubmit)}
         >
           <FormProvider {...form}>
-            <GeneralSettings id={providerId} />
+            <GeneralSettings
+              id={providerId}
+              showClientIdSecret={isSocialIdentityProvider}
+            />
             {providerInfo && (
               <DynamicComponents
                 stringify

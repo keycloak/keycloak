@@ -181,6 +181,13 @@ export default function DetailSettings() {
     }
   }, [serverInfo, providerId]);
 
+  const isSocialIdentityProvider = useMemo(() => {
+    const namespace = "org.keycloak.broker.social.SocialIdentityProvider";
+    const componentTypes = serverInfo.componentTypes?.[namespace] ?? [];
+
+    return componentTypes.some(({ id }) => id === providerId);
+  }, [serverInfo, providerId]);
+
   const { addAlert, addError } = useAlerts();
   const navigate = useNavigate();
   const { realm } = useRealm();
@@ -338,7 +345,11 @@ export default function DetailSettings() {
         >
           {!isOIDC && !isSAML && (
             <>
-              <GeneralSettings create={false} id={alias} />
+              <GeneralSettings
+                create={false}
+                id={alias}
+                showClientIdSecret={isSocialIdentityProvider}
+              />
               {providerInfo && (
                 <DynamicComponents
                   stringify

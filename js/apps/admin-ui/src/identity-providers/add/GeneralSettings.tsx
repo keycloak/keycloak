@@ -4,16 +4,20 @@ import { DisplayOrder } from "../component/DisplayOrder";
 
 type GeneralSettingsProps = {
   id: string;
+  showClientIdSecret?: boolean;
   create?: boolean;
 };
 
 export const GeneralSettings = ({
   create = true,
+  showClientIdSecret = true,
   id,
-}: GeneralSettingsProps) => (
-  <>
-    <RedirectUrl id={id} />
-    <ClientIdSecret create={create} />
-    <DisplayOrder />
-  </>
-);
+}: GeneralSettingsProps) => {
+  return (
+    <>
+      <RedirectUrl id={id} />
+      {showClientIdSecret && <ClientIdSecret create={create} />}
+      <DisplayOrder />
+    </>
+  );
+};
