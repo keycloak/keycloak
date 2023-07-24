@@ -44,5 +44,6 @@
         }
     },
     "defaultRoles": "Standardrollen",
-    "defaultGroups": "Standardgruppen"
+    "defaultGroups": "Standardgruppen",
+    "registrationEmailAsUsername": "E-Mail-Adresse als Benutzername"
 }
