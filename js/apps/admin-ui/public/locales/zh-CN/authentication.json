@@ -63,7 +63,8 @@
     "webAuthnPolicyRequireResidentKey": "需要常驻密钥",
     "residentKey": {
         "Yes": "是",
-        "No": "否"
+        "No": "否",
+        "not specified": ""
     },
     "webAuthnPolicyUserVerificationRequirement": "用户验证要求",
     "userVerify": {
@@ -160,5 +161,6 @@
     "setAsDefaultAction": "设置为默认操作",
     "disabledOff": "禁用状态的关闭",
     "updatedRequiredActionSuccess": "必需操作，更新成功",
-    "updatedRequiredActionError": "无法更新必需的操作：{{error}}"
+    "updatedRequiredActionError": "无法更新必需的操作：{{error}}",
+    "lookAround": ""
 }
