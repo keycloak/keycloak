@@ -45,7 +45,6 @@ public class OIDCAdvancedConfigWrapper extends AbstractClientConfigWrapper {
         return new OIDCAdvancedConfigWrapper(null, clientRep);
     }
 
-
     public String getUserInfoSignedResponseAlg() {
         return getAttribute(OIDCConfigAttributes.USER_INFO_RESPONSE_SIGNATURE_ALG);
     }
