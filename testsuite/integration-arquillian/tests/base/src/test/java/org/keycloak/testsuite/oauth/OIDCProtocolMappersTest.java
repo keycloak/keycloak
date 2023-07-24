@@ -35,6 +35,7 @@ import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
 import org.keycloak.protocol.oidc.mappers.AddressMapper;
+import org.keycloak.protocol.oidc.mappers.GroupMembershipMapper;
 import org.keycloak.protocol.oidc.mappers.OIDCAttributeMapperHelper;
 import org.keycloak.protocol.oidc.mappers.UserPropertyMapper;
 import org.keycloak.representations.AccessToken;
@@ -1763,6 +1764,50 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
         assertNotNull(accessToken.getOtherClaims().get("hardcoded-foo"));
         assertTrue(accessToken.getOtherClaims().get("hardcoded-foo") instanceof String);
         assertEquals("hardcoded-bar", accessToken.getOtherClaims().get("hardcoded-foo"));
+    }
+
+    @Test
+    public void testBuiltInGroupMembershipMapper() {
+        RealmResource realm = adminClient.realm("test");
+
+        // create group
+        GroupRepresentation group = new GroupRepresentation();
+        group.setName("group");
+        realm.groups().add(group);
+        group = realm.getGroupByPath("/group");
+
+        // join group
+        UserResource userResource = findUserByUsernameId(realm, "test-user@localhost");
+        userResource.joinGroup(group.getId());
+
+        // add group mapper
+        ClientResource app = findClientResourceByClientId(realm, "test-app");
+        Response mapper = app.getProtocolMappers().createMapper(
+                ModelToRepresentation.toRepresentation(
+                        GroupMembershipMapper.create("groups", "groups", false, null, true, false)
+                )
+        );
+        String mapperId = getCreatedId(mapper);
+
+        try {
+            // login user
+            OAuthClient.AccessTokenResponse response = browserLogin("password", "test-user@localhost", "password");
+
+            // verify access token is filled
+            AccessToken accessToken = oauth.verifyToken(response.getAccessToken());
+            List<String> groups = (List<String>) accessToken.getOtherClaims().get("groups");
+            Assert.assertNotNull(groups);
+            Assert.assertEquals(List.of("group"), groups);
+
+            // verify id token is not filled
+            IDToken idToken = oauth.verifyIDToken(response.getIdToken());
+            Assert.assertNotNull(idToken.getOtherClaims());
+            Assert.assertNull(idToken.getOtherClaims().get("groups"));
+        } finally {
+            app.getProtocolMappers().delete(mapperId);
+            userResource.leaveGroup(group.getId());
+            realm.groups().group(group.getId()).remove();
+        }
     }
 
     private void assertRoles(List<String> actualRoleList, String ...expectedRoles){
