@@ -157,6 +157,9 @@ public class OIDCConfigurationRepresentation {
     @JsonProperty("tls_client_certificate_bound_access_tokens")
     private Boolean tlsClientCertificateBoundAccessTokens;
 
+    @JsonProperty("dpop_signing_alg_values_supported")
+    private List<String> dpopSigningAlgValuesSupported;
+
     @JsonProperty("revocation_endpoint")
     private String revocationEndpoint;
 
@@ -488,6 +491,14 @@ public class OIDCConfigurationRepresentation {
 
     public void setTlsClientCertificateBoundAccessTokens(Boolean tlsClientCertificateBoundAccessTokens) {
         this.tlsClientCertificateBoundAccessTokens = tlsClientCertificateBoundAccessTokens;
+    }
+
+    public List<String> getDpopSigningAlgValuesSupported() {
+        return dpopSigningAlgValuesSupported;
+    }
+
+    public void setDpopSigningAlgValuesSupported(List<String> dpopSigningAlgValuesSupported) {
+        this.dpopSigningAlgValuesSupported = dpopSigningAlgValuesSupported;
     }
 
     public String getRevocationEndpoint() {

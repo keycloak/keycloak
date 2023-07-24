@@ -93,6 +93,7 @@ public interface Errors {
     String PKCE_VERIFICATION_FAILED = "pkce_verification_failed";
     String INVALID_CODE_CHALLENGE_METHOD = "invalid_code_challenge_method";
 
+    String INVALID_DPOP_PROOF = "invalid_dpop_proof";
 
     String NOT_LOGGED_IN = "not_logged_in";
     String UNKNOWN_IDENTITY_PROVIDER = "unknown_identity_provider";

@@ -1,6 +1,5 @@
 package org.keycloak.testsuite.util;
 
-import org.apache.http.entity.ContentType;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.crypto.JavaAlgorithm;
@@ -25,7 +24,7 @@ public class LogoutTokenUtil {
             String issuer, String clientId, String userId, String sessionId, boolean revokeOfflineSessions)
             throws IOException {
         JWSHeader jwsHeader =
-                new JWSHeader(Algorithm.RS256, OAuth2Constants.JWT, ContentType.APPLICATION_JSON.toString(), keyId);
+                new JWSHeader(Algorithm.RS256, OAuth2Constants.JWT, keyId, null);
         String logoutTokenHeaderEncoded = Base64Url.encode(JsonSerialization.writeValueAsBytes(jwsHeader));
 
         LogoutToken logoutToken = new LogoutToken();
