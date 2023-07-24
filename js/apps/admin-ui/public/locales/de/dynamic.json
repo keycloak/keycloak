@@ -1,9 +1,1 @@
-{
-  "usermodel": {
-    "clientRoleMapping": {
-      "client": {
-        "label": "Client-ID"
-      }
-    }
-  }
-}
+{}
