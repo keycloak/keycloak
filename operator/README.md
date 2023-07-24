@@ -16,10 +16,10 @@ Ensure you have JDK 11 (or newer) installed.
 Build the Docker image with:
 
 ```bash
-mvn clean package -Doperator -Dquarkus.container-image.build=true
+mvn clean package -Dquarkus.container-image.build=true
 ```
 
-This will build a container image from `src/main/docker/Dockerfile.jvm`, using `docker` by default. `podman` is also supported if you do these steps beforehand:
+This will build a container image from `Dockerfile`, using `docker` by default. `podman` is also supported if you do these steps beforehand:
 
 - Follow [this guide](https://quarkus.io/guides/podman#setting-docker_host-on-linux) to enable the podman user socket
 - Set the `DOCKER_HOST` environment variable to point at this user socket. For example: `DOCKER_HOST=unix:///run/user/1000/podman/podman.sock`.
@@ -52,7 +52,7 @@ eval $(minikube -p minikube docker-env)
 Compile the project and generate the Docker image with JIB:
 
 ```bash
-mvn clean package -Doperator -Dquarkus.container-image.build=true -Dquarkus.kubernetes.deployment-target=minikube
+mvn clean package -Dquarkus.container-image.build=true -Dquarkus.kubernetes.deployment-target=minikube
 ```
 
 Install the CRD definition and the operator in the cluster in the `keycloak` namespace:
