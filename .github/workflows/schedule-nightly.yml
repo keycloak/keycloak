@@ -55,6 +55,6 @@ jobs:
     steps:
       - run: echo ${{ needs.setup.outputs.latest-release-branch }}
       - name: Run workflow
-        run: gh workflow run -R ${{ github.repository }} ${{ matrix.workflow }} -R ${{ needs.setup.outputs.latest-release-branch }}
+        run: gh workflow run -R ${{ github.repository }} ${{ matrix.workflow }} --ref ${{ needs.setup.outputs.latest-release-branch }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
