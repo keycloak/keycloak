@@ -47,8 +47,6 @@ export default class IdentityProviderLinksTab {
 
   public clickLinkAccountModalLinkBtn() {
     modalUtils.confirmModal();
-    cy.intercept("/admin/realms/master").as("load");
-    cy.wait(["@load"]);
     return this;
   }
 
