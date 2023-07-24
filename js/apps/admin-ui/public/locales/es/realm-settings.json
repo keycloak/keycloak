@@ -57,5 +57,6 @@
     "waitIncrementSeconds": "Incremento de espera",
     "maxFailureWaitSeconds": "Espera máxima",
     "maxDeltaTimeSeconds": "Reinicio del contador de errores",
-    "minimumQuickLoginWaitSeconds": "Tiempo mínimo entre fallos de conexión rápidos"
+    "minimumQuickLoginWaitSeconds": "Tiempo mínimo entre fallos de conexión rápidos",
+    "registrationEmailAsUsername": "Email como nombre de usuario"
 }
