@@ -27,6 +27,7 @@ import org.apache.commons.exec.StreamPumper;
 import org.jboss.arquillian.container.spi.client.container.LifecycleException;
 import org.jboss.logging.Logger;
 import org.keycloak.testsuite.model.StoreProvider;
+import org.keycloak.testsuite.util.WaitUtils;
 
 /**
  * @author mhajas
@@ -193,6 +194,11 @@ public class KeycloakQuarkusServerDeployableContainer extends AbstractQuarkusDep
         if (!isWindows()) {
             return;
         }
+
+        // Wait some time before killing the windows processes. Otherwise there is a risk that some already commited H2 transactions
+        // won't be written to disk in time and hence those transactions may be lost, which could result in test failures in the next step after server restart.
+        // See http://repository.transtep.com/repository/thirdparty/H2/1.0.63/docs/html/advanced.html#durability_problems for the details
+        WaitUtils.pause(2000);
 
         CompletableFuture allProcesses = CompletableFuture.completedFuture(null);
 
