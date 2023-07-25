@@ -3,7 +3,7 @@ description: Checks changes against target branch
 
 inputs:
   token:
-    description: 'GitHub Token'
+    description: GitHub Token
     required: true
 
 outputs:
