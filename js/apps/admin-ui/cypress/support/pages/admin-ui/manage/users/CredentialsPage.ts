@@ -63,7 +63,7 @@ export default class CredentialsPage {
   }
 
   clickConfirmationBtn() {
-    cy.findByTestId(this.confirmationButton).dblclick();
+    cy.findByTestId(this.confirmationButton).click();
 
     return this;
   }
