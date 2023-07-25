@@ -1,6 +1,11 @@
 name: Changed Files
 description: Checks changes against target branch
 
+inputs:
+  token:
+    description: 'GitHub Token'
+    required: true
+
 outputs:
   ci:
     description: Should "ci.yml" execute
@@ -33,4 +38,6 @@ runs:
     - id: changes
       name: Find changes
       shell: bash
-      run: .github/actions/conditional/conditional.sh origin ${{ github.base_ref }}
+      run: .github/actions/conditional/conditional.sh ${{ github.repository }} ${{ github.ref }}
+      env:
+        GITHUB_TOKEN: ${{ inputs.token }}

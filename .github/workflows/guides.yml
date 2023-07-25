@@ -34,6 +34,8 @@ jobs:
 
       - id: conditional
         uses: ./.github/actions/conditional
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
 
   build:
     name: Build
