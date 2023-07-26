@@ -453,7 +453,9 @@ export default function ClientDetails() {
             )}
             {!client.publicClient &&
               !isRealmClient(client) &&
-              (hasViewClients || client.access?.configure) && (
+              (hasViewClients ||
+                client.access?.configure ||
+                client.access?.view) && (
                 <Tab
                   id="credentials"
                   title={<TabTitleText>{t("credentials")}</TabTitleText>}
