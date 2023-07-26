@@ -16,12 +16,13 @@
  */
 import base64 from 'base64-js';
 import sha256 from 'js-sha256';
+import jwtDecode from "jwt-decode";
 
 if (typeof Promise === 'undefined') {
     throw Error('Keycloak requires an environment that supports Promises. Make sure that you include the appropriate polyfill.');
 }
 
-function Keycloak (config) {
+function Keycloak(config) {
     if (!(this instanceof Keycloak)) {
         throw new Error("The 'Keycloak' constructor must be invoked with 'new'.")
     }
@@ -118,7 +119,7 @@ function Keycloak (config) {
                 kc.timeSkew = initOptions.timeSkew;
             }
 
-            if(initOptions.redirectUri) {
+            if (initOptions.redirectUri) {
                 kc.redirectUri = initOptions.redirectUri;
             }
 
@@ -167,17 +168,17 @@ function Keycloak (config) {
         var promise = createPromise();
 
         var initPromise = createPromise();
-        initPromise.promise.then(function() {
+        initPromise.promise.then(function () {
             kc.onReady && kc.onReady(kc.authenticated);
             promise.setSuccess(kc.authenticated);
-        }).catch(function(error) {
+        }).catch(function (error) {
             promise.setError(error);
         });
 
         var configPromise = loadConfig(config);
 
         function onLoad() {
-            var doLogin = function(prompt) {
+            var doLogin = function (prompt) {
                 if (!prompt) {
                     options.prompt = 'none';
                 }
@@ -192,16 +193,16 @@ function Keycloak (config) {
                 });
             }
 
-            var checkSsoSilently = function() {
+            var checkSsoSilently = function () {
                 var ifrm = document.createElement("iframe");
-                var src = kc.createLoginUrl({prompt: 'none', redirectUri: kc.silentCheckSsoRedirectUri});
+                var src = kc.createLoginUrl({ prompt: 'none', redirectUri: kc.silentCheckSsoRedirectUri });
                 ifrm.setAttribute("src", src);
                 ifrm.setAttribute("sandbox", "allow-scripts allow-same-origin");
                 ifrm.setAttribute("title", "keycloak-silent-check-sso");
                 ifrm.style.display = "none";
                 document.body.appendChild(ifrm);
 
-                var messageCallback = function(event) {
+                var messageCallback = function (event) {
                     if (event.origin !== window.location.origin || ifrm.contentWindow !== event.source) {
                         return;
                     }
@@ -220,7 +221,7 @@ function Keycloak (config) {
             switch (initOptions.onLoad) {
                 case 'check-sso':
                     if (loginIframe.enable) {
-                        setupCheckLoginIframe().then(function() {
+                        setupCheckLoginIframe().then(function () {
                             checkLoginIframe().then(function (unchanged) {
                                 if (!unchanged) {
                                     kc.silentCheckSsoRedirectUri ? checkSsoSilently() : doLogin(false);
@@ -251,7 +252,7 @@ function Keycloak (config) {
             }
 
             if (callback && callback.valid) {
-                return setupCheckLoginIframe().then(function() {
+                return setupCheckLoginIframe().then(function () {
                     processCallback(callback, initPromise);
                 }).catch(function (error) {
                     initPromise.setError(error);
@@ -261,7 +262,7 @@ function Keycloak (config) {
                     setToken(initOptions.token, initOptions.refreshToken, initOptions.idToken);
 
                     if (loginIframe.enable) {
-                        setupCheckLoginIframe().then(function() {
+                        setupCheckLoginIframe().then(function () {
                             checkLoginIframe().then(function (unchanged) {
                                 if (unchanged) {
                                     kc.onAuthSuccess && kc.onAuthSuccess();
@@ -275,10 +276,10 @@ function Keycloak (config) {
                             });
                         });
                     } else {
-                        kc.updateToken(-1).then(function() {
+                        kc.updateToken(-1).then(function () {
                             kc.onAuthSuccess && kc.onAuthSuccess();
                             initPromise.setSuccess();
-                        }).catch(function(error) {
+                        }).catch(function (error) {
                             kc.onAuthError && kc.onAuthError();
                             if (initOptions.onLoad) {
                                 onLoad();
@@ -354,7 +355,7 @@ function Keycloak (config) {
         return generateRandomString(len, 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789');
     }
 
-    function generateRandomString(len, alphabet){
+    function generateRandomString(len, alphabet) {
         var randomData = generateRandomData(len);
         var chars = new Array(len);
         for (var i = 0; i < len; i++) {
@@ -379,7 +380,7 @@ function Keycloak (config) {
         }
     }
 
-    function buildClaimsParameter(requestedAcr){
+    function buildClaimsParameter(requestedAcr) {
         var claims = {
             id_token: {
                 acr: requestedAcr
@@ -388,7 +389,7 @@ function Keycloak (config) {
         return JSON.stringify(claims);
     }
 
-    kc.createLoginUrl = function(options) {
+    kc.createLoginUrl = function (options) {
         var state = createUUID();
         var nonce = createUUID();
 
@@ -473,11 +474,11 @@ function Keycloak (config) {
         return url;
     }
 
-    kc.logout = function(options) {
+    kc.logout = function (options) {
         return adapter.logout(options);
     }
 
-    kc.createLogoutUrl = function(options) {
+    kc.createLogoutUrl = function (options) {
         var url = kc.endpoints.logout()
             + '?client_id=' + encodeURIComponent(kc.clientId)
             + '&post_logout_redirect_uri=' + encodeURIComponent(adapter.redirectUri(options, false));
@@ -493,7 +494,7 @@ function Keycloak (config) {
         return adapter.register(options);
     }
 
-    kc.createRegisterUrl = function(options) {
+    kc.createRegisterUrl = function (options) {
         if (!options) {
             options = {};
         }
@@ -501,19 +502,19 @@ function Keycloak (config) {
         return kc.createLoginUrl(options);
     }
 
-    kc.createAccountUrl = function(options) {
+    kc.createAccountUrl = function (options) {
         var realm = getRealmUrl();
         var url = undefined;
         if (typeof realm !== 'undefined') {
             url = realm
-            + '/account'
-            + '?referrer=' + encodeURIComponent(kc.clientId)
-            + '&referrer_uri=' + encodeURIComponent(adapter.redirectUri(options));
+                + '/account'
+                + '?referrer=' + encodeURIComponent(kc.clientId)
+                + '&referrer_uri=' + encodeURIComponent(adapter.redirectUri(options));
         }
         return url;
     }
 
-    kc.accountManagement = function() {
+    kc.accountManagement = function () {
         return adapter.accountManagement();
     }
 
@@ -522,7 +523,7 @@ function Keycloak (config) {
         return !!access && access.roles.indexOf(role) >= 0;
     }
 
-    kc.hasResourceRole = function(role, resource) {
+    kc.hasResourceRole = function (role, resource) {
         if (!kc.resourceAccess) {
             return false;
         }
@@ -531,7 +532,7 @@ function Keycloak (config) {
         return !!access && access.roles.indexOf(role) >= 0;
     }
 
-    kc.loadUserProfile = function() {
+    kc.loadUserProfile = function () {
         var url = getRealmUrl() + '/account';
         var req = new XMLHttpRequest();
         req.open('GET', url, true);
@@ -556,7 +557,7 @@ function Keycloak (config) {
         return promise.promise;
     }
 
-    kc.loadUserInfo = function() {
+    kc.loadUserInfo = function () {
         var url = kc.endpoints.userinfo();
         var req = new XMLHttpRequest();
         req.open('GET', url, true);
@@ -581,8 +582,8 @@ function Keycloak (config) {
         return promise.promise;
     }
 
-    kc.isTokenExpired = function(minValidity) {
-        if (!kc.tokenParsed || (!kc.refreshToken && kc.flow != 'implicit' )) {
+    kc.isTokenExpired = function (minValidity) {
+        if (!kc.tokenParsed || (!kc.refreshToken && kc.flow != 'implicit')) {
             throw 'Not authenticated';
         }
 
@@ -601,7 +602,7 @@ function Keycloak (config) {
         return expiresIn < 0;
     }
 
-    kc.updateToken = function(minValidity) {
+    kc.updateToken = function (minValidity) {
         var promise = createPromise();
 
         if (!kc.refreshToken) {
@@ -611,7 +612,7 @@ function Keycloak (config) {
 
         minValidity = minValidity || 5;
 
-        var exec = function() {
+        var exec = function () {
             var refreshToken = false;
             if (minValidity == -1) {
                 refreshToken = true;
@@ -676,9 +677,9 @@ function Keycloak (config) {
 
         if (loginIframe.enable) {
             var iframePromise = checkLoginIframe();
-            iframePromise.then(function() {
+            iframePromise.then(function () {
                 exec();
-            }).catch(function(error) {
+            }).catch(function (error) {
                 promise.setError(error);
             });
         } else {
@@ -688,7 +689,7 @@ function Keycloak (config) {
         return promise.promise;
     }
 
-    kc.clearToken = function() {
+    kc.clearToken = function () {
         if (kc.token) {
             setToken(null, null, null);
             kc.onAuthLogout && kc.onAuthLogout();
@@ -712,7 +713,7 @@ function Keycloak (config) {
 
     function getOrigin() {
         if (!window.location.origin) {
-            return window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port: '');
+            return window.location.protocol + "//" + window.location.hostname + (window.location.port ? ':' + window.location.port : '');
         } else {
             return window.location.origin;
         }
@@ -759,7 +760,7 @@ function Keycloak (config) {
 
             req.withCredentials = true;
 
-            req.onreadystatechange = function() {
+            req.onreadystatechange = function () {
                 if (req.readyState == 4) {
                     if (req.status == 200) {
 
@@ -809,62 +810,62 @@ function Keycloak (config) {
         }
 
         function setupOidcEndoints(oidcConfiguration) {
-            if (! oidcConfiguration) {
+            if (!oidcConfiguration) {
                 kc.endpoints = {
-                    authorize: function() {
+                    authorize: function () {
                         return getRealmUrl() + '/protocol/openid-connect/auth';
                     },
-                    token: function() {
+                    token: function () {
                         return getRealmUrl() + '/protocol/openid-connect/token';
                     },
-                    logout: function() {
+                    logout: function () {
                         return getRealmUrl() + '/protocol/openid-connect/logout';
                     },
-                    checkSessionIframe: function() {
+                    checkSessionIframe: function () {
                         var src = getRealmUrl() + '/protocol/openid-connect/login-status-iframe.html';
                         if (kc.iframeVersion) {
                             src = src + '?version=' + kc.iframeVersion;
                         }
                         return src;
                     },
-                    thirdPartyCookiesIframe: function() {
+                    thirdPartyCookiesIframe: function () {
                         var src = getRealmUrl() + '/protocol/openid-connect/3p-cookies/step1.html';
                         if (kc.iframeVersion) {
                             src = src + '?version=' + kc.iframeVersion;
                         }
                         return src;
                     },
-                    register: function() {
+                    register: function () {
                         return getRealmUrl() + '/protocol/openid-connect/registrations';
                     },
-                    userinfo: function() {
+                    userinfo: function () {
                         return getRealmUrl() + '/protocol/openid-connect/userinfo';
                     }
                 };
             } else {
                 kc.endpoints = {
-                    authorize: function() {
+                    authorize: function () {
                         return oidcConfiguration.authorization_endpoint;
                     },
-                    token: function() {
+                    token: function () {
                         return oidcConfiguration.token_endpoint;
                     },
-                    logout: function() {
+                    logout: function () {
                         if (!oidcConfiguration.end_session_endpoint) {
                             throw "Not supported by the OIDC server";
                         }
                         return oidcConfiguration.end_session_endpoint;
                     },
-                    checkSessionIframe: function() {
+                    checkSessionIframe: function () {
                         if (!oidcConfiguration.check_session_iframe) {
                             throw "Not supported by the OIDC server";
                         }
                         return oidcConfiguration.check_session_iframe;
                     },
-                    register: function() {
+                    register: function () {
                         throw 'Redirection to "Register user" page not supported in standard OIDC mode';
                     },
-                    userinfo: function() {
+                    userinfo: function () {
                         if (!oidcConfiguration.userinfo_endpoint) {
                             throw "Not supported by the OIDC server";
                         }
@@ -1021,27 +1022,11 @@ function Keycloak (config) {
     }
 
     function decodeToken(str) {
-        str = str.split('.')[1];
-
-        str = str.replace(/-/g, '+');
-        str = str.replace(/_/g, '/');
-        switch (str.length % 4) {
-            case 0:
-                break;
-            case 2:
-                str += '==';
-                break;
-            case 3:
-                str += '=';
-                break;
-            default:
-                throw 'Invalid token';
+        try {
+            return jwtDecode(str);
+        } catch (ex) {
+            throw 'Invalid token'
         }
-
-        str = decodeURIComponent(escape(atob(str)));
-
-        str = JSON.parse(str);
-        return str;
     }
 
     function createUUID() {
@@ -1154,15 +1139,15 @@ function Keycloak (config) {
         // Need to create a native Promise which also preserves the
         // interface of the custom promise type previously used by the API
         var p = {
-            setSuccess: function(result) {
+            setSuccess: function (result) {
                 p.resolve(result);
             },
 
-            setError: function(result) {
+            setError: function (result) {
                 p.reject(result);
             }
         };
-        p.promise = new Promise(function(resolve, reject) {
+        p.promise = new Promise(function (resolve, reject) {
             p.resolve = resolve;
             p.reject = reject;
         });
@@ -1200,7 +1185,7 @@ function Keycloak (config) {
         var iframe = document.createElement('iframe');
         loginIframe.iframe = iframe;
 
-        iframe.onload = function() {
+        iframe.onload = function () {
             var authUrl = kc.endpoints.authorize();
             if (authUrl.charAt(0) === '/') {
                 loginIframe.iframeOrigin = getOrigin();
@@ -1211,13 +1196,13 @@ function Keycloak (config) {
         }
 
         var src = kc.endpoints.checkSessionIframe();
-        iframe.setAttribute('src', src );
+        iframe.setAttribute('src', src);
         iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin');
-        iframe.setAttribute('title', 'keycloak-session-iframe' );
+        iframe.setAttribute('title', 'keycloak-session-iframe');
         iframe.style.display = 'none';
         document.body.appendChild(iframe);
 
-        var messageCallback = function(event) {
+        var messageCallback = function (event) {
             if ((event.origin !== loginIframe.iframeOrigin) || (loginIframe.iframe.contentWindow !== event.source)) {
                 return;
             }
@@ -1251,8 +1236,8 @@ function Keycloak (config) {
     function scheduleCheckIframe() {
         if (loginIframe.enable) {
             if (kc.token) {
-                setTimeout(function() {
-                    checkLoginIframe().then(function(unchanged) {
+                setTimeout(function () {
+                    checkLoginIframe().then(function (unchanged) {
                         if (unchanged) {
                             scheduleCheckIframe();
                         }
@@ -1265,7 +1250,7 @@ function Keycloak (config) {
     function checkLoginIframe() {
         var promise = createPromise();
 
-        if (loginIframe.iframe && loginIframe.iframeOrigin ) {
+        if (loginIframe.iframe && loginIframe.iframeOrigin) {
             var msg = kc.clientId + ' ' + (kc.sessionId ? kc.sessionId : '');
             loginIframe.callbackList.push(promise);
             var origin = loginIframe.iframeOrigin;
@@ -1286,11 +1271,11 @@ function Keycloak (config) {
             var iframe = document.createElement('iframe');
             iframe.setAttribute('src', kc.endpoints.thirdPartyCookiesIframe());
             iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin');
-            iframe.setAttribute('title', 'keycloak-3p-check-iframe' );
+            iframe.setAttribute('title', 'keycloak-3p-check-iframe');
             iframe.style.display = 'none';
             document.body.appendChild(iframe);
 
-            var messageCallback = function(event) {
+            var messageCallback = function (event) {
                 if (iframe.contentWindow !== event.source) {
                     return;
                 }
@@ -1322,22 +1307,22 @@ function Keycloak (config) {
     function loadAdapter(type) {
         if (!type || type == 'default') {
             return {
-                login: function(options) {
+                login: function (options) {
                     window.location.assign(kc.createLoginUrl(options));
                     return createPromise().promise;
                 },
 
-                logout: function(options) {
+                logout: function (options) {
                     window.location.replace(kc.createLogoutUrl(options));
                     return createPromise().promise;
                 },
 
-                register: function(options) {
+                register: function (options) {
                     window.location.assign(kc.createRegisterUrl(options));
                     return createPromise().promise;
                 },
 
-                accountManagement : function() {
+                accountManagement: function () {
                     var accountUrl = kc.createAccountUrl();
                     if (typeof accountUrl !== 'undefined') {
                         window.location.href = accountUrl;
@@ -1347,7 +1332,7 @@ function Keycloak (config) {
                     return createPromise().promise;
                 },
 
-                redirectUri: function(options, encodeHash) {
+                redirectUri: function (options, encodeHash) {
                     if (arguments.length == 1) {
                         encodeHash = true;
                     }
@@ -1365,7 +1350,7 @@ function Keycloak (config) {
 
         if (type == 'cordova') {
             loginIframe.enable = false;
-            var cordovaOpenWindowWrapper = function(loginUrl, target, options) {
+            var cordovaOpenWindowWrapper = function (loginUrl, target, options) {
                 if (window.cordova && window.cordova.InAppBrowser) {
                     // Use inappbrowser for IOS and Android if available
                     return window.cordova.InAppBrowser.open(loginUrl, target, options);
@@ -1387,7 +1372,7 @@ function Keycloak (config) {
 
             var formatCordovaOptions = function (cordovaOptions) {
                 return Object.keys(cordovaOptions).reduce(function (options, optionName) {
-                    options.push(optionName+"="+cordovaOptions[optionName]);
+                    options.push(optionName + "=" + cordovaOptions[optionName]);
                     return options;
                 }, []).join(",");
             };
@@ -1402,9 +1387,9 @@ function Keycloak (config) {
             };
 
             var cordovaRedirectUri = kc.redirectUri || 'http://localhost';
-            
+
             return {
-                login: function(options) {
+                login: function (options) {
                     var promise = createPromise();
 
                     var cordovaOptions = createCordovaOptions(options);
@@ -1413,12 +1398,12 @@ function Keycloak (config) {
                     var completed = false;
 
                     var closed = false;
-                    var closeBrowser = function() {
+                    var closeBrowser = function () {
                         closed = true;
                         ref.close();
                     };
 
-                    ref.addEventListener('loadstart', function(event) {
+                    ref.addEventListener('loadstart', function (event) {
                         if (event.url.indexOf(cordovaRedirectUri) == 0) {
                             var callback = parseCallback(event.url);
                             processCallback(callback, promise);
@@ -1427,7 +1412,7 @@ function Keycloak (config) {
                         }
                     });
 
-                    ref.addEventListener('loaderror', function(event) {
+                    ref.addEventListener('loaderror', function (event) {
                         if (!completed) {
                             if (event.url.indexOf(cordovaRedirectUri) == 0) {
                                 var callback = parseCallback(event.url);
@@ -1441,7 +1426,7 @@ function Keycloak (config) {
                         }
                     });
 
-                    ref.addEventListener('exit', function(event) {
+                    ref.addEventListener('exit', function (event) {
                         if (!closed) {
                             promise.setError({
                                 reason: "closed_by_user"
@@ -1452,7 +1437,7 @@ function Keycloak (config) {
                     return promise.promise;
                 },
 
-                logout: function(options) {
+                logout: function (options) {
                     var promise = createPromise();
 
                     var logoutUrl = kc.createLogoutUrl(options);
@@ -1460,13 +1445,13 @@ function Keycloak (config) {
 
                     var error;
 
-                    ref.addEventListener('loadstart', function(event) {
+                    ref.addEventListener('loadstart', function (event) {
                         if (event.url.indexOf(cordovaRedirectUri) == 0) {
                             ref.close();
                         }
                     });
 
-                    ref.addEventListener('loaderror', function(event) {
+                    ref.addEventListener('loaderror', function (event) {
                         if (event.url.indexOf(cordovaRedirectUri) == 0) {
                             ref.close();
                         } else {
@@ -1475,7 +1460,7 @@ function Keycloak (config) {
                         }
                     });
 
-                    ref.addEventListener('exit', function(event) {
+                    ref.addEventListener('exit', function (event) {
                         if (error) {
                             promise.setError();
                         } else {
@@ -1487,12 +1472,12 @@ function Keycloak (config) {
                     return promise.promise;
                 },
 
-                register : function(options) {
+                register: function (options) {
                     var promise = createPromise();
                     var registerUrl = kc.createRegisterUrl();
                     var cordovaOptions = createCordovaOptions(options);
                     var ref = cordovaOpenWindowWrapper(registerUrl, '_blank', cordovaOptions);
-                    ref.addEventListener('loadstart', function(event) {
+                    ref.addEventListener('loadstart', function (event) {
                         if (event.url.indexOf(cordovaRedirectUri) == 0) {
                             ref.close();
                             var oauth = parseCallback(event.url);
@@ -1502,11 +1487,11 @@ function Keycloak (config) {
                     return promise.promise;
                 },
 
-                accountManagement : function() {
+                accountManagement: function () {
                     var accountUrl = kc.createAccountUrl();
                     if (typeof accountUrl !== 'undefined') {
                         var ref = cordovaOpenWindowWrapper(accountUrl, '_blank', 'location=no');
-                        ref.addEventListener('loadstart', function(event) {
+                        ref.addEventListener('loadstart', function (event) {
                             if (event.url.indexOf(cordovaRedirectUri) == 0) {
                                 ref.close();
                             }
@@ -1516,7 +1501,7 @@ function Keycloak (config) {
                     }
                 },
 
-                redirectUri: function(options) {
+                redirectUri: function (options) {
                     return cordovaRedirectUri;
                 }
             }
@@ -1526,11 +1511,11 @@ function Keycloak (config) {
             loginIframe.enable = false;
 
             return {
-                login: function(options) {
+                login: function (options) {
                     var promise = createPromise();
                     var loginUrl = kc.createLoginUrl(options);
 
-                    universalLinks.subscribe('keycloak', function(event) {
+                    universalLinks.subscribe('keycloak', function (event) {
                         universalLinks.unsubscribe('keycloak');
                         window.cordova.plugins.browsertab.close();
                         var oauth = parseCallback(event.url);
@@ -1541,11 +1526,11 @@ function Keycloak (config) {
                     return promise.promise;
                 },
 
-                logout: function(options) {
+                logout: function (options) {
                     var promise = createPromise();
                     var logoutUrl = kc.createLogoutUrl(options);
 
-                    universalLinks.subscribe('keycloak', function(event) {
+                    universalLinks.subscribe('keycloak', function (event) {
                         universalLinks.unsubscribe('keycloak');
                         window.cordova.plugins.browsertab.close();
                         kc.clearToken();
@@ -1556,10 +1541,10 @@ function Keycloak (config) {
                     return promise.promise;
                 },
 
-                register : function(options) {
+                register: function (options) {
                     var promise = createPromise();
                     var registerUrl = kc.createRegisterUrl(options);
-                    universalLinks.subscribe('keycloak' , function(event) {
+                    universalLinks.subscribe('keycloak', function (event) {
                         universalLinks.unsubscribe('keycloak');
                         window.cordova.plugins.browsertab.close();
                         var oauth = parseCallback(event.url);
@@ -1570,7 +1555,7 @@ function Keycloak (config) {
 
                 },
 
-                accountManagement : function() {
+                accountManagement: function () {
                     var accountUrl = kc.createAccountUrl();
                     if (typeof accountUrl !== 'undefined') {
                         window.cordova.plugins.browsertab.openUrl(accountUrl);
@@ -1579,7 +1564,7 @@ function Keycloak (config) {
                     }
                 },
 
-                redirectUri: function(options) {
+                redirectUri: function (options) {
                     if (options && options.redirectUri) {
                         return options.redirectUri;
                     } else if (kc.redirectUri) {
@@ -1594,7 +1579,7 @@ function Keycloak (config) {
         throw 'invalid adapter type: ' + type;
     }
 
-    var LocalStorage = function() {
+    var LocalStorage = function () {
         if (!(this instanceof LocalStorage)) {
             return new LocalStorage();
         }
@@ -1606,7 +1591,7 @@ function Keycloak (config) {
 
         function clearExpired() {
             var time = new Date().getTime();
-            for (var i = 0; i < localStorage.length; i++)  {
+            for (var i = 0; i < localStorage.length; i++) {
                 var key = localStorage.key(i);
                 if (key && key.indexOf('kc-callback-') == 0) {
                     var value = localStorage.getItem(key);
@@ -1624,7 +1609,7 @@ function Keycloak (config) {
             }
         }
 
-        cs.get = function(state) {
+        cs.get = function (state) {
             if (!state) {
                 return;
             }
@@ -1640,7 +1625,7 @@ function Keycloak (config) {
             return value;
         };
 
-        cs.add = function(state) {
+        cs.add = function (state) {
             clearExpired();
 
             var key = 'kc-callback-' + state.state;
@@ -1649,14 +1634,14 @@ function Keycloak (config) {
         };
     };
 
-    var CookieStorage = function() {
+    var CookieStorage = function () {
         if (!(this instanceof CookieStorage)) {
             return new CookieStorage();
         }
 
         var cs = this;
 
-        cs.get = function(state) {
+        cs.get = function (state) {
             if (!state) {
                 return;
             }
@@ -1668,17 +1653,17 @@ function Keycloak (config) {
             }
         };
 
-        cs.add = function(state) {
+        cs.add = function (state) {
             setCookie('kc-callback-' + state.state, JSON.stringify(state), cookieExpiration(60));
         };
 
-        cs.removeItem = function(key) {
+        cs.removeItem = function (key) {
             setCookie(key, '', cookieExpiration(-100));
         };
 
         var cookieExpiration = function (minutes) {
             var exp = new Date();
-            exp.setTime(exp.getTime() + (minutes*60*1000));
+            exp.setTime(exp.getTime() + (minutes * 60 * 1000));
             return exp;
         };
 
@@ -1714,7 +1699,7 @@ function Keycloak (config) {
     }
 
     function createLogger(fn) {
-        return function() {
+        return function () {
             if (kc.enableLogging) {
                 fn.apply(console, Array.prototype.slice.call(arguments));
             }
