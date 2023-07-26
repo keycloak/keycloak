@@ -125,7 +125,7 @@
         <app.server.2.debug.suspend>n</app.server.2.debug.suspend>
         <app.server.2.jboss.jvm.debug.args>-agentlib:jdwp=transport=dt_socket,server=y,suspend=${app.server.2.debug.suspend},address=localhost:${app.server.2.debug.port}</app.server.2.jboss.jvm.debug.args>
         <app.server.memory.Xms>64m</app.server.memory.Xms>
-        <app.server.memory.Xmx>512m</app.server.memory.Xmx>
+        <app.server.memory.Xmx>768m</app.server.memory.Xmx>
         <app.server.memory.settings>-Xms${app.server.memory.Xms} -Xmx${app.server.memory.Xmx} -XX:MetaspaceSize=${surefire.memory.metaspace} -XX:MaxMetaspaceSize=${surefire.memory.metaspace.max}</app.server.memory.settings>
         <app.server.ssl.required>false</app.server.ssl.required>
         <app.server.truststore>${app.server.keystore.dir}/keycloak.truststore</app.server.truststore>
@@ -1810,11 +1810,11 @@
 
                 <dependency>
                     <groupId>org.bouncycastle</groupId>
-                    <artifactId>bcprov-jdk15on</artifactId>
+                    <artifactId>bcprov-jdk18on</artifactId>
                 </dependency>
                 <dependency>
                     <groupId>org.bouncycastle</groupId>
-                    <artifactId>bcpkix-jdk15on</artifactId>
+                    <artifactId>bcpkix-jdk18on</artifactId>
                 </dependency>
                 <dependency>
                     <groupId>org.hamcrest</groupId>
