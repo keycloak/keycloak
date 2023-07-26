@@ -7,11 +7,11 @@ import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
 import java.util.Enumeration;
 
-import javax.ws.rs.client.Client;
-import javax.ws.rs.client.ClientBuilder;
-import javax.ws.rs.client.WebTarget;
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.client.Client;
+import jakarta.ws.rs.client.ClientBuilder;
+import jakarta.ws.rs.client.WebTarget;
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.Response;
 
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
@@ -28,6 +28,9 @@ public class MutualTLSUtils {
 
     public static final String DEFAULT_KEYSTOREPATH = System.getProperty("client.certificate.keystore");
     public static final String DEFAULT_KEYSTOREPASSWORD = System.getProperty("client.certificate.keystore.passphrase");
+
+    // Subject DN of the 1st certificate corresponding to private-key in DEFAULT_KEYSTOREPATH keystore
+    public static final String DEFAULT_KEYSTORE_SUBJECT_DN = "EMAILADDRESS=test-user@localhost, CN=test-user@localhost, OU=Keycloak, O=Red Hat, L=Westford, ST=MA, C=US";
     public static final String DEFAULT_TRUSTSTOREPATH = System.getProperty("client.truststore");
     public static final String DEFAULT_TRUSTSTOREPASSWORD = System.getProperty("client.truststore.passphrase");
 

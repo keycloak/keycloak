@@ -22,8 +22,8 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.sessions.AuthenticationSessionModel;
 
-import javax.ws.rs.core.Cookie;
-import javax.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.Cookie;
+import jakarta.ws.rs.core.HttpHeaders;
 import java.util.List;
 import java.util.Locale;
 import java.util.stream.Collectors;
@@ -92,11 +92,7 @@ public class DefaultLocaleSelectorProvider implements LocaleSelectorProvider {
     }
 
     private Locale getUserSelectedLocale(RealmModel realm, AuthenticationSessionModel session) {
-        if (session == null) {
-            return null;
-        }
-
-        String locale = session.getAuthNote(USER_REQUEST_LOCALE);
+        String locale = session == null ? this.session.getAttribute(USER_REQUEST_LOCALE, String.class) : session.getAuthNote(USER_REQUEST_LOCALE);
         if (locale == null) {
             return null;
         }
@@ -122,7 +118,7 @@ public class DefaultLocaleSelectorProvider implements LocaleSelectorProvider {
             return null;
         }
 
-        String locale = session.getAuthNote(LocaleSelectorProvider.CLIENT_REQUEST_LOCALE);
+        String locale = session.getClientNote(LocaleSelectorProvider.CLIENT_REQUEST_LOCALE);
         if (locale == null) {
             return null;
         }
@@ -166,18 +162,19 @@ public class DefaultLocaleSelectorProvider implements LocaleSelectorProvider {
     private Locale findLocale(RealmModel realm, String... localeStrings) {
         List<Locale> supportedLocales = realm.getSupportedLocalesStream()
                 .map(Locale::forLanguageTag).collect(Collectors.toList());
+
+        return findBestMatchingLocale(supportedLocales, localeStrings);
+    }
+
+    static Locale findBestMatchingLocale(List<Locale> supportedLocales, String... localeStrings) {
         for (String localeString : localeStrings) {
             if (localeString != null) {
                 Locale result = null;
                 Locale search = Locale.forLanguageTag(localeString);
                 for (Locale supportedLocale : supportedLocales) {
-                    if (supportedLocale.getLanguage().equals(search.getLanguage())) {
-                        if (search.getCountry().equals("") ^ supportedLocale.getCountry().equals("") && result == null) {
-                            result = supportedLocale;
-                        }
-                        if (supportedLocale.getCountry().equals(search.getCountry())) {
-                            return supportedLocale;
-                        }
+                    if (doesLocaleMatch(search, supportedLocale) && (result == null
+                            || doesFirstLocaleBetterMatchThanSecondLocale(supportedLocale, result, search))) {
+                        result = supportedLocale;
                     }
                 }
                 if (result != null) {
@@ -186,6 +183,28 @@ public class DefaultLocaleSelectorProvider implements LocaleSelectorProvider {
             }
         }
         return null;
+    }
+
+    private static boolean doesLocaleMatch(Locale candidate, Locale supportedLocale) {
+        return candidate.getLanguage().equals(supportedLocale.getLanguage())
+                && ((candidate.getCountry().equals("") ^ supportedLocale.getCountry().equals(""))
+                        || candidate.getCountry().equals(supportedLocale.getCountry()));
+    }
+
+    private static boolean doesFirstLocaleBetterMatchThanSecondLocale(Locale firstLocale, Locale secondLocale,
+            Locale supportedLocale) {
+        if (firstLocale.getLanguage().equals(supportedLocale.getLanguage())
+                && !secondLocale.getLanguage().equals(supportedLocale.getLanguage())) {
+            return true;
+        }
+
+        if (firstLocale.getCountry().equals(supportedLocale.getCountry())
+                && !secondLocale.getCountry().equals(supportedLocale.getCountry())) {
+            return true;
+        }
+
+        return firstLocale.getVariant().equals(supportedLocale.getVariant())
+                && !secondLocale.getVariant().equals(supportedLocale.getVariant());
     }
 
     @Override

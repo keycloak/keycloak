@@ -33,31 +33,29 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.DefaultValue;
-import javax.ws.rs.GET;
-import javax.ws.rs.NotFoundException;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.DefaultValue;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.PUT;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 
 import org.jboss.resteasy.annotations.cache.NoCache;
-import org.jboss.resteasy.spi.HttpRequest;
+import org.keycloak.http.HttpRequest;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.Profile;
 import org.keycloak.common.enums.AccountRestApiVersion;
 import org.keycloak.common.util.StringPropertyReplacer;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventBuilder;
-import org.keycloak.events.EventStoreProvider;
 import org.keycloak.events.EventType;
 import org.keycloak.models.AccountRoles;
 import org.keycloak.models.AuthenticatedClientSessionModel;
@@ -101,40 +99,35 @@ import org.keycloak.validate.Validators;
  */
 public class AccountRestService {
 
-    @Context
-    private HttpRequest request;
-    @Context
-    protected HttpHeaders headers;
-    @Context
-    protected ClientConnection clientConnection;
+    private final HttpRequest request;
+
+    protected final HttpHeaders headers;
+
+    protected final ClientConnection clientConnection;
 
     private final KeycloakSession session;
-    private final ClientModel client;
     private final EventBuilder event;
-    private EventStoreProvider eventStore;
-    private Auth auth;
+    private final Auth auth;
     
     private final RealmModel realm;
     private final UserModel user;
     private final Locale locale;
     private final AccountRestApiVersion version;
 
-    public AccountRestService(KeycloakSession session, Auth auth, ClientModel client, EventBuilder event, AccountRestApiVersion version) {
+    public AccountRestService(KeycloakSession session, Auth auth, EventBuilder event, AccountRestApiVersion version) {
         this.session = session;
+        this.clientConnection = session.getContext().getConnection();
         this.auth = auth;
         this.realm = auth.getRealm();
         this.user = auth.getUser();
-        this.client = client;
         this.event = event;
         this.locale = session.getContext().resolveLocale(user);
         this.version = version;
         event.client(auth.getClient()).user(auth.getUser());
+        this.request = session.getContext().getHttpRequest();
+        this.headers = session.getContext().getRequestHeaders();
     }
     
-    public void init() {
-        eventStore = session.getProvider(EventStoreProvider.class);
-    }
-
     /**
      * Get account information.
      *
@@ -236,9 +229,9 @@ public class AccountRestService {
             for(Error err: pve.getErrors()) {
                 errors.add(new ErrorRepresentation(err.getAttribute(), err.getMessage(), validationErrorParamsToString(err.getMessageParameters(), profile.getAttributes())));
             }
-            return ErrorResponse.errors(errors, pve.getStatusCode(), false);
+            throw ErrorResponse.errors(errors, pve.getStatusCode(), false);
         } catch (ReadOnlyException e) {
-            return ErrorResponse.error(Messages.READ_ONLY_USER, Response.Status.BAD_REQUEST);
+            throw ErrorResponse.error(Messages.READ_ONLY_USER, Response.Status.BAD_REQUEST);
         }
     }
 
@@ -275,7 +268,7 @@ public class AccountRestService {
     public SessionResource sessions() {
         checkAccountApiEnabled();
         auth.requireOneOf(AccountRoles.MANAGE_ACCOUNT, AccountRoles.VIEW_PROFILE);
-        return new SessionResource(session, auth, request);
+        return new SessionResource(session, auth);
     }
 
     @Path("/credentials")
@@ -289,6 +282,12 @@ public class AccountRestService {
         checkAccountApiEnabled();
         auth.requireOneOf(AccountRoles.MANAGE_ACCOUNT, AccountRoles.VIEW_PROFILE);
         return new ResourcesService(session, user, auth, request);
+    }
+
+    @Path("supportedLocales")
+    @GET
+    public List<String> supportedLocales() {
+        return auth.getRealm().getSupportedLocalesStream().collect(Collectors.toList());
     }
 
     private ClientRepresentation modelToRepresentation(ClientModel model, List<String> inUseClients, List<String> offlineClients, Map<String, UserConsentModel> consents) {
@@ -342,7 +341,7 @@ public class AccountRestService {
 
         ClientModel client = realm.getClientByClientId(clientId);
         if (client == null) {
-            return ErrorResponse.error("No client with clientId: " + clientId + " found.", Response.Status.NOT_FOUND);
+            throw ErrorResponse.error("No client with clientId: " + clientId + " found.", Response.Status.NOT_FOUND);
         }
 
         UserConsentModel consent = session.users().getConsentByClient(realm, user.getId(), client.getId());
@@ -370,7 +369,7 @@ public class AccountRestService {
         if (client == null) {
             String msg = String.format("No client with clientId: %s found.", clientId);
             event.error(msg);
-            return ErrorResponse.error(msg, Response.Status.NOT_FOUND);
+            throw ErrorResponse.error(msg, Response.Status.NOT_FOUND);
         }
 
         UserConsentManager.revokeConsentToClient(session, client, user);
@@ -429,7 +428,7 @@ public class AccountRestService {
         if (client == null) {
             String msg = String.format("No client with clientId: %s found.", clientId);
             event.error(msg);
-            return ErrorResponse.error(msg, Response.Status.NOT_FOUND);
+            throw ErrorResponse.error(msg, Response.Status.NOT_FOUND);
         }
 
         try {
@@ -447,7 +446,7 @@ public class AccountRestService {
             grantedConsent = session.users().getConsentByClient(realm, user.getId(), client.getId());
             return Response.ok(modelToRepresentation(grantedConsent)).build();
         } catch (IllegalArgumentException e) {
-            return ErrorResponse.error(e.getMessage(), Response.Status.BAD_REQUEST);
+            throw ErrorResponse.error(e.getMessage(), Response.Status.BAD_REQUEST);
         }
     }
 
@@ -484,7 +483,7 @@ public class AccountRestService {
     
     @Path("/linked-accounts")
     public LinkedAccountsResource linkedAccounts() {
-        return new LinkedAccountsResource(session, request, client, auth, event, user);
+        return new LinkedAccountsResource(session, request, auth, event, user);
     }
 
     @Path("/groups")

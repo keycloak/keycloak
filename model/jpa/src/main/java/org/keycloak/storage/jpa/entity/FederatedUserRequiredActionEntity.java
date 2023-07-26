@@ -19,14 +19,15 @@ package org.keycloak.storage.jpa.entity;
 
 import org.keycloak.storage.jpa.KeyUtils;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.IdClass;
-import javax.persistence.NamedQueries;
-import javax.persistence.NamedQuery;
-import javax.persistence.Table;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.IdClass;
+import jakarta.persistence.NamedQueries;
+import jakarta.persistence.NamedQuery;
+import jakarta.persistence.Table;
 import java.io.Serializable;
+import java.util.Objects;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -120,7 +121,7 @@ public class FederatedUserRequiredActionEntity {
 
             Key key = (Key) o;
 
-            if (action != key.action) return false;
+            if (!Objects.equals(action, key.action)) return false;
             if (userId != null ? !userId.equals(key.userId != null ? key.userId : null) : key.userId != null) return false;
 
             return true;
@@ -142,7 +143,7 @@ public class FederatedUserRequiredActionEntity {
 
         FederatedUserRequiredActionEntity key = (FederatedUserRequiredActionEntity) o;
 
-        if (action != key.action) return false;
+        if (!Objects.equals(action, key.action)) return false;
         if (userId != null ? !userId.equals(key.userId != null ? key.userId : null) : key.userId != null) return false;
 
         return true;

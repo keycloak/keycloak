@@ -3517,6 +3517,7 @@
     "displayName" : "ldap-provider",
     "providerName" : "ldap",
     "config" : {
+      "enabled" : "false",
       "serverPrincipal" : "principal",
       "debug" : "true",
       "pagination" : "true",

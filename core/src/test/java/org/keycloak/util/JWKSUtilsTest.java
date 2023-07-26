@@ -21,12 +21,14 @@ import org.junit.ClassRule;
 import org.junit.Test;
 import org.keycloak.crypto.KeyUse;
 import org.keycloak.crypto.KeyWrapper;
-import org.keycloak.jose.jwk.*;
+import org.keycloak.crypto.PublicKeysWrapper;
+import org.keycloak.jose.jwk.JSONWebKeySet;
+import org.keycloak.jose.jwk.JWK;
 import org.keycloak.rule.CryptoInitRule;
 
-import java.util.Map;
-
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 
 
 public abstract class JWKSUtilsTest {
@@ -61,6 +63,14 @@ public abstract class JWKSUtilsTest {
                 "  }," +
                 "  {" +
                 "   \"kty\": \"RSA\"," +
+                "   \"alg\": \"RS512\"," +
+                "   \"use\": \"sig\"," +
+                "   \"kid\": \"" + kidRsa1 + "\"," +
+                "   \"n\": \"soFDjoZ5mQ8XAA7reQAFg90inKAHk0DXMTizo4JuOsgzUbhcplIeZ7ks83hsEjm8mP8lUVaHMPMAHEIp3gu6Xxsg-s73ofx1dtt_Fo7aj8j383MFQGl8-FvixTVobNeGeC0XBBQjN8lEl-lIwOa4ZoERNAShplTej0ntDp7TQm0=\"," +
+                "   \"e\": \"AQAB\"" +
+                "  }," +
+                "  {" +
+                "   \"kty\": \"RSA\"," +
                 "   \"kid\": \"" + kidInvalidKey + "\"," +
                 "   \"n\": \"soFDjoZ5mQ8XAA7reQAFg90inKAHk0DXMTizo4JuOsgzUbhcplIeZ7ks83hsEjm8mP8lUVaHMPMAHEIp3gu6Xxsg-s73ofx1dtt_Fo7aj8j383MFQGl8-FvixTVobNeGeC0XBBQjN8lEl-lIwOa4ZoERNAShplTej0ntDp7TQm0=\"," +
                 "   \"e\": \"AQAB\"" +
@@ -84,35 +94,60 @@ public abstract class JWKSUtilsTest {
                 "  }" +
                 "] }";
         JSONWebKeySet jsonWebKeySet = JsonSerialization.readValue(jwksJson, JSONWebKeySet.class);
-        Map<String, KeyWrapper> keyWrappersForUse = JWKSUtils.getKeyWrappersForUse(jsonWebKeySet, JWK.Use.SIG);
-        assertEquals(4, keyWrappersForUse.size());
+        PublicKeysWrapper keyWrappersForUse = JWKSUtils.getKeyWrappersForUse(jsonWebKeySet, JWK.Use.SIG);
+        assertEquals(5, keyWrappersForUse.getKeys().size());
 
-        KeyWrapper key = keyWrappersForUse.get(kidRsa1);
+        // get by both kid and alg
+        KeyWrapper key = keyWrappersForUse.getKeyByKidAndAlg(kidRsa1, "RS256");
         assertNotNull(key);
         assertEquals("RS256", key.getAlgorithmOrDefault());
         assertEquals(KeyUse.SIG, key.getUse());
         assertEquals(kidRsa1, key.getKid());
         assertEquals("RSA", key.getType());
 
-         key = keyWrappersForUse.get(kidRsa2);
+        // get by both kid and alg with RS512. It is same 'kid' as the previous, but should choose "RS512" key now
+        key = keyWrappersForUse.getKeyByKidAndAlg(kidRsa1, "RS512");
+        assertNotNull(key);
+        assertEquals("RS512", key.getAlgorithmOrDefault());
+        assertEquals(KeyUse.SIG, key.getUse());
+        assertEquals(kidRsa1, key.getKid());
+        assertEquals("RSA", key.getType());
+
+        // Get by kid only. Should choose default algorithm, so RS256
+        key = keyWrappersForUse.getKeyByKidAndAlg(kidRsa1, null);
+        assertNotNull(key);
+        assertEquals("RS256", key.getAlgorithmOrDefault());
+        assertEquals(KeyUse.SIG, key.getUse());
+        assertEquals(kidRsa1, key.getKid());
+        assertEquals("RSA", key.getType());
+
+        key = keyWrappersForUse.getKeyByKidAndAlg(kidRsa2, null);
         assertNotNull(key);
         assertEquals("RS256", key.getAlgorithmOrDefault());
         assertEquals(KeyUse.SIG, key.getUse());
         assertEquals(kidRsa2, key.getKid());
         assertEquals("RSA", key.getType());
 
-        key = keyWrappersForUse.get(kidEC1);
+        key = keyWrappersForUse.getKeyByKidAndAlg(kidEC1, null);
         assertNotNull(key);
         assertEquals("ES384", key.getAlgorithmOrDefault());
         assertEquals(KeyUse.SIG, key.getUse());
         assertEquals(kidEC1, key.getKid());
         assertEquals("EC", key.getType());
 
-        key = keyWrappersForUse.get(kidEC2);
+        key = keyWrappersForUse.getKeyByKidAndAlg(kidEC2, null);
         assertNotNull(key);
         assertNull(key.getAlgorithmOrDefault());
         assertEquals(KeyUse.SIG, key.getUse());
         assertEquals(kidEC2, key.getKid());
+        assertEquals("EC", key.getType());
+
+        // Search by alg only
+        key = keyWrappersForUse.getKeyByKidAndAlg(null, "ES384");
+        assertNotNull(key);
+        assertEquals("ES384", key.getAlgorithmOrDefault());
+        assertEquals(KeyUse.SIG, key.getUse());
+        assertEquals(kidEC1, key.getKid());
         assertEquals("EC", key.getType());
     }
 

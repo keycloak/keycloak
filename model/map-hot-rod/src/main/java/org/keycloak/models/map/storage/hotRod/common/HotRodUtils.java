@@ -22,21 +22,18 @@ import org.infinispan.query.dsl.Query;
  * @author <a href="mailto:mkanis@redhat.com">Martin Kanis</a>
  */
 public class HotRodUtils {
-
     public static final int DEFAULT_MAX_RESULTS = Integer.MAX_VALUE >> 1;
-
     public static <T> Query<T> paginateQuery(Query<T> query, Integer first, Integer max) {
         if (first != null && first > 0) {
             query = query.startOffset(first);
-
-            // workaround because of ISPN-13702 bug, see https://github.com/keycloak/keycloak/issues/10090
-            if (max == null || max < 0) {
-                max = DEFAULT_MAX_RESULTS;
-            }
         }
 
         if (max != null && max >= 0) {
             query = query.maxResults(max);
+        } else {
+            // Infinispan uses default max value equal to 100
+            //  We need to change this to support more returned values
+            query = query.maxResults(DEFAULT_MAX_RESULTS);
         }
 
         return query;

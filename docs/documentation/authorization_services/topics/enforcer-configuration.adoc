@@ -1,0 +1,132 @@
+[[_enforcer_configuration]]
+= Configuration
+
+The policy enforcer configuration uses a JSON format and most of the time you don't need to set anything if you want to
+automatically resolve the protected paths based on the resources available from your resource server.
+
+If you want to manually define the resources being protected, you can use a slightly more verbose format:
+
+[source,json]
+----
+{
+  "enforcement-mode" : "ENFORCING",
+  "paths": [
+    {
+      "path" : "/users/*",
+      "methods" : [
+        {
+          "method": "GET",
+          "scopes" : ["urn:app.com:scopes:view"]
+        },
+        {
+          "method": "POST",
+          "scopes" : ["urn:app.com:scopes:create"]
+        }
+      ]
+    }
+  ]
+}
+----
+
+The following is a description of each configuration option:
+
+* *enforcement-mode*
++
+Specifies how policies are enforced.
++
+** *ENFORCING*
++
+(default mode) Requests are denied by default even when no policy is associated with a given resource.
++
+** *PERMISSIVE*
++
+Requests are allowed even when no policy is associated with a given resource.
++
+** *DISABLED*
++
+Completely disables the evaluation of policies and allows access to any resource. When `enforcement-mode` is `DISABLED`,
+applications are still able to obtain all permissions granted by {project_name} through the <<_enforcer_authorization_context, Authorization Context>>
++
+* *on-deny-redirect-to*
++
+Defines a URL where a client request is redirected when an "access denied" message is obtained from the server. By default, the adapter responds with a 403 HTTP status code.
++
+* *path-cache*
++
+Defines how the policy enforcer should track associations between paths in your application and resources defined in {project_name}. The cache is needed to avoid
+unnecessary requests to a {project_name} server by caching associations between paths and protected resources.
++
+** *lifespan*
++
+Defines the time in milliseconds when the entry should be expired. If not provided, default value is *30000*. A value equal to 0 can be set to completely disable the cache. A value equal to -1 can be set to disable the expiry of the cache.
++
+** *max-entries*
++
+Defines the limit of entries that should be kept in the cache. If not provided, default value is *1000*.
++
+* *paths*
++
+Specifies the paths to protect. This configuration is optional. If not defined, the policy enforcer  discovers all paths by fetching the resources you defined to your application in {project_name}, where these resources are defined with `URIS` representing some paths in your application.
++
+** *name*
++
+The name of a resource on the server that is to be associated with a given path. When used in conjunction with a *path*, the policy enforcer ignores the resource's *URIS* property and uses the path you provided instead.
+** *path*
++
+(required) A URI relative to the application's context path. If this option is specified, the policy enforcer queries the server for a resource with a *URI* with the same value.
+Currently a very basic logic for path matching is supported. Examples of valid paths are:
++
+*** Wildcards: `/*`
+*** Suffix: `/*.html`
+*** Sub-paths: `/path/*`
+*** Path parameters: /resource/{id}
+*** Exact match: /resource
+*** Patterns: /{version}/resource, /api/{version}/resource, /api/{version}/resource/*
++
+** *methods*
++
+The HTTP methods (for example, GET, POST, PATCH) to protect and how they are associated with the scopes for a given resource in the server.
++
+*** *method*
++
+The name of the HTTP method.
++
+*** *scopes*
++
+An array of strings with the scopes associated with the method. When you associate scopes with a specific method, the client trying to access a protected resource (or path) must provide an RPT that grants permission to all scopes specified in the list. For example, if you define a method _POST_ with a scope _create_, the RPT must contain a permission granting access to the _create_ scope when performing a POST to the path.
++
+*** *scopes-enforcement-mode*
++
+A string referencing the enforcement mode for the scopes associated with a method. Values can be *ALL* or *ANY*. If *ALL*,
+all defined scopes must be granted in order to access the resource using that method. If *ANY*, at least one scope should be
+granted in order to gain access to the resource using that method. By default, enforcement mode is set to *ALL*.
++
+** *enforcement-mode*
++
+Specifies how policies are enforced.
++
+*** *ENFORCING*
++
+(default mode) Requests are denied by default even when there is no policy associated with a given resource.
++
+*** *DISABLED*
++
+** *claim-information-point*
++
+Defines a set of one or more claims that must be resolved and pushed to the {project_name} server in order to make these claims available to policies. See <<_enforcer_claim_information_point, Claim Information Point>> for more details.
++
+* *lazy-load-paths*
++
+Specifies how the adapter should fetch the server for resources associated with paths in your application. If *true*, the policy
+enforcer is going to fetch resources on-demand accordingly with the path being requested. This configuration is specially useful
+when you do not want to fetch all resources from the server during deployment (in case you have provided no `paths`) or in case
+you have defined only a sub set of `paths` and want to fetch others on-demand.
++
+* *http-method-as-scope*
++
+Specifies how scopes should be mapped to HTTP methods. If set to *true*, the policy enforcer will use the HTTP method from the current request to
+check whether or not access should be granted. When enabled, make sure your resources in {project_name} are associated with scopes representing each HTTP method you are protecting.
++
+* *claim-information-point*
++
+Defines a set of one or more *global* claims that must be resolved and pushed to the {project_name} server in order to make these claims available to policies. See <<_enforcer_claim_information_point, Claim Information Point>> for more details.

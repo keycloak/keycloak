@@ -40,9 +40,11 @@ import org.jboss.arquillian.test.spi.event.suite.BeforeClass;
 import org.jboss.arquillian.test.spi.event.suite.BeforeSuite;
 import org.jboss.logging.Logger;
 import org.keycloak.admin.client.Keycloak;
+import org.keycloak.common.crypto.FipsMode;
 import org.keycloak.common.util.StringPropertyReplacer;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.error.KeycloakErrorHandler;
+import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.arquillian.annotation.SetDefaultProvider;
 import org.keycloak.testsuite.arquillian.annotation.UncaughtServerErrorExpected;
 import org.keycloak.testsuite.arquillian.annotation.EnableVault;
@@ -70,7 +72,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import javax.ws.rs.NotFoundException;
+import jakarta.ws.rs.NotFoundException;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -126,6 +128,10 @@ public class AuthServerTestEnricher {
     public static final boolean AUTH_SERVER_CROSS_DC = Boolean.parseBoolean(System.getProperty(AUTH_SERVER_CROSS_DC_PROPERTY, "false"));
 
     public static final String AUTH_SERVER_HOME_PROPERTY = "auth.server.home";
+
+    public static final String AUTH_SERVER_FIPS_MODE_PROPERTY = "auth.server.fips.mode";
+
+    public static final FipsMode AUTH_SERVER_FIPS_MODE = FipsMode.valueOfOption(System.getProperty(AUTH_SERVER_FIPS_MODE_PROPERTY, FipsMode.DISABLED.toString()));
 
     public static final String CACHE_SERVER_LIFECYCLE_SKIP_PROPERTY = "cache.server.lifecycle.skip";
     public static final boolean CACHE_SERVER_LIFECYCLE_SKIP = Boolean.parseBoolean(System.getProperty(CACHE_SERVER_LIFECYCLE_SKIP_PROPERTY, "false"));
@@ -368,6 +374,12 @@ public class AuthServerTestEnricher {
     }
 
     public void startAuthContainer(@Observes(precedence = 0) StartSuiteContainers event) {
+        // this property can be used to skip start of auth-server before suite
+        // it might be useful for running some specific tests locally, e.g. when running standalone ZeroDowtime*Test 
+        if (Boolean.getBoolean("keycloak.testsuite.skip.start.auth.server")) {
+            log.debug("Skipping the start of auth server before suite");
+            return;
+        }
         //frontend-only (either load-balancer or auth-server)
         log.debug("Starting auth server before suite");
 
@@ -462,6 +474,7 @@ public class AuthServerTestEnricher {
     public void initializeTestContext(@Observes(precedence = 2) BeforeClass event) throws Exception {
         TestContext testContext = new TestContext(suiteContext, event.getTestClass().getJavaClass());
         testContextProducer.set(testContext);
+        ProfileAssume.setTestContext(testContext);
 
         boolean wasUpdated = false;
 
@@ -727,6 +740,7 @@ public class AuthServerTestEnricher {
         }
 
         TestContext testContext = testContextProducer.get();
+        testContext.runAfterClassActions();
 
         Keycloak adminClient = testContext.getAdminClient();
         KeycloakTestingClient testingClient = testContext.getTestingClient();

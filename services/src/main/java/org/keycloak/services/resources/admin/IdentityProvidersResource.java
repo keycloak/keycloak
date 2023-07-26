@@ -18,16 +18,18 @@
 package org.keycloak.services.resources.admin;
 
 import com.google.common.collect.Streams;
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
+import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.jboss.resteasy.annotations.cache.NoCache;
-import org.jboss.resteasy.plugins.providers.multipart.InputPart;
-import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataInput;
-import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.broker.provider.IdentityProvider;
 import org.keycloak.broker.provider.IdentityProviderFactory;
 import org.keycloak.broker.social.SocialIdentityProvider;
 import org.keycloak.connections.httpclient.HttpClientProvider;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
+import org.keycloak.http.FormPartValue;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
@@ -38,31 +40,33 @@ import org.keycloak.models.utils.StripSecretsUtils;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.services.ErrorResponse;
+import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 
-import javax.ws.rs.BadRequestException;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.BadRequestException;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.core.Response;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Stream;
 
-import static javax.ws.rs.core.Response.Status.BAD_REQUEST;
+import static jakarta.ws.rs.core.Response.Status.BAD_REQUEST;
 import org.keycloak.utils.ReservedCharValidator;
 
 /**
  * @resource Identity Providers
  * @author Pedro Igor
  */
+@Extension(name = KeycloakOpenAPI.Profiles.ADMIN, value = "")
 public class IdentityProvidersResource {
 
     private final RealmModel realm;
@@ -87,7 +91,9 @@ public class IdentityProvidersResource {
     @GET
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
-    public Response getIdentityProviders(@PathParam("provider_id") String providerId) {
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.IDENTITY_PROVIDERS)
+    @Operation( summary = "Get identity providers")
+    public Response getIdentityProviders(@Parameter(description = "Provider id") @PathParam("provider_id") String providerId) {
         this.auth.realm().requireViewIdentityProviders();
         IdentityProviderFactory providerFactory = getProviderFactoryById(providerId);
         if (providerFactory != null) {
@@ -107,15 +113,16 @@ public class IdentityProvidersResource {
     @Path("import-config")
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces(MediaType.APPLICATION_JSON)
-    public Map<String, String> importFrom(MultipartFormDataInput input) throws IOException {
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.IDENTITY_PROVIDERS)
+    @Operation( description = "Import identity provider from uploaded JSON file")
+    public Map<String, String> importFrom() throws IOException {
         this.auth.realm().requireManageIdentityProviders();
-        Map<String, List<InputPart>> formDataMap = input.getFormDataMap();
+        MultivaluedMap<String, FormPartValue> formDataMap = session.getContext().getHttpRequest().getMultiPartFormParameters();
         if (!(formDataMap.containsKey("providerId") && formDataMap.containsKey("file"))) {
             throw new BadRequestException();
         }
-        String providerId = formDataMap.get("providerId").get(0).getBodyAsString();
-        InputPart file = formDataMap.get("file").get(0);
-        InputStream inputStream = file.getBody(InputStream.class, null);
+        String providerId = formDataMap.getFirst("providerId").asString();
+        InputStream inputStream = formDataMap.getFirst("file").asInputStream();
         IdentityProviderFactory providerFactory = getProviderFactoryById(providerId);
         Map<String, String> config = providerFactory.parseConfig(session, inputStream);
         return config;
@@ -132,9 +139,11 @@ public class IdentityProvidersResource {
     @Path("import-config")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public Map<String, String> importFrom(Map<String, Object> data) throws IOException {
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.IDENTITY_PROVIDERS)
+    @Operation( summary = "Import identity provider from JSON body")
+    public Map<String, String> importFrom(@Parameter(description = "JSON body") Map<String, Object> data) throws IOException {
         this.auth.realm().requireManageIdentityProviders();
-        if (!(data.containsKey("providerId") && data.containsKey("fromUrl"))) {
+        if (data == null || !(data.containsKey("providerId") && data.containsKey("fromUrl"))) {
             throw new BadRequestException();
         }
         
@@ -165,6 +174,8 @@ public class IdentityProvidersResource {
     @Path("instances")
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.IDENTITY_PROVIDERS)
+    @Operation( summary = "Get identity providers")
     public Stream<IdentityProviderRepresentation> getIdentityProviders() {
         this.auth.realm().requireViewIdentityProviders();
 
@@ -181,7 +192,9 @@ public class IdentityProvidersResource {
     @POST
     @Path("instances")
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response create(IdentityProviderRepresentation representation) {
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.IDENTITY_PROVIDERS)
+    @Operation( summary = "Create a new identity provider")
+    public Response create(@Parameter(description = "JSON body") IdentityProviderRepresentation representation) {
         this.auth.realm().requireManageIdentityProviders();
 
         ReservedCharValidator.validate(representation.getAlias());
@@ -202,9 +215,9 @@ public class IdentityProvidersResource {
                 message = "Invalid request";
             }
             
-            return ErrorResponse.error(message, BAD_REQUEST);
+            throw ErrorResponse.error(message, BAD_REQUEST);
         } catch (ModelDuplicateException e) {
-            return ErrorResponse.exists("Identity Provider " + representation.getAlias() + " already exists");
+            throw ErrorResponse.exists("Identity Provider " + representation.getAlias() + " already exists");
         }
     }
 
@@ -215,10 +228,7 @@ public class IdentityProvidersResource {
                 .filter(p -> Objects.equals(p.getAlias(), alias) || Objects.equals(p.getInternalId(), alias))
                 .findFirst().orElse(null);
 
-        IdentityProviderResource identityProviderResource = new IdentityProviderResource(this.auth, realm, session, identityProviderModel, adminEvent);
-        ResteasyProviderFactory.getInstance().injectProperties(identityProviderResource);
-        
-        return identityProviderResource;
+        return new IdentityProviderResource(this.auth, realm, session, identityProviderModel, adminEvent);
     }
 
     private IdentityProviderFactory getProviderFactoryById(String providerId) {

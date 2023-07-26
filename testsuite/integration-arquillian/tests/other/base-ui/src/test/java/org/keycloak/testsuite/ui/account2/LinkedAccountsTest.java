@@ -143,8 +143,8 @@ public class LinkedAccountsTest extends BaseAccountPageTest {
         assertEquals(SYSTEM_IDP_ALIAS, fid.getIdentityProvider());
         assertEquals(homerUser.getUsername(), fid.getUserName());
 
-        // try to login using IdP
-        deleteAllSessionsInTestRealm();
+        // logout user and try to login using IdP
+        testUserResource().logout();
         linkedAccountsPage.navigateTo();
         loginPageWithSocialBtns.clickSocial(SYSTEM_IDP_ALIAS);
         linkedAccountsPage.assertCurrent(); // no need for re-login to REALM2

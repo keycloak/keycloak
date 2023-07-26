@@ -54,7 +54,7 @@ public class TimeBasedOTP extends HmacOTP {
      *
      * @param secretKey the secret key to derive the token from.
      */
-    public String generateTOTP(String secretKey) {
+    public String generateTOTP(byte[] secretKey) {
         long T = this.clock.getCurrentInterval();
 
         String steps = Long.toHexString(T).toUpperCase();
@@ -67,6 +67,10 @@ public class TimeBasedOTP extends HmacOTP {
         return generateOTP(secretKey, steps, this.numberDigits, this.algorithm);
     }
 
+    public String generateTOTP(String secretKey) {
+        return generateTOTP(secretKey.getBytes());
+    }
+
     /**
      * <p>Validates a token using a secret key.</p>
      *
@@ -77,7 +81,7 @@ public class TimeBasedOTP extends HmacOTP {
     public boolean validateTOTP(String token, byte[] secret) {
         long currentInterval = this.clock.getCurrentInterval();
 
-        for (int i = 0; i <= (lookAheadWindow * 2); i++) {
+        for (int i = 0; i <= (lookAroundWindow * 2); i++) {
             long delta = clockSkewIndexToDelta(i);
             long adjustedInterval = currentInterval + delta;
 
@@ -88,7 +92,7 @@ public class TimeBasedOTP extends HmacOTP {
                 steps = "0" + steps;
             }
 
-            String candidate = generateOTP(new String(secret), steps, this.numberDigits, this.algorithm);
+            String candidate = generateOTP(secret, steps, this.numberDigits, this.algorithm);
 
             if (candidate.equals(token)) {
                 return true;

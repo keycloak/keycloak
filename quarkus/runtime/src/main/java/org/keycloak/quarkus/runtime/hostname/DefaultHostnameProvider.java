@@ -17,6 +17,7 @@
 
 package org.keycloak.quarkus.runtime.hostname;
 
+import static org.keycloak.common.util.UriUtils.checkUrl;
 import static org.keycloak.urls.UrlType.ADMIN;
 import static org.keycloak.urls.UrlType.BACKEND;
 import static org.keycloak.urls.UrlType.FRONTEND;
@@ -28,10 +29,10 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.function.BiFunction;
 import java.util.function.Function;
-import javax.ws.rs.core.UriInfo;
+import jakarta.ws.rs.core.UriInfo;
 import org.jboss.logging.Logger;
-import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.Config;
+import org.keycloak.common.enums.SslRequired;
 import org.keycloak.common.util.Resteasy;
 import org.keycloak.config.HostnameOptions;
 import org.keycloak.models.KeycloakSession;
@@ -109,10 +110,10 @@ public final class DefaultHostnameProvider implements HostnameProvider, Hostname
     @Override
     public int getPort(UriInfo originalUriInfo, UrlType urlType) {
         if (ADMIN.equals(urlType)) {
-            return fromBaseUriOrDefault(URI::getPort, adminBaseUri, getRequestPort());
+            return fromBaseUriOrDefault(URI::getPort, adminBaseUri, getRequestPort(originalUriInfo));
         }
 
-        Integer port = forNonStrictBackChannel(originalUriInfo, urlType, this::getPort, this::getPort);
+        Integer port = forNonStrictBackChannel(originalUriInfo, urlType, this::getPort, this::getRequestPort);
 
         if (port != null) {
             return port;
@@ -127,7 +128,7 @@ public final class DefaultHostnameProvider implements HostnameProvider, Hostname
 
     @Override
     public int getPort(UriInfo originalUriInfo) {
-        return noProxy && strictHttps ? defaultTlsPort : getRequestPort();
+        return noProxy && strictHttps ? defaultTlsPort : getRequestPort(originalUriInfo);
     }
 
     private <T> T forNonStrictBackChannel(UriInfo originalUriInfo, UrlType urlType,
@@ -186,9 +187,14 @@ public final class DefaultHostnameProvider implements HostnameProvider, Hostname
             String frontendUrl = realm.getAttribute("frontendUrl");
 
             if (isNotBlank(frontendUrl)) {
-                realmUrl = URI.create(frontendUrl);
-                session.setAttribute(realmUriKey, realmUrl);
-                return realmUrl;
+                try {
+                    checkUrl(SslRequired.NONE, frontendUrl, "frontendUrl");
+                    realmUrl = URI.create(frontendUrl);
+                    session.setAttribute(realmUriKey, realmUrl);
+                    return realmUrl;
+                } catch (IllegalArgumentException e) {
+                    LOGGER.errorf(e, "Failed to parse realm frontendUrl '%s'. Falling back to global value.", frontendUrl);
+                }
             }
         }
 
@@ -235,7 +241,7 @@ public final class DefaultHostnameProvider implements HostnameProvider, Hostname
         hostnameEnabled = (frontEndHostName != null || frontEndBaseUri != null);
 
         if (frontEndBaseUri == null) {
-            strictHttps = config.getBoolean("strict-https", false);
+            strictHttps = hostnameEnabled && config.getBoolean("strict-https", false);
         } else {
             frontEndHostName = frontEndBaseUri.getHost();
             strictHttps = "https".equals(frontEndBaseUri.getScheme());
@@ -293,9 +299,9 @@ public final class DefaultHostnameProvider implements HostnameProvider, Hostname
                 !noProxy);
     }
 
-    private int getRequestPort() {
+    private int getRequestPort(UriInfo uriInfo) {
         KeycloakSession session = Resteasy.getContextData(KeycloakSession.class);
-        return session.getContext().getContextObject(HttpRequest.class).getUri().getBaseUri().getPort();
+        return session.getContext().getHttpRequest().getUri().getBaseUri().getPort();
     }
 
     private <T> T fromBaseUriOrDefault(Function<URI, T> resolver, URI baseUri, T defaultValue) {

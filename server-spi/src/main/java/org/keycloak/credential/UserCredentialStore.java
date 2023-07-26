@@ -17,12 +17,9 @@
 package org.keycloak.credential;
 
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.SubjectCredentialManager;
 import org.keycloak.models.UserModel;
 import org.keycloak.provider.Provider;
 
-import java.util.List;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -70,11 +67,4 @@ public interface UserCredentialStore extends Provider {
     //list operations
     boolean moveCredentialTo(RealmModel realm, UserModel user, String id, String newPreviousCredentialId);
 
-    /**
-     * @deprecated This interface is no longer necessary, collection-based methods were removed from the parent interface
-     * and therefore the parent interface can be used directly
-     */
-    @Deprecated
-    interface Streams extends UserCredentialStore {
-    }
 }

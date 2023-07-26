@@ -29,8 +29,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.core.Response;
 
 import org.jboss.logging.Logger;
 import org.keycloak.OAuth2Constants;
@@ -190,7 +190,7 @@ public class JWTClientAuthenticator extends AbstractClientAuthenticator {
                 throw new RuntimeException("Missing ID on the token");
             }
 
-            SingleUseObjectProvider singleUseCache = context.getSession().getProvider(SingleUseObjectProvider.class);
+            SingleUseObjectProvider singleUseCache = context.getSession().singleUseObjects();
             int lifespanInSecs = Math.max(token.getExpiration() - currentTime, 10);
             if (singleUseCache.putIfAbsent(token.getId(), lifespanInSecs)) {
                 logger.tracef("Added token '%s' to single-use cache. Lifespan: %d seconds, client: %s", token.getId(), lifespanInSecs, clientId);

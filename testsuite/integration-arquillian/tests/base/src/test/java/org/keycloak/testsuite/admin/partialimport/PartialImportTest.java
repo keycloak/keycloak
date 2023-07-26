@@ -25,7 +25,9 @@ import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.IdentityProviderResource;
 import org.keycloak.admin.client.resource.RoleResource;
 import org.keycloak.admin.client.resource.UserResource;
+import org.keycloak.authentication.requiredactions.TermsAndConditions;
 import org.keycloak.events.admin.OperationType;
+import org.keycloak.models.UserModel;
 import org.keycloak.partialimport.PartialImportResult;
 import org.keycloak.partialimport.PartialImportResults;
 import org.keycloak.representations.idm.AdminEventRepresentation;
@@ -46,9 +48,10 @@ import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.util.AssertAdminEvents;
 import org.keycloak.testsuite.util.RealmBuilder;
 
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -57,6 +60,9 @@ import java.util.Set;
 
 import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.CoreMatchers.startsWith;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.equalTo;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -244,7 +250,7 @@ public class PartialImportTest extends AbstractAuthTest {
     private void addUsersWithTermsAndConditions() {
         List<UserRepresentation> users = new ArrayList<>();
         List<String> requiredActions = new ArrayList<>();
-        requiredActions.add("terms_and_conditions");
+        requiredActions.add(UserModel.RequiredAction.TERMS_AND_CONDITIONS.name());
 
         for (int i = 0; i < NUM_ENTITIES; i++) {
             UserRepresentation user = createUserRepresentation(USER_PREFIX + i, USER_PREFIX + i + "@foo.com", "foo", "bar", true);
@@ -268,7 +274,7 @@ public class PartialImportTest extends AbstractAuthTest {
         piRep.setGroups(groups);
     }
 
-    private void addClients(boolean withServiceAccounts) throws IOException {
+    private void addClients(boolean withServiceAccounts) {
         List<ClientRepresentation> clients = new ArrayList<>();
         List<UserRepresentation> serviceAccounts = new ArrayList<>();
 
@@ -395,6 +401,7 @@ public class PartialImportTest extends AbstractAuthTest {
             Assert.assertEquals(realmId, adminEvent.getRealmId());
             Assert.assertEquals(OperationType.CREATE.name(), adminEvent.getOperationType());
             Assert.assertTrue(adminEvent.getResourcePath().startsWith("users/"));
+            assertThat(adminEvent.getResourceType(), equalTo(org.keycloak.events.admin.ResourceType.REALM.name()));
             String userId = adminEvent.getResourcePath().substring(6);
             userIds.add(userId);
         }
@@ -440,7 +447,7 @@ public class PartialImportTest extends AbstractAuthTest {
         doImport();
         
         UserRepresentation user = createUserRepresentation(USER_PREFIX + 999, USER_PREFIX + 1 + "@foo.com", "foo", "bar", true);
-        piRep.setUsers(Arrays.asList(user));
+        piRep.setUsers(List.of(user));
         
         PartialImportResults results = doImport();
         assertEquals(1, results.getAdded());
@@ -475,11 +482,12 @@ public class PartialImportTest extends AbstractAuthTest {
             UserRepresentation user = userRsc.toRepresentation();
             assertTrue(user.getUsername().startsWith(USER_PREFIX));
             Assert.assertTrue(userIds.contains(id));
+            assertThat(user.getRequiredActions(), contains(TermsAndConditions.PROVIDER_ID));
         }
     }
 
     @Test
-    public void testAddClients() throws IOException {
+    public void testAddClients() {
         setFail();
         addClients(false);
 
@@ -495,7 +503,7 @@ public class PartialImportTest extends AbstractAuthTest {
     }
 
     @Test
-    public void testAddClientsWithServiceAccountsAndAuthorization() throws IOException {
+    public void testAddClientsWithServiceAccountsAndAuthorization() {
         setFail();
         addClients(true);
 
@@ -621,7 +629,7 @@ public class PartialImportTest extends AbstractAuthTest {
     }
 
     @Test
-    public void testAddClientsFail() throws IOException {
+    public void testAddClientsFail() {
         addClients(false);
         testFail();
     }
@@ -676,13 +684,13 @@ public class PartialImportTest extends AbstractAuthTest {
     }
 
     @Test
-    public void testAddClientsSkip() throws IOException {
+    public void testAddClientsSkip() {
         addClients(false);
         testSkip();
     }
 
     @Test
-    public void testAddClientsSkipWithServiceAccountsAndAuthorization() throws IOException {
+    public void testAddClientsSkipWithServiceAccountsAndAuthorization() {
         addClients(true);
         setSkip();
         PartialImportResults results = doImport();
@@ -742,13 +750,13 @@ public class PartialImportTest extends AbstractAuthTest {
     }
 
     @Test
-    public void testAddClientsOverwrite() throws IOException {
+    public void testAddClientsOverwrite() {
         addClients(false);
         testOverwrite();
     }
 
     @Test
-    public void testAddClientsOverwriteWithServiceAccountsAndAuthorization() throws IOException {
+    public void testAddClientsOverwriteWithServiceAccountsAndAuthorization() {
         addClients(true);
         setOverwrite();
         PartialImportResults results = doImport();
@@ -759,7 +767,7 @@ public class PartialImportTest extends AbstractAuthTest {
     }
 
     @Test
-    public void testAddClientsOverwriteServiceAccountsWithNoServiceAccounts() throws IOException {
+    public void testAddClientsOverwriteServiceAccountsWithNoServiceAccounts() {
         addClients(true);
         setOverwrite();
         PartialImportResults results = doImport();
@@ -806,7 +814,7 @@ public class PartialImportTest extends AbstractAuthTest {
         testOverwrite();
     }
 
-    private void importEverything(boolean withServiceAccounts) throws IOException {
+    private void importEverything(boolean withServiceAccounts) {
         addUsers();
         addGroups();
         addClients(withServiceAccounts);
@@ -824,7 +832,7 @@ public class PartialImportTest extends AbstractAuthTest {
     }
 
     @Test
-    public void testEverythingFail() throws IOException {
+    public void testEverythingFail() {
         setFail();
         importEverything(false);
         PartialImportResults results = doImport(); // second import will fail because not allowed to skip or overwrite
@@ -832,7 +840,7 @@ public class PartialImportTest extends AbstractAuthTest {
     }
 
     @Test
-    public void testEverythingSkip() throws IOException {
+    public void testEverythingSkip() {
         setSkip();
         importEverything(false);
         PartialImportResults results = doImport();
@@ -840,7 +848,7 @@ public class PartialImportTest extends AbstractAuthTest {
     }
 
     @Test
-    public void testEverythingSkipWithServiceAccounts() throws IOException {
+    public void testEverythingSkipWithServiceAccounts() {
         setSkip();
         importEverything(true);
         PartialImportResults results = doImport();
@@ -848,7 +856,7 @@ public class PartialImportTest extends AbstractAuthTest {
     }
 
     @Test
-    public void testEverythingOverwrite() throws IOException {
+    public void testEverythingOverwrite() {
         setOverwrite();
         importEverything(false);
         PartialImportResults results = doImport();
@@ -856,7 +864,7 @@ public class PartialImportTest extends AbstractAuthTest {
     }
 
     @Test
-    public void testEverythingOverwriteWithServiceAccounts() throws IOException {
+    public void testEverythingOverwriteWithServiceAccounts() {
         setOverwrite();
         importEverything(true);
         PartialImportResults results = doImport();
@@ -877,7 +885,7 @@ public class PartialImportTest extends AbstractAuthTest {
         RolesRepresentation roles = new RolesRepresentation();
         roles.setClient(clients);
         
-        piRep.setClients(Arrays.asList(client));
+        piRep.setClients(List.of(client));
         piRep.setRoles(roles);
                 
         doImport();
@@ -898,12 +906,27 @@ public class PartialImportTest extends AbstractAuthTest {
     @Test
     public void testOverwriteExistingClientWithServiceAccount() {
         setOverwrite();
-        piRep.setClients(Arrays.asList(testRealmResource().clients().findByClientId(CLIENT_SERVICE_ACCOUNT).get(0)));
+        piRep.setClients(Collections.singletonList(testRealmResource().clients().findByClientId(CLIENT_SERVICE_ACCOUNT).get(0)));
 
         Assert.assertEquals(1, doImport().getOverwritten());
 
         ClientRepresentation client = testRealmResource().clients().findByClientId(CLIENT_SERVICE_ACCOUNT).get(0);
         testRealmResource().clients().get(client.getId()).getServiceAccountUser();
+    }
+
+    @Test
+    public void testOverwriteDefaultRole() {
+        setOverwrite();
+
+        RolesRepresentation roles = new RolesRepresentation();
+        RoleRepresentation oldDefaultRole = testRealmResource().toRepresentation().getDefaultRole();
+        roles.setRealm(Collections.singletonList(oldDefaultRole));
+        piRep.setRoles(roles);
+
+        Assert.assertEquals("default role should have been overwritten", 1, doImport().getOverwritten());
+        // The following check is not valid anymore since file store does have the same ID
+        // Assert.assertNotEquals("when overwriting, the ID of the role changes",
+        //        testRealmResource().toRepresentation().getDefaultRole().getId(), oldDefaultRole.getId());
     }
 
 }

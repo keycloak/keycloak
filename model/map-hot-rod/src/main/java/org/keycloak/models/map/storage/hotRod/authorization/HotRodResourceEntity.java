@@ -17,6 +17,9 @@
 
 package org.keycloak.models.map.storage.hotRod.authorization;
 
+import org.infinispan.api.annotations.indexing.Basic;
+import org.infinispan.api.annotations.indexing.Indexed;
+import org.infinispan.api.annotations.indexing.Keyword;
 import org.infinispan.protostream.GeneratedSchema;
 import org.infinispan.protostream.annotations.AutoProtoSchemaBuilder;
 import org.infinispan.protostream.annotations.ProtoDoc;
@@ -39,7 +42,7 @@ import java.util.Set;
         modelClass = "org.keycloak.authorization.model.Resource",
         cacheName = "authz"
 )
-@ProtoDoc("@Indexed")
+@Indexed
 @ProtoDoc("schema-version: " + HotRodResourceEntity.VERSION)
 public class HotRodResourceEntity extends AbstractHotRodEntity {
 
@@ -59,57 +62,53 @@ public class HotRodResourceEntity extends AbstractHotRodEntity {
     }
 
 
-    @ProtoDoc("@Field(index = Index.YES, store = Store.YES)")
+    @Basic(projectable = true)
     @ProtoField(number = 1)
     public Integer entityVersion = VERSION;
 
-    @ProtoDoc("@Field(index = Index.YES, store = Store.YES)")
+    @Basic(projectable = true, sortable = true)
     @ProtoField(number = 2)
     public String id;
 
-    @ProtoDoc("@Field(index = Index.YES, store = Store.YES)")
+    @Basic(sortable = true)
     @ProtoField(number = 3)
     public String realmId;
 
+    @Keyword(sortable = true, normalizer = "lowercase")
     @ProtoField(number = 4)
-    @ProtoDoc("@Field(index = Index.YES, store = Store.YES)")
     public String name;
 
     @ProtoField(number = 5)
-    @ProtoDoc("@Field(index = Index.YES, store = Store.YES)")
-    public String nameLowercase;
-
-    @ProtoField(number = 6)
     public String displayName;
 
-    @ProtoField(number = 7)
-    @ProtoDoc("@Field(index = Index.YES, store = Store.YES)")
+    @Basic(sortable = true)
+    @ProtoField(number = 6)
     public Set<String> uris;
 
-    @ProtoField(number = 8)
-    @ProtoDoc("@Field(index = Index.YES, store = Store.YES, analyze = Analyze.YES, analyzer = @Analyzer(definition = \"filename\"))")
+    @Keyword(sortable = true, normalizer = "lowercase")
+    @ProtoField(number = 7)
     public String type;
 
-    @ProtoField(number = 9)
+    @ProtoField(number = 8)
     public String iconUri;
 
-    @ProtoField(number = 10)
-    @ProtoDoc("@Field(index = Index.YES, store = Store.YES)")
+    @Basic(sortable = true)
+    @ProtoField(number = 9)
     public String owner;
 
-    @ProtoField(number = 11)
-    @ProtoDoc("@Field(index = Index.YES, store = Store.YES)")
+    @Basic(sortable = true)
+    @ProtoField(number = 10)
     public Boolean ownerManagedAccess;
 
-    @ProtoField(number = 12)
-    @ProtoDoc("@Field(index = Index.YES, store = Store.YES)")
+    @Basic(sortable = true)
+    @ProtoField(number = 11)
     public String resourceServerId;
 
-    @ProtoField(number = 13)
-    @ProtoDoc("@Field(index = Index.YES, store = Store.YES)")
+    @Basic(sortable = true)
+    @ProtoField(number = 12)
     public Set<String> scopeIds;
 
-    @ProtoField(number = 14)
+    @ProtoField(number = 13)
     public Set<HotRodAttributeEntityNonIndexed> attributes;
 
     public static abstract class AbstractHotRodResourceEntity extends UpdatableHotRodEntityDelegateImpl<HotRodResourceEntity> implements MapResourceEntity {
@@ -132,7 +131,6 @@ public class HotRodResourceEntity extends AbstractHotRodEntity {
             HotRodResourceEntity entity = getHotRodEntity();
             entity.updated |= ! Objects.equals(entity.name, name);
             entity.name = name;
-            entity.nameLowercase = name == null ? null : name.toLowerCase();
         }
     }
 

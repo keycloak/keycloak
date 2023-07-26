@@ -383,14 +383,11 @@ public class UserAttributeLDAPStorageMapper extends AbstractLDAPStorageMapper {
                 public Map<String, List<String>> getAttributes() {
                     Map<String, List<String>> attrs = new HashMap<>(super.getAttributes());
 
-                    // Ignore UserModel properties
-                    if (userModelProperties.get(userModelAttrName.toLowerCase()) != null) {
-                        return attrs;
-                    }
-
                     Set<String> allLdapAttrValues = ldapUser.getAttributeAsSet(ldapAttrName);
                     if (allLdapAttrValues != null) {
                         attrs.put(userModelAttrName, new ArrayList<>(allLdapAttrValues));
+                    } else {
+                        attrs.remove(userModelAttrName);
                     }
                     return attrs;
                 }

@@ -31,6 +31,7 @@ import java.util.stream.Collectors;
 
 import javax.naming.directory.SearchControls;
 
+import org.jboss.logging.Logger;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.component.ComponentValidationException;
 import org.keycloak.models.LDAPConstants;
@@ -56,6 +57,8 @@ import org.keycloak.storage.ldap.mappers.membership.MembershipType;
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public class LDAPUtils {
+
+    private static final Logger log = Logger.getLogger(LDAPUtils.class);
 
     /**
      * Method to crate a user in the LDAP. The user will be created when all

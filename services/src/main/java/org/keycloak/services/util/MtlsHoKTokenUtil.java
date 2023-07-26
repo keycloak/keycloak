@@ -7,7 +7,7 @@ import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
 
 import org.jboss.logging.Logger;
-import org.jboss.resteasy.spi.HttpRequest;
+import org.keycloak.http.HttpRequest;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.representations.AccessToken;
@@ -24,7 +24,7 @@ public class MtlsHoKTokenUtil {
     public static final String CERT_VERIFY_ERROR_DESC = "Client certificate missing, or its thumbprint and one in the refresh token did NOT match";
 
 
-    public static AccessToken.CertConf bindTokenWithClientCertificate(HttpRequest request, KeycloakSession session) {
+    public static AccessToken.Confirmation bindTokenWithClientCertificate(HttpRequest request, KeycloakSession session) {
         X509Certificate[] certs = getCertificateChain(request, session);
 
         if (certs == null || certs.length < 1) {
@@ -43,9 +43,9 @@ public class MtlsHoKTokenUtil {
             return null;
         }
 
-        AccessToken.CertConf certConf = new AccessToken.CertConf();
-        certConf.setCertThumbprint(DERX509Base64UrlEncoded);
-        return certConf;
+        AccessToken.Confirmation confirmation = new AccessToken.Confirmation();
+        confirmation.setCertThumbprint(DERX509Base64UrlEncoded);
+        return confirmation;
     }
 
     public static boolean verifyTokenBindingWithClientCertificate(AccessToken token, HttpRequest request, KeycloakSession session) {
@@ -55,7 +55,7 @@ public class MtlsHoKTokenUtil {
         }
 
         // Bearer Token, not MTLS HoK Token
-        if (token.getCertConf() == null) {
+        if (token.getConfirmation() == null) {
             logger.warnf("bearer token received instead of hok token.");
             return false;
         }
@@ -69,7 +69,7 @@ public class MtlsHoKTokenUtil {
         }
 
         String DERX509Base64UrlEncoded = null;
-        String x5ts256 = token.getCertConf().getCertThumbprint();
+        String x5ts256 = token.getConfirmation().getCertThumbprint();
         logger.tracef("hok token cnf-x5t#s256 = %s", x5ts256);
 
         try {

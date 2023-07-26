@@ -34,13 +34,13 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand.DEFAULT_WARN_MESSAGE_REPEATED_AUTO_BUILD_OPTION;
 import static org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand.OPTIMIZED_BUILD_OPTION_LONG;
 
-@DistributionTest(reInstall = DistributionTest.ReInstall.NEVER)
+@DistributionTest
 @RawDistOnly(reason = "Containers are immutable")
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class StartAutoBuildDistTest {
 
     @Test
-    @Launch({ "start", AbstractStartCommand.AUTO_BUILD_OPTION_LONG, "--http-enabled=true", "--hostname-strict=false", "--cache=local" })
+    @Launch({ "start", AbstractStartCommand.AUTO_BUILD_OPTION_LONG, "--http-enabled=true", "--hostname-strict=false" })
     @Order(1)
     void testStartAutoBuild(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
@@ -56,7 +56,7 @@ public class StartAutoBuildDistTest {
     }
 
     @Test
-    @Launch({ "start", "--http-enabled=true", "--hostname-strict=false", "--cache=local" })
+    @Launch({ "start", "--http-enabled=true", "--hostname-strict=false" })
     @Order(2)
     void testShouldNotReAugIfConfigIsSame(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
@@ -65,7 +65,7 @@ public class StartAutoBuildDistTest {
     }
 
     @Test
-    @Launch({ "start", "--db=dev-mem", "--http-enabled=true", "--hostname-strict=false", "--cache=local" })
+    @Launch({ "start", "--db=dev-mem", "--http-enabled=true", "--hostname-strict=false" })
     @Order(3)
     void testShouldReAugIfConfigChanged(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
@@ -74,7 +74,7 @@ public class StartAutoBuildDistTest {
     }
 
     @Test
-    @Launch({ "start", "--db=dev-mem", "--http-enabled=true", "--hostname-strict=false", "--cache=local" })
+    @Launch({ "start", "--db=dev-mem", "--http-enabled=true", "--hostname-strict=false" })
     @Order(4)
     void testShouldNotReAugIfSameDatabase(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
@@ -91,7 +91,7 @@ public class StartAutoBuildDistTest {
     }
 
     @Test
-    @Launch({ "start", "--http-enabled=true", "--hostname-strict=false", "--cache=local" })
+    @Launch({ "start", "--http-enabled=true", "--hostname-strict=false" })
     @Order(6)
     void testReAugWhenNoOptionAfterBuild(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
@@ -100,7 +100,7 @@ public class StartAutoBuildDistTest {
     }
 
     @Test
-    @Launch({ "start", "--db=postgres", "--http-enabled=true", "--hostname-strict=false", "--cache=local" })
+    @Launch({ "start", "--db=postgres", "--http-enabled=true", "--hostname-strict=false" })
     @Order(7)
     void testShouldReAugWithoutAutoBuildOptionAfterDatabaseChange(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
@@ -109,7 +109,7 @@ public class StartAutoBuildDistTest {
     }
 
     @Test
-    @Launch({ "start", "--db=dev-file", "--http-enabled=true", "--hostname-strict=false", "--cache=local", OPTIMIZED_BUILD_OPTION_LONG})
+    @Launch({ "start", "--db=dev-file", "--http-enabled=true", "--hostname-strict=false", OPTIMIZED_BUILD_OPTION_LONG})
     @Order(8)
     void testShouldReAugAndNeedsAutoBuildOptionBecauseHasNoAutoBuildOption(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;

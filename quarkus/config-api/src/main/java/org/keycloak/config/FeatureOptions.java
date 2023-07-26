@@ -3,6 +3,7 @@ package org.keycloak.config;
 import org.keycloak.common.Profile;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -27,10 +28,12 @@ public class FeatureOptions {
         List<String> features = new ArrayList<>();
 
         for (Profile.Feature value : Profile.Feature.values()) {
-            features.add(value.name().toLowerCase().replace('_', '-'));
+            features.add(value.getKey());
         }
 
-        features.add(Profile.Type.PREVIEW.name().toLowerCase());
+        features.add(Profile.Feature.Type.PREVIEW.name().toLowerCase());
+
+        Collections.sort(features);
 
         return features;
     }

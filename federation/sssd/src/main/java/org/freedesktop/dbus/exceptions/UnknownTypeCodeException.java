@@ -1,20 +1,11 @@
-/*
-   D-Bus Java Implementation
-   Copyright (c) 2005-2006 Matthew Johnson
-
-   This program is free software; you can redistribute it and/or modify it
-   under the terms of either the GNU Lesser General Public License Version 2 or the
-   Academic Free Licence Version 2.1.
-
-   Full licence texts are included in the COPYING file with this program.
-*/
 package org.freedesktop.dbus.exceptions;
 
-import static org.freedesktop.dbus.Gettext.getString;
+import org.freedesktop.dbus.interfaces.NonFatalException;
 
-@SuppressWarnings("serial")
 public class UnknownTypeCodeException extends DBusException implements NonFatalException {
-    public UnknownTypeCodeException(byte code) {
-        super(getString("invalidDBusCode") + code);
+    private static final long serialVersionUID = -4688075573912580455L;
+
+    public UnknownTypeCodeException(byte _code) {
+        super("Not a valid D-Bus type code: " + _code);
     }
 }

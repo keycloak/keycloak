@@ -67,12 +67,11 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.util.EntityUtils;
 import org.keycloak.common.crypto.CryptoIntegration;
+import org.keycloak.common.util.PemUtils;
 import org.keycloak.common.util.Time;
 import org.keycloak.connections.httpclient.HttpClientProvider;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.saml.common.exceptions.ProcessingException;
-import org.keycloak.saml.processing.core.util.XMLSignatureUtil;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.truststore.TruststoreProvider;
 import org.keycloak.utils.CRLUtils;
@@ -518,7 +517,7 @@ public class CertificateValidator {
 
         logger.debugf("Certificate policies found: %s", String.join(",", policyList));
 
-        if (policyCheckMode == CERTIFICATE_POLICY_MODE_ANY)
+        if (CERTIFICATE_POLICY_MODE_ANY.equals(policyCheckMode))
         {
             boolean hasMatch = expectedPolicies.stream().anyMatch(p -> policyList.contains(p.toLowerCase()));
             if (!hasMatch) {
@@ -586,7 +585,7 @@ public class CertificateValidator {
 
         TruststoreProvider truststoreProvider = session.getProvider(TruststoreProvider.class);
         if (truststoreProvider == null || truststoreProvider.getTruststore() == null) {
-            logger.error("Cannot validate client certificate trust: Truststore not available");
+            throw new GeneralSecurityException("Cannot validate client certificate trust: Truststore not available. Please make sure to correctly configure truststore provider in order to be able to revalidate certificate trust");
         }
         else
         {
@@ -982,13 +981,11 @@ public class CertificateValidator {
                 public GotOCSPFailOpen oCSPResponseCertificate(String responderCert) {
                     if (responderCert != null && !responderCert.isEmpty()) {
                         try {
-                            _responderCert = XMLSignatureUtil.getX509CertificateFromKeyInfoString(responderCert);
+                            _responderCert = PemUtils.decodeCertificate(responderCert);
                             _responderCert.checkValidity();
                         } catch(CertificateException e) {
                             logger.warnf("Ignoring invalid certificate: %s", _responderCert);
                             _responderCert = null;
-                        } catch (ProcessingException e) {
-                            throw new RuntimeException(e);
                         }
                     }
                     return new GotOCSPFailOpen();

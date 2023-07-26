@@ -1,0 +1,31 @@
+{
+  "name": "root",
+  "scripts": {
+    "prepare": "cd .. && husky install js/.husky"
+  },
+  "devDependencies": {
+    "@types/node": "^20.4.4",
+    "@typescript-eslint/eslint-plugin": "^6.2.0",
+    "@typescript-eslint/parser": "^6.2.0",
+    "eslint": "^8.45.0",
+    "eslint-config-prettier": "^8.8.0",
+    "eslint-import-resolver-typescript": "^3.5.5",
+    "eslint-plugin-cypress": "^2.13.3",
+    "eslint-plugin-import": "^2.27.5",
+    "eslint-plugin-lodash": "^7.4.0",
+    "eslint-plugin-mocha": "^10.1.0",
+    "eslint-plugin-prettier": "^5.0.0",
+    "eslint-plugin-react": "^7.33.0",
+    "eslint-plugin-react-hooks": "^4.6.0",
+    "husky": "^8.0.3",
+    "lint-staged": "^13.2.3",
+    "prettier": "^3.0.0",
+    "tslib": "^2.6.1",
+    "typescript": "^5.1.6",
+    "wireit": "^0.10.0"
+  },
+  "packageManager": "pnpm@8.6.2",
+  "lint-staged": {
+    "*.{js,jsx,mjs,ts,tsx}": "eslint --cache --fix"
+  }
+}

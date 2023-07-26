@@ -69,6 +69,11 @@ public class RealmAttributeUpdater extends ServerResourceUpdater<RealmAttributeU
         return this;
     }
 
+    public RealmAttributeUpdater setAccessTokenLifespanForImplicitFlow(Integer lifespan) {
+        rep.setAccessTokenLifespanForImplicitFlow(lifespan);
+        return this;
+    }
+
     public RealmAttributeUpdater setRememberMe(Boolean rememberMe) {
         rep.setRememberMe(rememberMe);
         return this;
@@ -76,6 +81,11 @@ public class RealmAttributeUpdater extends ServerResourceUpdater<RealmAttributeU
 
     public RealmAttributeUpdater setRegistrationEmailAsUsername(Boolean value) {
         rep.setRegistrationEmailAsUsername(value);
+        return this;
+    }
+
+    public RealmAttributeUpdater setEditUserNameAllowed(Boolean value) {
+        rep.setEditUsernameAllowed(value);
         return this;
     }
 

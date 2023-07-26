@@ -1,0 +1,10 @@
+{
+  "username": "Usuario",
+  "verifyEmail": "Verificar email",
+  "save": "Guardar",
+  "credentialType": "Tipo",
+  "password": "Contraseña",
+  "hours": "Horas",
+  "minutes": "Minutos",
+  "seconds": "Segundos"
+}

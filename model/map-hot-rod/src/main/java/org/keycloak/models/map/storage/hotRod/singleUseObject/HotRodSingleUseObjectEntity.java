@@ -17,6 +17,8 @@
 
 package org.keycloak.models.map.storage.hotRod.singleUseObject;
 
+import org.infinispan.api.annotations.indexing.Basic;
+import org.infinispan.api.annotations.indexing.Indexed;
 import org.infinispan.protostream.GeneratedSchema;
 import org.infinispan.protostream.annotations.AutoProtoSchemaBuilder;
 import org.infinispan.protostream.annotations.ProtoDoc;
@@ -37,7 +39,7 @@ import java.util.Set;
         topLevelEntity = true,
         modelClass = "org.keycloak.models.SingleUseObjectValueModel"
 )
-@ProtoDoc("@Indexed")
+@Indexed
 @ProtoDoc("schema-version: " + HotRodSingleUseObjectEntity.VERSION)
 public class HotRodSingleUseObjectEntity extends AbstractHotRodEntity {
 
@@ -56,7 +58,7 @@ public class HotRodSingleUseObjectEntity extends AbstractHotRodEntity {
         HotRodSingleUseObjectEntitySchema INSTANCE = new HotRodSingleUseObjectEntitySchemaImpl();
     }
 
-    @ProtoDoc("@Field(index = Index.YES, store = Store.YES)")
+    @Basic(projectable = true)
     @ProtoField(number = 1)
     public Integer entityVersion = VERSION;
 

@@ -46,9 +46,4 @@ public class LegacySessionSupportProviderImpl implements LegacySessionSupportPro
         return new UserCredentialStoreManager(session);
     }
 
-    @Override
-    public UserCache userCache() {
-        return session.getProvider(UserCache.class);
-    }
-
 }

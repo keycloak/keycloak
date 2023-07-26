@@ -1,0 +1,85 @@
+
+==== OpenShift 3
+
+.Procedure
+. Click *Identity Providers* in the menu.
+. From the `Add provider` list, select `Openshift`.
++
+.Add identity provider
+image:images/openshift-add-identity-provider.png[Add Identity Provider]
++
+. Copy the value of *Redirect URI* to your clipboard.
+. Register your client using the `oc` command-line tool.
++
+[source,subs="attributes+"]
+----
+$ oc create -f <(echo '
+kind: OAuthClient
+apiVersion: v1
+metadata:
+ name: kc-client <1>
+secret: "..." <2>
+redirectURIs:
+ - "http://www.example.com/" <3>
+grantMethod: prompt <4>
+')
+----
+
+<1> The `name` of your OAuth client. Passed as `client_id` request parameter when making requests to `_<openshift_master>_/oauth/authorize` and `_<openshift_master>_/oauth/token`.
+<2> The `secret` {project_name} uses for the `client_secret` request parameter.
+<3> The `redirect_uri` parameter specified in requests to `_<openshift_master>_/oauth/authorize` and `_<openshift_master>_/oauth/token` must be equal to (or prefixed by) one of the URIs in `redirectURIs`. You can obtain this from the *Redirect URI* field in the Identity Provider screen
+<4> The `grantMethod` {project_name} uses to determine the action when this client requests tokens but has not been granted access by the user.
++
+. In {project_name}, paste the value of the *Client ID* into the *Client ID* field.
+. In {project_name}, paste the value of the *Client Secret* into the *Client Secret* field.
+
+. Click *Add*.
+
+==== OpenShift 4
+
+.Prerequisites
+. Installation of https://stedolan.github.io/jq/[jq].
+. `X509_CA_BUNDLE` configured in the container and set to `/var/run/secrets/kubernetes.io/serviceaccount/ca.crt`.
+
+.Procedure
+. Run the following command on the command line and note the OpenShift 4 API URL output.
++
+[source,subs="attributes+"]
+----
+curl -s -k -H "Authorization: Bearer $(oc whoami -t)" \https://<openshift-user-facing-api-url>/apis/config.openshift.io/v1/infrastructures/cluster | jq ".status.apiServerURL"
+----
++
+. Click *Identity Providers* in the {project_name} menu.
+. From the `Add provider` list, select `Openshift`.
++
+.Add identity provider
+image:images/openshift-4-add-identity-provider.png[Add Identity Provider]
++
+. Copy the value of *Redirect URI* to your clipboard.
+. Register your client using the `oc` command-line tool.
++
+[source, subs="attributes+"]
+----
+$ oc create -f <(echo '
+kind: OAuthClient
+apiVersion: oauth.openshift.io/v1
+metadata:
+ name: keycloak-broker <1>
+secret: "..." <2>
+redirectURIs:
+ - "<copy pasted Redirect URI from OpenShift 4 Identity Providers page>" <3>
+grantMethod: prompt <4>
+')
+----
+
+<1> The `name` of your OAuth client. Passed as `client_id` request parameter when making requests to `_<openshift_master>_/oauth/authorize` and `_<openshift_master>_/oauth/token`. The `name` parameter must be the same in the `OAuthClient` object and the {project_name} configuration.
+<2> The `secret` {project_name} uses as the `client_secret` request parameter.
+<3> The `redirect_uri` parameter specified in requests to `_<openshift_master>_/oauth/authorize` and `_<openshift_master>_/oauth/token` must be equal to (or prefixed by) one of the URIs in `redirectURIs`. The easiest way to configure it correctly is to copy-paste it from {project_name} OpenShift 4 Identity Provider configuration page (`Redirect URI` field).
+<4> The `grantMethod` {project_name} uses to determine the action when this client requests tokens but has not been granted access by the user.
++
+. In {project_name}, paste the value of the *Client ID* into the *Client ID* field.
+. In {project_name}, paste the value of the *Client Secret* into the *Client Secret* field.
+
+. Click *Add*.
+
+See https://docs.okd.io/latest/authentication/configuring-oauth-clients.html#oauth-register-additional-client_configuring-oauth-clients[official OpenShift documentation] for more information.

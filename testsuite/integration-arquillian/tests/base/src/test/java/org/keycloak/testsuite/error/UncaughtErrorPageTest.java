@@ -24,9 +24,8 @@ import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.utils.MediaType;
 import org.openqa.selenium.By;
-import org.openqa.selenium.WebElement;
 
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
@@ -185,7 +184,7 @@ public class UncaughtErrorPageTest extends AbstractKeycloakTest {
         oauth.openLoginForm();
 
         assertTrue(errorPage.isCurrent());
-        assertEquals("Invalid parameter: redirect_uri", errorPage.getError());
+        assertEquals("Client not found.", errorPage.getError());
     }
 
     @Test
@@ -237,4 +236,27 @@ public class UncaughtErrorPageTest extends AbstractKeycloakTest {
         assertEquals("Page not found", errorPage.getError());
     }
 
+    @Test
+    public void jsonProcessingException() throws IOException {
+        try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
+            String accessToken = adminClient.tokenManager().getAccessTokenString();
+
+            // send an empty array to the user endpoint which expects a User json object
+            HttpPost post = new HttpPost(suiteContext.getAuthServerInfo().getUriBuilder().path("/auth/admin/realms/master/users").build());
+            post.setEntity(new StringEntity("[]"));
+            post.setHeader("Authorization", "bearer " + accessToken);
+            post.setHeader("Content-Type", "application/json");
+
+            try (CloseableHttpResponse response = client.execute(post)) {
+                assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatusLine().getStatusCode());
+
+                Header header = response.getFirstHeader("Content-Type");
+                assertThat(header, notNullValue());
+                assertEquals(MediaType.APPLICATION_JSON, header.getValue());
+
+                OAuth2ErrorRepresentation error = JsonSerialization.readValue(response.getEntity().getContent(), OAuth2ErrorRepresentation.class);
+                assertEquals("unknown_error", error.getError());
+            }
+        }
+    }
 }

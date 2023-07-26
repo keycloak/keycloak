@@ -18,14 +18,9 @@
 package org.keycloak.testsuite;
 
 import org.junit.Assume;
-import org.keycloak.admin.client.Keycloak;
 import org.keycloak.common.Profile;
-import org.keycloak.representations.info.ProfileInfoRepresentation;
-import org.keycloak.testsuite.util.AdminClientUtil;
+import org.keycloak.testsuite.arquillian.TestContext;
 
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 /**
@@ -33,51 +28,34 @@ import java.util.Set;
  */
 public class ProfileAssume {
 
-    private static Set<String> disabledFeatures;
-    private static String profile;
+    private static Set<Profile.Feature> DISABLED_FEATURES;
+    private static TestContext TEST_CONTEXT;
 
     private static void updateProfile() {
-        String host = System.getProperty("auth.server.host", "localhost");
-        String port = System.getProperty("auth.server.http.port", "8180");
-        boolean adapterCompatTesting = Boolean.parseBoolean(System.getProperty("testsuite.adapter.compat.testing"));
-
-        String authServerContextRoot = "http://" + host + ":" + port;
-        try (Keycloak adminClient = AdminClientUtil.createAdminClient(adapterCompatTesting, authServerContextRoot)) {
-            ProfileInfoRepresentation profileInfo = adminClient.serverInfo().getInfo().getProfileInfo();
-            profile = profileInfo.getName();
-            List<String> disabled = profileInfo.getDisabledFeatures();
-            disabledFeatures = Collections.unmodifiableSet(new HashSet<>(disabled));
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to obtain profile / features info from serverinfo endpoint of " + authServerContextRoot, e);
+        if (DISABLED_FEATURES == null) {
+            DISABLED_FEATURES = TEST_CONTEXT.getTestingClient().testing().listDisabledFeatures();
         }
     }
 
     public static void assumeFeatureEnabled(Profile.Feature feature) {
         updateProfile();
-        Assume.assumeTrue("Ignoring test as feature " + feature.name() + " is not enabled", isFeatureEnabled(feature));
+        Assume.assumeTrue("Ignoring test as feature " + feature.getKey() + " is not enabled", isFeatureEnabled(feature));
     }
 
     public static void assumeFeatureDisabled(Profile.Feature feature) {
-        Assume.assumeTrue("Ignoring test as feature " + feature.name() + " is enabled", !isFeatureEnabled(feature));
-    }
-
-    public static void assumePreview() {
-        updateProfile();
-        Assume.assumeTrue("Ignoring test as community/preview profile is not enabled", !profile.equals("product"));
-    }
-
-    public static void assumePreviewDisabled() {
-        updateProfile();
-        Assume.assumeFalse("Ignoring test as community/preview profile is enabled", !profile.equals("product"));
-    }
-
-    public static void assumeCommunity() {
-        updateProfile();
-        Assume.assumeTrue("Ignoring test as community profile is not enabled", profile.equals("community"));
+        Assume.assumeTrue("Ignoring test as feature " + feature.getKey() + " is enabled", !isFeatureEnabled(feature));
     }
 
     public static boolean isFeatureEnabled(Profile.Feature feature) {
         updateProfile();
-        return !disabledFeatures.contains(feature.name());
+        return !DISABLED_FEATURES.contains(feature);
+    }
+
+    public static void updateDisabledFeatures(Set<Profile.Feature> disabledFeatures) {
+        DISABLED_FEATURES = disabledFeatures;
+    }
+
+    public static void setTestContext(TestContext testContext) {
+        TEST_CONTEXT = testContext;
     }
 }

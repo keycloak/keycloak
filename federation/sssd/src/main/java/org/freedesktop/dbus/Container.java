@@ -1,39 +1,25 @@
-/*
-   D-Bus Java Implementation
-   Copyright (c) 2005-2006 Matthew Johnson
-
-   This program is free software; you can redistribute it and/or modify it
-   under the terms of either the GNU Lesser General Public License Version 2 or the
-   Academic Free Licence Version 2.1.
-
-   Full licence texts are included in the COPYING file with this program.
-*/
 package org.freedesktop.dbus;
+
+import org.freedesktop.dbus.annotations.Position;
+import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Type;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 /**
  * This class is the super class of both Structs and Tuples
  * and holds common methods.
  */
-abstract class Container {
-    private static Map<Type, Type[]> typecache = new HashMap<Type, Type[]>();
+public abstract class Container {
+    private static final Map<Type, Type[]> TYPE_CACHE = new HashMap<>();
+    private Object[]                       parameters = null;
 
-    static void putTypeCache(Type k, Type[] v) {
-        typecache.put(k, v);
-    }
-
-    static Type[] getTypeCache(Type k) {
-        return typecache.get(k);
-    }
-
-    private Object[] parameters = null;
-
-    public Container() {
+    Container() {
     }
 
     private void setup() {
@@ -43,13 +29,16 @@ abstract class Container {
         int diff = 0;
         for (Field f : fs) {
             Position p = f.getAnnotation(Position.class);
+            f.setAccessible(true);
+
             if (null == p) {
                 diff++;
                 continue;
             }
             try {
                 args[p.value()] = f.get(this);
-            } catch (IllegalAccessException IAe) {
+            } catch (IllegalAccessException _exIa) {
+                LoggerFactory.getLogger(getClass()).trace("Could not set value", _exIa);
             }
         }
 
@@ -58,36 +47,67 @@ abstract class Container {
     }
 
     /**
-     * Returns the struct contents in order.
-     *
-     * @throws DBusException If there is  a problem doing this.
-     */
+    * Returns the struct contents in order.
+    * @return object array
+    */
     public final Object[] getParameters() {
-        if (null != parameters) return parameters;
+        if (null != parameters) {
+            return parameters;
+        }
         setup();
         return parameters;
     }
 
-    /**
-     * Returns this struct as a string.
-     */
+    /** Returns this struct as a string. */
+    @Override
     public final String toString() {
-        String s = getClass().getName() + "<";
-        if (null == parameters)
+        StringBuilder sb = new StringBuilder();
+        sb.append(getClass().getName()).append("<");
+        if (null == parameters) {
             setup();
-        if (0 == parameters.length)
-            return s + ">";
-        for (Object o : parameters)
-            s += o + ", ";
-        return s.replaceAll(", $", ">");
+        }
+        if (0 == parameters.length) {
+            return sb.append(">").toString();
+        }
+        sb.append(Arrays.stream(parameters).map(o -> Objects.toString(o)).collect(Collectors.joining(", ")));
+        return sb.append(">").toString();
     }
 
-    public final boolean equals(Object other) {
-        if (other instanceof Container) {
-            Container that = (Container) other;
-            if (this.getClass().equals(that.getClass()))
+    @Override
+    public final boolean equals(Object _other) {
+        if (this == _other) {
+            return true;
+        }
+        if (_other == null) {
+            return false;
+        }
+
+        if (_other instanceof Container) {
+            Container that = (Container) _other;
+            if (this.getClass().equals(that.getClass())) {
                 return Arrays.equals(this.getParameters(), that.getParameters());
-            else return false;
-        } else return false;
+            } else {
+                return false;
+            }
+        } else {
+            return false;
+        }
     }
+
+    @Override
+    public int hashCode() {
+        final int prime = 31;
+        int result = 1;
+        result = prime * result + Arrays.deepHashCode(parameters);
+        return result;
+    }
+
+    static void putTypeCache(Type _k, Type[] _v) {
+        TYPE_CACHE.put(_k, _v);
+    }
+
+    static Type[] getTypeCache(Type _k) {
+        return TYPE_CACHE.get(_k);
+    }
+
 }

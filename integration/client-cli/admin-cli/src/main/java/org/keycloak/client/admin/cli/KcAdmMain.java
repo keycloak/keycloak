@@ -27,6 +27,7 @@ import org.keycloak.client.admin.cli.aesh.AeshEnhancer;
 import org.keycloak.client.admin.cli.aesh.Globals;
 import org.keycloak.client.admin.cli.aesh.ValveInputStream;
 import org.keycloak.client.admin.cli.commands.KcAdmCmd;
+import org.keycloak.client.admin.cli.util.ClassLoaderUtil;
 import org.keycloak.common.crypto.CryptoIntegration;
 
 import java.util.ArrayList;
@@ -38,8 +39,14 @@ import java.util.Arrays;
 public class KcAdmMain {
 
     public static void main(String [] args) {
+        String libDir = System.getProperty("kc.lib.dir");
+        if (libDir == null) {
+            throw new RuntimeException("System property kc.lib.dir needs to be set");
+        }
+        ClassLoader cl = ClassLoaderUtil.resolveClassLoader(libDir);
+        Thread.currentThread().setContextClassLoader(cl);
 
-        CryptoIntegration.init(KcAdmMain.class.getClassLoader());
+        CryptoIntegration.init(cl);
         
         Globals.stdin = new ValveInputStream();
 

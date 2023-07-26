@@ -25,7 +25,7 @@ import java.security.cert.X509Certificate;
 import java.util.function.Function;
 
 import javax.security.auth.x500.X500Principal;
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response;
 
 import org.apache.commons.codec.binary.Hex;
 
@@ -149,7 +149,7 @@ public abstract class AbstractX509ClientCertificateAuthenticator implements Auth
         private static Function<X509Certificate[], String> getIssuerDNFunc(X509AuthenticatorConfigModel config) {
             return config.isCanonicalDnEnabled() ? 
                     certs -> certs[0].getIssuerX500Principal().getName(X500Principal.CANONICAL) : 
-                    certs -> certs[0].getIssuerDN().getName();
+                    certs -> certs[0].getIssuerDN().toString();
         }
 
         static UserIdentityExtractor fromConfig(X509AuthenticatorConfigModel config) {
@@ -168,7 +168,7 @@ public abstract class AbstractX509ClientCertificateAuthenticator implements Auth
                 case SUBJECTDN:
                     func = config.isCanonicalDnEnabled() ?
                         certs -> certs[0].getSubjectX500Principal().getName(X500Principal.CANONICAL) :
-                        certs -> certs[0].getSubjectDN().getName();
+                        certs -> certs[0].getSubjectDN().toString();
                     extractor = userIdExtractor.getPatternIdentityExtractor(pattern, func);
                     break;
                 case ISSUERDN:

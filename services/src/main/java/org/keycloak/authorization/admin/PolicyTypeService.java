@@ -20,7 +20,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
-import javax.ws.rs.Path;
+import jakarta.ws.rs.Path;
 
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.authorization.AuthorizationProvider;
@@ -53,8 +53,6 @@ public class PolicyTypeService extends PolicyService {
         if (resource == null) {
             return null;
         }
-
-        ResteasyProviderFactory.getInstance().injectProperties(resource);
 
         return resource;
     }

@@ -19,10 +19,10 @@ package org.keycloak.models.map.storage.jpa.group;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
-import javax.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaBuilder;
 
-import javax.persistence.criteria.Join;
-import javax.persistence.criteria.JoinType;
+import jakarta.persistence.criteria.Join;
+import jakarta.persistence.criteria.JoinType;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.map.storage.CriterionNotSupportedException;
 import org.keycloak.models.map.storage.jpa.group.entity.JpaGroupAttributeEntity;
@@ -81,6 +81,7 @@ public class JpaGroupModelCriteriaBuilder extends JpaModelCriteriaBuilder<JpaGro
                         Join<JpaGroupEntity, JpaGroupAttributeEntity> join = root.join("attributes", JoinType.LEFT);
                         return cb.and(
                             cb.equal(join.get("name"), value[0]),
+                            hashExpression(cb, join, "value_hash", value[1]),
                             cb.equal(join.get("value"), value[1])
                         );
                     });

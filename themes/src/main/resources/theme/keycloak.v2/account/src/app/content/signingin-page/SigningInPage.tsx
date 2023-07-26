@@ -147,7 +147,7 @@ class SigningInPage extends React.Component<
     }
 
     private handleRemove = (credentialId: string, userLabel: string) => {
-        this.context!.doDelete("/credentials/" + credentialId).then(() => {
+        this.context!.doDelete("/credentials/" + encodeURIComponent(credentialId)).then(() => {
             this.getCredentialContainers();
             ContentAlert.success("successRemovedMessage", [userLabel]);
         });

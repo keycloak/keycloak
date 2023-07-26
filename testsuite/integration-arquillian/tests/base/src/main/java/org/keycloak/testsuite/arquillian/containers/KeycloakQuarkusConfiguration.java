@@ -29,14 +29,10 @@ public class KeycloakQuarkusConfiguration implements ContainerConfiguration {
 
     private String keystorePassword = System.getProperty("auth.server.keystore.password");
 
-    private String keystoreType = System.getProperty("auth.server.keystore.type");
-
 
     private String truststoreFile = System.getProperty("auth.server.truststore");
 
     private String truststorePassword = System.getProperty("auth.server.truststore.password");
-
-    private String truststoreType = System.getProperty("auth.server.truststore.type");
 
     private int debugPort = -1;
     private Path providersPath = Paths.get(System.getProperty("auth.server.home"));
@@ -49,7 +45,7 @@ public class KeycloakQuarkusConfiguration implements ContainerConfiguration {
     private boolean reaugmentBeforeStart;
     private String importFile = System.getProperty("migration.import.file.name");
 
-    private FipsMode fipsMode = FipsMode.valueOf(System.getProperty("auth.server.fips.mode"));
+    private FipsMode fipsMode = FipsMode.valueOfOption(System.getProperty("auth.server.fips.mode"));
 
     @Override
     public void validate() throws ConfigurationException {
@@ -121,14 +117,6 @@ public class KeycloakQuarkusConfiguration implements ContainerConfiguration {
         this.keystorePassword = keystorePassword;
     }
 
-    public String getKeystoreType() {
-        return keystoreType;
-    }
-
-    public void setKeystoreType(String keystoreType) {
-        this.keystoreType = keystoreType;
-    }
-
     public String getTruststoreFile() {
         return truststoreFile;
     }
@@ -145,20 +133,17 @@ public class KeycloakQuarkusConfiguration implements ContainerConfiguration {
         this.truststorePassword = truststorePassword;
     }
 
-    public String getTruststoreType() {
-        return truststoreType;
-    }
-
-    public void setTruststoreType(String truststoreType) {
-        this.truststoreType = truststoreType;
-    }
-
     public Path getProvidersPath() {
         return providersPath;
     }
 
     public void setProvidersPath(Path providersPath) {
         this.providersPath = providersPath;
+    }
+
+    // https://github.com/keycloak/keycloak/issues/20455 Overloading fails time to time with a mismatch error, most probably an Arquillian class reflection bug.
+    public void setProvidersPathString(String providersPath) {
+        this.providersPath = Paths.get(providersPath);
     }
 
     public int getStartupTimeoutInSeconds() {

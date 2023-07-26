@@ -1,0 +1,24 @@
+{
+  "name": "keycloak-server",
+  "type": "module",
+  "scripts": {
+    "start": "wireit",
+    "clear-data": "rm -r ./server/data"
+  },
+  "wireit": {
+    "start": {
+      "command": "./scripts/start-server.js",
+      "dependencies": [
+        "../../libs/keycloak-admin-client:build"
+      ]
+    }
+  },
+  "dependencies": {
+    "@keycloak/keycloak-admin-client": "workspace:*",
+    "@octokit/rest": "^20.0.1",
+    "@types/gunzip-maybe": "^1.4.0",
+    "@types/tar-fs": "^2.0.1",
+    "gunzip-maybe": "^1.4.2",
+    "tar-fs": "^3.0.4"
+  }
+}

@@ -38,7 +38,7 @@ import org.keycloak.sessions.AuthenticationSessionCompoundId;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
-import javax.ws.rs.core.*;
+import jakarta.ws.rs.core.*;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>

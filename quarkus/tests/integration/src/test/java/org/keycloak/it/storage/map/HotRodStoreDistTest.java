@@ -32,7 +32,7 @@ public class HotRodStoreDistTest {
     @Launch({ "start", "--optimized", "--http-enabled=true", "--hostname-strict=false" })
     void testSuccessful(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
-        cliResult.assertMessage("Experimental feature enabled: map_storage");
+        cliResult.assertMessage("Experimental features enabled: map-storage");
         cliResult.assertMessage("[org.keycloak.models.map.storage.hotRod.connections.DefaultHotRodConnectionProviderFactory] (main) HotRod client configuration was successful.");
         cliResult.assertStarted();
     }

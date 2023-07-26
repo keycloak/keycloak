@@ -55,8 +55,8 @@ public class SamlProtocolFactory extends AbstractLoginProtocolFactory {
     private DestinationValidator destinationValidator;
 
     @Override
-    public Object createProtocolEndpoint(RealmModel realm, EventBuilder event) {
-        return new SamlService(realm, event, destinationValidator);
+    public Object createProtocolEndpoint(KeycloakSession session, EventBuilder event) {
+        return new SamlService(session, event, destinationValidator);
     }
 
     @Override

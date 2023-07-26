@@ -52,7 +52,7 @@ import org.keycloak.testsuite.util.KeycloakModelUtils;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.UserInfoClientUtil;
 
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response;
 import java.io.IOException;
 import java.security.KeyPair;
 import java.security.PublicKey;
@@ -268,7 +268,7 @@ public class KeyRotationTest extends AbstractKeycloakTest {
     }
 
     private Map<String, String> createKeys(String priority) throws Exception {
-        KeyPair keyPair = KeyUtils.generateRsaKeyPair(1024);
+        KeyPair keyPair = KeyUtils.generateRsaKeyPair(org.keycloak.testsuite.util.KeyUtils.getLowestSupportedRsaKeySize());
         String privateKeyPem = PemUtils.encodeKey(keyPair.getPrivate());
         PublicKey publicKey = keyPair.getPublic();
 

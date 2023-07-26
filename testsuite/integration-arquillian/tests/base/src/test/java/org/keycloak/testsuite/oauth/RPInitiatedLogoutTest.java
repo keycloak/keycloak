@@ -30,7 +30,6 @@ import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.admin.client.resource.ClientsResource;
 import org.keycloak.admin.client.resource.UserResource;
-import org.keycloak.common.Profile;
 import org.keycloak.common.util.UriUtils;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
@@ -47,7 +46,6 @@ import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.InfoPage;
@@ -57,14 +55,13 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
-import javax.ws.rs.NotFoundException;
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriBuilder;
+import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.UriBuilder;
 
 import static org.hamcrest.Matchers.endsWith;
 import static org.hamcrest.Matchers.is;
@@ -76,13 +73,13 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlEquals;
 
-import org.keycloak.testsuite.auth.page.account.AccountManagement;
 import org.keycloak.testsuite.pages.LogoutConfirmPage;
 import org.keycloak.testsuite.pages.OAuthGrantPage;
 import org.keycloak.testsuite.pages.PageUtils;
 import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.updaters.UserAttributeUpdater;
+import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.ClientManager;
 import org.keycloak.testsuite.util.InfinispanTestTimeServiceRule;
 import org.keycloak.testsuite.util.Matchers;
@@ -121,9 +118,6 @@ public class RPInitiatedLogoutTest extends AbstractTestRealmKeycloakTest {
 
     @Page
     protected InfoPage infoPage;
-
-    @Page
-    protected AccountManagement accountManagementPage;
 
     @Page
     private ErrorPage errorPage;
@@ -237,7 +231,7 @@ public class RPInitiatedLogoutTest extends AbstractTestRealmKeycloakTest {
         driver.navigate().to(logoutUrl);
         logoutConfirmPage.assertCurrent();
         logoutConfirmPage.confirmLogout();
-        events.expectLogout(sessionId2).detail(Details.REDIRECT_URI, redirectUri).assertEvent();
+        events.expectLogoutError(Errors.SESSION_EXPIRED);
         MatcherAssert.assertThat(false, is(isSessionActive(sessionId2)));
         assertCurrentUrlEquals(redirectUri + "&state=something");
     }
@@ -260,7 +254,7 @@ public class RPInitiatedLogoutTest extends AbstractTestRealmKeycloakTest {
 
             // should not throw an internal server error. But no logout event is sent as nothing was logged-out
             appPage.assertCurrent();
-            events.assertEmpty();
+            events.expectLogoutError(Errors.SESSION_EXPIRED);
             MatcherAssert.assertThat(false, is(isSessionActive(tokenResponse.getSessionState())));
 
             // check if the back channel logout succeeded
@@ -273,14 +267,15 @@ public class RPInitiatedLogoutTest extends AbstractTestRealmKeycloakTest {
 
     //KEYCLOAK-2741
     @Test
-    @DisableFeature(value = Profile.Feature.ACCOUNT2, skipRestart = true) // TODO remove this (KEYCLOAK-16228)
     public void logoutWithRememberMe() throws IOException {
         try (RealmAttributeUpdater update = new RealmAttributeUpdater(testRealm()).setRememberMe(true).update()) {
+            String testUsername = "test-user@localhost";
+            String testUserPassword = "password";
             loginPage.open();
             assertFalse(loginPage.isRememberMeChecked());
             loginPage.setRememberMe(true);
             assertTrue(loginPage.isRememberMeChecked());
-            loginPage.login("test-user@localhost", "password");
+            loginPage.login(testUsername, testUserPassword);
 
             String sessionId = events.expectLogin().assertEvent().getSessionId();
 
@@ -290,17 +285,21 @@ public class RPInitiatedLogoutTest extends AbstractTestRealmKeycloakTest {
             // Assert rememberMe checked and username/email prefilled
             loginPage.open();
             assertTrue(loginPage.isRememberMeChecked());
-            assertEquals("test-user@localhost", loginPage.getUsername());
+            assertEquals(testUsername, loginPage.getUsername());
 
-            loginPage.login("test-user@localhost", "password");
+            loginPage.login(testUsername, testUserPassword);
 
             //log out
-            appPage.openAccount();
-            accountManagementPage.signOut();
+            String logoutUrl = oauth.getLogoutUrl().build();
+            driver.navigate().to(logoutUrl);
+            logoutConfirmPage.assertCurrent();
+            logoutConfirmPage.confirmLogout();
+
+            loginPage.open();
             // Assert rememberMe not checked nor username/email prefilled
             assertTrue(loginPage.isCurrent());
             assertFalse(loginPage.isRememberMeChecked());
-            assertNotEquals("test-user@localhost", loginPage.getUsername());
+            assertNotEquals(testUsername, loginPage.getUsername());
         }
     }
 
@@ -317,7 +316,7 @@ public class RPInitiatedLogoutTest extends AbstractTestRealmKeycloakTest {
         // Try logout even if user already logged-out by admin. Should redirect back to the application, but no logout-event should be triggered
         String logoutUrl = oauth.getLogoutUrl().postLogoutRedirectUri(APP_REDIRECT_URI).idTokenHint(idTokenString).build();
         driver.navigate().to(logoutUrl);
-        events.assertEmpty();
+        events.expectLogoutError(Errors.SESSION_EXPIRED);
         assertCurrentUrlEquals(APP_REDIRECT_URI);
 
         // Login again in the browser. Ensure to use newest idTokenHint after logout
@@ -377,7 +376,7 @@ public class RPInitiatedLogoutTest extends AbstractTestRealmKeycloakTest {
             assertThat(response, Matchers.statusCodeIsHC(Response.Status.FOUND));
             assertThat(response.getFirstHeader(HttpHeaders.LOCATION).getValue(), is(APP_REDIRECT_URI));
         }
-        events.assertEmpty();
+        events.expectLogoutError(Errors.SESSION_EXPIRED);
 
         MatcherAssert.assertThat(false, is(isSessionActive(tokenResponse.getSessionState())));
     }
@@ -400,7 +399,7 @@ public class RPInitiatedLogoutTest extends AbstractTestRealmKeycloakTest {
             assertThat(response, Matchers.statusCodeIsHC(Response.Status.FOUND));
             assertThat(response.getFirstHeader(HttpHeaders.LOCATION).getValue(), is(APP_REDIRECT_URI));
         }
-        events.assertEmpty();
+        events.expectLogoutError(Errors.SESSION_EXPIRED);
 
         MatcherAssert.assertThat(false, is(isSessionActive(tokenResponse.getSessionState())));
     }
@@ -902,6 +901,19 @@ public class RPInitiatedLogoutTest extends AbstractTestRealmKeycloakTest {
 
             infoPage.assertCurrent();
             Assert.assertEquals("Odhlášení bylo úspěšné", infoPage.getInfo()); // Logout success message
+
+            // Change locale on the info page (AuthenticationSession does not exists on server at this point)
+            infoPage.openLanguage("English");
+            Assert.assertEquals("You are logged out", infoPage.getInfo()); // Logout success message
+
+            // Change locale again
+            infoPage.openLanguage("Čeština");
+            Assert.assertEquals("Odhlášení bylo úspěšné", infoPage.getInfo()); // Logout success message
+
+            // Refresh page
+            driver.navigate().refresh();
+            Assert.assertEquals("Odhlášení bylo úspěšné", infoPage.getInfo()); // Logout success message
+
             infoPage.clickBackToApplicationLinkCs();
             WaitUtils.waitForPageToLoad();
             MatcherAssert.assertThat(driver.getCurrentUrl(), endsWith("/app/auth"));
@@ -931,7 +943,7 @@ public class RPInitiatedLogoutTest extends AbstractTestRealmKeycloakTest {
         errorPage.assertCurrent();
         Assert.assertEquals("Logout failed", errorPage.getError());
 
-        events.expectLogoutError(Errors.SESSION_EXPIRED).assertEvent();
+        events.expectLogoutError(Errors.LOGOUT_FAILED).assertEvent();
     }
 
 
@@ -1065,6 +1077,33 @@ public class RPInitiatedLogoutTest extends AbstractTestRealmKeycloakTest {
 
             MatcherAssert.assertThat(false, is(isSessionActive(sessionId)));
             MatcherAssert.assertThat(false, is(isSessionActive(tokenResponse.getSessionState())));
+        }
+    }
+
+    @Test
+    public void logoutWithIdTokenAndRemovedClient() throws Exception {
+        ClientRepresentation clientRep = ClientBuilder.create()
+                .clientId("my-foo-client")
+                .enabled(true)
+                .baseUrl("https://foo/bar")
+                .addRedirectUri(APP_REDIRECT_URI)
+                .secret("password")
+                .build();
+        try (Response response = testRealm().clients().create(clientRep)) {
+            String uuid = ApiUtil.getCreatedId(response);
+            oauth.clientId("my-foo-client");
+
+            OAuthClient.AccessTokenResponse tokenResponse = loginUser();
+
+            // Remove client after login of user
+            testRealm().clients().get(uuid).remove();
+
+            String logoutUrl = oauth.getLogoutUrl().postLogoutRedirectUri(APP_REDIRECT_URI).idTokenHint(tokenResponse.getIdToken()).build();
+            driver.navigate().to(logoutUrl);
+
+            // Invalid redirect URI page is shown. It was not possible to verify post_logout_redirect_uri due the client was removed
+            errorPage.assertCurrent();
+            events.expectLogoutError(OAuthErrorException.INVALID_REDIRECT_URI).detail(Details.REDIRECT_URI, APP_REDIRECT_URI).assertEvent();
         }
     }
 

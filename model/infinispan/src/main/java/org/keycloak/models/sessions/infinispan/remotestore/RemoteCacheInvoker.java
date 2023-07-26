@@ -121,7 +121,7 @@ public class RemoteCacheInvoker {
             case ADD_IF_ABSENT:
                 SessionEntityWrapper<V> existing = remoteCache
                         .withFlags(Flag.FORCE_RETURN_VALUE)
-                        .putIfAbsent(key, sessionWrapper.forTransport(), -1, TimeUnit.MILLISECONDS, InfinispanUtil.toHotrodTimeMs(remoteCache, maxIdleMs), TimeUnit.MILLISECONDS);
+                        .putIfAbsent(key, sessionWrapper.forTransport(), InfinispanUtil.toHotrodTimeMs(remoteCache, task.getLifespanMs()), TimeUnit.MILLISECONDS, InfinispanUtil.toHotrodTimeMs(remoteCache, maxIdleMs), TimeUnit.MILLISECONDS);
                 if (existing != null) {
                     logger.debugf("Existing entity in remote cache for key: %s . Will update it", key);
 

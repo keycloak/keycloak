@@ -19,24 +19,24 @@ package org.keycloak.models.map.storage.jpa.loginFailure.entity;
 import java.util.Objects;
 import java.util.UUID;
 
-import javax.persistence.Basic;
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.FetchType;
-import javax.persistence.Id;
-import javax.persistence.Table;
-import javax.persistence.UniqueConstraint;
-import javax.persistence.Version;
+import jakarta.persistence.Basic;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
+import jakarta.persistence.Version;
 
+import org.hibernate.annotations.Parameter;
 import org.hibernate.annotations.Type;
-import org.hibernate.annotations.TypeDef;
-import org.hibernate.annotations.TypeDefs;
+import org.hibernate.usertype.UserTypeLegacyBridge;
 import org.keycloak.models.map.common.DeepCloner;
 import org.keycloak.models.map.common.UuidValidator;
 import org.keycloak.models.map.loginFailure.MapUserLoginFailureEntity;
 import org.keycloak.models.map.storage.jpa.JpaRootVersionedEntity;
-import org.keycloak.models.map.storage.jpa.hibernate.jsonb.JsonbType;
 
+import org.keycloak.models.map.storage.jpa.hibernate.jsonb.JsonbType;
 import static org.keycloak.models.map.storage.jpa.Constants.CURRENT_SCHEMA_VERSION_USER_LOGIN_FAILURE;
 
 /**
@@ -52,7 +52,6 @@ import static org.keycloak.models.map.storage.jpa.Constants.CURRENT_SCHEMA_VERSI
                         columnNames = {"realmId", "userId"}
                 )
 })
-@TypeDefs({@TypeDef(name = "jsonb", typeClass = JsonbType.class)})
 public class JpaUserLoginFailureEntity extends MapUserLoginFailureEntity.AbstractUserLoginFailureEntity implements JpaRootVersionedEntity {
 
     @Id
@@ -64,7 +63,7 @@ public class JpaUserLoginFailureEntity extends MapUserLoginFailureEntity.Abstrac
     @Column
     private int version;
 
-    @Type(type = "jsonb")
+    @Type(JsonbType.class)
     @Column(columnDefinition = "jsonb")
     private final JpaUserLoginFailureMetadata metadata;
 

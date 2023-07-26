@@ -25,7 +25,6 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.provider.InvalidationHandler;
-import org.keycloak.provider.InvalidationHandler.InvalidableObjectType;
 
 import static org.keycloak.models.map.common.AbstractMapProviderFactory.MapProviderObjectType.CLIENT_AFTER_REMOVE;
 import static org.keycloak.models.map.common.AbstractMapProviderFactory.MapProviderObjectType.REALM_BEFORE_REMOVE;
@@ -45,7 +44,7 @@ public class MapClientProviderFactory extends AbstractMapProviderFactory<MapClie
 
     @Override
     public MapClientProvider createNew(KeycloakSession session) {
-        return new MapClientProvider(session, getStorage(session), REGISTERED_NODES_STORE);
+        return new MapClientProvider(session, getMapStorage(session), REGISTERED_NODES_STORE);
     }
 
     @Override

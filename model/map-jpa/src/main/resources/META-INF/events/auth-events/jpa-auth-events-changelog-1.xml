@@ -63,11 +63,29 @@ limitations under the License.
 
     </changeSet>
 
-    <changeSet author="keycloak" id="auth-events-2" dbms="postgresql">
+    <changeSet author="keycloak" id="auth-events-15699-drop-constraint" dbms="postgresql">
+        <preConditions onSqlOutput="TEST" onFail="MARK_RAN">
+            <changeSetExecuted author="keycloak" id="auth-events-2" changeLogFile="META-INF/events/auth-events/jpa-auth-events-changelog-1.xml" />
+        </preConditions>
+        <dropUniqueConstraint tableName="kc_auth_event_detail" constraintName="kc_auth_event_detail_fk_root_name_value_key" />
+    </changeSet>
+
+    <changeSet author="keycloak" id="auth-events-15699-add-hash-column-index">
+        <ext:addGeneratedColumn tableName="kc_auth_event_detail">
+            <ext:column name="value_hash" type="kc_hash" hashOf="value"/>
+        </ext:addGeneratedColumn>
+
+        <createIndex tableName="kc_auth_event_detail" indexName="auth_detail_name_value_hash">
+            <column name="name" />
+            <column name="value_hash" />
+        </createIndex>
+    </changeSet>
+
+    <changeSet author="keycloak" id="auth-events-15699-unique-constraint" dbms="postgres">
         <!-- this is deferrable and initiallyDeferred as hibernate will first insert new entries and then delete the old by default -->
         <!-- this will not work on cockroachdb as deferred indexes are not supported in version 22.1 yet, therefore, only run it on postgresql -->
         <!-- see https://go.crdb.dev/issue-v/31632/v21.2 for the current status of the implementation -->
-        <addUniqueConstraint tableName="kc_auth_event_detail" columnNames="fk_root, name, value" deferrable="true" initiallyDeferred="true" />
+        <addUniqueConstraint tableName="kc_auth_event_detail" columnNames="fk_root, name, value_hash" deferrable="true" initiallyDeferred="true" />
     </changeSet>
 
 </databaseChangeLog>

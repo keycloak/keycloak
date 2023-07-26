@@ -3,7 +3,6 @@ package org.keycloak.testsuite.broker;
 import static org.junit.Assert.assertEquals;
 import static org.keycloak.testsuite.broker.BrokerRunOnServerUtil.removeBrokerExpiredSessions;
 import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
-import static org.keycloak.testsuite.broker.BrokerTestTools.getConsumerRoot;
 
 import java.util.List;
 
@@ -51,7 +50,9 @@ public class KcOidcBrokerWithConsentTest extends AbstractInitializedBaseBrokerTe
      */
     @Test
     public void testConsentDeniedWithExpiredClientSession() {
-        driver.navigate().to(getAccountUrl(getConsumerRoot(), bc.consumerRealmName()));
+        oauth.clientId("broker-app");
+        loginPage.open(bc.consumerRealmName());
+
         log.debug("Clicking social " + bc.getIDPAlias());
         loginPage.clickSocial(bc.getIDPAlias());
         waitForPage(driver, "sign in to", true);
@@ -78,13 +79,14 @@ public class KcOidcBrokerWithConsentTest extends AbstractInitializedBaseBrokerTe
      */
     @Test
     public void testConsentDeniedWithExpiredAndClearedClientSession() {
-        driver.navigate().to(getAccountUrl(getConsumerRoot(), bc.consumerRealmName()));
+        oauth.clientId("broker-app");
+        loginPage.open(bc.consumerRealmName());
+
         logInWithBroker(bc);
 
         // Set time offset
         invokeTimeOffset(60);
         try {
-
             testingClient.server(bc.providerRealmName()).run(removeBrokerExpiredSessions());
 
             // User rejected consent
@@ -93,55 +95,6 @@ public class KcOidcBrokerWithConsentTest extends AbstractInitializedBaseBrokerTe
 
             // Assert login page with "You took too long to login..." message
             Assert.assertEquals("Your login attempt timed out. Login will start from the beginning.", loginPage.getError());
-
-        } finally {
-            invokeTimeOffset(0);
-        }
-    }
-
-    /**
-     * Referes to in old testsuite: org.keycloak.testsuite.broker.OIDCKeycloakServerBrokerWithConsentTest#testAccountManagementLinkingAndExpiredClientSession
-     */
-    @Test
-    public void testAccountManagementLinkingAndExpiredClientSession() {
-        updateExecutions(AbstractBrokerTest::disableUpdateProfileOnFirstLogin);
-        createUser(bc.consumerRealmName(), "consumer", "password", "FirstName", "LastName", "consumer@localhost.com");
-
-        driver.navigate().to(getAccountUrl(getConsumerRoot(), bc.consumerRealmName()));
-        loginPage.login("consumer", "password");
-
-        accountPage.federatedIdentity();
-        accountFederatedIdentityPage.clickAddProvider(bc.getIDPAlias());
-
-        this.loginPage.login(bc.getUserLogin(), bc.getUserPassword());
-
-        // Set time offset
-        invokeTimeOffset(60);
-        try {
-            // User rejected consent
-            grantPage.assertCurrent();
-            grantPage.cancel();
-
-            // Assert account error page with "staleCodeAccount" error displayed
-            accountFederatedIdentityPage.assertCurrent();
-            Assert.assertEquals("The page expired. Please try one more time.", accountFederatedIdentityPage.getError());
-
-
-            // Try to link one more time
-            accountFederatedIdentityPage.clickAddProvider(bc.getIDPAlias());
-
-            this.loginPage.login(bc.getUserLogin(), bc.getUserPassword());
-
-            invokeTimeOffset(120);
-
-            // User granted consent
-            grantPage.assertCurrent();
-            grantPage.accept();
-
-            // Assert account error page with "staleCodeAccount" error displayed
-            accountFederatedIdentityPage.assertCurrent();
-            Assert.assertEquals("The page expired. Please try one more time.", accountFederatedIdentityPage.getError());
-
         } finally {
             invokeTimeOffset(0);
         }
@@ -153,7 +106,10 @@ public class KcOidcBrokerWithConsentTest extends AbstractInitializedBaseBrokerTe
     @Test
     public void testLoginCancelConsent() {
         updateExecutions(AbstractBrokerTest::disableUpdateProfileOnFirstLogin);
-        driver.navigate().to(getAccountUrl(getConsumerRoot(), bc.consumerRealmName()));
+
+        oauth.clientId("broker-app");
+        loginPage.open(bc.consumerRealmName());
+
         logInWithBroker(bc);
 
         // User rejected consent
@@ -161,30 +117,5 @@ public class KcOidcBrokerWithConsentTest extends AbstractInitializedBaseBrokerTe
         grantPage.cancel();
 
         assertEquals("Sign in to " + bc.consumerRealmName(), driver.getTitle());
-    }
-
-    /**
-     * Referes to in old testsuite: org.keycloak.testsuite.broker.OIDCKeycloakServerBrokerWithConsentTest#testAccountManagementLinkingCancelConsent
-     */
-    @Test
-    public void testAccountManagementLinkingCancelConsent() throws Exception {
-        updateExecutions(AbstractBrokerTest::disableUpdateProfileOnFirstLogin);
-        createUser(bc.consumerRealmName(), "consumer", "password", "FirstName", "LastName", "consumer@localhost.com");
-
-        driver.navigate().to(getAccountUrl(getConsumerRoot(), bc.consumerRealmName()));
-        loginPage.login("consumer", "password");
-
-        accountPage.federatedIdentity();
-
-        accountFederatedIdentityPage.clickAddProvider(bc.getIDPAlias());
-        this.loginPage.login(bc.getUserLogin(), bc.getUserPassword());
-
-        // User rejected consent
-        grantPage.assertCurrent();
-        grantPage.cancel();
-
-        // Assert account error page with "consentDenied" error displayed
-        accountFederatedIdentityPage.assertCurrent();
-        Assert.assertEquals("Consent denied.", accountFederatedIdentityPage.getError());
     }
 }

@@ -22,20 +22,20 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Set;
 
-import javax.persistence.Access;
-import javax.persistence.AccessType;
-import javax.persistence.CascadeType;
-import javax.persistence.CollectionTable;
-import javax.persistence.Column;
-import javax.persistence.ElementCollection;
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.JoinColumn;
-import javax.persistence.NamedQueries;
-import javax.persistence.NamedQuery;
-import javax.persistence.OneToMany;
-import javax.persistence.Table;
-import javax.persistence.UniqueConstraint;
+import jakarta.persistence.Access;
+import jakarta.persistence.AccessType;
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.CollectionTable;
+import jakarta.persistence.Column;
+import jakarta.persistence.ElementCollection;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.NamedQueries;
+import jakarta.persistence.NamedQuery;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 
 import org.hibernate.annotations.Nationalized;
 
@@ -60,7 +60,7 @@ public class ClientScopeEntity {
     @Column(name = "DESCRIPTION")
     private String description;
     @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "clientScope")
-    Collection<ProtocolMapperEntity> protocolMappers;
+    Collection<ProtocolMapperEntity> protocolMappers = new LinkedList<>();
 
     @Column(name = "REALM_ID")
     protected String realmId;
@@ -69,7 +69,7 @@ public class ClientScopeEntity {
     private String protocol;
 
     @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "clientScope")
-    protected Collection<ClientScopeAttributeEntity> attributes;
+    protected Collection<ClientScopeAttributeEntity> attributes = new LinkedList<>();
 
     @ElementCollection
     @Column(name="ROLE_ID")

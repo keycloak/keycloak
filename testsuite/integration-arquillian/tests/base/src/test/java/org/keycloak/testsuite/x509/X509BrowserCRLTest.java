@@ -174,6 +174,21 @@ public class X509BrowserCRLTest extends AbstractX509AuthenticationTest {
         assertLoginFailedDueRevokedCertificate();
     }
 
+    @Test
+    public void loginWithMultipleRevocationListsUsingInvalidCert() {
+        X509AuthenticatorConfigModel config =
+                new X509AuthenticatorConfigModel()
+                        .setCRLEnabled(true)
+                        .setCRLRelativePath(CRLRule.CRL_RESPONDER_ORIGIN + "/" + INVALID_CRL_PATH)
+                        .setConfirmationPageAllowed(true)
+                        .setMappingSourceType(SUBJECTDN_EMAIL)
+                        .setUserIdentityMapperType(USERNAME_EMAIL);
+        AuthenticatorConfigRepresentation cfg = newConfig("x509-browser-config", config.getConfig());
+        String cfgId = createConfig(browserExecution.getId(), cfg);
+        Assert.assertNotNull(cfgId);
+
+        x509BrowserLogin(config, userId, "test-user@localhost", "test-user@localhost");
+    }
 
     @Test
     public void loginFailedWithRevocationListFromDistributionPoints() {

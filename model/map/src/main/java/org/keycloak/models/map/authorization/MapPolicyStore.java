@@ -25,13 +25,12 @@ import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.model.Scope;
 import org.keycloak.authorization.store.PolicyStore;
-import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.map.authorization.adapter.MapPolicyAdapter;
 import org.keycloak.models.map.authorization.entity.MapPolicyEntity;
-import org.keycloak.models.map.authorization.entity.MapPolicyEntityImpl;
-import org.keycloak.models.map.storage.MapKeycloakTransaction;
+import org.keycloak.models.map.common.DeepCloner;
+import org.keycloak.models.map.common.HasRealmId;
 import org.keycloak.models.map.storage.MapStorage;
 import org.keycloak.models.map.storage.ModelCriteriaBuilder.Operator;
 import org.keycloak.models.map.storage.criteria.DefaultModelCriteria;
@@ -53,16 +52,24 @@ public class MapPolicyStore implements PolicyStore {
 
     private static final Logger LOG = Logger.getLogger(MapPolicyStore.class);
     private final AuthorizationProvider authorizationProvider;
-    final MapKeycloakTransaction<MapPolicyEntity, Policy> tx;
+    final MapStorage<MapPolicyEntity, Policy> store;
+    private final boolean storeHasRealmId;
 
-    public MapPolicyStore(KeycloakSession session, MapStorage<MapPolicyEntity, Policy> policyStore, AuthorizationProvider provider) {
+    public MapPolicyStore(MapStorage<MapPolicyEntity, Policy> policyStore, AuthorizationProvider provider) {
         this.authorizationProvider = provider;
-        this.tx = policyStore.createTransaction(session);
-        session.getTransactionManager().enlist(tx);
+        this.store = policyStore;
+        this.storeHasRealmId = store instanceof HasRealmId;
     }
 
     private Function<MapPolicyEntity, Policy> entityToAdapterFunc(RealmModel realm, ResourceServer resourceServer) {
         return origEntity -> new MapPolicyAdapter(realm, resourceServer, origEntity, authorizationProvider.getStoreFactory());
+    }
+
+    private MapStorage<MapPolicyEntity, Policy> storeWithRealm(RealmModel realm) {
+        if (storeHasRealmId) {
+            ((HasRealmId) store).setRealmId(realm == null ? null : realm.getId());
+        }
+        return store;
     }
 
     private DefaultModelCriteria<Policy> forRealmAndResourceServer(RealmModel realm, ResourceServer resourceServer) {
@@ -84,19 +91,19 @@ public class MapPolicyStore implements PolicyStore {
         DefaultModelCriteria<Policy> mcb = forRealmAndResourceServer(realm, resourceServer)
                 .compare(SearchableFields.NAME, Operator.EQ, representation.getName());
 
-        if (tx.getCount(withCriteria(mcb)) > 0) {
+        if (storeWithRealm(realm).exists(withCriteria(mcb))) {
             throw new ModelDuplicateException("Policy with name '" + representation.getName() + "' for " + resourceServer.getId() + " already exists");
         }
 
         String uid = representation.getId();
-        MapPolicyEntity entity = new MapPolicyEntityImpl();
+        MapPolicyEntity entity = DeepCloner.DUMB_CLONER.newInstance(MapPolicyEntity.class);
         entity.setId(uid);
         entity.setType(representation.getType());
         entity.setName(representation.getName());
         entity.setResourceServerId(resourceServer.getId());
         entity.setRealmId(resourceServer.getRealm().getId());
 
-        entity = tx.create(entity);
+        entity = storeWithRealm(realm).create(entity);
 
         return entity == null ? null : entityToAdapterFunc(realm, resourceServer).apply(entity);
     }
@@ -108,7 +115,7 @@ public class MapPolicyStore implements PolicyStore {
         Policy policyEntity = findById(realm, null, id);
         if (policyEntity == null) return;
 
-        tx.delete(id);
+        storeWithRealm(realm).delete(id);
     }
 
     @Override
@@ -117,7 +124,7 @@ public class MapPolicyStore implements PolicyStore {
 
         if (id == null) return null;
 
-        return tx.read(withCriteria(forRealmAndResourceServer(realm, resourceServer)
+        return storeWithRealm(realm).read(withCriteria(forRealmAndResourceServer(realm, resourceServer)
                 .compare(SearchableFields.ID, Operator.EQ, id)))
                 .findFirst()
                 .map(entityToAdapterFunc(realm, resourceServer))
@@ -129,7 +136,7 @@ public class MapPolicyStore implements PolicyStore {
         LOG.tracef("findByName(%s, %s)%s", name, resourceServer, getShortStackTrace());
         RealmModel realm = resourceServer.getRealm();
 
-        return tx.read(withCriteria(forRealmAndResourceServer(realm, resourceServer)
+        return storeWithRealm(realm).read(withCriteria(forRealmAndResourceServer(realm, resourceServer)
                 .compare(SearchableFields.NAME, Operator.EQ, name)))
                 .findFirst()
                 .map(entityToAdapterFunc(realm, resourceServer))
@@ -141,7 +148,7 @@ public class MapPolicyStore implements PolicyStore {
         LOG.tracef("findByResourceServer(%s)%s", resourceServer, getShortStackTrace());
         RealmModel realm = resourceServer.getRealm();
 
-        return tx.read(withCriteria(forRealmAndResourceServer(realm, resourceServer)))
+        return storeWithRealm(realm).read(withCriteria(forRealmAndResourceServer(realm, resourceServer)))
                 .map(entityToAdapterFunc(realm, resourceServer))
                 .collect(Collectors.toList());
     }
@@ -161,7 +168,7 @@ public class MapPolicyStore implements PolicyStore {
             mcb = mcb.compare(SearchableFields.OWNER, Operator.NOT_EXISTS);
         }
 
-        return tx.read(withCriteria(mcb).pagination(firstResult, maxResults, SearchableFields.NAME))
+        return storeWithRealm(realm).read(withCriteria(mcb).pagination(firstResult, maxResults, SearchableFields.NAME))
                 .map(entityToAdapterFunc(realm, resourceServer))
                 .collect(Collectors.toList());
     }
@@ -179,11 +186,11 @@ public class MapPolicyStore implements PolicyStore {
                 return mcb.compare(name.getSearchableModelField(), Operator.IN, Arrays.asList(value));
             case PERMISSION: {
                 mcb = mcb.compare(SearchableFields.TYPE, Operator.IN, Arrays.asList("resource", "scope", "uma"));
-                
+
                 if (!Boolean.parseBoolean(value[0])) {
                     mcb = DefaultModelCriteria.<Policy>criteria().not(mcb); // TODO: create NOT_IN operator
                 }
-                
+
                 return mcb;
             }
             case ANY_OWNER:
@@ -192,7 +199,7 @@ public class MapPolicyStore implements PolicyStore {
                 if (value.length != 2) {
                     throw new IllegalArgumentException("Config filter option requires value with two items: [config_name, expected_config_value]");
                 }
-                
+
                 value[1] = "%" + value[1] + "%";
                 return mcb.compare(SearchableFields.CONFIG, Operator.LIKE, (Object[]) value);
             case TYPE:
@@ -208,7 +215,7 @@ public class MapPolicyStore implements PolicyStore {
     public void findByResource(ResourceServer resourceServer, Resource resource, Consumer<Policy> consumer) {
         LOG.tracef("findByResource(%s, %s, %s)%s", resourceServer, resource, consumer, getShortStackTrace());
         RealmModel realm = resourceServer.getRealm();
-        tx.read(withCriteria(forRealmAndResourceServer(realm, resourceServer)
+        storeWithRealm(realm).read(withCriteria(forRealmAndResourceServer(realm, resourceServer)
                 .compare(SearchableFields.RESOURCE_ID, Operator.EQ, resource.getId())))
                 .map(entityToAdapterFunc(realm, resourceServer))
                 .forEach(consumer);
@@ -219,7 +226,7 @@ public class MapPolicyStore implements PolicyStore {
         LOG.tracef("findByResourceType(%s, %s)%s", resourceServer, type, getShortStackTrace());
         RealmModel realm = resourceServer.getRealm();
 
-        tx.read(withCriteria(forRealmAndResourceServer(realm, resourceServer)
+        storeWithRealm(realm).read(withCriteria(forRealmAndResourceServer(realm, resourceServer)
                 .compare(SearchableFields.CONFIG, Operator.LIKE, (Object[]) new String[]{"defaultResourceType", type})))
                 .map(entityToAdapterFunc(realm, resourceServer))
                 .forEach(policyConsumer);
@@ -230,7 +237,7 @@ public class MapPolicyStore implements PolicyStore {
         LOG.tracef("findByScopes(%s, %s)%s", resourceServer, scopes, getShortStackTrace());
         RealmModel realm = resourceServer.getRealm();
 
-        return tx.read(withCriteria(forRealmAndResourceServer(realm, resourceServer)
+        return storeWithRealm(realm).read(withCriteria(forRealmAndResourceServer(realm, resourceServer)
                 .compare(SearchableFields.SCOPE_ID, Operator.IN, scopes.stream().map(Scope::getId))))
                 .map(entityToAdapterFunc(realm, resourceServer))
                 .collect(Collectors.toList());
@@ -252,7 +259,7 @@ public class MapPolicyStore implements PolicyStore {
                     .compare(SearchableFields.CONFIG, Operator.NOT_EXISTS, (Object[]) new String[] {"defaultResourceType"});
         }
 
-        tx.read(withCriteria(mcb)).map(entityToAdapterFunc(realm, resourceServer)).forEach(consumer);
+        storeWithRealm(realm).read(withCriteria(mcb)).map(entityToAdapterFunc(realm, resourceServer)).forEach(consumer);
     }
 
     @Override
@@ -260,7 +267,7 @@ public class MapPolicyStore implements PolicyStore {
         LOG.tracef("findByType(%s, %s)%s", resourceServer, type, getShortStackTrace());
         RealmModel realm = resourceServer.getRealm();
 
-        return tx.read(withCriteria(forRealmAndResourceServer(realm, resourceServer)
+        return storeWithRealm(realm).read(withCriteria(forRealmAndResourceServer(realm, resourceServer)
                 .compare(SearchableFields.TYPE, Operator.EQ, type)))
                 .map(entityToAdapterFunc(realm, resourceServer))
                 .collect(Collectors.toList());
@@ -269,7 +276,7 @@ public class MapPolicyStore implements PolicyStore {
     @Override
     public List<Policy> findDependentPolicies(ResourceServer resourceServer, String id) {
         RealmModel realm = resourceServer.getRealm();
-        return tx.read(withCriteria(forRealmAndResourceServer(realm, resourceServer)
+        return storeWithRealm(realm).read(withCriteria(forRealmAndResourceServer(realm, resourceServer)
                 .compare(SearchableFields.ASSOCIATED_POLICY_ID, Operator.EQ, id)))
                     .map(entityToAdapterFunc(realm, resourceServer))
                     .collect(Collectors.toList());
@@ -281,12 +288,12 @@ public class MapPolicyStore implements PolicyStore {
         DefaultModelCriteria<Policy> mcb = criteria();
         mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId());
 
-        tx.delete(withCriteria(mcb));
+        storeWithRealm(realm).delete(withCriteria(mcb));
     }
 
-    public void preRemove(ResourceServer resourceServer) {
-        LOG.tracef("preRemove(%s)%s", resourceServer, getShortStackTrace());
+    public void preRemove(RealmModel realm, ResourceServer resourceServer) {
+        LOG.tracef("preRemove(%s, %s)%s", realm, resourceServer, getShortStackTrace());
 
-        tx.delete(withCriteria(forRealmAndResourceServer(resourceServer.getRealm(), resourceServer)));
+        storeWithRealm(realm).delete(withCriteria(forRealmAndResourceServer(resourceServer.getRealm(), resourceServer)));
     }
 }

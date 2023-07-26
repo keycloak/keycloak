@@ -48,7 +48,7 @@ public abstract class AbstractEventTest extends AbstractAuthTest {
     @Override
     public void setDefaultPageUriParameters() {
         testRealmPage.setAuthRealm("test");
-        accountPage.setAuthRealm("test");
+        oauth.realm("test");
     }
 
     protected void saveConfig() {

@@ -27,6 +27,7 @@ import org.keycloak.federation.sssd.impl.PAMAuthenticator;
 import org.keycloak.models.*;
 import org.keycloak.models.credential.PasswordCredentialModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.storage.ReadOnlyException;
 import org.keycloak.storage.UserStoragePrivateUtil;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.UserStorageProviderModel;
@@ -111,8 +112,12 @@ public class SSSDFederationProvider implements UserStorageProvider,
     }
 
     protected UserModel importUserToKeycloak(RealmModel realm, String username) {
-        Sssd sssd = new Sssd(username);
+        Sssd sssd = new Sssd(username, factory.getDbusConnection());
         User sssdUser = sssd.getUser();
+        if (sssdUser == null) {
+            return null;
+        }
+
         logger.debugf("Creating SSSD user: %s to local Keycloak storage", username);
         UserModel user = UserStoragePrivateUtil.userLocalStorage(session).addUser(realm, username);
         user.setEnabled(true);
@@ -158,8 +163,8 @@ public class SSSDFederationProvider implements UserStorageProvider,
     }
 
     public boolean isValid(RealmModel realm, UserModel local) {
-        User user = new Sssd(local.getUsername()).getUser();
-        return user.equals(local);
+        User user = new Sssd(local.getUsername(), factory.getDbusConnection()).getUser();
+        return user != null && user.equals(local);
     }
 
     @Override
@@ -191,12 +196,11 @@ public class SSSDFederationProvider implements UserStorageProvider,
 
     @Override
     public void close() {
-        Sssd.disconnect();
     }
 
     @Override
     public boolean updateCredential(RealmModel realm, UserModel user, CredentialInput input) {
-        throw new IllegalStateException("You can't update your password as your account is read only.");
+        throw new ReadOnlyException("You can't update your password as your account is read only.");
     }
 
     @Override

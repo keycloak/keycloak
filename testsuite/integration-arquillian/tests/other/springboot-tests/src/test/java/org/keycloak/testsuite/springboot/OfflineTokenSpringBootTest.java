@@ -1,7 +1,6 @@
 package org.keycloak.testsuite.springboot;
 
 import org.eclipse.persistence.annotations.BatchFetch;
-import org.hibernate.annotations.SelectBeforeUpdate;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Assert;
 import org.junit.Before;
@@ -16,15 +15,18 @@ import org.keycloak.services.Urls;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
-import org.keycloak.testsuite.pages.AccountApplicationsPage;
 import org.keycloak.testsuite.pages.OAuthGrantPage;
 import org.keycloak.testsuite.util.ClientManager;
 import org.keycloak.testsuite.util.WaitUtils;
+import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.util.TokenUtil;
 import org.openqa.selenium.By;
 
 import javax.ws.rs.core.UriBuilder;
 import java.util.List;
+import java.util.Map;
+import java.util.LinkedHashMap;
+import java.util.ArrayList;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItem;
@@ -37,15 +39,12 @@ import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
 import static org.keycloak.testsuite.util.WaitUtils.pause;
 import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
 
-@DisableFeature(value = Profile.Feature.ACCOUNT2, skipRestart = true) // TODO remove this (KEYCLOAK-16228)
 public class OfflineTokenSpringBootTest extends AbstractSpringBootTest {
     private static final String SERVLET_URL = BASE_URL + "/TokenServlet";
+    private final String TEST_REALM = "test";
 
     @Rule
     public AssertEvents events = new AssertEvents(this);
-
-    @Page
-    private AccountApplicationsPage accountAppPage;
 
     @Page
     private OAuthGrantPage oauthGrantPage;
@@ -118,23 +117,18 @@ public class OfflineTokenSpringBootTest extends AbstractSpringBootTest {
         events.clear();
 
         // Go to account service and revoke grant
-        accountAppPage.open();
-        waitForPageToLoad();
+        List<Map<String, Object>> userConsents = AccountHelper.getUserConsents(adminClient.realm(TEST_REALM), USER_LOGIN);
+        String grantValue = String.valueOf(((LinkedHashMap) ((ArrayList) userConsents.get(0).get("additionalGrants")).get(0)).get("key"));
+        assertThat(userConsents, hasSize(1));
+        Assert.assertEquals("Offline Token", grantValue);
 
-        List<String> additionalGrants = accountAppPage.getApplications().get(CLIENT_ID).getAdditionalGrants();
-        assertThat(additionalGrants, hasSize(1));
-        assertThat(additionalGrants, hasItem("Offline Token"));
-
-        accountAppPage.revokeGrant(CLIENT_ID);
-
-        assertThat(accountAppPage.getApplications().get(CLIENT_ID).getAdditionalGrants(), hasSize(0));
+        AccountHelper.revokeConsents(adminClient.realm(TEST_REALM), USER_LOGIN, CLIENT_ID);
+        userConsents = AccountHelper.getUserConsents(adminClient.realm(TEST_REALM), USER_LOGIN);
+        Assert.assertEquals(userConsents.size(), 0);
 
         UserRepresentation userRepresentation =
                ApiUtil.findUserByUsername(realmsResouce().realm(REALM_NAME), USER_LOGIN);
         assertThat(userRepresentation, is(notNullValue()));
-
-        events.expect(EventType.REVOKE_GRANT).realm(REALM_ID).user(userRepresentation.getId())
-                .client("account").detail(Details.REVOKED_CLIENT, CLIENT_ID).assertEvent();
 
         // Assert refresh doesn't work now (increase time one more time)
         setAdapterAndServerTimeOffset(19999, SERVLET_URL);
@@ -173,14 +167,10 @@ public class OfflineTokenSpringBootTest extends AbstractSpringBootTest {
         tokenPage.assertIsCurrent();
         assertThat(tokenPage.getRefreshToken().getType(), is(equalTo(TokenUtil.TOKEN_TYPE_OFFLINE)));
 
-        String accountAppPageUrl =
-            Urls.accountApplicationsPage(getAuthServerRoot(), REALM_NAME).toString();
-        driver.navigate().to(accountAppPageUrl);
-        waitForPageToLoad();
-
-        AccountApplicationsPage.AppEntry offlineClient = accountAppPage.getApplications().get(CLIENT_ID);
-        assertThat(offlineClient.getClientScopesGranted(), hasItem(OAuthGrantPage.OFFLINE_ACCESS_CONSENT_TEXT));
-        assertThat(offlineClient.getAdditionalGrants(), hasItem("Offline Token"));
+        List<Map<String, Object>> userConsents = AccountHelper.getUserConsents(adminClient.realm(TEST_REALM), USER_LOGIN);
+        String grantValue = String.valueOf(((LinkedHashMap) ((ArrayList) userConsents.get(0).get("additionalGrants")).get(0)).get("key"));
+        Assert.assertTrue(((List) userConsents.get(0).get("grantedClientScopes")).stream().anyMatch(p -> p.equals("offline_access")));
+        Assert.assertEquals("Offline Token", grantValue);
 
         //This was necessary to be introduced, otherwise other testcases will fail
         logout(SERVLET_URL);

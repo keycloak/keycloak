@@ -26,23 +26,21 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-import javax.persistence.Basic;
-import javax.persistence.CascadeType;
-import javax.persistence.CollectionTable;
-import javax.persistence.Column;
-import javax.persistence.ElementCollection;
-import javax.persistence.Entity;
-import javax.persistence.FetchType;
-import javax.persistence.Id;
-import javax.persistence.JoinColumn;
-import javax.persistence.OneToMany;
-import javax.persistence.Table;
-import javax.persistence.UniqueConstraint;
-import javax.persistence.Version;
+import jakarta.persistence.Basic;
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.CollectionTable;
+import jakarta.persistence.Column;
+import jakarta.persistence.ElementCollection;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
+import jakarta.persistence.Version;
 
 import org.hibernate.annotations.Type;
-import org.hibernate.annotations.TypeDef;
-import org.hibernate.annotations.TypeDefs;
 import org.keycloak.models.map.common.DeepCloner;
 import org.keycloak.models.map.common.UuidValidator;
 import org.keycloak.models.map.storage.jpa.Constants;
@@ -54,6 +52,7 @@ import org.keycloak.models.map.user.MapUserEntity;
 import org.keycloak.models.map.user.MapUserFederatedIdentityEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
+import java.util.Optional;
 import static org.keycloak.models.map.storage.jpa.JpaMapStorageProviderFactory.CLONER;
 
 /**
@@ -69,7 +68,6 @@ import static org.keycloak.models.map.storage.jpa.JpaMapStorageProviderFactory.C
                 @UniqueConstraint(columnNames = {"realmId", "username", "usernameWithCase"}),
                 @UniqueConstraint(columnNames = {"realmId", "emailConstraint"})
         })
-@TypeDefs({@TypeDef(name = "jsonb", typeClass = JsonbType.class)})
 @SuppressWarnings("ConstantConditions")
 public class JpaUserEntity extends MapUserEntity.AbstractUserEntity implements JpaRootVersionedEntity {
 
@@ -82,7 +80,7 @@ public class JpaUserEntity extends MapUserEntity.AbstractUserEntity implements J
     @Column
     private int version;
 
-    @Type(type = "jsonb")
+    @Type(JsonbType.class)
     @Column(columnDefinition = "jsonb")
     private final JpaUserMetadata metadata;
 
@@ -472,6 +470,14 @@ public class JpaUserEntity extends MapUserEntity.AbstractUserEntity implements J
     }
 
     @Override
+    public Optional<MapUserConsentEntity> getUserConsent(String clientId) {
+        return this.consents.stream()
+          .map(MapUserConsentEntity.class::cast)
+          .filter(muce -> Objects.equals(muce.getClientId(), clientId))
+          .findAny();
+    }
+
+    @Override
     public void setUserConsents(Set<MapUserConsentEntity> userConsents) {
         this.consents.clear();
         if (userConsents != null) {
@@ -489,7 +495,7 @@ public class JpaUserEntity extends MapUserEntity.AbstractUserEntity implements J
 
     @Override
     public Boolean removeUserConsent(MapUserConsentEntity userConsentEntity) {
-        return this.consents.removeIf(uc -> Objects.equals(uc.getClientId(), userConsentEntity.getClientId()));
+        return removeUserConsent(userConsentEntity.getClientId());
     }
 
     @Override
@@ -504,6 +510,11 @@ public class JpaUserEntity extends MapUserEntity.AbstractUserEntity implements J
     }
 
     @Override
+    public Optional<MapUserCredentialEntity> getCredential(String id) {
+        return metadata.getCredential(id);
+    }
+
+    @Override
     public void setCredentials(List<MapUserCredentialEntity> credentials) {
         this.metadata.setCredentials(credentials);
     }
@@ -515,13 +526,26 @@ public class JpaUserEntity extends MapUserEntity.AbstractUserEntity implements J
 
     @Override
     public Boolean removeCredential(MapUserCredentialEntity credentialEntity) {
-        return super.removeCredential(credentialEntity.getId());
+        return removeCredential(credentialEntity.getId());
+    }
+
+    @Override
+    public Boolean removeCredential(String id) {
+        return metadata.removeCredential(id);
     }
 
     //user federated identities
     @Override
     public Set<MapUserFederatedIdentityEntity> getFederatedIdentities() {
         return this.federatedIdentities.stream().map(MapUserFederatedIdentityEntity.class::cast).collect(Collectors.toSet());
+    }
+
+    @Override
+    public Optional<MapUserFederatedIdentityEntity> getFederatedIdentity(String identityProviderId) {
+        return this.federatedIdentities.stream()
+          .map(MapUserFederatedIdentityEntity.class::cast)
+          .filter(muce -> Objects.equals(muce.getIdentityProvider(), identityProviderId))
+          .findAny();
     }
 
     @Override
@@ -542,7 +566,7 @@ public class JpaUserEntity extends MapUserEntity.AbstractUserEntity implements J
 
     @Override
     public Boolean removeFederatedIdentity(MapUserFederatedIdentityEntity federatedIdentity) {
-        return this.federatedIdentities.removeIf(fi -> Objects.equals(fi.getIdentityProvider(), federatedIdentity.getIdentityProvider()));
+        return removeFederatedIdentity(federatedIdentity.getIdentityProvider());
     }
 
     @Override

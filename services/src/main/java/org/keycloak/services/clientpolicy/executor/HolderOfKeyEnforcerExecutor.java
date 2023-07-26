@@ -17,7 +17,7 @@
 
 package org.keycloak.services.clientpolicy.executor;
 
-import org.jboss.resteasy.spi.HttpRequest;
+import org.keycloak.http.HttpRequest;
 
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
@@ -39,8 +39,8 @@ import org.keycloak.services.util.MtlsHoKTokenUtil;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.core.Response;
 
 public class HolderOfKeyEnforcerExecutor implements ClientPolicyExecutorProvider<HolderOfKeyEnforcerExecutor.Configuration> {
 
@@ -81,7 +81,7 @@ public class HolderOfKeyEnforcerExecutor implements ClientPolicyExecutorProvider
 
     @Override
     public void executeOnEvent(ClientPolicyContext context) throws ClientPolicyException {
-        HttpRequest request = session.getContext().getContextObject(HttpRequest.class);
+        HttpRequest request = session.getContext().getHttpRequest();
         switch (context.getEvent()) {
             case REGISTER:
             case UPDATE:
@@ -92,7 +92,7 @@ public class HolderOfKeyEnforcerExecutor implements ClientPolicyExecutorProvider
             case TOKEN_REQUEST:
             case SERVICE_ACCOUNT_TOKEN_REQUEST:
             case BACKCHANNEL_TOKEN_REQUEST:
-                AccessToken.CertConf certConf = MtlsHoKTokenUtil.bindTokenWithClientCertificate(request, session);
+                AccessToken.Confirmation certConf = MtlsHoKTokenUtil.bindTokenWithClientCertificate(request, session);
                 if (certConf == null) {
                     throw new ClientPolicyException(OAuthErrorException.INVALID_REQUEST, "Client Certification missing for MTLS HoK Token Binding");
                 }
@@ -143,7 +143,7 @@ public class HolderOfKeyEnforcerExecutor implements ClientPolicyExecutorProvider
     }
 
     private void checkUserInfo(UserInfoRequestContext context, HttpRequest request) throws ClientPolicyException {
-        String encodedAccessToken = context.getTokenString();
+        String encodedAccessToken = context.getTokenForUserInfo().getToken();
 
         AccessToken accessToken = session.tokens().decode(encodedAccessToken, AccessToken.class);
         if (accessToken == null) {

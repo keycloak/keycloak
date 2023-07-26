@@ -73,6 +73,11 @@ public class InitializerState extends SessionEntity {
         return segments.cardinality() == segmentsCount;
     }
 
+    /** Return indication of progress - changes upon progress */
+    public int getProgressIndicator() {
+        return segments.hashCode();
+    }
+
     /** Return next un-finished segments in the next row of segments.
      * @param segmentToLoad The segment we are loading
      * @param maxSegmentCount The max segment to load

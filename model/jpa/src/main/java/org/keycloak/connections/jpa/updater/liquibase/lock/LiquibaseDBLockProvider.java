@@ -40,7 +40,7 @@ public class LiquibaseDBLockProvider implements DBLockProvider {
     private static final Logger logger = Logger.getLogger(LiquibaseDBLockProvider.class);
 
     // 10 should be sufficient
-    private int DEFAULT_MAX_ATTEMPTS = 10;
+    private final int DEFAULT_MAX_ATTEMPTS = 10;
 
 
     private final LiquibaseDBLockProviderFactory factory;
@@ -83,9 +83,6 @@ public class LiquibaseDBLockProvider implements DBLockProvider {
     // Assumed transaction was rolled-back and we want to start with new DB connection
     private void restart() {
         safeCloseConnection();
-        this.dbConnection = null;
-        this.lockService = null;
-        initialized = false;
         lazyInit();
     }
 
@@ -187,6 +184,9 @@ public class LiquibaseDBLockProvider implements DBLockProvider {
         if (dbConnection != null) {
             try {
                 dbConnection.close();
+                dbConnection = null;
+                lockService = null;
+                initialized = false;
             } catch (SQLException e) {
                 logger.warn("Failed to close connection", e);
             }

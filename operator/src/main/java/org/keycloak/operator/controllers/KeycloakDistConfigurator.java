@@ -29,7 +29,7 @@ import io.quarkus.logging.Log;
 import org.keycloak.common.util.CollectionUtil;
 import org.keycloak.operator.Constants;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
-import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusBuilder;
+import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusAggregator;
 import org.keycloak.operator.crds.v2alpha1.deployment.ValueOrSecret;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.DatabaseSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.FeatureSpec;
@@ -85,7 +85,7 @@ public class KeycloakDistConfigurator {
      *
      * @param status Keycloak Status builder
      */
-    public void validateOptions(KeycloakStatusBuilder status) {
+    public void validateOptions(KeycloakStatusAggregator status) {
         assumeFirstClassCitizens(status);
     }
 
@@ -149,8 +149,8 @@ public class KeycloakDistConfigurator {
                 .withMountPath(Constants.CERTIFICATES_FOLDER)
                 .build();
 
-        deployment.getSpec().getTemplate().getSpec().getVolumes().add(volume);
-        kcContainer.getVolumeMounts().add(volumeMount);
+        deployment.getSpec().getTemplate().getSpec().getVolumes().add(0, volume);
+        kcContainer.getVolumeMounts().add(0, volumeMount);
     }
 
     public void configureDatabase() {
@@ -175,7 +175,7 @@ public class KeycloakDistConfigurator {
      *
      * @param status                    Status of the deployment
      */
-    protected void assumeFirstClassCitizens(KeycloakStatusBuilder status) {
+    protected void assumeFirstClassCitizens(KeycloakStatusAggregator status) {
         final var serverConfigNames = keycloakCR
                 .getSpec()
                 .getAdditionalOptions()
@@ -252,8 +252,10 @@ public class KeycloakDistConfigurator {
                 envVarBuilder.withValue(String.valueOf(value));
             }
 
-
-            envVars.add(envVarBuilder.build());
+            var toAdd = envVarBuilder.build();
+            if (!envVars.stream().anyMatch(envVar -> envVar.getName().equals(toAdd.getName()))) {
+                envVars.add(toAdd);
+            }
 
             return this;
         }

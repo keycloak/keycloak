@@ -18,11 +18,11 @@
 package org.keycloak.testsuite.model.session;
 
 import org.junit.Test;
-import org.keycloak.common.util.Time;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RealmProvider;
+import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.UserSessionProvider;
 import org.keycloak.models.map.userSession.MapUserSessionProviderFactory;
 import org.keycloak.testsuite.model.KeycloakModelTest;
@@ -40,7 +40,7 @@ public class UserSessionExpirationTest extends KeycloakModelTest {
 
     @Override
     public void createEnvironment(KeycloakSession s) {
-        RealmModel realm = s.realms().createRealm("test");
+        RealmModel realm = createRealm(s, "test");
         realm.setDefaultRole(s.roles().addRealmRole(realm, Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + realm.getName()));
 
         s.users().addUser(realm, "user1").setEmail("user1@localhost");
@@ -53,23 +53,22 @@ public class UserSessionExpirationTest extends KeycloakModelTest {
     }
 
     @Test
-    public void testClientSessionIdleTimeout() {
+    public void testSsoSessionIdleTimeout() {
 
-        // Set low ClientSessionIdleTimeout
+        // Set low ssoSessionIdleTimeout
         withRealm(realmId, (session, realm) -> {
-            realm.setSsoSessionIdleTimeout(1800);
+            realm.setSsoSessionIdleTimeout(5);
             realm.setSsoSessionMaxLifespan(36000);
             realm.setClientSessionIdleTimeout(5);
             return null;
         });
 
-        String uSId= withRealm(realmId, (session, realm) -> session.sessions().createUserSession(realm, session.users().getUserByUsername(realm, "user1"), "user1", "127.0.0.1", "form", true, null, null).getId());
+        String uSId= withRealm(realmId, (session, realm) -> session.sessions().createUserSession(null, realm, session.users().getUserByUsername(realm, "user1"), "user1", "127.0.0.1", "form", true, null, null, UserSessionModel.SessionPersistenceState.PERSISTENT).getId());
 
         assertThat(withRealm(realmId, (session, realm) -> session.sessions().getUserSession(realm, uSId)), notNullValue());
 
-        Time.setOffset(5);
+        setTimeOffset(5);
 
         assertThat(withRealm(realmId, (session, realm) -> session.sessions().getUserSession(realm, uSId)), nullValue());
-
     }
 }

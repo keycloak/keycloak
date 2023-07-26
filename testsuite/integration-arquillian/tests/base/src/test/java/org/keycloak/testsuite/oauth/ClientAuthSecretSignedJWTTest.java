@@ -24,8 +24,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-import javax.ws.rs.BadRequestException;
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.BadRequestException;
+import jakarta.ws.rs.core.Response;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -42,7 +42,6 @@ import org.jetbrains.annotations.NotNull;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
-import org.keycloak.adapters.authentication.JWTClientSecretCredentialsProvider;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.authentication.authenticators.client.JWTClientSecretAuthenticator;
 import org.keycloak.common.Profile;
@@ -56,6 +55,7 @@ import org.keycloak.events.Details;
 import org.keycloak.models.ClientSecretConstants;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
+import org.keycloak.protocol.oidc.client.authentication.JWTClientSecretCredentialsProvider;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.idm.ClientPoliciesRepresentation;
 import org.keycloak.representations.idm.ClientProfilesRepresentation;
@@ -92,6 +92,9 @@ public class ClientAuthSecretSignedJWTTest extends AbstractKeycloakTest {
     private static final String PROFILE_NAME = "ClientSecretRotationProfile";
     private static final String POLICY_NAME = "ClientSecretRotationPolicy";
     private static final String OIDC = "openid-connect";
+
+    // BCFIPS approved mode requires at least 112 bits (14 characters) long SecretKey for "client-secret-jwt" authentication
+    private static final String CLIENT_SECRET = "atleast-14chars-password";
     private static final ObjectMapper objectMapper = new ObjectMapper();
 
     @Rule
@@ -142,7 +145,7 @@ public class ClientAuthSecretSignedJWTTest extends AbstractKeycloakTest {
             }
         };
         String algorithm = Algorithm.HS256;
-        jwtProvider.setClientSecret("password", algorithm);
+        jwtProvider.setClientSecret(CLIENT_SECRET, algorithm);
         String jwt = jwtProvider.createSignedRequestToken(oauth.getClientId(), getRealmInfoUrl(), algorithm);
         OAuthClient.AccessTokenResponse response = doAccessTokenRequest(code,
                 jwt);
@@ -180,7 +183,6 @@ public class ClientAuthSecretSignedJWTTest extends AbstractKeycloakTest {
         ClientRepresentation clientRep = null;
         final String realmName = "test";
         final String clientId = "test-app";
-        final String clientSecret = "password";
         try {
             clientResource = ApiUtil.findClientByClientId(adminClient.realm(realmName), clientId);
             clientRep = clientResource.toRepresentation();
@@ -188,11 +190,11 @@ public class ClientAuthSecretSignedJWTTest extends AbstractKeycloakTest {
             clientResource.update(clientRep);
 
             oauth.clientId(clientId);
-            oauth.doLogin("test-user@localhost", clientSecret);
+            oauth.doLogin("test-user@localhost", "password");
             events.expectLogin().client(clientId).assertEvent();
 
             String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-            OAuthClient.AccessTokenResponse response = doAccessTokenRequest(code, getClientSignedJWT(clientSecret, 20, Algorithm.HS256));
+            OAuthClient.AccessTokenResponse response = doAccessTokenRequest(code, getClientSignedJWT(CLIENT_SECRET, 20, Algorithm.HS256));
             assertEquals(400, response.getStatusCode());
             assertEquals("invalid_client", response.getError());
         } catch (Exception e) {
@@ -213,7 +215,7 @@ public class ClientAuthSecretSignedJWTTest extends AbstractKeycloakTest {
                 .assertEvent();
 
         String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-        OAuthClient.AccessTokenResponse response = doAccessTokenRequest(code, getClientSignedJWT("password", 20, algorithm));
+        OAuthClient.AccessTokenResponse response = doAccessTokenRequest(code, getClientSignedJWT(CLIENT_SECRET, 20, algorithm));
 
         assertEquals(200, response.getStatusCode());
         oauth.verifyToken(response.getAccessToken());
@@ -245,7 +247,7 @@ public class ClientAuthSecretSignedJWTTest extends AbstractKeycloakTest {
     }
 
     private void processAuthenticateWithAlgorithm(String algorithm, Integer secretLength) throws Exception{
-        String cidConfidential= createClientByAdmin("jwt-client","jwt-client","password",algorithm);
+        String cidConfidential= createClientByAdmin("jwt-client","jwt-client",CLIENT_SECRET,algorithm);
         ClientResource clientResource = adminClient.realm(REALM_NAME).clients().get(cidConfidential);
         configureDefaultProfileAndPolicy();
 
@@ -292,7 +294,7 @@ public class ClientAuthSecretSignedJWTTest extends AbstractKeycloakTest {
                 .assertEvent();
 
         String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-        String clientSignedJWT = getClientSignedJWT("password", 20);
+        String clientSignedJWT = getClientSignedJWT(CLIENT_SECRET, 20);
 
         OAuthClient.AccessTokenResponse response = doAccessTokenRequest(code, clientSignedJWT);
         assertEquals(200, response.getStatusCode());
@@ -329,7 +331,7 @@ public class ClientAuthSecretSignedJWTTest extends AbstractKeycloakTest {
      */
     @Test
     public void authenticateWithInvalidRotatedClientSecretPolicyIsEnable() throws Exception {
-        String cidConfidential= createClientByAdmin("jwt-client","jwt-client","password",Algorithm.HS256);
+        String cidConfidential= createClientByAdmin("jwt-client","jwt-client",CLIENT_SECRET,Algorithm.HS256);
         ClientResource clientResource = adminClient.realm(REALM_NAME).clients().get(cidConfidential);
         configureDefaultProfileAndPolicy();
         String firstSecret = clientResource.getSecret().getValue();

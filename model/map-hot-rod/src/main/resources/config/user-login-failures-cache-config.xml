@@ -15,11 +15,13 @@
   ~ limitations under the License.
   -->
 <distributed-cache name="user-login-failures" mode="SYNC">
-    <indexing>
+    <encoding media-type="application/x-protostream"/>
+    <locking isolation="REPEATABLE_READ" />
+    <transaction mode="FULL_XA"/>
+    <indexing storage="local-heap">
         <indexed-entities>
             <indexed-entity>kc.HotRodUserLoginFailureEntity</indexed-entity>
         </indexed-entities>
     </indexing>
-    <encoding media-type="application/x-protostream"/>
 </distributed-cache>
 

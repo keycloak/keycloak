@@ -27,7 +27,7 @@ public class JpaResourceMetadata extends MapResourceEntityImpl implements Serial
     }
 
     public JpaResourceMetadata() {
-        super();
+        super(DeepCloner.DUMB_CLONER);
     }
 
     private Integer entityVersion;

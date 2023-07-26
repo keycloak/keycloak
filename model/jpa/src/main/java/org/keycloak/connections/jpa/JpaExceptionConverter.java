@@ -16,15 +16,17 @@
  */
 package org.keycloak.connections.jpa;
 
+import org.keycloak.common.Profile;
+import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.provider.ExceptionConverter;
 
-import javax.persistence.PersistenceException;
+import jakarta.persistence.PersistenceException;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class JpaExceptionConverter implements ExceptionConverter {
+public class JpaExceptionConverter implements ExceptionConverter, EnvironmentDependentProviderFactory {
     @Override
     public Throwable convert(Throwable e) {
         if (!(e instanceof PersistenceException)) return null;
@@ -34,5 +36,10 @@ public class JpaExceptionConverter implements ExceptionConverter {
     @Override
     public String getId() {
         return "jpa";
+    }
+
+    @Override
+    public boolean isSupported() {
+        return !Profile.isFeatureEnabled(Profile.Feature.MAP_STORAGE);
     }
 }

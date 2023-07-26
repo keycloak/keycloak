@@ -22,7 +22,12 @@ limitations under the License.
                    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd
                     http://www.liquibase.org/xml/ns/dbchangelog-ext http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-ext.xsd">
 
-    <changeSet author="keycloak" id="users-1">
+    <changeSet author="keycloak" id="users-1.1">
+        <preConditions onSqlOutput="TEST" onFail="MARK_RAN">
+            <not>
+                <changeSetExecuted author="keycloak" id="users-1" changeLogFile="META-INF/users/jpa-users-changelog-1.xml" />
+            </not>
+        </preConditions>
 
         <createTable tableName="kc_user">
             <column name="id" type="UUID">
@@ -159,23 +164,20 @@ limitations under the License.
         <createIndex tableName="kc_user_attribute" indexName="user_attr_fk_root">
             <column name="fk_root"/>
         </createIndex>
-        <createIndex tableName="kc_user_attribute" indexName="user_attr_name_value">
-            <column name="name"/>
-            <column name="VALUE(255)" valueComputed="VALUE(255)"/>
-        </createIndex>
-        <modifySql dbms="postgresql,cockroachdb">
-            <replace replace="VALUE(255)" with="(value::varchar(250))"/>
-        </modifySql>
 
     </changeSet>
 
-    <changeSet author="keycloak" id="users-2" dbms="postgresql">
+    <changeSet author="keycloak" id="users-2.1" dbms="postgresql">
+        <preConditions onSqlOutput="TEST" onFail="MARK_RAN">
+            <not>
+                <changeSetExecuted author="keycloak" id="users-2" changeLogFile="META-INF/users/jpa-users-changelog-1.xml" />
+            </not>
+        </preConditions>
         <!-- this is deferrable and initiallyDeferred as hibernate will first insert new entries and then delete the old by default -->
         <!-- this will not work on cockroachdb as deferred indexes are not supported in version 22.1 yet, therefore, only run it on postgresql -->
         <!-- see https://go.crdb.dev/issue-v/31632/v21.2 for the current status of the implementation -->
         <addUniqueConstraint tableName="kc_user_group" columnNames="user_id, group_id" deferrable="true" initiallyDeferred="true" />
         <addUniqueConstraint tableName="kc_user_role" columnNames="user_id, role_id" deferrable="true" initiallyDeferred="true" />
-        <addUniqueConstraint tableName="kc_user_attribute" columnNames="fk_root, name, value" deferrable="true" initiallyDeferred="true" />
     </changeSet>
 
     <changeSet author="keycloak" id="users-14161">

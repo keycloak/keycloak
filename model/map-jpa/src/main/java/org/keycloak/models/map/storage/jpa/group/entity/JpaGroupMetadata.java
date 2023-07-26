@@ -27,7 +27,7 @@ public class JpaGroupMetadata extends MapGroupEntityImpl implements Serializable
     }
 
     public JpaGroupMetadata() {
-        super();
+        super(DeepCloner.DUMB_CLONER);
     }
 
     private Integer entityVersion;

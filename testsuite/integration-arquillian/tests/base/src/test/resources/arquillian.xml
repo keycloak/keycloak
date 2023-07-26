@@ -654,6 +654,16 @@
         </configuration>
     </container>
 
+    <container qualifier="auth-server-quarkus-embedded" mode="manual" >
+        <configuration>
+            <property name="enabled">${auth.server.quarkus.embedded}</property>
+            <property name="adapterImplClass">
+                org.keycloak.testsuite.arquillian.containers.KeycloakQuarkusEmbeddedDeployableContainer
+            </property>
+            <property name="bindHttpPortOffset">${auth.server.port.offset}</property>
+        </configuration>
+    </container>
+
     <!-- Clustering with Quarkus -->
     <group qualifier="auth-server-quarkus-cluster">
         <container qualifier="auth-server-quarkus-backend1" mode="manual" >
@@ -712,6 +722,7 @@
             <property name="adapterImplClass">org.keycloak.testsuite.arquillian.containers.KeycloakQuarkusServerDeployableContainer</property>
             <property name="bindHttpPortOffset">${auth.server.port.offset}</property>
             <property name="importFile">${migration.import.file.name}</property>
+            <property name="providersPathString">${keycloak.migration.home}</property>
             <property name="javaOpts">
                 -Xms512m
                 -Xmx512m

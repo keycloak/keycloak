@@ -31,13 +31,18 @@ import java.util.Map;
  */
 public class RoleBuilder {
 
-    private RoleRepresentation rep = new RoleRepresentation();
+    private final RoleRepresentation rep;
 
     public static RoleBuilder create() {
-        return new RoleBuilder();
+        return new RoleBuilder(new RoleRepresentation());
     }
 
-    private RoleBuilder() {
+    public static RoleBuilder edit(RoleRepresentation rep) {
+        return new RoleBuilder(rep);
+    }
+
+    private RoleBuilder(RoleRepresentation rep) {
+        this.rep = rep;
     }
 
     public RoleBuilder id(String id) {
@@ -84,7 +89,7 @@ public class RoleBuilder {
         checkCompositesNull();
 
         if (rep.getComposites().getRealm() == null) {
-            rep.getComposites().setRealm(new HashSet<String>());
+            rep.getComposites().setRealm(new HashSet<>());
         }
 
         rep.getComposites().getRealm().add(compositeRole);
@@ -99,11 +104,11 @@ public class RoleBuilder {
         checkCompositesNull();
 
         if (rep.getComposites().getClient() == null) {
-            rep.getComposites().setClient(new HashMap<String, List<String>>());
+            rep.getComposites().setClient(new HashMap<>());
         }
 
         if (rep.getComposites().getClient().get(client) == null) {
-            rep.getComposites().getClient().put(client, new LinkedList<String>());
+            rep.getComposites().getClient().put(client, new LinkedList<>());
         }
 
         rep.getComposites().getClient().get(client).add(compositeRole);

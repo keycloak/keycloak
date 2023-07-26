@@ -68,21 +68,6 @@ public class IdentityBrokerStateTestHelpers {
         }
 
         @Override
-        public Stream<String> getDefaultRolesStream() {
-            return null;
-        }
-
-        @Override
-        public void addDefaultRole(String name) {
-
-        }
-
-        @Override
-        public void removeDefaultRoles(String... defaultRoles) {
-
-        }
-
-        @Override
         public String getClientId() {
             return clientId;
         }
@@ -551,21 +536,6 @@ public class IdentityBrokerStateTestHelpers {
         @Override
         public Stream<RoleModel> searchForRolesStream(String search, Integer first, Integer max) {
             return null;
-        }
-
-        @Override
-        public Stream<String> getDefaultRolesStream() {
-            return null;
-        }
-
-        @Override
-        public void addDefaultRole(String name) {
-
-        }
-
-        @Override
-        public void removeDefaultRoles(String... defaultRoles) {
-
         }
 
         @Override
@@ -1680,11 +1650,6 @@ public class IdentityBrokerStateTestHelpers {
 
         @Override
         public Stream<GroupModel> getTopLevelGroupsStream(Integer first, Integer max) {
-            return null;
-        }
-
-        @Override
-        public Stream<GroupModel> searchForGroupByNameStream(String search, Integer first, Integer max) {
             return null;
         }
 

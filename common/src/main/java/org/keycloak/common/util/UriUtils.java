@@ -20,6 +20,7 @@ package org.keycloak.common.util;
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.util.regex.Pattern;
@@ -45,6 +46,16 @@ public class UriUtils {
 
     public static boolean isOrigin(String url) {
         return originPattern.matcher(url).matches();
+    }
+
+    public static String getHost(String uri) {
+        try {
+            if (uri == null) return null;
+            URI url = new URI(uri);
+            return url.getHost();
+        } catch (URISyntaxException uriSyntaxException) {
+            throw new IllegalArgumentException("URI '" + uri + "' is not valid.");
+        }
     }
 
     public static MultivaluedHashMap<String, String> decodeQueryString(String queryString) {

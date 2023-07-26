@@ -77,7 +77,7 @@ public class IckleQueryMapModelCriteriaBuilderTest {
         DefaultModelCriteria<UserModel> criteria = mcb.compare(UserModel.SearchableFields.REALM_ID, ModelCriteriaBuilder.Operator.EQ, "realm1");
         criteria = criteria.compare(UserModel.SearchableFields.SERVICE_ACCOUNT_CLIENT, ModelCriteriaBuilder.Operator.NOT_EXISTS);
         criteria = mcb.and(criteria, mcb.or(
-                mcb.compare(UserModel.SearchableFields.USERNAME, ModelCriteriaBuilder.Operator.ILIKE, "a"),
+                mcb.compare(UserModel.SearchableFields.USERNAME, ModelCriteriaBuilder.Operator.LIKE, "a"),
                 mcb.compare(UserModel.SearchableFields.EMAIL, ModelCriteriaBuilder.Operator.ILIKE, "a"),
                 mcb.compare(UserModel.SearchableFields.FIRST_NAME, ModelCriteriaBuilder.Operator.ILIKE, "a"),
                 mcb.compare(UserModel.SearchableFields.LAST_NAME, ModelCriteriaBuilder.Operator.ILIKE, "a")
@@ -85,7 +85,17 @@ public class IckleQueryMapModelCriteriaBuilderTest {
 
         IckleQueryMapModelCriteriaBuilder<HotRodUserEntity, UserModel> ickle = criteria.flashToModelCriteriaBuilder(new IckleQueryMapModelCriteriaBuilder<>(HotRodUserEntity.class));
 
-        assertThat(ickle.getIckleQuery(), is(equalTo("FROM kc.HotRodUserEntity c WHERE ((c.realmId = :realmId0) AND (c.serviceAccountClientLink IS NULL OR c.serviceAccountClientLink IS EMPTY) AND ((c.usernameLowercase LIKE :usernameLowercase0) OR (c.email : 'a') OR (c.firstName : 'a') OR (c.lastName : 'a')))")));
+        assertThat(ickle.getIckleQuery(), is(equalTo("FROM kc.HotRodUserEntity c WHERE ((c.realmId = :realmId0) AND (c.serviceAccountClientLink IS NULL OR c.serviceAccountClientLink IS EMPTY) AND ((c.username LIKE :username0) OR (c.email LIKE :email0) OR (c.firstName LIKE :firstName0) OR (c.lastName LIKE :lastName0)))")));
+        assertThat(ickle.getParameters().entrySet(), hasSize(5));
+        assertThat(ickle.getParameters(), allOf(hasEntry("realmId0", "realm1"), hasEntry("username0", "a"), hasEntry("email0", "a"), hasEntry("firstName0", "a"), hasEntry("lastName0", "a")));
+
+        final DefaultModelCriteria<UserModel> mcb2 = criteria();
+        criteria = mcb2.compare(UserModel.SearchableFields.REALM_ID, ModelCriteriaBuilder.Operator.EQ, "realm1")
+                .compare(UserModel.SearchableFields.USERNAME_CASE_INSENSITIVE, ModelCriteriaBuilder.Operator.ILIKE, "a");
+
+        ickle = criteria.flashToModelCriteriaBuilder(new IckleQueryMapModelCriteriaBuilder<>(HotRodUserEntity.class));
+
+        assertThat(ickle.getIckleQuery(), is(equalTo("FROM kc.HotRodUserEntity c WHERE ((c.realmId = :realmId0) AND (c.usernameLowercase LIKE :usernameLowercase0))")));
         assertThat(ickle.getParameters().entrySet(), hasSize(2));
         assertThat(ickle.getParameters(), allOf(hasEntry("realmId0", "realm1"), hasEntry("usernameLowercase0", "a")));
     }

@@ -57,6 +57,15 @@ public class DBLockBasedCacheInitializer extends CacheInitializer {
         return delegate.isCoordinator();
     }
 
+    @Override
+    protected int getProgressIndicator() {
+        return delegate.getProgressIndicator();
+    }
+
+    @Override
+    protected int getStalledTimeoutInSeconds() {
+        return delegate.getStalledTimeoutInSeconds();
+    }
 
     /**
      * Just coordinator will run this. And there is DB-lock, so the delegate.startLoading() will be permitted just by the single DC

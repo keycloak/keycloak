@@ -18,10 +18,9 @@
 
 package org.keycloak.authorization.admin;
 
-import javax.ws.rs.NotFoundException;
-import javax.ws.rs.Path;
+import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.Path;
 
-import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.models.ClientModel;
@@ -58,11 +57,7 @@ public class AuthorizationService {
     }
 
     public ResourceServerService getResourceServerService() {
-        ResourceServerService resource = new ResourceServerService(this.authorization, this.resourceServer, this.client, this.auth, adminEvent);
-
-        ResteasyProviderFactory.getInstance().injectProperties(resource);
-
-        return resource;
+        return new ResourceServerService(this.authorization, this.resourceServer, this.client, this.auth, adminEvent);
     }
 
     public void enable(boolean newClient) {

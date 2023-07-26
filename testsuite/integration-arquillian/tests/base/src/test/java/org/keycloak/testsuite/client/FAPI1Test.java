@@ -32,7 +32,6 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
-import org.keycloak.adapters.authentication.JWTClientSecretCredentialsProvider;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.authentication.authenticators.client.ClientIdAndSecretAuthenticator;
@@ -50,6 +49,7 @@ import org.keycloak.models.Constants;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.oidc.client.authentication.JWTClientSecretCredentialsProvider;
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.IDToken;
@@ -73,6 +73,7 @@ import org.keycloak.testsuite.rest.resource.TestingOIDCEndpointsApplicationResou
 import org.keycloak.testsuite.util.MutualTLSUtils;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.ServerURLs;
+import org.keycloak.testsuite.client.policies.AbstractClientPoliciesTest;
 
 import java.security.KeyPair;
 import java.security.PrivateKey;
@@ -315,7 +316,7 @@ public class FAPI1Test extends AbstractClientPoliciesTest {
         // Register client (default authenticator)
         String clientUUID = createClientByAdmin("foo", (ClientRepresentation clientRep) -> {
             clientRep.setClientAuthenticatorType(JWTClientSecretAuthenticator.PROVIDER_ID);
-            clientRep.setSecret("secret");
+            clientRep.setSecret("atleast-14chars-password");
         });
         ClientRepresentation client = getClientByAdmin(clientUUID);
         Assert.assertFalse(client.isPublicClient());
@@ -335,7 +336,7 @@ public class FAPI1Test extends AbstractClientPoliciesTest {
 
         // Check PKCE with S256, redirectUri and nonce/state set. Login should be successful
         successfulLoginAndLogout("foo", false, (String code) -> {
-            String signedJwt = getClientSecretSignedJWT("secret", Algorithm.HS256);
+            String signedJwt = getClientSecretSignedJWT("atleast-14chars-password", Algorithm.HS256);
             return doAccessTokenRequestWithClientSignedJWT(code, signedJwt, codeVerifier, DefaultHttpClient::new);
         });
     }
@@ -598,7 +599,7 @@ public class FAPI1Test extends AbstractClientPoliciesTest {
 
         assertSuccessfulTokenResponse(tokenResponse);
         AccessToken accessToken = oauth.verifyToken(tokenResponse.getAccessToken());
-        Assert.assertNotNull(accessToken.getCertConf().getCertThumbprint());
+        Assert.assertNotNull(accessToken.getConfirmation().getCertThumbprint());
 
         // Logout and remove consent of the user for next logins
         logoutUserAndRevokeConsent("foo");
@@ -615,7 +616,8 @@ public class FAPI1Test extends AbstractClientPoliciesTest {
             clientRep.setImplicitFlowEnabled(true);
             OIDCAdvancedConfigWrapper clientConfig = OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep);
             clientConfig.setRequestUris(Collections.singletonList(TestApplicationResourceUrls.clientRequestUri()));
-            clientConfig.setTlsClientAuthSubjectDn("EMAILADDRESS=contact@keycloak.org, CN=Keycloak Intermediate CA, OU=Keycloak, O=Red Hat, ST=MA, C=US");
+            clientConfig.setTlsClientAuthSubjectDn(MutualTLSUtils.DEFAULT_KEYSTORE_SUBJECT_DN);
+            clientConfig.setAllowRegexPatternComparison(false);
         });
         ClientResource clientResource = adminClient.realm(REALM_NAME).clients().get(clientUUID);
         ClientRepresentation client = clientResource.toRepresentation();
@@ -651,7 +653,7 @@ public class FAPI1Test extends AbstractClientPoliciesTest {
 
         assertSuccessfulTokenResponse(tokenResponse);
         AccessToken accessToken = oauth.verifyToken(tokenResponse.getAccessToken());
-        Assert.assertNotNull(accessToken.getCertConf().getCertThumbprint());
+        Assert.assertNotNull(accessToken.getConfirmation().getCertThumbprint());
 
         // Logout and remove consent of the user for next logins
         logoutUserAndRevokeConsent("foo");
@@ -793,8 +795,8 @@ public class FAPI1Test extends AbstractClientPoliciesTest {
         Assert.assertNull(idToken.getAccessTokenHash());
         Assert.assertEquals(idToken.getNonce(), "123456");
         String state = getParameterFromUrl(OAuth2Constants.STATE, true);
-        Assert.assertEquals(idToken.getStateHash(), HashUtils.oidcHash(Algorithm.PS256, state));
-        Assert.assertEquals(idToken.getCodeHash(), HashUtils.oidcHash(Algorithm.PS256, code));
+        Assert.assertEquals(idToken.getStateHash(), HashUtils.accessTokenHash(Algorithm.PS256, state));
+        Assert.assertEquals(idToken.getCodeHash(), HashUtils.accessTokenHash(Algorithm.PS256, code));
     }
 
 

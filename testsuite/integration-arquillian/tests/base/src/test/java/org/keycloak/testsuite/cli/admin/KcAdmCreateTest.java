@@ -145,7 +145,7 @@ public class KcAdmCreateTest extends AbstractAdmCliTest {
             exe = execute("create clients --config '" + configFile.getName() + "' -s clientId=my_client4");
 
             assertExitCodeAndStreamSizes(exe, 0, 0, 1);
-            Assert.assertTrue("only id returned", exe.stderrLines().get(0).startsWith("Created new client with id '"));
+            Assert.assertTrue("only id returned", exe.stderrLines().get(exe.stderrLines().size() - 1).startsWith("Created new client with id '"));
         }
     }
 }

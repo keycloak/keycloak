@@ -17,6 +17,7 @@
 
 package org.keycloak.models.map.processor;
 
+import org.keycloak.models.map.annotations.CollectionKey;
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.RoundEnvironment;
 import javax.lang.model.element.Element;
@@ -32,10 +33,12 @@ import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
 import javax.tools.Diagnostic;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -87,6 +90,39 @@ public abstract class AbstractGenerateEntityImplementationsProcessor extends Abs
         }
 
         return true;
+    }
+
+    public ExecutableElement getCollectionKey(TypeMirror fieldType, ExecutableElement callingMethod) {
+        if (! Util.isCollectionType(elements.getTypeElement(types.erasure(fieldType).toString()))) {
+            processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, "Invalid collection type: " + fieldType, callingMethod);
+            return null;
+        }
+
+        TypeMirror collectionType = getGenericsDeclaration(fieldType).get(0);
+        TypeElement collectionTypeEl = elements.getTypeElement(types.erasure(collectionType).toString());
+
+        Iterator<ExecutableElement> it = elements.getAllMembers(collectionTypeEl).stream()
+          .filter(el -> el.getKind() == ElementKind.METHOD)
+          .filter(el -> el.getAnnotation(CollectionKey.class) != null)
+          .sorted(Comparator.comparing((Element el) -> el.getAnnotation(CollectionKey.class).priority()).reversed())
+          .filter(ExecutableElement.class::isInstance)
+          .map(ExecutableElement.class::cast)
+          .iterator();
+
+        ExecutableElement res = null;
+        if (it.hasNext()) {
+            res = it.next();
+            if (! res.getParameters().isEmpty() || ! "java.lang.String".equals(res.getReturnType().toString())) {
+                processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, "Invalid getter annotated with @CollectionKey in " + res, callingMethod);
+            }
+            if (it.hasNext() && it.next().getAnnotation(CollectionKey.class).priority() == res.getAnnotation(CollectionKey.class).priority()) {
+                processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, "Multiple getters annotated with @CollectionKey found: " + res + ", " + it.next(), callingMethod);
+            }
+        } else {
+            processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, "No getters annotated with @CollectionKey in " + collectionType, callingMethod);
+        }
+
+        return res;
     }
 
     protected boolean testAnnotationElement(TypeElement kind) { return true; }
@@ -276,6 +312,10 @@ public abstract class AbstractGenerateEntityImplementationsProcessor extends Abs
             processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, "Could not determine return type for the field " + fieldName, methods.iterator().next());
         }
         return res;
+    }
+
+    protected void generatedAnnotation(final PrintWriter pw) {
+        pw.println("@javax.annotation.processing.Generated(\"" + getClass().getName() + "\")");
     }
 
     protected static class NameFirstComparator implements Comparator<String> {

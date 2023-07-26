@@ -18,18 +18,20 @@
 package org.keycloak.operator.testsuite.integration;
 
 import io.fabric8.kubernetes.api.model.LocalObjectReferenceBuilder;
-import io.fabric8.kubernetes.api.model.PodTemplateSpecBuilder;
 import io.quarkus.logging.Log;
 import io.quarkus.test.junit.QuarkusTest;
+
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.keycloak.operator.testsuite.utils.CRAssert;
+import org.keycloak.operator.testsuite.utils.K8sUtils;
 import org.keycloak.operator.controllers.KeycloakService;
 import org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImport;
-import org.keycloak.operator.crds.v2alpha1.deployment.spec.UnsupportedSpec;
 
+import java.util.Arrays;
 import java.util.stream.Collectors;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
@@ -49,8 +51,8 @@ public class RealmImportTest extends BaseOperatorTest {
 
     @Override
     @BeforeEach
-    public void beforeEach() {
-        super.beforeEach();
+    public void beforeEach(TestInfo testInfo) {
+        super.beforeEach(testInfo);
         // Recreating the database and the realm import CR to keep this test isolated
         k8sclient.load(getClass().getResourceAsStream("/example-realm.yaml")).inNamespace(namespace).delete();
         k8sclient.load(getClass().getResourceAsStream("/incorrect-realm.yaml")).inNamespace(namespace).delete();
@@ -80,16 +82,11 @@ public class RealmImportTest extends BaseOperatorTest {
     public void testWorkingRealmImport() {
         // Arrange
         var kc = getDefaultKeycloakDeployment();
-        var podTemplate = new PodTemplateSpecBuilder()
-                .withNewSpec()
-                .withImagePullSecrets(new LocalObjectReferenceBuilder().withName("my-empty-secret").build())
-                .endSpec()
-                .build();
-        kc.getSpec().setUnsupported(new UnsupportedSpec(podTemplate));
+        kc.getSpec().setImagePullSecrets(Arrays.asList(new LocalObjectReferenceBuilder().withName("my-empty-secret").build()));
         deployKeycloak(k8sclient, kc, false);
 
         // Act
-        k8sclient.load(getClass().getResourceAsStream("/example-realm.yaml")).inNamespace(namespace).createOrReplace();
+        K8sUtils.set(k8sclient, getClass().getResourceAsStream("/example-realm.yaml"));
 
         // Assert
         var crSelector = k8sclient
@@ -150,7 +147,7 @@ public class RealmImportTest extends BaseOperatorTest {
         deployKeycloak(k8sclient, keycloak, false);
 
         // Act
-        k8sclient.load(getClass().getResourceAsStream("/example-realm.yaml")).inNamespace(namespace).createOrReplace();
+        K8sUtils.set(k8sclient, getClass().getResourceAsStream("/example-realm.yaml"));
 
         // Assert
         var crSelector = k8sclient
@@ -177,7 +174,7 @@ public class RealmImportTest extends BaseOperatorTest {
         deployKeycloak(k8sclient, getDefaultKeycloakDeployment(), true); // make sure there are no errors due to missing KC Deployment
 
         // Act
-        k8sclient.load(getClass().getResourceAsStream("/incorrect-realm.yaml")).inNamespace(namespace).createOrReplace();
+        K8sUtils.set(k8sclient, getClass().getResourceAsStream("/incorrect-realm.yaml"));
 
         // Assert
         Awaitility.await()

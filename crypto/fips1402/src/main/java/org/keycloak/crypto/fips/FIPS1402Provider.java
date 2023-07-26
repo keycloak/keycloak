@@ -1,5 +1,11 @@
 package org.keycloak.crypto.fips;
 
+import java.io.IOException;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.Socket;
+import java.net.SocketAddress;
+import java.net.UnknownHostException;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.KeyFactory;
 import java.security.KeyPairGenerator;
@@ -8,6 +14,7 @@ import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.Provider;
+import java.security.SecureRandom;
 import java.security.spec.ECField;
 import java.security.spec.ECFieldF2m;
 import java.security.spec.ECFieldFp;
@@ -22,12 +29,20 @@ import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.CollectionCertStoreParameters;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import javax.crypto.Cipher;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKeyFactory;
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SNIHostName;
+import javax.net.ssl.SSLParameters;
+import javax.net.ssl.SSLSocket;
+import javax.net.ssl.SSLSocketFactory;
+import javax.net.ssl.TrustManagerFactory;
 
 import org.bouncycastle.asn1.x9.ECNamedCurveTable;
 import org.bouncycastle.asn1.x9.X9ECParameters;
@@ -35,7 +50,9 @@ import org.bouncycastle.crypto.fips.FipsRSA;
 import org.bouncycastle.crypto.fips.FipsSHS;
 import org.bouncycastle.jcajce.provider.BouncyCastleFipsProvider;
 import org.bouncycastle.jsse.provider.BouncyCastleJsseProvider;
+import org.bouncycastle.jsse.util.CustomSSLSocketFactory;
 import org.bouncycastle.math.ec.ECCurve;
+import org.bouncycastle.util.IPAddress;
 import org.jboss.logging.Logger;
 import org.keycloak.common.crypto.CryptoProvider;
 import org.keycloak.common.crypto.ECDSACryptoProvider;
@@ -72,9 +89,11 @@ public class FIPS1402Provider implements CryptoProvider {
 
         Security.insertProviderAt(new KeycloakFipsSecurityProvider(bcFipsProvider), 1);
         if (existingBcFipsProvider == null) {
-            Security.insertProviderAt(this.bcFipsProvider, 2);
+            checkSecureRandom(() -> Security.insertProviderAt(this.bcFipsProvider, 2));
             Provider bcJsseProvider = new BouncyCastleJsseProvider("fips:BCFIPS");
             Security.insertProviderAt(bcJsseProvider, 3);
+            // force the key and trust manager factories if default values not present in BCJSSE
+            modifyKeyTrustManagerSecurityProperties(bcJsseProvider);
             log.debugf("Inserted security providers: %s", Arrays.asList(this.bcFipsProvider.getName(),bcJsseProvider.getName()));
         } else {
             log.debugf("Security provider %s already loaded", existingBcFipsProvider.getName());
@@ -180,11 +199,7 @@ public class FIPS1402Provider implements CryptoProvider {
     
     @Override
     public KeyStore getKeyStore(KeystoreFormat format) throws KeyStoreException, NoSuchProviderException {
-        if (format == KeystoreFormat.JKS) {
-            return KeyStore.getInstance(format.toString());
-        } else {
-            return KeyStore.getInstance(format.toString(), BouncyIntegration.PROVIDER);
-        }
+        return KeyStore.getInstance(format.toString(), BouncyIntegration.PROVIDER);
     }
 
     @Override
@@ -208,5 +223,162 @@ public class FIPS1402Provider implements CryptoProvider {
     public Signature getSignature(String sigAlgName) throws NoSuchAlgorithmException, NoSuchProviderException {
         return Signature.getInstance(JavaAlgorithm.getJavaAlgorithm(sigAlgName), BouncyIntegration.PROVIDER);
             
+    }
+
+    @Override
+    public SSLSocketFactory wrapFactoryForTruststore(SSLSocketFactory delegate) {
+        // See https://downloads.bouncycastle.org/fips-java/BC-FJA-(D)TLSUserGuide-1.0.9.pdf - Section 3.5.2 (Endpoint identification)
+        return new CustomSSLSocketFactory(delegate) {
+
+            @Override
+            public Socket createSocket() throws IOException {
+                // Creating unconnected socket (Used for example by com.sun.jndi.ldap.Connection.createSocket - when connectionTimeout > 0)
+                // Configuration of SNI hostname needs to be postponed as we don't yet know the hostname
+                Socket socket = delegate.createSocket();
+
+                if (socket instanceof SSLSocket) {
+                    return new AbstractDelegatingSSLSocket((SSLSocket) socket) {
+                        @Override
+                        public void connect(SocketAddress endpoint) throws IOException {
+                            log.tracef("Calling connect(%s)", endpoint);
+                            if (endpoint instanceof InetSocketAddress) {
+                                configureSocket(getDelegate(), ((InetSocketAddress) endpoint).getHostName());
+                            }
+                            super.connect(endpoint);
+                        }
+
+                        @Override
+                        public void connect(SocketAddress endpoint, int timeout) throws IOException {
+                            log.tracef("Calling connect(%s, %d)", endpoint, timeout);
+                            if (endpoint instanceof InetSocketAddress) {
+                                configureSocket(getDelegate(), ((InetSocketAddress) endpoint).getHostName());
+                            }
+                            super.connect(endpoint, timeout);
+                        }
+                    };
+                }
+                return socket;
+            }
+
+            @Override
+            public Socket createSocket(String host, int port) throws IOException, UnknownHostException {
+                return configureSocket(delegate.createSocket(host, port), host);
+            }
+
+            @Override
+            public Socket createSocket(String host, int port, InetAddress localHost, int localPort) throws IOException, UnknownHostException {
+                return configureSocket(delegate.createSocket(host, port, localHost, localPort), host);
+            }
+
+            @Override
+            protected Socket configureSocket(Socket s) {
+                if (s instanceof SSLSocket) {
+                    if (s.getInetAddress() == null) {
+                        throw new IllegalArgumentException("Socket not connected before trying to configure SSL Hostname");
+                    }
+                    String hostname = s.getInetAddress().getHostName();
+                    configureSocket(s, hostname);
+                }
+                return s;
+            }
+
+            private Socket configureSocket(Socket s, String hostname) {
+                if (s instanceof SSLSocket) {
+                    SSLSocket ssl = (SSLSocket)s;
+                    SNIHostName sniHostname = getSNIHostName(hostname);
+                    log.tracef("Configuration of SSL Socket - using sniHostname '%s' for the socket host '%s'", sniHostname, hostname);
+
+                    if (sniHostname != null) {
+                        SSLParameters sslParameters = ssl.getSSLParameters();
+                        if (sslParameters == null) {
+                            sslParameters = new SSLParameters();
+                        }
+                        sslParameters.setServerNames(Collections.singletonList(sniHostname));
+                        ssl.setSSLParameters(sslParameters);
+                    }
+                }
+                return s;
+            }
+
+            private SNIHostName getSNIHostName(String host) {
+                if (!IPAddress.isValid(host)) {
+                    try {
+                        return new SNIHostName(host);
+                    } catch (RuntimeException e) {
+                        log.warnf(e, "Not possible to create SNIHostName from the host '%s'", host);
+                    }
+                }
+                return null;
+            }
+
+        };
+    }
+
+    // BCFIPS require "SecureRandom.getInstanceStrong" to be available. But it may not be available on RHEL 8 on OpenJDK 17 due the https://bugzilla.redhat.com/show_bug.cgi?id=2155060
+    private void checkSecureRandom(Runnable insertBcFipsProvider) {
+        try {
+            SecureRandom sr = SecureRandom.getInstanceStrong();
+            log.debugf("Strong secure random available. Algorithm: %s, Provider: %s", sr.getAlgorithm(), sr.getProvider());
+            insertBcFipsProvider.run();
+        } catch (NoSuchAlgorithmException nsae) {
+
+            // Fallback to regular SecureRandom
+            SecureRandom secRandom = new SecureRandom();
+            String origStrongAlgs = Security.getProperty("securerandom.strongAlgorithms");
+            String usedAlg = secRandom.getAlgorithm() + ":" + secRandom.getProvider().getName();
+            log.debugf("Strong secure random not available. Tried algorithms: %s. Using algorithm as a fallback for strong secure random: %s", origStrongAlgs, usedAlg);
+
+            String strongAlgs = origStrongAlgs == null ? usedAlg : usedAlg + "," + origStrongAlgs;
+            Security.setProperty("securerandom.strongAlgorithms", strongAlgs);
+
+            try {
+                // Need to insert BCFIPS provider to security providers with "strong algorithm" available
+                insertBcFipsProvider.run();
+                SecureRandom.getInstance("DEFAULT", "BCFIPS");
+                log.debugf("Initialized BCFIPS secured random");
+            } catch (NoSuchAlgorithmException | NoSuchProviderException nsaee) {
+                throw new IllegalStateException("Not possible to initiate BCFIPS secure random", nsaee);
+            } finally {
+                Security.setProperty("securerandom.strongAlgorithms", origStrongAlgs != null ? origStrongAlgs : "");
+            }
+        }
+    }
+
+    /**
+     * BCJSSE manages X.509, X509 and PKIX for KeyManagerFactory and
+     * TrustManagerFactory (names or aliases) while JSSE manages SunX509,
+     * NewSunX509 and PKIX for KeyManagerFactory and SunX509, PKIX, SunPKIX,
+     * X509 and X.509 for the TrustManagerFactory. As BCJSSE is used when
+     * fips enabled, the default implementations are changed to the ones
+     * provided by BC if selected ones are not present in the BCJSSE.
+     *
+     * @param bcJsseProvider The BCJSSE provider
+     */
+    private static void modifyKeyTrustManagerSecurityProperties(Provider bcJsseProvider) {
+        boolean setKey = bcJsseProvider.getService(KeyManagerFactory.class.getSimpleName(), KeyManagerFactory.getDefaultAlgorithm()) == null;
+        boolean setTrust = bcJsseProvider.getService(TrustManagerFactory.class.getSimpleName(), TrustManagerFactory.getDefaultAlgorithm()) == null;
+        if (!setKey && !setTrust) {
+            return;
+        }
+        Set<Provider.Service> services = bcJsseProvider.getServices();
+        if (services != null) {
+            for (Provider.Service service : services) {
+                if (setKey && KeyManagerFactory.class.getSimpleName().equals(service.getType())) {
+                    Security.setProperty("ssl.KeyManagerFactory.algorithm", service.getAlgorithm());
+                    setKey = false;
+                    if (!setTrust) {
+                        return;
+                    }
+                } else if (setTrust && TrustManagerFactory.class.getSimpleName().equals(service.getType())) {
+                    Security.setProperty("ssl.TrustManagerFactory.algorithm", service.getAlgorithm());
+                    setTrust = false;
+                    if (!setKey) {
+                        return;
+                    }
+                }
+            }
+        }
+        throw new IllegalStateException("Provider " + bcJsseProvider.getName()
+                + " does not provide KeyManagerFactory or TrustManagerFactory algorithms for TLS");
     }
 }

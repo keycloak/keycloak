@@ -18,10 +18,12 @@
 package org.keycloak.models;
 
 import org.keycloak.common.ClientConnection;
+import org.keycloak.http.HttpRequest;
+import org.keycloak.http.HttpResponse;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.urls.UrlType;
 
-import javax.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.HttpHeaders;
 import java.net.URI;
 import java.util.Locale;
 
@@ -75,4 +77,8 @@ public interface KeycloakContext {
     AuthenticationSessionModel getAuthenticationSession(); 
     
     void setAuthenticationSession(AuthenticationSessionModel authenticationSession);
+
+    HttpRequest getHttpRequest();
+
+    HttpResponse getHttpResponse();
 }

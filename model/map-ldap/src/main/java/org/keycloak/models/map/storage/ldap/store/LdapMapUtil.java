@@ -17,7 +17,10 @@
 
 package org.keycloak.models.map.storage.ldap.store;
 
+import org.jboss.logging.Logger;
+import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.ModelException;
+import org.keycloak.models.map.storage.ldap.config.LdapMapConfig;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -29,6 +32,8 @@ import java.util.TimeZone;
  * @author Pedro Igor
  */
 public class LdapMapUtil {
+
+    private static final Logger logger = Logger.getLogger(LdapMapUtil.class);
 
     /**
      * <p>Formats the given date.</p>
@@ -250,5 +255,19 @@ public class LdapMapUtil {
         }
     }
 
+    public static boolean shouldUseTruststoreSpi(LdapMapConfig ldapConfig) {
+        boolean useSSL = ldapConfig.getConnectionUrl().toLowerCase().contains("ldaps://");
+        boolean defaultUseTruststore = useSSL || ldapConfig.isStartTls();
 
+        String useTruststoreSpi = ldapConfig.getUseTruststoreSpi();
+        if (useTruststoreSpi == null) {
+            return defaultUseTruststore;
+        }
+
+        if (LDAPConstants.USE_TRUSTSTORE_NEVER.equals(useTruststoreSpi)) {
+            return false;
+        }
+
+        return defaultUseTruststore;
+    }
 }

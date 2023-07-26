@@ -482,40 +482,6 @@ public abstract class MapClientAdapter extends AbstractClientModel<MapClientEnti
         return getRolesStream().anyMatch(r -> (Objects.equals(r, role) || r.hasRole(role)));
     }
 
-    /*************** Default roles ****************/
-
-    @Override
-    @Deprecated
-    public Stream<String> getDefaultRolesStream() {
-        return realm.getDefaultRole().getCompositesStream().filter(this::isClientRole).map(RoleModel::getName);
-    }
-
-    private boolean isClientRole(RoleModel role) {
-        return role.isClientRole() && Objects.equals(role.getContainerId(), this.getId());
-    }
-
-    @Override
-    @Deprecated
-    public void addDefaultRole(String name) {
-        realm.getDefaultRole().addCompositeRole(getOrAddRoleId(name));
-    }
-
-    private RoleModel getOrAddRoleId(String name) {
-        RoleModel role = getRole(name);
-        if (role == null) {
-            role = addRole(name);
-        }
-        return role;
-    }
-
-    @Override
-    @Deprecated
-    public void removeDefaultRoles(String... defaultRoles) {
-        for (String defaultRole : defaultRoles) {
-            realm.getDefaultRole().removeCompositeRole(getRole(defaultRole));
-        }
-    }
-
     /*************** Protocol mappers ****************/
 
     private String safeGetProtocol() {

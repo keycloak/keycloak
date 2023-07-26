@@ -48,11 +48,13 @@ class KeycloakHttpServerAuthenticationMechanism implements HttpServerAuthenticat
     private final Map<String, ?> properties;
     private final CallbackHandler callbackHandler;
     private final AdapterDeploymentContext deploymentContext;
+    private final NodesRegistrationManagement nodesRegistrationManagement;
 
-    public KeycloakHttpServerAuthenticationMechanism(Map<String, ?> properties, CallbackHandler callbackHandler, AdapterDeploymentContext deploymentContext) {
+    public KeycloakHttpServerAuthenticationMechanism(Map<String, ?> properties, CallbackHandler callbackHandler, AdapterDeploymentContext deploymentContext, NodesRegistrationManagement nodesRegistrationManagement) {
         this.properties = properties;
         this.callbackHandler = callbackHandler;
         this.deploymentContext = deploymentContext;
+        this.nodesRegistrationManagement = nodesRegistrationManagement;
     }
 
     @Override
@@ -129,8 +131,6 @@ class KeycloakHttpServerAuthenticationMechanism implements HttpServerAuthenticat
     }
 
     private boolean preActions(ElytronHttpFacade httpFacade, AdapterDeploymentContext deploymentContext) {
-        NodesRegistrationManagement nodesRegistrationManagement = new NodesRegistrationManagement();
-
         nodesRegistrationManagement.tryRegister(httpFacade.getDeployment());
 
         PreAuthActionsHandler preActions = new PreAuthActionsHandler(UserSessionManagement.class.cast(httpFacade.getTokenStore()), deploymentContext, httpFacade);

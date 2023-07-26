@@ -17,25 +17,25 @@
 
 package org.keycloak.models.map.storage.hotRod.user;
 
-import org.infinispan.protostream.annotations.ProtoDoc;
+import org.infinispan.api.annotations.indexing.Basic;
+import org.infinispan.api.annotations.indexing.Indexed;
 import org.infinispan.protostream.annotations.ProtoField;
 import org.keycloak.models.map.annotations.GenerateHotRodEntityImplementation;
-import org.keycloak.models.map.storage.hotRod.client.HotRodProtocolMapperEntityDelegate;
 import org.keycloak.models.map.storage.hotRod.common.AbstractHotRodEntity;
 
 @GenerateHotRodEntityImplementation(implementInterface = "org.keycloak.models.map.user.MapUserFederatedIdentityEntity")
-@ProtoDoc("@Indexed")
+@Indexed
 public class HotRodUserFederatedIdentityEntity extends AbstractHotRodEntity {
 
+    @Basic(sortable = true)
     @ProtoField(number = 1)
-    @ProtoDoc("@Field(index = Index.YES, store = Store.YES)")
     public String identityProvider;
 
     @ProtoField(number = 2)
     public String token;
 
+    @Basic(sortable = true)
     @ProtoField(number = 3)
-    @ProtoDoc("@Field(index = Index.YES, store = Store.YES)")
     public String userId;
 
     @ProtoField(number = 4)

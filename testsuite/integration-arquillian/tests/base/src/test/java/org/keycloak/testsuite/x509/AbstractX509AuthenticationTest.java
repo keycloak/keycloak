@@ -63,7 +63,7 @@ import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
 import org.openqa.selenium.WebDriver;
 
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response;
 import java.lang.reflect.Field;
 import java.net.URI;
 import java.util.ArrayList;
@@ -93,6 +93,7 @@ public abstract class AbstractX509AuthenticationTest extends AbstractTestRealmKe
     public static final String INTERMEDIATE_CA_CRL_PATH = "intermediate-ca.crl";
     public static final String INTERMEDIATE_CA_INVALID_SIGNATURE_CRL_PATH = "intermediate-ca-invalid-signature.crl";
     public static final String INTERMEDIATE_CA_3_CRL_PATH = "intermediate-ca-3.crl";
+    public static final String INVALID_CRL_PATH = "invalid.crl";
     protected final Logger log = Logger.getLogger(this.getClass());
 
     static final String REQUIRED = "REQUIRED";
@@ -297,8 +298,6 @@ public abstract class AbstractX509AuthenticationTest extends AbstractTestRealmKe
                 .addAttribute("x509_issuer_identity", "Keycloak Intermediate CA")
                 .build();
 
-        userId2 = user.getId();
-
         ClientRepresentation client = findTestApp(testRealm);
         URI baseUri = URI.create(client.getRedirectUris().get(0));
         URI redir = URI.create("https://localhost:" + System.getProperty("auth.server.https.port", "8543") + baseUri.getRawPath());
@@ -310,6 +309,12 @@ public abstract class AbstractX509AuthenticationTest extends AbstractTestRealmKe
         RealmBuilder.edit(testRealm)
                 .user(user)
                 .client(app);
+    }
+
+    @Override
+    public void importTestRealms() {
+        super.importTestRealms();
+        userId2 = adminClient.realm("test").users().search("keycloak", true).get(0).getId();
     }
 
     AuthenticationFlowRepresentation createFlow(AuthenticationFlowRepresentation flowRep) {

@@ -28,11 +28,6 @@ public @interface DisableFeature {
     boolean skipRestart() default false;
 
     /**
-     * The feature will be disabled only if the `product` profile is activated
-     */
-    boolean onlyForProduct() default false;
-
-    /**
      * Feature disable should be the last action in @Before context.
      * If the test halted, the feature is returned to the previous state.
      * If it's false, feature will be disabled before @Before method.

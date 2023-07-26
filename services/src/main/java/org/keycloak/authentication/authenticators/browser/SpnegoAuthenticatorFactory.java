@@ -18,8 +18,10 @@
 package org.keycloak.authentication.authenticators.browser;
 
 import org.keycloak.Config;
+import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.Authenticator;
 import org.keycloak.authentication.AuthenticatorFactory;
+import org.keycloak.common.Profile;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
@@ -36,10 +38,17 @@ public class SpnegoAuthenticatorFactory implements AuthenticatorFactory {
 
     public static final String PROVIDER_ID = "auth-spnego";
     public static final SpnegoAuthenticator SINGLETON = new SpnegoAuthenticator();
+    public static final SpnegoAuthenticator SINGLETON_DISABLED = new SpnegoAuthenticator() {
+
+        @Override
+        public void authenticate(AuthenticationFlowContext context) {
+            throw new IllegalStateException("Not possible to authenticate as Kerberos feature is disabled");
+        }
+    };
 
     @Override
     public Authenticator create(KeycloakSession session) {
-        return SINGLETON;
+        return isKerberosFeatureEnabled() ? SINGLETON : SINGLETON_DISABLED;
     }
 
     @Override
@@ -69,7 +78,7 @@ public class SpnegoAuthenticatorFactory implements AuthenticatorFactory {
 
     @Override
     public AuthenticationExecutionModel.Requirement[] getRequirementChoices() {
-        return REQUIREMENT_CHOICES;
+        return isKerberosFeatureEnabled() ? REQUIREMENT_CHOICES : new AuthenticationExecutionModel.Requirement[]{ AuthenticationExecutionModel.Requirement.DISABLED };
     }
 
 
@@ -85,7 +94,9 @@ public class SpnegoAuthenticatorFactory implements AuthenticatorFactory {
 
     @Override
     public String getHelpText() {
-        return "Initiates the SPNEGO protocol.  Most often used with Kerberos.";
+        return isKerberosFeatureEnabled()
+                ? "Initiates the SPNEGO protocol.  Most often used with Kerberos."
+                : "DISABLED. Please enable Kerberos feature and make sure Kerberos available in your platform. Initiates the SPNEGO protocol. Most often used with Kerberos.";
     }
 
     @Override
@@ -98,4 +109,7 @@ public class SpnegoAuthenticatorFactory implements AuthenticatorFactory {
         return false;
     }
 
+    private boolean isKerberosFeatureEnabled() {
+        return Profile.isFeatureEnabled(Profile.Feature.KERBEROS);
+    }
 }

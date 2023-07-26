@@ -17,7 +17,7 @@
 
 package org.keycloak.testsuite.broker.oidc;
 
-import javax.ws.rs.core.UriBuilder;
+import jakarta.ws.rs.core.UriBuilder;
 import org.keycloak.broker.oidc.KeycloakOIDCIdentityProvider;
 import org.keycloak.broker.oidc.KeycloakOIDCIdentityProviderFactory;
 import org.keycloak.broker.oidc.OIDCIdentityProviderConfig;
@@ -62,6 +62,16 @@ public class TestKeycloakOidcIdentityProviderFactory extends KeycloakOIDCIdentit
 
             private boolean isIgnoreMaxAgeParam() {
                 return Boolean.parseBoolean(model.getConfig().getOrDefault(IGNORE_MAX_AGE_PARAM, Boolean.FALSE.toString()));
+            }
+        };
+    }
+
+    @Override
+    public OIDCIdentityProviderConfig createConfig() {
+        return new OIDCIdentityProviderConfig(super.createConfig()) {
+            @Override
+            public String getDisplayIconClasses() {
+                return "my-custom-idp-icon";
             }
         };
     }

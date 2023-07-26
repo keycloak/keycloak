@@ -19,6 +19,7 @@ package org.keycloak.keys.infinispan;
 
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
@@ -30,6 +31,7 @@ import org.jboss.logging.Logger;
 import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.common.util.Time;
 import org.keycloak.crypto.KeyWrapper;
+import org.keycloak.crypto.PublicKeysWrapper;
 import org.keycloak.keys.PublicKeyLoader;
 import org.keycloak.keys.PublicKeyStorageProvider;
 import org.keycloak.models.KeycloakSession;
@@ -115,34 +117,30 @@ public class InfinispanPublicKeyStorageProvider implements PublicKeyStorageProvi
         }
     }
 
-
-    @Override
-    public KeyWrapper getPublicKey(String modelKey, String kid, PublicKeyLoader loader) {
-        return getPublicKey(modelKey, kid, null, loader);
-    }
-
     @Override
     public KeyWrapper getFirstPublicKey(String modelKey, String algorithm, PublicKeyLoader loader) {
         return getPublicKey(modelKey, null, algorithm, loader);
     }
 
-    private KeyWrapper getPublicKey(String modelKey, String kid, String algorithm, PublicKeyLoader loader) {
-        // Check if key is in cache
+    @Override
+    public KeyWrapper getPublicKey(String modelKey, String kid, String algorithm, PublicKeyLoader loader) {
         PublicKeysEntry entry = keys.get(modelKey);
-        if (entry != null) {
-            KeyWrapper publicKey = algorithm != null ? getPublicKeyByAlg(entry.getCurrentKeys(), algorithm) : getPublicKey(entry.getCurrentKeys(), kid);
+        int lastRequestTime = entry==null ? 0 : entry.getLastRequestTime();
+        int currentTime = Time.currentTime();
+        boolean isSendingRequestAllowed = currentTime > lastRequestTime + minTimeBetweenRequests;
+
+        // Check if key is in cache, but only if KID is provided or if the key cache has been loaded recently,
+        // in order to get a key based on partial match with alg param.
+        if (entry != null && (kid != null || !isSendingRequestAllowed)) {
+            KeyWrapper publicKey = entry.getCurrentKeys().getKeyByKidAndAlg(kid, algorithm);
             if (publicKey != null) {
                 // return a copy of the key to not modify the cached one
                 return publicKey.cloneKey();
             }
         }
 
-        int lastRequestTime = entry==null ? 0 : entry.getLastRequestTime();
-        int currentTime = Time.currentTime();
-
         // Check if we are allowed to send request
-        if (currentTime > lastRequestTime + minTimeBetweenRequests) {
-
+        if (isSendingRequestAllowed) {
             WrapperCallable wrapperCallable = new WrapperCallable(modelKey, loader);
             FutureTask<PublicKeysEntry> task = new FutureTask<>(wrapperCallable);
             FutureTask<PublicKeysEntry> existing = tasksInProgress.putIfAbsent(modelKey, task);
@@ -157,7 +155,7 @@ public class InfinispanPublicKeyStorageProvider implements PublicKeyStorageProvi
                 entry = task.get();
 
                 // Computation finished. Let's see if key is available
-                KeyWrapper publicKey = algorithm != null ? getPublicKeyByAlg(entry.getCurrentKeys(), algorithm) : getPublicKey(entry.getCurrentKeys(), kid);
+                KeyWrapper publicKey = entry.getCurrentKeys().getKeyByKidAndAlg(kid, algorithm);
                 if (publicKey != null) {
                     // return a copy of the key to not modify the cached one
                     return publicKey.cloneKey();
@@ -177,25 +175,9 @@ public class InfinispanPublicKeyStorageProvider implements PublicKeyStorageProvi
             log.warnf("Won't load the keys for model '%s' . Last request time was %d", modelKey, lastRequestTime);
         }
 
-        Set<String> availableKids = entry==null ? Collections.emptySet() : entry.getCurrentKeys().keySet();
+        List<String> availableKids = entry==null ? Collections.emptyList() : entry.getCurrentKeys().getKids();
         log.warnf("PublicKey wasn't found in the storage. Requested kid: '%s' . Available kids: '%s'", kid, availableKids);
 
-        return null;
-    }
-
-    private KeyWrapper getPublicKey(Map<String, KeyWrapper> publicKeys, String kid) {
-        // Backwards compatibility
-        if (kid == null && !publicKeys.isEmpty()) {
-            return publicKeys.values().iterator().next();
-        } else {
-            return publicKeys.get(kid);
-        }
-    }
-
-    private KeyWrapper getPublicKeyByAlg(Map<String, KeyWrapper> publicKeys, String algorithm) {
-        if (algorithm == null) return null;
-        for(KeyWrapper keyWrapper : publicKeys.values())
-            if (algorithm.equals(keyWrapper.getAlgorithmOrDefault())) return keyWrapper;
         return null;
     }
 
@@ -224,10 +206,10 @@ public class InfinispanPublicKeyStorageProvider implements PublicKeyStorageProvi
             // Check again if we are allowed to send request. There is a chance other task was already finished and removed from tasksInProgress in the meantime.
             if (currentTime > lastRequestTime + minTimeBetweenRequests) {
 
-                Map<String, KeyWrapper> publicKeys = delegate.loadKeys();
+                PublicKeysWrapper publicKeys = delegate.loadKeys();
 
                 if (log.isDebugEnabled()) {
-                    log.debugf("Public keys retrieved successfully for model %s. New kids: %s", modelKey, publicKeys.keySet().toString());
+                    log.debugf("Public keys retrieved successfully for model %s. New kids: %s", modelKey, publicKeys.getKids());
                 }
 
                 entry = new PublicKeysEntry(currentTime, publicKeys);

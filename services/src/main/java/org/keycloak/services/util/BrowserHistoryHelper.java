@@ -21,10 +21,10 @@ import java.net.URI;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response;
 
 import org.jboss.logging.Logger;
-import org.jboss.resteasy.spi.HttpRequest;
+import org.keycloak.http.HttpRequest;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.utils.MediaType;
@@ -54,12 +54,12 @@ public abstract class BrowserHistoryHelper {
     public abstract Response loadSavedResponse(KeycloakSession session, AuthenticationSessionModel authSession);
 
 
-    protected boolean shouldReplaceBrowserHistory(boolean actionRequest, HttpRequest httpRequest) {
+    protected boolean shouldReplaceBrowserHistory(boolean actionRequest, KeycloakSession session) {
         if (actionRequest) {
             return true;
         }
 
-        Boolean flowChanged = (Boolean) httpRequest.getAttribute(SHOULD_UPDATE_BROWSER_HISTORY);
+        Boolean flowChanged = (Boolean) session.getAttribute(SHOULD_UPDATE_BROWSER_HISTORY);
         return (flowChanged != null && flowChanged);
     }
 
@@ -81,7 +81,7 @@ public abstract class BrowserHistoryHelper {
 
         @Override
         public Response saveResponseAndRedirect(KeycloakSession session, AuthenticationSessionModel authSession, Response response, boolean actionRequest, HttpRequest httpRequest) {
-            if (!shouldReplaceBrowserHistory(actionRequest, httpRequest)) {
+            if (!shouldReplaceBrowserHistory(actionRequest, session)) {
                 return response;
             }
 
@@ -144,7 +144,7 @@ public abstract class BrowserHistoryHelper {
 
         @Override
         public Response saveResponseAndRedirect(KeycloakSession session, AuthenticationSessionModel authSession, Response response, boolean actionRequest, HttpRequest httpRequest) {
-            if (!shouldReplaceBrowserHistory(actionRequest, httpRequest)) {
+            if (!shouldReplaceBrowserHistory(actionRequest, session)) {
                 return response;
             }
 

@@ -45,6 +45,7 @@ public class SAMLIdentityProviderConfig extends IdentityProviderModel {
     public static final String POST_BINDING_LOGOUT = "postBindingLogout";
     public static final String POST_BINDING_RESPONSE = "postBindingResponse";
     public static final String SIGNATURE_ALGORITHM = "signatureAlgorithm";
+    public static final String ENCRYPTION_ALGORITHM = "encryptionAlgorithm";
     public static final String SIGNING_CERTIFICATE_KEY = "signingCertificate";
     public static final String SINGLE_LOGOUT_SERVICE_URL = "singleLogoutServiceUrl";
     public static final String SINGLE_SIGN_ON_SERVICE_URL = "singleSignOnServiceUrl";
@@ -202,6 +203,14 @@ public class SAMLIdentityProviderConfig extends IdentityProviderModel {
 
     public void setSignatureAlgorithm(String signatureAlgorithm) {
         getConfig().put(SIGNATURE_ALGORITHM, signatureAlgorithm);
+    }
+
+    public String getEncryptionAlgorithm() {
+        return getConfig().get(ENCRYPTION_ALGORITHM);
+    }
+
+    public void setEncryptionAlgorithm(String encryptionAlgorithm) {
+        getConfig().put(ENCRYPTION_ALGORITHM, encryptionAlgorithm);
     }
 
     public String getEncryptionPublicKey() {

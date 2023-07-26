@@ -3,12 +3,14 @@ description: Request an enhancement to an existing feature
 labels: ["kind/enhancement", "status/triage"]
 body:
   - type: textarea
+    id: description
     attributes:
       label: Description
       description: Describe the enhancement at a high-level.
     validations:
       required: true
   - type: input
+    id: discussion
     attributes:
       label: Discussion
       description: |
@@ -18,12 +20,14 @@ body:
     validations:
       required: false
   - type: textarea
+    id: motivation
     attributes:
       label: Motivation
       description: Describe why the feature should be added.
     validations:
       required: false
   - type: textarea
+    id: details
     attributes:
       label: Details
       description: More details? Implementation ideas? Anything that will give us more context about the enhancement you are proposing!

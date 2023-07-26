@@ -17,23 +17,103 @@
 
 package org.keycloak.quarkus.deployment;
 
-import static org.keycloak.quarkus.runtime.KeycloakRecorder.DEFAULT_HEALTH_ENDPOINT;
-import static org.keycloak.quarkus.runtime.KeycloakRecorder.DEFAULT_METRICS_ENDPOINT;
-import static org.keycloak.quarkus.runtime.Providers.getProviderManager;
-import static org.keycloak.quarkus.runtime.configuration.Configuration.getPropertyNames;
-import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_QUARKUS;
-import static org.keycloak.quarkus.runtime.configuration.QuarkusPropertiesConfigSource.QUARKUS_PROPERTY_ENABLED;
-import static org.keycloak.quarkus.runtime.storage.legacy.database.LegacyJpaConnectionProviderFactory.QUERY_PROPERTY_PREFIX;
-import static org.keycloak.connections.jpa.util.JpaUtils.loadSpecificNamedQueries;
-import static org.keycloak.representations.provider.ScriptProviderDescriptor.AUTHENTICATORS;
-import static org.keycloak.representations.provider.ScriptProviderDescriptor.MAPPERS;
-import static org.keycloak.representations.provider.ScriptProviderDescriptor.POLICIES;
-import static org.keycloak.quarkus.runtime.Environment.getProviderFiles;
-import static org.keycloak.theme.ClasspathThemeProviderFactory.KEYCLOAK_THEMES_JSON;
-import static org.keycloak.representations.provider.ScriptProviderDescriptor.SAML_MAPPERS;
+import io.quarkus.agroal.spi.JdbcDataSourceBuildItem;
+import io.quarkus.arc.deployment.BuildTimeConditionBuildItem;
+import io.quarkus.datasource.deployment.spi.DevServicesDatasourceResultBuildItem;
+import io.quarkus.deployment.IsDevelopment;
+import io.quarkus.deployment.annotations.BuildProducer;
+import io.quarkus.deployment.annotations.BuildStep;
+import io.quarkus.deployment.annotations.Consume;
+import io.quarkus.deployment.annotations.ExecutionTime;
+import io.quarkus.deployment.annotations.Record;
+import io.quarkus.deployment.builditem.BootstrapConfigSetupCompleteBuildItem;
+import io.quarkus.deployment.builditem.CombinedIndexBuildItem;
+import io.quarkus.deployment.builditem.ExecutorBuildItem;
+import io.quarkus.deployment.builditem.FeatureBuildItem;
+import io.quarkus.deployment.builditem.GeneratedResourceBuildItem;
+import io.quarkus.deployment.builditem.HotDeploymentWatchedFileBuildItem;
+import io.quarkus.deployment.builditem.IndexDependencyBuildItem;
+import io.quarkus.deployment.builditem.StaticInitConfigSourceProviderBuildItem;
+import io.quarkus.hibernate.orm.deployment.AdditionalJpaModelBuildItem;
+import io.quarkus.hibernate.orm.deployment.HibernateOrmConfig;
+import io.quarkus.hibernate.orm.deployment.PersistenceXmlDescriptorBuildItem;
+import io.quarkus.hibernate.orm.deployment.integration.HibernateOrmIntegrationRuntimeConfiguredBuildItem;
+import io.quarkus.resteasy.server.common.deployment.ResteasyDeploymentCustomizerBuildItem;
+import io.quarkus.runtime.configuration.ProfileManager;
+import io.quarkus.vertx.http.deployment.FilterBuildItem;
+import io.quarkus.vertx.http.deployment.NonApplicationRootPathBuildItem;
+import io.quarkus.vertx.http.deployment.RouteBuildItem;
+import io.smallrye.config.ConfigValue;
+import org.hibernate.cfg.AvailableSettings;
+import org.hibernate.jpa.boot.internal.ParsedPersistenceXmlDescriptor;
+import org.hibernate.jpa.boot.internal.PersistenceXmlParser;
+import org.jboss.jandex.AnnotationInstance;
+import org.jboss.jandex.AnnotationTarget;
+import org.jboss.jandex.ClassInfo;
+import org.jboss.jandex.DotName;
+import org.jboss.jandex.IndexView;
+import org.jboss.logging.Logger;
+import org.jboss.resteasy.plugins.server.servlet.ResteasyContextParameters;
+import org.jboss.resteasy.spi.ResteasyDeployment;
+import org.keycloak.Config;
+import org.keycloak.authentication.AuthenticatorSpi;
+import org.keycloak.authentication.authenticators.browser.DeployedScriptAuthenticatorFactory;
+import org.keycloak.authorization.policy.provider.PolicySpi;
+import org.keycloak.authorization.policy.provider.js.DeployedScriptPolicyFactory;
+import org.keycloak.common.Profile;
+import org.keycloak.common.crypto.FipsMode;
+import org.keycloak.common.util.StreamUtil;
+import org.keycloak.config.DatabaseOptions;
+import org.keycloak.config.SecurityOptions;
+import org.keycloak.config.StorageOptions;
+import org.keycloak.connections.jpa.DefaultJpaConnectionProviderFactory;
+import org.keycloak.connections.jpa.JpaConnectionProvider;
+import org.keycloak.connections.jpa.JpaConnectionSpi;
+import org.keycloak.connections.jpa.updater.liquibase.LiquibaseJpaUpdaterProviderFactory;
+import org.keycloak.connections.jpa.updater.liquibase.conn.DefaultLiquibaseConnectionProvider;
+import org.keycloak.models.map.storage.jpa.EventListenerIntegrator;
+import org.keycloak.models.map.storage.jpa.JpaMapStorageProviderFactory;
+import org.keycloak.policy.BlacklistPasswordPolicyProviderFactory;
+import org.keycloak.protocol.ProtocolMapperSpi;
+import org.keycloak.protocol.oidc.mappers.DeployedScriptOIDCProtocolMapper;
+import org.keycloak.protocol.saml.mappers.DeployedScriptSAMLProtocolMapper;
+import org.keycloak.provider.EnvironmentDependentProviderFactory;
+import org.keycloak.provider.Provider;
+import org.keycloak.provider.ProviderFactory;
+import org.keycloak.provider.ProviderManager;
+import org.keycloak.provider.Spi;
+import org.keycloak.quarkus.runtime.Environment;
+import org.keycloak.quarkus.runtime.KeycloakRecorder;
+import org.keycloak.quarkus.runtime.configuration.Configuration;
+import org.keycloak.quarkus.runtime.configuration.KeycloakConfigSourceProvider;
+import org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider;
+import org.keycloak.quarkus.runtime.configuration.PersistedConfigSource;
+import org.keycloak.quarkus.runtime.configuration.QuarkusPropertiesConfigSource;
+import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper;
+import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
+import org.keycloak.quarkus.runtime.integration.jaxrs.QuarkusKeycloakApplication;
+import org.keycloak.quarkus.runtime.integration.web.NotFoundHandler;
+import org.keycloak.quarkus.runtime.services.health.KeycloakReadyHealthCheck;
+import org.keycloak.quarkus.runtime.storage.database.jpa.NamedJpaConnectionProviderFactory;
+import org.keycloak.quarkus.runtime.themes.FlatClasspathThemeResourceProviderFactory;
+import org.keycloak.representations.provider.ScriptProviderDescriptor;
+import org.keycloak.representations.provider.ScriptProviderMetadata;
+import org.keycloak.services.ServicesLogger;
+import org.keycloak.theme.ClasspathThemeProviderFactory;
+import org.keycloak.theme.ClasspathThemeResourceProviderFactory;
+import org.keycloak.theme.FolderThemeProviderFactory;
+import org.keycloak.theme.JarThemeProviderFactory;
+import org.keycloak.theme.ThemeResourceSpi;
+import org.keycloak.transaction.JBossJtaTransactionManagerLookup;
+import org.keycloak.url.DefaultHostnameProviderFactory;
+import org.keycloak.url.FixedHostnameProviderFactory;
+import org.keycloak.url.RequestHostnameProviderFactory;
+import org.keycloak.util.JsonSerialization;
+import org.keycloak.vault.FilesKeystoreVaultProviderFactory;
+import org.keycloak.vault.FilesPlainTextVaultProviderFactory;
 
-import javax.persistence.Entity;
-import javax.persistence.spi.PersistenceUnitTransactionType;
+import jakarta.persistence.Entity;
+import jakarta.persistence.spi.PersistenceUnitTransactionType;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
@@ -41,7 +121,6 @@ import java.io.InputStream;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.Enumeration;
@@ -57,99 +136,25 @@ import java.util.function.Predicate;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
-import io.quarkus.agroal.spi.JdbcDataSourceBuildItem;
-import io.quarkus.arc.deployment.BuildTimeConditionBuildItem;
-import io.quarkus.datasource.deployment.spi.DevServicesDatasourceResultBuildItem;
-import io.quarkus.deployment.IsDevelopment;
-import io.quarkus.deployment.annotations.Consume;
-import io.quarkus.deployment.builditem.BootstrapConfigSetupCompleteBuildItem;
-import io.quarkus.deployment.builditem.CombinedIndexBuildItem;
-import io.quarkus.deployment.builditem.GeneratedResourceBuildItem;
-import io.quarkus.deployment.builditem.HotDeploymentWatchedFileBuildItem;
-import io.quarkus.deployment.builditem.IndexDependencyBuildItem;
-import io.quarkus.deployment.builditem.StaticInitConfigSourceProviderBuildItem;
-import io.quarkus.hibernate.orm.deployment.AdditionalJpaModelBuildItem;
-import io.quarkus.hibernate.orm.deployment.HibernateOrmConfig;
-import io.quarkus.hibernate.orm.deployment.PersistenceXmlDescriptorBuildItem;
-import io.quarkus.hibernate.orm.deployment.integration.HibernateOrmIntegrationRuntimeConfiguredBuildItem;
-import io.quarkus.resteasy.server.common.deployment.ResteasyDeploymentCustomizerBuildItem;
-import io.quarkus.runtime.configuration.ProfileManager;
-import io.quarkus.vertx.http.deployment.RouteBuildItem;
-import io.quarkus.vertx.http.runtime.HttpBuildTimeConfig;
-import io.smallrye.config.ConfigValue;
-import org.hibernate.cfg.AvailableSettings;
-import org.hibernate.jpa.boot.internal.ParsedPersistenceXmlDescriptor;
-import org.hibernate.jpa.boot.internal.PersistenceXmlParser;
-import org.jboss.jandex.AnnotationInstance;
-import org.jboss.jandex.AnnotationTarget;
-import org.jboss.jandex.ClassInfo;
-import org.jboss.jandex.DotName;
-import org.jboss.jandex.IndexView;
-import org.jboss.logging.Logger;
-import org.jboss.resteasy.plugins.server.servlet.ResteasyContextParameters;
-import org.jboss.resteasy.spi.ResteasyDeployment;
-import org.keycloak.Config;
-import org.keycloak.common.crypto.FipsMode;
-import org.keycloak.config.SecurityOptions;
-import org.keycloak.config.StorageOptions;
-import org.keycloak.connections.jpa.JpaConnectionProvider;
-import org.keycloak.connections.jpa.JpaConnectionSpi;
-import org.keycloak.models.map.storage.jpa.JpaMapStorageProviderFactory;
-import org.keycloak.protocol.saml.mappers.DeployedScriptSAMLProtocolMapper;
-import org.keycloak.quarkus.runtime.QuarkusProfile;
-import org.keycloak.quarkus.runtime.configuration.PersistedConfigSource;
-import org.keycloak.quarkus.runtime.configuration.QuarkusPropertiesConfigSource;
-import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper;
-import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
-import org.keycloak.quarkus.runtime.integration.jaxrs.QuarkusKeycloakApplication;
-import org.keycloak.authentication.AuthenticatorSpi;
-import org.keycloak.authentication.authenticators.browser.DeployedScriptAuthenticatorFactory;
-import org.keycloak.authorization.policy.provider.PolicySpi;
-import org.keycloak.authorization.policy.provider.js.DeployedScriptPolicyFactory;
-import org.keycloak.common.Profile;
-import org.keycloak.common.util.StreamUtil;
-import org.keycloak.quarkus.runtime.configuration.Configuration;
-import org.keycloak.quarkus.runtime.configuration.KeycloakConfigSourceProvider;
-import org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider;
-import org.keycloak.connections.jpa.DefaultJpaConnectionProviderFactory;
-import org.keycloak.connections.jpa.updater.liquibase.LiquibaseJpaUpdaterProviderFactory;
-import org.keycloak.connections.jpa.updater.liquibase.conn.DefaultLiquibaseConnectionProvider;
-import org.keycloak.policy.BlacklistPasswordPolicyProviderFactory;
-import org.keycloak.protocol.ProtocolMapperSpi;
-import org.keycloak.protocol.oidc.mappers.DeployedScriptOIDCProtocolMapper;
-import org.keycloak.provider.EnvironmentDependentProviderFactory;
-import org.keycloak.provider.Provider;
-import org.keycloak.provider.ProviderFactory;
-import org.keycloak.provider.ProviderManager;
-import org.keycloak.provider.Spi;
-import org.keycloak.quarkus.runtime.KeycloakRecorder;
-
-import io.quarkus.deployment.annotations.BuildProducer;
-import io.quarkus.deployment.annotations.BuildStep;
-import io.quarkus.deployment.annotations.ExecutionTime;
-import io.quarkus.deployment.annotations.Record;
-import io.quarkus.deployment.builditem.FeatureBuildItem;
-import io.quarkus.vertx.http.deployment.FilterBuildItem;
-
-import org.keycloak.quarkus.runtime.services.health.KeycloakReadyHealthCheck;
-import org.keycloak.quarkus.runtime.storage.database.jpa.NamedJpaConnectionProviderFactory;
-import org.keycloak.quarkus.runtime.themes.FlatClasspathThemeResourceProviderFactory;
-import org.keycloak.representations.provider.ScriptProviderDescriptor;
-import org.keycloak.representations.provider.ScriptProviderMetadata;
-import org.keycloak.quarkus.runtime.integration.web.NotFoundHandler;
-import org.keycloak.services.ServicesLogger;
-import org.keycloak.theme.ClasspathThemeProviderFactory;
-import org.keycloak.theme.ClasspathThemeResourceProviderFactory;
-import org.keycloak.theme.FolderThemeProviderFactory;
-import org.keycloak.theme.JarThemeProviderFactory;
-import org.keycloak.theme.ThemeResourceSpi;
-import org.keycloak.transaction.JBossJtaTransactionManagerLookup;
-import org.keycloak.quarkus.runtime.Environment;
-import org.keycloak.url.DefaultHostnameProviderFactory;
-import org.keycloak.url.FixedHostnameProviderFactory;
-import org.keycloak.url.RequestHostnameProviderFactory;
-import org.keycloak.util.JsonSerialization;
-import org.keycloak.vault.FilesPlainTextVaultProviderFactory;
+import static org.keycloak.connections.jpa.util.JpaUtils.loadSpecificNamedQueries;
+import static org.keycloak.quarkus.runtime.Environment.getCurrentOrCreateFeatureProfile;
+import static org.keycloak.quarkus.runtime.Environment.getProviderFiles;
+import static org.keycloak.quarkus.runtime.KeycloakRecorder.DEFAULT_HEALTH_ENDPOINT;
+import static org.keycloak.quarkus.runtime.KeycloakRecorder.DEFAULT_METRICS_ENDPOINT;
+import static org.keycloak.quarkus.runtime.Providers.getProviderManager;
+import static org.keycloak.quarkus.runtime.configuration.Configuration.getKcConfigValue;
+import static org.keycloak.quarkus.runtime.configuration.Configuration.getOptionalKcValue;
+import static org.keycloak.quarkus.runtime.configuration.Configuration.getOptionalValue;
+import static org.keycloak.quarkus.runtime.configuration.Configuration.getPropertyNames;
+import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX;
+import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_QUARKUS;
+import static org.keycloak.quarkus.runtime.configuration.QuarkusPropertiesConfigSource.QUARKUS_PROPERTY_ENABLED;
+import static org.keycloak.quarkus.runtime.storage.legacy.database.LegacyJpaConnectionProviderFactory.QUERY_PROPERTY_PREFIX;
+import static org.keycloak.representations.provider.ScriptProviderDescriptor.AUTHENTICATORS;
+import static org.keycloak.representations.provider.ScriptProviderDescriptor.MAPPERS;
+import static org.keycloak.representations.provider.ScriptProviderDescriptor.POLICIES;
+import static org.keycloak.representations.provider.ScriptProviderDescriptor.SAML_MAPPERS;
+import static org.keycloak.theme.ClasspathThemeProviderFactory.KEYCLOAK_THEMES_JSON;
 
 class KeycloakProcessor {
 
@@ -159,7 +164,7 @@ class KeycloakProcessor {
     private static final Map<String, Function<ScriptProviderMetadata, ProviderFactory>> DEPLOYEABLE_SCRIPT_PROVIDERS = new HashMap<>();
     private static final String KEYCLOAK_SCRIPTS_JSON_PATH = "META-INF/keycloak-scripts.json";
 
-    private static final List<Class<? extends ProviderFactory>> IGNORED_PROVIDER_FACTORY = Arrays.asList(
+    private static final List<Class<? extends ProviderFactory>> IGNORED_PROVIDER_FACTORY = List.of(
             JBossJtaTransactionManagerLookup.class,
             DefaultJpaConnectionProviderFactory.class,
             DefaultLiquibaseConnectionProvider.class,
@@ -168,11 +173,16 @@ class KeycloakProcessor {
             DefaultHostnameProviderFactory.class,
             FixedHostnameProviderFactory.class,
             RequestHostnameProviderFactory.class,
+            FilesKeystoreVaultProviderFactory.class,
             FilesPlainTextVaultProviderFactory.class,
             BlacklistPasswordPolicyProviderFactory.class,
             ClasspathThemeResourceProviderFactory.class,
             JarThemeProviderFactory.class,
             JpaMapStorageProviderFactory.class);
+    public static final String QUARKUS_HEALTH_ROOT_PROPERTY = "quarkus.smallrye-health.root-path";
+    public static final String QUARKUS_METRICS_PATH_PROPERTY = "quarkus.micrometer.export.prometheus.path";
+    public static final String QUARKUS_DEFAULT_HEALTH_PATH = "health";
+    public static final String QUARKUS_DEFAULT_METRICS_PATH = "metrics";
 
     static {
         DEPLOYEABLE_SCRIPT_PROVIDERS.put(AUTHENTICATORS, KeycloakProcessor::registerScriptAuthenticator);
@@ -200,6 +210,26 @@ class KeycloakProcessor {
     @BuildStep
     FeatureBuildItem getFeature() {
         return new FeatureBuildItem("keycloak");
+    }
+
+    @Record(ExecutionTime.STATIC_INIT)
+    @BuildStep
+    ConfigBuildItem initConfig(KeycloakRecorder recorder) {
+        Config.init(new MicroProfileConfigProvider());
+        recorder.initConfig();
+        return new ConfigBuildItem();
+    }
+
+    @Record(ExecutionTime.STATIC_INIT)
+    @BuildStep
+    @Consume(ConfigBuildItem.class)
+    ProfileBuildItem configureProfile(KeycloakRecorder recorder) {
+        Profile profile = getCurrentOrCreateFeatureProfile();
+
+        // record the features so that they are not calculated again at runtime
+        recorder.configureProfile(profile.getName(), profile.getFeatures());
+
+        return new ProfileBuildItem();
     }
 
     /**
@@ -231,7 +261,7 @@ class KeycloakProcessor {
 
             if ("keycloak-default".equals(descriptor.getName())) {
                 defaultUnitDescriptor = descriptor;
-                configureDefaultPersistenceUnitProperties(defaultUnitDescriptor, config, jdbcDataSources);
+                configureDefaultPersistenceUnitProperties(defaultUnitDescriptor, config, getDefaultDataSource(jdbcDataSources));
                 runtimeConfigured.produce(new HibernateOrmIntegrationRuntimeConfiguredBuildItem("keycloak", defaultUnitDescriptor.getName())
                         .setInitListener(recorder.createDefaultUnitListener()));
             } else {
@@ -253,7 +283,7 @@ class KeycloakProcessor {
     @BuildStep(onlyIf = IsJpaStoreEnabled.class)
     void produceDefaultPersistenceUnit(BuildProducer<PersistenceXmlDescriptorBuildItem> producer) {
         String storage = Configuration.getRawValue(
-                MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX.concat(StorageOptions.STORAGE.getKey()));
+                NS_KEYCLOAK_PREFIX.concat(StorageOptions.STORAGE.getKey()));
         ParsedPersistenceXmlDescriptor descriptor;
 
         if (storage == null) {
@@ -268,14 +298,28 @@ class KeycloakProcessor {
     }
 
     private void configureDefaultPersistenceUnitProperties(ParsedPersistenceXmlDescriptor descriptor, HibernateOrmConfig config,
-            List<JdbcDataSourceBuildItem> jdbcDataSources) {
+            JdbcDataSourceBuildItem defaultDataSource) {
+        if (defaultDataSource == null || !defaultDataSource.isDefault()) {
+            throw new RuntimeException("The server datasource must be the default datasource.");
+        }
+
         Properties unitProperties = descriptor.getProperties();
 
-        unitProperties.setProperty(AvailableSettings.DIALECT, config.defaultPersistenceUnit.dialect.dialect.orElse(null));
-        unitProperties.setProperty(AvailableSettings.JPA_TRANSACTION_TYPE, PersistenceUnitTransactionType.JTA.name());
+        final Optional<String> dialect = getOptionalKcValue(DatabaseOptions.DB_DIALECT.getKey());
+        dialect.ifPresent(d -> unitProperties.setProperty(AvailableSettings.DIALECT, d));
+
+        final Optional<String> defaultSchema = getOptionalKcValue(DatabaseOptions.DB_SCHEMA.getKey());
+        defaultSchema.ifPresent(ds -> unitProperties.setProperty(AvailableSettings.DEFAULT_SCHEMA, ds));
+
+        unitProperties.setProperty(AvailableSettings.JAKARTA_TRANSACTION_TYPE, PersistenceUnitTransactionType.JTA.name());
+        descriptor.setTransactionType(PersistenceUnitTransactionType.JTA);
+
+        final Optional<String> lockTimeoutConfigValue = getOptionalValue("spi-map-storage-jpa-lock-timeout");
+        lockTimeoutConfigValue.ifPresent(v -> unitProperties.setProperty(AvailableSettings.JAKARTA_LOCK_TIMEOUT, v));
+
         unitProperties.setProperty(AvailableSettings.QUERY_STARTUP_CHECKING, Boolean.FALSE.toString());
 
-        String dbKind = jdbcDataSources.get(0).getDbKind();
+        String dbKind = defaultDataSource.getDbKind();
 
         for (Entry<Object, Object> query : loadSpecificNamedQueries(dbKind.toLowerCase()).entrySet()) {
             unitProperties.setProperty(QUERY_PROPERTY_PREFIX + query.getKey(), query.getValue().toString());
@@ -308,8 +352,8 @@ class KeycloakProcessor {
      */
     @Record(ExecutionTime.STATIC_INIT)
     @BuildStep
+    @Consume(ProfileBuildItem.class)
     KeycloakSessionFactoryPreInitBuildItem configureKeycloakSessionFactory(KeycloakRecorder recorder, List<PersistenceXmlDescriptorBuildItem> descriptors) {
-        Profile.setInstance(new QuarkusProfile());
         Map<Spi, Map<Class<? extends Provider>, Map<String, Class<? extends ProviderFactory>>>> factories = new HashMap<>();
         Map<Class<? extends Provider>, String> defaultProviders = new HashMap<>();
         Map<String, ProviderFactory> preConfiguredProviders = new HashMap<>();
@@ -447,6 +491,11 @@ class KeycloakProcessor {
             properties.put(String.format("kc.provider.file.%s.last-modified", jar.getName()), String.valueOf(jar.lastModified()));
         }
 
+        if (!Environment.isRebuildCheck()) {
+            // not auto-build (e.g.: start without optimized option) but a regular build to create an optimized server image
+            Configuration.markAsOptimized(properties);
+        }
+
         String profile = Environment.getProfile();
 
         if (profile != null) {
@@ -482,6 +531,10 @@ class KeycloakProcessor {
         }
 
         if (value != null && value.getValue() != null) {
+            if (value.getConfigSourceName() == null) {
+                // only persist build options resolved from config sources and not default values
+                return;
+            }
             String rawValue = value.getRawValue();
 
             if (rawValue == null) {
@@ -515,21 +568,25 @@ class KeycloakProcessor {
         indexDependencyBuildItemBuildProducer.produce(new IndexDependencyBuildItem("org.keycloak", "keycloak-model-jpa"));
     }
 
-    @Record(ExecutionTime.STATIC_INIT)
+    @Record(ExecutionTime.RUNTIME_INIT)
     @BuildStep
-    void initializeFilter(BuildProducer<FilterBuildItem> filters, KeycloakRecorder recorder, HttpBuildTimeConfig httpBuildConfig) {
-        String rootPath = httpBuildConfig.rootPath;
+    void initializeFilter(BuildProducer<FilterBuildItem> filters, KeycloakRecorder recorder, ExecutorBuildItem executor, NonApplicationRootPathBuildItem nonApplicationRootPathBuildItem) {
+
         List<String> ignoredPaths = new ArrayList<>();
 
         if (isHealthEnabled()) {
-            ignoredPaths.add(rootPath + "health");
+            ignoredPaths.add(nonApplicationRootPathBuildItem.
+                    resolvePath(getOptionalValue(QUARKUS_HEALTH_ROOT_PROPERTY)
+                            .orElse(QUARKUS_DEFAULT_HEALTH_PATH)));
         }
 
         if (isMetricsEnabled()) {
-            ignoredPaths.add(rootPath + "metrics");
+            ignoredPaths.add(nonApplicationRootPathBuildItem.
+                    resolvePath(getOptionalValue(QUARKUS_METRICS_PATH_PROPERTY)
+                            .orElse(QUARKUS_DEFAULT_METRICS_PATH)));
         }
 
-        filters.produce(new FilterBuildItem(recorder.createRequestFilter(ignoredPaths),FilterBuildItem.AUTHORIZATION - 10));
+        filters.produce(new FilterBuildItem(recorder.createRequestFilter(ignoredPaths, executor.getExecutorProxy()),FilterBuildItem.AUTHORIZATION - 10));
     }
 
     @BuildStep
@@ -573,12 +630,19 @@ class KeycloakProcessor {
     }
 
     @Consume(BootstrapConfigSetupCompleteBuildItem.class)
+    @Consume(ProfileBuildItem.class)
     @BuildStep
     @Record(ExecutionTime.STATIC_INIT)
     void setCryptoProvider(KeycloakRecorder recorder) {
-        FipsMode fipsMode = Configuration.getOptionalValue(
-                MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX + SecurityOptions.FIPS_MODE.getKey()).map(
-                FipsMode::valueOf).orElse(FipsMode.disabled);
+        FipsMode fipsMode = getOptionalValue(NS_KEYCLOAK_PREFIX + SecurityOptions.FIPS_MODE.getKey())
+                .map(FipsMode::valueOfOption)
+                .orElse(FipsMode.DISABLED);
+        if (Profile.isFeatureEnabled(Profile.Feature.FIPS) && !fipsMode.isFipsEnabled()) {
+            // default to non strict when fips feature enabled
+            fipsMode = FipsMode.NON_STRICT;
+        } else if (fipsMode.isFipsEnabled() && !Profile.isFeatureEnabled(Profile.Feature.FIPS)) {
+            throw new RuntimeException("FIPS mode cannot be enabled without enabling the FIPS feature --features=fips");
+        }
 
         recorder.setCryptoProvider(fipsMode);
     }
@@ -774,10 +838,20 @@ class KeycloakProcessor {
     }
 
     private boolean isMetricsEnabled() {
-        return Configuration.getOptionalBooleanValue(MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX.concat("metrics-enabled")).orElse(false);
+        return Configuration.getOptionalBooleanValue(NS_KEYCLOAK_PREFIX.concat("metrics-enabled")).orElse(false);
     }
 
     private boolean isHealthEnabled() {
-        return Configuration.getOptionalBooleanValue(MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX.concat("health-enabled")).orElse(false);
+        return Configuration.getOptionalBooleanValue(NS_KEYCLOAK_PREFIX.concat("health-enabled")).orElse(false);
+    }
+
+    static JdbcDataSourceBuildItem getDefaultDataSource(List<JdbcDataSourceBuildItem> jdbcDataSources) {
+        for (JdbcDataSourceBuildItem jdbcDataSource : jdbcDataSources) {
+            if (jdbcDataSource.isDefault()) {
+                return jdbcDataSource;
+            }
+        }
+
+        throw new RuntimeException("No default datasource found. The server datasource must be the default datasource.");
     }
 }

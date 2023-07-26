@@ -390,7 +390,6 @@ public class LdapMapOperationManager implements AutoCloseable {
         StartTlsResponse tlsResponse = null;
 
         try {
-
             Hashtable<Object, Object> env = LdapMapContextManager.getNonAuthConnectionProperties(config);
 
             // Never use connection pool to prevent password caching

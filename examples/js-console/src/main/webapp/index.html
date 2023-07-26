@@ -130,7 +130,7 @@
         document.getElementById('events').innerHTML = new Date().toLocaleString() + "\t" + event + "\n" + e;
     }
 
-    var keycloak = Keycloak();
+    var keycloak = new Keycloak();
 
     keycloak.onAuthSuccess = function () {
         event('Auth Success');
