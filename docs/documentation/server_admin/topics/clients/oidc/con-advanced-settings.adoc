@@ -85,7 +85,7 @@ In the following cases, {project_name} will verify the client sending the access
 
 * A token refresh request is sent to the token endpoint with a holder-of-key refresh token.
 * A UserInfo request is sent to UserInfo endpoint with a holder-of-key access token.
-* A logout request is sent to Logout endpoint with a holder-of-key refresh token.
+* A logout request is sent to non-OIDC compliant {project_name} proprietary Logout endpoint with a holder-of-key refresh token.
 
 See https://datatracker.ietf.org/doc/html/draft-ietf-oauth-mtls-08#section-3[Mutual TLS Client Certificate Bound Access Tokens] in the OAuth 2.0 Mutual TLS Client Authentication and Certificate Bound Access Tokens for more details.
 
@@ -93,6 +93,40 @@ See https://datatracker.ietf.org/doc/html/draft-ietf-oauth-mtls-08#section-3[Mut
 ====
 Currently, {project_name} client adapters do not support holder-of-key token verification. {project_name} adapters treat access and refresh tokens as bearer tokens.
 ====
+
+[[_dpop-bound-tokens]]
+*OAuth 2.0 Demonstrating Proof-of-Possession at the Application Layer (DPoP)*
+
+DPoP binds an access token and a refresh token together with the public part of a client's key pair. This binding prevents an attacker from using stolen tokens.
+
+This type of token is a holder-of-key token. Unlike bearer tokens, the recipient of a holder-of-key token can verify if the sender of the token is legitimate.
+
+If this setting is on, the workflow is:
+
+. A token request is sent to the token endpoint in an authorization code flow or hybrid flow.
+. {project_name} requests a DPoP proof.
+. {project_name} receives the DPoP proof.
+. {project_name} successfully verifies the DPoP proof.
+
+If verification fails, {project_name} rejects the token.
+
+In the following cases, {project_name} will verify the client sending the refresh token:
+
+* A token refresh request is sent to the token endpoint with a holder-of-key refresh token. This verification is done only for public clients as described in the DPoP specification. For confidential clients, the verification is not done as client authentication with proper client credentials is in place to ensure that request comes from the legitimate client. For public clients, both access tokens and refresh tokens are DPoP bound. For confidential clients, only access tokens are DPoP bound.
+* A UserInfo request is sent to UserInfo endpoint with a holder-of-key access token.
+* A logout request is sent to a non-OIDC compliant {project_name} proprietary logout endpoint Logout endpoint with a holder-of-key refresh token. This request is done only for public clients as described above.
+
+See https://datatracker.ietf.org/doc/html/draft-ietf-oauth-dpop[OAuth 2.0 Demonstrating Proof-of-Possession at the Application Layer (DPoP)] for more details.
+
+[NOTE]
+====
+Currently, {project_name} client adapters do not support DPoP holder-of-key token verification. {project_name} adapters treat access and refresh tokens as bearer tokens.
+====
+
+:tech_feature_name: DPoP
+:tech_feature_setting: -Dkeycloak.profile.feature.dpop=enabled
+:tech_feature_id: dpop
+include::../../templates/techpreview.adoc[]
 
 [[_client_advanced_settings_oidc]]
 *Advanced Settings for OIDC*
