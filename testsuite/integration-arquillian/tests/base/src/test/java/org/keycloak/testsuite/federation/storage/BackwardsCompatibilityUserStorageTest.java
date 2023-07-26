@@ -168,7 +168,7 @@ public class BackwardsCompatibilityUserStorageTest extends AbstractTestRealmKeyc
         getCleanup().addUserId(userId);
 
         // Setup OTP for the user
-        String totpSecret = setupOTPForUserWithRequiredAction(userId);
+        String totpSecret = setupOTPForUserWithRequiredAction(userId, true);
 
         // Assert user has OTP in the userStorage
         assertUserDontHaveDBCredentials();
@@ -209,7 +209,7 @@ public class BackwardsCompatibilityUserStorageTest extends AbstractTestRealmKeyc
         getCleanup().addUserId(userId);
 
         // Setup OTP
-        String totpSecret = setupOTPForUserWithRequiredAction(userId);
+        String totpSecret = setupOTPForUserWithRequiredAction(userId, true);
 
         assertUserDontHaveDBCredentials();
         assertUserHasOTPCredentialInUserStorage(true);
@@ -245,7 +245,7 @@ public class BackwardsCompatibilityUserStorageTest extends AbstractTestRealmKeyc
         String accountToken = tokenUtil.getToken();
 
         // Setup OTP
-        String totpSecret = setupOTPForUserWithRequiredAction(userId);
+        String totpSecret = setupOTPForUserWithRequiredAction(userId, false);
 
         assertUserDontHaveDBCredentials();
         assertUserHasOTPCredentialInUserStorage(true);
@@ -281,7 +281,7 @@ public class BackwardsCompatibilityUserStorageTest extends AbstractTestRealmKeyc
         getCleanup().addUserId(userId);
 
         // Setup OTP for the user
-        setupOTPForUserWithRequiredAction(userId);
+        setupOTPForUserWithRequiredAction(userId, true);
 
         // Assert user has OTP in the userStorage
         assertUserDontHaveDBCredentials();
@@ -315,7 +315,7 @@ public class BackwardsCompatibilityUserStorageTest extends AbstractTestRealmKeyc
     }
 
     // return created totpSecret
-    private String setupOTPForUserWithRequiredAction(String userId) throws URISyntaxException, IOException {
+    private String setupOTPForUserWithRequiredAction(String userId, boolean logoutOtherSessions) throws URISyntaxException, IOException {
         // Add required action to the user to reset OTP
         UserResource user = testRealm().users().get(userId);
         UserRepresentation userRep = user.toRepresentation();
@@ -328,6 +328,9 @@ public class BackwardsCompatibilityUserStorageTest extends AbstractTestRealmKeyc
         testAppHelper.startLogin("otp1", "pass");
 
         configureTotpRequiredActionPage.assertCurrent();
+        if (!logoutOtherSessions) {
+            configureTotpRequiredActionPage.uncheckLogoutSessions();
+        }
         String totpSecret = configureTotpRequiredActionPage.getTotpSecret();
         configureTotpRequiredActionPage.configure(totp.generateTOTP(totpSecret));
         appPage.assertCurrent();

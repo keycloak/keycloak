@@ -1,4 +1,5 @@
 <#import "template.ftl" as layout>
+<#import "password-commons.ftl" as passwordCommons>
 <@layout.registrationLayout displayRequiredFields=false displayMessage=!messagesPerField.existsError('totp','userLabel'); section>
 
     <#if section = "header">
@@ -86,6 +87,10 @@
                         </span>
                     </#if>
                 </div>
+            </div>
+
+            <div class="${properties.kcFormGroupClass!}">
+                <@passwordCommons.logoutOtherSessions/>
             </div>
 
             <#if isAppInitiatedAction??>
