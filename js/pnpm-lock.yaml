@@ -260,7 +260,7 @@ importers:
         specifier: ^3.3.2
         version: 3.3.2(vite@4.4.7)
       cypress:
-        specifier: ^12.17.2
+        specifier: https://cdn.cypress.io/beta/npm/13.0.0/linux-x64/release/13.0.0-5d1e07a7aa228745b5e742aa3e912fcbd4cb217f/cypress.tgz
         version: 12.17.2
       cypress-axe:
         specifier: ^1.4.0
