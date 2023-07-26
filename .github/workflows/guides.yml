@@ -8,10 +8,6 @@ on:
   pull_request:
   workflow_dispatch:
 
-env:
-  DEFAULT_JDK_VERSION: 17
-  DEFAULT_JDK_DIST: temurin
-
 concurrency:
   # Only cancel jobs for PR updates
   group: guides-${{ github.head_ref || github.run_id }}

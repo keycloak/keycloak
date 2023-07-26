@@ -9,14 +9,14 @@ inputs:
   jdk-version:
     description: JDK version
     required: false
-    default: 17
+    default: "17"
 
 runs:
   using: composite
   steps:
     - id: setup-java
       name: Setup Java
-      uses: actions/setup-java@v3
+      uses: ./.github/actions/java-setup
       with:
         distribution: ${{ inputs.jdk-dist }}
         java-version: ${{ inputs.jdk-version }}
