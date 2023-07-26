@@ -21,7 +21,6 @@ import io.fabric8.kubernetes.api.model.ContainerStateWaiting;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.EnvVarBuilder;
 import io.fabric8.kubernetes.api.model.EnvVarSourceBuilder;
-import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.PodSpec;
 import io.fabric8.kubernetes.api.model.PodSpecFluent.ContainersNested;
 import io.fabric8.kubernetes.api.model.PodStatus;
@@ -54,13 +53,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.keycloak.operator.crds.v2alpha1.CRDUtils.isTlsConfigured;
 
-public class KeycloakDeployment extends OperatorManagedResource implements StatusUpdater<KeycloakStatusAggregator> {
+public class KeycloakDeployment extends OperatorManagedResource<StatefulSet> implements StatusUpdater<KeycloakStatusAggregator> {
 
     private final Config operatorConfig;
     private final KeycloakDistConfigurator distConfigurator;
@@ -71,6 +71,7 @@ public class KeycloakDeployment extends OperatorManagedResource implements Statu
     private final String adminSecretName;
 
     private Set<String> serverConfigSecretsNames;
+    private WatchedSecrets watchedSecrets;
 
     private boolean migrationInProgress;
 
@@ -87,8 +88,13 @@ public class KeycloakDeployment extends OperatorManagedResource implements Statu
         addRemainingEnvVars();
     }
 
+    public void setWatchedSecrets(WatchedSecrets watchedSecrets) {
+        this.watchedSecrets = watchedSecrets;
+    }
+
     @Override
-    public Optional<HasMetadata> getReconciledResource() {
+    public Optional<StatefulSet> getReconciledResource() {
+        StatefulSet baseDeployment = new StatefulSetBuilder(this.baseDeployment).build(); // clone not to change the base template
         if (existingDeployment == null) {
             Log.info("No existing Deployment found, using the default");
         }
@@ -102,11 +108,27 @@ public class KeycloakDeployment extends OperatorManagedResource implements Statu
 
             migrateDeployment(existingDeployment, baseDeployment);
         }
+
+        var configSecretsNames = getConfigSecretsNames();
+        if (!configSecretsNames.isEmpty() && watchedSecrets != null) {
+            watchedSecrets.annotateDeployment(configSecretsNames, keycloakCR, baseDeployment);
+        }
+
         return Optional.of(baseDeployment);
     }
 
     private boolean hasExpectedMatchLabels(StatefulSet statefulSet) {
         return Optional.ofNullable(statefulSet).map(s -> getInstanceLabels().equals(s.getSpec().getSelector().getMatchLabels())).orElse(true);
+    }
+
+    @Override
+    public Optional<StatefulSet> createOrUpdateReconciled() {
+        var ret = super.createOrUpdateReconciled();
+        // after the change to the statefulset has been "committed", start watching
+        if (watchedSecrets != null) {
+            ret.map(StatefulSet.class::cast).ifPresent(watchedSecrets::addLabelsToWatchedSecrets);
+        }
+        return ret;
     }
 
     public void validatePodTemplate(KeycloakStatusAggregator status) {
@@ -201,7 +223,7 @@ public class KeycloakDeployment extends OperatorManagedResource implements Statu
             containerBuilder.withImagePullPolicy(operatorConfig.keycloak().imagePullPolicy());
         }
         if (Optional.ofNullable(containerBuilder.getArgs()).orElse(List.of()).isEmpty()) {
-            containerBuilder.withArgs("start");
+            containerBuilder.withArgs("--verbose", "start");
         }
         if (customImage.isPresent()) {
             containerBuilder.addToArgs("--optimized");
@@ -391,22 +413,15 @@ public class KeycloakDeployment extends OperatorManagedResource implements Statu
                 });
     }
 
-    public Set<String> getConfigSecretsNames() {
-        Set<String> ret = new HashSet<>(serverConfigSecretsNames);
+    public List<String> getConfigSecretsNames() {
+        TreeSet<String> ret = new TreeSet<>(serverConfigSecretsNames);
         ret.addAll(distConfigurator.getSecretNames());
-        return ret;
+        return new ArrayList<>(ret);
     }
 
     @Override
     public String getName() {
         return keycloakCR.getMetadata().getName();
-    }
-
-    public void rollingRestart() {
-        client.apps().statefulSets()
-                .inNamespace(getNamespace())
-                .withName(getName())
-                .rolling().restart();
     }
 
     public void migrateDeployment(StatefulSet previousDeployment, StatefulSet reconciledDeployment) {

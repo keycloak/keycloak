@@ -25,6 +25,8 @@ import { useFetch } from "../../utils/useFetch";
 import { FormFields } from "../ClientDetails";
 import { TokenLifespan } from "./TokenLifespan";
 
+import useIsFeatureEnabled, { Feature } from "../../utils/useIsFeatureEnabled";
+
 type AdvancedSettingsProps = {
   save: () => void;
   reset: () => void;
@@ -43,6 +45,9 @@ export const AdvancedSettings = ({
 
   const [realm, setRealm] = useState<RealmRepresentation>();
   const { realm: realmName } = useRealm();
+
+  const isFeatureEnabled = useIsFeatureEnabled();
+  const isDPoPEnabled = isFeatureEnabled(Feature.DPoP);
 
   useFetch(
     () => adminClient.realms.findOne({ realm: realmName }),
@@ -160,6 +165,37 @@ export const AdvancedSettings = ({
               )}
             />
           </FormGroup>
+          {isDPoPEnabled && (
+            <FormGroup
+              label={t("oAuthDPoP")}
+              fieldId="oAuthDPoP"
+              hasNoPaddingTop
+              labelIcon={
+                <HelpItem
+                  helpText={t("clients-help:oAuthDPoP")}
+                  fieldLabelId="clients:oAuthDPoP"
+                />
+              }
+            >
+              <Controller
+                name={convertAttributeNameToForm<FormFields>(
+                  "attributes.dpop.bound.access.tokens",
+                )}
+                defaultValue={false}
+                control={control}
+                render={({ field }) => (
+                  <Switch
+                    id="oAuthDPoP-switch"
+                    label={t("common:on")}
+                    labelOff={t("common:off")}
+                    isChecked={field.value === "true"}
+                    onChange={(value) => field.onChange("" + value)}
+                    aria-label={t("oAuthDPoP")}
+                  />
+                )}
+              />
+            </FormGroup>
+          )}
           <FormGroup
             label={t("keyForCodeExchange")}
             fieldId="keyForCodeExchange"

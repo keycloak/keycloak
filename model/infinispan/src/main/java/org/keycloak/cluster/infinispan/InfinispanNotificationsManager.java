@@ -51,7 +51,6 @@ import org.keycloak.cluster.ClusterListener;
 import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.common.util.ConcurrentMultivaluedHashMap;
 import org.keycloak.common.util.Retry;
-import org.keycloak.connections.infinispan.DefaultInfinispanConnectionProviderFactory;
 import org.keycloak.executors.ExecutorsProvider;
 import org.keycloak.models.KeycloakSession;
 import org.infinispan.client.hotrod.exceptions.HotRodClientException;
@@ -71,7 +70,7 @@ public class InfinispanNotificationsManager {
 
     private final Cache<String, Serializable> workCache;
 
-    private final RemoteCache workRemoteCache;
+    private final RemoteCache<String, Serializable> workRemoteCache;
 
     private final String myAddress;
 
@@ -80,7 +79,7 @@ public class InfinispanNotificationsManager {
     private final ExecutorService listenersExecutor;
 
 
-    protected InfinispanNotificationsManager(Cache<String, Serializable> workCache, RemoteCache workRemoteCache, String myAddress, String mySite, ExecutorService listenersExecutor) {
+    protected InfinispanNotificationsManager(Cache<String, Serializable> workCache, RemoteCache<String, Serializable> workRemoteCache, String myAddress, String mySite, ExecutorService listenersExecutor) {
         this.workCache = workCache;
         this.workRemoteCache = workRemoteCache;
         this.myAddress = myAddress;
@@ -91,7 +90,7 @@ public class InfinispanNotificationsManager {
 
     // Create and init manager including all listeners etc
     public static InfinispanNotificationsManager create(KeycloakSession session, Cache<String, Serializable> workCache, String myAddress, String mySite, Set<RemoteStore> remoteStores) {
-        RemoteCache workRemoteCache = null;
+        RemoteCache<String, Serializable> workRemoteCache = null;
 
         if (!remoteStores.isEmpty()) {
             RemoteStore remoteStore = remoteStores.iterator().next();
@@ -158,21 +157,11 @@ public class InfinispanNotificationsManager {
             // Add directly to remoteCache. Will notify remote listeners on all nodes in all DCs
             Retry.executeWithBackoff((int iteration) -> {
                 try {
-                    /*
-                        workaround for Infinispan 12.1.7.Final to prevent a deadlock while
-                        DefaultInfinispanConnectionProviderFactory is shutting down PersistenceManagerImpl
-                        that acquires a writeLock and this put that acquires a readLock.
-                        First seen with https://issues.redhat.com/browse/ISPN-13664 and still occurs probably due to
-                        https://issues.redhat.com/browse/ISPN-13666 in 13.0.10
-                        Tracked in https://github.com/keycloak/keycloak/issues/9871
-                    */
-                    synchronized (DefaultInfinispanConnectionProviderFactory.class) {
-                        workRemoteCache.put(eventKey, wrappedEvent, 120, TimeUnit.SECONDS);
-                    }
+                    workRemoteCache.put(eventKey, wrappedEvent, 120, TimeUnit.SECONDS);
                 } catch (HotRodClientException re) {
-                if (logger.isDebugEnabled()) {
-                    logger.debugf(re, "Failed sending notification to remote cache '%s'. Key: '%s', iteration '%s'. Will try to retry the task",
-                            workRemoteCache.getName(), eventKey, iteration);
+                    if (logger.isDebugEnabled()) {
+                        logger.debugf(re, "Failed sending notification to remote cache '%s'. Key: '%s', iteration '%s'. Will try to retry the task",
+                                workRemoteCache.getName(), eventKey, iteration);
                 }
 
                 // Rethrow the exception. Retry will take care of handle the exception and eventually retry the operation.
@@ -195,7 +184,7 @@ public class InfinispanNotificationsManager {
 
         @CacheEntryModified
         public void cacheEntryModified(CacheEntryModifiedEvent<String, Serializable> event) {
-            eventReceived(event.getKey(), event.getValue());
+            eventReceived(event.getKey(), event.getNewValue());
         }
 
         @CacheEntryRemoved
@@ -209,30 +198,30 @@ public class InfinispanNotificationsManager {
     @ClientListener
     public class HotRodListener {
 
-        private final RemoteCache<Object, Object> remoteCache;
+        private final RemoteCache<String, Serializable> remoteCache;
 
-        public HotRodListener(RemoteCache<Object, Object> remoteCache) {
+        public HotRodListener(RemoteCache<String, Serializable> remoteCache) {
             this.remoteCache = remoteCache;
         }
 
 
         @ClientCacheEntryCreated
-        public void created(ClientCacheEntryCreatedEvent event) {
-            String key = event.getKey().toString();
+        public void created(ClientCacheEntryCreatedEvent<String> event) {
+            String key = event.getKey();
             hotrodEventReceived(key);
         }
 
 
         @ClientCacheEntryModified
-        public void updated(ClientCacheEntryModifiedEvent event) {
-            String key = event.getKey().toString();
+        public void updated(ClientCacheEntryModifiedEvent<String> event) {
+            String key = event.getKey();
             hotrodEventReceived(key);
         }
 
 
         @ClientCacheEntryRemoved
-        public void removed(ClientCacheEntryRemovedEvent event) {
-            String key = event.getKey().toString();
+        public void removed(ClientCacheEntryRemovedEvent<String> event) {
+            String key = event.getKey();
             taskFinished(key, true);
         }
 
@@ -241,21 +230,7 @@ public class InfinispanNotificationsManager {
             // TODO: Look at CacheEventConverter stuff to possibly include value in the event and avoid additional remoteCache request
             try {
                 listenersExecutor.submit(() -> {
-
-                    /*
-                        workaround for Infinispan 12.1.7.Final to prevent a deadlock while
-                        DefaultInfinispanConnectionProviderFactory is shutting down PersistenceManagerImpl
-                        that acquires a writeLock and this get that acquires a readLock.
-                        First seen with https://issues.redhat.com/browse/ISPN-13664 and still occurs probably due to
-                        https://issues.redhat.com/browse/ISPN-13666 in 13.0.10
-                        Tracked in https://github.com/keycloak/keycloak/issues/9871
-                    */
-                    Object value;
-                    synchronized (DefaultInfinispanConnectionProviderFactory.class) {
-                        value = remoteCache.get(key);
-                    }
-                    eventReceived(key, (Serializable) value);
-
+                    eventReceived(key, remoteCache.get(key));
                 });
             } catch (RejectedExecutionException ree) {
                 // server is shutting down or pool was terminated - don't throw errors

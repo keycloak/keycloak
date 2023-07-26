@@ -92,7 +92,7 @@ public class HolderOfKeyEnforcerExecutor implements ClientPolicyExecutorProvider
             case TOKEN_REQUEST:
             case SERVICE_ACCOUNT_TOKEN_REQUEST:
             case BACKCHANNEL_TOKEN_REQUEST:
-                AccessToken.CertConf certConf = MtlsHoKTokenUtil.bindTokenWithClientCertificate(request, session);
+                AccessToken.Confirmation certConf = MtlsHoKTokenUtil.bindTokenWithClientCertificate(request, session);
                 if (certConf == null) {
                     throw new ClientPolicyException(OAuthErrorException.INVALID_REQUEST, "Client Certification missing for MTLS HoK Token Binding");
                 }
@@ -143,7 +143,7 @@ public class HolderOfKeyEnforcerExecutor implements ClientPolicyExecutorProvider
     }
 
     private void checkUserInfo(UserInfoRequestContext context, HttpRequest request) throws ClientPolicyException {
-        String encodedAccessToken = context.getTokenString();
+        String encodedAccessToken = context.getTokenForUserInfo().getToken();
 
         AccessToken accessToken = session.tokens().decode(encodedAccessToken, AccessToken.class);
         if (accessToken == null) {

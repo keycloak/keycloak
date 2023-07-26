@@ -6,8 +6,6 @@ on:
       - main
       - dependabot/**
   pull_request:
-  schedule:
-    - cron: 0 20,23,2,5 * * *
   workflow_dispatch:
 
 env:
@@ -29,7 +27,6 @@ jobs:
 
   conditional:
     name: Check conditional workflows and jobs
-    if: github.event_name != 'schedule' || github.repository == 'keycloak/keycloak'
     runs-on: ubuntu-latest
     outputs:
       operator: ${{ steps.conditional.outputs.operator }}
@@ -38,6 +35,8 @@ jobs:
 
       - id: conditional
         uses: ./.github/actions/conditional
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
 
   build:
     name: Build distribution
@@ -93,7 +92,7 @@ jobs:
 
       - name: Test operator running locally
         run: |
-          mvn install -Poperator -pl :keycloak-operator -am \
+          ./mvnw install --batch-mode -Poperator -pl :keycloak-operator -am \
               -Dquarkus.kubernetes.image-pull-policy=IfNotPresent \
               -Doperator.keycloak.image=keycloak:${{ env.version_local }} \
               -Dtest.operator.custom.image=custom-keycloak:${{ env.version_local }} \
@@ -141,7 +140,7 @@ jobs:
       - name: Test operator running in cluster
         run: |
           eval $(minikube -p minikube docker-env)
-          mvn install -Poperator -pl :keycloak-operator -am \
+          ./mvnw install --batch-mode -Poperator -pl :keycloak-operator -am \
               -Dquarkus.container-image.build=true \
               -Dquarkus.kubernetes.image-pull-policy=IfNotPresent \
               -Doperator.keycloak.image=keycloak:${{ env.version_remote }} \
@@ -226,7 +225,7 @@ jobs:
 
   check:
     name: Status Check - Keycloak Operator CI
-    if: always() && ( github.event_name != 'schedule' || github.repository == 'keycloak/keycloak' )
+    if: always()
     needs:
       - conditional
       - check-set-status

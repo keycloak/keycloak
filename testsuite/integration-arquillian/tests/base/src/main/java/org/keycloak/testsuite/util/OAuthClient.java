@@ -194,6 +194,7 @@ public class OAuthClient {
     private String codeChallenge;
     private String codeChallengeMethod;
     private String origin;
+    private String dpopProof;
 
     private Map<String, String> customParameters;
 
@@ -297,6 +298,7 @@ public class OAuthClient {
         codeChallenge = null;
         codeChallengeMethod = null;
         origin = null;
+        dpopProof = null;
         customParameters = null;
         openid = true;
     }
@@ -512,6 +514,10 @@ public class OAuthClient {
         // https://tools.ietf.org/html/rfc7636#section-4.5
         if (codeVerifier != null) {
             parameters.add(new BasicNameValuePair(OAuth2Constants.CODE_VERIFIER, codeVerifier));
+        }
+
+        if (dpopProof != null) {
+            post.addHeader("DPoP", dpopProof);
         }
 
         UrlEncodedFormEntity formEntity = new UrlEncodedFormEntity(parameters, Charsets.UTF_8);
@@ -1009,6 +1015,10 @@ public class OAuthClient {
         }
         if (clientSessionHost != null) {
             parameters.add(new BasicNameValuePair(AdapterConstants.CLIENT_SESSION_HOST, clientSessionHost));
+        }
+
+        if (dpopProof != null) {
+            post.addHeader("DPoP", dpopProof);
         }
 
         UrlEncodedFormEntity formEntity;
@@ -1759,6 +1769,11 @@ public class OAuthClient {
         return this;
     }
 
+    public OAuthClient dpopProof(String dpopProof) {
+        this.dpopProof = dpopProof;
+        return this;
+    }
+
     public OAuthClient addCustomParameter(String key, String value) {
         if (customParameters == null) {
             customParameters = new HashMap<>();
@@ -1798,6 +1813,8 @@ public class OAuthClient {
         // Just during FAPI JARM response mode JWT
         private String response;
 
+        private String issuer;
+
         public AuthorizationEndpointResponse(OAuthClient client) {
             boolean fragment;
             if (client.responseMode == null || "jwt".equals(client.responseMode)) {
@@ -1830,6 +1847,7 @@ public class OAuthClient {
             tokenType = params.get(OAuth2Constants.TOKEN_TYPE);
             expiresIn = params.get(OAuth2Constants.EXPIRES_IN);
             response = params.get(OAuth2Constants.RESPONSE);
+            issuer = params.get(OAuth2Constants.ISSUER);
         }
 
         public boolean isRedirected() {
@@ -1874,6 +1892,9 @@ public class OAuthClient {
 
         public String getResponse() {
             return response;
+        }
+        public String getIssuer() {
+            return issuer;
         }
     }
 

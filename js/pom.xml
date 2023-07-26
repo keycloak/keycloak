@@ -22,6 +22,13 @@
         <module>libs/keycloak-js</module>
     </modules>
 
+    <properties>
+        <!-- The JavaScript projects use the non-standard 'src' folder for their sources, therefore, name it here explicitly -->
+        <maven.build.cache.input.1>src</maven.build.cache.input.1>
+        <!-- The child projects will package from the 'dist' folder, which is listed as a resource, but isn't a source folder -->
+        <maven.build.cache.exclude.1>${project.basedir}/dist</maven.build.cache.exclude.1>
+    </properties>
+
     <build>
         <plugins>
             <plugin>

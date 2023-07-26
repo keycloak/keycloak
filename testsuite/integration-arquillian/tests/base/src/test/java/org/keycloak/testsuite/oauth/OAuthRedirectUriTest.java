@@ -501,6 +501,7 @@ public class OAuthRedirectUriTest extends AbstractKeycloakTest {
                         .replaceQueryParam(OAuth2Constants.CODE, null)
                         .replaceQueryParam(OAuth2Constants.STATE, null)
                         .replaceQueryParam(OAuth2Constants.SESSION_STATE, null)
+                        .replaceQueryParam(OAuth2Constants.ISSUER, null)
                         .build().toString();
                 if (browserUrlAfterRedirectFromKeycloak.endsWith("/")) browserUrlAfterRedirectFromKeycloak = browserUrlAfterRedirectFromKeycloak.substring(0, browserUrlAfterRedirectFromKeycloak.length() - 1);
                 if (Constants.INSTALLED_APP_URN.equals(redirectUri)) {

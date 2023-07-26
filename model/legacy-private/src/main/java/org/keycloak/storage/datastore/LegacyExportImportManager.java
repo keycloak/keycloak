@@ -276,6 +276,12 @@ public class LegacyExportImportManager implements ExportImportManager {
         if (rep.getAccountTheme() != null) newRealm.setAccountTheme(rep.getAccountTheme());
         if (rep.getAdminTheme() != null) newRealm.setAdminTheme(rep.getAdminTheme());
         if (rep.getEmailTheme() != null) newRealm.setEmailTheme(rep.getEmailTheme());
+        if (rep.getLocalizationTexts() != null) {
+            Map<String, Map<String, String>> localizationTexts = rep.getLocalizationTexts();
+            for (Map.Entry<String, Map<String, String>> entry: localizationTexts.entrySet()) {
+                newRealm.createOrUpdateRealmLocalizationTexts(entry.getKey(), entry.getValue());
+            }
+        }
 
         // todo remove this stuff as its all deprecated
         if (rep.getRequiredCredentials() != null) {

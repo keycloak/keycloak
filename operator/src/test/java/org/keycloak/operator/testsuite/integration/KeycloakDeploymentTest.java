@@ -521,7 +521,7 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
                     .list()
                     .getItems();
 
-            assertThat(pods.get(0).getSpec().getContainers().get(0).getArgs()).containsExactly("start", "--optimized");
+            assertThat(pods.get(0).getSpec().getContainers().get(0).getArgs()).containsExactly("--verbose", "start", "--optimized");
         } catch (Exception e) {
             savePodLogs();
             throw e;
@@ -549,7 +549,7 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
                     .list()
                     .getItems();
 
-            assertThat(pods.get(0).getSpec().getContainers().get(0).getArgs()).containsExactly("start", "--optimized");
+            assertThat(pods.get(0).getSpec().getContainers().get(0).getArgs()).containsExactly("--verbose", "start", "--optimized");
             assertThat(pods.get(0).getSpec().getImagePullSecrets().size()).isEqualTo(1);
             assertThat(pods.get(0).getSpec().getImagePullSecrets().get(0).getName()).isEqualTo(imagePullSecretName);
 

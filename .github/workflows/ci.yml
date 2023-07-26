@@ -6,8 +6,6 @@ on:
       - main
       - dependabot/**
   pull_request:
-  schedule:
-    - cron: 0 20,23,2,5 * * *
   workflow_dispatch:
 
 env:
@@ -28,7 +26,6 @@ jobs:
 
   conditional:
     name: Check conditional workflows and jobs
-    if: github.event_name != 'schedule' || github.repository == 'keycloak/keycloak'
     runs-on: ubuntu-latest
     outputs:
       ci: ${{ steps.conditional.outputs.ci }}
@@ -38,6 +35,8 @@ jobs:
 
       - id: conditional
         uses: ./.github/actions/conditional
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
 
   build:
     name: Build
@@ -113,12 +112,20 @@ jobs:
   quarkus-integration-tests:
     name: Quarkus IT
     needs: build
-    runs-on: ubuntu-latest
     timeout-minutes: 115
     strategy:
       matrix:
-        server: [zip, container, storage]
+        os: [ubuntu-latest, windows-latest]
+        server: [sanity-check-zip, zip, container, storage]
+        exclude:
+          - os: windows-latest
+            server: zip
+          - os: windows-latest
+            server: container
+          - os: windows-latest
+            server: storage
       fail-fast: false
+    runs-on: ${{ matrix.os }}
     env:
       MAVEN_OPTS: -Xmx1024m
     steps:
@@ -132,6 +139,7 @@ jobs:
       - name: Run Quarkus integration Tests
         run: |
           declare -A PARAMS
+          PARAMS["sanity-check-zip"]="-Dtest=StartCommandDistTest,StartDevCommandDistTest,BuildAndStartDistTest,ImportAtStartupDistTest"
           PARAMS["zip"]=""
           PARAMS["container"]="-Dkc.quarkus.tests.dist=docker"
           PARAMS["storage"]="-Ptest-database -Dtest=PostgreSQLDistTest,MariaDBDistTest#testSuccessful,MySQLDistTest#testSuccessful,DatabaseOptionsDistTest,JPAStoreDistTest,HotRodStoreDistTest,MixedStoreDistTest,TransactionConfigurationDistTest"
@@ -146,13 +154,14 @@ jobs:
   jdk-integration-tests:
     name: Java Distribution IT
     needs: build
-    runs-on: ubuntu-latest
     timeout-minutes: 100
     strategy:
       matrix:
+        os: [ubuntu-latest, windows-latest]
         dist: [temurin]
         version: [19]
       fail-fast: false
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v3
 
@@ -247,7 +256,7 @@ jobs:
     name: Legacy Store IT
     needs: build
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 75
     strategy:
       matrix:
         db: [postgres, mysql, oracle, mssql, mariadb]
@@ -597,7 +606,7 @@ jobs:
 
   check:
     name: Status Check - Keycloak CI
-    if: always() && ( github.event_name != 'schedule' || github.repository == 'keycloak/keycloak' )
+    if: always()
     needs:
       - conditional
       - check-set-status

@@ -34,6 +34,7 @@ import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.AuthorizationEndpointBase;
+import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.endpoints.request.AuthorizationEndpointRequest;
 import org.keycloak.protocol.oidc.endpoints.request.AuthorizationEndpointRequestParserProcessor;
@@ -300,6 +301,11 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
             errorResponseBuilder.addParam(OAuth2Constants.STATE, request.getState());
         }
 
+        OIDCAdvancedConfigWrapper clientConfig = OIDCAdvancedConfigWrapper.fromClientModel(client);
+        if (!clientConfig.isExcludeIssuerFromAuthResponse()) {
+            errorResponseBuilder.addParam(OAuth2Constants.ISSUER, Urls.realmIssuer(session.getContext().getUri().getBaseUri(), realm.getName()));
+        }
+
         return errorResponseBuilder.build();
     }
 
@@ -313,7 +319,7 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
 
         performActionOnParameters(request, (paramName, paramValue) -> {if (paramValue != null) authenticationSession.setClientNote(paramName, paramValue);});
         if (request.getMaxAge() != null) authenticationSession.setClientNote(OIDCLoginProtocol.MAX_AGE_PARAM, String.valueOf(request.getMaxAge()));
-        if (request.getUiLocales() != null) authenticationSession.setAuthNote(LocaleSelectorProvider.CLIENT_REQUEST_LOCALE, request.getUiLocales());
+        if (request.getUiLocales() != null) authenticationSession.setClientNote(LocaleSelectorProvider.CLIENT_REQUEST_LOCALE, request.getUiLocales());
 
         Map<String, Integer> acrLoaMap = AcrUtils.getAcrLoaMap(authenticationSession.getClient());
         List<String> acrValues = AcrUtils.getRequiredAcrValues(request.getClaims());

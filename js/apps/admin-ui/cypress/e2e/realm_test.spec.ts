@@ -95,19 +95,12 @@ describe("Realm tests", () => {
     sidebarPage.goToCreateRealm();
     createRealmPage.fillRealmName(newRealmName).createRealm();
 
-    const fetchUrl = "/admin/realms?briefRepresentation=true";
-    cy.intercept(fetchUrl).as("fetch");
-
     masthead.checkNotificationMessage("Realm created successfully");
-
-    cy.wait(["@fetch"]);
 
     sidebarPage.goToCreateRealm();
     createRealmPage.fillRealmName(editedRealmName).createRealm();
 
     masthead.checkNotificationMessage("Realm created successfully");
-
-    cy.wait(["@fetch"]);
 
     // Show current realms
     sidebarPage.showCurrentRealms(4);

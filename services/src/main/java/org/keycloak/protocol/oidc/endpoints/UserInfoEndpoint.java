@@ -100,7 +100,7 @@ public class UserInfoEndpoint {
     private final RealmModel realm;
     private final OAuth2Error error;
     private Cors cors;
-    private String authorization;
+    private TokenForUserInfo tokenForUserInfo = new TokenForUserInfo();
 
     public UserInfoEndpoint(KeycloakSession session, org.keycloak.protocol.oidc.TokenManager tokenManager) {
         this.session = session;
@@ -163,7 +163,7 @@ public class UserInfoEndpoint {
         cors.allowAllOrigins();
 
         try {
-            session.clientPolicy().triggerOnEvent(new UserInfoRequestContext(authorization));
+            session.clientPolicy().triggerOnEvent(new UserInfoRequestContext(tokenForUserInfo));
         } catch (ClientPolicyException cpe) {
             throw error.error(cpe.getError()).errorDescription(cpe.getErrorDetail()).status(cpe.getErrorStatus()).build();
         }
@@ -172,7 +172,7 @@ public class UserInfoEndpoint {
                 .event(EventType.USER_INFO_REQUEST)
                 .detail(Details.AUTH_METHOD, Details.VALIDATE_ACCESS_TOKEN);
 
-        if (authorization == null) {
+        if (tokenForUserInfo.getToken() == null) {
             event.error(Errors.INVALID_TOKEN);
             throw error.unauthorized();
         }
@@ -180,7 +180,7 @@ public class UserInfoEndpoint {
         AccessToken token;
         ClientModel clientModel = null;
         try {
-            TokenVerifier<AccessToken> verifier = TokenVerifier.create(authorization, AccessToken.class).withDefaultChecks()
+            TokenVerifier<AccessToken> verifier = TokenVerifier.create(tokenForUserInfo.getToken(), AccessToken.class).withDefaultChecks()
                     .realmUrl(Urls.realmIssuer(session.getContext().getUri().getBaseUri(), realm.getName()));
 
             SignatureVerifierContext verifierContext = session.getProvider(SignatureProvider.class, verifier.getHeader().getAlgorithm().name()).verifier(verifier.getHeader().getKeyId());
@@ -417,11 +417,24 @@ public class UserInfoEndpoint {
 
     private void authorization(String accessToken) {
         if (accessToken != null) {
-            if (authorization == null) {
-                authorization = accessToken;
+            if (tokenForUserInfo.getToken() == null) {
+                tokenForUserInfo.setToken(accessToken);
             } else {
                 throw error.cors(cors.allowAllOrigins()).invalidRequest("More than one method used for including an access token");
             }
+        }
+    }
+
+    public static class TokenForUserInfo {
+
+        private String token;
+
+        public String getToken() {
+            return token;
+        }
+
+        public void setToken(String token) {
+            this.token = token;
         }
     }
 }

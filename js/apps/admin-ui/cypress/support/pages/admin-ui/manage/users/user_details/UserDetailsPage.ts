@@ -33,9 +33,14 @@ export default class UserDetailsPage extends PageObject {
   }
 
   public goToIdentityProviderLinksTab() {
+    cy.intercept("/admin/realms/master/identity-provider/instances").as(
+      "idpInstances",
+    );
+    cy.intercept("/admin/realms/master/users/*/federated-identity").as(
+      "fedIdentity",
+    );
     cy.findByTestId(this.identityProviderLinksTab).click();
-    cy.intercept("/admin/realms/master").as("load");
-    cy.wait(["@load"]);
+    cy.wait(["@idpInstances", "@fedIdentity"]);
 
     return this;
   }

@@ -75,6 +75,7 @@ import org.keycloak.representations.IDToken;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.LogoutToken;
 import org.keycloak.representations.RefreshToken;
+import org.keycloak.representations.dpop.DPoP;
 import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.AuthenticationSessionManager;
@@ -82,6 +83,7 @@ import org.keycloak.services.managers.UserSessionCrossDCManager;
 import org.keycloak.services.managers.UserSessionManager;
 import org.keycloak.services.resources.IdentityBrokerService;
 import org.keycloak.services.util.AuthorizationContextUtil;
+import org.keycloak.services.util.DPoPUtil;
 import org.keycloak.services.util.DefaultClientSessionContext;
 import org.keycloak.services.util.MtlsHoKTokenUtil;
 import org.keycloak.sessions.AuthenticationSessionModel;
@@ -382,6 +384,7 @@ public class TokenManager {
 
         TokenValidation validation = validateToken(session, uriInfo, connection, realm, refreshToken, headers);
         AuthenticatedClientSessionModel clientSession = validation.clientSessionCtx.getClientSession();
+        OIDCAdvancedConfigWrapper clientConfig = OIDCAdvancedConfigWrapper.fromClientModel(authorizedClient);
 
         // validate authorizedClient is same as validated client
         if (!clientSession.getClient().getId().equals(authorizedClient.getId())) {
@@ -400,24 +403,13 @@ public class TokenManager {
 
         AccessTokenResponseBuilder responseBuilder = responseBuilder(realm, authorizedClient, event, session,
             validation.userSession, validation.clientSessionCtx).accessToken(validation.newToken);
-        if (OIDCAdvancedConfigWrapper.fromClientModel(authorizedClient).isUseRefreshToken()) {
+        if (clientConfig.isUseRefreshToken()) {
             responseBuilder.generateRefreshToken();
         }
 
         if (validation.newToken.getAuthorization() != null
-            && OIDCAdvancedConfigWrapper.fromClientModel(authorizedClient).isUseRefreshToken()) {
+            && clientConfig.isUseRefreshToken()) {
             responseBuilder.getRefreshToken().setAuthorization(validation.newToken.getAuthorization());
-        }
-
-        // KEYCLOAK-6771 Certificate Bound Token
-        // https://tools.ietf.org/html/draft-ietf-oauth-mtls-08#section-3.1
-        // bind refreshed access and refresh token with Client Certificate
-        AccessToken.CertConf certConf = refreshToken.getCertConf();
-        if (certConf != null) {
-            responseBuilder.getAccessToken().setCertConf(certConf);
-            if (OIDCAdvancedConfigWrapper.fromClientModel(authorizedClient).isUseRefreshToken()) {
-                responseBuilder.getRefreshToken().setCertConf(certConf);
-            }
         }
 
         String scopeParam = clientSession.getNote(OAuth2Constants.SCOPE);
@@ -505,7 +497,19 @@ public class TokenManager {
                 }
             }
 
+            if (Profile.isFeatureEnabled(Profile.Feature.DPOP)) {
+                if (OIDCAdvancedConfigWrapper.fromClientModel(client).isUseDPoP() && client.isPublicClient()) {
+                    DPoP dPoP = (DPoP) session.getAttribute(DPoPUtil.DPOP_SESSION_ATTRIBUTE);
+                    try {
+                        DPoPUtil.validateBinding(refreshToken, dPoP);
+                    } catch (VerificationException ex) {
+                        throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, ex.getMessage());
+                    }
+                }
+            }
+
             return refreshToken;
+
         } catch (JWSInputException e) {
             throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Invalid refresh token", e);
         }
@@ -1012,11 +1016,14 @@ public class TokenManager {
         AccessToken accessToken;
         RefreshToken refreshToken;
         IDToken idToken;
+        String responseTokenType;
 
         boolean generateAccessTokenHash = false;
         String codeHash;
 
         String stateHash;
+
+        private AccessTokenResponse response;
 
         public AccessTokenResponseBuilder(RealmModel realm, ClientModel client, EventBuilder event, KeycloakSession session,
                                           UserSessionModel userSession, ClientSessionContext clientSessionCtx) {
@@ -1026,6 +1033,7 @@ public class TokenManager {
             this.session = session;
             this.userSession = userSession;
             this.clientSessionCtx = clientSessionCtx;
+            this.responseTokenType = formatTokenType(client);
         }
 
         public AccessToken getAccessToken() {
@@ -1046,6 +1054,11 @@ public class TokenManager {
         }
         public AccessTokenResponseBuilder refreshToken(RefreshToken refreshToken) {
             this.refreshToken = refreshToken;
+            return this;
+        }
+
+        public AccessTokenResponseBuilder responseTokenType(String responseTokenType) {
+            this.responseTokenType = responseTokenType;
             return this;
         }
 
@@ -1152,6 +1165,8 @@ public class TokenManager {
         }
 
         public AccessTokenResponse build() {
+            if (response != null) return response;
+
             if (accessToken != null) {
                 event.detail(Details.TOKEN_ID, accessToken.getId());
             }
@@ -1170,7 +1185,7 @@ public class TokenManager {
             if (accessToken != null) {
                 String encodedToken = session.tokens().encode(accessToken);
                 res.setToken(encodedToken);
-                res.setTokenType(formatTokenType(client));
+                res.setTokenType(responseTokenType);
                 res.setSessionState(accessToken.getSessionState());
                 if (accessToken.getExpiration() != 0) {
                     res.setExpiresIn(accessToken.getExpiration() - Time.currentTime());
@@ -1214,7 +1229,8 @@ public class TokenManager {
             res.setScope(responseScope);
             event.detail(Details.SCOPE, responseScope);
 
-            return res;
+            response = res;
+            return response;
         }
 
 

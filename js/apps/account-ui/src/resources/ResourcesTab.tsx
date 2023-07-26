@@ -235,20 +235,22 @@ export const ResourcesTab = () => {
                             </DropdownItem>,
                             <ContinueCancelModal
                               key="unShare"
-                              isDisabled={
-                                details[resource._id]?.permissions?.length === 0
-                              }
                               buttonTitle={
                                 <>
                                   <Remove2Icon /> {t("unShare")}
                                 </>
                               }
+                              modalTitle={t("unShare")}
+                              continueLabel={t("confirm")}
+                              cancelLabel={t("cancel")}
                               component={DropdownItem}
-                              modalTitle="unShare"
-                              modalMessage="unShareAllConfirm"
-                              continueLabel="confirmButton"
                               onContinue={() => removeShare(resource)}
-                            />,
+                              isDisabled={
+                                details[resource._id]?.permissions?.length === 0
+                              }
+                            >
+                              {t("unShareAllConfirm")}
+                            </ContinueCancelModal>,
                           ]}
                         />
                       </OverflowMenuItem>
@@ -287,20 +289,22 @@ export const ResourcesTab = () => {
                         </OverflowMenuDropdownItem>,
                         <ContinueCancelModal
                           key="unShare"
-                          isDisabled={
-                            details[resource._id]?.permissions?.length === 0
-                          }
                           buttonTitle={
                             <>
                               <Remove2Icon /> {t("unShare")}
                             </>
                           }
+                          modalTitle={t("unShare")}
+                          continueLabel={t("confirm")}
+                          cancelLabel={t("cancel")}
                           component={OverflowMenuDropdownItem}
-                          modalTitle="unShare"
-                          modalMessage="unShareAllConfirm"
-                          continueLabel="confirmButton"
                           onContinue={() => removeShare(resource)}
-                        />,
+                          isDisabled={
+                            details[resource._id]?.permissions?.length === 0
+                          }
+                        >
+                          {t("unShareAllConfirm")}
+                        </ContinueCancelModal>,
                       ]}
                     />
                   </OverflowMenuControl>

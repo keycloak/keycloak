@@ -580,10 +580,12 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
 
             boolean forwardedPassiveLogin = "true".equals(authenticationSession.getAuthNote(AuthenticationProcessor.FORWARDED_PASSIVE_LOGIN));
 
-            Map<String, String> extractedAuthNotes = extractAuthNotesFromSession(authenticationSession);
+            String userRequestedLocale = authenticationSession.getAuthNote(LocaleSelectorProvider.USER_REQUEST_LOCALE);
             // Redirect to firstBrokerLogin after successful login and ensure that previous authentication state removed
             AuthenticationProcessor.resetFlow(authenticationSession, LoginActionsService.FIRST_BROKER_LOGIN_PATH);
-            extractedAuthNotes.forEach(authenticationSession::setAuthNote);
+            if (userRequestedLocale != null) {
+                authenticationSession.setAuthNote(LocaleSelectorProvider.USER_REQUEST_LOCALE, userRequestedLocale);
+            }
 
             // Set the FORWARDED_PASSIVE_LOGIN note (if needed) after resetting the session so it is not lost.
             if (forwardedPassiveLogin) {
@@ -614,18 +616,6 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
 
             return finishOrRedirectToPostBrokerLogin(authenticationSession, context, false);
         }
-    }
-
-    private Map<String, String> extractAuthNotesFromSession(AuthenticationSessionModel authenticationSession) {
-        return Stream.of(
-            LocaleSelectorProvider.USER_REQUEST_LOCALE,
-            LocaleSelectorProvider.CLIENT_REQUEST_LOCALE
-        )
-            .filter(it -> authenticationSession.getAuthNote(it) != null)
-            .collect(Collectors.toMap(
-                Function.identity(),
-                authenticationSession::getAuthNote
-            ));
     }
 
 
@@ -1018,7 +1008,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
     }
 
     private void setBasicUserAttributes(BrokeredIdentityContext context, UserModel federatedUser) {
-        setDiffAttrToConsumer(federatedUser.getEmail(), context.getEmail(), federatedUser::setEmail);
+        setDiffAttrToConsumer(federatedUser.getEmail(), context.getEmail(), email -> setEmail(context, federatedUser, email));
         setDiffAttrToConsumer(federatedUser.getFirstName(), context.getFirstName(), federatedUser::setFirstName);
         setDiffAttrToConsumer(federatedUser.getLastName(), context.getLastName(), federatedUser::setLastName);
     }
@@ -1027,6 +1017,18 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
         String actualValueNotNull = Optional.ofNullable(actualValue).orElse("");
         if (newValue != null && !newValue.equals(actualValueNotNull)) {
             consumer.accept(newValue);
+        }
+    }
+
+    private void setEmail(BrokeredIdentityContext context, UserModel federatedUser, String newEmail) {
+        federatedUser.setEmail(newEmail);
+        // change email verified depending if it is trusted or not
+        if (context.getIdpConfig().isTrustEmail() && !Boolean.parseBoolean(context.getAuthenticationSession().getAuthNote(AbstractIdpAuthenticator.UPDATE_PROFILE_EMAIL_CHANGED))) {
+            logger.tracef("Email verified automatically after updating user '%s' through Identity provider '%s' ", federatedUser.getUsername(), context.getIdpConfig().getAlias());
+            federatedUser.setEmailVerified(true);
+        } else {
+            logger.tracef("Email verified reset to false after updating user '%s' through Identity provider '%s' ", federatedUser.getUsername(), context.getIdpConfig().getAlias());
+            federatedUser.setEmailVerified(false);
         }
     }
 

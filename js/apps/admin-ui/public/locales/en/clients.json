@@ -492,6 +492,7 @@
   "authorizationEncryptedResponseEnc": "Authorization response encryption content encryption algorithm",
   "openIdConnectCompatibilityModes": "Open ID Connect Compatibility Modes",
   "excludeSessionStateFromAuthenticationResponse": "Exclude Session State From Authentication Response",
+  "excludeIssuerFromAuthenticationResponse": "Exclude Issuer From Authentication Response",
   "useRefreshTokens": "Use refresh tokens",
   "useRefreshTokenForClientCredentialsGrant": "Use refresh tokens for client credentials grant",
   "useLowerCaseBearerType": "Use lower-case bearer type in token responses",
@@ -511,6 +512,7 @@
   "clientOfflineSessionIdle": "Client Offline Session Idle",
   "clientOfflineSessionMax": "Client Offline Session Max",
   "oAuthMutual": "OAuth 2.0 Mutual TLS Certificate Bound Access Tokens Enabled",
+  "oAuthDPoP": "OAuth 2.0 DPoP Bound Access Tokens Enabled",
   "keyForCodeExchange": "Proof Key for Code Exchange Code Challenge Method",
   "pushedAuthorizationRequestRequired": "Pushed authorization request required",
   "acrToLoAMapping": "ACR to LoA Mapping",
@@ -543,5 +545,7 @@
     "never": "Never expires"
   },
   "mappers": "Mappers",
-  "sessions": "Sessions"
+  "sessions": "Sessions",
+  "unsavedChangesTitle": "Unsaved changes",
+  "unsavedChangesConfirm": "You have unsaved changes. Do you really want to leave the page?"
 }

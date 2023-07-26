@@ -256,7 +256,7 @@ public class LogoutEndpoint {
         AuthenticationSessionModel logoutSession = AuthenticationManager.createOrJoinLogoutSession(session, realm, new AuthenticationSessionManager(session), null, true);
         session.getContext().setAuthenticationSession(logoutSession);
         if (uiLocales != null) {
-            logoutSession.setAuthNote(LocaleSelectorProvider.CLIENT_REQUEST_LOCALE, uiLocales);
+            logoutSession.setClientNote(LocaleSelectorProvider.CLIENT_REQUEST_LOCALE, uiLocales);
         }
         if (validatedRedirectUri != null) {
             logoutSession.setAuthNote(OIDCLoginProtocol.LOGOUT_REDIRECT_URI, validatedRedirectUri);
@@ -512,6 +512,7 @@ public class LogoutEndpoint {
 
         try {
             session.clientPolicy().triggerOnEvent(new LogoutRequestContext(form));
+            refreshToken = form.getFirst(OAuth2Constants.REFRESH_TOKEN);
         } catch (ClientPolicyException cpe) {
             throw new CorsErrorResponseException(cors, cpe.getError(), cpe.getErrorDetail(), cpe.getErrorStatus());
         }
