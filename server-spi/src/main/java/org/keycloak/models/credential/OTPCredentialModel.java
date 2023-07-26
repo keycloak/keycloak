@@ -6,22 +6,34 @@ import org.keycloak.models.credential.dto.OTPCredentialData;
 import org.keycloak.models.credential.dto.OTPSecretData;
 import org.keycloak.models.OTPPolicy;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.utils.Base32;
 import org.keycloak.util.JsonSerialization;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 
 public class OTPCredentialModel extends CredentialModel {
 
     public static final String TYPE = "otp";
-
     public static final String TOTP = "totp";
     public static final String HOTP = "hotp";
+
+    /**
+     * The supported encodings when reading the raw secret from the storage
+     */
+    public enum SecretEncoding {
+        BASE32
+    }
 
     private final OTPCredentialData credentialData;
     private final OTPSecretData secretData;
 
     private OTPCredentialModel(String secretValue, String subType, int digits, int counter, int period, String algorithm) {
-        credentialData = new OTPCredentialData(subType, digits, counter, period, algorithm);
+        this(secretValue, subType, digits, counter, period, algorithm, null);
+    }
+
+    private OTPCredentialModel(String secretValue, String subType, int digits, int counter, int period, String algorithm, String secretEncoding) {
+        credentialData = new OTPCredentialData(subType, digits, counter, period, algorithm, secretEncoding);
         secretData = new OTPSecretData(secretValue);
     }
 
@@ -31,7 +43,11 @@ public class OTPCredentialModel extends CredentialModel {
     }
 
     public static OTPCredentialModel createTOTP(String secretValue, int digits, int period, String algorithm){
-        OTPCredentialModel credentialModel = new OTPCredentialModel(secretValue, TOTP, digits, 0, period, algorithm);
+        return createTOTP(secretValue, digits, period, algorithm, null);
+    }
+
+    public static OTPCredentialModel createTOTP(String secretValue, int digits, int period, String algorithm, String encoding){
+        OTPCredentialModel credentialModel = new OTPCredentialModel(secretValue, TOTP, digits, 0, period, algorithm, encoding);
         credentialModel.fillCredentialModelFields();
         return credentialModel;
     }
@@ -90,6 +106,24 @@ public class OTPCredentialModel extends CredentialModel {
 
     public OTPSecretData getOTPSecretData() {
         return secretData;
+    }
+
+    public byte[] getDecodedSecret() {
+        String encoding = credentialData.getSecretEncoding();
+
+        if (encoding == null) {
+            return secretData.getValue().getBytes(StandardCharsets.UTF_8);
+        }
+
+        try {
+            if (SecretEncoding.BASE32.equals(SecretEncoding.valueOf(encoding.toUpperCase()))) {
+                return Base32.decode(secretData.getValue());
+            }
+
+            throw new RuntimeException("Unsupported secret encoding: " + encoding);
+        } catch (Exception cause) {
+            throw new RuntimeException("Failed to decode otp secret using encoding [" + encoding + "]", cause);
+        }
     }
 
     private void fillCredentialModelFields(){

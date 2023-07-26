@@ -12,7 +12,6 @@
   },
   "otpHashAlgorithm": "Algoritmo de hash OTP",
   "otpPolicyDigits": "Quantidade de dígitos",
-  "lookAhead": "Look Ahead Window",
   "otpPolicyPeriod": "Período de token OTP ",
   "initialCounter": "Contador inicial",
   "attestationPreference": {

@@ -233,6 +233,11 @@ public class PersistentAuthenticatedClientSessionAdapter implements Authenticate
         return getId().hashCode();
     }
 
+    @Override
+    public String toString() {
+        return getId();
+    }
+
     protected static class PersistentClientSessionData {
 
         @JsonProperty("authMethod")

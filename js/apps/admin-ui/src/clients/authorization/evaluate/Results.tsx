@@ -40,7 +40,7 @@ enum ResultsFilter {
 
 function filterResults(
   results: EvaluationResultRepresentation[],
-  filter: ResultsFilter
+  filter: ResultsFilter,
 ) {
   switch (filter) {
     case ResultsFilter.StatusPermitted:
@@ -74,9 +74,9 @@ export const Results = ({ evaluateResult, refresh, back }: ResultProps) => {
   const filteredResources = useMemo(
     () =>
       filterResults(evaluateResult.results!, filter).filter(
-        ({ resource }) => resource?.name?.includes(searchQuery) ?? false
+        ({ resource }) => resource?.name?.includes(searchQuery) ?? false,
       ),
-    [evaluateResult.results, filter, searchQuery]
+    [evaluateResult.results, filter, searchQuery],
   );
 
   const noEvaluatedData = evaluateResult.results!.length === 0;
@@ -148,11 +148,11 @@ export const Results = ({ evaluateResult, refresh, back }: ResultProps) => {
         <TableComposable aria-label={t("evaluationResults")}>
           <Thead>
             <Tr>
-              <Th />
+              <Th aria-hidden="true" />
               <Th>{t("resource")}</Th>
               <Th>{t("overallResults")}</Th>
               <Th>{t("scopes")}</Th>
-              <Th />
+              <Th aria-hidden="true" />
             </Tr>
           </Thead>
           {filteredResources.map((resource, rowIndex) => (

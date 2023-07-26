@@ -9,7 +9,7 @@ export type UserFederationKerberosParams = {
 };
 
 const UserFederationKerberosSettings = lazy(
-  () => import("../UserFederationKerberosSettings")
+  () => import("../UserFederationKerberosSettings"),
 );
 
 export const UserFederationKerberosRoute: AppRouteObject = {
@@ -22,7 +22,7 @@ export const UserFederationKerberosRoute: AppRouteObject = {
 };
 
 export const toUserFederationKerberos = (
-  params: UserFederationKerberosParams
+  params: UserFederationKerberosParams,
 ): Partial<Path> => ({
   pathname: generatePath(UserFederationKerberosRoute.path, params),
 });

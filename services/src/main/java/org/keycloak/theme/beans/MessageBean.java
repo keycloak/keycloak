@@ -16,6 +16,8 @@
  */
 package org.keycloak.theme.beans;
 
+import org.keycloak.forms.login.MessageType;
+
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */

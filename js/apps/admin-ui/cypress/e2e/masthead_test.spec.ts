@@ -38,8 +38,20 @@ describe("Masthead tests", () => {
 
     it("Should go to documentation page", () => {
       masthead.clickGlobalHelp();
-      masthead.clickDocumentationLink();
-      cy.get("#header").should("contain.text", "Server Administration Guide");
+      masthead
+        .getDocumentationLink()
+        .invoke("attr", "href")
+        .then((href) => {
+          if (!href) return;
+
+          masthead.clickDocumentationLink();
+          cy.origin(href, () => {
+            cy.get("#header").should(
+              "contain.text",
+              "Server Administration Guide",
+            );
+          });
+        });
     });
 
     it("Enable/disable help mode in desktop mode", () => {

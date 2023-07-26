@@ -1447,12 +1447,6 @@ public class RealmAdapter implements CachedRealmModel {
     }
 
     @Override
-    @Deprecated
-    public Stream<GroupModel> searchForGroupByNameStream(String search, Integer first, Integer max) {
-        return cacheSession.searchForGroupByNameStream( this, search, false, first, max);
-    }
-
-    @Override
     public boolean removeGroup(GroupModel group) {
         return cacheSession.removeGroup(this, group);
     }
@@ -1460,13 +1454,7 @@ public class RealmAdapter implements CachedRealmModel {
     @Override
     public Stream<ClientScopeModel> getClientScopesStream() {
         if (isUpdated()) return updated.getClientScopesStream();
-        return cached.getClientScopes().stream().map(scope -> {
-            ClientScopeModel model = cacheSession.getClientScopeById(this, scope);
-            if (model == null) {
-                throw new IllegalStateException("Cached clientScope not found: " + scope);
-            }
-            return model;
-        });
+        return cacheSession.getClientScopesStream(this);
     }
 
     @Override

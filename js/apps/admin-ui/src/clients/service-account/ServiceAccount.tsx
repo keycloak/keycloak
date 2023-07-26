@@ -38,7 +38,7 @@ export const ServiceAccount = ({ client }: ServiceAccountProps) => {
         id: client.id!,
       }),
     (serviceAccount) => setServiceAccount(serviceAccount),
-    []
+    [],
   );
 
   const assignRoles = async (rows: Row[]) => {
@@ -59,8 +59,8 @@ export const ServiceAccount = ({ client }: ServiceAccountProps) => {
               id: serviceAccount?.id!,
               clientUniqueId: row.client!.id!,
               roles: [row.role as RoleMappingPayload],
-            })
-          )
+            }),
+          ),
       );
       addAlert(t("roleMappingUpdatedSuccess"), AlertVariant.success);
     } catch (error) {

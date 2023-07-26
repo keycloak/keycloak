@@ -28,6 +28,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.infinispan.commons.marshall.Externalizer;
 import org.infinispan.commons.marshall.MarshallUtil;
 import org.infinispan.commons.marshall.SerializeWith;
+import org.keycloak.models.ClientModel;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.sessions.infinispan.entities.AuthenticatedClientSessionEntity;
 import org.keycloak.models.sessions.infinispan.entities.SessionEntity;
 import java.util.HashMap;
 import org.jboss.logging.Logger;
@@ -94,6 +97,16 @@ public class SessionEntityWrapper<S extends SessionEntity> {
 
     public S getEntity() {
         return entity;
+    }
+
+    public ClientModel getClientIfNeeded(RealmModel realm) {
+        if (entity instanceof AuthenticatedClientSessionEntity) {
+            String clientId = ((AuthenticatedClientSessionEntity) entity).getClientId();
+            if (clientId != null) {
+                return realm.getClientById(clientId);
+            }
+        }
+        return null;
     }
 
     public String getLocalMetadataNote(String key) {

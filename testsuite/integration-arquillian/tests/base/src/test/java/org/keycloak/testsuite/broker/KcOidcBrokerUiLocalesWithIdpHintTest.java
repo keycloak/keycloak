@@ -5,13 +5,11 @@ import org.keycloak.models.IdentityProviderSyncMode;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.Assert;
-import org.keycloak.testsuite.pages.PageUtils;
 
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-import static java.util.Locale.*;
 import static org.hamcrest.CoreMatchers.*;
 import static org.keycloak.OAuth2Constants.*;
 import static org.keycloak.testsuite.broker.BrokerTestConstants.*;
@@ -40,7 +38,8 @@ public class KcOidcBrokerUiLocalesWithIdpHintTest extends AbstractBrokerTest {
 
     @Override
     protected void loginUser() {
-        driver.navigate().to(getAccountUrl(getConsumerRoot(), bc.consumerRealmName()));
+        oauth.clientId("broker-app");
+        loginPage.open(bc.consumerRealmName());
 
         driver.navigate().to(driver.getCurrentUrl() + "&ui_locales=hu&kc_idp_hint=kc-oidc-idp");
 

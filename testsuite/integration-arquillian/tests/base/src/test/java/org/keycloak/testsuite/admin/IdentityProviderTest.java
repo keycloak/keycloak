@@ -585,6 +585,7 @@ public class IdentityProviderTest extends AbstractAdminTest {
         Set<String> expected = new HashSet<>();
         expected.add("hardcoded-user-session-attribute-idp-mapper");
         expected.add("oidc-hardcoded-role-idp-mapper");
+        expected.add("oidc-hardcoded-group-idp-mapper");
         expected.add("hardcoded-attribute-idp-mapper");
         expected.add("multi-valued-test-idp-mapper");
         expected.addAll(Arrays.asList(mapperIds));

@@ -33,7 +33,7 @@ export const OpenIdConnectCompatibilityModes = ({
         labelIcon={
           <HelpItem
             helpText={t(
-              "clients-help:excludeSessionStateFromAuthenticationResponse"
+              "clients-help:excludeSessionStateFromAuthenticationResponse",
             )}
             fieldLabelId="clients:excludeSessionStateFromAuthenticationResponse"
           />
@@ -41,7 +41,7 @@ export const OpenIdConnectCompatibilityModes = ({
       >
         <Controller
           name={convertAttributeNameToForm<FormFields>(
-            "attributes.exclude.session.state.from.auth.response"
+            "attributes.exclude.session.state.from.auth.response",
           )}
           defaultValue=""
           control={control}
@@ -53,6 +53,35 @@ export const OpenIdConnectCompatibilityModes = ({
               isChecked={field.value === "true"}
               onChange={(value) => field.onChange(value.toString())}
               aria-label={t("excludeSessionStateFromAuthenticationResponse")}
+            />
+          )}
+        />
+      </FormGroup>
+      <FormGroup
+        label={t("excludeIssuerFromAuthenticationResponse")}
+        fieldId="excludeIssuerFromAuthenticationResponse"
+        hasNoPaddingTop
+        labelIcon={
+          <HelpItem
+            helpText={t("clients-help:excludeIssuerFromAuthenticationResponse")}
+            fieldLabelId="clients:excludeIssuerFromAuthenticationResponse"
+          />
+        }
+      >
+        <Controller
+          name={convertAttributeNameToForm<FormFields>(
+            "attributes.exclude.issuer.from.auth.response",
+          )}
+          defaultValue=""
+          control={control}
+          render={({ field }) => (
+            <Switch
+              id="excludeIssuerFromAuthenticationResponse-switch"
+              label={t("common:on")}
+              labelOff={t("common:off")}
+              isChecked={field.value === "true"}
+              onChange={(value) => field.onChange(value.toString())}
+              aria-label={t("excludeIssuerFromAuthenticationResponse")}
             />
           )}
         />
@@ -70,7 +99,7 @@ export const OpenIdConnectCompatibilityModes = ({
       >
         <Controller
           name={convertAttributeNameToForm<FormFields>(
-            "attributes.use.refresh.tokens"
+            "attributes.use.refresh.tokens",
           )}
           defaultValue="true"
           control={control}
@@ -93,7 +122,7 @@ export const OpenIdConnectCompatibilityModes = ({
         labelIcon={
           <HelpItem
             helpText={t(
-              "clients-help:useRefreshTokenForClientCredentialsGrant"
+              "clients-help:useRefreshTokenForClientCredentialsGrant",
             )}
             fieldLabelId="clients:useRefreshTokenForClientCredentialsGrant"
           />
@@ -101,7 +130,7 @@ export const OpenIdConnectCompatibilityModes = ({
       >
         <Controller
           name={convertAttributeNameToForm<FormFields>(
-            "attributes.client_credentials.use_refresh_token"
+            "attributes.client_credentials.use_refresh_token",
           )}
           defaultValue="false"
           control={control}
@@ -130,7 +159,7 @@ export const OpenIdConnectCompatibilityModes = ({
       >
         <Controller
           name={convertAttributeNameToForm<FormFields>(
-            "attributes.token.response.type.bearer.lower-case"
+            "attributes.token.response.type.bearer.lower-case",
           )}
           defaultValue="false"
           control={control}

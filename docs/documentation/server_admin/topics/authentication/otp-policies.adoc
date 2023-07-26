@@ -53,8 +53,8 @@ The default algorithm is SHA1. The other, more secure options are SHA256 and SHA
 
 The length of the OTP.  Short OTPs are user-friendly, easier to type, and easier to remember. Longer OTPs are more secure than shorter OTPs.
 
-===== Look ahead window
-The number of intervals the server attempts to match the hash. This option is present in {project_name} if the clock of the TOTP generator or authentication server become out-of-sync. The default value of 1 is adequate. This option is present in {project_name} to cover when the user's counter gets ahead of the server.
+===== Look around window
+The number of previous and following intervals the server attempts to match the hash. This option is present in {project_name} if the clock of the TOTP generator or authentication server become out-of-sync. The default value of 1 is adequate. This option is present in {project_name} to cover when the user's counter gets ahead of the server.
 
 ===== Initial counter
 

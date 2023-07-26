@@ -124,11 +124,14 @@ public class MapUserSessionProvider implements UserSessionProvider {
         }
 
         MapAuthenticatedClientSessionEntity entity = createAuthenticatedClientSessionEntityInstance(null, userSession.getId(),
-                realm.getId(), client.getId(), false);
+                realm.getId(), client.getId(), userSession.isOffline());
         String started = entity.getTimestamp() != null ? String.valueOf(TimeAdapter.fromMilliSecondsToSeconds(entity.getTimestamp())) : String.valueOf(0);
         entity.setNote(AuthenticatedClientSessionModel.STARTED_AT_NOTE, started);
+        entity.setNote(AuthenticatedClientSessionModel.USER_SESSION_STARTED_AT_NOTE, String.valueOf(userSession.getStarted()));
+        if (userSession.isRememberMe()) {
+            entity.setNote(AuthenticatedClientSessionModel.USER_SESSION_REMEMBER_ME_NOTE, "true");
+        }
         setClientSessionExpiration(entity, realm, client);
-
         userSessionEntity.addAuthenticatedClientSession(entity);
 
         // We need to load the clientSession through userModel so we return an entity that is included within the
@@ -427,6 +430,7 @@ public class MapUserSessionProvider implements UserSessionProvider {
         MapAuthenticatedClientSessionEntity clientSessionEntity = createAuthenticatedClientSessionInstance(clientSession, offlineUserSession, true);
         int currentTime = Time.currentTime();
         clientSessionEntity.setNote(AuthenticatedClientSessionModel.STARTED_AT_NOTE, String.valueOf(currentTime));
+        clientSessionEntity.setNote(AuthenticatedClientSessionModel.USER_SESSION_STARTED_AT_NOTE, String.valueOf(offlineUserSession.getStarted()));
         clientSessionEntity.setTimestamp(Time.currentTimeMillis());
         RealmModel realm = clientSession.getRealm();
         setClientSessionExpiration(clientSessionEntity, realm, clientSession.getClient());

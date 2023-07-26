@@ -5,9 +5,7 @@ import environment from "./environment";
 export const keycloak = new Keycloak({
   url: environment.authServerUrl,
   realm: environment.loginRealm,
-  clientId: environment.isRunningAsTheme
-    ? "security-admin-console"
-    : "security-admin-console-v2",
+  clientId: environment.clientId,
 });
 
 export async function initKeycloak() {

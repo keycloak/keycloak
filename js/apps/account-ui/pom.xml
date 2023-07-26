@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
@@ -72,15 +74,36 @@
                             <value>href="${resourceUrl}/</value>
                         </replacement>
                         <replacement>
+                            <token><![CDATA[<link rel="icon" type="image/svg+xml" href="${resourceUrl}/favicon.svg" />]]></token>
+                            <value xml:space="preserve"><![CDATA[<link rel="icon" type="${properties.favIconType!"image/svg+xml"}" href="${resourceUrl}${properties.favIcon!"/favicon.svg"}" />]]></value>
+                        </replacement>
+                        <replacement>
+                            <token><![CDATA[<title>Keycloak account console</title>]]></token>
+                            <value xml:space="preserve"><![CDATA[<title>${properties.title!"Keycloak account console"}</title>]]></value>
+                        </replacement>
+                        <replacement>
                             <token><![CDATA[</body>]]></token>
                             <value xml:space="preserve">
 <![CDATA[
   <script id="environment" type="application/json">
     {
       "authUrl": "${authUrl}",
-      "isRunningAsTheme": true,
       "realm": "${realm.name}",
-      "resourceUrl": "${resourceUrl}"
+      "clientId": "${clientId}",
+      "resourceUrl": "${resourceUrl}",
+      "logo": "${properties.logo!""}",
+      "logoUrl": "${properties.logoUrl!""}",
+      "features": {
+            "isRegistrationEmailAsUsername": ${realm.registrationEmailAsUsername?c},
+            "isEditUserNameAllowed": ${realm.editUsernameAllowed?c},
+            "isInternationalizationEnabled": ${realm.isInternationalizationEnabled()?c},
+            "isLinkedAccountsEnabled": ${realm.identityFederationEnabled?c},
+            "isMyResourcesEnabled": ${(realm.userManagedAccessAllowed && isAuthorizationEnabled)?c},
+            "deleteAccountAllowed": ${deleteAccountAllowed?c},
+            "updateEmailFeatureEnabled": ${updateEmailFeatureEnabled?c},
+            "updateEmailActionEnabled": ${updateEmailActionEnabled?c},
+            "isViewGroupsEnabled": ${isViewGroupsEnabled?c}
+        }
     }
   </script>
 </body>
@@ -97,7 +120,7 @@
       </#list>
     </#if>
   </head>
-]]>	
+]]>
 </value>
                         </replacement>
                     </replacements>

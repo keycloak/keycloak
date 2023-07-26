@@ -56,7 +56,7 @@ export default function AddOpenIdConnect() {
           providerId: id,
           alias: provider.alias!,
           tab: "settings",
-        })
+        }),
       );
     } catch (error) {
       addError("identity-providers:createError", error);
@@ -67,7 +67,7 @@ export default function AddOpenIdConnect() {
     <>
       <ViewHeader
         titleKey={t(
-          isKeycloak ? "addKeycloakOpenIdProvider" : "addOpenIdProvider"
+          isKeycloak ? "addKeycloakOpenIdProvider" : "addOpenIdProvider",
         )}
       />
       <PageSection variant="light">

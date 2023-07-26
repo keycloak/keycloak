@@ -105,12 +105,12 @@ export default function PermissionDetails() {
       reset({ ...permission, resources, policies, scopes });
       if (permission && "resourceType" in permission) {
         setApplyToResourceTypeFlag(
-          !!(permission as { resourceType: string }).resourceType
+          !!(permission as { resourceType: string }).resourceType,
         );
       }
       setPermission({ ...permission, resources, policies });
     },
-    []
+    [],
   );
 
   const save = async (permission: PolicyRepresentation) => {
@@ -118,12 +118,12 @@ export default function PermissionDetails() {
       if (permissionId) {
         await adminClient.clients.updatePermission(
           { id, type: permissionType, permissionId },
-          permission
+          permission,
         );
       } else {
         const result = await adminClient.clients.createPermission(
           { id, type: permissionType },
-          permission
+          permission,
         );
         navigate(
           toPermissionDetails({
@@ -131,12 +131,12 @@ export default function PermissionDetails() {
             id,
             permissionType,
             permissionId: result.id!,
-          })
+          }),
         );
       }
       addAlert(
         t((permissionId ? "update" : "create") + "PermissionSuccess"),
-        AlertVariant.success
+        AlertVariant.success,
       );
     } catch (error) {
       addError("clients:permissionSaveError", error);
@@ -159,7 +159,7 @@ export default function PermissionDetails() {
         });
         addAlert(t("permissionDeletedSuccess"), AlertVariant.success);
         navigate(
-          toAuthorizationTab({ realm, clientId: id, tab: "permissions" })
+          toAuthorizationTab({ realm, clientId: id, tab: "permissions" }),
         );
       } catch (error) {
         addError("clients:permissionDeletedError", error);
@@ -272,7 +272,7 @@ export default function PermissionDetails() {
             {applyToResourceTypeFlag ? (
               <FormGroup
                 label={t("resourceType")}
-                fieldId="name"
+                fieldId="resourceType"
                 labelIcon={
                   <HelpItem
                     helpText={t("clients-help:resourceType")}

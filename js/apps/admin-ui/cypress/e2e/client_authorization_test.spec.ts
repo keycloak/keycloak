@@ -1,3 +1,4 @@
+import { v4 as uuid } from "uuid";
 import { keycloakBefore } from "../support/util/keycloak_hooks";
 import adminClient from "../support/util/AdminClient";
 import LoginPage from "../support/pages/LoginPage";
@@ -20,7 +21,7 @@ describe("Client authentication subtab", () => {
   const clientDetailsPage = new ClientDetailsPage();
   const policiesSubTab = new PoliciesTab();
   const permissionsSubTab = new PermissionsTab();
-  const clientId = "client-authentication-" + crypto.randomUUID();
+  const clientId = "client-authentication-" + uuid();
 
   before(() =>
     adminClient.createClient({
@@ -30,7 +31,7 @@ describe("Client authentication subtab", () => {
       authorizationServicesEnabled: true,
       serviceAccountsEnabled: true,
       standardFlowEnabled: true,
-    })
+    }),
   );
 
   after(() => {
@@ -98,7 +99,7 @@ describe("Client authentication subtab", () => {
 
     masthead.checkNotificationMessage(
       "Authorization scope created successfully",
-      true
+      true,
     );
     authenticationTab.goToScopesSubTab();
     listingPage.itemExist("The scope");
@@ -108,7 +109,7 @@ describe("Client authentication subtab", () => {
     authenticationTab.goToPoliciesSubTab();
     cy.intercept(
       "GET",
-      "/admin/realms/master/clients/*/authz/resource-server/policy/regex/*"
+      "/admin/realms/master/clients/*/authz/resource-server/policy/regex/*",
     ).as("get");
     policiesSubTab
       .createPolicy("regex")
@@ -140,7 +141,7 @@ describe("Client authentication subtab", () => {
     authenticationTab.goToPoliciesSubTab();
     cy.intercept(
       "GET",
-      "/admin/realms/master/clients/*/authz/resource-server/policy/client/*"
+      "/admin/realms/master/clients/*/authz/resource-server/policy/client/*",
     ).as("get");
     policiesSubTab
       .createPolicy("client")
@@ -167,11 +168,11 @@ describe("Client authentication subtab", () => {
     });
     permissionsSubTab.selectResource("Default Resource").formUtils().save();
     cy.intercept(
-      "/admin/realms/master/clients/*/authz/resource-server/resource?first=0&max=10&permission=false"
+      "/admin/realms/master/clients/*/authz/resource-server/resource?first=0&max=10&permission=false",
     ).as("load");
     masthead.checkNotificationMessage(
       "Successfully created the permission",
-      true
+      true,
     );
     authenticationTab.formUtils().cancel();
   });
@@ -190,7 +191,7 @@ describe("Client authentication subtab", () => {
 
     masthead.checkNotificationMessage(
       "Successfully exported authorization details.",
-      true
+      true,
     );
   });
 

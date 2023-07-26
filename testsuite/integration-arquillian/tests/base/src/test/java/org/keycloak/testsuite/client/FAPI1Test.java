@@ -599,7 +599,7 @@ public class FAPI1Test extends AbstractClientPoliciesTest {
 
         assertSuccessfulTokenResponse(tokenResponse);
         AccessToken accessToken = oauth.verifyToken(tokenResponse.getAccessToken());
-        Assert.assertNotNull(accessToken.getCertConf().getCertThumbprint());
+        Assert.assertNotNull(accessToken.getConfirmation().getCertThumbprint());
 
         // Logout and remove consent of the user for next logins
         logoutUserAndRevokeConsent("foo");
@@ -616,7 +616,7 @@ public class FAPI1Test extends AbstractClientPoliciesTest {
             clientRep.setImplicitFlowEnabled(true);
             OIDCAdvancedConfigWrapper clientConfig = OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep);
             clientConfig.setRequestUris(Collections.singletonList(TestApplicationResourceUrls.clientRequestUri()));
-            clientConfig.setTlsClientAuthSubjectDn("EMAILADDRESS=contact@keycloak.org, CN=Keycloak Intermediate CA, OU=Keycloak, O=Red Hat, ST=MA, C=US");
+            clientConfig.setTlsClientAuthSubjectDn(MutualTLSUtils.DEFAULT_KEYSTORE_SUBJECT_DN);
             clientConfig.setAllowRegexPatternComparison(false);
         });
         ClientResource clientResource = adminClient.realm(REALM_NAME).clients().get(clientUUID);
@@ -653,7 +653,7 @@ public class FAPI1Test extends AbstractClientPoliciesTest {
 
         assertSuccessfulTokenResponse(tokenResponse);
         AccessToken accessToken = oauth.verifyToken(tokenResponse.getAccessToken());
-        Assert.assertNotNull(accessToken.getCertConf().getCertThumbprint());
+        Assert.assertNotNull(accessToken.getConfirmation().getCertThumbprint());
 
         // Logout and remove consent of the user for next logins
         logoutUserAndRevokeConsent("foo");
@@ -795,8 +795,8 @@ public class FAPI1Test extends AbstractClientPoliciesTest {
         Assert.assertNull(idToken.getAccessTokenHash());
         Assert.assertEquals(idToken.getNonce(), "123456");
         String state = getParameterFromUrl(OAuth2Constants.STATE, true);
-        Assert.assertEquals(idToken.getStateHash(), HashUtils.oidcHash(Algorithm.PS256, state));
-        Assert.assertEquals(idToken.getCodeHash(), HashUtils.oidcHash(Algorithm.PS256, code));
+        Assert.assertEquals(idToken.getStateHash(), HashUtils.accessTokenHash(Algorithm.PS256, state));
+        Assert.assertEquals(idToken.getCodeHash(), HashUtils.accessTokenHash(Algorithm.PS256, code));
     }
 
 

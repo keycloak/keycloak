@@ -18,7 +18,6 @@ package org.keycloak.testsuite.forms;
 
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Test;
-import org.keycloak.common.Profile;
 import org.keycloak.common.util.Base64;
 import org.keycloak.credential.CredentialModel;
 import org.keycloak.credential.hash.PasswordHashProvider;
@@ -35,9 +34,8 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.admin.ApiUtil;
-import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
-import org.keycloak.testsuite.pages.AccountUpdateProfilePage;
 import org.keycloak.testsuite.pages.LoginPage;
+import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.UserBuilder;
 
 import javax.crypto.SecretKeyFactory;
@@ -54,9 +52,6 @@ import static org.junit.Assert.fail;
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class PasswordHashingTest extends AbstractTestRealmKeycloakTest {
-
-    @Page
-    private AccountUpdateProfilePage updateProfilePage;
 
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
@@ -124,7 +119,6 @@ public class PasswordHashingTest extends AbstractTestRealmKeycloakTest {
 
     // KEYCLOAK-5282
     @Test
-    @DisableFeature(value = Profile.Feature.ACCOUNT2, skipRestart = true) // TODO remove this (KEYCLOAK-16228)
     public void testPasswordNotRehasedUnchangedIterations() {
         setPasswordPolicy("");
 
@@ -147,8 +141,7 @@ public class PasswordHashingTest extends AbstractTestRealmKeycloakTest {
 
         setPasswordPolicy("hashIterations(" + Pbkdf2Sha256PasswordHashProviderFactory.DEFAULT_ITERATIONS + ")");
 
-        updateProfilePage.open();
-        updateProfilePage.logout();
+        AccountHelper.logout(adminClient.realm("test"), username);
 
         loginPage.open();
         loginPage.login(username, "password");

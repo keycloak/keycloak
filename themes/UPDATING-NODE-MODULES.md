@@ -2,7 +2,7 @@
 
 The dependencies will be downloaded at build time, based on the contents of `package-lock.json`. You should verify the new set of packages don't break anything before committing the new `package-lock.json`.
 
-## For login and old account console
+## For the login
 
 ```bash
 cd src/main/resources/theme/keycloak/common/resources
@@ -11,7 +11,7 @@ git add package-lock.json
 cd -
 ```
 
-## For the new account console
+## For account console v2
 
 ```bash
 cd src/main/resources/theme/keycloak.v2/account/src

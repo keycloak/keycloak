@@ -50,7 +50,7 @@ export const AuthorizationSettings = ({ clientId }: { clientId: string }) => {
       setResource(resource);
       reset(resource);
     },
-    []
+    [],
   );
 
   const importResource = async (value: ResourceServerRepresentation) => {
@@ -67,7 +67,7 @@ export const AuthorizationSettings = ({ clientId }: { clientId: string }) => {
     try {
       await adminClient.clients.updateResourceServer(
         { id: clientId },
-        resource
+        resource,
       );
       addAlert(t("updateResourceSuccess"), AlertVariant.success);
     } catch (error) {

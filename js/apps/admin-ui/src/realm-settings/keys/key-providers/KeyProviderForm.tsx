@@ -59,7 +59,7 @@ export const KeyProviderForm = ({
     if (component.config)
       Object.entries(component.config).forEach(
         ([key, value]) =>
-          (component.config![key] = Array.isArray(value) ? value : [value])
+          (component.config![key] = Array.isArray(value) ? value : [value]),
       );
     try {
       if (id) {
@@ -68,7 +68,7 @@ export const KeyProviderForm = ({
           {
             ...component,
             providerType: KEY_PROVIDER_TYPE,
-          }
+          },
         );
         addAlert(t("saveProviderSuccess"), AlertVariant.success);
       } else {
@@ -94,7 +94,7 @@ export const KeyProviderForm = ({
         reset({ ...result });
       }
     },
-    []
+    [],
   );
 
   return (

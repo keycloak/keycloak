@@ -16,7 +16,7 @@ export const UserFederationsLdapRoute: AppRouteObject = {
 };
 
 export const toUserFederationsLdap = (
-  params: UserFederationsLdapParams
+  params: UserFederationsLdapParams,
 ): Partial<Path> => ({
   pathname: generatePath(UserFederationsLdapRoute.path, params),
 });

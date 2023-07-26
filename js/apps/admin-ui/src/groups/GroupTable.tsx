@@ -97,7 +97,7 @@ export const GroupTable = ({
       {rename && (
         <GroupsModal
           id={rename.id}
-          rename={rename.name}
+          rename={rename}
           refresh={() => {
             refresh();
             viewRefresh();
@@ -221,7 +221,7 @@ export const GroupTable = ({
             hasIcon={true}
             message={t(`noGroupsInThis${id ? "SubGroup" : "Realm"}`)}
             instructions={t(
-              `noGroupsInThis${id ? "SubGroup" : "Realm"}Instructions`
+              `noGroupsInThis${id ? "SubGroup" : "Realm"}Instructions`,
             )}
             primaryActionText={t("createGroup")}
             onPrimaryAction={toggleCreateOpen}

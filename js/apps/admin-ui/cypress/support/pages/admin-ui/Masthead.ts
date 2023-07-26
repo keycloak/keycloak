@@ -58,8 +58,12 @@ export default class Masthead extends CommonElements {
     return this;
   }
 
+  getDocumentationLink() {
+    return cy.get(this.documentationLink);
+  }
+
   clickDocumentationLink() {
-    cy.get(this.documentationLink)
+    this.getDocumentationLink()
       .find("a")
       .invoke("removeAttr", "target")
       .click();
@@ -76,7 +80,7 @@ export default class Masthead extends CommonElements {
       .document()
       .then(({ documentElement }) => documentElement.getBoundingClientRect())
       .then(({ width }) =>
-        cy.get(width < 1024 ? this.userDrpDwnKebab : this.userDrpDwn)
+        cy.get(width < 1024 ? this.userDrpDwnKebab : this.userDrpDwn),
       );
   }
 

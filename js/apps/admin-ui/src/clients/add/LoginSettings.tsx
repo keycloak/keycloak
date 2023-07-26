@@ -24,7 +24,7 @@ export const LoginSettings = ({
   const { realm } = useRealm();
 
   const idpInitiatedSsoUrlName: string = watch(
-    "attributes.saml_idp_initiated_sso_url_name"
+    "attributes.saml_idp_initiated_sso_url_name",
   );
 
   const standardFlowEnabled = watch("standardFlowEnabled");
@@ -97,7 +97,7 @@ export const LoginSettings = ({
             <MultiLineInput
               id="kc-postLogoutRedirect"
               name={convertAttributeNameToForm(
-                "attributes.post.logout.redirect.uris"
+                "attributes.post.logout.redirect.uris",
               )}
               aria-label={t("validPostLogoutRedirectUri")}
               addButtonLabel="clients:addPostLogoutRedirectUri"

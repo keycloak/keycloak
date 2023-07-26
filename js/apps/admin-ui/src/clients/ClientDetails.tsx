@@ -106,7 +106,7 @@ const ClientDetailHeader = ({
   const badges = useMemo<ViewHeaderBadge[]>(() => {
     const protocolName = getProtocolName(
       t,
-      client.protocol ?? "openid-connect"
+      client.protocol ?? "openid-connect",
     );
 
     const text = client.bearerOnly ? (
@@ -198,7 +198,6 @@ export default function ClientDetails() {
   const hasManageClients = hasAccess("manage-clients");
   const hasViewClients = hasAccess("view-clients");
   const hasViewUsers = hasAccess("view-users");
-  const hasQueryUsers = hasAccess("query-users");
   const permissionsEnabled =
     isFeatureEnabled(Feature.AdminFineGrainedAuthz) && hasManageAuthorization;
 
@@ -230,7 +229,7 @@ export default function ClientDetails() {
         realm,
         clientId,
         tab,
-      })
+      }),
     );
 
   const settingsTab = useTab("settings");
@@ -250,7 +249,7 @@ export default function ClientDetails() {
         realm,
         clientId,
         tab,
-      })
+      }),
     );
 
   const clientScopesSetupTab = useClientScopesTab("setup");
@@ -262,7 +261,7 @@ export default function ClientDetails() {
         realm,
         clientId,
         tab,
-      })
+      }),
     );
 
   const authorizationSettingsTab = useAuthorizationTab("settings");
@@ -297,8 +296,8 @@ export default function ClientDetails() {
         convertAttributeNameToForm("attributes.acr.loa.map"),
         // @ts-ignore
         Object.entries(JSON.parse(client.attributes["acr.loa.map"])).flatMap(
-          ([key, value]) => ({ key, value })
-        )
+          ([key, value]) => ({ key, value }),
+        ),
       );
     }
   };
@@ -312,14 +311,14 @@ export default function ClientDetails() {
       setClient(cloneDeep(fetchedClient));
       setupForm(fetchedClient);
     },
-    [clientId, key]
+    [clientId, key],
   );
 
   const save = async (
     { confirmed = false, messageKey = "clientSaveSuccess" }: SaveOptions = {
       confirmed: false,
       messageKey: "clientSaveSuccess",
-    }
+    },
   ) => {
     if (!(await form.trigger())) {
       return;
@@ -344,8 +343,8 @@ export default function ClientDetails() {
         Object.fromEntries(
           (submittedClient.attributes["acr.loa.map"] as KeyValueType[])
             .filter(({ key }) => key !== "")
-            .map(({ key, value }) => [key, value])
-        )
+            .map(({ key, value }) => [key, value]),
+        ),
       );
     }
 
@@ -490,7 +489,7 @@ export default function ClientDetails() {
                 isReadOnly={!(hasManageClients || client.access?.configure)}
               />
             </Tab>
-            {!isRealmClient(client) && !client.bearerOnly && hasQueryUsers && (
+            {!isRealmClient(client) && !client.bearerOnly && (
               <Tab
                 id="clientScopes"
                 data-testid="clientScopesTab"

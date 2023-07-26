@@ -23,7 +23,7 @@ The following are possible configuration options for this setting:
 
 file::
 The path to a Java keystore file.
-HTTPS requests need a way to verify the host of the server to which they are talking.
+TLS requests need a way to verify the host of the server to which they are talking.
 This is what the truststore does.
 The keystore contains one or more trusted host certificates or certificate authorities.
 This truststore file should only contain public certificates of your secured hosts.
@@ -38,6 +38,8 @@ For HTTPS requests, this option verifies the hostname of the server's certificat
 * `ANY` means that the hostname is not verified.
 * `WILDCARD` allows wildcards in subdomain names, such as *.foo.com.
 * When using `STRICT`, the Common Name (CN) must match the hostname exactly.
++
+Please note that this setting does not apply to LDAP secure connections, which require strict hostname checking.
 
 type::
 The type of truststore, such as `jks`, `pkcs12` or `bcfks`. If not provided, the type would be detected based on the truststore

@@ -518,6 +518,11 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
                 }
             } catch (WebApplicationException e) {
                 return e.getResponse();
+            } catch (IdentityBrokerException e) {
+                if (e.getMessageCode() != null) {
+                    return errorIdentityProviderLogin(e.getMessageCode());
+                }
+                logger.error("Failed to make identity provider oauth callback", e);
             } catch (Exception e) {
                 logger.error("Failed to make identity provider oauth callback", e);
             }

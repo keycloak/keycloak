@@ -194,6 +194,7 @@ public class OAuthClient {
     private String codeChallenge;
     private String codeChallengeMethod;
     private String origin;
+    private String dpopProof;
 
     private Map<String, String> customParameters;
 
@@ -297,6 +298,7 @@ public class OAuthClient {
         codeChallenge = null;
         codeChallengeMethod = null;
         origin = null;
+        dpopProof = null;
         customParameters = null;
         openid = true;
     }
@@ -308,6 +310,13 @@ public class OAuthClient {
     public AuthorizationEndpointResponse doLogin(String username, String password) {
         openLoginForm();
         fillLoginForm(username, password);
+
+        return new AuthorizationEndpointResponse(this);
+    }
+
+    public AuthorizationEndpointResponse doSilentLogin() {
+        openLoginForm();
+        WaitUtils.waitForPageToLoad();
 
         return new AuthorizationEndpointResponse(this);
     }
@@ -505,6 +514,10 @@ public class OAuthClient {
         // https://tools.ietf.org/html/rfc7636#section-4.5
         if (codeVerifier != null) {
             parameters.add(new BasicNameValuePair(OAuth2Constants.CODE_VERIFIER, codeVerifier));
+        }
+
+        if (dpopProof != null) {
+            post.addHeader("DPoP", dpopProof);
         }
 
         UrlEncodedFormEntity formEntity = new UrlEncodedFormEntity(parameters, Charsets.UTF_8);
@@ -1002,6 +1015,10 @@ public class OAuthClient {
         }
         if (clientSessionHost != null) {
             parameters.add(new BasicNameValuePair(AdapterConstants.CLIENT_SESSION_HOST, clientSessionHost));
+        }
+
+        if (dpopProof != null) {
+            post.addHeader("DPoP", dpopProof);
         }
 
         UrlEncodedFormEntity formEntity;
@@ -1752,6 +1769,11 @@ public class OAuthClient {
         return this;
     }
 
+    public OAuthClient dpopProof(String dpopProof) {
+        this.dpopProof = dpopProof;
+        return this;
+    }
+
     public OAuthClient addCustomParameter(String key, String value) {
         if (customParameters == null) {
             customParameters = new HashMap<>();
@@ -1791,6 +1813,8 @@ public class OAuthClient {
         // Just during FAPI JARM response mode JWT
         private String response;
 
+        private String issuer;
+
         public AuthorizationEndpointResponse(OAuthClient client) {
             boolean fragment;
             if (client.responseMode == null || "jwt".equals(client.responseMode)) {
@@ -1823,6 +1847,7 @@ public class OAuthClient {
             tokenType = params.get(OAuth2Constants.TOKEN_TYPE);
             expiresIn = params.get(OAuth2Constants.EXPIRES_IN);
             response = params.get(OAuth2Constants.RESPONSE);
+            issuer = params.get(OAuth2Constants.ISSUER);
         }
 
         public boolean isRedirected() {
@@ -1867,6 +1892,9 @@ public class OAuthClient {
 
         public String getResponse() {
             return response;
+        }
+        public String getIssuer() {
+            return issuer;
         }
     }
 
@@ -2087,7 +2115,7 @@ public class OAuthClient {
         }
     }
 
-    private KeyWrapper getRealmPublicKey(String realm, String algoritm, String kid) {
+    private KeyWrapper getRealmPublicKey(String realm, String algorithm, String kid) {
         boolean loadedKeysFromServer = false;
         JSONWebKeySet jsonWebKeySet = publicKeys.get(realm);
         if (jsonWebKeySet == null) {
@@ -2096,17 +2124,17 @@ public class OAuthClient {
             loadedKeysFromServer = true;
         }
 
-        KeyWrapper key = findKey(jsonWebKeySet, algoritm, kid);
+        KeyWrapper key = findKey(jsonWebKeySet, algorithm, kid);
 
         if (key == null && !loadedKeysFromServer) {
             jsonWebKeySet = getRealmKeys(realm);
             publicKeys.put(realm, jsonWebKeySet);
 
-            key = findKey(jsonWebKeySet, algoritm, kid);
+            key = findKey(jsonWebKeySet, algorithm, kid);
         }
 
         if (key == null) {
-            throw new RuntimeException("Public key for realm:" + realm + ", algorithm: " + algoritm + " not found");
+            throw new RuntimeException("Public key for realm:" + realm + ", algorithm: " + algorithm + " not found");
         }
 
         return key;
@@ -2121,9 +2149,9 @@ public class OAuthClient {
         }
     }
 
-    private KeyWrapper findKey(JSONWebKeySet jsonWebKeySet, String algoritm, String kid) {
+    private KeyWrapper findKey(JSONWebKeySet jsonWebKeySet, String algorithm, String kid) {
         for (JWK k : jsonWebKeySet.getKeys()) {
-            if (k.getKeyId().equals(kid) && k.getAlgorithm().equals(algoritm)) {
+            if (k.getKeyId().equals(kid) && k.getAlgorithm().equals(algorithm)) {
                 PublicKey publicKey = JWKParser.create(k).toPublicKey();
 
                 KeyWrapper key = new KeyWrapper();

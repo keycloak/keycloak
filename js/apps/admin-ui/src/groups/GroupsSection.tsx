@@ -46,7 +46,7 @@ export default function GroupsSection() {
   const { subGroups, setSubGroups, currentGroup } = useSubGroups();
   const { realm } = useRealm();
 
-  const [rename, setRename] = useState<string>();
+  const [rename, setRename] = useState<GroupRepresentation>();
   const [deleteOpen, toggleDeleteOpen] = useToggle();
 
   const navigate = useNavigate();
@@ -97,7 +97,7 @@ export default function GroupsSection() {
     (groups: GroupRepresentation[]) => {
       if (groups.length) setSubGroups(groups);
     },
-    [id]
+    [id],
   );
 
   return (
@@ -140,7 +140,7 @@ export default function GroupsSection() {
                             <DropdownItem
                               data-testid="renameGroupAction"
                               key="renameGroup"
-                              onClick={() => setRename(currentGroup()?.name)}
+                              onClick={() => setRename(currentGroup())}
                             >
                               {t("renameGroup")}
                             </DropdownItem>,

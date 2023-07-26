@@ -69,9 +69,9 @@ export const CapabilityConfig = ({
                       setValue("serviceAccountsEnabled", false);
                       setValue(
                         convertAttributeNameToForm<FormFields>(
-                          "attributes.oidc.ciba.grant.enabled"
+                          "attributes.oidc.ciba.grant.enabled",
                         ),
-                        false
+                        false,
                       );
                     }
                   }}
@@ -234,7 +234,7 @@ export const CapabilityConfig = ({
                       />
                       <HelpItem
                         helpText={t(
-                          "clients-help:oauthDeviceAuthorizationGrant"
+                          "clients-help:oauthDeviceAuthorizationGrant",
                         )}
                         fieldLabelId="clients:oauthDeviceAuthorizationGrant"
                       />
@@ -245,7 +245,7 @@ export const CapabilityConfig = ({
               <GridItem lg={8} sm={6}>
                 <Controller
                   name={convertAttributeNameToForm<FormFields>(
-                    "attributes.oidc.ciba.grant.enabled"
+                    "attributes.oidc.ciba.grant.enabled",
                   )}
                   defaultValue={false}
                   control={control}
@@ -287,7 +287,7 @@ export const CapabilityConfig = ({
           >
             <Controller
               name={convertAttributeNameToForm<FormFields>(
-                "attributes.saml.encrypt"
+                "attributes.saml.encrypt",
               )}
               control={control}
               defaultValue={false}
@@ -317,7 +317,7 @@ export const CapabilityConfig = ({
           >
             <Controller
               name={convertAttributeNameToForm<FormFields>(
-                "attributes.saml.client.signature"
+                "attributes.saml.client.signature",
               )}
               control={control}
               defaultValue={false}

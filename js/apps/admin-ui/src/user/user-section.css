@@ -20,13 +20,9 @@ button#kc-join-groups-button {
   margin-right: var(--pf-global--spacer--sm);
 }
 
-.join-group-dialog-row-disabled {
-  cursor: not-allowed;
-}
-
 .join-group-dialog-row-m-disabled {
   pointer-events: none;
-  color: var(--pf-global--disabled-color--200);
+  color: var(--pf-global--Color--200);
 }
 
 .kc-who-will-appear-button {
@@ -44,10 +40,6 @@ button#kc-join-groups-button {
 
 .kc-consents-chip-group .pf-c-chip-group__list-item {
   margin-right: 0px;
-}
-
-#consents-chip-text.pf-c-chip-text {
-  font-size: var(--pf-c-table--cell--FontSize);
 }
 
 .kc-consents-chip > .pf-c-chip__text {
@@ -146,4 +138,41 @@ article.pf-c-card.pf-m-flat.kc-available-idps > div > div > h1 {
 
 .pf-c-table tbody > tr > * {
   white-space: nowrap;
+}
+
+.user-attribute-search-form {
+  display: block;
+  padding: 20px;
+  width: 700px;
+}
+
+.user-attribute-search-form-headline {
+  margin-bottom: 1.5rem;
+}
+
+.user-attribute-search-form-alert {
+  margin-bottom: 1.5rem;
+}
+
+.user-attribute-search-form-key-value {
+  margin-bottom: 0.5rem;
+}
+
+.user-attribute-search-form-left {
+  display: inline-block;
+  width: 35%;
+}
+
+.user-attribute-search-form-right {
+  display: inline-block;
+  width: 65%;
+}
+
+.user-attribute-search-form-action-group button {
+  margin-top: 2rem;
+}
+
+.user-attribute-search-form-subtoolbar {
+  margin-top: -2rem;
+  display: ruby;
 }

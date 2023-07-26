@@ -50,12 +50,7 @@ export const UserConsents = () => {
     return (
       <ChipGroup className="kc-consents-chip-group">
         {grantedClientScopes!.map((currentChip) => (
-          <Chip
-            key={currentChip}
-            isReadOnly
-            className="kc-consents-chip"
-            id="consents-chip-text"
-          >
+          <Chip key={currentChip} isReadOnly className="kc-consents-chip">
             {currentChip}
           </Chip>
         ))}

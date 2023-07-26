@@ -12,7 +12,7 @@ export type UserFederationLdapParams = {
 };
 
 const UserFederationLdapSettings = lazy(
-  () => import("../UserFederationLdapSettings")
+  () => import("../UserFederationLdapSettings"),
 );
 
 export const UserFederationLdapRoute: AppRouteObject = {
@@ -30,7 +30,7 @@ export const UserFederationLdapWithTabRoute: AppRouteObject = {
 };
 
 export const toUserFederationLdap = (
-  params: UserFederationLdapParams
+  params: UserFederationLdapParams,
 ): Partial<Path> => {
   const path = params.tab
     ? UserFederationLdapWithTabRoute.path

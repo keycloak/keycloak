@@ -24,7 +24,7 @@ export const UserRegistration = () => {
   useFetch(
     () => adminClient.realms.findOne({ realm: realmName }),
     setRealm,
-    []
+    [],
   );
 
   if (!realm) {
@@ -37,7 +37,7 @@ export const UserRegistration = () => {
     try {
       await adminClient.roles.createComposite(
         { roleId: realm.defaultRole!.id!, realm: realmName },
-        compositeArray
+        compositeArray,
       );
       setKey(key + 1);
       addAlert(t("roles:addAssociatedRolesSuccess"), AlertVariant.success);

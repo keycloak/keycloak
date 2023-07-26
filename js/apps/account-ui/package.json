@@ -1,5 +1,6 @@
 {
   "name": "account-ui",
+  "type": "module",
   "scripts": {
     "dev": "wireit",
     "build": "wireit",
@@ -11,25 +12,27 @@
     "@patternfly/react-core": "^4.276.8",
     "@patternfly/react-icons": "^4.93.6",
     "@patternfly/react-table": "^4.113.0",
-    "i18next": "^22.5.0",
+    "i18next": "^23.2.11",
     "i18next-http-backend": "^2.2.1",
     "keycloak-js": "workspace:*",
     "keycloak-masthead": "workspace:*",
     "lodash-es": "^4.17.21",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "react-hook-form": "^7.43.9",
-    "react-i18next": "^12.3.1",
-    "react-router-dom": "6.11.2",
+    "react-hook-form": "^7.45.2",
+    "react-i18next": "^13.0.2",
+    "react-router-dom": "^6.14.2",
     "ui-shared": "workspace:*"
   },
   "devDependencies": {
-    "@types/lodash-es": "^4.17.7",
-    "@types/react": "^18.2.7",
-    "@types/react-dom": "^18.2.4",
-    "@vitejs/plugin-react-swc": "^3.3.1",
-    "vite": "^4.3.8",
-    "vite-plugin-checker": "^0.6.0"
+    "@keycloak/keycloak-admin-client": "workspace:*",
+    "@playwright/test": "^1.36.1",
+    "@types/lodash-es": "^4.17.8",
+    "@types/react": "^18.2.16",
+    "@types/react-dom": "^18.2.7",
+    "@vitejs/plugin-react-swc": "^3.3.2",
+    "vite": "^4.4.7",
+    "vite-plugin-checker": "^0.6.1"
   },
   "wireit": {
     "dev": {
@@ -37,7 +40,8 @@
       "dependencies": [
         "../../libs/ui-shared:build",
         "../../libs/keycloak-masthead:build",
-        "../../libs/keycloak-js:build"
+        "../../libs/keycloak-js:build",
+        "../../libs/keycloak-admin-client:build"
       ]
     },
     "preview": {
@@ -45,7 +49,8 @@
       "dependencies": [
         "../../libs/ui-shared:build",
         "../../libs/keycloak-masthead:build",
-        "../../libs/keycloak-js:build"
+        "../../libs/keycloak-js:build",
+        "../../libs/keycloak-admin-client:build"
       ]
     },
     "build": {
@@ -53,7 +58,8 @@
       "dependencies": [
         "../../libs/ui-shared:build",
         "../../libs/keycloak-masthead:build",
-        "../../libs/keycloak-js:build"
+        "../../libs/keycloak-js:build",
+        "../../libs/keycloak-admin-client:build"
       ]
     },
     "lint": {
@@ -61,7 +67,8 @@
       "dependencies": [
         "../../libs/ui-shared:build",
         "../../libs/keycloak-masthead:build",
-        "../../libs/keycloak-js:build"
+        "../../libs/keycloak-js:build",
+        "../../libs/keycloak-admin-client:build"
       ]
     }
   }

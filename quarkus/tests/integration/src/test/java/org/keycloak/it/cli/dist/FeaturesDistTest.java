@@ -28,7 +28,7 @@ import static org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand.OPTI
 @LegacyStore
 public class FeaturesDistTest {
 
-    private static final String PREVIEW_FEATURES_EXPECTED_LOG = "Preview features enabled: admin-fine-grained-authz, client-secret-rotation, declarative-user-profile, openshift-integration, recovery-codes, scripts, token-exchange, update-email";
+    private static final String PREVIEW_FEATURES_EXPECTED_LOG = "Preview features enabled: account3, admin-fine-grained-authz, client-secret-rotation, declarative-user-profile, dpop, recovery-codes, scripts, token-exchange, update-email";
 
     @Test
     public void testEnableOnBuild(KeycloakDistribution dist) {

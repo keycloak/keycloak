@@ -113,7 +113,10 @@
         "http://localhost:8180/auth/realms/master/app/*"
       ],
       "adminUrl": "http://localhost:8180/auth/realms/master/app/logout",
-      "secret": "password"
+      "secret": "password",
+      "attributes" : {
+        "exclude.issuer.from.auth.response": "true"
+      }
     },
     {
       "clientId" : "third-party",
@@ -123,7 +126,10 @@
       "redirectUris": [
         "http://localhost:8180/app/*"
       ],
-      "secret": "password"
+      "secret": "password",
+      "attributes" : {
+        "exclude.issuer.from.auth.response": "true"
+      }
     },
     {
       "clientId": "offline-client",
@@ -134,7 +140,10 @@
       "redirectUris": [
         "/offline-client/*"
       ],
-      "secret": "secret1"
+      "secret": "secret1",
+      "attributes" : {
+        "exclude.issuer.from.auth.response": "true"
+      }
     }
 
   ],

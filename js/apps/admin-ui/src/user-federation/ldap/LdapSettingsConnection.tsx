@@ -70,7 +70,7 @@ export const LdapSettingsConnection = ({
       const settings = convertFormToSettings(form);
       await adminClient.realms.testLDAPConnection(
         { realm },
-        { ...settings, action: testType, componentId: id }
+        { ...settings, action: testType, componentId: id },
       );
       addAlert(t("testSuccess"), AlertVariant.success);
     } catch (error) {
@@ -95,7 +95,7 @@ export const LdapSettingsConnection = ({
         <WizardSectionHeader
           title={t("connectionAndAuthenticationSettings")}
           description={helpText(
-            "ldapConnectionAndAuthorizationSettingsDescription"
+            "ldapConnectionAndAuthorizationSettingsDescription",
           )}
           showDescription={showSectionDescription}
         />
@@ -106,7 +106,7 @@ export const LdapSettingsConnection = ({
           labelIcon={
             <HelpItem
               helpText={t(
-                "user-federation-help:consoleDisplayConnectionUrlHelp"
+                "user-federation-help:consoleDisplayConnectionUrlHelp",
               )}
               fieldLabelId="user-federation:connectionURL"
             />
@@ -183,7 +183,7 @@ export const LdapSettingsConnection = ({
           <Controller
             name="config.useTruststoreSpi[0]"
             control={form.control}
-            defaultValue="ldapsOnly"
+            defaultValue="always"
             render={({ field }) => (
               <Select
                 toggleId="kc-use-truststore-spi"
@@ -198,7 +198,6 @@ export const LdapSettingsConnection = ({
                 selections={field.value}
               >
                 <SelectOption value="always">{t("always")}</SelectOption>
-                <SelectOption value="ldapsOnly">{t("onlyLdaps")}</SelectOption>
                 <SelectOption value="never">{t("never")}</SelectOption>
               </Select>
             )}

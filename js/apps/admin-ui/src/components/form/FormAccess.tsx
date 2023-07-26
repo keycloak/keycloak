@@ -64,7 +64,7 @@ export const FormAccess = ({
 
   const recursiveCloneChildren = (
     children: ReactNode,
-    newProps: any
+    newProps: any,
   ): ReactNode => {
     return Children.map(children, (child) => {
       if (!isValidElement(child)) {
@@ -87,7 +87,7 @@ export const FormAccess = ({
         }
         const children = recursiveCloneChildren(
           element.props.children,
-          newProps
+          newProps,
         );
         if (child.type === TextArea) {
           return cloneElement(child, {
@@ -106,7 +106,7 @@ export const FormAccess = ({
             child.type === Stack ||
             child.type === StackItem
             ? { children }
-            : { ...newProps, children }
+            : { ...newProps, children },
         );
       }
       return child;

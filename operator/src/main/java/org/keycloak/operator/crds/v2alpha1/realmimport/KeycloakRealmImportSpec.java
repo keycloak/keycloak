@@ -17,16 +17,15 @@
 package org.keycloak.operator.crds.v2alpha1.realmimport;
 
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
+import io.fabric8.generator.annotation.Required;
 import org.keycloak.representations.idm.RealmRepresentation;
-
-import jakarta.validation.constraints.NotNull;
 
 public class KeycloakRealmImportSpec {
 
-    @NotNull
+    @Required
     @JsonPropertyDescription("The name of the Keycloak CR to reference, in the same namespace.")
     private String keycloakCRName;
-    @NotNull
+    @Required
     @JsonPropertyDescription("The RealmRepresentation to import into Keycloak.")
     private RealmRepresentation realm;
 

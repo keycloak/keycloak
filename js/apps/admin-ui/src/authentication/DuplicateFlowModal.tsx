@@ -58,7 +58,7 @@ export const DuplicateFlowModal = ({
         newFlow.description = form.description;
         await adminClient.authenticationManagement.updateFlow(
           { flowId: newFlow.id! },
-          newFlow
+          newFlow,
         );
       }
       addAlert(t("copyFlowSuccess"), AlertVariant.success);
@@ -68,7 +68,7 @@ export const DuplicateFlowModal = ({
           id: newFlow.id!,
           usedBy: "notInUse",
           builtIn: newFlow.builtIn ? "builtIn" : undefined,
-        })
+        }),
       );
     } catch (error) {
       addError("authentication:copyFlowError", error);

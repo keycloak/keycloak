@@ -79,12 +79,12 @@ export const Credentials = ({ client, save, refresh }: CredentialsProps) => {
       setProviders(providers);
       setSecret(secret.value!);
     },
-    []
+    [],
   );
 
   async function regenerate<T>(
     call: (clientId: string) => Promise<T>,
-    message: string
+    message: string,
   ): Promise<T | undefined> {
     try {
       const data = await call(clientId);
@@ -99,7 +99,7 @@ export const Credentials = ({ client, save, refresh }: CredentialsProps) => {
     const secret = await regenerate<CredentialRepresentation>(
       (clientId) =>
         adminClient.clients.generateNewClientSecret({ id: clientId }),
-      "clientSecret"
+      "clientSecret",
     );
     setSecret(secret?.value || "");
     refresh();
@@ -117,7 +117,7 @@ export const Credentials = ({ client, save, refresh }: CredentialsProps) => {
     const accessToken = await regenerate<AccessToken>(
       (clientId) =>
         adminClient.clients.generateRegistrationAccessToken({ id: clientId }),
-      "accessToken"
+      "accessToken",
     );
     setAccessToken(accessToken?.registrationAccessToken || "");
   };
@@ -185,7 +185,9 @@ export const Credentials = ({ client, save, refresh }: CredentialsProps) => {
               />
             </FormGroup>
             {(clientAuthenticatorType === "client-jwt" ||
-              clientAuthenticatorType === "client-secret-jwt") && <SignedJWT />}
+              clientAuthenticatorType === "client-secret-jwt") && (
+              <SignedJWT clientAuthenticatorType={clientAuthenticatorType} />
+            )}
             {clientAuthenticatorType === "client-jwt" && (
               <FormGroup>
                 <Alert variant="info" isInline title={t("signedJWTConfirm")} />

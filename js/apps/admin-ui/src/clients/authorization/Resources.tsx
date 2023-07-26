@@ -84,9 +84,9 @@ export const AuthorizationResources = ({ clientId }: ResourcesProps) => {
     },
     (resources) =>
       setResources(
-        resources.map((resource) => ({ ...resource, isExpanded: false }))
+        resources.map((resource) => ({ ...resource, isExpanded: false })),
       ),
-    [key, search, first, max]
+    [key, search, first, max],
   );
 
   const fetchPermissions = async (id: string) => {
@@ -185,14 +185,14 @@ export const AuthorizationResources = ({ clientId }: ResourcesProps) => {
             <TableComposable aria-label={t("resources")} variant="compact">
               <Thead>
                 <Tr>
-                  <Th />
+                  <Th aria-hidden="true" />
                   <Th>{t("common:name")}</Th>
                   <Th>{t("displayName")}</Th>
                   <Th>{t("common:type")}</Th>
                   <Th>{t("owner")}</Th>
                   <Th>{t("uris")}</Th>
-                  <Th />
-                  <Th />
+                  <Th aria-hidden="true" />
+                  <Th aria-hidden="true" />
                 </Tr>
               </Thead>
               {resources.map((resource, rowIndex) => (
@@ -209,7 +209,7 @@ export const AuthorizationResources = ({ clientId }: ResourcesProps) => {
                                   ...resource,
                                   isExpanded: !resource.isExpanded,
                                 }
-                              : resource
+                              : resource,
                           );
                           setResources(rows);
                         },
@@ -258,7 +258,7 @@ export const AuthorizationResources = ({ clientId }: ResourcesProps) => {
                             onClick: async () => {
                               setSelectedResource(resource);
                               setPermission(
-                                await fetchPermissions(resource._id!)
+                                await fetchPermissions(resource._id!),
                               );
                               toggleDeleteDialog();
                             },

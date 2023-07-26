@@ -284,6 +284,12 @@ public class AccountRestService {
         return new ResourcesService(session, user, auth, request);
     }
 
+    @Path("supportedLocales")
+    @GET
+    public List<String> supportedLocales() {
+        return auth.getRealm().getSupportedLocalesStream().collect(Collectors.toList());
+    }
+
     private ClientRepresentation modelToRepresentation(ClientModel model, List<String> inUseClients, List<String> offlineClients, Map<String, UserConsentModel> consents) {
         ClientRepresentation representation = new ClientRepresentation();
         representation.setClientId(model.getClientId());

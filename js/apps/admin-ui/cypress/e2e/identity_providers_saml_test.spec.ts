@@ -81,7 +81,7 @@ describe("SAML identity provider test", () => {
       addMapperPage.goToMappersTab();
       addMapperPage.addMapper();
       addMapperPage.addUsernameTemplateImporterMapper(
-        "SAML Username Template Importer Mapper"
+        "SAML Username Template Importer Mapper",
       );
       masthead.checkNotificationMessage(createMapperSuccessMsg, true);
     });
@@ -92,7 +92,7 @@ describe("SAML identity provider test", () => {
       addMapperPage.goToMappersTab();
       addMapperPage.addMapper();
       addMapperPage.addHardcodedUserSessionAttrMapper(
-        "Hardcoded User Session Attribute"
+        "Hardcoded User Session Attribute",
       );
       masthead.checkNotificationMessage(createMapperSuccessMsg, true);
     });

@@ -39,7 +39,9 @@ export const RoutableTabs = ({
     .map((child) => child.props.eventKey.toString());
 
   // Determine if there is an exact match.
-  const exactMatch = eventKeys.find((eventKey) => eventKey === pathname);
+  const exactMatch = eventKeys.find(
+    (eventKey) => eventKey === decodeURI(pathname),
+  );
 
   // Determine which event keys at least partially match the current path, then sort them so the nearest match ends up on top.
   const nearestMatch = eventKeys

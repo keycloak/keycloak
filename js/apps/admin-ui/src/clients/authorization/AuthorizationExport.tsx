@@ -40,7 +40,7 @@ export const AuthorizationExport = () => {
       setCode(JSON.stringify(authDetails, null, 2));
       setAuthorizationDetails(authDetails);
     },
-    []
+    [],
   );
 
   const exportAuthDetails = () => {
@@ -49,7 +49,7 @@ export const AuthorizationExport = () => {
         new Blob([prettyPrintJSON(authorizationDetails)], {
           type: "application/json",
         }),
-        "test-authz-config.json"
+        "test-authz-config.json",
       );
       addAlert(t("exportAuthDetailsSuccess"), AlertVariant.success);
     } catch (error) {

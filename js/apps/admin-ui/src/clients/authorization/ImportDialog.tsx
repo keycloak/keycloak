@@ -78,7 +78,7 @@ export const ImportDialog = ({ onConfirm, closeDialog }: ImportDialogProps) => {
                 id="policyEnforcementMode"
                 name="policyEnforcementMode"
                 label={t(
-                  `policyEnforcementModes.${imported.policyEnforcementMode}`
+                  `policyEnforcementModes.${imported.policyEnforcementMode}`,
                 )}
                 isChecked
                 isDisabled

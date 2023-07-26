@@ -94,6 +94,33 @@ See https://datatracker.ietf.org/doc/html/draft-ietf-oauth-mtls-08#section-3[Mut
 Currently, {project_name} client adapters do not support holder-of-key token verification. {project_name} adapters treat access and refresh tokens as bearer tokens.
 ====
 
+[[_client_advanced_settings_oidc]]
+*Advanced Settings for OIDC*
+
+The Advanced Settings for OpenID Connect allows you to configure overrides at the client level for <<_timeouts, session and token timeouts>>.
+
+image:images/client-advanced-settings-oidc.png[Advanced Settings]
+
+|===
+|Configuration|Description
+
+|Access Token Lifespan
+|The value overrides the realm option with same name.
+
+|Client Session Idle
+|The value overrides the realm option with same name. The value should be shorter than the global *SSO Session Idle*.
+
+|Client Session Max
+|The value overrides the realm option with same name. The value should be shorter than the global *SSO Session Max*.
+
+|Client Offline Session Idle
+|This setting allows you to configure a shorter offline session idle timeout for the client. The timeout is amount of time the session remains idle before {project_name} revokes its offline token. If not set, realm <<_offline-session-idle,Offline Session Idle>> is used.
+
+|Client Offline Session Max
+|This setting allows you to configure a shorter offline session max lifespan for the client. The lifespan is the maximum time before {project_name} revokes the corresponding offline token. This option needs <<_offline-session-max-limited,Offline Session Max Limited>> enabled globally in the realm, and defaults to <<_offline-session-max,Offline Session Max>>.
+
+|===
+
 [[_proof-key-for-code-exchange]]
 *Proof Key for Code Exchange Code Challenge Method*
 

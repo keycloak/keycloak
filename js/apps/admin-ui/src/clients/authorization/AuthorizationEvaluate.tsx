@@ -82,7 +82,17 @@ export type AttributeForm = Omit<
 
 type Props = ClientSettingsProps & EvaluationResultRepresentation;
 
-export const AuthorizationEvaluate = ({ client }: Props) => {
+export const AuthorizationEvaluate = (props: Props) => {
+  const { hasAccess } = useAccess();
+
+  if (!hasAccess("view-users")) {
+    return <ForbiddenSection permissionNeeded="view-users" />;
+  }
+
+  return <AuthorizationEvaluateContent {...props} />;
+};
+
+const AuthorizationEvaluateContent = ({ client }: Props) => {
   const form = useForm<EvaluateFormInputs>({ mode: "onChange" });
   const {
     control,
@@ -107,16 +117,12 @@ export const AuthorizationEvaluate = ({ client }: Props) => {
 
   const [clientRoles, setClientRoles] = useState<RoleRepresentation[]>([]);
 
-  const { hasAccess } = useAccess();
-  if (!hasAccess("view-users"))
-    return <ForbiddenSection permissionNeeded="view-users" />;
-
   useFetch(
     () => adminClient.roles.find(),
     (roles) => {
       setClientRoles(roles);
     },
-    []
+    [],
   );
 
   useFetch(
@@ -133,7 +139,7 @@ export const AuthorizationEvaluate = ({ client }: Props) => {
       setResources(resources);
       setScopes(scopes);
     },
-    []
+    [],
   );
 
   const evaluate = async () => {
@@ -153,7 +159,7 @@ export const AuthorizationEvaluate = ({ client }: Props) => {
           scopes: r.scopes?.filter((s) =>
             Object.values(keys)
               .flatMap((v) => v)
-              .includes(s.name!)
+              .includes(s.name!),
           ),
         })),
       entitlements: false,
@@ -161,7 +167,7 @@ export const AuthorizationEvaluate = ({ client }: Props) => {
         attributes: Object.fromEntries(
           formValues.context.attributes
             .filter((item) => item.key || item.value !== "")
-            .map(({ key, value }) => [key, value])
+            .map(({ key, value }) => [key, value]),
         ),
       },
     };
@@ -169,7 +175,7 @@ export const AuthorizationEvaluate = ({ client }: Props) => {
     try {
       const evaluation = await adminClient.clients.evaluateResource(
         { id: client.id!, realm: realm.realm },
-        resEval
+        resEval,
       );
 
       setEvaluateResult(evaluation);
@@ -248,8 +254,8 @@ export const AuthorizationEvaluate = ({ client }: Props) => {
                         if (field.value?.includes(option)) {
                           field.onChange(
                             field.value.filter(
-                              (item: string) => item !== option
-                            )
+                              (item: string) => item !== option,
+                            ),
                           );
                         } else {
                           field.onChange([...(field.value || []), option]);
@@ -369,8 +375,8 @@ export const AuthorizationEvaluate = ({ client }: Props) => {
                             if (field.value.includes(option)) {
                               field.onChange(
                                 field.value.filter(
-                                  (item: string) => item !== option
-                                )
+                                  (item: string) => item !== option,
+                                ),
                               );
                             } else {
                               field.onChange([...field.value, option]);

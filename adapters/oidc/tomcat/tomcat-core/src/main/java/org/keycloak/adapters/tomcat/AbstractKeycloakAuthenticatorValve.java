@@ -68,7 +68,7 @@ public abstract class AbstractKeycloakAuthenticatorValve extends FormAuthenticat
             cache = false;
         } else if (Lifecycle.AFTER_START_EVENT.equals(event.getType())) {
         	keycloakInit();
-        } else if (event.getType() == Lifecycle.BEFORE_STOP_EVENT) {
+        } else if (Lifecycle.BEFORE_STOP_EVENT.equals(event.getType())) {
             beforeStop();
         }
     }

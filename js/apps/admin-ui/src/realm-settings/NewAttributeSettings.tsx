@@ -65,14 +65,14 @@ type PermissionView = [
   {
     adminView: boolean;
     userView: boolean;
-  }
+  },
 ];
 
 type PermissionEdit = [
   {
     adminEdit: boolean;
     userEdit: boolean;
-  }
+  },
 ];
 
 export const USERNAME_EMAIL = ["username", "email"];
@@ -141,46 +141,44 @@ export default function NewAttributeSettings() {
         ...values
       } =
         config.attributes!.find(
-          (attribute) => attribute.name === attributeName
+          (attribute) => attribute.name === attributeName,
         ) || {};
       convertToFormValues(values, form.setValue);
       Object.entries(
-        flatten<any, any>({ permissions, selector, required }, { safe: true })
+        flatten<any, any>({ permissions, selector, required }, { safe: true }),
       ).map(([key, value]) => form.setValue(key as any, value));
       form.setValue(
         "annotations",
         Object.entries(annotations || {}).map(([key, value]) => ({
           key,
-          value,
-        }))
+          value: value as Record<string, unknown>,
+        })),
       );
       form.setValue(
         "validations",
         Object.entries(validations || {}).map(([key, value]) => ({
           key,
           value,
-        }))
+        })),
       );
       form.setValue("isRequired", required !== undefined);
     },
-    []
+    [],
   );
 
   const save = async (profileConfig: UserProfileAttributeType) => {
     const validations = profileConfig.validations.reduce(
       (prevValidations, currentValidations) => {
         prevValidations[currentValidations.key] =
-          currentValidations.value?.length === 0
-            ? {}
-            : currentValidations.value;
+          currentValidations.value || {};
         return prevValidations;
       },
-      {} as Record<string, unknown>
+      {} as Record<string, unknown>,
     );
 
     const annotations = profileConfig.annotations.reduce(
       (obj, item) => Object.assign(obj, { [item.key]: item.value }),
-      {}
+      {},
     );
 
     const patchAttributes = () =>
@@ -203,7 +201,9 @@ export default function NewAttributeSettings() {
           profileConfig.isRequired
             ? { required: profileConfig.required }
             : undefined,
-          profileConfig.group ? { group: profileConfig.group } : { group: null }
+          profileConfig.group
+            ? { group: profileConfig.group }
+            : { group: null },
         );
       });
 
@@ -213,7 +213,9 @@ export default function NewAttributeSettings() {
           {
             name: profileConfig.name,
             displayName: profileConfig.displayName!,
-            required: profileConfig.isRequired ? profileConfig.required : {},
+            required: profileConfig.isRequired
+              ? profileConfig.required
+              : undefined,
             selector: profileConfig.selector,
             permissions: profileConfig.permissions!,
             annotations,
@@ -222,7 +224,7 @@ export default function NewAttributeSettings() {
           profileConfig.isRequired
             ? { required: profileConfig.required }
             : undefined,
-          profileConfig.group ? { group: profileConfig.group } : undefined
+          profileConfig.group ? { group: profileConfig.group } : undefined,
         ),
       ] as UserProfileAttribute);
 
@@ -239,7 +241,7 @@ export default function NewAttributeSettings() {
 
       addAlert(
         t("realm-settings:createAttributeSuccess"),
-        AlertVariant.success
+        AlertVariant.success,
       );
     } catch (error) {
       addError("realm-settings:createAttributeError", error);

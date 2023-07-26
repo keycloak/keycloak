@@ -15,7 +15,6 @@ import {
   SplitItem,
   Title,
 } from "@patternfly/react-core";
-import { TFuncKey } from "i18next";
 import { CSSProperties, useState } from "react";
 import { Trans, useTranslation } from "react-i18next";
 import { ContinueCancelModal, useAlerts } from "ui-shared";
@@ -26,9 +25,10 @@ import {
   CredentialRepresentation,
 } from "../api/representations";
 import { EmptyRow } from "../components/datalist/EmptyRow";
-import useFormatter from "../components/format/format-date";
 import { Page } from "../components/page/Page";
+import { TFuncKey } from "../i18n";
 import { keycloak } from "../keycloak";
+import { formatDate } from "../utils/formatDate";
 import { usePromise } from "../utils/usePromise";
 
 type MobileLinkProps = {
@@ -65,7 +65,6 @@ const MobileLink = ({ title, onClick }: MobileLinkProps) => {
 
 const SigningIn = () => {
   const { t } = useTranslation();
-  const { formatDate } = useFormatter();
   const { addAlert, addError } = useAlerts();
   const { login } = keycloak;
 
@@ -76,7 +75,7 @@ const SigningIn = () => {
   usePromise((signal) => getCredentials({ signal }), setCredentials, [key]);
 
   const credentialRowCells = (
-    credMetadata: CredentialMetadataRepresentation
+    credMetadata: CredentialMetadataRepresentation,
   ) => {
     const credential = credMetadata.credential;
     const maxWidth = { "--pf-u-max-width--MaxWidth": "300px" } as CSSProperties;
@@ -98,7 +97,7 @@ const SigningIn = () => {
             <strong className="pf-u-mr-md"></strong>
             {{ date: formatDate(new Date(credential.createdDate)) }}
           </Trans>
-        </DataListCell>
+        </DataListCell>,
       );
     }
     return items;
@@ -174,21 +173,20 @@ const SigningIn = () => {
                         >
                           {container.removeable ? (
                             <ContinueCancelModal
-                              buttonTitle="remove"
-                              buttonVariant="danger"
+                              buttonTitle={t("delete")}
                               modalTitle={t("removeCred", [
                                 label(meta.credential),
                               ])}
-                              modalMessage={t("stopUsingCred", [
-                                label(meta.credential),
-                              ])}
+                              continueLabel={t("confirm")}
+                              cancelLabel={t("cancel")}
+                              buttonVariant="danger"
                               onContinue={async () => {
                                 try {
                                   await deleteCredentials(meta.credential);
                                   addAlert(
                                     t("successRemovedMessage", {
                                       userLabel: label(meta.credential),
-                                    })
+                                    }),
                                   );
                                   refresh();
                                 } catch (error) {
@@ -196,11 +194,13 @@ const SigningIn = () => {
                                     t("errorRemovedMessage", {
                                       userLabel: label(meta.credential),
                                       error,
-                                    }).toString()
+                                    }).toString(),
                                   );
                                 }
                               }}
-                            />
+                            >
+                              {t("stopUsingCred", [label(meta.credential)])}
+                            </ContinueCancelModal>
                           ) : (
                             <Button
                               variant="secondary"

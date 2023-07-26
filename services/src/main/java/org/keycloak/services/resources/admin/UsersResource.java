@@ -16,6 +16,10 @@
  */
 package org.keycloak.services.resources.admin;
 
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
+import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.keycloak.common.ClientConnection;
@@ -37,6 +41,7 @@ import org.keycloak.policy.PasswordPolicyNotMetException;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.ForbiddenException;
+import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 import org.keycloak.services.resources.admin.permissions.UserPermissionEvaluator;
 import org.keycloak.userprofile.UserProfile;
@@ -51,7 +56,6 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
-import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
@@ -75,6 +79,7 @@ import static org.keycloak.userprofile.UserProfileContext.USER_API;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
+@Extension(name = KeycloakOpenAPI.Profiles.ADMIN, value = "")
 public class UsersResource {
 
     private static final Logger logger = Logger.getLogger(UsersResource.class);
@@ -111,6 +116,8 @@ public class UsersResource {
      */
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.USERS)
+    @Operation( summary = "Create a new user Username must be unique.")
     public Response createUser(final UserRepresentation rep) {
         // first check if user has manage rights
         try {
@@ -160,7 +167,7 @@ public class UsersResource {
             RepresentationToModel.createGroups(rep, realm, user);
 
             RepresentationToModel.createCredentials(rep, session, realm, user, true);
-            adminEvent.operation(OperationType.CREATE).resourcePath(session.getContext().getUri(), user.getId()).representation(StripSecretsUtils.strip(rep)).success();
+            adminEvent.operation(OperationType.CREATE).resourcePath(session.getContext().getUri(), user.getId()).representation(rep).success();
 
             if (session.getTransactionManager().isActive()) {
                 session.getTransactionManager().commit();
@@ -234,7 +241,7 @@ public class UsersResource {
      *
      * Returns a stream of users, filtered according to query parameters.
      *
-     * @param search A String contained in username, first or last name, or email
+     * @param search A String contained in username, first or last name, or email. Default search behavior is prefix-based (e.g., <code>foo</code> or <code>foo*</code>). Use <code>*foo*</code> for infix search and <code>"foo"</code> for exact search.
      * @param last A String contained in lastName, or the complete lastName, if param "exact" is true
      * @param first A String contained in firstName, or the complete firstName, if param "exact" is true
      * @param email A String contained in email, or the complete email, if param "exact" is true
@@ -253,20 +260,23 @@ public class UsersResource {
     @GET
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
-    public Stream<UserRepresentation> getUsers(@QueryParam("search") String search,
-                                               @QueryParam("lastName") String last,
-                                               @QueryParam("firstName") String first,
-                                               @QueryParam("email") String email,
-                                               @QueryParam("username") String username,
-                                               @QueryParam("emailVerified") Boolean emailVerified,
-                                               @QueryParam("idpAlias") String idpAlias,
-                                               @QueryParam("idpUserId") String idpUserId,
-                                               @QueryParam("first") Integer firstResult,
-                                               @QueryParam("max") Integer maxResults,
-                                               @QueryParam("enabled") Boolean enabled,
-                                               @QueryParam("briefRepresentation") Boolean briefRepresentation,
-                                               @QueryParam("exact") Boolean exact,
-                                               @QueryParam("q") String searchQuery) {
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.USERS)
+    @Operation( summary = "Get users Returns a stream of users, filtered according to query parameters.")
+    public Stream<UserRepresentation> getUsers(
+            @Parameter(description = "A String contained in username, first or last name, or email. Default search behavior is prefix-based (e.g., foo or foo*). Use *foo* for infix search and \"foo\" for exact search.") @QueryParam("search") String search,
+            @Parameter(description = "A String contained in lastName, or the complete lastName, if param \"exact\" is true") @QueryParam("lastName") String last,
+            @Parameter(description = "A String contained in firstName, or the complete firstName, if param \"exact\" is true") @QueryParam("firstName") String first,
+            @Parameter(description = "A String contained in email, or the complete email, if param \"exact\" is true") @QueryParam("email") String email,
+            @Parameter(description = "A String contained in username, or the complete username, if param \"exact\" is true") @QueryParam("username") String username,
+            @Parameter(description = "whether the email has been verified") @QueryParam("emailVerified") Boolean emailVerified,
+            @Parameter(description = "The alias of an Identity Provider linked to the user") @QueryParam("idpAlias") String idpAlias,
+            @Parameter(description = "The userId at an Identity Provider linked to the user") @QueryParam("idpUserId") String idpUserId,
+            @Parameter(description = "Pagination offset") @QueryParam("first") Integer firstResult,
+            @Parameter(description = "Maximum results size (defaults to 100)") @QueryParam("max") Integer maxResults,
+            @Parameter(description = "Boolean representing if user is enabled or not") @QueryParam("enabled") Boolean enabled,
+            @Parameter(description = "Boolean which defines whether brief representations are returned (default: false)") @QueryParam("briefRepresentation") Boolean briefRepresentation,
+            @Parameter(description = "Boolean which defines whether the params \"last\", \"first\", \"email\" and \"username\" must match exactly") @QueryParam("exact") Boolean exact,
+            @Parameter(description = "A query to search for custom attributes, in the format 'key1:value2 key2:value2'") @QueryParam("q") String searchQuery) {
         UserPermissionEvaluator userPermissionEvaluator = auth.users();
 
         userPermissionEvaluator.requireQuery();
@@ -353,7 +363,7 @@ public class UsersResource {
      * {@code email} or {@code username} those criteria are matched against their
      * respective fields on a user entity. Combined with a logical and.
      *
-     * @param search   arbitrary search string for all the fields below
+     * @param search   arbitrary search string for all the fields below. Default search behavior is prefix-based (e.g., <code>foo</code> or <code>foo*</code>). Use <code>*foo*</code> for infix search and <code>"foo"</code> for exact search.
      * @param last     last name filter
      * @param first    first name filter
      * @param email    email filter
@@ -365,15 +375,28 @@ public class UsersResource {
     @GET
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
-    public Integer getUsersCount(@QueryParam("search") String search,
-                                 @QueryParam("lastName") String last,
-                                 @QueryParam("firstName") String first,
-                                 @QueryParam("email") String email,
-                                 @QueryParam("emailVerified") Boolean emailVerified,
-                                 @QueryParam("username") String username,
-                                 @QueryParam("enabled") Boolean enabled) {
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.USERS)
+    @Operation(
+            summary = "Returns the number of users that match the given criteria.",
+            description = "It can be called in three different ways. " +
+                    "1. Don’t specify any criteria and pass {@code null}. The number of all users within that realm will be returned. <p> " +
+                    "2. If {@code search} is specified other criteria such as {@code last} will be ignored even though you set them. The {@code search} string will be matched against the first and last name, the username and the email of a user. <p> " +
+                    "3. If {@code search} is unspecified but any of {@code last}, {@code first}, {@code email} or {@code username} those criteria are matched against their respective fields on a user entity. Combined with a logical and.")
+    public Integer getUsersCount(
+            @Parameter(description = "arbitrary search string for all the fields below. Default search behavior is prefix-based (e.g., foo or foo*). Use *foo* for infix search and \"foo\" for exact search.") @QueryParam("search") String search,
+            @Parameter(description = "last name filter") @QueryParam("lastName") String last,
+            @Parameter(description = "first name filter") @QueryParam("firstName") String first,
+            @Parameter(description = "email filter") @QueryParam("email") String email,
+            @QueryParam("emailVerified") Boolean emailVerified,
+            @Parameter(description = "username filter") @QueryParam("username") String username,
+            @Parameter(description = "Boolean representing if user is enabled or not") @QueryParam("enabled") Boolean enabled,
+            @QueryParam("q") String searchQuery) {
         UserPermissionEvaluator userPermissionEvaluator = auth.users();
         userPermissionEvaluator.requireQuery();
+
+        Map<String, String> searchAttributes = searchQuery == null
+                ? Collections.emptyMap()
+                : SearchQueryUtils.getFields(searchQuery);
 
         if (search != null) {
             if (search.startsWith(SEARCH_ID_PARAMETER)) {
@@ -384,7 +407,7 @@ public class UsersResource {
             } else {
                 return session.users().getUsersCount(realm, search.trim(), auth.groups().getGroupsWithViewPermission());
             }
-        } else if (last != null || first != null || email != null || username != null || emailVerified != null || enabled != null) {
+        } else if (last != null || first != null || email != null || username != null || emailVerified != null || enabled != null || !searchAttributes.isEmpty()) {
             Map<String, String> parameters = new HashMap<>();
             if (last != null) {
                 parameters.put(UserModel.LAST_NAME, last);
@@ -404,6 +427,8 @@ public class UsersResource {
             if (enabled != null) {
                 parameters.put(UserModel.ENABLED, enabled.toString());
             }
+            parameters.putAll(searchAttributes);
+
             if (userPermissionEvaluator.canView()) {
                 return session.users().getUsersCount(realm, parameters);
             } else {

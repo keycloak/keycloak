@@ -130,6 +130,7 @@
   <script id="environment" type="application/json">
     {
       "loginRealm": "${loginRealm!"master"}",
+      "clientId": "${clientId}",
       "authServerUrl": "${authServerUrl}",
       "authUrl": "${authUrl}",
       "consoleBaseUrl": "${consoleBaseUrl}",
@@ -137,8 +138,7 @@
       "masterRealm": "${masterRealm}",
       "resourceVersion": "${resourceVersion}",
       "logo": "${properties.logo!""}",
-      "logoUrl": "${properties.logoUrl!""}",
-      "isRunningAsTheme": true
+      "logoUrl": "${properties.logoUrl!""}"
     }
   </script>
 </body>

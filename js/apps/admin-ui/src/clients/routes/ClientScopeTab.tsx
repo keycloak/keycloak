@@ -23,7 +23,7 @@ export const ClientScopesRoute: AppRouteObject = {
 };
 
 export const toClientScopesTab = (
-  params: ClientScopesParams
+  params: ClientScopesParams,
 ): Partial<Path> => ({
   pathname: generatePath(ClientScopesRoute.path, params),
 });

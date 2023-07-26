@@ -33,7 +33,6 @@ const RoleDetailLink = ({
 }: RoleDetailLinkProps) => {
   const { t } = useTranslation(messageBundle);
   const { realm } = useRealm();
-
   return role.name !== defaultRoleName ? (
     <Link to={toDetail(role.id!)}>{role.name}</Link>
   ) : (
@@ -59,7 +58,7 @@ type RolesListProps = {
   loader?: (
     first?: number,
     max?: number,
-    search?: string
+    search?: string,
   ) => Promise<RoleRepresentation[]>;
 };
 
@@ -85,7 +84,7 @@ export const RolesList = ({
     (realm) => {
       setRealm(realm);
     },
-    []
+    [],
   );
 
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
@@ -107,7 +106,7 @@ export const RolesList = ({
           ]);
         }
         setSelectedRole(undefined);
-        addAlert(t("roleDeletedSuccess"), AlertVariant.success);
+        addAlert(t("roles:roleDeletedSuccess"), AlertVariant.success);
       } catch (error) {
         addError("roles:roleDeleteError", error);
       }
@@ -145,10 +144,13 @@ export const RolesList = ({
                   title: t("common:delete"),
                   onRowClick: (role) => {
                     setSelectedRole(role);
-                    if (role.name === realm!.defaultRole!.name) {
+                    if (
+                      realm!.defaultRole &&
+                      role.name === realm!.defaultRole!.name
+                    ) {
                       addAlert(
                         t("defaultRoleDeleteError"),
-                        AlertVariant.danger
+                        AlertVariant.danger,
                       );
                     } else toggleDeleteDialog();
                   },

@@ -166,7 +166,7 @@ export const AdminEvents = () => {
 
   function removeFilterValue(
     key: keyof AdminEventSearchForm,
-    valueToRemove: string
+    valueToRemove: string,
   ) {
     const formValues = getValues();
     const fieldValue = formValues[key];
@@ -181,7 +181,7 @@ export const AdminEvents = () => {
   function commitFilters() {
     const newFilters: Partial<AdminEventSearchForm> = pickBy(
       getValues(),
-      (value) => value !== "" || (Array.isArray(value) && value.length > 0)
+      (value) => value !== "" || (Array.isArray(value) && value.length > 0),
     );
 
     setActiveFilters(newFilters);
@@ -263,7 +263,7 @@ export const AdminEvents = () => {
                               onClick={(resource) => {
                                 resource.stopPropagation();
                                 field.onChange(
-                                  field.value.filter((val) => val !== chip)
+                                  field.value.filter((val) => val !== chip),
                                 );
                               }}
                             >
@@ -324,7 +324,7 @@ export const AdminEvents = () => {
                               onClick={(operation) => {
                                 operation.stopPropagation();
                                 field.onChange(
-                                  field.value.filter((val) => val !== chip)
+                                  field.value.filter((val) => val !== chip),
                                 );
                               }}
                             >
@@ -465,7 +465,7 @@ export const AdminEvents = () => {
               {Object.entries(activeFilters).map((filter) => {
                 const [key, value] = filter as [
                   keyof AdminEventSearchForm,
-                  string | string[]
+                  string | string[],
                 ];
 
                 return (
@@ -510,7 +510,7 @@ export const AdminEvents = () => {
       representationEvent?.representation
         ? prettyPrintJSON(JSON.parse(representationEvent.representation))
         : "",
-    [representationEvent?.representation]
+    [representationEvent?.representation],
   );
 
   return (

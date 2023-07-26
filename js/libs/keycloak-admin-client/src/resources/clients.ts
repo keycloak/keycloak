@@ -705,7 +705,7 @@ export class Clients extends Resource<{ realm?: string }> {
           policyId: policyFound.id!,
           type: payload.policy.type!,
         },
-        payload.policy
+        payload.policy,
       );
       return this.findPolicyByName({
         id: payload.id,
@@ -714,7 +714,7 @@ export class Clients extends Resource<{ realm?: string }> {
     } else {
       return this.createPolicy(
         { id: payload.id, type: payload.policy.type! },
-        payload.policy
+        payload.policy,
       );
     }
   }
@@ -908,7 +908,7 @@ export class Clients extends Resource<{ realm?: string }> {
       method: "POST",
       path: "/{id}/push-revocation",
       urlParamKeys: ["id"],
-    }
+    },
   );
 
   public addClusterNode = this.makeRequest<{ id: string; node: string }, void>({

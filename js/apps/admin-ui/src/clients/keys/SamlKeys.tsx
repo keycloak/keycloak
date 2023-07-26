@@ -169,11 +169,11 @@ export const SamlKeys = ({ clientId, save }: SamlKeysProps) => {
     () =>
       Promise.all(
         KEYS.map((attr) =>
-          adminClient.clients.getKeyInfo({ id: clientId, attr })
-        )
+          adminClient.clients.getKeyInfo({ id: clientId, attr }),
+        ),
       ),
     (info) => setKeyInfo(info),
-    [refresh]
+    [refresh],
   );
 
   const generate = async (attr: KeyTypes) => {
@@ -190,7 +190,7 @@ export const SamlKeys = ({ clientId, save }: SamlKeysProps) => {
         new Blob([info[index].privateKey!], {
           type: "application/octet-stream",
         }),
-        "private.key"
+        "private.key",
       );
 
       addAlert(t("generateSuccess"), AlertVariant.success);

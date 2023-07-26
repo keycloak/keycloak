@@ -262,7 +262,11 @@ public abstract class JpaMapStorage<RE extends JpaRootEntity, E extends Abstract
         UUID uuid = UUIDKey.INSTANCE.fromStringSafe(key);
         if (uuid == null) return false;
         removeFromCache(key);
-        em.remove(em.getReference(entityType, uuid));
+        // First find the entity, as just trying to remove it will throw an EntityNotFoundException
+        RE entity = em.find(entityType, uuid);
+        if (entity != null) {
+            em.remove(entity);
+        }
         logger.tracef("tx %d: delete entity %s", hashCode(), key);
         return true;
     }

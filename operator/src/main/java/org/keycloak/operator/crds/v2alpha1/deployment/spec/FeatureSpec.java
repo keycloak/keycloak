@@ -17,6 +17,7 @@
 
 package org.keycloak.operator.crds.v2alpha1.deployment.spec;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
@@ -25,6 +26,7 @@ import io.sundr.builder.annotations.Buildable;
 import java.io.Serializable;
 import java.util.List;
 
+@JsonInclude(JsonInclude.Include.NON_NULL)
 @Buildable(editableEnabled = false, builderPackage = "io.fabric8.kubernetes.api.builder")
 @JsonPropertyOrder({"enabled", "disabled"})
 public class FeatureSpec implements Serializable {

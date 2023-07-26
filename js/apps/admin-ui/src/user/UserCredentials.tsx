@@ -93,21 +93,21 @@ export const UserCredentials = ({ user }: UserCredentialsProps) => {
       }, Object.create(null));
 
       const groupedCredentialsArray = Object.keys(groupedCredentials).map(
-        (key) => ({ key, value: groupedCredentials[key] })
+        (key) => ({ key, value: groupedCredentials[key] }),
       );
 
       setGroupedUserCredentials(
         groupedCredentialsArray.map((groupedCredential) => ({
           ...groupedCredential,
           isExpanded: false,
-        }))
+        })),
       );
     },
-    [key]
+    [key],
   );
 
   const passwordTypeFinder = userCredentials.find(
-    (credential) => credential.type === "password"
+    (credential) => credential.type === "password",
   );
 
   const toggleModal = () => setIsOpen(!isOpen);
@@ -179,7 +179,7 @@ export const UserCredentials = ({ user }: UserCredentialsProps) => {
           ? groupedCredential.value.map((c) => c.id!)
           : []),
       ]),
-    [groupedUserCredentials]
+    [groupedUserCredentials],
   );
 
   const onDragStart = (evt: ReactDragEvent) => {
@@ -267,7 +267,7 @@ export const UserCredentials = ({ user }: UserCredentialsProps) => {
     } else {
       const dragId = curListItem.id;
       const draggingToItemIndex = Array.from(
-        bodyRef.current?.children || []
+        bodyRef.current?.children || [],
       ).findIndex((item) => item.id === dragId);
       if (draggingToItemIndex === state.draggingToItemIndex) {
         return;
@@ -275,7 +275,7 @@ export const UserCredentials = ({ user }: UserCredentialsProps) => {
       const tempItemOrder = moveItem(
         itemOrder,
         state.draggedItemId,
-        draggingToItemIndex
+        draggingToItemIndex,
       );
       move(tempItemOrder);
       setState({
@@ -337,7 +337,7 @@ export const UserCredentials = ({ user }: UserCredentialsProps) => {
   useFetch(
     () => adminClient.users.getUserStorageCredentialTypes({ id: user.id! }),
     setCredentialTypes,
-    []
+    [],
   );
 
   if (!credentialTypes) {
@@ -405,12 +405,13 @@ export const UserCredentials = ({ user }: UserCredentialsProps) => {
                     fieldLabelId="users:userCredentialsHelpTextLabel"
                   />
                 </Th>
-                <Th />
+                <Th aria-hidden="true" />
                 <Th>{t("type")}</Th>
                 <Th>{t("userLabel")}</Th>
+                <Th>{t("createdAt")}</Th>
                 <Th>{t("data")}</Th>
-                <Th />
-                <Th />
+                <Th aria-hidden="true" />
+                <Th aria-hidden="true" />
               </Tr>
             </Thead>
             <Tbody
@@ -434,7 +435,7 @@ export const UserCredentials = ({ user }: UserCredentialsProps) => {
                       }
                       draggableRow={{
                         id: `draggable-row-${groupedCredential.value.map(
-                          ({ id }) => id
+                          ({ id }) => id,
                         )}`,
                       }}
                     />
@@ -452,7 +453,7 @@ export const UserCredentials = ({ user }: UserCredentialsProps) => {
                                       ...credential,
                                       isExpanded: !credential.isExpanded,
                                     }
-                                  : credential
+                                  : credential,
                             );
                             setGroupedUserCredentials(rows);
                           },
@@ -488,7 +489,7 @@ export const UserCredentials = ({ user }: UserCredentialsProps) => {
                           className="kc-draggable-dropdown-type-icon"
                           draggableRow={{
                             id: `draggable-row-${groupedCredential.value.map(
-                              ({ id }) => id
+                              ({ id }) => id,
                             )}`,
                           }}
                         />
@@ -514,7 +515,7 @@ export const UserCredentials = ({ user }: UserCredentialsProps) => {
               <Tr>
                 <Th>{t("type")}</Th>
                 <Th>{t("providedBy")}</Th>
-                <Th />
+                <Th aria-hidden="true" />
               </Tr>
             </Thead>
             <Tbody>

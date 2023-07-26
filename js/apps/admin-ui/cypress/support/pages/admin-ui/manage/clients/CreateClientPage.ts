@@ -73,7 +73,7 @@ export default class CreateClientPage extends CommonPage {
     name = "",
     description = "",
     alwaysDisplay?: boolean,
-    frontchannelLogout?: boolean
+    frontchannelLogout?: boolean,
   ) {
     cy.get(this.clientIdInput).clear();
 

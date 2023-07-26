@@ -5,21 +5,21 @@ export default class FormValidation {
 
   static assertMinValue(
     chain: Cypress.Chainable<JQuery<HTMLElement>>,
-    minValue: number
+    minValue: number,
   ) {
     this.#getHelperText(chain).should(
       "have.text",
-      `Must be greater than ${minValue}`
+      `Must be greater than ${minValue}`,
     );
   }
 
   static assertMaxValue(
     chain: Cypress.Chainable<JQuery<HTMLElement>>,
-    maxValue: number
+    maxValue: number,
   ) {
     this.#getHelperText(chain).should(
       "have.text",
-      `Must be less than ${maxValue}`
+      `Must be less than ${maxValue}`,
     );
   }
 

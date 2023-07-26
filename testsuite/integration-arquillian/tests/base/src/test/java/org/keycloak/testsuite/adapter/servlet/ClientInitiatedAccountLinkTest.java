@@ -25,15 +25,20 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.ClientResource;
+import org.keycloak.admin.client.resource.IdentityProviderResource;
 import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.broker.provider.HardcodedAttributeMapper;
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.models.Constants;
+import org.keycloak.models.IdentityProviderMapperModel;
+import org.keycloak.models.IdentityProviderMapperSyncMode;
+import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
-import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.FederatedIdentityRepresentation;
+import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
@@ -41,14 +46,11 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.resources.LoginActionsService;
 import org.keycloak.testsuite.ActionURIUtils;
 import org.keycloak.testsuite.adapter.AbstractServletsAdapterTest;
-import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
-import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.utils.arquillian.ContainerConstants;
 import org.keycloak.testsuite.broker.BrokerTestTools;
 import org.keycloak.testsuite.page.AbstractPageWithInjectedUrl;
-import org.keycloak.testsuite.pages.AccountUpdateProfilePage;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginUpdateProfilePage;
@@ -60,10 +62,13 @@ import org.keycloak.util.JsonSerialization;
 import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.core.UriBuilder;
 import java.net.URL;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 import static org.keycloak.models.AccountRoles.MANAGE_ACCOUNT;
 import static org.keycloak.models.AccountRoles.MANAGE_ACCOUNT_LINKS;
@@ -84,12 +89,12 @@ public class ClientInitiatedAccountLinkTest extends AbstractServletsAdapterTest 
     public static final String CHILD_IDP = "child";
     public static final String PARENT_IDP = "parent-idp";
     public static final String PARENT_USERNAME = "parent";
+    private static final String HARDCODED_ATTRIBUTE_MAPPER_NAME = "my_hardcoded_mapper";
+    private static final String USER_ATTRIBUTE = "hardcoded_attribute";
+    private static final String USER_ATTRIBUTE_VALUE = "hardcoded_value";
 
     @Page
     protected LoginUpdateProfilePage loginUpdateProfilePage;
-
-    @Page
-    protected AccountUpdateProfilePage profilePage;
 
     @Page
     private LoginPage loginPage;
@@ -135,6 +140,11 @@ public class ClientInitiatedAccountLinkTest extends AbstractServletsAdapterTest 
         servlet.getRedirectUris().add(uri + "/*");
         servlet.setSecret("password");
         servlet.setFullScopeAllowed(true);
+
+        Map<String, String> attributes = Optional.ofNullable(servlet.getAttributes()).orElse(new HashMap<>());
+        attributes.put(OIDCConfigAttributes.EXCLUDE_ISSUER_FROM_AUTH_RESPONSE, Boolean.TRUE.toString());
+        servlet.setAttributes(attributes);
+
         realm.setClients(new LinkedList<>());
         realm.getClients().add(servlet);
         testRealms.add(realm);
@@ -388,26 +398,7 @@ public class ClientInitiatedAccountLinkTest extends AbstractServletsAdapterTest 
 
     @Test
     public void testAccountLink() throws Exception {
-        RealmResource realm = adminClient.realms().realm(CHILD_IDP);
-        List<FederatedIdentityRepresentation> links = realm.users().get(childUserId).getFederatedIdentity();
-        Assert.assertTrue(links.isEmpty());
-
-        UriBuilder linkBuilder = UriBuilder.fromUri(appPage.getInjectedUrl().toString())
-                .path("link");
-        String linkUrl = linkBuilder.clone()
-                .queryParam("realm", CHILD_IDP)
-                .queryParam("provider", PARENT_IDP).build().toString();
-        System.out.println("linkUrl: " + linkUrl);
-        navigateTo(linkUrl);
-        Assert.assertTrue(loginPage.isCurrent(CHILD_IDP));
-        Assert.assertTrue(driver.getPageSource().contains(PARENT_IDP));
-        loginPage.login("child", "password");
-        Assert.assertTrue(loginPage.isCurrent(PARENT_IDP));
-        loginPage.login(PARENT_USERNAME, "password");
-        System.out.println("After linking: " + driver.getCurrentUrl());
-        System.out.println(driver.getPageSource());
-        Assert.assertTrue(driver.getCurrentUrl().startsWith(linkBuilder.toTemplate()));
-        Assert.assertTrue(driver.getPageSource().contains("Account Linked"));
+        linkAccount();
 
         OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest(CHILD_IDP, "child", "password", null, "client-linking", "password");
         Assert.assertNotNull(response.getAccessToken());
@@ -416,19 +407,14 @@ public class ClientInitiatedAccountLinkTest extends AbstractServletsAdapterTest 
         String firstToken = getToken(response, httpClient);
         Assert.assertNotNull(firstToken);
 
-
-        navigateTo(linkUrl);
+        navigateToAccountLinkPage();
         Assert.assertTrue(driver.getPageSource().contains("Account Linked"));
         String nextToken = getToken(response, httpClient);
         Assert.assertNotNull(nextToken);
         Assert.assertNotEquals(firstToken, nextToken);
 
-
-
-
-
-
-        links = realm.users().get(childUserId).getFederatedIdentity();
+        RealmResource realm = adminClient.realms().realm(CHILD_IDP);
+        List<FederatedIdentityRepresentation> links = realm.users().get(childUserId).getFederatedIdentity();
         Assert.assertFalse(links.isEmpty());
 
         realm.users().get(childUserId).removeFederatedIdentity(PARENT_IDP);
@@ -436,8 +422,6 @@ public class ClientInitiatedAccountLinkTest extends AbstractServletsAdapterTest 
         Assert.assertTrue(links.isEmpty());
 
         logoutAll();
-
-
     }
 
     // TODO remove this once DYNAMIC_SCOPES feature is enabled by default
@@ -551,21 +535,18 @@ public class ClientInitiatedAccountLinkTest extends AbstractServletsAdapterTest 
 
     }
 
-
     @Test
-    @DisableFeature(value = Profile.Feature.ACCOUNT2, skipRestart = true) // TODO remove this (KEYCLOAK-16228)
-    public void testAccountLinkingExpired() throws Exception {
+    public void testAccountLinkingExpired() {
         RealmResource realm = adminClient.realms().realm(CHILD_IDP);
         List<FederatedIdentityRepresentation> links = realm.users().get(childUserId).getFederatedIdentity();
         Assert.assertTrue(links.isEmpty());
 
-        // Login to account mgmt first
-        profilePage.open(CHILD_IDP);
+        // Login to application first
+        appPage.navigateTo();
         WaitUtils.waitForPageToLoad();
 
         Assert.assertTrue(loginPage.isCurrent(CHILD_IDP));
         loginPage.login("child", "password");
-        profilePage.assertCurrent();
 
         // Now in another tab, request account linking
         UriBuilder linkBuilder = UriBuilder.fromUri(appPage.getInjectedUrl().toString())
@@ -598,6 +579,78 @@ public class ClientInitiatedAccountLinkTest extends AbstractServletsAdapterTest 
         WaitUtils.waitForPageToLoad();
     }
 
-    
+    @Test
+    public void testAccountLinkWithHardcodedMapper() throws Exception {
+        driver.manage().timeouts().pageLoadTimeout(1, TimeUnit.DAYS);
+        addHardcodedAttributeMapper();
+        linkAccount();
+        assertHardcodedAttributeHasBeenAssigned();
+        removeHardcodedAttribute();
+        removeHardcodedAttributeMapper();
+        logoutAll();
+    }
 
+    private void addHardcodedAttributeMapper() {
+        IdentityProviderResource provider = adminClient.realms().realm(CHILD_IDP).identityProviders().get(PARENT_IDP);
+
+        IdentityProviderMapperRepresentation mapper = new IdentityProviderMapperRepresentation();
+        mapper.setIdentityProviderAlias(PARENT_IDP);
+        mapper.setName(HARDCODED_ATTRIBUTE_MAPPER_NAME);
+        mapper.setIdentityProviderMapper("hardcoded-attribute-idp-mapper");
+        mapper.setConfig(Map.of(
+                IdentityProviderMapperModel.SYNC_MODE, IdentityProviderMapperSyncMode.FORCE.toString(),
+                HardcodedAttributeMapper.ATTRIBUTE, USER_ATTRIBUTE,
+                HardcodedAttributeMapper.ATTRIBUTE_VALUE, USER_ATTRIBUTE_VALUE)
+        );
+
+        mapper.setIdentityProviderAlias(PARENT_IDP);
+        provider.addMapper(mapper).close();
+    }
+
+    private void removeHardcodedAttributeMapper() {
+        IdentityProviderResource provider = adminClient.realms().realm(CHILD_IDP).identityProviders().get(PARENT_IDP);
+        Optional<IdentityProviderMapperRepresentation> mapper = provider.getMappers().stream()
+                .filter(m -> m.getName().equals(HARDCODED_ATTRIBUTE_MAPPER_NAME)).findFirst();
+
+        Assert.assertFalse(mapper.isEmpty());
+
+        provider.delete(mapper.get().getId());
+    }
+
+    private void assertHardcodedAttributeHasBeenAssigned() {
+        UserRepresentation user = adminClient.realm(CHILD_IDP).users().get(childUserId).toRepresentation();
+        Assert.assertEquals(USER_ATTRIBUTE_VALUE, user.firstAttribute(USER_ATTRIBUTE));
+    }
+
+    private void removeHardcodedAttribute() {
+        UserRepresentation user = adminClient.realm(CHILD_IDP).users().get(childUserId).toRepresentation();
+        user.getAttributes().remove(USER_ATTRIBUTE);
+        adminClient.realm(CHILD_IDP).users().get(user.getId()).update(user);
+    }
+
+    private void linkAccount() {
+        RealmResource realm = adminClient.realms().realm(CHILD_IDP);
+        List<FederatedIdentityRepresentation> links = realm.users().get(childUserId).getFederatedIdentity();
+        Assert.assertTrue(links.isEmpty());
+
+        navigateToAccountLinkPage();
+        Assert.assertTrue(loginPage.isCurrent(CHILD_IDP));
+        Assert.assertTrue(driver.getPageSource().contains(PARENT_IDP));
+        loginPage.login("child", "password");
+        Assert.assertTrue(loginPage.isCurrent(PARENT_IDP));
+        loginPage.login(PARENT_USERNAME, "password");
+        System.out.println("After linking: " + driver.getCurrentUrl());
+        System.out.println(driver.getPageSource());
+        Assert.assertTrue(driver.getPageSource().contains("Account Linked"));
+    }
+
+    private void navigateToAccountLinkPage() {
+        UriBuilder linkBuilder = UriBuilder.fromUri(appPage.getInjectedUrl().toString())
+                .path("link");
+        String linkUrl = linkBuilder.clone()
+                .queryParam("realm", CHILD_IDP)
+                .queryParam("provider", PARENT_IDP).build().toString();
+        System.out.println("linkUrl: " + linkUrl);
+        navigateTo(linkUrl);
+    }
 }

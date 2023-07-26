@@ -18,17 +18,24 @@
 package org.keycloak.testsuite.events;
 
 import org.apache.commons.lang3.StringUtils;
+import org.hamcrest.Matchers;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Assume;
+import org.junit.Rule;
 import org.junit.Test;
+import org.keycloak.events.Errors;
+import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventStoreProvider;
 import org.keycloak.events.EventType;
+import org.keycloak.models.RealmModel;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.testsuite.AssertEvents;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -40,6 +47,9 @@ import java.util.Map;
  */
 public class EventStoreProviderTest extends AbstractEventsTest {
 
+    @Rule
+    public AssertEvents assertEvents = new AssertEvents(this);
+
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
         super.addTestRealms(testRealms);
@@ -50,6 +60,7 @@ public class EventStoreProviderTest extends AbstractEventsTest {
             adminRealmRep.setEnabled(true);
             adminRealmRep.setEventsEnabled(true);
             adminRealmRep.setEventsExpiration(0);
+            adminRealmRep.setEventsListeners(Collections.singletonList(TestEventsListenerContextDetailsProviderFactory.PROVIDER_ID));
             testRealms.add(adminRealmRep);
         }
     }
@@ -169,6 +180,55 @@ public class EventStoreProviderTest extends AbstractEventsTest {
         Assert.assertEquals(0, testing().queryEvents(realmId2, null, null, null, d01, d03, null, null, null).size());
         Assert.assertEquals(0, testing().queryEvents(realmId, null, null, null, d08, d10, null, null, null).size());
         Assert.assertEquals(0, testing().queryEvents(realmId2, null, null, null, d08, d10, null, null, null).size());
+    }
+
+    @Test
+    public void testEventBuilder() {
+        testingClient.server(REALM_NAME_1).run(session -> {
+            RealmModel realm = session.getContext().getRealm();
+
+            EventBuilder event = new EventBuilder(realm, session)
+                    .event(EventType.LOGIN)
+                    .session("session1")
+                    .user("user1")
+                    .client("client1");
+            event.clone().error(Errors.USER_NOT_FOUND);
+
+            event.clone().success();
+        });
+
+        // expect events to contain the realm name as detail (session context correctly set)
+        assertEvents.expect(EventType.LOGIN_ERROR)
+                .ipAddress(Matchers.blankOrNullString())
+                .realm(realmId)
+                .client("client1")
+                .user("user1")
+                .session("session1")
+                .error(Errors.USER_NOT_FOUND)
+                .detail(TestEventsListenerContextDetailsProviderFactory.CONTEXT_REALM_DETAIL, REALM_NAME_1)
+                .assertEvent();
+        assertEvents.expect(EventType.LOGIN)
+                .ipAddress(Matchers.blankOrNullString())
+                .realm(realmId)
+                .client("client1")
+                .user("user1")
+                .session("session1")
+                .detail(TestEventsListenerContextDetailsProviderFactory.CONTEXT_REALM_DETAIL, REALM_NAME_1)
+                .assertEvent();
+
+        // the two events should be retrieved from the store provider
+        List<EventRepresentation> events = testing().queryEvents(realmId, null, null, null, null, null, null, null, null);
+        Assert.assertEquals(2, events.size());
+        EventRepresentation event = events.stream().filter(e -> EventType.LOGIN.toString().equals(e.getType())).findFirst().orElse(null);
+        Assert.assertNotNull("No LOGIN event found", event);
+        Assert.assertEquals("user1", event.getUserId());
+        Assert.assertEquals("client1", event.getClientId());
+        Assert.assertEquals("session1", event.getSessionId());
+        event = events.stream().filter(e -> EventType.LOGIN_ERROR.toString().equals(e.getType())).findFirst().orElse(null);
+        Assert.assertNotNull("No LOGIN_ERROR event found", event);
+        Assert.assertEquals("user1", event.getUserId());
+        Assert.assertEquals("client1", event.getClientId());
+        Assert.assertEquals("session1", event.getSessionId());
     }
 
     @Test

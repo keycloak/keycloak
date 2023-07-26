@@ -124,9 +124,14 @@ public class InfinispanPublicKeyStorageProvider implements PublicKeyStorageProvi
 
     @Override
     public KeyWrapper getPublicKey(String modelKey, String kid, String algorithm, PublicKeyLoader loader) {
-        // Check if key is in cache
         PublicKeysEntry entry = keys.get(modelKey);
-        if (entry != null) {
+        int lastRequestTime = entry==null ? 0 : entry.getLastRequestTime();
+        int currentTime = Time.currentTime();
+        boolean isSendingRequestAllowed = currentTime > lastRequestTime + minTimeBetweenRequests;
+
+        // Check if key is in cache, but only if KID is provided or if the key cache has been loaded recently,
+        // in order to get a key based on partial match with alg param.
+        if (entry != null && (kid != null || !isSendingRequestAllowed)) {
             KeyWrapper publicKey = entry.getCurrentKeys().getKeyByKidAndAlg(kid, algorithm);
             if (publicKey != null) {
                 // return a copy of the key to not modify the cached one
@@ -134,12 +139,8 @@ public class InfinispanPublicKeyStorageProvider implements PublicKeyStorageProvi
             }
         }
 
-        int lastRequestTime = entry==null ? 0 : entry.getLastRequestTime();
-        int currentTime = Time.currentTime();
-
         // Check if we are allowed to send request
-        if (currentTime > lastRequestTime + minTimeBetweenRequests) {
-
+        if (isSendingRequestAllowed) {
             WrapperCallable wrapperCallable = new WrapperCallable(modelKey, loader);
             FutureTask<PublicKeysEntry> task = new FutureTask<>(wrapperCallable);
             FutureTask<PublicKeysEntry> existing = tasksInProgress.putIfAbsent(modelKey, task);

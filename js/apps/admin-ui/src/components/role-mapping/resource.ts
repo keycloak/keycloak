@@ -42,12 +42,12 @@ const fetchEndpoint = async ({
   });
 
 export const getAvailableClientRoles = (
-  query: PaginatingQuery
+  query: PaginatingQuery,
 ): Promise<ClientRole[]> =>
   fetchEndpoint({ ...query, endpoint: "available-roles" });
 
 export const getEffectiveClientRoles = (
-  query: EffectiveClientRolesQuery
+  query: EffectiveClientRolesQuery,
 ): Promise<ClientRole[]> =>
   fetchEndpoint({ ...query, endpoint: "effective-roles" });
 

@@ -32,7 +32,7 @@ export default function CreateFlow() {
 
     try {
       const { id } = await adminClient.authenticationManagement.createFlow(
-        flow
+        flow,
       );
       addAlert(t("flowCreatedSuccess"), AlertVariant.success);
       navigate(
@@ -40,14 +40,14 @@ export default function CreateFlow() {
           realm,
           id: id!,
           usedBy: "notInUse",
-        })
+        }),
       );
     } catch (error: any) {
       addAlert(
         t("flowCreateError", {
           error: error.response?.data?.errorMessage || error,
         }),
-        AlertVariant.danger
+        AlertVariant.danger,
       );
     }
   };

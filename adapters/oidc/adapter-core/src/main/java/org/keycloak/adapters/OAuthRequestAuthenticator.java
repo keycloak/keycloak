@@ -384,7 +384,8 @@ public class OAuthRequestAuthenticator {
         KeycloakUriBuilder builder = KeycloakUriBuilder.fromUri(facade.getRequest().getURI())
                 .replaceQueryParam(OAuth2Constants.CODE, null)
                 .replaceQueryParam(OAuth2Constants.STATE, null)
-                .replaceQueryParam(OAuth2Constants.SESSION_STATE, null);
+                .replaceQueryParam(OAuth2Constants.SESSION_STATE, null)
+                .replaceQueryParam(OAuth2Constants.ISSUER, null);
         return builder.buildAsString();
     }
     

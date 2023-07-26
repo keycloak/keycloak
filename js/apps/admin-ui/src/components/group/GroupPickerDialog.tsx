@@ -24,6 +24,7 @@ import { PaginatingTableToolbar } from "../table-toolbar/PaginatingTableToolbar"
 import { GroupPath } from "./GroupPath";
 
 import "./group-picker-dialog.css";
+import { fetchAdminUI } from "../../context/auth/admin-ui-endpoint";
 
 export type GroupPickerDialogProps = {
   id?: string;
@@ -72,11 +73,16 @@ export const GroupPickerDialog = ({
       let existingUserGroups;
       let count = 0;
       if (!groupId) {
-        groups = await adminClient.groups.find({
-          first,
-          max: max + (isSearching ? 0 : 1),
-          search: isSearching ? filter : "",
-        });
+        groups = await fetchAdminUI<GroupRepresentation[]>(
+          "ui-ext/groups",
+          Object.assign(
+            {
+              first: `${first}`,
+              max: `${max + 1}`,
+            },
+            isSearching ? null : { search: filter },
+          ),
+        );
       } else if (!navigation.map(({ id }) => id).includes(groupId)) {
         group = await adminClient.groups.findOne({ id: groupId });
         if (!group) {
@@ -112,7 +118,7 @@ export const GroupPickerDialog = ({
       }
       setCount(count);
     },
-    [groupId, filter, first, max]
+    [groupId, filter, first, max],
   );
 
   const isRowDisabled = (row?: GroupRepresentation) => {
@@ -143,7 +149,7 @@ export const GroupPickerDialog = ({
                 ? selectedRows
                 : navigation.length
                 ? [currentGroup()]
-                : undefined
+                : undefined,
             );
           }}
           isDisabled={type === "selectMany" && selectedRows.length === 0}
@@ -295,14 +301,10 @@ const GroupRow = ({
 
   return (
     <DataListItem
-      className={`join-group-dialog-row-${
-        isRowDisabled(group) ? "disabled" : ""
-      }`}
       aria-labelledby={group.name}
       key={group.id}
       id={group.id}
       onClick={(e) => {
-        if (isRowDisabled(group)) return;
         if (type === "selectOne") {
           onSelect(group.id!);
         } else if (
@@ -363,7 +365,7 @@ const GroupRow = ({
           isPlainButtonAction
         >
           {((hasSubgroups(group) && canBrowse) || type === "selectOne") && (
-            <Button isDisabled variant="link" aria-label={t("common:select")}>
+            <Button variant="link" aria-label={t("common:select")}>
               <AngleRightIcon />
             </Button>
           )}

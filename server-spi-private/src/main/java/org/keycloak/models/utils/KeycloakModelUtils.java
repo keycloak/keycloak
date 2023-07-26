@@ -37,6 +37,7 @@ import org.keycloak.models.ClientSecretConstants;
 import org.keycloak.models.Constants;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.KeycloakSessionTask;
@@ -75,6 +76,8 @@ import java.util.stream.Stream;
 import org.keycloak.models.AccountRoles;
 import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
+import org.keycloak.sessions.AuthenticationSessionModel;
+import org.keycloak.sessions.RootAuthenticationSessionModel;
 
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
@@ -250,22 +253,133 @@ public final class KeycloakModelUtils {
 
     /**
      * Wrap given runnable job into KeycloakTransaction.
+     * @param factory The session factory to use
+     * @param task The task to execute
      */
     public static void runJobInTransaction(KeycloakSessionFactory factory, KeycloakSessionTask task) {
-        runJobInTransactionWithResult(factory, session -> {
+        runJobInTransactionWithResult(factory, null, session -> {
             task.run(session);
             return null;
         });
     }
 
     /**
+     * Wrap given runnable job into KeycloakTransaction.
+     * @param factory The session factory to use
+     * @param context The context from the previous session
+     * @param task The task to execute
+     */
+    public static void runJobInTransaction(KeycloakSessionFactory factory, KeycloakContext context, KeycloakSessionTask task) {
+        runJobInTransactionWithResult(factory, context, session -> {
+            task.run(session);
+            return null;
+        });
+    }
+
+    /**
+     * Sets up the context for the specified session with the RealmModel.
+     *
+     * @param origContext The original context to propagate
+     * @param targetSession The new target session to propagate the context to
+     */
+    public static void cloneContextRealmClientToSession(final KeycloakContext origContext, final KeycloakSession targetSession) {
+        cloneContextToSession(origContext, targetSession, false);
+    }
+
+    /**
+     * Sets up the context for the specified session with the RealmModel, clientModel and
+     * AuthenticatedSessionModel.
+     *
+     * @param origContext The original context to propagate
+     * @param targetSession The new target session to propagate the context to
+     */
+    public static void cloneContextRealmClientSessionToSession(final KeycloakContext origContext, final KeycloakSession targetSession) {
+        cloneContextToSession(origContext, targetSession, true);
+    }
+
+    /**
+     * Sets up the context for the specified session.The original realm's context is used to
+     * determine what models need to be re-loaded using the current session. The models
+     * in the context are re-read from the new session via the IDs.
+     */
+    private static void cloneContextToSession(final KeycloakContext origContext, final KeycloakSession targetSession,
+            final boolean includeAuthenticatedSessionModel) {
+        if (origContext == null) {
+            return;
+        }
+
+        // setup realm model if necessary.
+        RealmModel realmModel = null;
+        if (origContext.getRealm() != null) {
+            realmModel = targetSession.realms().getRealm(origContext.getRealm().getId());
+            if (realmModel != null) {
+                targetSession.getContext().setRealm(realmModel);
+            }
+        }
+
+        // setup client model if necessary.
+        ClientModel clientModel = null;
+        if (origContext.getClient() != null) {
+            if (origContext.getRealm() == null || !Objects.equals(origContext.getRealm().getId(), origContext.getClient().getRealm().getId())) {
+                realmModel = targetSession.realms().getRealm(origContext.getClient().getRealm().getId());
+            }
+            if (realmModel != null) {
+                clientModel = targetSession.clients().getClientById(realmModel, origContext.getClient().getId());
+                if (clientModel != null) {
+                    targetSession.getContext().setClient(clientModel);
+                }
+            }
+        }
+
+        // setup auth session model if necessary.
+        if (includeAuthenticatedSessionModel && origContext.getAuthenticationSession() != null) {
+            if (origContext.getClient() == null || !Objects.equals(origContext.getClient().getId(), origContext.getAuthenticationSession().getClient().getId())) {
+                realmModel = (origContext.getRealm() == null || !Objects.equals(origContext.getRealm().getId(), origContext.getAuthenticationSession().getRealm().getId()))
+                        ? targetSession.realms().getRealm(origContext.getAuthenticationSession().getRealm().getId())
+                        : targetSession.getContext().getRealm();
+                clientModel = (realmModel != null)
+                        ? targetSession.clients().getClientById(realmModel, origContext.getAuthenticationSession().getClient().getId())
+                        : null;
+            }
+            if (clientModel != null) {
+                RootAuthenticationSessionModel rootAuthSession = targetSession.authenticationSessions().getRootAuthenticationSession(
+                        realmModel, origContext.getAuthenticationSession().getParentSession().getId());
+                if (rootAuthSession != null) {
+                    AuthenticationSessionModel authSessionModel = rootAuthSession.getAuthenticationSession(clientModel,
+                            origContext.getAuthenticationSession().getTabId());
+                    if (authSessionModel != null) {
+                        targetSession.getContext().setAuthenticationSession(authSessionModel);
+                    }
+                }
+            }
+        }
+    }
+
+    /**
      * Wrap a given callable job into a KeycloakTransaction.
+     * @param <V> The type for the result
+     * @param factory The session factory
+     * @param callable The callable to execute
+     * @return The return value from the callable
      */
     public static <V> V runJobInTransactionWithResult(KeycloakSessionFactory factory, final KeycloakSessionTaskWithResult<V> callable) {
+        return runJobInTransactionWithResult(factory, null, callable);
+    }
+
+    /**
+     * Wrap a given callable job into a KeycloakTransaction.
+     * @param <V> The type for the result
+     * @param factory The session factory
+     * @param context The context from the previous session to use
+     * @param callable The callable to execute
+     * @return The return value from the callable
+     */
+    public static <V> V runJobInTransactionWithResult(KeycloakSessionFactory factory, KeycloakContext context, final KeycloakSessionTaskWithResult<V> callable) {
         V result;
         try (KeycloakSession session = factory.create()) {
             session.getTransactionManager().begin();
             try {
+                cloneContextRealmClientToSession(context, session);
                 result = callable.run(session);
             } catch (Throwable t) {
                 session.getTransactionManager().setRollbackOnly();
@@ -560,14 +674,6 @@ public final class KeycloakModelUtils {
         });
     }
 
-    public static String resolveFirstAttribute(GroupModel group, String name) {
-        String value = group.getFirstAttribute(name);
-        if (value != null) return value;
-        if (group.getParentId() == null) return null;
-        return resolveFirstAttribute(group.getParent(), name);
-
-    }
-
     public static Collection<String> resolveAttribute(GroupModel group, String name, boolean aggregateAttrs) {
         Set<String> values = group.getAttributeStream(name).collect(Collectors.toSet());
         if ((values.isEmpty() || aggregateAttrs) && group.getParentId() != null) {
@@ -587,7 +693,6 @@ public final class KeycloakModelUtils {
         }
         Stream<Collection<String>> attributes = user.getGroupsStream()
                 .map(group -> resolveAttribute(group, name, aggregateAttrs))
-                .filter(Objects::nonNull)
                 .filter(attr -> !attr.isEmpty());
 
         if (!aggregateAttrs) {
@@ -726,17 +831,6 @@ public final class KeycloakModelUtils {
         return normalized;
     }
 
-    /**
-     * @param client    {@link ClientModel}
-     * @param container {@link ScopeContainerModel}
-     * @return
-     * @deprecated Use {@link #getClientScopeMappingsStream(ClientModel, ScopeContainerModel)}  getClientScopeMappingsStream} instead.
-     */
-    @Deprecated
-    public static Set<RoleModel> getClientScopeMappings(ClientModel client, ScopeContainerModel container) {
-        return getClientScopeMappingsStream(client, container).collect(Collectors.toSet());
-    }
-
     public static Stream<RoleModel> getClientScopeMappingsStream(ClientModel client, ScopeContainerModel container) {
         return container.getScopeMappingsStream()
                 .filter(role -> role.getContainer() instanceof ClientModel &&
@@ -809,6 +903,32 @@ public final class KeycloakModelUtils {
         return realm.getIdentityProvidersStream().anyMatch(idp ->
                 Objects.equals(idp.getFirstBrokerLoginFlowId(), model.getId()) ||
                         Objects.equals(idp.getPostBrokerLoginFlowId(), model.getId()));
+    }
+
+    /**
+     * Recursively remove authentication flow (including all subflows and executions) from the model storage
+     *
+     * @param realm
+     * @param authFlow flow to delete
+     * @param flowUnavailableHandler Will be executed when flow or some of it's subflow is null
+     * @param builtinFlowHandler will be executed when flow is built-in flow
+     */
+    public static void deepDeleteAuthenticationFlow(RealmModel realm, AuthenticationFlowModel authFlow, Runnable flowUnavailableHandler, Runnable builtinFlowHandler) {
+        if (authFlow == null) {
+            flowUnavailableHandler.run();
+            return;
+        }
+        if (authFlow.isBuiltIn()) {
+            builtinFlowHandler.run();
+        }
+
+        realm.getAuthenticationExecutionsStream(authFlow.getId())
+                .map(AuthenticationExecutionModel::getFlowId)
+                .filter(Objects::nonNull)
+                .map(realm::getAuthenticationFlowById)
+                .forEachOrdered(subflow -> deepDeleteAuthenticationFlow(realm, subflow, flowUnavailableHandler, builtinFlowHandler));
+
+        realm.removeAuthenticationFlow(authFlow);
     }
 
     public static ClientScopeModel getClientScopeByName(RealmModel realm, String clientScopeName) {

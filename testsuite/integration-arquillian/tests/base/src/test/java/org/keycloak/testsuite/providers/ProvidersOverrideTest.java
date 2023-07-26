@@ -19,23 +19,23 @@
 
 package org.keycloak.testsuite.providers;
 
-import java.util.List;
-
 import org.junit.Test;
 import org.keycloak.authentication.Authenticator;
 import org.keycloak.authentication.authenticators.directgrant.ValidateOTP;
 import org.keycloak.authentication.authenticators.directgrant.ValidatePassword;
 import org.keycloak.authentication.authenticators.directgrant.ValidateUsername;
+import org.keycloak.email.EmailSenderProvider;
+import org.keycloak.examples.providersoverride.CustomDefaultEmailSenderProvider2;
+import org.keycloak.examples.providersoverride.CustomLoginFormsProvider;
 import org.keycloak.examples.providersoverride.CustomValidatePassword2;
 import org.keycloak.examples.providersoverride.CustomValidateUsername;
-import org.keycloak.forms.account.AccountProvider;
 import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.provider.Provider;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.Assert;
-import org.keycloak.examples.providersoverride.CustomFreemarkerAccountProvider2;
-import org.keycloak.examples.providersoverride.CustomLoginFormsProvider;
+
+import java.util.List;
 
 /**
  * Test for having multiple providerFactory of smae SPI with same providerId
@@ -66,7 +66,7 @@ public class ProvidersOverrideTest extends AbstractKeycloakTest {
         testProviderImplementationClass(LoginFormsProvider.class, null, CustomLoginFormsProvider.class);
 
         // The provider with highest order is chosen
-        testProviderImplementationClass(AccountProvider.class, null, CustomFreemarkerAccountProvider2.class);
+        testProviderImplementationClass(EmailSenderProvider.class, null, CustomDefaultEmailSenderProvider2.class);
     }
 
     private void testProviderImplementationClass(Class<? extends Provider> providerClass, String providerId, Class<? extends Provider> expectedProviderImplClass) {

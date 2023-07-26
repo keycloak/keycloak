@@ -338,6 +338,9 @@
                     }
                 ],
                 "scopes": []
+            },
+            "attributes" : {
+                "exclude.issuer.from.auth.response": "true"
             }
         }
     ]

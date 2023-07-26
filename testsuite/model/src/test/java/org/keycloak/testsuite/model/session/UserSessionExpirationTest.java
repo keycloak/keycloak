@@ -53,11 +53,11 @@ public class UserSessionExpirationTest extends KeycloakModelTest {
     }
 
     @Test
-    public void testClientSessionIdleTimeout() {
+    public void testSsoSessionIdleTimeout() {
 
-        // Set low ClientSessionIdleTimeout
+        // Set low ssoSessionIdleTimeout
         withRealm(realmId, (session, realm) -> {
-            realm.setSsoSessionIdleTimeout(1800);
+            realm.setSsoSessionIdleTimeout(5);
             realm.setSsoSessionMaxLifespan(36000);
             realm.setClientSessionIdleTimeout(5);
             return null;

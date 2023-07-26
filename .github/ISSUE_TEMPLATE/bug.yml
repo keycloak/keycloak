@@ -9,7 +9,7 @@ body:
       options:
         - label: I have searched existing issues
           required: true
-        - label: I have reproduced the issue with the latest release
+        - label: I have reproduced the issue with the [latest nightly release](https://github.com/keycloak/keycloak/releases/tag/nightly)
           required: true
   - type: dropdown
     id: area
@@ -17,6 +17,7 @@ body:
       label: Area
       description: Affected area
       options:
+        - 
         - account/api
         - account/ui
         - adapter/fuse

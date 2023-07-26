@@ -125,8 +125,7 @@ public class UpdatePassword implements RequiredActionProvider, RequiredActionFac
             return;
         }
 
-        if (getId().equals(authSession.getClientNote(Constants.KC_ACTION_EXECUTING))
-                && "on".equals(formData.getFirst("logout-sessions")))
+        if ("on".equals(formData.getFirst("logout-sessions")))
         {
             session.sessions().getUserSessionsStream(realm, user)
                     .filter(s -> !Objects.equals(s.getId(), authSession.getParentSession().getId()))

@@ -48,7 +48,7 @@ export const KeysTab = () => {
         realm: realmName,
       }),
     (components) => setRealmComponents(sortByPriority(components)),
-    [key]
+    [key],
   );
 
   const useTab = (tab: KeySubTab) =>

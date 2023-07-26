@@ -258,7 +258,7 @@ export default class RealmSettingsPage extends CommonPage {
   disableRealm() {
     cy.get(this.modalDialogTitle).contains("Disable realm?");
     cy.get(this.modalDialogBodyText).contains(
-      "User and clients can't access the realm if it's disabled. Are you sure you want to continue?"
+      "User and clients can't access the realm if it's disabled. Are you sure you want to continue?",
     );
     cy.findByTestId(this.modalConfirm).contains("Disable").click();
   }
@@ -386,7 +386,7 @@ export default class RealmSettingsPage extends CommonPage {
 
     cy.get(this.alertMessage).should(
       "be.visible",
-      "Success. The provider has been deleted."
+      "Success. The provider has been deleted.",
     );
     return this;
   }
@@ -492,7 +492,7 @@ export default class RealmSettingsPage extends CommonPage {
   changeTimeUnit(
     unit: "Minutes" | "Hours" | "Days",
     inputType: string,
-    listType: string
+    listType: string,
   ) {
     switch (unit) {
       case "Minutes":
@@ -518,38 +518,38 @@ export default class RealmSettingsPage extends CommonPage {
     this.changeTimeUnit(
       "Minutes",
       this.ssoSessionIdleSelectMenu,
-      this.ssoSessionIdleSelectMenuList
+      this.ssoSessionIdleSelectMenuList,
     );
     cy.findByTestId(this.ssoSessionMaxInput).clear().type("2");
     this.changeTimeUnit(
       "Hours",
       this.ssoSessionMaxSelectMenu,
-      this.ssoSessionMaxSelectMenuList
+      this.ssoSessionMaxSelectMenuList,
     );
     cy.findByTestId(this.ssoSessionIdleRememberMeInput).clear().type("3");
     this.changeTimeUnit(
       "Days",
       this.ssoSessionIdleRememberMeSelectMenu,
-      this.ssoSessionIdleRememberMeSelectMenuList
+      this.ssoSessionIdleRememberMeSelectMenuList,
     );
     cy.findByTestId(this.ssoSessionMaxRememberMeInput).clear().type("4");
     this.changeTimeUnit(
       "Minutes",
       this.ssoSessionMaxRememberMeSelectMenu,
-      this.ssoSessionMaxRememberMeSelectMenuList
+      this.ssoSessionMaxRememberMeSelectMenuList,
     );
 
     cy.findByTestId(this.clientSessionIdleInput).clear().type("5");
     this.changeTimeUnit(
       "Hours",
       this.clientSessionIdleSelectMenu,
-      this.clientSessionIdleSelectMenuList
+      this.clientSessionIdleSelectMenuList,
     );
     cy.findByTestId(this.clientSessionMaxInput).clear().type("6");
     this.changeTimeUnit(
       "Days",
       this.clientSessionMaxSelectMenu,
-      this.clientSessionMaxSelectMenuList
+      this.clientSessionMaxSelectMenuList,
     );
 
     cy.findByTestId(this.offlineSessionIdleInput).clear().type("7");
@@ -559,13 +559,13 @@ export default class RealmSettingsPage extends CommonPage {
     this.changeTimeUnit(
       "Minutes",
       this.loginTimeoutSelectMenu,
-      this.loginTimeoutSelectMenuList
+      this.loginTimeoutSelectMenuList,
     );
     cy.findByTestId(this.loginActionTimeoutInput).clear().type("10");
     this.changeTimeUnit(
       "Days",
       this.loginActionTimeoutSelectMenu,
-      this.loginActionTimeoutSelectMenuList
+      this.loginActionTimeoutSelectMenuList,
     );
   }
 
@@ -579,61 +579,61 @@ export default class RealmSettingsPage extends CommonPage {
     this.changeTimeUnit(
       "Days",
       this.accessTokenLifespanSelectMenu,
-      this.accessTokenLifespanSelectMenuList
+      this.accessTokenLifespanSelectMenuList,
     );
     cy.findByTestId(this.accessTokenLifespanImplicitInput).clear().type("2");
     this.changeTimeUnit(
       "Minutes",
       this.accessTokenLifespanImplicitSelectMenu,
-      this.accessTokenLifespanImplicitSelectMenuList
+      this.accessTokenLifespanImplicitSelectMenuList,
     );
 
     cy.findByTestId(this.clientLoginTimeoutInput).clear().type("3");
     this.changeTimeUnit(
       "Hours",
       this.clientLoginTimeoutSelectMenu,
-      this.clientLoginTimeoutSelectMenuList
+      this.clientLoginTimeoutSelectMenuList,
     );
 
     cy.findByTestId(this.userInitiatedActionLifespanInput).clear().type("4");
     this.changeTimeUnit(
       "Minutes",
       this.userInitiatedActionLifespanSelectMenu,
-      this.userInitiatedActionLifespanSelectMenuList
+      this.userInitiatedActionLifespanSelectMenuList,
     );
 
     cy.findByTestId(this.defaultAdminInitatedInput).clear().type("5");
     this.changeTimeUnit(
       "Days",
       this.defaultAdminInitatedInputSelectMenu,
-      this.defaultAdminInitatedInputSelectMenuList
+      this.defaultAdminInitatedInputSelectMenuList,
     );
 
     cy.findByTestId(this.emailVerificationInput).clear().type("6");
     this.changeTimeUnit(
       "Days",
       this.emailVerificationSelectMenu,
-      this.emailVerificationSelectMenuList
+      this.emailVerificationSelectMenuList,
     );
 
     cy.findByTestId(this.idpEmailVerificationInput).clear().type("7");
     this.changeTimeUnit(
       "Days",
       this.idpEmailVerificationSelectMenu,
-      this.idpEmailVerificationSelectMenuList
+      this.idpEmailVerificationSelectMenuList,
     );
 
     cy.findByTestId(this.forgotPasswordInput).clear().type("8");
     this.changeTimeUnit(
       "Days",
       this.forgotPasswordSelectMenu,
-      this.forgotPasswordSelectMenuList
+      this.forgotPasswordSelectMenuList,
     );
     cy.findByTestId(this.executeActionsInput).clear().type("9");
     this.changeTimeUnit(
       "Days",
       this.executeActionsSelectMenu,
-      this.executeActionsSelectMenuList
+      this.executeActionsSelectMenuList,
     );
   }
 
@@ -675,7 +675,7 @@ export default class RealmSettingsPage extends CommonPage {
     cy.findByTestId(this.eventListenersSaveBtn).click();
     cy.get(this.alertMessage).should(
       "be.visible",
-      "Event listener has been updated."
+      "Event listener has been updated.",
     );
   }
 
@@ -684,7 +684,7 @@ export default class RealmSettingsPage extends CommonPage {
     cy.findByTestId(this.eventListenersSaveBtn).click({ force: true });
     cy.get(this.alertMessage).should(
       "be.visible",
-      "Event listener has been updated."
+      "Event listener has been updated.",
     );
     cy.get(this.eventListenersDrpDwn).should("not.have.text", "email");
   }
@@ -773,7 +773,7 @@ export default class RealmSettingsPage extends CommonPage {
     cy.findByTestId(this.jsonEditorSaveBtn).click();
     cy.get(this.alertMessage).should(
       "be.visible",
-      "The client profiles configuration was updated"
+      "The client profiles configuration was updated",
     );
     cy.findByTestId(this.formViewProfilesView).check();
     cy.get("table").should("be.visible").contains("td", "Test");
@@ -792,7 +792,7 @@ export default class RealmSettingsPage extends CommonPage {
     cy.findByTestId(this.saveNewClientProfileBtn).click();
     cy.get(this.alertMessage).should(
       "be.visible",
-      "Client profile updated successfully"
+      "Client profile updated successfully",
     );
   }
 
@@ -810,7 +810,7 @@ export default class RealmSettingsPage extends CommonPage {
   shouldShowErrorWhenDuplicate() {
     cy.get("form").should(
       "not.have.text",
-      "The name must be unique within the realm"
+      "The name must be unique within the realm",
     );
   }
 
@@ -820,15 +820,15 @@ export default class RealmSettingsPage extends CommonPage {
     cy.findByTestId(this.reloadBtn).click();
     cy.findByTestId(this.newClientProfileNameInput).should(
       "have.value",
-      "Edit"
+      "Edit",
     );
   }
 
   shouldNotHaveExecutorsConfigured() {
     cy.get(this.clientProfileTwo).click();
-    cy.get('h6[class*="kc-emptyExecutors"]').should(
+    cy.get('h2[class*="kc-emptyExecutors"]').should(
       "have.text",
-      "No executors configured"
+      "No executors configured",
     );
   }
 
@@ -840,9 +840,9 @@ export default class RealmSettingsPage extends CommonPage {
       .contains("secure-ciba-signed-authn-req")
       .click();
     cy.get(this.addExecutorCancelBtn).click();
-    cy.get('h6[class*="kc-emptyExecutors"]').should(
+    cy.get('h2[class*="kc-emptyExecutors"]').should(
       "have.text",
-      "No executors configured"
+      "No executors configured",
     );
   }
 
@@ -856,11 +856,11 @@ export default class RealmSettingsPage extends CommonPage {
     cy.findByTestId(this.addExecutorSaveBtn).click();
     cy.get(this.alertMessage).should(
       "be.visible",
-      "Success! Executor created successfully"
+      "Success! Executor created successfully",
     );
     cy.get('ul[class*="pf-c-data-list"]').should(
       "have.text",
-      "secure-ciba-signed-authn-req"
+      "secure-ciba-signed-authn-req",
     );
   }
 
@@ -869,22 +869,22 @@ export default class RealmSettingsPage extends CommonPage {
     cy.get('svg[class*="kc-executor-trash-icon"]').click();
     cy.get(this.modalDialogTitle).contains("Delete executor?");
     cy.get(this.modalDialogBodyText).contains(
-      "The action will permanently delete secure-ciba-signed-authn-req. This cannot be undone."
+      "The action will permanently delete secure-ciba-signed-authn-req. This cannot be undone.",
     );
     cy.findByTestId(this.modalConfirm).contains("Delete");
     cy.get(this.deleteDialogCancelBtn).contains("Cancel").click();
     cy.get('ul[class*="pf-c-data-list"]').should(
       "have.text",
-      "secure-ciba-signed-authn-req"
+      "secure-ciba-signed-authn-req",
     );
   }
 
   openProfileDetails(name: string) {
     cy.intercept(
-      `/admin/realms/${this.realmName}/client-policies/profiles*`
+      `/admin/realms/${this.realmName}/client-policies/profiles*`,
     ).as("profilesFetch");
     cy.get(
-      'a[href*="realm-settings/client-policies/' + name + '/edit-profile"]'
+      'a[href*="realm-settings/client-policies/' + name + '/edit-profile"]',
     ).click();
     cy.wait("@profilesFetch");
     return this;
@@ -892,7 +892,7 @@ export default class RealmSettingsPage extends CommonPage {
 
   editExecutor(availablePeriod?: number) {
     cy.intercept(
-      `/admin/realms/${this.realmName}/client-policies/profiles*`
+      `/admin/realms/${this.realmName}/client-policies/profiles*`,
     ).as("profilesFetch");
     cy.get(this.editExecutorBtn).click();
     cy.wait("@profilesFetch");
@@ -917,7 +917,7 @@ export default class RealmSettingsPage extends CommonPage {
   checkExecutorNotInList() {
     cy.get('ul[class*="pf-c-data-list"]').should(
       "have.text",
-      "secure-ciba-signed-authn-req"
+      "secure-ciba-signed-authn-req",
     );
     return this;
   }
@@ -925,7 +925,7 @@ export default class RealmSettingsPage extends CommonPage {
   checkAvailablePeriodExecutor(value: number) {
     cy.findByTestId(this.availablePeriodExecutorFld).should(
       "have.value",
-      value
+      value,
     );
     return this;
   }
@@ -937,7 +937,7 @@ export default class RealmSettingsPage extends CommonPage {
     cy.findByTestId(this.addExecutorSaveBtn).click();
     cy.get(this.alertMessage).should(
       "be.visible",
-      "Executor updated successfully"
+      "Executor updated successfully",
     );
   }
 
@@ -946,13 +946,13 @@ export default class RealmSettingsPage extends CommonPage {
     cy.get('svg[class*="kc-executor-trash-icon"]').click();
     cy.get(this.modalDialogTitle).contains("Delete executor?");
     cy.get(this.modalDialogBodyText).contains(
-      "The action will permanently delete secure-ciba-signed-authn-req. This cannot be undone."
+      "The action will permanently delete secure-ciba-signed-authn-req. This cannot be undone.",
     );
     cy.findByTestId(this.modalConfirm).contains("Delete");
     cy.findByTestId(this.modalConfirm).click();
-    cy.get('h6[class*="kc-emptyExecutors"]').should(
+    cy.get('h2[class*="kc-emptyExecutors"]').should(
       "have.text",
-      "No executors configured"
+      "No executors configured",
     );
   }
 
@@ -985,7 +985,7 @@ export default class RealmSettingsPage extends CommonPage {
 
     cy.get(this.alertMessage).should(
       "be.visible",
-      "The client policy configuration was updated"
+      "The client policy configuration was updated",
     );
     cy.findByTestId(this.formViewSelectPolicies).check();
     cy.get("table").should("be.visible").contains("td", "Test");
@@ -997,7 +997,7 @@ export default class RealmSettingsPage extends CommonPage {
     cy.findByTestId(this.jsonEditorReloadBtn).contains("Reload");
     cy.findByTestId(this.formViewSelectPolicies).check();
     cy.findByTestId(this.createPolicyEmptyStateBtn).contains(
-      "Create client policy"
+      "Create client policy",
     );
   }
 
@@ -1024,7 +1024,7 @@ export default class RealmSettingsPage extends CommonPage {
   createNewClientPolicyFromList(
     name: string,
     description: string,
-    cancel?: boolean
+    cancel?: boolean,
   ) {
     cy.findByTestId(this.createPolicyBtn).click();
     cy.findByTestId(this.newClientPolicyNameInput).type(name);
@@ -1047,9 +1047,9 @@ export default class RealmSettingsPage extends CommonPage {
 
   shouldNotHaveConditionsConfigured() {
     cy.get(this.clientPolicy).click();
-    cy.get('h6[class*="kc-emptyConditions"]').should(
+    cy.get('h2[class*="kc-emptyConditions"]').should(
       "have.text",
-      "No conditions configured"
+      "No conditions configured",
     );
   }
 
@@ -1061,9 +1061,9 @@ export default class RealmSettingsPage extends CommonPage {
       .contains("any-client")
       .click();
     cy.findByTestId(this.addConditionCancelBtn).click();
-    cy.get('h6[class*="kc-emptyConditions"]').should(
+    cy.get('h2[class*="kc-emptyConditions"]').should(
       "have.text",
-      "No conditions configured"
+      "No conditions configured",
     );
   }
 
@@ -1079,7 +1079,7 @@ export default class RealmSettingsPage extends CommonPage {
     cy.findByTestId(this.addConditionSaveBtn).click();
     cy.get(this.alertMessage).should(
       "be.visible",
-      "Success! Condition created successfully"
+      "Success! Condition created successfully",
     );
     cy.get('ul[class*="pf-c-data-list"]').should("have.text", "client-roles");
   }
@@ -1105,7 +1105,7 @@ export default class RealmSettingsPage extends CommonPage {
     cy.findByTestId(this.addConditionSaveBtn).click();
     cy.get(this.alertMessage).should(
       "be.visible",
-      "Success! Condition created successfully"
+      "Success! Condition created successfully",
     );
     cy.get('ul[class*="pf-c-data-list"]').contains("client-scopes");
   }
@@ -1121,7 +1121,7 @@ export default class RealmSettingsPage extends CommonPage {
     cy.findByTestId(this.addConditionSaveBtn).click();
     cy.get(this.alertMessage).should(
       "be.visible",
-      "Success! Condition updated successfully"
+      "Success! Condition updated successfully",
     );
   }
 
@@ -1135,7 +1135,7 @@ export default class RealmSettingsPage extends CommonPage {
     cy.findByTestId(this.addConditionSaveBtn).click();
     cy.get(this.alertMessage).should(
       "be.visible",
-      "Success! Condition updated successfully"
+      "Success! Condition updated successfully",
     );
   }
 
@@ -1155,13 +1155,13 @@ export default class RealmSettingsPage extends CommonPage {
     cy.findByTestId(this.deleteClientScopesConditionBtn).click();
     cy.get(this.modalDialogTitle).contains("Delete condition?");
     cy.get(this.modalDialogBodyText).contains(
-      "This action will permanently delete client-scopes. This cannot be undone."
+      "This action will permanently delete client-scopes. This cannot be undone.",
     );
     cy.findByTestId(this.modalConfirm).contains("Delete");
     cy.findByTestId(this.modalConfirm).click({ force: true });
-    cy.get('h6[class*="kc-emptyConditions"]').should(
+    cy.get('h2[class*="kc-emptyConditions"]').should(
       "have.text",
-      "No conditions configured"
+      "No conditions configured",
     );
   }
 
@@ -1183,7 +1183,7 @@ export default class RealmSettingsPage extends CommonPage {
   createNewClientPolicyFromEmptyState(
     name: string,
     description: string,
-    cancel?: boolean
+    cancel?: boolean,
   ) {
     cy.findByTestId(this.createPolicyEmptyStateBtn).click();
     cy.findByTestId(this.newClientPolicyNameInput).type(name);

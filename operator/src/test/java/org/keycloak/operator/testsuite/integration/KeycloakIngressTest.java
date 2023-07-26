@@ -30,6 +30,7 @@ import org.junit.jupiter.api.Test;
 import org.keycloak.operator.Constants;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.IngressSpec;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.IngressSpecBuilder;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.HostnameSpecBuilder;
 import org.keycloak.operator.testsuite.utils.K8sUtils;
 import org.keycloak.operator.controllers.KeycloakIngress;
@@ -192,16 +193,17 @@ public class KeycloakIngressTest extends BaseOperatorTest {
 
         Log.info("Trying to modify the ingress");
 
-        var currentIngress = ingressSelector.get();
         var labels = Map.of("address", "EvergreenTerrace742");
-        currentIngress.getSpec().getDefaultBackend().getService().setPort(new ServiceBackendPortBuilder().withName("foo").build());
+		ingressSelector.accept(currentIngress -> {
+			currentIngress.getMetadata().setResourceVersion(null);
+			currentIngress.getSpec().getDefaultBackend().getService().setPort(new ServiceBackendPortBuilder().withName("foo").build());
 
-        currentIngress.getMetadata().getAnnotations().clear();
-        currentIngress.getMetadata().getLabels().putAll(labels);
-
-        ingressSelector.createOrReplace(currentIngress);
+	        currentIngress.getMetadata().getAnnotations().clear();
+	        currentIngress.getMetadata().getLabels().putAll(labels);
+		});
 
         Awaitility.await()
+                .timeout(1, MINUTES)
                 .ignoreExceptions()
                 .untilAsserted(() -> {
                     var i = ingressSelector.get();
@@ -268,6 +270,39 @@ public class KeycloakIngressTest extends BaseOperatorTest {
                 });
             }
         }
+    }
+    
+    @Test
+    public void testCustomIngressClassName() {
+        var kc = K8sUtils.getDefaultKeycloakDeployment();
+        kc.getSpec().setIngressSpec(new IngressSpecBuilder().withIngressClassName("nginx").build());
+        K8sUtils.deployKeycloak(k8sclient, kc, true);
+
+        var ingress = new KeycloakIngress(k8sclient, kc);
+        var ingressSelector = k8sclient
+                .network()
+                .v1()
+                .ingresses()
+                .inNamespace(namespace)
+                .withName(ingress.getName());
+
+        Awaitility.await()
+                .ignoreExceptions()
+                .untilAsserted(() -> {
+                    var i = ingressSelector.get();
+                    assertEquals("nginx", i.getSpec().getIngressClassName());
+                });
+
+        // update to a different classname
+        kc.getSpec().setIngressSpec(new IngressSpecBuilder().withIngressClassName("nginx-latest").build());
+        K8sUtils.deployKeycloak(k8sclient, kc, true);
+
+        Awaitility.await()
+                .ignoreExceptions()
+                .untilAsserted(() -> {
+                    var i = ingressSelector.get();
+                    assertEquals("nginx-latest", i.getSpec().getIngressClassName());
+                });
     }
 
     @Test
@@ -362,7 +397,7 @@ public class KeycloakIngressTest extends BaseOperatorTest {
                 .endSpec()
                 .build();
 
-        customIngressCreated = k8sclient.network().v1().ingresses().inNamespace(targetNamespace).create(customIngressCreated);
+        customIngressCreated = k8sclient.resource(customIngressCreated).create();
 
         return customIngressCreated;
     }

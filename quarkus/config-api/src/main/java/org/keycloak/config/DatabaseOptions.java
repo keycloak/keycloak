@@ -46,7 +46,9 @@ public class DatabaseOptions {
 
     public static final Option<String> DB_URL_PROPERTIES = new OptionBuilder<>("db-url-properties", String.class)
             .category(OptionCategory.DATABASE)
-            .description("Sets the properties of the default JDBC URL of the chosen vendor. If the `db-url` option is set, this option is ignored.")
+            .description("Sets the properties of the default JDBC URL of the chosen vendor. " +
+                    "Make sure to set the properties accordingly to the format expected by the database vendor, as well as appending the right character at the beginning of this property value. " +
+                    "If the `db-url` option is set, this option is ignored.")
             .build();
 
     public static final Option<String> DB_USERNAME = new OptionBuilder<>("db-username", String.class)

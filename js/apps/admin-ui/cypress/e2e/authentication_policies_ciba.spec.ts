@@ -1,3 +1,4 @@
+import { v4 as uuid } from "uuid";
 import Form from "../support/forms/Form";
 import FormValidation from "../support/forms/FormValidation";
 import Select from "../support/forms/Select";
@@ -11,7 +12,7 @@ const loginPage = new LoginPage();
 const sidebarPage = new SidebarPage();
 
 describe("Authentication - Policies - CIBA", () => {
-  const realmName = crypto.randomUUID();
+  const realmName = uuid();
 
   before(() => adminClient.createRealm(realmName));
   after(() => adminClient.deleteRealm(realmName));
@@ -27,7 +28,7 @@ describe("Authentication - Policies - CIBA", () => {
   it("displays the initial state", () => {
     Select.assertSelectedItem(
       CIBAPolicyPage.getBackchannelTokenDeliveryModeSelect(),
-      "Poll"
+      "Poll",
     );
     CIBAPolicyPage.getExpiresInput().should("have.value", "120");
     CIBAPolicyPage.getIntervalInput().should("have.value", "5");
@@ -64,7 +65,7 @@ describe("Authentication - Policies - CIBA", () => {
     // Select new values for fields.
     Select.selectItem(
       CIBAPolicyPage.getBackchannelTokenDeliveryModeSelect(),
-      "Ping"
+      "Ping",
     );
     CIBAPolicyPage.getExpiresInput().clear().type("140");
     CIBAPolicyPage.getIntervalInput().clear().type("20");
@@ -76,7 +77,7 @@ describe("Authentication - Policies - CIBA", () => {
     // Assert values are saved.
     Select.assertSelectedItem(
       CIBAPolicyPage.getBackchannelTokenDeliveryModeSelect(),
-      "Ping"
+      "Ping",
     );
     CIBAPolicyPage.getExpiresInput().should("have.value", "140");
     CIBAPolicyPage.getIntervalInput().should("have.value", "20");

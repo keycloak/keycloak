@@ -9,7 +9,6 @@ import {
   ToolbarItem,
 } from "@patternfly/react-core";
 import { useState } from "react";
-import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { HelpItem } from "ui-shared";
 
@@ -22,7 +21,7 @@ import {
   Action,
   KeycloakDataTable,
 } from "../../components/table-toolbar/KeycloakDataTable";
-import { TimeSelector } from "../../components/time-selector/TimeSelector";
+import { TimeSelectorForm } from "../../components/time-selector/TimeSelectorForm";
 import useFormatDate, { FORMAT_DATE_AND_TIME } from "../../utils/useFormatDate";
 import { AddHostDialog } from ".././advanced/AddHostDialog";
 import { AdvancedProps, parseResult } from "../AdvancedTab";
@@ -37,7 +36,6 @@ export const ClusteringPanel = ({
   client: { id, registeredNodes, access },
 }: AdvancedProps) => {
   const { t } = useTranslation("clients");
-  const { control } = useFormContext();
   const { addAlert, addError } = useAlerts();
   const formatDate = useFormatDate();
 
@@ -101,14 +99,7 @@ export const ClusteringPanel = ({
         >
           <Split hasGutter>
             <SplitItem>
-              <Controller
-                name="nodeReRegistrationTimeout"
-                defaultValue=""
-                control={control}
-                render={({ field }) => (
-                  <TimeSelector value={field.value} onChange={field.onChange} />
-                )}
-              />
+              <TimeSelectorForm name="nodeReRegistrationTimeout" />
             </SplitItem>
             <SplitItem>
               <Button variant={ButtonVariant.secondary} onClick={() => save()}>
@@ -141,7 +132,7 @@ export const ClusteringPanel = ({
               Promise.resolve<Node[]>(
                 Object.entries(nodes || {}).map((entry) => {
                   return { host: entry[0], registration: entry[1] };
-                })
+                }),
               )
             }
             toolbarItem={
@@ -189,7 +180,7 @@ export const ClusteringPanel = ({
                     value
                       ? formatDate(
                           new Date(parseInt(value.toString()) * 1000),
-                          FORMAT_DATE_AND_TIME
+                          FORMAT_DATE_AND_TIME,
                         )
                       : "",
                 ],

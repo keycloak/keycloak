@@ -20,7 +20,7 @@ type AddMapperFormProps = {
   mapperType: IdentityProviderMapperTypeRepresentation;
   id: string;
   updateMapperType: (
-    mapperType: IdentityProviderMapperTypeRepresentation
+    mapperType: IdentityProviderMapperTypeRepresentation,
   ) => void;
   form: UseFormReturn<IdPMapperRepresentationWithAttributes>;
 };

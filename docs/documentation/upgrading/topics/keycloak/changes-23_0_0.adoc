@@ -1,0 +1,13 @@
+= Added iss parameter to OAuth 2.0/OpenID Connect Authentication Response
+
+RFC 9207 OAuth 2.0 Authorization Server Issuer Identification specification adds the parameter `iss` in the OAuth 2.0/OpenID Connect Authentication Response for realizing secure authorization responses.
+
+In past releases, we did not have this parameter, but now {project_name} adds this parameter by default, as required by the specification.
+
+However, some OpenID Connect / OAuth2 adapters, and especially older {project_name} adapters, may have issues with this new parameter.
+
+For example, the parameter will be always present in the browser URL after successful authentication to the client application.
+In these cases, it may be useful to disable adding the `iss` parameter to the authentication response. This can be done
+for the particular client in the {project_name} Admin console, in client details in the section with `OpenID Connect Compatibility Modes`,
+described in <<_compatibility_with_older_adapters>>. Dedicated `Exclude Issuer From Authentication Response` switch exists,
+which can be turned on to prevent adding the `iss` parameter to the authentication response.

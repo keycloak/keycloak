@@ -121,15 +121,19 @@ export const SamlConfig = () => {
       />
       <Toggle
         name={convertAttributeNameToForm(
-          "attributes.saml.onetimeuse.condition"
+          "attributes.saml.onetimeuse.condition",
         )}
         label="includeOneTimeUseCondition"
       />
       <Toggle
         name={convertAttributeNameToForm(
-          "attributes.saml.server.signature.keyinfo.ext"
+          "attributes.saml.server.signature.keyinfo.ext",
         )}
         label="optimizeLookup"
+      />
+      <Toggle
+        name={convertAttributeNameToForm("attributes.saml.allow.ecp.flow")}
+        label="allowEcpFlow"
       />
     </FormAccess>
   );

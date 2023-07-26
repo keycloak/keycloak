@@ -50,4 +50,8 @@ public final class AdminExtResource {
         return new SessionsResource(session, realm, auth);
     }
 
+    @Path("/realms")
+    public RealmResource realms() {
+        return new RealmResource(session);
+    }
 }

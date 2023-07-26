@@ -87,23 +87,13 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
 
     @Override
     public void close() {
-        /*
-            workaround for Infinispan 12.1.7.Final to prevent a deadlock while
-            DefaultInfinispanConnectionProviderFactory is shutting down PersistenceManagerImpl
-            that acquires a writeLock and this removal that acquires a readLock.
-            First seen with https://issues.redhat.com/browse/ISPN-13664 and still occurs probably due to
-            https://issues.redhat.com/browse/ISPN-13666 in 13.0.10
-            Tracked in https://github.com/keycloak/keycloak/issues/9871
-        */
-        synchronized (DefaultInfinispanConnectionProviderFactory.class) {
-            if (cacheManager != null && !containerManaged) {
-                cacheManager.stop();
-            }
-            if (remoteCacheProvider != null) {
-                remoteCacheProvider.stop();
-            }
-            cacheManager = null;
+        if (cacheManager != null && !containerManaged) {
+            cacheManager.stop();
         }
+        if (remoteCacheProvider != null) {
+            remoteCacheProvider.stop();
+        }
+        cacheManager = null;
     }
 
     @Override
@@ -253,6 +243,7 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
 
             int l1Lifespan = config.getInt("l1Lifespan", 600000);
             boolean l1Enabled = l1Lifespan > 0;
+            Boolean awaitInitialTransfer = config.getBoolean("awaitInitialTransfer", true);
             sessionConfigBuilder.clustering()
                     .hash()
                         .numOwners(owners)
@@ -260,7 +251,7 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
                     .l1()
                         .enabled(l1Enabled)
                         .lifespan(l1Lifespan)
-                    .stateTransfer().timeout(30, TimeUnit.SECONDS)
+                    .stateTransfer().awaitInitialTransfer(awaitInitialTransfer).timeout(30, TimeUnit.SECONDS)
                     .build();
         }
 

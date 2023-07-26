@@ -66,7 +66,7 @@ export const Keys = ({ clientId, save, hasConfigureAccess }: KeysProps) => {
   useFetch(
     () => adminClient.clients.getKeyInfo({ id: clientId, attr }),
     (info) => setKeyInfo(info),
-    [key]
+    [key],
   );
 
   const generate = async (config: KeyStoreConfig) => {
@@ -76,11 +76,11 @@ export const Keys = ({ clientId, save, hasConfigureAccess }: KeysProps) => {
           id: clientId,
           attr,
         },
-        config
+        config,
       );
       saveAs(
         new Blob([keyStore], { type: "application/octet-stream" }),
-        `keystore.${getFileExtension(config.format ?? "")}`
+        `keystore.${getFileExtension(config.format ?? "")}`,
       );
       addAlert(t("generateSuccess"), AlertVariant.success);
       refresh();
@@ -102,7 +102,7 @@ export const Keys = ({ clientId, save, hasConfigureAccess }: KeysProps) => {
 
       await adminClient.clients.uploadCertificate(
         { id: clientId, attr },
-        formData
+        formData,
       );
       addAlert(t("importSuccess"), AlertVariant.success);
       refresh();
@@ -186,7 +186,7 @@ export const Keys = ({ clientId, save, hasConfigureAccess }: KeysProps) => {
                   id="jwksUrl"
                   type="url"
                   {...register(
-                    convertAttributeNameToForm("attributes.jwks.url")
+                    convertAttributeNameToForm("attributes.jwks.url"),
                   )}
                 />
               </FormGroup>

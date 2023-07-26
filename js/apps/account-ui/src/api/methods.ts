@@ -29,8 +29,15 @@ export async function getPersonalInfo({
   return parseResponse<UserRepresentation>(response);
 }
 
+export async function getSupportedLocales({
+  signal,
+}: CallOptions = {}): Promise<string[]> {
+  const response = await request("/supportedLocales", { signal });
+  return parseResponse<string[]>(response);
+}
+
 export async function savePersonalInfo(
-  info: UserRepresentation
+  info: UserRepresentation,
 ): Promise<void> {
   const response = await request("/", { body: info, method: "POST" });
   if (!response.ok) {
@@ -42,11 +49,11 @@ export async function savePersonalInfo(
 
 export async function getPermissionRequests(
   resourceId: string,
-  { signal }: CallOptions = {}
+  { signal }: CallOptions = {},
 ): Promise<Permission[]> {
   const response = await request(
     `/resources/${resourceId}/permissions/requests`,
-    { signal }
+    { signal },
   );
 
   return parseResponse<Permission[]>(response);
@@ -71,7 +78,7 @@ export async function deleteConsent(id: string) {
 }
 
 export async function deleteSession(id?: string) {
-  return request(`"/sessions${id ? `/${id}` : ""}`, {
+  return request(`/sessions${id ? `/${id}` : ""}`, {
     method: "DELETE",
   });
 }
@@ -103,7 +110,7 @@ export async function unLinkAccount(account: LinkedAccountRepresentation) {
 
 export async function linkAccount(account: LinkedAccountRepresentation) {
   const redirectUri = encodeURIComponent(
-    joinPath(environment.authUrl, "realms", environment.realm, "account")
+    joinPath(environment.authUrl, "realms", environment.realm, "account"),
   );
   const response = await request("/linked-accounts/" + account.providerName, {
     searchParams: { providerId: account.providerName, redirectUri },

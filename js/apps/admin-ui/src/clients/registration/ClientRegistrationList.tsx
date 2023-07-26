@@ -61,7 +61,7 @@ export const ClientRegistrationList = ({
         type: "org.keycloak.services.clientregistration.policy.ClientRegistrationPolicy",
       }),
     (policies) => setPolicies(policies.filter((p) => p.subType === subType)),
-    [selectedPolicy]
+    [selectedPolicy],
   );
 
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
@@ -95,7 +95,7 @@ export const ClientRegistrationList = ({
                 realm,
                 subTab: subTab || "anonymous",
                 providerId,
-              })
+              }),
             )
           }
           toggleDialog={toggleAddDialog}

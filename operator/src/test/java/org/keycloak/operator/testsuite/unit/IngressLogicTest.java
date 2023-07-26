@@ -27,6 +27,7 @@ import org.junit.jupiter.api.Test;
 import org.keycloak.operator.controllers.KeycloakIngress;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.IngressSpec;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.IngressSpecBuilder;
 import org.keycloak.operator.testsuite.utils.K8sUtils;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
@@ -35,6 +36,7 @@ import io.fabric8.kubernetes.api.model.networking.v1.IngressBuilder;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class IngressLogicTest {
@@ -43,15 +45,11 @@ public class IngressLogicTest {
 
     static class MockKeycloakIngress extends KeycloakIngress {
 
-        private static Keycloak getKeycloak(Boolean defaultIngressEnabled, boolean ingressSpecDefined, boolean tlsConfigured, Map<String, String> annotations) {
+        private static Keycloak getKeycloak(boolean tlsConfigured, IngressSpec ingressSpec) {
             var kc = K8sUtils.getDefaultKeycloakDeployment();
             kc.getMetadata().setUid("this-is-a-fake-uid");
-            if (ingressSpecDefined) {
-                kc.getSpec().setIngressSpec(new IngressSpec());
-                if (defaultIngressEnabled != null) kc.getSpec().getIngressSpec().setIngressEnabled(defaultIngressEnabled);
-                if (annotations != null) {
-                    kc.getSpec().getIngressSpec().setAnnotations(annotations);
-                }
+            if (ingressSpec != null) {
+                kc.getSpec().setIngressSpec(ingressSpec);
             }
             if (!tlsConfigured) {
                 kc.getSpec().getHttpSpec().setTlsSecret(null);
@@ -69,13 +67,23 @@ public class IngressLogicTest {
 
         public static MockKeycloakIngress build(Boolean defaultIngressEnabled, boolean ingressExists, boolean ingressSpecDefined, boolean tlsConfigured, Map<String, String> annotations) {
             MockKeycloakIngress.ingressExists = ingressExists;
-            return new MockKeycloakIngress(defaultIngressEnabled, ingressSpecDefined, tlsConfigured, annotations);
+            IngressSpec ingressSpec = null;
+            if (ingressSpecDefined) {
+                ingressSpec = new IngressSpec();
+                if (defaultIngressEnabled != null) {
+                    ingressSpec.setIngressEnabled(defaultIngressEnabled);
+                }
+                if (annotations != null) {
+                    ingressSpec.setAnnotations(annotations);
+                }
+            }
+            return new MockKeycloakIngress(tlsConfigured, ingressSpec);
         }
 
         public static boolean ingressExists = false;
         private boolean deleted = false;
-        public MockKeycloakIngress(Boolean defaultIngressEnabled, boolean ingressSpecDefined, boolean tlsConfigured, Map<String, String> annotations) {
-            super(null, getKeycloak(defaultIngressEnabled, ingressSpecDefined, tlsConfigured, annotations));
+        public MockKeycloakIngress(boolean tlsConfigured, IngressSpec ingressSpec) {
+            super(null, getKeycloak(tlsConfigured, ingressSpec));
         }
 
         @Override
@@ -217,5 +225,21 @@ public class IngressLogicTest {
         assertEquals("HTTPS", reconciled.get().getMetadata().getAnnotations().get("nginx.ingress.kubernetes.io/backend-protocol"));
         assertEquals("passthrough", reconciled.get().getMetadata().getAnnotations().get("route.openshift.io/termination"));
         assertEquals("another-value", reconciled.get().getMetadata().getAnnotations().get(EXISTING_ANNOTATION_KEY));
+    }
+    
+    @Test
+    public void testIngressSpecDefinedWithoutClassName() {
+        var kc = new MockKeycloakIngress(true, new IngressSpec());
+        Optional<HasMetadata> reconciled = kc.getReconciledResource();
+        Ingress ingress = reconciled.map(Ingress.class::cast).orElseThrow();
+        assertNull(ingress.getSpec().getIngressClassName());
+    }
+    
+    @Test
+    public void testIngressSpecDefinedWithClassName() {
+        var kc = new MockKeycloakIngress(true, new IngressSpecBuilder().withIngressClassName("my-class").build());
+        Optional<HasMetadata> reconciled = kc.getReconciledResource();
+        Ingress ingress = reconciled.map(Ingress.class::cast).orElseThrow();
+        assertEquals("my-class", ingress.getSpec().getIngressClassName());
     }
 }

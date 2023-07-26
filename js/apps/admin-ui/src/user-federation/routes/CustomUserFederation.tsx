@@ -11,7 +11,7 @@ export type CustomUserFederationRouteParams = {
 };
 
 const CustomProviderSettings = lazy(
-  () => import("../custom/CustomProviderSettings")
+  () => import("../custom/CustomProviderSettings"),
 );
 
 export const CustomUserFederationRoute: AppRouteObject = {
@@ -24,7 +24,7 @@ export const CustomUserFederationRoute: AppRouteObject = {
 };
 
 export const toCustomUserFederation = (
-  params: CustomUserFederationRouteParams
+  params: CustomUserFederationRouteParams,
 ): Partial<Path> => ({
   pathname: generatePath(CustomUserFederationRoute.path, params),
 });

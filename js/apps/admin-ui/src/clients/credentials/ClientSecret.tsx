@@ -89,7 +89,7 @@ export const ClientSecret = ({ client, secret, toggle }: ClientSecretProps) => {
   const { addAlert, addError } = useAlerts();
 
   const [secretRotated, setSecretRotated] = useState<string | undefined>(
-    client.attributes?.["client.secret.rotated"]
+    client.attributes?.["client.secret.rotated"],
   );
   const secretExpirationTime: number =
     client.attributes?.["client.secret.expiration.time"];

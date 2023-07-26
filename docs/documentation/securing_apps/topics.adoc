@@ -1,40 +1,20 @@
 include::topics/overview/overview.adoc[]
-include::topics/overview/what-are-client-adapters.adoc[]
-include::topics/overview/supported-platforms.adoc[]
-include::topics/overview/supported-protocols.adoc[]
-include::topics/overview/terminology.adoc[]
+
 include::topics/overview/basic-steps.adoc[]
+
+include::topics/overview/getting-started.adoc[]
+
+include::topics/overview/terminology.adoc[]
+
 include::topics/oidc/oidc-overview.adoc[]
 
+include::topics/oidc/available-endpoints.adoc[]
+
+include::topics/oidc/supported-grant-types.adoc[]
+
+ifeval::[{project_community}==true]
 include::topics/oidc/java/java-adapters.adoc[]
-include::topics/oidc/java/java-adapter-config.adoc[]
-include::topics/oidc/java/jboss-adapter.adoc[]
-ifeval::[{project_product}==true]
-include::topics/oidc/java/jboss-adapter-rpms.adoc[]
 endif::[]
-
-include::topics/oidc/java/spring-boot-adapter.adoc[]
-
-ifeval::[{project_community}==true]
-include::topics/oidc/java/tomcat-adapter.adoc[]
-include::topics/oidc/java/jetty9-adapter.adoc[]
-include::topics/oidc/java/spring-security-adapter.adoc[]
-endif::[]
-
-include::topics/oidc/java/servlet-filter-adapter.adoc[]
-
-ifeval::[{project_community}==true]
-include::topics/oidc/java/jaas.adoc[]
-include::topics/oidc/java/installed-adapter.adoc[]
-endif::[]
-
-include::topics/oidc/java/adapter-context.adoc[]
-include::topics/oidc/java/adapter_error_handling.adoc[]
-include::topics/oidc/java/logout.adoc[]
-include::topics/oidc/java/params_forwarding.adoc[]
-include::topics/oidc/java/client-authentication.adoc[]
-include::topics/oidc/java/multi-tenancy.adoc[]
-include::topics/oidc/java/application-clustering.adoc[]
 
 include::topics/oidc/javascript-adapter.adoc[]
 
@@ -44,8 +24,9 @@ ifeval::[{project_community}==true]
 include::topics/oidc/mod-auth-openidc.adoc[]
 endif::[]
 
-include::topics/oidc/oidc-generic.adoc[]
 include::topics/oidc/fapi-support.adoc[]
+
+include::topics/oidc/recommendations.adoc[]
 
 include::topics/saml/saml-overview.adoc[]
 include::topics/saml/java/java-adapters.adoc[]

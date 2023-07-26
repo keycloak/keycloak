@@ -59,14 +59,14 @@ const KeycloakMasthead = ({
         onClick={() => keycloak?.accountManagement()}
       >
         {t("manageAccount")}
-      </DropdownItem>
+      </DropdownItem>,
     );
   }
   if (hasLogout) {
     extraItems.push(
       <DropdownItem key="signOut" onClick={() => keycloak?.logout()}>
         {t("signOut")}
-      </DropdownItem>
+      </DropdownItem>,
     );
   }
 
@@ -85,6 +85,7 @@ const KeycloakMasthead = ({
               }}
             >
               <KeycloakDropdown
+                data-testid="options-kebab"
                 isKebab
                 dropDownItems={[
                   ...(kebabDropdownItems || dropdownItems),
@@ -100,6 +101,7 @@ const KeycloakMasthead = ({
               }}
             >
               <KeycloakDropdown
+                data-testid="options"
                 dropDownItems={[...dropdownItems, extraItems]}
                 title={
                   hasUsername && keycloak

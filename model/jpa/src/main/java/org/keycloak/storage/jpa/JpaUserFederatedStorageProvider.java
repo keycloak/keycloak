@@ -71,7 +71,7 @@ import static org.keycloak.utils.StreamsUtil.closing;
  * @version $Revision: 1 $
  */
 public class JpaUserFederatedStorageProvider implements
-        UserFederatedStorageProvider.Streams,
+        UserFederatedStorageProvider,
         UserCredentialStore {
 
     protected static final Logger logger = Logger.getLogger(JpaUserFederatedStorageProvider.class);
@@ -551,7 +551,7 @@ public class JpaUserFederatedStorageProvider implements
         entity.setType(cred.getType());
         entity.setCredentialData(cred.getCredentialData());
         entity.setSecretData(cred.getSecretData());
-        cred.setUserLabel(entity.getUserLabel());
+        entity.setUserLabel(cred.getUserLabel());
     }
 
     @Override

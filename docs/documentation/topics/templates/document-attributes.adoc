@@ -41,6 +41,7 @@
 :adapterguide_name_short: Securing Apps
 :adapterguide_link: {project_doc_base_url}/securing_apps/
 :adapterguide_link_js_adapter: {adapterguide_link}#_javascript_adapter
+:adapterguide_link_nodejs_adapter: {adapterguide_link}#_nodejs_adapter
 :adapterguide_link_latest: {project_doc_base_url_latest}/securing_apps/
 :adapterguide_logout_link: {adapterguide_link}#_java_adapter_logout
 :adminguide_name: Server Administration Guide

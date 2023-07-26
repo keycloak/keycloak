@@ -1,4 +1,4 @@
-import { ValidatedOptions } from "@patternfly/react-core";
+import { TextInputProps, ValidatedOptions } from "@patternfly/react-core";
 import {
   FieldPath,
   FieldValues,
@@ -12,19 +12,21 @@ import { FormLabel } from "./FormLabel";
 
 export type TextControlProps<
   T extends FieldValues,
-  P extends FieldPath<T> = FieldPath<T>
-> = UseControllerProps<T, P> & {
-  label: string;
-  labelIcon?: string;
-  isDisabled?: boolean;
-};
+  P extends FieldPath<T> = FieldPath<T>,
+> = UseControllerProps<T, P> &
+  TextInputProps & {
+    label: string;
+    labelIcon?: string;
+    isDisabled?: boolean;
+  };
 
 export const TextControl = <
   T extends FieldValues,
-  P extends FieldPath<T> = FieldPath<T>
+  P extends FieldPath<T> = FieldPath<T>,
 >(
-  props: TextControlProps<T, P>
+  props: TextControlProps<T, P>,
 ) => {
+  const { labelIcon, ...rest } = props;
   const required = !!props.rules?.required;
   const defaultValue = props.defaultValue ?? ("" as PathValue<T, P>);
 
@@ -37,7 +39,7 @@ export const TextControl = <
     <FormLabel
       name={props.name}
       label={props.label}
-      labelIcon={props.labelIcon}
+      labelIcon={labelIcon}
       isRequired={required}
       error={fieldState.error}
     >
@@ -49,6 +51,7 @@ export const TextControl = <
           fieldState.error ? ValidatedOptions.error : ValidatedOptions.default
         }
         isDisabled={props.isDisabled}
+        {...rest}
         {...field}
       />
     </FormLabel>

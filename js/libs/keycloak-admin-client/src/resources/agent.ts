@@ -77,27 +77,28 @@ export class Agent {
   }: RequestArgs) {
     return async (
       payload: any = {},
-      options?: Pick<RequestArgs, "catchNotFound">
+      options?: Pick<RequestArgs, "catchNotFound">,
     ) => {
       const baseParams = this.getBaseParams?.() ?? {};
 
       // Filter query parameters by queryParamKeys
-      const queryParams = queryParamKeys
-        ? pick(payload, queryParamKeys)
-        : undefined;
+      const queryParams =
+        queryParamKeys.length > 0 ? pick(payload, queryParamKeys) : undefined;
 
       // Add filtered payload parameters to base parameters
       const allUrlParamKeys = [...Object.keys(baseParams), ...urlParamKeys];
       const urlParams = { ...baseParams, ...pick(payload, allUrlParamKeys) };
 
-      // Omit url parameters and query parameters from payload
-      const omittedKeys = ignoredKeys
-        ? [...allUrlParamKeys, ...queryParamKeys].filter(
-            (key) => !ignoredKeys.includes(key)
-          )
-        : [...allUrlParamKeys, ...queryParamKeys];
+      if (!(payload instanceof FormData)) {
+        // Omit url parameters and query parameters from payload
+        const omittedKeys = ignoredKeys
+          ? [...allUrlParamKeys, ...queryParamKeys].filter(
+              (key) => !ignoredKeys.includes(key),
+            )
+          : [...allUrlParamKeys, ...queryParamKeys];
 
-      payload = omit(payload, omittedKeys);
+        payload = omit(payload, omittedKeys);
+      }
 
       // Transform keys of both payload and queryParams
       if (keyTransform) {
@@ -214,7 +215,7 @@ export class Agent {
     } else {
       // Otherwise assume it's JSON and stringify it.
       requestOptions.body = JSON.stringify(
-        payloadKey ? payload[payloadKey] : payload
+        payloadKey ? payload[payloadKey] : payload,
       );
     }
 
@@ -244,7 +245,7 @@ export class Agent {
 
         if (typeof locationHeader !== "string") {
           throw new Error(
-            `location header is not found in request: ${res.url}`
+            `location header is not found in request: ${res.url}`,
           );
         }
 
@@ -252,7 +253,7 @@ export class Agent {
         if (!resourceId) {
           // throw an error to let users know the response is not expected
           throw new Error(
-            `resourceId is not found in Location header from request: ${res.url}`
+            `resourceId is not found in Location header from request: ${res.url}`,
           );
         }
 
@@ -265,7 +266,7 @@ export class Agent {
         Object.entries(headers || []).find(
           ([key, value]) =>
             key.toLowerCase() === "accept" &&
-            value === "application/octet-stream"
+            value === "application/octet-stream",
         )
       ) {
         return res.arrayBuffer();

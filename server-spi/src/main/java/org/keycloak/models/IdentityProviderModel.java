@@ -36,6 +36,10 @@ public class IdentityProviderModel implements Serializable {
     
     public static final String HIDE_ON_LOGIN = "hideOnLoginPage";
 
+    public static final String FILTERED_BY_CLAIMS = "filteredByClaim";
+    public static final String CLAIM_FILTER_NAME = "claimFilterName";
+    public static final String CLAIM_FILTER_VALUE = "claimFilterValue";
+
     private String internalId;
 
     /**
@@ -253,5 +257,29 @@ public class IdentityProviderModel implements Serializable {
 
     public void setHideOnLogin(boolean hideOnLogin) {
         getConfig().put(HIDE_ON_LOGIN, String.valueOf(hideOnLogin));
+    }
+
+    public boolean isFilteredByClaims() {
+        return Boolean.valueOf(getConfig().getOrDefault(FILTERED_BY_CLAIMS, Boolean.toString(false)));
+    }
+
+    public void setFilteredByClaims(boolean filteredByClaims) {
+        getConfig().put(FILTERED_BY_CLAIMS, String.valueOf(filteredByClaims));
+    }
+
+    public String getClaimFilterName() {
+        return String.valueOf(getConfig().getOrDefault(CLAIM_FILTER_NAME, ""));
+    }
+
+    public void setClaimFilterName(String claimFilterName) {
+        getConfig().put(CLAIM_FILTER_NAME, claimFilterName);
+    }
+
+    public String getClaimFilterValue() {
+        return String.valueOf(getConfig().getOrDefault(CLAIM_FILTER_VALUE, ""));
+    }
+
+    public void setClaimFilterValue(String claimFilterValue) {
+        getConfig().put(CLAIM_FILTER_VALUE, claimFilterValue);
     }
 }

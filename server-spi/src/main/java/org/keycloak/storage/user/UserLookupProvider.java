@@ -71,12 +71,4 @@ public interface UserLookupProvider {
      * @throws org.keycloak.models.ModelDuplicateException when there are more users with same email
      */
     UserModel getUserByEmail(RealmModel realm, String email);
-
-    /**
-     * @deprecated This interface is no longer necessary, collection-based methods were removed from the parent interface
-     * and therefore the parent interface can be used directly
-     */
-    @Deprecated
-    interface Streams extends UserLookupProvider {
-    }
 }

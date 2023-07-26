@@ -68,9 +68,6 @@ public class AuthorizationTokenEncryptionTest extends AbstractTestRealmKeycloakT
     protected LoginPage loginPage;
 
     @Page
-    protected AccountUpdateProfilePage profilePage;
-
-    @Page
     protected OAuthGrantPage grantPage;
 
     @Page

@@ -56,7 +56,7 @@ const GroupTreeContextMenu = ({
       {renameOpen && (
         <GroupsModal
           id={group.id}
-          rename={group.name}
+          rename={group}
           refresh={() => {
             refresh();
           }}
@@ -139,7 +139,7 @@ export const GroupTree = ({
   const mapGroup = (
     group: GroupRepresentation,
     parents: GroupRepresentation[],
-    refresh: () => void
+    refresh: () => void,
   ): TreeViewDataItem => {
     const groups = [...parents, group];
     return {
@@ -170,8 +170,8 @@ export const GroupTree = ({
             max: `${max + 1}`,
             exact: `${exact}`,
           },
-          search === "" ? null : { search }
-        )
+          search === "" ? null : { search },
+        ),
       );
       const count = (await adminClient.groups.count({ search, top: true }))
         .count;
@@ -182,14 +182,14 @@ export const GroupTree = ({
       setData(groups.map((g) => mapGroup(g, [], refresh)));
       setCount(count);
     },
-    [key, first, max, search, exact]
+    [key, first, max, search, exact],
   );
 
   const findGroup = (
     groups: GroupRepresentation[],
     id: string,
     path: GroupRepresentation[],
-    found: GroupRepresentation[]
+    found: GroupRepresentation[],
   ) => {
     return groups.map((group) => {
       if (found.length > 0) return;

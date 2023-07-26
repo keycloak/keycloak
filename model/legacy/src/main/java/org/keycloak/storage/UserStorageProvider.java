@@ -28,7 +28,9 @@ import org.keycloak.provider.Provider;
  * are extended by implementing one or more of the following capability interfaces:
  * <ul>
  *     <li>{@link org.keycloak.storage.user.UserLookupProvider UserLookupProvider} - Provide basic lookup methods. After implementing it is possible to login using users from the storage.</li>
- *     <li>{@link org.keycloak.storage.user.UserQueryProvider UserQueryProvider} - Provide complex lookup methods. After implementing it is possible to manage users from admin console.</li>
+ *     <li>{@link org.keycloak.storage.user.UserQueryMethodsProvider UserQueryMethodsProvider} - Provide complex lookup methods. After implementing it is possible to manage users from admin console.</li>
+ *     <li>{@link org.keycloak.storage.user.UserCountMethodsProvider UserCountMethodsProvider} - Provide complex count methods. After implementing it is possible to leverage optimizations during querying for users.</li>
+ *     <li>{@link org.keycloak.storage.user.UserQueryProvider UserQueryProvider} - This interface is combined capability of {@code UserQueryMethodsProvider} and {@code UserCountMethodsProvider}.</li>
  *     <li>{@link org.keycloak.storage.user.UserRegistrationProvider UserRegistrationProvider} - Provide methods for adding users. After implementing it is possible to store registered users in the storage.</li>
  *     <li>{@link org.keycloak.storage.user.UserBulkUpdateProvider UserBulkUpdateProvider} - After implementing it is possible to perform bulk operations on all users from storage (for example, addition of a role to all users).</li>
  *     <li>{@link org.keycloak.storage.user.ImportedUserValidation ImportedUserValidation} - Provider method for validating users within Keycloak local storage that are imported from the storage.</li>

@@ -28,7 +28,6 @@ import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.utils.SystemClientUtil;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
-import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.sessions.AuthenticationSessionModel;
 
@@ -51,7 +50,9 @@ public class LogoutUtil {
         if (usedSystemClient) {
             loginForm.setAttribute(Constants.SKIP_LINK, true);
         }
-        return loginForm.createInfoPage();
+        return loginForm
+                .setDetachedAuthSession()
+                .createInfoPage();
     }
 
 

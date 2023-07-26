@@ -18,7 +18,6 @@ package org.keycloak.testsuite.forms;
 
 import org.hamcrest.Matchers;
 import org.jboss.arquillian.drone.api.annotation.Drone;
-import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.authentication.actiontoken.resetcred.ResetCredentialsActionToken;
 import org.jboss.arquillian.graphene.page.Page;
@@ -39,9 +38,8 @@ import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
-import org.keycloak.testsuite.auth.page.account.AccountManagement;
+import org.keycloak.testsuite.arquillian.annotation.IgnoreBrowserDriver;
 import org.keycloak.testsuite.federation.kerberos.AbstractKerberosTest;
-import org.keycloak.testsuite.pages.AccountUpdateProfilePage;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
 import org.keycloak.testsuite.pages.ErrorPage;
@@ -62,6 +60,9 @@ import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.SecondBrowser;
 import org.keycloak.testsuite.util.UserActionTokenBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
+import org.keycloak.testsuite.util.WaitUtils;
+import org.keycloak.testsuite.util.AccountHelper;
+import org.keycloak.testsuite.util.TestAppHelper;
 
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
@@ -77,13 +78,15 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.*;
-import org.keycloak.testsuite.util.WaitUtils;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
+import org.openqa.selenium.firefox.FirefoxDriver;
+import org.openqa.selenium.support.ui.ExpectedConditions;
+import org.openqa.selenium.support.ui.WebDriverWait;
 
+import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.*;
 
 /**
@@ -148,9 +151,6 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
     protected LoginPasswordUpdatePage updatePasswordPage;
 
     @Page
-    protected AccountUpdateProfilePage account1ProfilePage;
-
-    @Page
     protected LogoutConfirmPage logoutConfirmPage;
 
     @Rule
@@ -159,7 +159,6 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
     private int expectedMessagesCount;
 
     @Test
-    @DisableFeature(value = Profile.Feature.ACCOUNT2, skipRestart = true) // TODO remove this (KEYCLOAK-16228)
     public void resetPasswordLink() throws IOException, MessagingException {
         String username = "login-test";
         String resetUri = oauth.AUTH_SERVER_ROOT + "/realms/test/login-actions/reset-credentials";
@@ -198,22 +197,12 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
                 .client("account")
                 .user(userId).detail(Details.USERNAME, username).assertEvent();
 
-        EventRepresentation loginEvent = events.expectLogin().user(userId).detail(Details.USERNAME, username)
-                .detail(Details.REDIRECT_URI,  oauth.AUTH_SERVER_ROOT + "/realms/test/account/")
-                .client("account")
-                .assertEvent();
-        String sessionId = loginEvent.getSessionId();
+        AccountHelper.logout(testRealm(), username);
 
-        account1ProfilePage.assertCurrent();
-        account1ProfilePage.logout();
+        TestAppHelper testAppHelper = new TestAppHelper(oauth, loginPage, appPage);
+        testAppHelper.login("login-test", "resetPassword");
 
-        events.expectLogout(sessionId).user(userId).removeDetail(Details.REDIRECT_URI).assertEvent();
-
-        loginPage.open();
-
-        loginPage.login("login-test", "resetPassword");
-
-        events.expectLogin().user(userId).detail(Details.USERNAME, "login-test").assertEvent();
+        appPage.assertCurrent();
 
         assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
     }
@@ -970,6 +959,25 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
     }
 
     @Test
+    public void resetPasswordBeforeUserIsDisabled() throws IOException, MessagingException {
+        initiateResetPasswordFromResetPasswordPage("login-test");
+        
+        assertEquals(1, greenMail.getReceivedMessages().length);
+        MimeMessage message = greenMail.getReceivedMessages()[0];
+        String changePasswordUrl = MailUtils.getPasswordResetEmailLink(message);
+        events.expectRequiredAction(EventType.SEND_RESET_PASSWORD).session((String)null).user(userId).detail(Details.USERNAME, "login-test").detail(Details.EMAIL, "login@test.com").assertEvent();
+        
+        UserRepresentation user = findUser("login-test");
+        user.setEnabled(false);
+        updateUser(user);
+
+        driver.navigate().to(changePasswordUrl.trim());
+
+        errorPage.assertCurrent();
+        assertEquals("Account is disabled, contact your administrator.", errorPage.getError());
+    }
+
+    @Test
     public void resetPasswordWithPasswordHistoryPolicy() throws IOException, MessagingException {
         //Block passwords that are equal to previous passwords. Default value is 3.
         setPasswordPolicy("passwordHistory");
@@ -1094,6 +1102,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
 
     // KEYCLOAK-15239
     @Test
+    @IgnoreBrowserDriver(FirefoxDriver.class) // TODO: https://github.com/keycloak/keycloak/issues/20526
     public void resetPasswordWithSpnegoEnabled() throws IOException, MessagingException {
         KerberosUtils.assumeKerberosSupportExpected();
 
@@ -1135,24 +1144,28 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
     }
 
     @Test
-    @DisableFeature(value = Profile.Feature.ACCOUNT2, skipRestart = true) // TODO remove this (KEYCLOAK-16228)
     public void resetPasswordLinkNewTabAndProperRedirectAccount() throws IOException {
-        final String REQUIRED_URI = OAuthClient.AUTH_SERVER_ROOT + "/realms/test/account/applications";
-        final String REDIRECT_URI = getAccountRedirectUrl() + "?path=applications";
+        final String REQUIRED_URI = getAuthServerRoot() + "realms/test/account/login-redirect?path=applications";
+        final String REDIRECT_URI = getAuthServerRoot() + "realms/test/account/login-redirect?path=applications";
         final String CLIENT_ID = "account";
         final String ACCOUNT_MANAGEMENT_TITLE = "Keycloak Account Management";
 
         try (BrowserTabUtil tabUtil = BrowserTabUtil.getInstanceAndSetEnv(driver)) {
             assertThat(tabUtil.getCountOfTabs(), Matchers.is(1));
 
-            driver.navigate().to(REQUIRED_URI);
+            oauth.redirectUri(REDIRECT_URI);
+            oauth.clientId(CLIENT_ID);
+
+            loginPage.open();
             resetPasswordTwiceInNewTab(defaultUser, CLIENT_ID, false, REDIRECT_URI, REQUIRED_URI);
             assertThat(driver.getTitle(), Matchers.equalTo(ACCOUNT_MANAGEMENT_TITLE));
 
-            account1ProfilePage.assertCurrent();
-            account1ProfilePage.logout();
+            String logoutUrl = oauth.getLogoutUrl().build();
+            driver.navigate().to(logoutUrl);
+            logoutConfirmPage.assertCurrent();
+            logoutConfirmPage.confirmLogout();
 
-            driver.navigate().to(REQUIRED_URI);
+            loginPage.open();
             resetPasswordTwiceInNewTab(defaultUser, CLIENT_ID, true, REDIRECT_URI, REQUIRED_URI);
             assertThat(driver.getTitle(), Matchers.equalTo(ACCOUNT_MANAGEMENT_TITLE));
         }

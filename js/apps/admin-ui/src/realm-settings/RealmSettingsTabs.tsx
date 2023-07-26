@@ -193,20 +193,23 @@ export const RealmSettingsTabs = ({
         Object.fromEntries(
           (r.attributes["acr.loa.map"] as KeyValueType[])
             .filter(({ key }) => key !== "")
-            .map(({ key, value }) => [key, value])
-        )
+            .map(({ key, value }) => [key, value]),
+        ),
       );
     }
 
     try {
-      await adminClient.realms.update(
-        { realm: realmName },
-        {
-          ...realm,
-          ...r,
-          id: r.realm,
-        }
-      );
+      const savedRealm: RealmRepresentation = {
+        ...realm,
+        ...r,
+        id: r.realm,
+      };
+
+      // For the default value, null is expected instead of an empty string.
+      if (savedRealm.smtpServer?.port === "") {
+        savedRealm.smtpServer = { ...savedRealm.smtpServer, port: null };
+      }
+      await adminClient.realms.update({ realm: realmName }, savedRealm);
       addAlert(t("saveSuccess"), AlertVariant.success);
     } catch (error) {
       addError("realm-settings:saveError", error);
@@ -242,7 +245,7 @@ export const RealmSettingsTabs = ({
       toClientPolicies({
         realm: realmName,
         tab,
-      })
+      }),
     );
 
   const clientPoliciesProfilesTab = useClientPoliciesTab("profiles");
@@ -268,6 +271,7 @@ export const RealmSettingsTabs = ({
         <RoutableTabs
           isBox
           mountOnEnter
+          aria-label="realm-settings-tabs"
           defaultLocation={toRealmSettings({
             realm: realmName,
             tab: "general",
@@ -292,7 +296,7 @@ export const RealmSettingsTabs = ({
             data-testid="rs-email-tab"
             {...emailTab}
           >
-            <RealmSettingsEmailTab realm={realm} />
+            <RealmSettingsEmailTab realm={realm} save={save} />
           </Tab>
           <Tab
             title={<TabTitleText>{t("themes")}</TabTitleText>}
@@ -373,7 +377,7 @@ export const RealmSettingsTabs = ({
                   tooltip={
                     <Tooltip
                       content={t(
-                        "realm-settings:clientPoliciesProfilesHelpText"
+                        "realm-settings:clientPoliciesProfilesHelpText",
                       )}
                     />
                   }
@@ -390,7 +394,7 @@ export const RealmSettingsTabs = ({
                   tooltip={
                     <Tooltip
                       content={t(
-                        "realm-settings:clientPoliciesPoliciesHelpText"
+                        "realm-settings:clientPoliciesPoliciesHelpText",
                       )}
                     />
                   }

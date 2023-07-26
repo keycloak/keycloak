@@ -17,7 +17,7 @@ type UserProfileProps = {
 
 export type SaveCallback = (
   updatedConfig: UserProfileConfig,
-  options?: SaveOptions
+  options?: SaveOptions,
 ) => Promise<boolean>;
 
 export type SaveOptions = {
@@ -40,7 +40,7 @@ export const UserProfileProvider = ({ children }: PropsWithChildren) => {
   useFetch(
     () => adminClient.users.getProfile({ realm }),
     (config) => setConfig(config),
-    [refreshCount]
+    [refreshCount],
   );
 
   const save: SaveCallback = async (updatedConfig, options) => {
@@ -56,7 +56,7 @@ export const UserProfileProvider = ({ children }: PropsWithChildren) => {
       setRefreshCount(refreshCount + 1);
       addAlert(
         t(options?.successMessageKey ?? "realm-settings:userProfileSuccess"),
-        AlertVariant.success
+        AlertVariant.success,
       );
 
       return true;
@@ -64,7 +64,7 @@ export const UserProfileProvider = ({ children }: PropsWithChildren) => {
       setIsSaving(false);
       addError(
         options?.errorMessageKey ?? "realm-settings:userProfileError",
-        error
+        error,
       );
 
       return false;

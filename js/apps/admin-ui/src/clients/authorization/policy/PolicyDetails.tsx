@@ -103,7 +103,7 @@ export default function PolicyDetails() {
       reset({ ...policy, policies });
       setPolicy(policy);
     },
-    [id, policyType, policyId]
+    [id, policyType, policyId],
   );
 
   const onSubmit = async (policy: Policy) => {
@@ -118,12 +118,12 @@ export default function PolicyDetails() {
       if (policyId) {
         await adminClient.clients.updatePolicy(
           { id, type: policyType, policyId },
-          policy
+          policy,
         );
       } else {
         const result = await adminClient.clients.createPolicy(
           { id, type: policyType },
-          policy
+          policy,
         );
         navigate(
           toPolicyDetails({
@@ -131,12 +131,12 @@ export default function PolicyDetails() {
             id,
             policyType,
             policyId: result.id!,
-          })
+          }),
         );
       }
       addAlert(
         t((policyId ? "update" : "create") + "PolicySuccess"),
-        AlertVariant.success
+        AlertVariant.success,
       );
     } catch (error) {
       addError("clients:policySaveError", error);

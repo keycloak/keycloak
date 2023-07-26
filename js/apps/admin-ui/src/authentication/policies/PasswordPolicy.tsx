@@ -44,9 +44,9 @@ const PolicySelect = ({ onSelect, selectedPolicies }: PolicySelectProps) => {
   const policies = useMemo(
     () =>
       passwordPolicies?.filter(
-        (p) => selectedPolicies.find((o) => o.id === p.id) === undefined
+        (p) => selectedPolicies.find((o) => o.id === p.id) === undefined,
       ),
-    [selectedPolicies]
+    [selectedPolicies],
   );
 
   return (
