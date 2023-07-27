@@ -40,6 +40,7 @@ import org.keycloak.operator.crds.v2alpha1.deployment.spec.HttpSpecBuilder;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.UnsupportedSpec;
 
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -93,7 +94,7 @@ public class PodTemplateTest {
 
         var deployment = new KeycloakDeployment(null, config, kc, existingDeployment, "dummy-admin");
 
-        return (StatefulSet) deployment.getReconciledResource().get();
+        return deployment.getReconciledResource().get();
     }
 
     private StatefulSet getDeployment(PodTemplateSpec podTemplate, StatefulSet existingDeployment) {
@@ -367,5 +368,17 @@ public class PodTemplateTest {
         var fourth = setUpRelativePath.apply("/some/");
         assertEquals("/some/health/ready", fourth.getReadinessProbe().getHttpGet().getPath());
         assertEquals("/some/health/live", fourth.getLivenessProbe().getHttpGet().getPath());
+    }
+
+    @Test
+    public void testDefaultArgs() {
+        // Arrange
+        PodTemplateSpec additionalPodTemplate = null;
+
+        // Act
+        var podTemplate = getDeployment(additionalPodTemplate).getSpec().getTemplate();
+
+        // Assert
+        assertThat(podTemplate.getSpec().getContainers().get(0).getArgs()).doesNotContain("--optimized");
     }
 }
