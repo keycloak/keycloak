@@ -110,43 +110,10 @@ import org.keycloak.testsuite.client.policies.AbstractClientPoliciesTest;
  *
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
  */
-public class FAPICIBATest extends AbstractClientPoliciesTest {
+public class FAPICIBATest extends AbstractFAPITest {
 
     private final String clientId = "foo";
     private final String bindingMessage = "bbbbmmmm";
-    private final String username = "john";
-
-    @BeforeClass
-    public static void verifySSL() {
-        // FAPI requires SSL and does not makes sense to test it with disabled SSL
-        Assume.assumeTrue("The FAPI test requires SSL to be enabled.", ServerURLs.AUTH_SERVER_SSL_REQUIRED);
-    }
-
-    @Override
-    public void addTestRealms(List<RealmRepresentation> testRealms) {
-        RealmRepresentation realm = loadJson(getClass().getResourceAsStream("/testrealm.json"), RealmRepresentation.class);
-
-        List<UserRepresentation> users = realm.getUsers();
-
-        LinkedList<CredentialRepresentation> credentials = new LinkedList<>();
-        CredentialRepresentation password = new CredentialRepresentation();
-        password.setType(CredentialRepresentation.PASSWORD);
-        password.setValue("password");
-        credentials.add(password);
-
-        UserRepresentation user = new UserRepresentation();
-        user.setEnabled(true);
-        user.setUsername("john");
-        user.setEmail("john@keycloak.org");
-        user.setFirstName("Johny");
-        user.setCredentials(credentials);
-        user.setClientRoles(Collections.singletonMap(Constants.REALM_MANAGEMENT_CLIENT_ID, Arrays.asList(AdminRoles.CREATE_CLIENT, AdminRoles.MANAGE_CLIENTS)));
-        users.add(user);
-
-        realm.setUsers(users);
-
-        testRealms.add(realm);
-    }
 
     @Test
     public void testFAPIAdvancedClientRegistration() throws Exception {
@@ -272,7 +239,7 @@ public class FAPICIBATest extends AbstractClientPoliciesTest {
         assertEquals(JWTClientAuthenticator.PROVIDER_ID, client.getClientAuthenticatorType());
 
         // prepare valid signed authentication request
-        AuthorizationEndpointRequestObject requestObject = createFAPIValidAuthorizationEndpointRequestObject(username, bindingMessage);
+        AuthorizationEndpointRequestObject requestObject = createFAPIValidAuthorizationEndpointRequestObject(TEST_USERNAME, bindingMessage);
         String encodedRequestObject = registerSharedAuthenticationRequest(requestObject, clientId, Algorithm.PS256);
 
         // Get keys of client. Will be used for client authentication and signing of authentication request
@@ -303,10 +270,10 @@ public class FAPICIBATest extends AbstractClientPoliciesTest {
         // user Token Request
         OAuthClient.AccessTokenResponse tokenRes = doBackchannelAuthenticationTokenRequestWithClientSignedJWT(
                 signedJwt2, response.getAuthReqId(), () -> MutualTLSUtils.newCloseableHttpClientWithDefaultKeyStoreAndTrustStore());
-        verifyBackchannelAuthenticationTokenRequest(tokenRes, clientId, username);
+        verifyBackchannelAuthenticationTokenRequest(tokenRes, clientId, TEST_USERNAME);
 
         // Logout and remove consent of the user for next logins
-        logoutUserAndRevokeConsent(clientId, username);
+        logoutUserAndRevokeConsent(clientId, TEST_USERNAME);
     }
 
     @Test
@@ -325,7 +292,7 @@ public class FAPICIBATest extends AbstractClientPoliciesTest {
         assertEquals(JWTClientAuthenticator.PROVIDER_ID, client.getClientAuthenticatorType());
 
         // prepare valid signed authentication request
-        AuthorizationEndpointRequestObject requestObject = createFAPIValidAuthorizationEndpointRequestObject(username, bindingMessage);
+        AuthorizationEndpointRequestObject requestObject = createFAPIValidAuthorizationEndpointRequestObject(TEST_USERNAME, bindingMessage);
         String encodedRequestObject = registerSharedAuthenticationRequest(requestObject, clientId, Algorithm.PS256);
 
         // Get keys of client. Will be used for client authentication and signing of authentication request
@@ -379,7 +346,7 @@ public class FAPICIBATest extends AbstractClientPoliciesTest {
         assertEquals(X509ClientAuthenticator.PROVIDER_ID, client.getClientAuthenticatorType());
 
         // prepare valid signed authentication request
-        AuthorizationEndpointRequestObject requestObject = createFAPIValidAuthorizationEndpointRequestObject(username, bindingMessage);
+        AuthorizationEndpointRequestObject requestObject = createFAPIValidAuthorizationEndpointRequestObject(TEST_USERNAME, bindingMessage);
         String encodedRequestObject = registerSharedAuthenticationRequest(requestObject, clientId, Algorithm.PS256);
 
         // user Backchannel Authentication Request
@@ -399,10 +366,10 @@ public class FAPICIBATest extends AbstractClientPoliciesTest {
         // user Token Request
         OAuthClient.AccessTokenResponse tokenRes = doBackchannelAuthenticationTokenRequestWithMTLS(
                 clientId, response.getAuthReqId(), () -> MutualTLSUtils.newCloseableHttpClientWithDefaultKeyStoreAndTrustStore());
-        verifyBackchannelAuthenticationTokenRequest(tokenRes, clientId, username);
+        verifyBackchannelAuthenticationTokenRequest(tokenRes, clientId, TEST_USERNAME);
 
         // Logout and remove consent of the user for next logins
-        logoutUserAndRevokeConsent(clientId, username);
+        logoutUserAndRevokeConsent(clientId, TEST_USERNAME);
     }
 
     @Test
@@ -423,7 +390,7 @@ public class FAPICIBATest extends AbstractClientPoliciesTest {
         assertEquals(X509ClientAuthenticator.PROVIDER_ID, client.getClientAuthenticatorType());
 
         // prepare invalid signed authentication request lacking binding message
-        AuthorizationEndpointRequestObject requestObject = createFAPIValidAuthorizationEndpointRequestObject(username, null);
+        AuthorizationEndpointRequestObject requestObject = createFAPIValidAuthorizationEndpointRequestObject(TEST_USERNAME, null);
 
         String encodedRequestObject = registerSharedAuthenticationRequest(requestObject, clientId, Algorithm.PS256);
 
@@ -452,7 +419,7 @@ public class FAPICIBATest extends AbstractClientPoliciesTest {
         ClientRepresentation client = clientResource.toRepresentation();
         assertEquals(X509ClientAuthenticator.PROVIDER_ID, client.getClientAuthenticatorType());
 
-        AuthenticationRequestAcknowledgement response = doInvalidBackchannelAuthenticationRequestWithMTLS(clientId, username, bindingMessage, () -> MutualTLSUtils.newCloseableHttpClientWithDefaultKeyStoreAndTrustStore());
+        AuthenticationRequestAcknowledgement response = doInvalidBackchannelAuthenticationRequestWithMTLS(clientId, TEST_USERNAME, bindingMessage, () -> MutualTLSUtils.newCloseableHttpClientWithDefaultKeyStoreAndTrustStore());
         assertThat(response.getStatusCode(), is(equalTo(400)));
         assertThat(response.getError(), is(equalTo(OAuthErrorException.INVALID_REQUEST)));
         assertThat(response.getErrorDescription(), is(equalTo("Missing parameter: 'request' or 'request_uri'")));
@@ -639,23 +606,4 @@ public class FAPICIBATest extends AbstractClientPoliciesTest {
         assertThat(idToken.getAudience()[0], is(equalTo(idToken.getIssuedFor())));
     }
 
-    private void logoutUserAndRevokeConsent(String clientId, String username) {
-        UserResource user = ApiUtil.findUserByUsernameId(adminClient.realm(REALM_NAME), username);
-        user.logout();
-        List<Map<String, Object>> consents = user.getConsents();
-        org.junit.Assert.assertEquals(1, consents.size());
-        user.revokeConsent(clientId);
-    }
-
-    private CloseableHttpResponse sendRequest(String requestUrl, List<NameValuePair> parameters, Supplier<CloseableHttpClient> httpClientSupplier) throws Exception {
-        CloseableHttpClient client = httpClientSupplier.get();
-        try {
-            HttpPost post = new HttpPost(requestUrl);
-            UrlEncodedFormEntity formEntity = new UrlEncodedFormEntity(parameters, "UTF-8");
-            post.setEntity(formEntity);
-            return client.execute(post);
-        } finally {
-            oauth.closeClient(client);
-        }
-    }
 }
