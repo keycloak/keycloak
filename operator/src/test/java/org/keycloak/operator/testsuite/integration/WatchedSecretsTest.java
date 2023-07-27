@@ -278,7 +278,7 @@ public class WatchedSecretsTest extends BaseOperatorTest {
         kc.getSpec().getDatabaseSpec().setUsernameSecret(null);
         kc.getSpec().getDatabaseSpec().setPasswordSecret(null);
 
-        var username = new ValueOrSecret("db-username", "postgres");
+        var username = new ValueOrSecret("db-username", "kc-user");
         var password = new ValueOrSecret("db-password", "testpassword");
 
         kc.getSpec().getAdditionalOptions().remove(username);
