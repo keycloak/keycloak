@@ -35,6 +35,7 @@ import org.keycloak.common.util.Time;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.credential.CredentialMetadata;
 import org.keycloak.credential.CredentialModel;
+import org.keycloak.deployment.DeployedConfigurationsManager;
 import org.keycloak.events.Event;
 import org.keycloak.events.admin.AdminEvent;
 import org.keycloak.events.admin.AuthDetails;
@@ -546,7 +547,7 @@ public class ModelToRepresentation {
         rep.setSupportedLocales(realm.getSupportedLocalesStream().collect(Collectors.toSet()));
         rep.setDefaultLocale(realm.getDefaultLocale());
         if (internal) {
-            exportAuthenticationFlows(realm, rep);
+            exportAuthenticationFlows(session, realm, rep);
             exportRequiredActions(realm, rep);
             exportGroups(realm, rep);
         }
@@ -585,10 +586,10 @@ public class ModelToRepresentation {
         rep.setGroups(toGroupHierarchy(realm, true).collect(Collectors.toList()));
     }
 
-    public static void exportAuthenticationFlows(RealmModel realm, RealmRepresentation rep) {
+    public static void exportAuthenticationFlows(KeycloakSession session, RealmModel realm, RealmRepresentation rep) {
         List<AuthenticationFlowRepresentation> authenticationFlows = realm.getAuthenticationFlowsStream()
                 .sorted(AuthenticationFlowModel.AuthenticationFlowComparator.SINGLETON)
-                .map(flow -> toRepresentation(realm, flow))
+                .map(flow -> toRepresentation(session, realm, flow))
                 .collect(Collectors.toList());
         rep.setAuthenticationFlows(authenticationFlows);
 
@@ -873,7 +874,7 @@ public class ModelToRepresentation {
         return consentRep;
     }
 
-    public static AuthenticationFlowRepresentation toRepresentation(RealmModel realm, AuthenticationFlowModel model) {
+    public static AuthenticationFlowRepresentation toRepresentation(KeycloakSession session, RealmModel realm, AuthenticationFlowModel model) {
         AuthenticationFlowRepresentation rep = new AuthenticationFlowRepresentation();
         rep.setId(model.getId());
         rep.setBuiltIn(model.isBuiltIn());
@@ -882,14 +883,14 @@ public class ModelToRepresentation {
         rep.setAlias(model.getAlias());
         rep.setDescription(model.getDescription());
         rep.setAuthenticationExecutions(realm.getAuthenticationExecutionsStream(model.getId())
-                .map(e -> toRepresentation(realm, e)).collect(Collectors.toList()));
+                .map(e -> toRepresentation(session, realm, e)).collect(Collectors.toList()));
         return rep;
     }
 
-    public static AuthenticationExecutionExportRepresentation toRepresentation(RealmModel realm, AuthenticationExecutionModel model) {
+    public static AuthenticationExecutionExportRepresentation toRepresentation(KeycloakSession session, RealmModel realm, AuthenticationExecutionModel model) {
         AuthenticationExecutionExportRepresentation rep = new AuthenticationExecutionExportRepresentation();
         if (model.getAuthenticatorConfig() != null) {
-            AuthenticatorConfigModel config = realm.getAuthenticatorConfigById(model.getAuthenticatorConfig());
+            AuthenticatorConfigModel config = new DeployedConfigurationsManager(session).getAuthenticatorConfig(realm, model.getAuthenticatorConfig());
             rep.setAuthenticatorConfig(config.getAlias());
         }
         rep.setAuthenticator(model.getAuthenticator());
