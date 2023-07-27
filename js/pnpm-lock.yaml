@@ -69,8 +69,8 @@ importers:
   apps/account-ui:
     dependencies:
       '@patternfly/patternfly':
-        specifier: ^4.224.2
-        version: 4.224.2
+        specifier: ^5.0.2
+        version: 5.0.2
       '@patternfly/react-core':
         specifier: ^4.276.8
         version: 4.276.8(react-dom@18.2.0)(react@18.2.0)
@@ -145,8 +145,8 @@ importers:
         specifier: workspace:*
         version: link:../../libs/keycloak-admin-client
       '@patternfly/patternfly':
-        specifier: ^4.224.2
-        version: 4.224.2
+        specifier: ^5.0.2
+        version: 5.0.2
       '@patternfly/react-code-editor':
         specifier: ^4.82.115
         version: 4.82.115(react-dom@18.2.0)(react-monaco-editor@0.51.0)(react@18.2.0)
@@ -1085,8 +1085,8 @@ packages:
       '@octokit/openapi-types': 18.0.0
     dev: false
 
-  /@patternfly/patternfly@4.224.2:
-    resolution: {integrity: sha512-HGNV26uyHSIECuhjPg/WGn0mXbAotcs6ODfhAOkfYjIgGylddgiwElxUe1rpEHV5mQJJ2rMn4OdeJIIpzRX61g==}
+  /@patternfly/patternfly@5.0.2:
+    resolution: {integrity: sha512-PB8+MLdYVgF1hIOxGmnVsZG+YHUX3RePe5W1oMS4gS00EmSgw1cobr1Qbpy/BqqS8/R9DRN4hZ2FKDT0d5tkFQ==}
     dev: false
 
   /@patternfly/react-code-editor@4.82.115(react-dom@18.2.0)(react-monaco-editor@0.51.0)(react@18.2.0):
@@ -7152,7 +7152,7 @@ packages:
     name: admin-ui
     dependencies:
       '@keycloak/keycloak-admin-client': link:libs/keycloak-admin-client
-      '@patternfly/patternfly': 4.224.2
+      '@patternfly/patternfly': 5.0.2
       '@patternfly/react-code-editor': 4.82.115(react-dom@18.2.0)(react-monaco-editor@0.51.0)(react@18.2.0)
       '@patternfly/react-core': 4.276.8(react-dom@18.2.0)(react@18.2.0)
       '@patternfly/react-icons': 4.93.6(react-dom@18.2.0)(react@18.2.0)
