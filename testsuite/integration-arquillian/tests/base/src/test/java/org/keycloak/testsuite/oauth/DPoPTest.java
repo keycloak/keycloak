@@ -226,37 +226,37 @@ public class DPoPTest extends AbstractTestRealmKeycloakTest {
     public void testDPoPDisabledByPublicClient() throws Exception {
 
         changeDPoPBound(TEST_PUBLIC_CLIENT_ID, false);
+        try {
+            // with DPoP proof
+            testDPoPByPublicClient();
 
-        oauth.clientId(TEST_PUBLIC_CLIENT_ID);
-        oauth.doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
+            // without DPoP proof
+            oauth.clientId(TEST_PUBLIC_CLIENT_ID);
+            oauth.dpopProof(null);
+            oauth.doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
 
-        String dpopProofEcEncoded = generateSignedDPoPProof(UUID.randomUUID().toString(), HttpMethod.POST.toString(), oauth.getAccessTokenUrl(), Long.valueOf(Time.currentTime()), Algorithm.ES256, jwsEcHeader, ecKeyPair.getPrivate());
+            String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+            OAuthClient.AccessTokenResponse response = oauth.doAccessTokenRequest(code, null);
 
-        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-        oauth.dpopProof(dpopProofEcEncoded);
-        OAuthClient.AccessTokenResponse response = oauth.doAccessTokenRequest(code, null);
+            assertEquals(Status.OK.getStatusCode(), response.getStatusCode());
+            AccessToken accessToken = oauth.verifyToken(response.getAccessToken());
+            assertEquals(null, accessToken.getConfirmation());
+            RefreshToken refreshToken = oauth.parseRefreshToken(response.getRefreshToken());
+            assertEquals(null, refreshToken.getConfirmation());
 
-        assertEquals(Status.OK.getStatusCode(), response.getStatusCode());
-        AccessToken accessToken = oauth.verifyToken(response.getAccessToken());
-        assertEquals(null, accessToken.getConfirmation());
-        RefreshToken refreshToken = oauth.parseRefreshToken(response.getRefreshToken());
-        assertEquals(null, refreshToken.getConfirmation());
+            // token refresh
+            response = oauth.doRefreshTokenRequest(response.getRefreshToken(), null);
 
-        // token refresh
-        dpopProofEcEncoded = generateSignedDPoPProof(UUID.randomUUID().toString(), HttpMethod.POST.toString(), oauth.getAccessTokenUrl(), Long.valueOf(Time.currentTime()), Algorithm.ES256, jwsEcHeader, ecKeyPair.getPrivate());
+            assertEquals(Status.OK.getStatusCode(), response.getStatusCode());
+            accessToken = oauth.verifyToken(response.getAccessToken());
+            assertEquals(null, accessToken.getConfirmation());
+            refreshToken = oauth.parseRefreshToken(response.getRefreshToken());
+            assertEquals(null, refreshToken.getConfirmation());
 
-        oauth.dpopProof(dpopProofEcEncoded);
-        response = oauth.doRefreshTokenRequest(response.getRefreshToken(), null);
-
-        assertEquals(Status.OK.getStatusCode(), response.getStatusCode());
-        accessToken = oauth.verifyToken(response.getAccessToken());
-        assertEquals(null, accessToken.getConfirmation());
-        refreshToken = oauth.parseRefreshToken(response.getRefreshToken());
-        assertEquals(null, refreshToken.getConfirmation());
-
-        oauth.idTokenHint(response.getIdToken()).openLogout();
-
-        changeDPoPBound(TEST_PUBLIC_CLIENT_ID, true);
+            oauth.idTokenHint(response.getIdToken()).openLogout();
+        } finally {
+            changeDPoPBound(TEST_PUBLIC_CLIENT_ID, true);
+        }
     }
 
     @Test
