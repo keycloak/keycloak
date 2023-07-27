@@ -81,8 +81,8 @@ importers:
         specifier: ^4.113.0
         version: 4.113.0(react-dom@18.2.0)(react@18.2.0)
       i18next:
-        specifier: ^23.2.11
-        version: 23.2.11
+        specifier: ^23.3.0
+        version: 23.3.0
       i18next-http-backend:
         specifier: ^2.2.1
         version: 2.2.1
@@ -106,7 +106,7 @@ importers:
         version: 7.45.2(react@18.2.0)
       react-i18next:
         specifier: ^13.0.2
-        version: 13.0.2(i18next@23.2.11)(react-dom@18.2.0)(react@18.2.0)
+        version: 13.0.2(i18next@23.3.0)(react-dom@18.2.0)(react@18.2.0)
       react-router-dom:
         specifier: ^6.14.2
         version: 6.14.2(react-dom@18.2.0)(react@18.2.0)
@@ -124,8 +124,8 @@ importers:
         specifier: ^4.17.8
         version: 4.17.8
       '@types/react':
-        specifier: ^18.2.16
-        version: 18.2.16
+        specifier: ^18.2.17
+        version: 18.2.17
       '@types/react-dom':
         specifier: ^18.2.7
         version: 18.2.7
@@ -178,8 +178,8 @@ importers:
         specifier: ^5.0.2
         version: 5.0.2
       i18next:
-        specifier: ^23.2.11
-        version: 23.2.11
+        specifier: ^23.3.0
+        version: 23.3.0
       i18next-http-backend:
         specifier: ^2.2.1
         version: 2.2.1
@@ -209,7 +209,7 @@ importers:
         version: 7.45.2(react@18.2.0)
       react-i18next:
         specifier: ^13.0.2
-        version: 13.0.2(i18next@23.2.11)(react-dom@18.2.0)(react@18.2.0)
+        version: 13.0.2(i18next@23.3.0)(react-dom@18.2.0)(react@18.2.0)
       react-router-dom:
         specifier: ^6.14.2
         version: 6.14.2(react-dom@18.2.0)(react@18.2.0)
@@ -248,8 +248,8 @@ importers:
         specifier: ^4.17.8
         version: 4.17.8
       '@types/react':
-        specifier: ^18.2.16
-        version: 18.2.16
+        specifier: ^18.2.17
+        version: 18.2.17
       '@types/react-dom':
         specifier: ^18.2.7
         version: 18.2.7
@@ -398,8 +398,8 @@ importers:
         version: 18.2.0(react@18.2.0)
     devDependencies:
       '@types/react':
-        specifier: ^18.2.16
-        version: 18.2.16
+        specifier: ^18.2.17
+        version: 18.2.17
       '@types/react-dom':
         specifier: ^18.2.7
         version: 18.2.7
@@ -438,8 +438,8 @@ importers:
         version: 7.45.2(react@18.2.0)
     devDependencies:
       '@types/react':
-        specifier: ^18.2.16
-        version: 18.2.16
+        specifier: ^18.2.17
+        version: 18.2.17
       '@types/react-dom':
         specifier: ^18.2.7
         version: 18.2.7
@@ -1102,7 +1102,7 @@ packages:
       react: 18.2.0
       react-dom: 18.2.0(react@18.2.0)
       react-dropzone: 9.0.0(react@18.2.0)
-      react-monaco-editor: 0.51.0(@types/react@18.2.16)(monaco-editor@0.40.0)(react@18.2.0)
+      react-monaco-editor: 0.51.0(@types/react@18.2.17)(monaco-editor@0.40.0)(react@18.2.0)
       tslib: 2.6.1
     dev: false
 
@@ -1908,11 +1908,11 @@ packages:
   /@types/react-dom@18.2.7:
     resolution: {integrity: sha512-GRaAEriuT4zp9N4p1i8BDBYmEyfo+xQ3yHjJU4eiK5NDa1RmUZG+unZABUTK4/Ox/M+GaHwb6Ow8rUITrtjszA==}
     dependencies:
-      '@types/react': 18.2.16
+      '@types/react': 18.2.17
     dev: true
 
-  /@types/react@18.2.16:
-    resolution: {integrity: sha512-LLFWr12ZhBJ4YVw7neWLe6Pk7Ey5R9OCydfuMsz1L8bZxzaawJj2p06Q8/EFEHDeTBQNFLF62X+CG7B2zIyu0Q==}
+  /@types/react@18.2.17:
+    resolution: {integrity: sha512-u+e7OlgPPh+aryjOm5UJMX32OvB2E3QASOAqVMY6Ahs90djagxwv2ya0IctglNbNTexC12qCSMZG47KPfy1hAA==}
     dependencies:
       '@types/prop-types': 15.7.5
       '@types/scheduler': 0.16.3
@@ -4291,8 +4291,8 @@ packages:
       - encoding
     dev: false
 
-  /i18next@23.2.11:
-    resolution: {integrity: sha512-MA4FsxOjyCaOZtRDB4yuwjCvqYEioD4G4LlXOn7SO3rnQUlxTufyLsOqfL9MKakeLRBkefe8bqcs0D6Z/xFk1w==}
+  /i18next@23.3.0:
+    resolution: {integrity: sha512-xd/UzWT71zYudCT7qVn6tB4yUVuXAhgCorsowYgM2EOdc14WqQBp5P2wEsxgfiDgdLN5XwJvTbzxrMfoY/nxnw==}
     dependencies:
       '@babel/runtime': 7.22.6
     dev: false
@@ -5664,7 +5664,7 @@ packages:
       react: 18.2.0
     dev: false
 
-  /react-i18next@13.0.2(i18next@23.2.11)(react-dom@18.2.0)(react@18.2.0):
+  /react-i18next@13.0.2(i18next@23.3.0)(react-dom@18.2.0)(react@18.2.0):
     resolution: {integrity: sha512-NEVxC32v0oR4egwYM0QM0WE93AiJG5r0NTXTL8mhQfAhsMfDS2fSO6jpluyfsfypP988KzUQrAXncspcJ7+GHA==}
     peerDependencies:
       i18next: '>= 23.2.3'
@@ -5679,7 +5679,7 @@ packages:
     dependencies:
       '@babel/runtime': 7.22.6
       html-parse-stringify: 3.0.1
-      i18next: 23.2.11
+      i18next: 23.3.0
       react: 18.2.0
       react-dom: 18.2.0(react@18.2.0)
     dev: false
@@ -5695,14 +5695,14 @@ packages:
     resolution: {integrity: sha512-xWGDIW6x921xtzPkhiULtthJHoJvBbF3q26fzloPCK0hsvxtPVelvftw3zjbHWSkR2km9Z+4uxbDDK/6Zw9B8w==}
     dev: true
 
-  /react-monaco-editor@0.51.0(@types/react@18.2.16)(monaco-editor@0.40.0)(react@18.2.0):
+  /react-monaco-editor@0.51.0(@types/react@18.2.17)(monaco-editor@0.40.0)(react@18.2.0):
     resolution: {integrity: sha512-6jx1V8p6gHVKJHFaTvicOtmlhFjOJhekobeNd92ZAo7F5UvAin1cF7bxWLCKgtxClYZ7CB3Ar284Kpbhj22FpQ==}
     peerDependencies:
       '@types/react': '>=17 <= 18'
       monaco-editor: ^0.34.1
       react: '>=17 <= 18'
     dependencies:
-      '@types/react': 18.2.16
+      '@types/react': 18.2.17
       monaco-editor: 0.40.0
       prop-types: 15.8.1
       react: 18.2.0
@@ -7162,7 +7162,7 @@ packages:
       file-saver: 2.0.5
       file-selector: 0.6.0
       flat: 5.0.2
-      i18next: 23.2.11
+      i18next: 23.3.0
       i18next-http-backend: 2.2.1
       keycloak-js: link:libs/keycloak-js
       lodash-es: 4.17.21
@@ -7172,7 +7172,7 @@ packages:
       react-dropzone: 14.2.3(react@18.2.0)
       react-error-boundary: 3.1.4(react@18.2.0)
       react-hook-form: 7.45.2(react@18.2.0)
-      react-i18next: 13.0.2(i18next@23.2.11)(react-dom@18.2.0)(react@18.2.0)
+      react-i18next: 13.0.2(i18next@23.3.0)(react-dom@18.2.0)(react@18.2.0)
       react-router-dom: 6.14.2(react-dom@18.2.0)(react@18.2.0)
       reactflow: 11.7.4(react-dom@18.2.0)(react@18.2.0)
       ui-shared: link:libs/ui-shared

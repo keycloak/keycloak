@@ -334,7 +334,7 @@ public class TokenEndpoint {
     private void checkAndRetrieveDPoPProof(boolean isDPoPSupported) {
         if (!isDPoPSupported) return;
 
-        if (clientConfig.isUseDPoP()) {
+        if (clientConfig.isUseDPoP() || request.getHttpHeaders().getHeaderString(DPoPUtil.DPOP_HTTP_HEADER) != null) {
             try {
                 dPoP = new DPoPUtil.Validator(session).request(request).uriInfo(session.getContext().getUri()).validate();
                 session.setAttribute(DPoPUtil.DPOP_SESSION_ATTRIBUTE, dPoP);
@@ -547,7 +547,7 @@ public class TokenEndpoint {
     private void checkAndBindDPoPToken(TokenManager.AccessTokenResponseBuilder responseBuilder, boolean useRefreshToken, boolean isDPoPSupported) {
         if (!isDPoPSupported) return;
 
-        if (clientConfig.isUseDPoP()) {
+        if (clientConfig.isUseDPoP() || dPoP != null) {
             DPoPUtil.bindToken(responseBuilder.getAccessToken(), dPoP);
             // TODO Probably uncomment as the accessToken type "DPoP" will have more sense than "Bearer". It will require some changes in the introspection endpoint too...
             // responseBuilder.getAccessToken().type(DPoPUtil.DPOP_TOKEN_TYPE);

@@ -498,8 +498,8 @@ public class TokenManager {
             }
 
             if (Profile.isFeatureEnabled(Profile.Feature.DPOP)) {
-                if (OIDCAdvancedConfigWrapper.fromClientModel(client).isUseDPoP() && client.isPublicClient()) {
-                    DPoP dPoP = (DPoP) session.getAttribute(DPoPUtil.DPOP_SESSION_ATTRIBUTE);
+                DPoP dPoP = (DPoP) session.getAttribute(DPoPUtil.DPOP_SESSION_ATTRIBUTE);
+                if (client.isPublicClient() && (OIDCAdvancedConfigWrapper.fromClientModel(client).isUseDPoP() || dPoP != null )) {
                     try {
                         DPoPUtil.validateBinding(refreshToken, dPoP);
                     } catch (VerificationException ex) {
