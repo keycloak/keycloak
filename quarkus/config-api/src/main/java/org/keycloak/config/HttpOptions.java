@@ -56,7 +56,7 @@ public class HttpOptions {
     public static final Option HTTPS_PROTOCOLS = new OptionBuilder<>("https-protocols", String.class)
             .category(OptionCategory.HTTP)
             .description("The list of protocols to explicitly enable.")
-            .defaultValue("TLSv1.3")
+            .defaultValue("TLSv1.3,TLSv1.2")
             .build();
 
     public static final Option HTTPS_CERTIFICATE_FILE = new OptionBuilder<>("https-certificate-file", File.class)

@@ -12,6 +12,9 @@ import java.util.Optional;
 import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromOption;
 
 final class ConfigKeystorePropertyMappers {
+    private static final String SMALLRYE_KEYSTORE_PATH = "smallrye.config.source.keystore.kc-default.path";
+    private static final String SMALLRYE_KEYSTORE_PASSWORD = "smallrye.config.source.keystore.kc-default.password";
+
 
     private ConfigKeystorePropertyMappers() {
     }
@@ -19,12 +22,12 @@ final class ConfigKeystorePropertyMappers {
     public static PropertyMapper[] getConfigKeystorePropertyMappers() {
         return new PropertyMapper[] {
                 fromOption(ConfigKeystoreOptions.CONFIG_KEYSTORE)
-                        .to("smallrye.config.source.keystore.kc-default.path")
+                        .to(SMALLRYE_KEYSTORE_PATH)
                         .transformer(ConfigKeystorePropertyMappers::validatePath)
                         .paramLabel("config-keystore")
                         .build(),
                 fromOption(ConfigKeystoreOptions.CONFIG_KEYSTORE_PASSWORD)
-                        .to("smallrye.config.source.keystore.kc-default.password")
+                        .to(SMALLRYE_KEYSTORE_PASSWORD)
                         .transformer(ConfigKeystorePropertyMappers::validatePassword)
                         .paramLabel("config-keystore-password")
                         .build(),
@@ -36,10 +39,15 @@ final class ConfigKeystorePropertyMappers {
     }
 
     private static Optional<String> validatePath(Optional<String> option, ConfigSourceInterceptorContext context) {
-        ConfigValue path = context.proceed("smallrye.config.source.keystore.kc-default.path");
+        ConfigValue path = context.proceed(SMALLRYE_KEYSTORE_PATH);
+        boolean isPasswordDefined = context.proceed(SMALLRYE_KEYSTORE_PASSWORD) != null;
 
         if (path == null) {
             throw new IllegalArgumentException("config-keystore must be specified");
+        }
+
+        if (!isPasswordDefined) {
+            throw new IllegalArgumentException("config-keystore-password must be specified");
         }
 
         Optional<String> realPath = Optional.of(String.valueOf(Paths.get(path.getValue()).toAbsolutePath().normalize()));
@@ -50,11 +58,17 @@ final class ConfigKeystorePropertyMappers {
     }
 
     private static Optional<String> validatePassword(Optional<String> option, ConfigSourceInterceptorContext context) {
-        ConfigValue password = context.proceed("smallrye.config.source.keystore.kc-default.password");
+        boolean isPasswordDefined = context.proceed(SMALLRYE_KEYSTORE_PASSWORD).getValue() != null;
+        boolean isPathDefined = context.proceed(SMALLRYE_KEYSTORE_PATH) != null;
 
-        if (password == null) {
+        if (!isPasswordDefined) {
             throw new IllegalArgumentException("config-keystore-password must be specified");
         }
+
+        if (!isPathDefined) {
+            throw new IllegalArgumentException("config-keystore must be specified");
+        }
+
         return option;
     }
 
