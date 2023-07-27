@@ -183,6 +183,8 @@ public class BaseOperatorTest implements QuarkusTestAfterEachCallback {
   }
 
   protected static void deployDB() {
+    deployDBSecret();
+
     // DB
     Log.info("Creating new PostgreSQL deployment");
     K8sUtils.set(k8sclient, BaseOperatorTest.class.getResourceAsStream("/example-postgres.yaml"));
@@ -191,8 +193,6 @@ public class BaseOperatorTest implements QuarkusTestAfterEachCallback {
     Log.info("Checking Postgres is running");
     Awaitility.await()
             .untilAsserted(() -> assertThat(k8sclient.apps().statefulSets().inNamespace(namespace).withName("postgresql-db").get().getStatus().getReadyReplicas()).isEqualTo(1));
-
-    deployDBSecret();
   }
 
   protected static void deployDBSecret() {
