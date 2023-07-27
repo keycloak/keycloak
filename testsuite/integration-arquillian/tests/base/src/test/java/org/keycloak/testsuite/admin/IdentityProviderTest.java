@@ -77,6 +77,7 @@ import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
 import java.util.Base64;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -131,12 +132,33 @@ public class IdentityProviderTest extends AbstractAdminTest {
       + "LXrAUVcsR73oTngrhRfwUSmPrjjK0kjcRb6HL9V/+wh3R/6mEd59U08ExT8N38rhmn0CI3ehMdebReprP7U8=";
 
     @Test
-    public void testFindAll() {
+    public void testFind() {
+        create(createRep("twitter", "twitter", true, Collections.singletonMap("key1", "value1")));
+        create(createRep("linkedin", "linkedin"));
         create(createRep("google", "google"));
-
+        create(createRep("github", "github"));
         create(createRep("facebook", "facebook"));
 
-        Assert.assertNames(realm.identityProviders().findAll(), "google", "facebook");
+        Assert.assertNames(realm.identityProviders().findAll(), "facebook", "github", "google", "linkedin", "twitter");
+
+        Assert.assertNames(realm.identityProviders().find(null, true, 0, 2), "facebook", "github");
+        Assert.assertNames(realm.identityProviders().find(null, true, 2, 2), "google", "linkedin");
+        Assert.assertNames(realm.identityProviders().find(null, true, 4, 2), "twitter");
+
+        Assert.assertNames(realm.identityProviders().find("g", true, 0, 5), "github", "google");
+
+        Assert.assertNames(realm.identityProviders().find("g*", true, 0, 5), "github", "google");
+        Assert.assertNames(realm.identityProviders().find("g*", true, 0, 1), "github");
+        Assert.assertNames(realm.identityProviders().find("g*", true, 1, 1), "google");
+
+        Assert.assertNames(realm.identityProviders().find("*oo*", true, 0, 5), "google", "facebook");
+
+        List<IdentityProviderRepresentation> results = realm.identityProviders().find("\"twitter\"", true, 0, 5);
+        Assert.assertNames(results, "twitter");
+        Assert.assertTrue("Result is not in brief representation", results.iterator().next().getConfig().isEmpty());
+        results = realm.identityProviders().find("\"twitter\"", null, 0, 5);
+        Assert.assertNames(results, "twitter");
+        Assert.assertFalse("Config should be present in full representation", results.iterator().next().getConfig().isEmpty());
     }
 
     @Test
