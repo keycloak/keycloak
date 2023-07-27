@@ -33,7 +33,6 @@ import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.RoleMappingResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.admin.client.resource.UsersResource;
-import org.keycloak.common.Profile;
 import org.keycloak.common.Profile.Feature;
 import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.Base64;
@@ -1153,6 +1152,7 @@ public class UserTest extends AbstractAdminTest {
 
         assertThat(realm.users().search("*", null, null), hasSize(5));
         assertThat(realm.users().search("*user\\", null, null), hasSize(5));
+        assertThat(realm.users().search("\"2user\\\\%\"", null, null), hasSize(1));
     }
 
     @Test

@@ -788,12 +788,11 @@ public class MapUserProvider implements UserProvider {
     private DefaultModelCriteria<UserModel> addSearchToModelCriteria(RealmModel realm, String value,
             DefaultModelCriteria<UserModel> mcb) {
 
-        value = value.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_");
-
         if (value.length() >= 2 && value.charAt(0) == '"' && value.charAt(value.length() - 1) == '"') {
             // exact search
             value = value.substring(1, value.length() - 1);
         } else {
+            value = value.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_");
             value = value.replace("*", "%");
              if (value.isEmpty() || value.charAt(value.length() - 1) != '%') value += "%";
         }

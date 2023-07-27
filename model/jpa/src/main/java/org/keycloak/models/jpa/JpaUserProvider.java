@@ -898,7 +898,7 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
     }
 
     private Predicate[] getSearchOptionPredicateArray(String value, CriteriaBuilder builder, From<?, UserEntity> from) {
-        value = value.toLowerCase().replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_");
+        value = value.toLowerCase();
 
         List<Predicate> orPredicates = new ArrayList<>();
 
@@ -911,6 +911,7 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
             orPredicates.add(builder.equal(builder.lower(from.get(FIRST_NAME)), value));
             orPredicates.add(builder.equal(builder.lower(from.get(LAST_NAME)), value));
         } else {
+            value = value.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_");
             value = value.replace("*", "%");
             if (value.isEmpty() || value.charAt(value.length() - 1) != '%') value += "%";
 
