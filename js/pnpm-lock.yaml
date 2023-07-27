@@ -356,6 +356,9 @@ importers:
       js-sha256:
         specifier: ^0.9.0
         version: 0.9.0
+      jwt-decode:
+        specifier: ^3.1.2
+        version: 3.1.2
     devDependencies:
       '@rollup/plugin-commonjs':
         specifier: ^25.0.3
@@ -4812,6 +4815,10 @@ packages:
       object.assign: 4.1.4
       object.values: 1.1.6
     dev: true
+
+  /jwt-decode@3.1.2:
+    resolution: {integrity: sha512-UfpWE/VZn0iP50d8cz9NrZLM9lSWhcJ+0Gt/nm4by88UL+J1SiKN8/5dkjMmbEzwL2CAe+67GsegCbIKtbp75A==}
+    dev: false
 
   /kolorist@1.8.0:
     resolution: {integrity: sha512-Y+60/zizpJ3HRH8DCss+q95yr6145JXZo46OTpFvDZWLfRCE4qChOyk1b26nMaNpfHHgxagk9dXT5OP0Tfe+dQ==}
