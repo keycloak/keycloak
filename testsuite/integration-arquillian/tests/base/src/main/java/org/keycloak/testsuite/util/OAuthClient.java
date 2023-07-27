@@ -1140,14 +1140,27 @@ public class OAuthClient {
     }
 
     public ParResponse doPushedAuthorizationRequest(String clientId, String clientSecret) throws IOException {
-        return doPushedAuthorizationRequest(clientId, clientSecret, (CloseableHttpResponse c)->{});
+        return doPushedAuthorizationRequest(clientId, clientSecret, (CloseableHttpResponse c)->{}, null);
+    }
+
+    public ParResponse doPushedAuthorizationRequest(String clientId, String clientSecret, String signedJwt) throws IOException {
+        return doPushedAuthorizationRequest(clientId, clientSecret, (CloseableHttpResponse c)->{}, signedJwt);
     }
 
     public ParResponse doPushedAuthorizationRequest(String clientId, String clientSecret, Consumer<CloseableHttpResponse> c) throws IOException {
-        try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
+        return doPushedAuthorizationRequest(clientId, clientSecret, c, null);
+    }
+
+    public ParResponse doPushedAuthorizationRequest(String clientId, String clientSecret, Consumer<CloseableHttpResponse> c, String signedJwt) throws IOException {
+        try (CloseableHttpClient client = httpClient.get()) {
             HttpPost post = new HttpPost(getParEndpointUrl());
 
             List<NameValuePair> parameters = new LinkedList<>();
+
+            if (signedJwt != null) {
+                parameters.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ASSERTION_TYPE, OAuth2Constants.CLIENT_ASSERTION_TYPE_JWT));
+                parameters.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ASSERTION, signedJwt));
+            }
 
             if (origin != null) {
                 post.addHeader("Origin", origin);
@@ -1161,6 +1174,8 @@ public class OAuthClient {
             if (clientId != null && clientSecret != null) {
                 String authorization = BasicAuthHelper.createHeader(clientId, clientSecret);
                 post.setHeader("Authorization", authorization);
+            }
+            if (clientId != null) {
                 parameters.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ID, clientId));
             }
             if (redirectUri != null) {
