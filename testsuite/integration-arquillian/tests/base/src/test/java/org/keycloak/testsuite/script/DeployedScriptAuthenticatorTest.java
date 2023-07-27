@@ -24,15 +24,12 @@ import java.io.IOException;
 
 import jakarta.ws.rs.core.Response;
 
-import org.jboss.arquillian.container.test.api.Deployer;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.container.test.api.TargetsContainer;
 import org.jboss.arquillian.graphene.page.Page;
-import org.jboss.arquillian.test.api.ArquillianResource;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.asset.StringAsset;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
-import org.junit.After;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Rule;
@@ -69,7 +66,8 @@ public class DeployedScriptAuthenticatorTest extends AbstractFlowTest {
     public static final String EXECUTION_ID = "scriptAuth";
     private static final String SCRIPT_DEPLOYMENT_NAME = "scripts.jar";
 
-    @Deployment(name = SCRIPT_DEPLOYMENT_NAME, managed = false, testable = false)
+    // Managed to make sure that archive is deployed once in @BeforeClass stage and undeployed once in @AfterClass stage
+    @Deployment(name = SCRIPT_DEPLOYMENT_NAME, managed = true, testable = false)
     @TargetsContainer(AUTH_SERVER_CURRENT)
     public static JavaArchive deploy() throws IOException {
         ScriptProviderDescriptor representation = new ScriptProviderDescriptor();
@@ -92,9 +90,6 @@ public class DeployedScriptAuthenticatorTest extends AbstractFlowTest {
 
     @Page
     protected LoginPage loginPage;
-
-    @ArquillianResource
-    private Deployer deployer;
 
     private AuthenticationFlowRepresentation flow;
 
@@ -122,8 +117,6 @@ public class DeployedScriptAuthenticatorTest extends AbstractFlowTest {
     }
 
     public void configureFlows() throws Exception {
-        deployer.deploy(SCRIPT_DEPLOYMENT_NAME);
-        reconnectAdminClient();
         if (testContext.isInitialized()) {
             return;
         }
@@ -171,12 +164,6 @@ public class DeployedScriptAuthenticatorTest extends AbstractFlowTest {
         addExecutionResponse.close();
 
         testContext.setInitialized(true);
-    }
-
-    @After
-    public void onAfter() throws Exception {
-        deployer.undeploy(SCRIPT_DEPLOYMENT_NAME);
-        reconnectAdminClient();
     }
 
     /**
