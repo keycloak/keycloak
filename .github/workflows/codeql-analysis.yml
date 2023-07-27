@@ -11,7 +11,7 @@ on:
 
 concurrency:
   # Only cancel jobs for PR updates
-  group: codeql-analysis-${{ github.head_ref || github.run_id }}
+  group: codeql-analysis-${{ github.ref }}
   cancel-in-progress: true
 
 defaults:

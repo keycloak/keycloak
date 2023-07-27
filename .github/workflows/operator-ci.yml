@@ -18,7 +18,7 @@ defaults:
 
 concurrency:
   # Only cancel jobs for PR updates
-  group: operator-ci-${{ github.head_ref || github.run_id }}
+  group: operator-ci-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
