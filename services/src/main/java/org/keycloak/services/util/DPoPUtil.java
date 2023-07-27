@@ -69,7 +69,7 @@ public class DPoPUtil {
         DISABLED
     }
 
-    private static final String DPOP_HTTP_HEADER = "DPoP";
+    public static final String DPOP_HTTP_HEADER = "DPoP";
     private static final String DPOP_JWT_HEADER_TYPE = "dpop+jwt";
     private static final String DPOP_ATH_ALG = "RS256";
 
