@@ -33,11 +33,13 @@ import org.keycloak.authentication.FormAction;
 import org.keycloak.authentication.FormAuthenticator;
 import org.keycloak.authentication.RequiredActionFactory;
 import org.keycloak.authentication.RequiredActionProvider;
+import org.keycloak.deployment.DeployedConfigurationsManager;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.AuthenticatorConfigModel;
+import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredActionProviderModel;
@@ -205,7 +207,7 @@ public class AuthenticationManagementResource {
 
         return realm.getAuthenticationFlowsStream()
                 .filter(flow -> flow.isTopLevel() && !Objects.equals(flow.getAlias(), DefaultAuthenticationFlows.SAML_ECP_FLOW))
-                .map(flow -> ModelToRepresentation.toRepresentation(realm, flow));
+                .map(flow -> ModelToRepresentation.toRepresentation(session, realm, flow));
     }
 
     /**
@@ -264,7 +266,7 @@ public class AuthenticationManagementResource {
         if (flow == null) {
             throw new NotFoundException("Could not find flow with id");
         }
-        return ModelToRepresentation.toRepresentation(realm, flow);
+        return ModelToRepresentation.toRepresentation(session, realm, flow);
     }
 
     /**
@@ -375,7 +377,7 @@ public class AuthenticationManagementResource {
             logger.debug("flow not found: " + flowAlias);
             return Response.status(NOT_FOUND).build();
         }
-        AuthenticationFlowModel copy = copyFlow(realm, flow, newName);
+        AuthenticationFlowModel copy = copyFlow(session, realm, flow, newName);
 
         data.put("id", copy.getId());
         adminEvent.operation(OperationType.CREATE).resourcePath(session.getContext().getUri()).representation(data).success();
@@ -384,7 +386,7 @@ public class AuthenticationManagementResource {
 
     }
 
-    public static AuthenticationFlowModel copyFlow(RealmModel realm, AuthenticationFlowModel flow, String newName) {
+    public static AuthenticationFlowModel copyFlow(KeycloakSession session, RealmModel realm, AuthenticationFlowModel flow, String newName) {
         AuthenticationFlowModel copy = new AuthenticationFlowModel();
         copy.setAlias(newName);
         copy.setDescription(flow.getDescription());
@@ -392,11 +394,11 @@ public class AuthenticationManagementResource {
         copy.setBuiltIn(false);
         copy.setTopLevel(flow.isTopLevel());
         copy = realm.addAuthenticationFlow(copy);
-        copy(realm, newName, flow, copy);
+        copy(session, realm, newName, flow, copy);
         return copy;
     }
 
-    public static void copy(RealmModel realm, String newName, AuthenticationFlowModel from, AuthenticationFlowModel to) {
+    public static void copy(KeycloakSession session, RealmModel realm, String newName, AuthenticationFlowModel from, AuthenticationFlowModel to) {
         realm.getAuthenticationExecutionsStream(from.getId()).forEachOrdered(execution -> {
             if (execution.isAuthenticatorFlow()) {
                 AuthenticationFlowModel subFlow = realm.getAuthenticationFlowById(execution.getFlowId());
@@ -408,26 +410,32 @@ public class AuthenticationManagementResource {
                 copy.setTopLevel(false);
                 copy = realm.addAuthenticationFlow(copy);
                 execution.setFlowId(copy.getId());
-                copy(realm, newName, subFlow, copy);
+                copy(session, realm, newName, subFlow, copy);
             }
 
             if (execution.getAuthenticatorConfig() != null) {
-                AuthenticatorConfigModel config = realm.getAuthenticatorConfigById(execution.getAuthenticatorConfig());
+                DeployedConfigurationsManager configManager = new DeployedConfigurationsManager(session);
+                AuthenticatorConfigModel config = configManager.getAuthenticatorConfig(realm, execution.getAuthenticatorConfig());
 
                 if (config == null) {
                     logger.debugf("Authentication execution with id [%s] not found", config.getId());
                     throw new IllegalStateException("Authentication execution configuration not found");
                 }
 
-                config.setId(null);
+                if (configManager.getDeployedAuthenticatorConfig(execution.getAuthenticatorConfig()) != null) {
+                    // Shared configuration of deployed provider
+                    execution.setAuthenticatorConfig(config.getId());
+                } else {
+                    config.setId(null);
 
-                if (config.getAlias() != null) {
-                    config.setAlias(newName + " " + config.getAlias());
+                    if (config.getAlias() != null) {
+                        config.setAlias(newName + " " + config.getAlias());
+                    }
+
+                    AuthenticatorConfigModel newConfig = realm.addAuthenticatorConfig(config);
+
+                    execution.setAuthenticatorConfig(newConfig.getId());
                 }
-
-                AuthenticatorConfigModel newConfig = realm.addAuthenticatorConfig(config);
-
-                execution.setAuthenticatorConfig(newConfig.getId());
             }
 
             execution.setId(null);
@@ -524,17 +532,7 @@ public class AuthenticationManagementResource {
         String provider = data.get("provider");
 
         // make sure provider is one of the registered providers
-        ProviderFactory f;
-        if (parentFlow.getProviderId().equals(AuthenticationFlow.CLIENT_FLOW)) {
-            f = session.getKeycloakSessionFactory().getProviderFactory(ClientAuthenticator.class, provider);
-        } else if (parentFlow.getProviderId().equals(AuthenticationFlow.FORM_FLOW)) {
-            f = session.getKeycloakSessionFactory().getProviderFactory(FormAction.class, provider);
-        } else {
-            f = session.getKeycloakSessionFactory().getProviderFactory(Authenticator.class, provider);
-        }
-        if (f == null) {
-            throw new BadRequestException("No authentication provider found for id: " + provider);
-        }
+        ProviderFactory f = getProviderFactory( parentFlow, provider);
 
         AuthenticationExecutionModel execution = new AuthenticationExecutionModel();
         execution.setParentFlow(parentFlow.getId());
@@ -551,24 +549,45 @@ public class AuthenticationManagementResource {
 
         execution = realm.addAuthenticatorExecution(execution);
 
-        if (f instanceof ConfiguredProvider) {
-            ConfiguredProvider internalProviderFactory = (ConfiguredProvider) f;
-            AuthenticatorConfigModel config = internalProviderFactory.getConfig();
-
-            if (config != null) {
-                // creates a default configuration if the factory defines one
-                // useful for internal providers that already provide a built-in configuration
-                AuthenticatorConfigRepresentation configRepresentation = ModelToRepresentation.toRepresentation(
-                        config);
-                newExecutionConfig(execution.getId(), configRepresentation).close();
-            }
-        }
+        checkConfigForDeployedProvider(f, execution);
 
         data.put("id", execution.getId());
         adminEvent.operation(OperationType.CREATE).resource(ResourceType.AUTH_EXECUTION).resourcePath(session.getContext().getUri()).representation(data).success();
 
         String addExecutionPathSegment = UriBuilder.fromMethod(AuthenticationManagementResource.class, "addExecutionToFlow").build(parentFlow.getAlias()).getPath();
         return Response.created(session.getContext().getUri().getBaseUriBuilder().path(session.getContext().getUri().getPath().replace(addExecutionPathSegment, "")).path("executions").path(execution.getId()).build()).build();
+    }
+
+    private ProviderFactory getProviderFactory(AuthenticationFlowModel parentFlow, String provider) {
+        ProviderFactory f = null;
+        if (parentFlow.getProviderId().equals(AuthenticationFlow.CLIENT_FLOW)) {
+            f = session.getKeycloakSessionFactory().getProviderFactory(ClientAuthenticator.class, provider);
+        } else if (parentFlow.getProviderId().equals(AuthenticationFlow.FORM_FLOW)) {
+            f = session.getKeycloakSessionFactory().getProviderFactory(FormAction.class, provider);
+        } else {
+            f = session.getKeycloakSessionFactory().getProviderFactory(Authenticator.class, provider);
+        }
+        if (f == null) {
+            throw new BadRequestException("No authentication provider found for id: " + provider);
+        }
+        return f;
+    }
+
+
+    private void checkConfigForDeployedProvider(ProviderFactory f, AuthenticationExecutionModel execution) {
+        if (f instanceof ConfiguredProvider) {
+            ConfiguredProvider internalProviderFactory = (ConfiguredProvider) f;
+            AuthenticatorConfigModel config = internalProviderFactory.getConfig();
+
+            if (config != null) {
+                // use a default configuration if the factory defines one
+                // Assumption is that this is registered in DeployedConfigurationsProvider
+                // useful for internal providers that already provide a built-in configuration
+                logger.tracef("Updating execution of provider '%s' with shared configuration.", execution.getAuthenticator());
+                execution.setAuthenticatorConfig(config.getId());
+                realm.updateAuthenticatorExecution(execution);
+            }
+        }
     }
 
     /**
@@ -649,7 +668,7 @@ public class AuthenticationManagementResource {
                 if (factory.isConfigurable()) {
                     String authenticatorConfigId = execution.getAuthenticatorConfig();
                     if(authenticatorConfigId != null) {
-                        AuthenticatorConfigModel authenticatorConfig = realm.getAuthenticatorConfigById(authenticatorConfigId);
+                        AuthenticatorConfigModel authenticatorConfig = new DeployedConfigurationsManager(session).getAuthenticatorConfig(realm, authenticatorConfigId);
 
                         if (authenticatorConfig != null) {
                             rep.setAlias(authenticatorConfig.getAlias());
@@ -779,13 +798,18 @@ public class AuthenticationManagementResource {
     public Response addExecution(@Parameter(description = "JSON model describing authentication execution") AuthenticationExecutionRepresentation execution) {
         auth.realm().requireManageRealm();
 
-        AuthenticationExecutionModel model = RepresentationToModel.toModel(realm, execution);
+        AuthenticationExecutionModel model = RepresentationToModel.toModel(session, realm, execution);
         AuthenticationFlowModel parentFlow = getParentFlow(model);
         if (parentFlow.isBuiltIn()) {
             throw new BadRequestException("It is illegal to add execution to a built in flow");
         }
         model.setPriority(getNextPriority(parentFlow));
         model = realm.addAuthenticatorExecution(model);
+
+        if (!execution.isAuthenticatorFlow()) {
+            ProviderFactory f = getProviderFactory(parentFlow, execution.getAuthenticator());
+            checkConfigForDeployedProvider(f, model);
+        }
 
         adminEvent.operation(OperationType.CREATE).resource(ResourceType.AUTH_EXECUTION).resourcePath(session.getContext().getUri(), model.getId()).representation(execution).success();
         return Response.created(session.getContext().getUri().getAbsolutePathBuilder().path(model.getId()).build()).build();
@@ -976,7 +1000,7 @@ public class AuthenticationManagementResource {
     public AuthenticatorConfigRepresentation getAuthenticatorConfig(@Parameter(description = "Execution id") @PathParam("executionId") String execution, @Parameter(description = "Configuration id") @PathParam("id") String id) {
         auth.realm().requireViewRealm();
 
-        AuthenticatorConfigModel config = realm.getAuthenticatorConfigById(id);
+        AuthenticatorConfigModel config = new DeployedConfigurationsManager(session).getAuthenticatorConfig(realm, id);
         if (config == null) {
             throw new NotFoundException("Could not find authenticator config");
 
@@ -1317,7 +1341,7 @@ public class AuthenticationManagementResource {
     public AuthenticatorConfigRepresentation getAuthenticatorConfig(@Parameter(description = "Configuration id") @PathParam("id") String id) {
         auth.realm().requireViewRealm();
 
-        AuthenticatorConfigModel config = realm.getAuthenticatorConfigById(id);
+        AuthenticatorConfigModel config = new DeployedConfigurationsManager(session).getAuthenticatorConfig(realm, id);
         if (config == null) {
             throw new NotFoundException("Could not find authenticator config");
 
@@ -1369,6 +1393,10 @@ public class AuthenticationManagementResource {
         auth.realm().requireManageRealm();
 
         ReservedCharValidator.validate(rep.getAlias());
+        if (new DeployedConfigurationsManager(session).getDeployedAuthenticatorConfig(id) != null) {
+            throw new BadRequestException("Authenticator config is read-only");
+        }
+
         AuthenticatorConfigModel exists = realm.getAuthenticatorConfigById(id);
         if (exists == null) {
             throw new NotFoundException("Could not find authenticator config");
