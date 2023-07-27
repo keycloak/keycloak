@@ -16,6 +16,7 @@
  */
 import base64 from 'base64-js';
 import sha256 from 'js-sha256';
+import jwtDecode from 'jwt-decode';
 
 if (typeof Promise === 'undefined') {
     throw Error('Keycloak requires an environment that supports Promises. Make sure that you include the appropriate polyfill.');
@@ -969,7 +970,7 @@ function Keycloak (config) {
 
         if (refreshToken) {
             kc.refreshToken = refreshToken;
-            kc.refreshTokenParsed = decodeToken(refreshToken);
+            kc.refreshTokenParsed = jwtDecode(refreshToken);
         } else {
             delete kc.refreshToken;
             delete kc.refreshTokenParsed;
@@ -977,7 +978,7 @@ function Keycloak (config) {
 
         if (idToken) {
             kc.idToken = idToken;
-            kc.idTokenParsed = decodeToken(idToken);
+            kc.idTokenParsed = jwtDecode(idToken);
         } else {
             delete kc.idToken;
             delete kc.idTokenParsed;
@@ -985,7 +986,7 @@ function Keycloak (config) {
 
         if (token) {
             kc.token = token;
-            kc.tokenParsed = decodeToken(token);
+            kc.tokenParsed = jwtDecode(token);
             kc.sessionId = kc.tokenParsed.session_state;
             kc.authenticated = true;
             kc.subject = kc.tokenParsed.sub;
@@ -1018,30 +1019,6 @@ function Keycloak (config) {
 
             kc.authenticated = false;
         }
-    }
-
-    function decodeToken(str) {
-        str = str.split('.')[1];
-
-        str = str.replace(/-/g, '+');
-        str = str.replace(/_/g, '/');
-        switch (str.length % 4) {
-            case 0:
-                break;
-            case 2:
-                str += '==';
-                break;
-            case 3:
-                str += '=';
-                break;
-            default:
-                throw 'Invalid token';
-        }
-
-        str = decodeURIComponent(escape(atob(str)));
-
-        str = JSON.parse(str);
-        return str;
     }
 
     function createUUID() {
