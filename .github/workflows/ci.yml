@@ -476,7 +476,9 @@ jobs:
     timeout-minutes: 45
     strategy:
       matrix:
-        browser: [chrome, firefox]
+        browser:
+          - chrome
+          # - firefox  disabled until https://github.com/keycloak/keycloak/issues/20777 is resolved
       fail-fast: false
     steps:
       - uses: actions/checkout@v3
