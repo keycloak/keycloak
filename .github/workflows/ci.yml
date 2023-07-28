@@ -9,7 +9,9 @@ on:
   workflow_dispatch:
 
 env:
+  MAVEN_ARGS: "-B -nsu -Dhttp.keepAlive=false -Dmaven.wagon.http.pool=false -Dmaven.wagon.http.retryHandler.class=standard -Dmaven.wagon.http.retryHandler.count=3 -Dmaven.wagon.httpconnectionManager.ttlSeconds=120"
   SUREFIRE_RERUN_FAILING_COUNT: 2
+  SUREFIRE_RETRY: "-Dsurefire.rerunFailingTestsCount=2"
 
 concurrency:
   # Only cancel jobs for PR updates
@@ -68,7 +70,7 @@ jobs:
             SEP=","
           done
 
-          ./mvnw test -nsu -B -pl "$PROJECTS" -am
+          ./mvnw test -pl "$PROJECTS" -am
 
       - name: Upload JVM Heapdumps
         if: always()
@@ -94,7 +96,7 @@ jobs:
         run: |
           TESTS=`testsuite/integration-arquillian/tests/base/testsuites/base-suite.sh ${{ matrix.group }}`
           echo "Tests: $TESTS"
-          ./mvnw test -Dsurefire.rerunFailingTestsCount=${{ env.SUREFIRE_RERUN_FAILING_COUNT }} -nsu -B -Pauth-server-quarkus "-Dwebdriver.chrome.driver=$CHROMEWEBDRIVER/chromedriver" -Dtest=$TESTS -pl testsuite/integration-arquillian/tests/base | misc/log/trimmer.sh
+          ./mvnw test ${{ env.SUREFIRE_RETRY }} -Pauth-server-quarkus "-Dwebdriver.chrome.driver=$CHROMEWEBDRIVER/chromedriver" -Dtest=$TESTS -pl testsuite/integration-arquillian/tests/base | misc/log/trimmer.sh
 
       - name: Upload JVM Heapdumps
         if: always()
@@ -142,8 +144,8 @@ jobs:
           PARAMS["container"]="-Dkc.quarkus.tests.dist=docker"
           PARAMS["storage"]="-Ptest-database -Dtest=PostgreSQLDistTest,MariaDBDistTest#testSuccessful,MySQLDistTest#testSuccessful,DatabaseOptionsDistTest,JPAStoreDistTest,HotRodStoreDistTest,MixedStoreDistTest,TransactionConfigurationDistTest"
 
-          ./mvnw install -nsu -B -pl quarkus/tests/integration -am -DskipTests
-          ./mvnw test -nsu -B -pl quarkus/tests/integration ${PARAMS["${{ matrix.server }}"]} | misc/log/trimmer.sh
+          ./mvnw install -pl quarkus/tests/integration -am -DskipTests
+          ./mvnw test -pl quarkus/tests/integration ${PARAMS["${{ matrix.server }}"]} | misc/log/trimmer.sh
 
       - name: Upload JVM Heapdumps
         if: always()
@@ -171,17 +173,17 @@ jobs:
           jdk-version: ${{ matrix.version }}
 
       - name: Prepare Quarkus distribution with current JDK
-        run: ./mvnw install -nsu -B -e -pl testsuite/integration-arquillian/servers/auth-server/quarkus
+        run: ./mvnw install -e -pl testsuite/integration-arquillian/servers/auth-server/quarkus
 
       - name: Run base tests
         run: |
           TESTS=`testsuite/integration-arquillian/tests/base/testsuites/suite.sh jdk`
           echo "Tests: $TESTS"
-          ./mvnw test -Dsurefire.rerunFailingTestsCount=${{ env.SUREFIRE_RERUN_FAILING_COUNT }} -nsu -B -Pauth-server-quarkus -Dtest=$TESTS -pl testsuite/integration-arquillian/tests/base | misc/log/trimmer.sh
+          ./mvnw test ${{ env.SUREFIRE_RETRY }} -Pauth-server-quarkus -Dtest=$TESTS -pl testsuite/integration-arquillian/tests/base | misc/log/trimmer.sh
 
       - name: Build with JDK
         run:
-          ./mvnw install -nsu -B -e -DskipTests -DskipExamples
+          ./mvnw install -e -DskipTests -DskipExamples
 
       - name: Upload JVM Heapdumps
         if: always()
@@ -237,7 +239,7 @@ jobs:
 
           TESTS=`testsuite/integration-arquillian/tests/base/testsuites/suite.sh database`
           echo "Tests: $TESTS"
-          ./mvnw test -Dsurefire.rerunFailingTestsCount=${{ env.SUREFIRE_RERUN_FAILING_COUNT }} -nsu -B -Pauth-server-quarkus ${PARAMS["${{ matrix.db }}"]} -Dtest=$TESTS -pl testsuite/integration-arquillian/tests/base | misc/log/trimmer.sh
+          ./mvnw test ${{ env.SUREFIRE_RETRY }} -Pauth-server-quarkus ${PARAMS["${{ matrix.db }}"]} -Dtest=$TESTS -pl testsuite/integration-arquillian/tests/base | misc/log/trimmer.sh
 
       - name: Upload JVM Heapdumps
         if: always()
@@ -270,7 +272,7 @@ jobs:
         run: |
           TESTS=`testsuite/integration-arquillian/tests/base/testsuites/suite.sh database`
           echo "Tests: $TESTS"
-          ./mvnw test -Dsurefire.rerunFailingTestsCount=${{ env.SUREFIRE_RERUN_FAILING_COUNT }} -nsu -B -Pauth-server-quarkus -Pdb-${{ matrix.db }} -Dtest=$TESTS -pl testsuite/integration-arquillian/tests/base | misc/log/trimmer.sh
+          ./mvnw test ${{ env.SUREFIRE_RETRY }} -Pauth-server-quarkus -Pdb-${{ matrix.db }} -Dtest=$TESTS -pl testsuite/integration-arquillian/tests/base | misc/log/trimmer.sh
 
       - name: Upload JVM Heapdumps
         if: always()
@@ -296,7 +298,7 @@ jobs:
         uses: ./.github/actions/integration-test-setup
 
       - name: Run model tests
-        run: testsuite/model/test-all-profiles.sh -Dsurefire.rerunFailingTestsCount=${{ env.SUREFIRE_RERUN_FAILING_COUNT }}
+        run: testsuite/model/test-all-profiles.sh ${{ env.SUREFIRE_RETRY }}
 
       - name: Upload JVM Heapdumps
         if: always()
@@ -325,7 +327,7 @@ jobs:
 
       - name: Run cluster tests
         run: |
-          ./mvnw test -Dsurefire.rerunFailingTestsCount=${{ env.SUREFIRE_RERUN_FAILING_COUNT }} -nsu -B -Pauth-server-cluster-quarkus -Dsession.cache.owners=2 -Dtest=**.cluster.** -pl testsuite/integration-arquillian/tests/base  | misc/log/trimmer.sh
+          ./mvnw test ${{ env.SUREFIRE_RETRY }} -Pauth-server-cluster-quarkus -Dsession.cache.owners=2 -Dtest=**.cluster.** -pl testsuite/integration-arquillian/tests/base  | misc/log/trimmer.sh
 
       - name: Upload JVM Heapdumps
         if: always()
@@ -388,7 +390,7 @@ jobs:
           jdk-version: 17
 
       - name: Prepare Quarkus distribution with BCFIPS
-        run: ./mvnw install -nsu -B -e -pl testsuite/integration-arquillian/servers/auth-server/quarkus -Pauth-server-quarkus,auth-server-fips140-2
+        run: ./mvnw install -e -pl testsuite/integration-arquillian/servers/auth-server/quarkus -Pauth-server-quarkus,auth-server-fips140-2
 
       - name: Run base tests
         run: docker run --rm --workdir /github/workspace -e "SUREFIRE_RERUN_FAILING_COUNT" -v "${{ github.workspace }}":"/github/workspace" -v "$HOME/.m2":"/root/.m2" registry.access.redhat.com/ubi8/ubi:latest .github/scripts/run-fips-it.sh ${{ matrix.mode }}
@@ -421,7 +423,7 @@ jobs:
         uses: ./.github/actions/integration-test-setup
 
       - name: Run Account Console IT
-        run: ./mvnw test -Dsurefire.rerunFailingTestsCount=${{ env.SUREFIRE_RERUN_FAILING_COUNT }} -nsu -B -Pauth-server-quarkus -Dtest=**.account2.**,!SigningInTest#passwordlessWebAuthnTest,!SigningInTest#twoFactorWebAuthnTest -Dbrowser=${{ matrix.browser }} "-Dwebdriver.chrome.driver=$CHROMEWEBDRIVER/chromedriver" "-Dwebdriver.gecko.driver=$GECKOWEBDRIVER/geckodriver" -f testsuite/integration-arquillian/tests/other/base-ui/pom.xml | misc/log/trimmer.sh
+        run: ./mvnw test ${{ env.SUREFIRE_RETRY }} -Pauth-server-quarkus -Dtest=**.account2.**,!SigningInTest#passwordlessWebAuthnTest,!SigningInTest#twoFactorWebAuthnTest -Dbrowser=${{ matrix.browser }} "-Dwebdriver.chrome.driver=$CHROMEWEBDRIVER/chromedriver" "-Dwebdriver.gecko.driver=$GECKOWEBDRIVER/geckodriver" -f testsuite/integration-arquillian/tests/other/base-ui/pom.xml | misc/log/trimmer.sh
 
       - name: Upload JVM Heapdumps
         if: always()
@@ -454,7 +456,7 @@ jobs:
         run: |
           TESTS=`testsuite/integration-arquillian/tests/base/testsuites/suite.sh forms`
           echo "Tests: $TESTS"
-          ./mvnw test -Dsurefire.rerunFailingTestsCount=${{ env.SUREFIRE_RERUN_FAILING_COUNT }} -nsu -B -Pauth-server-quarkus -Dtest=$TESTS -Dbrowser=${{ matrix.browser }} "-Dwebdriver.chrome.driver=$CHROMEWEBDRIVER/chromedriver" "-Dwebdriver.gecko.driver=$GECKOWEBDRIVER/geckodriver" -f testsuite/integration-arquillian/tests/base/pom.xml | misc/log/trimmer.sh
+          ./mvnw test ${{ env.SUREFIRE_RETRY }} -Pauth-server-quarkus -Dtest=$TESTS -Dbrowser=${{ matrix.browser }} "-Dwebdriver.chrome.driver=$CHROMEWEBDRIVER/chromedriver" "-Dwebdriver.gecko.driver=$GECKOWEBDRIVER/geckodriver" -f testsuite/integration-arquillian/tests/base/pom.xml | misc/log/trimmer.sh
 
       - name: Upload JVM Heapdumps
         if: always()
@@ -484,7 +486,7 @@ jobs:
         uses: ./.github/actions/integration-test-setup
 
       - name: Run WebAuthn IT
-        run: ./mvnw test -Dsurefire.rerunFailingTestsCount=${{ env.SUREFIRE_RERUN_FAILING_COUNT }} -nsu -B -Pauth-server-quarkus -Dtest=org.keycloak.testsuite.webauthn.**.*Test -Dbrowser=${{ matrix.browser }} "-Dwebdriver.chrome.driver=$CHROMEWEBDRIVER/chromedriver" "-Dwebdriver.gecko.driver=$GECKOWEBDRIVER/geckodriver" -Pwebauthn -f testsuite/integration-arquillian/tests/other/pom.xml | misc/log/trimmer.sh
+        run: ./mvnw test ${{ env.SUREFIRE_RETRY }} -Pauth-server-quarkus -Dtest=org.keycloak.testsuite.webauthn.**.*Test -Dbrowser=${{ matrix.browser }} "-Dwebdriver.chrome.driver=$CHROMEWEBDRIVER/chromedriver" "-Dwebdriver.gecko.driver=$GECKOWEBDRIVER/geckodriver" -Pwebauthn -f testsuite/integration-arquillian/tests/other/pom.xml | misc/log/trimmer.sh
 
       - name: Upload JVM Heapdumps
         if: always()
@@ -551,7 +553,7 @@ jobs:
 
       - name: Run Migration Tests
         run: |
-          ./mvnw clean install -Dsurefire.rerunFailingTestsCount=${{ env.SUREFIRE_RERUN_FAILING_COUNT }} -B \
+          ./mvnw clean install ${{ env.SUREFIRE_RETRY }} \
           -Pauth-server-quarkus -Pdb-${{ matrix.database }} -Pauth-server-migration \
           -Dtest=MigrationTest \
           -Dmigration.mode=auto \
