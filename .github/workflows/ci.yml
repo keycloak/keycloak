@@ -500,28 +500,25 @@ jobs:
   sssd-unit-tests:
     name: SSSD
     runs-on: ubuntu-latest
+    if: needs.conditional.outputs.sssd == 'true'
     needs:
       - conditional
       - build
     timeout-minutes: 30
     steps:
       - name: checkout
-        if: ${{ needs.conditional.outputs.sssd == 'true' }}
         uses: actions/checkout@v3
 
       - id: integration-test-setup
-        if: ${{ needs.conditional.outputs.sssd == 'true' }}
         name: Integration test setup
         uses: ./.github/actions/integration-test-setup
 
       - id: weekly-cache-key
-        if: ${{ needs.conditional.outputs.sssd == 'true' }}
         name: Key for weekly rotation of cache
         shell: bash
         run: echo "key=ipa-data-`date -u "+%Y-%U"`" >> $GITHUB_OUTPUT
 
       - id: cache-maven-repository
-        if: ${{ needs.conditional.outputs.sssd == 'true' }}
         name: ipa-data cache
         uses: actions/cache@v3
         with:
@@ -529,7 +526,6 @@ jobs:
           key: ${{ steps.weekly-cache-key.outputs.key }}
 
       - name: Run tests
-        if: ${{ needs.conditional.outputs.sssd == 'true' }}
         run: .github/scripts/run-ipa.sh "${{ github.workspace }}"
 
   migration-tests:
