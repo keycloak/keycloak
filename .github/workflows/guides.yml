@@ -45,33 +45,14 @@ jobs:
       - name: Build Keycloak
         uses: ./.github/actions/build-keycloak
 
-  check-set-status:
-    name: Set check conclusion
-    needs:
-      - build
-    runs-on: ubuntu-latest
-    outputs:
-      conclusion: ${{ steps.check.outputs.conclusion }}
-
-    steps:
-      - uses: actions/checkout@v3
-
-      - id: check
-        uses: ./.github/actions/checks-success
-
   check:
     name: Status Check - Keycloak Guides
     if: always()
     needs:
-      - conditional
-      - check-set-status
+      - build
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v3
-
-      - name: Check status
-        uses: ./.github/actions/checks-job-pass
+      - uses: ./.github/actions/status-check
         with:
-          required: ${{ needs.conditional.outputs.guides == 'true' && needs.conditional.outputs.ci != 'true' }}
-          conclusion: ${{ needs.check-set-status.outputs.conclusion }}
+          jobs: ${{ toJSON(needs) }}
