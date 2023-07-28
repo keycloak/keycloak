@@ -3,6 +3,7 @@
 # To test a pattern run '.github/actions/conditional/conditional.sh <remote name> <branch>'
 
 .github/actions/                            ci ci-store ci-sssd operator js codeql-java codeql-themes guides documentation
+.github/scripts/                            ci ci-sssd
 
 .github/workflows/ci.yml                    ci ci-store ci-sssd
 .github/workflows/operator-ci.yml           operator
