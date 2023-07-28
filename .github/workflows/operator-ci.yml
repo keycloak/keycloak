@@ -199,35 +199,16 @@ jobs:
           # Wait for the CRs to be ready
           ./scripts/check-examples-installed.sh
 
-  check-set-status:
-    name: Set check conclusion
+  check:
+    name: Status Check - Keycloak Operator CI
+    if: always()
     needs:
       - test-local
       - test-remote
       - test-olm
     runs-on: ubuntu-latest
-    outputs:
-      conclusion: ${{ steps.check.outputs.conclusion }}
-
     steps:
       - uses: actions/checkout@v3
-
-      - id: check
-        uses: ./.github/actions/checks-success
-
-  check:
-    name: Status Check - Keycloak Operator CI
-    if: always()
-    needs:
-      - conditional
-      - check-set-status
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v3
-
-      - name: Check status
-        uses: ./.github/actions/checks-job-pass
+      - uses: ./.github/actions/status-check
         with:
-          required: ${{ needs.conditional.outputs.operator }}
-          conclusion: ${{ needs.check-set-status.outputs.conclusion }}
+          jobs: ${{ toJSON(needs) }}

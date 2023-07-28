@@ -60,9 +60,6 @@ jobs:
         env:
           CODEQL_ACTION_EXTRA_OPTIONS: '{"database":{"interpret-results":["--max-paths",0]}}'
 
-      - id: check
-        uses: ./.github/actions/checks-success
-
   themes:
     name: CodeQL Themes
     needs: conditional
@@ -89,26 +86,15 @@ jobs:
         env:
           CODEQL_ACTION_EXTRA_OPTIONS: '{"database":{"interpret-results":["--max-paths",0]}}'
 
-      - id: check
-        uses: ./.github/actions/checks-success
-
   check:
     name: Status Check - CodeQL
     if: always()
-    needs: [conditional, java, themes]
+    needs:
+      - java
+      - themes
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v3
-
-      - name: CodeQL Java
-        uses: ./.github/actions/checks-job-pass
+      - uses: ./.github/actions/status-check
         with:
-          required: ${{ needs.conditional.outputs.java }}
-          conclusion: ${{ needs.java.outputs.conclusion }}
-
-      - name: CodeQL Themes
-        uses: ./.github/actions/checks-job-pass
-        with:
-          required: ${{ needs.conditional.outputs.themes }}
-          conclusion: ${{ needs.themes.outputs.conclusion }}
+          jobs: ${{ toJSON(needs) }}
