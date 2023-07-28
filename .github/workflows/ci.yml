@@ -27,6 +27,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       ci: ${{ steps.conditional.outputs.ci }}
+      ci-store: ${{ steps.conditional.outputs.ci-store }}
       ci-sssd: ${{ steps.conditional.outputs.ci-sssd }}
     steps:
       - uses: actions/checkout@v3
@@ -197,6 +198,8 @@ jobs:
   databases-new-store:
     name: Databases New Store
     runs-on: ubuntu-latest
+    needs: [conditional]
+    if: needs.conditional.outputs.ci-store == 'true'
     steps:
       - id: matrix-db
         # language=bash
@@ -212,7 +215,8 @@ jobs:
 
   new-store-integration-tests:
     name: New Store IT
-    needs: [build, databases-new-store]
+    needs: [conditional, build, databases-new-store]
+    if: needs.conditional.outputs.ci-store == 'true'
     runs-on: ubuntu-latest
     # Currently, the run of CockroachDB (only branches and nightly runs) is the longest with 50-60 minutes
     timeout-minutes: 90
@@ -252,7 +256,8 @@ jobs:
 
   legacy-store-integration-tests:
     name: Legacy Store IT
-    needs: build
+    needs: [build, conditional]
+    if: needs.conditional.outputs.ci-store == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 75
     strategy:
@@ -286,7 +291,8 @@ jobs:
   store-model-tests:
     name: Store Model Tests
     runs-on: ubuntu-latest
-    needs: build
+    needs: [build, conditional]
+    if: needs.conditional.outputs.ci-store == 'true'
     timeout-minutes: 75
     steps:
       - uses: actions/checkout@v3
