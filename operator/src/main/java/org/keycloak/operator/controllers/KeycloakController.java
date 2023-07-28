@@ -38,7 +38,6 @@ import org.keycloak.operator.Constants;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatus;
 import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusAggregator;
-import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusCondition;
 
 import jakarta.inject.Inject;
 import java.util.Map;
@@ -113,14 +112,11 @@ public class KeycloakController implements Reconciler<Keycloak>, EventSourceInit
         kcDeployment.updateStatus(statusAggregator);
 
         var kcService = new KeycloakService(client, kc);
-        kcService.updateStatus(statusAggregator);
         kcService.createOrUpdateReconciled();
         var kcDiscoveryService = new KeycloakDiscoveryService(client, kc);
-        kcDiscoveryService.updateStatus(statusAggregator);
         kcDiscoveryService.createOrUpdateReconciled();
 
         var kcIngress = new KeycloakIngress(client, kc);
-        kcIngress.updateStatus(statusAggregator);
         kcIngress.createOrUpdateReconciled();
 
         var status = statusAggregator.build();
@@ -136,8 +132,7 @@ public class KeycloakController implements Reconciler<Keycloak>, EventSourceInit
             updateControl = UpdateControl.updateStatus(kc);
         }
 
-        if (status.findCondition(KeycloakStatusCondition.READY)
-                .filter(c -> !Boolean.TRUE.equals(c.getStatus())).isPresent()) {
+        if (!status.isReady()) {
             updateControl.rescheduleAfter(10, TimeUnit.SECONDS);
         }
 
