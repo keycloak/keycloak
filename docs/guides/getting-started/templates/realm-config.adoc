@@ -1,7 +1,7 @@
 == Log in to the Admin Console
 
 . Go to the {links-admin-console}.
-. Log in with the username and password you created earlier.
+. Log in with the admin user account.
 
 == Create a realm
 
