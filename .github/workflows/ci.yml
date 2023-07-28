@@ -27,7 +27,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       ci: ${{ steps.conditional.outputs.ci }}
-      sssd: ${{ steps.conditional.outputs.sssd }}
+      ci-sssd: ${{ steps.conditional.outputs.ci-sssd }}
     steps:
       - uses: actions/checkout@v3
 
@@ -500,7 +500,7 @@ jobs:
   sssd-unit-tests:
     name: SSSD
     runs-on: ubuntu-latest
-    if: needs.conditional.outputs.sssd == 'true'
+    if: needs.conditional.outputs.ci-sssd == 'true'
     needs:
       - conditional
       - build
