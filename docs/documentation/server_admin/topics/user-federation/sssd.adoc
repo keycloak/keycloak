@@ -18,7 +18,7 @@ image:images/keycloak-sssd-freeipa-integration-overview.png[]
 
 ==== FreeIPA/IdM server
 
-The https://quay.io/repository/freeipa/freeipa-server?tab=tags/[FreeIPA Container image] is available at https://quay.io/[Quay.io]. To set up the FreeIPA server, see the https://freeipa.org/page/Quick_Start_Guide[FreeIPA documentation].
+The https://quay.io/repository/freeipa/freeipa-server?tab=tags/[FreeIPA Container image] is available at https://quay.io/[Quay.io]. To set up the FreeIPA server, see the https://www.freeipa.org/page/Quick_Start_Guide[FreeIPA documentation].
 
 .Procedure
 . Run your FreeIPA server using this command:
