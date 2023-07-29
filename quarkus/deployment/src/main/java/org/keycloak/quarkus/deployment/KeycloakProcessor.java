@@ -75,7 +75,6 @@ import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.connections.jpa.JpaConnectionSpi;
 import org.keycloak.connections.jpa.updater.liquibase.LiquibaseJpaUpdaterProviderFactory;
 import org.keycloak.connections.jpa.updater.liquibase.conn.DefaultLiquibaseConnectionProvider;
-import org.keycloak.models.map.storage.jpa.EventListenerIntegrator;
 import org.keycloak.models.map.storage.jpa.JpaMapStorageProviderFactory;
 import org.keycloak.policy.BlacklistPasswordPolicyProviderFactory;
 import org.keycloak.protocol.ProtocolMapperSpi;
@@ -86,6 +85,7 @@ import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.provider.ProviderManager;
 import org.keycloak.provider.Spi;
+import org.keycloak.quarkus.runtime.integration.health.ReactiveLivenessHandler;
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.KeycloakRecorder;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
@@ -147,7 +147,6 @@ import static org.keycloak.quarkus.runtime.Environment.getProviderFiles;
 import static org.keycloak.quarkus.runtime.KeycloakRecorder.DEFAULT_HEALTH_ENDPOINT;
 import static org.keycloak.quarkus.runtime.KeycloakRecorder.DEFAULT_METRICS_ENDPOINT;
 import static org.keycloak.quarkus.runtime.Providers.getProviderManager;
-import static org.keycloak.quarkus.runtime.configuration.Configuration.getKcConfigValue;
 import static org.keycloak.quarkus.runtime.configuration.Configuration.getOptionalKcValue;
 import static org.keycloak.quarkus.runtime.configuration.Configuration.getOptionalValue;
 import static org.keycloak.quarkus.runtime.configuration.Configuration.getPropertyNames;
@@ -633,6 +632,11 @@ class KeycloakProcessor {
 
         if (healthDisabled) {
             routes.produce(RouteBuildItem.builder().route(DEFAULT_HEALTH_ENDPOINT.concat("/*")).handler(new NotFoundHandler()).build());
+        } else {
+            // local solution until https://github.com/quarkusio/quarkus/issues/35099 is available in Quarkus
+            if (!isHealthClassicProbesEnabled()) {
+                routes.produce(RouteBuildItem.builder().route(DEFAULT_HEALTH_ENDPOINT.concat("/live")).handler(new ReactiveLivenessHandler()).build());
+            }
         }
 
         boolean metricsDisabled = !isMetricsEnabled();
@@ -874,6 +878,10 @@ class KeycloakProcessor {
 
     private boolean isHealthEnabled() {
         return Configuration.getOptionalBooleanValue(NS_KEYCLOAK_PREFIX.concat("health-enabled")).orElse(false);
+    }
+
+    private boolean isHealthClassicProbesEnabled() {
+        return Configuration.getOptionalBooleanValue(NS_KEYCLOAK_PREFIX.concat("health-classic-probes-enabled")).orElse(false);
     }
 
     static JdbcDataSourceBuildItem getDefaultDataSource(List<JdbcDataSourceBuildItem> jdbcDataSources) {
