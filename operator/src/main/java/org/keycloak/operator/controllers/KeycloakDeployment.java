@@ -428,9 +428,13 @@ public class KeycloakDeployment extends OperatorManagedResource<StatefulSet> imp
         return new ArrayList<>(ret);
     }
 
+    public static String getName(Keycloak keycloak) {
+        return keycloak.getMetadata().getName();
+    }
+
     @Override
     public String getName() {
-        return keycloakCR.getMetadata().getName();
+        return getName(keycloakCR);
     }
 
     public void migrateDeployment(StatefulSet previousDeployment, StatefulSet reconciledDeployment) {

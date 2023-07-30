@@ -257,9 +257,6 @@ public class KeycloakIngressTest extends BaseOperatorTest {
                 assertThat(k8sclient.network().v1().ingresses().inNamespace(namespace).list().getItems().size()).isEqualTo(1);
             });
 
-        } catch (Exception e) {
-            savePodLogs();
-            throw e;
         } finally {
             Log.info("Destroying the Custom Ingress created manually to avoid errors in others Tests methods");
             if (customIngressDeployedManuallySelector != null && customIngressDeployedManuallySelector.isReady()) {
