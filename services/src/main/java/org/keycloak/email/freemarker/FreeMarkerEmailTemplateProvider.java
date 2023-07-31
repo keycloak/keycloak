@@ -19,14 +19,12 @@ package org.keycloak.email.freemarker;
 
 import java.io.IOException;
 import java.text.MessageFormat;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
-
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.common.util.ObjectUtil;
 import org.keycloak.email.EmailException;
@@ -136,21 +134,15 @@ public class FreeMarkerEmailTemplateProvider implements EmailTemplateProvider {
         BrokeredIdentityContext brokerContext = (BrokeredIdentityContext) this.attributes.get(IDENTITY_PROVIDER_BROKER_CONTEXT);
         String idpAlias = brokerContext.getIdpConfig().getAlias();
         String idpDisplayName = brokerContext.getIdpConfig().getDisplayName();
-        idpAlias = ObjectUtil.capitalize(idpAlias);
-        String displayName = idpAlias;
-        if (!ObjectUtil.isBlank(brokerContext.getIdpConfig().getDisplayName())) {
-            displayName = brokerContext.getIdpConfig().getDisplayName();
-        }
-
-        if (idpDisplayName != null && idpDisplayName.length() > 0) {
-            idpAlias = ObjectUtil.capitalize(idpDisplayName);
+        if (ObjectUtil.isBlank(idpDisplayName)) {
+            idpDisplayName = ObjectUtil.capitalize(idpAlias);
         }
 
         attributes.put("identityProviderContext", brokerContext);
         attributes.put("identityProviderAlias", idpAlias);
-        attributes.put("identityProviderDisplayName", displayName);
+        attributes.put("identityProviderDisplayName", idpDisplayName);
 
-        List<Object> subjectAttrs = Arrays.asList(displayName);
+        List<Object> subjectAttrs = Collections.singletonList(idpDisplayName);
         send("identityProviderLinkSubject", subjectAttrs, "identity-provider-link.ftl", attributes);
     }
 
