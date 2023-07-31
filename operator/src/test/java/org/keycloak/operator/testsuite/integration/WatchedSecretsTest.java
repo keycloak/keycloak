@@ -55,67 +55,57 @@ import static org.keycloak.operator.testsuite.utils.K8sUtils.deployKeycloak;
 public class WatchedSecretsTest extends BaseOperatorTest {
     @Test
     public void testSecretsAreWatched() {
-        try {
-            var kc = getTestKeycloakDeployment(true);
-            deployKeycloak(k8sclient, kc, true);
+        var kc = getTestKeycloakDeployment(true);
+        deployKeycloak(k8sclient, kc, true);
 
-            Secret dbSecret = getDbSecret();
-            Secret tlsSecret = getTlsSecret();
+        Secret dbSecret = getDbSecret();
+        Secret tlsSecret = getTlsSecret();
 
-            assertThat(dbSecret.getMetadata().getLabels()).containsEntry(Constants.KEYCLOAK_COMPONENT_LABEL, WatchedSecrets.WATCHED_SECRETS_LABEL_VALUE);
-            assertThat(tlsSecret.getMetadata().getLabels()).containsEntry(Constants.KEYCLOAK_COMPONENT_LABEL, WatchedSecrets.WATCHED_SECRETS_LABEL_VALUE);
+        assertThat(dbSecret.getMetadata().getLabels()).containsEntry(Constants.KEYCLOAK_COMPONENT_LABEL, WatchedSecrets.WATCHED_SECRETS_LABEL_VALUE);
+        assertThat(tlsSecret.getMetadata().getLabels()).containsEntry(Constants.KEYCLOAK_COMPONENT_LABEL, WatchedSecrets.WATCHED_SECRETS_LABEL_VALUE);
 
-            Log.info("Updating DB Secret, expecting restart");
-            testDeploymentRestarted(Set.of(kc), Set.of(), () -> {
-                dbSecret.getData().put(UUID.randomUUID().toString(), "YmxhaGJsYWg=");
-                k8sclient.resource(dbSecret).update();
-            });
+        Log.info("Updating DB Secret, expecting restart");
+        testDeploymentRestarted(Set.of(kc), Set.of(), () -> {
+            dbSecret.getData().put(UUID.randomUUID().toString(), "YmxhaGJsYWg=");
+            k8sclient.resource(dbSecret).update();
+        });
 
-            Log.info("Updating TLS Secret, expecting restart");
-            testDeploymentRestarted(Set.of(kc), Set.of(), () -> {
-                tlsSecret.getData().put(UUID.randomUUID().toString(), "YmxhaGJsYWg=");
-                k8sclient.resource(tlsSecret).update();
-            });
+        Log.info("Updating TLS Secret, expecting restart");
+        testDeploymentRestarted(Set.of(kc), Set.of(), () -> {
+            tlsSecret.getData().put(UUID.randomUUID().toString(), "YmxhaGJsYWg=");
+            k8sclient.resource(tlsSecret).update();
+        });
 
-            Log.info("Updating DB Secret metadata, NOT expecting restart");
-            testDeploymentRestarted(Set.of(), Set.of(kc), () -> {
-                dbSecret.getMetadata().getLabels().put(UUID.randomUUID().toString(), "YmxhaGJsYWg");
-                k8sclient.resource(dbSecret).update();
-            });
-        } catch (Exception e) {
-            savePodLogs();
-            throw e;
-        }
+        Log.info("Updating DB Secret metadata, NOT expecting restart");
+        testDeploymentRestarted(Set.of(), Set.of(kc), () -> {
+            dbSecret.getMetadata().getLabels().put(UUID.randomUUID().toString(), "YmxhaGJsYWg");
+            k8sclient.resource(dbSecret).update();
+        });
     }
 
     @Test
     public void testSecretChangesArePropagated() {
-        try {
-            final String username = "HomerSimpson";
+        final String username = "HomerSimpson";
 
-            var kc = getTestKeycloakDeployment(false);
-            deployKeycloak(k8sclient, kc, true);
+        var kc = getTestKeycloakDeployment(false);
+        deployKeycloak(k8sclient, kc, true);
 
-            var prevRevision = getStatefulSet(kc).getStatus().getUpdateRevision();
+        var prevRevision = getStatefulSet(kc).getStatus().getUpdateRevision();
 
-            var dbSecret = getDbSecret();
+        var dbSecret = getDbSecret();
 
-            dbSecret.getData().put("username",
-                    Base64.getEncoder().encodeToString(username.getBytes()));
-            k8sclient.resource(dbSecret).update();
+        dbSecret.getData().put("username",
+                Base64.getEncoder().encodeToString(username.getBytes()));
+        k8sclient.resource(dbSecret).update();
 
-            Pod pod = k8sclient.pods().withName(kc.getMetadata().getName() + "-0").waitUntilCondition(
-                    p -> p != null && !prevRevision.equals(p.getMetadata().getLabels().get("controller-revision-hash")),
-                    30, TimeUnit.SECONDS);
+        Pod pod = k8sclient.pods().withName(kc.getMetadata().getName() + "-0").waitUntilCondition(
+                p -> p != null && !prevRevision.equals(p.getMetadata().getLabels().get("controller-revision-hash")),
+                30, TimeUnit.SECONDS);
 
-            ByteArrayOutputStream logBytes = new ByteArrayOutputStream();
-            try (var ignored = k8sclient.pods().resource(pod).watchLog(logBytes)) {
-                Awaitility.await().atMost(1, TimeUnit.MINUTES).until(() -> logBytes.toString(StandardCharsets.UTF_8)
-                        .contains("password authentication failed for user \"" + username + "\""));
-            }
-        } catch (Exception e) {
-            savePodLogs();
-            throw e;
+        ByteArrayOutputStream logBytes = new ByteArrayOutputStream();
+        try (var ignored = k8sclient.pods().resource(pod).watchLog(logBytes)) {
+            Awaitility.await().atMost(1, TimeUnit.MINUTES).until(() -> logBytes.toString(StandardCharsets.UTF_8)
+                    .contains("password authentication failed for user \"" + username + "\""));
         }
     }
 
@@ -125,73 +115,62 @@ public class WatchedSecretsTest extends BaseOperatorTest {
 
     @Test
     public void testSecretsCanBeUnWatched() {
-        try {
-            var kc = getTestKeycloakDeployment(true);
-            deployKeycloak(k8sclient, kc, true);
+        var kc = getTestKeycloakDeployment(true);
+        deployKeycloak(k8sclient, kc, true);
 
-            Log.info("Updating KC to not to rely on DB Secret");
-            hardcodeDBCredsInCR(kc);
-            testDeploymentRestarted(Set.of(kc), Set.of(), () -> {
-                deployKeycloak(k8sclient, kc, false, false);
-            });
+        Log.info("Updating KC to not to rely on DB Secret");
+        hardcodeDBCredsInCR(kc);
+        testDeploymentRestarted(Set.of(kc), Set.of(), () -> {
+            deployKeycloak(k8sclient, kc, false, false);
+        });
 
-            Log.info("Updating DB Secret to trigger clean-up process");
-            testDeploymentRestarted(Set.of(), Set.of(kc), () -> {
-                var dbSecret = getDbSecret();
-                dbSecret.getMetadata().getLabels().put(UUID.randomUUID().toString(), "YmxhaGJsYWg");
-                k8sclient.resource(dbSecret).update();
-            });
+        Log.info("Updating DB Secret to trigger clean-up process");
+        testDeploymentRestarted(Set.of(), Set.of(kc), () -> {
+            var dbSecret = getDbSecret();
+            dbSecret.getMetadata().getLabels().put(UUID.randomUUID().toString(), "YmxhaGJsYWg");
+            k8sclient.resource(dbSecret).update();
+        });
 
-            Awaitility.await().untilAsserted(() -> {
-                Log.info("Checking labels on DB Secret");
-                assertThat(getDbSecret().getMetadata().getLabels()).doesNotContainKey(Constants.KEYCLOAK_COMPONENT_LABEL);
-            });
-        } catch (Exception e) {
-            savePodLogs();
-            throw e;
-        }
+        Awaitility.await().untilAsserted(() -> {
+            Log.info("Checking labels on DB Secret");
+            assertThat(getDbSecret().getMetadata().getLabels()).doesNotContainKey(Constants.KEYCLOAK_COMPONENT_LABEL);
+        });
     }
 
     @Test
     public void testSingleSecretMultipleKeycloaks() {
-        try {
-            var kc1 = getTestKeycloakDeployment(true);
-            var kc1Hostname = new HostnameSpecBuilder().withHostname("kc1.local").build();
-            kc1.getMetadata().setName(kc1.getMetadata().getName() + "-1");
-            kc1.getSpec().setHostnameSpec(kc1Hostname);
+        var kc1 = getTestKeycloakDeployment(true);
+        var kc1Hostname = new HostnameSpecBuilder().withHostname("kc1.local").build();
+        kc1.getMetadata().setName(kc1.getMetadata().getName() + "-1");
+        kc1.getSpec().setHostnameSpec(kc1Hostname);
 
-            var kc2 = getTestKeycloakDeployment(true);
-            var kc2Hostname = new HostnameSpecBuilder().withHostname("kc2.local").build();
-            kc2.getMetadata().setName(kc2.getMetadata().getName() + "-2");
-            kc2.getSpec().setHostnameSpec(kc2Hostname); // to prevent Ingress conflicts
+        var kc2 = getTestKeycloakDeployment(true);
+        var kc2Hostname = new HostnameSpecBuilder().withHostname("kc2.local").build();
+        kc2.getMetadata().setName(kc2.getMetadata().getName() + "-2");
+        kc2.getSpec().setHostnameSpec(kc2Hostname); // to prevent Ingress conflicts
 
-            deployKeycloak(k8sclient, kc1, true);
-            deployKeycloak(k8sclient, kc2, true);
+        deployKeycloak(k8sclient, kc1, true);
+        deployKeycloak(k8sclient, kc2, true);
 
-            var dbSecret = getDbSecret();
+        var dbSecret = getDbSecret();
 
-            Log.info("Updating DB Secret, expecting restart of both KCs");
-            testDeploymentRestarted(Set.of(kc1, kc2), Set.of(), () -> {
-                dbSecret.getData().put(UUID.randomUUID().toString(), "YmxhaGJsYWg=");
-                k8sclient.resource(dbSecret).update();
-            });
+        Log.info("Updating DB Secret, expecting restart of both KCs");
+        testDeploymentRestarted(Set.of(kc1, kc2), Set.of(), () -> {
+            dbSecret.getData().put(UUID.randomUUID().toString(), "YmxhaGJsYWg=");
+            k8sclient.resource(dbSecret).update();
+        });
 
-            Log.info("Updating KC1 to not to rely on DB Secret");
-            hardcodeDBCredsInCR(kc1);
-            testDeploymentRestarted(Set.of(kc1), Set.of(kc2), () -> {
-                deployKeycloak(k8sclient, kc1, false, false);
-            });
+        Log.info("Updating KC1 to not to rely on DB Secret");
+        hardcodeDBCredsInCR(kc1);
+        testDeploymentRestarted(Set.of(kc1), Set.of(kc2), () -> {
+            deployKeycloak(k8sclient, kc1, false, false);
+        });
 
-            Log.info("Updating DB Secret, expecting restart of just KC2");
-            testDeploymentRestarted(Set.of(kc2), Set.of(kc1), () -> {
-                dbSecret.getData().put(UUID.randomUUID().toString(), "YmxhaGJsYWg=");
-                k8sclient.resource(dbSecret).update();
-            });
-        }
-        catch (Exception e) {
-            savePodLogs();
-            throw e;
-        }
+        Log.info("Updating DB Secret, expecting restart of just KC2");
+        testDeploymentRestarted(Set.of(kc2), Set.of(kc1), () -> {
+            dbSecret.getData().put(UUID.randomUUID().toString(), "YmxhaGJsYWg=");
+            k8sclient.resource(dbSecret).update();
+        });
     }
 
     private void testDeploymentRestarted(Set<Keycloak> crsToBeRestarted, Set<Keycloak> crsNotToBeRestarted, Runnable action) {
