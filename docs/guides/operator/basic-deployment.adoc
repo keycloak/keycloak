@@ -111,6 +111,8 @@ kubectl create secret tls example-tls-secret --cert certificate.pem --key key.pe
 
 To deploy Keycloak, you create a Custom Resource (CR) based on the Keycloak Custom Resource Definition (CRD).
 
+Please follow the following guide <https://www.keycloak.org/operator/installation#_installing_by_using_kubectl_without_operator_lifecycle_manager> to install CRD
+
 Consider storing the Database credentials in a separate Secret. Enter the following commands:
 [source,bash]
 ----
