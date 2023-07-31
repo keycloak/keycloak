@@ -36,7 +36,7 @@ import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.keycloak.operator.Constants;
-import org.keycloak.operator.controllers.KeycloakAdminSecret;
+import org.keycloak.operator.controllers.KeycloakAdminSecretDependentResource;
 import org.keycloak.operator.controllers.KeycloakDistConfigurator;
 import org.keycloak.operator.controllers.KeycloakService;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
@@ -367,7 +367,7 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
     @Test
     public void testInitialAdminUser() {
         var kc = getTestKeycloakDeployment(true);
-        var kcAdminSecret = new KeycloakAdminSecret(k8sclient, kc);
+        String secretName = KeycloakAdminSecretDependentResource.getName(kc);
 
         k8sclient
                 .resources(Keycloak.class)
@@ -376,7 +376,7 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
         k8sclient
                 .secrets()
                 .inNamespace(namespace)
-                .withName(kcAdminSecret.getName())
+                .withName(secretName)
                 .delete();
 
         // Making sure no other Keycloak pod is still around
@@ -402,11 +402,11 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
         Awaitility.await()
                 .ignoreExceptions()
                 .untilAsserted(() -> {
-                    Log.info("Checking secret, ns: " + namespace + ", name: " + kcAdminSecret.getName());
+                    Log.info("Checking secret, ns: " + namespace + ", name: " + secretName);
                     var adminSecret = k8sclient
                             .secrets()
                             .inNamespace(namespace)
-                            .withName(kcAdminSecret.getName())
+                            .withName(secretName)
                             .get();
 
                     adminUsername.set(new String(decoder.decode(adminSecret.getData().get("username").getBytes(StandardCharsets.UTF_8))));
@@ -428,11 +428,11 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
         Awaitility.await()
                 .ignoreExceptions()
                 .untilAsserted(() -> {
-                    Log.info("Checking secret, ns: " + namespace + ", name: " + kcAdminSecret.getName());
+                    Log.info("Checking secret, ns: " + namespace + ", name: " + secretName);
                     var adminSecret = k8sclient
                             .secrets()
                             .inNamespace(namespace)
-                            .withName(kcAdminSecret.getName())
+                            .withName(secretName)
                             .get();
 
                     var newPassword = new String(decoder.decode(adminSecret.getData().get("password").getBytes(StandardCharsets.UTF_8)));
