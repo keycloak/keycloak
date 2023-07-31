@@ -13,7 +13,12 @@ This {section} describes how to perform a basic Keycloak Deployment on Kubernete
 
 === Preparing for deployment
 
-Once the Keycloak Operator is installed and running in the cluster namespace, you can set up the other deployment prerequisites.
+
+The Keycloak Operator is installed and running in the cluster namespace.
+
+Please make use of the following guide <https://www.keycloak.org/operator/installation#_installing_by_using_kubectl_without_operator_lifecycle_manager> to install the CRD.
+
+Once you have setup the keycloak operator then you can set up the other deployment prerequisites.
 
 * Database
 * Hostname
@@ -110,8 +115,6 @@ kubectl create secret tls example-tls-secret --cert certificate.pem --key key.pe
 === Deploying Keycloak
 
 To deploy Keycloak, you create a Custom Resource (CR) based on the Keycloak Custom Resource Definition (CRD).
-
-Please follow the following guide <https://www.keycloak.org/operator/installation#_installing_by_using_kubectl_without_operator_lifecycle_manager> to install CRD
 
 Consider storing the Database credentials in a separate Secret. Enter the following commands:
 [source,bash]
