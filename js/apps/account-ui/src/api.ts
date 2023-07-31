@@ -10,9 +10,9 @@ export const fetchResources = async (
   shared: boolean | undefined = false,
 ): Promise<{ data: Resource[]; links: Links }> => {
   const response = await get(
-    `/resources${shared ? "/shared-with-me?" : "?"}${new URLSearchParams(
-      requestParams,
-    )}`,
+    `/resources${shared ? "/shared-with-me?" : "?"}${
+      shared ? "" : new URLSearchParams(requestParams)
+    }`,
     params,
   );
 
