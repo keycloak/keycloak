@@ -38,7 +38,7 @@ import org.keycloak.testsuite.util.SamlClientBuilder;
 import org.keycloak.util.JsonSerialization;
 
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.keycloak.common.Profile.Feature.SCRIPTS;
 import static org.keycloak.testsuite.arquillian.DeploymentTargetModifier.AUTH_SERVER_CURRENT;
 import static org.keycloak.testsuite.saml.RoleMapperTest.createSamlProtocolMapper;

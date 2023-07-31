@@ -1397,7 +1397,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
             //clientResource = ApiUtil.findClientByClientId(adminClient.realm(TEST_REALM_NAME), TEST_CLIENT_NAME);
             clientRep = clientResource.toRepresentation();
             Assert.assertNull(clientRep.getAttributes().get(CibaConfig.OIDC_CIBA_GRANT_ENABLED));
-            Assert.assertThat(clientRep.getAttributes().get(CibaConfig.CIBA_BACKCHANNEL_AUTH_REQUEST_SIGNING_ALG), is(Algorithm.RS256));
+            assertThat(clientRep.getAttributes().get(CibaConfig.CIBA_BACKCHANNEL_AUTH_REQUEST_SIGNING_ALG), is(Algorithm.RS256));
 
             // user Backchannel Authentication Request
             AuthenticationRequestAcknowledgement response = oauth.doBackchannelAuthenticationRequest(TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD, username, "gilwekDe3", "acr2");
@@ -1416,8 +1416,8 @@ public class CIBATest extends AbstractClientPoliciesTest {
             clientRep.setAttributes(attributes);
             clientResource.update(clientRep);
             clientRep = clientResource.toRepresentation();
-            Assert.assertThat(clientRep.getAttributes().get(CibaConfig.OIDC_CIBA_GRANT_ENABLED), is(Boolean.TRUE.toString()));
-            Assert.assertThat(clientRep.getAttributes().get(CibaConfig.CIBA_BACKCHANNEL_AUTH_REQUEST_SIGNING_ALG), is(Algorithm.ES256));
+            assertThat(clientRep.getAttributes().get(CibaConfig.OIDC_CIBA_GRANT_ENABLED), is(Boolean.TRUE.toString()));
+            assertThat(clientRep.getAttributes().get(CibaConfig.CIBA_BACKCHANNEL_AUTH_REQUEST_SIGNING_ALG), is(Algorithm.ES256));
 
             // user Backchannel Authentication Request
             response = doBackchannelAuthenticationRequest(TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD, username, "Fkb4T3s");
@@ -1439,8 +1439,8 @@ public class CIBATest extends AbstractClientPoliciesTest {
             clientRep.setAttributes(attributes);
             clientResource.update(clientRep);
             clientRep = clientResource.toRepresentation();
-            Assert.assertThat(clientRep.getAttributes().get(CibaConfig.OIDC_CIBA_GRANT_ENABLED), is(Boolean.FALSE.toString()));
-            Assert.assertThat(clientRep.getAttributes().get(CibaConfig.CIBA_BACKCHANNEL_AUTH_REQUEST_SIGNING_ALG), is("none"));
+            assertThat(clientRep.getAttributes().get(CibaConfig.OIDC_CIBA_GRANT_ENABLED), is(Boolean.FALSE.toString()));
+            assertThat(clientRep.getAttributes().get(CibaConfig.CIBA_BACKCHANNEL_AUTH_REQUEST_SIGNING_ALG), is("none"));
 
             // user Token Request
             OAuthClient.AccessTokenResponse tokenRes = oauth.doBackchannelAuthenticationTokenRequest(SECOND_TEST_CLIENT_NAME, SECOND_TEST_CLIENT_SECRET, response.getAuthReqId());
@@ -1467,7 +1467,7 @@ public class CIBATest extends AbstractClientPoliciesTest {
 
         rep = getClientDynamically(clientId);
         Assert.assertTrue(rep.getGrantTypes().contains(OAuth2Constants.CIBA_GRANT_TYPE));
-        Assert.assertThat(rep.getBackchannelAuthenticationRequestSigningAlg(), is(Algorithm.PS256));
+        assertThat(rep.getBackchannelAuthenticationRequestSigningAlg(), is(Algorithm.PS256));
     }
 
     @Test
@@ -2458,9 +2458,9 @@ public class CIBATest extends AbstractClientPoliciesTest {
 
             // user Backchannel Authentication Request
             AuthenticationRequestAcknowledgement response = oauth.doBackchannelAuthenticationRequest(clientId, clientSecret, null, null, null);
-            Assert.assertThat(response.getStatusCode(), is(equalTo(statusCode)));
-            Assert.assertThat(response.getError(), is(error));
-            Assert.assertThat(response.getErrorDescription(), is(errorDescription));
+            assertThat(response.getStatusCode(), is(equalTo(statusCode)));
+            assertThat(response.getError(), is(error));
+            assertThat(response.getErrorDescription(), is(errorDescription));
         } finally {
             revertCIBASettings(clientResource, clientRep);
         }
@@ -2519,8 +2519,8 @@ public class CIBATest extends AbstractClientPoliciesTest {
             // user Authentication Channel Request
             TestAuthenticationChannelRequest testRequest = doAuthenticationChannelRequest(bindingMessage);
             AuthenticationChannelRequest authenticationChannelReq = testRequest.getRequest();
-            Assert.assertThat(authenticationChannelReq.getBindingMessage(), is(equalTo(bindingMessage)));
-            Assert.assertThat(authenticationChannelReq.getScope(), is(containsString(OAuth2Constants.SCOPE_OPENID)));
+            assertThat(authenticationChannelReq.getBindingMessage(), is(equalTo(bindingMessage)));
+            assertThat(authenticationChannelReq.getScope(), is(containsString(OAuth2Constants.SCOPE_OPENID)));
 
             // user Authentication Channel completed
             EventRepresentation loginEvent = doAuthenticationChannelCallback(testRequest);

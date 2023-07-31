@@ -53,7 +53,7 @@ import java.util.concurrent.TimeUnit;
 import org.hamcrest.Matchers;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.greaterThan;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 import org.keycloak.testsuite.arquillian.CrossDCTestEnricher;
 import org.keycloak.testsuite.arquillian.annotation.InitialDcState;
 

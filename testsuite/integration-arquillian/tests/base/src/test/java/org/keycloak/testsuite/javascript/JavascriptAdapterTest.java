@@ -279,7 +279,7 @@ public class JavascriptAdapterTest extends AbstractJavascriptTest {
                 .login(this::assertOnLoginPage)
                 .loginForm(testUser, this::assertOnTestAppUrl)
                 .init(defaultArguments(), this::assertInitAuth)
-                .getProfile((driver1, output, events) -> Assert.assertThat((Map<String, String>) output, hasEntry("username", testUser.getUsername())));
+                .getProfile((driver1, output, events) -> assertThat((Map<String, String>) output, hasEntry("username", testUser.getUsername())));
     }
 
     @Test
@@ -424,7 +424,7 @@ public class JavascriptAdapterTest extends AbstractJavascriptTest {
         if (!"phantomjs".equals(System.getProperty("js.browser"))) {
             // I have no idea why, but this request doesn't work with phantomjs, it works in chrome
             testExecutor.logInAndInit(defaultArguments(), unauthorizedUser, this::assertInitAuth)
-                    .sendXMLHttpRequest(request, output -> Assert.assertThat(output, hasEntry("status", 403L)))
+                    .sendXMLHttpRequest(request, output -> assertThat(output, hasEntry("status", 403L)))
                     .logout(this::assertOnTestAppUrl)
                     .refresh();
         }
@@ -534,7 +534,7 @@ public class JavascriptAdapterTest extends AbstractJavascriptTest {
                 ClaimsRepresentation claimsRep = JsonSerialization.readValue(claimsParam, ClaimsRepresentation.class);
                 ClaimsRepresentation.ClaimValue<String> claimValue = claimsRep.getClaimValue(IDToken.ACR, ClaimsRepresentation.ClaimContext.ID_TOKEN, String.class);
                 Assert.assertNames(claimValue.getValues(), "foo", "bar");
-                Assert.assertThat(claimValue.isEssential(), is(false));
+                assertThat(claimValue.isEssential(), is(false));
             } catch (IOException ioe) {
                 throw new AssertionError(ioe);
             }

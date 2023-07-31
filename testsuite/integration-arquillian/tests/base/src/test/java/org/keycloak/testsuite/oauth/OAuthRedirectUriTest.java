@@ -53,7 +53,7 @@ import java.net.URL;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
 import static org.keycloak.testsuite.util.OAuthClient.APP_ROOT;
 
@@ -505,7 +505,7 @@ public class OAuthRedirectUriTest extends AbstractKeycloakTest {
                         .build().toString();
                 if (browserUrlAfterRedirectFromKeycloak.endsWith("/")) browserUrlAfterRedirectFromKeycloak = browserUrlAfterRedirectFromKeycloak.substring(0, browserUrlAfterRedirectFromKeycloak.length() - 1);
                 if (Constants.INSTALLED_APP_URN.equals(redirectUri)) {
-                    Assert.assertThat(browserUrlAfterRedirectFromKeycloak, Matchers.endsWith("oauth/oob"));
+                    assertThat(browserUrlAfterRedirectFromKeycloak, Matchers.endsWith("oauth/oob"));
                 } else {
                     Assert.assertEquals(redirectUri, browserUrlAfterRedirectFromKeycloak);
                 }

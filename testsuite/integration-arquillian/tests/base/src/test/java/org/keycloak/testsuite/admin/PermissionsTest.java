@@ -80,6 +80,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.fail;
 import static org.keycloak.services.resources.admin.AdminAuth.Resource.AUTHORIZATION;
 import static org.keycloak.services.resources.admin.AdminAuth.Resource.CLIENT;
@@ -509,10 +510,10 @@ public class PermissionsTest extends AbstractKeycloakTest {
             }
         }, Resource.CLIENT, false, true);
         List<ClientRepresentation> l = clients.get(AdminRoles.QUERY_CLIENTS).realm(REALM_NAME).clients().findAll();
-        Assert.assertThat(l, Matchers.empty());
+        assertThat(l, Matchers.empty());
 
         l = clients.get(AdminRoles.VIEW_CLIENTS).realm(REALM_NAME).clients().findAll();
-        Assert.assertThat(l, Matchers.not(Matchers.empty()));
+        assertThat(l, Matchers.not(Matchers.empty()));
 
         ClientRepresentation client = l.get(0);
         invoke(new InvocationWithResponse() {

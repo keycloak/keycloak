@@ -51,6 +51,8 @@ import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+
 /**
  * Tests the bulk removal of user sessions and expiration scenarios (eg. removing realm, removing user etc)
  *
@@ -225,7 +227,7 @@ public class SessionExpirationCrossDCTest extends AbstractAdminCrossDCTest {
 
             // Workaround...
             if (checkSomeMessagesSentBetweenDCs) {
-                Assert.assertThat(messagesCount, Matchers.greaterThan(0l));
+                assertThat(messagesCount, Matchers.greaterThan(0l));
             }
 
         }, 50, 50);

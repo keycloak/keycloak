@@ -54,6 +54,7 @@ import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -122,7 +123,7 @@ public class LDAPAccountRestApiTest extends AbstractLDAPTest {
         List<String> origLdapEntryDn = new ArrayList<>(user.getAttributes().get(LDAPConstants.LDAP_ENTRY_DN));
         Assert.assertEquals(1, origLdapId.size());
         Assert.assertEquals(1, origLdapEntryDn.size());
-        Assert.assertThat(user.getAttributes().keySet(), not(contains(KerberosFederationProvider.KERBEROS_PRINCIPAL)));
+        assertThat(user.getAttributes().keySet(), not(contains(KerberosFederationProvider.KERBEROS_PRINCIPAL)));
 
         // Trying to add KERBEROS_PRINCIPAL should fail (Adding attribute, which was not yet present)
         user.setFirstName("JohnUpdated");

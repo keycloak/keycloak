@@ -24,6 +24,7 @@ import org.w3c.dom.Document;
 import java.util.Collections;
 
 import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.keycloak.testsuite.broker.BrokerTestConstants.IDP_SAML_ALIAS;
 import static org.keycloak.testsuite.broker.BrokerTestTools.getConsumerRoot;
 
@@ -118,10 +119,10 @@ public class KcSamlXPathAttributeMapperTest extends AbstractInitializedBaseBroke
         RealmResource realm = adminClient.realm(bc.consumerRealmName());
 
         UserRepresentation user = realm.users().search(bc.getUserLogin()).get(0);
-        Assert.assertThat(user.getFirstName(), equalTo("Theo"));
-        Assert.assertThat(user.getLastName(), equalTo("Tester"));
-        Assert.assertThat(user.getEmail(), equalTo("test@example.org"));
-        Assert.assertThat(user.getAttributes().get("xml-output"), equalTo(Collections.singletonList("Some random text")));
+        assertThat(user.getFirstName(), equalTo("Theo"));
+        assertThat(user.getLastName(), equalTo("Tester"));
+        assertThat(user.getEmail(), equalTo("test@example.org"));
+        assertThat(user.getAttributes().get("xml-output"), equalTo(Collections.singletonList("Some random text")));
     }
 
 }

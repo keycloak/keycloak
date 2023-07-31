@@ -98,7 +98,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.keycloak.saml.common.constants.JBossSAMLURIConstants.XMLDSIG_NSURI;
@@ -1108,32 +1108,32 @@ public class IdentityProviderTest extends AbstractAdminTest {
         Document document = DocumentUtil.getDocument(body);
 
         Element signatureElement = DocumentUtil.getDirectChildElement(document.getDocumentElement(), XMLDSIG_NSURI.get(), "Signature");
-        Assert.assertThat("Signature not null", signatureElement, notNullValue());
+        assertThat("Signature not null", signatureElement, notNullValue());
 
         Element keyInfoElement = DocumentUtil.getDirectChildElement(signatureElement, XMLDSIG_NSURI.get(), "KeyInfo");
-        Assert.assertThat("KeyInfo not null", keyInfoElement, notNullValue());
+        assertThat("KeyInfo not null", keyInfoElement, notNullValue());
 
         Element x509DataElement = DocumentUtil.getDirectChildElement(keyInfoElement, XMLDSIG_NSURI.get(), "X509Data");
-        Assert.assertThat("X509Data not null", x509DataElement, notNullValue());
+        assertThat("X509Data not null", x509DataElement, notNullValue());
 
         Element x509CertificateElement = DocumentUtil.getDirectChildElement(x509DataElement, XMLDSIG_NSURI.get(), "X509Certificate");
-        Assert.assertThat("X509Certificate not null", x509CertificateElement, notNullValue());
+        assertThat("X509Certificate not null", x509CertificateElement, notNullValue());
 
         Element keyNameElement = DocumentUtil.getDirectChildElement(keyInfoElement, XMLDSIG_NSURI.get(), "KeyName");
-        Assert.assertThat("KeyName not null", keyNameElement, notNullValue());
+        assertThat("KeyName not null", keyNameElement, notNullValue());
 
         String activeSigCert = KeyUtils.findActiveSigningKey(realm, Constants.DEFAULT_SIGNATURE_ALGORITHM).getCertificate();
-        Assert.assertThat("activeSigCert not null", activeSigCert, notNullValue());
+        assertThat("activeSigCert not null", activeSigCert, notNullValue());
 
         X509Certificate activeX509SigCert = XMLSignatureUtil.getX509CertificateFromKeyInfoString(activeSigCert);
-        Assert.assertThat("KeyName matches subject DN",
+        assertThat("KeyName matches subject DN",
                 keyNameElement.getTextContent().trim(), equalTo(activeX509SigCert.getSubjectDN().getName()));
 
-        Assert.assertThat("Signing cert matches active realm cert",
+        assertThat("Signing cert matches active realm cert",
                 x509CertificateElement.getTextContent().trim(), equalTo(Base64.getEncoder().encodeToString(activeX509SigCert.getEncoded())));
 
         PublicKey activePublicSigKey = activeX509SigCert.getPublicKey();
-        Assert.assertThat("Metadata signature is valid",
+        assertThat("Metadata signature is valid",
                 new SAML2Signature().validate(document, new HardcodedKeyLocator(activePublicSigKey)), is(true));
     }
 }
