@@ -132,9 +132,9 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - id: unit-test-setup
-        name: Unit test setup
-        uses: ./.github/actions/unit-test-setup
+      - id: integration-test-setup
+        name: Integration test setup
+        uses: ./.github/actions/integration-test-setup
 
       # Not sure why, but needs to re-build otherwise there's some failures starting up
       - name: Run Quarkus integration Tests
@@ -145,8 +145,9 @@ jobs:
           PARAMS["container"]="-Dkc.quarkus.tests.dist=docker"
           PARAMS["storage"]="-Ptest-database -Dtest=PostgreSQLDistTest,MariaDBDistTest#testSuccessful,MySQLDistTest#testSuccessful,DatabaseOptionsDistTest,JPAStoreDistTest,HotRodStoreDistTest,MixedStoreDistTest,TransactionConfigurationDistTest"
 
-          ./mvnw install -pl quarkus/tests/integration -am -DskipTests
-          ./mvnw test -pl quarkus/tests/integration ${PARAMS["${{ matrix.server }}"]} | misc/log/trimmer.sh
+          ./mvnw clean install -nsu -B -pl 'common,core,services' -DskipTests
+          ./mvnw clean install -nsu -B -f quarkus/pom.xml -DskipTests
+          ./mvnw test -nsu -B -pl quarkus/tests/integration ${PARAMS["${{ matrix.server }}"]} | misc/log/trimmer.sh
 
       - name: Upload JVM Heapdumps
         if: always()
