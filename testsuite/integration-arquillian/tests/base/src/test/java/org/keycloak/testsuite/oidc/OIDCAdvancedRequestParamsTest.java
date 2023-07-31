@@ -103,6 +103,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.keycloak.jose.jwe.JWEConstants.RSA_OAEP;
@@ -216,7 +217,7 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
         // Assert I need to login again through the login form. But username field is not present
         oauth.openLoginForm();
         loginPage.assertCurrent();
-        Assert.assertThat(false, is(loginPage.isUsernameInputPresent()));
+        assertThat(false, is(loginPage.isUsernameInputPresent()));
         loginPage.login("password");
         loginEvent = events.expectLogin().assertEvent();
 
@@ -385,7 +386,7 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
         // Assert need to re-authenticate with prompt=login
         driver.navigate().to(oauth.getLoginFormUrl() + "&prompt=login");
         loginPage.assertCurrent();
-        Assert.assertThat(false, is(loginPage.isUsernameInputPresent()));
+        assertThat(false, is(loginPage.isUsernameInputPresent()));
         loginPage.login("password");
         Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
 

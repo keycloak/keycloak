@@ -78,6 +78,7 @@ import org.keycloak.util.JsonSerialization;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_SSL_REQUIRED;
 /**
  * @author <a href="mailto:vramik@redhat.com">Vlastislav Ramik</a>
@@ -166,7 +167,7 @@ public class ConcurrentLoginTest extends AbstractConcurrencyTest {
         CookieStore cookieStore = new BasicCookieStore();
         context.setCookieStore(cookieStore);
         HttpUriRequest request = handleLogin(getPageContent(oauth.getLoginFormUrl(), httpClient, context), userName, password);
-        Assert.assertThat(parseAndCloseResponse(httpClient.execute(request, context)), containsString("<title>AUTH_RESPONSE</title>"));
+        assertThat(parseAndCloseResponse(httpClient.execute(request, context)), containsString("<title>AUTH_RESPONSE</title>"));
         return context;
     }
 
@@ -267,8 +268,8 @@ public class ConcurrentLoginTest extends AbstractConcurrencyTest {
             oauth1.idTokenHint(idTokenHint).openLogout();
 
             // Code should be successfully exchanged for the token at max once. In some cases (EG. Cross-DC) it may not be even successfully exchanged
-            Assert.assertThat(codeToTokenSuccessCount.get(), Matchers.lessThanOrEqualTo(0));
-            Assert.assertThat(codeToTokenErrorsCount.get(), Matchers.greaterThanOrEqualTo(DEFAULT_THREADS));
+            assertThat(codeToTokenSuccessCount.get(), Matchers.lessThanOrEqualTo(0));
+            assertThat(codeToTokenErrorsCount.get(), Matchers.greaterThanOrEqualTo(DEFAULT_THREADS));
 
             log.infof("Iteration %d passed successfully", i);
         }
@@ -408,9 +409,9 @@ public class ConcurrentLoginTest extends AbstractConcurrencyTest {
             final HttpClientContext context = HttpClientContext.create();
             context.setCookieStore(templateContext.getCookieStore());
             String pageContent = getPageContent(oauth1.getLoginFormUrl(), httpClient, context);
-            Assert.assertThat(pageContent, Matchers.containsString("<title>AUTH_RESPONSE</title>"));
-            Assert.assertThat(context.getRedirectLocations(), Matchers.notNullValue());
-            Assert.assertThat(context.getRedirectLocations(), Matchers.not(Matchers.empty()));
+            assertThat(pageContent, Matchers.containsString("<title>AUTH_RESPONSE</title>"));
+            assertThat(context.getRedirectLocations(), Matchers.notNullValue());
+            assertThat(context.getRedirectLocations(), Matchers.not(Matchers.empty()));
             String currentUrl = context.getRedirectLocations().get(0).toString();
 
             Map<String, String> query = getQueryFromUrl(currentUrl);

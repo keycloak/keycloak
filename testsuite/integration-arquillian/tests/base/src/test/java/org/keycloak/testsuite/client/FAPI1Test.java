@@ -88,6 +88,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 import static org.junit.Assert.assertEquals;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.fail;
 import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.ClientPoliciesBuilder;
@@ -767,8 +768,8 @@ public class FAPI1Test extends AbstractClientPoliciesTest {
 
     private void assertSuccessfulTokenResponse(OAuthClient.AccessTokenResponse tokenResponse) {
         assertEquals(200, tokenResponse.getStatusCode());
-        Assert.assertThat(tokenResponse.getIdToken(), Matchers.notNullValue());
-        Assert.assertThat(tokenResponse.getAccessToken(), Matchers.notNullValue());
+        assertThat(tokenResponse.getIdToken(), Matchers.notNullValue());
+        assertThat(tokenResponse.getAccessToken(), Matchers.notNullValue());
 
         // Scope parameter must be present per FAPI
         Assert.assertNotNull(tokenResponse.getScope());

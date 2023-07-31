@@ -147,7 +147,7 @@ public class SessionSpringBootTest extends AbstractSpringBootTest {
         driver2.navigate().to(logoutUrl);
 
         waitForPageToLoad();
-        Assert.assertThat(true, is(secondBrowserLogoutConfirmPage.isCurrent(driver2)));
+        assertThat(true, is(secondBrowserLogoutConfirmPage.isCurrent(driver2)));
         secondBrowserLogoutConfirmPage.confirmLogout(driver2);
         waitForPageToLoad();
         secondBrowserInfoPage.assertCurrent();
