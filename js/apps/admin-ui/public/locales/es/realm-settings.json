@@ -19,7 +19,7 @@
   "userRegistrationHelpText": "Habilitar/deshabilitar la página de registro. Un enlace para el registro se mostrará también en la página de inicio de sesión.",
   "rememberMe": "Seguir conectado",
   "rememberMeHelpText": "Muestra la casilla de selección en la página de inicio de sesión para permitir al usuario permanecer conectado entre reinicios del navegador hasta que la sesión expire.",
-  "emailAsUsername": "Email como nombre de usuario",
+  "registrationEmailAsUsername": "Email como nombre de usuario",
   "verifyEmail": "Verificar email",
   "editUsername": "Editar nombre de usuario",
   "requireSsl": "Solicitar SSL",

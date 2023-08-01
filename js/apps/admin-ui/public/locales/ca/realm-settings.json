@@ -19,7 +19,7 @@
   "userRegistrationHelpText": "Habilitar/deshabilitar la pàgina de registre. Un enllaç per al registre es mostrarà també a la pàgina d''inici de sessió.",
   "rememberMe": "Mantenir connectat",
   "rememberMeHelpText": "Mostra la casella de selecció en la pàgina d''inici de sessió per a permetre a l''usuari estar connectat entre reinicis del navegador fins que la sessió expiri.",
-  "emailAsUsername": "Email com a nom d''usuari",
+  "registrationEmailAsUsername": "Email com a nom d''usuari",
   "verifyEmail": "Verificar email",
   "editUsername": "Edita el nom d''usuari",
   "requireSsl": "Sol·licitar SSL",

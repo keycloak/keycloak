@@ -32,7 +32,7 @@
   "userRegistrationHelpText": "Habilita/desabilita a página de cadastro. Um link para a página de cadastro também será exibido na tela de login.",
   "rememberMe": "Lembrar me",
   "rememberMeHelpText": "Exibe um checkbox na página de login para permitir ao usuário continuar logado entre restarts do browser até que a sessão expire.",
-  "emailAsUsername": "Email como nome de usuário",
+  "registrationEmailAsUsername": "Email como nome de usuário",
   "verifyEmail": "Verificar e-mail",
   "editUsername": "Editar nome de usuário",
   "testConnection": "Testar conexão",

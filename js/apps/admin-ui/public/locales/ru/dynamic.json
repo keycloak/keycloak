@@ -10,7 +10,7 @@
       "tooltip": "Имя сохраненного атрибута пользователя, которое является именем атрибута, согласованным с UserModel.attribute."
     },
     "clientRoleMapping": {
-      "client": {
+      "clientId": {
         "label": "ID клиента",
         "tooltip": "ID клиента для сопоставления ролей"
       },
