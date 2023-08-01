@@ -106,6 +106,17 @@ public abstract class AbstractOIDCProtocolMapper implements ProtocolMapper {
         return accessTokenResponse;
     }
 
+    public AccessToken transformIntrospectionToken(AccessToken token, ProtocolMapperModel mappingModel, KeycloakSession session,
+                                            UserSessionModel userSession, ClientSessionContext clientSessionCtx) {
+
+        if (!OIDCAttributeMapperHelper.includeInIntrospection(mappingModel)){
+            return token;
+        }
+
+        setClaim(token, mappingModel, userSession, session, clientSessionCtx);
+        return token;
+    }
+
     /**
      * Intended to be overridden in {@link ProtocolMapper} implementations to add claims to an token.
      * @param token
