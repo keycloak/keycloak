@@ -78,7 +78,7 @@
         <hibernate-orm.version>6.2.7.Final</hibernate-orm.version>
         <hibernate-orm.plugin.version>6.2.7.Final</hibernate-orm.plugin.version>
         <hibernate.c3p0.version>6.2.7.Final</hibernate.c3p0.version>
-        <infinispan.version>14.0.13.Final</infinispan.version>
+        <infinispan.version>14.0.14-SNAPSHOT</infinispan.version>
         <infinispan.protostream.processor.version>4.6.2.Final</infinispan.protostream.processor.version>
 
         <!--JAKARTA-->

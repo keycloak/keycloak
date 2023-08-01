@@ -25,6 +25,22 @@
             <updatePolicy>never</updatePolicy>
           </snapshots>
         </repository>
+        <repository>
+          <id>github-jgroups</id>
+          <url>https://maven.pkg.github.com/mabartos/jgroups/</url>
+          <snapshots>
+            <enabled>true</enabled>
+            <updatePolicy>never</updatePolicy>
+          </snapshots>
+        </repository>
+        <repository>
+          <id>github-infinispan</id>
+          <url>https://maven.pkg.github.com/mabartos/infinispan/</url>
+          <snapshots>
+            <enabled>true</enabled>
+            <updatePolicy>never</updatePolicy>
+          </snapshots>
+        </repository>
       </repositories>
       <pluginRepositories>
         <pluginRepository>
@@ -41,6 +57,22 @@
             <updatePolicy>never</updatePolicy>
           </snapshots>
         </pluginRepository>
+        <pluginRepository>
+          <id>github-jgroups</id>
+          <url>https://maven.pkg.github.com/mabartos/jgroups/</url>
+          <snapshots>
+            <enabled>true</enabled>
+            <updatePolicy>never</updatePolicy>
+          </snapshots>
+        </pluginRepository>
+        <pluginRepository>
+          <id>github-infinispan</id>
+          <url>https://maven.pkg.github.com/mabartos/infinispan/</url>
+          <snapshots>
+            <enabled>true</enabled>
+            <updatePolicy>never</updatePolicy>
+          </snapshots>
+        </pluginRepository>
       </pluginRepositories>
     </profile>
   </profiles>
@@ -48,5 +80,18 @@
   <activeProfiles>
     <activeProfile>jboss-public-repository</activeProfile>
   </activeProfiles>
+
+  <servers>
+    <server>
+      <id>github-jgroups</id>
+      <username>keycloak</username>
+      <password>${env.GH_TOKEN}</password>
+    </server>
+    <server>
+      <id>github-infinispan</id>
+      <username>keycloak</username>
+      <password>${env.GH_TOKEN}</password>
+    </server>
+  </servers>
 
 </settings>
