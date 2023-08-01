@@ -1,6 +1,6 @@
 ## Building from source
 
-Ensure you have JDK 11 (or newer) and Git installed
+Ensure you have JDK 17 (or newer) and Git installed
 
     java -version
     git --version
@@ -20,15 +20,9 @@ To build Keycloak run:
     
 This will build all modules and run the testsuite. 
 
-To build the ZIP distribution run:
-
-    ./mvnw clean install -Pdistribution
-    
-Once completed you will find distribution archives in `distribution`.
-
 To build only the server run:
 
-    ./mvnw -Pdistribution -pl quarkus/dist -am -Dmaven.test.skip clean install
+    ./mvnw -pl quarkus/dist -am -DskipTests clean install
 
 ---
 **NOTE**
