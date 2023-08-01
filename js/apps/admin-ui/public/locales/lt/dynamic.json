@@ -10,7 +10,7 @@
       "tooltip": "Išsaugoto naudotojo atributo pavadinimas kuris naudojamas UserModel.attribute rinkinyje."
     },
     "clientRoleMapping": {
-      "client": {
+      "clientId": {
         "label": "Kliento ID",
         "tooltip": "Kliento ID naudojamas rolių atributų susiejime"
       },

@@ -15,7 +15,7 @@
   "userRegistrationHelpText": "Activer/désactiver la page d''enregistrement. Un lien pour l''enregistrement sera visible sur la page de connexion.",
   "rememberMe": "Se souvenir de moi",
   "rememberMeHelpText": "Affiche une case à cocher sur la page de connexion pour permettre aux utilisateurs de rester connectés entre deux redémarrages de leur navigateur, jusqu''à expiration de la session.",
-  "emailAsUsername": "Courriel comme nom d''utilisateur",
+  "registrationEmailAsUsername": "Courriel comme nom d''utilisateur",
   "loginWithEmail": "Authentification avec courriel",
   "loginWithEmailHelpText": "Autorise l''utilisateur à s''authentifier avec son adresse de courriel.",
   "duplicateEmails": "Doublon courriel",

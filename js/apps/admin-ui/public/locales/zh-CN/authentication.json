@@ -62,7 +62,7 @@
   },
   "webAuthnPolicyRequireResidentKey": "需要常驻密钥",
   "residentKey": {
-    "未指定": "未指定",
+    "not specified": "未指定",
     "Yes": "是",
     "No": "否"
   },
