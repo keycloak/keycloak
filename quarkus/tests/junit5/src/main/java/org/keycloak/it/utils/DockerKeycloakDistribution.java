@@ -1,8 +1,10 @@
 package org.keycloak.it.utils;
 
+import com.github.dockerjava.api.DockerClient;
 import org.jboss.logging.Logger;
 import org.keycloak.common.Version;
 import org.keycloak.it.junit5.extension.CLIResult;
+import org.testcontainers.DockerClientFactory;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.output.OutputFrame;
 import org.testcontainers.containers.output.ToStringConsumer;
@@ -11,7 +13,6 @@ import org.testcontainers.images.RemoteDockerImage;
 import org.testcontainers.images.builder.ImageFromDockerfile;
 import org.testcontainers.utility.DockerImageName;
 import org.testcontainers.utility.LazyFuture;
-import org.testcontainers.utility.ResourceReaper;
 
 import java.io.File;
 import java.lang.reflect.Field;
@@ -172,9 +173,9 @@ public final class DockerKeycloakDistribution implements KeycloakDistribution {
                     @Override
                     public void run() {
                         try {
-                            ResourceReaper
-                                    .instance()
-                                    .stopAndRemoveContainer(finalContainerId);
+                            DockerClient dockerClient = DockerClientFactory.lazyClient();
+                            dockerClient.killContainerCmd(containerId).exec();
+                            dockerClient.removeContainerCmd(containerId).withRemoveVolumes(true).withForce(true).exec();
                         } catch (Exception cause) {
                             throw new RuntimeException("Failed to stop and remove container", cause);
                         }

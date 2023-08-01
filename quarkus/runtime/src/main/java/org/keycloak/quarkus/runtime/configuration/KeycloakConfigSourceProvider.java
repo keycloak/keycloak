@@ -21,11 +21,13 @@ package org.keycloak.quarkus.runtime.configuration;
 import java.util.ArrayList;
 import java.util.List;
 
+import io.quarkus.runtime.configuration.ConfigBuilder;
+import io.smallrye.config.SmallRyeConfigBuilder;
 import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.eclipse.microprofile.config.spi.ConfigSourceProvider;
 import org.keycloak.quarkus.runtime.Environment;
 
-public class KeycloakConfigSourceProvider implements ConfigSourceProvider {
+public class KeycloakConfigSourceProvider implements ConfigSourceProvider, ConfigBuilder {
 
     private static final List<ConfigSource> CONFIG_SOURCES = new ArrayList<>();
 
@@ -69,5 +71,10 @@ public class KeycloakConfigSourceProvider implements ConfigSourceProvider {
             reload();
         }
         return CONFIG_SOURCES;
+    }
+
+    @Override
+    public SmallRyeConfigBuilder configBuilder(SmallRyeConfigBuilder builder) {
+        return builder.withSources(CONFIG_SOURCES);
     }
 }
