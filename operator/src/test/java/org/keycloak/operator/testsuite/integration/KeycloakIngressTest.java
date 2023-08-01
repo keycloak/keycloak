@@ -32,6 +32,7 @@ import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.IngressSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.IngressSpecBuilder;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.HostnameSpecBuilder;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.UnsupportedSpecBuilder;
 import org.keycloak.operator.testsuite.utils.K8sUtils;
 import org.keycloak.operator.controllers.KeycloakIngress;
 
@@ -76,6 +77,19 @@ public class KeycloakIngressTest extends BaseOperatorTest {
             // on OpenShift, when Keycloak is configured for HTTP only, we use edge TLS termination, i.e. Route still uses TLS
             baseUrl = "https://" + testHostname + ":443";
             hostnameSpecBuilder.withHostname(testHostname);
+            // see https://github.com/keycloak/keycloak/issues/14400#issuecomment-1659900081
+            kc.getSpec().setUnsupported(new UnsupportedSpecBuilder()
+                    .withNewPodTemplate()
+                        .withNewSpec()
+                            .addNewContainer()
+                                .addNewEnv()
+                                    .withName("KC_PROXY")
+                                    .withValue("edge")
+                                .endEnv()
+                            .endContainer()
+                        .endSpec()
+                    .endPodTemplate()
+                    .build());
         }
         else {
             baseUrl = "http://" + kubernetesIp + ":80";
