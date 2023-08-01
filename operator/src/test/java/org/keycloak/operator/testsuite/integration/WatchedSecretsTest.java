@@ -17,13 +17,11 @@
 
 package org.keycloak.operator.testsuite.integration;
 
-import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.quarkus.logging.Log;
 import io.quarkus.test.junit.QuarkusTest;
-
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
@@ -34,8 +32,6 @@ import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusCondition;
 import org.keycloak.operator.crds.v2alpha1.deployment.ValueOrSecret;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.HostnameSpecBuilder;
 
-import java.io.ByteArrayOutputStream;
-import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.HashSet;
 import java.util.Set;
@@ -98,15 +94,9 @@ public class WatchedSecretsTest extends BaseOperatorTest {
                 Base64.getEncoder().encodeToString(username.getBytes()));
         k8sclient.resource(dbSecret).update();
 
-        Pod pod = k8sclient.pods().withName(kc.getMetadata().getName() + "-0").waitUntilCondition(
-                p -> p != null && !prevRevision.equals(p.getMetadata().getLabels().get("controller-revision-hash")),
-                30, TimeUnit.SECONDS);
-
-        ByteArrayOutputStream logBytes = new ByteArrayOutputStream();
-        try (var ignored = k8sclient.pods().resource(pod).watchLog(logBytes)) {
-            Awaitility.await().atMost(1, TimeUnit.MINUTES).until(() -> logBytes.toString(StandardCharsets.UTF_8)
-                    .contains("password authentication failed for user \"" + username + "\""));
-        }
+        // dynamically check pod 0 to avoid race conditions
+        Awaitility.await().atMost(1, TimeUnit.MINUTES).ignoreExceptions().until(() ->
+                k8sclient.pods().withName(kc.getMetadata().getName() + "-0").getLog().contains("password authentication failed for user \"" + username + "\""));
     }
 
     private StatefulSet getStatefulSet(Keycloak kc) {

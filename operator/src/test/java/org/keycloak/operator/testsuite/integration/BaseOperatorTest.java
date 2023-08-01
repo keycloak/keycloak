@@ -41,7 +41,6 @@ import io.quarkus.test.junit.callback.QuarkusTestMethodContext;
 import org.awaitility.Awaitility;
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestInfo;
@@ -179,7 +178,11 @@ public class BaseOperatorTest implements QuarkusTestAfterEachCallback {
   }
 
   private static void calculateNamespace() {
-    namespace = "keycloak-test-" + UUID.randomUUID();
+    namespace = getNewRandomNamespaceName();
+  }
+
+  public static String getNewRandomNamespaceName() {
+      return "keycloak-test-" + UUID.randomUUID();
   }
 
   protected static void deployDB() {

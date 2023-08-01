@@ -19,6 +19,7 @@ package org.keycloak.operator.testsuite.integration;
 
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.LocalObjectReferenceBuilder;
+import io.fabric8.kubernetes.api.model.NamespaceBuilder;
 import io.fabric8.kubernetes.api.model.PodTemplateSpecBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.client.dsl.Resource;
@@ -110,26 +111,35 @@ public class PodTemplateTest extends BaseOperatorTest {
 
     @Test
     public void testPodTemplateIncorrectNamespace() {
-        // Arrange
-        var plainKc = getEmptyPodTemplateKeycloak();
-        var podTemplate = new PodTemplateSpecBuilder()
-                .withNewMetadata()
-                .withNamespace("bar")
-                .endMetadata()
-                .build();
-        plainKc.getSpec().getUnsupported().setPodTeplate(podTemplate);
+        final String wrongNamespace = getNewRandomNamespaceName();
+        try {
+            // Arrange
+            Log.info("Using incorrect namespace: " + wrongNamespace);
+            k8sclient.resource(new NamespaceBuilder().withNewMetadata().withName(wrongNamespace).endMetadata().build()).create(); // OpenShift actually checks existence of the NS
+            var plainKc = getEmptyPodTemplateKeycloak();
+            var podTemplate = new PodTemplateSpecBuilder()
+                    .withNewMetadata()
+                    .withNamespace(wrongNamespace)
+                    .endMetadata()
+                    .build();
+            plainKc.getSpec().getUnsupported().setPodTeplate(podTemplate);
 
-        // Act
-        K8sUtils.set(k8sclient, plainKc);
+            // Act
+            K8sUtils.set(k8sclient, plainKc);
 
-        // Assert
-        Log.info("Getting status of Keycloak");
-        Awaitility
-                .await()
-                .ignoreExceptions()
-                .atMost(3, MINUTES).untilAsserted(() -> {
-                    CRAssert.assertKeycloakStatusCondition(getCrSelector().get(), HAS_ERRORS, false, "cannot be modified");
-                });
+            // Assert
+            Log.info("Getting status of Keycloak");
+            Awaitility
+                    .await()
+                    .ignoreExceptions()
+                    .atMost(3, MINUTES).untilAsserted(() -> {
+                        CRAssert.assertKeycloakStatusCondition(getCrSelector().get(), HAS_ERRORS, false, "cannot be modified");
+                    });
+        }
+        finally {
+            Log.info("Deleting incorrect namespace: " + wrongNamespace);
+            k8sclient.namespaces().withName(wrongNamespace).delete();
+        }
     }
 
     @Test
