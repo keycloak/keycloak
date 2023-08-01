@@ -42,8 +42,8 @@ importers:
         specifier: ^5.0.0
         version: 5.0.0(eslint-config-prettier@8.9.0)(eslint@8.45.0)(prettier@3.0.0)
       eslint-plugin-react:
-        specifier: ^7.33.0
-        version: 7.33.0(eslint@8.45.0)
+        specifier: ^7.33.1
+        version: 7.33.1(eslint@8.45.0)
       eslint-plugin-react-hooks:
         specifier: ^4.6.0
         version: 4.6.0(eslint@8.45.0)
@@ -3602,8 +3602,8 @@ packages:
       eslint: 8.45.0
     dev: true
 
-  /eslint-plugin-react@7.33.0(eslint@8.45.0):
-    resolution: {integrity: sha512-qewL/8P34WkY8jAqdQxsiL82pDUeT7nhs8IsuXgfgnsEloKCT4miAV9N9kGtx7/KM9NH/NCGUE7Edt9iGxLXFw==}
+  /eslint-plugin-react@7.33.1(eslint@8.45.0):
+    resolution: {integrity: sha512-L093k0WAMvr6VhNwReB8VgOq5s2LesZmrpPdKz/kZElQDzqS7G7+DnKoqT+w4JwuiGeAhAvHO0fvy0Eyk4ejDA==}
     engines: {node: '>=4'}
     peerDependencies:
       eslint: ^3 || ^4 || ^5 || ^6 || ^7 || ^8
