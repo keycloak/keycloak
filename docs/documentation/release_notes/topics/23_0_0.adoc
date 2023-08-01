@@ -1,0 +1,7 @@
+= Localization files for themes default to UTF-8 encoding
+
+Message properties files for themes are now read in UTF-8 encoding, with an automatic fallback to ISO-8859-1 encoding.
+
+See the migration guide for more details.
+
+
