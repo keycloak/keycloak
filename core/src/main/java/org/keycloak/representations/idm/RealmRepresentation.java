@@ -123,6 +123,7 @@ public class RealmRepresentation {
     protected Integer otpPolicyPeriod;
     protected Boolean otpPolicyCodeReusable;
     protected List<String> otpSupportedApplications;
+    protected Map<String, Map<String, String>> localizationTexts;
 
     // WebAuthn 2-factor properties below
 
@@ -1023,6 +1024,14 @@ public class RealmRepresentation {
 
     public void setOtpSupportedApplications(List<String> otpSupportedApplications) {
         this.otpSupportedApplications = otpSupportedApplications;
+    }
+
+    public Map<String, Map<String, String>> getLocalizationTexts() {
+        return localizationTexts;
+    }
+
+    public void setLocalizationTexts(Map<String, Map<String, String>> localizationTexts) {
+        this.localizationTexts = localizationTexts;
     }
 
     public Boolean isOtpPolicyCodeReusable() {

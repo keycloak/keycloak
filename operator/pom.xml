@@ -101,11 +101,11 @@
         <!-- FIXME: Adding BC for now as removing the Bouncycastle dependencies from the operator makes it unusable on K3s and possibly on other kubernetes distributions (e.g. Rancher is based on K3s). -->
         <dependency>
             <groupId>org.bouncycastle</groupId>
-            <artifactId>bcprov-jdk15on</artifactId>
+            <artifactId>bcprov-jdk18on</artifactId>
         </dependency>
         <dependency>
             <groupId>org.bouncycastle</groupId>
-            <artifactId>bcpkix-jdk15on</artifactId>
+            <artifactId>bcpkix-jdk18on</artifactId>
         </dependency>
 
         <!-- Test -->
@@ -245,27 +245,6 @@
                         <OPERATOR_TEST_LABEL_EXPRESSION>my-value</OPERATOR_TEST_LABEL_EXPRESSION>
                     </systemPropertyVariables>
                 </configuration>
-            </plugin>
-
-            <plugin>
-                <artifactId>maven-antrun-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>filterEnum</id>
-                        <phase>package</phase>
-                        <configuration>
-                            <target>
-                                <replaceregexp file="${project.build.directory}/kubernetes/keycloakrealmimports.k8s.keycloak.org-v1.yml"
-                                   match="[^\n]*- ENUM\$VALUES\s*\n"
-                                   flags="g"
-                                   replace=""/>
-                            </target>
-                        </configuration>
-                        <goals>
-                            <goal>run</goal>
-                        </goals>
-                    </execution>
-                </executions>
             </plugin>
 
             <plugin>

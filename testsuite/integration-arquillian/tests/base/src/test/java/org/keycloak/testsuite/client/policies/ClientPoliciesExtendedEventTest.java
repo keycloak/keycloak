@@ -46,6 +46,7 @@ import org.keycloak.models.Constants;
 import org.keycloak.models.OAuth2DeviceConfig;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
+import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.RefreshToken;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
@@ -64,6 +65,8 @@ import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LogoutConfirmPage;
 import org.keycloak.testsuite.pages.OAuth2DeviceVerificationPage;
 import org.keycloak.testsuite.pages.OAuthGrantPage;
+import org.keycloak.testsuite.services.clientpolicy.executor.TestEnhancedPluggableTokenManagerExecutor;
+import org.keycloak.testsuite.services.clientpolicy.executor.TestEnhancedPluggableTokenManagerExecutorFactory;
 import org.keycloak.testsuite.services.clientpolicy.executor.TestRaiseExceptionExecutorFactory;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientPoliciesBuilder;
@@ -596,5 +599,45 @@ public class ClientPoliciesExtendedEventTest extends AbstractClientPoliciesTest 
         oauth.openLoginForm();
         assertTrue(errorPage.isCurrent());
         assertEquals("Exception thrown intentionally", errorPage.getError());
+    }
+
+    @Test
+    public void testEnhancedPluggableTokenManagerForTokenResponse() throws Exception {
+        // register a confidential client
+        String clientId = generateSuffixedName(CLIENT_NAME);
+        String clientSecret = "secret";
+        createClientByAdmin(clientId, (ClientRepresentation clientRep) -> {
+            clientRep.setSecret(clientSecret);
+            clientRep.setPublicClient(Boolean.FALSE);
+            clientRep.setBearerOnly(Boolean.FALSE);
+        });
+
+        // register profiles
+        String json = (new ClientProfilesBuilder()).addProfile(
+                (new ClientProfileBuilder()).createProfile(PROFILE_NAME, "Den Forste Profilen")
+                        .addExecutor(TestEnhancedPluggableTokenManagerExecutorFactory.PROVIDER_ID, null)
+                        .toRepresentation()
+        ).toString();
+        updateProfiles(json);
+
+        // register policies
+        json = (new ClientPoliciesBuilder()).addPolicy(
+                (new ClientPolicyBuilder()).createPolicy(POLICY_NAME, "La Primera Plitica", Boolean.TRUE)
+                        .addCondition(ClientAccessTypeConditionFactory.PROVIDER_ID,
+                                createClientAccessTypeConditionConfig(Arrays.asList(ClientAccessTypeConditionFactory.TYPE_CONFIDENTIAL)))
+                        .addProfile(PROFILE_NAME)
+                        .toRepresentation()
+        ).toString();
+        updatePolicies(json);
+
+        oauth.clientId(clientId);
+        oauth.doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
+
+        events.expectLogin().client(clientId).assertEvent();
+        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        OAuthClient.AccessTokenResponse response = oauth.doAccessTokenRequest(code, clientSecret);
+        assertEquals(200, response.getStatusCode());
+        AccessToken token = oauth.verifyToken(response.getAccessToken());
+        assertNull(token.getSubject());
     }
 }

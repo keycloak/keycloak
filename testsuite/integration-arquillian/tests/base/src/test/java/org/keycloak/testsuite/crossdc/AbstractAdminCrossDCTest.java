@@ -31,7 +31,7 @@ import java.util.function.BiConsumer;
 import java.util.function.Function;
 import org.hamcrest.Matcher;
 import org.junit.Before;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 import org.keycloak.representations.idm.ClientRepresentation;
 
 /**

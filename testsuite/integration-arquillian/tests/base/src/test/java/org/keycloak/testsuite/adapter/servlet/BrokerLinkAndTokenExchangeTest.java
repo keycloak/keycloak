@@ -38,6 +38,7 @@ import org.keycloak.models.Constants;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.representations.AccessToken;
@@ -77,8 +78,11 @@ import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriBuilder;
 import java.io.File;
 import java.net.URL;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 import static org.keycloak.testsuite.admin.ApiUtil.createUserAndResetPasswordWithAdminClient;
 
@@ -159,6 +163,11 @@ public class BrokerLinkAndTokenExchangeTest extends AbstractServletsAdapterTest 
         servlet.getRedirectUris().add(uri + "/*");
         servlet.setSecret("password");
         servlet.setFullScopeAllowed(true);
+
+        Map<String, String> attributes = Optional.ofNullable(servlet.getAttributes()).orElse(new HashMap<>());
+        attributes.put(OIDCConfigAttributes.EXCLUDE_ISSUER_FROM_AUTH_RESPONSE, Boolean.TRUE.toString());
+        servlet.setAttributes(attributes);
+
         realm.setClients(new LinkedList<>());
         realm.getClients().add(servlet);
 

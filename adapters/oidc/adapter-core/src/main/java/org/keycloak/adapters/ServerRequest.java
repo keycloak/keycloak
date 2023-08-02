@@ -290,7 +290,8 @@ public class ServerRequest {
     protected static String stripOauthParametersFromRedirect(String uri) {
         KeycloakUriBuilder builder = KeycloakUriBuilder.fromUri(uri)
                 .replaceQueryParam(OAuth2Constants.CODE, null)
-                .replaceQueryParam(OAuth2Constants.STATE, null);
+                .replaceQueryParam(OAuth2Constants.STATE, null)
+                .replaceQueryParam(OAuth2Constants.ISSUER, null);
         return builder.buildAsString();
     }
 

@@ -33,6 +33,7 @@ import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
 import io.javaoperatorsdk.operator.processing.event.source.informer.Mappers;
 import io.quarkus.logging.Log;
+
 import org.keycloak.operator.Config;
 import org.keycloak.operator.Constants;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
@@ -40,9 +41,10 @@ import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatus;
 import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusAggregator;
 import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusCondition;
 
-import jakarta.inject.Inject;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+
+import jakarta.inject.Inject;
 
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.WATCH_CURRENT_NAMESPACE;
 
@@ -101,6 +103,13 @@ public class KeycloakController implements Reconciler<Keycloak>, EventSourceInit
         String namespace = kc.getMetadata().getNamespace();
 
         Log.infof("--- Reconciling Keycloak: %s in namespace: %s", kcName, namespace);
+
+        if (kc.getSpec().getInstances() == null) {
+            // explicitly set defaults - and let another reconciliation happen
+            // this avoids ensuring unintentional modifications have not been made to the cr
+            kc.getSpec().setInstances(1);
+            return UpdateControl.updateResource(kc);
+        }
 
         var statusAggregator = new KeycloakStatusAggregator(kc.getStatus(), kc.getMetadata().getGeneration());
 

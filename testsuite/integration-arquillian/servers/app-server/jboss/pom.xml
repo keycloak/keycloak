@@ -845,6 +845,23 @@
                 <module>wildfly</module>
             </modules>
         </profile>
+
+        <!-- Build app-server-wildfly on Windows by default -->
+        <!-- See https://github.com/keycloak/keycloak/issues/21284 -->
+        <profile>
+            <id>app-server-wildfly-windows</id>
+            <activation>
+                <property>
+                    <name>!skipAppServerWildfly</name>
+                </property>
+                <os>
+                    <family>Windows</family>
+                </os>
+            </activation>
+            <modules>
+                <module>wildfly</module>
+            </modules>
+        </profile>
     </profiles>
 
 </project>

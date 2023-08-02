@@ -674,7 +674,7 @@ public class TestingResourceProvider implements RealmResourceProvider {
         RealmModel realm = getRealmByName(realmName);
         AuthenticationFlowModel flow = realm.getClientAuthenticationFlow();
         if (flow == null) return null;
-        return ModelToRepresentation.toRepresentation(realm, flow);
+        return ModelToRepresentation.toRepresentation(session, realm, flow);
     }
 
     @GET
@@ -684,7 +684,7 @@ public class TestingResourceProvider implements RealmResourceProvider {
         RealmModel realm = getRealmByName(realmName);
         AuthenticationFlowModel flow = realm.getResetCredentialsFlow();
         if (flow == null) return null;
-        return ModelToRepresentation.toRepresentation(realm, flow);
+        return ModelToRepresentation.toRepresentation(session, realm, flow);
     }
 
     @GET

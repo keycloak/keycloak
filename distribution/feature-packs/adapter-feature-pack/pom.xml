@@ -170,6 +170,16 @@
             <artifactId>wildfly-feature-pack</artifactId>
             <version>${wildfly.version}</version>
             <type>zip</type>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.bouncycastle</groupId>
+                    <artifactId>bcprov-jdk15on</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.bouncycastle</groupId>
+                    <artifactId>bcpkix-jdk15on</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
     </dependencies>
 

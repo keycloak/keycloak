@@ -48,7 +48,7 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.not;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.keycloak.testsuite.saml.RoleMapperTest.ROLE_ATTRIBUTE_NAME;
 import static org.keycloak.testsuite.util.Matchers.isSamlResponse;
 import static org.keycloak.testsuite.util.Matchers.statusCodeIsHC;
@@ -293,8 +293,8 @@ public final class KcSamlBrokerTest extends AbstractAdvancedBrokerTest {
 
           .getSamlResponse(Binding.POST);       // Response from consumer IdP
 
-        Assert.assertThat(samlResponse, Matchers.notNullValue());
-        Assert.assertThat(samlResponse.getSamlObject(), isSamlResponse(JBossSAMLURIConstants.STATUS_SUCCESS));
+        assertThat(samlResponse, Matchers.notNullValue());
+        assertThat(samlResponse.getSamlObject(), isSamlResponse(JBossSAMLURIConstants.STATUS_SUCCESS));
     }
 
     @Test
@@ -343,8 +343,8 @@ public final class KcSamlBrokerTest extends AbstractAdvancedBrokerTest {
 
                 .getSamlResponse(Binding.POST);       // Response from consumer IdP
 
-        Assert.assertThat(samlResponse, Matchers.notNullValue());
-        Assert.assertThat(samlResponse.getSamlObject(), isSamlResponse(JBossSAMLURIConstants.STATUS_SUCCESS));
+        assertThat(samlResponse, Matchers.notNullValue());
+        assertThat(samlResponse.getSamlObject(), isSamlResponse(JBossSAMLURIConstants.STATUS_SUCCESS));
 
         Stream<AssertionType> assertionTypeStream = assertionsUnencrypted(samlResponse.getSamlObject());
         Stream<AttributeType> attributeStatementTypeStream = attributesUnecrypted(attributeStatements(assertionTypeStream));
@@ -389,8 +389,8 @@ public final class KcSamlBrokerTest extends AbstractAdvancedBrokerTest {
 
           .getSamlResponse(Binding.POST);       // Response from consumer IdP
 
-        Assert.assertThat(samlResponse, Matchers.notNullValue());
-        Assert.assertThat(samlResponse.getSamlObject(), isSamlResponse(JBossSAMLURIConstants.STATUS_SUCCESS));
+        assertThat(samlResponse, Matchers.notNullValue());
+        assertThat(samlResponse.getSamlObject(), isSamlResponse(JBossSAMLURIConstants.STATUS_SUCCESS));
       }
     }
 

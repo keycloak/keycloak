@@ -46,6 +46,7 @@ import org.hamcrest.Matcher;
 import org.junit.Assert;
 import org.w3c.dom.Document;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.keycloak.testsuite.util.saml.SamlDocumentStepBuilder.saml2Object2String;
 
 /**
@@ -128,7 +129,7 @@ public class SamlClientBuilder {
 
     public SamlClientBuilder assertResponse(Matcher<? super CloseableHttpResponse> matcher) {
         steps.add((client, currentURI, currentResponse, context) -> {
-            Assert.assertThat(currentResponse, matcher);
+            assertThat(currentResponse, matcher);
             return null;
         });
         return this;
@@ -264,8 +265,8 @@ public class SamlClientBuilder {
         return
           doNotFollowRedirects()
           .addStep((client, currentURI, currentResponse, context) -> {
-            Assert.assertThat(currentResponse, Matchers.statusCodeIsHC(Status.FOUND));
-            Assert.assertThat("Location header not found", currentResponse.getFirstHeader("Location"), notNullValue());
+            assertThat(currentResponse, Matchers.statusCodeIsHC(Status.FOUND));
+            assertThat("Location header not found", currentResponse.getFirstHeader("Location"), notNullValue());
             return new HttpGet(currentResponse.getFirstHeader("Location").getValue());
           });
     }

@@ -59,6 +59,8 @@ import java.util.stream.IntStream;
 import org.keycloak.testsuite.model.KeycloakModelTest;
 import org.keycloak.testsuite.model.RequireProvider;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  * @author <a href="mailto:mkanis@redhat.com">Martin Kanis</a>
@@ -390,7 +392,7 @@ public class UserSessionProviderOfflineModelTest extends KeycloakModelTest {
         List<String> offlineUserSessionIds =  withRealm(realmId, (session, realm) -> {
             UserModel user = session.users().getUserByUsername(realm, "user1");
             List<String> ids = session.sessions().getOfflineUserSessionsStream(realm, user).map(UserSessionModel::getId).collect(Collectors.toList());
-            Assert.assertThat(ids, Matchers.hasSize(2));
+            assertThat(ids, Matchers.hasSize(2));
             return ids;
         });
 

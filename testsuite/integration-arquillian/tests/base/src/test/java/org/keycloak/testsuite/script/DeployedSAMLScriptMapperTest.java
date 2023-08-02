@@ -6,19 +6,15 @@ import java.util.stream.Stream;
 
 import jakarta.ws.rs.core.Response;
 
-import org.jboss.arquillian.container.test.api.Deployer;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.container.test.api.TargetsContainer;
-import org.jboss.arquillian.test.api.ArquillianResource;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.asset.StringAsset;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
-import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.keycloak.common.Profile;
 import org.keycloak.dom.saml.v2.assertion.AssertionType;
 import org.keycloak.dom.saml.v2.assertion.AttributeType;
 import org.keycloak.protocol.saml.SamlProtocol;
@@ -29,8 +25,8 @@ import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.provider.ScriptProviderDescriptor;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.saml.processing.core.saml.v2.common.SAMLDocumentHolder;
+import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
-import org.keycloak.testsuite.arquillian.annotation.EnableFeatures;
 import org.keycloak.testsuite.saml.AbstractSamlTest;
 import org.keycloak.testsuite.saml.RoleMapperTest;
 import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
@@ -42,7 +38,7 @@ import org.keycloak.testsuite.util.SamlClientBuilder;
 import org.keycloak.util.JsonSerialization;
 
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.keycloak.common.Profile.Feature.SCRIPTS;
 import static org.keycloak.testsuite.arquillian.DeploymentTargetModifier.AUTH_SERVER_CURRENT;
 import static org.keycloak.testsuite.saml.RoleMapperTest.createSamlProtocolMapper;
@@ -53,6 +49,7 @@ import static org.keycloak.testsuite.util.SamlStreams.attributesUnecrypted;
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
+@EnableFeature(value = SCRIPTS, skipRestart = true)
 public class DeployedSAMLScriptMapperTest extends AbstractSamlTest {
 
     private static final String SCRIPT_DEPLOYMENT_NAME = "scripts.jar";
@@ -60,7 +57,8 @@ public class DeployedSAMLScriptMapperTest extends AbstractSamlTest {
     private ClientAttributeUpdater cau;
     private ProtocolMappersUpdater pmu;
 
-    @Deployment(name = SCRIPT_DEPLOYMENT_NAME, managed = false, testable = false)
+    // Managed to make sure that archive is deployed once in @BeforeClass stage and undeployed once in @AfterClass stage
+    @Deployment(name = SCRIPT_DEPLOYMENT_NAME, managed = true, testable = false)
     @TargetsContainer(AUTH_SERVER_CURRENT)
     public static JavaArchive deploy() throws IOException {
         ScriptProviderDescriptor representation = new ScriptProviderDescriptor();
@@ -78,15 +76,6 @@ public class DeployedSAMLScriptMapperTest extends AbstractSamlTest {
         ContainerAssume.assumeNotAuthServerUndertow();
     }
 
-    @ArquillianResource
-    private Deployer deployer;
-
-    @Before
-    public void deployScripts() throws Exception {
-        deployer.deploy(SCRIPT_DEPLOYMENT_NAME);
-        reconnectAdminClient();
-    }
-
     @Before
     public void cleanMappersAndScopes() {
         this.cau = ClientAttributeUpdater.forClient(adminClient, REALM_NAME, SAML_CLIENT_ID_EMPLOYEE_2)
@@ -101,13 +90,8 @@ public class DeployedSAMLScriptMapperTest extends AbstractSamlTest {
                 .addCleanup(this.pmu);
     }
 
-    @After
-    public void onAfter() throws Exception {
-        deployer.undeploy(SCRIPT_DEPLOYMENT_NAME);
-        reconnectAdminClient();
-    }
-
     @Test
+    @DisableFeature(value = SCRIPTS, executeAsLast = false, skipRestart = true)
     public void testScriptMapperNotAvailableThroughAdminRest() {
         assertFalse(adminClient.serverInfo().getInfo().getProtocolMapperTypes().get(SamlProtocol.LOGIN_PROTOCOL).stream()
                 .anyMatch(
@@ -127,7 +111,6 @@ public class DeployedSAMLScriptMapperTest extends AbstractSamlTest {
 
 
     @Test
-    @EnableFeature(value = SCRIPTS, skipRestart = true, executeAsLast = false)
     public void testScriptMappingThroughServerDeploy() {
         // ScriptBasedMapper still not available even if SCRIPTS feature is enabled
         testScriptMapperNotAvailableThroughAdminRest();

@@ -42,7 +42,7 @@ public class AtHashTest {
     }
 
     private void verifyHash(String jwtAlgorithm, String accessToken, String expectedAtHash) {
-        String atHash = HashUtils.oidcHash(jwtAlgorithm, accessToken);
+        String atHash = HashUtils.accessTokenHash(jwtAlgorithm, accessToken);
         Assert.assertEquals(expectedAtHash, atHash);
     }
 }

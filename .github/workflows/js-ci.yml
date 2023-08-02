@@ -6,13 +6,11 @@ on:
       - main
       - dependabot/**
   pull_request:
-  schedule:
-    - cron: 0 20,23,2,5 * * *
   workflow_dispatch:
 
 concurrency:
   # Only cancel jobs for PR updates
-  group: js-ci-${{ github.head_ref || github.run_id }}
+  group: js-ci-${{ github.ref }}
   cancel-in-progress: true
 
 defaults:
@@ -22,7 +20,6 @@ defaults:
 jobs:
   conditional:
     name: Check conditional workflows and jobs
-    if: github.event_name != 'schedule' || github.repository == 'keycloak/keycloak'
     runs-on: ubuntu-latest
     outputs:
       js-ci: ${{ steps.conditional.outputs.js }}
@@ -31,6 +28,8 @@ jobs:
 
       - id: conditional
         uses: ./.github/actions/conditional
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
 
   build-keycloak:
     name: Build Keycloak
@@ -50,7 +49,7 @@ jobs:
 
       - name: Build Keycloak
         run: |
-          mvn clean install --batch-mode --errors -DskipTests -DskipTestsuite -DskipExamples -DskipAccount2 -DskipCommon -Pdistribution
+          ./mvnw clean install --batch-mode --errors -DskipTests -DskipTestsuite -DskipExamples -DskipAccount2 -DskipCommon -Pdistribution
           mv ./quarkus/dist/target/keycloak-999.0.0-SNAPSHOT.tar.gz ./keycloak-999.0.0-SNAPSHOT.tar.gz
 
       - name: Upload Keycloak dist
@@ -197,7 +196,7 @@ jobs:
         browser: [chrome, firefox]
         exclude:
           # Only test with Firefox on scheduled runs
-          - browser: ${{ github.event_name != 'schedule' && 'firefox' || '' }}
+          - browser: ${{ github.event_name != 'workflow_dispatch' && 'firefox' || '' }}
     steps:
       - uses: actions/checkout@v3
 
@@ -266,8 +265,9 @@ jobs:
           name: server-log-${{ matrix.container }}-${{ matrix.browser }}
           path: ~/server.log
 
-  check-set-status:
-    name: Set check conclusion
+  check:
+    name: Status Check - Keycloak JavaScript CI
+    if: always()
     needs:
       - admin-client
       - keycloak-js
@@ -277,26 +277,8 @@ jobs:
       - admin-ui
       - admin-ui-e2e
     runs-on: ubuntu-latest
-    outputs:
-      conclusion: ${{ steps.check.outputs.conclusion }}
     steps:
       - uses: actions/checkout@v3
-
-      - id: check
-        uses: ./.github/actions/checks-success
-
-  check:
-    name: Status Check - Keycloak JavaScript CI
-    if: always() && ( github.event_name != 'schedule' || github.repository == 'keycloak/keycloak' )
-    needs:
-      - conditional
-      - check-set-status
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-
-      - name: Check status
-        uses: ./.github/actions/checks-job-pass
+      - uses: ./.github/actions/status-check
         with:
-          required: ${{ needs.conditional.outputs.js-ci }}
-          conclusion: ${{ needs.check-set-status.outputs.conclusion }}
+          jobs: ${{ toJSON(needs) }}

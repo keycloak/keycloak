@@ -38,7 +38,7 @@ final class ClassLoaderPropertyMappers {
 
             if (profile.getFeatures().get(Feature.FIPS)) {
                 ignoredArtifacts.addAll(List.of(
-                        "org.bouncycastle:bcprov-jdk15on", "org.bouncycastle:bcpkix-jdk15on", "org.bouncycastle:bcutil-jdk15on", "org.keycloak:keycloak-crypto-default"));
+                        "org.bouncycastle:bcprov-jdk18on", "org.bouncycastle:bcpkix-jdk18on", "org.bouncycastle:bcutil-jdk18on", "org.keycloak:keycloak-crypto-default"));
             } else {
                 ignoredArtifacts.addAll(List.of(
                         "org.keycloak:keycloak-crypto-fips1402", "org.bouncycastle:bc-fips", "org.bouncycastle:bctls-fips", "org.bouncycastle:bcpkix-fips"));

@@ -46,8 +46,8 @@ import jakarta.ws.rs.core.Response.Status;
  */
 public class TokenIntrospectionEndpoint {
 
-    private static final String PARAM_TOKEN_TYPE_HINT = "token_type_hint";
-    private static final String PARAM_TOKEN = "token";
+    public static final String PARAM_TOKEN_TYPE_HINT = "token_type_hint";
+    public static final String PARAM_TOKEN = "token";
 
     private final KeycloakSession session;
 
@@ -100,6 +100,7 @@ public class TokenIntrospectionEndpoint {
 
         try {
             session.clientPolicy().triggerOnEvent(new TokenIntrospectContext(formParams));
+            token = formParams.getFirst(PARAM_TOKEN);
         } catch (ClientPolicyException cpe) {
             throw throwErrorResponseException(Errors.INVALID_REQUEST, cpe.getErrorDetail(), Status.BAD_REQUEST);
         }

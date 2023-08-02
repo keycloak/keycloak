@@ -6,7 +6,7 @@ import static org.hamcrest.Matchers.lessThanOrEqualTo;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.keycloak.testsuite.admin.ApiUtil.findUserByUsername;
 import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_SSL_REQUIRED;
@@ -221,8 +221,8 @@ public class HoKTest extends AbstractTestRealmKeycloakTest {
     private void expectSuccessfulResponseFromTokenEndpoint(String sessionId, String codeId, AccessTokenResponse response) throws Exception {
         assertEquals(200, response.getStatusCode());
 
-        Assert.assertThat(response.getExpiresIn(), allOf(greaterThanOrEqualTo(250), lessThanOrEqualTo(300)));
-        Assert.assertThat(response.getRefreshExpiresIn(), allOf(greaterThanOrEqualTo(1750), lessThanOrEqualTo(1800)));
+        assertThat(response.getExpiresIn(), allOf(greaterThanOrEqualTo(250), lessThanOrEqualTo(300)));
+        assertThat(response.getRefreshExpiresIn(), allOf(greaterThanOrEqualTo(1750), lessThanOrEqualTo(1800)));
 
         assertEquals("Bearer", response.getTokenType());
 
@@ -335,9 +335,9 @@ public class HoKTest extends AbstractTestRealmKeycloakTest {
 
         Assert.assertNotNull(refreshTokenString);
         assertEquals("Bearer", tokenResponse.getTokenType());
-        Assert.assertThat(token.getExpiration() - getCurrentTime(), allOf(greaterThanOrEqualTo(200), lessThanOrEqualTo(350)));
+        assertThat(token.getExpiration() - getCurrentTime(), allOf(greaterThanOrEqualTo(200), lessThanOrEqualTo(350)));
         int actual = refreshToken.getExpiration() - getCurrentTime();
-        Assert.assertThat(actual, allOf(greaterThanOrEqualTo(1799 - RefreshTokenTest.ALLOWED_CLOCK_SKEW), lessThanOrEqualTo(1800 + RefreshTokenTest.ALLOWED_CLOCK_SKEW)));
+        assertThat(actual, allOf(greaterThanOrEqualTo(1799 - RefreshTokenTest.ALLOWED_CLOCK_SKEW), lessThanOrEqualTo(1800 + RefreshTokenTest.ALLOWED_CLOCK_SKEW)));
         assertEquals(sessionId, refreshToken.getSessionState());
 
         setTimeOffset(2);
@@ -372,9 +372,9 @@ public class HoKTest extends AbstractTestRealmKeycloakTest {
 
         Assert.assertNotNull(refreshTokenString);
         assertEquals("Bearer", tokenResponse.getTokenType());
-        Assert.assertThat(token.getExpiration() - getCurrentTime(), allOf(greaterThanOrEqualTo(200), lessThanOrEqualTo(350)));
+        assertThat(token.getExpiration() - getCurrentTime(), allOf(greaterThanOrEqualTo(200), lessThanOrEqualTo(350)));
         int actual = refreshToken.getExpiration() - getCurrentTime();
-        Assert.assertThat(actual, allOf(greaterThanOrEqualTo(1799 - RefreshTokenTest.ALLOWED_CLOCK_SKEW), lessThanOrEqualTo(1800 + RefreshTokenTest.ALLOWED_CLOCK_SKEW)));
+        assertThat(actual, allOf(greaterThanOrEqualTo(1799 - RefreshTokenTest.ALLOWED_CLOCK_SKEW), lessThanOrEqualTo(1800 + RefreshTokenTest.ALLOWED_CLOCK_SKEW)));
         assertEquals(sessionId, refreshToken.getSessionState());
 
         setTimeOffset(2);
@@ -399,9 +399,9 @@ public class HoKTest extends AbstractTestRealmKeycloakTest {
     private void expectSuccessfulResponseFromTokenEndpoint(OAuthClient oauth, String username, AccessTokenResponse response, String sessionId, AccessToken token, RefreshToken refreshToken, EventRepresentation tokenEvent) {
         AccessToken refreshedToken = oauth.verifyToken(response.getAccessToken());
         RefreshToken refreshedRefreshToken = oauth.parseRefreshToken(response.getRefreshToken());
-        if (refreshedToken.getCertConf() != null) {
-            log.warnf("refreshed access token's cnf-x5t#256 = %s", refreshedToken.getCertConf().getCertThumbprint());
-            log.warnf("refreshed refresh token's cnf-x5t#256 = %s", refreshedRefreshToken.getCertConf().getCertThumbprint());    
+        if (refreshedToken.getConfirmation() != null) {
+            log.warnf("refreshed access token's cnf-x5t#256 = %s", refreshedToken.getConfirmation().getCertThumbprint());
+            log.warnf("refreshed refresh token's cnf-x5t#256 = %s", refreshedRefreshToken.getConfirmation().getCertThumbprint());
         }
 
         assertEquals(200, response.getStatusCode());
@@ -409,11 +409,11 @@ public class HoKTest extends AbstractTestRealmKeycloakTest {
         assertEquals(sessionId, refreshedToken.getSessionState());
         assertEquals(sessionId, refreshedRefreshToken.getSessionState());
 
-        Assert.assertThat(response.getExpiresIn(), allOf(greaterThanOrEqualTo(250), lessThanOrEqualTo(300)));
-        Assert.assertThat(refreshedToken.getExpiration() - getCurrentTime(), allOf(greaterThanOrEqualTo(250 - RefreshTokenTest.ALLOWED_CLOCK_SKEW), lessThanOrEqualTo(300 + RefreshTokenTest.ALLOWED_CLOCK_SKEW)));
+        assertThat(response.getExpiresIn(), allOf(greaterThanOrEqualTo(250), lessThanOrEqualTo(300)));
+        assertThat(refreshedToken.getExpiration() - getCurrentTime(), allOf(greaterThanOrEqualTo(250 - RefreshTokenTest.ALLOWED_CLOCK_SKEW), lessThanOrEqualTo(300 + RefreshTokenTest.ALLOWED_CLOCK_SKEW)));
 
-        Assert.assertThat(refreshedToken.getExpiration() - token.getExpiration(), allOf(greaterThanOrEqualTo(1), lessThanOrEqualTo(10)));
-        Assert.assertThat(refreshedRefreshToken.getExpiration() - refreshToken.getExpiration(), allOf(greaterThanOrEqualTo(1), lessThanOrEqualTo(10)));
+        assertThat(refreshedToken.getExpiration() - token.getExpiration(), allOf(greaterThanOrEqualTo(1), lessThanOrEqualTo(10)));
+        assertThat(refreshedRefreshToken.getExpiration() - refreshToken.getExpiration(), allOf(greaterThanOrEqualTo(1), lessThanOrEqualTo(10)));
 
         Assert.assertNotEquals(token.getId(), refreshedToken.getId());
         Assert.assertNotEquals(refreshToken.getId(), refreshedRefreshToken.getId());
@@ -599,7 +599,7 @@ public class HoKTest extends AbstractTestRealmKeycloakTest {
         // Validate "c_hash"
         Assert.assertNull(idToken.getAccessTokenHash());
         Assert.assertNotNull(idToken.getCodeHash());
-        Assert.assertEquals(idToken.getCodeHash(), HashUtils.oidcHash(Algorithm.RS256, authzResponse.getCode()));
+        Assert.assertEquals(idToken.getCodeHash(), HashUtils.accessTokenHash(Algorithm.RS256, authzResponse.getCode()));
 
         // IDToken exchanged for the code
         IDToken idToken2 = sendTokenRequestAndGetIDToken(loginEvent);
@@ -634,9 +634,9 @@ public class HoKTest extends AbstractTestRealmKeycloakTest {
         AccessToken at = jws.readJsonContent(AccessToken.class);
         jws = new JWSInput(accessTokenResponse.getRefreshToken());
         RefreshToken rt = jws.readJsonContent(RefreshToken.class);
-        String certThumprintFromAccessToken = at.getCertConf().getCertThumbprint();
-        String certThumprintFromRefreshToken = rt.getCertConf().getCertThumbprint();
-        String certThumprintFromTokenIntrospection = rep.getCertConf().getCertThumbprint();
+        String certThumprintFromAccessToken = at.getConfirmation().getCertThumbprint();
+        String certThumprintFromRefreshToken = rt.getConfirmation().getCertThumbprint();
+        String certThumprintFromTokenIntrospection = rep.getConfirmation().getCertThumbprint();
         String certThumprintFromBoundClientCertificate = MutualTLSUtils.getThumbprintFromDefaultClientCert();
 
         assertTrue(rep.isActive());
@@ -727,7 +727,7 @@ public class HoKTest extends AbstractTestRealmKeycloakTest {
         } catch (JWSInputException e) {
             Assert.fail(e.toString());
         }
-        assertTrue(MessageDigest.isEqual(certThumbPrint.getBytes(), at.getCertConf().getCertThumbprint().getBytes()));
+        assertTrue(MessageDigest.isEqual(certThumbPrint.getBytes(), at.getConfirmation().getCertThumbprint().getBytes()));
 
         if (checkRefreshToken) {
             RefreshToken rt = null;
@@ -737,7 +737,7 @@ public class HoKTest extends AbstractTestRealmKeycloakTest {
             } catch (JWSInputException e) {
                 Assert.fail(e.toString());
             }
-            assertTrue(MessageDigest.isEqual(certThumbPrint.getBytes(), rt.getCertConf().getCertThumbprint().getBytes()));
+            assertTrue(MessageDigest.isEqual(certThumbPrint.getBytes(), rt.getConfirmation().getCertThumbprint().getBytes()));
         }
     }
 }

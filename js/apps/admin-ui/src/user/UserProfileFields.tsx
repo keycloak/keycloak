@@ -3,13 +3,14 @@ import { Form, Text } from "@patternfly/react-core";
 import { Fragment } from "react";
 import { useTranslation } from "react-i18next";
 
+import { useFormContext } from "react-hook-form";
 import { ScrollForm } from "../components/scroll-form/ScrollForm";
 import { useUserProfile } from "../realm-settings/user-profile/UserProfileContext";
 import { OptionComponent } from "./components/OptionsComponent";
 import { SelectComponent } from "./components/SelectComponent";
 import { TextAreaComponent } from "./components/TextAreaComponent";
 import { TextComponent } from "./components/TextComponent";
-import { DEFAULT_ROLES } from "./utils";
+import { DEFAULT_ROLES, fieldName } from "./utils";
 
 type UserProfileFieldsProps = {
   roles?: string[];
@@ -112,8 +113,14 @@ type FormFieldProps = {
 };
 
 const FormField = ({ attribute, roles }: FormFieldProps) => {
-  const componentType = (attribute.annotations?.["inputType"] ||
-    "text") as Field;
+  const { watch } = useFormContext();
+  const value = watch(fieldName(attribute));
+
+  const componentType = (
+    attribute.annotations?.["inputType"] || Array.isArray(value)
+      ? "multiselect"
+      : "text"
+  ) as Field;
   const Component = FIELDS[componentType];
 
   return <Component {...{ ...attribute, roles }} />;

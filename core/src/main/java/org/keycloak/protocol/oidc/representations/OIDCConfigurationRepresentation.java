@@ -157,6 +157,9 @@ public class OIDCConfigurationRepresentation {
     @JsonProperty("tls_client_certificate_bound_access_tokens")
     private Boolean tlsClientCertificateBoundAccessTokens;
 
+    @JsonProperty("dpop_signing_alg_values_supported")
+    private List<String> dpopSigningAlgValuesSupported;
+
     @JsonProperty("revocation_endpoint")
     private String revocationEndpoint;
 
@@ -192,6 +195,9 @@ public class OIDCConfigurationRepresentation {
 
     @JsonProperty("mtls_endpoint_aliases")
     private MTLSEndpointAliases mtlsEndpointAliases;
+
+    @JsonProperty("authorization_response_iss_parameter_supported")
+    private Boolean authorizationResponseIssParameterSupported;
 
     protected Map<String, Object> otherClaims = new HashMap<String, Object>();
 
@@ -487,6 +493,14 @@ public class OIDCConfigurationRepresentation {
         this.tlsClientCertificateBoundAccessTokens = tlsClientCertificateBoundAccessTokens;
     }
 
+    public List<String> getDpopSigningAlgValuesSupported() {
+        return dpopSigningAlgValuesSupported;
+    }
+
+    public void setDpopSigningAlgValuesSupported(List<String> dpopSigningAlgValuesSupported) {
+        this.dpopSigningAlgValuesSupported = dpopSigningAlgValuesSupported;
+    }
+
     public String getRevocationEndpoint() {
         return revocationEndpoint;
     }
@@ -624,4 +638,13 @@ public class OIDCConfigurationRepresentation {
     public Boolean getFrontChannelLogoutSupported() {
         return frontChannelLogoutSupported;
     }
+
+    public Boolean getAuthorizationResponseIssParameterSupported() {
+        return authorizationResponseIssParameterSupported;
+    }
+
+    public void setAuthorizationResponseIssParameterSupported(Boolean authorizationResponseIssParameterSupported) {
+        this.authorizationResponseIssParameterSupported = authorizationResponseIssParameterSupported;
+    }
+
 }

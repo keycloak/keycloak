@@ -304,7 +304,7 @@ public abstract class AbstractOIDCResponseTypeTest extends AbstractTestRealmKeyc
 
         Assert.assertNotNull(accessTokenHash);
         Assert.assertNotNull(accessToken);
-        assertEquals(accessTokenHash, HashUtils.oidcHash(getIdTokenSignatureAlgorithm(), accessToken));
+        assertEquals(accessTokenHash, HashUtils.accessTokenHash(getIdTokenSignatureAlgorithm(), accessToken));
     }
 
     /**
@@ -316,6 +316,6 @@ public abstract class AbstractOIDCResponseTypeTest extends AbstractTestRealmKeyc
 
         Assert.assertNotNull(codeHash);
         Assert.assertNotNull(code);
-        Assert.assertEquals(codeHash, HashUtils.oidcHash(getIdTokenSignatureAlgorithm(), code));
+        Assert.assertEquals(codeHash, HashUtils.accessTokenHash(getIdTokenSignatureAlgorithm(), code));
     }
 }

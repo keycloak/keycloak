@@ -35,7 +35,7 @@ import static org.hamcrest.Matchers.anyOf;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.keycloak.testsuite.adapter.AbstractServletsAdapterTest.samlServletDeployment;
 import static org.keycloak.testsuite.adapter.servlet.SAMLServletAdapterTest.FORBIDDEN_TEXT;
 import static org.keycloak.testsuite.adapter.servlet.SAMLServletAdapterTest.WEBSPHERE_FORBIDDEN_TEXT;

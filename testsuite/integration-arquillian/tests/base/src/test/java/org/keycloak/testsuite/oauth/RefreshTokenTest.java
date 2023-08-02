@@ -238,9 +238,9 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
 
         assertEquals("Bearer", tokenResponse.getTokenType());
 
-        Assert.assertThat(token.getExpiration() - getCurrentTime(), allOf(greaterThanOrEqualTo(200), lessThanOrEqualTo(350)));
+        assertThat(token.getExpiration() - getCurrentTime(), allOf(greaterThanOrEqualTo(200), lessThanOrEqualTo(350)));
         int actual = refreshToken.getExpiration() - getCurrentTime();
-        Assert.assertThat(actual, allOf(greaterThanOrEqualTo(1799 - ALLOWED_CLOCK_SKEW), lessThanOrEqualTo(1800 + ALLOWED_CLOCK_SKEW)));
+        assertThat(actual, allOf(greaterThanOrEqualTo(1799 - ALLOWED_CLOCK_SKEW), lessThanOrEqualTo(1800 + ALLOWED_CLOCK_SKEW)));
 
         assertEquals(sessionId, refreshToken.getSessionState());
 
@@ -253,11 +253,11 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
         assertEquals(sessionId, refreshedToken.getSessionState());
         assertEquals(sessionId, refreshedRefreshToken.getSessionState());
 
-        Assert.assertThat(response.getExpiresIn(), allOf(greaterThanOrEqualTo(250), lessThanOrEqualTo(300)));
-        Assert.assertThat(refreshedToken.getExpiration() - getCurrentTime(), allOf(greaterThanOrEqualTo(250 - ALLOWED_CLOCK_SKEW), lessThanOrEqualTo(300 + ALLOWED_CLOCK_SKEW)));
+        assertThat(response.getExpiresIn(), allOf(greaterThanOrEqualTo(250), lessThanOrEqualTo(300)));
+        assertThat(refreshedToken.getExpiration() - getCurrentTime(), allOf(greaterThanOrEqualTo(250 - ALLOWED_CLOCK_SKEW), lessThanOrEqualTo(300 + ALLOWED_CLOCK_SKEW)));
 
-        Assert.assertThat(refreshedToken.getExpiration() - token.getExpiration(), allOf(greaterThanOrEqualTo(0), lessThanOrEqualTo(10)));
-        Assert.assertThat(refreshedRefreshToken.getExpiration() - refreshToken.getExpiration(), allOf(greaterThanOrEqualTo(0), lessThanOrEqualTo(10)));
+        assertThat(refreshedToken.getExpiration() - token.getExpiration(), allOf(greaterThanOrEqualTo(0), lessThanOrEqualTo(10)));
+        assertThat(refreshedRefreshToken.getExpiration() - refreshToken.getExpiration(), allOf(greaterThanOrEqualTo(0), lessThanOrEqualTo(10)));
 
         // "test-app" should not be an audience in the refresh token
         assertEquals("test-app", refreshedRefreshToken.getIssuedFor());
@@ -968,7 +968,7 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
             next = testingClient.testing().getLastSessionRefresh("test", sessionId, false);
 
             // lastSEssionRefresh should be updated because access code lifespan is higher than sso idle timeout
-            Assert.assertThat(next, allOf(greaterThan(last), lessThan(last + 50)));
+            assertThat(next, allOf(greaterThan(last), lessThan(last + 50)));
 
             RealmManager.realm(realmResource).ssoSessionIdleTimeout(1);
 

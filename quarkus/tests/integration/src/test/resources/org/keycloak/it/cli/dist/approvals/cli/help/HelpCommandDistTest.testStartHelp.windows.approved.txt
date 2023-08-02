@@ -77,14 +77,14 @@ Feature:
 --features <feature> Enables a set of one or more features. Possible values are: account-api,
                        account2, account3, admin-api, admin-fine-grained-authz, admin2,
                        authorization, ciba, client-policies, client-secret-rotation,
-                       declarative-user-profile, docker, dynamic-scopes, fips, impersonation,
+                       declarative-user-profile, docker, dpop, dynamic-scopes, fips, impersonation,
                        js-adapter, kerberos, map-storage, par, preview, recovery-codes, scripts,
                        step-up-authentication, token-exchange, update-email, web-authn.
 --features-disabled <feature>
                      Disables a set of one or more features. Possible values are: account-api,
                        account2, account3, admin-api, admin-fine-grained-authz, admin2,
                        authorization, ciba, client-policies, client-secret-rotation,
-                       declarative-user-profile, docker, dynamic-scopes, fips, impersonation,
+                       declarative-user-profile, docker, dpop, dynamic-scopes, fips, impersonation,
                        js-adapter, kerberos, map-storage, par, preview, recovery-codes, scripts,
                        step-up-authentication, token-exchange, update-email, web-authn.
 
@@ -143,7 +143,7 @@ HTTP/TLS:
                        value is set, it defaults to 'BCFKS'.
 --https-port <port>  The used HTTPS port. Default: 8443.
 --https-protocols <protocols>
-                     The list of protocols to explicitly enable. Default: TLSv1.3.
+                     The list of protocols to explicitly enable. Default: TLSv1.3,TLSv1.2.
 --https-trust-store-file <file>
                      The trust store which holds the certificate information of the certificates to
                        trust.

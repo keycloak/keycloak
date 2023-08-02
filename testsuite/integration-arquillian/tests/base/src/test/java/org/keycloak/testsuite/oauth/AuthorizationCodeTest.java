@@ -86,6 +86,7 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
         Assert.assertNotNull(response.getCode());
         assertEquals("OpenIdConnect.AuthenticationProperties=2302984sdlk", response.getState());
         Assert.assertNull(response.getError());
+        assertEquals(oauth.AUTH_SERVER_ROOT + "/realms/test", response.getIssuer());
 
         String codeId = events.expectLogin().assertEvent().getDetails().get(Details.CODE_ID);
     }
@@ -160,6 +161,7 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
         Assert.assertNotNull(response.getCode());
         Assert.assertNull(response.getState());
         Assert.assertNull(response.getError());
+        assertEquals(oauth.AUTH_SERVER_ROOT + "/realms/test", response.getIssuer());
 
         String codeId = events.expectLogin().assertEvent().getDetails().get(Details.CODE_ID);
     }
@@ -173,6 +175,7 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
         OAuthClient.AuthorizationEndpointResponse errorResponse = new OAuthClient.AuthorizationEndpointResponse(oauth);
         assertTrue(errorResponse.isRedirected());
         Assert.assertEquals(errorResponse.getError(), OAuthErrorException.UNSUPPORTED_RESPONSE_TYPE);
+        Assert.assertEquals(oauth.AUTH_SERVER_ROOT + "/realms/test", errorResponse.getIssuer());
 
         events.expectLogin().error(Errors.INVALID_REQUEST).user((String) null).session((String) null).clearDetails().detail(Details.RESPONSE_TYPE, "tokenn").assertEvent();
     }
@@ -284,6 +287,7 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
 
         Assert.assertNotNull(response.getCode());
         Assert.assertNotNull(response.getState());
+        Assert.assertEquals(oauth.AUTH_SERVER_ROOT + "/realms/test", response.getIssuer());
 
         currentUri = new URI(driver.getCurrentUrl());
         Assert.assertNotNull(currentUri.getRawQuery());

@@ -869,7 +869,7 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
         assertFalse(applications.isEmpty());
 
         Map<String, ClientRepresentation> apps = applications.stream().collect(Collectors.toMap(x -> x.getClientId(), x -> x));
-        Assert.assertThat(apps.keySet(), containsInAnyOrder("in-use-client", "always-display-client", "direct-grant"));
+        assertThat(apps.keySet(), containsInAnyOrder("in-use-client", "always-display-client", "direct-grant"));
 
         assertClientRep(apps.get("in-use-client"), "In Use Client", null, false, true, false, null, inUseClientAppUri);
         assertClientRep(apps.get("always-display-client"), "Always Display Client", null, false, false, false, null, alwaysDisplayClientAppUri);
@@ -893,7 +893,7 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
         assertFalse(applications.isEmpty());
 
         Map<String, ClientRepresentation> apps = applications.stream().collect(Collectors.toMap(x -> x.getClientId(), x -> x));
-        Assert.assertThat(apps.keySet(), containsInAnyOrder("in-use-client"));
+        assertThat(apps.keySet(), containsInAnyOrder("in-use-client"));
 
         assertClientRep(apps.get("in-use-client"), "In Use Client", null, false, true, false, null, inUseClientAppUri);
     }
@@ -919,7 +919,7 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
         assertFalse(applications.isEmpty());
 
         Map<String, ClientRepresentation> apps = applications.stream().collect(Collectors.toMap(x -> x.getClientId(), x -> x));
-        Assert.assertThat(apps.keySet(), containsInAnyOrder("offline-client", "offline-client-without-base-url", "always-display-client", "direct-grant"));
+        assertThat(apps.keySet(), containsInAnyOrder("offline-client", "offline-client-without-base-url", "always-display-client", "direct-grant"));
 
         assertClientRep(apps.get("offline-client"), "Offline Client", null, false, true, true, null, offlineClientAppUri);
         assertClientRep(apps.get("offline-client-without-base-url"), "Offline Client Without Base URL", null, false, true, true, null, null);
@@ -969,7 +969,7 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
                 .asResponse();
 
         Map<String, ClientRepresentation> apps = applications.stream().collect(Collectors.toMap(x -> x.getClientId(), x -> x));
-        Assert.assertThat(apps.keySet(), containsInAnyOrder(appId, "always-display-client", "direct-grant"));
+        assertThat(apps.keySet(), containsInAnyOrder(appId, "always-display-client", "direct-grant"));
 
         ClientRepresentation app = apps.get(appId);
         assertClientRep(app, null, "A third party application", true, false, false, null, "http://localhost:8180/auth/realms/master/app/auth");
@@ -1001,7 +1001,7 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
         assertFalse(applications.isEmpty());
 
         Map<String, ClientRepresentation> apps = applications.stream().collect(Collectors.toMap(x -> x.getClientId(), x -> x));
-        Assert.assertThat(apps.keySet(), containsInAnyOrder("root-url-client", "always-display-client", "direct-grant"));
+        assertThat(apps.keySet(), containsInAnyOrder("root-url-client", "always-display-client", "direct-grant"));
 
         assertClientRep(apps.get("root-url-client"), null, null, false, true, false, "http://localhost:8180/foo/bar", "/baz");
     }
@@ -1449,7 +1449,7 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
         assertFalse(applications.isEmpty());
 
         Map<String, ClientRepresentation> apps = applications.stream().collect(Collectors.toMap(x -> x.getClientId(), x -> x));
-        Assert.assertThat(apps.keySet(), containsInAnyOrder("offline-client", "always-display-client", "direct-grant"));
+        assertThat(apps.keySet(), containsInAnyOrder("offline-client", "always-display-client", "direct-grant"));
 
         assertClientRep(apps.get("offline-client"), "Offline Client", null, false, true, false, null, offlineClientAppUri);
     }

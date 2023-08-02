@@ -63,7 +63,7 @@ import java.util.Map;
 
 import jakarta.ws.rs.core.Response.Status;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.keycloak.testsuite.util.Matchers.statusCodeIs;
 
 /**
@@ -218,7 +218,7 @@ public class CustomFlowTest extends AbstractFlowTest {
         Response response = authMgmtResource.copy("browser", params);
         String flowId = null;
         try {
-            Assert.assertThat("Copy flow", response, statusCodeIs(Response.Status.CREATED));
+            assertThat("Copy flow", response, statusCodeIs(Response.Status.CREATED));
             AuthenticationFlowRepresentation newFlow = findFlowByAlias(flowAlias);
             flowId = newFlow.getId();
         } finally {

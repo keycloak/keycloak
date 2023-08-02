@@ -27,7 +27,7 @@ const Resources = () => {
           eventKey={1}
           title={<TabTitleText>{t("sharedWithMe")}</TabTitleText>}
         >
-          <h1>Share</h1>
+          <ResourcesTab isShared />
         </Tab>
       </Tabs>
     </Page>

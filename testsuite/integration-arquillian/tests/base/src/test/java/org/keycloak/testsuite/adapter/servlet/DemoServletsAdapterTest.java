@@ -122,7 +122,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.keycloak.testsuite.auth.page.AuthRealm.DEMO;
 import static org.keycloak.testsuite.util.AdminClientUtil.NUMBER_OF_CONNECTIONS;
@@ -1197,19 +1197,19 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
         // Redirect client to login page if it's not an XHR
         response = target.request().header("X-Requested-With", "Dont-Know").header(HttpHeaders.ACCEPT, "*/*").get();
         Assert.assertEquals(302, response.getStatus());
-        Assert.assertThat(response.getHeaderString(HttpHeaders.LOCATION), containsString("response_type=code"));
+        assertThat(response.getHeaderString(HttpHeaders.LOCATION), containsString("response_type=code"));
         response.close();
 
         // Redirect client to login page if client explicitely understands HTML responses
         response = target.request().header(HttpHeaders.ACCEPT, "text/html,application/xhtml+xml,application/xml;q=0.9").get();
         Assert.assertEquals(302, response.getStatus());
-        Assert.assertThat(response.getHeaderString(HttpHeaders.LOCATION), containsString("response_type=code"));
+        assertThat(response.getHeaderString(HttpHeaders.LOCATION), containsString("response_type=code"));
         response.close();
 
         // Redirect client to login page if client understands all response types
         response = target.request().header(HttpHeaders.ACCEPT, "*/*").get();
         Assert.assertEquals(302, response.getStatus());
-        Assert.assertThat(response.getHeaderString(HttpHeaders.LOCATION), containsString("response_type=code"));
+        assertThat(response.getHeaderString(HttpHeaders.LOCATION), containsString("response_type=code"));
         response.close();
         client.close();
     }

@@ -370,10 +370,6 @@ to {project_name} will contain the scope parameter `scope=openid address phone`.
 * enableLogging - Enables logging messages from Keycloak to the console (default is `false`).
 * pkceMethod - The method for Proof Key Code Exchange (https://datatracker.ietf.org/doc/html/rfc7636[PKCE]) to use. Configuring this value enables the PKCE mechanism. Available options:
     - "S256" - The SHA256 based PKCE method
-* scope - Used to forward the scope parameter to the {project_name} login endpoint. Use a space-delimited list of scopes. Those typically
-reference link:{adminguide_link}#_client_scopes[Client scopes] defined on a particular client. Note that the scope `openid` is
-always added to the list of scopes by the adapter. For example, if you enter the scope options `address phone`, then the request
-to {project_name} will contain the scope parameter `scope=openid address phone`.
 * messageReceiveTimeout - Set a timeout in milliseconds for waiting for message responses from the Keycloak server. This is used, for example, when waiting for a message during 3rd party cookies check. The default value is 10000.
 * locale - When onLoad is 'login-required', sets the 'ui_locales' query param in compliance with https://openid.net/specs/openid-connect-core-1_0.html#AuthRequest[section 3.1.2.1 of the OIDC 1.0 specification].
 
