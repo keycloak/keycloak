@@ -110,6 +110,27 @@ jobs:
         with:
           job-name: Base IT
 
+  quarkus-unit-tests:
+    name: Quarkus UT
+    needs: build
+    timeout-minutes: 15
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      # We want to download Keycloak artifacts
+      - id: integration-test-setup
+        name: Integration test setup
+        uses: ./.github/actions/integration-test-setup
+
+      - name: Run unit tests
+        run: |
+          ./mvnw test -f quarkus/pom.xml -pl '!tests,!tests/junit5,!tests/integration,!dist'
+
+      - name: Upload JVM Heapdumps
+        if: always()
+        uses: ./.github/actions/upload-heapdumps
+
   quarkus-integration-tests:
     name: Quarkus IT
     needs: build
@@ -590,6 +611,7 @@ jobs:
     needs:
       - unit-tests
       - base-integration-tests
+      - quarkus-unit-tests
       - quarkus-integration-tests
       - jdk-integration-tests
       - new-store-integration-tests
