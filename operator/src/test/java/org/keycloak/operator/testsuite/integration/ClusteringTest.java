@@ -108,8 +108,9 @@ public class ClusteringTest extends BaseOperatorTest {
 
     @Test
     public void testKeycloakScaleAsExpected() {
-        // given
+        // given a starting point of a default keycloak with null/default instances
         var kc = getTestKeycloakDeployment(false);
+        kc.getSpec().setInstances(null);
         var crSelector = k8sclient.resource(kc);
         K8sUtils.deployKeycloak(k8sclient, kc, true);
 
