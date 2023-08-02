@@ -101,7 +101,7 @@
     "@types/react-dom": "^18.2.7",
     "@types/uuid": "^9.0.2",
     "@vitejs/plugin-react-swc": "^3.3.2",
-    "cypress": "^12.17.2",
+    "cypress": "^12.17.3",
     "cypress-axe": "^1.4.0",
     "jsdom": "^22.1.0",
     "ldap-server-mock": "^6.0.1",
