@@ -1,10 +1,12 @@
 import { expect, test } from "@playwright/test";
 import { login } from "./login";
+import { getBaseUrl } from "./utils";
+import { getRootPath } from "../src/utils/getRootPath";
 
 test.describe("Applications test", () => {
   test.beforeEach(async ({ page }) => {
     // Sign out all devices before each test
-    await login(page, "admin", "admin", "master");
+    await login(page, "admin", "admin");
     await page.getByTestId("accountSecurity").click();
     await page.getByTestId("account-security/device-activity").click();
 
@@ -19,7 +21,7 @@ test.describe("Applications test", () => {
   });
 
   test("Single application", async ({ page }) => {
-    await login(page, "admin", "admin", "master");
+    await login(page, "admin", "admin");
 
     await page.getByTestId("applications").click();
 
@@ -39,8 +41,8 @@ test.describe("Applications test", () => {
       const page1 = await context1.newPage();
       const page2 = await context2.newPage();
 
-      await login(page1, "admin", "admin", "master");
-      await login(page2, "admin", "admin", "master");
+      await login(page1, "admin", "admin");
+      await login(page2, "admin", "admin");
 
       await page1.getByTestId("applications").click();
 
@@ -62,15 +64,15 @@ test.describe("Applications test", () => {
       "Skip this test if not running with regular Keycloak",
     );
 
-    await login(page, "admin", "admin", "master");
+    await login(page, "admin", "admin");
 
     // go to admin console
     await page.goto("/");
-    await expect(page).toHaveURL("http://localhost:8080/admin/master/console/");
-    await page.waitForURL("http://localhost:8080/admin/master/console/");
+    await expect(page).toHaveURL(`${getBaseUrl()}/admin/master/console/`);
+    await page.waitForURL(`${getBaseUrl()}/admin/master/console/`);
 
-    await page.goto("/realms/master/account");
-    await page.waitForURL("http://localhost:8080/realms/master/account/");
+    await page.goto(getRootPath());
+    await page.waitForURL(getBaseUrl() + getRootPath());
 
     await page.getByTestId("applications").click();
 
