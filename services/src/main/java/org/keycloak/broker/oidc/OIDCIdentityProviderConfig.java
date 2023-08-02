@@ -18,12 +18,9 @@ package org.keycloak.broker.oidc;
 
 import static org.keycloak.common.util.UriUtils.checkUrl;
 
-import org.keycloak.OAuth2Constants;
 import org.keycloak.common.enums.SslRequired;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.RealmModel;
-
-import java.util.Arrays;
 
 /**
  * @author Pedro Igor
@@ -34,6 +31,7 @@ public class OIDCIdentityProviderConfig extends OAuth2IdentityProviderConfig {
 
     public static final String USE_JWKS_URL = "useJwksUrl";
     public static final String VALIDATE_SIGNATURE = "validateSignature";
+    public static final String IS_ACCESS_TOKEN_JWT = "isAccessTokenJWT";
 
     public OIDCIdentityProviderConfig(IdentityProviderModel identityProviderModel) {
         super(identityProviderModel);
@@ -85,6 +83,14 @@ public class OIDCIdentityProviderConfig extends OAuth2IdentityProviderConfig {
 
     public void setValidateSignature(boolean validateSignature) {
         getConfig().put(VALIDATE_SIGNATURE, String.valueOf(validateSignature));
+    }
+
+    public void setAccessTokenJwt(boolean accessTokenJwt) {
+        getConfig().put(IS_ACCESS_TOKEN_JWT, String.valueOf(accessTokenJwt));
+    }
+
+    public boolean isAccessTokenJwt() {
+        return Boolean.parseBoolean(getConfig().get(IS_ACCESS_TOKEN_JWT));
     }
 
     public boolean isUseJwksUrl() {

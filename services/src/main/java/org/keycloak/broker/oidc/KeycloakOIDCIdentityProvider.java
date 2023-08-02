@@ -31,8 +31,6 @@ import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
-import org.keycloak.representations.AccessTokenResponse;
-import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.adapters.action.AdminAction;
 import org.keycloak.representations.adapters.action.LogoutAction;
 import org.keycloak.services.ErrorResponseException;
@@ -53,22 +51,14 @@ import static org.keycloak.utils.LockObjectsForModification.lockUserSessionsForM
  */
 public class KeycloakOIDCIdentityProvider extends OIDCIdentityProvider {
 
-    public static final String VALIDATED_ACCESS_TOKEN = "VALIDATED_ACCESS_TOKEN";
-
     public KeycloakOIDCIdentityProvider(KeycloakSession session, OIDCIdentityProviderConfig config) {
         super(session, config);
+        config.setAccessTokenJwt(true); // force access token JWT
     }
 
     @Override
     public Object callback(RealmModel realm, AuthenticationCallback callback, EventBuilder event) {
         return new KeycloakEndpoint(callback, realm, event, this);
-    }
-
-    @Override
-    protected void processAccessTokenResponse(BrokeredIdentityContext context, AccessTokenResponse response) {
-        // Don't verify audience on accessToken as it may not be there. It was verified on IDToken already
-        JsonWebToken access = validateToken(response.getToken(), true);
-        context.getContextData().put(VALIDATED_ACCESS_TOKEN, access);
     }
 
     protected static class KeycloakEndpoint extends OIDCEndpoint {

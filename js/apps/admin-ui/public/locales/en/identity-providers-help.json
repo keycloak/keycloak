@@ -15,6 +15,7 @@
   "logoutUrl": "End session endpoint to use to logout user from external IDP.",
   "backchannelLogout": "Does the external IDP support backchannel logout?",
   "disableUserInfo": "Disable usage of User Info service to obtain additional user information?  Default is to use this OIDC service.",
+  "isAccessTokenJWT": "The Access Token received from the Identity Provider is a JWT and its claims will be accessible for mappers.",
   "userInfoUrl": "The User Info Url. This is optional.",
   "issuer": "The issuer identifier for the issuer of the response. If not provided, no validation will be performed.",
   "scopes": "The scopes to be sent when asking for authorization. It can be a space-separated list of scopes. Defaults to 'openid'.",

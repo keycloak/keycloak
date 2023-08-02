@@ -78,7 +78,6 @@ public class GoogleIdentityProvider extends OIDCIdentityProvider implements Soci
         return true;
     }
 
-
     @Override
     public boolean isIssuer(String issuer, MultivaluedMap<String, String> params) {
         String requestedIssuer = params.getFirst(OAuth2Constants.SUBJECT_ISSUER);
