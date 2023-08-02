@@ -55,6 +55,8 @@ jobs:
     runs-on: ubuntu-latest
     needs: build
     timeout-minutes: 30
+    env:
+      GH_TOKEN: ${{ github.token }}
     steps:
       - uses: actions/checkout@v3
 
@@ -71,7 +73,7 @@ jobs:
             SEP=","
           done
 
-          ./mvnw test -pl "$PROJECTS" -am
+          ./mvnw test -pl "$PROJECTS" -am -s maven-settings.xml
 
       - name: Upload JVM Heapdumps
         if: always()
@@ -82,6 +84,8 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     timeout-minutes: 100
+    env:
+      GH_TOKEN: ${{ github.token }}
     strategy:
       matrix:
         group: [1, 2, 3, 4, 5, 6]
@@ -97,7 +101,7 @@ jobs:
         run: |
           TESTS=`testsuite/integration-arquillian/tests/base/testsuites/base-suite.sh ${{ matrix.group }}`
           echo "Tests: $TESTS"
-          ./mvnw test ${{ env.SUREFIRE_RETRY }} -Pauth-server-quarkus "-Dwebdriver.chrome.driver=$CHROMEWEBDRIVER/chromedriver" -Dtest=$TESTS -pl testsuite/integration-arquillian/tests/base | misc/log/trimmer.sh
+          ./mvnw test ${{ env.SUREFIRE_RETRY }} -Pauth-server-quarkus "-Dwebdriver.chrome.driver=$CHROMEWEBDRIVER/chromedriver" -Dtest=$TESTS -pl testsuite/integration-arquillian/tests/base -s maven-settings.xml | misc/log/trimmer.sh
 
       - name: Upload JVM Heapdumps
         if: always()
@@ -129,6 +133,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     env:
       MAVEN_OPTS: -Xmx1024m
+      GH_TOKEN: ${{ github.token }}
     steps:
       - uses: actions/checkout@v3
 
@@ -145,8 +150,8 @@ jobs:
           PARAMS["container"]="-Dkc.quarkus.tests.dist=docker"
           PARAMS["storage"]="-Ptest-database -Dtest=PostgreSQLDistTest,MariaDBDistTest#testSuccessful,MySQLDistTest#testSuccessful,DatabaseOptionsDistTest,JPAStoreDistTest,HotRodStoreDistTest,MixedStoreDistTest,TransactionConfigurationDistTest"
 
-          ./mvnw install -pl quarkus/tests/integration -am -DskipTests
-          ./mvnw test -pl quarkus/tests/integration ${PARAMS["${{ matrix.server }}"]} | misc/log/trimmer.sh
+          ./mvnw install -pl quarkus/tests/integration -am -DskipTests -s maven-settings.xml
+          ./mvnw test -s maven-settings.xml -pl quarkus/tests/integration ${PARAMS["${{ matrix.server }}"]} | misc/log/trimmer.sh
 
       - name: Upload JVM Heapdumps
         if: always()
@@ -156,6 +161,8 @@ jobs:
     name: Java Distribution IT
     needs: build
     timeout-minutes: 100
+    env:
+      GH_TOKEN: ${{ github.token }}
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest]
@@ -174,17 +181,17 @@ jobs:
           jdk-version: ${{ matrix.version }}
 
       - name: Prepare Quarkus distribution with current JDK
-        run: ./mvnw install -e -pl testsuite/integration-arquillian/servers/auth-server/quarkus
+        run: ./mvnw install -e -pl testsuite/integration-arquillian/servers/auth-server/quarkus -s maven-settings.xml
 
       - name: Run base tests
         run: |
           TESTS=`testsuite/integration-arquillian/tests/base/testsuites/suite.sh jdk`
           echo "Tests: $TESTS"
-          ./mvnw test ${{ env.SUREFIRE_RETRY }} -Pauth-server-quarkus -Dtest=$TESTS -pl testsuite/integration-arquillian/tests/base | misc/log/trimmer.sh
+          ./mvnw test ${{ env.SUREFIRE_RETRY }} -Pauth-server-quarkus -Dtest=$TESTS -pl testsuite/integration-arquillian/tests/base -s maven-settings.xml | misc/log/trimmer.sh
 
       - name: Build with JDK
         run:
-          ./mvnw install -e -DskipTests -DskipExamples
+          ./mvnw install -e -DskipTests -DskipExamples -s maven-settings.xml
 
       - name: Upload JVM Heapdumps
         if: always()
@@ -201,6 +208,8 @@ jobs:
     name: Databases New Store
     runs-on: ubuntu-latest
     needs: [conditional]
+    env:
+      GH_TOKEN: ${{ github.token }}
     if: needs.conditional.outputs.ci-store == 'true'
     steps:
       - id: matrix-db
@@ -219,6 +228,8 @@ jobs:
     name: New Store IT
     needs: [conditional, build, databases-new-store]
     if: needs.conditional.outputs.ci-store == 'true'
+    env:
+      GH_TOKEN: ${{ github.token }}
     runs-on: ubuntu-latest
     # Currently, the run of CockroachDB (only branches and nightly runs) is the longest with 50-60 minutes
     timeout-minutes: 90
@@ -243,7 +254,7 @@ jobs:
 
           TESTS=`testsuite/integration-arquillian/tests/base/testsuites/suite.sh database`
           echo "Tests: $TESTS"
-          ./mvnw test ${{ env.SUREFIRE_RETRY }} -Pauth-server-quarkus ${PARAMS["${{ matrix.db }}"]} -Dtest=$TESTS -pl testsuite/integration-arquillian/tests/base | misc/log/trimmer.sh
+          ./mvnw test ${{ env.SUREFIRE_RETRY }} -Pauth-server-quarkus -s maven-settings.xml ${PARAMS["${{ matrix.db }}"]} -Dtest=$TESTS -pl testsuite/integration-arquillian/tests/base | misc/log/trimmer.sh
 
       - name: Upload JVM Heapdumps
         if: always()
@@ -261,6 +272,8 @@ jobs:
     needs: [build, conditional]
     if: needs.conditional.outputs.ci-store == 'true'
     runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
     timeout-minutes: 75
     strategy:
       matrix:
@@ -277,7 +290,7 @@ jobs:
         run: |
           TESTS=`testsuite/integration-arquillian/tests/base/testsuites/suite.sh database`
           echo "Tests: $TESTS"
-          ./mvnw test ${{ env.SUREFIRE_RETRY }} -Pauth-server-quarkus -Pdb-${{ matrix.db }} -Dtest=$TESTS -pl testsuite/integration-arquillian/tests/base | misc/log/trimmer.sh
+          ./mvnw test ${{ env.SUREFIRE_RETRY }} -s maven-settings.xml -Pauth-server-quarkus -Pdb-${{ matrix.db }} -Dtest=$TESTS -pl testsuite/integration-arquillian/tests/base | misc/log/trimmer.sh
 
       - name: Upload JVM Heapdumps
         if: always()
@@ -294,6 +307,8 @@ jobs:
     name: Store Model Tests
     runs-on: ubuntu-latest
     needs: [build, conditional]
+    env:
+      GH_TOKEN: ${{ github.token }}
     if: needs.conditional.outputs.ci-store == 'true'
     timeout-minutes: 75
     steps:
@@ -324,6 +339,7 @@ jobs:
     timeout-minutes: 35
     env:
       MAVEN_OPTS: -Xmx1024m
+      GH_TOKEN: ${{ github.token }}
     steps:
       - uses: actions/checkout@v3
 
@@ -333,7 +349,7 @@ jobs:
 
       - name: Run cluster tests
         run: |
-          ./mvnw test ${{ env.SUREFIRE_RETRY }} -Pauth-server-cluster-quarkus -Dsession.cache.owners=2 -Dtest=**.cluster.** -pl testsuite/integration-arquillian/tests/base  | misc/log/trimmer.sh
+          ./mvnw test ${{ env.SUREFIRE_RETRY }} -s maven-settings.xml -Pauth-server-cluster-quarkus -Dsession.cache.owners=2 -Dtest=**.cluster.** -pl testsuite/integration-arquillian/tests/base  | misc/log/trimmer.sh
 
       - name: Upload JVM Heapdumps
         if: always()
@@ -350,6 +366,8 @@ jobs:
     name: FIPS UT
     runs-on: ubuntu-latest
     needs: build
+    env:
+      GH_TOKEN: ${{ github.token }}
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v3
@@ -375,6 +393,8 @@ jobs:
     name: FIPS IT
     needs: build
     runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
     timeout-minutes: 45
     strategy:
       matrix:
@@ -396,7 +416,7 @@ jobs:
           jdk-version: 17
 
       - name: Prepare Quarkus distribution with BCFIPS
-        run: ./mvnw install -e -pl testsuite/integration-arquillian/servers/auth-server/quarkus -Pauth-server-quarkus,auth-server-fips140-2
+        run: ./mvnw install -s maven-settings.xml -e -pl testsuite/integration-arquillian/servers/auth-server/quarkus -Pauth-server-quarkus,auth-server-fips140-2
 
       - name: Run base tests
         run: docker run --rm --workdir /github/workspace -e "SUREFIRE_RERUN_FAILING_COUNT" -v "${{ github.workspace }}":"/github/workspace" -v "$HOME/.m2":"/root/.m2" registry.access.redhat.com/ubi8/ubi:latest .github/scripts/run-fips-it.sh ${{ matrix.mode }}
@@ -417,6 +437,8 @@ jobs:
     runs-on: ubuntu-latest
     needs: build
     timeout-minutes: 75
+    env:
+      GH_TOKEN: ${{ github.token }}
     strategy:
       matrix:
         browser: [chrome, firefox]
@@ -429,7 +451,7 @@ jobs:
         uses: ./.github/actions/integration-test-setup
 
       - name: Run Account Console IT
-        run: ./mvnw test ${{ env.SUREFIRE_RETRY }} -Pauth-server-quarkus -Dtest=**.account2.**,!SigningInTest#passwordlessWebAuthnTest,!SigningInTest#twoFactorWebAuthnTest -Dbrowser=${{ matrix.browser }} "-Dwebdriver.chrome.driver=$CHROMEWEBDRIVER/chromedriver" "-Dwebdriver.gecko.driver=$GECKOWEBDRIVER/geckodriver" -f testsuite/integration-arquillian/tests/other/base-ui/pom.xml | misc/log/trimmer.sh
+        run: ./mvnw test ${{ env.SUREFIRE_RETRY }} -s maven-settings.xml -Pauth-server-quarkus -Dtest=**.account2.**,!SigningInTest#passwordlessWebAuthnTest,!SigningInTest#twoFactorWebAuthnTest -Dbrowser=${{ matrix.browser }} "-Dwebdriver.chrome.driver=$CHROMEWEBDRIVER/chromedriver" "-Dwebdriver.gecko.driver=$GECKOWEBDRIVER/geckodriver" -f testsuite/integration-arquillian/tests/other/base-ui/pom.xml | misc/log/trimmer.sh
 
       - name: Upload JVM Heapdumps
         if: always()
@@ -447,6 +469,8 @@ jobs:
     runs-on: ubuntu-latest
     needs: build
     timeout-minutes: 75
+    env:
+      GH_TOKEN: ${{ github.token }}
     strategy:
       matrix:
         browser: [chrome, firefox]
@@ -462,7 +486,7 @@ jobs:
         run: |
           TESTS=`testsuite/integration-arquillian/tests/base/testsuites/suite.sh forms`
           echo "Tests: $TESTS"
-          ./mvnw test ${{ env.SUREFIRE_RETRY }} -Pauth-server-quarkus -Dtest=$TESTS -Dbrowser=${{ matrix.browser }} "-Dwebdriver.chrome.driver=$CHROMEWEBDRIVER/chromedriver" "-Dwebdriver.gecko.driver=$GECKOWEBDRIVER/geckodriver" -f testsuite/integration-arquillian/tests/base/pom.xml | misc/log/trimmer.sh
+          ./mvnw test ${{ env.SUREFIRE_RETRY }} -s maven-settings.xml -Pauth-server-quarkus -Dtest=$TESTS -Dbrowser=${{ matrix.browser }} "-Dwebdriver.chrome.driver=$CHROMEWEBDRIVER/chromedriver" "-Dwebdriver.gecko.driver=$GECKOWEBDRIVER/geckodriver" -f testsuite/integration-arquillian/tests/base/pom.xml | misc/log/trimmer.sh
 
       - name: Upload JVM Heapdumps
         if: always()
@@ -480,6 +504,8 @@ jobs:
     runs-on: ubuntu-latest
     needs: build
     timeout-minutes: 45
+    env:
+      GH_TOKEN: ${{ github.token }}
     strategy:
       matrix:
         browser:
@@ -494,7 +520,7 @@ jobs:
         uses: ./.github/actions/integration-test-setup
 
       - name: Run WebAuthn IT
-        run: ./mvnw test ${{ env.SUREFIRE_RETRY }} -Pauth-server-quarkus -Dtest=org.keycloak.testsuite.webauthn.**.*Test -Dbrowser=${{ matrix.browser }} "-Dwebdriver.chrome.driver=$CHROMEWEBDRIVER/chromedriver" "-Dwebdriver.gecko.driver=$GECKOWEBDRIVER/geckodriver" -Pwebauthn -f testsuite/integration-arquillian/tests/other/pom.xml | misc/log/trimmer.sh
+        run: ./mvnw test ${{ env.SUREFIRE_RETRY }} -s maven-settings.xml -Pauth-server-quarkus -Dtest=org.keycloak.testsuite.webauthn.**.*Test -Dbrowser=${{ matrix.browser }} "-Dwebdriver.chrome.driver=$CHROMEWEBDRIVER/chromedriver" "-Dwebdriver.gecko.driver=$GECKOWEBDRIVER/geckodriver" -Pwebauthn -f testsuite/integration-arquillian/tests/other/pom.xml | misc/log/trimmer.sh
 
       - name: Upload JVM Heapdumps
         if: always()
@@ -511,6 +537,8 @@ jobs:
     name: SSSD
     runs-on: ubuntu-latest
     if: needs.conditional.outputs.ci-sssd == 'true'
+    env:
+      GH_TOKEN: ${{ github.token }}
     needs:
       - conditional
       - build
@@ -542,6 +570,8 @@ jobs:
     name: Migration Tests
     runs-on: ubuntu-latest
     needs: build
+    env:
+      GH_TOKEN: ${{ github.token }}
     timeout-minutes: 45
     strategy:
       matrix:
@@ -565,6 +595,7 @@ jobs:
           -Dmigration.import.file.name=migration-realm-${{ matrix.old-version }}.json \
           -Dauth.server.ssl.required=false \
           -Dauth.server.db.host=localhost \
+          -s maven-settings.xml \
           -f testsuite/integration-arquillian/pom.xml | misc/log/trimmer.sh
 
       - name: Upload JVM Heapdumps

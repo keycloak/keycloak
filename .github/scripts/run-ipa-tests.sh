@@ -58,7 +58,7 @@ dnf install -y java-17-openjdk-devel
 export JAVA_HOME=/etc/alternatives/java_sdk_17
 
 echo "Building quarkus keyclok server with SSSD integration"
-./mvnw install -nsu -B -e -pl testsuite/integration-arquillian/servers/auth-server/quarkus -Pauth-server-quarkus
+./mvnw -s maven-settings.xml install -nsu -B -e -pl testsuite/integration-arquillian/servers/auth-server/quarkus -Pauth-server-quarkus
 
 echo "Executing SSSD tests"
-./mvnw -f testsuite/integration-arquillian/tests/other/sssd/pom.xml test -Psssd-testing -Pauth-server-quarkus
+./mvnw -f testsuite/integration-arquillian/tests/other/sssd/pom.xml -s maven-settings.xml test -Psssd-testing -Pauth-server-quarkus

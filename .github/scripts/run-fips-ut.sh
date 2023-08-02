@@ -12,4 +12,4 @@ export JAVA_HOME=/etc/alternatives/java_sdk_17
 if [ $? -ne 0 ]; then
   exit 1
 fi
-./mvnw test -nsu -B -am -pl crypto/default,crypto/fips1402 -Dcom.redhat.fips=true -Dorg.bouncycastle.fips.approved_only=true
+./mvnw test -s maven-settings.xml -nsu -B -am -pl crypto/default,crypto/fips1402 -Dcom.redhat.fips=true -Dorg.bouncycastle.fips.approved_only=true
