@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2023 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,27 +15,24 @@
  * limitations under the License.
  */
 
-package org.keycloak.common.util.reflections;
+package org.keycloak.connections.jpa.updater.liquibase.conn;
 
-import java.lang.reflect.AccessibleObject;
-import java.security.PrivilegedAction;
+import liquibase.Liquibase;
+import liquibase.database.Database;
+import liquibase.resource.ResourceAccessor;
 
 /**
- * A {@link PrivilegedAction} that calls {@link AccessibleObject#setAccessible(boolean)}
+ * Custom subclass to expose protected liquibase API.
  */
-public class UnSetAccessiblePrivilegedAction implements PrivilegedAction<Void> {
+public class KeycloakLiquibase extends Liquibase {
 
-    private final AccessibleObject member;
-
-    public UnSetAccessiblePrivilegedAction(AccessibleObject member) {
-        this.member = member;
+    public KeycloakLiquibase(String changeLogFile, ResourceAccessor resourceAccessor, Database database) {
+        super(changeLogFile, resourceAccessor, database);
     }
 
-    public Void run() {
-        if (member.isAccessible()) {
-            member.setAccessible(false);
-        }
-        return null;
+    @Override
+    public void resetServices() {
+        // expose protected method for use without reflection
+        super.resetServices();
     }
-
 }
