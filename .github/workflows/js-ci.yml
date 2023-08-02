@@ -36,6 +36,8 @@ jobs:
     needs: conditional
     if: needs.conditional.outputs.js-ci == 'true'
     runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
     steps:
       - uses: actions/checkout@v3
 
@@ -49,7 +51,7 @@ jobs:
 
       - name: Build Keycloak
         run: |
-          ./mvnw clean install --batch-mode --errors -DskipTests -DskipTestsuite -DskipExamples -DskipAccount2 -DskipCommon -Pdistribution
+          ./mvnw clean install -s maven-settings.xml --batch-mode --errors -DskipTests -DskipTestsuite -DskipExamples -DskipAccount2 -DskipCommon -Pdistribution
           mv ./quarkus/dist/target/keycloak-999.0.0-SNAPSHOT.tar.gz ./keycloak-999.0.0-SNAPSHOT.tar.gz
 
       - name: Upload Keycloak dist
