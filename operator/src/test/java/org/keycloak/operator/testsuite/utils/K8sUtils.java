@@ -30,7 +30,6 @@ import io.quarkus.logging.Log;
 
 import org.awaitility.Awaitility;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
-import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakSpecBuilder;
 import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusCondition;
 
 import java.io.ByteArrayOutputStream;
@@ -83,10 +82,6 @@ public final class K8sUtils {
         if (deployTlsSecret) {
             set(client, getDefaultTlsSecret());
         }
-
-        // speed the cleanup of pods
-        kc.setSpec(new KeycloakSpecBuilder(kc.getSpec()).editOrNewUnsupported().editOrNewPodTemplate().editOrNewSpec()
-                .withTerminationGracePeriodSeconds(0L).endSpec().endPodTemplate().endUnsupported().build());
 
         set(client, kc);
 
