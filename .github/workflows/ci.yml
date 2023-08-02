@@ -58,9 +58,9 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - id: unit-test-setup
-        name: Unit test setup
-        uses: ./.github/actions/unit-test-setup
+      - id: test-setup
+        name: Test setup
+        uses: ./.github/actions/test-setup
 
       - name: Run unit tests
         run: |
@@ -71,7 +71,7 @@ jobs:
             SEP=","
           done
 
-          ./mvnw test -pl "$PROJECTS" -am
+          ./mvnw test -pl "$PROJECTS"
 
       - name: Upload JVM Heapdumps
         if: always()
@@ -89,9 +89,9 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - id: integration-test-setup
-        name: Integration test setup
-        uses: ./.github/actions/integration-test-setup
+      - id: test-setup
+        name: Test setup
+        uses: ./.github/actions/test-setup
 
       - name: Run base tests
         run: |
@@ -132,9 +132,11 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - id: unit-test-setup
-        name: Unit test setup
-        uses: ./.github/actions/unit-test-setup
+      - id: test-setup
+        name: Test setup
+        uses: ./.github/actions/test-setup
+        with:
+          download-artifacts: false
 
       # Not sure why, but needs to re-build otherwise there's some failures starting up
       - name: Run Quarkus integration Tests
@@ -166,9 +168,9 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - id: integration-test-setup
-        name: Integration test setup
-        uses: ./.github/actions/integration-test-setup
+      - id: test-setup
+        name: Test setup
+        uses: ./.github/actions/test-setup
         with:
           jdk-dist: ${{ matrix.dist }}
           jdk-version: ${{ matrix.version }}
@@ -229,9 +231,9 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - id: integration-test-setup
-        name: Integration test setup
-        uses: ./.github/actions/integration-test-setup
+      - id: test-setup
+        name: Test setup
+        uses: ./.github/actions/test-setup
 
       - name: Run base tests
         run: |
@@ -269,9 +271,9 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - id: integration-test-setup
-        name: Integration test setup
-        uses: ./.github/actions/integration-test-setup
+      - id: test-setup
+        name: Test setup
+        uses: ./.github/actions/test-setup
 
       - name: Run base tests
         run: |
@@ -299,9 +301,9 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - id: integration-test-setup
-        name: Integration test setup
-        uses: ./.github/actions/integration-test-setup
+      - id: test-setup
+        name: Test setup
+        uses: ./.github/actions/test-setup
 
       - name: Run model tests
         run: testsuite/model/test-all-profiles.sh ${{ env.SUREFIRE_RETRY }}
@@ -327,9 +329,9 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - id: integration-test-setup
-        name: Integration test setup
-        uses: ./.github/actions/integration-test-setup
+      - id: test-setup
+        name: Test setup
+        uses: ./.github/actions/test-setup
 
       - name: Run cluster tests
         run: |
@@ -360,9 +362,9 @@ jobs:
           make
           sudo insmod fake_fips.ko
 
-      - id: unit-test-setup
-        name: Unit test setup
-        uses: ./.github/actions/unit-test-setup
+      - id: test-setup
+        name: Test setup
+        uses: ./.github/actions/test-setup
 
       - name: Run crypto tests
         run: docker run --rm --workdir /github/workspace -v "${{ github.workspace }}":"/github/workspace" -v "$HOME/.m2":"/root/.m2" registry.access.redhat.com/ubi8/ubi:latest .github/scripts/run-fips-ut.sh
@@ -389,9 +391,9 @@ jobs:
           make
           sudo insmod fake_fips.ko
 
-      - id: integration-test-setup
-        name: Integration test setup
-        uses: ./.github/actions/integration-test-setup
+      - id: test-setup
+        name: Test setup
+        uses: ./.github/actions/test-setup
         with:
           jdk-version: 17
 
@@ -424,9 +426,9 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - id: integration-test-setup
-        name: Integration test setup
-        uses: ./.github/actions/integration-test-setup
+      - id: test-setup
+        name: Test setup
+        uses: ./.github/actions/test-setup
 
       - name: Run Account Console IT
         run: ./mvnw test ${{ env.SUREFIRE_RETRY }} -Pauth-server-quarkus -Dtest=**.account2.**,!SigningInTest#passwordlessWebAuthnTest,!SigningInTest#twoFactorWebAuthnTest -Dbrowser=${{ matrix.browser }} "-Dwebdriver.chrome.driver=$CHROMEWEBDRIVER/chromedriver" "-Dwebdriver.gecko.driver=$GECKOWEBDRIVER/geckodriver" -f testsuite/integration-arquillian/tests/other/base-ui/pom.xml | misc/log/trimmer.sh
@@ -454,9 +456,9 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - id: integration-test-setup
-        name: Integration test setup
-        uses: ./.github/actions/integration-test-setup
+      - id: test-setup
+        name: Test setup
+        uses: ./.github/actions/test-setup
 
       - name: Run Forms IT
         run: |
@@ -489,9 +491,9 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - id: integration-test-setup
-        name: Integration test setup
-        uses: ./.github/actions/integration-test-setup
+      - id: test-setup
+        name: Test setup
+        uses: ./.github/actions/test-setup
 
       - name: Run WebAuthn IT
         run: ./mvnw test ${{ env.SUREFIRE_RETRY }} -Pauth-server-quarkus -Dtest=org.keycloak.testsuite.webauthn.**.*Test -Dbrowser=${{ matrix.browser }} "-Dwebdriver.chrome.driver=$CHROMEWEBDRIVER/chromedriver" "-Dwebdriver.gecko.driver=$GECKOWEBDRIVER/geckodriver" -Pwebauthn -f testsuite/integration-arquillian/tests/other/pom.xml | misc/log/trimmer.sh
@@ -519,9 +521,9 @@ jobs:
       - name: checkout
         uses: actions/checkout@v3
 
-      - id: integration-test-setup
-        name: Integration test setup
-        uses: ./.github/actions/integration-test-setup
+      - id: test-setup
+        name: Test setup
+        uses: ./.github/actions/test-setup
 
       - id: weekly-cache-key
         name: Key for weekly rotation of cache
@@ -551,9 +553,9 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - id: integration-test-setup
-        name: Integration test setup
-        uses: ./.github/actions/integration-test-setup
+      - id: test-setup
+        name: Test setup
+        uses: ./.github/actions/test-setup
 
       - name: Run Migration Tests
         run: |

@@ -1,5 +1,5 @@
-name: Setup integration test
-description: Download Maven caches needed for integration tests
+name: Setup test
+description: Setup for Unit and Integration tests
 
 inputs:
   jdk-dist:
@@ -10,6 +10,10 @@ inputs:
     description: JDK version
     required: false
     default: "17"
+  download-artifacts:
+    description: Download Keycloak Maven artifacts
+    required: false
+    default: "true"
 
 runs:
   using: composite
@@ -32,12 +36,14 @@ runs:
     - id: download-keycloak
       name: Download Keycloak Maven artifacts
       uses: actions/download-artifact@v3
+      if: inputs.download-artifacts == 'true'
       with:
         name: m2-keycloak.tzts
 
     - id: extract-maven-artifacts
       name: Extract Keycloak Maven artifacts
       shell: bash
+      if: inputs.download-artifacts == 'true'
       run: |
         if [ "$RUNNER_OS" == "Windows" ]; then
           choco install zstandard
