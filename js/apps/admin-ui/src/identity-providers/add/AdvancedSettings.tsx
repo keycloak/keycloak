@@ -132,6 +132,9 @@ export const AdvancedSettings = ({ isOIDC, isSAML }: AdvancedSettingsProps) => {
           <SwitchField field="config.disableUserInfo" label="disableUserInfo" />
         </>
       )}
+      {isOIDC && (
+        <SwitchField field="config.isAccessTokenJWT" label="isAccessTokenJWT" />
+      )}
       <SwitchField field="trustEmail" label="trustEmail" fieldType="boolean" />
       <SwitchField
         field="linkOnly"

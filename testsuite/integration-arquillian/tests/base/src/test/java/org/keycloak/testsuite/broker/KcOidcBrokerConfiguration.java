@@ -73,10 +73,10 @@ public class KcOidcBrokerConfiguration implements BrokerConfiguration {
         client.setSecret(CLIENT_SECRET);
 
         client.setRedirectUris(Collections.singletonList(getConsumerRoot() +
-                "/auth/realms/" + REALM_CONS_NAME + "/broker/" + IDP_OIDC_ALIAS + "/endpoint/*"));
+                "/auth/realms/" + REALM_CONS_NAME + "/broker/" + getIDPAlias() + "/endpoint/*"));
 
         client.setAdminUrl(getConsumerRoot() +
-                "/auth/realms/" + REALM_CONS_NAME + "/broker/" + IDP_OIDC_ALIAS + "/endpoint");
+                "/auth/realms/" + REALM_CONS_NAME + "/broker/" + getIDPAlias() + "/endpoint");
 
         OIDCAdvancedConfigWrapper.fromClientRepresentation(client).setPostLogoutRedirectUris(Collections.singletonList("+"));
 
