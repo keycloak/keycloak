@@ -53,7 +53,7 @@ public class DatabaseContainer {
         if (alias.equals("infinispan")) {
             dist.setProperty("storage-hotrod-username", getUsername());
             dist.setProperty("storage-hotrod-password", getPassword());
-            dist.setProperty("storage-hotrod-host", container.getContainerIpAddress());
+            dist.setProperty("storage-hotrod-host", container.getHost());
             dist.setProperty("storage-hotrod-port", String.valueOf(container.getMappedPort(11222)));
         } else {
             dist.setProperty("db-username", getUsername());
