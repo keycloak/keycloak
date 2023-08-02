@@ -8,8 +8,12 @@ if [ $? -ne 0 ]; then
 fi
 echo "fips.provider.7=XMLDSig" >>/etc/alternatives/java_sdk_17/conf/security/java.security
 export JAVA_HOME=/etc/alternatives/java_sdk_17
-./mvnw test -nsu -B -am -pl crypto/default,crypto/fips1402 -Dcom.redhat.fips=true
+
+# Build all dependent modules
+./mvnw install -nsu -B -am -pl crypto/default,crypto/fips1402 -DskipTests
+
+./mvnw test -nsu -B -pl crypto/default,crypto/fips1402 -Dcom.redhat.fips=true
 if [ $? -ne 0 ]; then
   exit 1
 fi
-./mvnw test -nsu -B -am -pl crypto/default,crypto/fips1402 -Dcom.redhat.fips=true -Dorg.bouncycastle.fips.approved_only=true
+./mvnw test -nsu -B -pl crypto/default,crypto/fips1402 -Dcom.redhat.fips=true -Dorg.bouncycastle.fips.approved_only=true
