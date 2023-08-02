@@ -49,9 +49,10 @@ import org.keycloak.operator.controllers.KeycloakDeployment;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakSpecBuilder;
 import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakSpecFluent.UnsupportedNested;
-import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusCondition;
+import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatus;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.UnsupportedSpecFluent.PodTemplateNested;
 import org.keycloak.operator.testsuite.utils.K8sUtils;
+import org.opentest4j.TestAbortedException;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -264,15 +265,14 @@ public class BaseOperatorTest implements QuarkusTestAfterEachCallback {
           return;
       }
       try {
-          if (!context.getTestStatus().isTestFailed()) {
+          if (!context.getTestStatus().isTestFailed() && !(context.getTestStatus().getTestErrorCause() instanceof TestAbortedException)) {
               return;
           }
+          Log.warnf("Test failed with %s: %s", context.getTestStatus().getTestErrorCause().getMessage(), context.getTestStatus().getTestErrorCause().getClass().getName());
           savePodLogs();
           // provide some helpful entries in the main log as well
           k8sclient.resources(Keycloak.class).list().getItems().stream()
-                  .filter(kc -> !Boolean.TRUE.equals(Optional.ofNullable(kc.getStatus())
-                          .flatMap(keycloak -> keycloak.findCondition(KeycloakStatusCondition.READY))
-                          .map(KeycloakStatusCondition::getStatus).orElse(null)))
+                  .filter(kc -> !Optional.ofNullable(kc.getStatus()).map(KeycloakStatus::isReady).orElse(false))
                   .forEach(kc -> {
                       Log.warnf("Keycloak failed to become ready \"%s\" %s", kc.getMetadata().getName(), Serialization.asYaml(kc.getStatus()));
                       var statefulSet = k8sclient.resources(StatefulSet.class).withName(KeycloakDeployment.getName(kc)).get();
@@ -283,7 +283,7 @@ public class BaseOperatorTest implements QuarkusTestAfterEachCallback {
                                       try {
                                           String log = k8sclient.pods().resource(pod).getLog();
                                           if (log.length() > 5000) {
-                                              log = log.substring(log.length() - 5000, log.length());
+                                              log = log.substring(log.length() - 5000);
                                           }
                                           Log.warnf("Not ready pod log \"%s\": %s", pod.getMetadata().getName(), log);
                                       } catch (KubernetesClientException e) {

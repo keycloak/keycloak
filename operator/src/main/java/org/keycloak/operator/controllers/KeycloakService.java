@@ -22,25 +22,22 @@ import io.fabric8.kubernetes.api.model.ServiceBuilder;
 import io.fabric8.kubernetes.api.model.ServiceSpec;
 import io.fabric8.kubernetes.api.model.ServiceSpecBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
+
 import org.keycloak.operator.Constants;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
-import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusAggregator;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.HttpSpec;
 
 import java.util.Optional;
 
-import static org.keycloak.operator.crds.v2alpha1.CRDUtils.getValueFromSubSpec;
 import static org.keycloak.operator.crds.v2alpha1.CRDUtils.isTlsConfigured;
 
-public class KeycloakService extends OperatorManagedResource implements StatusUpdater<KeycloakStatusAggregator> {
+public class KeycloakService extends OperatorManagedResource {
 
-    private Service existingService;
     private final Keycloak keycloak;
 
     public KeycloakService(KubernetesClient client, Keycloak keycloakCR) {
         super(client, keycloakCR);
         this.keycloak = keycloakCR;
-        this.existingService = fetchExistingService();
     }
 
     private ServiceSpec getServiceSpec() {
@@ -71,22 +68,6 @@ public class KeycloakService extends OperatorManagedResource implements StatusUp
         return service;
     }
 
-    private Service fetchExistingService() {
-        return client
-                .services()
-                .inNamespace(getNamespace())
-                .withName(getName())
-                .get();
-    }
-
-    @Override
-    public void updateStatus(KeycloakStatusAggregator status) {
-        if (existingService == null) {
-            status.addNotReadyMessage("No existing Keycloak Service found, waiting for creating a new one");
-            return;
-        }
-    }
-
     @Override
     public String getName() {
         return getServiceName(cr);
@@ -99,9 +80,9 @@ public class KeycloakService extends OperatorManagedResource implements StatusUp
     public static int getServicePort(Keycloak keycloak) {
         // we assume HTTP when TLS is not configured
         if (!isTlsConfigured(keycloak)) {
-            return getValueFromSubSpec(keycloak.getSpec().getHttpSpec(), HttpSpec::getHttpPort).orElse(Constants.KEYCLOAK_HTTP_PORT);
+            return Optional.ofNullable(keycloak.getSpec().getHttpSpec()).map(HttpSpec::getHttpPort).orElse(Constants.KEYCLOAK_HTTP_PORT);
         } else {
-            return getValueFromSubSpec(keycloak.getSpec().getHttpSpec(), HttpSpec::getHttpsPort).orElse(Constants.KEYCLOAK_HTTPS_PORT);
+            return Optional.ofNullable(keycloak.getSpec().getHttpSpec()).map(HttpSpec::getHttpsPort).orElse(Constants.KEYCLOAK_HTTPS_PORT);
         }
     }
 }

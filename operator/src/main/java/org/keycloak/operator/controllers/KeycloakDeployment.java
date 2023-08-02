@@ -60,7 +60,7 @@ import java.util.stream.Stream;
 
 import static org.keycloak.operator.crds.v2alpha1.CRDUtils.isTlsConfigured;
 
-public class KeycloakDeployment extends OperatorManagedResource<StatefulSet> implements StatusUpdater<KeycloakStatusAggregator> {
+public class KeycloakDeployment extends OperatorManagedResource<StatefulSet> {
 
     private final Config operatorConfig;
     private final KeycloakDistConfigurator distConfigurator;
@@ -364,7 +364,6 @@ public class KeycloakDeployment extends OperatorManagedResource<StatefulSet> imp
         return envVars;
     }
 
-    @Override
     public void updateStatus(KeycloakStatusAggregator status) {
         status.apply(b -> b.withSelector(Utils.toSelectorString(getInstanceLabels())));
         validatePodTemplate(status);

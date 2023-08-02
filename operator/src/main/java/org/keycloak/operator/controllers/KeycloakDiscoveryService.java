@@ -22,19 +22,16 @@ import io.fabric8.kubernetes.api.model.ServiceBuilder;
 import io.fabric8.kubernetes.api.model.ServiceSpec;
 import io.fabric8.kubernetes.api.model.ServiceSpecBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
+
 import org.keycloak.operator.Constants;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
-import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusAggregator;
 
 import java.util.Optional;
 
-public class KeycloakDiscoveryService extends OperatorManagedResource implements StatusUpdater<KeycloakStatusAggregator> {
-
-    private Service existingService;
+public class KeycloakDiscoveryService extends OperatorManagedResource {
 
     public KeycloakDiscoveryService(KubernetesClient client, Keycloak keycloakCR) {
         super(client, keycloakCR);
-        this.existingService = fetchExistingService();
     }
 
     private ServiceSpec getServiceSpec() {
@@ -63,22 +60,6 @@ public class KeycloakDiscoveryService extends OperatorManagedResource implements
                 .withSpec(getServiceSpec())
                 .build();
         return service;
-    }
-
-    private Service fetchExistingService() {
-        return client
-                .services()
-                .inNamespace(getNamespace())
-                .withName(getName())
-                .get();
-    }
-
-    @Override
-    public void updateStatus(KeycloakStatusAggregator status) {
-        if (existingService == null) {
-            status.addNotReadyMessage("No existing Discovery Service found, waiting for creating a new one");
-            return;
-        }
     }
 
     @Override
