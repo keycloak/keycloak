@@ -29,6 +29,7 @@ import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceInitializer;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
 import io.javaoperatorsdk.operator.processing.event.source.informer.Mappers;
@@ -47,7 +48,10 @@ import jakarta.inject.Inject;
 
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.WATCH_CURRENT_NAMESPACE;
 
-@ControllerConfiguration(namespaces = WATCH_CURRENT_NAMESPACE)
+@ControllerConfiguration(namespaces = WATCH_CURRENT_NAMESPACE,
+    dependents = {
+        @Dependent(type = KeycloakAdminSecretDependentResource.class)
+    })
 public class KeycloakController implements Reconciler<Keycloak>, EventSourceInitializer<Keycloak>, ErrorStatusHandler<Keycloak> {
 
     @Inject
@@ -112,10 +116,7 @@ public class KeycloakController implements Reconciler<Keycloak>, EventSourceInit
 
         var statusAggregator = new KeycloakStatusAggregator(kc.getStatus(), kc.getMetadata().getGeneration());
 
-        var kcAdminSecret = new KeycloakAdminSecret(client, kc);
-        kcAdminSecret.createOrUpdateReconciled();
-
-        var kcDeployment = new KeycloakDeployment(client, config, kc, context.getSecondaryResource(StatefulSet.class).orElse(null), kcAdminSecret.getName());
+        var kcDeployment = new KeycloakDeployment(client, config, kc, context.getSecondaryResource(StatefulSet.class).orElse(null), KeycloakAdminSecretDependentResource.getName(kc));
         kcDeployment.setWatchedSecrets(watchedSecrets);
         kcDeployment.createOrUpdateReconciled();
         kcDeployment.updateStatus(statusAggregator);
