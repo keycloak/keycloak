@@ -888,6 +888,33 @@ public class ClientAuthSignedJWTTest extends AbstractKeycloakTest {
     }
 
     @Test
+    public void testAssertionNonMatchingClientIdParameter() throws Exception {
+        String invalidJwt = getClient1SignedJWT();
+
+        // client_id parameter does not match the client from JWT (See "client_id" at https://www.rfc-editor.org/rfc/rfc7521.html#section-4.2 )
+        List<NameValuePair> parameters = new LinkedList<NameValuePair>();
+        parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, OAuth2Constants.CLIENT_CREDENTIALS));
+        parameters.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ASSERTION_TYPE, OAuth2Constants.CLIENT_ASSERTION_TYPE_JWT));
+        parameters.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ASSERTION, invalidJwt));
+        parameters.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ID, "client2"));
+
+        CloseableHttpResponse resp = sendRequest(oauth.getServiceAccountUrl(), parameters);
+        OAuthClient.AccessTokenResponse response = new OAuthClient.AccessTokenResponse(resp);
+
+        assertError(response,"client2", "invalid_client", Errors.INVALID_CLIENT_CREDENTIALS);
+
+        // Matching client_id should work fine
+        parameters.remove(3);
+        parameters.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ID, "client1"));
+        resp = sendRequest(oauth.getServiceAccountUrl(), parameters);
+        response = new OAuthClient.AccessTokenResponse(resp);
+
+        assertEquals(200, response.getStatusCode());
+        AccessToken accessToken = oauth.verifyToken(response.getAccessToken());
+        assertEquals(accessToken.getIssuedFor(), "client1");
+    }
+
+    @Test
     public void testAssertionDisabledClient() throws Exception {
 
         ClientManager.realm(adminClient.realm("test")).clientId("client1").enabled(false);
