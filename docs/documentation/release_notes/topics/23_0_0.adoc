@@ -6,7 +6,7 @@ See the migration guide for more details.
 
 = FAPI 2 drafts support
 
-Keycloak has new client profiles `fapi-2-security-profile` and `fapi-2-message-signing`, which ensure Keycloak to enforce compliance with
+Keycloak has new client profiles `fapi-2-security-profile` and `fapi-2-message-signing`, which ensure Keycloak enforces compliance with
 the latest FAPI 2 draft specifications when communicating with your clients. Thanks to https://github.com/tnorimat[Takashi Norimatsu] for the contribution.
 
 
