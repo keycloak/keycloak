@@ -1,5 +1,6 @@
 package org.keycloak.utils;
 
+import java.util.Collections;
 import java.util.stream.Collectors;
 
 import org.keycloak.common.Profile;
@@ -27,6 +28,8 @@ public class GroupUtils {
                     )
 
             ).collect(Collectors.toList()));
+        } else {
+            rep.setSubGroups(Collections.emptyList());
         }
 
         if (Profile.isFeatureEnabled(Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ)) {
