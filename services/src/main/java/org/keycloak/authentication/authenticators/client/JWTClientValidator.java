@@ -97,11 +97,15 @@ public class JWTClientValidator {
     }
 
     public void readJws() throws JWSInputException {
+        if (clientAssertion == null) throw new IllegalStateException("Incorrect usage. Variable 'clientAssertion' is null. Need to validate clientAssertion first before read JWS");
+
         jws = new JWSInput(clientAssertion);
         token = jws.readJsonContent(JsonWebToken.class);
     }
 
     public boolean validateClient() {
+        if (token == null) throw new IllegalStateException("Incorrect usage. Variable 'token' is null. Need to read JWS first before validateClient");
+
         String clientId = token.getSubject();
         if (clientId == null) {
             throw new RuntimeException("Can't identify client. Subject missing on JWT token");
@@ -134,6 +138,9 @@ public class JWTClientValidator {
     }
 
     public boolean validateSignatureAlgorithm() {
+        if (jws == null) throw new IllegalStateException("Incorrect usage. Variable 'jws' is null. Need to read token first before validate signature algorithm");
+        if (client == null) throw new IllegalStateException("Incorrect usage. Variable 'client' is null. Need to validate client first before validate signature algorithm");
+
         String expectedSignatureAlg = OIDCAdvancedConfigWrapper.fromClientModel(client).getTokenEndpointAuthSigningAlg();
         if (jws.getHeader().getAlgorithm() == null || jws.getHeader().getAlgorithm().name() == null) {
             Response challengeResponse = ClientAuthUtil.errorResponse(Response.Status.BAD_REQUEST.getStatusCode(), "invalid_client", "invalid signature algorithm");
@@ -152,6 +159,8 @@ public class JWTClientValidator {
     }
 
     public void validateToken() {
+        if (token == null) throw new IllegalStateException("Incorrect usage. Variable 'token' is null. Need to read token first before validateToken");
+
         if (!token.isActive()) {
             throw new RuntimeException("Token is not active");
         }
@@ -167,6 +176,9 @@ public class JWTClientValidator {
     }
 
     public void validateTokenReuse() {
+        if (token == null) throw new IllegalStateException("Incorrect usage. Variable 'token' is null. Need to read token first before validateToken reuse");
+        if (client == null) throw new IllegalStateException("Incorrect usage. Variable 'client' is null. Need to validate client first before validateToken reuse");
+
         SingleUseObjectProvider singleUseCache = context.getSession().singleUseObjects();
         int lifespanInSecs = Math.max(token.getExpiration() - currentTime, 10);
         if (singleUseCache.putIfAbsent(token.getId(), lifespanInSecs)) {
