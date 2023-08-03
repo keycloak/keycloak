@@ -6,6 +6,8 @@
 * https://openid.net/specs/openid-financial-api-part-1-1_0.html[Financial-grade API Security Profile 1.0 - Part 1: Baseline]
 * https://openid.net/specs/openid-financial-api-part-2-1_0.html[Financial-grade API Security Profile 1.0 - Part 2: Advanced]
 * https://openid.net/specs/openid-financial-api-ciba-ID1.html[Financial-grade API: Client Initiated Backchannel Authentication Profile] (FAPI CIBA)
+* https://openid.bitbucket.io/fapi/fapi-2_0-security-profile.html[FAPI 2.0 Security Profile (Draft)]
+* https://openid.bitbucket.io/fapi/fapi-2_0-message-signing.html[FAPI 2.0 Message Signing (Draft)]
 
 This compliance means that the {project_name} server will verify the requirements
 for the authorization server, which are mentioned in the specifications. {project_name} adapters do not have any specific support for the FAPI, hence the required validations on the client (application)
@@ -15,7 +17,7 @@ side may need to be still done manually or through some other third-party soluti
 
 To make sure that your clients are FAPI compliant, you can configure Client Policies in your realm as described in the link:{adminguide_link}#_client_policies[{adminguide_name}]
 and link them to the global client profiles for FAPI support, which are automatically available in each realm. You can use either `fapi-1-baseline` or `fapi-1-advanced` profile based on which FAPI
-profile you need your clients to conform with.
+profile you need your clients to conform with. You can use also profiles `fapi-2-security-profile` or `fapi-2-message-signing` for the compliance with FAPI 2 Draft specifications.
 
 In case you want to use link:{adminguide_link}#_oidc_clients[Pushed Authorization Request (PAR)], it is recommended that your client use
 both the `fapi-1-baseline` profile and `fapi-1-advanced` for PAR requests. Specifically, the `fapi-1-baseline` profile contains `pkce-enforcer` executor, which makes sure
