@@ -42,7 +42,7 @@ export const AddRoleMappingModal = ({
 }: AddRoleMappingModalProps) => {
   const { t } = useTranslation(type);
   const { hasAccess } = useAccess();
-  const canViewRealmRoles = hasAccess("view-realm");
+  const canViewRealmRoles = hasAccess("view-realm") || hasAccess("query-users");
 
   const [searchToggle, setSearchToggle] = useState(false);
 
