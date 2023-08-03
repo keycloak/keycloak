@@ -10,6 +10,12 @@ outputs:
   ci:
     description: Should "ci.yml" execute
     value: ${{ steps.changes.outputs.ci }}
+  ci-store:
+    description: Should "ci.yml" execute
+    value: ${{ steps.changes.outputs.ci-store }}
+  ci-sssd:
+    description: Should "ci.yml" execute
+    value: ${{ steps.changes.outputs.ci-sssd }}
   operator:
     description: Should "operator-ci.yml" execute
     value: ${{ steps.changes.outputs.operator }}
