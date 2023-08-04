@@ -40,6 +40,11 @@ public class HttpResponseImpl implements HttpResponse, KeycloakTransaction {
     }
 
     @Override
+    public int getStatus() {
+        return delegate.getStatus();
+    }
+
+    @Override
     public void setStatus(int statusCode) {
         delegate.setStatus(statusCode);
     }
