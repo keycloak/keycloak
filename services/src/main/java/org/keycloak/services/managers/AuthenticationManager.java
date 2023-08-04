@@ -100,6 +100,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
@@ -170,7 +171,7 @@ public class AuthenticationManager {
     // Parameter of LogoutEndpoint
     public static final String INITIATING_IDP_PARAM = "initiating_idp";
 
-    private static final TokenTypeCheck VALIDATE_IDENTITY_COOKIE = new TokenTypeCheck(TokenUtil.TOKEN_TYPE_KEYCLOAK_ID);
+    private static final TokenTypeCheck VALIDATE_IDENTITY_COOKIE = new TokenTypeCheck(Arrays.asList(TokenUtil.TOKEN_TYPE_KEYCLOAK_ID));
 
     public static boolean isSessionValid(RealmModel realm, UserSessionModel userSession) {
         if (userSession == null) {

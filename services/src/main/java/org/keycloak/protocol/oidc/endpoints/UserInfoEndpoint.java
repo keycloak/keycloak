@@ -22,6 +22,7 @@ import org.keycloak.OAuth2Constants;
 import org.keycloak.TokenCategory;
 import org.keycloak.TokenVerifier;
 import org.keycloak.common.ClientConnection;
+import org.keycloak.common.Profile;
 import org.keycloak.common.VerificationException;
 import org.keycloak.common.constants.ServiceAccountConstants;
 import org.keycloak.crypto.ContentEncryptionProvider;
@@ -53,6 +54,7 @@ import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.protocol.oidc.TokenManager.NotBeforeCheck;
 import org.keycloak.representations.AccessToken;
+import org.keycloak.representations.dpop.DPoP;
 import org.keycloak.services.Urls;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.context.UserInfoRequestContext;
@@ -61,6 +63,7 @@ import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.UserSessionCrossDCManager;
 import org.keycloak.services.managers.UserSessionManager;
 import org.keycloak.services.resources.Cors;
+import org.keycloak.services.util.DPoPUtil;
 import org.keycloak.services.util.DefaultClientSessionContext;
 import org.keycloak.services.util.MtlsHoKTokenUtil;
 import org.keycloak.sessions.AuthenticationSessionModel;
@@ -248,6 +251,18 @@ public class UserInfoEndpoint {
             if (!MtlsHoKTokenUtil.verifyTokenBindingWithClientCertificate(token, request, session)) {
                 event.error(Errors.NOT_ALLOWED);
                 throw error.invalidToken("Client certificate missing, or its thumbprint and one in the refresh token did NOT match");
+            }
+        }
+
+        if (Profile.isFeatureEnabled(Profile.Feature.DPOP)) {
+            if (OIDCAdvancedConfigWrapper.fromClientModel(clientModel).isUseDPoP() || DPoPUtil.DPOP_TOKEN_TYPE.equals(token.getType())) {
+                try {
+                    DPoP dPoP = new DPoPUtil.Validator(session).request(request).uriInfo(session.getContext().getUri()).validate();
+                    DPoPUtil.validateBinding(token, dPoP);
+                } catch (VerificationException ex) {
+                    event.detail("detail", ex.getMessage()).error(Errors.NOT_ALLOWED);
+                    throw error.invalidToken("DPoP proof and token binding verification failed");
+                }
             }
         }
 
