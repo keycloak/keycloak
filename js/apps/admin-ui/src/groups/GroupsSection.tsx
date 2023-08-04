@@ -145,6 +145,7 @@ export default function GroupsSection() {
             <DrawerContentBody>
               <Tooltip content={open ? t("common:hide") : t("common:show")}>
                 <Button
+                  aria-label={open ? t("common:hide") : t("common:show")}
                   variant="plain"
                   icon={open ? <AngleLeftIcon /> : <TreeIcon />}
                   onClick={toggle}
