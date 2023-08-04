@@ -78,6 +78,7 @@ import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.ServerURLs;
 import org.keycloak.util.JWKSUtils;
 import org.keycloak.util.JsonSerialization;
+import org.keycloak.util.TokenUtil;
 
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
@@ -193,6 +194,7 @@ public class DPoPTest extends AbstractTestRealmKeycloakTest {
         TokenMetadataRepresentation tokenMetadataRepresentation = JsonSerialization.readValue(tokenResponse, TokenMetadataRepresentation.class);
         Assert.assertTrue(tokenMetadataRepresentation.isActive());
         assertEquals(jkt, tokenMetadataRepresentation.getConfirmation().getKeyThumbprint());
+        assertEquals(TokenUtil.TOKEN_TYPE_DPOP, tokenMetadataRepresentation.getOtherClaims().get(OAuth2Constants.TOKEN_TYPE));
 
         CloseableHttpResponse closableHttpResponse = oauth.doTokenRevoke(response.getAccessToken(), "access_token", TEST_CONFIDENTIAL_CLIENT_SECRET);
         tokenResponse = oauth.introspectTokenWithClientCredential(TEST_CONFIDENTIAL_CLIENT_ID, TEST_CONFIDENTIAL_CLIENT_SECRET, "access_token", response.getAccessToken());
@@ -309,7 +311,7 @@ public class DPoPTest extends AbstractTestRealmKeycloakTest {
         String[] headers = response.getHeaders(Cors.ACCESS_CONTROL_ALLOW_HEADERS)[0].getValue().split(", ");
         Set<String> allowedHeaders = new HashSet<String>(Arrays.asList(headers));
 
-        assertTrue(allowedHeaders.contains("DPoP"));
+        assertTrue(allowedHeaders.contains(TokenUtil.TOKEN_TYPE_DPOP));
     }
 
     @Test

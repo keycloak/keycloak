@@ -549,8 +549,7 @@ public class TokenEndpoint {
 
         if (clientConfig.isUseDPoP() || dPoP != null) {
             DPoPUtil.bindToken(responseBuilder.getAccessToken(), dPoP);
-            // TODO Probably uncomment as the accessToken type "DPoP" will have more sense than "Bearer". It will require some changes in the introspection endpoint too...
-            // responseBuilder.getAccessToken().type(DPoPUtil.DPOP_TOKEN_TYPE);
+            responseBuilder.getAccessToken().type(DPoPUtil.DPOP_TOKEN_TYPE);
             responseBuilder.responseTokenType(DPoPUtil.DPOP_TOKEN_TYPE);
 
             // Bind refresh tokens for public clients, See "Section 5. DPoP Access Token Request" from DPoP specification

@@ -60,6 +60,7 @@ import org.keycloak.testsuite.util.TokenSignatureUtil;
 import org.keycloak.testsuite.util.WaitUtils;
 import org.keycloak.util.BasicAuthHelper;
 import org.keycloak.util.JsonSerialization;
+import org.keycloak.util.TokenUtil;
 
 import jakarta.ws.rs.core.UriBuilder;
 
@@ -352,6 +353,7 @@ public class TokenIntrospectionTest extends AbstractTestRealmKeycloakTest {
             assertEquals("test-user@localhost", rep.getUserName());
             assertEquals("test-app", rep.getClientId());
             assertEquals(loginEvent.getUserId(), rep.getSubject());
+            assertEquals(TokenUtil.TOKEN_TYPE_BEARER, rep.getOtherClaims().get(OAuth2Constants.TOKEN_TYPE));
 
             // Assert expected scope
             OIDCScopeTest.assertScopes("openid email profile", rep.getScope());
