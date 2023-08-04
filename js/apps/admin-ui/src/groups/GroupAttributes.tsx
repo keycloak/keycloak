@@ -3,8 +3,7 @@ import {
   PageSection,
   PageSectionVariants,
 } from "@patternfly/react-core";
-import GroupRepresentation from "libs/keycloak-admin-client/lib/defs/groupRepresentation";
-import { useState } from "react";
+import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useLocation } from "react-router-dom";
@@ -19,7 +18,6 @@ import {
   arrayToKeyValue,
   keyValueToArray,
 } from "../components/key-value-form/key-value-convert";
-import { useFetch } from "../utils/useFetch";
 import { useSubGroups } from "./SubGroupsContext";
 import { getLastId } from "./groupIdUtils";
 
@@ -32,29 +30,21 @@ export const GroupAttributes = () => {
 
   const location = useLocation();
   const id = getLastId(location.pathname);
-  const { currentGroup: group, subGroups, setSubGroups } = useSubGroups();
-  const [currentGroup, setCurrentGroup] = useState<GroupRepresentation>();
+  const { currentGroup, subGroups, setSubGroups } = useSubGroups();
 
   const convertAttributes = (attr?: Record<string, any>) => {
-    return arrayToKeyValue(attr);
+    return arrayToKeyValue(attr || currentGroup()?.attributes!);
   };
 
-  useFetch(
-    () => adminClient.groups.findOne({ id: group()!.id! }),
-    (group) => {
-      setCurrentGroup(group);
-      form.setValue("attributes", convertAttributes(group?.attributes));
-    },
-    [],
-  );
+  useEffect(() => {
+    form.setValue("attributes", convertAttributes());
+  }, [subGroups]);
 
   const save = async (attributeForm: AttributeForm) => {
     try {
+      const group = currentGroup();
       const attributes = keyValueToArray(attributeForm.attributes!);
-      await adminClient.groups.update(
-        { id: id! },
-        { ...currentGroup, attributes },
-      );
+      await adminClient.groups.update({ id: id! }, { ...group, attributes });
 
       setSubGroups([
         ...subGroups.slice(0, subGroups.length - 1),
@@ -71,7 +61,7 @@ export const GroupAttributes = () => {
       <AttributesForm
         form={form}
         save={save}
-        fineGrainedAccess={currentGroup?.access?.manage}
+        fineGrainedAccess={currentGroup()?.access?.manage}
         reset={() =>
           form.reset({
             attributes: convertAttributes(),
