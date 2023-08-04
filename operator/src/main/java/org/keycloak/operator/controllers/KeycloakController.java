@@ -41,6 +41,7 @@ import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatus;
 import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusAggregator;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
@@ -50,7 +51,9 @@ import static io.javaoperatorsdk.operator.api.reconciler.Constants.WATCH_CURRENT
 
 @ControllerConfiguration(namespaces = WATCH_CURRENT_NAMESPACE,
     dependents = {
-        @Dependent(type = KeycloakAdminSecretDependentResource.class)
+        @Dependent(type = KeycloakAdminSecretDependentResource.class),
+        @Dependent(type = KeycloakServiceDependentResource.class, useEventSourceWithName = "serviceSource"),
+        @Dependent(type = KeycloakDiscoveryServiceDependentResource.class, useEventSourceWithName = "serviceSource")
     })
 public class KeycloakController implements Reconciler<Keycloak>, EventSourceInitializer<Keycloak>, ErrorStatusHandler<Keycloak> {
 
@@ -95,9 +98,11 @@ public class KeycloakController implements Reconciler<Keycloak>, EventSourceInit
         EventSource servicesEvent = new InformerEventSource<>(servicesIC, context);
         EventSource ingressesEvent = new InformerEventSource<>(ingressesIC, context);
 
-        return EventSourceInitializer.nameEventSources(statefulSetEvent,
-                servicesEvent,
-                ingressesEvent, watchedSecrets.getWatchedSecretsEventSource());
+        Map<String, EventSource> sources = new HashMap<>();
+        sources.put("serviceSource", servicesEvent);
+        sources.putAll(EventSourceInitializer.nameEventSources(statefulSetEvent,
+                ingressesEvent, watchedSecrets.getWatchedSecretsEventSource()));
+        return sources;
     }
 
     @Override
@@ -120,11 +125,6 @@ public class KeycloakController implements Reconciler<Keycloak>, EventSourceInit
         kcDeployment.setWatchedSecrets(watchedSecrets);
         kcDeployment.createOrUpdateReconciled();
         kcDeployment.updateStatus(statusAggregator);
-
-        var kcService = new KeycloakService(client, kc);
-        kcService.createOrUpdateReconciled();
-        var kcDiscoveryService = new KeycloakDiscoveryService(client, kc);
-        kcDiscoveryService.createOrUpdateReconciled();
 
         var kcIngress = new KeycloakIngress(client, kc);
         kcIngress.createOrUpdateReconciled();

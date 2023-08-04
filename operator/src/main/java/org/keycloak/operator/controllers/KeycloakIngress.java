@@ -55,7 +55,7 @@ public class KeycloakIngress extends OperatorManagedResource {
     }
 
     private Ingress newIngress() {
-        var port = KeycloakService.getServicePort(keycloak);
+        var port = KeycloakServiceDependentResource.getServicePort(keycloak);
         var annotations = new HashMap<String, String>();
 
         // set default annotations
@@ -80,7 +80,7 @@ public class KeycloakIngress extends OperatorManagedResource {
                     .withIngressClassName(optionalSpec.map(IngressSpec::getIngressClassName).orElse(null))
                     .withNewDefaultBackend()
                         .withNewService()
-                            .withName(KeycloakService.getServiceName(keycloak))
+                            .withName(KeycloakServiceDependentResource.getServiceName(keycloak))
                             .withNewPort()
                                 .withNumber(port)
                                 .withName("") // for SSA to clear the name if already set
@@ -94,7 +94,7 @@ public class KeycloakIngress extends OperatorManagedResource {
                                 .withPathType("ImplementationSpecific")
                                 .withNewBackend()
                                     .withNewService()
-                                        .withName(KeycloakService.getServiceName(keycloak))
+                                        .withName(KeycloakServiceDependentResource.getServiceName(keycloak))
                                         .withNewPort()
                                             .withNumber(port)
                                             .withName("") // for SSA to clear the name if already set

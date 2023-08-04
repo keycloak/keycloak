@@ -21,26 +21,44 @@ import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.ServiceBuilder;
 import io.fabric8.kubernetes.api.model.ServiceSpec;
 import io.fabric8.kubernetes.api.model.ServiceSpecBuilder;
-import io.fabric8.kubernetes.client.KubernetesClient;
+import io.javaoperatorsdk.operator.api.reconciler.Context;
+import io.javaoperatorsdk.operator.api.reconciler.ResourceDiscriminator;
+import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
+import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
+import io.javaoperatorsdk.operator.processing.event.ResourceID;
+import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
 
 import org.keycloak.operator.Constants;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.HttpSpec;
 
 import java.util.Optional;
+import java.util.function.Function;
 
 import static org.keycloak.operator.crds.v2alpha1.CRDUtils.isTlsConfigured;
 
-public class KeycloakService extends OperatorManagedResource {
+@KubernetesDependent(labelSelector = Constants.DEFAULT_LABELS_AS_STRING, resourceDiscriminator = KeycloakServiceDependentResource.NameResourceDiscriminator.class)
+public class KeycloakServiceDependentResource extends CRUDKubernetesDependentResource<Service, Keycloak> {
 
-    private final Keycloak keycloak;
-
-    public KeycloakService(KubernetesClient client, Keycloak keycloakCR) {
-        super(client, keycloakCR);
-        this.keycloak = keycloakCR;
+    public static class NameResourceDiscriminator implements ResourceDiscriminator<Service, Keycloak> {
+        @Override
+        public Optional<Service> distinguish(Class<Service> resource, Keycloak primary, Context<Keycloak> context) {
+            return getService(KeycloakServiceDependentResource::getServiceName, primary, context);
+        }
     }
 
-    private ServiceSpec getServiceSpec() {
+    public static Optional<Service> getService(Function<Keycloak, String> nameFunction, Keycloak primary, Context<Keycloak> context) {
+        InformerEventSource<Service, Keycloak> ies = (InformerEventSource<Service, Keycloak>) context
+                .eventSourceRetriever().getResourceEventSourceFor(Service.class);
+
+        return ies.get(new ResourceID(nameFunction.apply(primary), primary.getMetadata().getNamespace()));
+    }
+
+    public KeycloakServiceDependentResource() {
+        super(Service.class);
+    }
+
+    private ServiceSpec getServiceSpec(Keycloak keycloak) {
         String name = isTlsConfigured(keycloak) ? Constants.KEYCLOAK_HTTPS_PORT_NAME : Constants.KEYCLOAK_HTTP_PORT_NAME;
         return new ServiceSpecBuilder()
               .addNewPort()
@@ -48,29 +66,21 @@ public class KeycloakService extends OperatorManagedResource {
               .withName(name)
               .withProtocol(Constants.KEYCLOAK_SERVICE_PROTOCOL)
               .endPort()
-              .withSelector(getInstanceLabels())
+              .withSelector(OperatorManagedResource.allInstanceLabels(keycloak))
               .build();
     }
 
     @Override
-    protected Optional<HasMetadata> getReconciledResource() {
-        return Optional.of(newService());
-    }
-
-    private Service newService() {
+    protected Service desired(Keycloak primary, Context<Keycloak> context) {
         Service service = new ServiceBuilder()
                 .withNewMetadata()
-                .withName(getName())
-                .withNamespace(getNamespace())
+                .withName(getServiceName(primary))
+                .withNamespace(primary.getMetadata().getNamespace())
+                .addToLabels(OperatorManagedResource.allInstanceLabels(primary))
                 .endMetadata()
-                .withSpec(getServiceSpec())
+                .withSpec(getServiceSpec(primary))
                 .build();
         return service;
-    }
-
-    @Override
-    public String getName() {
-        return getServiceName(cr);
     }
 
     public static String getServiceName(HasMetadata keycloak) {
