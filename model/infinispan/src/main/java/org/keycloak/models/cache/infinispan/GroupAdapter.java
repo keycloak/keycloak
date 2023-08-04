@@ -234,7 +234,7 @@ public class GroupAdapter implements GroupModel {
             }
             subGroups.add(subGroup);
         }
-        return subGroups.stream();
+        return subGroups.stream().sorted(GroupModel.COMPARE_BY_NAME);
     }
 
 
