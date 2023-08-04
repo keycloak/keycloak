@@ -17,7 +17,6 @@ import { Link, useLocation } from "react-router-dom";
 import { adminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
 import { GroupPath } from "../components/group/GroupPath";
-import { KeycloakSpinner } from "../components/keycloak-spinner/KeycloakSpinner";
 import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
 import {
   Action,
@@ -27,7 +26,6 @@ import { useAccess } from "../context/access/Access";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { toUser } from "../user/routes/User";
 import { emptyFormatter } from "../util";
-import { useFetch } from "../utils/useFetch";
 import { MemberModal } from "./MembersModal";
 import { useSubGroups } from "./SubGroupsContext";
 import { getLastId } from "./groupIdUtils";
@@ -65,21 +63,14 @@ export const Members = () => {
   const location = useLocation();
   const id = getLastId(location.pathname);
   const [includeSubGroup, setIncludeSubGroup] = useState(false);
-  const { currentGroup: group } = useSubGroups();
-  const [currentGroup, setCurrentGroup] = useState<GroupRepresentation>();
+  const { currentGroup } = useSubGroups();
   const [addMembers, setAddMembers] = useState(false);
   const [isKebabOpen, setIsKebabOpen] = useState(false);
   const [selectedRows, setSelectedRows] = useState<UserRepresentation[]>([]);
   const { hasAccess } = useAccess();
 
-  useFetch(
-    () => adminClient.groups.findOne({ id: group()!.id! }),
-    setCurrentGroup,
-    [],
-  );
-
   const isManager =
-    hasAccess("manage-users") || currentGroup?.access!.manageMembership;
+    hasAccess("manage-users") || currentGroup()!.access!.manageMembership;
 
   const [key, setKey] = useState(0);
   const refresh = () => setKey(new Date().getTime());
@@ -105,7 +96,7 @@ export const Members = () => {
     });
 
     if (includeSubGroup) {
-      const subGroups = getSubGroups(currentGroup?.subGroups || []);
+      const subGroups = getSubGroups(currentGroup()?.subGroups || []);
       for (const group of subGroups) {
         members = members.concat(
           await adminClient.groups.listMembers({ id: group.id! }),
@@ -121,10 +112,6 @@ export const Members = () => {
       return { ...member, membership: memberOfPromises[i] };
     });
   };
-
-  if (!currentGroup) {
-    return <KeycloakSpinner />;
-  }
 
   return (
     <>
