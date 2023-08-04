@@ -28,7 +28,7 @@ runs:
         # In case there's more than one version of each package, let's use only the latest
         LATEST_CHROME=$(ls -td $PWD/chrome/*/ | head -1)
         LATEST_CHROMEDRIVER=$(ls -td $PWD/chromedriver/*/ | head -1)
-        sudo ln -s -f "${LATEST_CHROME}chrome-linux64/chrome" /usr/bin/chrome
+        sudo ln -s -f "${LATEST_CHROME}chrome-linux64/chrome" /usr/bin/google-chrome-stable
         sudo cp -u "${LATEST_CHROMEDRIVER}chromedriver-linux64/chromedriver" $CHROMEWEBDRIVER/
         # Remove any older version of browser or driver so we don't keep it in the cache
         cd chrome
