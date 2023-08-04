@@ -126,7 +126,7 @@ public class GroupsResource {
         GroupModel group = realm.getGroupById(id);
         this.auth.groups().requireView(group);
 
-        GroupRepresentation rep = toRepresentation(group, false);
+        GroupRepresentation rep = toRepresentation(group, true);
 
         rep.setAccess(auth.groups().getAccess(group));
 
