@@ -419,8 +419,8 @@ importers:
         specifier: ^0.6.1
         version: 0.6.1(eslint@8.46.0)(typescript@5.1.6)(vite@4.4.8)
       vite-plugin-dts:
-        specifier: ^3.4.0
-        version: 3.4.0(@types/node@20.4.6)(rollup@3.27.1)(typescript@5.1.6)(vite@4.4.8)
+        specifier: ^3.5.1
+        version: 3.5.1(@types/node@20.4.6)(rollup@3.27.1)(typescript@5.1.6)(vite@4.4.8)
 
   libs/ui-shared:
     dependencies:
@@ -459,8 +459,8 @@ importers:
         specifier: ^0.6.1
         version: 0.6.1(eslint@8.46.0)(typescript@5.1.6)(vite@4.4.8)
       vite-plugin-dts:
-        specifier: ^3.4.0
-        version: 3.4.0(@types/node@20.4.6)(rollup@3.27.1)(typescript@5.1.6)(vite@4.4.8)
+        specifier: ^3.5.1
+        version: 3.5.1(@types/node@20.4.6)(rollup@3.27.1)(typescript@5.1.6)(vite@4.4.8)
       vitest:
         specifier: ^0.34.1
         version: 0.34.1(jsdom@22.1.0)
@@ -941,7 +941,7 @@ packages:
       '@rushstack/ts-command-line': 4.15.1
       colors: 1.2.5
       lodash: 4.17.21
-      resolve: 1.22.2
+      resolve: 1.22.3
       semver: 7.5.4
       source-map: 0.6.1
       typescript: 5.0.4
@@ -1404,7 +1404,7 @@ packages:
       fs-extra: 7.0.1
       import-lazy: 4.0.0
       jju: 1.4.0
-      resolve: 1.22.2
+      resolve: 1.22.3
       semver: 7.5.4
       z-schema: 5.0.5
     dev: true
@@ -1412,7 +1412,7 @@ packages:
   /@rushstack/rig-package@0.4.0:
     resolution: {integrity: sha512-FnM1TQLJYwSiurP6aYSnansprK5l8WUK8VG38CmAaZs29ZeL1msjK0AP1VS4ejD33G0kE/2cpsPsS9jDenBMxw==}
     dependencies:
-      resolve: 1.22.2
+      resolve: 1.22.3
       strip-json-comments: 3.1.1
     dev: true
 
@@ -3419,7 +3419,7 @@ packages:
     dependencies:
       debug: 3.2.7(supports-color@8.1.1)
       is-core-module: 2.12.1
-      resolve: 1.22.2
+      resolve: 1.22.3
     transitivePeerDependencies:
       - supports-color
     dev: true
@@ -6734,8 +6734,8 @@ packages:
       vscode-uri: 3.0.7
     dev: true
 
-  /vite-plugin-dts@3.4.0(@types/node@20.4.6)(rollup@3.27.1)(typescript@5.1.6)(vite@4.4.8):
-    resolution: {integrity: sha512-B5UbhiF83hPlJpdri3k2FlseO2qIQfY95XJib7z1s8NTQKgPK+KgeuOQf8FR1hnE/pSU+RA3ra2T18HvymPDyA==}
+  /vite-plugin-dts@3.5.1(@types/node@20.4.6)(rollup@3.27.1)(typescript@5.1.6)(vite@4.4.8):
+    resolution: {integrity: sha512-wrrIvRTWq9xL0HKOUvJyJ+wivEoLsZ2GU2I2000v5tAAUtu9gE+5OUmUJ9yNkmyYz3tSPedkkiXHeb5jnnSXhg==}
     engines: {node: ^14.18.0 || >=16.0.0}
     peerDependencies:
       typescript: '*'
