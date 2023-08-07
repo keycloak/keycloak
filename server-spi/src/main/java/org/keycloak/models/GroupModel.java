@@ -104,6 +104,8 @@ public interface GroupModel extends RoleMapperModel {
 
     /**
      * Returns all sub groups for the parent group as a stream.
+     * The stream is sorted by the group name.
+     *
      * @return Stream of {@link GroupModel}. Never returns {@code null}.
      */
     Stream<GroupModel> getSubGroupsStream();

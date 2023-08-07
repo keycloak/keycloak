@@ -366,6 +366,6 @@ public class MapGroupProvider implements GroupProvider {
                 .compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
                 .compare(SearchableFields.PARENT_ID, Operator.EQ, parentId);
 
-        return storeWithRealm(realm).read(withCriteria(mcb)).map(entityToAdapterFunc(realm));
+        return storeWithRealm(realm).read(withCriteria(mcb).orderBy(SearchableFields.NAME, ASCENDING)).map(entityToAdapterFunc(realm));
     }
 }
