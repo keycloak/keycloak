@@ -116,11 +116,9 @@ const FormField = ({ attribute, roles }: FormFieldProps) => {
   const { watch } = useFormContext();
   const value = watch(fieldName(attribute));
 
-  const componentType = (
-    attribute.annotations?.["inputType"] || Array.isArray(value)
-      ? "multiselect"
-      : "text"
-  ) as Field;
+  const componentType = (attribute.annotations?.["inputType"] ||
+    (Array.isArray(value) ? "multiselect" : "text")) as Field;
+
   const Component = FIELDS[componentType];
 
   return <Component {...{ ...attribute, roles }} />;
