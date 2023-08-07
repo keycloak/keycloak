@@ -1497,6 +1497,54 @@ public class UserTest extends AbstractAdminTest {
     }
 
     @Test
+    public void localeAttributeManageableIfRealmLocalizationDisabled() {
+        RealmRepresentation realm = this.realm.toRepresentation();
+        Boolean internationalizationEnabled = realm.isInternationalizationEnabled();
+
+        try {
+            realm.setInternationalizationEnabled(false);
+            this.realm.update(realm);
+
+            UserRepresentation user = new UserRepresentation();
+            user.setUsername(KeycloakModelUtils.generateId());
+            user.singleAttribute(UserModel.LOCALE, "en");
+            String userId = createUser(user, false);
+            UserResource userResource = this.realm.users().get(userId);
+
+            user = userResource.toRepresentation();
+            Map<String, List<String>> attributes = user.getAttributes();
+            assertNotNull(attributes);
+            List<String> locale = attributes.get(UserModel.LOCALE);
+            assertEquals("en", locale.get(0));
+
+            realm = this.realm.toRepresentation();
+            realm.setInternationalizationEnabled(true);
+            this.realm.update(realm);
+
+            user = new UserRepresentation();
+            user.setUsername(KeycloakModelUtils.generateId());
+            user.singleAttribute(UserModel.LOCALE, "en");
+            userId = createUser(user, false);
+            userResource = this.realm.users().get(userId);
+
+            user = userResource.toRepresentation();
+            attributes = user.getAttributes();
+            assertNotNull(attributes);
+            locale = user.getAttributes().get(UserModel.LOCALE);
+            assertNotNull(locale);
+            assertEquals("en", locale.get(0));
+
+            attributes.remove(UserModel.LOCALE);
+            userResource.update(user);
+            attributes = user.getAttributes();
+            assertNull(attributes.get(UserModel.LOCALE));
+        } finally {
+            realm.setInternationalizationEnabled(internationalizationEnabled);
+            this.realm.update(realm);
+        }
+    }
+
+    @Test
     public void updateUserWithReadOnlyAttributes() {
         // Admin is able to update "usercertificate" attribute
         UserRepresentation user1 = new UserRepresentation();

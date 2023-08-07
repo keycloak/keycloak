@@ -381,7 +381,7 @@ public class AccountRestServiceWithUserProfileTest extends AccountRestServiceTes
         try {
             user.getAttributes().put(UserModel.LOCALE, List.of("pt_BR"));
             user = updateAndGet(user);
-            assertNull(user.getAttributes().get(UserModel.LOCALE));
+            assertEquals("pt_BR", user.getAttributes().get(UserModel.LOCALE).get(0));
 
             realmRep.setInternationalizationEnabled(true);
             testRealm().update(realmRep);

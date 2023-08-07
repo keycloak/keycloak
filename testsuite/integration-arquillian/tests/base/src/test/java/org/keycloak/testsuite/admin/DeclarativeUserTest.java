@@ -363,7 +363,7 @@ public class DeclarativeUserTest extends AbstractAdminTest {
             realm.update(realmRep);
 
             user1 = userResource.toRepresentation();
-            assertNull(user1.getAttributes().get(UserModel.LOCALE));
+            assertEquals("pt_BR", user1.getAttributes().get(UserModel.LOCALE).get(0));
         } finally {
             realmRep.setInternationalizationEnabled(internationalizationEnabled);
             realm.update(realmRep);

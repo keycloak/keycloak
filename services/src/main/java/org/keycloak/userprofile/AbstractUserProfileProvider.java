@@ -145,11 +145,6 @@ public abstract class AbstractUserProfileProvider<U extends UserProfileProvider>
         return null;
     }
 
-    private static boolean isInternationalizationEnabled(AttributeContext context) {
-        RealmModel realm = context.getSession().getContext().getRealm();
-        return realm.isInternationalizationEnabled();
-    }
-
     /**
      * There are the declarations for creating the built-in validations for read-only attributes. Regardless of the context where
      * user profiles are used. They are related to internal attributes with hard conditions on them in terms of management.
@@ -399,8 +394,7 @@ public abstract class AbstractUserProfileProvider<U extends UserProfileProvider>
         readonlyValidators.add(createReadOnlyAttributeUnchangedValidator(adminReadOnlyAttributesPattern));
         metadata.addAttribute(READ_ONLY_ATTRIBUTE_KEY, 1000, readonlyValidators);
 
-        metadata.addAttribute(UserModel.LOCALE, -1, AbstractUserProfileProvider::isInternationalizationEnabled, AbstractUserProfileProvider::isInternationalizationEnabled)
-                .setRequired(AttributeMetadata.ALWAYS_FALSE);
+        metadata.addAttribute(UserModel.LOCALE, -1).setRequired(AttributeMetadata.ALWAYS_FALSE);
 
         return metadata;
     }
@@ -426,8 +420,7 @@ public abstract class AbstractUserProfileProvider<U extends UserProfileProvider>
     private UserProfileMetadata createAccountProfile(UserProfileContext context, AttributeValidatorMetadata readOnlyValidator) {
         UserProfileMetadata defaultProfile = createDefaultProfile(context, readOnlyValidator);
 
-        defaultProfile.addAttribute(UserModel.LOCALE, -1, AbstractUserProfileProvider::isInternationalizationEnabled, AbstractUserProfileProvider::isInternationalizationEnabled)
-                .setRequired(AttributeMetadata.ALWAYS_FALSE);
+        defaultProfile.addAttribute(UserModel.LOCALE, -1).setRequired(AttributeMetadata.ALWAYS_FALSE);
 
         return defaultProfile;
     }
