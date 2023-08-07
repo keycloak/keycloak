@@ -122,7 +122,7 @@ public abstract class AbstractUserProfileProvider<U extends UserProfileProvider>
         RealmModel realm = c.getSession().getContext().getRealm();
 
         if (realm.isRegistrationEmailAsUsername() && !realm.isEditUsernameAllowed()) {
-            return REGISTRATION_PROFILE.equals(c.getContext());
+            return REGISTRATION_PROFILE.equals(c.getContext()) || ACCOUNT.equals(c.getContext());
         }
 
         return !Profile.isFeatureEnabled(Profile.Feature.UPDATE_EMAIL) || c.getContext() != UPDATE_PROFILE;

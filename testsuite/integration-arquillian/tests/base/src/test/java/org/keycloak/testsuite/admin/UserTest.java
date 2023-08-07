@@ -2332,6 +2332,25 @@ public class UserTest extends AbstractAdminTest {
     }
 
     @Test
+    public void testKeepRootAttributeWhenOtherAttributesAreSet() {
+        String userId = createUser();
+        UserResource user = realm.users().get(userId);
+        UserRepresentation userRep = user.toRepresentation();
+
+        userRep.setEmail(null);
+        userRep.setAttributes(Map.of("test", List.of("test")));
+
+        user.update(userRep);
+        userRep = user.toRepresentation();
+        assertNotNull(userRep.getEmail());
+
+        userRep.setEmail("test@test.com");
+        user.update(userRep);
+        userRep = user.toRepresentation();
+        assertEquals("test@test.com", userRep.getEmail());
+    }
+
+    @Test
     public void updateUserWithNewUsernameNotPossible() {
         String id = createUser();
 
