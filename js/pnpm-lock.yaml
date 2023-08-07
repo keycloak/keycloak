@@ -102,8 +102,8 @@ importers:
         specifier: ^18.2.0
         version: 18.2.0(react@18.2.0)
       react-hook-form:
-        specifier: ^7.45.2
-        version: 7.45.2(react@18.2.0)
+        specifier: ^7.45.4
+        version: 7.45.4(react@18.2.0)
       react-i18next:
         specifier: ^13.0.3
         version: 13.0.3(i18next@23.4.1)(react-dom@18.2.0)(react@18.2.0)
@@ -205,8 +205,8 @@ importers:
         specifier: ^3.1.4
         version: 3.1.4(react@18.2.0)
       react-hook-form:
-        specifier: ^7.45.2
-        version: 7.45.2(react@18.2.0)
+        specifier: ^7.45.4
+        version: 7.45.4(react@18.2.0)
       react-i18next:
         specifier: ^13.0.3
         version: 13.0.3(i18next@23.4.1)(react-dom@18.2.0)(react@18.2.0)
@@ -437,8 +437,8 @@ importers:
         specifier: ^18.2.0
         version: 18.2.0(react@18.2.0)
       react-hook-form:
-        specifier: 7.45.2
-        version: 7.45.2(react@18.2.0)
+        specifier: 7.45.4
+        version: 7.45.4(react@18.2.0)
     devDependencies:
       '@types/react':
         specifier: ^18.2.18
@@ -5685,8 +5685,8 @@ packages:
       react: 18.2.0
     dev: false
 
-  /react-hook-form@7.45.2(react@18.2.0):
-    resolution: {integrity: sha512-9s45OdTaKN+4NSTbXVqeDITd/nwIg++nxJGL8+OD5uf1DxvhsXQ641kaYHk5K28cpIOTYm71O/fYk7rFaygb3A==}
+  /react-hook-form@7.45.4(react@18.2.0):
+    resolution: {integrity: sha512-HGDV1JOOBPZj10LB3+OZgfDBTn+IeEsNOKiq/cxbQAIbKaiJUe/KV8DBUzsx0Gx/7IG/orWqRRm736JwOfUSWQ==}
     engines: {node: '>=12.22.0'}
     peerDependencies:
       react: ^16.8.0 || ^17 || ^18
@@ -7202,7 +7202,7 @@ packages:
       react-dom: 18.2.0(react@18.2.0)
       react-dropzone: 14.2.3(react@18.2.0)
       react-error-boundary: 3.1.4(react@18.2.0)
-      react-hook-form: 7.45.2(react@18.2.0)
+      react-hook-form: 7.45.4(react@18.2.0)
       react-i18next: 13.0.3(i18next@23.4.1)(react-dom@18.2.0)(react@18.2.0)
       react-router-dom: 6.14.2(react-dom@18.2.0)(react@18.2.0)
       reactflow: 11.7.4(react-dom@18.2.0)(react@18.2.0)
