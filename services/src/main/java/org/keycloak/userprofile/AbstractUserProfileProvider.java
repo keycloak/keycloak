@@ -39,6 +39,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import org.keycloak.Config;
 import org.keycloak.common.Profile;
+import org.keycloak.common.Profile.Feature;
 import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
@@ -119,13 +120,21 @@ public abstract class AbstractUserProfileProvider<U extends UserProfileProvider>
     }
 
     private static boolean readEmailCondition(AttributeContext c) {
-        RealmModel realm = c.getSession().getContext().getRealm();
+        UserProfileContext context = c.getContext();
 
-        if (realm.isRegistrationEmailAsUsername() && !realm.isEditUsernameAllowed()) {
-            return REGISTRATION_PROFILE.equals(c.getContext());
+        if (UPDATE_PROFILE.equals(context)) {
+            if (Profile.isFeatureEnabled(Feature.UPDATE_EMAIL)) {
+                return false;
+            }
+
+            RealmModel realm = c.getSession().getContext().getRealm();
+
+            if (realm.isRegistrationEmailAsUsername() && !realm.isEditUsernameAllowed()) {
+                return false;
+            }
         }
 
-        return !Profile.isFeatureEnabled(Profile.Feature.UPDATE_EMAIL) || c.getContext() != UPDATE_PROFILE;
+        return true;
     }
 
     public static Pattern getRegexPatternString(String[] builtinReadOnlyAttributes) {
