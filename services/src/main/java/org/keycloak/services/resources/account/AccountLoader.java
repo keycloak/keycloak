@@ -79,7 +79,10 @@ public class AccountLoader {
 
         Theme theme = getTheme(session);
         UriInfo uriInfo = session.getContext().getUri();
+
         AccountResourceProvider accountResourceProvider = getAccountResourceProvider(theme);
+        logger.debugf("Proceed with AccountResourceProvider %s", accountResourceProvider);
+        
         if (request.getHttpMethod().equals(HttpMethod.OPTIONS)) {
             return new CorsPreflightService(request);
         } else if ((accepts.contains(MediaType.APPLICATION_JSON_TYPE) || MediaType.APPLICATION_JSON_TYPE.equals(content)) && !uriInfo.getPath().endsWith("keycloak.json")) {
@@ -152,12 +155,17 @@ public class AccountLoader {
     }
 
   private AccountResourceProvider getAccountResourceProvider(Theme theme) {
+    logger.debugf("Attempting to get AccountResourceProvider for theme %s", theme.getName());
     Set<AccountResourceProvider> providers = session.getAllProviders(AccountResourceProvider.class);
+    logger.debugf("Found %d AccountResourceProvider instances", providers != null ? providers.size() : "0");
     if (providers != null && !providers.isEmpty()) {
       // has the flaw that it will only return the first match. no provision for multiple providers
       // that match the same theme.
       for (AccountResourceProvider provider : providers) {
-        if (provider.useWithTheme(theme)) return provider;
+        if (provider.useWithTheme(theme)) {
+          logger.debugf("Found provider %s for theme %s", provider.getClass().getName(), theme.getName());
+          return provider;
+        }
       }
     }
     return null;
