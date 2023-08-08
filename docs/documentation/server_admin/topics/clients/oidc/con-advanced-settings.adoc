@@ -110,8 +110,8 @@ If the client switch `OAuth 2.0 DPoP Bound Access Tokens Enabled` is on, the wor
 
 If verification fails, {project_name} rejects the token.
 
-If the switch `OAuth 2.0 DPoP Bound Access Tokens Enabled` is off, client can still send `DPoP` proof in the token request. In that case, {project_name} will verify DPoP proof
-and will add the thumbprint to the token. But if the switch is off, DPoP binding is not enforced by {project_name} server for this client. It is recommended to have this switch
+If the switch `OAuth 2.0 DPoP Bound Access Tokens Enabled` is off, the client can still send `DPoP` proof in the token request. In that case, {project_name} will verify DPoP proof
+and will add the thumbprint to the token. But if the switch is off, DPoP binding is not enforced by the {project_name} server for this client. It is recommended to have this switch
 on if you want to make sure that particular client always uses DPoP binding.
 
 In the following cases, {project_name} will verify the client sending the access token or the refresh token:
