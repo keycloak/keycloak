@@ -1,6 +1,7 @@
 import AuthenticationExecutionInfoRepresentation from "@keycloak/keycloak-admin-client/lib/defs/authenticationExecutionInfoRepresentation";
 import AuthenticationFlowRepresentation from "@keycloak/keycloak-admin-client/lib/defs/authenticationFlowRepresentation";
 import type { AuthenticationProviderRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/authenticatorConfigRepresentation";
+import AuthenticatorConfigRepresentation from "@keycloak/keycloak-admin-client/lib/defs/authenticatorConfigRepresentation";
 import {
   AlertVariant,
   Button,
@@ -103,12 +104,29 @@ export default function FlowDetails() {
     try {
       let id = ex.id!;
       if ("parent" in change) {
+        let config: AuthenticatorConfigRepresentation = {};
+        if ("authenticationConfig" in ex) {
+          config = await adminClient.authenticationManagement.getConfig({
+            id: ex.authenticationConfig as string,
+          });
+        }
+
         await adminClient.authenticationManagement.delExecution({ id });
         const result =
           await adminClient.authenticationManagement.addExecutionToFlow({
             flow: change.parent?.displayName! || flow?.alias!,
             provider: ex.providerId!,
           });
+
+        if (config.id) {
+          const newConfig = {
+            id: result.id,
+            alias: config.alias,
+            config: config.config,
+          };
+          await adminClient.authenticationManagement.createConfig(newConfig);
+        }
+
         id = result.id!;
       }
       const times = change.newIndex - change.oldIndex;
