@@ -1,3 +1,4 @@
+import GroupRepresentation from "@keycloak/keycloak-admin-client/lib/defs/groupRepresentation";
 import {
   AlertVariant,
   PageSection,
@@ -8,13 +9,13 @@ import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useLocation } from "react-router-dom";
 
-import GroupRepresentation from "@keycloak/keycloak-admin-client/lib/defs/groupRepresentation";
 import { adminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
 import {
   AttributeForm,
   AttributesForm,
 } from "../components/key-value-form/AttributeForm";
+import { arrayToKeyValue } from "../components/key-value-form/key-value-convert";
 import { convertFormValuesToObject, convertToFormValues } from "../util";
 import { useFetch } from "../utils/useFetch";
 import { getLastId } from "./groupIdUtils";
@@ -60,7 +61,11 @@ export const GroupAttributes = () => {
         form={form}
         save={save}
         fineGrainedAccess={currentGroup?.access?.manage}
-        reset={() => convertToFormValues(currentGroup!, form.setValue)}
+        reset={() =>
+          form.reset({
+            attributes: arrayToKeyValue(currentGroup?.attributes!),
+          })
+        }
       />
     </PageSection>
   );
