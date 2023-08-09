@@ -35,7 +35,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class KeycloakServicesTest extends BaseOperatorTest {
     @Test
     public void testMainServiceDurability() {
-        var kc = K8sUtils.getDefaultKeycloakDeployment();
+        var kc = getTestKeycloakDeployment(true);
         K8sUtils.deployKeycloak(k8sclient, kc, true);
         var service = new KeycloakService(k8sclient, kc);
         var serviceSelector = k8sclient.services().inNamespace(namespace).withName(service.getName());
@@ -84,7 +84,7 @@ public class KeycloakServicesTest extends BaseOperatorTest {
 
     @Test
     public void testDiscoveryServiceDurability() {
-        var kc = K8sUtils.getDefaultKeycloakDeployment();
+        var kc = getTestKeycloakDeployment(true);
         K8sUtils.deployKeycloak(k8sclient, kc, true);
         var discoveryService = new KeycloakDiscoveryService(k8sclient, kc);
         var discoveryServiceSelector = k8sclient.services().inNamespace(namespace).withName(discoveryService.getName());

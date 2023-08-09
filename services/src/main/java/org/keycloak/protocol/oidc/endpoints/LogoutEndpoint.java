@@ -92,6 +92,8 @@ import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
+
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -200,7 +202,7 @@ public class LogoutEndpoint {
         if (encodedIdToken != null) {
             try {
                 idToken = tokenManager.verifyIDTokenSignature(session, encodedIdToken);
-                TokenVerifier.createWithoutSignature(idToken).tokenType(TokenUtil.TOKEN_TYPE_ID).verify();
+                TokenVerifier.createWithoutSignature(idToken).tokenType(Arrays.asList(TokenUtil.TOKEN_TYPE_ID)).verify();
             } catch (OAuthErrorException | VerificationException e) {
                 event.event(EventType.LOGOUT);
                 event.error(Errors.INVALID_TOKEN);
@@ -512,6 +514,7 @@ public class LogoutEndpoint {
 
         try {
             session.clientPolicy().triggerOnEvent(new LogoutRequestContext(form));
+            refreshToken = form.getFirst(OAuth2Constants.REFRESH_TOKEN);
         } catch (ClientPolicyException cpe) {
             throw new CorsErrorResponseException(cors, cpe.getError(), cpe.getErrorDetail(), cpe.getErrorStatus());
         }

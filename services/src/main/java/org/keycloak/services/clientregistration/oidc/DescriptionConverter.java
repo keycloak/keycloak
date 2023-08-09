@@ -212,6 +212,13 @@ public class DescriptionConverter {
             configWrapper.setPostLogoutRedirectUris(clientOIDC.getPostLogoutRedirectUris());
         }
 
+        // OAuth 2.0 DPoP
+        Boolean dpopBoundAccessTokens = clientOIDC.getDpopBoundAccessTokens();
+        if (dpopBoundAccessTokens != null) {
+            if (dpopBoundAccessTokens.booleanValue()) configWrapper.setUseDPoP(true);
+            else configWrapper.setUseDPoP(false);
+        }
+
         // CIBA
         String backchannelTokenDeliveryMode = clientOIDC.getBackchannelTokenDeliveryMode();
         if (backchannelTokenDeliveryMode != null) {
@@ -413,6 +420,11 @@ public class DescriptionConverter {
         response.setBackchannelLogoutUri(config.getBackchannelLogoutUrl());
         response.setBackchannelLogoutSessionRequired(config.isBackchannelLogoutSessionRequired());
         response.setBackchannelLogoutSessionRequired(config.getBackchannelLogoutRevokeOfflineTokens());
+        if (config.isUseDPoP()) {
+            response.setDpopBoundAccessTokens(Boolean.TRUE);
+        } else {
+            response.setDpopBoundAccessTokens(Boolean.FALSE);
+        }
 
         if (client.getAttributes() != null) {
             String mode = client.getAttributes().get(CibaConfig.CIBA_BACKCHANNEL_TOKEN_DELIVERY_MODE_PER_CLIENT);

@@ -24,6 +24,11 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.testsuite.model.KeycloakModelTest;
 
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
+
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.equalTo;
@@ -65,6 +70,30 @@ public class GroupModelTest extends KeycloakModelTest {
             assertThat(groupModel.getAttributes().get("key"), contains(NEW_VALUE));
             assertThat(groupModel.getFirstAttribute("key"), equalTo(NEW_VALUE));
             assertThat(groupModel.getAttributeStream("key").findFirst().get(), equalTo(NEW_VALUE));
+
+            return null;
+        });
+    }
+
+    @Test
+    public void testSubGroupsSorted() {
+        List<String> subGroups = Arrays.asList("sub-group-1", "sub-group-2", "sub-group-3");
+
+        String groupId = withRealm(realmId, (session, realm) -> {
+            GroupModel group = session.groups().createGroup(realm, "my-group");
+
+            subGroups.stream().sorted(Collections.reverseOrder()).forEach(s -> {
+                GroupModel subGroup = session.groups().createGroup(realm, s);
+                group.addChild(subGroup);
+            });
+
+            return group.getId();
+        });
+        withRealm(realmId, (session, realm) -> {
+            GroupModel group = session.groups().getGroupById(realm, groupId);
+
+            assertThat(group.getSubGroupsStream().map(GroupModel::getName).collect(Collectors.toList()),
+                    contains(subGroups.toArray()));
 
             return null;
         });

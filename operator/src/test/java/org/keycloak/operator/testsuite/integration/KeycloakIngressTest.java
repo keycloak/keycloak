@@ -32,6 +32,7 @@ import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.IngressSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.IngressSpecBuilder;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.HostnameSpecBuilder;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.UnsupportedSpecBuilder;
 import org.keycloak.operator.testsuite.utils.K8sUtils;
 import org.keycloak.operator.controllers.KeycloakIngress;
 
@@ -63,7 +64,7 @@ public class KeycloakIngressTest extends BaseOperatorTest {
 
     @Test
     public void testIngressOnHTTP() {
-        var kc = K8sUtils.getDefaultKeycloakDeployment();
+        var kc = getTestKeycloakDeployment(false);
         kc.getSpec().getHttpSpec().setTlsSecret(null);
         kc.getSpec().getHttpSpec().setHttpEnabled(true);
         var hostnameSpecBuilder = new HostnameSpecBuilder()
@@ -76,6 +77,19 @@ public class KeycloakIngressTest extends BaseOperatorTest {
             // on OpenShift, when Keycloak is configured for HTTP only, we use edge TLS termination, i.e. Route still uses TLS
             baseUrl = "https://" + testHostname + ":443";
             hostnameSpecBuilder.withHostname(testHostname);
+            // see https://github.com/keycloak/keycloak/issues/14400#issuecomment-1659900081
+            kc.getSpec().setUnsupported(new UnsupportedSpecBuilder()
+                    .withNewPodTemplate()
+                        .withNewSpec()
+                            .addNewContainer()
+                                .addNewEnv()
+                                    .withName("KC_PROXY")
+                                    .withValue("edge")
+                                .endEnv()
+                            .endContainer()
+                        .endSpec()
+                    .endPodTemplate()
+                    .build());
         }
         else {
             baseUrl = "http://" + kubernetesIp + ":80";
@@ -89,7 +103,7 @@ public class KeycloakIngressTest extends BaseOperatorTest {
 
     @Test
     public void testIngressOnHTTPS() {
-        var kc = K8sUtils.getDefaultKeycloakDeployment();
+        var kc = getTestKeycloakDeployment(false);
         var hostnameSpecBuilder = new HostnameSpecBuilder()
                 .withStrict(false)
                 .withStrictBackchannel(false);
@@ -142,7 +156,7 @@ public class KeycloakIngressTest extends BaseOperatorTest {
 
     @Test
     public void testIngressHostname() {
-        var kc = K8sUtils.getDefaultKeycloakDeployment();
+        var kc = getTestKeycloakDeployment(true);
         var hostnameSpec = new HostnameSpecBuilder().withHostname("foo.bar").build();
         kc.getSpec().setHostnameSpec(hostnameSpec);
 
@@ -170,7 +184,7 @@ public class KeycloakIngressTest extends BaseOperatorTest {
 
     @Test
     public void testMainIngressDurability() {
-        var kc = K8sUtils.getDefaultKeycloakDeployment();
+        var kc = getTestKeycloakDeployment(true);
         kc.getSpec().setIngressSpec(new IngressSpec());
         kc.getSpec().getIngressSpec().setIngressEnabled(true);
         kc.getSpec().getIngressSpec().setAnnotations(Map.of("haproxy.router.openshift.io/disable_cookies", "true"));
@@ -226,8 +240,7 @@ public class KeycloakIngressTest extends BaseOperatorTest {
 
     @Test
     public void testCustomIngressDeletion() {
-
-        Keycloak defaultKeycloakDeployment = K8sUtils.getDefaultKeycloakDeployment();
+        Keycloak defaultKeycloakDeployment = getTestKeycloakDeployment(true);
         String kcDeploymentName = defaultKeycloakDeployment.getMetadata().getName();
         Resource<Ingress> customIngressDeployedManuallySelector = null;
         Ingress customIngressCreatedManually;
@@ -258,9 +271,6 @@ public class KeycloakIngressTest extends BaseOperatorTest {
                 assertThat(k8sclient.network().v1().ingresses().inNamespace(namespace).list().getItems().size()).isEqualTo(1);
             });
 
-        } catch (Exception e) {
-            savePodLogs();
-            throw e;
         } finally {
             Log.info("Destroying the Custom Ingress created manually to avoid errors in others Tests methods");
             if (customIngressDeployedManuallySelector != null && customIngressDeployedManuallySelector.isReady()) {
@@ -271,10 +281,10 @@ public class KeycloakIngressTest extends BaseOperatorTest {
             }
         }
     }
-    
+
     @Test
     public void testCustomIngressClassName() {
-        var kc = K8sUtils.getDefaultKeycloakDeployment();
+        var kc = getTestKeycloakDeployment(true);
         kc.getSpec().setIngressSpec(new IngressSpecBuilder().withIngressClassName("nginx").build());
         K8sUtils.deployKeycloak(k8sclient, kc, true);
 
@@ -307,7 +317,7 @@ public class KeycloakIngressTest extends BaseOperatorTest {
 
     @Test
     public void testCustomIngressAnnotations() {
-        var kc = K8sUtils.getDefaultKeycloakDeployment();
+        var kc = getTestKeycloakDeployment(true);
         kc.getSpec().setIngressSpec(new IngressSpec());
         kc.getSpec().getIngressSpec().setIngressEnabled(true);
 

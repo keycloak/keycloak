@@ -21,6 +21,7 @@ import org.jboss.logging.Logger;
 import org.keycloak.testsuite.arquillian.HotRodContainerProvider;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.wait.strategy.Wait;
+import org.testcontainers.images.PullPolicy;
 import org.testcontainers.utility.MountableFile;
 
 import java.io.IOException;
@@ -50,10 +51,15 @@ public class InfinispanContainer extends GenericContainer<InfinispanContainer> {
     private static final Pattern IP_ADDRESS_PATTERN = Pattern.compile("listening on (" + IP_ADDRESS_REGEX + "):" + PORT);
 
     public InfinispanContainer() {
-        super("quay.io/infinispan/server:" + System.getProperty("infinispan.version"));
+        super(getImageName());
         withEnv("USER", USERNAME);
         withEnv("PASS", PASSWORD);
         withNetworkMode("host");
+
+        // the images in the 'infinispan-test' repository point to tags that are frequently refreshed, therefore, always pull them
+        if (getImageName().startsWith("quay.io/infinispan-test")) {
+            withImagePullPolicy(PullPolicy.alwaysPull());
+        }
         
         Path dir = Path.of(Path.of("").toAbsolutePath() + "/target/lib");
         String projectVersion = System.getProperty("project.version");
@@ -70,6 +76,17 @@ public class InfinispanContainer extends GenericContainer<InfinispanContainer> {
         //order of waitingFor and withStartupTimeout matters as the latter sets the timeout for WaitStrategy set by waitingFor
         waitingFor(Wait.forLogMessage(".*Infinispan Server.*started in.*", 1));
         withStartupTimeout(Duration.ofMinutes(5));
+    }
+
+    private static String getImageName() {
+        String version = System.getProperty("infinispan.version");
+        if (version.endsWith("-SNAPSHOT")) {
+            // for snapshot versions, '14.0.13-SNAPSHOT' translates to '14.0.x'
+            version = version.replaceAll("[0-9]*-SNAPSHOT$", "x");
+            return "quay.io/infinispan-test/server:" + version;
+        } else {
+            return "quay.io/infinispan/server:" + version;
+        }
     }
 
     @Override

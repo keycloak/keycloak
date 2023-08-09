@@ -408,6 +408,7 @@ export const UserCredentials = ({ user }: UserCredentialsProps) => {
                 <Th aria-hidden="true" />
                 <Th>{t("type")}</Th>
                 <Th>{t("userLabel")}</Th>
+                <Th>{t("createdAt")}</Th>
                 <Th>{t("data")}</Th>
                 <Th aria-hidden="true" />
                 <Th aria-hidden="true" />

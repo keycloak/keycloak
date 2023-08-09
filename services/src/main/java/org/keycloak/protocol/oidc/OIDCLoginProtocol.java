@@ -223,6 +223,9 @@ public class OIDCLoginProtocol implements LoginProtocol {
         if (!clientConfig.isExcludeSessionStateFromAuthResponse()) {
             redirectUri.addParam(OAuth2Constants.SESSION_STATE, userSession.getId());
         }
+        if (!clientConfig.isExcludeIssuerFromAuthResponse()) {
+            redirectUri.addParam(OAuth2Constants.ISSUER, clientSession.getNote(OIDCLoginProtocol.ISSUER));
+        }
 
         String nonce = authSession.getClientNote(OIDCLoginProtocol.NONCE_PARAM);
         clientSessionCtx.setAttribute(OIDCLoginProtocol.NONCE_PARAM, nonce);
@@ -278,6 +281,9 @@ public class OIDCLoginProtocol implements LoginProtocol {
                 event.error(cpe.getError());
                 new AuthenticationSessionManager(session).removeAuthenticationSession(realm, authSession, true);
                 redirectUri.addParam(OAuth2Constants.ERROR_DESCRIPTION, cpe.getError());
+                if (!clientConfig.isExcludeIssuerFromAuthResponse()) {
+                    redirectUri.addParam(OAuth2Constants.ISSUER, clientSession.getNote(OIDCLoginProtocol.ISSUER));
+                }
                 return redirectUri.build();
             }
 

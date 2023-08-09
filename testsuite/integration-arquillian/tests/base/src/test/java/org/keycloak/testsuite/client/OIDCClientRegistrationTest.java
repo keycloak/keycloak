@@ -357,6 +357,44 @@ public class OIDCClientRegistrationTest extends AbstractClientRegistrationTest {
     }
 
     @Test
+    public void testDPoPHoKTokenEnabled() throws Exception {
+        // create (no specification)
+        OIDCClientRepresentation clientRep = createRep();
+
+        OIDCClientRepresentation response = reg.oidc().create(clientRep);
+        Assert.assertEquals(Boolean.FALSE, response.getDpopBoundAccessTokens());
+        Assert.assertNotNull(response.getClientSecret());
+
+        // Test Keycloak representation
+        ClientRepresentation kcClient = getClient(response.getClientId());
+        OIDCAdvancedConfigWrapper config = OIDCAdvancedConfigWrapper.fromClientRepresentation(kcClient);
+        assertTrue(!config.isUseDPoP());
+
+        // update (true)
+        reg.auth(Auth.token(response));
+        response.setDpopBoundAccessTokens(Boolean.TRUE);
+        OIDCClientRepresentation updated = reg.oidc().update(response);
+        assertTrue(updated.getDpopBoundAccessTokens().booleanValue());
+
+        // Test Keycloak representation
+        kcClient = getClient(updated.getClientId());
+        config = OIDCAdvancedConfigWrapper.fromClientRepresentation(kcClient);
+        assertTrue(config.isUseDPoP());
+
+        // update (false)
+        reg.auth(Auth.token(updated));
+        updated.setDpopBoundAccessTokens(Boolean.FALSE);
+        OIDCClientRepresentation reUpdated = reg.oidc().update(updated);
+        assertTrue(!reUpdated.getDpopBoundAccessTokens().booleanValue());
+
+        // Test Keycloak representation
+        kcClient = getClient(reUpdated.getClientId());
+        config = OIDCAdvancedConfigWrapper.fromClientRepresentation(kcClient);
+        assertTrue(!config.isUseDPoP());
+
+    }
+
+    @Test
     public void testUserInfoEncryptedResponse() throws Exception {
         OIDCClientRepresentation response = null;
         OIDCClientRepresentation updated = null;

@@ -129,9 +129,12 @@ const DeviceActivity = () => {
             <ContinueCancelModal
               buttonTitle={t("signOutAllDevices")}
               modalTitle={t("signOutAllDevices")}
-              modalMessage={t("signOutAllDevicesWarning")}
+              continueLabel={t("confirm")}
+              cancelLabel={t("cancel")}
               onContinue={() => signOutAll()}
-            />
+            >
+              {t("signOutAllDevicesWarning")}
+            </ContinueCancelModal>
           )}
         </SplitItem>
       </Split>
@@ -174,10 +177,13 @@ const DeviceActivity = () => {
                         <ContinueCancelModal
                           buttonTitle={t("signOut")}
                           modalTitle={t("signOut")}
+                          continueLabel={t("confirm")}
+                          cancelLabel={t("cancel")}
                           buttonVariant="secondary"
-                          modalMessage={t("signOutWarning")}
                           onContinue={() => signOutSession(session, device)}
-                        />
+                        >
+                          {t("signOutWarning")}
+                        </ContinueCancelModal>
                       )}
                     </GridItem>
                     <GridItem span={11}>

@@ -17,7 +17,7 @@ public class ExternalLinksTest {
         List<LinkUtils.InvalidLink> invalidLinks = LinkUtils.getInstance().findInvalidLinks(guide);
         if (!invalidLinks.isEmpty()) {
             StringBuilder sb = new StringBuilder();
-            sb.append("Broken links (" + invalidLinks.size() + "):");
+            sb.append("Broken links (" + invalidLinks.size() + ") in guide '" + guideName + "': ");
 
             for (LinkUtils.InvalidLink l : invalidLinks) {
                 sb.append("\n\t\t- " + l.getLink() + " (" + l.getError() + ")");

@@ -28,6 +28,7 @@ import org.keycloak.common.util.Environment;
 import org.keycloak.rule.CryptoInitRule;
 
 import static org.hamcrest.Matchers.greaterThan;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -144,9 +145,9 @@ public class FIPS1402SslTest {
         logger.infof("Enabled ciphersuites: %s", enabledCipherSuites.size());
         logger.infof("Supported protocols: %s", supportedProtocols);
         logger.infof("Supported ciphers size: %d", supportedCiphers.size());
-        Assert.assertThat(enabledCipherSuites.size(), greaterThan(0));
-        Assert.assertThat(supportedProtocols.size(), greaterThan(0));
-        Assert.assertThat(supportedCiphers.size(), greaterThan(0));
+        assertThat(enabledCipherSuites.size(), greaterThan(0));
+        assertThat(supportedProtocols.size(), greaterThan(0));
+        assertThat(supportedCiphers.size(), greaterThan(0));
 
         SSLSessionContext sslServerCtx = context.getServerSessionContext();
         Assert.assertNotNull(sslServerCtx);

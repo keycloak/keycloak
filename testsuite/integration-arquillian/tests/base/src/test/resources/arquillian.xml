@@ -722,7 +722,7 @@
             <property name="adapterImplClass">org.keycloak.testsuite.arquillian.containers.KeycloakQuarkusServerDeployableContainer</property>
             <property name="bindHttpPortOffset">${auth.server.port.offset}</property>
             <property name="importFile">${migration.import.file.name}</property>
-            <property name="providersPath">${keycloak.migration.home}</property>
+            <property name="providersPathString">${keycloak.migration.home}</property>
             <property name="javaOpts">
                 -Xms512m
                 -Xmx512m

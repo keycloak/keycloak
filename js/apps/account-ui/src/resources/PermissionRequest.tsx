@@ -67,7 +67,7 @@ export const PermissionRequest = ({
     <>
       <Button variant="link" onClick={toggle}>
         <UserCheckIcon size="lg" />
-        <Badge>{resource.shareRequests.length}</Badge>
+        <Badge>{resource.shareRequests?.length}</Badge>
       </Button>
       <Modal
         title={t("permissionRequest", [resource.name])}
@@ -89,7 +89,7 @@ export const PermissionRequest = ({
             </Tr>
           </Thead>
           <Tbody>
-            {resource.shareRequests.map((shareRequest) => (
+            {resource.shareRequests?.map((shareRequest) => (
               <Tr key={shareRequest.username}>
                 <Td>
                   {shareRequest.firstName} {shareRequest.lastName}{" "}

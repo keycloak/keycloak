@@ -19,6 +19,7 @@ import {
   ReactNode,
   isValidElement,
   useEffect,
+  useId,
   useMemo,
   useRef,
   useState,
@@ -220,6 +221,7 @@ export function KeycloakDataTable<T>({
 
   const [key, setKey] = useState(0);
   const refresh = () => setKey(new Date().getTime());
+  const id = useId();
 
   const renderCell = (columns: (Field<T> | DetailField<T>)[], value: T) => {
     return columns.map((col) => {
@@ -415,7 +417,7 @@ export function KeycloakDataTable<T>({
     <>
       {(loading || !noData || searching) && (
         <PaginatingTableToolbar
-          id={ariaLabelKey}
+          id={id}
           count={rowLength}
           first={first}
           max={max}

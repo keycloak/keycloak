@@ -28,6 +28,7 @@ import io.fabric8.kubernetes.client.utils.Serialization;
 import io.quarkus.logging.Log;
 
 import org.keycloak.operator.Constants;
+import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -100,6 +101,12 @@ public abstract class OperatorManagedResource<T extends HasMetadata> {
         labels = Optional.ofNullable(labels).orElse(new LinkedHashMap<>());
         labels.putAll(Constants.DEFAULT_LABELS);
         labels.put(Constants.INSTANCE_LABEL, instanceName);
+        return labels;
+    }
+
+    public static Map<String, String> allInstanceLabels(Keycloak keycloak) {
+        var labels = new LinkedHashMap<>(Constants.DEFAULT_LABELS);
+        labels.put(Constants.INSTANCE_LABEL, keycloak.getMetadata().getName());
         return labels;
     }
 

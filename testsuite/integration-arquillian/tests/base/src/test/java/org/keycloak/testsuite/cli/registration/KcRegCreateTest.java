@@ -31,6 +31,7 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_SSL_REQUIRED;
 import static org.keycloak.testsuite.cli.KcRegExec.execute;
 
@@ -297,7 +298,7 @@ public class KcRegCreateTest extends AbstractRegCliTest {
 
                 Assert.assertNotNull("clientId", oidcClient.getClientId());
                 Assert.assertEquals("redirect_uris", Arrays.asList("http://localhost:8980/myapp5/*"), oidcClient.getRedirectUris());
-                Assert.assertThat("grant_types", oidcClient.getGrantTypes(), Matchers.containsInAnyOrder("authorization_code", "client_credentials", "refresh_token", OAuth2Constants.UMA_GRANT_TYPE));
+                assertThat("grant_types", oidcClient.getGrantTypes(), Matchers.containsInAnyOrder("authorization_code", "client_credentials", "refresh_token", OAuth2Constants.UMA_GRANT_TYPE));
                 Assert.assertEquals("response_types", Arrays.asList("code", "none"), oidcClient.getResponseTypes());
                 Assert.assertEquals("client_name", "My Reg Authz", oidcClient.getClientName());
                 Assert.assertEquals("client_uri", "http://localhost:8980/myapp5", oidcClient.getClientUri());

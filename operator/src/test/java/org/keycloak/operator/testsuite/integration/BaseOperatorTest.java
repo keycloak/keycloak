@@ -19,29 +19,40 @@ package org.keycloak.operator.testsuite.integration;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.NamespaceBuilder;
+import io.fabric8.kubernetes.api.model.PodSpecFluent.ContainersNested;
+import io.fabric8.kubernetes.api.model.PodTemplateSpecFluent.SpecNested;
 import io.fabric8.kubernetes.api.model.Secret;
+import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.client.Config;
 import io.fabric8.kubernetes.client.ConfigBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientBuilder;
+import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.NamespacedKubernetesClient;
+import io.fabric8.kubernetes.client.readiness.Readiness;
+import io.fabric8.kubernetes.client.utils.Serialization;
 import io.javaoperatorsdk.operator.Operator;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.quarkiverse.operatorsdk.runtime.QuarkusConfigurationService;
 import io.quarkus.logging.Log;
-import jakarta.enterprise.inject.Instance;
-import jakarta.enterprise.inject.spi.CDI;
-import jakarta.enterprise.util.TypeLiteral;
+import io.quarkus.test.junit.callback.QuarkusTestAfterEachCallback;
+import io.quarkus.test.junit.callback.QuarkusTestMethodContext;
+
 import org.awaitility.Awaitility;
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestInfo;
 import org.keycloak.operator.Constants;
+import org.keycloak.operator.controllers.KeycloakDeployment;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
+import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakSpecBuilder;
+import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakSpecFluent.UnsupportedNested;
+import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatus;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.UnsupportedSpecFluent.PodTemplateNested;
 import org.keycloak.operator.testsuite.utils.K8sUtils;
+import org.opentest4j.TestAbortedException;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -50,13 +61,18 @@ import java.io.FileWriter;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.time.Duration;
+import java.util.Optional;
 import java.util.UUID;
+
+import jakarta.enterprise.inject.Instance;
+import jakarta.enterprise.inject.spi.CDI;
+import jakarta.enterprise.util.TypeLiteral;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.keycloak.operator.Utils.isOpenShift;
 import static org.keycloak.operator.testsuite.utils.K8sUtils.getResourceFromFile;
 
-public abstract class BaseOperatorTest {
+public class BaseOperatorTest implements QuarkusTestAfterEachCallback {
 
   public static final String QUARKUS_KUBERNETES_DEPLOYMENT_TARGET = "quarkus.kubernetes.deployment-target";
   public static final String OPERATOR_DEPLOYMENT_PROP = "test.operator.deployment";
@@ -79,7 +95,6 @@ public abstract class BaseOperatorTest {
   protected static String customImage;
   private static Operator operator;
   protected static boolean isOpenShift;
-
 
   @BeforeAll
   public static void before() throws FileNotFoundException {
@@ -164,10 +179,16 @@ public abstract class BaseOperatorTest {
   }
 
   private static void calculateNamespace() {
-    namespace = "keycloak-test-" + UUID.randomUUID();
+    namespace = getNewRandomNamespaceName();
+  }
+
+  public static String getNewRandomNamespaceName() {
+      return "keycloak-test-" + UUID.randomUUID();
   }
 
   protected static void deployDB() {
+    deployDBSecret();
+
     // DB
     Log.info("Creating new PostgreSQL deployment");
     K8sUtils.set(k8sclient, BaseOperatorTest.class.getResourceAsStream("/example-postgres.yaml"));
@@ -176,8 +197,6 @@ public abstract class BaseOperatorTest {
     Log.info("Checking Postgres is running");
     Awaitility.await()
             .untilAsserted(() -> assertThat(k8sclient.apps().statefulSets().inNamespace(namespace).withName("postgresql-db").get().getStatus().getReadyReplicas()).isEqualTo(1));
-
-    deployDBSecret();
   }
 
   protected static void deployDBSecret() {
@@ -214,7 +233,7 @@ public abstract class BaseOperatorTest {
           fw.write(podLog);
         }
       } catch (Exception e) {
-        Log.error(e.getStackTrace());
+        Log.errorf("Error saving pod logs: %s", e.getMessage());
       }
     }
   }
@@ -224,7 +243,6 @@ public abstract class BaseOperatorTest {
     Awaitility.setDefaultTimeout(Duration.ofSeconds(360));
   }
 
-  @AfterEach
   public void cleanup() {
     Log.info("Deleting Keycloak CR");
     k8sclient.resources(Keycloak.class).delete();
@@ -239,6 +257,44 @@ public abstract class BaseOperatorTest {
                       .getItems();
               assertThat(kcDeployments.size()).isZero();
             });
+  }
+
+  @Override
+  public void afterEach(QuarkusTestMethodContext context) {
+      if (!(context.getTestInstance() instanceof BaseOperatorTest)) {
+          return;
+      }
+      try {
+          if (!context.getTestStatus().isTestFailed() && !(context.getTestStatus().getTestErrorCause() instanceof TestAbortedException)) {
+              return;
+          }
+          Log.warnf("Test failed with %s: %s", context.getTestStatus().getTestErrorCause().getMessage(), context.getTestStatus().getTestErrorCause().getClass().getName());
+          savePodLogs();
+          // provide some helpful entries in the main log as well
+          k8sclient.resources(Keycloak.class).list().getItems().stream()
+                  .filter(kc -> !Optional.ofNullable(kc.getStatus()).map(KeycloakStatus::isReady).orElse(false))
+                  .forEach(kc -> {
+                      Log.warnf("Keycloak failed to become ready \"%s\" %s", kc.getMetadata().getName(), Serialization.asYaml(kc.getStatus()));
+                      var statefulSet = k8sclient.resources(StatefulSet.class).withName(KeycloakDeployment.getName(kc)).get();
+                      if (statefulSet != null) {
+                          Log.warnf("Keycloak \"%s\" StatefulSet status %s", kc.getMetadata().getName(), Serialization.asYaml(statefulSet.getStatus()));
+                          k8sclient.pods().withLabels(statefulSet.getSpec().getSelector().getMatchLabels()).list()
+                                  .getItems().stream().filter(pod -> !Readiness.isPodReady(pod)).forEach(pod -> {
+                                      try {
+                                          String log = k8sclient.pods().resource(pod).getLog();
+                                          if (log.length() > 5000) {
+                                              log = log.substring(log.length() - 5000);
+                                          }
+                                          Log.warnf("Not ready pod log \"%s\": %s", pod.getMetadata().getName(), log);
+                                      } catch (KubernetesClientException e) {
+                                          Log.warnf("No pod log for \"%s\": %s", pod.getMetadata().getName(), e.getMessage());
+                                      }
+                                  });
+                      }
+                  });
+      } finally {
+          cleanup();
+      }
   }
 
   @AfterAll
@@ -263,4 +319,45 @@ public abstract class BaseOperatorTest {
   public static String getCurrentNamespace() {
     return namespace;
   }
+
+  public static String getTestCustomImage() {
+    return customImage;
+  }
+
+  /**
+   * Get the default deployment modified/optimized by operator test settings
+   * @param disableProbes when true the unsupported template will be used to effectively
+   *   disable the probes, which will speed up testing for scenarios that don't interact
+   *   with the underlying keycloak
+   * @return
+   */
+  public static Keycloak getTestKeycloakDeployment(boolean disableProbes) {
+      Keycloak kc = K8sUtils.getDefaultKeycloakDeployment();
+      kc.getMetadata().setNamespace(getCurrentNamespace());
+      String image = getTestCustomImage();
+      if (image != null) {
+          kc.getSpec().setImage(image);
+      }
+      if (disableProbes) {
+          return disableProbes(kc);
+      }
+      return kc;
+  }
+
+  public static Keycloak disableProbes(Keycloak keycloak) {
+      KeycloakSpecBuilder specBuilder = new KeycloakSpecBuilder(keycloak.getSpec());
+      var podTemplateSpecBuilder = specBuilder.editOrNewUnsupported().editOrNewPodTemplate().editOrNewSpec();
+      ContainersNested<SpecNested<PodTemplateNested<UnsupportedNested<KeycloakSpecBuilder>>>> containerBuilder = null;
+      if (podTemplateSpecBuilder.hasContainers()) {
+          containerBuilder = podTemplateSpecBuilder.editContainer(0);
+      } else {
+          containerBuilder = podTemplateSpecBuilder.addNewContainer();
+      }
+      keycloak.setSpec(containerBuilder.withNewLivenessProbe().withNewExec().addToCommand("true").endExec()
+              .endLivenessProbe().withNewReadinessProbe().withNewExec().addToCommand("true").endExec()
+              .endReadinessProbe().withNewStartupProbe().withNewExec().addToCommand("true").endExec()
+              .endStartupProbe().endContainer().endSpec().endPodTemplate().endUnsupported().build());
+      return keycloak;
+  }
+
 }

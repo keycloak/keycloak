@@ -11,6 +11,7 @@ import java.util.Map;
 
 import static java.util.Locale.ENGLISH;
 import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.keycloak.OAuth2Constants.UI_LOCALES_PARAM;
 import static org.keycloak.testsuite.broker.BrokerTestConstants.IDP_OIDC_ALIAS;
 import static org.keycloak.testsuite.broker.BrokerTestConstants.IDP_OIDC_PROVIDER_ID;
@@ -48,10 +49,10 @@ public class KcOidcBrokerUiLocalesEnabledTest extends AbstractBrokerTest {
 
         waitForPage(driver, "sign in to", true);
 
-        Assert.assertThat("Driver should be on the provider realm page right now",
+        assertThat("Driver should be on the provider realm page right now",
                 driver.getCurrentUrl(), containsString("/auth/realms/" + bc.providerRealmName() + "/"));
 
-        Assert.assertThat(UI_LOCALES_PARAM + "=" + ENGLISH.toLanguageTag() + " should be part of the url",
+        assertThat(UI_LOCALES_PARAM + "=" + ENGLISH.toLanguageTag() + " should be part of the url",
                 driver.getCurrentUrl(), containsString(UI_LOCALES_PARAM + "=" + ENGLISH.toLanguageTag()));
 
         loginPage.login(bc.getUserLogin(), bc.getUserPassword());
@@ -59,7 +60,7 @@ public class KcOidcBrokerUiLocalesEnabledTest extends AbstractBrokerTest {
 
         updateAccountInformationPage.assertCurrent();
 
-        Assert.assertThat("We must be on correct realm right now",
+        assertThat("We must be on correct realm right now",
                 driver.getCurrentUrl(), containsString("/auth/realms/" + bc.consumerRealmName() + "/"));
 
         log.debug("Updating info on updateAccount page");

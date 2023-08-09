@@ -21,6 +21,7 @@ import org.jboss.logging.Logger;
 import org.keycloak.common.enums.SslRequired;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.component.ComponentModel;
+import org.keycloak.deployment.DeployedConfigurationsManager;
 import org.keycloak.exportimport.ExportAdapter;
 import org.keycloak.exportimport.ExportOptions;
 import org.keycloak.exportimport.util.ExportUtils;
@@ -276,6 +277,12 @@ public class LegacyExportImportManager implements ExportImportManager {
         if (rep.getAccountTheme() != null) newRealm.setAccountTheme(rep.getAccountTheme());
         if (rep.getAdminTheme() != null) newRealm.setAdminTheme(rep.getAdminTheme());
         if (rep.getEmailTheme() != null) newRealm.setEmailTheme(rep.getEmailTheme());
+        if (rep.getLocalizationTexts() != null) {
+            Map<String, Map<String, String>> localizationTexts = rep.getLocalizationTexts();
+            for (Map.Entry<String, Map<String, String>> entry: localizationTexts.entrySet()) {
+                newRealm.createOrUpdateRealmLocalizationTexts(entry.getKey(), entry.getValue());
+            }
+        }
 
         // todo remove this stuff as its all deprecated
         if (rep.getRequiredCredentials() != null) {
@@ -301,7 +308,7 @@ public class LegacyExportImportManager implements ExportImportManager {
 
         updateParSettings(rep, newRealm);
 
-        Map<String, String> mappedFlows = importAuthenticationFlows(newRealm, rep);
+        Map<String, String> mappedFlows = importAuthenticationFlows(session, newRealm, rep);
         if (rep.getRequiredActions() != null) {
             for (RequiredActionProviderRepresentation action : rep.getRequiredActions()) {
                 RequiredActionProviderModel model = toModel(action);
@@ -1251,7 +1258,7 @@ public class LegacyExportImportManager implements ExportImportManager {
 
         return webAuthnPolicy;
     }
-    public static Map<String, String> importAuthenticationFlows(RealmModel newRealm, RealmRepresentation rep) {
+    public static Map<String, String> importAuthenticationFlows(KeycloakSession session, RealmModel newRealm, RealmRepresentation rep) {
         Map<String, String> mappedFlows = new HashMap<>();
         if (rep.getAuthenticationFlows() == null) {
             // assume this is an old version being imported
@@ -1279,7 +1286,7 @@ public class LegacyExportImportManager implements ExportImportManager {
                 for (AuthenticationFlowRepresentation flowRep : rep.getAuthenticationFlows()) {
                     AuthenticationFlowModel model = newRealm.getFlowByAlias(flowRep.getAlias());
                     for (AuthenticationExecutionExportRepresentation exeRep : flowRep.getAuthenticationExecutions()) {
-                        AuthenticationExecutionModel execution = toModel(newRealm, model, exeRep);
+                        AuthenticationExecutionModel execution = toModel(session, newRealm, model, exeRep);
                         newRealm.addAuthenticatorExecution(execution);
                     }
                 }
@@ -1365,10 +1372,10 @@ public class LegacyExportImportManager implements ExportImportManager {
         return mappedFlows;
     }
 
-    private static AuthenticationExecutionModel toModel(RealmModel realm, AuthenticationFlowModel parentFlow, AuthenticationExecutionExportRepresentation rep) {
+    private static AuthenticationExecutionModel toModel(KeycloakSession session, RealmModel realm, AuthenticationFlowModel parentFlow, AuthenticationExecutionExportRepresentation rep) {
         AuthenticationExecutionModel model = new AuthenticationExecutionModel();
         if (rep.getAuthenticatorConfig() != null) {
-            AuthenticatorConfigModel config = realm.getAuthenticatorConfigByAlias(rep.getAuthenticatorConfig());
+            AuthenticatorConfigModel config = new DeployedConfigurationsManager(session).getAuthenticatorConfigByAlias(realm, rep.getAuthenticatorConfig());
             model.setAuthenticatorConfig(config.getId());
         }
         model.setAuthenticator(rep.getAuthenticator());

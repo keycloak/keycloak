@@ -73,7 +73,7 @@ class LiquibaseProcessor {
                         !Modifier.isPublic(found.flags())) {
                     continue;
                 }
-                AnnotationInstance annotationInstance = found.classAnnotation(liquibaseServiceName);
+                AnnotationInstance annotationInstance = found.declaredAnnotation(liquibaseServiceName);
                 if (annotationInstance == null || !annotationInstance.value("skip").asBoolean()) {
                     impls.add(found.name().toString());
                 }

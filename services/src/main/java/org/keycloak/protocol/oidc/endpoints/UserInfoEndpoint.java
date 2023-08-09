@@ -22,6 +22,7 @@ import org.keycloak.OAuth2Constants;
 import org.keycloak.TokenCategory;
 import org.keycloak.TokenVerifier;
 import org.keycloak.common.ClientConnection;
+import org.keycloak.common.Profile;
 import org.keycloak.common.VerificationException;
 import org.keycloak.common.constants.ServiceAccountConstants;
 import org.keycloak.crypto.ContentEncryptionProvider;
@@ -53,6 +54,7 @@ import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.protocol.oidc.TokenManager.NotBeforeCheck;
 import org.keycloak.representations.AccessToken;
+import org.keycloak.representations.dpop.DPoP;
 import org.keycloak.services.Urls;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.context.UserInfoRequestContext;
@@ -61,6 +63,7 @@ import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.UserSessionCrossDCManager;
 import org.keycloak.services.managers.UserSessionManager;
 import org.keycloak.services.resources.Cors;
+import org.keycloak.services.util.DPoPUtil;
 import org.keycloak.services.util.DefaultClientSessionContext;
 import org.keycloak.services.util.MtlsHoKTokenUtil;
 import org.keycloak.sessions.AuthenticationSessionModel;
@@ -100,7 +103,7 @@ public class UserInfoEndpoint {
     private final RealmModel realm;
     private final OAuth2Error error;
     private Cors cors;
-    private String authorization;
+    private TokenForUserInfo tokenForUserInfo = new TokenForUserInfo();
 
     public UserInfoEndpoint(KeycloakSession session, org.keycloak.protocol.oidc.TokenManager tokenManager) {
         this.session = session;
@@ -163,7 +166,7 @@ public class UserInfoEndpoint {
         cors.allowAllOrigins();
 
         try {
-            session.clientPolicy().triggerOnEvent(new UserInfoRequestContext(authorization));
+            session.clientPolicy().triggerOnEvent(new UserInfoRequestContext(tokenForUserInfo));
         } catch (ClientPolicyException cpe) {
             throw error.error(cpe.getError()).errorDescription(cpe.getErrorDetail()).status(cpe.getErrorStatus()).build();
         }
@@ -172,7 +175,7 @@ public class UserInfoEndpoint {
                 .event(EventType.USER_INFO_REQUEST)
                 .detail(Details.AUTH_METHOD, Details.VALIDATE_ACCESS_TOKEN);
 
-        if (authorization == null) {
+        if (tokenForUserInfo.getToken() == null) {
             event.error(Errors.INVALID_TOKEN);
             throw error.unauthorized();
         }
@@ -180,7 +183,7 @@ public class UserInfoEndpoint {
         AccessToken token;
         ClientModel clientModel = null;
         try {
-            TokenVerifier<AccessToken> verifier = TokenVerifier.create(authorization, AccessToken.class).withDefaultChecks()
+            TokenVerifier<AccessToken> verifier = TokenVerifier.create(tokenForUserInfo.getToken(), AccessToken.class).withDefaultChecks()
                     .realmUrl(Urls.realmIssuer(session.getContext().getUri().getBaseUri(), realm.getName()));
 
             SignatureVerifierContext verifierContext = session.getProvider(SignatureProvider.class, verifier.getHeader().getAlgorithm().name()).verifier(verifier.getHeader().getKeyId());
@@ -248,6 +251,18 @@ public class UserInfoEndpoint {
             if (!MtlsHoKTokenUtil.verifyTokenBindingWithClientCertificate(token, request, session)) {
                 event.error(Errors.NOT_ALLOWED);
                 throw error.invalidToken("Client certificate missing, or its thumbprint and one in the refresh token did NOT match");
+            }
+        }
+
+        if (Profile.isFeatureEnabled(Profile.Feature.DPOP)) {
+            if (OIDCAdvancedConfigWrapper.fromClientModel(clientModel).isUseDPoP() || DPoPUtil.DPOP_TOKEN_TYPE.equals(token.getType())) {
+                try {
+                    DPoP dPoP = new DPoPUtil.Validator(session).request(request).uriInfo(session.getContext().getUri()).validate();
+                    DPoPUtil.validateBinding(token, dPoP);
+                } catch (VerificationException ex) {
+                    event.detail("detail", ex.getMessage()).error(Errors.NOT_ALLOWED);
+                    throw error.invalidToken("DPoP proof and token binding verification failed");
+                }
             }
         }
 
@@ -417,11 +432,24 @@ public class UserInfoEndpoint {
 
     private void authorization(String accessToken) {
         if (accessToken != null) {
-            if (authorization == null) {
-                authorization = accessToken;
+            if (tokenForUserInfo.getToken() == null) {
+                tokenForUserInfo.setToken(accessToken);
             } else {
                 throw error.cors(cors.allowAllOrigins()).invalidRequest("More than one method used for including an access token");
             }
+        }
+    }
+
+    public static class TokenForUserInfo {
+
+        private String token;
+
+        public String getToken() {
+            return token;
+        }
+
+        public void setToken(String token) {
+            this.token = token;
         }
     }
 }

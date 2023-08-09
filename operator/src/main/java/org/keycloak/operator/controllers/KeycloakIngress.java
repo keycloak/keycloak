@@ -23,7 +23,6 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 
 import org.keycloak.operator.Constants;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
-import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusAggregator;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.IngressSpec;
 
 import java.util.HashMap;
@@ -31,7 +30,7 @@ import java.util.Optional;
 
 import static org.keycloak.operator.crds.v2alpha1.CRDUtils.isTlsConfigured;
 
-public class KeycloakIngress extends OperatorManagedResource implements StatusUpdater<KeycloakStatusAggregator> {
+public class KeycloakIngress extends OperatorManagedResource {
 
     private final Ingress existingIngress;
     private final Keycloak keycloak;
@@ -128,18 +127,6 @@ public class KeycloakIngress extends OperatorManagedResource implements StatusUp
                 .inNamespace(getNamespace())
                 .withName(getName())
                 .get();
-    }
-
-    @Override
-    public void updateStatus(KeycloakStatusAggregator status) {
-        IngressSpec ingressSpec = keycloak.getSpec().getIngressSpec();
-        if (ingressSpec == null) {
-            ingressSpec = new IngressSpec();
-            ingressSpec.setIngressEnabled(true);
-        }
-        if (ingressSpec.isIngressEnabled() && existingIngress == null) {
-            status.addNotReadyMessage("No existing Keycloak Ingress found, waiting for creating a new one");
-        }
     }
 
     @Override

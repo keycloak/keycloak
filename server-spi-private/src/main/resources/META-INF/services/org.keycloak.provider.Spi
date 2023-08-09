@@ -62,6 +62,7 @@ org.keycloak.authentication.otp.OTPApplicationSpi
 org.keycloak.authorization.policy.provider.PolicySpi
 org.keycloak.authorization.store.StoreFactorySpi
 org.keycloak.authorization.AuthorizationSpi
+org.keycloak.deployment.DeployedConfigurationsSpi
 org.keycloak.models.cache.authorization.CachedStoreFactorySpi
 org.keycloak.protocol.oidc.TokenExchangeSpi
 org.keycloak.protocol.oidc.TokenIntrospectionSpi

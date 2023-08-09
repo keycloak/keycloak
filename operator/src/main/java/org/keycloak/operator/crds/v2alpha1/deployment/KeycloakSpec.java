@@ -39,7 +39,7 @@ public class KeycloakSpec {
 
     @SpecReplicas
     @JsonPropertyDescription("Number of Keycloak instances in HA mode. Default is 1.")
-    private int instances = 1;
+    private Integer instances;
 
     @JsonPropertyDescription("Custom Keycloak image to be used.")
     private String image;
@@ -137,11 +137,11 @@ public class KeycloakSpec {
         this.hostnameSpec = hostnameSpec;
     }
 
-    public int getInstances() {
+    public Integer getInstances() {
         return instances;
     }
 
-    public void setInstances(int instances) {
+    public void setInstances(Integer instances) {
         this.instances = instances;
     }
 
