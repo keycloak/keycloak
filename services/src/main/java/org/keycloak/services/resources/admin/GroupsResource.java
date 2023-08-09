@@ -108,7 +108,7 @@ public class GroupsResource {
 
         boolean canViewGlobal = groupsEvaluator.canView();
         return stream.filter(group -> canViewGlobal || groupsEvaluator.canView(group))
-                .map(group -> GroupUtils.toGroupHierarchy(groupsEvaluator, group, search, exact, !briefRepresentation));
+                .map(group -> GroupUtils.toGroupHierarchy(groupsEvaluator, group, search, exact, !briefRepresentation, false));
     }
 
     /**

@@ -1139,15 +1139,41 @@ public class OAuthClient {
         }
     }
 
+    public UserInfoResponse doUserInfoRequestByGet(String accessToken) throws Exception {
+        try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
+            HttpGet get = new HttpGet(getUserInfoUrl());
+            get.setHeader("Authorization", "Bearer " + accessToken);
+            if (dpopProof != null) {
+                get.addHeader("DPoP", dpopProof);
+            }
+            return new UserInfoResponse(client.execute(get));
+        } catch (IOException ex) {
+            throw new RuntimeException(ex);
+        }
+    }
+
     public ParResponse doPushedAuthorizationRequest(String clientId, String clientSecret) throws IOException {
-        return doPushedAuthorizationRequest(clientId, clientSecret, (CloseableHttpResponse c)->{});
+        return doPushedAuthorizationRequest(clientId, clientSecret, (CloseableHttpResponse c)->{}, null);
+    }
+
+    public ParResponse doPushedAuthorizationRequest(String clientId, String clientSecret, String signedJwt) throws IOException {
+        return doPushedAuthorizationRequest(clientId, clientSecret, (CloseableHttpResponse c)->{}, signedJwt);
     }
 
     public ParResponse doPushedAuthorizationRequest(String clientId, String clientSecret, Consumer<CloseableHttpResponse> c) throws IOException {
-        try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
+        return doPushedAuthorizationRequest(clientId, clientSecret, c, null);
+    }
+
+    public ParResponse doPushedAuthorizationRequest(String clientId, String clientSecret, Consumer<CloseableHttpResponse> c, String signedJwt) throws IOException {
+        try (CloseableHttpClient client = httpClient.get()) {
             HttpPost post = new HttpPost(getParEndpointUrl());
 
             List<NameValuePair> parameters = new LinkedList<>();
+
+            if (signedJwt != null) {
+                parameters.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ASSERTION_TYPE, OAuth2Constants.CLIENT_ASSERTION_TYPE_JWT));
+                parameters.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ASSERTION, signedJwt));
+            }
 
             if (origin != null) {
                 post.addHeader("Origin", origin);
@@ -1161,6 +1187,8 @@ public class OAuthClient {
             if (clientId != null && clientSecret != null) {
                 String authorization = BasicAuthHelper.createHeader(clientId, clientSecret);
                 post.setHeader("Authorization", authorization);
+            }
+            if (clientId != null) {
                 parameters.add(new BasicNameValuePair(OAuth2Constants.CLIENT_ID, clientId));
             }
             if (redirectUri != null) {
@@ -2273,6 +2301,44 @@ public class OAuthClient {
 
         public int getInterval() {
             return interval;
+        }
+
+        public int getStatusCode() {
+            return statusCode;
+        }
+
+        public Map<String, String> getHeaders() {
+            return headers;
+        }
+    }
+
+    public static class UserInfoResponse {
+        private int statusCode;
+
+        private UserInfo userInfo;
+
+        private Map<String, String> headers;
+
+        public UserInfoResponse(CloseableHttpResponse response) throws Exception {
+            try {
+                statusCode = response.getStatusLine().getStatusCode();
+
+                headers = new HashMap<>();
+
+                for (Header h : response.getAllHeaders()) {
+                    headers.put(h.getName(), h.getValue());
+                }
+
+                if (statusCode == 200) {
+                    userInfo = JsonSerialization.readValue(response.getEntity().getContent(), UserInfo.class);
+                }
+            } finally {
+                response.close();
+            }
+        }
+
+        public UserInfo getUserInfo() {
+            return userInfo;
         }
 
         public int getStatusCode() {

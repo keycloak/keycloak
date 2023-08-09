@@ -62,4 +62,26 @@
         <module>utils</module>
     </modules>
 
+    <profiles>
+        <profile>
+            <id>deploy-testsuite</id>
+            <activation>
+                <property>
+                    <name>deployTestsuite</name>
+                </property>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-deploy-plugin</artifactId>
+                        <configuration>
+                            <skip>false</skip>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
+
 </project>
