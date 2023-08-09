@@ -230,14 +230,11 @@ public class GroupSearchTest extends AbstractGroupTest {
             System.setProperty(SEARCHABLE_ATTRS_PROP, String.join(",", searchableAttributes));
             controller.start(suiteContext.getAuthServerInfo().getQualifier());
         } else if (suiteContext.getAuthServerInfo().isQuarkus()) {
-            searchableAttributes = Arrays.stream(searchableAttributes)
-                    .map(a -> a.replace(" ", "\\ ").replace("\"", "\\\\\\\""))
-                    .toArray(String[]::new);
             String s = String.join(",", searchableAttributes);
             controller.stop(suiteContext.getAuthServerInfo().getQualifier());
             AbstractQuarkusDeployableContainer container = (AbstractQuarkusDeployableContainer) suiteContext.getAuthServerInfo().getArquillianContainer().getDeployableContainer();
             container.setAdditionalBuildArgs(
-                    Collections.singletonList("--spi-group-jpa-searchable-attributes=\"" + s + "\""));
+                    Collections.singletonList("--spi-group-jpa-searchable-attributes=" + s));
             controller.start(suiteContext.getAuthServerInfo().getQualifier());
         } else {
             throw new RuntimeException("Don't know how to config");

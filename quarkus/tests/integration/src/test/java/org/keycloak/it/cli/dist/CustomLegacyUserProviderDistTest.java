@@ -36,7 +36,7 @@ public class CustomLegacyUserProviderDistTest {
 
     @Test
     @TestProvider(CustomLegacyUserProvider.class)
-    @Launch({ "start-dev", "--spi-user-provider=custom_jpa --spi-user-jpa-enabled=false" })
+    @Launch({ "start-dev", "--spi-user-provider=custom_jpa", "--spi-user-jpa-enabled=false" })
     void testUserManagedEntityNotAddedToDefaultPU(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
         cliResult.assertMessage("KC-SERVICES0047: custom_jpa (com.acme.provider.legacy.jpa.user.MyUserProviderFactory) is implementing the internal SPI user. This SPI is internal and may change without notice");

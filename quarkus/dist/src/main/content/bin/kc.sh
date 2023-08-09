@@ -21,6 +21,9 @@ case "$(uname)" in
         ;;
 esac
 
+printf "%q" "" >/dev/null 2>&1
+QUOTE=$?
+
 RESOLVED_NAME="${RESOLVED_NAME:-"$0"}"
 
 GREP="grep"
@@ -61,10 +64,17 @@ do
           break
           ;;
       *)
+          if [ $QUOTE -eq 0 ]; then
+              OPT=${1@Q}
+          else
+              OPT=$(echo "$1" | sed "s/'/'\\\\''/g")
+              OPT="'${OPT}'"
+          fi
+
           case "$1" in
             start-dev) CONFIG_ARGS="$CONFIG_ARGS --profile=dev $1";;
-            -D*) SERVER_OPTS="$SERVER_OPTS $1";;
-            *) CONFIG_ARGS="$CONFIG_ARGS $1";;
+            -D*) SERVER_OPTS="$SERVER_OPTS ${OPT}";;
+            *) CONFIG_ARGS="$CONFIG_ARGS ${OPT}";;
           esac
           ;;
     esac
@@ -123,7 +133,7 @@ if [ "$PRINT_ENV" = "true" ]; then
 fi
 
 case "$CONFIG_ARGS" in
-  " build"* | *--optimized* | *-h | *--help*) ;;
+  " 'build'"* | *--optimized* | *"'-h'" | *--help*) ;;
   *)
     eval "'$JAVA'" -Dkc.config.build-and-exit=true $JAVA_RUN_OPTS || exit $?
     JAVA_RUN_OPTS="-Dkc.config.built=true $JAVA_RUN_OPTS"
