@@ -157,6 +157,7 @@ const EditUserForm = ({ user, bruteForced, refresh }: EditUserFormProps) => {
       await adminClient.users.update(
         { id: user.id! },
         {
+          ...user,
           ...formUser,
           username: formUser.username?.trim(),
           attributes,
