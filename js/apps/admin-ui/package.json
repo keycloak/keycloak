@@ -97,7 +97,7 @@
     "@types/file-saver": "^2.0.5",
     "@types/flat": "^5.0.2",
     "@types/lodash-es": "^4.17.8",
-    "@types/react": "^18.2.18",
+    "@types/react": "^18.2.19",
     "@types/react-dom": "^18.2.7",
     "@types/uuid": "^9.0.2",
     "@vitejs/plugin-react-swc": "^3.3.2",
