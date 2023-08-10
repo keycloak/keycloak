@@ -16,10 +16,13 @@
  */
 package org.keycloak.operator.controllers;
 
-import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.networking.v1.Ingress;
 import io.fabric8.kubernetes.api.model.networking.v1.IngressBuilder;
-import io.fabric8.kubernetes.client.KubernetesClient;
+import io.javaoperatorsdk.operator.api.reconciler.Context;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
+import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
+import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
+import io.javaoperatorsdk.operator.processing.dependent.workflow.Condition;
 
 import org.keycloak.operator.Constants;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
@@ -30,32 +33,27 @@ import java.util.Optional;
 
 import static org.keycloak.operator.crds.v2alpha1.CRDUtils.isTlsConfigured;
 
-public class KeycloakIngress extends OperatorManagedResource {
+@KubernetesDependent(labelSelector = Constants.DEFAULT_LABELS_AS_STRING)
+public class KeycloakIngressDependentResource extends CRUDKubernetesDependentResource<Ingress, Keycloak> {
 
-    private final Ingress existingIngress;
-    private final Keycloak keycloak;
-
-    public KeycloakIngress(KubernetesClient client, Keycloak keycloakCR) {
-        super(client, keycloakCR);
-        this.keycloak = keycloakCR;
-        this.existingIngress = fetchExistingIngress();
-    }
-
-    @Override
-    protected Optional<HasMetadata> getReconciledResource() {
-        IngressSpec ingressSpec = keycloak.getSpec().getIngressSpec();
-        if (ingressSpec != null && !ingressSpec.isIngressEnabled()) {
-            if (existingIngress != null && existingIngress.hasOwnerReferenceFor(keycloak)) {
-                deleteExistingIngress();
-            }
-            return Optional.empty();
-        } else {
-            return Optional.of(newIngress());
+    public static class EnabledCondition implements Condition<Ingress, Keycloak> {
+        @Override
+        public boolean isMet(DependentResource<Ingress, Keycloak> dependentResource, Keycloak primary,
+                Context<Keycloak> context) {
+            return isIngressEnabled(primary);
         }
     }
 
-    private Ingress newIngress() {
-        // set default annotations
+    public KeycloakIngressDependentResource() {
+        super(Ingress.class);
+    }
+
+    public static boolean isIngressEnabled(Keycloak keycloak) {
+        return Optional.ofNullable(keycloak.getSpec().getIngressSpec()).map(IngressSpec::isIngressEnabled).orElse(true);
+    }
+
+    @Override
+    public Ingress desired(Keycloak keycloak, Context<Keycloak> context) {
         var annotations = new HashMap<String, String>();
         boolean tlsConfigured = isTlsConfigured(keycloak);
         var port = KeycloakServiceDependentResource.getServicePort(tlsConfigured, keycloak);
@@ -73,8 +71,10 @@ public class KeycloakIngress extends OperatorManagedResource {
 
         Ingress ingress = new IngressBuilder()
                 .withNewMetadata()
-                    .withName(getName())
-                    .withNamespace(getNamespace())
+                    .withName(getName(keycloak))
+                    .withNamespace(keycloak.getMetadata().getNamespace())
+                    .addToLabels(Constants.DEFAULT_LABELS)
+                    .addToLabels(OperatorManagedResource.updateWithInstanceLabels(null, keycloak.getMetadata().getName()))
                     .addToAnnotations(annotations)
                 .endMetadata()
                 .withNewSpec()
@@ -84,21 +84,18 @@ public class KeycloakIngress extends OperatorManagedResource {
                             .withName(KeycloakServiceDependentResource.getServiceName(keycloak))
                             .withNewPort()
                                 .withNumber(port)
-                                .withName("") // for SSA to clear the name if already set
                             .endPort()
                         .endService()
                     .endDefaultBackend()
                     .addNewRule()
                         .withNewHttp()
                             .addNewPath()
-                                .withPath("")
                                 .withPathType("ImplementationSpecific")
                                 .withNewBackend()
                                     .withNewService()
                                         .withName(KeycloakServiceDependentResource.getServiceName(keycloak))
                                         .withNewPort()
                                             .withNumber(port)
-                                            .withName("") // for SSA to clear the name if already set
                                             .endPort()
                                     .endService()
                                 .endBackend()
@@ -116,22 +113,7 @@ public class KeycloakIngress extends OperatorManagedResource {
         return ingress;
     }
 
-    protected void deleteExistingIngress() {
-        client.resource(existingIngress).delete();
-    }
-
-    protected Ingress fetchExistingIngress() {
-        return client
-                .network()
-                .v1()
-                .ingresses()
-                .inNamespace(getNamespace())
-                .withName(getName())
-                .get();
-    }
-
-    @Override
-    public String getName() {
-        return cr.getMetadata().getName() + Constants.KEYCLOAK_INGRESS_SUFFIX;
+    public static String getName(Keycloak keycloak) {
+        return keycloak.getMetadata().getName() + Constants.KEYCLOAK_INGRESS_SUFFIX;
     }
 }
