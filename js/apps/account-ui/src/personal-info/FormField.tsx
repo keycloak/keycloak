@@ -1,11 +1,20 @@
-import { FormGroup, Select, SelectOption } from "@patternfly/react-core";
+import {
+  Button,
+  FormGroup,
+  InputGroup,
+  Select,
+  SelectOption,
+} from "@patternfly/react-core";
+import { ExternalLinkSquareAltIcon } from "@patternfly/react-icons";
 import { get } from "lodash-es";
 import { useState } from "react";
 import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { KeycloakTextInput } from "ui-shared";
 import { UserProfileAttributeMetadata } from "../api/representations";
+import { environment } from "../environment";
 import { TFuncKey } from "../i18n";
+import { keycloak } from "../keycloak";
 import { LocaleSelector } from "./LocaleSelector";
 import { fieldName, isBundleKey, unWrap } from "./PersonalInfo";
 
@@ -25,6 +34,13 @@ export const FormField = ({ attribute }: FormFieldProps) => {
 
   const isSelect = (attribute: UserProfileAttributeMetadata) =>
     Object.hasOwn(attribute.validators, "options");
+
+  const {
+    updateEmailFeatureEnabled,
+    updateEmailActionEnabled,
+    isRegistrationEmailAsUsername,
+    isEditUserNameAllowed,
+  } = environment.features;
 
   if (attribute.name === "locale") return <LocaleSelector />;
   return (
@@ -81,14 +97,33 @@ export const FormField = ({ attribute }: FormFieldProps) => {
           )}
         />
       ) : (
-        <KeycloakTextInput
-          data-testid={attribute.name}
-          id={attribute.name}
-          isDisabled={attribute.readOnly}
-          {...register(fieldName(attribute.name), {
-            required: { value: attribute.required, message: t("required") },
-          })}
-        />
+        <InputGroup>
+          <KeycloakTextInput
+            data-testid={attribute.name}
+            id={attribute.name}
+            isDisabled={
+              attribute.readOnly ||
+              (attribute.name === "email" && !updateEmailActionEnabled)
+            }
+            {...register(fieldName(attribute.name), {
+              required: { value: attribute.required, message: t("required") },
+            })}
+          />
+          {attribute.name === "email" &&
+            updateEmailFeatureEnabled &&
+            updateEmailActionEnabled &&
+            (!isRegistrationEmailAsUsername || isEditUserNameAllowed) && (
+              <Button
+                id="update-email-btn"
+                variant="link"
+                onClick={() => keycloak.login({ action: "UPDATE_EMAIL" })}
+                icon={<ExternalLinkSquareAltIcon />}
+                iconPosition="right"
+              >
+                {t("updateEmail")}
+              </Button>
+            )}
+        </InputGroup>
       )}
     </FormGroup>
   );
