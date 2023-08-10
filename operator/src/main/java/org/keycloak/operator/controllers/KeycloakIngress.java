@@ -55,11 +55,12 @@ public class KeycloakIngress extends OperatorManagedResource {
     }
 
     private Ingress newIngress() {
-        var port = KeycloakServiceDependentResource.getServicePort(keycloak);
-        var annotations = new HashMap<String, String>();
-
         // set default annotations
-        if (isTlsConfigured(keycloak)) {
+        var annotations = new HashMap<String, String>();
+        boolean tlsConfigured = isTlsConfigured(keycloak);
+        var port = KeycloakServiceDependentResource.getServicePort(tlsConfigured, keycloak);
+
+        if (tlsConfigured) {
             annotations.put("nginx.ingress.kubernetes.io/backend-protocol", "HTTPS");
             annotations.put("route.openshift.io/termination", "passthrough");
         } else {

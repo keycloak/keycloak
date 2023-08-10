@@ -278,6 +278,15 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
     }
 
     @Test
+    public void testHttpEnabledWithTls() {
+        var kc = getTestKeycloakDeployment(true);
+        kc.getSpec().getHttpSpec().setHttpEnabled(true);
+        deployKeycloak(k8sclient, kc, true);
+
+        assertKeycloakAccessibleViaService(kc, false, Constants.KEYCLOAK_HTTP_PORT);
+    }
+
+    @Test
     public void testHostnameStrict() {
         var kc = getTestKeycloakDeployment(true);
         deployKeycloak(k8sclient, kc, true);
