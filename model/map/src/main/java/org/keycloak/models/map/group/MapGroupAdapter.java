@@ -159,6 +159,7 @@ public abstract class MapGroupAdapter extends AbstractGroupModel<MapGroupEntity>
     @Override
     public Stream<RoleModel> getRoleMappingsStream() {
         Set<String> grantedRoles = entity.getGrantedRoles();
+        // TODO: doing lookups on an adapter for a model object, should this be moved to a lookup provider to fit the general pattern?
         return grantedRoles == null ? Stream.empty() : grantedRoles.stream()
             .map(roleId -> session.roles().getRoleById(realm, roleId));
     }

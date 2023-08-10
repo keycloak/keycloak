@@ -80,6 +80,14 @@ public class GroupStorageManager extends AbstractStorageManager<GroupStorageProv
 
         return Stream.concat(local, ext);
     }
+
+    @Override
+    public Stream<GroupModel> searchForSubgroupsByParentIdStream(RealmModel realm, String id, Integer firstResult, Integer maxResults) {
+        Stream<GroupModel> local = localStorage().searchForSubgroupsByParentIdStream(realm, id, firstResult, maxResults);
+        // TODO: not really sure if this is actually external or internal behavior... need to learn more about what's going on with this steorage manager class and legacy providers
+        Stream<GroupModel> ext = flatMapEnabledStorageProvidersWithTimeout(realm, GroupLookupProvider.class, p -> p.searchForSubgroupsByParentIdStream(realm, id, firstResult, maxResults));
+        return Stream.concat(local, ext);
+    }
     /* GROUP PROVIDER METHODS - provided only by local storage (e.g. not supported by storage providers) */
 
     @Override
@@ -95,6 +103,11 @@ public class GroupStorageManager extends AbstractStorageManager<GroupStorageProv
     @Override
     public Long getGroupsCount(RealmModel realm, Boolean onlyTopGroups) {
         return localStorage().getGroupsCount(realm, onlyTopGroups);
+    }
+
+    @Override
+    public Long getSubGroupsCount(RealmModel realm, String parentId) {
+        return localStorage().getSubGroupsCount(realm, parentId);
     }
 
     @Override

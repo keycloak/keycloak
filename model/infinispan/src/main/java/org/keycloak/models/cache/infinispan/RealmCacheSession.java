@@ -948,6 +948,11 @@ public class RealmCacheSession implements CacheRealmProvider {
     }
 
     @Override
+    public Long getSubGroupsCount(RealmModel realm, String parentId) {
+        return getGroupDelegate().getSubGroupsCount(realm, parentId);
+    }
+
+    @Override
     public long getClientsCount(RealmModel realm) {
         return getClientDelegate().getClientsCount(realm);
     }
@@ -1045,6 +1050,11 @@ public class RealmCacheSession implements CacheRealmProvider {
     @Override
     public Stream<GroupModel> searchForGroupByNameStream(RealmModel realm, String search, Boolean exact, Integer firstResult, Integer maxResults) {
        return getGroupDelegate().searchForGroupByNameStream(realm, search, exact, firstResult, maxResults);
+    }
+
+    @Override
+    public Stream<GroupModel> searchForSubgroupsByParentIdStream(RealmModel realm, String id, Integer firstResult, Integer maxResults) {
+        return getGroupDelegate().searchForSubgroupsByParentIdStream(realm, id, firstResult, maxResults);
     }
 
     @Override

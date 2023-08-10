@@ -17,6 +17,7 @@
 
 package org.keycloak.models.map.group;
 
+import javax.swing.GroupLayout.Group;
 import org.jboss.logging.Logger;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.GroupModel.SearchableFields;
@@ -145,6 +146,13 @@ public class MapGroupProvider implements GroupProvider {
     }
 
     @Override
+    public Long getSubGroupsCount(RealmModel realm, String parentId) {
+        DefaultModelCriteria<GroupModel> mcb = criteria();
+        mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId()).compare(SearchableFields.PARENT_ID, Operator.EQ, parentId);
+        return storeWithRealm(realm).getCount(withCriteria(mcb));
+    }
+
+    @Override
     public Long getGroupsCountByNameContaining(RealmModel realm, String search) {
         return searchForGroupByNameStream(realm, search, false, null, null).count();
     }
@@ -200,6 +208,16 @@ public class MapGroupProvider implements GroupProvider {
                     }
                     return groupById;
                 }).sorted(GroupModel.COMPARE_BY_NAME).distinct();
+    }
+
+    @Override
+    public Stream<GroupModel> searchForSubgroupsByParentIdStream(RealmModel realm, String id, Integer firstResult, Integer maxResults) {
+        DefaultModelCriteria<GroupModel> mcb = criteria();
+        mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
+            .compare(SearchableFields.PARENT_ID, Operator.EQ, id);
+
+        return storeWithRealm(realm).read(withCriteria(mcb).pagination(firstResult, maxResults, SearchableFields.NAME))
+            .map(entityToAdapterFunc(realm));
     }
 
     @Override

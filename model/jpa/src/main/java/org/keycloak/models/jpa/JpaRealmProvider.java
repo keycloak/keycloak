@@ -552,7 +552,7 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
     @Override
     public Long getGroupsCount(RealmModel realm, Boolean onlyTopGroups) {
         if(Objects.equals(onlyTopGroups, Boolean.TRUE)) {
-            return em.createNamedQuery("getTopLevelGroupCount", Long.class)
+            return em.createNamedQuery("getGroupCountByParent", Long.class)
                     .setParameter("realm", realm.getId())
                     .setParameter("parent", GroupEntity.TOP_PARENT_ID)
                     .getSingleResult();
@@ -561,6 +561,14 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
                     .setParameter("realm", realm.getId())
                     .getSingleResult();
         }
+    }
+
+    @Override
+    public Long getSubGroupsCount(RealmModel realm, String parentId) {
+        return em.createNamedQuery("getGroupCountByParent", Long.class)
+            .setParameter("realm", realm.getId())
+            .setParameter("parent", parentId)
+            .getSingleResult();
     }
 
     @Override
@@ -634,7 +642,14 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
         session.users().preRemove(realm, group);
 
         realm.removeDefaultGroup(group);
-        group.getSubGroupsStream().forEach(realm::removeGroup);
+
+        // TODO: this batch size could potentially be stored somewhere (config?) as a variable
+        // calculate out batches of subgroups to delete from the parent group to avoid grinding the server to a halt at large scale
+        // especially helpful for freeing up some amount of database time for other requests
+        long batches = (long) Math.ceil(session.groups().getSubGroupsCount(realm, group.getId()) / 1000.0);
+        for(int i = 0; i < batches; i++) {
+            session.groups().searchForSubgroupsByParentIdStream(realm, group.getId(), i * 1000, 1000).forEach(realm::removeGroup);
+        }
 
         GroupEntity groupEntity = em.find(GroupEntity.class, group.getId(), LockModeType.PESSIMISTIC_WRITE);
         if ((groupEntity == null) || (!groupEntity.getRealm().equals(realm.getId()))) {
@@ -1009,6 +1024,24 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
             return groupById;
         }).sorted(GroupModel.COMPARE_BY_NAME).distinct());
     }
+
+    @Override
+    public Stream<GroupModel> searchForSubgroupsByParentIdStream(RealmModel realm, String id, Integer firstResult, Integer maxResults) {
+        CriteriaBuilder builder = em.getCriteriaBuilder();
+        CriteriaQuery<GroupEntity> queryBuilder = builder.createQuery(GroupEntity.class);
+        Root<GroupEntity> root = queryBuilder.from(GroupEntity.class);
+
+        List<Predicate> predicates = new ArrayList<>();
+
+        predicates.add(builder.equal(root.get("realm"), realm.getId()));
+        predicates.add(builder.equal(root.get("parentId"), id));
+        Predicate finalPredicate = builder.and(predicates.toArray(new Predicate[0]));
+        queryBuilder.where(finalPredicate).orderBy(builder.asc(root.get("name")));
+
+        TypedQuery<GroupEntity> query = em.createQuery(queryBuilder);
+        return closing(paginateQuery(query, firstResult, maxResults).getResultStream()).map(g -> new GroupAdapter(realm, em, g));
+    }
+
     @Override
     public Stream<GroupModel> searchGroupsByAttributes(RealmModel realm, Map<String, String> attributes, Integer firstResult, Integer maxResults) {
         Map<String, String> filteredAttributes = groupSearchableAttributes == null || groupSearchableAttributes.isEmpty()
@@ -1043,7 +1076,7 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
 
         TypedQuery<GroupEntity> query = em.createQuery(queryBuilder);
         return closing(paginateQuery(query, firstResult, maxResults).getResultStream())
-                .map(g -> session.groups().getGroupById(realm, g.getId()));
+                .map(g -> new GroupAdapter(realm, em, g));
     }
 
     @Override

@@ -74,6 +74,17 @@ public class HardcodedGroupStorageProvider implements GroupStorageProvider {
     }
 
     @Override
+    public Stream<GroupModel> searchForSubgroupsByParentIdStream(RealmModel realm, String id, Integer firstResult, Integer maxResults) {
+        if (Boolean.parseBoolean(component.getConfig().getFirst(HardcodedGroupStorageProviderFactory.DELAYED_SEARCH))) try {
+            Thread.sleep(5000l);
+        } catch (InterruptedException ex) {
+            Logger.getLogger(HardcodedGroupStorageProvider.class).warn(ex.getCause());
+            return Stream.empty();
+        }
+        return Stream.empty();
+    }
+
+    @Override
     public Stream<GroupModel> searchGroupsByAttributes(RealmModel realm, Map<String, String> attributes, Integer firstResult, Integer maxResults) {
         if (Boolean.parseBoolean(component.getConfig().getFirst(HardcodedGroupStorageProviderFactory.DELAYED_SEARCH))) try {
             Thread.sleep(5000l);
