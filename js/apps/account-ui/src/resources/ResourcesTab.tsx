@@ -179,7 +179,12 @@ export const ResourcesTab = ({ isShared = false }: ResourcesTabProps) => {
                     : undefined
                 }
               />
-              <Td dataLabel={t("resourceName")}>{resource.name}</Td>
+              <Td
+                dataLabel={t("resourceName")}
+                data-testid={`row[${index}].name`}
+              >
+                {resource.name}
+              </Td>
               <Td dataLabel={t("application")}>
                 <a href={resource.client.baseUrl}>
                   {resource.client.name || resource.client.clientId}{" "}
