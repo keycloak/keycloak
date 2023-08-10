@@ -59,15 +59,20 @@ public class KeycloakServiceDependentResource extends CRUDKubernetesDependentRes
     }
 
     private ServiceSpec getServiceSpec(Keycloak keycloak) {
-        String name = isTlsConfigured(keycloak) ? Constants.KEYCLOAK_HTTPS_PORT_NAME : Constants.KEYCLOAK_HTTP_PORT_NAME;
-        return new ServiceSpecBuilder()
-              .addNewPort()
-              .withPort(getServicePort(keycloak))
-              .withName(name)
-              .withProtocol(Constants.KEYCLOAK_SERVICE_PROTOCOL)
-              .endPort()
-              .withSelector(OperatorManagedResource.allInstanceLabels(keycloak))
-              .build();
+        var builder = new ServiceSpecBuilder().withSelector(OperatorManagedResource.allInstanceLabels(keycloak));
+
+        boolean tlsConfigured = isTlsConfigured(keycloak);
+        Optional<HttpSpec> httpSpec = Optional.ofNullable(keycloak.getSpec().getHttpSpec());
+        boolean httpEnabled = httpSpec.map(HttpSpec::getHttpEnabled).orElse(false);
+        if (!tlsConfigured || httpEnabled) {
+            builder.addNewPort().withPort(getServicePort(false, keycloak)).withName(Constants.KEYCLOAK_HTTP_PORT_NAME)
+                    .withProtocol(Constants.KEYCLOAK_SERVICE_PROTOCOL).endPort();
+        }
+        if (tlsConfigured) {
+            builder.addNewPort().withPort(getServicePort(true, keycloak)).withName(Constants.KEYCLOAK_HTTPS_PORT_NAME)
+                    .withProtocol(Constants.KEYCLOAK_SERVICE_PROTOCOL).endPort();
+        }
+        return builder.build();
     }
 
     @Override
@@ -87,12 +92,11 @@ public class KeycloakServiceDependentResource extends CRUDKubernetesDependentRes
         return keycloak.getMetadata().getName() + Constants.KEYCLOAK_SERVICE_SUFFIX;
     }
 
-    public static int getServicePort(Keycloak keycloak) {
-        // we assume HTTP when TLS is not configured
-        if (!isTlsConfigured(keycloak)) {
-            return Optional.ofNullable(keycloak.getSpec().getHttpSpec()).map(HttpSpec::getHttpPort).orElse(Constants.KEYCLOAK_HTTP_PORT);
-        } else {
-            return Optional.ofNullable(keycloak.getSpec().getHttpSpec()).map(HttpSpec::getHttpsPort).orElse(Constants.KEYCLOAK_HTTPS_PORT);
+    public static int getServicePort(boolean tls, Keycloak keycloak) {
+        Optional<HttpSpec> httpSpec = Optional.ofNullable(keycloak.getSpec().getHttpSpec());
+        if (tls) {
+            return httpSpec.map(HttpSpec::getHttpsPort).orElse(Constants.KEYCLOAK_HTTPS_PORT);
         }
+        return httpSpec.map(HttpSpec::getHttpPort).orElse(Constants.KEYCLOAK_HTTP_PORT);
     }
 }
