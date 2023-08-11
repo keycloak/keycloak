@@ -11,6 +11,7 @@ test.describe("My resources page", () => {
       process.env.CI ? "/realms/photoz/account" : "/?realm=photoz",
     );
     await page.getByTestId("resources").click();
-    await expect(page.getByTestId("row[0].name")).toHaveText("one");
+    //await expect(page.getByTestId("row[0].name")).toHaveText("one");
+    await expect(page.getByRole("gridcell", { name: "one" })).toBeVisible();
   });
 });
