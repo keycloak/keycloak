@@ -28,6 +28,7 @@ import io.fabric8.kubernetes.api.model.ServicePort;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.api.model.apps.StatefulSetBuilder;
 import io.fabric8.kubernetes.api.model.apps.StatefulSetSpecBuilder;
+import io.fabric8.kubernetes.client.dsl.Resource;
 import io.quarkus.logging.Log;
 import io.quarkus.test.junit.QuarkusTest;
 
@@ -92,6 +93,26 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
         k8sclient.resource(kc).delete();
         Awaitility.await()
                 .untilAsserted(() -> assertThat(k8sclient.apps().statefulSets().inNamespace(namespace).withName(deploymentName).get()).isNull());
+    }
+
+    @Test
+    public void testKeycloakDeploymentBeforeSecret() {
+        // CR
+        var kc = getTestKeycloakDeployment(true);
+        var deploymentName = kc.getMetadata().getName();
+        deployKeycloak(k8sclient, kc, false, false);
+
+        // Check Operator has deployed Keycloak and the statefulset exists, this allows for the watched secret to be picked up
+        Log.info("Checking Operator has deployed Keycloak deployment");
+        Resource<StatefulSet> stsResource = k8sclient.resources(StatefulSet.class).withName(deploymentName);
+        Resource<Keycloak> keycloakResource = k8sclient.resources(Keycloak.class).withName(deploymentName);
+        // expect no errors and not ready, which means we'll keep reconciling
+        Awaitility.await().untilAsserted(() -> {
+            assertThat(stsResource.get()).isNotNull();
+            Keycloak keycloak = keycloakResource.get();
+            CRAssert.assertKeycloakStatusCondition(keycloak, KeycloakStatusCondition.HAS_ERRORS, false);
+            CRAssert.assertKeycloakStatusCondition(keycloak, KeycloakStatusCondition.READY, false);
+        });
     }
 
     @Test

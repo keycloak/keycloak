@@ -87,8 +87,6 @@ public class WatchedSecretsTest extends BaseOperatorTest {
         var kc = getTestKeycloakDeployment(false);
         deployKeycloak(k8sclient, kc, true);
 
-        var prevRevision = getStatefulSet(kc).getStatus().getUpdateRevision();
-
         var dbSecret = getDbSecret();
 
         dbSecret.getData().put("username",
