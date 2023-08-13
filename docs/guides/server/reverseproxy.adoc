@@ -107,6 +107,7 @@ to create URLs using the scheme, host name, and port, being exposed by your prox
 When using a reverse proxy, Keycloak only requires certain paths need to be exposed.
 The following table shows the recommended paths to expose.
 
+[%autowidth]
 |===
 |Keycloak Path|Reverse Proxy Path|Exposed|Reason
 
@@ -170,6 +171,7 @@ clients. You are able to configure how the server is going to retrieve client ce
 
 The server supports some of the most commons TLS termination proxies such as:
 
+[%autowidth]
 |===
 |Proxy|Provider
 
@@ -196,6 +198,7 @@ forwarded by the proxy with the client certificate information.
 
 The available options for configuring a provider are:
 
+[%autowidth]
 |===
 |Option|Description
 
