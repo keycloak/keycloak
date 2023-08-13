@@ -14,6 +14,7 @@ This {section} explains how to configure the Keycloak server to store data in a 
 
 The server has built-in support for different databases. You can query the available databases by viewing the expected values for the `db` configuration option. The following table lists the supported databases and their tested versions.
 
+[%autowidth]
 |===
 |Database | Option value | Tested Version
 

@@ -65,8 +65,9 @@ The Dockerfile image `+HEALTHCHECK+` instruction defines a command that will be 
 
 The table below shows the available checks.
 
+[%autowidth]
 |===
-|*Check* | *Description* | *Requires Metrics*
+|Check | Description | Requires Metrics
 
 |Database
 |Returns the status of the database connection pool.
