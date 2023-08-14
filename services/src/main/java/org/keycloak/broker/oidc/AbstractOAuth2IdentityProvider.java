@@ -62,6 +62,7 @@ import org.keycloak.services.Urls;
 import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.sessions.AuthenticationSessionModel;
+import org.keycloak.utils.StringUtil;
 import org.keycloak.vault.VaultStringSecret;
 
 import javax.crypto.SecretKey;
@@ -427,7 +428,11 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
         jwt.type(OAuth2Constants.JWT);
         jwt.issuer(getConfig().getClientId());
         jwt.subject(getConfig().getClientId());
-        jwt.audience(getConfig().getTokenUrl());
+        String audience = getConfig().getClientAssertionAudience();
+        if (StringUtil.isBlank(audience)) {
+            audience = getConfig().getTokenUrl();
+        }
+        jwt.audience(audience);
         int expirationDelay = session.getContext().getRealm().getAccessCodeLifespan();
         jwt.expiration(Time.currentTime() + expirationDelay);
         jwt.issuedNow();
