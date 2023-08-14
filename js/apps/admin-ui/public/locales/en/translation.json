@@ -2894,9 +2894,10 @@
   "clientAuthentications": {
     "client_secret_post": "Client secret sent as post",
     "client_secret_basic": "Client secret sent as basic auth",
-    "client_secret_jwt": "Client secret as jwt",
+    "client_secret_jwt": "JWT signed with client secret",
     "private_key_jwt": "JWT signed with private key"
   },
+  "clientAssertionAudience": "Client assertion audience",
   "clientAssertionSigningAlg": "Client assertion signature algorithm",
   "algorithmNotSpecified": "Algorithm not specified",
   "acceptsPromptNone": "Accepts prompt=none forward from client",
@@ -2979,7 +2980,8 @@
   "attributeConsumingServiceNameHelp": "Name of the Attribute Consuming Service profile to advertise in the SP metadata.",
   "forwardParametersHelp": "Non OpenID Connect/OAuth standard query parameters to be forwarded to external IDP from the initial application request to Authorization Endpoint. Multiple parameters can be entered, separated by comma (,).",
   "clientAuthenticationHelp": "The client authentication method (cfr. https://openid.net/specs/openid-connect-core-1_0.html#ClientAuthentication). In case of JWT signed with private key, the realm private key is used.",
-  "clientAssertionSigningAlgHelp": "Signature algorithm to create JWT assertion as client authentication. In the case of JWT signed with private key or Client secret as jwt, it is required. If no algorithm is specified, the following algorithm is adapted. RS256 is adapted in the case of JWT signed with private key. HS256 is adapted in the case of Client secret as jwt.",
+  "clientAssertionAudienceHelp": "The audience to use for the client assertion. The default value is the IDP's token endpoint URL.",
+  "clientAssertionSigningAlgHelp": "Signature algorithm to create JWT assertion as client authentication. In the case of JWT signed with private key or JWT signed with client secret, it is required. If no algorithm is specified, the following algorithm is adapted. RS256 is adapted in the case of JWT signed with private key. HS256 is adapted in the case of JWT signed with client secret.",
   "storeTokensHelp": "Enable/disable if tokens must be stored after authenticating users.",
   "storedTokensReadableHelp": "Enable/disable if new users can read any stored tokens. This assigns the broker.read-token role.",
   "accountLinkingOnlyHelp": "If true, users cannot log in through this provider.  They can only link to this provider.  This is useful if you don't want to allow login from the provider, but want to integrate with a provider",

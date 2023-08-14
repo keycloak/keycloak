@@ -29,10 +29,10 @@ export enum PromptSelect {
 }
 
 export enum ClientAuthentication {
-  post = "Client secret sent as basic auth",
-  basicAuth = "Client secret as jwt",
-  jwt = "JWT signed with private key",
-  jwtPrivKey = "Client secret sent as post",
+  post = "Client secret sent as post",
+  basicAuth = "Client secret sent as basic auth",
+  jwt = "JWT signed with client secret",
+  jwtPrivKey = "JWT signed with private key",
 }
 
 export enum ClientAssertionSigningAlg {
@@ -84,6 +84,7 @@ export default class ProviderBaseGeneralSettingsPage extends PageObject {
   #pkceMethod = "#pkceMethod";
   #clientAuth = "#clientAuthentication";
   #clientAssertionSigningAlg = "#clientAssertionSigningAlg";
+  #clientAssertionAudienceInput = "#clientAssertionAudience";
 
   public clickSaveBtn() {
     cy.findByTestId(this.#saveBtn).click();
@@ -184,6 +185,11 @@ export default class ProviderBaseGeneralSettingsPage extends PageObject {
       clientAssertionSigningAlg,
       cy.get(".pf-c-select__menu-item").contains(clientAssertionSigningAlg),
     );
+    return this;
+  }
+
+  public typeClientAssertionAudience(text: string) {
+    cy.get(this.#clientAssertionAudienceInput).type(text).blur();
     return this;
   }
 
@@ -311,6 +317,13 @@ export default class ProviderBaseGeneralSettingsPage extends PageObject {
       "have.text",
       clientAssertionSigningAlg,
     );
+    return this;
+  }
+
+  public assertClientAssertionAudienceInputEqual(text: string) {
+    cy.get(this.#clientAssertionAudienceInput)
+      .should("have.value", text)
+      .parent();
     return this;
   }
 
