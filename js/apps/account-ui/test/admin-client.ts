@@ -13,6 +13,14 @@ await adminClient.auth({
   clientId: "admin-cli",
 });
 
+export async function useTheme() {
+  const masterRealm = await adminClient.realms.findOne({ realm: "master" });
+  await adminClient.realms.update(
+    { realm: "master" },
+    { ...masterRealm, accountTheme: "keycloak.v3" },
+  );
+}
+
 export async function importRealm(realm: RealmRepresentation) {
   await adminClient.realms.create(realm);
 }
