@@ -1931,6 +1931,18 @@
         </profile>
 
         <profile>
+            <id>fuzzing</id>
+            <activation>
+                <property>
+                    <name>fuzzing</name>
+                </property>
+            </activation>
+            <modules>
+                <module>fuzzing</module>
+            </modules>
+        </profile>
+
+        <profile>
             <id>distribution</id>
             <modules>
                 <module>distribution</module>
