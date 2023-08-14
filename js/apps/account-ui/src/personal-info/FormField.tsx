@@ -101,10 +101,7 @@ export const FormField = ({ attribute }: FormFieldProps) => {
           <KeycloakTextInput
             data-testid={attribute.name}
             id={attribute.name}
-            isDisabled={
-              attribute.readOnly ||
-              (attribute.name === "email" && !updateEmailActionEnabled)
-            }
+            isDisabled={attribute.readOnly}
             {...register(fieldName(attribute.name), {
               required: { value: attribute.required, message: t("required") },
             })}
