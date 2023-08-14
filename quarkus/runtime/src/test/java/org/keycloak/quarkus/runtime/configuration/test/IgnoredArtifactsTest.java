@@ -22,6 +22,8 @@ import org.junit.Test;
 import org.keycloak.common.Profile;
 import org.keycloak.common.profile.PropertiesProfileConfigResolver;
 import org.keycloak.config.DatabaseOptions;
+import org.keycloak.config.HealthOptions;
+import org.keycloak.config.MetricsOptions;
 import org.keycloak.quarkus.runtime.configuration.IgnoredArtifacts;
 import org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider;
 
@@ -107,6 +109,36 @@ public class IgnoredArtifactsTest {
                     CoreMatchers.hasItems(includedArtifacts.toArray(new String[0])));
         } finally {
             System.setProperty(MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX + DatabaseOptions.DB.getKey(), "");
+        }
+    }
+
+    @Test
+    public void health() {
+        var ignoredArtifacts = IgnoredArtifacts.getDefaultIgnoredArtifacts();
+        // Health disabled by default
+        assertThat(ignoredArtifacts.containsAll(IgnoredArtifacts.HEALTH), is(true));
+
+        System.setProperty(MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX + HealthOptions.HEALTH_ENABLED.getKey(), "true");
+        try {
+            final var artifacts = IgnoredArtifacts.getDefaultIgnoredArtifacts();
+            assertThat(artifacts.containsAll(IgnoredArtifacts.HEALTH), is(false));
+        } finally {
+            System.setProperty(MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX + HealthOptions.HEALTH_ENABLED.getKey(), "");
+        }
+    }
+
+    @Test
+    public void metrics() {
+        var ignoredArtifacts = IgnoredArtifacts.getDefaultIgnoredArtifacts();
+        // Metrics disabled by default
+        assertThat(ignoredArtifacts.containsAll(IgnoredArtifacts.METRICS), is(true));
+
+        System.setProperty(MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX + MetricsOptions.METRICS_ENABLED.getKey(), "true");
+        try {
+            final var artifacts = IgnoredArtifacts.getDefaultIgnoredArtifacts();
+            assertThat(artifacts.containsAll(IgnoredArtifacts.METRICS), is(false));
+        } finally {
+            System.setProperty(MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX + HealthOptions.HEALTH_ENABLED.getKey(), "");
         }
     }
 }
