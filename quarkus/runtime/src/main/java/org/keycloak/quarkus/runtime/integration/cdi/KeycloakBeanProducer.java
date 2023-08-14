@@ -15,22 +15,23 @@
  * limitations under the License.
  */
 
-package org.keycloak.quarkus.runtime.integration;
+package org.keycloak.quarkus.runtime.integration.cdi;
 
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.enterprise.inject.Produces;
+import org.keycloak.common.util.Resteasy;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.quarkus.runtime.integration.resteasy.QuarkusKeycloakContext;
-import org.keycloak.services.DefaultKeycloakContext;
-import org.keycloak.services.DefaultKeycloakSession;
-import org.keycloak.services.DefaultKeycloakSessionFactory;
 
-public final class QuarkusKeycloakSession extends DefaultKeycloakSession {
+import io.quarkus.arc.Unremovable;
 
-    public QuarkusKeycloakSession(DefaultKeycloakSessionFactory factory) {
-        super(factory);
-    }
+@ApplicationScoped
+@Unremovable
+public class KeycloakBeanProducer {
 
-    @Override
-    protected DefaultKeycloakContext createKeycloakContext(KeycloakSession session) {
-        return new QuarkusKeycloakContext(session);
+    @Produces
+    @RequestScoped
+    public KeycloakSession getKeycloakSession() {
+        return Resteasy.getContextData(KeycloakSession.class);
     }
 }

@@ -137,7 +137,7 @@ public class OAuth2Error {
                 bearer.setErrorDescription(errorDescription);
                 WWWAuthenticate wwwAuthenticate = new WWWAuthenticate(bearer);
                 wwwAuthenticate.build(builder::header);
-                builder.entity("");
+                builder.entity("").type(MediaType.TEXT_PLAIN_UTF_8_TYPE);
             }
 
             return constructor.newInstance(builder.build());

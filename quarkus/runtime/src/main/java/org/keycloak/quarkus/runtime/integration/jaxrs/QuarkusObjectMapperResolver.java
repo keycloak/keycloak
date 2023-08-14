@@ -15,21 +15,20 @@
  * limitations under the License.
  */
 
-package org.keycloak.quarkus.runtime.integration;
+package org.keycloak.quarkus.runtime.integration.jaxrs;
 
-import org.keycloak.common.util.Resteasy;
-import org.keycloak.http.HttpRequest;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.services.DefaultKeycloakContext;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.inject.Produces;
+import jakarta.ws.rs.ext.Provider;
+import org.keycloak.services.util.ObjectMapperResolver;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
-public class QuarkusKeycloakContext extends DefaultKeycloakContext {
+@Provider
+@ApplicationScoped
+public class QuarkusObjectMapperResolver extends ObjectMapperResolver {
 
-    public QuarkusKeycloakContext(KeycloakSession session) {
-        super(session);
-    }
-
-    @Override
-    protected HttpRequest createHttpRequest() {
-        return new QuarkusHttpRequest(Resteasy.getContextData(org.jboss.resteasy.spi.HttpRequest.class));
+    @Produces
+    public ObjectMapper getObjectMapper() {
+        return mapper;
     }
 }
