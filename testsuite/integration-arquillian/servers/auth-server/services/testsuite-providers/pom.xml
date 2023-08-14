@@ -78,6 +78,14 @@
         <dependency>
             <groupId>org.infinispan</groupId>
             <artifactId>infinispan-core-jakarta</artifactId>
+            <exclusions>
+                <exclusion>
+                    <!-- used only in ProfilingHelper of JGroups, not necessary in Keycloak -->
+                    <!-- this avoids unnecessary dependencies in the final Keycloak distribution -->
+                    <groupId>org.jboss.byteman</groupId>
+                    <artifactId>byteman-bmunit</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.infinispan</groupId>
