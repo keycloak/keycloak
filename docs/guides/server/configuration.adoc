@@ -85,6 +85,24 @@ Keycloak is packed with many command line parameters for configuration. To see t
 
 Alternatively, see <@links.server id="all-config"/> for all server options.
 
+Each parameter currently admits two different formats. For example for the `--db` parameter:
+
+[source]
+----
+bin/kc.[sh|bat] start --db=postgres ...
+
+bin/kc.[sh|bat] start --db postgres ...
+----
+
+In Unix, if the parameter value needs to be escaped, it should be escaped twice because of historical reasons. For example for the `--db-url` parameter when using `postgres`:
+
+[source]
+----
+bin/kc.sh start --db=postgres --db-username=keycloak "--db-url=\"jdbc:postgresql://localhost:5432/keycloak?ssl=false&connectTimeout=30\"" --db-password=keycloak --hostname=localhost
+
+bin/kc.sh start --db postgres --db-username keycloak --db-url "jdbc:postgresql://localhost:5432/keycloak?\"ssl=false&connectTimeout=30\"" --db-password keycloak --hostname localhost
+----
+
 === Formats for environment variables
 You can use placeholders to resolve an environment specific value from environment variables inside the `keycloak.conf` file by using the `${r"++${ENV_VAR}++"}` syntax:
 
