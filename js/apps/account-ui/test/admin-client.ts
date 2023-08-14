@@ -2,7 +2,7 @@ import KeycloakAdminClient from "@keycloak/keycloak-admin-client";
 import RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
 
 const adminClient = new KeycloakAdminClient({
-  baseUrl: "http://127.0.0.1:8180",
+  baseUrl: process.env.KEYCLOAK_SERVER || "http://127.0.0.1:8180",
   realmName: "master",
 });
 
@@ -12,6 +12,14 @@ await adminClient.auth({
   grantType: "password",
   clientId: "admin-cli",
 });
+
+export async function useTheme() {
+  const masterRealm = await adminClient.realms.findOne({ realm: "master" });
+  await adminClient.realms.update(
+    { realm: "master" },
+    { ...masterRealm, accountTheme: "keycloak.v3" },
+  );
+}
 
 export async function importRealm(realm: RealmRepresentation) {
   await adminClient.realms.create(realm);
