@@ -87,10 +87,10 @@ public class KerberosStandaloneMultipleProvidersTest extends AbstractKerberosTes
         getCleanup().addComponentId(ApiUtil.getCreatedId(resp));
         resp.close();
 
-        OAuthClient.AccessTokenResponse tokenResponse = assertSuccessfulSpnegoLogin("hnelson2@KC2.COM", "hnelson2", "secret");
+        OAuthClient.AccessTokenResponse tokenResponse = assertSuccessfulSpnegoLogin("hnelson2@KC2.COM", "hnelson2@kc2.com", "secret");
         AccessToken token = oauth.verifyToken(tokenResponse.getAccessToken());
-        Assert.assertEquals(token.getEmail(), "hnelson2@keycloak.org");
-        UserRepresentation user = assertUser("hnelson2", "hnelson2@keycloak.org", null, null, false);
+        Assert.assertEquals(token.getEmail(), "hnelson2@kc2.com");
+        UserRepresentation user = assertUser("hnelson2@kc2.com", "hnelson2@kc2.com", null, null, "hnelson2@KC2.COM", false);
         assertUserStorageProvider(user, "kerberos-standalone");
     }
 
@@ -107,10 +107,10 @@ public class KerberosStandaloneMultipleProvidersTest extends AbstractKerberosTes
         getCleanup().addComponentId(ApiUtil.getCreatedId(resp));
         resp.close();
 
-        OAuthClient.AccessTokenResponse tokenResponse = assertSuccessfulSpnegoLogin("hnelson2@KC2.COM", "hnelson2", "secret");
+        OAuthClient.AccessTokenResponse tokenResponse = assertSuccessfulSpnegoLogin("hnelson2@KC2.COM", "hnelson2@kc2.com", "secret");
         AccessToken token = oauth.verifyToken(tokenResponse.getAccessToken());
-        Assert.assertEquals(token.getEmail(), "hnelson2@keycloak.org");
-        UserRepresentation user = assertUser("hnelson2", "hnelson2@keycloak.org", null, null, false);
+        Assert.assertEquals(token.getEmail(), "hnelson2@kc2.com");
+        UserRepresentation user = assertUser("hnelson2@kc2.com", "hnelson2@kc2.com", null, null, "hnelson2@KC2.COM",false);
         assertUserStorageProvider(user, "kerberos-standalone");
     }
 }

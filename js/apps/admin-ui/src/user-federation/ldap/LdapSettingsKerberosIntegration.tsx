@@ -186,6 +186,40 @@ export const LdapSettingsKerberosIntegration = ({
             </FormGroup>
 
             <FormGroup
+              label={t("krbPrincipalAttribute")}
+              labelIcon={
+                <HelpItem
+                  helpText={t("user-federation-help:krbPrincipalAttributeHelp")}
+                  fieldLabelId="user-federation:krbPrincipalAttribute"
+                />
+              }
+              fieldId="kc-krb-principal-attribute"
+              validated={
+                (form.formState.errors.config as any)
+                  ?.krbPrincipalAttribute?.[0]
+                  ? "error"
+                  : "default"
+              }
+              helperTextInvalid={
+                (form.formState.errors.config as any)
+                  ?.krbPrincipalAttribute?.[0].message
+              }
+            >
+              <KeycloakTextInput
+                defaultValue="userPrincipalName"
+                id="kc-krb-principal-attribute"
+                data-testid="krb-principal-attribute"
+                validated={
+                  (form.formState.errors.config as any)
+                    ?.krbPrincipalAttribute?.[0]
+                    ? "error"
+                    : "default"
+                }
+                {...form.register("config.krbPrincipalAttribute.0")}
+              />
+            </FormGroup>
+
+            <FormGroup
               label={t("debug")}
               labelIcon={
                 <HelpItem
