@@ -49,6 +49,8 @@ jobs:
 
       - name: Build Keycloak
         uses: ./.github/actions/build-keycloak
+        with:
+          upload-dist: true
 
   unit-tests:
     name: Base UT
