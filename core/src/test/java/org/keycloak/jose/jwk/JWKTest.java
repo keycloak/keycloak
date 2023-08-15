@@ -27,6 +27,7 @@ import org.keycloak.common.util.KeyUtils;
 import org.keycloak.common.util.PemUtils;
 import org.keycloak.crypto.JavaAlgorithm;
 import org.keycloak.crypto.KeyType;
+import org.keycloak.crypto.KeyUse;
 import org.keycloak.common.crypto.CryptoIntegration;
 import org.keycloak.rule.CryptoInitRule;
 import org.keycloak.util.JsonSerialization;
@@ -47,6 +48,7 @@ import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import static org.keycloak.common.util.CertificateUtils.generateV1SelfSignedCertificate;
 
 /**
@@ -205,6 +207,23 @@ public abstract class JWKTest {
         PublicKey key = JWKParser.create().parse(jwkJson).toPublicKey();
         assertEquals("RSA", key.getAlgorithm());
         assertEquals("X.509", key.getFormat());
+    }
+
+    @Test
+    public void emptyEcOverclaim() throws Exception {
+        JWKBuilder builder = JWKBuilder.create();
+        KeyPairGenerator generator = KeyPairGenerator.getInstance("EC");
+        KeyPair keyPair = generator.generateKeyPair();
+        JWK jwk = builder.ec(keyPair.getPublic(), KeyUse.ENC);
+        JWKParser parser = new JWKParser(jwk);
+
+        try {
+            parser.toPublicKey();
+        } catch (NullPointerException e) {
+            fail("NullPointerException is thrown: " + e.getMessage());
+        } catch (RuntimeException e) {
+            // Other runtime exception is expected.
+        }
     }
 
     private byte[] sign(byte[] data, String javaAlgorithm, PrivateKey key) throws Exception {

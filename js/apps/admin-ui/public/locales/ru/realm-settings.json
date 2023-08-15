@@ -37,7 +37,7 @@
   "userRegistrationHelpText": "Включить/выключить страницу регистрации. Ссылка для регистрации будет также показана на странице входа.",
   "rememberMe": "Запомнить меня",
   "rememberMeHelpText": "Показать чекбокс на странице входа, чтобы разрешить пользователю запомнить вход в учетную запись в случае если браузерная сессия устареет.",
-  "emailAsUsername": "E-mail как имя пользователя",
+  "registrationEmailAsUsername": "E-mail как имя пользователя",
   "loginWithEmail": "Вход по E-mail",
   "loginWithEmailHelpText": "Разрешает пользователям входить с помощью E-mail.",
   "duplicateEmails": "Дублирующиеся E-mail",

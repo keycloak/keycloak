@@ -18,9 +18,9 @@
     "none": "jokio"
   },
   "flow": {
-    "browserFlow": "Autentifikacijos seka",
-    "registrationFlow": "Registracijos seka",
-    "directGrantFlow": "Tiesioginių teisių seka"
+    "browser": "Autentifikacijos seka",
+    "registration": "Registracijos seka",
+    "direct grant": "Tiesioginių teisių seka"
   },
   "edit": "Redaguoti",
   "flowType": "Sekos tipas",

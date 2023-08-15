@@ -11,7 +11,9 @@ export default defineConfig({
   workers: process.env.CI ? 1 : undefined,
   reporter: "html",
   use: {
-    baseURL: "http://localhost:8080/",
+    baseURL: process.env.CI
+      ? "http://localhost:8080/realms/master/account/"
+      : "http://localhost:8080/",
     trace: "on-first-retry",
   },
 

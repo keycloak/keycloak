@@ -21,8 +21,10 @@ Logging is done on a per-category basis in Keycloak. You can configure logging f
 
 The following table defines the available log levels.
 
-|====
+[%autowidth]
+|===
 |Level|Description
+
 |FATAL|Critical failures with complete inability to serve any kind of request.
 |ERROR|A significant error or problem leading to the inability to process requests.
 |WARN|A non-critical error or problem that might not require immediate correction.
@@ -31,7 +33,7 @@ The following table defines the available log levels.
 |TRACE|Most detailed debugging information. Very high frequency.
 |ALL|Special level for all log messages.
 |OFF|Special level to turn logging off entirely (not recommended).
-|====
+|===
 
 === Configuring the root log level
 When no log level configuration exists for a more specific category logger, the enclosing category is used instead. When there is no enclosing category, the root logger level is used.
@@ -81,8 +83,10 @@ The logging format template for these lines can be applied at the root level. Th
 
 The format string supports the symbols in the following table:
 
-|====
+[%autowidth]
+|===
 |Symbol|Summary|Description
+
 |%%|%|Renders a simple % character.
 |%c|Category|Renders the log category name.
 |++%d{xxx}++|Date|Renders a date with the given date format string.String syntax defined by `java.text.SimpleDateFormat`

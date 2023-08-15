@@ -232,7 +232,7 @@ public class KeycloakDeployment extends OperatorManagedResource<StatefulSet> {
         // probes
         var tlsConfigured = isTlsConfigured(keycloakCR);
         var protocol = !tlsConfigured ? "HTTP" : "HTTPS";
-        var kcPort = KeycloakService.getServicePort(keycloakCR);
+        var kcPort = KeycloakServiceDependentResource.getServicePort(tlsConfigured, keycloakCR);
 
         // Relative path ends with '/'
         var kcRelativePath = Optional.ofNullable(readConfigurationValue(Constants.KEYCLOAK_HTTP_RELATIVE_PATH_KEY))

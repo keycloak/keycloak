@@ -36,7 +36,7 @@
   "userRegistrationHelpText": "Įgalina naudotojų registravimosi sąsają. Prisijungimo lange rodoma nuoroda į registravimosi puslapį.",
   "rememberMe": "Prisiminti mane",
   "rememberMeHelpText": "Prisijungimo lange rodyti pasirinkimą leidžiantį naudotojui likti prisijungus netgi tuomet, kai naršyklė yra išjungiama/įjungiama tol, kol nepasibaigia prisijungimo sesija.",
-  "emailAsUsername": "El. paštas kaip naudojo vardas",
+  "registrationEmailAsUsername": "El. paštas kaip naudojo vardas",
   "verifyEmail": "El. pašto patvirtinimas",
   "editUsername": "Naudotojo vardo redagavimas",
   "testConnection": "Tikrinti jungtį",

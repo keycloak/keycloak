@@ -16,7 +16,7 @@
   "userRegistrationHelpText": "Aktiviere/deaktiviere die Seite zur Benutzerregistrierung. Auf der Loginseite wird ein entsprechender Link angezeigt.",
   "rememberMe": "Angemeldet bleiben",
   "rememberMeHelpText": "Zeigt eine Auswahlbox auf der Loginseite, die es dem Benutzer erlaubt, zwischen Browser-Neustarts eingeloggt zu bleiben, bis die Session abläuft.",
-  "emailAsUsername": "E-Mail-Adresse als Benutzername",
+  "registrationEmailAsUsername": "E-Mail-Adresse als Benutzername",
   "loginWithEmail": "Anmeldung mit E-Mail",
   "loginWithEmailHelpText": "Erlaubt Benutzern, sich mit ihrer E-Mail-Adresse anzumelden.",
   "verifyEmail": "E-Mail verifizieren",

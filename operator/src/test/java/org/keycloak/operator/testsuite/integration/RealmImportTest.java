@@ -26,10 +26,10 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
+import org.keycloak.operator.controllers.KeycloakServiceDependentResource;
+import org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImport;
 import org.keycloak.operator.testsuite.utils.CRAssert;
 import org.keycloak.operator.testsuite.utils.K8sUtils;
-import org.keycloak.operator.controllers.KeycloakService;
-import org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImport;
 
 import java.util.Arrays;
 import java.util.stream.Collectors;
@@ -39,11 +39,11 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.keycloak.operator.Constants.KEYCLOAK_HTTPS_PORT;
 import static org.keycloak.operator.controllers.KeycloakDistConfigurator.getKeycloakOptionEnvVarName;
-import static org.keycloak.operator.testsuite.utils.K8sUtils.deployKeycloak;
-import static org.keycloak.operator.testsuite.utils.K8sUtils.inClusterCurl;
 import static org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImportStatusCondition.DONE;
 import static org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImportStatusCondition.HAS_ERRORS;
 import static org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImportStatusCondition.STARTED;
+import static org.keycloak.operator.testsuite.utils.K8sUtils.deployKeycloak;
+import static org.keycloak.operator.testsuite.utils.K8sUtils.inClusterCurl;
 
 @QuarkusTest
 public class RealmImportTest extends BaseOperatorTest {
@@ -123,7 +123,7 @@ public class RealmImportTest extends BaseOperatorTest {
         assertThat(job.getSpec().getTemplate().getSpec().getImagePullSecrets().get(0).getName()).isEqualTo("my-empty-secret");
 
         String url =
-                "https://" + KeycloakService.getServiceName(kc) + "." + namespace + ":" + KEYCLOAK_HTTPS_PORT + "/realms/count0";
+                "https://" + KeycloakServiceDependentResource.getServiceName(kc) + "." + namespace + ":" + KEYCLOAK_HTTPS_PORT + "/realms/count0";
 
         Awaitility.await().atMost(10, MINUTES).ignoreExceptions().untilAsserted(() -> {
             Log.info("Starting curl Pod to test if the realm is available");
