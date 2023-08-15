@@ -80,7 +80,8 @@ public class KerberosStandaloneTest extends AbstractKerberosSingleRealmTest {
         assertSuccessfulSpnegoLogin("hnelson", "hnelson", "secret");
 
         // Assert user was imported and hasn't any required action on him. Profile info is NOT synced from LDAP. Just username is filled and email is "guessed"
-        assertUser("hnelson", "hnelson@" + kerberosRule.getConfig().get(KerberosConstants.KERBEROS_REALM).toLowerCase(), null, null, false);
+        assertUser("hnelson", "hnelson@" + kerberosRule.getConfig().get(KerberosConstants.KERBEROS_REALM).toLowerCase(), null, null,
+                "hnelson@" + kerberosRule.getConfig().get(KerberosConstants.KERBEROS_REALM), false);
     }
 
 
@@ -103,7 +104,8 @@ public class KerberosStandaloneTest extends AbstractKerberosSingleRealmTest {
         spnegoResponse.close();
 
         // Assert user was imported and has required action on him
-        assertUser("hnelson", "hnelson@" + kerberosRule.getConfig().get(KerberosConstants.KERBEROS_REALM).toLowerCase(), null, null, true);
+        assertUser("hnelson", "hnelson@" + kerberosRule.getConfig().get(KerberosConstants.KERBEROS_REALM).toLowerCase(), null, null,
+                "hnelson@" + kerberosRule.getConfig().get(KerberosConstants.KERBEROS_REALM), true);
 
         // Switch updateProfileOnFirstLogin to off
         kerberosProvider.getConfig().putSingle(KerberosConstants.UPDATE_PROFILE_FIRST_LOGIN, "false");

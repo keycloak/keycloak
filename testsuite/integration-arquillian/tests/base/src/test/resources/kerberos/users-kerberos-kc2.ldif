@@ -76,6 +76,20 @@ userPassword: secret
 krb5PrincipalName: hnelson2@KC2.COM
 krb5KeyVersionNumber: 0
 
+dn: uid=jduke,ou=People,dc=kc2,dc=com
+objectClass: top
+objectClass: person
+objectClass: inetOrgPerson
+objectClass: krb5principal
+objectClass: krb5kdcentry
+cn: Java
+sn: Duke
+mail: jduke@keycloak.org
+uid: jduke
+userPassword: theduke
+krb5PrincipalName: jduke@KEYCLOAK.ORG
+krb5KeyVersionNumber: 0
+
 dn: uid=jduke2,ou=People,dc=kc2,dc=com
 objectClass: top
 objectClass: person
@@ -84,10 +98,10 @@ objectClass: krb5principal
 objectClass: krb5kdcentry
 cn: Java
 sn: Duke
-mail: jduke2@keycloak.org
+mail: jduke2@kc2.com
 uid: jduke2
-userPassword: theduke
-krb5PrincipalName: jduke2@KC2.COM
+userPassword: theduke2
+krb5PrincipalName: jduke@KC2.COM
 krb5KeyVersionNumber: 0
 
 dn: uid=gsstestserver,ou=People,dc=kc2,dc=com
