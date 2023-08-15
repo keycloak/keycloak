@@ -40,7 +40,7 @@ import java.io.Serializable;
         @NamedQuery(name="deleteFederatedUserRoleMappingsByRealmAndLink", query="delete from  FederatedUserRoleMappingEntity mapping where mapping.userId IN (select u.id from UserEntity u where u.realmId=:realmId and u.federationLink=:link)"),
         @NamedQuery(name="deleteFederatedUserRoleMappingsByRole", query="delete from FederatedUserRoleMappingEntity m where m.roleId = :roleId"),
         @NamedQuery(name="deleteFederatedUserRoleMappingsByUser", query="delete from FederatedUserRoleMappingEntity m where m.userId = :userId and m.realmId = :realmId"),
-
+        @NamedQuery(name="fedRoleMembership", query="select m.userId FROM FederatedUserRoleMappingEntity m where m.roleId = :roleId AND m.realmId = :realmId"),  
 })
 @Table(name="FED_USER_ROLE_MAPPING")
 @Entity
