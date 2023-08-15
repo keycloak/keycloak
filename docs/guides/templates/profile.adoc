@@ -1,0 +1,11 @@
+<#macro ifProduct>
+ifdef::project_product[]
+<#nested>
+endif::[]
+</#macro>
+
+<#macro ifCommunity>
+ifndef::project_product[]
+<#nested>
+endif::[]
+</#macro>
