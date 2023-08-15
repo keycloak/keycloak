@@ -9,7 +9,7 @@ import {
 import { useTranslation } from "react-i18next";
 
 import { Options } from "../UserProfileFields";
-import { fieldName } from "../utils";
+import { fieldName, unWrap } from "../utils";
 import { UserProfileFieldsProps, UserProfileGroup } from "./UserProfileGroup";
 
 export const SelectComponent = (attribute: UserProfileFieldsProps) => {
@@ -79,7 +79,13 @@ export const SelectComponent = (attribute: UserProfileFieldsProps) => {
                 key={option}
                 value={option}
               >
-                {option}
+                {t(
+                  unWrap(
+                    (attribute.annotations?.["inputOptionLabels"] as any)?.[
+                      option
+                    ],
+                  ),
+                ) || option}
               </SelectOption>
             ))}
           </Select>
