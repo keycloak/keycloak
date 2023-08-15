@@ -16,7 +16,7 @@ await initKeycloak();
 await i18n.init();
 
 const router = createHashRouter([RootRoute]);
-const container = document.getElementById("app");
+export const container = document.getElementById("app");
 const root = createRoot(container!);
 
 root.render(

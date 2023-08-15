@@ -1,6 +1,9 @@
 import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
 import {
+  Alert,
   AlertVariant,
+  Backdrop,
+  Bullseye,
   ButtonVariant,
   DropdownItem,
   DropdownSeparator,
@@ -48,6 +51,7 @@ import { ClientPoliciesTab, toClientPolicies } from "./routes/ClientPolicies";
 import { RealmSettingsTab, toRealmSettings } from "./routes/RealmSettings";
 import { SecurityDefenses } from "./security-defences/SecurityDefenses";
 import { UserProfileTab } from "./user-profile/UserProfileTab";
+import { trackPromise, usePromiseTracker } from "../utils/useTracker";
 
 type RealmSettingsHeaderProps = {
   onChange: (value: boolean) => void;
@@ -70,6 +74,7 @@ const RealmSettingsHeader = ({
   const navigate = useNavigate();
   const [partialImportOpen, setPartialImportOpen] = useState(false);
   const [partialExportOpen, setPartialExportOpen] = useState(false);
+  const { promiseInProgress } = usePromiseTracker();
 
   const [toggleDisableDialog, DisableConfirm] = useConfirmDialog({
     titleKey: "realm-settings:disableConfirmTitle",
@@ -88,7 +93,7 @@ const RealmSettingsHeader = ({
     continueButtonVariant: ButtonVariant.danger,
     onConfirm: async () => {
       try {
-        await adminClient.realms.del({ realm: realmName });
+        await trackPromise(adminClient.realms.del({ realm: realmName }));
         addAlert(t("deletedSuccess"), AlertVariant.success);
         await refreshRealms();
         navigate(toDashboard({ realm: environment.masterRealm }));
@@ -101,6 +106,13 @@ const RealmSettingsHeader = ({
 
   return (
     <>
+      {promiseInProgress && (
+        <Backdrop>
+          <Bullseye>
+            <Alert isInline title={t("common:longRunningAction")} />
+          </Bullseye>
+        </Backdrop>
+      )}
       <DisableConfirm />
       <DeleteConfirm />
       <PartialImportDialog

@@ -41,6 +41,7 @@ import { useAlerts } from "../components/alert/Alerts";
 import { JsonFileUpload } from "../components/json-file-upload/JsonFileUpload";
 import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
 import { useRealm } from "../context/realm-context/RealmContext";
+import { trackPromise, usePromiseTracker } from "../utils/useTracker";
 
 export type PartialImportProps = {
   open: boolean;
@@ -82,6 +83,7 @@ export const PartialImportDialog = (props: PartialImportProps) => {
   const [targetRealm, setTargetRealm] = useState<RealmRepresentation>({});
   const [importResponse, setImportResponse] = useState<PartialImportResponse>();
   const { addError } = useAlerts();
+  const { promiseInProgress } = usePromiseTracker("import");
 
   const [resourcesToImport, setResourcesToImport] = useState(INITIAL_RESOURCES);
   const isAnyResourceChecked = Object.values(resourcesToImport).some(
@@ -269,10 +271,13 @@ export const PartialImportDialog = (props: PartialImportProps) => {
     setImportInProgress(true);
 
     try {
-      const importResults = await adminClient.realms.partialImport({
-        realm,
-        rep: jsonForImport(),
-      });
+      const importResults = await trackPromise(
+        adminClient.realms.partialImport({
+          realm,
+          rep: jsonForImport(),
+        }),
+        "import",
+      );
       setImportResponse(importResults);
     } catch (error) {
       addError("realm-settings:importFail", error);
@@ -294,6 +299,7 @@ export const PartialImportDialog = (props: PartialImportProps) => {
             data-testid="import-button"
             key="import"
             isDisabled={!isAnyResourceChecked}
+            isLoading={promiseInProgress}
             onClick={() => {
               doImport();
             }}
