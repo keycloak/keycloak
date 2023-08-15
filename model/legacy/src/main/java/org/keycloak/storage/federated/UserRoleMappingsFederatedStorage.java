@@ -18,6 +18,7 @@ package org.keycloak.storage.federated;
 
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
+import org.keycloak.models.UserModel;
 
 import java.util.stream.Stream;
 
@@ -40,6 +41,17 @@ public interface UserRoleMappingsFederatedStorage {
 
     void deleteRoleMapping(RealmModel realm, String userId, RoleModel role);
 
+   /** Obtains the federated users that are members of the given {@code role} in the specified {@code realm}.
+    *
+    * @param realm a reference to the realm.
+    * @param role a reference to the role whose federated members are being searched.
+    * @param firstResult first result to return. Ignored if negative or {@code null}.
+    * @param max maximum number of results to return. Ignored if negative or {@code null}.
+    * @return a non-null {@code Stream} of federated user ids that are members of the role in the realm.
+    */
+
+	Stream<String> getRoleMembersStream(RealmModel realm, RoleModel role, Integer firstResult, Integer max);
+    
     /**
      * @deprecated This interface is no longer necessary; collection-based methods were removed from the parent interface
      * and therefore the parent interface can be used directly
@@ -47,4 +59,6 @@ public interface UserRoleMappingsFederatedStorage {
     @Deprecated
     interface Streams extends UserRoleMappingsFederatedStorage {
     }
+   
+    
 }
