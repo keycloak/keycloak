@@ -186,6 +186,38 @@ export const LdapSettingsKerberosIntegration = ({
             </FormGroup>
 
             <FormGroup
+              label={t("kerberosPrincipalLDAPAttribute")}
+              labelIcon={
+                <HelpItem
+                  helpText={t("user-federation-help:kerberosPrincipalLDAPAttributeHelp")}
+                  fieldLabelId="user-federation:kerberosPrincipalLDAPAttribute"
+                />
+              }
+              fieldId="kc-kerberos-principal-ldap-attribute"
+              validated={
+                (form.formState.errors.config as any)?.kerberosPrincipalLDAPAttribute?.[0]
+                  ? "error"
+                  : "default"
+              }
+              helperTextInvalid={
+                (form.formState.errors.config as any)?.kerberosPrincipalLDAPAttribute?.[0].message
+              }
+            >
+              <KeycloakTextInput
+                defaultValue="userPrincipalName"
+                id="kc-kerberos-principal-ldap-attribute"
+                data-testid="kerberos-kerberos-principal-ldap-attribute"
+                validated={
+                  (form.formState.errors.config as any)?.kerberosPrincipalLDAPAttribute?.[0]
+                    ? "error"
+                    : "default"
+                }
+                {...form.register("config.kerberosPrincipalLDAPAttribute.0", {
+                })}
+              />
+            </FormGroup>
+
+            <FormGroup
               label={t("debug")}
               labelIcon={
                 <HelpItem

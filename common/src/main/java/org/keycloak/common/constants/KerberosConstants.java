@@ -71,6 +71,11 @@ public class KerberosConstants {
     public static final String SERVER_PRINCIPAL = "serverPrincipal";
     public static final String KEYTAB = "keyTab";
     public static final String DEBUG = "debug";
+    public static final String KERBEROS_PRINCIPAL_LDAP_ATTRIBUTE = "kerberosPrincipalLDAPAttribute";
+    public static final String KERBEROS_PRINCIPAL_LDAP_ATTRIBUTE_KRB5_PRINCIPAL_NAME = "krb5PrincipalName"; // Used for instance in ApacheDS
+    public static final String KERBEROS_PRINCIPAL_LDAP_ATTRIBUTE_KRB_PRINCIPAL_NAME = "krbPrincipalName"; // Used for instance in FreeIPA
+    public static final String KERBEROS_PRINCIPAL_LDAP_ATTRIBUTE_USER_PRINCIPAL_NAME = "userPrincipalName"; // Used for instance in MSAD
+
     public static final String ALLOW_PASSWORD_AUTHENTICATION = "allowPasswordAuthentication";
     public static final String UPDATE_PROFILE_FIRST_LOGIN = "updateProfileFirstLogin";
     public static final String USE_KERBEROS_FOR_PASSWORD_AUTHENTICATION = "useKerberosForPasswordAuthentication";
@@ -91,5 +96,10 @@ public class KerberosConstants {
      * Display name for the above in admin console and consent screens
      */
     public static final String GSS_DELEGATION_CREDENTIAL_DISPLAY_NAME = "gss delegation credential";
+
+    /**
+     * User attribute for kerberos principal used for users from Kerberos/LDAP providers
+     */
+    public static final String KERBEROS_PRINCIPAL = "KERBEROS_PRINCIPAL";
 
 }
