@@ -101,7 +101,7 @@ DPoP binds an access token and a refresh token together with the public part of 
 
 This type of token is a holder-of-key token. Unlike bearer tokens, the recipient of a holder-of-key token can verify if the sender of the token is legitimate.
 
-If this setting is on, the workflow is:
+If the client switch `OAuth 2.0 DPoP Bound Access Tokens Enabled` is on, the workflow is:
 
 . A token request is sent to the token endpoint in an authorization code flow or hybrid flow.
 . {project_name} requests a DPoP proof.
@@ -110,11 +110,15 @@ If this setting is on, the workflow is:
 
 If verification fails, {project_name} rejects the token.
 
-In the following cases, {project_name} will verify the client sending the refresh token:
+If the switch `OAuth 2.0 DPoP Bound Access Tokens Enabled` is off, the client can still send `DPoP` proof in the token request. In that case, {project_name} will verify DPoP proof
+and will add the thumbprint to the token. But if the switch is off, DPoP binding is not enforced by the {project_name} server for this client. It is recommended to have this switch
+on if you want to make sure that particular client always uses DPoP binding.
+
+In the following cases, {project_name} will verify the client sending the access token or the refresh token:
 
 * A token refresh request is sent to the token endpoint with a holder-of-key refresh token. This verification is done only for public clients as described in the DPoP specification. For confidential clients, the verification is not done as client authentication with proper client credentials is in place to ensure that request comes from the legitimate client. For public clients, both access tokens and refresh tokens are DPoP bound. For confidential clients, only access tokens are DPoP bound.
 * A UserInfo request is sent to UserInfo endpoint with a holder-of-key access token.
-* A logout request is sent to a non-OIDC compliant {project_name} proprietary logout endpoint Logout endpoint with a holder-of-key refresh token. This request is done only for public clients as described above.
+* A logout request is sent to a non-OIDC compliant {project_name} proprietary logout endpoint Logout endpoint with a holder-of-key refresh token. This verification is done only for public clients as described above.
 
 See https://datatracker.ietf.org/doc/html/draft-ietf-oauth-dpop[OAuth 2.0 Demonstrating Proof-of-Possession at the Application Layer (DPoP)] for more details.
 

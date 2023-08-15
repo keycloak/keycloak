@@ -13,7 +13,7 @@ import {
   TreeView,
   TreeViewDataItem,
 } from "@patternfly/react-core";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 
@@ -130,6 +130,8 @@ export const GroupTree = ({
   const [search, setSearch] = useState("");
   const [max, setMax] = useState(20);
   const [first, setFirst] = useState(0);
+  const prefFirst = useRef(0);
+  const prefMax = useRef(20);
   const [count, setCount] = useState(0);
   const [exact, setExact] = useState(false);
   const [activeItem, setActiveItem] = useState<TreeViewDataItem>();
@@ -220,7 +222,7 @@ export const GroupTree = ({
         ];
       }
       setGroups(groups);
-      if (search) {
+      if (search || prefFirst.current !== first || prefMax.current !== max) {
         setData(groups.map((g) => mapGroup(g, refresh)));
       } else {
         setData(
@@ -232,6 +234,8 @@ export const GroupTree = ({
         );
       }
       setCount(count);
+      prefFirst.current = first;
+      prefMax.current = max;
     },
     [key, first, firstSub, max, search, exact, activeItem],
   );

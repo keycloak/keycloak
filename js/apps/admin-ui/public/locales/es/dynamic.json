@@ -9,7 +9,7 @@
       "tooltip": "Nombre del atributo de usuario almacenado que es el nombre del atributo dentro del map UserModel.attribute."
     },
     "clientRoleMapping": {
-      "client": {
+      "clientId": {
         "label": "ID Cliente"
       }
     }

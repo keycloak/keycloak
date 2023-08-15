@@ -45,7 +45,7 @@
   "forgotPassword": "パスワード忘れ",
   "rememberMe": "ログイン状態の保存",
   "rememberMeHelpText": "セッションの有効期限が切れるまではブラウザーの再起動でもログイン状態を保存するチェックボックスをログインページに表示します。",
-  "emailAsUsername": "Eメールをユーザー名とする",
+  "registrationEmailAsUsername": "Eメールをユーザー名とする",
   "loginWithEmail": "Eメールでログイン",
   "loginWithEmailHelpText": "ユーザーがEメールアドレスでログインできるようにします。",
   "duplicateEmails": "メールの重複",

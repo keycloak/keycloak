@@ -31,9 +31,9 @@
   "webAuthnPolicyAcceptableAaguids": "許容可能なAAGUID",
   "default": "DEFAULT",
   "flow": {
-    "browserFlow": "ブラウザーフロー",
-    "registrationFlow": "登録フロー",
-    "directGrantFlow": "ダイレクト・グラント・フロー"
+    "browser": "ブラウザーフロー",
+    "registration": "登録フロー",
+    "direct grant": "ダイレクト・グラント・フロー"
   },
   "edit": "編集",
   "flowType": "フロータイプ",

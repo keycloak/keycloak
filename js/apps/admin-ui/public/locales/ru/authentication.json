@@ -18,9 +18,9 @@
     "none": "нет"
   },
   "flow": {
-    "browserFlow": "Сценарий браузера",
-    "registrationFlow": "Сценарий регистрации",
-    "directGrantFlow": "Сценарий Direct Grant Flow"
+    "browser": "Сценарий браузера",
+    "registration": "Сценарий регистрации",
+    "direct grant": "Сценарий Direct Grant Flow"
   },
   "edit": "Редактировать",
   "flowType": "Тип сценария",

@@ -1,5 +1,5 @@
 import type { UserProfileAttribute } from "@keycloak/keycloak-admin-client/lib/defs/userProfileConfig";
-import { Form, Text } from "@patternfly/react-core";
+import { Text } from "@patternfly/react-core";
 import { Fragment } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -88,7 +88,7 @@ export const UserProfileFields = ({
       sections={[{ name: "" }, ...(config?.groups || [])].map((g) => ({
         title: g.displayHeader || g.name || t("general"),
         panel: (
-          <Form>
+          <div className="pf-c-form">
             {g.displayDescription && (
               <Text className="pf-u-pb-lg">{g.displayDescription}</Text>
             )}
@@ -100,7 +100,7 @@ export const UserProfileFields = ({
                   ) && <FormField attribute={attribute} roles={roles} />}
               </Fragment>
             ))}
-          </Form>
+          </div>
         ),
       }))}
     />
@@ -116,11 +116,9 @@ const FormField = ({ attribute, roles }: FormFieldProps) => {
   const { watch } = useFormContext();
   const value = watch(fieldName(attribute));
 
-  const componentType = (
-    attribute.annotations?.["inputType"] || Array.isArray(value)
-      ? "multiselect"
-      : "text"
-  ) as Field;
+  const componentType = (attribute.annotations?.["inputType"] ||
+    (Array.isArray(value) ? "multiselect" : "text")) as Field;
+
   const Component = FIELDS[componentType];
 
   return <Component {...{ ...attribute, roles }} />;

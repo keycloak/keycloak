@@ -24,7 +24,6 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.dsl.base.PatchContext;
 import io.fabric8.kubernetes.client.dsl.base.PatchType;
-import io.fabric8.kubernetes.client.utils.Serialization;
 import io.quarkus.logging.Log;
 
 import org.keycloak.operator.Constants;
@@ -79,11 +78,12 @@ public abstract class OperatorManagedResource<T extends HasMetadata> {
                         throw ex;
                     }
                 }
-                Log.debugf("Successfully created or updated resource: %s", resource);
+                Log.debugf("Successfully created or updated resource: %s %s/%s", resource.getKind(), resource.getMetadata().getNamespace(),
+                        resource.getMetadata().getName());
                 return resource;
             } catch (Exception e) {
-                Log.error("Failed to create or update resource");
-                Log.error(Serialization.asYaml(resource));
+                Log.errorf("Failed to create or update resource %s %s/%s", resource.getKind(), resource.getMetadata().getNamespace(),
+                        resource.getMetadata().getName());
                 throw KubernetesClientException.launderThrowable(e);
             }
         });

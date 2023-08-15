@@ -422,6 +422,28 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
     }
 
     @Test
+    public void testEmailReadableWhenEditUsernameDisabled() throws IOException {
+        RealmRepresentation realmRep = testRealm().toRepresentation();
+        Boolean emailAsUsername = realmRep.isRegistrationEmailAsUsername();
+        Boolean editUsernameAllowed = realmRep.isEditUsernameAllowed();
+        realmRep.setRegistrationEmailAsUsername(true);
+        realmRep.setEditUsernameAllowed(false);
+        testRealm().update(realmRep);
+
+        try {
+            UserRepresentation user = getUser();
+            String email = user.getEmail();
+            assertNotNull(email);
+            user = updateAndGet(user);
+            assertEquals(email, user.getEmail());
+        } finally {
+            realmRep.setRegistrationEmailAsUsername(emailAsUsername);
+            realmRep.setEditUsernameAllowed(editUsernameAllowed);
+            testRealm().update(realmRep);
+        }
+    }
+
+    @Test
     public void testUpdateProfileCannotChangeThroughAttributes() throws IOException {
         UserRepresentation user = getUser();
         String originalUsername = user.getUsername();

@@ -72,10 +72,10 @@ jobs:
         with:
           working-directory: js
 
-      - run: pnpm --filter=${{ env.WORKSPACE }} run lint
+      - run: pnpm --filter ${{ env.WORKSPACE }} run lint
         working-directory: js
 
-      - run: pnpm --filter=${{ env.WORKSPACE }} run build
+      - run: pnpm --filter ${{ env.WORKSPACE }} run build
         working-directory: js
 
   keycloak-js:
@@ -92,7 +92,7 @@ jobs:
         with:
           working-directory: js
 
-      - run: pnpm --filter=${{ env.WORKSPACE }} run build
+      - run: pnpm --filter ${{ env.WORKSPACE }} run build
         working-directory: js
 
   keycloak-masthead:
@@ -109,10 +109,10 @@ jobs:
         with:
           working-directory: js
 
-      - run: pnpm --filter=${{ env.WORKSPACE }} run lint
+      - run: pnpm --filter ${{ env.WORKSPACE }} run lint
         working-directory: js
 
-      - run: pnpm --filter=${{ env.WORKSPACE }} run build
+      - run: pnpm --filter ${{ env.WORKSPACE }} run build
         working-directory: js
 
   ui-shared:
@@ -129,10 +129,10 @@ jobs:
         with:
           working-directory: js
 
-      - run: pnpm --filter=${{ env.WORKSPACE }} run lint
+      - run: pnpm --filter ${{ env.WORKSPACE }} run lint
         working-directory: js
 
-      - run: pnpm --filter=${{ env.WORKSPACE }} run build
+      - run: pnpm --filter ${{ env.WORKSPACE }} run build
         working-directory: js
 
   account-ui:
@@ -149,10 +149,10 @@ jobs:
         with:
           working-directory: js
 
-      - run: pnpm --filter=${{ env.WORKSPACE }} run lint
+      - run: pnpm --filter ${{ env.WORKSPACE }} run lint
         working-directory: js
 
-      - run: pnpm --filter=${{ env.WORKSPACE }} run build
+      - run: pnpm --filter ${{ env.WORKSPACE }} run build
         working-directory: js
 
   admin-ui:
@@ -169,17 +169,77 @@ jobs:
         with:
           working-directory: js
 
-      - run: pnpm --filter=${{ env.WORKSPACE }} run lint
+      - run: pnpm --filter ${{ env.WORKSPACE }} run lint
         working-directory: js
 
-      - run: pnpm --filter=${{ env.WORKSPACE }} run test
+      - run: pnpm --filter ${{ env.WORKSPACE }} run test
         working-directory: js
 
-      - run: pnpm --filter=${{ env.WORKSPACE }} run build
+      - run: pnpm --filter ${{ env.WORKSPACE }} run build
         working-directory: js
 
-      - run: pnpm --filter=${{ env.WORKSPACE }} run cy:check-types
+      - run: pnpm --filter ${{ env.WORKSPACE }} run cy:check-types
         working-directory: js
+
+  account-ui-e2e:
+    name: Account UI E2E
+    needs:
+      - conditional
+      - build-keycloak
+    if: needs.conditional.outputs.js-ci == 'true'
+    runs-on: ubuntu-latest
+    env:
+      WORKSPACE: account-ui
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: ./.github/actions/pnpm-setup
+        with:
+          working-directory: js
+
+      - name: Download Keycloak server
+        uses: actions/download-artifact@v3
+        with:
+          name: keycloak
+
+      - name: Setup Java
+        uses: actions/setup-java@v3
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Start Keycloak server
+        run: |
+          tar xfvz keycloak-999.0.0-SNAPSHOT.tar.gz
+          keycloak-999.0.0-SNAPSHOT/bin/kc.sh start-dev &> ~/server.log &
+        env:
+          KEYCLOAK_ADMIN: admin
+          KEYCLOAK_ADMIN_PASSWORD: admin
+
+      - name: Install Playwright browsers
+        run: pnpm --filter ${{ env.WORKSPACE }} exec playwright install --with-deps
+        working-directory: js
+
+      - name: Run Playwright tests
+        run: pnpm --filter ${{ env.WORKSPACE }} run test
+        working-directory: js
+        env:
+          KEYCLOAK_SERVER: http://localhost:8080
+
+      - uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: account-ui-playwright-report
+          path: js/apps/${{ env.WORKSPACE }}/playwright-report
+          retention-days: 30
+
+      - name: Upload server logs
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: account-ui-server-log
+          path: ~/server.log
+
 
   admin-ui-e2e:
     name: Admin UI E2E
@@ -217,7 +277,7 @@ jobs:
           working-directory: js
 
       - name: Compile Admin Client
-        run: pnpm --filter=@keycloak/keycloak-admin-client run build
+        run: pnpm --filter @keycloak/keycloak-admin-client run build
         working-directory: js
 
       - name: Download Keycloak server
@@ -231,7 +291,7 @@ jobs:
           distribution: temurin
           java-version: 17
 
-      - name: Start Keycloak Server
+      - name: Start Keycloak server
         run: |
           tar xfvz keycloak-999.0.0-SNAPSHOT.tar.gz
           keycloak-999.0.0-SNAPSHOT/bin/kc.sh start-dev --features=admin-fine-grained-authz,declarative-user-profile &> ~/server.log &
@@ -240,7 +300,7 @@ jobs:
           KEYCLOAK_ADMIN_PASSWORD: admin
 
       - name: Start LDAP server
-        run: pnpm --filter=${{ env.WORKSPACE }} run cy:ldap-server &
+        run: pnpm --filter ${{ env.WORKSPACE }} run cy:ldap-server &
         working-directory: js
 
       - name: Run Cypress
@@ -260,9 +320,10 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upload server logs
+        if: always()
         uses: actions/upload-artifact@v3
         with:
-          name: server-log-${{ matrix.container }}-${{ matrix.browser }}
+          name: admin-ui-server-log-${{ matrix.container }}-${{ matrix.browser }}
           path: ~/server.log
 
   check:
@@ -274,6 +335,7 @@ jobs:
       - keycloak-masthead
       - ui-shared
       - account-ui
+      - account-ui-e2e
       - admin-ui
       - admin-ui-e2e
     runs-on: ubuntu-latest

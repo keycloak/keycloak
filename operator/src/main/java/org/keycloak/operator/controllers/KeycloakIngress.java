@@ -55,11 +55,12 @@ public class KeycloakIngress extends OperatorManagedResource {
     }
 
     private Ingress newIngress() {
-        var port = KeycloakService.getServicePort(keycloak);
-        var annotations = new HashMap<String, String>();
-
         // set default annotations
-        if (isTlsConfigured(keycloak)) {
+        var annotations = new HashMap<String, String>();
+        boolean tlsConfigured = isTlsConfigured(keycloak);
+        var port = KeycloakServiceDependentResource.getServicePort(tlsConfigured, keycloak);
+
+        if (tlsConfigured) {
             annotations.put("nginx.ingress.kubernetes.io/backend-protocol", "HTTPS");
             annotations.put("route.openshift.io/termination", "passthrough");
         } else {
@@ -80,7 +81,7 @@ public class KeycloakIngress extends OperatorManagedResource {
                     .withIngressClassName(optionalSpec.map(IngressSpec::getIngressClassName).orElse(null))
                     .withNewDefaultBackend()
                         .withNewService()
-                            .withName(KeycloakService.getServiceName(keycloak))
+                            .withName(KeycloakServiceDependentResource.getServiceName(keycloak))
                             .withNewPort()
                                 .withNumber(port)
                                 .withName("") // for SSA to clear the name if already set
@@ -94,7 +95,7 @@ public class KeycloakIngress extends OperatorManagedResource {
                                 .withPathType("ImplementationSpecific")
                                 .withNewBackend()
                                     .withNewService()
-                                        .withName(KeycloakService.getServiceName(keycloak))
+                                        .withName(KeycloakServiceDependentResource.getServiceName(keycloak))
                                         .withNewPort()
                                             .withNumber(port)
                                             .withName("") // for SSA to clear the name if already set

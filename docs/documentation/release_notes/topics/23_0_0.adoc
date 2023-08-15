@@ -9,4 +9,9 @@ See the migration guide for more details.
 Keycloak has new client profiles `fapi-2-security-profile` and `fapi-2-message-signing`, which ensure Keycloak enforces compliance with
 the latest FAPI 2 draft specifications when communicating with your clients. Thanks to https://github.com/tnorimat[Takashi Norimatsu] for the contribution.
 
+= DPoP preview support
+
+Keycloak has preview for support for OAuth 2.0 Demonstrating Proof-of-Possession at the Application Layer (DPoP). Thanks to
+https://github.com/tnorimat[Takashi Norimatsu] and https://github.com/dteleguin[Dmitry Telegin] for their contributions.
+
 

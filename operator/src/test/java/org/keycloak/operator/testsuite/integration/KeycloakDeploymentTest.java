@@ -38,7 +38,7 @@ import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.keycloak.operator.Constants;
 import org.keycloak.operator.controllers.KeycloakAdminSecretDependentResource;
 import org.keycloak.operator.controllers.KeycloakDistConfigurator;
-import org.keycloak.operator.controllers.KeycloakService;
+import org.keycloak.operator.controllers.KeycloakServiceDependentResource;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusCondition;
 import org.keycloak.operator.crds.v2alpha1.deployment.ValueOrSecret;
@@ -254,11 +254,10 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
         var kc = getTestKeycloakDeployment(true);
         deployKeycloak(k8sclient, kc, true);
 
-        var service = new KeycloakService(k8sclient, kc);
         Awaitility.await()
                 .ignoreExceptions()
                 .untilAsserted(() -> {
-                    String url = "https://" + service.getName() + "." + namespace + ":" + Constants.KEYCLOAK_HTTPS_PORT;
+                    String url = "https://" + KeycloakServiceDependentResource.getServiceName(kc) + "." + namespace + ":" + Constants.KEYCLOAK_HTTPS_PORT;
                     Log.info("Checking url: " + url);
 
                     var curlOutput = K8sUtils.inClusterCurl(k8sclient, namespace, "--insecure", "-s", "-w", "%{certs}", url);
@@ -279,15 +278,23 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
     }
 
     @Test
+    public void testHttpEnabledWithTls() {
+        var kc = getTestKeycloakDeployment(true);
+        kc.getSpec().getHttpSpec().setHttpEnabled(true);
+        deployKeycloak(k8sclient, kc, true);
+
+        assertKeycloakAccessibleViaService(kc, false, Constants.KEYCLOAK_HTTP_PORT);
+    }
+
+    @Test
     public void testHostnameStrict() {
         var kc = getTestKeycloakDeployment(true);
         deployKeycloak(k8sclient, kc, true);
 
-        var service = new KeycloakService(k8sclient, kc);
         Awaitility.await()
                 .ignoreExceptions()
                 .untilAsserted(() -> {
-                    String url = "https://" + service.getName() + "." + namespace + ":" + Constants.KEYCLOAK_HTTPS_PORT + "/admin/master/console/";
+                    String url = "https://" + KeycloakServiceDependentResource.getServiceName(kc) + "." + namespace + ":" + Constants.KEYCLOAK_HTTPS_PORT + "/admin/master/console/";
                     Log.info("Checking url: " + url);
 
                     var curlOutput = K8sUtils.inClusterCurl(k8sclient, namespace, "-s", "--insecure", "-H", "Host: foo.bar", url);
@@ -308,11 +315,10 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
 
         deployKeycloak(k8sclient, kc, true);
 
-        var service = new KeycloakService(k8sclient, kc);
         Awaitility.await()
                 .ignoreExceptions()
                 .untilAsserted(() -> {
-                    String url = "https://" + service.getName() + "." + namespace + ":" + Constants.KEYCLOAK_HTTPS_PORT + "/admin/master/console/";
+                    String url = "https://" + KeycloakServiceDependentResource.getServiceName(kc) + "." + namespace + ":" + Constants.KEYCLOAK_HTTPS_PORT + "/admin/master/console/";
                     Log.info("Checking url: " + url);
 
                     var curlOutput = K8sUtils.inClusterCurl(k8sclient, namespace, "-s", "--insecure", "-H", "Host: foo.bar", url);
@@ -395,7 +401,6 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
         deployDB();
         deployKeycloak(k8sclient, kc, true);
         var decoder = Base64.getDecoder();
-        var service = new KeycloakService(k8sclient, kc);
 
         AtomicReference<String> adminUsername = new AtomicReference<>();
         AtomicReference<String> adminPassword = new AtomicReference<>();
@@ -412,7 +417,7 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
                     adminUsername.set(new String(decoder.decode(adminSecret.getData().get("username").getBytes(StandardCharsets.UTF_8))));
                     adminPassword.set(new String(decoder.decode(adminSecret.getData().get("password").getBytes(StandardCharsets.UTF_8))));
 
-                    String url = "https://" + service.getName() + "." + namespace + ":" + Constants.KEYCLOAK_HTTPS_PORT + "/realms/master/protocol/openid-connect/token";
+                    String url = "https://" + KeycloakServiceDependentResource.getServiceName(kc) + "." + namespace + ":" + Constants.KEYCLOAK_HTTPS_PORT + "/realms/master/protocol/openid-connect/token";
                     Log.info("Checking url: " + url);
 
                     var curlOutput = K8sUtils.inClusterCurl(k8sclient, namespace, "--insecure", "-s", "--data", "grant_type=password&client_id=admin-cli&username=" + adminUsername.get() + "&password=" + adminPassword.get(), url);
@@ -437,7 +442,7 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
 
                     var newPassword = new String(decoder.decode(adminSecret.getData().get("password").getBytes(StandardCharsets.UTF_8)));
 
-                    String url = "https://" + service.getName() + "." + namespace + ":" + Constants.KEYCLOAK_HTTPS_PORT + "/realms/master/protocol/openid-connect/token";
+                    String url = "https://" + KeycloakServiceDependentResource.getServiceName(kc) + "." + namespace + ":" + Constants.KEYCLOAK_HTTPS_PORT + "/realms/master/protocol/openid-connect/token";
                     Log.info("Checking url: " + url);
 
                     var curlOutput = K8sUtils.inClusterCurl(k8sclient, namespace, "--insecure", "-s", "--data", "grant_type=password&client_id=admin-cli&username=" + adminUsername.get() + "&password=" + adminPassword.get(), url);
@@ -631,7 +636,7 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
                 .untilAsserted(() -> {
                     String protocol = https ? "https" : "http";
 
-                    String serviceName = KeycloakService.getServiceName(kc);
+                    String serviceName = KeycloakServiceDependentResource.getServiceName(kc);
                     assertThat(k8sclient.resources(Service.class).withName(serviceName).require().getSpec().getPorts()
                             .stream().map(ServicePort::getName).anyMatch(protocol::equals));
 

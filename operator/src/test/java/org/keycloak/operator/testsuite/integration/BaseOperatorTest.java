@@ -265,7 +265,7 @@ public class BaseOperatorTest implements QuarkusTestAfterEachCallback {
           return;
       }
       try {
-          if (!context.getTestStatus().isTestFailed() && !(context.getTestStatus().getTestErrorCause() instanceof TestAbortedException)) {
+          if (!context.getTestStatus().isTestFailed() || context.getTestStatus().getTestErrorCause() instanceof TestAbortedException) {
               return;
           }
           Log.warnf("Test failed with %s: %s", context.getTestStatus().getTestErrorCause().getMessage(), context.getTestStatus().getTestErrorCause().getClass().getName());

@@ -106,6 +106,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
@@ -2329,6 +2330,32 @@ public class UserTest extends AbstractAdminTest {
             Assert.assertEquals("User exists with same username or email", error.getErrorMessage());
             assertAdminEvents.assertEmpty();
         }
+    }
+
+    @Test
+    public void testKeepRootAttributeWhenOtherAttributesAreSet() {
+        String random = UUID.randomUUID().toString();
+        String userName = String.format("username-%s", random);
+        String email = String.format("my@mail-%s.com", random);
+        UserRepresentation user = new UserRepresentation();
+        user.setUsername(userName);
+        user.setEmail(email);
+        String userId = createUser(user);
+
+        UserRepresentation created = realm.users().get(userId).toRepresentation();
+        assertThat(created.getEmail(), equalTo(email));
+        assertThat(created.getUsername(), equalTo(userName));
+        assertThat(created.getAttributes(), Matchers.nullValue());
+
+        UserRepresentation update = new UserRepresentation();
+        update.setId(userId);
+        update.setAttributes(Map.of("phoneNumber", List.of("123")));
+        updateUser(realm.users().get(userId), update);
+
+        UserRepresentation updated = realm.users().get(userId).toRepresentation();
+        assertThat(updated.getUsername(), equalTo(userName));
+        assertThat(updated.getAttributes(), equalTo(Map.of("phoneNumber", List.of("123"))));
+        assertThat(updated.getEmail(), equalTo(email));
     }
 
     @Test

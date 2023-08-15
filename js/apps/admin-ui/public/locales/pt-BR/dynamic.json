@@ -10,7 +10,7 @@
       "tooltip": "Nome do atributo do usuário que é uma chave de atributo no mapa UserModel.attribute."
     },
     "clientRoleMapping": {
-      "client": {
+      "clientId": {
         "label": "ID do cliente",
         "tooltip": "ID do cliente para mapeamentos de roles"
       },

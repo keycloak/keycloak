@@ -79,9 +79,23 @@ public class JWKParser {
     }
 
     private PublicKey createECPublicKey() {
+        /* Check if jwk.getOtherClaims return an empty map */
+        if (jwk.getOtherClaims().size() == 0) {
+            throw new RuntimeException("JWK Otherclaims map is empty.");
+        }
+
+        /* Try retrieving the necessary fields */
         String crv = (String) jwk.getOtherClaims().get(ECPublicJWK.CRV);
-        BigInteger x = new BigInteger(1, Base64Url.decode((String) jwk.getOtherClaims().get(ECPublicJWK.X)));
-        BigInteger y = new BigInteger(1, Base64Url.decode((String) jwk.getOtherClaims().get(ECPublicJWK.Y)));
+        String xStr = (String) jwk.getOtherClaims().get(ECPublicJWK.X);
+        String yStr = (String) jwk.getOtherClaims().get(ECPublicJWK.Y);
+
+        /* Check if the retrieving of necessary fields success */
+        if (crv == null || xStr == null || yStr == null) {
+            throw new RuntimeException("Fail to retrieve ECPublicJWK.CRV, ECPublicJWK.X or ECPublicJWK.Y field.");
+        }
+
+        BigInteger x = new BigInteger(1, Base64Url.decode(xStr));
+        BigInteger y = new BigInteger(1, Base64Url.decode(yStr));
 
         String name;
         switch (crv) {

@@ -1,5 +1,6 @@
 {
   "realm": "photoz",
+  "accountTheme": "keycloak.v3",
   "enabled": true,
   "userManagedAccessAllowed": true,
   "sslRequired": "external",
