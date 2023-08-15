@@ -1,11 +1,11 @@
 name: Keycloak JavaScript CI
 
 on:
-  push:
-    branches-ignore:
-      - main
-      - dependabot/**
-  pull_request:
+  # push:
+  #   branches-ignore:
+  #     - main
+  #     - dependabot/**
+  # pull_request:
   workflow_dispatch:
 
 concurrency:
