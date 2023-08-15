@@ -31,6 +31,7 @@ import { toCreatePolicy } from "../routes/NewPolicy";
 import { NewPolicyDialog } from "./NewPolicyDialog";
 import useToggle from "../../utils/useToggle";
 import PolicyProviderRepresentation from "@keycloak/keycloak-admin-client/lib/defs/policyProviderRepresentation";
+import { toResourceDetails } from "../routes/Resource";
 
 type Type = "resources" | "policies";
 
@@ -148,16 +149,22 @@ export const ResourcesPolicySelect = ({
     messageKey: t("unsavedChangesConfirm"),
     continueButtonLabel: t("common:continue"),
     continueButtonVariant: ButtonVariant.danger,
-    onConfirm: onUnsavedChangesConfirm!,
+    onConfirm: () => onUnsavedChangesConfirm?.(),
   });
 
   const to = (policy: Policies) =>
-    toPolicyDetails({
-      realm: realm,
-      id: clientId,
-      policyId: policy.id!,
-      policyType: policy.type!,
-    });
+    name === "policies"
+      ? toPolicyDetails({
+          realm: realm,
+          id: clientId,
+          policyId: policy.id!,
+          policyType: policy.type!,
+        })
+      : toResourceDetails({
+          realm,
+          id: clientId,
+          resourceId: policy.id!,
+        });
 
   const toSelectOptions = () =>
     items.map((p) => (
@@ -172,42 +179,30 @@ export const ResourcesPolicySelect = ({
     return (
       <ChipGroup>
         {field.value?.map((permissionId) => {
-          const policy = items.find(
+          const item = items.find(
             (permission) => permission.id === permissionId,
-          );
+          )!;
 
-          if (!policy) {
-            return null;
-          }
-
-          const location = to(policy);
-
+          const route = to(item);
           return (
             <Chip
-              key={policy.id}
-              onClick={(event) => {
-                event.stopPropagation();
-                field.onChange(field.value?.filter((id) => id !== policy.id));
+              key={item.id}
+              onClick={() => {
+                field.onChange(field.value?.filter((id) => id !== item.id));
               }}
             >
-              {policy.type ? (
-                <Link
-                  to={location}
-                  onClick={(event) => {
-                    if (isDirty) {
-                      event.preventDefault();
-                      event.stopPropagation();
-                      setOpen(false);
-                      setOnUnsavedChangesConfirm(() => navigate(location));
-                      toggleUnsavedChangesDialog();
-                    }
-                  }}
-                >
-                  {policy.name}
-                </Link>
-              ) : (
-                policy.name
-              )}
+              <Link
+                to={route}
+                onClick={(event) => {
+                  if (isDirty) {
+                    event.preventDefault();
+                    setOnUnsavedChangesConfirm(() => () => navigate(route));
+                    toggleUnsavedChangesDialog();
+                  }
+                }}
+              >
+                {item.name}
+              </Link>
             </Chip>
           );
         })}
@@ -270,21 +265,25 @@ export const ResourcesPolicySelect = ({
             typeAheadAriaLabel={t(name)}
             chipGroupComponent={toChipGroupItems(field)}
             footer={
-              <Button
-                variant="link"
-                isInline
-                onClick={() => {
-                  if (isDirty) {
-                    setOpen(false);
-                    setOnUnsavedChangesConfirm(() => toggleCreatePolicyDialog);
-                    toggleUnsavedChangesDialog();
-                  } else {
-                    toggleCreatePolicyDialog();
-                  }
-                }}
-              >
-                {t("createPolicy")}
-              </Button>
+              name === "policies" ? (
+                <Button
+                  variant="link"
+                  isInline
+                  onClick={() => {
+                    if (isDirty) {
+                      setOpen(false);
+                      setOnUnsavedChangesConfirm(
+                        () => toggleCreatePolicyDialog,
+                      );
+                      toggleUnsavedChangesDialog();
+                    } else {
+                      toggleCreatePolicyDialog();
+                    }
+                  }}
+                >
+                  {t("createPolicy")}
+                </Button>
+              ) : undefined
             }
           >
             {toSelectOptions()}
