@@ -1,11 +1,14 @@
-import { FormGroup, Popover } from "@patternfly/react-core";
-import { HelpIcon } from "@patternfly/react-icons";
+import { Button, FormGroup, InputGroup, Popover } from "@patternfly/react-core";
+import { ExternalLinkSquareAltIcon, HelpIcon } from "@patternfly/react-icons";
 import { get } from "lodash-es";
 import { PropsWithChildren } from "react";
 import { useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { UserProfileAttributeMetadata } from "../../api/representations";
+import { environment } from "../../environment";
+import { keycloak } from "../../keycloak";
 import { fieldName, label } from "../utils";
+import { TFuncKey } from "../../i18n";
 
 export type UserProfileFieldsProps = UserProfileAttributeMetadata;
 
@@ -24,6 +27,13 @@ export const UserProfileGroup = ({
     formState: { errors },
   } = useFormContext();
 
+  const {
+    updateEmailFeatureEnabled,
+    updateEmailActionEnabled,
+    isRegistrationEmailAsUsername,
+    isEditUserNameAllowed,
+  } = environment.features;
+
   return (
     <FormGroup
       key={attribute.name}
@@ -31,7 +41,9 @@ export const UserProfileGroup = ({
       fieldId={attribute.name}
       isRequired={isRequired(attribute)}
       validated={get(errors, fieldName(attribute)) ? "error" : "default"}
-      helperTextInvalid={get(errors, fieldName(attribute))?.message as string}
+      helperTextInvalid={t(
+        get(errors, fieldName(attribute))?.message as TFuncKey,
+      )}
       labelIcon={
         helpText ? (
           <Popover bodyContent={helpText}>
@@ -40,7 +52,23 @@ export const UserProfileGroup = ({
         ) : undefined
       }
     >
-      {children}
+      <InputGroup>
+        {children}
+        {attribute.name === "email" &&
+          updateEmailFeatureEnabled &&
+          updateEmailActionEnabled &&
+          (!isRegistrationEmailAsUsername || isEditUserNameAllowed) && (
+            <Button
+              id="update-email-btn"
+              variant="link"
+              onClick={() => keycloak.login({ action: "UPDATE_EMAIL" })}
+              icon={<ExternalLinkSquareAltIcon />}
+              iconPosition="right"
+            >
+              {t("updateEmail")}
+            </Button>
+          )}
+      </InputGroup>
     </FormGroup>
   );
 };
