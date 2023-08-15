@@ -27,6 +27,7 @@ import {
 import { ViewHeader } from "../components/view-header/ViewHeader";
 import { useAccess } from "../context/access/Access";
 import { useRealm } from "../context/realm-context/RealmContext";
+import { useWhoAmI } from "../context/whoami/WhoAmI";
 import { UserProfileProvider } from "../realm-settings/user-profile/UserProfileContext";
 import { useFetch } from "../utils/useFetch";
 import useIsFeatureEnabled, { Feature } from "../utils/useIsFeatureEnabled";
@@ -57,6 +58,8 @@ export default function EditUser() {
   const [bruteForced, setBruteForced] = useState<BruteForced>();
   const [refreshCount, setRefreshCount] = useState(0);
   const refresh = () => setRefreshCount((count) => count + 1);
+  const { whoAmI } = useWhoAmI();
+  const locale = whoAmI.getLocale();
 
   useFetch(
     async () => {
@@ -76,7 +79,15 @@ export default function EditUser() {
       return { user, bruteForced: { isBruteForceProtected, isLocked } };
     },
     ({ user, bruteForced }) => {
-      setUser(user);
+      setUser({
+        ...user,
+        attributes: Object.keys(user.attributes || {})
+          .sort((a, b) => a.localeCompare(b, locale))
+          .reduce<Record<string, any>>((attr, value) => {
+            attr[value] = user.attributes?.[value];
+            return attr;
+          }, {}),
+      });
       setBruteForced(bruteForced);
     },
     [refreshCount],
@@ -152,7 +163,7 @@ const EditUserForm = ({ user, bruteForced, refresh }: EditUserFormProps) => {
     const attributes =
       "key" in (formUser.attributes?.[0] || [])
         ? keyValueToArray(formUser.attributes as KeyValueType[])
-        : user.attributes;
+        : [];
     try {
       await adminClient.users.update(
         { id: user.id! },
