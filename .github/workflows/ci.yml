@@ -51,6 +51,7 @@ jobs:
         uses: ./.github/actions/build-keycloak
         with:
           upload-dist: true
+          upload-m2-repo: false
 
   unit-tests:
     name: Base UT
