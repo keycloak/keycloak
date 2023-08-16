@@ -18,8 +18,13 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v2
     
-    - name: Extract version from tag
+    - name: Set VERSION from push event
+      if: github.event_name == 'push'
       run: echo "VERSION=$(echo $GITHUB_REF | sed 's/refs\/tags\///')" >> $GITHUB_ENV
+    
+    - name: Set VERSION from workflow_dispatch input
+      if: github.event_name == 'workflow_dispatch'
+      run: echo "VERSION=${{ github.event.inputs.version }}" >> $GITHUB_ENV
 
     - name: Build Keycloak
       uses: ./.github/actions/build-keycloak
