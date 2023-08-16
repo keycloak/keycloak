@@ -1,0 +1,36 @@
+name: Release Workflow
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version (e.g., v1.0.0)'
+        required: true
+
+jobs:
+  build_and_release:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+    
+    - name: Extract version from tag
+      run: echo "VERSION=$(echo $GITHUB_REF | sed 's/refs\/tags\///')" >> $GITHUB_ENV
+
+    - name: Build Keycloak
+      uses: ./.github/actions/build-keycloak
+      with:
+        upload-m2-repo: false
+    
+    - name: Rename artifact
+      run: mv quarkus/dist/target/keycloak*.tar.gz quarkus/dist/target/keycloak-$VERSION.tar.gz
+    
+    - name: Create GitHub Release and Upload Artifact
+      run: |
+        gh release create $VERSION quarkus/dist/target/keycloak-$VERSION.tar.gz --title "Release $VERSION"
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
