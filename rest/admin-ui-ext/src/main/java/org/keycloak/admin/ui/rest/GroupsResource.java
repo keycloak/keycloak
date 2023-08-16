@@ -72,7 +72,7 @@ public class GroupsResource {
                     .filter(group -> canViewGlobal || groupsEvaluator.canView(group))
                     .skip(first).limit(max);
         }
-        return GroupUtils.toAncestorsLine(groupsEvaluator, stream);
+        return GroupUtils.toAncestorsLine(groupsEvaluator, stream, false);
     }
 
     @GET

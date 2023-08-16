@@ -64,12 +64,12 @@ public class GroupUtils {
         return group.getSubGroupsStream().findAny().isPresent();
     }
 
-    public static Stream<GroupRepresentation> toAncestorsLine(GroupPermissionEvaluator groupsEvaluator, Stream<GroupModel> stream) {
+    public static Stream<GroupRepresentation> toAncestorsLine(GroupPermissionEvaluator groupsEvaluator, Stream<GroupModel> stream, boolean full) {
         List<GroupRepresentationExtended> tree = new ArrayList<>();
         HashMap<String,GroupRepresentationExtended> groupMap = new HashMap<>();
 
         stream.forEach(g ->  {
-            getAncestryStream(groupsEvaluator, g).forEach(group -> {
+            getAncestryStream(groupsEvaluator, g, full).forEach(group -> {
                 GroupRepresentationExtended alreadyProcessedGroup = groupMap.get( group.getGroupRep().getId());
                 String parentId = group.getParentId();
                 if (parentId == null) {
@@ -113,12 +113,12 @@ public class GroupUtils {
         }
 
     }
-    private static Stream<GroupRepresentationExtended> getAncestryStream(GroupPermissionEvaluator groupsEvaluator, GroupModel group) {
+    private static Stream<GroupRepresentationExtended> getAncestryStream(GroupPermissionEvaluator groupsEvaluator, GroupModel group, boolean full) {
         List<GroupRepresentationExtended> groupsList = new ArrayList<>();
         GroupModel currentGroup = group;
         while (currentGroup != null) {
             Map<String, Boolean> access =  groupsEvaluator.getAccess(currentGroup);
-            GroupRepresentation groupRepresentation = ModelToRepresentation.toRepresentation(currentGroup, false);
+            GroupRepresentation groupRepresentation = ModelToRepresentation.toRepresentation(currentGroup, full);
             groupRepresentation.setAccess(access);
             groupsList.add(new GroupRepresentationExtended(groupRepresentation, currentGroup.getParentId()));
             currentGroup =  currentGroup.getParent();;

@@ -1160,7 +1160,14 @@ public class GroupTest extends AbstractGroupTest {
         assertNotNull(group0);
         assertEquals(2,group0.getSubGroups().size());
         assertThat(group0.getSubGroups().stream().map(GroupRepresentation::getName).collect(Collectors.toList()), Matchers.containsInAnyOrder("group1111", "group111111"));
-        assertEquals(new Long(search.size()), realm.groups().count("group11").get("count"));
+        // This should match /group0/group1111, /group0/group111111 and /group11 since this is not an exact match query
+        // search = realm.groups().groups("group11",0,10) returns the top level groups with some matches in subgroups: it returns group0 and group11
+        // below we are counting matches individually
+        Long actualCount = realm.groups().count("group11").get("count");
+        Long expectedCount = search.size()
+                + search.stream().filter(t -> t.getSubGroups() != null).flatMap(t -> t.getSubGroups().stream()).filter(g -> g.getName().contains("group11")).count()
+                - search.stream().filter(g -> !g.getName().contains("group11") && g.getSubGroups().size() > 0).count();
+        assertEquals(expectedCount, actualCount);
     }
 
     @Test
