@@ -25,6 +25,9 @@ jobs:
     - name: Set VERSION from workflow_dispatch input
       if: github.event_name == 'workflow_dispatch'
       run: echo "VERSION=${{ github.event.inputs.version }}" >> $GITHUB_ENV
+    
+    - name: Set Maven Version
+      run: ./set-version.sh $VERSION
 
     - name: Build Keycloak
       uses: ./.github/actions/build-keycloak
