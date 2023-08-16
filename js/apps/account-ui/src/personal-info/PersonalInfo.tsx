@@ -6,6 +6,7 @@ import {
   Form,
   Spinner,
 } from "@patternfly/react-core";
+import { useKeycloak } from "keycloak-masthead";
 import { useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -38,6 +39,7 @@ export const fieldName = (name: string) =>
 
 const PersonalInfo = () => {
   const { t } = useTranslation();
+  const context = useKeycloak();
   const [userProfileMetadata, setUserProfileMetadata] =
     useState<UserProfileMetadata>();
   const form = useForm<UserRepresentation>({ mode: "onChange" });
@@ -55,6 +57,7 @@ const PersonalInfo = () => {
   const onSubmit = async (user: UserRepresentation) => {
     try {
       await savePersonalInfo(user);
+      context?.updateToken();
       addAlert(t("accountUpdatedMessage"));
     } catch (error) {
       addError(t("accountUpdatedError").toString());
