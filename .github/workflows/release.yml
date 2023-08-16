@@ -59,3 +59,5 @@ jobs:
         if: env.CREATE_LATEST_RELEASE == 'true'
         run: |
           gh release create latest quarkus/dist/target/keycloak-latest.tar.gz --title "Release latest"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
