@@ -42,7 +42,7 @@ jobs:
 
       - name: Check if current release is the latest release
         run: |
-          LATEST_TAG=$(gh release list | head -n 1 | awk '{print $1}')
+          LATEST_TAG=$(gh release list | head -n 1 | awk '{print $2}')
           if [[ "$VERSION" == "$LATEST_TAG" ]]; then
             echo "CREATE_LATEST_RELEASE=true" >> $GITHUB_ENV
           else
