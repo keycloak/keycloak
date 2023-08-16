@@ -70,56 +70,48 @@ public class GroupUtils {
 
         stream.forEach(g ->  {
             getAncestryStream(groupsEvaluator, g).forEach(group -> {
-                GroupRepresentationExtended alreadyProcessedGroup = groupMap.get( group.getId());
+                GroupRepresentationExtended alreadyProcessedGroup = groupMap.get( group.getGroupRep().getId());
                 String parentId = group.getParentId();
                 if (parentId == null) {
                     if(alreadyProcessedGroup == null || !tree.contains(alreadyProcessedGroup)) {
                         tree.add(group);
-                        groupMap.put(group.getId(), group);
+                        groupMap.put(group.getGroupRep().getId(), group);
                     } else if (alreadyProcessedGroup != null) {
                         // already processed a top level group, do nothing
                     }
                 } else {
                     GroupRepresentationExtended foundParent  = groupMap.get(parentId);
-                    if ( foundParent.getSubGroups() == null) {
-                        foundParent.setSubGroups(new ArrayList<>());
+                    if ( foundParent.getGroupRep().getSubGroups() == null) {
+                        foundParent.getGroupRep().setSubGroups(new ArrayList<>());
                     }
-                    if (groupMap.get(group.getId()) == null) {
-                        foundParent.getSubGroups().add(group);
-                        groupMap.put(group.getId(), group);
+                    if (groupMap.get(group.getGroupRep().getId()) == null) {
+                        foundParent.getGroupRep().getSubGroups().add(group.getGroupRep());
+                        groupMap.put(group.getGroupRep().getId(), group);
                     }
                 }
             } );
         });
-        return tree.stream().map(g -> {return (GroupRepresentation) g;}).collect(Collectors.toList()).stream();
+        return tree.stream().map(GroupRepresentationExtended::getGroupRep).collect(Collectors.toList()).stream();
     }
 
-    private static class GroupRepresentationExtended extends GroupRepresentation {
+    private static class GroupRepresentationExtended {
         private String parentId;
 
-        public GroupRepresentationExtended(GroupRepresentation group, String parentId) {
-            this.id = group.getId();
-            if ( group.getSubGroups() != null) {
-                this.subGroups = group.getSubGroups().stream().map(s -> {
-                    return new GroupRepresentationExtended(s, this.id);
-                }).collect(Collectors.toList());
-            }
-            this.attributes = group.getAttributes();
-            this.clientRoles = group.getClientRoles();
-            this.realmRoles = group.getRealmRoles();
-            this.name = group.getName();
-            this.path = group.getPath();
-            this.parentId = parentId;
+        public GroupRepresentation getGroupRep() {
+            return groupRep;
         }
 
+        private GroupRepresentation groupRep;
+
+        public GroupRepresentationExtended(GroupRepresentation group, String parentId) {
+            this.groupRep = group;
+            this.parentId = parentId;
+        }
 
         public String getParentId() {
             return parentId;
         }
 
-        public void setParentId(String parentId) {
-            this.parentId = parentId;
-        }
     }
     private static Stream<GroupRepresentationExtended> getAncestryStream(GroupPermissionEvaluator groupsEvaluator, GroupModel group) {
         List<GroupRepresentationExtended> groupsList = new ArrayList<>();
