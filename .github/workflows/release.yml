@@ -1,4 +1,4 @@
-name: Release Workflow
+name: Washinton Release
 
 on:
   push:
