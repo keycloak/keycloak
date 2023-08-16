@@ -196,7 +196,7 @@ public class RedirectUtils {
         int MAX_DECODING_COUNT = 5; // Max count of attempts for decoding URL (in case it was encoded multiple times)
 
         try {
-            KeycloakUriBuilder uriBuilder = KeycloakUriBuilder.fromUri(redirectUri).preserveDefaultPort();
+            KeycloakUriBuilder uriBuilder = KeycloakUriBuilder.fromUri(redirectUri, false).preserveDefaultPort();
             String origQuery = uriBuilder.getQuery();
             String origFragment = uriBuilder.getFragment();
             String encodedRedirectUri = uriBuilder
@@ -209,7 +209,7 @@ public class RedirectUtils {
                 decodedRedirectUri = Encode.decode(encodedRedirectUri);
                 if (decodedRedirectUri.equals(encodedRedirectUri)) {
                     // URL is decoded. We can return it (after attach original query and fragment)
-                    return KeycloakUriBuilder.fromUri(decodedRedirectUri).preserveDefaultPort()
+                    return KeycloakUriBuilder.fromUri(decodedRedirectUri, false).preserveDefaultPort()
                             .replaceQuery(origQuery)
                             .fragment(origFragment)
                             .buildAsString();
