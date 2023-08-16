@@ -114,4 +114,17 @@ public class RedirectUtilsTest {
 
         Assert.assertNull(RedirectUtils.verifyRedirectUri(session, null, "custom3:/test", set, false));
     }
+
+    @Test
+    public void testverifyRedirectUriWithCurlyBrackets() {
+        Set<String> set = Stream.of(
+                "https://keycloak.org/%7B123%7D",
+                "https://keycloak.org/parent/*"
+        ).collect(Collectors.toSet());
+
+        Assert.assertEquals("https://keycloak.org/%7B123%7D", RedirectUtils.verifyRedirectUri(session, null, "https://keycloak.org/%7B123%7D", set, false));
+        Assert.assertEquals("https://keycloak.org/parent/%7B123%7D", RedirectUtils.verifyRedirectUri(session, null, "https://keycloak.org/parent/%7B123%7D", set, false));
+
+        Assert.assertNull(RedirectUtils.verifyRedirectUri(session, null, "https://keycloak.org/%7Babc%7D", set, false));
+    }
 }
