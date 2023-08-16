@@ -7,35 +7,55 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Release version (e.g., v1.0.0)'
+        description: "Release version (e.g., v1.0.0)"
         required: true
 
 jobs:
   build_and_release:
     runs-on: ubuntu-latest
-    
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v2
-    
-    - name: Set VERSION from push event
-      if: github.event_name == 'push'
-      run: echo "VERSION=$(echo $GITHUB_REF | sed 's/refs\/tags\///')" >> $GITHUB_ENV
-    
-    - name: Set VERSION from workflow_dispatch input
-      if: github.event_name == 'workflow_dispatch'
-      run: echo "VERSION=${{ github.event.inputs.version }}" >> $GITHUB_ENV
 
-    - name: Build Keycloak
-      uses: ./.github/actions/build-keycloak
-      with:
-        upload-m2-repo: false
-    
-    - name: Rename artifact
-      run: mv quarkus/dist/target/keycloak*.tar.gz quarkus/dist/target/keycloak-$VERSION.tar.gz
-    
-    - name: Create GitHub Release and Upload Artifact
-      run: |
-        gh release create $VERSION quarkus/dist/target/keycloak-$VERSION.tar.gz --title "Release $VERSION"
-      env:
-        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set VERSION from push event
+        if: github.event_name == 'push'
+        run: echo "VERSION=$(echo $GITHUB_REF | sed 's/refs\/tags\///')" >> $GITHUB_ENV
+
+      - name: Set VERSION from workflow_dispatch input
+        if: github.event_name == 'workflow_dispatch'
+        run: echo "VERSION=${{ github.event.inputs.version }}" >> $GITHUB_ENV
+
+      - name: Build Keycloak
+        uses: ./.github/actions/build-keycloak
+        with:
+          upload-m2-repo: false
+
+      - name: Rename artifact
+        run: mv quarkus/dist/target/keycloak*.tar.gz quarkus/dist/target/keycloak-$VERSION.tar.gz
+
+      - name: Create GitHub Release and Upload Artifact
+        run: |
+          gh release create $VERSION quarkus/dist/target/keycloak-$VERSION.tar.gz --title "Release $VERSION"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Check if current release is the latest release
+        run: |
+          LATEST_TAG=$(gh release list | head -n 1 | awk '{print $1}')
+          if [[ "$VERSION" == "$LATEST_TAG" ]]; then
+            echo "CREATE_LATEST_RELEASE=true" >> $GITHUB_ENV
+          else
+            echo "CREATE_LATEST_RELEASE=false" >> $GITHUB_ENV
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Rename artifact for latest release
+        if: env.CREATE_LATEST_RELEASE == 'true'
+        run: mv quarkus/dist/target/keycloak-$VERSION.tar.gz quarkus/dist/target/keycloak-latest.tar.gz
+
+      - name: Create latest release
+        if: env.CREATE_LATEST_RELEASE == 'true'
+        run: |
+          gh release create latest quarkus/dist/target/keycloak-latest.tar.gz --title "Release latest"
