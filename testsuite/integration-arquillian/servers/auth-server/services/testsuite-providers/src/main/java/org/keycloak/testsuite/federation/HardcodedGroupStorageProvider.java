@@ -74,6 +74,11 @@ public class HardcodedGroupStorageProvider implements GroupStorageProvider {
     }
 
     @Override
+    public Stream<GroupModel> searchForGroupByNameNoAncestryStream(RealmModel realm, String search, Boolean exact, Integer firstResult, Integer maxResults) {
+        return searchForGroupByNameStream(realm, search, exact, firstResult, maxResults);
+    }
+
+    @Override
     public Stream<GroupModel> searchGroupsByAttributes(RealmModel realm, Map<String, String> attributes, Integer firstResult, Integer maxResults) {
         if (Boolean.parseBoolean(component.getConfig().getFirst(HardcodedGroupStorageProviderFactory.DELAYED_SEARCH))) try {
             Thread.sleep(5000l);

@@ -146,7 +146,14 @@ public class MapGroupProvider implements GroupProvider {
 
     @Override
     public Long getGroupsCountByNameContaining(RealmModel realm, String search) {
-        return searchForGroupByNameStream(realm, search, false, null, null).count();
+        LOG.tracef("getGroupsCountByNameContaining(%s, %s, %s)%s", realm, session, search, getShortStackTrace());
+
+        DefaultModelCriteria<GroupModel> mcb = criteria();
+
+        mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
+                    .compare(SearchableFields.NAME, Operator.ILIKE, "%" + search + "%");
+
+        return storeWithRealm(realm).read(withCriteria(mcb)).count();
     }
 
     @Override
@@ -180,7 +187,6 @@ public class MapGroupProvider implements GroupProvider {
     public Stream<GroupModel> searchForGroupByNameStream(RealmModel realm, String search, Boolean exact, Integer firstResult, Integer maxResults) {
         LOG.tracef("searchForGroupByNameStream(%s, %s, %s, %b, %d, %d)%s", realm, session, search, exact, firstResult, maxResults, getShortStackTrace());
 
-
         DefaultModelCriteria<GroupModel> mcb = criteria();
         if (exact != null && exact.equals(Boolean.TRUE)) {
             mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
@@ -200,6 +206,23 @@ public class MapGroupProvider implements GroupProvider {
                     }
                     return groupById;
                 }).sorted(GroupModel.COMPARE_BY_NAME).distinct();
+    }
+
+    @Override
+    public Stream<GroupModel> searchForGroupByNameNoAncestryStream(RealmModel realm, String search, Boolean exact, Integer firstResult, Integer maxResults) {
+        LOG.tracef("searchForGroupByNameNoAncestryStream(%s, %s, %s, %b, %d, %d)%s", realm, session, search, exact, firstResult, maxResults, getShortStackTrace());
+
+        DefaultModelCriteria<GroupModel> mcb = criteria();
+        if (exact != null && exact.equals(Boolean.TRUE)) {
+            mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
+                    .compare(SearchableFields.NAME, Operator.EQ, search);
+        } else {
+            mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
+                    .compare(SearchableFields.NAME, Operator.ILIKE, "%" + search + "%");
+        }
+
+        return storeWithRealm(realm).read(withCriteria(mcb).pagination(firstResult, maxResults, SearchableFields.NAME))
+                .map(groupEntity -> session.groups().getGroupById(realm, groupEntity.getId())).sorted(GroupModel.COMPARE_BY_NAME);
     }
 
     @Override

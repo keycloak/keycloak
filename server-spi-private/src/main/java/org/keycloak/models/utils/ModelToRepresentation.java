@@ -186,6 +186,10 @@ public class ModelToRepresentation {
         return session.groups().searchForGroupByNameStream(realm, search, exact, first, max);
     }
 
+    public static Stream<GroupModel> searchForGroupByNameNoAncestryStream(KeycloakSession session, RealmModel realm, boolean full, String search, Boolean exact, Integer first, Integer max) {
+        return session.groups().searchForGroupByNameNoAncestryStream(realm, search, exact, first, max);
+    }
+
     public static Stream<GroupRepresentation> searchForGroupByName(UserModel user, boolean full, String search, Integer first, Integer max) {
         return user.getGroupsStream(search, first, max)
                 .map(group -> toRepresentation(group, full));
