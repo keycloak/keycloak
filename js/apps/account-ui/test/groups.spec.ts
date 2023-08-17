@@ -9,10 +9,7 @@ test.describe("Groups page", () => {
   test.afterAll(() => deleteRealm("groups"));
 
   test("List my groups", async ({ page }) => {
-    await page.goto(
-      process.env.CI ? "/realms/groups/account" : "/?realm=groups",
-    );
-    await login(page, "jdoe", "jdoe");
+    await login(page, "jdoe", "jdoe", "groups");
     await page.getByTestId("groups").click();
     await expect(page.getByTestId("group[0].name")).toHaveText("one");
   });
