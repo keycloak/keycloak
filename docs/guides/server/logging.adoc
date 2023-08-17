@@ -104,7 +104,7 @@ The format string supports the symbols in the following table:
 |%t++{id}++|Thread ID|Render the thread ID.
 |%z{<zone name>}|Timezone|Set the time zone of log output to <zone name>.
 |%L|Line number|Render the line number of the log message.
-|====
+|===
 
 === Setting the logging format
 To set the logging format for a logged line, perform these steps:
