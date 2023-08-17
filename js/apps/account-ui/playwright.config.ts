@@ -30,15 +30,6 @@ export default defineConfig({
       testMatch: /test-realm\.teardown\.ts/,
     },
     {
-      name: "import groups realm",
-      testMatch: /groups-realm\.setup\.ts/,
-      teardown: "del groups realm",
-    },
-    {
-      name: "del groups realm",
-      testMatch: /groups-realm\.teardown\.ts/,
-    },
-    {
       name: "chromium",
       use: {
         ...devices["Desktop Chrome"],
@@ -63,12 +54,6 @@ export default defineConfig({
       use: { ...devices["Desktop Chrome"] },
       dependencies: ["import test realm"],
       testMatch: ["**/*my-resources.spec.ts"],
-    },
-    {
-      name: "groups",
-      use: { ...devices["Desktop Chrome"] },
-      dependencies: ["import groups realm"],
-      testMatch: ["**/*groups.spec.ts"],
     },
   ],
 });
