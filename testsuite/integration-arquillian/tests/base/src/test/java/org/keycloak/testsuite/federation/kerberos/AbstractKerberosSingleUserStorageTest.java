@@ -35,7 +35,7 @@ import javax.naming.directory.Attributes;
 import javax.naming.directory.DirContext;
 import javax.naming.directory.InitialDirContext;
 import javax.security.sasl.Sasl;
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response;
 import java.util.Hashtable;
 import java.util.Map;
 
