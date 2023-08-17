@@ -111,6 +111,14 @@ public interface GroupModel extends RoleMapperModel {
     Stream<GroupModel> getSubGroupsStream();
 
     /**
+     * Returns all sub groups for the parent group as a stream, paginated.
+     * Stream is sorted by the group name.
+     *
+     * @return Stream of {@link GroupModel}. Never returns {@code null}.
+     */
+    Stream<GroupModel> getSubGroupsStream(String search, Integer firstResult, Integer maxResults);
+
+    /**
      * You must also call addChild on the parent group, addChild on RealmModel if there is no parent group
      *
      * @param group
