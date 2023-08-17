@@ -43,7 +43,7 @@
         <jboss.snapshots.repo.id>jboss-snapshots-repository</jboss.snapshots.repo.id>
         <jboss.snapshots.repo.url>https://s01.oss.sonatype.org/content/repositories/snapshots/</jboss.snapshots.repo.url>
 
-        <quarkus.version>3.2.3.Final</quarkus.version>
+        <quarkus.version>3.2.4.Final</quarkus.version>
         <quarkus.build.version>3.2.3.Final</quarkus.build.version>
 
         <project.build-time>${timestamp}</project.build-time>
