@@ -17,6 +17,11 @@
 
 package org.keycloak.models.map.group;
 
+import java.util.Map;
+import java.util.Objects;
+import java.util.function.Function;
+import java.util.function.UnaryOperator;
+import java.util.stream.Stream;
 import org.jboss.logging.Logger;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.GroupModel.SearchableFields;
@@ -28,18 +33,13 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.models.map.common.DeepCloner;
 import org.keycloak.models.map.common.HasRealmId;
 import org.keycloak.models.map.storage.MapStorage;
-
 import org.keycloak.models.map.storage.ModelCriteriaBuilder.Operator;
 import org.keycloak.models.map.storage.QueryParameters;
-
 import org.keycloak.models.map.storage.criteria.DefaultModelCriteria;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
-import java.util.Map;
-import java.util.Objects;
-import java.util.function.Function;
-import java.util.function.UnaryOperator;
-import java.util.stream.Stream;
+
+
 
 import static org.keycloak.common.util.StackUtil.getShortStackTrace;
 import static org.keycloak.models.map.common.AbstractMapProviderFactory.MapProviderObjectType.GROUP_AFTER_REMOVE;
@@ -70,12 +70,7 @@ public class MapGroupProvider implements GroupProvider {
 
     private Function<MapGroupEntity, GroupModel> entityToAdapterFunc(RealmModel realm) {
         // Clone entity before returning back, to avoid giving away a reference to the live object to the caller
-        return origEntity -> new MapGroupAdapter(session, realm, origEntity) {
-            @Override
-            public Stream<GroupModel> getSubGroupsStream() {
-                return getGroupsByParentId(realm, this.getId());
-            }
-        };
+        return origEntity -> new MapGroupAdapter(session, realm, origEntity);
     }
 
     @Override
@@ -135,8 +130,7 @@ public class MapGroupProvider implements GroupProvider {
         }
 
         return storeWithRealm(realm).read(queryParameters)
-                .map(entityToAdapterFunc(realm))
-                ;
+                .map(entityToAdapterFunc(realm));
     }
 
     @Override
@@ -167,8 +161,22 @@ public class MapGroupProvider implements GroupProvider {
     }
 
     @Override
+    public Long getSubGroupsCount(RealmModel realm, String parentId) {
+        DefaultModelCriteria<GroupModel> mcb = criteria();
+        mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId()).compare(SearchableFields.PARENT_ID, Operator.EQ, parentId);
+        return storeWithRealm(realm).getCount(withCriteria(mcb));
+    }
+
+    @Override
     public Long getGroupsCountByNameContaining(RealmModel realm, String search) {
-        return searchForGroupByNameStream(realm, search, false, null, null).count();
+        LOG.tracef("getGroupsCountByNameContaining(%s, %s, %s)%s", realm, session, search, getShortStackTrace());
+
+        DefaultModelCriteria<GroupModel> mcb = criteria();
+
+        mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
+                    .compare(SearchableFields.NAME, Operator.ILIKE, "%" + search + "%");
+
+        return storeWithRealm(realm).read(withCriteria(mcb).orderBy(SearchableFields.NAME, ASCENDING)).count();
     }
 
     @Override
@@ -199,6 +207,19 @@ public class MapGroupProvider implements GroupProvider {
     }
 
     @Override
+    public Stream<GroupModel> getTopLevelGroupsStream(RealmModel realm, String search, Integer firstResult, Integer maxResults) {
+        LOG.tracef("getTopLevelGroupsStream(%s, %s, %s,%s)%s", realm, search, firstResult, maxResults, getShortStackTrace());
+
+        DefaultModelCriteria<GroupModel> mcb = criteria();
+            mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
+                .compare(SearchableFields.NAME, Operator.ILIKE, "%" + search + "%")
+                .compare(SearchableFields.PARENT_ID, Operator.NOT_EXISTS);
+
+        return storeWithRealm(realm).read(withCriteria(mcb).pagination(firstResult, maxResults, SearchableFields.NAME))
+            .map(entityToAdapterFunc(realm));
+    }
+
+    @Override
     public Stream<GroupModel> searchForGroupByNameStream(RealmModel realm, String search, Boolean exact, Integer firstResult, Integer maxResults) {
         LOG.tracef("searchForGroupByNameStream(%s, %s, %s, %b, %d, %d)%s", realm, session, search, exact, firstResult, maxResults, getShortStackTrace());
 
@@ -214,14 +235,28 @@ public class MapGroupProvider implements GroupProvider {
 
 
         return storeWithRealm(realm).read(withCriteria(mcb).pagination(firstResult, maxResults, SearchableFields.NAME))
-                .map(MapGroupEntity::getId)
-                .map(id -> {
-                    GroupModel groupById = session.groups().getGroupById(realm, id);
-                    while (Objects.nonNull(groupById.getParentId())) {
-                        groupById = session.groups().getGroupById(realm, groupById.getParentId());
-                    }
-                    return groupById;
-                }).sorted(GroupModel.COMPARE_BY_NAME).distinct();
+            .map(entityToAdapterFunc(realm));
+    }
+
+    @Override
+    public Stream<GroupModel> searchForSubgroupsByParentIdStream(RealmModel realm, String id, Integer firstResult, Integer maxResults) {
+        DefaultModelCriteria<GroupModel> mcb = criteria();
+        mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
+            .compare(SearchableFields.PARENT_ID, Operator.EQ, id);
+
+        return storeWithRealm(realm).read(withCriteria(mcb).pagination(firstResult, maxResults, SearchableFields.NAME))
+            .map(entityToAdapterFunc(realm));
+    }
+
+    @Override
+    public Stream<GroupModel> searchForSubgroupsByParentIdNameStream(RealmModel realm, String id, String search, Integer firstResult, Integer maxResults) {
+        DefaultModelCriteria<GroupModel> mcb = criteria();
+        mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
+            .compare(SearchableFields.PARENT_ID, Operator.EQ, id)
+            .compare(SearchableFields.NAME, Operator.ILIKE, "%" + search + "%");
+
+        return storeWithRealm(realm).read(withCriteria(mcb).pagination(firstResult, maxResults, SearchableFields.NAME))
+            .map(entityToAdapterFunc(realm));
     }
 
     @Override

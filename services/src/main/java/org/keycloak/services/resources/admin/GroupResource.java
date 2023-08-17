@@ -16,6 +16,7 @@
  */
 package org.keycloak.services.resources.admin;
 
+import jakarta.ws.rs.DefaultValue;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
@@ -59,6 +60,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Stream;
+import org.keycloak.utils.GroupUtils;
 
 /**
  * @resource Groups
@@ -94,7 +96,7 @@ public class GroupResource {
     public GroupRepresentation getGroup() {
         this.auth.groups().requireView(group);
 
-        GroupRepresentation rep = ModelToRepresentation.toGroupHierarchy(group, true);
+        GroupRepresentation rep = ModelToRepresentation.toRepresentation(group, true);
 
         rep.setAccess(auth.groups().getAccess(group));
 
@@ -150,6 +152,21 @@ public class GroupResource {
         adminEvent.operation(OperationType.DELETE).resourcePath(session.getContext().getUri()).success();
     }
 
+    @GET
+    @Path("children")
+    @NoCache
+    @Produces(MediaType.APPLICATION_JSON)
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.GROUPS)
+    @Operation( summary = "Return a paginated list of subgroups that have a parent group corresponding to the group on the URL")
+    public Stream<GroupRepresentation> getSubGroups(@QueryParam("first") @DefaultValue("0") Integer first,
+        @QueryParam("max") @DefaultValue("10") Integer max,
+        @QueryParam("full") @DefaultValue("false") Boolean full) {
+        this.auth.groups().requireView(group);
+        return session.groups().searchForSubgroupsByParentIdStream(realm, group.getId(), first, max)
+            .filter(g -> auth.groups().canView() || auth.groups().canView(g))
+            .map(g -> ModelToRepresentation.toRepresentation(g, full))
+            .map(g -> GroupUtils.populateSubGroupCount(realm, session, g));
+    }
 
     /**
      * Set or create child.  This will just set the parent if it exists.  Create it and set the parent
@@ -201,7 +218,7 @@ public class GroupResource {
             }
             adminEvent.resourcePath(session.getContext().getUri()).representation(rep).success();
 
-            GroupRepresentation childRep = ModelToRepresentation.toGroupHierarchy(child, true);
+            GroupRepresentation childRep = ModelToRepresentation.toRepresentation(child, true);
             return builder.type(MediaType.APPLICATION_JSON_TYPE).entity(childRep).build();
         } catch (ModelDuplicateException e) {
             throw ErrorResponse.exists("Sibling group named '" + groupName + "' already exists.");

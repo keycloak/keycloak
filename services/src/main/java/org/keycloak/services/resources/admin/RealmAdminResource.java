@@ -117,6 +117,7 @@ import org.keycloak.services.resources.admin.permissions.AdminPermissions;
 import org.keycloak.storage.DatastoreProvider;
 import org.keycloak.storage.ExportImportManager;
 import org.keycloak.storage.LegacyStoreSyncEvent;
+import org.keycloak.utils.GroupUtils;
 import org.keycloak.utils.ProfileHelper;
 import org.keycloak.utils.ReservedCharValidator;
 
@@ -1079,7 +1080,7 @@ public class RealmAdminResource {
 
         }
         auth.groups().requireView(found);
-        return ModelToRepresentation.toGroupHierarchy(found, true);
+        return ModelToRepresentation.toRepresentation(found, true);
     }
 
     /**

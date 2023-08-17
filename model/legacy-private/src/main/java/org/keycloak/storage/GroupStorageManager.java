@@ -16,6 +16,8 @@
  */
 package org.keycloak.storage;
 
+import java.util.Map;
+import java.util.stream.Stream;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.GroupProvider;
 import org.keycloak.models.KeycloakSession;
@@ -26,8 +28,6 @@ import org.keycloak.storage.group.GroupStorageProvider;
 import org.keycloak.storage.group.GroupStorageProviderFactory;
 import org.keycloak.storage.group.GroupStorageProviderModel;
 
-import java.util.Map;
-import java.util.stream.Stream;
 
 public class GroupStorageManager extends AbstractStorageManager<GroupStorageProvider, GroupStorageProviderModel> implements GroupProvider {
 
@@ -85,6 +85,23 @@ public class GroupStorageManager extends AbstractStorageManager<GroupStorageProv
 
         return Stream.concat(local, ext);
     }
+
+    @Override
+    public Stream<GroupModel> searchForSubgroupsByParentIdStream(RealmModel realm, String id, Integer firstResult, Integer maxResults) {
+        Stream<GroupModel> local = localStorage().searchForSubgroupsByParentIdStream(realm, id, firstResult, maxResults);
+        // TODO: not really sure if this is actually external or internal behavior... need to learn more about what's going on with this steorage manager class and legacy providers
+        Stream<GroupModel> ext = flatMapEnabledStorageProvidersWithTimeout(realm, GroupLookupProvider.class, p -> p.searchForSubgroupsByParentIdStream(realm, id, firstResult, maxResults));
+        return Stream.concat(local, ext);
+    }
+
+    @Override
+    public Stream<GroupModel> searchForSubgroupsByParentIdNameStream(RealmModel realm, String id, String search, Integer firstResult, Integer maxResults) {
+        Stream<GroupModel> local = localStorage().searchForSubgroupsByParentIdNameStream(realm, id, search, firstResult, maxResults);
+        // TODO: not really sure if this is actually external or internal behavior... need to learn more about what's going on with this steorage manager class and legacy providers
+        Stream<GroupModel> ext = flatMapEnabledStorageProvidersWithTimeout(realm, GroupLookupProvider.class, p -> p.searchForSubgroupsByParentIdNameStream(realm, id, search, firstResult, maxResults));
+        return Stream.concat(local, ext);
+    }
+
     /* GROUP PROVIDER METHODS - provided only by local storage (e.g. not supported by storage providers) */
 
     @Override
@@ -100,6 +117,11 @@ public class GroupStorageManager extends AbstractStorageManager<GroupStorageProv
     @Override
     public Long getGroupsCount(RealmModel realm, Boolean onlyTopGroups) {
         return localStorage().getGroupsCount(realm, onlyTopGroups);
+    }
+
+    @Override
+    public Long getSubGroupsCount(RealmModel realm, String parentId) {
+        return localStorage().getSubGroupsCount(realm, parentId);
     }
 
     @Override
@@ -120,6 +142,11 @@ public class GroupStorageManager extends AbstractStorageManager<GroupStorageProv
     @Override
     public Stream<GroupModel> getTopLevelGroupsStream(RealmModel realm, Integer firstResult, Integer maxResults) {
         return localStorage().getTopLevelGroupsStream(realm, firstResult, maxResults);
+    }
+
+    @Override
+    public Stream<GroupModel> getTopLevelGroupsStream(RealmModel realm, String search, Integer firstResult, Integer maxResults) {
+        return localStorage().getTopLevelGroupsStream(realm, search, firstResult, maxResults);
     }
 
     @Override

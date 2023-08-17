@@ -32,7 +32,7 @@ import java.util.Set;
 import java.util.stream.Stream;
 
 
-public abstract class MapGroupAdapter extends AbstractGroupModel<MapGroupEntity> {
+public class MapGroupAdapter extends AbstractGroupModel<MapGroupEntity> {
     public MapGroupAdapter(KeycloakSession session, RealmModel realm, MapGroupEntity entity) {
         super(session, realm, entity);
     }
@@ -101,6 +101,19 @@ public abstract class MapGroupAdapter extends AbstractGroupModel<MapGroupEntity>
     }
 
     @Override
+    public Stream<GroupModel> getSubGroupsStream() {
+        return session.groups().searchForSubgroupsByParentIdStream(realm, getId(), -1, -1);
+    }
+
+    @Override
+    public Stream<GroupModel> getSubGroupsStream(String search, Integer firstResult, Integer maxResults) {
+        if(search == null || search.isEmpty()) {
+            return session.groups().searchForSubgroupsByParentIdStream(realm, getId(), firstResult, maxResults);
+        }
+        return session.groups().searchForSubgroupsByParentIdNameStream(realm, getId(), search, firstResult, maxResults);
+    }
+
+    @Override
     public void setParent(GroupModel group) {
         if (group == null) {
             entity.setParentId(null);
@@ -159,6 +172,7 @@ public abstract class MapGroupAdapter extends AbstractGroupModel<MapGroupEntity>
     @Override
     public Stream<RoleModel> getRoleMappingsStream() {
         Set<String> grantedRoles = entity.getGrantedRoles();
+        // TODO: doing lookups on an adapter for a model object, should this be moved to a lookup provider to fit the general pattern?
         return grantedRoles == null ? Stream.empty() : grantedRoles.stream()
             .map(roleId -> session.roles().getRoleById(realm, roleId));
     }

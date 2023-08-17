@@ -92,6 +92,7 @@ import org.keycloak.userprofile.UserProfileProvider;
 import org.keycloak.userprofile.EventAuditingAttributeChangeListener;
 import org.keycloak.userprofile.ValidationException;
 import org.keycloak.userprofile.ValidationException.Error;
+import org.keycloak.utils.GroupUtils;
 import org.keycloak.validate.Validators;
 
 /**
@@ -459,9 +460,10 @@ public class AccountRestService {
     @GET
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
+    //TODO GROUPS this isn't paginated
     public Stream<GroupRepresentation> groupMemberships(@QueryParam("briefRepresentation") @DefaultValue("true") boolean briefRepresentation) {
         auth.require(AccountRoles.VIEW_GROUPS);
-        return ModelToRepresentation.toGroupHierarchy(user, !briefRepresentation);
+        return user.getGroupsStream().map(g -> ModelToRepresentation.toRepresentation(g, !briefRepresentation));
     }
 
     @Path("/applications")

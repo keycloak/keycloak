@@ -1,42 +1,72 @@
 package org.keycloak.utils;
-
-import java.util.Collections;
-import java.util.stream.Collectors;
-
-import org.keycloak.common.Profile;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Stream;
 import org.keycloak.models.GroupModel;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.services.resources.admin.permissions.GroupPermissionEvaluator;
 
+
+
 public class GroupUtils {
-    // Moved out from org.keycloak.admin.ui.rest.GroupsResource
-    public static GroupRepresentation toGroupHierarchy(GroupPermissionEvaluator groupsEvaluator, GroupModel group, final String search, boolean exact, boolean lazy) {
-        return toGroupHierarchy(groupsEvaluator, group, search, exact, true, lazy);
+
+    /**
+     * This method takes the provided groups and attempts to load their parents all the way to the root group while maintaining the hierarchy data
+     * for each GroupRepresentation object. Each resultant GroupRepresentation object in the stream should contain relevant subgroups to the originally
+     * provided groups
+     * @param session The active keycloak session
+     * @param realm The realm to operate on
+     * @param groups The groups that we want to populate the hierarchy for
+     * @return A stream of groups that contain all relevant groups from the root down with no extra siblings
+     */
+    public static Stream<GroupRepresentation> populateGroupHierarchyFromSubGroups(KeycloakSession session, RealmModel realm, Stream<GroupModel> groups, boolean full, GroupPermissionEvaluator groupEvaluator) {
+        Map<String, GroupRepresentation> groupIdToGroups = new HashMap<>();
+        groups.forEach(group -> {
+            // TODO GROUPS do permissions work in such a way that if you can view the children you can definitely view the parents?
+            if(!groupEvaluator.canView() && !groupEvaluator.canView(group)) return;
+
+            GroupRepresentation currGroup = ModelToRepresentation.toRepresentation(group, full);
+            populateSubGroupCount(realm, session, currGroup);
+            groupIdToGroups.putIfAbsent(currGroup.getId(), currGroup);
+
+            while(currGroup.getParentId() != null) {
+                GroupModel parentModel = session.groups().getGroupById(realm, currGroup.getParentId());
+
+                // TODO GROUPS not sure if this is even necessary but if somehow you can't view the parent we need to remove the child and move on
+                if(!groupEvaluator.canView() && !groupEvaluator.canView(parentModel)) {
+                    groupIdToGroups.remove(currGroup.getId());
+                    break;
+                }
+
+                GroupRepresentation parent = groupIdToGroups.computeIfAbsent(currGroup.getParentId(),
+                    id -> ModelToRepresentation.toRepresentation(parentModel, full));
+                // TODO GROUPS this is here but it really could be moved to be part of converting a model to a representation.
+                populateSubGroupCount(realm, session, parent);
+                GroupRepresentation finalCurrGroup = currGroup;
+
+                // check the parent for existing subgroups that match the group we're currently operating on and merge them if needed
+                Optional<GroupRepresentation> duplicateGroup = parent.getSubGroups() == null ?
+                    Optional.empty() : parent.getSubGroups().stream().filter(g -> g.equals(finalCurrGroup)).findFirst();
+                if(duplicateGroup.isPresent()) {
+                    duplicateGroup.get().merge(currGroup);
+                } else {
+                    parent.getSubGroups().add(currGroup);
+                }
+                groupIdToGroups.remove(currGroup.getId());
+                currGroup = parent;
+            }
+        });
+        return groupIdToGroups.values().stream().sorted(Comparator.comparing(GroupRepresentation::getName));
     }
 
-    public static GroupRepresentation toGroupHierarchy(GroupPermissionEvaluator groupsEvaluator, GroupModel group, final String search, boolean exact, boolean full, boolean lazy) {
-        GroupRepresentation rep = ModelToRepresentation.toRepresentation(group, full);
-        if (!lazy) {
-            rep.setSubGroups(group.getSubGroupsStream().filter(g ->
-                    groupMatchesSearchOrIsPathElement(
-                            g, search
-                    )
-            ).map(subGroup ->
-                    ModelToRepresentation.toGroupHierarchy(
-                            subGroup, full, search, exact
-                    )
-
-            ).collect(Collectors.toList()));
-        } else {
-            rep.setSubGroups(Collections.emptyList());
-        }
-
-        if (Profile.isFeatureEnabled(Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ)) {
-            setAccess(groupsEvaluator, group, rep);
-        }
-
-        return rep;
+    public static GroupRepresentation populateSubGroupCount(RealmModel realm, KeycloakSession session, GroupRepresentation representation) {
+        representation.setSubGroupCount(session.groups().getSubGroupsCount(realm, representation.getId()));
+        return representation;
     }
 
     //From org.keycloak.admin.ui.rest.GroupsResource

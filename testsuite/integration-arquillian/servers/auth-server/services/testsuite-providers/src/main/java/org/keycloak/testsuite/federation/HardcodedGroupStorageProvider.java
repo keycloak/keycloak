@@ -16,6 +16,9 @@
  */
 package org.keycloak.testsuite.federation;
 
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Stream;
 import org.jboss.logging.Logger;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.GroupModel;
@@ -26,9 +29,6 @@ import org.keycloak.storage.StorageId;
 import org.keycloak.storage.group.GroupStorageProvider;
 import org.keycloak.storage.group.GroupStorageProviderModel;
 
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Stream;
 
 public class HardcodedGroupStorageProvider implements GroupStorageProvider {
     private final GroupStorageProviderModel component;
@@ -76,6 +76,28 @@ public class HardcodedGroupStorageProvider implements GroupStorageProvider {
             }
         }
 
+        return Stream.empty();
+    }
+
+    @Override
+    public Stream<GroupModel> searchForSubgroupsByParentIdStream(RealmModel realm, String id, Integer firstResult, Integer maxResults) {
+        if (Boolean.parseBoolean(component.getConfig().getFirst(HardcodedGroupStorageProviderFactory.DELAYED_SEARCH))) try {
+            Thread.sleep(5000l);
+        } catch (InterruptedException ex) {
+            Logger.getLogger(HardcodedGroupStorageProvider.class).warn(ex.getCause());
+            return Stream.empty();
+        }
+        return Stream.empty();
+    }
+
+    @Override
+    public Stream<GroupModel> searchForSubgroupsByParentIdNameStream(RealmModel realm, String id, String search, Integer firstResult, Integer maxResults) {
+        if (Boolean.parseBoolean(component.getConfig().getFirst(HardcodedGroupStorageProviderFactory.DELAYED_SEARCH))) try {
+            Thread.sleep(5000l);
+        } catch (InterruptedException ex) {
+            Logger.getLogger(HardcodedGroupStorageProvider.class).warn(ex.getCause());
+            return Stream.empty();
+        }
         return Stream.empty();
     }
 
@@ -161,6 +183,11 @@ public class HardcodedGroupStorageProvider implements GroupStorageProvider {
 
         @Override
         public Stream<GroupModel> getSubGroupsStream() {
+            return Stream.empty();
+        }
+
+        @Override
+        public Stream<GroupModel> getSubGroupsStream(String search, Integer firstResult, Integer maxResults) {
             return Stream.empty();
         }
 

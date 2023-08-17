@@ -17,6 +17,7 @@
 
 package org.keycloak.admin.client.resource;
 
+import java.util.stream.Stream;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.ManagementPermissionReference;
 import org.keycloak.representations.idm.ManagementPermissionRepresentation;
@@ -85,6 +86,19 @@ public interface GroupResource {
     @DELETE
     void remove();
 
+    /**
+     * Set or create child.  This will just set the parent if it exists.  Create it and set the parent
+     * if the group doesn't exist.
+     *
+     * @param first
+     * @param max
+     * @param full
+     */
+    @GET
+    @Path("children")
+    @Produces(jakarta.ws.rs.core.MediaType.APPLICATION_JSON)
+    @Consumes(jakarta.ws.rs.core.MediaType.APPLICATION_JSON)
+    List<GroupRepresentation> getSubGroups(@QueryParam("first") Integer first, @QueryParam("max") Integer max, @QueryParam("full") Boolean full);
 
     /**
      * Set or create child.  This will just set the parent if it exists.  Create it and set the parent

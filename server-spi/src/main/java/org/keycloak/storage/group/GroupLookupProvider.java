@@ -16,11 +16,10 @@
  */
 package org.keycloak.storage.group;
 
-import org.keycloak.models.GroupModel;
-import org.keycloak.models.RealmModel;
-
 import java.util.Map;
 import java.util.stream.Stream;
+import org.keycloak.models.GroupModel;
+import org.keycloak.models.RealmModel;
 
 public interface GroupLookupProvider {
 
@@ -92,4 +91,15 @@ public interface GroupLookupProvider {
      */
     Stream<GroupModel> searchForGroupByNameStream(RealmModel realm, String search, Boolean exact, Integer firstResult, Integer maxResults);
 
+    /**
+     * Returns the subgroups of a given group id
+     * @param realm Realm
+     * @param id the id of parent group to be used to load subgroups with
+     * @param firstResult First result to return, Ignored if negative or {@code null}.
+     * @param maxResults Maximum number of results to return. Ignored if negative or {@code null}.
+     * @return A Stream of groups that all have the given parent group as their parent.
+     */
+    Stream<GroupModel> searchForSubgroupsByParentIdStream(RealmModel realm, String id, Integer firstResult, Integer maxResults);
+
+    Stream<GroupModel> searchForSubgroupsByParentIdNameStream(RealmModel realm, String id, String search, Integer firstResult, Integer maxResults);
 }

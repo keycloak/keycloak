@@ -20,6 +20,7 @@ package org.keycloak.models.jpa;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.GroupModel;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.jpa.entities.GroupAttributeEntity;
@@ -46,11 +47,13 @@ import static org.keycloak.utils.StreamsUtil.closing;
  */
 public class GroupAdapter implements GroupModel , JpaModel<GroupEntity> {
 
+    protected KeycloakSession session;
     protected GroupEntity group;
     protected EntityManager em;
     protected RealmModel realm;
 
-    public GroupAdapter(RealmModel realm, EntityManager em, GroupEntity group) {
+    public GroupAdapter(KeycloakSession session, RealmModel realm, EntityManager em, GroupEntity group) {
+        this.session = session;
         this.em = em;
         this.group = group;
         this.realm = realm;
@@ -121,10 +124,15 @@ public class GroupAdapter implements GroupModel , JpaModel<GroupEntity> {
 
     @Override
     public Stream<GroupModel> getSubGroupsStream() {
-        TypedQuery<String> query = em.createNamedQuery("getGroupIdsByParent", String.class);
-        query.setParameter("realm", group.getRealm());
-        query.setParameter("parent", group.getId());
-        return closing(query.getResultStream().map(realm::getGroupById).filter(Objects::nonNull));
+        return session.groups().searchForSubgroupsByParentIdStream(realm, group.getId(), -1, -1);
+    }
+
+    @Override
+    public Stream<GroupModel> getSubGroupsStream(String search, Integer firstResult, Integer maxResults) {
+        if(search == null || search.isEmpty()) {
+            return session.groups().searchForSubgroupsByParentIdStream(realm, group.getId(), firstResult, maxResults);
+        }
+        return session.groups().searchForSubgroupsByParentIdNameStream(realm, group.getId(), search, firstResult, maxResults);
     }
 
     @Override
