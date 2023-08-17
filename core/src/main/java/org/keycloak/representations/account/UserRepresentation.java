@@ -19,6 +19,7 @@ package org.keycloak.representations.account;
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import org.keycloak.json.StringListMapDeserializer;
+import org.keycloak.representations.idm.UserProfileMetadata;
 
 import java.util.ArrayList;
 import java.util.Arrays;

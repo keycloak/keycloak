@@ -51,11 +51,6 @@ public class ImmutableAttributeValidator implements SimpleValidator {
     public ValidationContext validate(Object input, String inputHint, ValidationContext context, ValidatorConfig config) {
         UserProfileAttributeValidationContext ac = (UserProfileAttributeValidationContext) context;
         AttributeContext attributeContext = ac.getAttributeContext();
-
-        if (!isReadOnly(attributeContext)) {
-            return context;
-        }
-
         UserModel user = attributeContext.getUser();
 
         if (user == null) {
@@ -65,7 +60,7 @@ public class ImmutableAttributeValidator implements SimpleValidator {
         List<String> currentValue = user.getAttributeStream(inputHint).collect(Collectors.toList());
         List<String> values = (List<String>) input;
 
-        if (!CollectionUtil.collectionEquals(currentValue, values)) {
+        if (!CollectionUtil.collectionEquals(currentValue, values) && isReadOnly(attributeContext)) {
             if (currentValue.isEmpty() && !notBlankValidator().validate(values).isValid()) {
                 return context;
             }

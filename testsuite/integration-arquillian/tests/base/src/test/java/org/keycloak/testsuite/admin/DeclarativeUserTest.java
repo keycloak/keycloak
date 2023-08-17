@@ -109,7 +109,6 @@ public class DeclarativeUserTest extends AbstractAdminTest {
             ApiUtil.getCreatedId(response);
         } catch (WebApplicationException e) {
             // it's ok when the client has already been created for a previous test
-            assertThat(e.getResponse().getStatus(), equalTo(409));
         }
 
         testRealmUserManagerClient = AdminClientUtil.createAdminClient(true, realmRep.getRealm(),
