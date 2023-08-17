@@ -97,6 +97,10 @@
             		<groupId>io.vertx</groupId>
             		<artifactId>vertx-uri-template</artifactId>
             	</exclusion>
+                <exclusion>
+                    <groupId>com.aayushatharva.brotli4j</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
             </exclusions>
         </dependency>
         <dependency>
