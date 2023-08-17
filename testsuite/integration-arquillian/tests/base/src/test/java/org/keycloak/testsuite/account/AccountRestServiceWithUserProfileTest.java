@@ -37,8 +37,8 @@ import org.keycloak.common.Profile;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
 import org.keycloak.models.UserModel;
-import org.keycloak.representations.account.UserProfileAttributeMetadata;
-import org.keycloak.representations.account.UserProfileMetadata;
+import org.keycloak.representations.idm.UserProfileAttributeMetadata;
+import org.keycloak.representations.idm.UserProfileMetadata;
 import org.keycloak.representations.account.UserRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
@@ -101,7 +101,7 @@ public class AccountRestServiceWithUserProfileTest extends AccountRestServiceTes
 
     @Test
     @Override
-    public void testGetUserProfileMetadata_EditUsernameAllowed() throws IOException {
+    public void testEditUsernameAllowed() throws IOException {
 
         setUserProfileConfiguration(UP_CONFIG_FOR_METADATA);
         
@@ -221,7 +221,7 @@ public class AccountRestServiceWithUserProfileTest extends AccountRestServiceTes
 
     @Test
     @Override
-    public void testGetUserProfileMetadata_EditUsernameDisallowed() throws IOException {
+    public void testEditUsernameDisallowed() throws IOException {
         
         try {
             RealmRepresentation realmRep = adminClient.realm("test").toRepresentation();
@@ -261,6 +261,7 @@ public class AccountRestServiceWithUserProfileTest extends AccountRestServiceTes
         } finally {
             RealmRepresentation realmRep = testRealm().toRepresentation();
             realmRep.setEditUsernameAllowed(true);
+            realmRep.setRegistrationEmailAsUsername(false);
             testRealm().update(realmRep);
         }
     }

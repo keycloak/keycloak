@@ -104,13 +104,8 @@ public final class DefaultUserProfile implements UserProfile {
         }
 
         try {
-            for (Map.Entry<String, List<String>> attribute : attributes.attributeSet()) {
+            for (Map.Entry<String, List<String>> attribute : attributes.getWritable().entrySet()) {
                 String name = attribute.getKey();
-
-                if (attributes.isReadOnly(name)) {
-                    continue;
-                }
-
                 List<String> currentValue = user.getAttributeStream(name).filter(Objects::nonNull).collect(Collectors.toList());
                 List<String> updatedValue = attribute.getValue().stream().filter(Objects::nonNull).collect(Collectors.toList());
 
@@ -118,6 +113,7 @@ public final class DefaultUserProfile implements UserProfile {
                     if (!removeAttributes && updatedValue.isEmpty()) {
                         continue;
                     }
+
                     user.setAttribute(name, updatedValue);
 
                     if (UserModel.EMAIL.equals(name) && metadata.getContext().isResetEmailVerified()) {
@@ -139,7 +135,7 @@ public final class DefaultUserProfile implements UserProfile {
                 attrsToRemove.removeAll(attributes.nameSet());
 
                 for (String attr : attrsToRemove) {
-                    if (this.attributes.isReadOnly(attr)) {
+                    if (attributes.isReadOnly(attr)) {
                         continue;
                     }
 

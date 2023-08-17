@@ -42,7 +42,7 @@ type OtpPolicyProps = {
 
 type FormFields = Omit<
   RealmRepresentation,
-  "clients" | "components" | "groups"
+  "clients" | "components" | "groups" | "users" | "federatedUsers"
 >;
 
 export const OtpPolicy = ({ realm, realmUpdated }: OtpPolicyProps) => {
