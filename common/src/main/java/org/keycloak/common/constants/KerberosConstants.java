@@ -92,4 +92,9 @@ public class KerberosConstants {
      */
     public static final String GSS_DELEGATION_CREDENTIAL_DISPLAY_NAME = "gss delegation credential";
 
+    /**
+     * Attribute attached to the credential, which contains authenticated SPNEGO context. This is used in case that some LDAP/Kerberos provider was able to authenticate user via SPNEGO, but wasn't able
+     * to lookup it in his LDAP tree. In this case, LDAP lookup might be performed by other providers in the chain.
+     */
+    public static final String AUTHENTICATED_SPNEGO_CONTEXT = "authenticatedSpnegoContext";
 }

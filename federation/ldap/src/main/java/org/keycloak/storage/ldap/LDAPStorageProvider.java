@@ -725,14 +725,19 @@ public class LDAPStorageProvider implements UserStorageProvider,
 
     @Override
     public CredentialValidationOutput authenticate(RealmModel realm, CredentialInput cred) {
-        if (!(cred instanceof UserCredentialModel)) return CredentialValidationOutput.failed();
+        if (!(cred instanceof UserCredentialModel)) return CredentialValidationOutput.fallback();
         UserCredentialModel credential = (UserCredentialModel)cred;
         if (credential.getType().equals(UserCredentialModel.KERBEROS)) {
             if (kerberosConfig.isAllowKerberosAuthentication()) {
-                String spnegoToken = credential.getChallengeResponse();
-                SPNEGOAuthenticator spnegoAuthenticator = factory.createSPNEGOAuthenticator(spnegoToken, kerberosConfig);
+                SPNEGOAuthenticator spnegoAuthenticator = (SPNEGOAuthenticator) credential.getNote(KerberosConstants.AUTHENTICATED_SPNEGO_CONTEXT);
+                if (spnegoAuthenticator != null) {
+                    logger.debugf("SPNEGO authentication already performed by previous provider. Provider '%s' will try to lookup user with principal kerberos principal '%s'", this, spnegoAuthenticator.getAuthenticatedUsername());
+                } else {
+                    String spnegoToken = credential.getChallengeResponse();
+                    spnegoAuthenticator = factory.createSPNEGOAuthenticator(spnegoToken, kerberosConfig);
 
-                spnegoAuthenticator.authenticate();
+                    spnegoAuthenticator.authenticate();
+                }
 
                 Map<String, String> state = new HashMap<>();
                 if (spnegoAuthenticator.isAuthenticated()) {
@@ -743,8 +748,13 @@ public class LDAPStorageProvider implements UserStorageProvider,
                     UserModel user = findOrCreateAuthenticatedUser(realm, username);
 
                     if (user == null) {
-                        logger.warnf("Kerberos/SPNEGO authentication succeeded with username [%s], but couldn't find or create user with federation provider [%s]", username, model.getName());
-                        return CredentialValidationOutput.failed();
+                        logger.debugf("Kerberos/SPNEGO authentication succeeded with kerberos principal [%s], but couldn't find or create user with federation provider [%s]", username, model.getName());
+
+                        // Adding the authenticated SPNEGO, in case that other LDAP/Kerberos providers in the chain are able to lookup user from their LDAP
+                        // This can be the case with more complex setup (like MSAD Forest Trust environment)
+                        // Note that SPNEGO authentication cannot be done again by the other provider due the Kerberos replay protection
+                        credential.setNote(KerberosConstants.AUTHENTICATED_SPNEGO_CONTEXT, spnegoAuthenticator);
+                        return CredentialValidationOutput.fallback();
                     } else {
                         String delegationCredential = spnegoAuthenticator.getSerializedDelegationCredential();
                         if (delegationCredential != null) {
@@ -760,12 +770,12 @@ public class LDAPStorageProvider implements UserStorageProvider,
                     return new CredentialValidationOutput(null, CredentialValidationOutput.Status.CONTINUE, state);
                 } else {
                     logger.tracef("SPNEGO Handshake not successful");
-                    return CredentialValidationOutput.failed();
+                    return CredentialValidationOutput.fallback();
                 }
             }
         }
 
-        return CredentialValidationOutput.failed();
+        return CredentialValidationOutput.fallback();
     }
 
     @Override
@@ -898,5 +908,10 @@ public class LDAPStorageProvider implements UserStorageProvider,
         }
 
         return ldapQuery.getResultList().stream();
+    }
+
+    @Override
+    public String toString() {
+        return "LDAPStorageProvider - " + getModel().getName();
     }
 }
