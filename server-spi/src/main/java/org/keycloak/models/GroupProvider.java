@@ -100,6 +100,15 @@ public interface GroupProvider extends Provider, GroupLookupProvider {
     Long getGroupsCount(RealmModel realm, Boolean onlyTopGroups);
 
     /**
+     * Returns the number of groups contained beneath the parent group. This is a shallow search and does not
+     * include the count of subgroups past a depth of one.
+     * @param realm Realm
+     * @param parentId ID of the group that should have its subgroups counted
+     * @return The number of root groups beneath the parent group
+     */
+    Long getSubGroupsCount(RealmModel realm, String parentId);
+
+    /**
      * Returns the number of top level groups containing groups with the given string in name for the given realm.
      *
      * @param realm Realm.
@@ -136,6 +145,17 @@ public interface GroupProvider extends Provider, GroupLookupProvider {
      * @return Stream of top level groups in the realm. Never returns {@code null}.
      */
     Stream<GroupModel> getTopLevelGroupsStream(RealmModel realm, Integer firstResult, Integer maxResults);
+
+    /**
+     * Returns top level groups (i.e. groups without parent group) for the given realm.
+     *
+     * @param realm Realm.
+     * @param firstResult First result to return. Ignored if negative or {@code null}.
+     * @param maxResults Maximum number of results to return. Ignored if negative or {@code null}.
+     * @param search The name that should be matched
+     * @return Stream of top level groups in the realm. Never returns {@code null}.
+     */
+    Stream<GroupModel> getTopLevelGroupsStream(RealmModel realm, String search, Integer firstResult, Integer maxResults);
 
     /**
      * Creates a new group with the given name in the given realm.
