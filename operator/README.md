@@ -52,12 +52,13 @@ eval $(minikube -p minikube docker-env)
 Compile the project and generate the Docker image with JIB:
 
 ```bash
-mvn clean package -Dquarkus.container-image.build=true -Dquarkus.kubernetes.deployment-target=minikube
+mvn clean package -Dquarkus.kubernetes.image-pull-policy=IfNotPresent -Dquarkus.container-image.build=true
 ```
 
 Install the CRD definition and the operator in the cluster in the `keycloak` namespace:
 
 ```bash
+kubectl create namespace keycloak
 kubectl apply -k target
 ```
 
