@@ -19,6 +19,14 @@
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-quarkus-server</artifactId>
         </dependency>
+
+        <!-- Necessary for proper execution of IDELauncher -->
+        <!-- Can be removed as part of the https://github.com/keycloak/keycloak/issues/22455 enhancement -->
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-vertx-http-dev-ui-resources</artifactId>
+            <scope>provided</scope>
+        </dependency>
     </dependencies>
 
     <properties>

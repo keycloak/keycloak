@@ -43,7 +43,7 @@
         <jboss.snapshots.repo.id>jboss-snapshots-repository</jboss.snapshots.repo.id>
         <jboss.snapshots.repo.url>https://s01.oss.sonatype.org/content/repositories/snapshots/</jboss.snapshots.repo.url>
 
-        <quarkus.version>3.2.3.Final</quarkus.version>
+        <quarkus.version>3.2.4.Final</quarkus.version>
         <quarkus.build.version>3.2.3.Final</quarkus.build.version>
 
         <project.build-time>${timestamp}</project.build-time>
@@ -76,7 +76,7 @@
         <h2.version>2.2.220</h2.version>
         <hibernate-orm.plugin.version>6.2.7.Final</hibernate-orm.plugin.version>
         <hibernate.c3p0.version>6.2.7.Final</hibernate.c3p0.version>
-        <infinispan.version>14.0.13.Final</infinispan.version>
+        <infinispan.version>14.0.14.Final</infinispan.version>
         <infinispan.protostream.processor.version>4.6.2.Final</infinispan.protostream.processor.version>
 
         <!--JAKARTA-->
@@ -194,7 +194,7 @@
         <spring-boot26.version>2.6.1</spring-boot26.version>
 
         <!-- webauthn support -->
-        <webauthn4j.version>0.21.0.RELEASE</webauthn4j.version>
+        <webauthn4j.version>0.21.5.RELEASE</webauthn4j.version>
         <org.apache.kerby.kerby-asn1.version>2.0.3</org.apache.kerby.kerby-asn1.version>
 
         <!-- WildFly Galleon Build related properties -->

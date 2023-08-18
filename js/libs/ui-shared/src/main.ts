@@ -7,6 +7,7 @@ export { TextAreaControl } from "./controls/TextAreaControl";
 export { HelpItem } from "./controls/HelpItem";
 export { useHelp, Help } from "./context/HelpContext";
 export { KeycloakTextInput } from "./keycloak-text-input/KeycloakTextInput";
+export { KeycloakTextArea } from "./controls/keycloak-text-area/KeycloakTextArea";
 export { AlertProvider, useAlerts } from "./alerts/Alerts";
 export { IconMapper } from "./icons/IconMapper";
 export { useStoredState } from "./utils/useStoredState";
