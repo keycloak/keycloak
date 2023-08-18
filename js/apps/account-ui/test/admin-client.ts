@@ -1,5 +1,6 @@
 import KeycloakAdminClient from "@keycloak/keycloak-admin-client";
 import RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
+import type UserProfileConfig from "@keycloak/keycloak-admin-client/lib/defs/userProfileConfig";
 
 const adminClient = new KeycloakAdminClient({
   baseUrl: process.env.KEYCLOAK_SERVER || "http://127.0.0.1:8180",
@@ -27,4 +28,11 @@ export async function importRealm(realm: RealmRepresentation) {
 
 export async function deleteRealm(realm: string) {
   await adminClient.realms.del({ realm });
+}
+
+export async function importUserProfile(
+  userProfile: UserProfileConfig,
+  realm: string,
+) {
+  await adminClient.users.updateProfile({ ...userProfile, realm });
 }
