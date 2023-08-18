@@ -403,7 +403,7 @@ public class DefaultTokenExchangeProvider implements TokenExchangeProvider {
         if (requestedTokenType.equals(OAuth2Constants.REFRESH_TOKEN_TYPE)
             && OIDCAdvancedConfigWrapper.fromClientModel(client).isUseRefreshToken()) {
             responseBuilder.generateRefreshToken();
-            responseBuilder.getRefreshToken().issuedFor(client.getClientId());
+            responseBuilder.getRefreshToken().issuedFor(targetClient.getClientId());
         }
 
         String scopeParam = clientSessionCtx.getClientSession().getNote(OAuth2Constants.SCOPE);
