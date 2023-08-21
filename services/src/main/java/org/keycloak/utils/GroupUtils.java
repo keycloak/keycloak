@@ -71,7 +71,7 @@ public class GroupUtils {
 
     //From org.keycloak.admin.ui.rest.GroupsResource
     // set fine-grained access for each group in the tree
-    private static GroupRepresentation toRepresentation(GroupPermissionEvaluator groupsEvaluator, GroupModel groupTree, boolean full) {
+    public static GroupRepresentation toRepresentation(GroupPermissionEvaluator groupsEvaluator, GroupModel groupTree, boolean full) {
         GroupRepresentation rep = ModelToRepresentation.toRepresentation(groupTree, full);
         rep.setAccess(groupsEvaluator.getAccess(groupTree));
         return rep;

@@ -66,7 +66,7 @@ public class GroupsResource {
             stream = this.realm.getTopLevelGroupsStream(search, first, max);
         }
         if("".equals(search)) {
-            return stream.map(g -> toRepresentation(g, false)).map(g -> GroupUtils.populateSubGroupCount(realm, session, g));
+            return stream.filter(g -> groupsEvaluator.canView() || groupsEvaluator.canView(g)).map(g -> GroupUtils.toRepresentation(groupsEvaluator, g, false)).map(g -> GroupUtils.populateSubGroupCount(realm, session, g));
         }
         return GroupUtils.populateGroupHierarchyFromSubGroups(session, realm, stream, false, groupsEvaluator)
             .map(g -> GroupUtils.populateSubGroupCount(realm, session, g));
@@ -100,7 +100,8 @@ public class GroupsResource {
         }
 
         return group.getSubGroupsStream(search, first, max)
-            .map(g -> toRepresentation(g, false))
+            .filter(g -> groupsEvaluator.canView() || groupsEvaluator.canView(g))
+            .map(g -> GroupUtils.toRepresentation(groupsEvaluator, g, false))
             .map(g -> GroupUtils.populateSubGroupCount(realm, session, g));
     }
 
