@@ -1,8 +1,7 @@
-import RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
 import type UserProfileConfig from "@keycloak/keycloak-admin-client/lib/defs/userProfileConfig";
 import { expect, test } from "@playwright/test";
-import { importRealm, importUserProfile } from "../admin-client";
-import userProfileRealm from "./personal-info-realm.json" assert { type: "json" };
+import { importUserProfile } from "../admin-client";
+import { login } from "../login";
 import userProfileConfig from "./user-profile.json" assert { type: "json" };
 
 test.describe("Personal info page", () => {
@@ -19,11 +18,15 @@ test.describe("Personal info page", () => {
 });
 
 test.describe("Personal info with userprofile enabled", async () => {
+  const realm = "user-profile";
+
   test.beforeAll(async () => {
-    await importRealm(userProfileRealm as RealmRepresentation);
-    await importUserProfile(
-      userProfileConfig as UserProfileConfig,
-      "user-profile",
-    );
+    await importUserProfile(userProfileConfig as UserProfileConfig, realm);
+  });
+
+  test("render user profile fields", async ({ page }) => {
+    await login(page, "jdoe", "jdoe", realm);
+
+    await expect(page.locator("#select")).toBeVisible();
   });
 });
