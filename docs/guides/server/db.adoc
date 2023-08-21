@@ -28,7 +28,7 @@ The server has built-in support for different databases. You can query the avail
 By default, the server uses the `dev-file` database. This is the default database that the server will use to persist data and
 only exists for development use-cases. The `dev-file` database is not suitable for production use-cases, and must be replaced before deploying to production.
 
-== Installing a database driver
+== Installing a database driver (Oracle)
 
 Database drivers are shipped as part of Keycloak except for the Oracle Database driver which needs to be installed separately.
 
