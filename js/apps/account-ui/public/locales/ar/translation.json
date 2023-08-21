@@ -153,6 +153,7 @@
   "unShareSuccess": "تم إلغاء مشاركة المورد بنجاح.",
   "update": "تحديث",
   "updateCredAriaLabel": "تحديث اعتماد",
+  "updateEmail": "تحديث البريد الإلكتروني",
   "updateError": "لم يكن بالاستطاعة تحديث المورد بسبب الخطأ: {{error}}",
   "updateSuccess": "تم تحديث المورد بنجاح.",
   "user": "المستخدم",
