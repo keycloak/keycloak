@@ -91,7 +91,7 @@
   "devDependencies": {
     "@4tw/cypress-drag-drop": "^2.2.4",
     "@testing-library/cypress": "^9.0.0",
-    "@testing-library/jest-dom": "^5.17.0",
+    "@testing-library/jest-dom": "^6.0.1",
     "@testing-library/react": "^14.0.0",
     "@types/dagre": "^0.7.49",
     "@types/file-saver": "^2.0.5",
