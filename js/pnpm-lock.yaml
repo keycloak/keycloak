@@ -57,8 +57,8 @@ importers:
         specifier: ^3.0.1
         version: 3.0.1
       tslib:
-        specifier: ^2.6.1
-        version: 2.6.1
+        specifier: ^2.6.2
+        version: 2.6.2
       typescript:
         specifier: ^5.1.6
         version: 5.1.6
@@ -374,7 +374,7 @@ importers:
         version: 0.4.3(rollup@3.27.1)
       '@rollup/plugin-typescript':
         specifier: ^11.1.2
-        version: 11.1.2(rollup@3.27.1)(tslib@2.6.1)(typescript@5.1.6)
+        version: 11.1.2(rollup@3.27.1)(tslib@2.6.2)(typescript@5.1.6)
       es6-promise:
         specifier: ^4.2.8
         version: 4.2.8
@@ -1106,7 +1106,7 @@ packages:
       react-dom: 18.2.0(react@18.2.0)
       react-dropzone: 9.0.0(react@18.2.0)
       react-monaco-editor: 0.51.0(@types/react@18.2.18)(monaco-editor@0.41.0)(react@18.2.0)
-      tslib: 2.6.1
+      tslib: 2.6.2
     dev: false
 
   /@patternfly/react-core@4.276.8(react-dom@18.2.0)(react@18.2.0):
@@ -1123,7 +1123,7 @@ packages:
       react-dom: 18.2.0(react@18.2.0)
       react-dropzone: 9.0.0(react@18.2.0)
       tippy.js: 5.1.2
-      tslib: 2.6.1
+      tslib: 2.6.2
     dev: false
 
   /@patternfly/react-icons@4.93.6(react-dom@18.2.0)(react@18.2.0):
@@ -1153,7 +1153,7 @@ packages:
       lodash: 4.17.21
       react: 18.2.0
       react-dom: 18.2.0(react@18.2.0)
-      tslib: 2.6.1
+      tslib: 2.6.2
     dev: false
 
   /@patternfly/react-tokens@4.94.6:
@@ -1169,7 +1169,7 @@ packages:
       is-glob: 4.0.3
       open: 9.1.0
       picocolors: 1.0.0
-      tslib: 2.6.1
+      tslib: 2.6.2
     dev: true
 
   /@playwright/test@1.36.2:
@@ -1356,7 +1356,7 @@ packages:
       terser: 5.19.0
     dev: true
 
-  /@rollup/plugin-typescript@11.1.2(rollup@3.27.1)(tslib@2.6.1)(typescript@5.1.6):
+  /@rollup/plugin-typescript@11.1.2(rollup@3.27.1)(tslib@2.6.2)(typescript@5.1.6):
     resolution: {integrity: sha512-0ghSOCMcA7fl1JM+0gYRf+Q/HWyg+zg7/gDSc+fRLmlJWcW5K1I+CLRzaRhXf4Y3DRyPnnDo4M2ktw+a6JcDEg==}
     engines: {node: '>=14.0.0'}
     peerDependencies:
@@ -1372,7 +1372,7 @@ packages:
       '@rollup/pluginutils': 5.0.2(rollup@3.27.1)
       resolve: 1.22.2
       rollup: 3.27.1
-      tslib: 2.6.1
+      tslib: 2.6.2
       typescript: 5.1.6
     dev: true
 
@@ -3870,14 +3870,14 @@ packages:
     resolution: {integrity: sha512-kCWw3+Aai8Uox+5tHCNgMFaUdgidxvMnLWO6fM5sZ0hA2wlHP5/DHGF0ECe84BiB95qdJbKNEJhWKVDvMN+JDQ==}
     engines: {node: '>= 10'}
     dependencies:
-      tslib: 2.6.1
+      tslib: 2.6.2
     dev: false
 
   /file-selector@0.6.0:
     resolution: {integrity: sha512-QlZ5yJC0VxHxQQsQhXvBaC7VRJ2uaxTf+Tfpu4Z/OcVQJVpZO+DGU0rkoVW5ce2SccxugvpBJoMvUs59iILYdw==}
     engines: {node: '>= 12'}
     dependencies:
-      tslib: 2.6.1
+      tslib: 2.6.2
     dev: false
 
   /fill-range@7.0.1:
@@ -4856,7 +4856,7 @@ packages:
     hasBin: true
     dependencies:
       ldapjs: 2.3.3
-      tslib: 2.6.1
+      tslib: 2.6.2
     dev: true
 
   /ldapjs@2.3.3:
@@ -5947,7 +5947,7 @@ packages:
   /rxjs@7.8.1:
     resolution: {integrity: sha512-AA3TVj+0A2iuIoQkWEK/tqFjBq2j+6PO6Y0zJcvzLAFhEFIO3HL0vls9hWLncZbAAbK0mar7oZ4V079I/qPMxg==}
     dependencies:
-      tslib: 2.6.1
+      tslib: 2.6.2
     dev: true
 
   /safe-buffer@5.1.2:
@@ -6294,7 +6294,7 @@ packages:
     engines: {node: ^14.18.0 || >=16.0.0}
     dependencies:
       '@pkgr/utils': 2.4.2
-      tslib: 2.6.1
+      tslib: 2.6.2
     dev: true
 
   /tabbable@5.3.3:
@@ -6478,8 +6478,8 @@ packages:
       strip-bom: 3.0.0
     dev: true
 
-  /tslib@2.6.1:
-    resolution: {integrity: sha512-t0hLfiEKfMUoqhG+U1oid7Pva4bbDPHYfJNiB7BiIjRkj1pyC++4N3huJfqY6aRH6VTB0rvtzQwjM4K6qpfOig==}
+  /tslib@2.6.2:
+    resolution: {integrity: sha512-AEYxH93jGFPn/a2iVAwW87VuUIkR1FVUKB77NwMF7nBTDkDrrT/Hpt/IrCJ0QXhW27jTBDcf5ZY7w6RiqTMw2Q==}
 
   /tunnel-agent@0.6.0:
     resolution: {integrity: sha512-McnNiV1l8RYeY8tBgEpuodCC1mLUdbSN+CYBL7kJsJNInOP8UjDDEwdk6Mw60vdLLrr5NHKZhMAOSrR2NZuQ+w==}

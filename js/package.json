@@ -20,7 +20,7 @@
     "husky": "^8.0.3",
     "lint-staged": "^13.2.3",
     "prettier": "^3.0.1",
-    "tslib": "^2.6.1",
+    "tslib": "^2.6.2",
     "typescript": "^5.1.6",
     "wireit": "^0.10.0"
   },
