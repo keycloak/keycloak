@@ -80,7 +80,7 @@ export const GroupPickerDialog = ({
               first: `${first}`,
               max: `${max + 1}`,
             },
-            isSearching ? null : { search: filter },
+            isSearching ? { search: filter } : null,
           ),
         );
       } else if (!navigation.map(({ id }) => id).includes(groupId)) {
@@ -92,7 +92,7 @@ export const GroupPickerDialog = ({
       }
 
       if (isSearching) {
-        count = (await adminClient.groups.count({ search: filter, top: true }))
+        count = (await adminClient.groups.count({ search: filter, top: false }))
           .count;
       }
 

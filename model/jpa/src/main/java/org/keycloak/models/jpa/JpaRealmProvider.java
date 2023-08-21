@@ -581,7 +581,14 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
 
     @Override
     public Long getGroupsCountByNameContaining(RealmModel realm, String search) {
-        return searchForGroupByNameStream(realm, search, false, null, null).count();
+        TypedQuery<String> query;
+        query = em.createNamedQuery("getGroupIdsByNameContaining", String.class);
+
+        query.setParameter("realm", realm.getId())
+                .setParameter("search", search);
+        Stream<String> groups =  query.getResultStream();
+
+        return groups.count();
     }
 
     @Override
@@ -1032,6 +1039,21 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
         Stream<String> groups =  paginateQuery(query, first, max).getResultStream();
 
         return closing(groups.map(id -> session.groups().getGroupById(realm, id)).sorted(GroupModel.COMPARE_BY_NAME).distinct());
+    }
+
+    @Override
+    public Stream<GroupModel> searchForGroupByNameNoAncestryStream(RealmModel realm, String search, Boolean exact, Integer first, Integer max) {
+        TypedQuery<String> query;
+        if (Boolean.TRUE.equals(exact)) {
+            query = em.createNamedQuery("getGroupIdsByName", String.class);
+        } else {
+            query = em.createNamedQuery("getGroupIdsByNameContaining", String.class);
+        }
+        query.setParameter("realm", realm.getId())
+                .setParameter("search", search);
+        Stream<String> groups =  paginateQuery(query, first, max).getResultStream();
+
+        return closing(groups.map(id ->session.groups().getGroupById(realm, id)).sorted(GroupModel.COMPARE_BY_NAME));
     }
 
     @Override

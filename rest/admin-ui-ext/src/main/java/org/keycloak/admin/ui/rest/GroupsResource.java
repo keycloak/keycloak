@@ -60,16 +60,17 @@ public class GroupsResource {
         GroupPermissionEvaluator groupsEvaluator = auth.groups();
         groupsEvaluator.requireList();
         final Stream<GroupModel> stream;
+        final boolean canViewGlobal = groupsEvaluator.canView();
+
         if (global) {
-            stream = session.groups().searchForGroupByNameStream(realm, search.trim(), exact, first, max);
+            stream = session.groups().searchForGroupByNameNoAncestryStream(realm, search.trim(), exact, first, max)
+                    .filter(group -> canViewGlobal || groupsEvaluator.canView(group));
         } else {
-            stream = this.realm.getTopLevelGroupsStream(search, first, max);
+            stream = this.realm.getTopLevelGroupsStream().filter(g -> g.getName().contains(search))
+                    .filter(group -> canViewGlobal || groupsEvaluator.canView(group))
+                    .skip(first).limit(max);
         }
-        if("".equals(search)) {
-            return stream.map(g -> toRepresentation(g, false)).map(g -> GroupUtils.populateSubGroupCount(realm, session, g));
-        }
-        return GroupUtils.populateGroupHierarchyFromSubGroups(session, realm, stream, false, groupsEvaluator)
-            .map(g -> GroupUtils.populateSubGroupCount(realm, session, g));
+        return GroupUtils.toAncestorsLine(groupsEvaluator, stream, false);
     }
 
     @GET

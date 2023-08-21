@@ -90,4 +90,21 @@ public interface GroupLookupProvider {
     Stream<GroupModel> searchForSubgroupsByParentIdStream(RealmModel realm, String id, Integer firstResult, Integer maxResults);
 
     Stream<GroupModel> searchForSubgroupsByParentIdNameStream(RealmModel realm, String id, String search, Integer firstResult, Integer maxResults);
+
+    /**
+     * Returns the groups stream with the given string in name for the given realm. Does not find return any hierarchy
+     *
+
+     *
+     * @param realm Realm.
+     * @param search Case sensitive searched string.
+     * @param exact Boolean which defines wheather search param should be matched exactly.
+     * @param firstResult First result to return. Ignored if negative or {@code null}.
+     * @param maxResults Maximum number of results to return. Ignored if negative or {@code null}.
+     * @return Stream of groups that have the given string in their name themselves
+     */
+    Stream<GroupModel> searchForGroupByNameNoAncestryStream(RealmModel realm, String search, Boolean exact, Integer firstResult, Integer maxResults);
+
+
 }
+

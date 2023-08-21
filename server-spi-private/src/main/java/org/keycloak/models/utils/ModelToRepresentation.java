@@ -159,6 +159,10 @@ public class ModelToRepresentation {
         return session.groups().searchForGroupByNameStream(realm, search, exact, first, max);
     }
 
+    public static Stream<GroupModel> searchForGroupByNameNoAncestryStream(KeycloakSession session, RealmModel realm, boolean full, String search, Boolean exact, Integer first, Integer max) {
+        return session.groups().searchForGroupByNameNoAncestryStream(realm, search, exact, first, max);
+    }
+
     public static Stream<GroupRepresentation> searchForGroupByName(UserModel user, boolean full, String search, Integer first, Integer max) {
         return user.getGroupsStream(search, first, max)
                 .map(group -> toRepresentation(group, full));
@@ -184,6 +188,7 @@ public class ModelToRepresentation {
 
     public static GroupRepresentation toGroupHierarchy(GroupModel group, boolean full, String search, Boolean exact) {
         GroupRepresentation rep = toRepresentation(group, full);
+        //recursive call that builds the whole tree !
         List<GroupRepresentation> subGroups = group.getSubGroupsStream()
                 .filter(g -> groupMatchesSearchOrIsPathElement(g, search, exact))
                 .map(subGroup -> toGroupHierarchy(subGroup, full, search, exact)).collect(Collectors.toList());

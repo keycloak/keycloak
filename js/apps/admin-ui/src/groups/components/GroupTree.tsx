@@ -180,7 +180,7 @@ export const GroupTree = ({
           search === "" ? null : { search },
         ),
       );
-      const count = (await adminClient.groups.count({ search, top: true }))
+      const count = (await adminClient.groups.count({ search, top: false }))
         .count;
       let subGroups: GroupRepresentation[] = [];
       if (activeItem) {

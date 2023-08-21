@@ -82,6 +82,14 @@ public class GroupStorageManager extends AbstractStorageManager<GroupStorageProv
     }
 
     @Override
+    public Stream<GroupModel> searchForGroupByNameNoAncestryStream(RealmModel realm, String search, Boolean exact, Integer firstResult, Integer maxResults) {
+        Stream<GroupModel> local = localStorage().searchForGroupByNameNoAncestryStream(realm, search, exact,  firstResult, maxResults);
+        Stream<GroupModel> ext = flatMapEnabledStorageProvidersWithTimeout(realm, GroupLookupProvider.class,
+                p -> p.searchForGroupByNameNoAncestryStream(realm, search, exact, firstResult, maxResults));
+        return Stream.concat(local, ext);
+    }
+
+    @Override
     public Stream<GroupModel> searchForSubgroupsByParentIdStream(RealmModel realm, String id, Integer firstResult, Integer maxResults) {
         Stream<GroupModel> local = localStorage().searchForSubgroupsByParentIdStream(realm, id, firstResult, maxResults);
         // TODO: not really sure if this is actually external or internal behavior... need to learn more about what's going on with this steorage manager class and legacy providers
