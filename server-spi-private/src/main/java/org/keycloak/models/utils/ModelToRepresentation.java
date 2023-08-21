@@ -230,6 +230,7 @@ public class ModelToRepresentation {
 
     public static GroupRepresentation toGroupHierarchy(GroupModel group, boolean full, String search, Boolean exact) {
         GroupRepresentation rep = toRepresentation(group, full);
+        //recursive call that builds the whole tree !
         List<GroupRepresentation> subGroups = group.getSubGroupsStream()
                 .filter(g -> groupMatchesSearchOrIsPathElement(g, search, exact))
                 .map(subGroup -> toGroupHierarchy(subGroup, full, search, exact)).collect(Collectors.toList());
