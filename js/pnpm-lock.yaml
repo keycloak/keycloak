@@ -136,8 +136,8 @@ importers:
         specifier: ^4.4.8
         version: 4.4.8(@types/node@20.4.6)
       vite-plugin-checker:
-        specifier: ^0.6.1
-        version: 0.6.1(eslint@8.46.0)(typescript@5.1.6)(vite@4.4.8)
+        specifier: ^0.6.2
+        version: 0.6.2(eslint@8.46.0)(typescript@5.1.6)(vite@4.4.8)
 
   apps/admin-ui:
     dependencies:
@@ -281,8 +281,8 @@ importers:
         specifier: ^4.4.8
         version: 4.4.8(@types/node@20.4.6)
       vite-plugin-checker:
-        specifier: ^0.6.1
-        version: 0.6.1(eslint@8.46.0)(typescript@5.1.6)(vite@4.4.8)
+        specifier: ^0.6.2
+        version: 0.6.2(eslint@8.46.0)(typescript@5.1.6)(vite@4.4.8)
       vitest:
         specifier: ^0.34.1
         version: 0.34.1(jsdom@22.1.0)
@@ -416,8 +416,8 @@ importers:
         specifier: ^4.4.8
         version: 4.4.8(@types/node@20.4.6)
       vite-plugin-checker:
-        specifier: ^0.6.1
-        version: 0.6.1(eslint@8.46.0)(typescript@5.1.6)(vite@4.4.8)
+        specifier: ^0.6.2
+        version: 0.6.2(eslint@8.46.0)(typescript@5.1.6)(vite@4.4.8)
       vite-plugin-dts:
         specifier: ^3.4.0
         version: 3.4.0(@types/node@20.4.6)(rollup@3.27.1)(typescript@5.1.6)(vite@4.4.8)
@@ -456,8 +456,8 @@ importers:
         specifier: ^4.4.8
         version: 4.4.8(@types/node@20.4.6)
       vite-plugin-checker:
-        specifier: ^0.6.1
-        version: 0.6.1(eslint@8.46.0)(typescript@5.1.6)(vite@4.4.8)
+        specifier: ^0.6.2
+        version: 0.6.2(eslint@8.46.0)(typescript@5.1.6)(vite@4.4.8)
       vite-plugin-dts:
         specifier: ^3.4.0
         version: 3.4.0(@types/node@20.4.6)(rollup@3.27.1)(typescript@5.1.6)(vite@4.4.8)
@@ -6681,8 +6681,8 @@ packages:
       - terser
     dev: true
 
-  /vite-plugin-checker@0.6.1(eslint@8.46.0)(typescript@5.1.6)(vite@4.4.8):
-    resolution: {integrity: sha512-4fAiu3W/IwRJuJkkUZlWbLunSzsvijDf0eDN6g/MGh6BUK4SMclOTGbLJCPvdAcMOQvVmm8JyJeYLYd4//8CkA==}
+  /vite-plugin-checker@0.6.2(eslint@8.46.0)(typescript@5.1.6)(vite@4.4.8):
+    resolution: {integrity: sha512-YvvvQ+IjY09BX7Ab+1pjxkELQsBd4rPhWNw8WLBeFVxu/E7O+n6VYAqNsKdK/a2luFlX/sMpoWdGFfg4HvwdJQ==}
     engines: {node: '>=14.16'}
     peerDependencies:
       eslint: '>=7'
