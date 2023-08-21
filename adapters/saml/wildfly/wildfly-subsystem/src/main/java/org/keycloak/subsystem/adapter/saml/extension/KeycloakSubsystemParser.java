@@ -498,7 +498,7 @@ class KeycloakSubsystemParser implements XMLStreamConstants, XMLElementReader<Li
             writer.writeAttribute(Constants.XML.ENTITY_ID, sp.getName());
             ModelNode spAttributes = sp.getValue();
             for (SimpleAttributeDefinition attr : ServiceProviderDefinition.ATTRIBUTES) {
-                attr.getAttributeMarshaller().marshallAsAttribute(attr, spAttributes, false, writer);
+                attr.getMarshaller().marshallAsAttribute(attr, spAttributes, false, writer);
             }
             writeKeys(writer, spAttributes.get(Constants.Model.KEY));
             writePrincipalNameMapping(writer, spAttributes);
@@ -521,7 +521,7 @@ class KeycloakSubsystemParser implements XMLStreamConstants, XMLElementReader<Li
 
             ModelNode idpAttributes = idp.getValue();
             for (SimpleAttributeDefinition attr : IdentityProviderDefinition.ATTRIBUTES) {
-                attr.getAttributeMarshaller().marshallAsAttribute(attr, idpAttributes, false, writer);
+                attr.getMarshaller().marshallAsAttribute(attr, idpAttributes, false, writer);
             }
 
             writeSingleSignOn(writer, idpAttributes.get(Constants.Model.SINGLE_SIGN_ON));
@@ -539,7 +539,7 @@ class KeycloakSubsystemParser implements XMLStreamConstants, XMLElementReader<Li
         }
         writer.writeStartElement(Constants.XML.SINGLE_SIGN_ON);
         for (SimpleAttributeDefinition attr : SingleSignOnDefinition.ATTRIBUTES) {
-            attr.getAttributeMarshaller().marshallAsAttribute(attr, model, false, writer);
+            attr.getMarshaller().marshallAsAttribute(attr, model, false, writer);
         }
         writer.writeEndElement();
     }
@@ -550,7 +550,7 @@ class KeycloakSubsystemParser implements XMLStreamConstants, XMLElementReader<Li
         }
         writer.writeStartElement(Constants.XML.SINGLE_LOGOUT);
         for (SimpleAttributeDefinition attr : SingleLogoutDefinition.ATTRIBUTES) {
-            attr.getAttributeMarshaller().marshallAsAttribute(attr, model, false, writer);
+            attr.getMarshaller().marshallAsAttribute(attr, model, false, writer);
         }
         writer.writeEndElement();
     }
@@ -569,10 +569,10 @@ class KeycloakSubsystemParser implements XMLStreamConstants, XMLElementReader<Li
 
             ModelNode keyAttributes = key.getValue();
             for (SimpleAttributeDefinition attr : KeyDefinition.ATTRIBUTES) {
-                attr.getAttributeMarshaller().marshallAsAttribute(attr, keyAttributes, false, writer);
+                attr.getMarshaller().marshallAsAttribute(attr, keyAttributes, false, writer);
             }
             for (SimpleAttributeDefinition attr : KeyDefinition.ELEMENTS) {
-                attr.getAttributeMarshaller().marshallAsElement(attr, keyAttributes, false, writer);
+                attr.getMarshaller().marshallAsElement(attr, keyAttributes, false, writer);
             }
             writeKeyStore(writer, keyAttributes.get(Constants.Model.KEY_STORE));
 
@@ -599,7 +599,7 @@ class KeycloakSubsystemParser implements XMLStreamConstants, XMLElementReader<Li
             return;
         }
         writer.writeStartElement(Constants.XML.ALLOWED_CLOCK_SKEW);
-        AllowedClockSkew.ALLOWED_CLOCK_SKEW_UNIT.getAttributeMarshaller().marshallAsAttribute(AllowedClockSkew.ALLOWED_CLOCK_SKEW_UNIT, allowedClockSkew, false, writer);
+        AllowedClockSkew.ALLOWED_CLOCK_SKEW_UNIT.getMarshaller().marshallAsAttribute(AllowedClockSkew.ALLOWED_CLOCK_SKEW_UNIT, allowedClockSkew, false, writer);
         ModelNode allowedClockSkewValue = allowedClockSkew.get(Constants.Model.ALLOWED_CLOCK_SKEW_VALUE);
         char[] chars = allowedClockSkewValue.asString().toCharArray();
         writer.writeCharacters(chars, 0, chars.length);
@@ -612,7 +612,7 @@ class KeycloakSubsystemParser implements XMLStreamConstants, XMLElementReader<Li
         }
         writer.writeStartElement(Constants.XML.KEY_STORE);
         for (SimpleAttributeDefinition attr : KeyStoreDefinition.ATTRIBUTES) {
-            attr.getAttributeMarshaller().marshallAsAttribute(attr, model, false, writer);
+            attr.getMarshaller().marshallAsAttribute(attr, model, false, writer);
         }
         writePrivateKey(writer, model);
         writeCertificate(writer, model);
@@ -626,7 +626,7 @@ class KeycloakSubsystemParser implements XMLStreamConstants, XMLElementReader<Li
         }
         writer.writeStartElement(Constants.XML.CERTIFICATE);
         SimpleAttributeDefinition attr = KeyStoreCertificateDefinition.CERTIFICATE_ALIAS;
-        attr.getAttributeMarshaller().marshallAsAttribute(attr, model, false, writer);
+        attr.getMarshaller().marshallAsAttribute(attr, model, false, writer);
         writer.writeEndElement();
     }
 
@@ -639,7 +639,7 @@ class KeycloakSubsystemParser implements XMLStreamConstants, XMLElementReader<Li
         }
         writer.writeStartElement(Constants.XML.PRIVATE_KEY);
         for (SimpleAttributeDefinition attr : KeyStorePrivateKeyDefinition.ATTRIBUTES) {
-            attr.getAttributeMarshaller().marshallAsAttribute(attr, model, false, writer);
+            attr.getMarshaller().marshallAsAttribute(attr, model, false, writer);
         }
         writer.writeEndElement();
     }

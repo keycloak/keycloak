@@ -31,9 +31,9 @@
     <packaging>pom</packaging>
 
     <properties>
-        <wildfly.version>27.0.0.Final</wildfly.version>
+        <wildfly.version>29.0.0.Final</wildfly.version>
         <wildfly.build-tools.version>1.2.13.Final</wildfly.build-tools.version>
-        <wildfly.core.version>19.0.0.Final</wildfly.core.version>
+        <wildfly.core.version>21.1.0.Final</wildfly.core.version>
 
         <feature-pack.resources.directory>${basedir}/../../saml-adapters/wildfly-adapter/wildfly-jakarta-modules/src/main/resources</feature-pack.resources.directory>
         <version.org.wildfly.galleon-plugins>6.4.0.Final</version.org.wildfly.galleon-plugins>

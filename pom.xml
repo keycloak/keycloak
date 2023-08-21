@@ -659,6 +659,12 @@
                 <version>${apache.httpcomponents.version}</version>
             </dependency>
             <dependency>
+                <groupId>org.wildfly.common</groupId>
+                <artifactId>wildfly-common</artifactId>
+                <version>${wildfly.common.version}</version>
+                <scope>provided</scope>
+            </dependency>
+            <dependency>
                 <groupId>org.wildfly.core</groupId>
                 <artifactId>wildfly-controller</artifactId>
                 <version>${wildfly.core.version}</version>
