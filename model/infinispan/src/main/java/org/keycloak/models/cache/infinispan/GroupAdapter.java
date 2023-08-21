@@ -17,6 +17,8 @@
 
 package org.keycloak.models.cache.infinispan;
 
+import java.util.Map.Entry;
+import java.util.stream.Collectors;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
@@ -224,33 +226,41 @@ public class GroupAdapter implements GroupModel {
     public Stream<GroupModel> getSubGroupsStream() {
         if (isUpdated()) return updated.getSubGroupsStream();
         Set<GroupModel> subGroups = new HashSet<>();
-        for (String id : cached.getSubGroups(modelSupplier)) {
-            GroupModel subGroup = keycloakSession.groups().getGroupById(realm, id);
+
+        for (Map.Entry<String, String> entry : cached.getSubGroups(modelSupplier).entrySet()) {
+            GroupModel subGroup = keycloakSession.groups().getGroupById(realm, entry.getValue());
             if (subGroup == null) {
                 // chance that role was removed, so just delegate to persistence and get user invalidated
                 getDelegateForUpdate();
                 return updated.getSubGroupsStream();
-
             }
             subGroups.add(subGroup);
         }
-        return subGroups.stream().sorted(GroupModel.COMPARE_BY_NAME);
+        return subGroups.stream();
     }
 
     @Override
     public Stream<GroupModel> getSubGroupsStream(String search, Integer firstResult, Integer maxResults) {
         if (isUpdated()) return updated.getSubGroupsStream(search, firstResult, maxResults);
         Set<GroupModel> subGroups = new HashSet<>();
-        for (String id : cached.getSubGroups(modelSupplier)) {
+
+        Set<String> groupIds = cached.getSubGroups(modelSupplier).entrySet().stream()
+            .filter(entry -> entry.getKey().contains(search))
+            .skip(firstResult)
+            .limit(maxResults)
+            .map(Entry::getValue)
+            .collect(Collectors.toSet());
+
+        for (String id : groupIds) {
             GroupModel subGroup = keycloakSession.groups().getGroupById(realm, id);
             if (subGroup == null) {
                 // chance that role was removed, so just delegate to persistence and get user invalidated
                 getDelegateForUpdate();
-                return updated.getSubGroupsStream(search, firstResult, maxResults);
+                return updated.getSubGroupsStream();
             }
             subGroups.add(subGroup);
         }
-        return subGroups.stream().sorted(GroupModel.COMPARE_BY_NAME);
+        return subGroups.stream();
     }
 
 

@@ -17,6 +17,8 @@
 
 package org.keycloak.models.cache.infinispan.entities;
 
+import java.util.Map;
+import java.util.TreeMap;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.RealmModel;
@@ -40,7 +42,7 @@ public class CachedGroup extends AbstractRevisioned implements InRealm {
     private final String parentId;
     private final LazyLoader<GroupModel, MultivaluedHashMap<String, String>> attributes;
     private final LazyLoader<GroupModel, Set<String>> roleMappings;
-    private final LazyLoader<GroupModel, Set<String>> subGroups;
+    private final LazyLoader<GroupModel, Map<String, String>> subGroups;
 
     public CachedGroup(Long revision, RealmModel realm, GroupModel group) {
         super(revision, group.getId());
@@ -49,7 +51,7 @@ public class CachedGroup extends AbstractRevisioned implements InRealm {
         this.parentId = group.getParentId();
         this.attributes = new DefaultLazyLoader<>(source -> new MultivaluedHashMap<>(source.getAttributes()), MultivaluedHashMap::new);
         this.roleMappings = new DefaultLazyLoader<>(source -> source.getRoleMappingsStream().map(RoleModel::getId).collect(Collectors.toSet()), Collections::emptySet);
-        this.subGroups = new DefaultLazyLoader<>(source -> source.getSubGroupsStream().map(GroupModel::getId).collect(Collectors.toSet()), Collections::emptySet);
+        this.subGroups = new DefaultLazyLoader<>(source -> source.getSubGroupsStream().collect(Collectors.toMap(GroupModel::getName, GroupModel::getId, (g, g1) -> g1, TreeMap::new)), Collections::emptyMap);
     }
 
     public String getRealm() {
@@ -76,7 +78,7 @@ public class CachedGroup extends AbstractRevisioned implements InRealm {
         return parentId;
     }
 
-    public Set<String> getSubGroups(Supplier<GroupModel> group) {
+    public Map<String, String> getSubGroups(Supplier<GroupModel> group) {
         return subGroups.get(group);
     }
 }
