@@ -28,6 +28,46 @@ The server has built-in support for different databases. You can query the avail
 By default, the server uses the `dev-file` database. This is the default database that the server will use to persist data and
 only exists for development use-cases. The `dev-file` database is not suitable for production use-cases, and must be replaced before deploying to production.
 
+== Installing a database driver (Oracle)
+
+Database drivers are shipped as part of Keycloak except for the Oracle Database driver which needs to be installed separately.
+
+Install the Oracle Database driver if you want to connect to an Oracle Database, or skip this section if you want to connect to a different database.
+
+To install the Oracle Database driver for Keycloak:
+
+. Download the `ojdbc11` and `orai18n` JAR files from one of the following sources:
+
+.. *Zipped JDBC driver and Companion Jars* version ${properties["oracle-jdbc.version"]} from the https://www.oracle.com/database/technologies/appdev/jdbc-downloads.html[Oracle driver download page].
+
+.. Maven Central via `link:++https://repo1.maven.org/maven2/com/oracle/database/jdbc/ojdbc11/${properties["oracle-jdbc.version"]}/ojdbc11-${properties["oracle-jdbc.version"]}.jar++[ojdbc11]` and `link:++https://repo1.maven.org/maven2/com/oracle/database/nls/orai18n/${properties["oracle-jdbc.version"]}/orai18n-${properties["oracle-jdbc.version"]}.jar++[orai18n]`.
+
+.. Installation media recommended by the database vendor for the specific database in use.
+
+. When running the unzipped distribution: Place the `ojdbc11` and `orai18n` JAR files in Keycloak's `providers` folder
+
+. When running containers: Build a custom Keycloak image and add the JARs in the `providers` folder. When building a custom image for the Keycloak Operator, those images need to be optimized images with all build-time options of Keycloak set.
++
+A minimal Dockerfile to build an image which can be used with the Keycloak Operator and includes Oracle Database JDBC drivers downloaded from Maven Central looks like the following:
++
+[source,dockerfile]
+----
+FROM quay.io/keycloak/keycloak:latest
+ADD --chown=keycloak:keycloak https://repo1.maven.org/maven2/com/oracle/database/jdbc/ojdbc11/${properties["oracle-jdbc.version"]}/ojdbc11-${properties["oracle-jdbc.version"]}.jar /opt/keycloak/providers/ojdbc11.jar
+ADD --chown=keycloak:keycloak https://repo1.maven.org/maven2/com/oracle/database/nls/orai18n/${properties["oracle-jdbc.version"]}/orai18n-${properties["oracle-jdbc.version"]}.jar /opt/keycloak/providers/orai18n.jar
+# Setting the build parameter for the database:
+ENV KC_DB=oracle
+# Add all other build parameters needed, for example enable health and metrics:
+ENV KC_HEALTH_ENABLED=true
+ENV KC_METRICS_ENABLED=true
+# To be able to use the image with the Keycloak Operator, it needs to be optimized, which requires Keycloak's build step:
+RUN /opt/keycloak/bin/kc.sh build
+----
++
+See the <@links.server id="containers" /> {section} for details on how to build optimized images.
+
+Then continue configuring the database as described in the next section.
+
 == Configuring a database
 
 For each supported database, the server provides some opinionated defaults to simplify database configuration. You complete the configuration by providing some key settings such as the database host and credentials.
