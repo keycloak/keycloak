@@ -97,13 +97,15 @@ type EditUserFormProps = {
   refresh: () => void;
 };
 
+type FormFields = Omit<UserRepresentation, "userProfileMetadata">;
+
 const EditUserForm = ({ user, bruteForced, refresh }: EditUserFormProps) => {
   const { t } = useTranslation("users");
   const { realm } = useRealm();
   const { addAlert, addError } = useAlerts();
   const navigate = useNavigate();
   const { hasAccess } = useAccess();
-  const userForm = useForm<Omit<UserRepresentation, "userProfileMetadata">>({
+  const userForm = useForm<FormFields>({
     mode: "onChange",
     defaultValues: user,
   });
