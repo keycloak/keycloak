@@ -65,6 +65,7 @@ import org.keycloak.quarkus.runtime.cli.command.ShowConfig;
 import org.keycloak.quarkus.runtime.cli.command.StartDev;
 import org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
+import org.keycloak.quarkus.runtime.configuration.KeycloakConfiguration;
 import org.keycloak.quarkus.runtime.configuration.PersistedConfigSource;
 import org.keycloak.quarkus.runtime.configuration.QuarkusPropertiesConfigSource;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
@@ -553,7 +554,7 @@ public final class Picocli {
     }
 
     private static void checkChangesInBuildOptionsDuringAutoBuild() {
-        if (Configuration.isOptimized()) {
+        if (KeycloakConfiguration.isOptimized()) {
             List<PropertyMapper> buildOptions = stream(Configuration.getPropertyNames(true).spliterator(), false)
                     .sorted()
                     .map(PropertyMappers::getMapper)

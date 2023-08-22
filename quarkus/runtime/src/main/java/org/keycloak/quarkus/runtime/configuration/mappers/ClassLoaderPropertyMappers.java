@@ -13,10 +13,8 @@ import java.util.Set;
 import org.keycloak.common.Profile;
 import org.keycloak.common.Profile.Feature;
 import org.keycloak.config.ClassLoaderOptions;
-import org.keycloak.config.StorageOptions;
 import org.keycloak.quarkus.runtime.Environment;
-import org.keycloak.quarkus.runtime.configuration.Configuration;
-import org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider;
+import org.keycloak.quarkus.runtime.configuration.KeycloakConfiguration;
 
 final class ClassLoaderPropertyMappers {
 
@@ -44,8 +42,7 @@ final class ClassLoaderPropertyMappers {
                         "org.keycloak:keycloak-crypto-fips1402", "org.bouncycastle:bc-fips", "org.bouncycastle:bctls-fips", "org.bouncycastle:bcpkix-fips"));
             }
 
-            Optional<String> storage = Configuration.getOptionalValue(
-                    MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX + StorageOptions.STORAGE.getKey());
+            Optional<String> storage = KeycloakConfiguration.getStorage();
 
             if (storage.isEmpty()) {
                 ignoredArtifacts.add("org.keycloak:keycloak-model-map-jpa");

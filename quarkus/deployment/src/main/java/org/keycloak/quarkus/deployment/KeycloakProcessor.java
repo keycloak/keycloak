@@ -63,9 +63,6 @@ import org.keycloak.authorization.policy.provider.js.DeployedScriptPolicyFactory
 import org.keycloak.common.Profile;
 import org.keycloak.common.crypto.FipsMode;
 import org.keycloak.common.util.StreamUtil;
-import org.keycloak.config.DatabaseOptions;
-import org.keycloak.config.SecurityOptions;
-import org.keycloak.config.StorageOptions;
 import org.keycloak.connections.jpa.DefaultJpaConnectionProviderFactory;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.connections.jpa.JpaConnectionSpi;
@@ -85,6 +82,7 @@ import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.KeycloakRecorder;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
 import org.keycloak.quarkus.runtime.configuration.KeycloakConfigSourceProvider;
+import org.keycloak.quarkus.runtime.configuration.KeycloakConfiguration;
 import org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider;
 import org.keycloak.quarkus.runtime.configuration.PersistedConfigSource;
 import org.keycloak.quarkus.runtime.configuration.QuarkusPropertiesConfigSource;
@@ -141,10 +139,10 @@ import static org.keycloak.quarkus.runtime.Environment.getProviderFiles;
 import static org.keycloak.quarkus.runtime.KeycloakRecorder.DEFAULT_HEALTH_ENDPOINT;
 import static org.keycloak.quarkus.runtime.KeycloakRecorder.DEFAULT_METRICS_ENDPOINT;
 import static org.keycloak.quarkus.runtime.Providers.getProviderManager;
-import static org.keycloak.quarkus.runtime.configuration.Configuration.getOptionalKcValue;
 import static org.keycloak.quarkus.runtime.configuration.Configuration.getOptionalValue;
 import static org.keycloak.quarkus.runtime.configuration.Configuration.getPropertyNames;
-import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX;
+import static org.keycloak.quarkus.runtime.configuration.KeycloakConfiguration.isHealthEnabled;
+import static org.keycloak.quarkus.runtime.configuration.KeycloakConfiguration.isMetricsEnabled;
 import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_QUARKUS;
 import static org.keycloak.quarkus.runtime.configuration.QuarkusPropertiesConfigSource.QUARKUS_PROPERTY_ENABLED;
 import static org.keycloak.quarkus.runtime.storage.legacy.database.LegacyJpaConnectionProviderFactory.QUERY_PROPERTY_PREFIX;
@@ -280,11 +278,9 @@ class KeycloakProcessor {
 
     @BuildStep(onlyIf = IsJpaStoreEnabled.class)
     void produceDefaultPersistenceUnit(BuildProducer<PersistenceXmlDescriptorBuildItem> producer) {
-        String storage = Configuration.getRawValue(
-                NS_KEYCLOAK_PREFIX.concat(StorageOptions.STORAGE.getKey()));
         ParsedPersistenceXmlDescriptor descriptor;
 
-        if (storage == null) {
+        if (KeycloakConfiguration.isLegacyJpa()) {
             descriptor = PersistenceXmlParser.locateIndividualPersistenceUnit(
                     Thread.currentThread().getContextClassLoader().getResource("default-persistence.xml"));
         } else {
@@ -303,10 +299,10 @@ class KeycloakProcessor {
 
         Properties unitProperties = descriptor.getProperties();
 
-        final Optional<String> dialect = getOptionalKcValue(DatabaseOptions.DB_DIALECT.getKey());
+        final Optional<String> dialect = KeycloakConfiguration.getDbDialect();
         dialect.ifPresent(d -> unitProperties.setProperty(AvailableSettings.DIALECT, d));
 
-        final Optional<String> defaultSchema = getOptionalKcValue(DatabaseOptions.DB_SCHEMA.getKey());
+        final Optional<String> defaultSchema = KeycloakConfiguration.getDbSchema();
         defaultSchema.ifPresent(ds -> unitProperties.setProperty(AvailableSettings.DEFAULT_SCHEMA, ds));
 
         unitProperties.setProperty(AvailableSettings.JAKARTA_TRANSACTION_TYPE, PersistenceUnitTransactionType.JTA.name());
@@ -491,7 +487,7 @@ class KeycloakProcessor {
 
         if (!Environment.isRebuildCheck()) {
             // not auto-build (e.g.: start without optimized option) but a regular build to create an optimized server image
-            Configuration.markAsOptimized(properties);
+            KeycloakConfiguration.markAsOptimized(properties);
         }
 
         String profile = Environment.getProfile();
@@ -632,9 +628,8 @@ class KeycloakProcessor {
     @BuildStep
     @Record(ExecutionTime.STATIC_INIT)
     void setCryptoProvider(KeycloakRecorder recorder) {
-        FipsMode fipsMode = getOptionalValue(NS_KEYCLOAK_PREFIX + SecurityOptions.FIPS_MODE.getKey())
-                .map(FipsMode::valueOfOption)
-                .orElse(FipsMode.DISABLED);
+        FipsMode fipsMode = KeycloakConfiguration.getFipsMode().orElse(FipsMode.DISABLED);
+
         if (Profile.isFeatureEnabled(Profile.Feature.FIPS) && !fipsMode.isFipsEnabled()) {
             // default to non strict when fips feature enabled
             fipsMode = FipsMode.NON_STRICT;
@@ -833,14 +828,6 @@ class KeycloakProcessor {
         } else {
             logger.debugv("No default provider for {0}", spi.getName());
         }
-    }
-
-    private boolean isMetricsEnabled() {
-        return Configuration.getOptionalBooleanValue(NS_KEYCLOAK_PREFIX.concat("metrics-enabled")).orElse(false);
-    }
-
-    private boolean isHealthEnabled() {
-        return Configuration.getOptionalBooleanValue(NS_KEYCLOAK_PREFIX.concat("health-enabled")).orElse(false);
     }
 
     static JdbcDataSourceBuildItem getDefaultDataSource(List<JdbcDataSourceBuildItem> jdbcDataSources) {

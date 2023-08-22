@@ -17,13 +17,9 @@
 
 package org.keycloak.quarkus.deployment;
 
-import static org.keycloak.config.StorageOptions.STORAGE;
-import static org.keycloak.quarkus.runtime.configuration.Configuration.getOptionalValue;
-import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX;
+import org.keycloak.quarkus.runtime.configuration.KeycloakConfiguration;
 
-import java.util.Optional;
 import java.util.function.BooleanSupplier;
-import org.keycloak.config.StorageOptions;
 
 /***
  * Checks if JPA is enabled either for the legacy or the new store.
@@ -34,14 +30,6 @@ public class IsJpaStoreEnabled implements BooleanSupplier {
 
     @Override
     public boolean getAsBoolean() {
-        Optional<String> storage = getOptionalValue(NS_KEYCLOAK_PREFIX.concat(STORAGE.getKey()));
-
-        if (storage.isEmpty()) {
-            // legacy store
-            return true;
-        }
-
-        return StorageOptions.StorageType.jpa.name().equals(storage.orElse(null));
+        return KeycloakConfiguration.isJpa();
     }
-
 }

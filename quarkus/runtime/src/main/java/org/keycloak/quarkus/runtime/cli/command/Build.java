@@ -22,23 +22,20 @@ import static org.keycloak.quarkus.runtime.Environment.isDevMode;
 import static org.keycloak.quarkus.runtime.cli.Picocli.println;
 import static org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource.getAllCliArgs;
 
-import org.keycloak.config.ClassLoaderOptions;
 import org.keycloak.config.OptionCategory;
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.Messages;
-import org.keycloak.quarkus.runtime.configuration.Configuration;
-import org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider;
 
 import io.quarkus.bootstrap.runner.QuarkusEntryPoint;
 import io.quarkus.bootstrap.runner.RunnerClassLoader;
 
 import io.quarkus.runtime.configuration.ProfileManager;
-import io.smallrye.config.ConfigValue;
-import org.keycloak.utils.StringUtil;
+import org.keycloak.quarkus.runtime.configuration.KeycloakConfiguration;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
 
 import java.util.List;
+import java.util.Optional;
 
 @Command(name = Build.NAME,
         header = "Creates a new and optimized server image.",
@@ -92,13 +89,9 @@ public final class Build extends AbstractCommand implements Runnable {
     }
 
     private static void configureBuildClassLoader() {
-        ConfigValue ignoredArtifacts = Configuration.getCurrentBuiltTimeProperty(
-                MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX + ClassLoaderOptions.IGNORE_ARTIFACTS.getKey());
-
-        if (ignoredArtifacts != null && StringUtil.isNotBlank(ignoredArtifacts.getValue())) {
-            // ignored artifacts must be set prior to starting re-augmentation
-            System.setProperty("quarkus.class-loading.removed-artifacts", ignoredArtifacts.getValue());
-        }
+        Optional<String> ignoredArtifacts = KeycloakConfiguration.getIgnoredArtifacts();
+        // ignored artifacts must be set prior to starting re-augmentation
+        ignoredArtifacts.ifPresent(s -> System.setProperty("quarkus.class-loading.removed-artifacts", s));
     }
 
     @Override

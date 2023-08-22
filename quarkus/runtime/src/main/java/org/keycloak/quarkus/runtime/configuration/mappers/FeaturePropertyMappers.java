@@ -1,20 +1,17 @@
 package org.keycloak.quarkus.runtime.configuration.mappers;
 
+import io.smallrye.config.ConfigSourceInterceptorContext;
 import org.keycloak.common.Profile;
 import org.keycloak.config.FeatureOptions;
-import org.keycloak.quarkus.runtime.configuration.Configuration;
-
-import static java.util.Optional.of;
-import static org.keycloak.config.StorageOptions.STORAGE;
-import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX;
-import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromOption;
+import org.keycloak.quarkus.runtime.configuration.KeycloakConfiguration;
 
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
-import io.smallrye.config.ConfigSourceInterceptorContext;
+import static java.util.Optional.of;
+import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromOption;
 
 final class FeaturePropertyMappers {
 
@@ -34,7 +31,7 @@ final class FeaturePropertyMappers {
     }
 
     private static Optional<String> transformFeatures(Optional<String> features, ConfigSourceInterceptorContext context) {
-        if (Configuration.getOptionalValue(NS_KEYCLOAK_PREFIX.concat(STORAGE.getKey())).isEmpty()) {
+        if (KeycloakConfiguration.isLegacyJpa()) {
             return features;
         }
 
