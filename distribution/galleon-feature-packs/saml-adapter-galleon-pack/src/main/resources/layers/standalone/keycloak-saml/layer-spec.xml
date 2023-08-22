@@ -6,4 +6,7 @@
         <layer name="undertow"/>
     </dependencies>
     <feature spec="subsystem.keycloak-saml"/>
+    <packages>
+        <package name="docs.licenses" optional="true"/>
+    </packages>
 </layer-spec>

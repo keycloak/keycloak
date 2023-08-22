@@ -37,8 +37,8 @@
 
         <feature-pack.resources.directory>${basedir}/../../saml-adapters/wildfly-adapter/wildfly-jakarta-modules/src/main/resources</feature-pack.resources.directory>
         <version.org.wildfly.galleon-plugins>6.4.0.Final</version.org.wildfly.galleon-plugins>
-        <xmlFileSource>${basedir}/src/main/resources/licenses/keycloak/licenses.xml</xmlFileSource>
-        <outputDirectory>${basedir}/target/resources/packages/licenses/content/docs/licenses-keycloak</outputDirectory>
+        <version.org.wildfly.maven.plugins.licenses-plugin>2.3.1.Final</version.org.wildfly.maven.plugins.licenses-plugin>
+        <license.directory>${project.build.directory}/resources/packages/docs.licenses/content/docs/licenses</license.directory>
     </properties>
     <dependencies>
         <dependency>
@@ -256,8 +256,27 @@
                 </executions>
             </plugin>
             <plugin>
-                <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-distribution-licenses-maven-plugin</artifactId>
+                <groupId>org.wildfly.maven.plugins</groupId>
+                <artifactId>licenses-plugin</artifactId>
+                <version>${version.org.wildfly.maven.plugins.licenses-plugin}</version>
+                <inherited>false</inherited>
+                <executions>
+                    <execution>
+                        <id>update-licenses-xml</id>
+                        <goals>
+                            <goal>insert-versions</goal>
+                        </goals>
+                        <phase>process-resources</phase>
+                        <configuration>
+                            <generateVersionProperty>true</generateVersionProperty>
+                            <sortByGroupIdAndArtifactId>true</sortByGroupIdAndArtifactId>
+                            <licensesConfigFiles>
+                                <licensesConfigFile>${basedir}/target/resources/license/licenses.xml</licensesConfigFile>
+                            </licensesConfigFiles>
+                            <licensesOutputFile>${license.directory}/keycloak-saml-adapter-galleon-pack-licenses.xml</licensesOutputFile>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>
