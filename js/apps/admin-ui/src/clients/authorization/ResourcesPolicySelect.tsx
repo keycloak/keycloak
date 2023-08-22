@@ -181,7 +181,9 @@ export const ResourcesPolicySelect = ({
         {field.value?.map((permissionId) => {
           const item = items.find(
             (permission) => permission.id === permissionId,
-          )!;
+          );
+
+          if (!item) return;
 
           const route = to(item);
           return (
