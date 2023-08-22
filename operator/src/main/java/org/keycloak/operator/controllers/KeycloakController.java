@@ -130,7 +130,9 @@ public class KeycloakController implements Reconciler<Keycloak>, EventSourceInit
             updateControl = UpdateControl.updateStatus(kc);
         }
 
-        if (!status.isReady()) {
+        if (!status.isReady() || context.getSecondaryResource(StatefulSet.class)
+                .map(s -> s.getMetadata().getAnnotations().get(Constants.KEYCLOAK_MISSING_SECRETS_ANNOTATION))
+                .filter(Boolean::valueOf).isPresent()) {
             updateControl.rescheduleAfter(10, TimeUnit.SECONDS);
         }
 

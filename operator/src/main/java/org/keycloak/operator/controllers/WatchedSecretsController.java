@@ -104,6 +104,8 @@ public class WatchedSecretsController implements Reconciler<Secret>, EventSource
     @Override
     public void annotateDeployment(List<String> desiredWatchedSecretsNames, Keycloak keycloakCR, StatefulSet deployment) {
         List<Secret> currentSecrets = fetchSecrets(desiredWatchedSecretsNames, keycloakCR.getMetadata().getNamespace());
+        deployment.getMetadata().getAnnotations().put(Constants.KEYCLOAK_MISSING_SECRETS_ANNOTATION,
+                Boolean.valueOf(currentSecrets.size() < desiredWatchedSecretsNames.size()).toString());
         deployment.getMetadata().getAnnotations().put(Constants.KEYCLOAK_WATCHING_ANNOTATION, desiredWatchedSecretsNames.stream().collect(Collectors.joining(";")));
         deployment.getSpec().getTemplate().getMetadata().getAnnotations().put(Constants.KEYCLOAK_WATCHED_SECRET_HASH_ANNOTATION, getSecretHash(currentSecrets));
     }
