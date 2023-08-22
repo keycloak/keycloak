@@ -496,7 +496,7 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
                     if (MediaType.APPLICATION_JSON_TYPE.isCompatible(contentMediaType)) {
                         userInfo = response.asJson();
                     } else if (APPLICATION_JWT_TYPE.isCompatible(contentMediaType)) {
-                        userInfo = JsonSerialization.readValue(parseTokenInput(accessToken, false), JsonNode.class);
+                        userInfo = JsonSerialization.readValue(parseTokenInput(response.asString(), false), JsonNode.class);
                     } else {
                         throw new RuntimeException("Unsupported content-type [" + contentType + "] in response from [" + userInfoUrl + "].");
                     }
