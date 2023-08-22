@@ -34,7 +34,7 @@ type RealmSettingsEmailTabProps = {
   save: (realm: RealmRepresentation) => void;
 };
 
-type FormType = Omit<RealmRepresentation, "users" | "federatedUsers">;
+type FormFields = Omit<RealmRepresentation, "users" | "federatedUsers">;
 
 export const RealmSettingsEmailTab = ({
   realm,
