@@ -22,7 +22,7 @@ export const ClientRegistrationRoute: AppRouteObject = {
 };
 
 export const toClientRegistration = (
-  params: ClientRegistrationParams
+  params: ClientRegistrationParams,
 ): Partial<Path> => ({
   pathname: generatePath(ClientRegistrationRoute.path, params),
 });

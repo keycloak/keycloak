@@ -41,7 +41,7 @@ export const UserIdpModal = ({
   });
 
   const onSubmit = async (
-    federatedIdentity: FederatedIdentityRepresentation
+    federatedIdentity: FederatedIdentityRepresentation,
   ) => {
     try {
       await adminClient.users.addToFederatedIdentity({

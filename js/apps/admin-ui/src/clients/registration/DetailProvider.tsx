@@ -64,7 +64,7 @@ export default function DetailProvider() {
       setParentId(realm?.id || "");
       reset(data || { providerId });
     },
-    []
+    [],
   );
 
   const providerName = useWatch({ control, defaultValue: "", name: "name" });
@@ -73,7 +73,7 @@ export default function DetailProvider() {
     if (component.config)
       Object.entries(component.config).forEach(
         ([key, value]) =>
-          (component.config![key] = Array.isArray(value) ? value : [value])
+          (component.config![key] = Array.isArray(value) ? value : [value]),
       );
     try {
       const updatedComponent = {

@@ -104,7 +104,7 @@ export default class GroupPage extends PageObject {
 
   public moveGroupItemAction(
     groupName: string,
-    destinationGroupName: string[]
+    destinationGroupName: string[],
   ) {
     listingPage.clickRowDetails(groupName);
     listingPage.clickDetailMenu("Move to");
@@ -176,18 +176,18 @@ export default class GroupPage extends PageObject {
 
   public assertNotificationCouldNotCreateGroupWithEmptyName() {
     masthead.checkNotificationMessage(
-      "Could not create group Group name is missing"
+      "Could not create group Group name is missing",
     );
     return this;
   }
 
   public assertNotificationCouldNotCreateGroupWithDuplicatedName(
-    groupName: string
+    groupName: string,
   ) {
     masthead.checkNotificationMessage(
       "Could not create group Top level group named '" +
         groupName +
-        "' already exists."
+        "' already exists.",
     );
     return this;
   }

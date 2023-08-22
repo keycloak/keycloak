@@ -13,7 +13,7 @@ const MAX_REALMS = 4;
 
 export const RecentRealmsContext = createNamedContext<string[] | undefined>(
   "RecentRealmsContext",
-  undefined
+  undefined,
 );
 
 export const RecentRealmsProvider = ({ children }: PropsWithChildren) => {
@@ -22,12 +22,12 @@ export const RecentRealmsProvider = ({ children }: PropsWithChildren) => {
   const [storedRealms, setStoredRealms] = useStoredState(
     localStorage,
     "recentRealms",
-    [realm]
+    [realm],
   );
 
   const recentRealms = useMemo(
     () => filterRealmNames(realms, storedRealms),
-    [realms, storedRealms]
+    [realms, storedRealms],
   );
 
   useEffect(() => {

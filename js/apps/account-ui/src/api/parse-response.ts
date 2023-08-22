@@ -9,7 +9,7 @@ export async function parseResponse<T>(response: Response): Promise<T> {
 
   if (!isJSON) {
     throw new Error(
-      `Expected response to have a JSON content type, got '${contentType}' instead.`
+      `Expected response to have a JSON content type, got '${contentType}' instead.`,
     );
   }
 
@@ -48,6 +48,6 @@ function getErrorMessage(data: unknown): string {
   }
 
   throw new Error(
-    "Unable to retrieve error message from response, no matching key found."
+    "Unable to retrieve error message from response, no matching key found.",
   );
 }

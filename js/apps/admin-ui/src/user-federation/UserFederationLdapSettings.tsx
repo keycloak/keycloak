@@ -54,7 +54,7 @@ export default function UserFederationLdapSettings() {
       setComponent(component);
       setupForm(component);
     },
-    [id, refreshCount]
+    [id, refreshCount],
   );
 
   const useTab = (tab: UserFederationLdapTab) =>
@@ -67,12 +67,12 @@ export default function UserFederationLdapSettings() {
     form.reset(component);
     form.setValue(
       "config.periodicChangedUsersSync",
-      component.config?.["changedSyncPeriod"]?.[0] !== "-1"
+      component.config?.["changedSyncPeriod"]?.[0] !== "-1",
     );
 
     form.setValue(
       "config.periodicFullSync",
-      component.config?.["fullSyncPeriod"]?.[0] !== "-1"
+      component.config?.["fullSyncPeriod"]?.[0] !== "-1",
     );
   };
 
@@ -80,7 +80,7 @@ export default function UserFederationLdapSettings() {
     try {
       await adminClient.components.update(
         { id: id! },
-        serializeFormData(formData)
+        serializeFormData(formData),
       );
       addAlert(t("saveSuccess"), AlertVariant.success);
       refresh();

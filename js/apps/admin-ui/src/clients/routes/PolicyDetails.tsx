@@ -11,7 +11,7 @@ export type PolicyDetailsParams = {
 };
 
 const PolicyDetails = lazy(
-  () => import("../authorization/policy/PolicyDetails")
+  () => import("../authorization/policy/PolicyDetails"),
 );
 
 export const PolicyDetailsRoute: AppRouteObject = {
@@ -24,7 +24,7 @@ export const PolicyDetailsRoute: AppRouteObject = {
 };
 
 export const toPolicyDetails = (
-  params: PolicyDetailsParams
+  params: PolicyDetailsParams,
 ): Partial<Path> => ({
   pathname: generatePath(PolicyDetailsRoute.path, params),
 });

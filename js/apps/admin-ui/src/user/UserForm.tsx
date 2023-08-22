@@ -109,7 +109,7 @@ export const UserForm = ({
   } = useFormContext();
   const watchUsernameInput = watch("username");
   const [selectedGroups, setSelectedGroups] = useState<GroupRepresentation[]>(
-    []
+    [],
   );
   const [open, setOpen] = useState(false);
   const [locked, setLocked] = useState(isLocked);

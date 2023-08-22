@@ -90,7 +90,7 @@ const TypeSelector = ({
             clientId,
             scope,
             scope.type,
-            value as ClientScope
+            value as ClientScope,
           );
           addAlert(t("clientScopeSuccess"), AlertVariant.success);
           refresh();
@@ -116,7 +116,7 @@ export const ClientScopes = ({
   const [searchType, setSearchType] = useState<SearchType>("name");
 
   const [searchTypeType, setSearchTypeType] = useState<AllClientScopes>(
-    AllClientScopes.none
+    AllClientScopes.none,
   );
 
   const [addDialogOpen, setAddDialogOpen] = useState(false);
@@ -170,7 +170,7 @@ export const ClientScopes = ({
     setRest(
       clientScopes
         .filter((scope) => !names.includes(scope.name))
-        .filter((scope) => scope.protocol === protocol)
+        .filter((scope) => scope.protocol === protocol),
     );
 
     const filter =
@@ -203,7 +203,7 @@ export const ClientScopes = ({
         await removeClientScope(
           clientId,
           selectedRows[0],
-          selectedRows[0].type as ClientScope
+          selectedRows[0].type as ClientScope,
         );
         addAlert(t("clientScopeRemoveSuccess"), AlertVariant.success);
         refresh();
@@ -226,8 +226,8 @@ export const ClientScopes = ({
               await Promise.all(
                 scopes.map(
                   async (scope) =>
-                    await addClientScope(clientId, scope.scope, scope.type!)
-                )
+                    await addClientScope(clientId, scope.scope, scope.type!),
+                ),
               );
               addAlert(t("clientScopeSuccess"), AlertVariant.success);
               refresh();
@@ -299,9 +299,9 @@ export const ClientScopes = ({
                                 removeClientScope(
                                   clientId,
                                   { ...row },
-                                  row.type as ClientScope
-                                )
-                              )
+                                  row.type as ClientScope,
+                                ),
+                              ),
                             );
 
                             setKebabOpen(false);

@@ -39,7 +39,7 @@ function transformAnnotations(input: KeyValueType[]): Record<string, unknown> {
   return Object.fromEntries(
     input
       .filter((annotation) => annotation.key.length > 0)
-      .map((annotation) => [annotation.key, annotation.value] as const)
+      .map((annotation) => [annotation.key, annotation.value] as const),
   );
 }
 
@@ -64,7 +64,7 @@ export default function AttributesGroupForm() {
 
   const matchingGroup = useMemo(
     () => config?.groups?.find(({ name }) => name === params.name),
-    [config?.groups]
+    [config?.groups],
   );
 
   useEffect(() => {

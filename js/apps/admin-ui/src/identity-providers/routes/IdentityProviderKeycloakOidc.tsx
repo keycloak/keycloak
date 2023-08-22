@@ -17,7 +17,7 @@ export const IdentityProviderKeycloakOidcRoute: AppRouteObject = {
 };
 
 export const toIdentityProviderKeycloakOidc = (
-  params: IdentityProviderKeycloakOidcParams
+  params: IdentityProviderKeycloakOidcParams,
 ): Partial<Path> => ({
   pathname: generatePath(IdentityProviderKeycloakOidcRoute.path, params),
 });

@@ -92,7 +92,7 @@ export default function ResourceDetails() {
       setResource(resource);
       setupForm(resource);
     },
-    []
+    [],
   );
 
   const submit = async (submitted: SubmittedResource) => {
@@ -107,13 +107,13 @@ export default function ResourceDetails() {
       } else {
         const result = await adminClient.clients.createResource(
           { id },
-          resource
+          resource,
         );
         navigate(toResourceDetails({ realm, id, resourceId: result._id! }));
       }
       addAlert(
         t((resourceId ? "update" : "create") + "ResourceSuccess"),
-        AlertVariant.success
+        AlertVariant.success,
       );
     } catch (error) {
       addError("clients:resourceSaveError", error);

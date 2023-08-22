@@ -47,11 +47,13 @@ export const ClientScope = () => {
     () => adminClient.clientScopes.find(),
     (scopes) => {
       setSelectedScopes(
-        getValues("clientScopes").map((s) => scopes.find((c) => c.id === s.id)!)
+        getValues("clientScopes").map(
+          (s) => scopes.find((c) => c.id === s.id)!,
+        ),
       );
       setScopes(localeSort(scopes, mapByKey("name")));
     },
-    []
+    [],
   );
 
   return (
@@ -84,7 +86,7 @@ export const ClientScope = () => {
                   (scope) =>
                     !field.value
                       .map((c: RequiredIdValue) => c.id)
-                      .includes(scope.id!)
+                      .includes(scope.id!),
                 )}
                 isClientScopesConditionType
                 open={open}
@@ -152,7 +154,7 @@ export const ClientScope = () => {
                     onClick={() => {
                       setValue("clientScopes", [
                         ...getValues("clientScopes").filter(
-                          (s) => s.id !== scope.id
+                          (s) => s.id !== scope.id,
                         ),
                       ]);
                       setSelectedScopes([

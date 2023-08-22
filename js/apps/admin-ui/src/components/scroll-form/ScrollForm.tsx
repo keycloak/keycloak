@@ -38,7 +38,7 @@ export const ScrollForm = ({
   const { t } = useTranslation("common");
   const shownSections = useMemo(
     () => sections.filter(({ isHidden }) => !isHidden),
-    [sections]
+    [sections],
   );
 
   return (

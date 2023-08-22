@@ -70,7 +70,7 @@ export const OtpPolicy = ({ realm, realmUpdated }: OtpPolicyProps) => {
 
   const supportedApplications = useMemo(() => {
     const labels = (realm.otpSupportedApplications ?? []).map((key) =>
-      t(`otpSupportedApplications.${key}`)
+      t(`otpSupportedApplications.${key}`),
     );
 
     return localeSort(labels, (label) => label);

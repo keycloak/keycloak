@@ -122,7 +122,7 @@ const AuthorizationEvaluateContent = ({ client }: Props) => {
     (roles) => {
       setClientRoles(roles);
     },
-    []
+    [],
   );
 
   useFetch(
@@ -139,7 +139,7 @@ const AuthorizationEvaluateContent = ({ client }: Props) => {
       setResources(resources);
       setScopes(scopes);
     },
-    []
+    [],
   );
 
   const evaluate = async () => {
@@ -159,7 +159,7 @@ const AuthorizationEvaluateContent = ({ client }: Props) => {
           scopes: r.scopes?.filter((s) =>
             Object.values(keys)
               .flatMap((v) => v)
-              .includes(s.name!)
+              .includes(s.name!),
           ),
         })),
       entitlements: false,
@@ -167,7 +167,7 @@ const AuthorizationEvaluateContent = ({ client }: Props) => {
         attributes: Object.fromEntries(
           formValues.context.attributes
             .filter((item) => item.key || item.value !== "")
-            .map(({ key, value }) => [key, value])
+            .map(({ key, value }) => [key, value]),
         ),
       },
     };
@@ -175,7 +175,7 @@ const AuthorizationEvaluateContent = ({ client }: Props) => {
     try {
       const evaluation = await adminClient.clients.evaluateResource(
         { id: client.id!, realm: realm.realm },
-        resEval
+        resEval,
       );
 
       setEvaluateResult(evaluation);
@@ -254,8 +254,8 @@ const AuthorizationEvaluateContent = ({ client }: Props) => {
                         if (field.value?.includes(option)) {
                           field.onChange(
                             field.value.filter(
-                              (item: string) => item !== option
-                            )
+                              (item: string) => item !== option,
+                            ),
                           );
                         } else {
                           field.onChange([...(field.value || []), option]);
@@ -375,8 +375,8 @@ const AuthorizationEvaluateContent = ({ client }: Props) => {
                             if (field.value.includes(option)) {
                               field.onChange(
                                 field.value.filter(
-                                  (item: string) => item !== option
-                                )
+                                  (item: string) => item !== option,
+                                ),
                               );
                             } else {
                               field.onChange([...field.value, option]);

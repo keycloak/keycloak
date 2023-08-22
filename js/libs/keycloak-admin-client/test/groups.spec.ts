@@ -69,7 +69,7 @@ describe("Groups", () => {
     const groupId = currentGroup.id;
     await kcAdminClient.groups.update(
       { id: groupId! },
-      { name: "another-group-name" }
+      { name: "another-group-name" },
     );
 
     const group = await kcAdminClient.groups.findOne({
@@ -85,7 +85,7 @@ describe("Groups", () => {
     const groupId = currentGroup.id;
     const childGroup = await kcAdminClient.groups.setOrCreateChild(
       { id: groupId! },
-      { name: groupName }
+      { name: groupName },
     );
 
     expect(childGroup.id).to.be.ok;

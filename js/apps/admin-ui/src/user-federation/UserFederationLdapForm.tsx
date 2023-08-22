@@ -91,7 +91,7 @@ export const UserFederationLdapForm = ({
 };
 
 export function serializeFormData(
-  formData: LdapComponentRepresentation
+  formData: LdapComponentRepresentation,
 ): LdapComponentRepresentation {
   const { config } = formData;
 

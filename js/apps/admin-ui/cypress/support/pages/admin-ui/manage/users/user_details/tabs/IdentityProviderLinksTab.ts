@@ -62,7 +62,7 @@ export default class IdentityProviderLinksTab {
   public assertNoIdentityProvidersLinkedMessageExist(exist: boolean) {
     cy.get(this.linkedProvidersSection).should(
       (exist ? "" : "not.") + "contain.text",
-      "No identity providers linked. Choose one from the list below."
+      "No identity providers linked. Choose one from the list below.",
     );
 
     return this;
@@ -71,7 +71,7 @@ export default class IdentityProviderLinksTab {
   public assertNoAvailableIdentityProvidersMessageExist(exist: boolean) {
     cy.get(this.availableProvidersSection).should(
       (exist ? "" : "not.") + "contain.text",
-      "No available identity providers."
+      "No available identity providers.",
     );
 
     return this;
@@ -92,7 +92,7 @@ export default class IdentityProviderLinksTab {
   public assertLinkAccountModalIdentityProviderInputEqual(idpName: string) {
     cy.findByTestId(this.linkAccountModalIdentityProviderInput).should(
       "have.value",
-      idpName
+      idpName,
     );
 
     return this;
@@ -106,7 +106,7 @@ export default class IdentityProviderLinksTab {
 
   public assertNotificationAlreadyLinkedError() {
     masthead.checkNotificationMessage(
-      "Could not link identity provider User is already linked with provider"
+      "Could not link identity provider User is already linked with provider",
     );
 
     return this;
@@ -144,7 +144,7 @@ export default class IdentityProviderLinksTab {
   public assertLinkedIdentityProviderExist(idpName: string, exist: boolean) {
     cy.get(this.linkedProvidersSection).should(
       (exist ? "" : "not.") + "contain.text",
-      idpName
+      idpName,
     );
 
     return this;
@@ -153,7 +153,7 @@ export default class IdentityProviderLinksTab {
   public assertAvailableIdentityProviderExist(idpName: string, exist: boolean) {
     cy.get(this.availableProvidersSection).should(
       (exist ? "" : "not.") + "contain.text",
-      idpName
+      idpName,
     );
 
     return this;

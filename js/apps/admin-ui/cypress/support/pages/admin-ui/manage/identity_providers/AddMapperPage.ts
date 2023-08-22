@@ -81,7 +81,7 @@ export default class AddMapperPage {
 
     cy.findByTestId(this.socialProfileJSONfieldPath).clear();
     cy.findByTestId(this.socialProfileJSONfieldPath).type(
-      "social profile JSON field path"
+      "social profile JSON field path",
     );
 
     cy.findByTestId(this.userAttributeName).clear();
@@ -175,7 +175,7 @@ export default class AddMapperPage {
 
     cy.findByTestId(this.userSessionAttributeValue).clear();
     cy.findByTestId(this.userSessionAttributeValue).type(
-      "user session attribute value"
+      "user session attribute value",
     );
 
     this.saveNewMapper();
@@ -323,7 +323,7 @@ export default class AddMapperPage {
     cy.findByTestId(this.socialProfileJSONfieldPath).clear();
 
     cy.findByTestId(this.socialProfileJSONfieldPath).type(
-      "social profile JSON field path edited"
+      "social profile JSON field path edited",
     );
 
     cy.findByTestId(this.userAttributeName).clear();

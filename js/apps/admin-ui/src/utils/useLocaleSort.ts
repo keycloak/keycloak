@@ -30,9 +30,9 @@ type KeysMatching<T, V> = {
 export const mapByKey =
   <
     T extends { [_ in K]?: string },
-    K extends KeysMatching<T, string | undefined>
+    K extends KeysMatching<T, string | undefined>,
   >(
-    key: K
+    key: K,
   ) =>
   (item: T) =>
     item[key];

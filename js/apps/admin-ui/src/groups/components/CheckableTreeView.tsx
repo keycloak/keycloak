@@ -45,11 +45,11 @@ export const CheckableTreeView = ({
         checkedItems: checked
           ? prevState.checkedItems.concat(
               flatCheckedItems.filter(
-                (item) => !prevState.checkedItems.some((i) => i.id === item.id)
-              )
+                (item) => !prevState.checkedItems.some((i) => i.id === item.id),
+              ),
             )
           : prevState.checkedItems.filter(
-              (item) => !flatCheckedItems.some((i) => i.id === item.id)
+              (item) => !flatCheckedItems.some((i) => i.id === item.id),
             ),
       };
     });

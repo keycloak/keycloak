@@ -33,7 +33,7 @@ export const GroupBreadCrumbs = () => {
               <Link
                 to={location.pathname.substring(
                   0,
-                  location.pathname.indexOf(group.id!) + group.id!.length
+                  location.pathname.indexOf(group.id!) + group.id!.length,
                 )}
                 onClick={() => remove(group)}
               >

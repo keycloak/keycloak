@@ -50,12 +50,12 @@ export const SamlSignature = () => {
   const { control, watch } = useFormContext<FormFields>();
 
   const signDocs = watch(
-    convertAttributeNameToForm<FormFields>("attributes.saml.server.signature")
+    convertAttributeNameToForm<FormFields>("attributes.saml.server.signature"),
   );
   const signAssertion = watch(
     convertAttributeNameToForm<FormFields>(
-      "attributes.saml.assertion.signature"
-    )
+      "attributes.saml.assertion.signature",
+    ),
   );
 
   return (
@@ -86,7 +86,7 @@ export const SamlSignature = () => {
           >
             <Controller
               name={convertAttributeNameToForm<FormFields>(
-                "attributes.saml.signature.algorithm"
+                "attributes.saml.signature.algorithm",
               )}
               defaultValue={SIGNATURE_ALGORITHMS[0]}
               control={control}
@@ -126,7 +126,7 @@ export const SamlSignature = () => {
           >
             <Controller
               name={convertAttributeNameToForm<FormFields>(
-                "attributes.saml.server.signature.keyinfo.xmlSigKeyInfoKeyNameTransformer"
+                "attributes.saml.server.signature.keyinfo.xmlSigKeyInfoKeyNameTransformer",
               )}
               defaultValue={KEYNAME_TRANSFORMER[0]}
               control={control}

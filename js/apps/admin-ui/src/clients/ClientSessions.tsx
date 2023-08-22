@@ -15,7 +15,7 @@ export const ClientSessions = ({ client }: ClientSessionsProps) => {
 
   const loader: LoaderFunction<UserSessionRepresentation> = async (
     first,
-    max
+    max,
   ) => {
     const mapSessionsToType =
       (type: string) => (sessions: UserSessionRepresentation[]) =>

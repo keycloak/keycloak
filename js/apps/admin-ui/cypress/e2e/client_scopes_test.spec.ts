@@ -220,7 +220,7 @@ describe("Client Scopes test", () => {
         .checkModalMessage(modalMessageDeleteConfirmation)
         .confirmModal();
       masthead.checkNotificationMessage(
-        notificationMessageDeletionConfirmation
+        notificationMessageDeletionConfirmation,
       );
       listingPage.checkInSearchBarChangeTypeToButtonIsDisabled();
     });
@@ -235,7 +235,7 @@ describe("Client Scopes test", () => {
         .checkModalMessage(modalMessageDeleteConfirmation)
         .confirmModal();
       masthead.checkNotificationMessage(
-        notificationMessageDeletionConfirmation
+        notificationMessageDeletionConfirmation,
       );
       listingPage.checkInSearchBarChangeTypeToButtonIsDisabled();
     });
@@ -252,7 +252,7 @@ describe("Client Scopes test", () => {
         .checkModalMessage(modalMessageDeleteConfirmation)
         .confirmModal();
       masthead.checkNotificationMessage(
-        notificationMessageDeletionConfirmation
+        notificationMessageDeletionConfirmation,
       );
       listingPage.checkInSearchBarChangeTypeToButtonIsDisabled();
     });
@@ -272,7 +272,7 @@ describe("Client Scopes test", () => {
       createClientScopePage.fillClientScopeData("address").save();
 
       masthead.checkNotificationMessage(
-        "Could not create client scope: 'Client Scope address already exists'"
+        "Could not create client scope: 'Client Scope address already exists'",
       );
     });
 
@@ -456,7 +456,7 @@ describe("Client Scopes test", () => {
 
       mappersTab.addMappersByConfiguration(
         predefinedMapper,
-        predefinedMapperName
+        predefinedMapperName,
       );
       cy.checkA11y();
 

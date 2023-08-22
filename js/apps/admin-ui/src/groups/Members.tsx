@@ -99,14 +99,14 @@ export const Members = () => {
       const subGroups = getSubGroups(currentGroup()?.subGroups!);
       for (const group of subGroups) {
         members = members.concat(
-          await adminClient.groups.listMembers({ id: group.id! })
+          await adminClient.groups.listMembers({ id: group.id! }),
         );
       }
       members = uniqBy(members, (member) => member.username);
     }
 
     const memberOfPromises = await Promise.all(
-      members.map((member) => getMembership(member.id!))
+      members.map((member) => getMembership(member.id!)),
     );
     return members.map((member: UserRepresentation, i) => {
       return { ...member, membership: memberOfPromises[i] };
@@ -174,13 +174,13 @@ export const Members = () => {
                               adminClient.users.delFromGroup({
                                 id: user.id!,
                                 groupId: id!,
-                              })
-                            )
+                              }),
+                            ),
                           );
                           setIsKebabOpen(false);
                           addAlert(
                             t("usersLeft", { count: selectedRows.length }),
-                            AlertVariant.success
+                            AlertVariant.success,
                           );
                         } catch (error) {
                           addError("groups:usersLeftError", error);
@@ -210,7 +210,7 @@ export const Members = () => {
                       });
                       addAlert(
                         t("usersLeft", { count: 1 }),
-                        AlertVariant.success
+                        AlertVariant.success,
                       );
                     } catch (error) {
                       addError("groups:usersLeftError", error);

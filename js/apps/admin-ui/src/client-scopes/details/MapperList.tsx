@@ -21,7 +21,7 @@ import {
 type MapperListProps = {
   model: ClientScopeRepresentation | ClientRepresentation;
   onAdd: (
-    mappers: ProtocolMapperTypeRepresentation | ProtocolMapperRepresentation[]
+    mappers: ProtocolMapperTypeRepresentation | ProtocolMapperRepresentation[],
   ) => void;
   onDelete: (mapper: ProtocolMapperRepresentation) => void;
   detailLink: (id: string) => Partial<Path>;
@@ -74,7 +74,7 @@ export const MapperList = ({
 
     const list = mapperList.reduce<Row[]>((rows, mapper) => {
       const mapperType = mapperTypes.find(
-        ({ id }) => id === mapper.protocolMapper
+        ({ id }) => id === mapper.protocolMapper,
       );
 
       if (!mapperType) {

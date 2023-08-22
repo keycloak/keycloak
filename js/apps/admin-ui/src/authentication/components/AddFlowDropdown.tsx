@@ -19,7 +19,7 @@ type AddFlowDropdownProps = {
   execution: ExpandableExecution;
   onAddExecution: (
     execution: ExpandableExecution,
-    type: AuthenticationProviderRepresentation
+    type: AuthenticationProviderRepresentation,
   ) => void;
   onAddFlow: (execution: ExpandableExecution, flow: Flow) => void;
 };
@@ -41,7 +41,7 @@ export const AddFlowDropdown = ({
         flowId: execution.flowId!,
       }),
     ({ providerId }) => setProviderId(providerId),
-    []
+    [],
   );
 
   return (

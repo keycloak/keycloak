@@ -70,7 +70,7 @@ export const LdapSettingsConnection = ({
       const settings = convertFormToSettings(form);
       await adminClient.realms.testLDAPConnection(
         { realm },
-        { ...settings, action: testType, componentId: id }
+        { ...settings, action: testType, componentId: id },
       );
       addAlert(t("testSuccess"), AlertVariant.success);
     } catch (error) {
@@ -95,7 +95,7 @@ export const LdapSettingsConnection = ({
         <WizardSectionHeader
           title={t("connectionAndAuthenticationSettings")}
           description={helpText(
-            "ldapConnectionAndAuthorizationSettingsDescription"
+            "ldapConnectionAndAuthorizationSettingsDescription",
           )}
           showDescription={showSectionDescription}
         />
@@ -106,7 +106,7 @@ export const LdapSettingsConnection = ({
           labelIcon={
             <HelpItem
               helpText={t(
-                "user-federation-help:consoleDisplayConnectionUrlHelp"
+                "user-federation-help:consoleDisplayConnectionUrlHelp",
               )}
               fieldLabelId="user-federation:connectionURL"
             />

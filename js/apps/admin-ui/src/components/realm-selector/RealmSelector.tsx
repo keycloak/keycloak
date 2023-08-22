@@ -97,13 +97,13 @@ export const RealmSelector = () => {
         .concat(
           realms
             .filter(
-              (r) => !recentRealms.includes(r.realm!) || r.realm === realm
+              (r) => !recentRealms.includes(r.realm!) || r.realm === realm,
             )
             .map((r) => {
               return { name: r.realm!, used: false };
-            })
+            }),
         ),
-    [recentRealms, realm, realms]
+    [recentRealms, realm, realms],
   );
 
   const filteredItems = useMemo(
@@ -111,9 +111,9 @@ export const RealmSelector = () => {
       search.trim() === ""
         ? all
         : all.filter((r) =>
-            r.name.toLowerCase().includes(search.toLowerCase())
+            r.name.toLowerCase().includes(search.toLowerCase()),
           ),
-    [search, all]
+    [search, all],
   );
 
   return realms.length > 5 ? (

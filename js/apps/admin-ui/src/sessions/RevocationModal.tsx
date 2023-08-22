@@ -53,7 +53,7 @@ export const RevocationModal = ({
     (realm) => {
       setRealm(realm);
     },
-    [key]
+    [key],
   );
 
   const parseResult = (result: GlobalRequestResult, prefixKey: string) => {
@@ -67,20 +67,20 @@ export const RevocationModal = ({
         t("clients:" + prefixKey + "Success", {
           successNodes: result.successRequests,
         }),
-        AlertVariant.success
+        AlertVariant.success,
       );
       addAlert(
         t("clients:" + prefixKey + "Fail", {
           failedNodes: result.failedRequests,
         }),
-        AlertVariant.danger
+        AlertVariant.danger,
       );
     } else {
       addAlert(
         t("clients:" + prefixKey + "Success", {
           successNodes: result.successRequests,
         }),
-        AlertVariant.success
+        AlertVariant.success,
       );
     }
   };
@@ -92,7 +92,7 @@ export const RevocationModal = ({
         {
           realm: realmName,
           notBefore: Date.now() / 1000,
-        }
+        },
       );
 
       addAlert(t("notBeforeSuccess"), AlertVariant.success);
@@ -108,7 +108,7 @@ export const RevocationModal = ({
         {
           realm: realmName,
           notBefore: 0,
-        }
+        },
       );
       addAlert(t("notBeforeClearedSuccess"), AlertVariant.success);
       refresh();

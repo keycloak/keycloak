@@ -57,13 +57,13 @@ export const MemberModal = ({ groupId, onClose }: MemberModalProps) => {
             try {
               await Promise.all(
                 selectedRows.map((user) =>
-                  adminClient.users.addToGroup({ id: user.id!, groupId })
-                )
+                  adminClient.users.addToGroup({ id: user.id!, groupId }),
+                ),
               );
               onClose();
               addAlert(
                 t("usersAdded", { count: selectedRows.length }),
-                AlertVariant.success
+                AlertVariant.success,
               );
             } catch (error) {
               addError("groups:usersAddedError", error);

@@ -67,7 +67,7 @@ export const CibaPolicy = ({ realm, realmUpdated }: CibaPolicyProps) => {
     try {
       await adminClient.realms.update(
         { realm: realmName },
-        convertFormValuesToObject(formValues)
+        convertFormValuesToObject(formValues),
       );
 
       const updatedRealm = await adminClient.realms.findOne({
@@ -95,7 +95,7 @@ export const CibaPolicy = ({ realm, realmUpdated }: CibaPolicyProps) => {
           labelIcon={
             <HelpItem
               helpText={t(
-                "authentication-help:cibaBackchannelTokenDeliveryMode"
+                "authentication-help:cibaBackchannelTokenDeliveryMode",
               )}
               fieldLabelId="authentication:cibaBackchannelTokenDeliveryMode"
             />

@@ -42,20 +42,20 @@ export const DownloadDialog = ({
 
   const configFormats = serverInfo.clientInstallations![protocol];
   const [selected, setSelected] = useState(
-    configFormats[configFormats.length - 1].id
+    configFormats[configFormats.length - 1].id,
   );
   const [snippet, setSnippet] = useState<string | ArrayBuffer>();
   const [openType, setOpenType] = useState(false);
 
   const selectedConfig = useMemo(
     () => configFormats.find((config) => config.id === selected) ?? null,
-    [selected]
+    [selected],
   );
 
   const sanitizeSnippet = (snippet: string) =>
     snippet.replace(
       /<PrivateKeyPem>.*<\/PrivateKeyPem>/gs,
-      `<PrivateKeyPem>${t("clients:privateKeyMask")}</PrivateKeyPem>`
+      `<PrivateKeyPem>${t("clients:privateKeyMask")}</PrivateKeyPem>`,
     );
 
   useFetch(
@@ -63,14 +63,14 @@ export const DownloadDialog = ({
       if (selectedConfig?.mediaType === "application/zip") {
         const response = await fetch(
           `${addTrailingSlash(
-            adminClient.baseUrl
+            adminClient.baseUrl,
           )}admin/realms/${realm}/clients/${id}/installation/providers/${selected}`,
           {
             method: "GET",
             headers: getAuthorizationHeaders(
-              await adminClient.getAccessToken()
+              await adminClient.getAccessToken(),
             ),
-          }
+          },
         );
 
         return response.arrayBuffer();
@@ -87,7 +87,7 @@ export const DownloadDialog = ({
       }
     },
     (snippet) => setSnippet(snippet),
-    [id, selected]
+    [id, selected],
   );
 
   // Clear snippet when selected config changes, this prevents old snippets from being displayed during fetch.
@@ -100,7 +100,7 @@ export const DownloadDialog = ({
       onConfirm={() => {
         saveAs(
           new Blob([snippet!], { type: selectedConfig?.mediaType }),
-          selectedConfig?.filename
+          selectedConfig?.filename,
         );
       }}
       open={open}

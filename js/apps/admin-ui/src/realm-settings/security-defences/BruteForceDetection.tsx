@@ -99,7 +99,7 @@ export const BruteForceDetection = ({
                     onMinus={() => field.onChange(field.value - 1)}
                     onChange={(event) =>
                       field.onChange(
-                        Number((event.target as HTMLInputElement).value)
+                        Number((event.target as HTMLInputElement).value),
                       )
                     }
                   />
@@ -141,7 +141,7 @@ export const BruteForceDetection = ({
               labelIcon={
                 <HelpItem
                   helpText={t(
-                    "realm-settings-help:quickLoginCheckMilliSeconds"
+                    "realm-settings-help:quickLoginCheckMilliSeconds",
                   )}
                   fieldLabelId="realm-settings:quickLoginCheckMilliSeconds"
                 />
@@ -161,7 +161,7 @@ export const BruteForceDetection = ({
                     onMinus={() => field.onChange(field.value - 1)}
                     onChange={(event) =>
                       field.onChange(
-                        Number((event.target as HTMLInputElement).value)
+                        Number((event.target as HTMLInputElement).value),
                       )
                     }
                   />

@@ -132,7 +132,7 @@ export const ClusteringPanel = ({
               Promise.resolve<Node[]>(
                 Object.entries(nodes || {}).map((entry) => {
                   return { host: entry[0], registration: entry[1] };
-                })
+                }),
               )
             }
             toolbarItem={
@@ -180,7 +180,7 @@ export const ClusteringPanel = ({
                     value
                       ? formatDate(
                           new Date(parseInt(value.toString()) * 1000),
-                          FORMAT_DATE_AND_TIME
+                          FORMAT_DATE_AND_TIME,
                         )
                       : "",
                 ],

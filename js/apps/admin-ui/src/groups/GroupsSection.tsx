@@ -97,7 +97,7 @@ export default function GroupsSection() {
     (groups: GroupRepresentation[]) => {
       if (groups.length) setSubGroups(groups);
     },
-    [id]
+    [id],
   );
 
   return (

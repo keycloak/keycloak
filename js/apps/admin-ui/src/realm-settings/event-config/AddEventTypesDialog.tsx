@@ -49,7 +49,7 @@ export const AddEventTypesDialog = ({
         ariaLabelKey="addTypes"
         onSelect={(selected) => setSelectedTypes(selected)}
         eventTypes={enums!["eventType"].filter(
-          (type) => !configured.includes(type)
+          (type) => !configured.includes(type),
         )}
       />
     </Modal>

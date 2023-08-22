@@ -80,8 +80,8 @@ export const GroupPickerDialog = ({
               first: `${first}`,
               max: `${max + 1}`,
             },
-            isSearching ? null : { search: filter }
-          )
+            isSearching ? null : { search: filter },
+          ),
         );
       } else if (!navigation.map(({ id }) => id).includes(groupId)) {
         group = await adminClient.groups.findOne({ id: groupId });
@@ -118,7 +118,7 @@ export const GroupPickerDialog = ({
       }
       setCount(count);
     },
-    [groupId, filter, first, max]
+    [groupId, filter, first, max],
   );
 
   const isRowDisabled = (row?: GroupRepresentation) => {
@@ -149,7 +149,7 @@ export const GroupPickerDialog = ({
                 ? selectedRows
                 : navigation.length
                 ? [currentGroup()]
-                : undefined
+                : undefined,
             );
           }}
           isDisabled={type === "selectMany" && selectedRows.length === 0}

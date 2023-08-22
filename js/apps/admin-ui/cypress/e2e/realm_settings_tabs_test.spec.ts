@@ -39,7 +39,7 @@ describe("Realm settings tabs tests", () => {
     cy.findByTestId(realmSettingsPage.userProfileTab).should("not.exist");
     realmSettingsPage.toggleSwitch(
       realmSettingsPage.profileEnabledSwitch,
-      false
+      false,
     );
     realmSettingsPage.save(realmSettingsPage.generalSaveBtn);
     masthead.checkNotificationMessage("Realm successfully updated");
@@ -75,12 +75,12 @@ describe("Realm settings tabs tests", () => {
     // Check other values
     cy.findByTestId(realmSettingsPage.emailAsUsernameSwitch).should(
       "have.value",
-      "off"
+      "off",
     );
 
     cy.findByTestId(realmSettingsPage.verifyEmailSwitch).should(
       "have.value",
-      "off"
+      "off",
     );
   });
 

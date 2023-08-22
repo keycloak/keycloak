@@ -24,7 +24,7 @@ export const IdentityProviderRoute: AppRouteObject = {
 };
 
 export const toIdentityProvider = (
-  params: IdentityProviderParams
+  params: IdentityProviderParams,
 ): Partial<Path> => ({
   pathname: generatePath(IdentityProviderRoute.path, params),
 });

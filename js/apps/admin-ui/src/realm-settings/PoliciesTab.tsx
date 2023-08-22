@@ -60,7 +60,7 @@ export const PoliciesTab = () => {
         setTablePolicies(policies.policies || []),
         setCode(prettyPrintJSON(policies.policies));
     },
-    [key]
+    [key],
   );
 
   const loader = async () => policies ?? [];
@@ -76,7 +76,7 @@ export const PoliciesTab = () => {
           ...policy,
           enabled,
         };
-      }
+      },
     );
 
     try {
@@ -86,7 +86,7 @@ export const PoliciesTab = () => {
       navigate(toClientPolicies({ realm, tab: "policies" }));
       addAlert(
         t("realm-settings:updateClientPolicySuccess"),
-        AlertVariant.success
+        AlertVariant.success,
       );
     } catch (error) {
       addError("realm-settings:updateClientPolicyError", error);
@@ -155,7 +155,7 @@ export const PoliciesTab = () => {
         });
         addAlert(
           t("realm-settings:updateClientPoliciesSuccess"),
-          AlertVariant.success
+          AlertVariant.success,
         );
         refresh();
       } catch (error) {
@@ -176,7 +176,7 @@ export const PoliciesTab = () => {
     continueButtonVariant: ButtonVariant.danger,
     onConfirm: async () => {
       const updatedPolicies = policies?.filter(
-        (policy) => policy.name !== selectedPolicy?.name
+        (policy) => policy.name !== selectedPolicy?.name,
       );
 
       try {

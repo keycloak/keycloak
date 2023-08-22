@@ -46,7 +46,7 @@ export default function CreateClientScope() {
           realm,
           id: scope.id!,
           tab: "settings",
-        })
+        }),
       );
     } catch (error) {
       addError("client-scopes:createError", error);

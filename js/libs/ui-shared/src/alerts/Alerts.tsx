@@ -9,7 +9,7 @@ import { createContext, PropsWithChildren, useContext, useState } from "react";
 export type AddAlertFunction = (
   message: string,
   variant?: AlertVariant,
-  description?: string
+  description?: string,
 ) => void;
 
 export type AddErrorFunction = (message: string) => void;
@@ -40,7 +40,7 @@ export const AlertProvider = ({ children }: PropsWithChildren) => {
   const addAlert = (
     message: string,
     variant: AlertVariant = AlertVariant.success,
-    description?: string
+    description?: string,
   ) => {
     setAlerts([
       {

@@ -17,7 +17,7 @@ export const IdentityProviderOidcRoute: AppRouteObject = {
 };
 
 export const toIdentityProviderOidc = (
-  params: IdentityProviderOidcParams
+  params: IdentityProviderOidcParams,
 ): Partial<Path> => ({
   pathname: generatePath(IdentityProviderOidcRoute.path, params),
 });

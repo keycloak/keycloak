@@ -19,7 +19,7 @@ export const ValidatorSelect = ({
     useServerInfo().componentTypes?.["org.keycloak.validate.Validator"] || [];
   const validators = useMemo(
     () => allValidator.filter(({ id }) => !selectedValidators.includes(id)),
-    [selectedValidators]
+    [selectedValidators],
   );
   const [open, toggle] = useToggle();
   const [value, setValue] = useState<ComponentTypeRepresentation>();

@@ -122,13 +122,13 @@ export const deleteMapping = (type: ResourcesKey, id: string, rows: Row[]) =>
         client: row.client?.id,
         roles: [role],
       },
-      [role]
+      [role],
     );
   });
 
 export const getMapping = async (
   type: ResourcesKey,
-  id: string
+  id: string,
 ): Promise<MappingsRepresentation> => {
   const query = mapping[type]!.listEffective[0];
   const result = applyQuery(type, query, { id });
@@ -146,7 +146,7 @@ export const getMapping = async (
 
         role.containerId = client?.clientId;
         return { ...client, mappings: [role] };
-      })
+      }),
   );
 
   return {
@@ -157,7 +157,7 @@ export const getMapping = async (
 
 export const getEffectiveRoles = async (
   type: ResourcesKey,
-  id: string
+  id: string,
 ): Promise<Row[]> => {
   const query = mapping[type]!.listEffective[1];
   if (type !== "roles") {
@@ -169,14 +169,14 @@ export const getEffectiveRoles = async (
   const parentRoles = await Promise.all(
     roles
       .filter((r) => r.composite)
-      .map((r) => applyQuery(type, query, { id: r.id }))
+      .map((r) => applyQuery(type, query, { id: r.id })),
   );
   return [...roles, ...parentRoles.flat()].map((role) => ({ role }));
 };
 
 export const getAvailableRoles = async (
   type: ResourcesKey,
-  params: Record<string, string | number>
+  params: Record<string, string | number>,
 ): Promise<Row[]> => {
   const query = mapping[type]!.listAvailable[1];
   return (await applyQuery(type, query, params)).map((role) => ({

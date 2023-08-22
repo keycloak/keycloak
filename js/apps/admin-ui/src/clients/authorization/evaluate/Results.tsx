@@ -40,7 +40,7 @@ enum ResultsFilter {
 
 function filterResults(
   results: EvaluationResultRepresentation[],
-  filter: ResultsFilter
+  filter: ResultsFilter,
 ) {
   switch (filter) {
     case ResultsFilter.StatusPermitted:
@@ -74,9 +74,9 @@ export const Results = ({ evaluateResult, refresh, back }: ResultProps) => {
   const filteredResources = useMemo(
     () =>
       filterResults(evaluateResult.results!, filter).filter(
-        ({ resource }) => resource?.name?.includes(searchQuery) ?? false
+        ({ resource }) => resource?.name?.includes(searchQuery) ?? false,
       ),
-    [evaluateResult.results, filter, searchQuery]
+    [evaluateResult.results, filter, searchQuery],
   );
 
   const noEvaluatedData = evaluateResult.results!.length === 0;

@@ -57,7 +57,7 @@ export const UserIdentityProviderLinks = ({
     })) as WithProviderId[];
     for (const element of allFedIds) {
       element.providerId = allProviders.find(
-        (item) => item.alias === element.identityProvider
+        (item) => item.alias === element.identityProvider,
       )?.providerId!;
     }
 
@@ -74,11 +74,11 @@ export const UserIdentityProviderLinks = ({
 
   const availableIdPsLoader = async () => {
     const linkedNames = (await getFederatedIdentities()).map(
-      (x) => x.identityProvider
+      (x) => x.identityProvider,
     );
 
     return (await getAvailableIdPs())?.filter(
-      (item) => !linkedNames.includes(item.alias)
+      (item) => !linkedNames.includes(item.alias),
     )!;
   };
 
@@ -122,7 +122,7 @@ export const UserIdentityProviderLinks = ({
 
   const badgeRenderer1 = (idp: FederatedIdentityRepresentation) => {
     const groupName = identityProviders?.find(
-      (provider) => provider["id"] === idp.identityProvider
+      (provider) => provider["id"] === idp.identityProvider,
     )?.groupName!;
     return (
       <Label color={groupName === "Social" ? "blue" : "orange"}>
@@ -135,7 +135,7 @@ export const UserIdentityProviderLinks = ({
 
   const badgeRenderer2 = (idp: IdentityProviderRepresentation) => {
     const groupName = identityProviders?.find(
-      (provider) => provider["id"] === idp.providerId
+      (provider) => provider["id"] === idp.providerId,
     )?.groupName!;
     return (
       <Label color={groupName === "User-defined" ? "orange" : "blue"}>

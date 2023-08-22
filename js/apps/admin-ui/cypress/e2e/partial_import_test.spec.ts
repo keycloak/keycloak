@@ -25,7 +25,7 @@ describe("Partial import test", () => {
     Promise.all([
       adminClient.createRealm(TEST_REALM),
       adminClient.createRealm(TEST_REALM_2),
-    ])
+    ]),
   );
 
   after(async () => {

@@ -22,7 +22,7 @@ export default class PageObject {
 
   protected assertIsVisible(
     element: Cypress.Chainable<JQuery>,
-    isVisible: boolean
+    isVisible: boolean,
   ) {
     element.should((!isVisible ? "not." : "") + "be.visible");
     return this;
@@ -30,13 +30,13 @@ export default class PageObject {
 
   protected assertIsEnabled(
     element: Cypress.Chainable<JQuery>,
-    isEnabled = true
+    isEnabled = true,
   ) {
     element.then(($btn) => {
       if ($btn.hasClass("pf-m-disabled")) {
         element.should(
           (isEnabled ? "not." : "") + "have.class",
-          "pf-m-disabled"
+          "pf-m-disabled",
         );
       } else {
         element.should((isEnabled ? "not." : "") + "have.attr", "disabled");
@@ -61,7 +61,7 @@ export default class PageObject {
 
   protected assertSwitchStateOn(
     element?: Cypress.Chainable<JQuery>,
-    isOn = true
+    isOn = true,
   ) {
     (element ?? cy.get(this.switchInput))
       .parent()
@@ -76,7 +76,7 @@ export default class PageObject {
 
   protected assertDropdownMenuIsOpen(
     isOpen = true,
-    element?: Cypress.Chainable<JQuery>
+    element?: Cypress.Chainable<JQuery>,
   ) {
     this.assertExist(element ?? cy.get(this.drpDwnMenuList), isOpen);
     return this;
@@ -85,13 +85,13 @@ export default class PageObject {
   protected assertDropdownMenuIsClosed(element?: Cypress.Chainable<JQuery>) {
     return this.assertDropdownMenuIsOpen(
       false,
-      element ?? cy.get(this.drpDwnMenuList)
+      element ?? cy.get(this.drpDwnMenuList),
     );
   }
 
   protected clickDropdownMenuItem(
     itemName: string,
-    element?: Cypress.Chainable<JQuery>
+    element?: Cypress.Chainable<JQuery>,
   ) {
     (element ?? cy.get(this.drpDwnMenuItem).contains(itemName)).click();
     return this;
@@ -99,7 +99,7 @@ export default class PageObject {
 
   protected clickDropdownMenuToggleButton(
     itemName: string,
-    element?: Cypress.Chainable<JQuery>
+    element?: Cypress.Chainable<JQuery>,
   ) {
     element =
       element ??
@@ -110,7 +110,7 @@ export default class PageObject {
 
   protected openDropdownMenu(
     itemName: string,
-    element?: Cypress.Chainable<JQuery>
+    element?: Cypress.Chainable<JQuery>,
   ) {
     element =
       element ??
@@ -122,7 +122,7 @@ export default class PageObject {
 
   protected closeDropdownMenu(
     itemName: string,
-    element?: Cypress.Chainable<JQuery>
+    element?: Cypress.Chainable<JQuery>,
   ) {
     element =
       element ??
@@ -135,19 +135,19 @@ export default class PageObject {
   protected assertDropdownMenuItemIsSelected(
     itemName: string,
     isSelected: boolean,
-    element?: Cypress.Chainable<JQuery>
+    element?: Cypress.Chainable<JQuery>,
   ) {
     element = element ?? cy.get(this.drpDwnMenuItem);
     this.assertExist(
       element.contains(itemName).find(this.selectItemSelectedIcon),
-      isSelected
+      isSelected,
     );
     return this;
   }
 
   protected assertDropdownMenuHasItems(
     items: string[],
-    element?: Cypress.Chainable<JQuery>
+    element?: Cypress.Chainable<JQuery>,
   ) {
     const initialElement = element;
     for (const item of items) {
@@ -159,7 +159,7 @@ export default class PageObject {
 
   protected assertDropdownMenuHasLabels(
     items: string[],
-    element?: Cypress.Chainable<JQuery>
+    element?: Cypress.Chainable<JQuery>,
   ) {
     const initialElement = element;
     for (const item of items) {
@@ -171,7 +171,7 @@ export default class PageObject {
 
   protected assertDropdownMenuItemsEqualTo(
     number: number,
-    element?: Cypress.Chainable<JQuery>
+    element?: Cypress.Chainable<JQuery>,
   ) {
     element = element ?? cy.get(this.drpDwnMenuList);
     element.find(this.drpDwnMenuItem).should(($item) => {
@@ -182,7 +182,7 @@ export default class PageObject {
 
   protected assertSelectMenuIsOpen(
     isOpen = true,
-    element?: Cypress.Chainable<JQuery>
+    element?: Cypress.Chainable<JQuery>,
   ) {
     element = element ?? cy.get(this.selectMenuList);
     return this.assertDropdownMenuIsOpen(isOpen, element);
@@ -195,7 +195,7 @@ export default class PageObject {
 
   protected clickSelectMenuItem(
     itemName: string,
-    element?: Cypress.Chainable<JQuery>
+    element?: Cypress.Chainable<JQuery>,
   ) {
     element =
       element ??
@@ -205,7 +205,7 @@ export default class PageObject {
 
   protected clickSelectMenuToggleButton(
     itemName: string,
-    element?: Cypress.Chainable<JQuery>
+    element?: Cypress.Chainable<JQuery>,
   ) {
     element =
       element ??
@@ -224,7 +224,7 @@ export default class PageObject {
 
   protected closeSelectMenu(
     itemName: string,
-    element?: Cypress.Chainable<JQuery>
+    element?: Cypress.Chainable<JQuery>,
   ) {
     element =
       element ??
@@ -237,7 +237,7 @@ export default class PageObject {
   protected assertSelectMenuItemIsSelected(
     itemName: string,
     isSelected: boolean,
-    element?: Cypress.Chainable<JQuery>
+    element?: Cypress.Chainable<JQuery>,
   ) {
     element = element ?? cy.get(this.selectMenuItem);
     return this.assertDropdownMenuItemIsSelected(itemName, isSelected, element);
@@ -245,7 +245,7 @@ export default class PageObject {
 
   protected assertSelectMenuHasItems(
     items: string[],
-    element?: Cypress.Chainable<JQuery>
+    element?: Cypress.Chainable<JQuery>,
   ) {
     const initialElement = element;
     for (const item of items) {
@@ -257,7 +257,7 @@ export default class PageObject {
 
   protected assertSelectMenuItemsEqualTo(
     number: number,
-    element?: Cypress.Chainable<JQuery>
+    element?: Cypress.Chainable<JQuery>,
   ) {
     element = element ?? cy.get(this.selectMenuList);
     element.find(this.selectMenuItem).should(($item) => {
@@ -320,11 +320,11 @@ export default class PageObject {
   protected assertChipGroupItemExist(
     groupName: string,
     itemName: string,
-    exist: boolean
+    exist: boolean,
   ) {
     this.assertExist(
       this.getChipGroup(groupName).contains(this.chipItem, itemName),
-      exist
+      exist,
     );
     return this;
   }

@@ -73,7 +73,7 @@ describe("Sessions test", () => {
       commonPage
         .masthead()
         .checkNotificationMessage(
-          "No push sent. No admin URI configured or no registered cluster nodes available"
+          "No push sent. No admin URI configured or no registered cluster nodes available",
         );
     });
   });

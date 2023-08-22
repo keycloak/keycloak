@@ -41,7 +41,7 @@ export const SignedJWT = ({ clientAuthenticatorType }: SignedJWTProps) => {
     >
       <Controller
         name={convertAttributeNameToForm<FormFields>(
-          "attributes.token.endpoint.auth.signing.alg"
+          "attributes.token.endpoint.auth.signing.alg",
         )}
         defaultValue=""
         control={control}
