@@ -100,6 +100,12 @@ public class UserSyncTest extends KeycloakModelTest {
 
     @Override
     public void cleanEnvironment(KeycloakSession s) {
+        final RealmModel realm = s.realms().getRealm(realmId);
+
+        ComponentModel ldapModel = LDAPTestUtils.getLdapProviderModel(realm);
+        LDAPStorageProvider ldapFedProvider = LDAPTestUtils.getLdapProvider(s, ldapModel);
+        LDAPTestUtils.removeAllLDAPUsers(ldapFedProvider, realm);
+
         s.realms().removeRealm(realmId);
     }
 
