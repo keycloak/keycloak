@@ -10,7 +10,7 @@ import { OptionComponent } from "./components/OptionsComponent";
 import { SelectComponent } from "./components/SelectComponent";
 import { TextAreaComponent } from "./components/TextAreaComponent";
 import { TextComponent } from "./components/TextComponent";
-import { DEFAULT_ROLES, fieldName } from "./utils";
+import { fieldName } from "./utils";
 
 type UserProfileFieldsProps = {
   config: UserProfileConfig;
@@ -95,10 +95,9 @@ export const UserProfileFields = ({
             )}
             {config.attributes?.map((attribute) => (
               <Fragment key={attribute.name}>
-                {(attribute.group || "") === g.name &&
-                  (attribute.permissions?.view || DEFAULT_ROLES).some((r) =>
-                    roles.includes(r),
-                  ) && <FormField attribute={attribute} roles={roles} />}
+                {(attribute.group || "") === g.name && (
+                  <FormField attribute={attribute} roles={roles} />
+                )}
               </Fragment>
             ))}
           </div>
