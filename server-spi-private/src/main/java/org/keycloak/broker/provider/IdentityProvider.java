@@ -29,6 +29,9 @@ import org.keycloak.sessions.AuthenticationSessionModel;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriInfo;
 
+import java.util.Arrays;
+import java.util.List;
+
 /**
  * @author Pedro Igor
  */
@@ -73,6 +76,8 @@ public interface IdentityProvider<C extends IdentityProviderModel> extends Provi
          */
         Response error(String message);
     }
+
+    C getConfig();
 
 
     void preprocessFederatedIdentity(KeycloakSession session, RealmModel realm, BrokeredIdentityContext context);
@@ -131,5 +136,14 @@ public interface IdentityProvider<C extends IdentityProviderModel> extends Provi
      * @return
      */
     IdentityProviderDataMarshaller getMarshaller();
+
+    /**
+     * Checks whether a mapper is supported for this Identity Provider.
+     */
+    default boolean isMapperSupported(IdentityProviderMapper mapper) {
+    List<String> compatibleIdps = Arrays.asList(mapper.getCompatibleProviders());
+        return compatibleIdps.contains(IdentityProviderMapper.ANY_PROVIDER)
+            || compatibleIdps.contains(getConfig().getProviderId());
+    }
 
 }

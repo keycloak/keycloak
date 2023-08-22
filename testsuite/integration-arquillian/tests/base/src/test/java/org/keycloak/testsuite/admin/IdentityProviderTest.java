@@ -52,6 +52,7 @@ import org.keycloak.saml.processing.core.parsers.saml.SAMLParser;
 import org.keycloak.saml.processing.core.util.XMLSignatureUtil;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.broker.OIDCIdentityProviderConfigRep;
+import org.keycloak.testsuite.broker.oidc.OverwrittenMappersTestIdentityProviderFactory;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.util.AdminEventPaths;
 import org.keycloak.testsuite.util.KeyUtils;
@@ -601,6 +602,27 @@ public class IdentityProviderTest extends AbstractAdminTest {
         provider = realm.identityProviders().get("saml");
         mapperTypes = provider.getMapperTypes();
         assertMapperTypes(mapperTypes, "saml-user-attribute-idp-mapper", "saml-role-idp-mapper", "saml-username-idp-mapper", "saml-advanced-role-idp-mapper", "saml-advanced-group-idp-mapper", "saml-xpath-attribute-idp-mapper");
+    }
+
+    @Test
+    public void mapperTypesCanBeOverwritten() {
+        String kcOidcProviderId = "keycloak-oidc";
+        create(createRep(kcOidcProviderId, kcOidcProviderId));
+
+        String testProviderId = OverwrittenMappersTestIdentityProviderFactory.PROVIDER_ID;
+        create(createRep(testProviderId, testProviderId));
+
+        /*
+         * in the test provider, we have overwritten the mapper types to be the same as supported by "keycloak-oidc", so
+         * the "keycloak-oidc" mappers are the expected mappers for the test provider
+         */
+        IdentityProviderResource kcOidcProvider = realm.identityProviders().get(kcOidcProviderId);
+        Set<String> expectedMapperTypes = kcOidcProvider.getMapperTypes().keySet();
+
+        IdentityProviderResource testProvider = realm.identityProviders().get(testProviderId);
+        Set<String> actualMapperTypes = testProvider.getMapperTypes().keySet();
+
+        assertThat(actualMapperTypes, equalTo(expectedMapperTypes));
     }
 
     private void assertMapperTypes(Map<String, IdentityProviderMapperTypeRepresentation> mapperTypes, String ... mapperIds) {
