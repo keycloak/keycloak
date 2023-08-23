@@ -154,7 +154,7 @@ export const ResourcesTab = ({ isShared = false }: ResourcesTabProps) => {
             <Th aria-hidden="true" />
             <Th>{t("resourceName")}</Th>
             <Th>{t("application")}</Th>
-            <Th aria-hidden={!isShared ? false : true}>
+            <Th aria-hidden={isShared ?? true}>
               {!isShared ? t("permissionRequests") : ""}
             </Th>
           </Tr>
