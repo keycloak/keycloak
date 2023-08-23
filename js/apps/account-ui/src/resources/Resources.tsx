@@ -19,12 +19,14 @@ const Resources = () => {
       >
         <Tab
           eventKey={0}
+          data-testid="myResources-tab"
           title={<TabTitleText>{t("myResources")}</TabTitleText>}
         >
           <ResourcesTab />
         </Tab>
         <Tab
           eventKey={1}
+          data-testid="sharedWithMe-tab"
           title={<TabTitleText>{t("sharedWithMe")}</TabTitleText>}
         >
           <ResourcesTab isShared />
