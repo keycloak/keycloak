@@ -1,5 +1,6 @@
 package org.keycloak.utils;
 
+import java.util.Collections;
 import java.util.stream.Collectors;
 
 import org.keycloak.common.Profile;
@@ -10,22 +11,26 @@ import org.keycloak.services.resources.admin.permissions.GroupPermissionEvaluato
 
 public class GroupUtils {
     // Moved out from org.keycloak.admin.ui.rest.GroupsResource
-    public static GroupRepresentation toGroupHierarchy(GroupPermissionEvaluator groupsEvaluator, GroupModel group, final String search, boolean exact) {
-        return toGroupHierarchy(groupsEvaluator, group, search, exact, true);
+    public static GroupRepresentation toGroupHierarchy(GroupPermissionEvaluator groupsEvaluator, GroupModel group, final String search, boolean exact, boolean lazy) {
+        return toGroupHierarchy(groupsEvaluator, group, search, exact, true, lazy);
     }
 
-    public static GroupRepresentation toGroupHierarchy(GroupPermissionEvaluator groupsEvaluator, GroupModel group, final String search, boolean exact, boolean full) {
+    public static GroupRepresentation toGroupHierarchy(GroupPermissionEvaluator groupsEvaluator, GroupModel group, final String search, boolean exact, boolean full, boolean lazy) {
         GroupRepresentation rep = ModelToRepresentation.toRepresentation(group, full);
-        rep.setSubGroups(group.getSubGroupsStream().filter(g ->
-                groupMatchesSearchOrIsPathElement(
-                        g, search
-                )
-        ).map(subGroup ->
-            ModelToRepresentation.toGroupHierarchy(
-                    subGroup, full, search, exact
-            )
+        if (!lazy) {
+            rep.setSubGroups(group.getSubGroupsStream().filter(g ->
+                    groupMatchesSearchOrIsPathElement(
+                            g, search
+                    )
+            ).map(subGroup ->
+                    ModelToRepresentation.toGroupHierarchy(
+                            subGroup, full, search, exact
+                    )
 
-        ).collect(Collectors.toList()));
+            ).collect(Collectors.toList()));
+        } else {
+            rep.setSubGroups(Collections.emptyList());
+        }
 
         if (Profile.isFeatureEnabled(Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ)) {
             setAccess(groupsEvaluator, group, rep);
