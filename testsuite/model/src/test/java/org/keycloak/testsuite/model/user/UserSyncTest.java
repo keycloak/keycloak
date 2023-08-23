@@ -139,15 +139,15 @@ public class UserSyncTest extends KeycloakModelTest {
     @Test
     public void testRemovedLDAPUserShouldNotFailGetUserByEmail() {
         withRealm(realmId, (session, realm) -> {
+            UserStorageProviderModel providerModel = new UserStorageProviderModel(realm.getComponent(userFederationId));
+            // disable cache
+            providerModel.setCachePolicy(CacheableStorageProviderModel.CachePolicy.NO_CACHE);
+            realm.updateComponent(providerModel);
+
             ComponentModel ldapModel = LDAPTestUtils.getLdapProviderModel(realm);
             LDAPStorageProvider ldapFedProvider = LDAPTestUtils.getLdapProvider(session, ldapModel);
             LDAPTestUtils.addLDAPUser(ldapFedProvider, realm, "user", "UserFN", "UserLN", "user@email.org", "userStreet", "1450");
             return null;
-        });
-
-        withRealm(realmId, (session, realm) -> {
-            UserStorageProviderModel providerModel = new UserStorageProviderModel(realm.getComponent(userFederationId));
-            return UserStorageSyncManager.syncAllUsers(session.getKeycloakSessionFactory(), realm.getId(), providerModel);
         });
 
         assertThat(withRealm(realmId, (session, realm) -> session.users().getUserByEmail(realm, "user@email.org")), is(notNullValue()));
@@ -157,11 +157,6 @@ public class UserSyncTest extends KeycloakModelTest {
             LDAPStorageProvider ldapFedProvider = LDAPTestUtils.getLdapProvider(session, ldapModel);
             LDAPTestUtils.removeLDAPUserByUsername(ldapFedProvider, realm, ldapFedProvider.getLdapIdentityStore().getConfig(), "user");
             return null;
-        });
-
-        withRealm(realmId, (session, realm) -> {
-            UserStorageProviderModel providerModel = new UserStorageProviderModel(realm.getComponent(userFederationId));
-            return UserStorageSyncManager.syncAllUsers(session.getKeycloakSessionFactory(), realm.getId(), providerModel);
         });
 
         assertThat(withRealm(realmId, (session, realm) -> session.users().getUserByEmail(realm, "user@email.org")), is(nullValue()));
