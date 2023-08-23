@@ -157,7 +157,7 @@ const Applications = () => {
             <DataListContent
               id={`content-${application.clientId}`}
               className="pf-u-pl-4xl"
-              aria-label={t("applicationDetails")}
+              aria-label={`${t("applicationDetails")}-${application.clientId}`}
               isHidden={!application.open}
             >
               <DescriptionList>
