@@ -9,6 +9,7 @@
     "test": "wireit"
   },
   "dependencies": {
+    "@axe-core/playwright": "^4.7.3",
     "@patternfly/patternfly": "^4.224.2",
     "@patternfly/react-core": "^4.276.8",
     "@patternfly/react-icons": "^4.93.6",
