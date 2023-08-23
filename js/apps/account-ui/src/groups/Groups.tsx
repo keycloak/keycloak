@@ -69,7 +69,10 @@ const Groups = () => {
             />
           </DataListItemRow>
         </DataListItem>
-        <DataListItem id="groups-list-header" aria-labelledby="Columns names">
+        <DataListItem
+          id="groups-columns-header"
+          aria-labelledby="Columns names"
+        >
           <DataListItemRow>
             <DataListItemCells
               dataListCells={[
