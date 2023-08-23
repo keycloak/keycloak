@@ -91,7 +91,7 @@ public class GroupUtils {
         return group.getSubGroupsStream().findAny().isPresent();
     }
 
-    public static Stream<GroupRepresentation> toAncestorsLine(GroupPermissionEvaluator groupsEvaluator, Stream<GroupModel> stream, boolean full) {
+    public static Stream<GroupRepresentation> toAncestorsLine(KeycloakSession session, RealmModel realm, GroupPermissionEvaluator groupsEvaluator, Stream<GroupModel> stream, boolean full) {
         List<GroupRepresentationExtended> tree = new ArrayList<>();
         HashMap<String,GroupRepresentationExtended> groupMap = new HashMap<>();
 
@@ -101,6 +101,7 @@ public class GroupUtils {
                 String parentId = group.getParentId();
                 if (parentId == null) {
                     if(alreadyProcessedGroup == null || !tree.contains(alreadyProcessedGroup)) {
+                        group.groupRep.setSubGroupCount(session.groups().getSubGroupsCount(realm,  group.groupRep.getId()));
                         tree.add(group);
                         groupMap.put(group.getGroupRep().getId(), group);
                     } else if (alreadyProcessedGroup != null) {

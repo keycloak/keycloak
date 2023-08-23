@@ -49,7 +49,6 @@ public class CachedGroup extends AbstractRevisioned implements InRealm {
         this.parentId = group.getParentId();
         this.attributes = new DefaultLazyLoader<>(source -> new MultivaluedHashMap<>(source.getAttributes()), MultivaluedHashMap::new);
         this.roleMappings = new DefaultLazyLoader<>(source -> source.getRoleMappingsStream().map(RoleModel::getId).collect(Collectors.toSet()), Collections::emptySet);
-        //this.subGroups = new DefaultLazyLoader<>(source -> source.getSubGroupsStream().map(GroupModel::getId).collect(Collectors.toSet()), Collections::emptySet);
         this.subGroups = new DefaultLazyLoader<>(
                 (source, search, first, max) -> source.getSubGroupsStream(search, first, max).map(GroupModel::getId).collect(Collectors.toSet()),
                 Collections::emptySet);

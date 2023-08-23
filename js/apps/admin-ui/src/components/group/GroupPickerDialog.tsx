@@ -84,10 +84,21 @@ export const GroupPickerDialog = ({
           ),
         );
       } else if (!navigation.map(({ id }) => id).includes(groupId)) {
-        group = await adminClient.groups.findOne({ id: groupId });
+        group = await fetchAdminUI<GroupRepresentation | undefined>(
+          "ui-ext/groups/" + groupId,
+        );
+
         if (!group) {
           throw new Error(t("common:notFound"));
         }
+        group.subGroups! = await fetchAdminUI<GroupRepresentation[]>(
+          "ui-ext/groups/subgroup",
+          {
+            id: group.id!,
+            first: `${first}`,
+            max: `${max}`,
+          },
+        );
         groups = group.subGroups!;
       }
 
@@ -128,6 +139,32 @@ export const GroupPickerDialog = ({
     ].some((group) => group === row?.id);
   };
 
+  const getMoreSubgroups = async (groupId: string, first: any, max: any) => {
+    let subGroups: GroupRepresentation[] = [];
+    subGroups = await fetchAdminUI<GroupRepresentation[]>(
+      "ui-ext/groups/subgroup",
+      {
+        id: groupId!,
+        first: first,
+        max: max,
+      },
+    );
+    return { subGroups };
+  };
+
+  const processSubgroups = (groupId: string, first: any, max: any) => {
+    getMoreSubgroups(groupId, first, max).then((r) => {
+      if (r.subGroups) {
+        r.subGroups.forEach((group: SelectableGroup) => {
+          group.checked = !!selectedRows.find(
+            (selectedGroup) => selectedGroup.id === group.id,
+          );
+        });
+        setGroups(r.subGroups);
+      }
+    });
+  };
+
   return (
     <Modal
       variant={isSearching ? ModalVariant.medium : ModalVariant.small}
@@ -160,16 +197,33 @@ export const GroupPickerDialog = ({
     >
       <PaginatingTableToolbar
         count={
-          (isSearching ? count : groups.length) -
-          (groupId || isSearching ? first : 0)
+          (isSearching
+            ? count
+            : currentGroup().subGroupCount !== undefined
+            ? currentGroup()!.subGroupCount!
+            : groups.length) - (groupId || isSearching ? first : 0)
         }
         first={first}
         max={max}
-        onNextClick={setFirst}
-        onPreviousClick={setFirst}
+        onNextClick={(f: number) => {
+          setFirst(f);
+          setMax(max);
+          if (groupId != null) {
+            processSubgroups(groupId, f, max);
+          }
+        }}
+        onPreviousClick={(f: number) => {
+          setFirst(f);
+          if (groupId != null) {
+            processSubgroups(groupId, f, max);
+          }
+        }}
         onPerPageSelect={(first, max) => {
           setFirst(first);
           setMax(max);
+          if (groupId != null) {
+            processSubgroups(groupId, first, max);
+          }
         }}
         inputGroupName={"common:search"}
         inputGroupOnEnter={(search) => {
@@ -218,40 +272,38 @@ export const GroupPickerDialog = ({
           ))}
         </Breadcrumb>
         <DataList aria-label={t("groups")} isCompact>
-          {groups
-            .slice(groupId ? first : 0, max + (groupId ? first : 0))
-            .map((group: SelectableGroup) => (
-              <>
-                <GroupRow
-                  key={group.id}
-                  group={group}
-                  isRowDisabled={isRowDisabled}
-                  onSelect={setGroupId}
-                  type={type}
-                  isSearching={isSearching}
-                  setIsSearching={setIsSearching}
-                  selectedRows={selectedRows}
-                  setSelectedRows={setSelectedRows}
-                  canBrowse={canBrowse}
-                />
-                {isSearching &&
-                  group.subGroups?.length !== 0 &&
-                  group.subGroups!.map((g) => (
-                    <GroupRow
-                      key={g.id}
-                      group={g}
-                      isRowDisabled={isRowDisabled}
-                      onSelect={setGroupId}
-                      type={type}
-                      isSearching={isSearching}
-                      setIsSearching={setIsSearching}
-                      selectedRows={selectedRows}
-                      setSelectedRows={setSelectedRows}
-                      canBrowse={canBrowse}
-                    />
-                  ))}
-              </>
-            ))}
+          {groups.map((group: SelectableGroup) => (
+            <>
+              <GroupRow
+                key={group.id}
+                group={group}
+                isRowDisabled={isRowDisabled}
+                onSelect={setGroupId}
+                type={type}
+                isSearching={isSearching}
+                setIsSearching={setIsSearching}
+                selectedRows={selectedRows}
+                setSelectedRows={setSelectedRows}
+                canBrowse={canBrowse}
+              />
+              {isSearching &&
+                group.subGroups?.length !== 0 &&
+                group.subGroups!.map((g) => (
+                  <GroupRow
+                    key={g.id}
+                    group={g}
+                    isRowDisabled={isRowDisabled}
+                    onSelect={setGroupId}
+                    type={type}
+                    isSearching={isSearching}
+                    setIsSearching={setIsSearching}
+                    selectedRows={selectedRows}
+                    setSelectedRows={setSelectedRows}
+                    canBrowse={canBrowse}
+                  />
+                ))}
+            </>
+          ))}
         </DataList>
         {groups.length === 0 && !isSearching && (
           <ListEmptyState
@@ -296,8 +348,12 @@ const GroupRow = ({
 }: GroupRowProps) => {
   const { t } = useTranslation();
 
-  const hasSubgroups = (group: GroupRepresentation) =>
-    group.subGroups?.length !== 0;
+  const hasSubgroups = (group: GroupRepresentation) => {
+    if (group.subGroupCount === undefined) {
+      return false;
+    }
+    return group.subGroupCount! > 0;
+  };
 
   return (
     <DataListItem

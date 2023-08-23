@@ -59,7 +59,7 @@ public class DefaultLazyLoader<S, D> implements LazyLoader<S, D> {
         return data;
     }
 
-    public D bind(Supplier<S> sourceSupplier,String search, Integer first, Integer max) {
+    public D bind(Supplier<S> sourceSupplier, String search, Integer first, Integer max) {
         S source = sourceSupplier.get();
         return source == null || pagedLoader == null ? fallback.get() : this.pagedLoader.apply(source, search, first, max);
     }
