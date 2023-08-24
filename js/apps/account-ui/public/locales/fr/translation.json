@@ -60,7 +60,7 @@
   "groupDescriptionLabel": "Voir les groupes auxquels vous êtes associé",
   "groups": "Groupes",
   "hasAccessTo": "A accès à",
-  "infoMessage": "En cliquant sur Supprimer l'accès, vous supprimerez les permissions accordées de cette application. Cette application ne pourra plus utiliser vos informations.",
+  "infoMessage": "En cliquant sur Supprimer l'accès, vous supprimerez les permissions accordées à cette application. Cette application ne pourra plus utiliser vos informations.",
   "internalApp": "Interne",
   "inUse": "Utilisé",
   "ipAddress": "Adresse IP",
