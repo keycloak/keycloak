@@ -68,7 +68,7 @@
   "lastName": "Nom de famille",
   "link": "Lier le compte",
   "linkedAccounts": "Comptes liés",
-  "linkedAccountsIntroMessage": "Gérew les connexion via les comptes tiers.",
+  "linkedAccountsIntroMessage": "Gérez les connexions via les comptes tiers.",
   "linkedEmpty": "Aucun fournisseur lié",
   "linkedLoginProviders": "Fournisseurs de connexion liés",
   "linkError": "Impossible de lier à cause de : {{error}}",
