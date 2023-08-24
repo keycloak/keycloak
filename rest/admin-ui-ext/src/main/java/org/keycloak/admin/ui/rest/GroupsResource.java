@@ -101,7 +101,8 @@ public class GroupsResource {
         }
 
         return group.getSubGroupsStream(search, first, max)
-            .map(g -> toRepresentation(g, false))
+            .filter(g -> groupsEvaluator.canView() || groupsEvaluator.canView(g))
+            .map(g -> GroupUtils.toRepresentation(groupsEvaluator, g, false))
             .map(g -> GroupUtils.populateSubGroupCount(realm, session, g));
     }
 

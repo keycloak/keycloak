@@ -1,6 +1,10 @@
 package org.keycloak.utils;
-import java.util.*;
+
 import java.util.stream.Collectors;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Stream;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
@@ -8,7 +12,6 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.services.resources.admin.permissions.GroupPermissionEvaluator;
-
 
 
 public class GroupUtils {
@@ -28,7 +31,7 @@ public class GroupUtils {
             // TODO GROUPS do permissions work in such a way that if you can view the children you can definitely view the parents?
             if(!groupEvaluator.canView() && !groupEvaluator.canView(group)) return;
 
-            GroupRepresentation currGroup = ModelToRepresentation.toRepresentation(group, full);
+            GroupRepresentation currGroup = toRepresentation(groupEvaluator, group, full);
             populateSubGroupCount(realm, session, currGroup);
             groupIdToGroups.putIfAbsent(currGroup.getId(), currGroup);
 
@@ -42,7 +45,7 @@ public class GroupUtils {
                 }
 
                 GroupRepresentation parent = groupIdToGroups.computeIfAbsent(currGroup.getParentId(),
-                    id -> ModelToRepresentation.toRepresentation(parentModel, full));
+                    id -> toRepresentation(groupEvaluator, parentModel, full));
                 // TODO GROUPS this is here but it really could be moved to be part of converting a model to a representation.
                 populateSubGroupCount(realm, session, parent);
                 GroupRepresentation finalCurrGroup = currGroup;
@@ -69,16 +72,10 @@ public class GroupUtils {
 
     //From org.keycloak.admin.ui.rest.GroupsResource
     // set fine-grained access for each group in the tree
-    private static void setAccess(GroupPermissionEvaluator groupsEvaluator, GroupModel groupTree, GroupRepresentation rootGroup) {
-        if (rootGroup == null) return;
-
-        rootGroup.setAccess(groupsEvaluator.getAccess(groupTree));
-
-        rootGroup.getSubGroups().stream().forEach(subGroup -> {
-            GroupModel foundGroupModel = groupTree.getSubGroupsStream().filter(g -> g.getId().equals(subGroup.getId())).findFirst().get();
-            setAccess(groupsEvaluator, foundGroupModel, subGroup);
-        });
-
+    public static GroupRepresentation toRepresentation(GroupPermissionEvaluator groupsEvaluator, GroupModel groupTree, boolean full) {
+        GroupRepresentation rep = ModelToRepresentation.toRepresentation(groupTree, full);
+        rep.setAccess(groupsEvaluator.getAccess(groupTree));
+        return rep;
     }
 
     private static boolean groupMatchesSearchOrIsPathElement(GroupModel group, String search) {

@@ -1108,6 +1108,16 @@ public class RealmCacheSession implements CacheRealmProvider {
     }
 
     @Override
+    public Stream<GroupModel> searchForSubgroupsByParentIdStream(RealmModel realm, String id, Integer firstResult, Integer maxResults) {
+        return getGroupDelegate().searchForSubgroupsByParentIdStream(realm, id, firstResult, maxResults);
+    }
+
+    @Override
+    public Stream<GroupModel> searchForSubgroupsByParentIdNameStream(RealmModel realm, String id, String search, Integer firstResult, Integer maxResults) {
+        return getGroupDelegate().searchForSubgroupsByParentIdNameStream(realm, id, search, firstResult, maxResults);
+    }
+
+    @Override
     public Stream<GroupModel> searchGroupsByAttributes(RealmModel realm, Map<String, String> attributes, Integer firstResult, Integer maxResults) {
         return getGroupDelegate().searchGroupsByAttributes(realm, attributes, firstResult, maxResults);
     }

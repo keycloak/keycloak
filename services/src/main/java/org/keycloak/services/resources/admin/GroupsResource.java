@@ -99,10 +99,7 @@ public class GroupsResource {
             Map<String, String> attributes = SearchQueryUtils.getFields(searchQuery);
             stream = ModelToRepresentation.searchGroupModelsByAttributes(session, realm, !briefRepresentation, populateHierarchy, attributes, firstResult, maxResults);
         } else if (Objects.nonNull(search)) {
-            //briefRepresentation is ignored by searchForGroupModelByName, and top level groups are returned
-            //This is the case where search results are displayed in the sidebar.
-            // We need to be creating a single line for the ancestry that is all parents and grandparents etc should just show one subgroup
-
+            // We are creating a single line for the ancestry that is all parents and grandparents etc should just show one subgroup
             stream = ModelToRepresentation.searchForGroupByNameNoAncestryStream(session, realm, !briefRepresentation, search.trim(), exact, firstResult, maxResults);
             return  GroupUtils.toAncestorsLine(session, realm, groupsEvaluator, stream, !briefRepresentation);
 
