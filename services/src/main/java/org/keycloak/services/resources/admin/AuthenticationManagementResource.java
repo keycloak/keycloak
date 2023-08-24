@@ -165,9 +165,10 @@ public class AuthenticationManagementResource {
         return factories.map(factory -> {
             Map<String, Object> data = new HashMap<>();
             data.put("id", factory.getId());
-            ConfigurableAuthenticatorFactory configured = (ConfigurableAuthenticatorFactory)factory;
+            ClientAuthenticatorFactory configured = (ClientAuthenticatorFactory)factory;
             data.put("description", configured.getHelpText());
             data.put("displayName", configured.getDisplayType());
+            data.put("supportsSecret", configured.supportsSecret());
             return data;
         });
     }
