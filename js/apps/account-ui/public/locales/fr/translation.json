@@ -123,7 +123,7 @@
   "signedInDevicesExplanation": "Déconnectez-vous de tout appareil non familier.",
   "signedOutSession": "Déconnecté {{0}}/{{1}}",
   "signingIn": "Connexion",
-  "signingInDescription": "Configuez les façons de vous authentifier.",
+  "signingInDescription": "Configurez les façons de vous authentifier.",
   "signOut": "Déconnexion",
   "signOutAllDevices": "Se déconnecter de tous les appareils",
   "signOutAllDevicesWarning": "Cette action déconnectera tous les appareils qui se sont connectés à votre compte, y compris l'appareil que vous utilisez actuellement.",
