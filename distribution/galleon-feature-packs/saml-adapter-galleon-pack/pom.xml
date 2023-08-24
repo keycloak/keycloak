@@ -274,6 +274,7 @@
                                 <licensesConfigFile>${basedir}/target/resources/license/licenses.xml</licensesConfigFile>
                             </licensesConfigFiles>
                             <licensesOutputFile>${license.directory}/keycloak-saml-adapter-galleon-pack-licenses.xml</licensesOutputFile>
+                            <excludedArtifacts>wildfly-common-ee-dependency-management|wildfly-ee-galleon-pack|wildfly-legacy-ee-bom|wildfly-standard-ee-bom\z</excludedArtifacts>
                         </configuration>
                     </execution>
                 </executions>

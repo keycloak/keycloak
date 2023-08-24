@@ -6,7 +6,7 @@
             <artifactId>keycloak-adapter-spi</artifactId>
             <licenses>
                 <license>
-                    <name>Apache Software License 2.0</name>
+                    <name>Apache License 2.0</name>
                     <url>https://raw.githubusercontent.com/keycloak/keycloak/999-SNAPSHOT/LICENSE.txt</url>
                 </license>
             </licenses>
@@ -16,7 +16,7 @@
             <artifactId>keycloak-undertow-adapter-spi</artifactId>
             <licenses>
                 <license>
-                    <name>Apache Software License 2.0</name>
+                    <name>Apache License 2.0</name>
                     <url>https://raw.githubusercontent.com/keycloak/keycloak/999-SNAPSHOT/LICENSE.txt</url>
                 </license>
             </licenses>
@@ -26,7 +26,7 @@
             <artifactId>keycloak-common</artifactId>
             <licenses>
                 <license>
-                    <name>Apache Software License 2.0</name>
+                    <name>Apache License 2.0</name>
                     <url>https://raw.githubusercontent.com/keycloak/keycloak/999-SNAPSHOT/LICENSE.txt</url>
                 </license>
             </licenses>
@@ -36,7 +36,7 @@
             <artifactId>keycloak-core</artifactId>
             <licenses>
                 <license>
-                    <name>Apache Software License 2.0</name>
+                    <name>Apache License 2.0</name>
                     <url>https://raw.githubusercontent.com/keycloak/keycloak/999-SNAPSHOT/LICENSE.txt</url>
                 </license>
             </licenses>
@@ -46,7 +46,7 @@
             <artifactId>keycloak-crypto-default</artifactId>
             <licenses>
                 <license>
-                    <name>Apache Software License 2.0</name>
+                    <name>Apache License 2.0</name>
                     <url>https://raw.githubusercontent.com/keycloak/keycloak/999-SNAPSHOT/LICENSE.txt</url>
                 </license>
             </licenses>
@@ -56,7 +56,7 @@
             <artifactId>keycloak-jboss-adapter-core</artifactId>
             <licenses>
                 <license>
-                    <name>Apache Software License 2.0</name>
+                    <name>Apache License 2.0</name>
                     <url>https://raw.githubusercontent.com/keycloak/keycloak/999-SNAPSHOT/LICENSE.txt</url>
                 </license>
             </licenses>
@@ -66,7 +66,7 @@
             <artifactId>keycloak-saml-adapter-api-public</artifactId>
             <licenses>
                 <license>
-                    <name>Apache Software License 2.0</name>
+                    <name>Apache License 2.0</name>
                     <url>https://raw.githubusercontent.com/keycloak/keycloak/999-SNAPSHOT/LICENSE.txt</url>
                 </license>
             </licenses>
@@ -76,7 +76,7 @@
             <artifactId>keycloak-saml-adapter-core</artifactId>
             <licenses>
                 <license>
-                    <name>Apache Software License 2.0</name>
+                    <name>Apache License 2.0</name>
                     <url>https://raw.githubusercontent.com/keycloak/keycloak/999-SNAPSHOT/LICENSE.txt</url>
                 </license>
             </licenses>
@@ -86,7 +86,7 @@
             <artifactId>keycloak-saml-core</artifactId>
             <licenses>
                 <license>
-                    <name>Apache Software License 2.0</name>
+                    <name>Apache License 2.0</name>
                     <url>https://raw.githubusercontent.com/keycloak/keycloak/999-SNAPSHOT/LICENSE.txt</url>
                 </license>
             </licenses>
@@ -96,7 +96,7 @@
             <artifactId>keycloak-saml-core-public</artifactId>
             <licenses>
                 <license>
-                    <name>Apache Software License 2.0</name>
+                    <name>Apache License 2.0</name>
                     <url>https://raw.githubusercontent.com/keycloak/keycloak/999-SNAPSHOT/LICENSE.txt</url>
                 </license>
             </licenses>
@@ -106,27 +106,27 @@
             <artifactId>keycloak-saml-undertow-adapter</artifactId>
             <licenses>
                 <license>
-                    <name>Apache Software License 2.0</name>
+                    <name>Apache License 2.0</name>
                     <url>https://raw.githubusercontent.com/keycloak/keycloak/999-SNAPSHOT/LICENSE.txt</url>
                 </license>
             </licenses>
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-saml-wildfly-elytron-adapter</artifactId>
+            <artifactId>keycloak-saml-wildfly-elytron-jakarta-adapter</artifactId>
             <licenses>
                 <license>
-                    <name>Apache Software License 2.0</name>
+                    <name>Apache License 2.0</name>
                     <url>https://raw.githubusercontent.com/keycloak/keycloak/999-SNAPSHOT/LICENSE.txt</url>
                 </license>
             </licenses>
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-saml-wildfly-subsystem</artifactId>
+            <artifactId>keycloak-saml-wildfly-jakarta-subsystem</artifactId>
             <licenses>
                 <license>
-                    <name>Apache Software License 2.0</name>
+                    <name>Apache License 2.0</name>
                     <url>https://raw.githubusercontent.com/keycloak/keycloak/999-SNAPSHOT/LICENSE.txt</url>
                 </license>
             </licenses>
