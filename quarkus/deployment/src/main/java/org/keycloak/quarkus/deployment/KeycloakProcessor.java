@@ -60,6 +60,8 @@ import org.keycloak.authentication.AuthenticatorSpi;
 import org.keycloak.authentication.authenticators.browser.DeployedScriptAuthenticatorFactory;
 import org.keycloak.authorization.policy.provider.PolicySpi;
 import org.keycloak.authorization.policy.provider.js.DeployedScriptPolicyFactory;
+import org.keycloak.broker.provider.DeployedIdPScriptMapper;
+import org.keycloak.broker.provider.IdentityProviderMapperSpi;
 import org.keycloak.common.Profile;
 import org.keycloak.common.crypto.FipsMode;
 import org.keycloak.common.util.StreamUtil;
@@ -151,6 +153,7 @@ import static org.keycloak.quarkus.runtime.storage.legacy.database.LegacyJpaConn
 import static org.keycloak.representations.provider.ScriptProviderDescriptor.AUTHENTICATORS;
 import static org.keycloak.representations.provider.ScriptProviderDescriptor.MAPPERS;
 import static org.keycloak.representations.provider.ScriptProviderDescriptor.POLICIES;
+import static org.keycloak.representations.provider.ScriptProviderDescriptor.SAML_IDP_MAPPERS;
 import static org.keycloak.representations.provider.ScriptProviderDescriptor.SAML_MAPPERS;
 import static org.keycloak.theme.ClasspathThemeProviderFactory.KEYCLOAK_THEMES_JSON;
 
@@ -187,6 +190,7 @@ class KeycloakProcessor {
         DEPLOYEABLE_SCRIPT_PROVIDERS.put(POLICIES, KeycloakProcessor::registerScriptPolicy);
         DEPLOYEABLE_SCRIPT_PROVIDERS.put(MAPPERS, KeycloakProcessor::registerScriptMapper);
         DEPLOYEABLE_SCRIPT_PROVIDERS.put(SAML_MAPPERS, KeycloakProcessor::registerSAMLScriptMapper);
+        DEPLOYEABLE_SCRIPT_PROVIDERS.put(SAML_IDP_MAPPERS, KeycloakProcessor::registerSAMLIdPScriptMapper);
     }
 
     private static ProviderFactory registerScriptAuthenticator(ScriptProviderMetadata metadata) {
@@ -203,6 +207,10 @@ class KeycloakProcessor {
 
     private static ProviderFactory registerSAMLScriptMapper(ScriptProviderMetadata metadata) {
         return new DeployedScriptSAMLProtocolMapper(metadata);
+    }
+
+    private static ProviderFactory registerSAMLIdPScriptMapper(ScriptProviderMetadata metadata) {
+        return new DeployedIdPScriptMapper(metadata);
     }
 
     @BuildStep
@@ -768,11 +776,10 @@ class KeycloakProcessor {
     }
 
     private boolean isScriptForSpi(Spi spi, String type) {
-        if (spi instanceof ProtocolMapperSpi && (MAPPERS.equals(type) || SAML_MAPPERS.equals(type))) {
-            return true;
-        } else if (spi instanceof PolicySpi && POLICIES.equals(type)) {
-            return true;
-        } else if (spi instanceof AuthenticatorSpi && AUTHENTICATORS.equals(type)) {
+        if ((spi instanceof ProtocolMapperSpi && (MAPPERS.equals(type) || SAML_MAPPERS.equals(type)))
+                || (spi instanceof PolicySpi && POLICIES.equals(type))
+                ||(spi instanceof AuthenticatorSpi && AUTHENTICATORS.equals(type))
+                ||(spi instanceof IdentityProviderMapperSpi && SAML_IDP_MAPPERS.equals(type))) {
             return true;
         }
         return false;

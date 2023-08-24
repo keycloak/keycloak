@@ -7,18 +7,20 @@ import java.util.List;
 import java.util.Set;
 
 import org.jboss.logging.Logger;
+import org.keycloak.common.Profile;
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderSyncMode;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.ScriptModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.scripting.EvaluatableScriptAdapter;
 import org.keycloak.scripting.ScriptingProvider;
 
 
-public class ScriptMapper extends AbstractIdentityProviderMapper {
+public class ScriptMapper extends AbstractIdentityProviderMapper implements EnvironmentDependentProviderFactory {
 
     private static final List<ProviderConfigProperty> configProperties;
     public static final String PROVIDER_ID = "javascript-idp-mapper";
@@ -71,6 +73,10 @@ public class ScriptMapper extends AbstractIdentityProviderMapper {
     }
 
     @Override
+    public boolean isSupported() {
+        return Profile.isFeatureEnabled(Profile.Feature.SCRIPTS);
+    }
+    @Override
     public boolean supportsSyncMode(IdentityProviderSyncMode syncMode) {
         return IDENTITY_PROVIDER_SYNC_MODES.contains(syncMode);
     }
@@ -108,7 +114,7 @@ public class ScriptMapper extends AbstractIdentityProviderMapper {
     @Override
     public void updateBrokeredUser(KeycloakSession session, RealmModel realm, UserModel user, IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
 
-        String scriptSource = mapperModel.getConfig().get(ProviderConfigProperty.SCRIPT_TYPE);
+        String scriptSource = getScriptCode(mapperModel);
 
         ScriptingProvider scripting = session.getProvider(ScriptingProvider.class);
         ScriptModel scriptModel = scripting.createScript(realm.getId(), ScriptModel.TEXT_JAVASCRIPT, "idp2user-attribute-mapper-script_" + mapperModel.getName(), scriptSource, null);
@@ -125,6 +131,10 @@ public class ScriptMapper extends AbstractIdentityProviderMapper {
             LOGGER.error(String.format("Error during execution of ScriptMapper's javascript (realm: %s, idp_mapper:  %s)", realm.getName(), mapperModel.getName()), ex);
         }
 
+    }
+
+    protected String getScriptCode(IdentityProviderMapperModel mapperModel){
+        return mapperModel.getConfig().get(ProviderConfigProperty.SCRIPT_TYPE);
     }
 
     @Override
