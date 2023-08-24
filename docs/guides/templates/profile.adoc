@@ -1,11 +1,11 @@
 <#macro ifProduct>
-ifdef::project_product[]
+ifeval::[{project_product}==true]
 <#nested>
 endif::[]
 </#macro>
 
 <#macro ifCommunity>
-ifndef::project_product[]
+ifeval::[{project_community}==true]
 <#nested>
 endif::[]
 </#macro>
