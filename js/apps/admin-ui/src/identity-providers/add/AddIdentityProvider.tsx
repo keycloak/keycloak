@@ -92,7 +92,10 @@ export default function AddIdentityProvider() {
           <FormProvider {...form}>
             <GeneralSettings id={providerId} />
             {providerInfo && (
-              <DynamicComponents properties={providerInfo.properties} />
+              <DynamicComponents
+                stringify
+                properties={providerInfo.properties}
+              />
             )}
           </FormProvider>
           <ActionGroup>

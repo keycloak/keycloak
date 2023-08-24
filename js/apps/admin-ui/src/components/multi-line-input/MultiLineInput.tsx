@@ -44,12 +44,18 @@ export const MultiLineInput = ({
   });
 
   const fields = useMemo<string[]>(() => {
-    let values = stringify ? stringToMultiline(value as string) : value;
+    let values = stringify
+      ? stringToMultiline(
+          Array.isArray(value) && value.length === 1 ? value[0] : value,
+        )
+      : value;
 
     values =
       Array.isArray(values) && values.length !== 0
         ? values
-        : defaultValue || [""];
+        : (stringify
+            ? stringToMultiline(defaultValue as string)
+            : defaultValue) || [""];
 
     return values;
   }, [value]);

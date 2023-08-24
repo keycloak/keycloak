@@ -340,7 +340,10 @@ export default function DetailSettings() {
             <>
               <GeneralSettings create={false} id={alias} />
               {providerInfo && (
-                <DynamicComponents properties={providerInfo.properties} />
+                <DynamicComponents
+                  stringify
+                  properties={providerInfo.properties}
+                />
               )}
             </>
           )}
