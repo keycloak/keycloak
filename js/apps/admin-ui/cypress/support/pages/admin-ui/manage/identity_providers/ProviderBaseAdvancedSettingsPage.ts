@@ -86,6 +86,7 @@ export default class ProviderBaseGeneralSettingsPage extends PageObject {
   #clientAuth = "#clientAuthentication";
   #clientAssertionSigningAlg = "#clientAssertionSigningAlg";
   #clientAssertionAudienceInput = "#clientAssertionAudience";
+  #jwtX509HeadersSwitch = "#jwtX509HeadersEnabled";
 
   public clickSaveBtn() {
     cy.findByTestId(this.#saveBtn).click();
@@ -405,6 +406,39 @@ export default class ProviderBaseGeneralSettingsPage extends PageObject {
       .get(".pf-c-select__menu-item")
       .contains(alg)
       .click();
+    return this;
+  }
+
+  public assertOIDCJWTX509HeadersSwitch() {
+    cy.findByTestId("jump-link-openid-connect-settings").click();
+    cy.get(this.#clientAuth)
+      .click()
+      .get(".pf-c-select__menu-item")
+      .contains(ClientAuthentication.post)
+      .click();
+    cy.get(this.#jwtX509HeadersSwitch).should("not.exist");
+    cy.get(this.#clientAuth)
+      .click()
+      .get(".pf-c-select__menu-item")
+      .contains(ClientAuthentication.basicAuth)
+      .click();
+    cy.get(this.#jwtX509HeadersSwitch).should("not.exist");
+    cy.get(this.#clientAuth)
+      .click()
+      .get(".pf-c-select__menu-item")
+      .contains(ClientAuthentication.jwt)
+      .click();
+    cy.get(this.#jwtX509HeadersSwitch).should("not.exist");
+    cy.get(this.#clientAuth)
+      .click()
+      .get(".pf-c-select__menu-item")
+      .contains(ClientAuthentication.jwtPrivKey)
+      .click();
+    cy.get(this.#jwtX509HeadersSwitch).should("exist");
+
+    super.assertSwitchStateOff(cy.get(this.#jwtX509HeadersSwitch));
+    cy.get(this.#jwtX509HeadersSwitch).parent().click();
+    super.assertSwitchStateOn(cy.get(this.#jwtX509HeadersSwitch));
     return this;
   }
 
