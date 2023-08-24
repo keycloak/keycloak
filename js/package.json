@@ -4,7 +4,7 @@
     "prepare": "cd .. && husky install js/.husky"
   },
   "devDependencies": {
-    "@types/node": "^20.5.3",
+    "@types/node": "^20.5.4",
     "@typescript-eslint/eslint-plugin": "^6.4.1",
     "@typescript-eslint/parser": "^6.4.1",
     "eslint": "^8.47.0",
@@ -19,7 +19,7 @@
     "eslint-plugin-react-hooks": "^4.6.0",
     "husky": "^8.0.3",
     "lint-staged": "^14.0.1",
-    "prettier": "^3.0.1",
+    "prettier": "^3.0.2",
     "tslib": "^2.6.2",
     "typescript": "^5.1.6",
     "wireit": "^0.10.0"
