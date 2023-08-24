@@ -1,10 +1,7 @@
 package org.keycloak.utils;
 
+import java.util.*;
 import java.util.stream.Collectors;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
 import java.util.stream.Stream;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
