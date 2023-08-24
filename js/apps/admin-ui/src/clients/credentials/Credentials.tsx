@@ -204,15 +204,17 @@ export const Credentials = ({ client, save, refresh }: CredentialsProps) => {
               </Button>
             </ActionGroup>
           </CardBody>
-          {selectedProvider?.supportsSecret && <Divider />}
           {selectedProvider?.supportsSecret && (
-            <CardBody>
-              <ClientSecret
-                client={client}
-                secret={secret}
-                toggle={toggleClientSecretConfirm}
-              />
-            </CardBody>
+            <>
+              <Divider />
+              <CardBody>
+                <ClientSecret
+                  client={client}
+                  secret={secret}
+                  toggle={toggleClientSecretConfirm}
+                />
+              </CardBody>
+            </>
           )}
         </Card>
         <Card isFlat>
