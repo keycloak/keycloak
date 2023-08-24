@@ -102,7 +102,7 @@
   "requestor": "Demandeur",
   "required": "Requis",
   "resourceAlreadyShared": "La ressource est déjà partagée avec cet utilisateur.",
-  "resourceIntroMessage": "Partagez votre ressource avec vos membres de l'équipe",
+  "resourceIntroMessage": "Partagez votre ressource avec les membres de votre équipe",
   "resourceName": "Nom de la ressource",
   "resources": "Resources",
   "resourceSharedWith_one": "La ressource est partagée avec <0>{{username}}</0>",
