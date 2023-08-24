@@ -122,7 +122,7 @@
   "signedInDevices": "Appareils connectés",
   "signedInDevicesExplanation": "Déconnectez-vous de tout appareil non familier.",
   "signedOutSession": "Déconnecté {{0}}/{{1}}",
-  "signingIn": "Connexoin",
+  "signingIn": "Connexion",
   "signingInDescription": "Configuez les façons de vous authentifier.",
   "signOut": "Déconnexion",
   "signOutAllDevices": "Se déconnecter de tous les appareils",
