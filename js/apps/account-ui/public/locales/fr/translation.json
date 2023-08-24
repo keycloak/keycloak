@@ -147,7 +147,7 @@
   "unlinkedLoginProviders": "Fournisseurs de connexion non liés",
   "unLinkError": "Impossible de dissocier à cause de : {{error}}",
   "unLinkSuccess": "Compte dissocié avec succès",
-  "unShare": "Tout ne plus partager",
+  "unShare": "Ne plus rien partager",
   "unShareAllConfirm": "Êtes-vous sûr de vouloir complétement supprimer tous les partages ?",
   "unShareError": "Impossible d'annuler le partage à cause de : {{error}}",
   "unShareSuccess": "Annulation du partage de la ressource effectuée avec succès.",
