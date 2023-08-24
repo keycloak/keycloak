@@ -27,21 +27,40 @@ import java.util.function.Supplier;
  */
 public class DefaultLazyLoader<S, D> implements LazyLoader<S, D> {
 
+
+    @FunctionalInterface
+    public interface PagedSearchFunction<S, D> {
+
+        D apply(S t, String search, Integer f, Integer m);
+    }
+
     private final Function<S, D> loader;
+    private final PagedSearchFunction<S, D> pagedLoader;
     private final Supplier<D> fallback;
     private D data;
 
     public DefaultLazyLoader(Function<S, D> loader, Supplier<D> fallback) {
         this.loader = loader;
+        this.pagedLoader = null;
         this.fallback = fallback;
     }
 
+    public DefaultLazyLoader(PagedSearchFunction<S, D> pagedLoader, Supplier<D> fallback) {
+        this.loader = null;
+        this.pagedLoader = pagedLoader;
+        this.fallback = fallback;
+    }
     @Override
     public D get(Supplier<S> sourceSupplier) {
         if (data == null) {
             S source = sourceSupplier.get();
-            data = source == null ? fallback.get() : this.loader.apply(source);
+            data = source == null || loader == null ? fallback.get() : this.loader.apply(source);
         }
         return data;
+    }
+
+    public D bind(Supplier<S> sourceSupplier, String search, Integer first, Integer max) {
+        S source = sourceSupplier.get();
+        return source == null || pagedLoader == null ? fallback.get() : this.pagedLoader.apply(source, search, first, max);
     }
 }

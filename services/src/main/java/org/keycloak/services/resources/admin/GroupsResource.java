@@ -16,12 +16,26 @@
  */
 package org.keycloak.services.resources.admin;
 
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DefaultValue;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+import java.net.URI;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Stream;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.jboss.resteasy.annotations.cache.NoCache;
-import jakarta.ws.rs.NotFoundException;
-
 import org.keycloak.common.util.ObjectUtil;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
@@ -38,21 +52,7 @@ import org.keycloak.services.resources.admin.permissions.GroupPermissionEvaluato
 import org.keycloak.utils.GroupUtils;
 import org.keycloak.utils.SearchQueryUtils;
 
-import jakarta.ws.rs.Consumes;
-import jakarta.ws.rs.DefaultValue;
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.POST;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.PathParam;
-import jakarta.ws.rs.Produces;
-import jakarta.ws.rs.QueryParam;
-import jakarta.ws.rs.core.MediaType;
-import jakarta.ws.rs.core.Response;
-import java.net.URI;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
-import java.util.stream.Stream;
+
 
 /**
  * @resource Groups
@@ -94,10 +94,9 @@ public class GroupsResource {
         GroupPermissionEvaluator groupsEvaluator = auth.groups();
         groupsEvaluator.requireList();
 
-        Stream<GroupModel> stream = null;
+        Stream<GroupModel> stream;
         if (Objects.nonNull(searchQuery)) {
             Map<String, String> attributes = SearchQueryUtils.getFields(searchQuery);
-            // if populateHierarchy is true, searchGroupModelsByAttributes returns top level groups
             stream = ModelToRepresentation.searchGroupModelsByAttributes(session, realm, !briefRepresentation, populateHierarchy, attributes, firstResult, maxResults);
         } else if (Objects.nonNull(search)) {
             //briefRepresentation is ignored by searchForGroupModelByName, and top level groups are returned
@@ -105,19 +104,20 @@ public class GroupsResource {
             // We need to be creating a single line for the ancestry that is all parents and grandparents etc should just show one subgroup
 
             stream = ModelToRepresentation.searchForGroupByNameNoAncestryStream(session, realm, !briefRepresentation, search.trim(), exact, firstResult, maxResults);
-            return  GroupUtils.toAncestorsLine(groupsEvaluator, stream, !briefRepresentation);
+            return  GroupUtils.toAncestorsLine(session, realm, groupsEvaluator, stream, !briefRepresentation);
 
         } else if(Objects.nonNull(firstResult) && Objects.nonNull(maxResults)) {
-            // briefRepresentation is ignored top level groups are returned, this is not a search since search and searchQuery and search cases handled above
-            stream = ModelToRepresentation.toGroupModelHierarchy(realm, !briefRepresentation, firstResult, maxResults);
+            stream = realm.getTopLevelGroupsStream(firstResult, maxResults);
         } else {
-            //if this is not a searchQuery or search and no pagination, return top level groups
             stream = realm.getTopLevelGroupsStream();
         }
 
-        boolean canViewGlobal = groupsEvaluator.canView();
-        return stream.filter(group -> canViewGlobal || groupsEvaluator.canView(group))
-                .map(group -> GroupUtils.toGroupHierarchy(groupsEvaluator, group, search, exact, !briefRepresentation, false));
+        if(populateHierarchy) {
+            return GroupUtils.populateGroupHierarchyFromSubGroups(session, realm, stream, !briefRepresentation, groupsEvaluator);
+        }
+        return stream
+            .map(g -> ModelToRepresentation.toRepresentation(g, !briefRepresentation))
+            .map(g -> GroupUtils.populateSubGroupCount(realm, session, g));
     }
 
     /**

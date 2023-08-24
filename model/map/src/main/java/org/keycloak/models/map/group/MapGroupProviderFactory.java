@@ -61,7 +61,14 @@ public class MapGroupProviderFactory extends AbstractMapProviderFactory<MapGroup
             GroupModel group = (GroupModel) params[1];
 
             realm.removeDefaultGroup(group);
-            group.getSubGroupsStream().collect(Collectors.toSet()).forEach(subGroup -> create(session).removeGroup(realm, subGroup));
+
+            // TODO: Should the batch size be a config option?
+            // batch and remove subgroups to avoid grinding server to a halt at scale
+            long batches = (long) Math.ceil(create(session).getSubGroupsCount(realm, group.getId()) / 1000.0);
+            for(int i = 0; i < batches; i++) {
+                create(session).searchForSubgroupsByParentIdStream(realm, group.getId(), i * 1000, 1000)
+                    .forEach(subGroup -> create(session).removeGroup(realm, subGroup));
+            }
         } else if (type == GROUP_AFTER_REMOVE) {
             session.getKeycloakSessionFactory().publish(new GroupModel.GroupRemovedEvent() {
                 @Override public RealmModel getRealm() { return (RealmModel) params[0]; }

@@ -1,8 +1,6 @@
 package org.keycloak.admin.ui.rest;
 
 
-import java.util.Objects;
-import java.util.stream.Stream;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.GET;
@@ -10,7 +8,7 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
-
+import java.util.stream.Stream;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
@@ -19,11 +17,11 @@ import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 import org.keycloak.services.resources.admin.permissions.GroupPermissionEvaluator;
 import org.keycloak.utils.GroupUtils;
+
 
 import static org.keycloak.models.utils.ModelToRepresentation.toRepresentation;
 
@@ -72,7 +70,7 @@ public class GroupsResource {
                     .filter(group -> canViewGlobal || groupsEvaluator.canView(group))
                     .skip(first).limit(max);
         }
-        return GroupUtils.toAncestorsLine(groupsEvaluator, stream, false);
+        return GroupUtils.toAncestorsLine(session, realm, groupsEvaluator, stream, false);
     }
 
     @GET
@@ -102,8 +100,9 @@ public class GroupsResource {
             return Stream.empty();
         }
 
-        return group.getSubGroupsStream().filter(g -> g.getName().contains(search))
-                .map(g -> GroupUtils.toGroupHierarchy(groupsEvaluator, g, search, false, true)).skip(first).limit(max);
+        return group.getSubGroupsStream(search, first, max)
+            .map(g -> toRepresentation(g, false))
+            .map(g -> GroupUtils.populateSubGroupCount(realm, session, g));
     }
 
     @GET
@@ -129,6 +128,7 @@ public class GroupsResource {
         this.auth.groups().requireView(group);
 
         GroupRepresentation rep = toRepresentation(group, true);
+        GroupUtils.populateSubGroupCount(realm, session, rep);
 
         rep.setAccess(auth.groups().getAccess(group));
 
