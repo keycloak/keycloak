@@ -35,6 +35,7 @@ import java.security.PrivateKey;
 public class JWSBuilder {
     String type;
     String kid;
+    String x5t;
     String contentType;
     byte[] contentBytes;
 
@@ -45,6 +46,11 @@ public class JWSBuilder {
 
     public JWSBuilder kid(String kid) {
         this.kid = kid;
+        return this;
+    }
+
+    public JWSBuilder x5t(String x5t) {
+        this.x5t = x5t;
         return this;
     }
 
@@ -74,6 +80,7 @@ public class JWSBuilder {
 
         if (type != null) builder.append(",\"typ\" : \"").append(type).append("\"");
         if (kid != null) builder.append(",\"kid\" : \"").append(kid).append("\"");
+        if (x5t != null) builder.append(",\"x5t\" : \"").append(x5t).append("\"");
         if (contentType != null) builder.append(",\"cty\":\"").append(contentType).append("\"");
         builder.append("}");
         return Base64Url.encode(builder.toString().getBytes(StandardCharsets.UTF_8));
