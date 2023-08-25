@@ -3,7 +3,6 @@
     [
       "snowpack/assets/babel-plugin.js",
       {
-        "webModulesUrl": "../common/keycloak/web_modules",
         "moduleResolution": "node"
       }
     ],

@@ -188,7 +188,7 @@ You will notice that the only styles being applied are those from your custom st
 +
 [source]
 ----
-styles=web_modules/@fontawesome/fontawesome-free/css/icons/all.css web_modules/@patternfly/react-core/dist/styles/base.css web_modules/@patternfly/react-core/dist/styles/app.css node_modules/patternfly/dist/css/patternfly.min.css node_modules/patternfly/dist/css/patternfly-additions.min.css css/login.css css/styles.css
+styles=css/login.css css/styles.css
 ----
 +
 NOTE: To override styles from the parent stylesheets, ensure that your stylesheet is listed last.
