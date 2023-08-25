@@ -152,7 +152,7 @@ const EditUserForm = ({ user, bruteForced, refresh }: EditUserFormProps) => {
     const attributes =
       "key" in (formUser.attributes?.[0] || [])
         ? keyValueToArray(formUser.attributes as KeyValueType[])
-        : user.attributes;
+        : [];
     try {
       await adminClient.users.update(
         { id: user.id! },
