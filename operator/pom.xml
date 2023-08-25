@@ -42,11 +42,8 @@
         <!-- Fabric8 -->
         <dependency>
             <groupId>io.fabric8</groupId>
-            <artifactId>crd-generator-api</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.fabric8</groupId>
             <artifactId>crd-generator-apt</artifactId>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>io.fabric8</groupId>
@@ -84,10 +81,6 @@
         <dependency>
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-openshift</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.quarkus</groupId>
-            <artifactId>quarkus-minikube</artifactId>
         </dependency>
         <dependency>
             <groupId>io.quarkus</groupId>
@@ -178,6 +171,11 @@
                     <goals>
                         <goal>build</goal>
                     </goals>
+                    <configuration>
+                        <properties>
+                            <quarkus.package.filter-optional-dependencies>true</quarkus.package.filter-optional-dependencies> 
+                        </properties>
+                    </configuration>
                     </execution>
                 </executions>
             </plugin>

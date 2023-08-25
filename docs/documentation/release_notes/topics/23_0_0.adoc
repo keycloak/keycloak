@@ -14,4 +14,8 @@ the latest FAPI 2 draft specifications when communicating with your clients. Tha
 Keycloak has preview for support for OAuth 2.0 Demonstrating Proof-of-Possession at the Application Layer (DPoP). Thanks to
 https://github.com/tnorimat[Takashi Norimatsu] and https://github.com/dteleguin[Dmitry Telegin] for their contributions.
 
+= Oracle Database driver not part of the distribution
 
+The Oracle Database JDBC driver is no longer part of the Keycloak distribution.
+Administrators will need to install a version of the Oracle Driver matching their environment
+as described in the configuring the database {section}.

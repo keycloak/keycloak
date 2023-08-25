@@ -30,3 +30,8 @@ Previous versions of Keycloak supported specifying the encoding in the first lin
 Message properties files for themes are now read in UTF-8 encoding, with an automatic fallback to ISO-8859-1 encoding.
 If you are using a different encoding, convert the files to UTF-8.
 
+= Oracle Database driver not part of the distribution
+
+The Oracle Database JDBC driver is no longer part of the Keycloak distribution.
+Administrators will need to install a version of the Oracle Driver matching their environment
+as described in the configuring the database {section}.

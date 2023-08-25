@@ -27,7 +27,6 @@ import io.fabric8.kubernetes.client.dsl.base.PatchType;
 import io.quarkus.logging.Log;
 
 import org.keycloak.operator.Constants;
-import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -104,9 +103,9 @@ public abstract class OperatorManagedResource<T extends HasMetadata> {
         return labels;
     }
 
-    public static Map<String, String> allInstanceLabels(Keycloak keycloak) {
+    public static Map<String, String> allInstanceLabels(HasMetadata primary) {
         var labels = new LinkedHashMap<>(Constants.DEFAULT_LABELS);
-        labels.put(Constants.INSTANCE_LABEL, keycloak.getMetadata().getName());
+        labels.put(Constants.INSTANCE_LABEL, primary.getMetadata().getName());
         return labels;
     }
 

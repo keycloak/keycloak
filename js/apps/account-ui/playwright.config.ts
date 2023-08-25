@@ -21,13 +21,13 @@ export default defineConfig({
   projects: [
     { name: "setup", testMatch: /.auth\.setup\.ts/ },
     {
-      name: "import realm",
-      testMatch: /import\.setup\.ts/,
-      teardown: "del realm",
+      name: "import test realm",
+      testMatch: /test-realm\.setup\.ts/,
+      teardown: "del test realm",
     },
     {
-      name: "del realm",
-      testMatch: /import\.teardown\.ts/,
+      name: "del test realm",
+      testMatch: /test-realm\.teardown\.ts/,
     },
     {
       name: "chromium",
@@ -50,9 +50,9 @@ export default defineConfig({
     },
 
     {
-      name: "photoz realm chromium",
+      name: "resources",
       use: { ...devices["Desktop Chrome"] },
-      dependencies: ["import realm"],
+      dependencies: ["import test realm"],
       testMatch: ["**/*my-resources.spec.ts"],
     },
   ],

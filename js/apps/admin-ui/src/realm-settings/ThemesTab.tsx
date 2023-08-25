@@ -120,15 +120,17 @@ export const RealmSettingsThemesTab = ({
                 placeholderText="Select a theme"
                 data-testid="select-account-theme"
               >
-                {themeTypes.account.map((theme, idx) => (
-                  <SelectOption
-                    selected={theme.name === field.value}
-                    key={`account-theme-${idx}`}
-                    value={theme.name}
-                  >
-                    {t(`${theme.name}`)}
-                  </SelectOption>
-                ))}
+                {themeTypes.account
+                  .filter((theme) => theme.name !== "base")
+                  .map((theme, idx) => (
+                    <SelectOption
+                      selected={theme.name === field.value}
+                      key={`account-theme-${idx}`}
+                      value={theme.name}
+                    >
+                      {t(`${theme.name}`)}
+                    </SelectOption>
+                  ))}
               </Select>
             )}
           />
@@ -162,15 +164,17 @@ export const RealmSettingsThemesTab = ({
                 placeholderText="Select a theme"
                 data-testid="select-admin-theme"
               >
-                {themeTypes.admin.map((theme, idx) => (
-                  <SelectOption
-                    selected={theme.name === field.value}
-                    key={`admin-theme-${idx}`}
-                    value={theme.name}
-                  >
-                    {t(`${theme.name}`)}
-                  </SelectOption>
-                ))}
+                {themeTypes.admin
+                  .filter((theme) => theme.name !== "base")
+                  .map((theme, idx) => (
+                    <SelectOption
+                      selected={theme.name === field.value}
+                      key={`admin-theme-${idx}`}
+                      value={theme.name}
+                    >
+                      {t(`${theme.name}`)}
+                    </SelectOption>
+                  ))}
               </Select>
             )}
           />
