@@ -339,8 +339,8 @@ importers:
         specifier: ^20.5.6
         version: 20.5.6
       chai:
-        specifier: ^4.3.7
-        version: 4.3.7
+        specifier: ^4.3.8
+        version: 4.3.8
       mocha:
         specifier: ^10.2.0
         version: 10.2.0
@@ -2090,7 +2090,7 @@ packages:
     dependencies:
       '@vitest/spy': 0.34.2
       '@vitest/utils': 0.34.2
-      chai: 4.3.7
+      chai: 4.3.8
     dev: true
 
   /@vitest/runner@0.34.2:
@@ -2634,8 +2634,8 @@ packages:
     resolution: {integrity: sha512-4tYFyifaFfGacoiObjJegolkwSU4xQNGbVgUiNYVUxbQ2x2lUsFvY4hVgVzGiIe6WLOPqycWXA40l+PWsxthUw==}
     dev: true
 
-  /chai@4.3.7:
-    resolution: {integrity: sha512-HLnAzZ2iupm25PlN0xFreAlBA5zaBSv3og0DdeGA4Ar6h6rJ3A0rolRUKJhSF2V10GZKDgWF/VmAEsNWjCRB+A==}
+  /chai@4.3.8:
+    resolution: {integrity: sha512-vX4YvVVtxlfSZ2VecZgFUTU5qPCYsobVI2O9FmwEXBhDigYGQA6jRXCycIs1yJnnWbZ6/+a2zNIF5DfVCcJBFQ==}
     engines: {node: '>=4'}
     dependencies:
       assertion-error: 1.1.0
@@ -6902,7 +6902,7 @@ packages:
       acorn: 8.10.0
       acorn-walk: 8.2.0
       cac: 6.7.14
-      chai: 4.3.7
+      chai: 4.3.8
       debug: 4.3.4(supports-color@8.1.1)
       jsdom: 22.1.0
       local-pkg: 0.4.3
