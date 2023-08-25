@@ -1,18 +1,18 @@
 package org.keycloak.quarkus.runtime.configuration.mappers;
 
 import static java.util.Optional.of;
+import static org.keycloak.config.LoggingOptions.GELF_ACTIVATED;
 import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromOption;
 import static org.keycloak.quarkus.runtime.integration.QuarkusPlatform.addInitializationException;
 
 import java.io.File;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 import java.util.function.BiFunction;
 import java.util.logging.Level;
-import java.util.stream.Collectors;
 
+import org.apache.commons.lang3.ArrayUtils;
 import org.jboss.logmanager.LogContext;
 import org.keycloak.config.LoggingOptions;
 import org.keycloak.quarkus.runtime.Messages;
@@ -24,7 +24,7 @@ public final class LoggingPropertyMappers {
     private LoggingPropertyMappers(){}
 
     public static PropertyMapper[] getMappers() {
-        return new PropertyMapper[] {
+        PropertyMapper[] defaultMappers = new PropertyMapper[]{
                 fromOption(LoggingOptions.LOG)
                         .paramLabel("<handler>")
                         .build(),
@@ -68,7 +68,14 @@ public final class LoggingPropertyMappers {
                         .to("quarkus.log.level")
                         .transformer(LoggingPropertyMappers::resolveLogLevel)
                         .paramLabel("category:level")
-                        .build(),
+                        .build()
+        };
+
+        return GELF_ACTIVATED ? ArrayUtils.addAll(defaultMappers, getGelfMappers()) : defaultMappers;
+    }
+
+    public static PropertyMapper[] getGelfMappers() {
+        return new PropertyMapper[]{
                 fromOption(LoggingOptions.LOG_GELF_ENABLED)
                         .mapFrom("log")
                         .to("quarkus.log.handler.gelf.enabled")
@@ -126,7 +133,7 @@ public final class LoggingPropertyMappers {
             }
 
             String[] logHandlerValues = handlers.split(",");
-            List<String> availableLogHandlers = Arrays.stream(LoggingOptions.Handler.values()).map(Enum::name).collect(Collectors.toList());
+            final List<String> availableLogHandlers = LoggingOptions.getAvailableHandlerNames();
 
             if (!availableLogHandlers.containsAll(List.of(logHandlerValues))) {
                 addInitializationException(Messages.notRecognizedValueInList("log", handlers, String.join(",", availableLogHandlers)));
