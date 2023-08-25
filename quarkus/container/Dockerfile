@@ -25,8 +25,8 @@ ENV LANG en_US.UTF-8
 COPY --from=ubi-micro-build /tmp/null/rootfs/ /
 COPY --from=ubi-micro-build --chown=1000:0 /opt/keycloak /opt/keycloak
 
-RUN echo "keycloak:x:0:root" >> /etc/group && \
-    echo "keycloak:x:1000:0:keycloak user:/opt/keycloak:/sbin/nologin" >> /etc/passwd
+RUN echo "keycloak:x:1000:" >> /etc/group && \
+    echo "keycloak:x:1000:1000:keycloak user:/opt/keycloak:/sbin/nologin" >> /etc/passwd
 
 USER 1000
 
