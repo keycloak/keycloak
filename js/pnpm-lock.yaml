@@ -230,8 +230,8 @@ importers:
         specifier: ^9.0.0
         version: 9.0.0(cypress@12.17.4)
       '@testing-library/jest-dom':
-        specifier: ^6.0.1
-        version: 6.0.1(vitest@0.34.2)
+        specifier: ^6.1.2
+        version: 6.1.2(vitest@0.34.2)
       '@testing-library/react':
         specifier: ^14.0.0
         version: 14.0.0(react-dom@18.2.0)(react@18.2.0)
@@ -480,8 +480,8 @@ packages:
     engines: {node: '>=0.10.0'}
     dev: true
 
-  /@adobe/css-tools@4.2.0:
-    resolution: {integrity: sha512-E09FiIft46CmH5Qnjb0wsW54/YQd69LsxeKUOWawmws1XWvyFGURnAChH0mlr7YPFR1ofwvUQfcL0J3lMxXqPA==}
+  /@adobe/css-tools@4.3.1:
+    resolution: {integrity: sha512-/62yikz7NLScCGAAST5SHdnjaDJQBDq0M2muyRTpf2VQhw6StBg2ALiu73zSJQ4fMVLA+0uBhBHAle7Wg+2kSg==}
     dev: true
 
   /@babel/code-frame@7.22.5:
@@ -1567,8 +1567,8 @@ packages:
       pretty-format: 27.5.1
     dev: true
 
-  /@testing-library/jest-dom@6.0.1(vitest@0.34.2):
-    resolution: {integrity: sha512-0hx/AWrJp8EKr8LmC5jrV3Lx8TZySH7McU1Ix2czBPQnLd458CefSEGjZy7w8kaBRA6LhoPkGjoZ3yqSs338IQ==}
+  /@testing-library/jest-dom@6.1.2(vitest@0.34.2):
+    resolution: {integrity: sha512-NP9jl1Q2qDDtx+cqogowtQtmgD2OVs37iMSIsTv5eN5ETRkf26Kj6ugVwA93/gZzzFWQAsgkKkcftDe91BJCkQ==}
     engines: {node: '>=14', npm: '>=6', yarn: '>=1'}
     peerDependencies:
       '@jest/globals': '>= 28'
@@ -1585,7 +1585,7 @@ packages:
       vitest:
         optional: true
     dependencies:
-      '@adobe/css-tools': 4.2.0
+      '@adobe/css-tools': 4.3.1
       '@babel/runtime': 7.22.6
       aria-query: 5.3.0
       chalk: 3.0.0
