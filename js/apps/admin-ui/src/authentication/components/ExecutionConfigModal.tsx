@@ -100,9 +100,8 @@ export const ExecutionConfigModal = ({
           alias: changedConfig.alias,
           config: changedConfig.config,
         };
-        const { id } = await adminClient.authenticationManagement.createConfig(
-          newConfig,
-        );
+        const { id } =
+          await adminClient.authenticationManagement.createConfig(newConfig);
         setConfig({ ...newConfig.config, id, alias: newConfig.alias });
       }
       addAlert(t("configSaveSuccess"), AlertVariant.success);
