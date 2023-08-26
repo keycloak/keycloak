@@ -41,7 +41,12 @@ public interface GroupLookupProvider {
      * @param name   name.
      * @return GroupModel with the corresponding name.
      */
-    GroupModel getGroupByName(RealmModel realm, GroupModel parent, String name);
+    default GroupModel getGroupByName(RealmModel realm, GroupModel parent, String name) {
+        return searchForGroupByNameStream(realm, name, true, null, null)
+                .filter(groupModel -> parent == null
+                        ? groupModel.getParent() == null
+                        : parent.getId().equals(groupModel.getParentId())).findFirst().orElse(null);
+    }
 
     /**
      * Returns the group hierarchy with the given string in name for the given realm.
