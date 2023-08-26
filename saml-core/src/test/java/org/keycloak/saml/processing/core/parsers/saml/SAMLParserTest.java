@@ -105,7 +105,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertTrue;
 /**
  * Test class for SAML parser.
@@ -218,7 +218,7 @@ public class SAMLParserTest {
         assertNotNull(rtChoiceType.getEncryptedAssertion());
 
         PrivateKey privateKey = DerUtils.decodePrivateKey(Base64.decode(PRIVATE_KEY));
-        AssertionUtil.decryptAssertion(holder, resp, privateKey);
+        AssertionUtil.decryptAssertion(resp, privateKey);
 
         rtChoiceType = resp.getAssertions().get(0);
         assertNotNull(rtChoiceType.getAssertion());

@@ -17,15 +17,18 @@
 
 package org.keycloak.services.resources;
 
+import static org.keycloak.services.managers.AuthenticationManager.authenticateIdentityCookie;
+import static org.keycloak.utils.LockObjectsForModification.lockUserSessionsForModification;
+
 import java.net.URI;
 
-import javax.ws.rs.core.Cookie;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriBuilder;
-import javax.ws.rs.core.UriInfo;
+import jakarta.ws.rs.core.Cookie;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.UriBuilder;
+import jakarta.ws.rs.core.UriInfo;
 
 import org.jboss.logging.Logger;
-import org.jboss.resteasy.spi.HttpRequest;
+import org.keycloak.http.HttpRequest;
 import org.keycloak.authentication.AuthenticationProcessor;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.util.ObjectUtil;
@@ -42,6 +45,7 @@ import org.keycloak.protocol.AuthorizationEndpointBase;
 import org.keycloak.protocol.RestartLoginCookie;
 import org.keycloak.services.ErrorPage;
 import org.keycloak.services.ServicesLogger;
+import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.services.managers.ClientSessionCode;
 import org.keycloak.services.messages.Messages;
@@ -175,24 +179,26 @@ public class SessionCodeChecks {
 
         }
 
-        // See if we are already authenticated and userSession with same ID exists.
-        UserSessionModel userSession = authSessionManager.getUserSessionFromAuthCookie(realm);
-
-        if (userSession != null) {
-            LoginFormsProvider loginForm = session.getProvider(LoginFormsProvider.class).setAuthenticationSession(authSession)
-                    .setSuccess(Messages.ALREADY_LOGGED_IN);
-
-            if (client == null) {
-                loginForm.setAttribute(Constants.SKIP_LINK, true);
-            }
-
-            response = loginForm.createInfoPage();
-            return null;
-        }
-
         // Otherwise just try to restart from the cookie
         RootAuthenticationSessionModel existingRootAuthSession = authSessionManager.getCurrentRootAuthenticationSession(realm);
         response = restartAuthenticationSessionFromCookie(existingRootAuthSession);
+
+        // if restart from cookie was not found check if the user is already authenticated
+        if (response.getStatus() != Response.Status.FOUND.getStatusCode()) {
+            AuthenticationManager.AuthResult authResult = lockUserSessionsForModification(session, () -> authenticateIdentityCookie(session, realm, false));
+
+            if (authResult != null && authResult.getSession() != null) {
+                LoginFormsProvider loginForm = session.getProvider(LoginFormsProvider.class).setAuthenticationSession(authSession)
+                        .setSuccess(Messages.ALREADY_LOGGED_IN);
+
+                if (client == null) {
+                    loginForm.setAttribute(Constants.SKIP_LINK, true);
+                }
+
+                response = loginForm.createInfoPage();
+            }
+        }
+
         return null;
     }
 
@@ -216,6 +222,7 @@ public class SessionCodeChecks {
         ClientModel client = authSession.getClient();
         if (client == null) {
             event.error(Errors.CLIENT_NOT_FOUND);
+            session.getProvider(LoginFormsProvider.class).setDetachedAuthSession();
             response = ErrorPage.error(session, authSession, Response.Status.BAD_REQUEST, Messages.UNKNOWN_LOGIN_REQUESTER);
             clientCode.removeExpiredClientSession();
             return false;
@@ -226,6 +233,7 @@ public class SessionCodeChecks {
 
         if (checkClientDisabled(client)) {
             event.error(Errors.CLIENT_DISABLED);
+            session.getProvider(LoginFormsProvider.class).setDetachedAuthSession();
             response = ErrorPage.error(session, authSession, Response.Status.BAD_REQUEST, Messages.LOGIN_REQUESTER_NOT_ENABLED);
             clientCode.removeExpiredClientSession();
             return false;
@@ -257,7 +265,7 @@ public class SessionCodeChecks {
                 // Allow refresh, but rewrite browser history
                 if (execution == null && lastExecFromSession != null) {
                     logger.debugf("Parameter 'execution' is not in the request, but flow wasn't changed. Will update browser history");
-                    request.setAttribute(BrowserHistoryHelper.SHOULD_UPDATE_BROWSER_HISTORY, true);
+                    session.setAttribute(BrowserHistoryHelper.SHOULD_UPDATE_BROWSER_HISTORY, true);
                 }
 
                 return true;

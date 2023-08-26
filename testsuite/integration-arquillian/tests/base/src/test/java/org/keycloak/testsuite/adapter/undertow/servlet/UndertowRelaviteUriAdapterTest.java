@@ -24,8 +24,6 @@ import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
-import org.keycloak.OAuth2Constants;
-import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.adapter.AbstractServletsAdapterTest;
 import org.keycloak.testsuite.adapter.filter.AdapterActionsFilter;
@@ -38,6 +36,7 @@ import org.keycloak.testsuite.adapter.servlet.ErrorServlet;
 import org.keycloak.testsuite.adapter.servlet.ProductServlet;
 import org.keycloak.testsuite.adapter.servlet.ServletTestUtils;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
+import org.keycloak.testsuite.util.AccountHelper;
 
 import static org.keycloak.testsuite.arquillian.AuthServerTestEnricher.AUTH_SERVER_CONTAINER_DEFAULT;
 import static org.keycloak.testsuite.auth.page.AuthRealm.DEMO;
@@ -116,8 +115,8 @@ public class UndertowRelaviteUriAdapterTest extends AbstractServletsAdapterTest 
         Assert.assertEquals(1, Integer.parseInt(productPortalStats.get("active")));
         
         // test logout
-        testRealmAccountPage.navigateTo();
-        testRealmAccountPage.logOut();
+        AccountHelper.logout(testRealmResource(), testUser.getUsername());
+
         assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
         productPortal.navigateTo();
         assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);

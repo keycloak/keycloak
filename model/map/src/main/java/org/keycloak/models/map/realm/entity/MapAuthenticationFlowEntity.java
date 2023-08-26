@@ -28,7 +28,7 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 @DeepCloner.Root
 public interface MapAuthenticationFlowEntity extends UpdatableEntity, AbstractEntity {
     static MapAuthenticationFlowEntity fromModel(AuthenticationFlowModel model) {
-        MapAuthenticationFlowEntity entity = new MapAuthenticationFlowEntityImpl();
+        MapAuthenticationFlowEntity entity = DeepCloner.DUMB_CLONER.newInstance(MapAuthenticationFlowEntity.class);
         String id = model.getId() == null ? KeycloakModelUtils.generateId() : model.getId();
         entity.setId(id);
         entity.setAlias(model.getAlias());

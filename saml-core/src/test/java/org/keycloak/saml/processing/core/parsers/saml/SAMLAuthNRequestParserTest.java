@@ -26,7 +26,7 @@ import org.junit.Test;
 import org.junit.Before;
 import org.w3c.dom.Element;
 import static org.hamcrest.CoreMatchers.*;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * Test class for SAML AuthNRequest parser.

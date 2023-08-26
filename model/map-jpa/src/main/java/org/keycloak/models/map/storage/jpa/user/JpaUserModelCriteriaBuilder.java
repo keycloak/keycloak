@@ -19,9 +19,9 @@ package org.keycloak.models.map.storage.jpa.user;
 import java.util.Arrays;
 import java.util.Collection;
 
-import javax.persistence.criteria.CriteriaBuilder;
-import javax.persistence.criteria.Join;
-import javax.persistence.criteria.JoinType;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.Join;
+import jakarta.persistence.criteria.JoinType;
 
 import org.keycloak.models.UserModel;
 import org.keycloak.models.map.storage.CriterionNotSupportedException;
@@ -41,6 +41,8 @@ import org.keycloak.storage.StorageId;
  * @author <a href="mailto:sguilhen@redhat.com">Stefan Guilhen</a>
  */
 public class JpaUserModelCriteriaBuilder extends JpaModelCriteriaBuilder<JpaUserEntity, UserModel, JpaUserModelCriteriaBuilder> {
+
+    private static final char ESCAPE_BACKSLASH = '\\';
 
     public JpaUserModelCriteriaBuilder() {
         super(JpaUserModelCriteriaBuilder::new);
@@ -167,6 +169,7 @@ public class JpaUserModelCriteriaBuilder extends JpaModelCriteriaBuilder<JpaUser
                         Join<JpaUserEntity, JpaUserAttributeEntity> join = root.join("attributes", JoinType.LEFT);
                         return cb.and(
                                 cb.equal(join.get("name"), value[0]),
+                                hashExpression(cb, join, "value_hash", value[1]),
                                 cb.equal(join.get("value"), value[1])
                         );
                     });
@@ -188,7 +191,7 @@ public class JpaUserModelCriteriaBuilder extends JpaModelCriteriaBuilder<JpaUser
                     validateValue(value, modelField, op, String.class);
 
                     return new JpaUserModelCriteriaBuilder((cb, query, root) ->
-                        cb.like(root.get("username"), value[0].toString().toLowerCase())
+                        cb.like(root.get("username"), value[0].toString().toLowerCase(), ESCAPE_BACKSLASH)
                     );
 
                 } else {
@@ -202,11 +205,11 @@ public class JpaUserModelCriteriaBuilder extends JpaModelCriteriaBuilder<JpaUser
                     return new JpaUserModelCriteriaBuilder((cb, query, root) ->
                         cb.or(
                             cb.and(
-                                cb.like(root.get("usernameWithCase"), value[0].toString()),
+                                cb.like(root.get("usernameWithCase"), value[0].toString(), ESCAPE_BACKSLASH),
                                 cb.ge(root.get("entityVersion"), 2)
                             ),
                             cb.and(
-                                cb.like(root.get("username"), value[0].toString()),
+                                cb.like(root.get("username"), value[0].toString(), ESCAPE_BACKSLASH),
                                 cb.le(root.get("entityVersion"), 1)
                             )
                         )

@@ -1,0 +1,16 @@
+{
+  "requireSsl": "Niveau d''exigence HTTPS : ''aucun'' signifie que le HTTPS n''est requis pour aucune adresse IP cliente. ''les requêtes externes'' signifie que localhost et les adresses IP privées peuvent accéder sans HTTPS.  ''toutes les requêtes'' signifie que le protocole HTTPS est obligatoire pour toutes les adresses IP.",
+  "accountTheme": "Sélectionnez le thème pour la gestion des comptes.",
+  "adminUITheme": "Sélectionnez le thème de la UI d''administration.",
+  "emailTheme": "Sélectionnez le thème pour les courriels envoyées par le serveur.",
+  "failureFactor": "Nombre d''erreurs avant de déclencher le temps d''attente.",
+  "waitIncrementSeconds": "Quand le seuil des erreurs est atteint, combien de temps l''utilisateur est-il bloqué ?",
+  "maxFailureWaitSeconds": "Durée maximale de blocage du compte utilisateur",
+  "maxDeltaTimeSeconds": "Quand les erreurs sont-elles remises à zéro ?",
+  "quickLoginCheckMilliSeconds": "Si une erreur apparait trop rapidement, bloquer le compte utilisateur.",
+  "minimumQuickLoginWaitSeconds": "Durée d''attente demandée après une erreur entre deux connexions.",
+  "ssoSessionIdle": "Temps d''inactivité autorisé avant expiration de la session. Les jetons et les sessions navigateurs sont invalidées quand la session expire.",
+  "ssoSessionMax": "Durée maximale avant que la session n''expire. Les jetons et les sessions navigateurs sont invalidées quand la session expire.",
+  "clientLoginTimeout": "Durée maximale qu''a un client pour finir le protocole du jeton d''accès. Devrait être de l''ordre de la minute (1 min).",
+  "editUsername": "Si actif, le champ du nom de l''utilisateur est modifiable."
+}

@@ -17,7 +17,7 @@
 package org.keycloak.protocol.oidc.endpoints;
 
 import org.jboss.resteasy.annotations.cache.NoCache;
-import org.jboss.resteasy.spi.HttpRequest;
+import org.keycloak.http.HttpRequest;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
@@ -32,10 +32,12 @@ import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.context.TokenIntrospectContext;
 
-import javax.ws.rs.POST;
-import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.Status;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response.Status;
 
 /**
  * A token introspection endpoint based on RFC-7662.
@@ -44,8 +46,8 @@ import javax.ws.rs.core.Response.Status;
  */
 public class TokenIntrospectionEndpoint {
 
-    private static final String PARAM_TOKEN_TYPE_HINT = "token_type_hint";
-    private static final String PARAM_TOKEN = "token";
+    public static final String PARAM_TOKEN_TYPE_HINT = "token_type_hint";
+    public static final String PARAM_TOKEN = "token";
 
     private final KeycloakSession session;
 
@@ -61,11 +63,12 @@ public class TokenIntrospectionEndpoint {
         this.clientConnection = session.getContext().getConnection();
         this.realm = session.getContext().getRealm();
         this.event = event;
-        this.request = session.getContext().getContextObject(HttpRequest.class);
+        this.request = session.getContext().getHttpRequest();
     }
 
     @POST
     @NoCache
+    @Produces(MediaType.APPLICATION_JSON)
     public Response introspect() {
         event.event(EventType.INTROSPECT_TOKEN);
 
@@ -97,6 +100,7 @@ public class TokenIntrospectionEndpoint {
 
         try {
             session.clientPolicy().triggerOnEvent(new TokenIntrospectContext(formParams));
+            token = formParams.getFirst(PARAM_TOKEN);
         } catch (ClientPolicyException cpe) {
             throw throwErrorResponseException(Errors.INVALID_REQUEST, cpe.getErrorDetail(), Status.BAD_REQUEST);
         }

@@ -29,24 +29,19 @@ import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
-import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.ModelException;
-import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.FormMessage;
-import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.validation.Validation;
 import org.keycloak.sessions.AuthenticationSessionModel;
 
-import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.Response;
-import java.util.Objects;
+import jakarta.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.core.Response;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -95,9 +90,7 @@ public class UpdatePassword implements RequiredActionProvider, RequiredActionFac
     public void processAction(RequiredActionContext context) {
         EventBuilder event = context.getEvent();
         AuthenticationSessionModel authSession = context.getAuthenticationSession();
-        RealmModel realm = context.getRealm();
         UserModel user = context.getUser();
-        KeycloakSession session = context.getSession();
         MultivaluedMap<String, String> formData = context.getHttpRequest().getDecodedFormParameters();
         event.event(EventType.UPDATE_PASSWORD);
         String passwordNew = formData.getFirst("password-new");
@@ -125,14 +118,8 @@ public class UpdatePassword implements RequiredActionProvider, RequiredActionFac
             return;
         }
 
-        if (getId().equals(authSession.getClientNote(Constants.KC_ACTION_EXECUTING))
-                && "on".equals(formData.getFirst("logout-sessions")))
-        {
-            session.sessions().getUserSessionsStream(realm, user)
-                    .filter(s -> !Objects.equals(s.getId(), authSession.getParentSession().getId()))
-                    .collect(Collectors.toList()) // collect to avoid concurrent modification as backchannelLogout removes the user sessions.
-                    .forEach(s -> AuthenticationManager.backchannelLogout(session, realm, s, session.getContext().getUri(),
-                            context.getConnection(), context.getHttpRequest().getHttpHeaders(), true));
+        if ("on".equals(formData.getFirst("logout-sessions"))) {
+            AuthenticatorUtil.logoutOtherSessions(context);
         }
 
         try {

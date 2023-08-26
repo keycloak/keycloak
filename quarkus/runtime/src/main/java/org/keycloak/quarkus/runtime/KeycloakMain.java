@@ -31,16 +31,15 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import javax.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.context.ApplicationScoped;
 
 import io.quarkus.runtime.ApplicationLifecycleManager;
 import io.quarkus.runtime.Quarkus;
 
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
-import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.models.KeycloakTransactionManager;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.quarkus.runtime.cli.ExecutionExceptionHandler;
 import org.keycloak.quarkus.runtime.cli.Picocli;
 import org.keycloak.common.Version;
@@ -95,11 +94,7 @@ public class KeycloakMain implements QuarkusApplication {
     }
 
     public static void start(ExecutionExceptionHandler errorHandler, PrintWriter errStream, String[] args) {
-        ClassLoader originalCl = Thread.currentThread().getContextClassLoader();
-
         try {
-            Thread.currentThread().setContextClassLoader(new KeycloakClassLoader());
-
             Quarkus.run(KeycloakMain.class, (exitCode, cause) -> {
                 if (cause != null) {
                     errorHandler.error(errStream,
@@ -118,8 +113,6 @@ public class KeycloakMain implements QuarkusApplication {
                     String.format("Unexpected error when starting the server in (%s) mode", getKeycloakModeFromProfile(getProfileOrDefault("prod"))),
                     cause.getCause());
             System.exit(1);
-        } finally {
-            Thread.currentThread().setContextClassLoader(originalCl);
         }
     }
 
@@ -159,24 +152,13 @@ public class KeycloakMain implements QuarkusApplication {
         }
 
         KeycloakSessionFactory sessionFactory = KeycloakApplication.getSessionFactory();
-        KeycloakSession session = sessionFactory.create();
-        KeycloakTransactionManager transaction = session.getTransactionManager();
 
         try {
-            transaction.begin();
-
-            new ApplianceBootstrap(session).createMasterRealmUser(adminUserName, adminPassword);
-            ServicesLogger.LOGGER.addUserSuccess(adminUserName, Config.getAdminRealm());
-
-            transaction.commit();
-        } catch (IllegalStateException e) {
-            session.getTransactionManager().rollback();
-            ServicesLogger.LOGGER.addUserFailedUserExists(adminUserName, Config.getAdminRealm());
+            KeycloakModelUtils.runJobInTransaction(sessionFactory, session -> {
+                new ApplianceBootstrap(session).createMasterRealmUser(adminUserName, adminPassword);
+            });
         } catch (Throwable t) {
-            session.getTransactionManager().rollback();
             ServicesLogger.LOGGER.addUserFailed(t, adminUserName, Config.getAdminRealm());
-        } finally {
-            session.close();
         }
     }
 }

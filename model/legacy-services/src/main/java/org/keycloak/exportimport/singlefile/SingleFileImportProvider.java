@@ -19,7 +19,7 @@ package org.keycloak.exportimport.singlefile;
 
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
-import org.keycloak.exportimport.ImportProvider;
+import org.keycloak.exportimport.AbstractFileBasedImportProvider;
 import org.keycloak.exportimport.Strategy;
 import org.keycloak.exportimport.util.ExportImportSessionTask;
 import org.keycloak.exportimport.util.ImportUtils;
@@ -30,35 +30,38 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.util.JsonSerialization;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.Map;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class SingleFileImportProvider implements ImportProvider {
+public class SingleFileImportProvider extends AbstractFileBasedImportProvider {
 
     private static final Logger logger = Logger.getLogger(SingleFileImportProvider.class);
+    private final KeycloakSessionFactory factory;
 
-    private File file;
+    private final File file;
+    private final Strategy strategy;
 
     // Allows to cache representation per provider to avoid parsing them twice
     protected Map<String, RealmRepresentation> realmReps;
 
-    public SingleFileImportProvider(File file) {
+    public SingleFileImportProvider(KeycloakSessionFactory factory, File file, Strategy strategy) {
+        this.factory = factory;
         this.file = file;
+        this.strategy = strategy;
     }
 
-    @Override
-    public void importModel(KeycloakSessionFactory factory, final Strategy strategy) throws IOException {
+    public void importModel() throws IOException {
         logger.infof("Full importing from file %s", this.file.getAbsolutePath());
         checkRealmReps();
 
         KeycloakModelUtils.runJobInTransaction(factory, new ExportImportSessionTask() {
 
             @Override
-            protected void runExportImportTask(KeycloakSession session) throws IOException {
+            protected void runExportImportTask(KeycloakSession session) {
                 ImportUtils.importRealms(session, realmReps.values(), strategy);
             }
 
@@ -73,15 +76,9 @@ public class SingleFileImportProvider implements ImportProvider {
 
     protected void checkRealmReps() throws IOException {
         if (realmReps == null) {
-            FileInputStream is = new FileInputStream(file);
+            InputStream is = parseFile(file);
             realmReps = ImportUtils.getRealmsFromStream(JsonSerialization.mapper, is);
         }
-    }
-
-    @Override
-    public void importRealm(KeycloakSessionFactory factory, String realmName, Strategy strategy) throws IOException {
-        // TODO: import just that single realm in case that file contains many realms?
-        importModel(factory, strategy);
     }
 
     @Override

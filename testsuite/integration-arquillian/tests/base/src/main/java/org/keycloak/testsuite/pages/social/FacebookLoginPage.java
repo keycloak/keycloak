@@ -17,6 +17,7 @@
 
 package org.keycloak.testsuite.pages.social;
 
+import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 
@@ -38,6 +39,7 @@ public class FacebookLoginPage extends AbstractSocialLoginPage {
         emailInput.clear();
         emailInput.sendKeys(user);
         passwordInput.sendKeys(password);
-        loginButton.click();
+        JavascriptExecutor executor = (JavascriptExecutor) driver;
+        executor.executeScript("arguments[0].click();", loginButton);
     }
 }

@@ -30,15 +30,15 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import javax.persistence.EntityManager;
-import javax.persistence.LockModeType;
-import javax.persistence.TypedQuery;
-import javax.persistence.criteria.CriteriaBuilder;
-import javax.persistence.criteria.CriteriaDelete;
-import javax.persistence.criteria.CriteriaQuery;
-import javax.persistence.criteria.Join;
-import javax.persistence.criteria.Predicate;
-import javax.persistence.criteria.Root;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.LockModeType;
+import jakarta.persistence.TypedQuery;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaDelete;
+import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.Join;
+import jakarta.persistence.criteria.Predicate;
+import jakarta.persistence.criteria.Root;
 
 import org.hibernate.Session;
 import org.jboss.logging.Logger;
@@ -166,7 +166,6 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
         if (realm == null) {
             return false;
         }
-        em.refresh(realm);
         final RealmAdapter adapter = new RealmAdapter(session, em, realm);
         session.users().preRemove(adapter);
 
@@ -379,7 +378,7 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
             throw new ModelException("Role not found or trying to remove role from incorrect realm");
         }
         String compositeRoleTable = JpaUtils.getTableNameForNativeQuery("COMPOSITE_ROLE", em);
-        em.createNativeQuery("delete from " + compositeRoleTable + " where CHILD_ROLE = :role").setParameter("role", roleEntity).executeUpdate();
+        em.createNativeQuery("delete from " + compositeRoleTable + " where CHILD_ROLE = :role").setParameter("role", roleEntity.getId()).executeUpdate();
         em.createNamedQuery("deleteClientScopeRoleMappingByRole").setParameter("role", roleEntity).executeUpdate();
 
         em.flush();
@@ -1072,7 +1071,7 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
 
     private RealmLocalizationTextsEntity getRealmLocalizationTextsEntity(String locale, String realmId) {
         RealmLocalizationTextsEntity.RealmLocalizationTextEntityKey key = new RealmLocalizationTextsEntity.RealmLocalizationTextEntityKey();
-        key.setRealmId(realmId);
+        key.setRealm(em.getReference(RealmEntity.class, realmId));
         key.setLocale(locale);
         return em.find(RealmLocalizationTextsEntity.class, key);
     }
@@ -1095,7 +1094,7 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
         RealmLocalizationTextsEntity entity = getRealmLocalizationTextsEntity(locale, realm.getId());
         if(entity == null) {
             entity = new RealmLocalizationTextsEntity();
-            entity.setRealmId(realm.getId());
+            entity.setRealm(em.getReference(RealmEntity.class, realm.getId()));
             entity.setLocale(locale);
             entity.setTexts(new HashMap<>());
         }
@@ -1108,7 +1107,7 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
         RealmLocalizationTextsEntity entity = new RealmLocalizationTextsEntity();
         entity.setTexts(localizationTexts);
         entity.setLocale(locale);
-        entity.setRealmId(realm.getId());
+        entity.setRealm(em.getReference(RealmEntity.class, realm.getId()));
         em.merge(entity);
     }
 

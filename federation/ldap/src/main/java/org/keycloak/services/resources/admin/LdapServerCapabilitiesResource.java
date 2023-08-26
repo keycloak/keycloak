@@ -26,12 +26,12 @@ import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.managers.LDAPServerCapabilitiesManager;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 
-import javax.ws.rs.Consumes;
-import javax.ws.rs.POST;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 import java.util.Set;
 
 /**
@@ -70,14 +70,14 @@ public class LdapServerCapabilitiesResource {
     @POST
     @NoCache
     @Consumes(MediaType.APPLICATION_JSON)
-    @Produces(javax.ws.rs.core.MediaType.APPLICATION_JSON)
+    @Produces(jakarta.ws.rs.core.MediaType.APPLICATION_JSON)
     public Response ldapServerCapabilities(TestLdapConnectionRepresentation config) {
         auth.realm().requireManageRealm();
         try {
             Set<LDAPCapabilityRepresentation> ldapCapabilities = LDAPServerCapabilitiesManager.queryServerCapabilities(config, session, realm);
             return Response.ok().entity(ldapCapabilities).build();
         } catch (Exception e) {
-            return ErrorResponse.error("ldapServerCapabilities error", Response.Status.BAD_REQUEST);
+            throw ErrorResponse.error("ldapServerCapabilities error", Response.Status.BAD_REQUEST);
         }
     }
 

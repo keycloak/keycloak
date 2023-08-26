@@ -59,6 +59,7 @@ import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.authorization.DecisionStrategy;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
@@ -69,6 +70,7 @@ import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.exportimport.ExportImportUtil;
 import org.keycloak.testsuite.runonserver.RunHelpers;
 import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.theme.DefaultThemeSelectorProvider;
 import org.keycloak.util.TokenUtil;
 
 import java.io.IOException;
@@ -84,6 +86,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import static net.bytebuddy.matcher.ElementMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.containsInAnyOrder;
@@ -150,6 +154,26 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
         assertNames(masterRealm.clients().get(id).roles().list(), "master-test-client-role");
         assertNames(masterRealm.users().search("", 0, 5), "admin", "master-test-user");
         assertNames(masterRealm.groups().groups(), "master-test-group");
+    }
+
+    protected void testRhssoThemes(RealmResource realm) {
+        // check themes are removed
+        RealmRepresentation rep = realm.toRepresentation();
+        Assert.assertNull("Login theme was not modified", rep.getLoginTheme());
+        Assert.assertNull("Email theme was not modified", rep.getEmailTheme());
+        Assert.assertNull("Account theme was not modified", rep.getAccountTheme());
+        // check the client theme is also removed
+        List<ClientRepresentation> client = realm.clients().findByClientId("migration-saml-client");
+        Assert.assertNotNull("migration-saml-client client is missing", client);
+        Assert.assertEquals("migration-saml-client client is missing", 1, client.size());
+        Assert.assertNull("migration-saml-client login theme was not removed", client.get(0).getAttributes().get(DefaultThemeSelectorProvider.LOGIN_THEME_KEY));
+    }
+
+    protected void testHttpChallengeFlow(RealmResource realm) {
+        log.info("testing 'http challenge' flow not present");
+        Assert.assertFalse(realm.flows().getFlows()
+                .stream()
+                .anyMatch(authFlow -> authFlow.getAlias().equalsIgnoreCase("http challenge")));
     }
 
     /**
@@ -320,11 +344,21 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
         testPostLogoutRedirectUrisSet(migrationRealm);
     }
 
-   protected void testMigrationTo20_0_0() {
+    protected void testMigrationTo20_0_0() {
         testViewGroups(masterRealm);
         testViewGroups(migrationRealm);
     }
 
+    protected void testMigrationTo21_0_2() {
+        testTermsAndConditionsMigrated(masterRealm);
+        testTermsAndConditionsMigrated(migrationRealm);
+        testTermsAndConditionsMigrated(migrationRealm2);
+    }
+
+    protected void testMigrationTo22_0_0() {
+        testRhssoThemes(migrationRealm);
+        testHttpChallengeFlow(migrationRealm);
+    }
 
     protected void testDeleteAccount(RealmResource realm) {
         ClientRepresentation accountClient = realm.clients().findByClientId(ACCOUNT_MANAGEMENT_CLIENT_ID).get(0);
@@ -505,6 +539,32 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
         assertNotNull(viewAppRole);
     }
 
+    protected void testTermsAndConditionsMigrated(RealmResource realmResource) {
+        final String legacyTermsAndConditionsAlias = "terms_and_conditions";
+        // Test realm RequiredAction migrated
+        RealmRepresentation realm = realmResource.toRepresentation();
+        List<RequiredActionProviderRepresentation> requiredActions = realm.getRequiredActions();
+
+        if (requiredActions != null && !requiredActions.isEmpty()) {
+            assertThat(requiredActions.stream()
+                    .map(RequiredActionProviderRepresentation::getAlias)
+                    .collect(Collectors.toList()), not(hasItem(legacyTermsAndConditionsAlias)));
+            assertThat(requiredActions.stream()
+                    .map(RequiredActionProviderRepresentation::getProviderId)
+                    .collect(Collectors.toList()), not(hasItem(legacyTermsAndConditionsAlias)));
+        }
+
+        List<UserRepresentation> users = realmResource.users().list(null, null);
+
+        if (users != null && !users.isEmpty()) {
+            // Test users required actions migrated
+            assertThat(users.stream()
+                            .flatMap(user -> user.getRequiredActions().stream())
+                            .collect(Collectors.toList()),
+                    not(hasItem(legacyTermsAndConditionsAlias)));
+        }
+    }
+
     protected void testRoleManageAccountLinks(RealmResource... realms) {
         log.info("testing role manage account links");
         for (RealmResource realm : realms) {
@@ -551,7 +611,7 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
         String expectedMigrationRealmKey = "MIIEpAIBAAKCAQEApt6gCllWkVTZ7fy/oRIx6Bxjt9x3eKKyKGFXvN4iaafrNqpYU9lcqPngWJ9DyXGqUf8RpjPaQWiLWLxjw3xGBqLk2E1/Frb9e/dy8rj//fHGq6bujN1iguzyFwxPGT5Asd7jflRI3qU04M8JE52PArqPhGL2Fn+FiSK5SWRIGm+hVL7Ck/E/tVxM25sFG1/UTQqvrROm4q76TmP8FsyZaTLVf7cCwW2QPIX0N5HTVb3QbBb5KIsk4kKmk/g7uUxS9r42tu533LISzRr5CTyWZAL2XFRuF2RrKdE8gwqkEubw6sDmB2mE0EoPdY1DUhBQgVP/5rwJrCtTsUBR2xdEYQIDAQABAoIBAFbbsNBSOlZBpYJUOmcb8nBQPrOYhXN8tGGCccn0klMOvcdhmcJjdPDbyCQ5Gm7DxJUTwNsTSHsdcNMKlJ9Pk5+msJnKlOl87KrXXbTsCQvlCrWUmb0nCzz9GvJWTOHl3oT3cND0DE4gDksqWR4luCgCdevCGzgQvrBoK6wBD+r578uEW3iw10hnJ0+wnGiw8IvPzE1a9xbY4HD8/QrYdaLxuLb/aC1PDuzrz0cOjnvPkrws5JrbUSnbFygJiOv1z4l2Q00uGIxlHtXdwQBnTZZjVi4vOec2BYSHffgwDYEZIglw1mnrV7y0N1nnPbtJK/cegIkXoBQHXm8Q99TrWMUCgYEA9au86qcwrXZZg5H4BpR5cpy0MSkcKDbA1aRL1cAyTCqJxsczlAtLhFADF+NhnlXj4y7gwDEYWrz064nF73I+ZGicvCiyOy+tCTugTyTGS+XR948ElDMS6PCUUXsotS3dKa0b3c9wd2mxeddTjq/ArfgEVZJ6fE1KtjLt9dtfA+8CgYEAreK3JsvjR5b/Xct28TghYUU7Qnasombb/shqqy8FOMjYUr5OUm/OjNIgoCqhOlE8oQDJ4dOZofNSa7tL+oM8Gmbal+E3fRzxnx/9/EC4QV6sVaPLTIyk7EPfKTcZuzH7+BNZtAziTxJw9d6YJQRbkpg92EZIEoR8iDj2Xs5xrK8CgYEAwMVWwwYX8zT3vn7ukTM2LRH7bsvkVUXJgJqgCwT6Mrv6SmkK9vL5+cPS+Y6pjdW1sRGauBSOGL1Grf/4ug/6F03jFt4UJM8fRyxreU7Q7sNSQ6AMpsGA6BnHODycz7ZCYa59PErG5FyiL4of/cm5Nolz1TXQOPNpWZiTEqVlZC8CgYA4YPbjVF4nuxSnU64H/hwMjsbtAM9uhI016cN0J3W4+J3zDhMU9X1x+Tts0wWdg/N1fGz4lIQOl3cUyRCUc/KL2OdtMS+tmDHbVyMho9ZaE5kq10W2Vy+uDz+O/HeSU12QDK4cC8Vgv+jyPy7zaZtLR6NduUPrBRvfiyCOkr8WrwKBgQCY0h4RCdNFhr0KKLLmJipAtV8wBCGcg1jY1KoWKQswbcykfBKwHbF6EooVqkRW0ITjWB7ZZCf8TnSUxe0NXCUAkVBrhzS4DScgtoSZYOOUaSHgOxpfwgnQ3oYotKi98Yg3IsaLs1j4RuPG5Sp1z6o+ELP1uvr8azyn9YlLa+523Q==";
         String realmId = migrationRealm.toRepresentation().getId();
         List<ComponentRepresentation> components = migrationRealm.components().query(realmId, KeyProvider.class.getName());
-        assertEquals(3, components.size());
+        assertEquals(4, components.size());
 
         components = migrationRealm.components().query(realmId, KeyProvider.class.getName(), "rsa");
         assertEquals(1, components.size());
@@ -970,6 +1030,14 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
 
     protected void testMigrationTo20_x() {
         testMigrationTo20_0_0();
+    }
+
+    protected void testMigrationTo21_x() {
+        testMigrationTo21_0_2();
+    }
+
+    protected void testMigrationTo22_x() {
+        testMigrationTo22_0_0();
     }
 
     protected void testMigrationTo7_x(boolean supportedAuthzServices) {

@@ -20,14 +20,16 @@ package org.keycloak.operator.controllers;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.api.model.OwnerReferenceBuilder;
-import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.fabric8.kubernetes.client.utils.Serialization;
+import io.fabric8.kubernetes.client.KubernetesClientException;
+import io.fabric8.kubernetes.client.dsl.base.PatchContext;
+import io.fabric8.kubernetes.client.dsl.base.PatchType;
 import io.quarkus.logging.Log;
+
 import org.keycloak.operator.Constants;
 
 import java.util.Collections;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
 
@@ -36,38 +38,75 @@ import java.util.Optional;
  *
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
  */
-public abstract class OperatorManagedResource {
+public abstract class OperatorManagedResource<T extends HasMetadata> {
+    private static final String KEYCLOAK_OPERATOR_FIELD_MANAGER = "keycloak-operator";
     protected KubernetesClient client;
-    protected CustomResource<?, ?> cr;
+    protected HasMetadata cr;
 
-    public OperatorManagedResource(KubernetesClient client, CustomResource<?, ?> cr) {
+    public OperatorManagedResource(KubernetesClient client, HasMetadata cr) {
         this.client = client;
         this.cr = cr;
     }
 
-    protected abstract Optional<HasMetadata> getReconciledResource();
+    protected abstract Optional<T> getReconciledResource();
 
-    public void createOrUpdateReconciled() {
-        getReconciledResource().ifPresent(resource -> {
+    public Optional<T> createOrUpdateReconciled() {
+        return getReconciledResource().map(resource -> {
             try {
-                setDefaultLabels(resource);
+                setInstanceLabels(resource);
                 setOwnerReferences(resource);
 
                 Log.debugf("Creating or updating resource: %s", resource);
-                resource = client.resource(resource).inNamespace(getNamespace()).createOrReplace();
-                Log.debugf("Successfully created or updated resource: %s", resource);
+                try {
+                    resource = client.resource(resource).inNamespace(getNamespace()).forceConflicts().fieldManager(KEYCLOAK_OPERATOR_FIELD_MANAGER).serverSideApply();
+                } catch (KubernetesClientException e) {
+                    if (e.getCode() != 422) {
+                        throw e;
+                    }
+                    Log.infof("Could not apply changes to resource %s %s/%s will try strategic merge instead",
+                            resource.getKind(), resource.getMetadata().getNamespace(),
+                            resource.getMetadata().getName(), e.getMessage());
+                    try {
+                        client.resource(resource).patch(PatchContext.of(PatchType.STRATEGIC_MERGE));
+                    } catch (KubernetesClientException ex) {
+                        if (ex.getCode() == 422) {
+                            Log.warnf("Could not apply changes to resource %s %s/%s if you have modified the resource please revert it or delete the resource so that the operator may regain control",
+                                    resource.getKind(), resource.getMetadata().getNamespace(),
+                                    resource.getMetadata().getName());
+                        }
+                        throw ex;
+                    }
+                }
+                Log.debugf("Successfully created or updated resource: %s %s/%s", resource.getKind(), resource.getMetadata().getNamespace(),
+                        resource.getMetadata().getName());
+                return resource;
             } catch (Exception e) {
-                Log.error("Failed to create or update resource");
-                Log.error(Serialization.asYaml(resource));
-                throw e;
+                Log.errorf("Failed to create or update resource %s %s/%s", resource.getKind(), resource.getMetadata().getNamespace(),
+                        resource.getMetadata().getName());
+                throw KubernetesClientException.launderThrowable(e);
             }
         });
     }
 
-    protected void setDefaultLabels(HasMetadata resource) {
-        Map<String, String> labels = Optional.ofNullable(resource.getMetadata().getLabels()).orElse(new HashMap<>());
+    protected void setInstanceLabels(HasMetadata resource) {
+        resource.getMetadata().setLabels(updateWithInstanceLabels(resource.getMetadata().getLabels(), cr.getMetadata().getName()));
+    }
+
+    protected Map<String, String> getInstanceLabels() {
+        return updateWithInstanceLabels(null, cr.getMetadata().getName());
+    }
+
+    public static Map<String, String> updateWithInstanceLabels(Map<String, String> labels, String instanceName) {
+        labels = Optional.ofNullable(labels).orElse(new LinkedHashMap<>());
         labels.putAll(Constants.DEFAULT_LABELS);
-        resource.getMetadata().setLabels(labels);
+        labels.put(Constants.INSTANCE_LABEL, instanceName);
+        return labels;
+    }
+
+    public static Map<String, String> allInstanceLabels(HasMetadata primary) {
+        var labels = new LinkedHashMap<>(Constants.DEFAULT_LABELS);
+        labels.put(Constants.INSTANCE_LABEL, primary.getMetadata().getName());
+        return labels;
     }
 
     protected void setOwnerReferences(HasMetadata resource) {

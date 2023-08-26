@@ -1,0 +1,5 @@
+{
+  "node-option": [
+    "loader=ts-node/esm"
+  ]
+}

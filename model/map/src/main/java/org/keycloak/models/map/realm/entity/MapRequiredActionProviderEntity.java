@@ -32,7 +32,7 @@ import java.util.Map;
 public interface MapRequiredActionProviderEntity extends UpdatableEntity, AbstractEntity {
     static MapRequiredActionProviderEntity fromModel(RequiredActionProviderModel model) {
         if (model == null) return null;
-        MapRequiredActionProviderEntity entity = new MapRequiredActionProviderEntityImpl();
+        MapRequiredActionProviderEntity entity = DeepCloner.DUMB_CLONER.newInstance(MapRequiredActionProviderEntity.class);
         String id = model.getId() == null ? KeycloakModelUtils.generateId() : model.getId();
         entity.setId(id);
         entity.setAlias(model.getAlias());

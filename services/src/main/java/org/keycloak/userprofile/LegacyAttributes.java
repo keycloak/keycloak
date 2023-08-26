@@ -40,20 +40,19 @@ public class LegacyAttributes extends DefaultAttributes {
 
     @Override
     public Map<String, List<String>> getReadable() {
-        if(user == null)
-            return null;
+        if(user == null || user.getAttributes() == null)
+            return new HashMap<>();
 
-        Map<String, List<String>> attributes = new HashMap<>(user.getAttributes());
-
-        if (attributes.isEmpty()) {
-            return null;
-        }
-
-        return attributes;
+        return new HashMap<>(user.getAttributes());
     }
 
     @Override
     protected boolean isIncludeAttributeIfNotProvided(AttributeMetadata metadata) {
+        if (UserModel.LOCALE.equals(metadata.getName())) {
+            // locale is an internal attribute and should be updated as a regular attribute
+            return false;
+        }
+
         // user api expects that attributes are not updated if not provided when in legacy mode
         return UserProfileContext.USER_API.equals(context);
     }

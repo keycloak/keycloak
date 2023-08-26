@@ -60,7 +60,9 @@ import org.keycloak.testsuite.util.LDAPRule;
 import org.keycloak.testsuite.util.LDAPTestUtils;
 import org.keycloak.testsuite.util.WaitUtils;
 
-import javax.ws.rs.BadRequestException;
+import jakarta.ws.rs.BadRequestException;
+
+import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -489,7 +491,7 @@ public class LDAPSyncTest extends AbstractLDAPTest {
 
             // sync to Keycloak should pass without an error
             SynchronizationResult syncResult = new GroupLDAPStorageMapperFactory().create(session, mapperModel).syncDataFromFederationProviderToKeycloak(appRealm);
-            Assert.assertThat(syncResult.getFailed(), Matchers.is(0));
+            assertThat(syncResult.getFailed(), Matchers.is(0));
         });
 
         testingClient.server().run(session -> {
@@ -512,7 +514,7 @@ public class LDAPSyncTest extends AbstractLDAPTest {
             RealmModel appRealm = ctx.getRealm();
 
             // Remove all users from model
-            UserStoragePrivateUtil.userLocalStorage(session).getUsersStream(ctx.getRealm(), true)
+            UserStoragePrivateUtil.userLocalStorage(session).searchForUserStream(ctx.getRealm(), Map.of())
                     .peek(user -> System.out.println("trying to delete user: " + user.getUsername()))
                     .collect(Collectors.toList())
                     .forEach(user -> {

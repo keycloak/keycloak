@@ -23,8 +23,6 @@ import org.keycloak.storage.SearchableModelField;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -106,6 +104,8 @@ public interface GroupModel extends RoleMapperModel {
 
     /**
      * Returns all sub groups for the parent group as a stream.
+     * The stream is sorted by the group name.
+     *
      * @return Stream of {@link GroupModel}. Never returns {@code null}.
      */
     Stream<GroupModel> getSubGroupsStream();
@@ -130,12 +130,4 @@ public interface GroupModel extends RoleMapperModel {
      * @param subGroup
      */
     void removeChild(GroupModel subGroup);
-
-    /**
-     * @deprecated This interface is no longer necessary, collection-based methods were removed from the parent interface
-     * and therefore the parent interface can be used directly
-     */
-    @Deprecated
-    interface Streams extends GroupModel, RoleMapperModel {
-    }
 }

@@ -20,12 +20,15 @@ package org.keycloak.models.jpa.entities;
 import java.io.Serializable;
 import java.util.Map;
 import java.util.Objects;
-import javax.persistence.Column;
-import javax.persistence.Convert;
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.IdClass;
-import javax.persistence.Table;
+import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.Id;
+import jakarta.persistence.IdClass;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
 
 import org.hibernate.annotations.Nationalized;
 import org.keycloak.models.jpa.converter.MapStringConverter;
@@ -35,15 +38,15 @@ import org.keycloak.models.jpa.converter.MapStringConverter;
 @Table(name = "REALM_LOCALIZATIONS")
 public class RealmLocalizationTextsEntity {
     static public class RealmLocalizationTextEntityKey implements Serializable {
-        private String realmId;
+        private RealmEntity realm;
         private String locale;
 
-        public String getRealmId() {
-            return realmId;
+        public RealmEntity getRealm() {
+            return realm;
         }
 
-        public void setRealmId(String realmId) {
-            this.realmId = realmId;
+        public void setRealm(RealmEntity realm) {
+            this.realm = realm;
         }
 
         public String getLocale() {
@@ -59,19 +62,20 @@ public class RealmLocalizationTextsEntity {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
             RealmLocalizationTextEntityKey that = (RealmLocalizationTextEntityKey) o;
-            return Objects.equals(realmId, that.realmId) &&
+            return Objects.equals(realm, that.realm) &&
                     Objects.equals(locale, that.locale);
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(realmId, locale);
+            return Objects.hash(realm, locale);
         }
     }
 
     @Id
-    @Column(name = "REALM_ID")
-    private String realmId;
+    @ManyToOne(fetch= FetchType.LAZY)
+    @JoinColumn(name = "REALM_ID")
+    private RealmEntity realm;
 
     @Id
     @Column(name = "LOCALE")
@@ -98,20 +102,20 @@ public class RealmLocalizationTextsEntity {
         this.locale = locale;
     }
 
-    public String getRealmId() {
-        return realmId;
+    public RealmEntity getRealm() {
+        return realm;
     }
 
-    public void setRealmId(String realmId) {
-        this.realmId = realmId;
+    public void setRealm(RealmEntity realm) {
+        this.realm = realm;
     }
 
     @Override
     public String toString() {
         return "LocalizationTextEntity{" +
-                ", text='" + texts + '\'' +
+                "text='" + texts + '\'' +
                 ", locale='" + locale + '\'' +
-                ", realmId='" + realmId + '\'' +
+                ", realm='" + realm + '\'' +
                 '}';
     }
 
@@ -120,13 +124,13 @@ public class RealmLocalizationTextsEntity {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         RealmLocalizationTextsEntity that = (RealmLocalizationTextsEntity) o;
-        return Objects.equals(realmId, that.realmId) &&
+        return Objects.equals(realm, that.realm) &&
                 Objects.equals(locale, that.locale) &&
                 Objects.equals(texts, that.texts);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(realmId, locale, texts);
+        return Objects.hash(realm, locale, texts);
     }
 }

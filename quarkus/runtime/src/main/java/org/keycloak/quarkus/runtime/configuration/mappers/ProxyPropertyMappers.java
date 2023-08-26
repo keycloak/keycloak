@@ -26,6 +26,16 @@ final class ProxyPropertyMappers {
                         .to("quarkus.http.proxy.enable-forwarded-host")
                         .mapFrom("proxy")
                         .transformer(ProxyPropertyMappers::getResolveEnableForwardedHost)
+                        .build(),
+                fromOption(ProxyOptions.PROXY_FORWARDED_HEADER_ENABLED)
+                        .to("quarkus.http.proxy.allow-forwarded")
+                        .mapFrom("proxy")
+                        .transformer(ProxyPropertyMappers::getResolveEnableForwardedHost)
+                        .build(),
+                fromOption(ProxyOptions.PROXY_X_FORWARDED_HEADER_ENABLED)
+                        .to("quarkus.http.proxy.allow-x-forwarded")
+                        .mapFrom("proxy")
+                        .transformer(ProxyPropertyMappers::getResolveEnableForwardedHost)
                         .build()
         };
     }
@@ -35,10 +45,10 @@ final class ProxyPropertyMappers {
 
         switch (mode) {
             case "none":
+            case "passthrough":
                 return of(Boolean.FALSE.toString());
             case "edge":
             case "reencrypt":
-            case "passthrough":
                 return of(Boolean.TRUE.toString());
             default:
                 addInitializationException(Messages.invalidProxyMode(mode));

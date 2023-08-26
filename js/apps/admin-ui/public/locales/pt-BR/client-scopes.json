@@ -1,0 +1,8 @@
+{
+  "protocol": "Protocolo",
+  "type": "Tipo",
+  "realmRolePrefix": "Prefixo do Realm Role",
+  "realmRoles": "Roles do Realm",
+  "clients": "Clientes",
+  "scope": "Escopo"
+}

@@ -19,7 +19,9 @@ package org.keycloak.testsuite.model;
 
 import org.keycloak.utils.StringUtil;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -33,12 +35,18 @@ public enum StoreProvider {
             commands.add("--storage=" + getAlias());
         }
     },
+    FILE("file") {
+        @Override
+        public void addStoreOptions(List<String> commands) {
+            commands.add("--storage=" + getAlias());
+        }
+    },
     JPA("jpa") {
         @Override
         public void addStoreOptions(List<String> commands) {
             commands.add("--storage=" + getAlias());
-            getDbVendor().ifPresent(vendor -> commands.add("--db=" + vendor));
-            commands.add("--db-url='" + System.getProperty("keycloak.map.storage.connectionsJpa.url") + "'");
+            getDbVendor().ifPresent(vendor -> commands.add("--storage-jpa-db=" + vendor));
+            commands.add("--db-url=" + System.getProperty("keycloak.map.storage.connectionsJpa.url"));
             commands.add("--db-username=" + System.getProperty("keycloak.map.storage.connectionsJpa.user"));
             commands.add("--db-password=" + System.getProperty("keycloak.map.storage.connectionsJpa.password"));
         }
@@ -48,17 +56,33 @@ public enum StoreProvider {
         public void addStoreOptions(List<String> commands) {
             commands.add("--storage=" + getAlias());
             commands.add("--storage-hotrod-host='" + System.getProperty("keycloak.connectionsHotRod.host") + "'");
-            commands.add("--storage-hotrod-username" + System.getProperty("keycloak.connectionsHotRod.username"));
-            commands.add("--storage-hotrod-password" + System.getProperty("keycloak.connectionsHotRod.password"));
+            commands.add("--storage-hotrod-username=" + System.getProperty("keycloak.connectionsHotRod.username", "admin"));
+            commands.add("--storage-hotrod-password=" + System.getProperty("keycloak.connectionsHotRod.password", "admin"));
         }
     },
     LEGACY("legacy") {
         @Override
         public void addStoreOptions(List<String> commands) {
             getDbVendor().ifPresent(vendor -> commands.add("--db=" + vendor));
-            commands.add("--db-url='" + System.getProperty("keycloak.connectionsJpa.url") + "'");
             commands.add("--db-username=" + System.getProperty("keycloak.connectionsJpa.user"));
             commands.add("--db-password=" + System.getProperty("keycloak.connectionsJpa.password"));
+            if ("mssql".equals(getDbVendor().orElse(null))){
+                commands.add("--transaction-xa-enabled=false");
+            }
+            commands.add("--db-url='" + System.getProperty("keycloak.connectionsJpa.url") + "'");
+        }
+
+        @Override
+        public List<String> getStoreOptionsToKeycloakConfImport() {
+            List<String> options = new ArrayList<>();
+            getDbVendor().ifPresent(vendor -> options.add("db=" + vendor));
+            options.add("db-url=" + System.getProperty("keycloak.connectionsJpa.url"));
+            options.add("db-username=" + System.getProperty("keycloak.connectionsJpa.user"));
+            options.add("db-password=" + System.getProperty("keycloak.connectionsJpa.password"));
+            if ("mssql".equals(getDbVendor().orElse(null))){
+                options.add("transaction-xa-enabled=false");
+            }
+            return options;
         }
     },
     DEFAULT("default") {
@@ -77,6 +101,15 @@ public enum StoreProvider {
 
     StoreProvider(String alias) {
         this.alias = alias;
+    }
+
+    /**
+     * Add store options for the import command in migration tests. The options
+     * will be added as lines in the <em>keycloak.conf</em> file.
+     * @return The option lines to add
+     */
+    public List<String> getStoreOptionsToKeycloakConfImport() {
+        return Collections.emptyList();
     }
 
     public String getAlias() {

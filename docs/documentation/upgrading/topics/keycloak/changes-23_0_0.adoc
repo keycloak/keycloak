@@ -1,0 +1,37 @@
+= Added iss parameter to OAuth 2.0/OpenID Connect Authentication Response
+
+RFC 9207 OAuth 2.0 Authorization Server Issuer Identification specification adds the parameter `iss` in the OAuth 2.0/OpenID Connect Authentication Response for realizing secure authorization responses.
+
+In past releases, we did not have this parameter, but now {project_name} adds this parameter by default, as required by the specification.
+
+However, some OpenID Connect / OAuth2 adapters, and especially older {project_name} adapters, may have issues with this new parameter.
+
+For example, the parameter will be always present in the browser URL after successful authentication to the client application.
+In these cases, it may be useful to disable adding the `iss` parameter to the authentication response. This can be done
+for the particular client in the {project_name} Admin console, in client details in the section with `OpenID Connect Compatibility Modes`,
+described in <<_compatibility_with_older_adapters>>. Dedicated `Exclude Issuer From Authentication Response` switch exists,
+which can be turned on to prevent adding the `iss` parameter to the authentication response.
+
+= Wildcard characters handling
+
+JPA allows wildcards `%` and `_` when searching, while other providers like LDAP allow only `*`.
+As `*` is a natural wildcard character in LDAP, it works in all places, while with JPA it only
+worked at the beginning and the end of the search string. Starting with this release the only
+wildcard character is `*` which work consistently across all providers in all places in the search
+string. All special characters in a specific provider like `%` and `_` for JPA are escaped. For exact
+search, with added quotes e.g. `"w*ord"`, the behavior remains the same as in previous releases.
+
+= Language files for themes default to UTF-8 encoding
+
+This release now follows the standard mechanisms of Java and later, which assumes resource bundle files to be encoded in UTF-8.
+
+Previous versions of Keycloak supported specifying the encoding in the first line with a comment like `# encoding: UTF-8`, which is no longer supported and is ignored.
+
+Message properties files for themes are now read in UTF-8 encoding, with an automatic fallback to ISO-8859-1 encoding.
+If you are using a different encoding, convert the files to UTF-8.
+
+= Oracle Database driver not part of the distribution
+
+The Oracle Database JDBC driver is no longer part of the Keycloak distribution.
+Administrators will need to install a version of the Oracle Driver matching their environment
+as described in the configuring the database {section}.

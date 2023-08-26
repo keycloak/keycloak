@@ -31,8 +31,6 @@ import org.keycloak.models.credential.dto.OTPSecretData;
 import org.keycloak.models.utils.HmacOTP;
 import org.keycloak.models.utils.TimeBasedOTP;
 
-import java.nio.charset.StandardCharsets;
-
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
@@ -103,7 +101,7 @@ public class OTPCredentialProvider implements CredentialProvider<OTPCredentialMo
 
         if (OTPCredentialModel.HOTP.equals(credentialData.getSubType())) {
             HmacOTP validator = new HmacOTP(credentialData.getDigits(), credentialData.getAlgorithm(), policy.getLookAheadWindow());
-            int counter = validator.validateHOTP(challengeResponse, secretData.getValue(), credentialData.getCounter());
+            int counter = validator.validateHOTP(challengeResponse, otpCredentialModel.getDecodedSecret(), credentialData.getCounter());
             if (counter < 0) {
                 return false;
             }
@@ -112,12 +110,12 @@ public class OTPCredentialProvider implements CredentialProvider<OTPCredentialMo
             return true;
         } else if (OTPCredentialModel.TOTP.equals(credentialData.getSubType())) {
             TimeBasedOTP validator = new TimeBasedOTP(credentialData.getAlgorithm(), credentialData.getDigits(), credentialData.getPeriod(), policy.getLookAheadWindow());
-            final boolean isValid = validator.validateTOTP(challengeResponse, secretData.getValue().getBytes(StandardCharsets.UTF_8));
+            final boolean isValid = validator.validateTOTP(challengeResponse, otpCredentialModel.getDecodedSecret());
 
             if (isValid) {
                 if (policy.isCodeReusable()) return true;
 
-                SingleUseObjectProvider singleUseStore = session.getProvider(SingleUseObjectProvider.class);
+                SingleUseObjectProvider singleUseStore = session.singleUseObjects();
                 final long validLifespan = (long) credentialData.getPeriod() * (2L * policy.getLookAheadWindow() + 1);
                 final String searchKey = credential.getId() + "." + challengeResponse;
 

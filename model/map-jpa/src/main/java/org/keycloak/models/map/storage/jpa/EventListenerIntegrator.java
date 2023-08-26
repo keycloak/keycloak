@@ -18,43 +18,53 @@
 package org.keycloak.models.map.storage.jpa;
 
 import org.hibernate.boot.Metadata;
+import org.hibernate.dialect.CockroachDialect;
+import org.hibernate.engine.OptimisticLockStyle;
 import org.hibernate.engine.spi.SessionFactoryImplementor;
 import org.hibernate.event.service.spi.EventListenerRegistry;
 import org.hibernate.event.spi.EventType;
 import org.hibernate.integrator.spi.Integrator;
+import org.hibernate.mapping.RootClass;
 import org.hibernate.service.spi.SessionFactoryServiceRegistry;
-import org.keycloak.common.Profile;
 import org.keycloak.models.map.storage.jpa.hibernate.listeners.JpaAutoFlushListener;
 import org.keycloak.models.map.storage.jpa.hibernate.listeners.JpaEntityVersionListener;
 import org.keycloak.models.map.storage.jpa.hibernate.listeners.JpaOptimisticLockingListener;
 
 /**
  * Adding listeners to Hibernate's entity manager for the JPA Map store.
- * This used to be a JPA map storage specific configuration via the Hibernate option <code>hibernate.integrator_provider</code>
- * which worked in an Undertow setup but not in a Quarkus setup.
- * As this will be called for both the legacy store and the new JPA Map store, it first checks if the JPA Map store has been enabled.
- * A follow-up issue to track this is here: <a href="https://github.com/keycloak/keycloak/issues/13219">#13219</a>
  */
 public class EventListenerIntegrator implements Integrator {
 
     @Override
     public void integrate(Metadata metadata, SessionFactoryImplementor sessionFactoryImplementor,
             SessionFactoryServiceRegistry sessionFactoryServiceRegistry) {
-        if (Profile.isFeatureEnabled(Profile.Feature.MAP_STORAGE)) {
-            final EventListenerRegistry eventListenerRegistry =
-                    sessionFactoryServiceRegistry.getService(EventListenerRegistry.class);
+        final EventListenerRegistry eventListenerRegistry =
+                sessionFactoryServiceRegistry.getService(EventListenerRegistry.class);
 
+        if (metadata.getDatabase().getDialect() instanceof CockroachDialect) {
+            // CockroachDB will always use serializable transactions, therefore no optimistic locking is necessary
+            metadata.getEntityBindings().forEach(persistentClass -> {
+                if (persistentClass instanceof RootClass) {
+                    RootClass root = (RootClass) persistentClass;
+                    root.setOptimisticLockStyle(OptimisticLockStyle.NONE);
+                    root.setVersion(null);
+                    root.setDeclaredVersion(null);
+                }
+            });
+            // If the version column should be updated with an incrementing number on each change in the future,
+            // implement a listener similar to JpaOptimisticLockingListener to increment it.
+        } else {
             eventListenerRegistry.appendListeners(EventType.PRE_INSERT, JpaOptimisticLockingListener.INSTANCE);
             eventListenerRegistry.appendListeners(EventType.PRE_UPDATE, JpaOptimisticLockingListener.INSTANCE);
             eventListenerRegistry.appendListeners(EventType.PRE_DELETE, JpaOptimisticLockingListener.INSTANCE);
-
-            eventListenerRegistry.appendListeners(EventType.PRE_INSERT, JpaEntityVersionListener.INSTANCE);
-            eventListenerRegistry.appendListeners(EventType.PRE_UPDATE, JpaEntityVersionListener.INSTANCE);
-            eventListenerRegistry.appendListeners(EventType.PRE_DELETE, JpaEntityVersionListener.INSTANCE);
-
-            // replace auto-flush listener
-            eventListenerRegistry.setListeners(EventType.AUTO_FLUSH, JpaAutoFlushListener.INSTANCE);
         }
+
+        eventListenerRegistry.appendListeners(EventType.PRE_INSERT, JpaEntityVersionListener.INSTANCE);
+        eventListenerRegistry.appendListeners(EventType.PRE_UPDATE, JpaEntityVersionListener.INSTANCE);
+        eventListenerRegistry.appendListeners(EventType.PRE_DELETE, JpaEntityVersionListener.INSTANCE);
+
+        // replace auto-flush listener
+        eventListenerRegistry.setListeners(EventType.AUTO_FLUSH, JpaAutoFlushListener.INSTANCE);
     }
 
     @Override

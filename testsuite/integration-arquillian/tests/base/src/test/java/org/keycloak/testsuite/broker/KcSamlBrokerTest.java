@@ -27,6 +27,7 @@ import org.keycloak.saml.processing.core.parsers.saml.protocol.SAMLProtocolQName
 import org.keycloak.saml.processing.core.saml.v2.common.SAMLDocumentHolder;
 import org.keycloak.testsuite.saml.AbstractSamlTest;
 import org.keycloak.testsuite.updaters.IdentityProviderAttributeUpdater;
+import org.keycloak.testsuite.util.AccountHelper;
 import org.keycloak.testsuite.util.SamlClient;
 import org.keycloak.testsuite.util.SamlClient.Binding;
 import org.keycloak.testsuite.util.SamlClientBuilder;
@@ -38,7 +39,7 @@ import java.util.HashMap;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response;
 
 import org.hamcrest.Matchers;
 import org.junit.Assert;
@@ -47,7 +48,7 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.not;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.keycloak.testsuite.saml.RoleMapperTest.ROLE_ATTRIBUTE_NAME;
 import static org.keycloak.testsuite.util.Matchers.isSamlResponse;
 import static org.keycloak.testsuite.util.Matchers.statusCodeIsHC;
@@ -55,7 +56,6 @@ import static org.keycloak.testsuite.util.SamlStreams.assertionsUnencrypted;
 import static org.keycloak.testsuite.util.SamlStreams.attributeStatements;
 import static org.keycloak.testsuite.util.SamlStreams.attributesUnecrypted;
 import static org.keycloak.testsuite.broker.BrokerTestTools.getConsumerRoot;
-import static org.keycloak.testsuite.broker.BrokerTestTools.getProviderRoot;
 
 /**
  * Final class as it's not intended to be overriden. Feel free to remove "final" if you really know what you are doing.
@@ -163,11 +163,14 @@ public final class KcSamlBrokerTest extends AbstractAdvancedBrokerTest {
         assertThat(currentRoles, hasItems(ROLE_MANAGER));
         assertThat(currentRoles, not(hasItems(ROLE_USER, ROLE_FRIENDLY_MANAGER)));
 
-        logoutFromRealm(getConsumerRoot(), bc.consumerRealmName());
-
+        AccountHelper.logout(adminClient.realm(bc.consumerRealmName()), bc.getUserLogin());
+        AccountHelper.logout(adminClient.realm(bc.providerRealmName()), bc.getUserLogin());
 
         userResource.roles().realmLevel().add(Collections.singletonList(userRole));
         userResource.roles().realmLevel().add(Collections.singletonList(friendlyManagerRole));
+
+        oauth.clientId("broker-app");
+        loginPage.open(bc.consumerRealmName());
 
         logInAsUserInIDP();
 
@@ -176,10 +179,13 @@ public final class KcSamlBrokerTest extends AbstractAdvancedBrokerTest {
           .collect(Collectors.toSet());
         assertThat(currentRoles, hasItems(ROLE_MANAGER, ROLE_USER, ROLE_FRIENDLY_MANAGER));
 
-        logoutFromRealm(getConsumerRoot(), bc.consumerRealmName());
-
+        AccountHelper.logout(adminClient.realm(bc.consumerRealmName()), bc.getUserLogin());
+        AccountHelper.logout(adminClient.realm(bc.providerRealmName()), bc.getUserLogin());
 
         userResource.roles().realmLevel().remove(Collections.singletonList(friendlyManagerRole));
+
+        oauth.clientId("broker-app");
+        loginPage.open(bc.consumerRealmName());
 
         logInAsUserInIDP();
 
@@ -189,8 +195,8 @@ public final class KcSamlBrokerTest extends AbstractAdvancedBrokerTest {
         assertThat(currentRoles, hasItems(ROLE_MANAGER, ROLE_USER));
         assertThat(currentRoles, not(hasItems(ROLE_FRIENDLY_MANAGER)));
 
-        logoutFromRealm(getProviderRoot(), bc.providerRealmName());
-        logoutFromRealm(getConsumerRoot(), bc.consumerRealmName());
+        AccountHelper.logout(adminClient.realm(bc.providerRealmName()), bc.getUserLogin());
+        AccountHelper.logout(adminClient.realm(bc.consumerRealmName()), bc.getUserLogin());
     }
 
     @Test
@@ -219,8 +225,8 @@ public final class KcSamlBrokerTest extends AbstractAdvancedBrokerTest {
         assertThat(currentRoles, hasItems(ROLE_MANAGER));
         assertThat(currentRoles, not(hasItems(ROLE_USER, ROLE_FRIENDLY_MANAGER, ROLE_USER_DOT_GUIDE)));
 
-        logoutFromRealm(getConsumerRoot(), bc.consumerRealmName());
-
+        AccountHelper.logout(adminClient.realm(bc.consumerRealmName()), bc.getUserLogin());
+        AccountHelper.logout(adminClient.realm(bc.providerRealmName()), bc.getUserLogin());
 
         UserRepresentation urp = userResourceProv.toRepresentation();
         urp.setAttributes(new HashMap<>());
@@ -229,6 +235,9 @@ public final class KcSamlBrokerTest extends AbstractAdvancedBrokerTest {
         userResourceProv.roles().realmLevel().add(Collections.singletonList(userRole));
         userResourceProv.roles().realmLevel().add(Collections.singletonList(userRoleDotGuide));
 
+        oauth.clientId("broker-app");
+        loginPage.open(bc.consumerRealmName());
+
         logInAsUserInIDP();
 
         currentRoles = userResourceCons.roles().realmLevel().listAll().stream()
@@ -236,12 +245,15 @@ public final class KcSamlBrokerTest extends AbstractAdvancedBrokerTest {
           .collect(Collectors.toSet());
         assertThat(currentRoles, hasItems(ROLE_MANAGER, ROLE_USER, ROLE_USER_DOT_GUIDE, ROLE_FRIENDLY_MANAGER));
 
-        logoutFromRealm(getConsumerRoot(), bc.consumerRealmName());
-
+        AccountHelper.logout(adminClient.realm(bc.consumerRealmName()), bc.getUserLogin());
+        AccountHelper.logout(adminClient.realm(bc.providerRealmName()), bc.getUserLogin());
 
         urp = userResourceProv.toRepresentation();
         urp.setAttributes(new HashMap<>());
         userResourceProv.update(urp);
+
+        oauth.clientId("broker-app");
+        loginPage.open(bc.consumerRealmName());
 
         logInAsUserInIDP();
 
@@ -251,8 +263,8 @@ public final class KcSamlBrokerTest extends AbstractAdvancedBrokerTest {
         assertThat(currentRoles, hasItems(ROLE_MANAGER, ROLE_USER, ROLE_USER_DOT_GUIDE));
         assertThat(currentRoles, not(hasItems(ROLE_FRIENDLY_MANAGER)));
 
-        logoutFromRealm(getProviderRoot(), bc.providerRealmName());
-        logoutFromRealm(getConsumerRoot(), bc.consumerRealmName());
+        AccountHelper.logout(adminClient.realm(bc.consumerRealmName()), bc.getUserLogin());
+        AccountHelper.logout(adminClient.realm(bc.providerRealmName()), bc.getUserLogin());
     }
 
     // KEYCLOAK-6106
@@ -281,8 +293,8 @@ public final class KcSamlBrokerTest extends AbstractAdvancedBrokerTest {
 
           .getSamlResponse(Binding.POST);       // Response from consumer IdP
 
-        Assert.assertThat(samlResponse, Matchers.notNullValue());
-        Assert.assertThat(samlResponse.getSamlObject(), isSamlResponse(JBossSAMLURIConstants.STATUS_SUCCESS));
+        assertThat(samlResponse, Matchers.notNullValue());
+        assertThat(samlResponse.getSamlObject(), isSamlResponse(JBossSAMLURIConstants.STATUS_SUCCESS));
     }
 
     @Test
@@ -331,8 +343,8 @@ public final class KcSamlBrokerTest extends AbstractAdvancedBrokerTest {
 
                 .getSamlResponse(Binding.POST);       // Response from consumer IdP
 
-        Assert.assertThat(samlResponse, Matchers.notNullValue());
-        Assert.assertThat(samlResponse.getSamlObject(), isSamlResponse(JBossSAMLURIConstants.STATUS_SUCCESS));
+        assertThat(samlResponse, Matchers.notNullValue());
+        assertThat(samlResponse.getSamlObject(), isSamlResponse(JBossSAMLURIConstants.STATUS_SUCCESS));
 
         Stream<AssertionType> assertionTypeStream = assertionsUnencrypted(samlResponse.getSamlObject());
         Stream<AttributeType> attributeStatementTypeStream = attributesUnecrypted(attributeStatements(assertionTypeStream));
@@ -377,8 +389,8 @@ public final class KcSamlBrokerTest extends AbstractAdvancedBrokerTest {
 
           .getSamlResponse(Binding.POST);       // Response from consumer IdP
 
-        Assert.assertThat(samlResponse, Matchers.notNullValue());
-        Assert.assertThat(samlResponse.getSamlObject(), isSamlResponse(JBossSAMLURIConstants.STATUS_SUCCESS));
+        assertThat(samlResponse, Matchers.notNullValue());
+        assertThat(samlResponse.getSamlObject(), isSamlResponse(JBossSAMLURIConstants.STATUS_SUCCESS));
       }
     }
 

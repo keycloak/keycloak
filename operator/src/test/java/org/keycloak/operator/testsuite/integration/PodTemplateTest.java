@@ -19,6 +19,7 @@ package org.keycloak.operator.testsuite.integration;
 
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.LocalObjectReferenceBuilder;
+import io.fabric8.kubernetes.api.model.NamespaceBuilder;
 import io.fabric8.kubernetes.api.model.PodTemplateSpecBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.client.dsl.Resource;
@@ -28,6 +29,7 @@ import io.quarkus.test.junit.QuarkusTest;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
 import org.keycloak.operator.testsuite.utils.CRAssert;
+import org.keycloak.operator.testsuite.utils.K8sUtils;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 
 import java.util.Collections;
@@ -53,12 +55,8 @@ public class PodTemplateTest extends BaseOperatorTest {
 
     @Test
     public void testPodTemplateIsMerged() {
-        // Arrange
-        var keycloakWithPodTemplate = k8sclient
-                .load(getClass().getResourceAsStream("/correct-podtemplate-keycloak.yml"));
-
         // Act
-        keycloakWithPodTemplate.createOrReplace();
+        K8sUtils.set(k8sclient, getClass().getResourceAsStream("/correct-podtemplate-keycloak.yml"));
 
         // Assert
         Awaitility
@@ -99,7 +97,7 @@ public class PodTemplateTest extends BaseOperatorTest {
         plainKc.getSpec().getUnsupported().setPodTeplate(podTemplate);
 
         // Act
-        k8sclient.resource(plainKc).createOrReplace();
+        K8sUtils.set(k8sclient, plainKc);
 
         // Assert
         Log.info("Getting status of Keycloak");
@@ -113,26 +111,35 @@ public class PodTemplateTest extends BaseOperatorTest {
 
     @Test
     public void testPodTemplateIncorrectNamespace() {
-        // Arrange
-        var plainKc = getEmptyPodTemplateKeycloak();
-        var podTemplate = new PodTemplateSpecBuilder()
-                .withNewMetadata()
-                .withNamespace("bar")
-                .endMetadata()
-                .build();
-        plainKc.getSpec().getUnsupported().setPodTeplate(podTemplate);
+        final String wrongNamespace = getNewRandomNamespaceName();
+        try {
+            // Arrange
+            Log.info("Using incorrect namespace: " + wrongNamespace);
+            k8sclient.resource(new NamespaceBuilder().withNewMetadata().withName(wrongNamespace).endMetadata().build()).create(); // OpenShift actually checks existence of the NS
+            var plainKc = getEmptyPodTemplateKeycloak();
+            var podTemplate = new PodTemplateSpecBuilder()
+                    .withNewMetadata()
+                    .withNamespace(wrongNamespace)
+                    .endMetadata()
+                    .build();
+            plainKc.getSpec().getUnsupported().setPodTeplate(podTemplate);
 
-        // Act
-        k8sclient.resource(plainKc).createOrReplace();
+            // Act
+            K8sUtils.set(k8sclient, plainKc);
 
-        // Assert
-        Log.info("Getting status of Keycloak");
-        Awaitility
-                .await()
-                .ignoreExceptions()
-                .atMost(3, MINUTES).untilAsserted(() -> {
-                    CRAssert.assertKeycloakStatusCondition(getCrSelector().get(), HAS_ERRORS, false, "cannot be modified");
-                });
+            // Assert
+            Log.info("Getting status of Keycloak");
+            Awaitility
+                    .await()
+                    .ignoreExceptions()
+                    .atMost(3, MINUTES).untilAsserted(() -> {
+                        CRAssert.assertKeycloakStatusCondition(getCrSelector().get(), HAS_ERRORS, false, "cannot be modified");
+                    });
+        }
+        finally {
+            Log.info("Deleting incorrect namespace: " + wrongNamespace);
+            k8sclient.namespaces().withName(wrongNamespace).delete();
+        }
     }
 
     @Test
@@ -149,7 +156,7 @@ public class PodTemplateTest extends BaseOperatorTest {
         plainKc.getSpec().getUnsupported().setPodTeplate(podTemplate);
 
         // Act
-        k8sclient.resource(plainKc).createOrReplace();
+        K8sUtils.set(k8sclient, plainKc);
 
         // Assert
         Log.info("Getting status of Keycloak");
@@ -175,7 +182,7 @@ public class PodTemplateTest extends BaseOperatorTest {
         plainKc.getSpec().getUnsupported().setPodTeplate(podTemplate);
 
         // Act
-        k8sclient.resource(plainKc).createOrReplace();
+        K8sUtils.set(k8sclient, plainKc);
 
         // Assert
         Log.info("Getting status of Keycloak");
@@ -193,7 +200,7 @@ public class PodTemplateTest extends BaseOperatorTest {
         String secretDescriptorFilename = "test-docker-registry-secret.yaml";
 
         Secret imagePullSecret = getResourceFromFile(secretDescriptorFilename, Secret.class);
-        k8sclient.secrets().inNamespace(namespace).createOrReplace(imagePullSecret);
+        K8sUtils.set(k8sclient, imagePullSecret);
         LocalObjectReference localObjRefAsSecretTmp = new LocalObjectReferenceBuilder().withName(imagePullSecret.getMetadata().getName()).build();
 
         assertThat(localObjRefAsSecretTmp.getName()).isNotNull();
@@ -209,7 +216,7 @@ public class PodTemplateTest extends BaseOperatorTest {
         plainKc.getSpec().getUnsupported().setPodTeplate(podTemplate);
 
         // Act
-        k8sclient.resource(plainKc).createOrReplace();
+        K8sUtils.set(k8sclient, plainKc);
 
         // Assert
         Log.info("Getting status of Keycloak");

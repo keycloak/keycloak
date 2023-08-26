@@ -24,7 +24,7 @@ import static org.keycloak.utils.LockObjectsForModification.lockUserSessionsForM
 
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
-import org.jboss.resteasy.spi.HttpRequest;
+import org.keycloak.http.HttpRequest;
 import org.keycloak.Config;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
@@ -82,16 +82,18 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import javax.ws.rs.Consumes;
-import javax.ws.rs.GET;
-import javax.ws.rs.OPTIONS;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.OPTIONS;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.core.Response;
+
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -127,7 +129,7 @@ public class LogoutEndpoint {
         this.event = event;
         this.providerConfig = providerConfig;
         this.offlineSessionsLazyLoadingEnabled = !Config.scope("userSessions").scope("infinispan").getBoolean("preloadOfflineSessionsFromDatabase", false);
-        this.request = session.getContext().getContextObject(HttpRequest.class);
+        this.request = session.getContext().getHttpRequest();
         this.headers = session.getContext().getRequestHeaders();
     }
 
@@ -200,7 +202,7 @@ public class LogoutEndpoint {
         if (encodedIdToken != null) {
             try {
                 idToken = tokenManager.verifyIDTokenSignature(session, encodedIdToken);
-                TokenVerifier.createWithoutSignature(idToken).tokenType(TokenUtil.TOKEN_TYPE_ID).verify();
+                TokenVerifier.createWithoutSignature(idToken).tokenType(Arrays.asList(TokenUtil.TOKEN_TYPE_ID)).verify();
             } catch (OAuthErrorException | VerificationException e) {
                 event.event(EventType.LOGOUT);
                 event.error(Errors.INVALID_TOKEN);
@@ -238,10 +240,9 @@ public class LogoutEndpoint {
                 OIDCAdvancedConfigWrapper wrapper = OIDCAdvancedConfigWrapper.fromClientModel(client);
                 Set<String> postLogoutRedirectUris = wrapper.getPostLogoutRedirectUris() != null ? new HashSet(wrapper.getPostLogoutRedirectUris()) : new HashSet<>();
                 validatedRedirectUri = RedirectUtils.verifyRedirectUri(session, client.getRootUrl(), redirectUri, postLogoutRedirectUris, true);
-            } else if (clientId == null) {
+            } else if (clientId == null && providerConfig.isLegacyLogoutRedirectUri()) {
                 /*
-                 * Only call verifyRealmRedirectUri, in case both clientId and client are null - otherwise
-                 * the logout uri contains a non-existing client, and we should show an INVALID_REDIRECT_URI error
+                 * Only call verifyRealmRedirectUri against all in the realm, in case when "Legacy" switch is enabled and when we don't have a client - usually due both clientId and client are null
                  */
                 validatedRedirectUri = RedirectUtils.verifyRealmRedirectUri(session, redirectUri);
             }
@@ -257,7 +258,7 @@ public class LogoutEndpoint {
         AuthenticationSessionModel logoutSession = AuthenticationManager.createOrJoinLogoutSession(session, realm, new AuthenticationSessionManager(session), null, true);
         session.getContext().setAuthenticationSession(logoutSession);
         if (uiLocales != null) {
-            logoutSession.setAuthNote(LocaleSelectorProvider.CLIENT_REQUEST_LOCALE, uiLocales);
+            logoutSession.setClientNote(LocaleSelectorProvider.CLIENT_REQUEST_LOCALE, uiLocales);
         }
         if (validatedRedirectUri != null) {
             logoutSession.setAuthNote(OIDCLoginProtocol.LOGOUT_REDIRECT_URI, validatedRedirectUri);
@@ -371,6 +372,8 @@ public class LogoutEndpoint {
                 session.getProvider(LoginFormsProvider.class).setAttribute(Constants.SKIP_LINK, true);
             }
 
+            event.error(Errors.SESSION_EXPIRED);
+
             return ErrorPage.error(session, logoutSession, Response.Status.BAD_REQUEST, Messages.FAILED_LOGOUT);
         }
 
@@ -406,6 +409,7 @@ public class LogoutEndpoint {
 
             AuthenticationManager.AuthResult authResult = AuthenticationManager.authenticateIdentityCookie(session, realm, false);
             if (authResult != null) {
+                event.error(Errors.LOGOUT_FAILED);
                 return ErrorPage.error(session, logoutSession, Response.Status.BAD_REQUEST, Messages.FAILED_LOGOUT);
             } else {
                 // Probably changing locale on logout screen after logout was already performed. If there is no session in the browser, we can just display that logout was already finished
@@ -432,7 +436,10 @@ public class LogoutEndpoint {
             try {
                 userSession = lockUserSessionsForModification(session, () -> session.sessions().getUserSession(realm, userSessionIdFromIdToken));
 
-                if (userSession != null) {
+                if (userSession == null) {
+                    event.event(EventType.LOGOUT);
+                    event.error(Errors.SESSION_EXPIRED);
+                } else {
                     Integer idTokenIssuedAt = Integer.parseInt(idTokenIssuedAtStr);
                     checkTokenIssuedAt(idTokenIssuedAt, userSession);
                 }
@@ -507,6 +514,7 @@ public class LogoutEndpoint {
 
         try {
             session.clientPolicy().triggerOnEvent(new LogoutRequestContext(form));
+            refreshToken = form.getFirst(OAuth2Constants.REFRESH_TOKEN);
         } catch (ClientPolicyException cpe) {
             throw new CorsErrorResponseException(cors, cpe.getError(), cpe.getErrorDetail(), cpe.getErrorStatus());
         }

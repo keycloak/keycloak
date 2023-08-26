@@ -25,7 +25,6 @@ import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.message.BasicNameValuePair;
 import org.keycloak.OAuth2Constants;
-import org.keycloak.adapters.authentication.ClientCredentialsProviderUtils;
 import org.keycloak.common.util.HostUtils;
 import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.common.util.StreamUtil;
@@ -75,7 +74,7 @@ public class ServerRequest {
 
         formparams.add(new BasicNameValuePair(OAuth2Constants.REFRESH_TOKEN, refreshToken));
         HttpPost post = new HttpPost(uri);
-        ClientCredentialsProviderUtils.setClientCredentials(deployment, post, formparams);
+        AdapterUtils.setClientCredentials(deployment, post, formparams);
 
         UrlEncodedFormEntity form = new UrlEncodedFormEntity(formparams, "UTF-8");
         post.setEntity(form);
@@ -104,7 +103,7 @@ public class ServerRequest {
         }
 
         HttpPost post = new HttpPost(deployment.getTokenUrl());
-        ClientCredentialsProviderUtils.setClientCredentials(deployment, post, formparams);
+        AdapterUtils.setClientCredentials(deployment, post, formparams);
 
         UrlEncodedFormEntity form = new UrlEncodedFormEntity(formparams, "UTF-8");
         post.setEntity(form);
@@ -160,7 +159,7 @@ public class ServerRequest {
         }
 
         HttpPost post = new HttpPost(deployment.getTokenUrl());
-        ClientCredentialsProviderUtils.setClientCredentials(deployment, post, formparams);
+        AdapterUtils.setClientCredentials(deployment, post, formparams);
 
         UrlEncodedFormEntity form = new UrlEncodedFormEntity(formparams, "UTF-8");
         post.setEntity(form);
@@ -202,7 +201,7 @@ public class ServerRequest {
         formparams.add(new BasicNameValuePair(OAuth2Constants.REFRESH_TOKEN, refreshToken));
 
         HttpPost post = new HttpPost(deployment.getTokenUrl());
-        ClientCredentialsProviderUtils.setClientCredentials(deployment, post, formparams);
+        AdapterUtils.setClientCredentials(deployment, post, formparams);
 
         UrlEncodedFormEntity form = new UrlEncodedFormEntity(formparams, "UTF-8");
         post.setEntity(form);
@@ -257,7 +256,7 @@ public class ServerRequest {
         formparams.add(new BasicNameValuePair(AdapterConstants.CLIENT_CLUSTER_HOST, host));
 
         HttpPost post = new HttpPost(endpointUrl);
-        ClientCredentialsProviderUtils.setClientCredentials(deployment, post, formparams);
+        AdapterUtils.setClientCredentials(deployment, post, formparams);
 
         UrlEncodedFormEntity form = new UrlEncodedFormEntity(formparams, "UTF-8");
         post.setEntity(form);
@@ -291,7 +290,8 @@ public class ServerRequest {
     protected static String stripOauthParametersFromRedirect(String uri) {
         KeycloakUriBuilder builder = KeycloakUriBuilder.fromUri(uri)
                 .replaceQueryParam(OAuth2Constants.CODE, null)
-                .replaceQueryParam(OAuth2Constants.STATE, null);
+                .replaceQueryParam(OAuth2Constants.STATE, null)
+                .replaceQueryParam(OAuth2Constants.ISSUER, null);
         return builder.buildAsString();
     }
 

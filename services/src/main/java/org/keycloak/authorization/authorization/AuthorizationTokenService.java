@@ -19,6 +19,8 @@ package org.keycloak.authorization.authorization;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -32,13 +34,13 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
-import javax.ws.rs.HttpMethod;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.Status;
+import jakarta.ws.rs.HttpMethod;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response.Status;
 
 import org.jboss.logging.Logger;
-import org.jboss.resteasy.spi.HttpRequest;
+import org.keycloak.http.HttpRequest;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.common.DefaultEvaluationContext;
@@ -59,12 +61,14 @@ import org.keycloak.authorization.util.Tokens;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.constants.ServiceAccountConstants;
 import org.keycloak.common.util.Base64Url;
+import org.keycloak.common.util.PathMatcher;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSessionContext;
+import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
@@ -89,6 +93,7 @@ import org.keycloak.services.ErrorResponseException;
 import org.keycloak.services.Urls;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.AuthenticationSessionManager;
+import org.keycloak.services.managers.UserSessionManager;
 import org.keycloak.services.resources.Cors;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
@@ -310,7 +315,7 @@ public class AuthorizationTokenService {
         if (accessToken.getSessionState() == null) {
             // Create temporary (request-scoped) transient session
             UserModel user = TokenManager.lookupUserFromStatelessToken(keycloakSession, realm, accessToken);
-            userSessionModel = sessions.createUserSession(KeycloakModelUtils.generateId(), realm, user, user.getUsername(), request.getClientConnection().getRemoteAddr(),
+            userSessionModel = new UserSessionManager(keycloakSession).createUserSession(KeycloakModelUtils.generateId(), realm, user, user.getUsername(), request.getClientConnection().getRemoteAddr(),
                     ServiceAccountConstants.CLIENT_AUTH, false, null, null, UserSessionModel.SessionPersistenceState.TRANSIENT);
         } else {
             userSessionModel = lockUserSessionsForModification(keycloakSession, () -> sessions.getUserSession(realm, accessToken.getSessionState()));
@@ -800,6 +805,130 @@ public class AuthorizationTokenService {
 
         ClientConnection getClientConnection() {
             return clientConnection;
+        }
+
+        public void addPermissions(List<String> permissionList, String permissionResourceFormat, boolean matchingUri) {
+            if (permissionResourceFormat == null) {
+                permissionResourceFormat = "id";
+            }
+
+            switch (permissionResourceFormat) {
+                case "id":
+                    addPermissionsById(permissionList);
+                    break;
+                case "uri":
+                    addPermissionsByUri(permissionList, matchingUri);
+                    break;
+            }
+
+        }
+
+        private void addPermissionsById(List<String> permissionList) {
+            for (String permission : permissionList) {
+                String[] parts = permission.split("#");
+                String rsid = parts[0];
+
+                if (parts.length == 1) {
+                    addPermission(rsid);
+                } else {
+                    String[] scopes = parts[1].split(",");
+                    addPermission(rsid, scopes);
+                }
+            }
+        }
+
+        private void addPermissionsByUri(List<String> permissionList, boolean matchingUri) {
+            StoreFactory storeFactory = authorization.getStoreFactory();
+
+            for (String permission : permissionList) {
+                String[] parts = permission.split("#");
+                String uri = parts[0];
+
+                if (parts.length == 1) {
+                    // only resource uri is specified
+                    if (uri.isEmpty()) {
+                        CorsErrorResponseException invalidResourceException = new CorsErrorResponseException(getCors(),
+                            OAuthErrorException.INVALID_REQUEST, "You must provide the uri", Status.BAD_REQUEST);
+                        fireErrorEvent(getEvent(), Errors.INVALID_REQUEST, invalidResourceException);
+                        throw invalidResourceException;
+                    }
+
+                    List<Resource> resources = getResourceListByUri(uri, storeFactory, matchingUri);
+
+                    if (resources == null || resources.isEmpty()) {
+                        CorsErrorResponseException invalidResourceException = new CorsErrorResponseException(getCors(),
+                            "invalid_resource", "Resource with uri [" + uri + "] does not exist.", Status.BAD_REQUEST);
+                        fireErrorEvent(getEvent(), Errors.INVALID_REQUEST, invalidResourceException);
+                        throw invalidResourceException;
+                    }
+
+                    resources.stream().forEach(resource -> addPermission(resource.getId()));
+                } else {
+                    // resource uri and scopes are specified, or only scopes are specified
+                    String[] scopes = parts[1].split(",");
+                    
+                    if (uri.isEmpty()) {
+                        // only scopes are specified
+                        addPermission("", scopes);
+                        return;
+                    }
+
+                    List<Resource> resources = getResourceListByUri(uri, storeFactory, matchingUri);
+
+                    if (resources == null || resources.isEmpty()) {
+                        CorsErrorResponseException invalidResourceException = new CorsErrorResponseException(getCors(),
+                            "invalid_resource", "Resource with uri [" + uri + "] does not exist.", Status.BAD_REQUEST);
+                        fireErrorEvent(getEvent(), Errors.INVALID_REQUEST, invalidResourceException);
+                        throw invalidResourceException;
+                    }
+
+                    resources.stream().forEach(resource -> addPermission(resource.getId(), scopes));
+                }
+            }
+        }
+
+        private List<Resource> getResourceListByUri(String uri, StoreFactory storeFactory, boolean matchingUri) {
+            Map<Resource.FilterOption, String[]> search = new EnumMap<>(Resource.FilterOption.class);
+            search.put(Resource.FilterOption.URI, new String[] { uri });
+            ResourceServer resourceServer = storeFactory.getResourceServerStore()
+                .findByClient(getRealm().getClientByClientId(getAudience()));
+            List<Resource> resources = storeFactory.getResourceStore().find(getRealm(), resourceServer, search, -1,
+                Constants.DEFAULT_MAX_RESULTS);
+
+            if (!matchingUri || !resources.isEmpty()) {
+                return resources;
+            }
+
+            search = new EnumMap<>(Resource.FilterOption.class);
+            search.put(Resource.FilterOption.URI_NOT_NULL, new String[] { "true" });
+            search.put(Resource.FilterOption.OWNER, new String[] { resourceServer.getClientId() });
+
+            List<Resource> serverResources = storeFactory.getResourceStore().find(getRealm(), resourceServer, search, -1, -1);
+
+            PathMatcher<Map.Entry<String, Resource>> pathMatcher = new PathMatcher<Map.Entry<String, Resource>>() {
+                @Override
+                protected String getPath(Map.Entry<String, Resource> entry) {
+                    return entry.getKey();
+                }
+
+                @Override
+                protected Collection<Map.Entry<String, Resource>> getPaths() {
+                    Map<String, Resource> result = new HashMap<>();
+                    serverResources.forEach(resource -> resource.getUris().forEach(uri -> {
+                        result.put(uri, resource);
+                    }));
+
+                    return result.entrySet();
+                }
+            };
+
+            Map.Entry<String, Resource> matches = pathMatcher.matches(uri);
+
+            if (matches != null) {
+                return Collections.singletonList(matches.getValue());
+            }
+
+            return null;
         }
     }
 }

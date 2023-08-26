@@ -23,26 +23,24 @@ import org.keycloak.admin.client.resource.ClientScopeResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.RoleResource;
 import org.keycloak.admin.client.resource.UserResource;
-import org.keycloak.crypto.KeyStatus;
-import org.keycloak.crypto.KeyUse;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
-import org.keycloak.representations.idm.KeysMetadataRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 
-import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.Status;
-import javax.ws.rs.core.Response.StatusType;
+import jakarta.ws.rs.WebApplicationException;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response.Status;
+import jakarta.ws.rs.core.Response.StatusType;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import static org.junit.Assert.assertEquals;
 import static org.keycloak.representations.idm.CredentialRepresentation.PASSWORD;
 
 /**
@@ -110,6 +108,15 @@ public class ApiUtil {
 
     public static ProtocolMapperRepresentation findProtocolMapperByName(ClientResource client, String name) {
         for (ProtocolMapperRepresentation p : client.getProtocolMappers().getMappers()) {
+            if (p.getName().equals(name)) {
+                return p;
+            }
+        }
+        return null;
+    }
+
+    public static ProtocolMapperRepresentation findProtocolMapperByName(ClientScopeResource scope, String name) {
+        for (ProtocolMapperRepresentation p : scope.getProtocolMappers().getMappers()) {
             if (p.getName().equals(name)) {
                 return p;
             }
@@ -269,23 +276,4 @@ public class ApiUtil {
         return null;
     }
 
-    public static KeysMetadataRepresentation.KeyMetadataRepresentation findActiveSigningKey(RealmResource realm) {
-        KeysMetadataRepresentation keyMetadata = realm.keys().getKeyMetadata();
-        for (KeysMetadataRepresentation.KeyMetadataRepresentation rep : keyMetadata.getKeys()) {
-            if (rep.getPublicKey() != null && KeyStatus.valueOf(rep.getStatus()).isActive() && KeyUse.SIG.equals(rep.getUse())) {
-                return rep;
-            }
-        }
-        return null;
-    }
-
-    public static KeysMetadataRepresentation.KeyMetadataRepresentation findActiveSigningKey(RealmResource realm, String alg) {
-        KeysMetadataRepresentation keyMetadata = realm.keys().getKeyMetadata();
-        for (KeysMetadataRepresentation.KeyMetadataRepresentation rep : keyMetadata.getKeys()) {
-            if (rep.getPublicKey() != null && KeyStatus.valueOf(rep.getStatus()).isActive() && KeyUse.SIG.equals(rep.getUse()) && alg.equals(rep.getAlgorithm())) {
-                return rep;
-            }
-        }
-        return null;
-    }
 }

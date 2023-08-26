@@ -22,10 +22,10 @@ import java.net.URI;
 import java.util.HashMap;
 import java.util.List;
 
-import javax.ws.rs.client.Client;
-import javax.ws.rs.client.WebTarget;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriBuilder;
+import jakarta.ws.rs.client.Client;
+import jakarta.ws.rs.client.WebTarget;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.UriBuilder;
 
 import org.jboss.arquillian.test.api.ArquillianResource;
 import org.junit.Test;

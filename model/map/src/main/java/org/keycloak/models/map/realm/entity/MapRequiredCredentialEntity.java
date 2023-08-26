@@ -27,7 +27,7 @@ import org.keycloak.models.map.common.UpdatableEntity;
 public interface MapRequiredCredentialEntity extends UpdatableEntity {
     static MapRequiredCredentialEntity fromModel(RequiredCredentialModel model) {
         if (model == null) return null;
-        MapRequiredCredentialEntity entity = new MapRequiredCredentialEntityImpl();
+        MapRequiredCredentialEntity entity = DeepCloner.DUMB_CLONER.newInstance(MapRequiredCredentialEntity.class);
         entity.setFormLabel(model.getFormLabel());
         entity.setType(model.getType());
         entity.setInput(model.isInput());

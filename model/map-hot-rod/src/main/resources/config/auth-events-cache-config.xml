@@ -16,7 +16,9 @@
   -->
 <distributed-cache name="auth-events" mode="SYNC">
     <encoding media-type="application/x-protostream"/>
-    <indexing>
+    <locking isolation="REPEATABLE_READ" />
+    <transaction mode="FULL_XA"/>
+    <indexing storage="local-heap">
         <indexed-entities>
             <indexed-entity>kc.HotRodAuthEventEntity</indexed-entity>
         </indexed-entities>

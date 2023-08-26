@@ -28,7 +28,7 @@ import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.util.JsonSerialization;
 import org.openqa.selenium.NoSuchElementException;
 
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -40,7 +40,7 @@ import static java.util.Collections.singletonList;
 import static org.hamcrest.core.StringEndsWith.endsWith;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.keycloak.representations.idm.CredentialRepresentation.PASSWORD;

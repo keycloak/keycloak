@@ -67,10 +67,10 @@ import java.net.URI;
 import java.util.Optional;
 import java.util.UUID;
 
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriBuilder;
-import javax.ws.rs.core.UriInfo;
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.UriBuilder;
+import jakarta.ws.rs.core.UriInfo;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -223,6 +223,9 @@ public class OIDCLoginProtocol implements LoginProtocol {
         if (!clientConfig.isExcludeSessionStateFromAuthResponse()) {
             redirectUri.addParam(OAuth2Constants.SESSION_STATE, userSession.getId());
         }
+        if (!clientConfig.isExcludeIssuerFromAuthResponse()) {
+            redirectUri.addParam(OAuth2Constants.ISSUER, clientSession.getNote(OIDCLoginProtocol.ISSUER));
+        }
 
         String nonce = authSession.getClientNote(OIDCLoginProtocol.NONCE_PARAM);
         clientSessionCtx.setAttribute(OIDCLoginProtocol.NONCE_PARAM, nonce);
@@ -241,7 +244,8 @@ public class OIDCLoginProtocol implements LoginProtocol {
                     authSession.getClientNote(OAuth2Constants.SCOPE),
                     authSession.getClientNote(OIDCLoginProtocol.REDIRECT_URI_PARAM),
                     authSession.getClientNote(OIDCLoginProtocol.CODE_CHALLENGE_PARAM),
-                    authSession.getClientNote(OIDCLoginProtocol.CODE_CHALLENGE_METHOD_PARAM));
+                    authSession.getClientNote(OIDCLoginProtocol.CODE_CHALLENGE_METHOD_PARAM),
+                    userSession.getId());
 
             code = OAuth2CodeParser.persistCode(session, clientSession, codeData);
             redirectUri.addParam(OAuth2Constants.CODE, code);
@@ -277,6 +281,9 @@ public class OIDCLoginProtocol implements LoginProtocol {
                 event.error(cpe.getError());
                 new AuthenticationSessionManager(session).removeAuthenticationSession(realm, authSession, true);
                 redirectUri.addParam(OAuth2Constants.ERROR_DESCRIPTION, cpe.getError());
+                if (!clientConfig.isExcludeIssuerFromAuthResponse()) {
+                    redirectUri.addParam(OAuth2Constants.ISSUER, clientSession.getNote(OIDCLoginProtocol.ISSUER));
+                }
                 return redirectUri.build();
             }
 
@@ -325,8 +332,13 @@ public class OIDCLoginProtocol implements LoginProtocol {
         if (state != null) {
             redirectUri.addParam(OAuth2Constants.STATE, state);
         }
-        
-        new AuthenticationSessionManager(session).removeAuthenticationSession(realm, authSession, true);
+
+        if (error == Error.PASSIVE_LOGIN_REQUIRED || error == Error.PASSIVE_INTERACTION_REQUIRED) {
+            // passive check error, just delete the tabId maintaining session and don't reset the restart cookie
+            new AuthenticationSessionManager(session).removeTabIdInAuthenticationSession(realm, authSession);
+        } else {
+            new AuthenticationSessionManager(session).removeAuthenticationSession(realm, authSession, true);
+        }
         return redirectUri.build();
     }
 

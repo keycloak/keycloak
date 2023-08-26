@@ -1,0 +1,398 @@
+[id="con-oidc_{context}"]
+
+=== OpenID Connect
+
+link:https://openid.net/developers/how-connect-works/[OpenID Connect] (OIDC) is an authentication protocol that is an extension of link:https://datatracker.ietf.org/doc/html/rfc6749[OAuth 2.0].
+While OAuth 2.0 is only a framework for building authorization protocols and is mainly incomplete, OIDC is a full-fledged authentication and authorization
+protocol.  OIDC also makes heavy use of the link:https://jwt.io[Json Web Token] (JWT) set of standards.  These standards define an
+identity token JSON format and ways to digitally sign and encrypt that data in a compact and web-friendly way.
+
+There are really two types of use cases when using OIDC.  The first is an application that asks the {project_name} server to authenticate
+a user for them.  After a successful login, the application will receive an _identity token_ and an _access token_.  The _identity token_
+contains information about the user such as username, email, and other profile information.  The _access token_ is digitally signed by
+the realm and contains access information (like user role mappings) that the application can use to determine what resources the user
+is allowed to access on the application.
+
+The second type of use cases is that of a client that wants to gain access to remote services.  In this case, the client asks {project_name}
+to obtain an _access token_ it can use to invoke on other remote services on behalf of the user.  {project_name} authenticates the user
+then asks the user for consent to grant access to the client requesting it.  The client then receives the _access token_.  This _access token_
+is digitally signed by the realm.  The client can make REST invocations on remote services using this _access token_.  The REST service
+extracts the _access token_, verifies the signature of the token, then decides based on access information within the token whether or not to process
+the request.
+
+[[_oidc-auth-flows]]
+
+==== OIDC Auth Flows
+
+OIDC has different ways for a client or application to authenticate a user and receive an _identity_ and _access_ token.  Which
+path you use depends greatly on the type of application or client requesting access.  All of these flows are described in the
+OIDC and OAuth 2.0 specifications so only a brief overview will be provided here.
+
+[[_oidc-auth-flows-authorization]]
+
+===== Authorization Code Flow
+
+This is a browser-based protocol and it is what we recommend you use to authenticate and authorize browser-based applications.  It makes
+heavy use of browser redirects to obtain an _identity_ and _access_ token.  Here's a brief summary:
+
+. Browser visits application.  The application notices the user is not logged in, so it redirects the browser to {project_name}
+  to be authenticated.  The application passes along a callback URL (a redirect URL) as a query parameter in this browser redirect
+  that {project_name} will use when it finishes authentication.
+. {project_name} authenticates the user and creates a one-time, very short-lived, temporary code.  {project_name}
+  redirects back to the application using the callback URL provided earlier and additionally adds the temporary code
+  as a query parameter in the callback URL.
+. The application extracts the temporary code and makes a background out of band REST invocation to {project_name}
+  to exchange the code for an _identity_, _access_ and _refresh_ token.  Once this temporary code has been used once
+  to obtain the tokens, it can never be used again.  This prevents potential replay attacks.
+
+It is important to note that _access_ tokens are usually short-lived and often expired after only minutes.  The additional _refresh_
+token that was transmitted by the login protocol allows the application to obtain a new access token after it expires.  This
+refresh protocol is important in the situation of a compromised system.  If access tokens are short-lived, the whole system is only
+vulnerable to a stolen token for the lifetime of the access token.  Future refresh token requests will fail if an admin
+has revoked access.  This makes things more secure and more scalable.
+
+[[_confidential-clients]]
+Another important aspect of this flow is the concept of a _public_ vs. a _confidential_ client.  _Confidential_ clients are required
+to provide a client secret when they exchange the temporary codes for tokens.  _Public_ clients are not required to provide this client secret.
+_Public_ clients are perfectly fine so long as HTTPS is strictly enforced and you are very strict about what redirect URIs are registered for the
+client.  HTML5/JavaScript clients always have to be _public_ clients because there is no way to transmit the client secret to them in a secure
+manner.  Again, this is ok so long as you use HTTPS and strictly enforce redirect URI registration.  This guide goes more detail
+into this in the xref:assembly-managing-clients_{context}[Managing Clients] chapter.
+
+{project_name} also supports the optional https://datatracker.ietf.org/doc/html/rfc7636[Proof Key for Code Exchange] specification.
+
+[[_oidc-auth-flows-implicit]]
+
+===== Implicit Flow
+
+This is a browser-based protocol that is similar to Authorization Code Flow except there are fewer requests and no refresh tokens involved.
+We do not recommend this flow as there remains the possibility of _access_ tokens being leaked in the browser history as tokens are transmitted
+via redirect URIs (see below).  Also, since this flow doesn't provide the client with a refresh token, access tokens would either have to
+be long-lived or users would have to re-authenticate when they expired.  This flow is supported because it is in the OIDC and OAuth 2.0 specification.
+Here's a brief summary of the protocol:
+
+. Browser visits application.  The application notices the user is not logged in, so it redirects the browser to {project_name}
+  to be authenticated.  The application passes along a callback URL (a redirect URL) as a query parameter in this browser redirect
+  that {project_name} will use when it finishes authentication.
+. {project_name} authenticates the user and creates an _identity_ and _access_ token.  {project_name}
+  redirects back to the application using the callback URL provided earlier and additionally adding the _identity_ and
+  _access_ tokens as query parameters in the callback URL.
+. The application extracts the _identity_ and _access_ tokens from the callback URL.
+
+[[_oidc-auth-flows-direct]]
+
+===== Resource Owner Password Credentials Grant (Direct Access Grants)
+
+This is referred to in the Admin Console as _Direct Access Grants_. This is used by REST clients that want to obtain a token on behalf of a user.  It is one HTTP POST request that contains
+the credentials of the user as well as the id of the client and the client's secret (if it is a confidential client).  The user's credentials
+are sent within form parameters.  The HTTP response contains
+_identity_, _access_, and _refresh_ tokens.
+
+[[_client_credentials_grant]]
+===== Client Credentials Grant
+
+This is also used by REST clients, but instead of obtaining a token that works on behalf
+of an external user, a token is created based on the metadata and permissions of a service account that is associated with the client.
+More info together with example is in <<_service_accounts,Service Accounts>> chapter.
+
+===== Device Authorization Grant
+
+This is used by clients running on internet-connected devices that have limited input capabilities or lack a suitable browser. Here's a brief summary of the protocol:
+
+. The application requests {project_name} a device code and a user code. {project_name} creates a device code and a user code. {project_name} returns a response including the device code and the user code to the application.
+. The application provides the user with the user code and the verification URI. The user accesses a verification URI to be authenticated by using another browser.
+. The application repeatedly polls {project_name} to find out if the user completed the user authorization. If user authentication is complete, the application exchanges the device code for an _identity_, _access_ and _refresh_ token.
+
+[[_client_initiated_backchannel_authentication_grant]]
+===== Client Initiated Backchannel Authentication Grant
+
+This is used by clients who want to initiate the authentication flow by communicating with the OpenID Provider directly without redirect through the user's browser like OAuth 2.0's authorization code grant. Here's a brief summary of the protocol:
+
+. The client requests {project_name} an auth_req_id that identifies the authentication request made by the client. {project_name} creates the auth_req_id.
+. After receiving this auth_req_id, this client repeatedly needs to poll {project_name} to obtain an Access Token, Refresh Token and ID Token from {project_name} in return for the auth_req_id until the user is authenticated. 
+
+An administrator can configure Client Initiated Backchannel Authentication (CIBA) related operations as `CIBA Policy` per realm.
+
+Also please refer to other places of {project_name} documentation like link:{adapterguide_link}#_backchannel_authentication_endpoint[Backchannel Authentication Endpoint section] of {adapterguide_name} and link:{adapterguide_link}#_client_initiated_backchannel_authentication_grant[Client Initiated Backchannel Authentication Grant section] of {adapterguide_name}.
+
+====== CIBA Policy
+
+An administrator carries out the following operations on the `Admin Console` :
+
+- Open the `Authentication -> CIBA Policy` tab.
+- Configure items and click `Save`.
+
+The configurable items and their description follow.
+
+|===
+|Configuration|Description
+
+|Backchannel Token Delivery Mode
+|Specifying how the CD (Consumption Device) gets the authentication result and related tokens. There are three modes, "poll", "ping" and "push". {project_name} only supports "poll" and "ping" modes.
+The default setting is "poll". This configuration is used as the default mode for clients, however every client can override the mode.
+ For more details, see https://openid.net/specs/openid-client-initiated-backchannel-authentication-core-1_0.html#rfc.section.5[CIBA Specification].
+
+|Expires In
+|The expiration time of the "auth_req_id" in seconds since the authentication request was received. The default setting is 120. This configuration is required.
+ For more details, see https://openid.net/specs/openid-client-initiated-backchannel-authentication-core-1_0.html#successful_authentication_request_acknowdlegment[CIBA Specification].
+
+|Interval
+|The interval in seconds the CD (Consumption Device) needs to wait for between polling requests to the token endpoint. The default setting is 5. This configuration is optional.
+ For more details, see https://openid.net/specs/openid-client-initiated-backchannel-authentication-core-1_0.html#successful_authentication_request_acknowdlegment[CIBA Specification].
+
+|Authentication Requested User Hint
+|The way of identifying the end-user for whom authentication is being requested. The default setting is "login_hint".  There are three modes, "login_hint", "login_hint_token" and "id_token_hint". {project_name} only supports "login_hint". This configuration is required.
+ For more details, see https://openid.net/specs/openid-client-initiated-backchannel-authentication-core-1_0.html#rfc.section.7.1[CIBA Specification].
+
+|===
+
+====== Provider Setting
+
+The CIBA grant uses the following two providers.
+
+. Authentication Channel Provider : provides the communication between {project_name} and the entity that actually authenticates the user via AD (Authentication Device).
+. User Resolver Provider : get `UserModel` of {project_name} from the information provided by the client to identify the user.
+
+{project_name} has both default providers. However, the administrator needs to set up Authentication Channel Provider like this:
+
+[source,bash,subs="attributes+"]
+----
+kc.[sh|bat] start --spi-ciba-auth-channel-ciba-http-auth-channel-http-authentication-channel-uri=https://backend.internal.example.com{kc_base_path}
+----
+
+The configurable items and their description follow.
+
+|===
+|Configuration|Description
+
+|httpAuthenticationChannelUri
+|Specifying URI of the entity that actually authenticates the user via AD (Authentication Device).
+
+|===
+
+====== Authentication Channel Provider
+
+CIBA standard document does not specify how to authenticate the user by AD. Therefore, it might be implemented at the discretion of products. {project_name} delegates this authentication to an external authentication entity. To communicate with the authentication entity, {project_name} provides Authentication Channel Provider.
+
+Its implementation of {project_name} assumes that the authentication entity is under the control of the administrator of {project_name} so that {project_name} trusts the authentication entity. It is not recommended to use the authentication entity that the administrator of {project_name} cannot control.
+
+Authentication Channel Provider is provided as SPI provider so that users of {project_name} can implement their own provider in order to meet their environment. {project_name} provides its default provider called HTTP Authentication Channel Provider that uses HTTP to communicate with the authentication entity.
+
+If a user of {project_name} user want to use the HTTP Authentication Channel Provider, they need to know its contract between {project_name} and the authentication entity consisting of the following two parts.
+
+Authentication Delegation Request/Response:: 
+{project_name} sends an authentication request to the authentication entity.
+
+Authentication Result Notification/ACK:: 
+The authentication entity notifies the result of the authentication to {project_name}.
+
+Authentication Delegation Request/Response consists of the following messaging.
+
+Authentication Delegation Request:: The request is sent from {project_name} to the authentication entity to ask it for user authentication by AD.
+
+----
+POST [delegation_reception]
+----
+
+* Headers
+
+|===
+|Name|Value|Description
+
+|Content-Type|application/json|The message body is json formatted.
+|Authorization|Bearer [token]|The [token] is used when the authentication entity notifies the result of the authentication to {project_name}.
+
+|===
+
+* Parameters
+
+|===
+|Type|Name|Description
+
+|Path
+|delegation_reception|The endpoint provided by the authentication entity to receive the delegation request
+
+|===
+
+* Body
+
+|===
+|Name|Description
+
+|login_hint|It tells the authentication entity who is authenticated by AD. +
+By default, it is the user's "username". +
+This field is required and was defined by CIBA standard document.
+
+|scope|It tells which scopes the authentication entity gets consent from the authenticated user. +
+This field is required and was defined by CIBA standard document.
+
+|is_consent_required|It shows whether the authentication entity needs to get consent from the authenticated user about the scope. +
+ This field is required.
+
+|binding_message|Its value is intended to be shown in both CD and AD's UI to make the user recognize that the authentication by AD is triggered by CD. +
+This field is optional and was defined by CIBA standard document.
+
+|acr_values|It tells the requesting Authentication Context Class Reference from CD. +
+This field is optional and was defined by CIBA standard document.
+
+|===
+
+Besides the mentioned parameters, any custom parameter that is sent to the Backchannel Authentication Endpoint, will be forwarded to Channel Provider as well.
+
+Authentication Delegation Response:: The response is returned from the authentication entity to {project_name} to notify that the authentication entity received the authentication request from {project_name}.
+
+* Responses
+
+|===
+|HTTP Status Code|Description
+
+|201|It notifies {project_name} of receiving the authentication delegation request.
+
+|===
+
+Authentication Result Notification/ACK consists of the following messaging.
+
+Authentication Result Notification:: The authentication entity sends the result of the authentication request to {project_name}.
+
+[source,subs=+attributes]
+----
+POST {kc_realms_path}/[realm]/protocol/openid-connect/ext/ciba/auth/callback
+----
+
+* Headers
+
+|===
+|Name|Value|Description
+
+|Content-Type|application/json|The message body is json formatted.
+|Authorization|Bearer [token]|The [token] must be the one the authentication entity has received from {project_name} in Authentication Delegation Request.
+
+|===
+
+* Parameters
+
+|===
+|Type|Name|Description
+
+|Path
+|realm|The realm name
+
+|===
+
+* Body
+
+|===
+|Name|Description
+
+|status|It tells the result of user authentication by AD. +
+It must be one of the following status. +
+  SUCCEED : The authentication by AD has been successfully completed. +
+  UNAUTHORIZED : The authentication by AD has not been completed. +
+  CANCELLED : The authentication by AD has been cancelled by the user.
+
+|===
+
+Authentication Result ACK:: The response is returned from {project_name} to the authentication entity to notify {project_name} received the result of user authentication by AD from the authentication entity.
+
+* Responses
+
+|===
+|HTTP Status Code|Description
+
+|200|It notifies the authentication entity of receiving the notification of the authentication result.
+
+|===
+
+====== User Resolver Provider
+
+Even if the same user, its representation may differ in each CD, {project_name} and the authentication entity.
+
+For CD, {project_name} and the authentication entity to recognize the same user, this User Resolver Provider converts their own user representations among them.
+
+User Resolver Provider is provided as SPI provider so that users of {project_name} can implement their own provider in order to meet their environment. {project_name} provides its default provider called Default User Resolver Provider that has the following characteristics.
+
+* Only support `login_hint` parameter and is used as default.
+* `username` of UserModel in {project_name} is used to represent the user on CD, {project_name} and the authentication entity.
+
+
+[[_oidc-logout]]
+
+==== OIDC Logout
+
+OIDC has three different specifications relevant to logout mechanisms, all of these are currently in draft status:
+
+. https://openid.net/specs/openid-connect-session-1_0.html[Session Management]
+. https://openid.net/specs/openid-connect-frontchannel-1_0.html[Front-Channel Logout]
+. https://openid.net/specs/openid-connect-backchannel-1_0.html[Back-Channel Logout]
+
+Again since all of this is described in the OIDC specification we will only give a brief overview here.
+
+===== Session Management
+
+This is a browser-based logout. The application obtains session status information from {project_name} at a regular basis.
+When the session is terminated at {project_name} the application will notice and trigger its own logout.
+
+===== Front-Channel Logout
+
+This is also a browser-based logout where the logout starts by redirecting the user to a specific endpoint at {project_name}.
+
+Once the user is redirected to the logout endpoint, {project_name} is going to send logout requests to
+clients to let them invalidate their local user sessions, and potentially redirect the user to some URL
+once the logout process is finished.
+
+Depending on the client configuration, logout requests can be sent to clients through the front-channel or through the back-channel.
+
+To configure clients to receive logout requests through the front-channel, look at the <<_front-channel-logout, Front-Channel Logout>> client setting. When using this method, consider the following:
+
+* Logout requests sent by {project_name} to clients rely on the browser and on embedded `iframes` that are rendered for the logout page.
+* By being based on `iframes`, front-channel logout might be impacted by Content Security Policies (CSP) and logout requests might be blocked.
+* If the user closes the browser prior to rendering the logout page or before logout requests are actually sent to clients, their sessions at
+the client might not be invalidated.
+
+[NOTE]
+====
+Consider using Back-Channel Logout as it provides a more reliable and secure approach to log out users and terminate their sessions
+on the clients.
+====
+
+If the client is not enabled with front-channel logout, then {project_name} is going to try first to send logout requests through the back-channel
+using the <<_back-channel-logout-url, Back-Channel Logout URL>>. If not defined, the server is going to fall back to using the <<_admin-url, Admin URL>>.
+
+===== Backchannel Logout
+
+This is a non-browser-based logout that uses direct backchannel communication between {project_name} and clients.
+{project_name} sends a HTTP POST request containing a logout token to all clients logged into {project_name}. These
+requests are sent to a registered backchannel logout URLs at {project_name} and are supposed to trigger a logout at client side.
+
+
+[[_oidc-endpoints]]
+====  {project_name} Server OIDC URI Endpoints
+
+Here's a list of OIDC endpoints that the {project_name} publishes.  These URLs are useful if you are using a non-{project_name} client adapter to
+talk OIDC with the auth server.  These are all relative URLs and the root of the URL being the HTTP(S) protocol, hostname, and usually path prefixed with
+_/auth_, for example \https://localhost:8080{kc_base_path}.
+
+You can also find these endpoints under "OpenID Endpoint Configuration" in your realm settings.
+
+/realms/{realm-name}/protocol/openid-connect/auth::
+  This is the URL endpoint for obtaining a temporary code in the Authorization Code Flow or for obtaining tokens via the
+  Implicit Flow or Hybrid Flow.
+/realms/{realm-name}/protocol/openid-connect/token::
+  This is the URL endpoint for the Authorization Code Flow to turn a temporary code into a token, or for obtaining tokens
+  directly via Resource Owner Password Credentials (Direct Access Grants) or Client Credentials.
+/realms/{realm-name}/protocol/openid-connect/logout::
+  This is the URL endpoint for performing logouts.
+/realms/{realm-name}/protocol/openid-connect/userinfo::
+  This is the URL endpoint for the User Info service described in the OIDC specification.
+/realms/{realm-name}/protocol/openid-connect/revoke::
+  This is the URL endpoint for OAuth 2.0 Token Revocation described in https://datatracker.ietf.org/doc/html/rfc7009[RFC7009].
+/realms/{realm-name}/protocol/openid-connect/certs::
+  This is the URL endpoint for the JSON Web Key Set (JWKS) containing the public keys used to verify any JSON Web Token (jwks_uri)
+/realms/{realm-name}/protocol/openid-connect/auth/device::
+  This is the URL endpoint for Device Authorization Grant to obtain a device code and a user code.
+/realms/{realm-name}/protocol/openid-connect/ext/ciba/auth::
+  This is the URL endpoint for Client Initiated Backchannel Authentication Grant to obtain an auth_req_id that identifies the authentication request made by the client.
+/realms/{realm-name}/protocol/openid-connect/logout/backchannel-logout::
+  This is the URL endpoint for performing backchannel logouts described in the OIDC specification.
+
+In all of these replace _{realm-name}_ with the name of the realm.

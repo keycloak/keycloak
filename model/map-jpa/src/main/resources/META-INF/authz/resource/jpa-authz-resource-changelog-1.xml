@@ -22,7 +22,12 @@ limitations under the License.
                    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd
                     http://www.liquibase.org/xml/ns/dbchangelog-ext http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-ext.xsd">
 
-    <changeSet author="keycloak" id="authz-resource-1">
+    <changeSet author="keycloak" id="authz-resource-1.1">
+        <preConditions onSqlOutput="TEST" onFail="MARK_RAN">
+            <not>
+                <changeSetExecuted author="keycloak" id="authz-resource-1" changeLogFile="META-INF/authz/resource/jpa-authz-resource-changelog-1.xml" />
+            </not>
+        </preConditions>
 
         <createTable tableName="kc_authz_resource">
             <column name="id" type="UUID">
@@ -95,22 +100,18 @@ limitations under the License.
         <createIndex tableName="kc_authz_resource_attribute" indexName="authz_resource_attr_fk_root">
             <column name="fk_root"/>
         </createIndex>
-        <createIndex tableName="kc_authz_resource_attribute" indexName="authz_resource_attr_name_value">
-            <column name="name"/>
-            <column name="VALUE(255)" valueComputed="VALUE(255)"/>
-        </createIndex>
-        <modifySql dbms="postgresql,cockroachdb">
-            <replace replace="VALUE(255)" with="(value::varchar(250))"/>
-        </modifySql>
-
     </changeSet>
 
-    <changeSet author="keycloak" id="authz-resource-2" dbms="postgresql">
+    <changeSet author="keycloak" id="authz-resource-2.1" dbms="postgresql">
+        <preConditions onSqlOutput="TEST" onFail="MARK_RAN">
+            <not>
+                <changeSetExecuted author="keycloak" id="authz-resource-2" changeLogFile="META-INF/authz/resource/jpa-authz-resource-changelog-1.xml" />
+            </not>
+        </preConditions>
         <!-- this is deferrable and initiallyDeferred as hibernate will first insert new entries and then delete the old by default -->
         <!-- this will not work on cockroachdb as deferred indexes are not supported in version 22.1 yet, therefore, only run it on postgresql -->
         <!-- see https://go.crdb.dev/issue-v/31632/v21.2 for the current status of the implementation -->
         <addUniqueConstraint tableName="kc_authz_resource_scope" columnNames="resource_id, scope_id" deferrable="true" initiallyDeferred="true" />
-        <addUniqueConstraint tableName="kc_authz_resource_attribute" columnNames="fk_root, name, value" deferrable="true" initiallyDeferred="true" />
 
         <!-- unimplemented on CockroachDB: computed column "XXX" cannot reference a foreign key
              See: https://go.crdb.dev/issue-v/46672/v21.2 -->
@@ -127,6 +128,38 @@ limitations under the License.
         <createIndex tableName="kc_authz_resource" indexName="authz_resource_fk_root_fkey">
             <column name="resourceserverid"/>
         </createIndex>
+    </changeSet>
+
+    <changeSet author="keycloak" id="authz-resource-15699-drop-index">
+        <preConditions onSqlOutput="TEST" onFail="MARK_RAN">
+            <changeSetExecuted author="keycloak" id="authz-resource-1" changeLogFile="META-INF/authz/resource/jpa-authz-resource-changelog-1.xml" />
+        </preConditions>
+        <dropIndex tableName="kc_authz_resource_attribute" indexName="authz_resource_attr_name_value" />
+    </changeSet>
+
+    <changeSet author="keycloak" id="authz-resource-15699-drop-constraint" dbms="postgresql">
+        <preConditions onSqlOutput="TEST" onFail="MARK_RAN">
+            <changeSetExecuted author="keycloak" id="authz-resource-2" changeLogFile="META-INF/authz/resource/jpa-authz-resource-changelog-1.xml" />
+        </preConditions>
+        <dropUniqueConstraint tableName="kc_authz_resource_attribute" constraintName="kc_authz_resource_attribute_fk_root_name_value_key" />
+    </changeSet>
+
+    <changeSet author="keycloak" id="authz-resource-15699-add-hash-column-index">
+        <ext:addGeneratedColumn tableName="kc_authz_resource_attribute">
+            <ext:column name="value_hash" type="kc_hash" hashOf="value"/>
+        </ext:addGeneratedColumn>
+
+        <createIndex tableName="kc_authz_resource_attribute" indexName="authz_resource_attr_name_value_hash">
+            <column name="name" />
+            <column name="value_hash" />
+        </createIndex>
+    </changeSet>
+
+    <changeSet author="keycloak" id="authz-resource-15699-unique-constraint" dbms="postgres">
+        <!-- this is deferrable and initiallyDeferred as hibernate will first insert new entries and then delete the old by default -->
+        <!-- this will not work on cockroachdb as deferred indexes are not supported in version 22.1 yet, therefore, only run it on postgresql -->
+        <!-- see https://go.crdb.dev/issue-v/31632/v21.2 for the current status of the implementation -->
+        <addUniqueConstraint tableName="kc_authz_resource_attribute" columnNames="fk_root, name, value_hash" deferrable="true" initiallyDeferred="true" />
     </changeSet>
 
 </databaseChangeLog>

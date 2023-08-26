@@ -31,8 +31,10 @@ import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.arquillian.annotation.EnableVault;
 import org.keycloak.testsuite.util.LDAPRule;
 
-import javax.ws.rs.BadRequestException;
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.BadRequestException;
+import jakarta.ws.rs.core.Response;
+
+import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -109,6 +111,34 @@ public class UserFederationLdapConnectionTest extends AbstractAdminTest {
     }
 
     @Test
+    public void testLdapConnectionMoreServers() {
+        // Both servers work
+        Response response = realm.testLDAPConnection(new TestLdapConnectionRepresentation(LDAPServerCapabilitiesManager.TEST_AUTHENTICATION, "ldap://localhost:10389 ldaps://localhost:10636", "uid=admin,ou=system", "secret", "true", null));
+        assertStatus(response, 204);
+
+        // Only 1st server works
+        response = realm.testLDAPConnection(new TestLdapConnectionRepresentation(LDAPServerCapabilitiesManager.TEST_AUTHENTICATION, "ldap://localhost:10389 ldap://localhostt:10389", "uid=admin,ou=system", "secret", "true", null));
+        assertStatus(response, 204);
+
+        // Only 1st server works - variant with connectionTimeout (important to test as com.sun.jndi.ldap.Connection.createSocket implementation differs based on whether connectionTimeout is used)
+        response = realm.testLDAPConnection(new TestLdapConnectionRepresentation(LDAPServerCapabilitiesManager.TEST_AUTHENTICATION, "ldap://localhost:10389 ldap://localhostt:10389", "uid=admin,ou=system", "secret", "true", "10000"));
+        assertStatus(response, 204);
+
+        // Only 2nd server works
+        response = realm.testLDAPConnection(new TestLdapConnectionRepresentation(LDAPServerCapabilitiesManager.TEST_AUTHENTICATION, "ldap://localhostt:10389 ldaps://localhost:10636", "uid=admin,ou=system", "secret", "true", null));
+        assertStatus(response, 204);
+
+        // Only 2nd server works - variant with connectionTimeout
+        response = realm.testLDAPConnection(new TestLdapConnectionRepresentation(LDAPServerCapabilitiesManager.TEST_AUTHENTICATION, "ldap://localhostt:10389 ldaps://localhost:10636", "uid=admin,ou=system", "secret", "true", "10000"));
+        assertStatus(response, 204);
+
+        // None of servers work
+        response = realm.testLDAPConnection(new TestLdapConnectionRepresentation(LDAPServerCapabilitiesManager.TEST_AUTHENTICATION, "ldap://localhostt:10389 ldaps://localhostt:10636", "uid=admin,ou=system", "secret", "true", null));
+        assertStatus(response, 400);
+
+    }
+
+    @Test
     public void testLdapCapabilities() {
 
         // Query the rootDSE success
@@ -117,7 +147,7 @@ public class UserFederationLdapConnectionTest extends AbstractAdminTest {
             "false", null, "false", LDAPConstants.AUTH_TYPE_SIMPLE);
 
         List<LDAPCapabilityRepresentation> ldapCapabilities = realm.ldapServerCapabilities(config);
-        Assert.assertThat(ldapCapabilities, Matchers.hasItem(new LDAPCapabilityRepresentation(PasswordModifyRequest.PASSWORD_MODIFY_OID, LDAPCapabilityRepresentation.CapabilityType.EXTENSION)));
+        assertThat(ldapCapabilities, Matchers.hasItem(new LDAPCapabilityRepresentation(PasswordModifyRequest.PASSWORD_MODIFY_OID, LDAPCapabilityRepresentation.CapabilityType.EXTENSION)));
 
         // Query the rootDSE failure
         try {

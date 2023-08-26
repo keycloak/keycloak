@@ -26,8 +26,8 @@ import org.keycloak.representations.idm.RequiredActionProviderSimpleRepresentati
 import org.keycloak.testsuite.actions.DummyRequiredActionFactory;
 import org.keycloak.testsuite.util.AdminEventPaths;
 
-import javax.ws.rs.ClientErrorException;
-import javax.ws.rs.NotFoundException;
+import jakarta.ws.rs.ClientErrorException;
+import jakarta.ws.rs.NotFoundException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -46,11 +46,11 @@ public class RequiredActionsTest extends AbstractAuthenticationTest {
 
         List<RequiredActionProviderRepresentation> expected = new ArrayList<>();
         addRequiredAction(expected, "CONFIGURE_TOTP", "Configure OTP", true, false, null);
+        addRequiredAction(expected, "TERMS_AND_CONDITIONS", "Terms and Conditions", false, false, null);
         addRequiredAction(expected, "UPDATE_PASSWORD", "Update Password", true, false, null);
         addRequiredAction(expected, "UPDATE_PROFILE", "Update Profile", true, false, null);
         addRequiredAction(expected, "VERIFY_EMAIL", "Verify Email", true, false, null);
         addRequiredAction(expected, "delete_account", "Delete Account", false, false, null);
-        addRequiredAction(expected, "terms_and_conditions", "Terms and Conditions", false, false, null);
         addRequiredAction(expected, "update_user_locale", "Update User Locale", true, false, null);
         addRequiredAction(expected, "webauthn-register", "Webauthn Register", true, false, null);
         addRequiredAction(expected, "webauthn-register-passwordless", "Webauthn Register Passwordless", true, false, null);

@@ -20,12 +20,14 @@ package org.keycloak.operator.testsuite.integration;
 import io.fabric8.kubernetes.api.model.ServiceSpecBuilder;
 import io.quarkus.logging.Log;
 import io.quarkus.test.junit.QuarkusTest;
+
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
-import org.keycloak.operator.controllers.KeycloakDiscoveryService;
-import org.keycloak.operator.controllers.KeycloakService;
+import org.keycloak.operator.controllers.KeycloakDiscoveryServiceDependentResource;
+import org.keycloak.operator.controllers.KeycloakServiceDependentResource;
 import org.keycloak.operator.testsuite.utils.K8sUtils;
 
+import java.time.Duration;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -34,17 +36,18 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class KeycloakServicesTest extends BaseOperatorTest {
     @Test
     public void testMainServiceDurability() {
-        var kc = K8sUtils.getDefaultKeycloakDeployment();
+        var kc = getTestKeycloakDeployment(true);
         K8sUtils.deployKeycloak(k8sclient, kc, true);
-        var service = new KeycloakService(k8sclient, kc);
-        var serviceSelector = k8sclient.services().inNamespace(namespace).withName(service.getName());
+        String serviceName = KeycloakServiceDependentResource.getServiceName(kc);
+        var serviceSelector = k8sclient.services().inNamespace(namespace).withName(serviceName);
 
         Log.info("Trying to delete the service");
-        assertThat(serviceSelector.delete()).isTrue();
+        assertThat(serviceSelector.delete()).isNotNull();
         Awaitility.await()
+                .timeout(Duration.ofMinutes(1))
                 .untilAsserted(() -> assertThat(serviceSelector.get()).isNotNull());
 
-        K8sUtils.waitForKeycloakToBeReady(k8sclient, kc); // wait for reconciler to calm down to avoid race condititon
+        K8sUtils.waitForKeycloakToBeReady(k8sclient, kc); // wait for reconciler to calm down to avoid race condition
 
         Log.info("Trying to modify the service");
 
@@ -53,34 +56,42 @@ public class KeycloakServicesTest extends BaseOperatorTest {
         // ignoring current IP/s
         currentService.getSpec().setClusterIP(null);
         currentService.getSpec().setClusterIPs(null);
+
+        // an unmanaged change
+        currentService.getSpec().setSessionAffinity("ClientIP");
         var origSpecs = new ServiceSpecBuilder(currentService.getSpec()).build(); // deep copy
 
-        currentService.getMetadata().getLabels().putAll(labels);
-        currentService.getSpec().setSessionAffinity("ClientIP");
+        // a managed change
+        currentService.getSpec().getPorts().get(0).setName(null);
 
-        serviceSelector.createOrReplace(currentService);
+        currentService.getMetadata().getLabels().putAll(labels);
+
+        currentService.getMetadata().setResourceVersion(null);
+        k8sclient.resource(currentService).update();
 
         Awaitility.await()
+                .timeout(Duration.ofMinutes(1))
                 .untilAsserted(() -> {
                     var s = serviceSelector.get();
                     assertThat(s.getMetadata().getLabels().entrySet().containsAll(labels.entrySet())).isTrue(); // additional labels should not be overwritten
-                    // ignoring assigned IP/s
+                    // ignoring assigned IP/s and generated config
                     s.getSpec().setClusterIP(null);
                     s.getSpec().setClusterIPs(null);
-                    assertThat(s.getSpec()).isEqualTo(origSpecs); // specs should be reconciled back to original values
+                    s.getSpec().setSessionAffinityConfig(null);
+                    assertThat(s.getSpec()).isEqualTo(origSpecs); // managed spec fields should be reconciled back to original values
                 });
     }
 
     @Test
     public void testDiscoveryServiceDurability() {
-        var kc = K8sUtils.getDefaultKeycloakDeployment();
+        var kc = getTestKeycloakDeployment(true);
         K8sUtils.deployKeycloak(k8sclient, kc, true);
-        var discoveryService = new KeycloakDiscoveryService(k8sclient, kc);
-        var discoveryServiceSelector = k8sclient.services().inNamespace(namespace).withName(discoveryService.getName());
+        var discoveryServiceSelector = k8sclient.services().inNamespace(namespace).withName(KeycloakDiscoveryServiceDependentResource.getName(kc));
 
         Log.info("Trying to delete the discovery service");
-        assertThat(discoveryServiceSelector.delete()).isTrue();
+        assertThat(discoveryServiceSelector.delete()).isNotNull();
         Awaitility.await()
+                .timeout(Duration.ofMinutes(1))
                 .untilAsserted(() -> assertThat(discoveryServiceSelector.get()).isNotNull());
 
         K8sUtils.waitForKeycloakToBeReady(k8sclient, kc); // wait for reconciler to calm down to avoid race condititon
@@ -88,24 +99,33 @@ public class KeycloakServicesTest extends BaseOperatorTest {
         Log.info("Trying to modify the service");
 
         var currentDiscoveryService = discoveryServiceSelector.get();
+        // check publishNotReadyAddresses is set
+        assertThat(currentDiscoveryService.getSpec().getPublishNotReadyAddresses()).isTrue();
         var labels = Map.of("address", "EvergreenTerrace742");
         // ignoring current IP/s
         currentDiscoveryService.getSpec().setClusterIP(null);
         currentDiscoveryService.getSpec().setClusterIPs(null);
-        var origDiscoverySpecs = new ServiceSpecBuilder(currentDiscoveryService.getSpec()).build(); // deep copy
 
         currentDiscoveryService.getMetadata().getLabels().putAll(labels);
+        // an unmanaged change
         currentDiscoveryService.getSpec().setSessionAffinity("ClientIP");
+        var origDiscoverySpecs = new ServiceSpecBuilder(currentDiscoveryService.getSpec()).build(); // deep copy
 
-        discoveryServiceSelector.createOrReplace(currentDiscoveryService);
+        // a managed change
+        currentDiscoveryService.getSpec().getPorts().get(0).setName(null);
+
+        currentDiscoveryService.getMetadata().setResourceVersion(null);
+        k8sclient.resource(currentDiscoveryService).update();
 
         Awaitility.await()
+                .timeout(Duration.ofMinutes(1))
                 .untilAsserted(() -> {
                     var ds = discoveryServiceSelector.get();
                     assertThat(ds.getMetadata().getLabels().entrySet().containsAll(labels.entrySet())).isTrue(); // additional labels should not be overwritten
-                    // ignoring assigned IP/s
+                    // ignoring assigned IP/s and generated config
                     ds.getSpec().setClusterIP(null);
                     ds.getSpec().setClusterIPs(null);
+                    ds.getSpec().setSessionAffinityConfig(null);
                     assertThat(ds.getSpec()).isEqualTo(origDiscoverySpecs); // specs should be reconciled back to original values
                 });
     }

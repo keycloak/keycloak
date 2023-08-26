@@ -2,10 +2,9 @@ package org.keycloak.testsuite.broker;
 
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.not;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.keycloak.models.IdentityProviderMapperSyncMode.FORCE;
 import static org.keycloak.models.IdentityProviderMapperSyncMode.IMPORT;
-import static org.keycloak.testsuite.broker.BrokerTestTools.getConsumerRoot;
 
 import java.util.HashMap;
 
@@ -19,6 +18,7 @@ import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 
 import com.google.common.collect.ImmutableMap;
+import org.keycloak.testsuite.util.AccountHelper;
 
 /**
  * <a href="mailto:external.martin.idel@bosch.io">Martin Idel</a>,
@@ -88,7 +88,7 @@ public class HardcodedUserAttributeMapperTest extends AbstractIdentityProviderMa
         if (createAfterFirstLogin) {
             createMapperInIdp(idp, syncMode);
         }
-        logoutFromRealm(getConsumerRoot(), bc.consumerRealmName());
+        AccountHelper.logout(adminClient.realm(bc.consumerRealmName()), bc.getUserLogin());
 
         if (user.getAttributes() != null) {
             user.setAttributes(new HashMap<>());

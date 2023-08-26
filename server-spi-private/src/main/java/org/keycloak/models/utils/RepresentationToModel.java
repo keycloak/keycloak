@@ -57,6 +57,7 @@ import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.UriUtils;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.credential.CredentialModel;
+import org.keycloak.deployment.DeployedConfigurationsManager;
 import org.keycloak.migration.migrators.MigrationUtils;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationFlowModel;
@@ -230,7 +231,7 @@ public class RepresentationToModel {
                             cred.setSecretData("{\"value\":\"" + cred.getHashedSaltedValue() + "\",\"salt\":\"" + cred.getSalt() + "\"}");
                             cred.setPriority(10);
                         } else if (OTPCredentialModel.TOTP.equals(cred.getType()) || OTPCredentialModel.HOTP.equals(cred.getType())) {
-                            OTPCredentialData credentialData = new OTPCredentialData(cred.getType(), cred.getDigits(), cred.getCounter(), cred.getPeriod(), cred.getAlgorithm());
+                            OTPCredentialData credentialData = new OTPCredentialData(cred.getType(), cred.getDigits(), cred.getCounter(), cred.getPeriod(), cred.getAlgorithm(), null);
                             OTPSecretData secretData = new OTPSecretData(cred.getHashedSaltedValue());
                             cred.setCredentialData(JsonSerialization.writeValueAsString(credentialData));
                             cred.setSecretData(JsonSerialization.writeValueAsString(secretData));
@@ -926,7 +927,7 @@ public class RepresentationToModel {
     }
 
 
-    public static AuthenticationExecutionModel toModel(RealmModel realm, AuthenticationExecutionRepresentation rep) {
+    public static AuthenticationExecutionModel toModel(KeycloakSession session, RealmModel realm, AuthenticationExecutionRepresentation rep) {
         AuthenticationExecutionModel model = new AuthenticationExecutionModel();
         model.setId(rep.getId());
         model.setFlowId(rep.getFlowId());
@@ -938,7 +939,7 @@ public class RepresentationToModel {
         model.setRequirement(AuthenticationExecutionModel.Requirement.valueOf(rep.getRequirement()));
 
         if (rep.getAuthenticatorConfig() != null) {
-            AuthenticatorConfigModel cfg = realm.getAuthenticatorConfigByAlias(rep.getAuthenticatorConfig());
+            AuthenticatorConfigModel cfg = new DeployedConfigurationsManager(session).getAuthenticatorConfigByAlias(realm, rep.getAuthenticatorConfig());
             model.setAuthenticatorConfig(cfg.getId());
         }
         return model;
@@ -946,6 +947,7 @@ public class RepresentationToModel {
 
     public static AuthenticatorConfigModel toModel(AuthenticatorConfigRepresentation rep) {
         AuthenticatorConfigModel model = new AuthenticatorConfigModel();
+        model.setId(rep.getId());
         model.setAlias(rep.getAlias());
         model.setConfig(removeEmptyString(rep.getConfig()));
         return model;

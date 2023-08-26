@@ -55,12 +55,12 @@ import org.keycloak.testsuite.arquillian.annotation.UncaughtServerErrorExpected;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.util.BasicAuthHelper;
 
-import javax.ws.rs.client.Client;
-import javax.ws.rs.client.Entity;
-import javax.ws.rs.client.WebTarget;
-import javax.ws.rs.core.Form;
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.client.Client;
+import jakarta.ws.rs.client.Entity;
+import jakarta.ws.rs.client.WebTarget;
+import jakarta.ws.rs.core.Form;
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.Response;
 import java.util.List;
 import java.util.Map;
 
@@ -68,6 +68,7 @@ import static org.hamcrest.Matchers.instanceOf;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.keycloak.models.ImpersonationSessionNote.IMPERSONATOR_ID;
 import static org.keycloak.models.ImpersonationSessionNote.IMPERSONATOR_USERNAME;
@@ -417,7 +418,7 @@ public class ClientTokenExchangeTest extends AbstractKeycloakTest {
             Assert.assertNull(exchangedToken.getRealmAccess());
 
             Object impersonatorRaw = exchangedToken.getOtherClaims().get("impersonator");
-            Assert.assertThat(impersonatorRaw, instanceOf(Map.class));
+            assertThat(impersonatorRaw, instanceOf(Map.class));
             Map impersonatorClaim = (Map) impersonatorRaw;
 
             Assert.assertEquals(token.getSubject(), impersonatorClaim.get("id"));

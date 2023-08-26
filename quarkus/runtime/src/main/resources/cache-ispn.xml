@@ -18,19 +18,19 @@
 
 <infinispan
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-        xsi:schemaLocation="urn:infinispan:config:11.0 http://www.infinispan.org/schemas/infinispan-config-11.0.xsd"
-        xmlns="urn:infinispan:config:11.0">
+        xsi:schemaLocation="urn:infinispan:config:14.0 http://www.infinispan.org/schemas/infinispan-config-14.0.xsd"
+        xmlns="urn:infinispan:config:14.0">
 
     <cache-container name="keycloak">
         <transport lock-timeout="60000"/>
-        <local-cache name="realms">
+        <local-cache name="realms" simple-cache="true">
             <encoding>
                 <key media-type="application/x-java-object"/>
                 <value media-type="application/x-java-object"/>
             </encoding>
             <memory max-count="10000"/>
         </local-cache>
-        <local-cache name="users">
+        <local-cache name="users" simple-cache="true">
             <encoding>
                 <key media-type="application/x-java-object"/>
                 <value media-type="application/x-java-object"/>
@@ -55,7 +55,7 @@
         <distributed-cache name="loginFailures" owners="2">
             <expiration lifespan="-1"/>
         </distributed-cache>
-        <local-cache name="authorization">
+        <local-cache name="authorization" simple-cache="true">
             <encoding>
                 <key media-type="application/x-java-object"/>
                 <value media-type="application/x-java-object"/>
@@ -65,7 +65,7 @@
         <replicated-cache name="work">
             <expiration lifespan="-1"/>
         </replicated-cache>
-        <local-cache name="keys">
+        <local-cache name="keys" simple-cache="true">
             <encoding>
                 <key media-type="application/x-java-object"/>
                 <value media-type="application/x-java-object"/>

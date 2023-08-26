@@ -20,6 +20,7 @@ import org.keycloak.broker.saml.SAMLIdentityProviderConfig;
 import org.keycloak.broker.saml.SAMLIdentityProviderFactory;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.keycloak.testsuite.cli.KcAdmExec.CMD;
 import static org.keycloak.testsuite.cli.KcAdmExec.execute;
 import org.keycloak.testsuite.updaters.IdentityProviderCreator;
@@ -61,7 +62,7 @@ public class KcAdmUpdateTest extends AbstractAdmCliTest {
                 assertExitCodeAndStdErrSize(exe, 0, 0);
             }
 
-            Assert.assertThat(realmResource.identityProviders().get("idpAlias").toRepresentation().getDisplayName(), is(equalTo("SAML_UPDATED")));
+            assertThat(realmResource.identityProviders().get("idpAlias").toRepresentation().getDisplayName(), is(equalTo("SAML_UPDATED")));
         }
     }
 

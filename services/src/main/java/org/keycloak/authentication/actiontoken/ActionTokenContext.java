@@ -27,10 +27,10 @@ import org.keycloak.representations.JsonWebToken;
 import org.keycloak.services.Urls;
 import org.keycloak.services.managers.AuthenticationSessionManager;
 import org.keycloak.sessions.AuthenticationSessionModel;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriBuilderException;
-import javax.ws.rs.core.UriInfo;
-import org.jboss.resteasy.spi.HttpRequest;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.UriBuilderException;
+import jakarta.ws.rs.core.UriInfo;
+import org.keycloak.http.HttpRequest;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
 
 /**

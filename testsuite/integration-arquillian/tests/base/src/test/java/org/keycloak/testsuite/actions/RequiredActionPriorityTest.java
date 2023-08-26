@@ -134,7 +134,7 @@ public class RequiredActionPriorityTest extends AbstractTestRealmKeycloakTest {
         // After Changing the priority, the order will be:
         // UpdatePassword -> UpdateProfile -> TermsAndConditions
         testRealm().flows().raiseRequiredActionPriority(UserModel.RequiredAction.UPDATE_PASSWORD.name());
-        testRealm().flows().lowerRequiredActionPriority("terms_and_conditions");
+        testRealm().flows().lowerRequiredActionPriority(UserModel.RequiredAction.TERMS_AND_CONDITIONS.name());
 
         // Login
         loginPage.open();

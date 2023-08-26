@@ -28,15 +28,15 @@ import org.keycloak.models.jpa.entities.GroupRoleMappingEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.RoleUtils;
 
-import javax.persistence.EntityManager;
-import javax.persistence.TypedQuery;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.TypedQuery;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Stream;
-import javax.persistence.LockModeType;
+import jakarta.persistence.LockModeType;
 
 import static org.keycloak.utils.StreamsUtil.closing;
 
@@ -122,6 +122,7 @@ public class GroupAdapter implements GroupModel , JpaModel<GroupEntity> {
     @Override
     public Stream<GroupModel> getSubGroupsStream() {
         TypedQuery<String> query = em.createNamedQuery("getGroupIdsByParent", String.class);
+        query.setParameter("realm", group.getRealm());
         query.setParameter("parent", group.getId());
         return closing(query.getResultStream().map(realm::getGroupById).filter(Objects::nonNull));
     }

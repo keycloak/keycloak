@@ -40,7 +40,6 @@ public class DefaultAuthenticationFlows {
     public static final String LOGIN_FORMS_FLOW = "forms";
     public static final String SAML_ECP_FLOW = "saml ecp";
     public static final String DOCKER_AUTH = "docker auth";
-    public static final String HTTP_CHALLENGE_FLOW = "http challenge";
 
     public static final String CLIENT_AUTHENTICATION_FLOW = "clients";
     public static final String FIRST_BROKER_LOGIN_FLOW = "first broker login";
@@ -52,27 +51,25 @@ public class DefaultAuthenticationFlows {
     public static void addFlows(RealmModel realm) {
         if (realm.getFlowByAlias(BROWSER_FLOW) == null) browserFlow(realm);
         if (realm.getFlowByAlias(DIRECT_GRANT_FLOW) == null) directGrantFlow(realm, false);
-        if (realm.getFlowByAlias(REGISTRATION_FLOW) == null) registrationFlow(realm);
+        if (realm.getFlowByAlias(REGISTRATION_FLOW) == null) registrationFlow(realm, false);
         if (realm.getFlowByAlias(RESET_CREDENTIALS_FLOW) == null) resetCredentialsFlow(realm);
         if (realm.getFlowByAlias(CLIENT_AUTHENTICATION_FLOW) == null) clientAuthFlow(realm);
         if (realm.getFlowByAlias(FIRST_BROKER_LOGIN_FLOW) == null) firstBrokerLoginFlow(realm, false);
         if (realm.getFlowByAlias(SAML_ECP_FLOW) == null) samlEcpProfile(realm);
         if (realm.getFlowByAlias(DOCKER_AUTH) == null) dockerAuthenticationFlow(realm);
-        if (realm.getFlowByAlias(HTTP_CHALLENGE_FLOW) == null) httpChallengeFlow(realm);
     }
     public static void migrateFlows(RealmModel realm) {
         if (realm.getFlowByAlias(BROWSER_FLOW) == null) browserFlow(realm, true);
         if (realm.getFlowByAlias(DIRECT_GRANT_FLOW) == null) directGrantFlow(realm, true);
-        if (realm.getFlowByAlias(REGISTRATION_FLOW) == null) registrationFlow(realm);
+        if (realm.getFlowByAlias(REGISTRATION_FLOW) == null) registrationFlow(realm, true);
         if (realm.getFlowByAlias(RESET_CREDENTIALS_FLOW) == null) resetCredentialsFlow(realm);
         if (realm.getFlowByAlias(CLIENT_AUTHENTICATION_FLOW) == null) clientAuthFlow(realm);
         if (realm.getFlowByAlias(FIRST_BROKER_LOGIN_FLOW) == null) firstBrokerLoginFlow(realm, true);
         if (realm.getFlowByAlias(SAML_ECP_FLOW) == null) samlEcpProfile(realm);
         if (realm.getFlowByAlias(DOCKER_AUTH) == null) dockerAuthenticationFlow(realm);
-        if (realm.getFlowByAlias(HTTP_CHALLENGE_FLOW) == null) httpChallengeFlow(realm);
     }
 
-    public static void registrationFlow(RealmModel realm) {
+    public static void registrationFlow(RealmModel realm, boolean migrate) {
         AuthenticationFlowModel registrationFlow = new AuthenticationFlowModel();
         registrationFlow.setAlias(REGISTRATION_FLOW);
         registrationFlow.setDescription("registration flow");
@@ -140,6 +137,16 @@ public class DefaultAuthenticationFlows {
         execution.setAuthenticatorFlow(false);
         //execution.setAuthenticatorConfig(captchaConfig.getId());
         realm.addAuthenticatorExecution(execution);
+
+        if (!migrate) {
+            execution = new AuthenticationExecutionModel();
+            execution.setParentFlow(registrationFormFlow.getId());
+            execution.setRequirement(AuthenticationExecutionModel.Requirement.DISABLED);
+            execution.setAuthenticator("registration-terms-and-conditions");
+            execution.setPriority(70);
+            execution.setAuthenticatorFlow(false);
+            realm.addAuthenticatorExecution(execution);
+        }
     }
 
     public static void browserFlow(RealmModel realm) {
@@ -674,63 +681,6 @@ public class DefaultAuthenticationFlows {
         execution.setPriority(10);
         execution.setAuthenticatorFlow(false);
 
-        realm.addAuthenticatorExecution(execution);
-    }
-
-    public static void httpChallengeFlow(RealmModel realm) {
-        AuthenticationFlowModel challengeFlow = new AuthenticationFlowModel();
-        challengeFlow.setAlias(HTTP_CHALLENGE_FLOW);
-        challengeFlow.setDescription("An authentication flow based on challenge-response HTTP Authentication Schemes");
-        challengeFlow.setProviderId("basic-flow");
-        challengeFlow.setTopLevel(true);
-        challengeFlow.setBuiltIn(true);
-        challengeFlow = realm.addAuthenticationFlow(challengeFlow);
-
-        AuthenticationExecutionModel execution = new AuthenticationExecutionModel();
-        execution.setParentFlow(challengeFlow.getId());
-        execution.setRequirement(AuthenticationExecutionModel.Requirement.REQUIRED);
-        execution.setAuthenticator("no-cookie-redirect");
-        execution.setPriority(10);
-        execution.setAuthenticatorFlow(false);
-        realm.addAuthenticatorExecution(execution);
-
-        AuthenticationFlowModel authType = new AuthenticationFlowModel();
-        authType.setTopLevel(false);
-        authType.setBuiltIn(true);
-        authType.setAlias("Authentication Options");
-        authType.setDescription("Authentication options.");
-        authType.setProviderId("basic-flow");
-        authType = realm.addAuthenticationFlow(authType);
-        execution = new AuthenticationExecutionModel();
-        execution.setParentFlow(challengeFlow.getId());
-        execution.setRequirement(AuthenticationExecutionModel.Requirement.REQUIRED);
-        execution.setFlowId(authType.getId());
-        execution.setPriority(20);
-        execution.setAuthenticatorFlow(true);
-        realm.addAuthenticatorExecution(execution);
-
-        execution = new AuthenticationExecutionModel();
-        execution.setParentFlow(authType.getId());
-        execution.setRequirement(AuthenticationExecutionModel.Requirement.REQUIRED);
-        execution.setAuthenticator("basic-auth");
-        execution.setPriority(10);
-        execution.setAuthenticatorFlow(false);
-        realm.addAuthenticatorExecution(execution);
-
-        execution = new AuthenticationExecutionModel();
-        execution.setParentFlow(authType.getId());
-        execution.setRequirement(AuthenticationExecutionModel.Requirement.DISABLED);
-        execution.setAuthenticator("basic-auth-otp");
-        execution.setPriority(20);
-        execution.setAuthenticatorFlow(false);
-        realm.addAuthenticatorExecution(execution);
-
-        execution = new AuthenticationExecutionModel();
-        execution.setParentFlow(authType.getId());
-        execution.setRequirement(AuthenticationExecutionModel.Requirement.DISABLED);
-        execution.setAuthenticator("auth-spnego");
-        execution.setPriority(30);
-        execution.setAuthenticatorFlow(false);
         realm.addAuthenticatorExecution(execution);
     }
 }

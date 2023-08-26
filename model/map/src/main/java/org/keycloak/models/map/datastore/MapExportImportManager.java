@@ -17,11 +17,14 @@
 
 package org.keycloak.models.map.datastore;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.common.enums.SslRequired;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.component.ComponentModel;
+import org.keycloak.deployment.DeployedConfigurationsManager;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.ClientProvider;
 import org.keycloak.models.ClientScopeProvider;
@@ -61,7 +64,7 @@ import org.keycloak.models.WebAuthnPolicy;
 import org.keycloak.models.map.common.AbstractEntity;
 import org.keycloak.models.map.common.AbstractMapProviderFactory;
 import org.keycloak.models.map.realm.MapRealmEntity;
-import org.keycloak.models.map.storage.MapKeycloakTransaction;
+import org.keycloak.models.map.storage.MapStorage;
 import org.keycloak.models.map.storage.ModelCriteriaBuilder;
 import org.keycloak.models.map.storage.criteria.DefaultModelCriteria;
 import org.keycloak.models.utils.DefaultAuthenticationFlows;
@@ -106,6 +109,7 @@ import org.keycloak.util.JsonSerialization;
 import org.keycloak.utils.ReservedCharValidator;
 import org.keycloak.validation.ValidationUtil;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -123,6 +127,7 @@ import java.util.stream.Collectors;
 
 import static org.keycloak.models.map.storage.QueryParameters.withCriteria;
 import static org.keycloak.models.map.storage.criteria.DefaultModelCriteria.criteria;
+import static org.keycloak.models.utils.DefaultRequiredActions.getDefaultRequiredActionCaseInsensitively;
 import static org.keycloak.models.utils.RepresentationToModel.createCredentials;
 import static org.keycloak.models.utils.RepresentationToModel.createFederatedIdentities;
 import static org.keycloak.models.utils.RepresentationToModel.createGroups;
@@ -279,6 +284,12 @@ public class MapExportImportManager implements ExportImportManager {
         if (rep.getAccountTheme() != null) newRealm.setAccountTheme(rep.getAccountTheme());
         if (rep.getAdminTheme() != null) newRealm.setAdminTheme(rep.getAdminTheme());
         if (rep.getEmailTheme() != null) newRealm.setEmailTheme(rep.getEmailTheme());
+        if (rep.getLocalizationTexts() != null) {
+            Map<String, Map<String, String>> localizationTexts = rep.getLocalizationTexts();
+            for (Map.Entry<String, Map<String, String>> entry: localizationTexts.entrySet()) {
+                newRealm.createOrUpdateRealmLocalizationTexts(entry.getKey(), entry.getValue());
+            }
+        }
 
         // todo remove this stuff as its all deprecated
         if (rep.getRequiredCredentials() != null) {
@@ -304,7 +315,7 @@ public class MapExportImportManager implements ExportImportManager {
 
         updateParSettings(rep, newRealm);
 
-        Map<String, String> mappedFlows = importAuthenticationFlows(newRealm, rep);
+        Map<String, String> mappedFlows = importAuthenticationFlows(session, newRealm, rep);
         if (rep.getRequiredActions() != null) {
             for (RequiredActionProviderRepresentation action : rep.getRequiredActions()) {
                 RequiredActionProviderModel model = toModel(action);
@@ -480,6 +491,7 @@ public class MapExportImportManager implements ExportImportManager {
         return role;
     }
 
+    @Override
     public void exportRealm(RealmModel realm, ExportOptions options, ExportAdapter callback) {
         throw new ModelException("exporting for map storage is currently not supported");
     }
@@ -490,11 +502,28 @@ public class MapExportImportManager implements ExportImportManager {
           might want to add the file name or the media type as a method parameter to switch between different implementations. */
 
         RealmRepresentation rep;
+        byte[] inputData = null;
         try {
-            rep = JsonSerialization.readValue(requestBody, RealmRepresentation.class);
+            // read input data to be able to re-try later
+            try (requestBody) {
+                inputData = requestBody.readAllBytes();
+            }
+            rep = JsonSerialization.readValue(new ByteArrayInputStream(inputData), RealmRepresentation.class);
         } catch (IOException e) {
-            throw new ModelException("unable to read contents from stream", e);
+            /* This is a re-try when unrecognized property is being imported, it may happen e.g. when using admin client of newer version 
+               in heterogenous cluster (during zero-downtime upgrade) and the request lands into older version of kc. */
+            if (e instanceof UnrecognizedPropertyException && inputData != null) {
+                try {
+                    rep = JsonSerialization.mapper.copy().disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES).readValue(new ByteArrayInputStream(inputData), RealmRepresentation.class);
+                    logger.warnf("%s during an import!", e.getMessage().indexOf(",") > 0 ? e.getMessage().substring(0, e.getMessage().indexOf(",")) : "Unrecognized field");
+                } catch (IOException ex) {
+                    throw new ModelException("unable to read contents from stream", ex);
+                }
+            } else {
+                throw new ModelException("unable to read contents from stream", e);
+            }
         }
+
         logger.debugv("importRealm: {0}", rep.getRealm());
 
         if (!useNewImportMethod) {
@@ -576,23 +605,23 @@ public class MapExportImportManager implements ExportImportManager {
     }
 
     private void copyRealm(String realmId, KeycloakSession sessionChm) {
-        MapRealmEntity realmEntityChm = (MapRealmEntity) getTransaction(sessionChm, RealmProvider.class).read(realmId);
-        getTransaction(session, RealmProvider.class).create(realmEntityChm);
+        MapRealmEntity realmEntityChm = (MapRealmEntity) getMapStorage(sessionChm, RealmProvider.class).read(realmId);
+        getMapStorage(session, RealmProvider.class).create(realmEntityChm);
     }
 
-    private static <P extends Provider, E extends AbstractEntity, M> MapKeycloakTransaction<E, M> getTransaction(KeycloakSession session, Class<P> provider) {
+    private static <P extends Provider, E extends AbstractEntity, M> MapStorage<E, M> getMapStorage(KeycloakSession session, Class<P> provider) {
         ProviderFactory<P> factoryChm = session.getKeycloakSessionFactory().getProviderFactory(provider);
-        return ((AbstractMapProviderFactory<P, E, M>) factoryChm).getStorage(session).createTransaction(session);
+        return ((AbstractMapProviderFactory<P, E, M>) factoryChm).getMapStorage(session);
     }
 
     private <P extends Provider, M> void copyEntities(String realmId, KeycloakSession sessionChm, Class<P> provider, Class<M> model, SearchableModelField<M> field) {
-        MapKeycloakTransaction<AbstractEntity, M> txChm = getTransaction(sessionChm, provider);
-        MapKeycloakTransaction<AbstractEntity, M> txOrig = getTransaction(session, provider);
+        MapStorage<AbstractEntity, M> storeChm = getMapStorage(sessionChm, provider);
+        MapStorage<AbstractEntity, M> storeOrig = getMapStorage(session, provider);
 
         DefaultModelCriteria<M> mcb = criteria();
         mcb = mcb.compare(field, ModelCriteriaBuilder.Operator.EQ, realmId);
 
-        txChm.read(withCriteria(mcb)).forEach(txOrig::create);
+        storeChm.read(withCriteria(mcb)).forEach(storeOrig::create);
     }
 
     private static void fillRealm(KeycloakSession session, String id, RealmRepresentation rep) {
@@ -1138,11 +1167,7 @@ public class MapExportImportManager implements ExportImportManager {
         }
         if (userRep.getRequiredActions() != null) {
             for (String requiredAction : userRep.getRequiredActions()) {
-                try {
-                    user.addRequiredAction(UserModel.RequiredAction.valueOf(requiredAction.toUpperCase()));
-                } catch (IllegalArgumentException iae) {
-                    user.addRequiredAction(requiredAction);
-                }
+                user.addRequiredAction(getDefaultRequiredActionCaseInsensitively(requiredAction));
             }
         }
         createCredentials(userRep, session, newRealm, user, false);
@@ -1437,7 +1462,7 @@ public class MapExportImportManager implements ExportImportManager {
 
         return webAuthnPolicy;
     }
-    public static Map<String, String> importAuthenticationFlows(RealmModel newRealm, RealmRepresentation rep) {
+    public static Map<String, String> importAuthenticationFlows(KeycloakSession session, RealmModel newRealm, RealmRepresentation rep) {
         Map<String, String> mappedFlows = new HashMap<>();
         if (rep.getAuthenticationFlows() == null) {
             // assume this is an old version being imported
@@ -1457,9 +1482,7 @@ public class MapExportImportManager implements ExportImportManager {
             if (rep.getAuthenticationFlows() != null) {
                 for (AuthenticationFlowRepresentation flowRep : rep.getAuthenticationFlows()) {
                     AuthenticationFlowModel model = RepresentationToModel.toModel(flowRep);
-                    // make sure new id is generated for new AuthenticationFlowModel instance
                     String previousId = model.getId();
-                    model.setId(null);
                     model = newRealm.addAuthenticationFlow(model);
                     // store the mapped ids so that clients can reference the correct flow when importing the authenticationFlowBindingOverrides
                     mappedFlows.put(previousId, model.getId());
@@ -1467,7 +1490,7 @@ public class MapExportImportManager implements ExportImportManager {
                 for (AuthenticationFlowRepresentation flowRep : rep.getAuthenticationFlows()) {
                     AuthenticationFlowModel model = newRealm.getFlowByAlias(flowRep.getAlias());
                     for (AuthenticationExecutionExportRepresentation exeRep : flowRep.getAuthenticationExecutions()) {
-                        AuthenticationExecutionModel execution = toModel(newRealm, model, exeRep);
+                        AuthenticationExecutionModel execution = toModel(session, newRealm, model, exeRep);
                         newRealm.addAuthenticatorExecution(execution);
                     }
                 }
@@ -1553,10 +1576,10 @@ public class MapExportImportManager implements ExportImportManager {
         return mappedFlows;
     }
 
-    private static AuthenticationExecutionModel toModel(RealmModel realm, AuthenticationFlowModel parentFlow, AuthenticationExecutionExportRepresentation rep) {
+    private static AuthenticationExecutionModel toModel(KeycloakSession session, RealmModel realm, AuthenticationFlowModel parentFlow, AuthenticationExecutionExportRepresentation rep) {
         AuthenticationExecutionModel model = new AuthenticationExecutionModel();
         if (rep.getAuthenticatorConfig() != null) {
-            AuthenticatorConfigModel config = realm.getAuthenticatorConfigByAlias(rep.getAuthenticatorConfig());
+            AuthenticatorConfigModel config = new DeployedConfigurationsManager(session).getAuthenticatorConfigByAlias(realm, rep.getAuthenticatorConfig());
             model.setAuthenticatorConfig(config.getId());
         }
         model.setAuthenticator(rep.getAuthenticator());

@@ -22,18 +22,25 @@ import org.infinispan.client.hotrod.RemoteCacheManagerAdmin;
 import org.infinispan.client.hotrod.configuration.ClientIntelligence;
 import org.infinispan.client.hotrod.configuration.ConfigurationBuilder;
 import org.infinispan.client.hotrod.configuration.NearCacheMode;
+import org.infinispan.client.hotrod.configuration.TransactionMode;
 import org.infinispan.commons.marshall.ProtoStreamMarshaller;
+import org.infinispan.commons.tx.lookup.TransactionManagerLookup;
 import org.infinispan.protostream.GeneratedSchema;
 import org.infinispan.query.remote.client.ProtobufMetadataManagerConstants;
 import org.jboss.logging.Logger;
+import org.keycloak.common.Profile;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.map.storage.hotRod.locking.HotRodLocksUtils;
 import org.keycloak.models.map.storage.hotRod.common.HotRodEntityDescriptor;
 import org.keycloak.models.map.storage.hotRod.common.CommonPrimitivesProtoSchemaInitializer;
 import org.keycloak.models.map.storage.hotRod.common.HotRodVersionUtils;
+import org.keycloak.models.map.storage.hotRod.transaction.HotRodTransactionManagerLookup;
+import org.keycloak.provider.EnvironmentDependentProviderFactory;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
@@ -47,20 +54,28 @@ import static org.keycloak.models.map.storage.hotRod.common.HotRodVersionUtils.i
 /**
  * @author <a href="mailto:mkanis@redhat.com">Martin Kanis</a>
  */
-public class DefaultHotRodConnectionProviderFactory implements HotRodConnectionProviderFactory {
+public class DefaultHotRodConnectionProviderFactory implements HotRodConnectionProviderFactory, EnvironmentDependentProviderFactory {
 
     public static final String PROVIDER_ID = "default";
-
+    public static final String SCRIPT_CACHE = "___script_cache";
+    public static final String HOT_ROD_LOCKS_CACHE_NAME = "locks";
+    private static final String HOT_ROD_INIT_LOCK_NAME = "HOT_ROD_INIT_LOCK";
     private static final Logger LOG = Logger.getLogger(DefaultHotRodConnectionProviderFactory.class);
 
     private org.keycloak.Config.Scope config;
 
-    private RemoteCacheManager remoteCacheManager;
+    private volatile RemoteCacheManager remoteCacheManager;
+
+    private TransactionManagerLookup transactionManagerLookup;
 
     @Override
     public HotRodConnectionProvider create(KeycloakSession session) {
         if (remoteCacheManager == null) {
-            lazyInit();
+            synchronized (this) {
+                if (remoteCacheManager == null) {
+                    lazyInit(session);
+                }
+            }
         }
         return new DefaultHotRodConnectionProvider(remoteCacheManager);
     }
@@ -88,8 +103,10 @@ public class DefaultHotRodConnectionProviderFactory implements HotRodConnectionP
         this.config = config;
     }
 
-    public void lazyInit() {
+    public void lazyInit(KeycloakSession session) {
         LOG.debugf("Initializing HotRod client connection to Infinispan server.");
+        transactionManagerLookup = new HotRodTransactionManagerLookup(session);
+
         ConfigurationBuilder remoteBuilder = new ConfigurationBuilder();
         remoteBuilder.addServer()
                 .host(config.get("host", "localhost"))
@@ -111,32 +128,51 @@ public class DefaultHotRodConnectionProviderFactory implements HotRodConnectionP
 
         remoteBuilder.addContextInitializer(CommonPrimitivesProtoSchemaInitializer.INSTANCE);
         ENTITY_DESCRIPTOR_MAP.values().stream().map(HotRodEntityDescriptor::getProtoSchema).forEach(remoteBuilder::addContextInitializer);
+
+        // Configure settings necessary for locking
+        configureLocking(remoteBuilder);
+
         remoteCacheManager = new RemoteCacheManager(remoteBuilder.build());
 
-        Set<String> remoteCaches = ENTITY_DESCRIPTOR_MAP.values().stream()
-                .map(HotRodEntityDescriptor::getCacheName).collect(Collectors.toSet());
+        // Acquire initial phase lock to avoid concurrent schema update
+        RemoteCache<String, String> locksCache = remoteCacheManager.getCache(HOT_ROD_LOCKS_CACHE_NAME);
+        try {
+            HotRodLocksUtils.repeatPutIfAbsent(locksCache, HOT_ROD_INIT_LOCK_NAME, Duration.ofMillis(900), 50, false);
 
-        LOG.debugf("Uploading proto schema to Infinispan server.");
-        registerSchemata();
+            Set<String> remoteCaches = ENTITY_DESCRIPTOR_MAP.values().stream()
+                    .map(HotRodEntityDescriptor::getCacheName).collect(Collectors.toSet());
 
-        String reindexCaches = config.get("reindexCaches", null);
-        RemoteCacheManagerAdmin administration = remoteCacheManager.administration();
-        if (reindexCaches != null && reindexCaches.equals("all")) {
-            LOG.infof("Reindexing all caches. This can take a long time to complete. While the rebuild operation is in progress, queries might return fewer results.");
-            remoteCaches.stream()
-                    .peek(remoteCacheManager::getCache) // access the caches to force their creation, otherwise reindexing fails if cache doesn't exist
-                    .forEach(administration::reindexCache);
-        } else if (reindexCaches != null && !reindexCaches.isEmpty()){
-            Arrays.stream(reindexCaches.split(","))
-                .map(String::trim)
-                    .filter(e -> !e.isEmpty())
-                    .filter(remoteCaches::contains)
-                    .peek(cacheName -> LOG.infof("Reindexing %s cache. This can take a long time to complete. While the rebuild operation is in progress, queries might return fewer results.", cacheName))
-                    .peek(remoteCacheManager::getCache) // access the caches to force their creation, otherwise reindexing fails if cache doesn't exist
-                    .forEach(administration::reindexCache);
+            LOG.debugf("Uploading proto schema to Infinispan server.");
+            registerSchemata();
+
+            String reindexCaches = config.get("reindexCaches", null);
+            RemoteCacheManagerAdmin administration = remoteCacheManager.administration();
+            if (reindexCaches != null && reindexCaches.equals("all")) {
+                LOG.infof("Reindexing all caches. This can take a long time to complete. While the rebuild operation is in progress, queries might return fewer results.");
+                remoteCaches.stream()
+                        .peek(remoteCacheManager::getCache) // access the caches to force their creation, otherwise reindexing fails if cache doesn't exist
+                        .forEach(administration::reindexCache);
+            } else if (reindexCaches != null && !reindexCaches.isEmpty()) {
+                Arrays.stream(reindexCaches.split(","))
+                        .map(String::trim)
+                        .filter(e -> !e.isEmpty())
+                        .filter(remoteCaches::contains)
+                        .peek(cacheName -> LOG.infof("Reindexing %s cache. This can take a long time to complete. While the rebuild operation is in progress, queries might return fewer results.", cacheName))
+                        .peek(remoteCacheManager::getCache) // access the caches to force their creation, otherwise reindexing fails if cache doesn't exist
+                        .forEach(administration::reindexCache);
+            }
+
+            LOG.infof("HotRod client configuration was successful.");
+        } finally {
+            if (!HotRodLocksUtils.removeWithInstanceIdentifier(locksCache, HOT_ROD_INIT_LOCK_NAME)) {
+                throw new RuntimeException("Cannot release HotRod init lock");
+            }
         }
+    }
 
-        LOG.infof("HotRod client configuration was successful.");
+    private void configureLocking(ConfigurationBuilder builder) {
+        builder.remoteCache(HOT_ROD_LOCKS_CACHE_NAME)
+                .configurationURI(getCacheConfigUri(HOT_ROD_LOCKS_CACHE_NAME));
     }
 
     private void registerSchemata() {
@@ -236,9 +272,16 @@ public class DefaultHotRodConnectionProviderFactory implements HotRodConnectionP
             LOG.debugf("Configuring cache %s", cacheName);
             builder.remoteCache(cacheName)
                     .configurationURI(getCacheConfigUri(cacheName))
+                    .transactionMode(TransactionMode.FULL_XA)
+                    .transactionManagerLookup(transactionManagerLookup)
                     .nearCacheMode(config.scope(cacheName).getBoolean("nearCacheEnabled", config.getBoolean("nearCacheEnabled", true)) ? NearCacheMode.INVALIDATED : NearCacheMode.DISABLED)
                     .nearCacheMaxEntries(config.scope(cacheName).getInt("nearCacheMaxEntries", config.getInt("nearCacheMaxEntries", 10000)))
                     .nearCacheUseBloomFilter(config.scope(cacheName).getBoolean("nearCacheBloomFilter", config.getBoolean("nearCacheBloomFilter", false)));
         };
+    }
+
+    @Override
+    public boolean isSupported() {
+        return Profile.isFeatureEnabled(Profile.Feature.MAP_STORAGE);
     }
 }

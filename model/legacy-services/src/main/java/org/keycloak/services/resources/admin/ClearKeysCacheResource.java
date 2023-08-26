@@ -23,8 +23,8 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.cache.CachePublicKeyProvider;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 
-import javax.ws.rs.POST;
-import javax.ws.rs.core.Context;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.core.Context;
 
 public class ClearKeysCacheResource {
 

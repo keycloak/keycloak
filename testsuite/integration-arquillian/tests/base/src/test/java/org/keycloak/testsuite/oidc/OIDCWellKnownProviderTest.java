@@ -56,11 +56,11 @@ import org.keycloak.testsuite.util.TokenSignatureUtil;
 import org.keycloak.testsuite.wellknown.CustomOIDCWellKnownProviderFactory;
 import org.keycloak.util.JsonSerialization;
 
-import javax.ws.rs.client.Client;
-import javax.ws.rs.client.Invocation;
-import javax.ws.rs.client.WebTarget;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriBuilder;
+import jakarta.ws.rs.client.Client;
+import jakarta.ws.rs.client.Invocation;
+import jakarta.ws.rs.client.WebTarget;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.UriBuilder;
 import java.io.IOException;
 import java.net.URI;
 import java.util.HashMap;
@@ -218,6 +218,9 @@ public class OIDCWellKnownProviderTest extends AbstractKeycloakTest {
             assertTrue(oidcConfig.getFrontChannelLogoutSessionSupported());
             assertTrue(oidcConfig.getFrontChannelLogoutSupported());
 
+            // DPoP
+            Assert.assertNames(oidcConfig.getDpopSigningAlgValuesSupported(), Algorithm.PS256, Algorithm.PS384, Algorithm.PS512,
+                    Algorithm.RS256, Algorithm.RS384, Algorithm.RS512, Algorithm.ES256, Algorithm.ES384, Algorithm.ES512);
         } finally {
             client.close();
         }
@@ -288,7 +291,7 @@ public class OIDCWellKnownProviderTest extends AbstractKeycloakTest {
         String jwksUri = representation.getJwksUri();
 
         JSONWebKeySet jsonWebKeySet = SimpleHttp.doGet(jwksUri, client).asJson(JSONWebKeySet.class);
-        assertEquals(2, jsonWebKeySet.getKeys().length);
+        assertEquals(3, jsonWebKeySet.getKeys().length);
     }
 
     @Test

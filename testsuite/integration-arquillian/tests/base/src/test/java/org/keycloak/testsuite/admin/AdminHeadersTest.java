@@ -8,13 +8,13 @@ import org.junit.Test;
 import org.keycloak.models.BrowserSecurityHeaders;
 import org.keycloak.testsuite.util.UserBuilder;
 
-import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.core.Response;
 import java.io.IOException;
 
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 public class AdminHeadersTest extends AbstractAdminTest {
 

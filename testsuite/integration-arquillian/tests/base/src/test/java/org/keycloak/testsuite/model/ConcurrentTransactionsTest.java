@@ -38,6 +38,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
+import static org.hamcrest.MatcherAssert.assertThat;
+
 import org.keycloak.models.Constants;
 import org.keycloak.models.RoleModel;
 
@@ -289,7 +291,7 @@ public class ConcurrentTransactionsTest extends AbstractTestRealmKeycloakTest {
         }
 
         Assert.assertTrue(currentSession.realms().removeRealm(realm.getId()));
-        Assert.assertThat(currentSession.realms().getRealm(realm.getId()), is(nullValue()));
+        assertThat(currentSession.realms().getRealm(realm.getId()), is(nullValue()));
     }
 
     @Override

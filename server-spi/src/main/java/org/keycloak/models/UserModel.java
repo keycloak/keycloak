@@ -21,11 +21,8 @@ import org.keycloak.provider.ProviderEvent;
 import org.keycloak.storage.SearchableModelField;
 
 import java.util.Comparator;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -274,13 +271,5 @@ public interface UserModel extends RoleMapperModel {
         TERMS_AND_CONDITIONS,
         VERIFY_PROFILE,
         UPDATE_EMAIL
-    }
-
-    /**
-     * @deprecated This interface is no longer necessary, collection-based methods were removed from the parent interface
-     * and therefore the parent interface can be used directly
-     */
-    @Deprecated
-    interface Streams extends UserModel, RoleMapperModel {
     }
 }

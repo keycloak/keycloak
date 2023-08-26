@@ -24,6 +24,7 @@ import org.keycloak.services.clientpolicy.ClientPolicyManager;
 import org.keycloak.sessions.AuthenticationSessionProvider;
 import org.keycloak.vault.VaultTranscriber;
 
+import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
 
@@ -31,7 +32,7 @@ import java.util.function.Function;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public interface KeycloakSession {
+public interface KeycloakSession extends AutoCloseable {
 
     KeycloakContext getContext();
 
@@ -123,6 +124,8 @@ public interface KeycloakSession {
     Object removeAttribute(String attribute);
     void setAttribute(String name, Object value);
 
+    Map<String, Object> getAttributes();
+
     /**
      * Invalidates intermediate states of the given objects, both immediately and at the end of this session.
      * @param type Type of the objects to invalidate
@@ -198,19 +201,9 @@ public interface KeycloakSession {
 
     AuthenticationSessionProvider authenticationSessions();
 
-
+    SingleUseObjectProvider singleUseObjects();
 
     void close();
-
-    /**
-     * The user cache
-     *
-     * @deprecated The access to the UserCache interface is no longer possible here, and this method is about to be removed.
-     * Adjust your code according to the Keycloak 19 Upgrading Guide.
-     * @return may be null if cache is disabled
-     */
-    @Deprecated
-    UserProvider userCache();
 
     /**
      * A cached view of all users in system including  users loaded by UserStorageProviders
@@ -218,88 +211,6 @@ public interface KeycloakSession {
      * @return UserProvider instance
      */
     UserProvider users();
-
-    /**
-     * @return ClientStorageManager instance
-     */
-    @Deprecated
-    ClientProvider clientStorageManager();
-
-    /**
-     * @return ClientScopeStorageManager instance
-     * @deprecated Use {@link #clientScopes()} instead
-     */
-    @Deprecated
-    ClientScopeProvider clientScopeStorageManager();
-
-    /**
-     * @return RoleStorageManager instance
-     */
-    @Deprecated
-    RoleProvider roleStorageManager();
-
-    /**
-     * @return GroupStorageManager instance
-     */
-    @Deprecated
-    GroupProvider groupStorageManager();
-
-    /**
-     * Un-cached view of all users in system including users loaded by UserStorageProviders
-     *
-     * @return
-     */
-    @Deprecated
-    UserProvider userStorageManager();
-
-    /**
-     * Service that allows you to valid and update credentials for a user
-     * @deprecated Use {@link UserModel#credentialManager()} instead.
-     * @return
-     */
-    @Deprecated
-    UserCredentialManager userCredentialManager();
-
-    /**
-     * Keycloak specific local storage for users.  No cache in front, this api talks directly to database configured for Keycloak
-     */
-    @Deprecated
-    UserProvider userLocalStorage();
-
-    @Deprecated
-    RealmProvider realmLocalStorage();
-
-    /**
-     * Keycloak specific local storage for clients.  No cache in front, this api talks directly to database configured for Keycloak
-     *
-     * @deprecated Access to the legacy store is no longer possible via this method. Adjust your code according to the Keycloak 19 Upgrading Guide.
-     */
-    @Deprecated
-    ClientProvider clientLocalStorage();
-
-    /**
-     * Keycloak specific local storage for client scopes.  No cache in front, this api talks directly to database configured for Keycloak
-     *
-     * @deprecated Access to the legacy store is no longer possible via this method. Adjust your code according to the Keycloak 19 Upgrading Guide.
-     */
-    @Deprecated
-    ClientScopeProvider clientScopeLocalStorage();
-
-    /**
-     * Keycloak specific local storage for groups.  No cache in front, this api talks directly to storage configured for Keycloak
-     *
-     * @deprecated Access to the legacy store is no longer possible via this method. Adjust your code according to the Keycloak 19 Upgrading Guide.
-     */
-    @Deprecated
-    GroupProvider groupLocalStorage();
-
-    /**
-     * Keycloak specific local storage for roles.  No cache in front, this api talks directly to storage configured for Keycloak
-     *
-     * @deprecated Access to the legacy store is no longer possible via this method. Adjust your code according to the Keycloak 19 Upgrading Guide.
-     */
-    @Deprecated
-    RoleProvider roleLocalStorage();
 
     /**
      * Key manager

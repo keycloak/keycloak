@@ -12,6 +12,7 @@ import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLSessionContext;
+import javax.net.ssl.TrustManagerFactory;
 
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.jboss.logging.Logger;
@@ -27,6 +28,7 @@ import org.keycloak.common.util.Environment;
 import org.keycloak.rule.CryptoInitRule;
 
 import static org.hamcrest.Matchers.greaterThan;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -103,6 +105,16 @@ public class FIPS1402SslTest {
         testSSLContext(keyMgrFact);
     }
 
+    @Test
+    public void testDefaultTruststore() throws Exception {
+        String defaultAlg = TrustManagerFactory.getDefaultAlgorithm();
+        logger.infof("Default trust manager factory algorithm: %s", defaultAlg);
+        TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance(defaultAlg);
+
+        // This may fail if default truststore is "pkcs12" and security property "keystore.type.compat" is set to false
+        trustManagerFactory.init((KeyStore) null);
+    }
+
     private KeyStore loadKeystore(String type, String password) throws Exception {
         KeyStore keystore = KeyStore.getInstance(type);
         InputStream in = FIPS1402SslTest.class.getClassLoader().getResourceAsStream("bcfips-keystore." + type.toLowerCase());
@@ -129,12 +141,13 @@ public class FIPS1402SslTest {
         List<String> supportedProtocols = Arrays.asList(context.getDefaultSSLParameters().getProtocols());
         List<String> supportedCiphers = Arrays.asList(engine.getSupportedCipherSuites());
 
+        logger.infof("SSLContext provider: %s, SSLContext class: %s", context.getProvider().getName(), context.getClass().getName());
         logger.infof("Enabled ciphersuites: %s", enabledCipherSuites.size());
         logger.infof("Supported protocols: %s", supportedProtocols);
         logger.infof("Supported ciphers size: %d", supportedCiphers.size());
-        Assert.assertThat(enabledCipherSuites.size(), greaterThan(0));
-        Assert.assertThat(supportedProtocols.size(), greaterThan(0));
-        Assert.assertThat(supportedCiphers.size(), greaterThan(0));
+        assertThat(enabledCipherSuites.size(), greaterThan(0));
+        assertThat(supportedProtocols.size(), greaterThan(0));
+        assertThat(supportedCiphers.size(), greaterThan(0));
 
         SSLSessionContext sslServerCtx = context.getServerSessionContext();
         Assert.assertNotNull(sslServerCtx);

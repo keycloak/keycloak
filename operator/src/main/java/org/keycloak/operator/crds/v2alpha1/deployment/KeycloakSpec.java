@@ -16,10 +16,13 @@
  */
 package org.keycloak.operator.crds.v2alpha1.deployment;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
+import io.fabric8.kubernetes.model.annotation.SpecReplicas;
+
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.DatabaseSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.FeatureSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.HttpSpec;
@@ -31,10 +34,12 @@ import org.keycloak.operator.crds.v2alpha1.deployment.spec.HostnameSpec;
 import java.util.ArrayList;
 import java.util.List;
 
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class KeycloakSpec {
 
+    @SpecReplicas
     @JsonPropertyDescription("Number of Keycloak instances in HA mode. Default is 1.")
-    private int instances = 1;
+    private Integer instances;
 
     @JsonPropertyDescription("Custom Keycloak image to be used.")
     private String image;
@@ -132,11 +137,11 @@ public class KeycloakSpec {
         this.hostnameSpec = hostnameSpec;
     }
 
-    public int getInstances() {
+    public Integer getInstances() {
         return instances;
     }
 
-    public void setInstances(int instances) {
+    public void setInstances(Integer instances) {
         this.instances = instances;
     }
 

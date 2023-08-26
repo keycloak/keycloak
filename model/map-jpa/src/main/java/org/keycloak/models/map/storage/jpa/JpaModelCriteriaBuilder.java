@@ -29,7 +29,9 @@ import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import javax.persistence.criteria.Predicate;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.Join;
+import jakarta.persistence.criteria.Predicate;
 
 import org.keycloak.models.map.common.StringKeyConverter;
 import org.keycloak.models.map.storage.CriterionNotSupportedException;
@@ -143,5 +145,9 @@ public abstract class JpaModelCriteriaBuilder<E, M, Self extends JpaModelCriteri
                     .map(val -> StringKeyConverter.UUIDKey.INSTANCE.fromStringSafe(Objects.toString(val, null)))
                     .filter(Objects::nonNull)
                     .collect(Collectors.toSet());
+    }
+
+    protected Predicate hashExpression(CriteriaBuilder cb, Join<E, ?> join, String columnName, Object value) {
+        return cb.equal(join.get(columnName), cb.function("kc_hash", Object.class, cb.literal(value)));
     }
 }

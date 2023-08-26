@@ -13,6 +13,12 @@
     "requiredCredentials": [ "password" ],
     "defaultRoles": [ "foo", "bar" ],
     "verifyEmail" : "true",
+    "localizationTexts" : {
+        "en" : {
+            "key1" : "value1",
+            "key2" : "value2"
+        }
+    },
     "smtpServer": {
         "from": "auto@keycloak.org",
         "host": "localhost",
@@ -56,6 +62,7 @@
             "providerName": "ldap",
             "priority": 1,
             "config": {
+                "enabled": false,
                 "connectionUrl": "ldap://foo",
                 "editMode": "WRITABLE"
             }
@@ -65,6 +72,7 @@
             "providerName": "ldap",
             "priority": 2,
             "config": {
+                "enabled": false,
                 "connectionUrl": "ldap://bar",
                 "editMode": "WRITABLE"
             }

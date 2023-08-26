@@ -425,7 +425,7 @@ public class OwnerReplacementTest extends AbstractKeycloakTest {
                 ((session, realm1) -> {
 
                     UserModel user = session.users().getUserByUsername(realm1, "test-user@localhost");
-                    UserSessionModel userSession = session.sessions().createUserSession(realm1, user, user.getUsername(), "1.2.3.4", "bar", false, null, null);
+                    UserSessionModel userSession = session.sessions().createUserSession(null, realm1, user, user.getUsername(), "1.2.3.4", "bar", false, null, null, UserSessionModel.SessionPersistenceState.PERSISTENT);
                     return userSession.getId();
 
                 }),

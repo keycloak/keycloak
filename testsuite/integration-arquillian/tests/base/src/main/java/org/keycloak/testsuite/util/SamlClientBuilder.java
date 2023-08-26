@@ -40,12 +40,13 @@ import org.keycloak.testsuite.util.saml.UpdateProfileBuilder;
 import org.keycloak.testsuite.util.saml.ModifySamlResponseStepBuilder;
 import org.keycloak.testsuite.util.saml.RequiredConsentBuilder;
 import java.util.function.Function;
-import javax.ws.rs.core.Response.Status;
+import jakarta.ws.rs.core.Response.Status;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.hamcrest.Matcher;
 import org.junit.Assert;
 import org.w3c.dom.Document;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.keycloak.testsuite.util.saml.SamlDocumentStepBuilder.saml2Object2String;
 
 /**
@@ -128,7 +129,7 @@ public class SamlClientBuilder {
 
     public SamlClientBuilder assertResponse(Matcher<? super CloseableHttpResponse> matcher) {
         steps.add((client, currentURI, currentResponse, context) -> {
-            Assert.assertThat(currentResponse, matcher);
+            assertThat(currentResponse, matcher);
             return null;
         });
         return this;
@@ -171,9 +172,14 @@ public class SamlClientBuilder {
         return addStepBuilder(new CreateAuthnRequestStepBuilder(authServerSamlUrl, authnRequestDocument, requestBinding, this));
     }
 
-    /** Issues the given AuthnRequest to the SAML endpoint */
-    public CreateLogoutRequestStepBuilder logoutRequest(URI authServerSamlUrl, String issuer, Binding requestBinding) {
-        return addStepBuilder(new CreateLogoutRequestStepBuilder(authServerSamlUrl, issuer, requestBinding, this));
+    /** Issues the given LogoutRequest to the SAML endpoint */
+    public CreateLogoutRequestStepBuilder logoutRequest(URI logoutServerSamlUrl, String issuer, Binding requestBinding) {
+        return addStepBuilder(new CreateLogoutRequestStepBuilder(logoutServerSamlUrl, issuer, requestBinding, this));
+    }
+
+    /** Issues the given LogoutRequest to the SAML endpoint */
+    public CreateLogoutRequestStepBuilder logoutRequest(URI logoutServerSamlUrl, String issuer, Binding requestBinding, boolean skipSignature) {
+        return addStepBuilder(new CreateLogoutRequestStepBuilder(logoutServerSamlUrl, issuer, requestBinding, this, skipSignature));
     }
 
     /** Issues the given SAML document to the SAML endpoint */
@@ -259,8 +265,8 @@ public class SamlClientBuilder {
         return
           doNotFollowRedirects()
           .addStep((client, currentURI, currentResponse, context) -> {
-            Assert.assertThat(currentResponse, Matchers.statusCodeIsHC(Status.FOUND));
-            Assert.assertThat("Location header not found", currentResponse.getFirstHeader("Location"), notNullValue());
+            assertThat(currentResponse, Matchers.statusCodeIsHC(Status.FOUND));
+            assertThat("Location header not found", currentResponse.getFirstHeader("Location"), notNullValue());
             return new HttpGet(currentResponse.getFirstHeader("Location").getValue());
           });
     }

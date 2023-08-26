@@ -118,8 +118,9 @@ public final class CRLUtils {
 
         X509Certificate currentCRLAnchorCertificate = crlSignatureCertificate;
         X500Principal currentCRLAnchorPrincipal = crlIssuerPrincipal;
-        while (true) {
-            if (certificateCAPrincipals.contains(currentCRLAnchorPrincipal)) {
+
+        for (X500Principal certificateCAPrincipal : certificateCAPrincipals) {
+            if (certificateCAPrincipal.equals(currentCRLAnchorPrincipal)) {
                 log.tracef("Found trust anchor of the CRL issuer '%s' in the CA chain. Anchor is '%s'", crlIssuerPrincipal, currentCRLAnchorPrincipal);
                 break;
             }

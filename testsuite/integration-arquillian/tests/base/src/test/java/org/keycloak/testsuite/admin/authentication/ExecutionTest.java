@@ -22,7 +22,6 @@ import org.junit.Test;
 import org.keycloak.authentication.AuthenticationFlow;
 import org.keycloak.authentication.authenticators.browser.UsernameFormFactory;
 import org.keycloak.authentication.authenticators.browser.WebAuthnAuthenticatorFactory;
-import org.keycloak.authentication.authenticators.challenge.NoCookieFlowRedirectAuthenticatorFactory;
 import org.keycloak.authentication.authenticators.client.ClientIdAndSecretAuthenticator;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
@@ -34,14 +33,15 @@ import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.util.AdminEventPaths;
 import org.keycloak.testsuite.util.AssertAdminEvents;
 
-import javax.ws.rs.BadRequestException;
-import javax.ws.rs.NotFoundException;
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.BadRequestException;
+import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.core.Response;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import static org.hamcrest.Matchers.hasItems;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
@@ -97,7 +97,7 @@ public class ExecutionTest extends AbstractAuthenticationTest {
 
         AuthenticatorConfigRepresentation updated = authMgmtResource.getAuthenticatorConfig(authConfigRep.getId());
 
-        Assert.assertThat(updated.getConfig().values(), hasItems("test-updated", "skip"));
+        assertThat(updated.getConfig().values(), hasItems("test-updated", "skip"));
     }
 
     @Test
@@ -330,7 +330,6 @@ public class ExecutionTest extends AbstractAuthenticationTest {
 
         addExecutionCheckReq(newBrowserFlow, UsernameFormFactory.PROVIDER_ID, params, REQUIRED);
         addExecutionCheckReq(newBrowserFlow, WebAuthnAuthenticatorFactory.PROVIDER_ID, params, DISABLED);
-        addExecutionCheckReq(newBrowserFlow, NoCookieFlowRedirectAuthenticatorFactory.PROVIDER_ID, params, REQUIRED);
 
         AuthenticationFlowRepresentation rep = findFlowByAlias(newBrowserFlow, authMgmtResource.getFlows());
         Assert.assertNotNull(rep);

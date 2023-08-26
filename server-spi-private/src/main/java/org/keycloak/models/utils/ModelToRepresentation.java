@@ -35,6 +35,7 @@ import org.keycloak.common.util.Time;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.credential.CredentialMetadata;
 import org.keycloak.credential.CredentialModel;
+import org.keycloak.deployment.DeployedConfigurationsManager;
 import org.keycloak.events.Event;
 import org.keycloak.events.admin.AdminEvent;
 import org.keycloak.events.admin.AuthDetails;
@@ -150,8 +151,17 @@ public class ModelToRepresentation {
         return rep;
     }
 
-    public static Stream<GroupRepresentation> searchGroupsByAttributes(KeycloakSession session, RealmModel realm, boolean full, Map<String,String> attributes, Integer first, Integer max) {
-        return session.groups().searchGroupsByAttributes(realm, attributes, first, max)
+    public static Stream<GroupRepresentation> searchGroupsByAttributes(KeycloakSession session, RealmModel realm, boolean full, boolean populateHierarchy, Map<String,String> attributes, Integer first, Integer max) {
+        Stream<GroupModel> groups = searchGroupModelsByAttributes(session, realm, full, populateHierarchy, attributes, first, max);
+        // and then turn the result into GroupRepresentations creating whole hierarchy of child groups for each root group
+        return groups.map(g -> toGroupHierarchy(g, full, attributes));
+
+    }
+
+    public static Stream<GroupModel> searchGroupModelsByAttributes(KeycloakSession session, RealmModel realm, boolean full, boolean populateHierarchy, Map<String,String> attributes, Integer first, Integer max) {
+        Stream<GroupModel> groups = session.groups().searchGroupsByAttributes(realm, attributes, first, max);
+        if(populateHierarchy) {
+            groups = groups
                 // We need to return whole group hierarchy when any child group fulfills the attribute search,
                 // therefore for each group from the result, we need to find root group
                 .map(group -> {
@@ -162,21 +172,18 @@ public class ModelToRepresentation {
                 })
 
                 // More child groups of one root can fulfill the search, so we need to filter duplicates
-                .filter(StreamsUtil.distinctByKey(GroupModel::getId))
-
-                // and then turn the result into GroupRepresentations creating whole hierarchy of child groups for each root group
-                .map(g -> toGroupHierarchy(g, full, attributes));
-    }
-
-    @Deprecated
-    public static Stream<GroupRepresentation> searchForGroupByName(RealmModel realm, boolean full, String search, Integer first, Integer max) {
-        return realm.searchForGroupByNameStream(search, first, max)
-            .map(g -> toGroupHierarchy(g, full, search));
+                .filter(StreamsUtil.distinctByKey(GroupModel::getId));
+        }
+        return groups;
     }
 
     public static Stream<GroupRepresentation> searchForGroupByName(KeycloakSession session, RealmModel realm, boolean full, String search, Boolean exact, Integer first, Integer max) {
-        return session.groups().searchForGroupByNameStream(realm, search, exact, first, max)
-                .map(g -> toGroupHierarchy(g, full, search, exact));
+        return searchForGroupModelByName(session, realm, full, search, exact, first, max)
+            .map(g -> toGroupHierarchy(g, full, search, exact));
+    }
+
+    public static Stream<GroupModel> searchForGroupModelByName(KeycloakSession session, RealmModel realm, boolean full, String search, Boolean exact, Integer first, Integer max) {
+        return session.groups().searchForGroupByNameStream(realm, search, exact, first, max);
     }
 
     public static Stream<GroupRepresentation> searchForGroupByName(UserModel user, boolean full, String search, Integer first, Integer max) {
@@ -185,8 +192,12 @@ public class ModelToRepresentation {
     }
 
     public static Stream<GroupRepresentation> toGroupHierarchy(RealmModel realm, boolean full, Integer first, Integer max) {
-        return realm.getTopLevelGroupsStream(first, max)
-                .map(g -> toGroupHierarchy(g, full));
+        return toGroupModelHierarchy(realm, full, first, max) 
+            .map(g -> toGroupHierarchy(g, full));
+    }
+
+    public static Stream<GroupModel> toGroupModelHierarchy(RealmModel realm, boolean full, Integer first, Integer max) {
+        return realm.getTopLevelGroupsStream(first, max);
     }
 
     public static Stream<GroupRepresentation> toGroupHierarchy(UserModel user, boolean full, Integer first, Integer max) {
@@ -464,6 +475,7 @@ public class ModelToRepresentation {
                 .stream()
                 .filter(p -> p.supports(otpPolicy))
                 .map(OTPApplicationProvider::getName)
+                .sorted(String::compareTo)
                 .collect(Collectors.toList()));
 
         WebAuthnPolicy webAuthnPolicy = realm.getWebAuthnPolicy();
@@ -536,7 +548,7 @@ public class ModelToRepresentation {
         rep.setSupportedLocales(realm.getSupportedLocalesStream().collect(Collectors.toSet()));
         rep.setDefaultLocale(realm.getDefaultLocale());
         if (internal) {
-            exportAuthenticationFlows(realm, rep);
+            exportAuthenticationFlows(session, realm, rep);
             exportRequiredActions(realm, rep);
             exportGroups(realm, rep);
         }
@@ -575,10 +587,10 @@ public class ModelToRepresentation {
         rep.setGroups(toGroupHierarchy(realm, true).collect(Collectors.toList()));
     }
 
-    public static void exportAuthenticationFlows(RealmModel realm, RealmRepresentation rep) {
+    public static void exportAuthenticationFlows(KeycloakSession session, RealmModel realm, RealmRepresentation rep) {
         List<AuthenticationFlowRepresentation> authenticationFlows = realm.getAuthenticationFlowsStream()
                 .sorted(AuthenticationFlowModel.AuthenticationFlowComparator.SINGLETON)
-                .map(flow -> toRepresentation(realm, flow))
+                .map(flow -> toRepresentation(session, realm, flow))
                 .collect(Collectors.toList());
         rep.setAuthenticationFlows(authenticationFlows);
 
@@ -784,14 +796,22 @@ public class ModelToRepresentation {
         return rep;
     }
 
-    public static IdentityProviderRepresentation toRepresentation(RealmModel realm, IdentityProviderModel identityProviderModel) {
+    public static IdentityProviderRepresentation toBriefRepresentation(RealmModel realm, IdentityProviderModel identityProviderModel) {
         IdentityProviderRepresentation providerRep = new IdentityProviderRepresentation();
 
+        // brief representation means IDs, names and enabled
         providerRep.setInternalId(identityProviderModel.getInternalId());
         providerRep.setProviderId(identityProviderModel.getProviderId());
         providerRep.setAlias(identityProviderModel.getAlias());
         providerRep.setDisplayName(identityProviderModel.getDisplayName());
         providerRep.setEnabled(identityProviderModel.isEnabled());
+
+        return providerRep;
+    }
+
+    public static IdentityProviderRepresentation toRepresentation(RealmModel realm, IdentityProviderModel identityProviderModel) {
+        IdentityProviderRepresentation providerRep = toBriefRepresentation(realm, identityProviderModel);
+
         providerRep.setLinkOnly(identityProviderModel.isLinkOnly());
         providerRep.setStoreToken(identityProviderModel.isStoreToken());
         providerRep.setTrustEmail(identityProviderModel.isTrustEmail());
@@ -863,7 +883,7 @@ public class ModelToRepresentation {
         return consentRep;
     }
 
-    public static AuthenticationFlowRepresentation toRepresentation(RealmModel realm, AuthenticationFlowModel model) {
+    public static AuthenticationFlowRepresentation toRepresentation(KeycloakSession session, RealmModel realm, AuthenticationFlowModel model) {
         AuthenticationFlowRepresentation rep = new AuthenticationFlowRepresentation();
         rep.setId(model.getId());
         rep.setBuiltIn(model.isBuiltIn());
@@ -872,14 +892,14 @@ public class ModelToRepresentation {
         rep.setAlias(model.getAlias());
         rep.setDescription(model.getDescription());
         rep.setAuthenticationExecutions(realm.getAuthenticationExecutionsStream(model.getId())
-                .map(e -> toRepresentation(realm, e)).collect(Collectors.toList()));
+                .map(e -> toRepresentation(session, realm, e)).collect(Collectors.toList()));
         return rep;
     }
 
-    public static AuthenticationExecutionExportRepresentation toRepresentation(RealmModel realm, AuthenticationExecutionModel model) {
+    public static AuthenticationExecutionExportRepresentation toRepresentation(KeycloakSession session, RealmModel realm, AuthenticationExecutionModel model) {
         AuthenticationExecutionExportRepresentation rep = new AuthenticationExecutionExportRepresentation();
         if (model.getAuthenticatorConfig() != null) {
-            AuthenticatorConfigModel config = realm.getAuthenticatorConfigById(model.getAuthenticatorConfig());
+            AuthenticatorConfigModel config = new DeployedConfigurationsManager(session).getAuthenticatorConfig(realm, model.getAuthenticatorConfig());
             rep.setAuthenticatorConfig(config.getAlias());
         }
         rep.setAuthenticator(model.getAuthenticator());

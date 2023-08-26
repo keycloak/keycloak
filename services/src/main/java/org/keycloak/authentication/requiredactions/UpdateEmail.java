@@ -20,11 +20,12 @@ package org.keycloak.authentication.requiredactions;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
-import javax.ws.rs.core.MultivaluedHashMap;
-import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.UriInfo;
+import jakarta.ws.rs.core.MultivaluedHashMap;
+import jakarta.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.core.UriInfo;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
+import org.keycloak.authentication.AuthenticatorUtil;
 import org.keycloak.authentication.InitiatedActionSupport;
 import org.keycloak.authentication.RequiredActionContext;
 import org.keycloak.authentication.RequiredActionFactory;
@@ -97,16 +98,20 @@ public class UpdateEmail implements RequiredActionProvider, RequiredActionFactor
             return;
         }
 
+        final boolean logoutSessions = "on".equals(formData.getFirst("logout-sessions"));
         if (!realm.isVerifyEmail() || Validation.isBlank(newEmail)
                 || Objects.equals(user.getEmail(), newEmail) && user.isEmailVerified()) {
+            if (logoutSessions) {
+                AuthenticatorUtil.logoutOtherSessions(context);
+            }
             updateEmailWithoutConfirmation(context, emailUpdateValidationResult);
             return;
         }
 
-        sendEmailUpdateConfirmation(context);
+        sendEmailUpdateConfirmation(context, logoutSessions);
     }
 
-    private void sendEmailUpdateConfirmation(RequiredActionContext context) {
+    private void sendEmailUpdateConfirmation(RequiredActionContext context, boolean logoutSessions) {
         UserModel user = context.getUser();
         String oldEmail = user.getEmail();
         String newEmail = context.getHttpRequest().getDecodedFormParameters().getFirst(UserModel.EMAIL);
@@ -119,7 +124,7 @@ public class UpdateEmail implements RequiredActionProvider, RequiredActionFactor
         AuthenticationSessionModel authenticationSession = context.getAuthenticationSession();
 
         UpdateEmailActionToken actionToken = new UpdateEmailActionToken(user.getId(), Time.currentTime() + validityInSecs,
-                oldEmail, newEmail);
+                oldEmail, newEmail, authenticationSession.getClient().getClientId(), logoutSessions);
 
         String link = Urls
                 .actionTokenBuilder(uriInfo.getBaseUri(), actionToken.serialize(session, realm, uriInfo),

@@ -21,6 +21,8 @@ import org.keycloak.Config;
 import org.keycloak.common.Profile;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.KeycloakSessionTaskWithResult;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
 
 import java.time.Duration;
@@ -31,7 +33,21 @@ public class NoneGlobalLockProviderFactory implements GlobalLockProviderFactory,
 
     @Override
     public GlobalLockProvider create(KeycloakSession session) {
-        return INSTANCE;
+        return new GlobalLockProvider() {
+            @Override
+            public void close() {
+            }
+
+            @Override
+            public <V> V withLock(String lockName, Duration timeToWaitForLock, KeycloakSessionTaskWithResult<V> task) {
+                return KeycloakModelUtils.runJobInTransactionWithResult(session.getKeycloakSessionFactory(), task);
+            }
+
+            @Override
+            public void forceReleaseAllLocks() {
+
+            }
+        };
     }
 
     @Override
@@ -58,21 +74,4 @@ public class NoneGlobalLockProviderFactory implements GlobalLockProviderFactory,
     public boolean isSupported() {
         return Profile.isFeatureEnabled(Profile.Feature.MAP_STORAGE);
     }
-
-    private static final GlobalLockProvider INSTANCE = new GlobalLockProvider() {
-        @Override
-        public void close() {
-
-        }
-
-        @Override
-        public GlobalLock acquire(String lockName, Duration timeToWaitForLock) {
-            return () -> {};
-        }
-
-        @Override
-        public void forceReleaseAllLocks() {
-
-        }
-    };
 }

@@ -15,10 +15,12 @@
   ~ limitations under the License.
   -->
 <distributed-cache name="groups" mode="SYNC">
-    <indexing>
+    <encoding media-type="application/x-protostream"/>
+    <locking isolation="REPEATABLE_READ" />
+    <transaction mode="FULL_XA"/>
+    <indexing storage="local-heap">
         <indexed-entities>
             <indexed-entity>kc.HotRodGroupEntity</indexed-entity>
         </indexed-entities>
     </indexing>
-    <encoding media-type="application/x-protostream"/>
 </distributed-cache>

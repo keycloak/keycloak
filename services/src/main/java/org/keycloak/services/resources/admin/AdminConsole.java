@@ -19,9 +19,9 @@ package org.keycloak.services.resources.admin;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
-import org.jboss.resteasy.spi.HttpRequest;
-import org.jboss.resteasy.spi.HttpResponse;
-import javax.ws.rs.NotFoundException;
+import org.keycloak.http.HttpRequest;
+import org.keycloak.http.HttpResponse;
+import jakarta.ws.rs.NotFoundException;
 import org.keycloak.Config;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.Version;
@@ -47,12 +47,12 @@ import org.keycloak.theme.freemarker.FreeMarkerProvider;
 import org.keycloak.urls.UrlType;
 import org.keycloak.utils.MediaType;
 
-import javax.ws.rs.GET;
-import javax.ws.rs.OPTIONS;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.OPTIONS;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.Response;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -85,8 +85,8 @@ public class AdminConsole {
         this.session = session;
         this.realm = session.getContext().getRealm();
         this.clientConnection = session.getContext().getConnection();
-        this.request = session.getContext().getContextObject(HttpRequest.class);
-        this.response = session.getContext().getContextObject(HttpResponse.class);
+        this.request = session.getContext().getHttpRequest();
+        this.response = session.getContext().getHttpResponse();
     }
 
     public static class WhoAmI {
@@ -198,7 +198,7 @@ public class AdminConsole {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
-    public Response whoAmI() {
+    public Response whoAmI(@QueryParam("currentRealm") String currentRealm) {
         RealmManager realmManager = new RealmManager(session);
         AuthenticationManager.AuthResult authResult = new AppAuthManager.BearerTokenAuthenticator(session)
                 .setRealm(realm)
@@ -227,8 +227,11 @@ public class AdminConsole {
         boolean createRealm = false;
         if (realm.equals(masterRealm)) {
             logger.debug("setting up realm access for a master realm user");
-            createRealm = user.hasRole(masterRealm.getRole(AdminRoles.CREATE_REALM));
-            addMasterRealmAccess(user, realmAccess);
+            RoleModel createRealmRole = masterRealm.getRole(AdminRoles.CREATE_REALM);
+            if (createRealmRole != null) {
+                createRealm = user.hasRole(createRealmRole);
+            }
+            addMasterRealmAccess(user, currentRealm != null ? currentRealm : realm.getName(), realmAccess);
         } else {
             logger.debug("setting up realm access for a realm user");
             addRealmAccess(realm, user, realmAccess);
@@ -248,11 +251,9 @@ public class AdminConsole {
         getRealmAdminAccess(realm, realmAdminApp, user, realmAdminAccess);
     }
 
-    private void addMasterRealmAccess(UserModel user, Map<String, Set<String>> realmAdminAccess) {
-        session.realms().getRealmsStream().forEach(realm -> {
-            ClientModel realmAdminApp = realm.getMasterAdminClient();
-            getRealmAdminAccess(realm, realmAdminApp, user, realmAdminAccess);
-        });
+    private void addMasterRealmAccess(UserModel user, String currentRealm, Map<String, Set<String>> realmAdminAccess) {
+        final RealmModel realm = session.realms().getRealmByName(currentRealm);
+        getRealmAdminAccess(realm, realm.getMasterAdminClient(), user, realmAdminAccess);
     }
 
     private static <T> HashSet<T> union(Set<T> set1, Set<T> set2) {
@@ -344,6 +345,7 @@ public class AdminConsole {
             map.put("masterRealm", Config.getAdminRealm());
             map.put("resourceVersion", Version.RESOURCES_VERSION);
             map.put("loginRealm", realm.getName());
+            map.put("clientId", Constants.ADMIN_CONSOLE_CLIENT_ID);
             map.put("properties", theme.getProperties());
 
             FreeMarkerProvider freeMarkerUtil = session.getProvider(FreeMarkerProvider.class);

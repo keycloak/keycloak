@@ -39,11 +39,14 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import org.keycloak.Config;
 import org.keycloak.common.Profile;
+import org.keycloak.common.Profile.Feature;
 import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.provider.ProviderConfigProperty;
+import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.userprofile.validator.BlankAttributeValidator;
 import org.keycloak.userprofile.validator.BrokeringFederatedUsernameHasValueValidator;
@@ -55,7 +58,6 @@ import org.keycloak.userprofile.validator.RegistrationEmailAsUsernameEmailValueV
 import org.keycloak.userprofile.validator.RegistrationEmailAsUsernameUsernameValueValidator;
 import org.keycloak.userprofile.validator.RegistrationUsernameExistsValidator;
 import org.keycloak.userprofile.validator.UsernameHasValueValidator;
-import org.keycloak.userprofile.validator.UsernameIDNHomographValidator;
 import org.keycloak.userprofile.validator.UsernameMutationValidator;
 import org.keycloak.validate.ValidatorConfig;
 import org.keycloak.validate.validators.EmailValidator;
@@ -66,6 +68,9 @@ import org.keycloak.validate.validators.EmailValidator;
  * @author <a href="mailto:markus.till@bosch.io">Markus Till</a>
  */
 public abstract class AbstractUserProfileProvider<U extends UserProfileProvider> implements UserProfileProvider, UserProfileProviderFactory<U> {
+
+    public static final String CONFIG_ADMIN_READ_ONLY_ATTRIBUTES = "admin-read-only-attributes";
+    public static final String CONFIG_READ_ONLY_ATTRIBUTES = "read-only-attributes";
 
     private static boolean editUsernameCondition(AttributeContext c) {
         KeycloakSession session = c.getSession();
@@ -80,6 +85,8 @@ public abstract class AbstractUserProfileProvider<U extends UserProfileProvider>
             case ACCOUNT:
             case UPDATE_PROFILE:
                 return realm.isEditUsernameAllowed();
+            case UPDATE_EMAIL:
+                return realm.isRegistrationEmailAsUsername();
             case USER_API:
                 return true;
             default:
@@ -97,6 +104,9 @@ public abstract class AbstractUserProfileProvider<U extends UserProfileProvider>
             case IDP_REVIEW:
                 return !realm.isRegistrationEmailAsUsername();
             case UPDATE_PROFILE:
+                if (realm.isRegistrationEmailAsUsername()) {
+                    return false;
+                }
                 return realm.isEditUsernameAllowed();
             case UPDATE_EMAIL:
                 return false;
@@ -110,7 +120,21 @@ public abstract class AbstractUserProfileProvider<U extends UserProfileProvider>
     }
 
     private static boolean readEmailCondition(AttributeContext c) {
-        return !Profile.isFeatureEnabled(Profile.Feature.UPDATE_EMAIL) || c.getContext() != UPDATE_PROFILE;
+        UserProfileContext context = c.getContext();
+
+        if (UPDATE_PROFILE.equals(context)) {
+            if (Profile.isFeatureEnabled(Feature.UPDATE_EMAIL)) {
+                return false;
+            }
+
+            RealmModel realm = c.getSession().getContext().getRealm();
+
+            if (realm.isRegistrationEmailAsUsername() && !realm.isEditUsernameAllowed()) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     public static Pattern getRegexPatternString(String[] builtinReadOnlyAttributes) {
@@ -130,14 +154,19 @@ public abstract class AbstractUserProfileProvider<U extends UserProfileProvider>
         return null;
     }
 
+    private static boolean isInternationalizationEnabled(AttributeContext context) {
+        RealmModel realm = context.getSession().getContext().getRealm();
+        return realm.isInternationalizationEnabled();
+    }
+
     /**
      * There are the declarations for creating the built-in validations for read-only attributes. Regardless of the context where
      * user profiles are used. They are related to internal attributes with hard conditions on them in terms of management.
      */
-    private static String[] DEFAULT_READ_ONLY_ATTRIBUTES = { "KERBEROS_PRINCIPAL", "LDAP_ID", "LDAP_ENTRY_DN", "CREATED_TIMESTAMP", "createTimestamp", "modifyTimestamp", "userCertificate", "saml.persistent.name.id.for.*", "ENABLED", "EMAIL_VERIFIED", "disabledReason" };
-    private static String[] DEFAULT_ADMIN_READ_ONLY_ATTRIBUTES = { "KERBEROS_PRINCIPAL", "LDAP_ID", "LDAP_ENTRY_DN", "CREATED_TIMESTAMP", "createTimestamp", "modifyTimestamp" };
-    private static Pattern readOnlyAttributesPattern = getRegexPatternString(DEFAULT_READ_ONLY_ATTRIBUTES);
-    private static Pattern adminReadOnlyAttributesPattern = getRegexPatternString(DEFAULT_ADMIN_READ_ONLY_ATTRIBUTES);
+    private static final String[] DEFAULT_READ_ONLY_ATTRIBUTES = { "KERBEROS_PRINCIPAL", "LDAP_ID", "LDAP_ENTRY_DN", "CREATED_TIMESTAMP", "createTimestamp", "modifyTimestamp", "userCertificate", "saml.persistent.name.id.for.*", "ENABLED", "EMAIL_VERIFIED", "disabledReason" };
+    private static final String[] DEFAULT_ADMIN_READ_ONLY_ATTRIBUTES = { "KERBEROS_PRINCIPAL", "LDAP_ID", "LDAP_ENTRY_DN", "CREATED_TIMESTAMP", "createTimestamp", "modifyTimestamp" };
+    private static final Pattern readOnlyAttributesPattern = getRegexPatternString(DEFAULT_READ_ONLY_ATTRIBUTES);
+    private static final Pattern adminReadOnlyAttributesPattern = getRegexPatternString(DEFAULT_ADMIN_READ_ONLY_ATTRIBUTES);
 
     protected final Map<UserProfileContext, UserProfileMetadata> contextualMetadataRegistry;
     protected final KeycloakSession session;
@@ -176,7 +205,7 @@ public abstract class AbstractUserProfileProvider<U extends UserProfileProvider>
     public void init(Config.Scope config) {
         // make sure registry is clear in case of re-deploy
         contextualMetadataRegistry.clear();
-        Pattern pattern = getRegexPatternString(config.getArray("read-only-attributes"));
+        Pattern pattern = getRegexPatternString(config.getArray(CONFIG_READ_ONLY_ATTRIBUTES));
         AttributeValidatorMetadata readOnlyValidator = null;
 
         if (pattern != null) {
@@ -184,7 +213,7 @@ public abstract class AbstractUserProfileProvider<U extends UserProfileProvider>
         }
 
         addContextualProfileMetadata(configureUserProfile(createBrokeringProfile(readOnlyValidator)));
-        addContextualProfileMetadata(configureUserProfile(createDefaultProfile(ACCOUNT, readOnlyValidator)));
+        addContextualProfileMetadata(configureUserProfile(createAccountProfile(ACCOUNT, readOnlyValidator)));
         addContextualProfileMetadata(configureUserProfile(createDefaultProfile(ACCOUNT_OLD, readOnlyValidator)));
         addContextualProfileMetadata(configureUserProfile(createDefaultProfile(REGISTRATION_PROFILE, readOnlyValidator)));
         addContextualProfileMetadata(configureUserProfile(createDefaultProfile(UPDATE_PROFILE, readOnlyValidator)));
@@ -298,7 +327,7 @@ public abstract class AbstractUserProfileProvider<U extends UserProfileProvider>
     private UserProfileMetadata createRegistrationUserCreationProfile() {
         UserProfileMetadata metadata = new UserProfileMetadata(REGISTRATION_USER_CREATION);
 
-        metadata.addAttribute(UserModel.USERNAME, -2, new AttributeValidatorMetadata(RegistrationEmailAsUsernameUsernameValueValidator.ID), new AttributeValidatorMetadata(RegistrationUsernameExistsValidator.ID));
+        metadata.addAttribute(UserModel.USERNAME, -2, new AttributeValidatorMetadata(RegistrationEmailAsUsernameUsernameValueValidator.ID), new AttributeValidatorMetadata(RegistrationUsernameExistsValidator.ID), new AttributeValidatorMetadata(UsernameHasValueValidator.ID));
 
         metadata.addAttribute(UserModel.EMAIL, -1, new AttributeValidatorMetadata(RegistrationEmailAsUsernameEmailValueValidator.ID));
 
@@ -314,7 +343,6 @@ public abstract class AbstractUserProfileProvider<U extends UserProfileProvider>
                 AbstractUserProfileProvider::editUsernameCondition,
                 AbstractUserProfileProvider::readUsernameCondition,
                 new AttributeValidatorMetadata(UsernameHasValueValidator.ID),
-                new AttributeValidatorMetadata(UsernameIDNHomographValidator.ID),
                 new AttributeValidatorMetadata(DuplicateUsernameValidator.ID),
                 new AttributeValidatorMetadata(UsernameMutationValidator.ID)).setAttributeDisplayName("${username}");
 
@@ -364,8 +392,13 @@ public abstract class AbstractUserProfileProvider<U extends UserProfileProvider>
     }
 
     private UserProfileMetadata createUserResourceValidation(Config.Scope config) {
-        Pattern p = getRegexPatternString(config.getArray("admin-read-only-attributes"));
+        Pattern p = getRegexPatternString(config.getArray(CONFIG_ADMIN_READ_ONLY_ATTRIBUTES));
         UserProfileMetadata metadata = new UserProfileMetadata(USER_API);
+
+
+        metadata.addAttribute(UserModel.USERNAME, -2, new AttributeValidatorMetadata(UsernameHasValueValidator.ID));
+        metadata.addAttribute(UserModel.EMAIL, -1, new AttributeValidatorMetadata(EmailValidator.ID, ValidatorConfig.builder().config(EmailValidator.IGNORE_EMPTY_VALUE, true).build()));
+
         List<AttributeValidatorMetadata> readonlyValidators = new ArrayList<>();
 
         if (p != null) {
@@ -373,9 +406,38 @@ public abstract class AbstractUserProfileProvider<U extends UserProfileProvider>
         }
 
         readonlyValidators.add(createReadOnlyAttributeUnchangedValidator(adminReadOnlyAttributesPattern));
-
         metadata.addAttribute(READ_ONLY_ATTRIBUTE_KEY, 1000, readonlyValidators);
 
+        metadata.addAttribute(UserModel.LOCALE, -1, AbstractUserProfileProvider::isInternationalizationEnabled, AbstractUserProfileProvider::isInternationalizationEnabled)
+                .setRequired(AttributeMetadata.ALWAYS_FALSE);
+
         return metadata;
+    }
+
+    @Override
+    public List<ProviderConfigProperty> getConfigMetadata() {
+        return ProviderConfigurationBuilder.create()
+                .property()
+                .name(CONFIG_READ_ONLY_ATTRIBUTES)
+                .type(ProviderConfigProperty.MULTIVALUED_STRING_TYPE)
+                .helpText("Array of regular expressions to identify fields that should be treated read-only so users can't change them.")
+                .add()
+
+                .property()
+                .name(CONFIG_ADMIN_READ_ONLY_ATTRIBUTES)
+                .type(ProviderConfigProperty.MULTIVALUED_STRING_TYPE)
+                .helpText("Array of regular expressions to identify fields that should be treated read-only so administrators can't change them.")
+                .add()
+
+                .build();
+    }
+
+    private UserProfileMetadata createAccountProfile(UserProfileContext context, AttributeValidatorMetadata readOnlyValidator) {
+        UserProfileMetadata defaultProfile = createDefaultProfile(context, readOnlyValidator);
+
+        defaultProfile.addAttribute(UserModel.LOCALE, -1, AbstractUserProfileProvider::isInternationalizationEnabled, AbstractUserProfileProvider::isInternationalizationEnabled)
+                .setRequired(AttributeMetadata.ALWAYS_FALSE);
+
+        return defaultProfile;
     }
 }

@@ -34,6 +34,7 @@ import org.keycloak.testsuite.util.WaitUtils;
 import org.openqa.selenium.WebDriver;
 
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.keycloak.authentication.authenticators.x509.X509AuthenticatorConfigModel.IdentityMapperType.USERNAME_EMAIL;
 import static org.keycloak.authentication.authenticators.x509.X509AuthenticatorConfigModel.MappingSourceType.SUBJECTDN_EMAIL;
 
@@ -174,6 +175,21 @@ public class X509BrowserCRLTest extends AbstractX509AuthenticationTest {
         assertLoginFailedDueRevokedCertificate();
     }
 
+    @Test
+    public void loginWithMultipleRevocationListsUsingInvalidCert() {
+        X509AuthenticatorConfigModel config =
+                new X509AuthenticatorConfigModel()
+                        .setCRLEnabled(true)
+                        .setCRLRelativePath(CRLRule.CRL_RESPONDER_ORIGIN + "/" + INVALID_CRL_PATH)
+                        .setConfirmationPageAllowed(true)
+                        .setMappingSourceType(SUBJECTDN_EMAIL)
+                        .setUserIdentityMapperType(USERNAME_EMAIL);
+        AuthenticatorConfigRepresentation cfg = newConfig("x509-browser-config", config.getConfig());
+        String cfgId = createConfig(browserExecution.getId(), cfg);
+        Assert.assertNotNull(cfgId);
+
+        x509BrowserLogin(config, userId, "test-user@localhost", "test-user@localhost");
+    }
 
     @Test
     public void loginFailedWithRevocationListFromDistributionPoints() {
@@ -204,7 +220,7 @@ public class X509BrowserCRLTest extends AbstractX509AuthenticationTest {
         // Verify there is an error message
         Assert.assertNotNull(loginPage.getError());
 
-        Assert.assertThat(loginPage.getError(), containsString(expectedError));
+        assertThat(loginPage.getError(), containsString(expectedError));
 
         // Continue with form based login
         loginPage.login("test-user@localhost", "password");

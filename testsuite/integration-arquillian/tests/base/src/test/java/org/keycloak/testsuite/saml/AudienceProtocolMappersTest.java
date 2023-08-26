@@ -20,7 +20,7 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.greaterThan;
 import org.junit.After;
@@ -36,6 +36,8 @@ import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.saml.common.constants.JBossSAMLURIConstants;
 import org.keycloak.saml.processing.core.saml.v2.common.SAMLDocumentHolder;
 import org.keycloak.testsuite.admin.ApiUtil;
+
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_PORT;
 import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_SCHEME;
 import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_SSL_REQUIRED;
@@ -77,9 +79,9 @@ public class AudienceProtocolMappersTest extends AbstractSamlTest {
           .getSamlResponse(SamlClient.Binding.POST);
 
         Assert.assertNotNull(document.getSamlObject());
-        Assert.assertThat(document.getSamlObject(), Matchers.isSamlResponse(JBossSAMLURIConstants.STATUS_SUCCESS));
+        assertThat(document.getSamlObject(), Matchers.isSamlResponse(JBossSAMLURIConstants.STATUS_SUCCESS));
         Assert.assertNotNull(((ResponseType) document.getSamlObject()).getAssertions());
-        Assert.assertThat(((ResponseType) document.getSamlObject()).getAssertions().size(), greaterThan(0));
+        assertThat(((ResponseType) document.getSamlObject()).getAssertions().size(), greaterThan(0));
         Assert.assertNotNull(((ResponseType) document.getSamlObject()).getAssertions().get(0));
         Assert.assertNotNull(((ResponseType) document.getSamlObject()).getAssertions().get(0).getAssertion());
         AudienceRestrictionType audience = ((ResponseType) document.getSamlObject())
@@ -91,7 +93,7 @@ public class AudienceProtocolMappersTest extends AbstractSamlTest {
         Assert.assertNotNull(audience);
         Assert.assertNotNull(audience.getAudience());
         List<String> values = audience.getAudience().stream().map(uri -> uri.toString()).collect(Collectors.toList());
-        Assert.assertThat(values, containsInAnyOrder(audiences));
+        assertThat(values, containsInAnyOrder(audiences));
     }
 
     @Test
@@ -167,7 +169,7 @@ public class AudienceProtocolMappersTest extends AbstractSamlTest {
             String employeeId = adminClient.realm(REALM_NAME).clients().findByClientId("http://localhost:8280/employee/").get(0).getId();
             Assert.assertNotNull(employeeId);
             List<RoleRepresentation> availables = adminClient.realm(REALM_NAME).clients().get(employee2Id).getScopeMappings().clientLevel(employeeId).listAvailable();
-            Assert.assertThat(availables.size(), greaterThan(0));
+            assertThat(availables.size(), greaterThan(0));
             // assign scope to only employee2 (employee-role-mapping should not be there)
             try (RoleScopeUpdater ru = cau.clientRoleScope(employeeId)
                     .add(availables.get(0))
@@ -195,7 +197,7 @@ public class AudienceProtocolMappersTest extends AbstractSamlTest {
             String employeeId = adminClient.realm(REALM_NAME).clients().findByClientId("http://localhost:8280/employee/").get(0).getId();
             Assert.assertNotNull(employeeId);
             List<RoleRepresentation> availables = adminClient.realm(REALM_NAME).clientScopes().get(clientScopeId).getScopeMappings().clientLevel(employeeId).listAvailable();
-            Assert.assertThat(availables.size(), greaterThan(0));
+            assertThat(availables.size(), greaterThan(0));
             adminClient.realm(REALM_NAME).clientScopes().get(clientScopeId).getScopeMappings().clientLevel(employeeId).add(availables);
 
             // remove full scope and add the client scope

@@ -31,14 +31,16 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.pages.ErrorPage;
-import org.keycloak.testsuite.pages.PageUtils;
+import org.keycloak.testsuite.pages.InstalledAppRedirectPage;
+import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
 import org.keycloak.testsuite.util.ClientManager;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.openqa.selenium.By;
 
-import javax.ws.rs.core.UriBuilder;
+import jakarta.ws.rs.core.UriBuilder;
 import java.io.IOException;
 import java.net.URI;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -57,6 +59,9 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
 
     @Page
     private ErrorPage errorPage;
+
+    @Page
+    private InstalledAppRedirectPage installedAppPage;
 
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
@@ -81,6 +86,7 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
         Assert.assertNotNull(response.getCode());
         assertEquals("OpenIdConnect.AuthenticationProperties=2302984sdlk", response.getState());
         Assert.assertNull(response.getError());
+        assertEquals(oauth.AUTH_SERVER_ROOT + "/realms/test", response.getIssuer());
 
         String codeId = events.expectLogin().assertEvent().getDetails().get(Details.CODE_ID);
     }
@@ -92,14 +98,28 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
 
         oauth.doLogin("test-user@localhost", "password");
 
-        String title = PageUtils.getPageTitle(driver);
-        Assert.assertEquals("Success code", title);
-
-        driver.findElement(By.id(OAuth2Constants.CODE)).getAttribute("value");
+        installedAppPage.getSuccessCode();
 
         events.expectLogin().detail(Details.REDIRECT_URI, oauth.AUTH_SERVER_ROOT + "/realms/test/protocol/openid-connect/oauth/oob").assertEvent().getDetails().get(Details.CODE_ID);
 
         ClientManager.realm(adminClient.realm("test")).clientId("test-app").removeRedirectUris(Constants.INSTALLED_APP_URN);
+    }
+
+    @Test
+    public void authorizationRequestInstalledAppErrors() throws IOException {
+        String error = "<p><a href=\"javascript&amp;colon;alert(document.domain);\">Back to application</a></p>";
+        installedAppPage.open("test", null, error, null);
+
+        // Assert text escaped and not "a" link present
+        installedAppPage.assertLinkBackToApplicationNotPresent();
+        Assert.assertEquals("Error code: <p>Back to application</p>", installedAppPage.getPageTitleText());
+
+        error = "<p><a href=\"http://foo.com\">Back to application</a></p>";
+        installedAppPage.open("test", null, error, null);
+
+        // In this case, link is not sanitized as it is valid link, however it is escaped and not shown as a link
+        installedAppPage.assertLinkBackToApplicationNotPresent();
+        Assert.assertEquals("Error code: <p><a href=\"http://foo.com\" rel=\"nofollow\">Back to application</a></p>", installedAppPage.getPageTitleText());
     }
 
     @Test
@@ -141,6 +161,7 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
         Assert.assertNotNull(response.getCode());
         Assert.assertNull(response.getState());
         Assert.assertNull(response.getError());
+        assertEquals(oauth.AUTH_SERVER_ROOT + "/realms/test", response.getIssuer());
 
         String codeId = events.expectLogin().assertEvent().getDetails().get(Details.CODE_ID);
     }
@@ -154,6 +175,7 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
         OAuthClient.AuthorizationEndpointResponse errorResponse = new OAuthClient.AuthorizationEndpointResponse(oauth);
         assertTrue(errorResponse.isRedirected());
         Assert.assertEquals(errorResponse.getError(), OAuthErrorException.UNSUPPORTED_RESPONSE_TYPE);
+        Assert.assertEquals(oauth.AUTH_SERVER_ROOT + "/realms/test", errorResponse.getIssuer());
 
         events.expectLogin().error(Errors.INVALID_REQUEST).user((String) null).session((String) null).clearDetails().detail(Details.RESPONSE_TYPE, "tokenn").assertEvent();
     }
@@ -210,6 +232,22 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
         String codeId = events.expectLogin().assertEvent().getDetails().get(Details.CODE_ID);
     }
 
+    @Test
+    public void authorizationRequestFormPostResponseModeInvalidRedirectUri() throws IOException {
+        try (var c = ClientAttributeUpdater.forClient(adminClient, "test", "test-app")
+                .setRedirectUris(Collections.singletonList("*"))
+                .update()) {
+            oauth.responseMode(OIDCResponseMode.FORM_POST.value());
+            oauth.responseType(OAuth2Constants.CODE);
+            oauth.redirectUri("javascript:alert('XSS')");
+            oauth.openLoginForm();
+
+            errorPage.assertCurrent();
+            assertEquals("Invalid parameter: redirect_uri", errorPage.getError());
+
+            events.expectLogin().error(Errors.INVALID_REDIRECT_URI).user((String) null).session((String) null).clearDetails().assertEvent();
+        }
+    }
 
     @Test
     public void authorizationRequestFormPostResponseModeWithCustomState() throws IOException {
@@ -249,6 +287,7 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
 
         Assert.assertNotNull(response.getCode());
         Assert.assertNotNull(response.getState());
+        Assert.assertEquals(oauth.AUTH_SERVER_ROOT + "/realms/test", response.getIssuer());
 
         currentUri = new URI(driver.getCurrentUrl());
         Assert.assertNotNull(currentUri.getRawQuery());

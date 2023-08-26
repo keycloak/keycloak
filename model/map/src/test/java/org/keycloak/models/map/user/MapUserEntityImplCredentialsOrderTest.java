@@ -41,7 +41,7 @@ public class MapUserEntityImplCredentialsOrderTest {
         user = new MapUserEntityImpl(CLONER);
         
         for (int i = 1; i <= 5; i++) {
-            MapUserCredentialEntity credentialModel = new MapUserCredentialEntityImpl();
+            MapUserCredentialEntity credentialModel = DeepCloner.DUMB_CLONER.newInstance(MapUserCredentialEntity.class);
             credentialModel.setId(Integer.toString(i));
 
             user.addCredential(credentialModel);

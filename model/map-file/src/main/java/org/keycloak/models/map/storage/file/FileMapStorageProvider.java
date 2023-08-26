@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Red Hat, Inc. and/or its affiliates
+ * Copyright 2023 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,10 +16,21 @@
  */
 package org.keycloak.models.map.storage.file;
 
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.map.common.AbstractEntity;
+import org.keycloak.models.map.common.ExpirableEntity;
+import org.keycloak.models.map.common.SessionAttributesUtils;
+import org.keycloak.models.map.common.UpdatableEntity;
 import org.keycloak.models.map.storage.MapStorage;
 import org.keycloak.models.map.storage.MapStorageProvider;
 import org.keycloak.models.map.storage.MapStorageProviderFactory;
+import org.keycloak.models.map.storage.ModelEntityUtil;
+import org.keycloak.models.map.storage.chm.ConcurrentHashMapStorage;
+
+import java.util.function.Function;
+
+import static org.keycloak.models.map.storage.ModelEntityUtil.getModelName;
+import static org.keycloak.models.map.storage.file.FileMapStorageProviderFactory.UNIQUE_HUMAN_READABLE_NAME_FIELD;
 
 /**
  * File-based {@link MapStorageProvider} implementation.
@@ -28,12 +39,33 @@ import org.keycloak.models.map.storage.MapStorageProviderFactory;
  */
 public class FileMapStorageProvider implements MapStorageProvider {
 
-    public FileMapStorageProvider() {
+    private final KeycloakSession session;
+    private final FileMapStorageProviderFactory factory;
+    private final int factoryId;
+
+    public FileMapStorageProvider(KeycloakSession session, FileMapStorageProviderFactory factory, int factoryId) {
+        this.session = session;
+        this.factory = factory;
+        this.factoryId = factoryId;
     }
 
     @Override
-    public <V extends AbstractEntity, M> MapStorage<V, M> getStorage(Class<M> modelType, MapStorageProviderFactory.Flag... flags) {
-        return null;
+    @SuppressWarnings("unchecked")
+    public <V extends AbstractEntity, M> MapStorage<V, M> getMapStorage(Class<M> modelType, MapStorageProviderFactory.Flag... flags) {
+        return (MapStorage<V, M>) SessionAttributesUtils.createMapStorageIfAbsent(session, getClass(), modelType, factoryId, () -> createFileMapStorage(modelType));
+    }
+
+    private <V extends AbstractEntity & UpdatableEntity, M> ConcurrentHashMapStorage<?, V, M, FileCrudOperations<V, M>> createFileMapStorage(Class<M> modelType) {
+        String areaName = getModelName(modelType, modelType.getSimpleName());
+        final Class<V> et = ModelEntityUtil.getEntityType(modelType);
+        Function<V, String[]> uniqueHumanReadableField = (Function<V, String[]>) UNIQUE_HUMAN_READABLE_NAME_FIELD.get(et);
+
+        ConcurrentHashMapStorage mapStorage = FileMapStorage.newInstance(et,
+                factory.getDataDirectoryFunc(areaName),
+                ((uniqueHumanReadableField == null) ? v -> v.getId() == null ? null : new String[]{v.getId()} : uniqueHumanReadableField),
+                ExpirableEntity.class.isAssignableFrom(et));
+        session.getTransactionManager().enlist(mapStorage);
+        return mapStorage;
     }
 
     @Override

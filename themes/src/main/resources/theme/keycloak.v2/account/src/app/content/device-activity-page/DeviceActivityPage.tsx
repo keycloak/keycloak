@@ -116,7 +116,7 @@ export class DeviceActivityPage extends React.Component<DeviceActivityPageProps,
     }
 
     private signOutSession = (device: Device, session: Session) => {
-      this.context!.doDelete("/sessions/" + session.id)
+      this.context!.doDelete("/sessions/" + encodeURIComponent(session.id))
           .then (() => {
             this.fetchDevices();
             ContentAlert.success('signedOutSession', [session.browser, device.os]);

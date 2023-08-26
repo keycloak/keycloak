@@ -21,6 +21,7 @@ import org.jboss.logging.Logger;
 import org.keycloak.common.enums.SslRequired;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.component.ComponentModel;
+import org.keycloak.deployment.DeployedConfigurationsManager;
 import org.keycloak.exportimport.ExportAdapter;
 import org.keycloak.exportimport.ExportOptions;
 import org.keycloak.exportimport.util.ExportUtils;
@@ -100,7 +101,7 @@ import org.keycloak.userprofile.UserProfileProvider;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.validation.ValidationUtil;
 
-import javax.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.MediaType;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -114,6 +115,7 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import static org.keycloak.models.utils.DefaultRequiredActions.getDefaultRequiredActionCaseInsensitively;
 import static org.keycloak.models.utils.RepresentationToModel.createCredentials;
 import static org.keycloak.models.utils.RepresentationToModel.createFederatedIdentities;
 import static org.keycloak.models.utils.RepresentationToModel.createGroups;
@@ -275,6 +277,12 @@ public class LegacyExportImportManager implements ExportImportManager {
         if (rep.getAccountTheme() != null) newRealm.setAccountTheme(rep.getAccountTheme());
         if (rep.getAdminTheme() != null) newRealm.setAdminTheme(rep.getAdminTheme());
         if (rep.getEmailTheme() != null) newRealm.setEmailTheme(rep.getEmailTheme());
+        if (rep.getLocalizationTexts() != null) {
+            Map<String, Map<String, String>> localizationTexts = rep.getLocalizationTexts();
+            for (Map.Entry<String, Map<String, String>> entry: localizationTexts.entrySet()) {
+                newRealm.createOrUpdateRealmLocalizationTexts(entry.getKey(), entry.getValue());
+            }
+        }
 
         // todo remove this stuff as its all deprecated
         if (rep.getRequiredCredentials() != null) {
@@ -300,7 +308,7 @@ public class LegacyExportImportManager implements ExportImportManager {
 
         updateParSettings(rep, newRealm);
 
-        Map<String, String> mappedFlows = importAuthenticationFlows(newRealm, rep);
+        Map<String, String> mappedFlows = importAuthenticationFlows(session, newRealm, rep);
         if (rep.getRequiredActions() != null) {
             for (RequiredActionProviderRepresentation action : rep.getRequiredActions()) {
                 RequiredActionProviderModel model = toModel(action);
@@ -869,11 +877,7 @@ public class LegacyExportImportManager implements ExportImportManager {
         }
         if (userRep.getRequiredActions() != null) {
             for (String requiredAction : userRep.getRequiredActions()) {
-                try {
-                    user.addRequiredAction(UserModel.RequiredAction.valueOf(requiredAction.toUpperCase()));
-                } catch (IllegalArgumentException iae) {
-                    user.addRequiredAction(requiredAction);
-                }
+                user.addRequiredAction(getDefaultRequiredActionCaseInsensitively(requiredAction));
             }
         }
         createCredentials(userRep, session, newRealm, user, false);
@@ -1254,7 +1258,7 @@ public class LegacyExportImportManager implements ExportImportManager {
 
         return webAuthnPolicy;
     }
-    public static Map<String, String> importAuthenticationFlows(RealmModel newRealm, RealmRepresentation rep) {
+    public static Map<String, String> importAuthenticationFlows(KeycloakSession session, RealmModel newRealm, RealmRepresentation rep) {
         Map<String, String> mappedFlows = new HashMap<>();
         if (rep.getAuthenticationFlows() == null) {
             // assume this is an old version being imported
@@ -1274,9 +1278,7 @@ public class LegacyExportImportManager implements ExportImportManager {
             if (rep.getAuthenticationFlows() != null) {
                 for (AuthenticationFlowRepresentation flowRep : rep.getAuthenticationFlows()) {
                     AuthenticationFlowModel model = RepresentationToModel.toModel(flowRep);
-                    // make sure new id is generated for new AuthenticationFlowModel instance
                     String previousId = model.getId();
-                    model.setId(null);
                     model = newRealm.addAuthenticationFlow(model);
                     // store the mapped ids so that clients can reference the correct flow when importing the authenticationFlowBindingOverrides
                     mappedFlows.put(previousId, model.getId());
@@ -1284,7 +1286,7 @@ public class LegacyExportImportManager implements ExportImportManager {
                 for (AuthenticationFlowRepresentation flowRep : rep.getAuthenticationFlows()) {
                     AuthenticationFlowModel model = newRealm.getFlowByAlias(flowRep.getAlias());
                     for (AuthenticationExecutionExportRepresentation exeRep : flowRep.getAuthenticationExecutions()) {
-                        AuthenticationExecutionModel execution = toModel(newRealm, model, exeRep);
+                        AuthenticationExecutionModel execution = toModel(session, newRealm, model, exeRep);
                         newRealm.addAuthenticatorExecution(execution);
                     }
                 }
@@ -1370,10 +1372,10 @@ public class LegacyExportImportManager implements ExportImportManager {
         return mappedFlows;
     }
 
-    private static AuthenticationExecutionModel toModel(RealmModel realm, AuthenticationFlowModel parentFlow, AuthenticationExecutionExportRepresentation rep) {
+    private static AuthenticationExecutionModel toModel(KeycloakSession session, RealmModel realm, AuthenticationFlowModel parentFlow, AuthenticationExecutionExportRepresentation rep) {
         AuthenticationExecutionModel model = new AuthenticationExecutionModel();
         if (rep.getAuthenticatorConfig() != null) {
-            AuthenticatorConfigModel config = realm.getAuthenticatorConfigByAlias(rep.getAuthenticatorConfig());
+            AuthenticatorConfigModel config = new DeployedConfigurationsManager(session).getAuthenticatorConfigByAlias(realm, rep.getAuthenticatorConfig());
             model.setAuthenticatorConfig(config.getId());
         }
         model.setAuthenticator(rep.getAuthenticator());
@@ -1431,9 +1433,9 @@ public class LegacyExportImportManager implements ExportImportManager {
         model.setPriority(rep.getPriority());
         model.setDefaultAction(rep.isDefaultAction());
         model.setEnabled(rep.isEnabled());
-        model.setProviderId(rep.getProviderId());
+        model.setProviderId(getDefaultRequiredActionCaseInsensitively(rep.getProviderId()));
         model.setName(rep.getName());
-        model.setAlias(rep.getAlias());
+        model.setAlias(getDefaultRequiredActionCaseInsensitively(rep.getAlias()));
         return model;
     }
 

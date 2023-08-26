@@ -16,6 +16,9 @@
  */
 package org.keycloak.services.resources.admin;
 
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
+import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.keycloak.common.Profile;
@@ -32,16 +35,17 @@ import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.saml.common.util.StringUtil;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.ErrorResponseException;
+import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.GET;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.PUT;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 
 import java.util.Optional;
 import java.util.regex.Pattern;
@@ -54,6 +58,7 @@ import java.util.regex.Pattern;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
+@Extension(name = KeycloakOpenAPI.Profiles.ADMIN, value = "")
 public class ClientScopeResource {
     protected static final Logger logger = Logger.getLogger(ClientScopeResource.class);
     protected RealmModel realm;
@@ -99,6 +104,8 @@ public class ClientScopeResource {
      */
     @PUT
     @Consumes(MediaType.APPLICATION_JSON)
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.CLIENT_SCOPES)
+    @Operation(summary = "Update the client scope")
     public Response update(final ClientScopeRepresentation rep) {
         auth.clients().requireManageClientScopes();
         validateDynamicScopeUpdate(rep);
@@ -111,7 +118,7 @@ public class ClientScopeResource {
             }
             return Response.noContent().build();
         } catch (ModelDuplicateException e) {
-            return ErrorResponse.exists("Client Scope " + rep.getName() + " already exists");
+            throw ErrorResponse.exists("Client Scope " + rep.getName() + " already exists");
         }
     }
 
@@ -124,6 +131,8 @@ public class ClientScopeResource {
     @GET
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.CLIENT_SCOPES)
+    @Operation(summary = "Get representation of the client scope")
     public ClientScopeRepresentation getClientScope() {
         auth.clients().requireView(clientScope);
 
@@ -136,6 +145,8 @@ public class ClientScopeResource {
      */
     @DELETE
     @NoCache
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.CLIENT_SCOPES)
+    @Operation(summary = "Delete the client scope")
     public Response deleteClientScope() {
         auth.clients().requireManage(clientScope);
 
@@ -144,7 +155,7 @@ public class ClientScopeResource {
             adminEvent.operation(OperationType.DELETE).resourcePath(session.getContext().getUri()).success();
             return Response.noContent().build();
         } catch (ModelException me) {
-            return ErrorResponse.error(me.getMessage(), Response.Status.BAD_REQUEST);
+            throw ErrorResponse.error(me.getMessage(), Response.Status.BAD_REQUEST);
         }
     }
 
@@ -163,24 +174,24 @@ public class ClientScopeResource {
         if (Profile.isFeatureEnabled(Profile.Feature.DYNAMIC_SCOPES)) {
             // if the scope is dynamic but the regexp is empty, it's not considered valid
             if (isDynamic && StringUtil.isNullOrEmpty(regexp)) {
-                throw new ErrorResponseException(ErrorResponse.error("Dynamic scope regexp must not be null or empty", Response.Status.BAD_REQUEST));
+                throw ErrorResponse.error("Dynamic scope regexp must not be null or empty", Response.Status.BAD_REQUEST);
             }
             // Always validate the dynamic scope regexp to avoid inserting a wrong value even when the feature is disabled
             if (!StringUtil.isNullOrEmpty(regexp) && !dynamicScreenPattern.matcher(regexp).matches()) {
-                throw new ErrorResponseException(ErrorResponse.error(String.format("Invalid format for the Dynamic Scope regexp %1s", regexp), Response.Status.BAD_REQUEST));
+                throw ErrorResponse.error(String.format("Invalid format for the Dynamic Scope regexp %1s", regexp), Response.Status.BAD_REQUEST);
             }
         } else {
             // if the value is not null or empty we won't accept the request as the feature is disabled
             Optional.ofNullable(regexp).ifPresent(s -> {
                 if (!s.isEmpty()) {
-                    throw new ErrorResponseException(ErrorResponse.error(String.format("Unexpected value \"%1s\" for attribute %2s in ClientScope",
-                            regexp, ClientScopeModel.DYNAMIC_SCOPE_REGEXP), Response.Status.BAD_REQUEST));
+                    throw ErrorResponse.error(String.format("Unexpected value \"%1s\" for attribute %2s in ClientScope",
+                            regexp, ClientScopeModel.DYNAMIC_SCOPE_REGEXP), Response.Status.BAD_REQUEST);
                 }
             });
             // If isDynamic is true, we won't accept the request as the feature is disabled
             if (isDynamic) {
-                throw new ErrorResponseException(ErrorResponse.error(String.format("Unexpected value \"%1s\" for attribute %2s in ClientScope",
-                        isDynamic, ClientScopeModel.IS_DYNAMIC_SCOPE), Response.Status.BAD_REQUEST));
+                throw ErrorResponse.error(String.format("Unexpected value \"%1s\" for attribute %2s in ClientScope",
+                        isDynamic, ClientScopeModel.IS_DYNAMIC_SCOPE), Response.Status.BAD_REQUEST);
             }
         }
     }
@@ -188,7 +199,7 @@ public class ClientScopeResource {
     public static void validateClientScopeName(String name) throws ErrorResponseException {
         if (!scopeNamePattern.matcher(name).matches()) {
             String message = String.format("Unexpected name \"%s\" for ClientScope", name);
-            throw new ErrorResponseException(ErrorResponse.error(message, Response.Status.BAD_REQUEST));
+            throw ErrorResponse.error(message, Response.Status.BAD_REQUEST);
         }
     }
 
@@ -209,8 +220,8 @@ public class ClientScopeResource {
                     .findAny();
             // if it's present, it means that a client has this scope assigned as a default scope, so this scope can't be made dynamic
             if (scopeModelOpt.isPresent()) {
-                throw new ErrorResponseException(ErrorResponse.error("This Client Scope can't be made dynamic as it's assigned to a Client as a Default Scope",
-                        Response.Status.BAD_REQUEST));
+                throw ErrorResponse.error("This Client Scope can't be made dynamic as it's assigned to a Client as a Default Scope",
+                        Response.Status.BAD_REQUEST);
             }
         }
         // after the previous validation, run the usual Dynamic Scope validations.

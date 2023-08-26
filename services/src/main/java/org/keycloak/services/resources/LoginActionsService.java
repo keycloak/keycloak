@@ -17,7 +17,13 @@
 package org.keycloak.services.resources;
 
 import org.jboss.logging.Logger;
-import org.jboss.resteasy.spi.HttpRequest;
+import org.keycloak.common.Profile;
+import org.keycloak.common.util.ResponseSessionTask;
+import org.keycloak.forms.login.LoginFormsProvider;
+import org.keycloak.forms.login.MessageType;
+import org.keycloak.forms.login.freemarker.DetachedInfoStateChecker;
+import org.keycloak.forms.login.freemarker.DetachedInfoStateCookie;
+import org.keycloak.http.HttpRequest;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.TokenVerifier;
 import org.keycloak.authentication.AuthenticationFlowException;
@@ -29,7 +35,6 @@ import org.keycloak.authentication.RequiredActionFactory;
 import org.keycloak.authentication.RequiredActionProvider;
 import org.keycloak.authentication.actiontoken.ActionTokenContext;
 import org.keycloak.authentication.actiontoken.ActionTokenHandler;
-import org.keycloak.common.util.Resteasy;
 import org.keycloak.models.DefaultActionTokenKey;
 import org.keycloak.authentication.actiontoken.ExplainedTokenVerificationException;
 import org.keycloak.authentication.actiontoken.resetcred.ResetCredentialsActionTokenHandler;
@@ -86,23 +91,24 @@ import org.keycloak.sessions.AuthenticationSessionCompoundId;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
 
-import javax.ws.rs.Consumes;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriBuilder;
-import javax.ws.rs.core.UriBuilderException;
-import javax.ws.rs.core.UriInfo;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.WebApplicationException;
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.UriBuilder;
+import jakarta.ws.rs.core.UriBuilderException;
+import jakarta.ws.rs.core.UriInfo;
 import java.net.URI;
 import java.util.Map;
 
 import static org.keycloak.authentication.actiontoken.DefaultActionToken.ACTION_TOKEN_BASIC_CHECKS;
+import static org.keycloak.models.utils.DefaultRequiredActions.getDefaultRequiredActionCaseInsensitively;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -119,6 +125,8 @@ public class LoginActionsService {
     public static final String POST_BROKER_LOGIN_PATH = "post-broker-login";
 
     public static final String RESTART_PATH = "restart";
+
+    public static final String DETACHED_INFO_PATH = "detached-info";
 
     public static final String FORWARDED_ERROR_MESSAGE_NOTE = "forwardedErrorMessage";
 
@@ -177,8 +185,8 @@ public class LoginActionsService {
         this.clientConnection = session.getContext().getConnection();
         this.realm = session.getContext().getRealm();
         this.event = event;
-        CacheControlUtil.noBackButtonCacheControlHeader();
-        this.request = session.getContext().getContextObject(HttpRequest.class);
+        CacheControlUtil.noBackButtonCacheControlHeader(session);
+        this.request = session.getContext().getHttpRequest();
         this.headers = session.getContext().getRequestHeaders();
     }
 
@@ -241,6 +249,50 @@ public class LoginActionsService {
         return Response.status(Response.Status.FOUND).location(redirectUri).build();
     }
 
+    /**
+     * protocol independent "detached info" page. Shown when locale is changed by user on info/error page
+     * after authenticationSession was already removed.
+     *
+     * @return
+     */
+    @Path(DETACHED_INFO_PATH)
+    @GET
+    public Response detachedInfo(@QueryParam(DetachedInfoStateChecker.STATE_CHECKER_PARAM) String stateCheckerParam) {
+        DetachedInfoStateCookie cookie;
+        try {
+            cookie = new DetachedInfoStateChecker(session, realm).verifyStateCheckerParameter(stateCheckerParam);
+            logger.tracef("Detached info endpoint invoked and cookie successfully verified. StateCheckerParam=%s, StateCookie=%s", stateCheckerParam, cookie);
+        } catch (VerificationException ve) {
+            logger.warn(ve.getMessage());
+            return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.EXPIRED_ACTION_TOKEN_NO_SESSION);
+        }
+
+        processLocaleParam(null);
+
+        boolean skipLink = true;
+        if (cookie.getClientUuid() != null) {
+            ClientModel client = session.clients().getClientById(realm, cookie.getClientUuid());
+            if (client != null) {
+                session.getContext().setClient(client);
+                skipLink = client.equals(SystemClientUtil.getSystemClient(realm));
+            }
+        }
+
+        MessageType type = Enum.valueOf(MessageType.class, cookie.getMessageType());
+        Response.Status statusObj = cookie.getStatus() == null ? Response.Status.BAD_REQUEST : Response.Status.fromStatusCode(cookie.getStatus());
+        Object[] paramsAsObject = cookie.getMessageParameters() == null ? null : cookie.getMessageParameters().toArray();
+
+        LoginFormsProvider loginForm = session.getProvider(LoginFormsProvider.class)
+                .setDetachedAuthSession()
+                .setMessage(type, cookie.getMessageKey(), paramsAsObject);
+
+        if (skipLink) {
+            loginForm.setAttribute(Constants.SKIP_LINK, true);
+        }
+
+        return type == MessageType.ERROR ? loginForm.createErrorPage(statusObj) : loginForm.createInfoPage();
+    }
+
 
     /**
      * protocol independent login page entry point
@@ -255,6 +307,25 @@ public class LoginActionsService {
                                  @QueryParam(Constants.EXECUTION) String execution,
                                  @QueryParam(Constants.CLIENT_ID) String clientId,
                                  @QueryParam(Constants.TAB_ID) String tabId) {
+        if (Profile.isFeatureEnabled(Profile.Feature.MAP_STORAGE)) {
+            return KeycloakModelUtils.runJobInRetriableTransaction(session.getKeycloakSessionFactory(), new ResponseSessionTask(session) {
+                @Override
+                public Response runInternal(KeycloakSession session) {
+                    // create another instance of the endpoint to isolate each run.
+                    session.getContext().getHttpResponse().setWriteCookiesOnTransactionComplete();
+                    LoginActionsService other = new LoginActionsService(session, new EventBuilder(session.getContext().getRealm(), session, clientConnection));
+                    // process the request in the created instance.
+                    return other.authenticateInternal(authSessionId, code, execution, clientId, tabId);
+                }
+            }, 10, 100);
+        } else {
+            return authenticateInternal(authSessionId, code, execution, clientId, tabId);
+        }
+
+    }
+
+    private Response authenticateInternal(final String authSessionId, final String code, final String execution,
+                                          final String clientId, final String tabId) {
         event.event(EventType.LOGIN);
 
         SessionCodeChecks checks = checksForCode(authSessionId, code, execution, clientId, tabId, AUTHENTICATE_PATH);
@@ -702,7 +773,7 @@ public class LoginActionsService {
 
         processLocaleParam(authSession);
 
-        AuthenticationManager.expireIdentityCookie(realm, session.getContext().getUri(), clientConnection);
+        AuthenticationManager.expireIdentityCookie(realm, session.getContext().getUri(), session);
 
         return processRegistration(checks.isActionRequest(), execution, authSession, null);
     }
@@ -757,6 +828,7 @@ public class LoginActionsService {
 
         SessionCodeChecks checks = checksForCode(authSessionId, code, execution, clientId, tabId, flowPath);
         if (!checks.verifyActiveAndValidAction(AuthenticationSessionModel.Action.AUTHENTICATE.name(), ClientSessionCode.ActionType.LOGIN)) {
+            event.error("Failed to verify login action");
             return checks.getResponse();
         }
         event.detail(Details.CODE_ID, code);
@@ -768,7 +840,9 @@ public class LoginActionsService {
         SerializedBrokeredIdentityContext serializedCtx = SerializedBrokeredIdentityContext.readFromAuthenticationSession(authSession, noteKey);
         if (serializedCtx == null) {
             ServicesLogger.LOGGER.notFoundSerializedCtxInClientSession(noteKey);
-            throw new WebApplicationException(ErrorPage.error(session, authSession, Response.Status.BAD_REQUEST, "Not found serialized context in authenticationSession."));
+            String message = "Not found serialized context in authenticationSession.";
+            event.error(message);
+            throw new WebApplicationException(ErrorPage.error(session, authSession, Response.Status.BAD_REQUEST, message));
         }
         BrokeredIdentityContext brokerContext = serializedCtx.deserialize(session, authSession);
         final String identityProviderAlias = brokerContext.getIdpConfig().getAlias();
@@ -776,16 +850,22 @@ public class LoginActionsService {
         String flowId = firstBrokerLogin ? brokerContext.getIdpConfig().getFirstBrokerLoginFlowId() : brokerContext.getIdpConfig().getPostBrokerLoginFlowId();
         if (flowId == null) {
             ServicesLogger.LOGGER.flowNotConfigForIDP(identityProviderAlias);
-            throw new WebApplicationException(ErrorPage.error(session, authSession, Response.Status.BAD_REQUEST, "Flow not configured for identity provider"));
+            String message = "Flow not configured for identity provider";
+            event.error(message);
+            throw new WebApplicationException(ErrorPage.error(session, authSession, Response.Status.BAD_REQUEST, message));
         }
         AuthenticationFlowModel brokerLoginFlow = realm.getAuthenticationFlowById(flowId);
         if (brokerLoginFlow == null) {
             ServicesLogger.LOGGER.flowNotFoundForIDP(flowId, identityProviderAlias);
-            throw new WebApplicationException(ErrorPage.error(session, authSession, Response.Status.BAD_REQUEST, "Flow not found for identity provider"));
+            String message = "Flow not found for identity provider";
+            event.error(message);
+            throw new WebApplicationException(ErrorPage.error(session, authSession, Response.Status.BAD_REQUEST, message));
         }
 
         event.detail(Details.IDENTITY_PROVIDER, identityProviderAlias)
                 .detail(Details.IDENTITY_PROVIDER_USERNAME, brokerContext.getUsername());
+
+        event.success();
 
         AuthenticationProcessor processor = new AuthenticationProcessor() {
 
@@ -993,7 +1073,7 @@ public class LoginActionsService {
         event.event(EventType.CUSTOM_REQUIRED_ACTION);
         event.detail(Details.CUSTOM_REQUIRED_ACTION, action);
 
-        RequiredActionFactory factory = (RequiredActionFactory)session.getKeycloakSessionFactory().getProviderFactory(RequiredActionProvider.class, action);
+        RequiredActionFactory factory = (RequiredActionFactory)session.getKeycloakSessionFactory().getProviderFactory(RequiredActionProvider.class, getDefaultRequiredActionCaseInsensitively(action));
         if (factory == null) {
             ServicesLogger.LOGGER.actionProviderNull();
             event.error(Errors.INVALID_CODE);

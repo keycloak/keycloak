@@ -32,7 +32,7 @@ import org.keycloak.testsuite.utils.arquillian.ContainerConstants;
 import org.openqa.selenium.By;
 import org.w3c.dom.Document;
 
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response;
 import java.net.URI;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -40,7 +40,7 @@ import java.util.Map;
 import java.util.Set;
 
 import static org.hamcrest.Matchers.containsString;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.keycloak.testsuite.admin.ApiUtil.getCreatedId;
 import static org.keycloak.testsuite.saml.AbstractSamlTest.REALM_PRIVATE_KEY;
 import static org.keycloak.testsuite.saml.AbstractSamlTest.REALM_PUBLIC_KEY;
@@ -105,8 +105,8 @@ public class SAMLLoginResponseHandlingTest extends AbstractSAMLServletAdapterTes
                 .build()
                 .navigateTo(employee2ServletPage.getUriBuilder().clone().path("getAttributes").build())
                 .execute(response -> {
-                            Assert.assertThat(response, statusCodeIsHC(Response.Status.OK));
-                            Assert.assertThat(response, bodyHC(containsString("attribute-with-null-attribute-value: <br />")));
+                            assertThat(response, statusCodeIsHC(Response.Status.OK));
+                            assertThat(response, bodyHC(containsString("attribute-with-null-attribute-value: <br />")));
                         }
                 );
     }
@@ -122,7 +122,7 @@ public class SAMLLoginResponseHandlingTest extends AbstractSAMLServletAdapterTes
         new SamlClientBuilder()
                 .addStep((client, currentURI, currentResponse, context) ->
                         SamlClient.Binding.REDIRECT.createSamlUnsignedResponse(URI.create(employeeSigServletPage.toString() + "/saml"), null, document))
-                .execute(closeableHttpResponse -> Assert.assertThat(closeableHttpResponse, bodyHC(containsString("INVALID_SIGNATURE"))));
+                .execute(closeableHttpResponse -> assertThat(closeableHttpResponse, bodyHC(containsString("INVALID_SIGNATURE"))));
     }
 
     @Test
@@ -136,7 +136,7 @@ public class SAMLLoginResponseHandlingTest extends AbstractSAMLServletAdapterTes
         new SamlClientBuilder()
                 .addStep((client, currentURI, currentResponse, context) ->
                         SamlClient.Binding.REDIRECT.createSamlSignedResponse(URI.create(employeeSigServletPage.toString() + "/saml"), null, document, REALM_PRIVATE_KEY, REALM_PUBLIC_KEY))
-                .execute(closeableHttpResponse -> Assert.assertThat(closeableHttpResponse, bodyHC(containsString("ERROR_STATUS"))));
+                .execute(closeableHttpResponse -> assertThat(closeableHttpResponse, bodyHC(containsString("ERROR_STATUS"))));
     }
 
     @Test
@@ -225,7 +225,7 @@ public class SAMLLoginResponseHandlingTest extends AbstractSAMLServletAdapterTes
 
                 try (Response response = protocolMappersResource.createMapper(mapper)) {
                     String createdId = getCreatedId(response);
-                    getCleanup().addCleanup((Runnable) () -> {
+                    getCleanup().addCleanup(() -> {
                         protocolMappersResource.delete(createdId);
                         mapper.setConfig(origConfig);
                         protocolMappersResource.createMapper(mapper).close();

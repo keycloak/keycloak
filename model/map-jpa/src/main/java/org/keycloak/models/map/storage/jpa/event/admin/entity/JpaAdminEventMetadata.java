@@ -33,7 +33,7 @@ public class JpaAdminEventMetadata extends MapAdminEventEntityImpl implements Se
     }
 
     public JpaAdminEventMetadata() {
-        super();
+        super(DeepCloner.DUMB_CLONER);
     }
 
     private Integer entityVersion;
@@ -45,4 +45,5 @@ public class JpaAdminEventMetadata extends MapAdminEventEntityImpl implements Se
     public void setEntityVersion(Integer entityVersion) {
         this.entityVersion = entityVersion;
     }
+
 }

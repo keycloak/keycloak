@@ -1,0 +1,82 @@
+{
+  "name": "account-ui",
+  "type": "module",
+  "scripts": {
+    "dev": "wireit",
+    "build": "wireit",
+    "preview": "wireit",
+    "lint": "wireit",
+    "test": "wireit"
+  },
+  "dependencies": {
+    "@patternfly/patternfly": "^4.224.2",
+    "@patternfly/react-core": "^4.276.8",
+    "@patternfly/react-icons": "^4.93.6",
+    "@patternfly/react-table": "^4.113.0",
+    "i18next": "^23.4.6",
+    "i18next-http-backend": "^2.2.1",
+    "keycloak-js": "workspace:*",
+    "keycloak-masthead": "workspace:*",
+    "lodash-es": "^4.17.21",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-hook-form": "^7.45.4",
+    "react-i18next": "^13.2.0",
+    "react-router-dom": "^6.15.0",
+    "ui-shared": "workspace:*"
+  },
+  "devDependencies": {
+    "@keycloak/keycloak-admin-client": "workspace:*",
+    "@playwright/test": "^1.37.1",
+    "@types/lodash-es": "^4.17.8",
+    "@types/react": "^18.2.21",
+    "@types/react-dom": "^18.2.7",
+    "@vitejs/plugin-react-swc": "^3.3.2",
+    "vite": "^4.4.9",
+    "vite-plugin-checker": "^0.6.2"
+  },
+  "wireit": {
+    "dev": {
+      "command": "vite --host",
+      "dependencies": [
+        "../../libs/ui-shared:build",
+        "../../libs/keycloak-masthead:build",
+        "../../libs/keycloak-js:build",
+        "../../libs/keycloak-admin-client:build"
+      ]
+    },
+    "preview": {
+      "command": "vite preview",
+      "dependencies": [
+        "../../libs/ui-shared:build",
+        "../../libs/keycloak-masthead:build",
+        "../../libs/keycloak-js:build",
+        "../../libs/keycloak-admin-client:build"
+      ]
+    },
+    "build": {
+      "command": "vite build",
+      "dependencies": [
+        "../../libs/ui-shared:build",
+        "../../libs/keycloak-masthead:build",
+        "../../libs/keycloak-js:build",
+        "../../libs/keycloak-admin-client:build"
+      ]
+    },
+    "lint": {
+      "command": "eslint . --ext js,jsx,mjs,ts,tsx",
+      "dependencies": [
+        "../../libs/ui-shared:build",
+        "../../libs/keycloak-masthead:build",
+        "../../libs/keycloak-js:build",
+        "../../libs/keycloak-admin-client:build"
+      ]
+    },
+    "test": {
+      "command": "playwright test",
+      "dependencies": [
+        "../../libs/keycloak-admin-client:build"
+      ]
+    }
+  }
+}

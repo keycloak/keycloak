@@ -19,6 +19,7 @@ package org.keycloak.protocol.oidc;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.jboss.logging.Logger;
+import org.keycloak.OAuth2Constants;
 import org.keycloak.TokenVerifier;
 import org.keycloak.common.VerificationException;
 import org.keycloak.crypto.SignatureProvider;
@@ -32,8 +33,8 @@ import org.keycloak.representations.AccessToken;
 import org.keycloak.services.Urls;
 import org.keycloak.util.JsonSerialization;
 
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -85,6 +86,9 @@ public class AccessTokenIntrospectionProvider implements TokenIntrospectionProvi
                         }
                     }
                 }
+
+                tokenMetadata.put(OAuth2Constants.TOKEN_TYPE, accessToken.getType());
+
             } else {
                 tokenMetadata = JsonSerialization.createObjectNode();
             }

@@ -17,6 +17,8 @@
 
 package org.keycloak.theme;
 
+import org.keycloak.models.RealmModel;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
@@ -62,6 +64,20 @@ public interface Theme {
      * @throws IOException If bundle can not be read.
      */
     Properties getMessages(String baseBundlename, Locale locale) throws IOException;
+
+    /**
+     * Retrieve localized messages from a message bundle named "messages" and enhance those messages with messages from
+     * realm localization.
+     * <p>
+     * In general, the translation for the most specific applicable language is used. If a translation exists both in the message bundle and realm localization, the realm localization translation is used.
+     * </p>
+     *
+     * @param realm The realm from which the localization should be retrieved
+     * @param locale The locale of the desired message bundle.
+     * @return The localized messages from the bundle, enhanced with realm localization
+     * @throws IOException If bundle can not be read.
+     */
+    Properties getEnhancedMessages(RealmModel realm, Locale locale) throws IOException;
 
     Properties getProperties() throws IOException;
 

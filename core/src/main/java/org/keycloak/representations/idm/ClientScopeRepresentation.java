@@ -84,4 +84,18 @@ public class ClientScopeRepresentation {
     public void setAttributes(Map<String, String> attributes) {
         this.attributes = attributes;
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || !(o instanceof ClientScopeRepresentation)) return false;
+
+        ClientScopeRepresentation that = (ClientScopeRepresentation) o;
+        return that.getId().equals(getId());
+    }
+
+    @Override
+    public int hashCode() {
+        return getId().hashCode();
+    }
 }

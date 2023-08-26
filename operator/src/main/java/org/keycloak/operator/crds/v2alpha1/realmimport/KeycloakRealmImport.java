@@ -16,14 +16,26 @@
  */
 package org.keycloak.operator.crds.v2alpha1.realmimport;
 
+import io.fabric8.crd.generator.annotation.SchemaSwap;
 import io.fabric8.kubernetes.api.model.Namespaced;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.model.annotation.Group;
 import io.fabric8.kubernetes.model.annotation.Version;
+import io.quarkiverse.operatorsdk.bundle.runtime.CSVMetadata;
 import io.sundr.builder.annotations.Buildable;
 import io.sundr.builder.annotations.BuildableReference;
-import org.keycloak.operator.Constants;
 
+import org.keycloak.operator.Constants;
+import org.keycloak.representations.idm.ComponentExportRepresentation;
+import org.keycloak.representations.idm.GroupRepresentation;
+import org.keycloak.representations.idm.authorization.ScopeRepresentation;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
+@CSVMetadata(
+    description="Represents a Keycloak Realm Import",
+    displayName="KeycloakRealmImport"
+)
 @Group(Constants.CRDS_GROUP)
 @Version(Constants.CRDS_VERSION)
 @Buildable(editableEnabled = false, builderPackage = "io.fabric8.kubernetes.api.builder",
@@ -32,6 +44,15 @@ import org.keycloak.operator.Constants;
         @BuildableReference(io.fabric8.kubernetes.client.CustomResource.class),
         @BuildableReference(KeycloakRealmImportSpec.class)
 })
+@SchemaSwap(originalType = GroupRepresentation.class, fieldName = "subGroups", targetType = org.keycloak.representations.overrides.NoSubGroupsGroupRepresentationList.class)
+@SchemaSwap(originalType = ComponentExportRepresentation.class, fieldName = "subComponents", targetType = org.keycloak.representations.overrides.NoSubcomponentsComponentExportRepresentationMap.class)
+@SchemaSwap(originalType = ScopeRepresentation.class, fieldName = "policies")
+@SchemaSwap(originalType = ScopeRepresentation.class, fieldName = "resources")
 public class KeycloakRealmImport extends CustomResource<KeycloakRealmImportSpec, KeycloakRealmImportStatus> implements Namespaced {
+
+    @JsonIgnore
+    public String getRealmName() {
+        return this.getSpec().getRealm().getRealm();
+    }
 
 }

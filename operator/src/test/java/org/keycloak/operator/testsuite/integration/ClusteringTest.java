@@ -17,49 +17,128 @@
 
 package org.keycloak.operator.testsuite.integration;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.api.model.Secret;
+import io.fabric8.kubernetes.api.model.Service;
+import io.fabric8.kubernetes.api.model.apps.StatefulSet;
+import io.fabric8.kubernetes.api.model.networking.v1.Ingress;
+import io.fabric8.kubernetes.client.readiness.Readiness;
 import io.fabric8.kubernetes.client.utils.Serialization;
 import io.quarkus.logging.Log;
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.RestAssured;
+
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
 import org.keycloak.operator.Constants;
-import org.keycloak.operator.testsuite.utils.CRAssert;
-import org.keycloak.operator.controllers.KeycloakService;
+import org.keycloak.operator.controllers.KeycloakServiceDependentResource;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
-import org.keycloak.operator.testsuite.utils.K8sUtils;
+import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusCondition;
 import org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImport;
 import org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImportStatusCondition;
-import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusCondition;
+import org.keycloak.operator.testsuite.utils.CRAssert;
+import org.keycloak.operator.testsuite.utils.K8sUtils;
 
 import java.time.Duration;
+import java.util.Optional;
+
+import com.fasterxml.jackson.databind.JsonNode;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
 
-
 @QuarkusTest
 public class ClusteringTest extends BaseOperatorTest {
 
     @Test
-    public void testKeycloakScaleAsExpected() {
+    public void testMultipleDeployments() throws InterruptedException {
         // given
-        var kc = K8sUtils.getDefaultKeycloakDeployment();
-        var crSelector = k8sclient
-                .resources(Keycloak.class)
-                .inNamespace(kc.getMetadata().getNamespace())
-                .withName(kc.getMetadata().getName());
+        var kc = getTestKeycloakDeployment(true);
+
+        // another instance running off the same database
+        // - should eventually give this a separate schema
+        var kc1 = getTestKeycloakDeployment(true);
+        kc1.getMetadata().setName("another-example");
+        kc1.getSpec().getHostnameSpec().setHostname("another-example.com");
+        // this is using the wrong tls-secret, but simply removing http spec renders the pod unstartable
+
+        try {
+            K8sUtils.deployKeycloak(k8sclient, kc, true);
+            K8sUtils.deployKeycloak(k8sclient, kc1, true);
+        } catch (Exception e) {
+            k8sclient.resources(Keycloak.class).list().getItems().stream().forEach(k -> {
+                Log.infof("Keycloak %s status: %s", k.getMetadata().getName(), Serialization.asYaml(k.getStatus()));
+            });
+            k8sclient.pods().list().getItems().stream().filter(p -> !Readiness.isPodReady(p)).forEach(p -> {
+                Log.infof("Pod %s not ready: %s", p.getMetadata().getName(), Serialization.asYaml(p.getStatus()));
+            });
+            throw e;
+        }
+
+        assertThat(k8sclient.resources(Keycloak.class).list().getItems().size()).isEqualTo(2);
+
+        // get the current version for the uid
+        kc = k8sclient.resource(kc).get();
+        kc1 = k8sclient.resource(kc1).get();
+
+        // the main resources are ready, check for the expected dependents
+        checkInstanceCount(1, StatefulSet.class, kc, kc1);
+        checkInstanceCount(1, Secret.class, kc, kc1);
+        checkInstanceCount(1, Ingress.class, kc, kc1);
+        checkInstanceCount(2, Service.class, kc, kc1);
+
+        // ensure they don't see each other's pods
+        assertThat(k8sclient.resource(kc).scale().getStatus().getReplicas()).isEqualTo(1);
+        assertThat(k8sclient.resource(kc1).scale().getStatus().getReplicas()).isEqualTo(1);
+
+        // could also scale one instance to zero end ensure the services are no longer reachable
+    }
+
+    private void checkInstanceCount(int count, Class<? extends HasMetadata> type, HasMetadata... toCheck) {
+        var instances = k8sclient.resources(type).list().getItems();
+
+        for (HasMetadata hasMetadata : toCheck) {
+            assertThat(instances.stream()
+                    .filter(h -> h.getOwnerReferenceFor(hasMetadata).isPresent() && hasMetadata.getMetadata()
+                            .getName().equals(h.getMetadata().getLabels().get(Constants.INSTANCE_LABEL)))
+                    .count()).isEqualTo(count);
+        }
+    }
+
+    @Test
+    public void testKeycloakScaleAsExpected() {
+        // given a starting point of a default keycloak with null/default instances
+        var kc = getTestKeycloakDeployment(false);
+        kc.getSpec().setInstances(null);
+        var crSelector = k8sclient.resource(kc);
         K8sUtils.deployKeycloak(k8sclient, kc, true);
 
         var kcPodsSelector = k8sclient.pods().inNamespace(namespace).withLabel("app", "keycloak");
 
-        Keycloak keycloak = crSelector.get();
+        var scale = crSelector.scale();
+        assertThat(scale.getSpec().getReplicas()).isEqualTo(1);
+        assertThat(scale.getStatus().getReplicas()).isEqualTo(1);
+        assertThat(scale.getStatus().getSelector()).isEqualTo("app=keycloak,app.kubernetes.io/managed-by=keycloak-operator,app.kubernetes.io/instance=example-kc");
+
+        // when scale it to 0
+        Keycloak scaled = crSelector.scale(0);
+        assertThat(scaled.getSpec().getInstances()).isEqualTo(0);
+
+        Awaitility.await()
+                .atMost(Duration.ofSeconds(60))
+                .ignoreExceptions()
+                .untilAsserted(() -> assertThat(Optional.ofNullable(crSelector.scale().getStatus().getReplicas()).orElse(0)).isEqualTo(0));
+
+        Awaitility.await()
+                .atMost(1, MINUTES)
+                .pollDelay(1, SECONDS)
+                .ignoreExceptions()
+                .untilAsserted(() -> CRAssert.assertKeycloakStatusCondition(crSelector.get(), KeycloakStatusCondition.READY, true));
 
         // when scale it to 3
-        keycloak.getSpec().setInstances(3);
-        k8sclient.resources(Keycloak.class).inNamespace(namespace).createOrReplace(keycloak);
+        crSelector.scale(3);
+        assertThat(crSelector.scale().getSpec().getReplicas()).isEqualTo(3);
 
         Awaitility.await()
                 .atMost(1, MINUTES)
@@ -68,13 +147,14 @@ public class ClusteringTest extends BaseOperatorTest {
                 .untilAsserted(() -> CRAssert.assertKeycloakStatusCondition(crSelector.get(), KeycloakStatusCondition.READY, false));
 
         Awaitility.await()
-                .atMost(Duration.ofSeconds(60))
+                .atMost(Duration.ofSeconds(180))
                 .ignoreExceptions()
                 .untilAsserted(() -> assertThat(kcPodsSelector.list().getItems().size()).isEqualTo(3));
 
         // when scale it down to 2
-        keycloak.getSpec().setInstances(2);
-        k8sclient.resources(Keycloak.class).inNamespace(namespace).createOrReplace(keycloak);
+        crSelector.scale(2);
+        assertThat(crSelector.scale().getSpec().getReplicas()).isEqualTo(2);
+
         Awaitility.await()
                 .atMost(Duration.ofSeconds(180))
                 .ignoreExceptions()
@@ -86,9 +166,13 @@ public class ClusteringTest extends BaseOperatorTest {
                 .ignoreExceptions()
                 .untilAsserted(() -> CRAssert.assertKeycloakStatusCondition(crSelector.get(), KeycloakStatusCondition.READY, true));
 
+        Awaitility.await()
+                .atMost(Duration.ofSeconds(60))
+                .ignoreExceptions()
+                .untilAsserted(() -> assertThat(crSelector.scale().getStatus().getReplicas()).isEqualTo(2));
+
         // get the service
-        var service = new KeycloakService(k8sclient, kc);
-        String url = "https://" + service.getName() + "." + namespace + ":" + Constants.KEYCLOAK_HTTPS_PORT;
+        String url = "https://" + KeycloakServiceDependentResource.getServiceName(kc) + "." + namespace + ":" + Constants.KEYCLOAK_HTTPS_PORT;
 
         Awaitility.await().atMost(5, MINUTES).untilAsserted(() -> {
             Log.info("Starting curl Pod to test if the realm is available");
@@ -112,18 +196,13 @@ public class ClusteringTest extends BaseOperatorTest {
     public void testKeycloakCacheIsConnected() throws Exception {
         // given
         Log.info("Setup");
-        var kc = K8sUtils.getDefaultKeycloakDeployment();
-        var crSelector = k8sclient
-                .resources(Keycloak.class)
-                .inNamespace(kc.getMetadata().getNamespace())
-                .withName(kc.getMetadata().getName());
+        var kc = getTestKeycloakDeployment(false);
+        var crSelector = k8sclient.resource(kc);
         K8sUtils.deployKeycloak(k8sclient, kc, false);
         var targetInstances = 3;
-        kc.getSpec().setInstances(targetInstances);
-        k8sclient.resources(Keycloak.class).inNamespace(namespace).createOrReplace(kc);
-        var realm = k8sclient.resources(KeycloakRealmImport.class).inNamespace(namespace).load(getClass().getResourceAsStream("/token-test-realm.yaml"));
+        crSelector.scale(targetInstances);
+        K8sUtils.set(k8sclient, getClass().getResourceAsStream("/token-test-realm.yaml"));
         var realmImportSelector = k8sclient.resources(KeycloakRealmImport.class).inNamespace(namespace).withName("example-token-test-kc");
-        realm.createOrReplace();
 
         Log.info("Waiting for a stable Keycloak Cluster");
         Awaitility.await()
@@ -195,7 +274,7 @@ public class ClusteringTest extends BaseOperatorTest {
 
         // This is to test passing through the "Service", not 100% deterministic, but a smoke test that things are working as expected
         // Executed here to avoid paying the setup time again
-        var service = new KeycloakService(k8sclient, kc);
+        String serviceName = KeycloakServiceDependentResource.getServiceName(kc);
         Awaitility.await()
                 .atMost(20, MINUTES)
                 .pollDelay(5, SECONDS)
@@ -206,7 +285,7 @@ public class ClusteringTest extends BaseOperatorTest {
             for (int i = 0; i < (targetInstances + 1); i++) {
 
                 if (token2 == null) {
-                    var tokenUrl = "https://" + service.getName() + "." + namespace + ":" + Constants.KEYCLOAK_HTTPS_PORT + "/realms/token-test/protocol/openid-connect/token";
+                    var tokenUrl = "https://" + serviceName + "." + namespace + ":" + Constants.KEYCLOAK_HTTPS_PORT + "/realms/token-test/protocol/openid-connect/token";
                     Log.info("Checking url: " + tokenUrl);
 
                     var tokenOutput = K8sUtils.inClusterCurl(k8sclient, namespace, "--insecure", "-s", "--data", "grant_type=password&client_id=token-test-client&username=test&password=test&scope=openid", tokenUrl);
@@ -216,7 +295,7 @@ public class ClusteringTest extends BaseOperatorTest {
                     token2 = tokenAnswer.get("access_token").asText();
                 }
 
-                String url = "https://" + service.getName() + "." + namespace + ":" + Constants.KEYCLOAK_HTTPS_PORT + "/realms/token-test/protocol/openid-connect/userinfo";
+                String url = "https://" + serviceName + "." + namespace + ":" + Constants.KEYCLOAK_HTTPS_PORT + "/realms/token-test/protocol/openid-connect/userinfo";
                 Log.info("Checking url: " + url);
 
                 var curlOutput = K8sUtils.inClusterCurl(k8sclient, namespace, "--insecure", "-s", "-H", "Authorization: Bearer " + token2, url);

@@ -56,6 +56,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
 
 public class UsersTest extends AbstractAdminTest {
@@ -69,10 +70,33 @@ public class UsersTest extends AbstractAdminTest {
     }
 
     @Test
+    public void searchUserWithWildcards() throws Exception {
+        createUser(REALM_NAME, "User", "password", "firstName", "lastName", "user@example.com");
+
+        assertThat(adminClient.realm(REALM_NAME).users().search("Use%", null, null), hasSize(0));
+        assertThat(adminClient.realm(REALM_NAME).users().search("Use_", null, null), hasSize(0));
+        assertThat(adminClient.realm(REALM_NAME).users().search("Us_r", null, null), hasSize(0));
+        assertThat(adminClient.realm(REALM_NAME).users().search("Use", null, null), hasSize(1));
+        assertThat(adminClient.realm(REALM_NAME).users().search("Use*", null, null), hasSize(1));
+        assertThat(adminClient.realm(REALM_NAME).users().search("Us*e", null, null), hasSize(1));
+    }
+
+    @Test
     public void searchUserDefaultSettings() throws Exception {
         createUser(REALM_NAME, "User", "password", "firstName", "lastName", "user@example.com");
 
         assertCaseInsensitiveSearch();
+    }
+    
+    @Test
+    public void searchUserMatchUsersCount() {
+        createUser(REALM_NAME, "john.doe", "password", "John", "Doe Smith", "john.doe@keycloak.org");
+        String search = "jo do";
+
+        assertThat(adminClient.realm(REALM_NAME).users().count(search), is(1));
+        List<UserRepresentation> users = adminClient.realm(REALM_NAME).users().search(search, null, null);
+        assertThat(users, hasSize(1));
+        assertThat(users.get(0).getUsername(), is("john.doe"));
     }
 
     @Test
@@ -174,76 +198,39 @@ public class UsersTest extends AbstractAdminTest {
         createUser(REALM_NAME, "user3", "password", "user3FirstName", "user3LastName", "user3@example.com", rep -> rep.setEmailVerified(true));
 
         // Prefix search count
-        Integer count = realm.users().count("user");
-        assertThat(count, is(3));
-
-        count = realm.users().count("user*");
-        assertThat(count, is(3));
-
-        count = realm.users().count("er");
-        assertThat(count, is(0));
-
-        count = realm.users().count("");
-        assertThat(count, is(3));
-
-        count = realm.users().count("*");
-        assertThat(count, is(3));
-
-        count = realm.users().count("user2FirstName");
-        assertThat(count, is(1));
-
-        count = realm.users().count("user2First");
-        assertThat(count, is(1));
-
-        count = realm.users().count("user2First*");
-        assertThat(count, is(1));
-
-        count = realm.users().count("user1@example");
-        assertThat(count, is(1));
-
-        count = realm.users().count("user1@example*");
-        assertThat(count, is(1));
-
-        count = realm.users().count(null);
-        assertThat(count, is(3));
+        assertSearchMatchesCount(realm, "user", 3);
+        assertSearchMatchesCount(realm, "user*", 3);
+        assertSearchMatchesCount(realm, "er", 0);
+        assertSearchMatchesCount(realm, "", 3);
+        assertSearchMatchesCount(realm, "*", 3);
+        assertSearchMatchesCount(realm, "user2FirstName", 1);
+        assertSearchMatchesCount(realm, "user2First", 1);
+        assertSearchMatchesCount(realm, "user2First*", 1);
+        assertSearchMatchesCount(realm, "user1@example", 1);
+        assertSearchMatchesCount(realm, "user1@example*", 1);
+        assertSearchMatchesCount(realm, null, 3);
 
         // Infix search count
-        count = realm.users().count("*user*");
-        assertThat(count, is(3));
-
-        count = realm.users().count("**");
-        assertThat(count, is(3));
-
-        count = realm.users().count("*foobar*");
-        assertThat(count, is(0));
-
-        count = realm.users().count("*LastName*");
-        assertThat(count, is(3));
-
-        count = realm.users().count("*FirstName*");
-        assertThat(count, is(3));
-
-        count = realm.users().count("*@example.com*");
-        assertThat(count, is(3));
-
+        assertSearchMatchesCount(realm, "*user*", 3);
+        assertSearchMatchesCount(realm, "**", 3);
+        assertSearchMatchesCount(realm, "*foobar*", 0);
+        assertSearchMatchesCount(realm, "*LastName*", 3);
+        assertSearchMatchesCount(realm, "*FirstName*", 3);
+        assertSearchMatchesCount(realm, "*@example.com*", 3);
+ 
         // Exact search count
-        count = realm.users().count("\"user1\"");
-        assertThat(count, is(1));
+        assertSearchMatchesCount(realm, "\"user1\"", 1);
+        assertSearchMatchesCount(realm, "\"1\"", 0);
+        assertSearchMatchesCount(realm, "\"\"", 0);
+        assertSearchMatchesCount(realm, "\"user1FirstName\"", 1);
+        assertSearchMatchesCount(realm, "\"user1LastName\"", 1);
+        assertSearchMatchesCount(realm, "\"user1@example.com\"", 1);
+    }
 
-        count = realm.users().count("\"1\"");
-        assertThat(count, is(0));
-
-        count = realm.users().count("\"\"");
-        assertThat(count, is(0));
-
-        count = realm.users().count("\"user1FirstName\"");
-        assertThat(count, is(1));
-
-        count = realm.users().count("\"user1LastName\"");
-        assertThat(count, is(1));
-
-        count = realm.users().count("\"user1@example.com\"");
-        assertThat(count, is(1));
+    private void assertSearchMatchesCount(RealmResource realm, String search, Integer expectedCount) {
+        Integer count = realm.users().count(search);
+        assertThat(count, is(expectedCount));
+        assertThat(realm.users().search(search, null, null), hasSize(count));
     }
 
     @Test
@@ -294,22 +281,22 @@ public class UsersTest extends AbstractAdminTest {
     public void countUsersBySearchWithGroupViewPermission() throws CertificateException, NoSuchAlgorithmException, KeyStoreException, KeyManagementException, IOException {
         RealmResource testRealmResource = setupTestEnvironmentWithPermissions(true);
         //search all
-        assertThat(testRealmResource.users().count("user"), is(3));
+        assertSearchMatchesCount(testRealmResource, "user", 3);
         //search first name
-        assertThat(testRealmResource.users().count("*FirstName*"), is(3));
-        assertThat(testRealmResource.users().count("user2FirstName"), is(1));
+        assertSearchMatchesCount(testRealmResource, "*FirstName*", 3);
+        assertSearchMatchesCount(testRealmResource, "user2FirstName", 1);
         //search last name
-        assertThat(testRealmResource.users().count("*LastName*"), is(3));
-        assertThat(testRealmResource.users().count("user2LastName"), is(1));
+        assertSearchMatchesCount(testRealmResource, "*LastName*", 3);
+        assertSearchMatchesCount(testRealmResource, "user2LastName", 1);
         //search in email
-        assertThat(testRealmResource.users().count("*@example.com*"), is(3));
-        assertThat(testRealmResource.users().count("user1@example.com"), is(1));
+        assertSearchMatchesCount(testRealmResource, "*@example.com*", 3);
+        assertSearchMatchesCount(testRealmResource, "user1@example.com", 1);
         //search for something not existing
-        assertThat(testRealmResource.users().count("notExisting"), is(0));
+        assertSearchMatchesCount(testRealmResource, "notExisting", 0);
         //search for empty string
-        assertThat(testRealmResource.users().count(""), is(3));
+        assertSearchMatchesCount(testRealmResource, "", 3);
         //search not specified (defaults to simply /count)
-        assertThat(testRealmResource.users().count(null), is(3));
+        assertSearchMatchesCount(testRealmResource, null, 3);
     }
 
     @Test
@@ -317,6 +304,7 @@ public class UsersTest extends AbstractAdminTest {
     public void countUsersByFiltersWithGroupViewPermission() throws CertificateException, NoSuchAlgorithmException, KeyStoreException, KeyManagementException, IOException {
         RealmResource testRealmResource = setupTestEnvironmentWithPermissions(true);
         //search username
+        assertThat(testRealmResource.users().count(null, null, null, "user"), equalTo(testRealmResource.users().search("user", null, null, null, null, null).size()));
         assertThat(testRealmResource.users().count(null, null, null, "user"), is(3));
         assertThat(testRealmResource.users().count(null, null, null, "user1"), is(1));
         assertThat(testRealmResource.users().count(null, null, null, "notExisting"), is(0));
@@ -360,22 +348,22 @@ public class UsersTest extends AbstractAdminTest {
     public void countUsersBySearchWithNoViewPermission() throws CertificateException, NoSuchAlgorithmException, KeyStoreException, KeyManagementException, IOException {
         RealmResource testRealmResource = setupTestEnvironmentWithPermissions(false);
         //search all
-        assertThat(testRealmResource.users().count("user"), is(0));
+        assertSearchMatchesCount(testRealmResource, "user", 0);
         //search first name
-        assertThat(testRealmResource.users().count("FirstName"), is(0));
-        assertThat(testRealmResource.users().count("user2FirstName"), is(0));
+        assertSearchMatchesCount(testRealmResource, "FirstName", 0);
+        assertSearchMatchesCount(testRealmResource, "user2FirstName", 0);
         //search last name
-        assertThat(testRealmResource.users().count("LastName"), is(0));
-        assertThat(testRealmResource.users().count("user2LastName"), is(0));
+        assertSearchMatchesCount(testRealmResource, "LastName", 0);
+        assertSearchMatchesCount(testRealmResource, "user2LastName", 0);
         //search in email
-        assertThat(testRealmResource.users().count("@example.com"), is(0));
-        assertThat(testRealmResource.users().count("user1@example.com"), is(0));
+        assertSearchMatchesCount(testRealmResource, "@example.com", 0);
+        assertSearchMatchesCount(testRealmResource, "user1@example.com", 0);
         //search for something not existing
-        assertThat(testRealmResource.users().count("notExisting"), is(0));
+        assertSearchMatchesCount(testRealmResource, "notExisting", 0);
         //search for empty string
-        assertThat(testRealmResource.users().count(""), is(0));
+        assertSearchMatchesCount(testRealmResource, "", 0);
         //search not specified (defaults to simply /count)
-        assertThat(testRealmResource.users().count(null), is(0));
+        assertSearchMatchesCount(testRealmResource, null, 0);
     }
 
     @Test

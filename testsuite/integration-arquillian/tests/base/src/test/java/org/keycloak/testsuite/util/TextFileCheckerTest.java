@@ -30,6 +30,8 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+
 /**
  *
  * @author hmlnarik
@@ -87,7 +89,7 @@ public class TextFileCheckerTest {
     public void assertCheckedOutputIs(String... expectedOutput) throws IOException {
         List<String> target = new LinkedList<>();
         tfc.checkFiles(false, collector(target));
-        Assert.assertThat(target,
+        assertThat(target,
           expectedOutput == null || expectedOutput.length == 0
             ? Matchers.empty()
             : Matchers.contains(expectedOutput));

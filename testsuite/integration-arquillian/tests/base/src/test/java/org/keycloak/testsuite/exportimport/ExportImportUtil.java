@@ -62,7 +62,6 @@ import org.keycloak.storage.ldap.mappers.LDAPStorageMapper;
 import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.client.KeycloakTestingClient;
-import org.keycloak.testsuite.util.RealmRepUtil;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -78,10 +77,11 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import org.hamcrest.Matcher;
+import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.keycloak.util.JsonSerialization;
 
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  *
@@ -107,7 +107,6 @@ public class ExportImportUtil {
 
         RealmResource realmRsc = adminClient.realm(realm.getRealm());
 
-        /* See KEYCLOAK-3104*/
         UserRepresentation user = findByUsername(realmRsc, "loginclient");
         Assert.assertNotNull(user);
 
@@ -431,6 +430,11 @@ public class ExportImportUtil {
             assertAuthorizationSettingsOtherApp(realmRsc);
             assertAuthorizationSettingsTestAppAuthz(realmRsc);
         }
+
+        // Test Message Bundle
+        Map<String, String> localizations = adminClient.realm(realm.getRealm()).localization().getRealmLocalizationTexts("en");
+        Assert.assertEquals("value1", localizations.get("key1"));
+        Assert.assertEquals("value2", localizations.get("key2"));
     }
 
 
@@ -478,12 +482,10 @@ public class ExportImportUtil {
         return false;
     }
 
-    // Workaround for KEYCLOAK-3104.  For this realm, search() only works if username is null.
     private static UserRepresentation findByUsername(RealmResource realmRsc, String username) {
-        for (UserRepresentation user : realmRsc.users().search(null, 0, -1)) {
-            if (user.getUsername().equalsIgnoreCase(username)) return user;
-        }
-        return null;
+        List<UserRepresentation> usersByUsername = realmRsc.users().search(username);
+        MatcherAssert.assertThat(usersByUsername, Matchers.hasSize(1));
+        return usersByUsername.get(0);
     }
 
     private static Set<RoleRepresentation> allScopeMappings(ClientResource client) {
@@ -591,11 +593,11 @@ public class ExportImportUtil {
         Assert.assertNotNull(authzResource);
 
         List<ResourceRepresentation> resources = authzResource.resources().resources();
-        Assert.assertThat(resources.stream().map(ResourceRepresentation::getName).collect(Collectors.toList()),
+        assertThat(resources.stream().map(ResourceRepresentation::getName).collect(Collectors.toList()),
                 Matchers.containsInAnyOrder("Default Resource", "test"));
 
         List<PolicyRepresentation> policies = authzResource.policies().policies();
-        Assert.assertThat(policies.stream().map(PolicyRepresentation::getName).collect(Collectors.toList()),
+        assertThat(policies.stream().map(PolicyRepresentation::getName).collect(Collectors.toList()),
                 Matchers.containsInAnyOrder("User Policy", "Default Permission", "test-permission"));
     }
 

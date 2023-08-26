@@ -22,21 +22,13 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
-import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 
 public class AppInitiatedActionUpdateEmailTest extends AbstractAppInitiatedActionUpdateEmailTest {
 
     @Test
-    public void updateEmail() {
-        doAIA();
-
-        loginPage.login("test-user@localhost", "password");
-
-        emailUpdatePage.assertCurrent();
-        assertTrue(emailUpdatePage.isCancelDisplayed());
-
-        emailUpdatePage.changeEmail("new@email.com");
+    public void updateEmail() throws Exception {
+        changeEmailUsingAIA("new@email.com");
 
         events.expect(EventType.UPDATE_EMAIL).detail(Details.PREVIOUS_EMAIL, "test-user@localhost")
                 .detail(Details.UPDATED_EMAIL, "new@email.com").assertEvent();
@@ -47,5 +39,17 @@ public class AppInitiatedActionUpdateEmailTest extends AbstractAppInitiatedActio
         Assert.assertEquals("new@email.com", user.getEmail());
         Assert.assertEquals("Tom", user.getFirstName());
         Assert.assertEquals("Brady", user.getLastName());
+    }
+
+    @Override
+    protected void changeEmailUsingAIA(String newEmail) throws Exception {
+        doAIA();
+
+        loginPage.login("test-user@localhost", "password");
+
+        emailUpdatePage.assertCurrent();
+        assertTrue(emailUpdatePage.isCancelDisplayed());
+
+        emailUpdatePage.changeEmail(newEmail);
     }
 }

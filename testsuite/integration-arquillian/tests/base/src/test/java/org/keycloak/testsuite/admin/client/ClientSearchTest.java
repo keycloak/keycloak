@@ -25,7 +25,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.models.ClientProvider;
 import org.keycloak.representations.idm.ClientRepresentation;
-import org.keycloak.testsuite.arquillian.containers.KeycloakQuarkusServerDeployableContainer;
+import org.keycloak.testsuite.arquillian.containers.AbstractQuarkusDeployableContainer;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -147,7 +147,7 @@ public class ClientSearchTest extends AbstractClientTest {
                     .toArray(String[]::new);
             String s = String.join(",",searchableAttributes);
             controller.stop(suiteContext.getAuthServerInfo().getQualifier());
-            KeycloakQuarkusServerDeployableContainer container = (KeycloakQuarkusServerDeployableContainer)suiteContext.getAuthServerInfo().getArquillianContainer().getDeployableContainer();
+            AbstractQuarkusDeployableContainer container = (AbstractQuarkusDeployableContainer)suiteContext.getAuthServerInfo().getArquillianContainer().getDeployableContainer();
             container.setAdditionalBuildArgs(Collections.singletonList("--spi-client-jpa-searchable-attributes=\""+ s + "\""));
             controller.start(suiteContext.getAuthServerInfo().getQualifier());
         } else {
@@ -165,7 +165,7 @@ public class ClientSearchTest extends AbstractClientTest {
             System.clearProperty(SEARCHABLE_ATTRS_PROP);
             controller.start(suiteContext.getAuthServerInfo().getQualifier());
         } else if (suiteContext.getAuthServerInfo().isQuarkus()) {
-            KeycloakQuarkusServerDeployableContainer container = (KeycloakQuarkusServerDeployableContainer) suiteContext.getAuthServerInfo().getArquillianContainer().getDeployableContainer();
+            AbstractQuarkusDeployableContainer container = (AbstractQuarkusDeployableContainer) suiteContext.getAuthServerInfo().getArquillianContainer().getDeployableContainer();
             container.setAdditionalBuildArgs(Collections.emptyList());
             container.restartServer();
         } else {

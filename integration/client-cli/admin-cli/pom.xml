@@ -21,7 +21,7 @@
     <parent>
         <artifactId>keycloak-client-cli-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>999-SNAPSHOT</version>
+        <version>999.0.0-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -29,18 +29,24 @@
     <name>Keycloak Admin CLI</name>
     <description/>
 
+    <properties>
+        <jansi.version>1.18</jansi.version>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>org.jboss.aesh</groupId>
             <artifactId>aesh</artifactId>
         </dependency>
+        <!-- Jansi library version needs to be overridden due to the backwards compatibility - see #21851 -->
         <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-core</artifactId>
+            <groupId>org.fusesource.jansi</groupId>
+            <artifactId>jansi</artifactId>
+            <version>${jansi.version}</version>
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>${keycloak.crypto.artifactId}</artifactId>
+            <artifactId>keycloak-core</artifactId>
         </dependency>
         <dependency>
             <groupId>org.apache.httpcomponents</groupId>
@@ -62,7 +68,6 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
-                <!--version>2.4.3</version-->
                 <executions>
                     <execution>
                         <phase>package</phase>
@@ -138,7 +143,7 @@
                                     </includes>
                                 </filter>
                                 <filter>
-                                    <artifact>org.jboss.spec.javax.ws.rs:jboss-jaxrs-api_2.1_spec</artifact>
+                                    <artifact>jakarta.ws.rs:jakarta.ws.rs-api</artifact>
                                     <includes>
                                         <include>**/**</include>
                                     </includes>

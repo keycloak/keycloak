@@ -26,13 +26,11 @@ import org.keycloak.OAuth2Constants;
 import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.common.util.UriUtils;
 import org.keycloak.events.EventType;
-import org.keycloak.models.Constants;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginExpiredPage;
 
-import static org.junit.Assert.assertThat;
-import static org.keycloak.testsuite.broker.BrokerTestTools.getConsumerRoot;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
 
 /**
@@ -112,8 +110,9 @@ public class KcOidcBrokerStateParameterTest extends AbstractInitializedBaseBroke
 
 
     @Test
-    public void testCorrectStateParameterButIncorrectCode() throws Exception {
-        driver.navigate().to(getAccountUrl(getConsumerRoot(), bc.consumerRealmName()));
+    public void testCorrectStateParameterButIncorrectCode() {
+        oauth.clientId("broker-app");
+        loginPage.open(bc.consumerRealmName());
 
         waitForPage(driver, "sign in to", true);
         loginPage.clickSocial(bc.getIDPAlias());
@@ -150,7 +149,7 @@ public class KcOidcBrokerStateParameterTest extends AbstractInitializedBaseBroke
                 .session((String) null)
                 .realm(consumerRealmId)
                 .user((String) null)
-                .client(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID)
+                .client("broker-app")
                 .error("identity_provider_login_failure")
                 .assertEvent();
 

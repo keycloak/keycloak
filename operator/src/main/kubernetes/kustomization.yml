@@ -7,7 +7,3 @@ resources:
   - kubernetes/keycloaks.k8s.keycloak.org-v1.yml
   - kubernetes/keycloakrealmimports.k8s.keycloak.org-v1.yml
   - kubernetes/kubernetes.yml
-
-# patchesStrategicMerge
-patches:
-  - kubernetes/minikube.yml

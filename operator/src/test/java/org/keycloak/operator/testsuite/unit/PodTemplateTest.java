@@ -17,6 +17,8 @@
 
 package org.keycloak.operator.testsuite.unit;
 
+import io.fabric8.kubernetes.api.model.Container;
+import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.IntOrString;
 import io.fabric8.kubernetes.api.model.PodTemplateSpec;
 import io.fabric8.kubernetes.api.model.PodTemplateSpecBuilder;
@@ -24,14 +26,25 @@ import io.fabric8.kubernetes.api.model.ProbeBuilder;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.api.model.apps.StatefulSetBuilder;
 import io.quarkus.test.junit.QuarkusTest;
+
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.keycloak.operator.Config;
 import org.keycloak.operator.controllers.KeycloakDeployment;
-import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
+import org.keycloak.operator.controllers.OperatorManagedResource;
+import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakBuilder;
 import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakSpecBuilder;
+import org.keycloak.operator.crds.v2alpha1.deployment.ValueOrSecret;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.HostnameSpecBuilder;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.HttpSpecBuilder;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.UnsupportedSpec;
+
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -39,9 +52,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @QuarkusTest
 public class PodTemplateTest {
-
-    private StatefulSet getDeployment(PodTemplateSpec podTemplate, StatefulSet existingDeployment) {
-        var config = new Config(){
+    private StatefulSet getDeployment(PodTemplateSpec podTemplate, StatefulSet existingDeployment, Consumer<KeycloakSpecBuilder> additionalSpec) {
+        var config = new Config() {
             @Override
             public Keycloak keycloak() {
                 return new Keycloak() {
@@ -49,25 +61,44 @@ public class PodTemplateTest {
                     public String image() {
                         return "dummy-image";
                     }
+
                     @Override
                     public String imagePullPolicy() {
                         return "Never";
                     }
+                    @Override
+                    public Map<String, String> podLabels() {
+                        return Collections.emptyMap();
+                    }
                 };
             }
         };
-        var kc = new Keycloak();
+        var kc = new KeycloakBuilder().withNewMetadata().withName("instance").endMetadata().build();
+        existingDeployment = new StatefulSetBuilder(existingDeployment).editOrNewSpec().editOrNewSelector()
+                .addToMatchLabels(OperatorManagedResource.updateWithInstanceLabels(null, kc.getMetadata().getName()))
+                .endSelector().endSpec().build();
 
         var httpSpec = new HttpSpecBuilder().withTlsSecret("example-tls-secret").build();
         var hostnameSpec = new HostnameSpecBuilder().withHostname("example.com").build();
 
-        kc.setSpec(new KeycloakSpecBuilder().withUnsupported(new UnsupportedSpec(podTemplate))
+        var keycloakSpecBuilder = new KeycloakSpecBuilder()
+                .withUnsupported(new UnsupportedSpec(podTemplate))
                 .withHttpSpec(httpSpec)
-                .withHostnameSpec(hostnameSpec)
-                .build());
+                .withHostnameSpec(hostnameSpec);
+
+        if (additionalSpec != null) {
+            additionalSpec.accept(keycloakSpecBuilder);
+        }
+
+        kc.setSpec(keycloakSpecBuilder.build());
 
         var deployment = new KeycloakDeployment(null, config, kc, existingDeployment, "dummy-admin");
-        return (StatefulSet) deployment.getReconciledResource().get();
+
+        return deployment.getReconciledResource().get();
+    }
+
+    private StatefulSet getDeployment(PodTemplateSpec podTemplate, StatefulSet existingDeployment) {
+        return getDeployment(podTemplate, existingDeployment, null);
     }
 
     private StatefulSet getDeployment(PodTemplateSpec podTemplate) {
@@ -249,7 +280,45 @@ public class PodTemplateTest {
     }
 
     @Test
-    public void testAnnotationsAreMerged() {
+    public void testEnvVarConflict() {
+        // Arrange
+        var additionalPodTemplate = new PodTemplateSpecBuilder()
+                .withNewSpec()
+                .addNewContainer()
+                .addNewEnv()
+                .withName("KC_CACHE_STACK")
+                .withValue("template_stack")
+                .endEnv()
+                .addNewEnv()
+                .withName("KC_DB_URL_HOST")
+                .withValue("template_host")
+                .endEnv()
+                .endContainer()
+                .endSpec()
+                .build();
+
+        // Act
+        var podTemplate = getDeployment(additionalPodTemplate, null,
+                s -> s.addNewAdditionalOption("cache.stack", "additional_stack")
+                        .addNewAdditionalOption("http.port", "additional_port").withNewDatabaseSpec().withHost("spec-host")
+                        .endDatabaseSpec())
+                .getSpec().getTemplate();
+
+        // Assert
+        var envVar = podTemplate.getSpec().getContainers().get(0).getEnv();
+        var envVarMap = envVar.stream().collect(Collectors.toMap(EnvVar::getName, Function.identity(), (e1, e2) -> {
+            Assertions.fail("duplicate env" + e1.getName());
+            return e1;
+        }));
+        // template spec takes the most priority for envs - only fields called out in the KeycloakDeployment warning are overriden by the rest of the spec
+        assertThat(envVarMap.get("KC_CACHE_STACK").getValue()).isEqualTo("template_stack");
+        assertThat(envVarMap.get("KC_DB_URL_HOST").getValue()).isEqualTo("template_host");
+        // the main spec takes priority over the additional options
+        assertThat(envVarMap.get("KC_HTTP_PORT").getValue()).isEqualTo("8080");
+    }
+
+    @Test
+    public void testAnnotationsAreNotMerged() {
         // Arrange
         var existingDeployment = new StatefulSetBuilder()
                 .withNewSpec()
@@ -271,7 +340,45 @@ public class PodTemplateTest {
         var podTemplate = getDeployment(additionalPodTemplate, existingDeployment).getSpec().getTemplate();
 
         // Assert
-        assertThat(podTemplate.getMetadata().getAnnotations()).containsEntry("one", "1");
         assertThat(podTemplate.getMetadata().getAnnotations()).containsEntry("two", "2");
+    }
+
+    @Test
+    public void testRelativePathHealthProbes() {
+        final Function<String, Container> setUpRelativePath = (path) -> getDeployment(null, new StatefulSet(),
+                spec -> spec.withAdditionalOptions(new ValueOrSecret("http-relative-path", path)))
+                .getSpec()
+                .getTemplate()
+                .getSpec()
+                .getContainers()
+                .get(0);
+
+        var first = setUpRelativePath.apply("/");
+        assertEquals("/health/ready", first.getReadinessProbe().getHttpGet().getPath());
+        assertEquals("/health/live", first.getLivenessProbe().getHttpGet().getPath());
+
+        var second = setUpRelativePath.apply("some");
+        assertEquals("some/health/ready", second.getReadinessProbe().getHttpGet().getPath());
+        assertEquals("some/health/live", second.getLivenessProbe().getHttpGet().getPath());
+
+        var third = setUpRelativePath.apply("");
+        assertEquals("/health/ready", third.getReadinessProbe().getHttpGet().getPath());
+        assertEquals("/health/live", third.getLivenessProbe().getHttpGet().getPath());
+
+        var fourth = setUpRelativePath.apply("/some/");
+        assertEquals("/some/health/ready", fourth.getReadinessProbe().getHttpGet().getPath());
+        assertEquals("/some/health/live", fourth.getLivenessProbe().getHttpGet().getPath());
+    }
+
+    @Test
+    public void testDefaultArgs() {
+        // Arrange
+        PodTemplateSpec additionalPodTemplate = null;
+
+        // Act
+        var podTemplate = getDeployment(additionalPodTemplate).getSpec().getTemplate();
+
+        // Assert
+        assertThat(podTemplate.getSpec().getContainers().get(0).getArgs()).doesNotContain("--optimized");
     }
 }

@@ -17,6 +17,8 @@
 
 package org.keycloak.models.map.storage.hotRod.realm;
 
+import org.infinispan.api.annotations.indexing.Basic;
+import org.infinispan.api.annotations.indexing.Indexed;
 import org.infinispan.protostream.GeneratedSchema;
 import org.infinispan.protostream.annotations.AutoProtoSchemaBuilder;
 import org.infinispan.protostream.annotations.ProtoDoc;
@@ -75,7 +77,7 @@ import static org.keycloak.models.map.common.ExpirationUtils.isExpired;
         topLevelEntity = true,
         modelClass = "org.keycloak.models.RealmModel"
 )
-@ProtoDoc("@Indexed")
+@Indexed
 @ProtoDoc("schema-version: " + HotRodRealmEntity.VERSION)
 public class HotRodRealmEntity extends AbstractHotRodEntity {
 
@@ -106,14 +108,14 @@ public class HotRodRealmEntity extends AbstractHotRodEntity {
         HotRodRealmEntitySchema INSTANCE = new HotRodRealmEntitySchemaImpl();
     }
 
-    @ProtoDoc("@Field(index = Index.YES, store = Store.YES)")
+    @Basic(projectable = true)
     @ProtoField(number = 1)
     public Integer entityVersion = VERSION;
 
     @ProtoField(number = 2)
     public String id;
 
-    @ProtoDoc("@Field(index = Index.YES, store = Store.YES)")
+    @Basic(sortable = true)
     @ProtoField(number = 3)
     public String name;
 
@@ -242,11 +244,11 @@ public class HotRodRealmEntity extends AbstractHotRodEntity {
     @ProtoField(number = 65)
     public Set<HotRodAuthenticatorConfigEntity> authenticatorConfigs;
 
-    @ProtoDoc("@Field(index = Index.YES, store = Store.YES)")
+    @Basic(sortable = true)
     @ProtoField(number = 66)
     public Set<HotRodClientInitialAccessEntity> clientInitialAccesses;
 
-    @ProtoDoc("@Field(index = Index.YES, store = Store.YES)")
+    @Basic(sortable = true)
     @ProtoField(number = 67)
     public Set<HotRodComponentEntity> components;
 
@@ -319,126 +321,6 @@ public class HotRodRealmEntity extends AbstractHotRodEntity {
             Optional.ofNullable(getOTPPolicy()).ifPresent(UpdatableEntity::clearUpdatedFlag);
             Optional.ofNullable(getWebAuthnPolicy()).ifPresent(UpdatableEntity::clearUpdatedFlag);
             Optional.ofNullable(getWebAuthnPolicyPasswordless()).ifPresent(UpdatableEntity::clearUpdatedFlag);
-        }
-
-        @Override
-        public Optional<MapComponentEntity> getComponent(String id) {
-            Set<HotRodComponentEntity> set = getHotRodEntity().components;
-            if (set == null || set.isEmpty()) return Optional.empty();
-
-            return set.stream().filter(ob -> Objects.equals(ob.id, id)).findFirst().map(HotRodComponentEntityDelegate::new);
-        }
-
-        @Override
-        public Boolean removeComponent(String componentId) {
-            Set<HotRodComponentEntity> set = getHotRodEntity().components;
-            boolean removed = set != null && set.removeIf(ob -> Objects.equals(ob.id, componentId));
-            getHotRodEntity().updated |= removed;
-            return removed;
-        }
-
-        @Override
-        public Optional<MapAuthenticationExecutionEntity> getAuthenticationExecution(String id) {
-            Set<HotRodAuthenticationExecutionEntity> set = getHotRodEntity().authenticationExecutions;
-            if (set == null || set.isEmpty()) return Optional.empty();
-
-            return set.stream().filter(ob -> Objects.equals(ob.id, id)).findFirst().map(HotRodAuthenticationExecutionEntityDelegate::new);
-        }
-
-        @Override
-        public Boolean removeAuthenticationExecution(String executionId) {
-            Set<HotRodAuthenticationExecutionEntity> set = getHotRodEntity().authenticationExecutions;
-            boolean removed = set != null && set.removeIf(ob -> Objects.equals(ob.id, executionId));
-            getHotRodEntity().updated |= removed;
-            return removed;
-        }
-
-        @Override
-        public Optional<MapAuthenticationFlowEntity> getAuthenticationFlow(String flowId) {
-            Set<HotRodAuthenticationFlowEntity> set = getHotRodEntity().authenticationFlows;
-            if (set == null || set.isEmpty()) return Optional.empty();
-
-            return set.stream().filter(ob -> Objects.equals(ob.id, flowId)).findFirst().map(HotRodAuthenticationFlowEntityDelegate::new);
-        }
-
-        @Override
-        public Boolean removeAuthenticationFlow(String flowId) {
-            Set<HotRodAuthenticationFlowEntity> set = getHotRodEntity().authenticationFlows;
-            boolean removed = set != null && set.removeIf(ob -> Objects.equals(ob.id, flowId));
-            getHotRodEntity().updated |= removed;
-            return removed;
-        }
-
-        @Override
-        public Boolean removeAuthenticatorConfig(String authenticatorConfigId) {
-            Set<HotRodAuthenticatorConfigEntity> set = getHotRodEntity().authenticatorConfigs;
-            boolean removed = set != null && set.removeIf(ob -> Objects.equals(ob.id, authenticatorConfigId));
-            getHotRodEntity().updated |= removed;
-            return removed;
-        }
-
-        @Override
-        public Optional<MapAuthenticatorConfigEntity> getAuthenticatorConfig(String authenticatorConfigId) {
-            Set<HotRodAuthenticatorConfigEntity> set = getHotRodEntity().authenticatorConfigs;
-            if (set == null || set.isEmpty()) return Optional.empty();
-
-            return set.stream().filter(ob -> Objects.equals(ob.id, authenticatorConfigId)).findFirst().map(HotRodAuthenticatorConfigEntityDelegate::new);
-        }
-
-        @Override
-        public Boolean removeIdentityProviderMapper(String identityProviderMapperId) {
-            Set<HotRodIdentityProviderMapperEntity> set = getHotRodEntity().identityProviderMappers;
-            boolean removed = set != null && set.removeIf(ob -> Objects.equals(ob.id, identityProviderMapperId));
-            getHotRodEntity().updated |= removed;
-            return removed;
-        }
-
-        @Override
-        public Optional<MapIdentityProviderMapperEntity> getIdentityProviderMapper(String identityProviderMapperId) {
-            Set<HotRodIdentityProviderMapperEntity> set = getHotRodEntity().identityProviderMappers;
-            if (set == null || set.isEmpty()) return Optional.empty();
-
-            return set.stream().filter(ob -> Objects.equals(ob.id, identityProviderMapperId)).findFirst().map(HotRodIdentityProviderMapperEntityDelegate::new);
-        }
-
-        @Override
-        public Boolean removeIdentityProvider(String identityProviderId) {
-            Set<HotRodIdentityProviderEntity> set = getHotRodEntity().identityProviders;
-            boolean removed = set != null && set.removeIf(ob -> Objects.equals(ob.id, identityProviderId));
-            getHotRodEntity().updated |= removed;
-            return removed;
-        }
-
-        @Override
-        public Optional<MapClientInitialAccessEntity> getClientInitialAccess(String clientInitialAccessId) {
-            Set<HotRodClientInitialAccessEntity> set = getHotRodEntity().clientInitialAccesses;
-            if (set == null || set.isEmpty()) return Optional.empty();
-
-            return set.stream().filter(ob -> Objects.equals(ob.id, clientInitialAccessId)).findFirst().map(HotRodClientInitialAccessEntityDelegate::new);
-        }
-
-        @Override
-        public Boolean removeClientInitialAccess(String clientInitialAccessId) {
-            Set<HotRodClientInitialAccessEntity> set = getHotRodEntity().clientInitialAccesses;
-            boolean removed = set != null && set.removeIf(ob -> Objects.equals(ob.id, clientInitialAccessId));
-            getHotRodEntity().updated |= removed;
-            return removed;
-        }
-
-        @Override
-        public Optional<MapRequiredActionProviderEntity> getRequiredActionProvider(String requiredActionProviderId) {
-            Set<HotRodRequiredActionProviderEntity> set = getHotRodEntity().requiredActionProviders;
-            if (set == null || set.isEmpty()) return Optional.empty();
-
-            return set.stream().filter(ob -> Objects.equals(ob.id, requiredActionProviderId)).findFirst().map(HotRodRequiredActionProviderEntityDelegate::new);
-        }
-
-        @Override
-        public Boolean removeRequiredActionProvider(String requiredActionProviderId) {
-            Set<HotRodRequiredActionProviderEntity> set = getHotRodEntity().requiredActionProviders;
-            boolean removed = set != null && set.removeIf(ob -> Objects.equals(ob.id, requiredActionProviderId));
-            getHotRodEntity().updated |= removed;
-            return removed;
         }
 
         @Override

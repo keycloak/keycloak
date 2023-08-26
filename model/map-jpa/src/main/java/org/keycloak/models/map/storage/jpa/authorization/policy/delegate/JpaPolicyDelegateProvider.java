@@ -18,12 +18,7 @@ package org.keycloak.models.map.storage.jpa.authorization.policy.delegate;
 
 import java.util.UUID;
 
-import javax.persistence.EntityManager;
-import javax.persistence.criteria.CriteriaBuilder;
-import javax.persistence.criteria.CriteriaQuery;
-import javax.persistence.criteria.JoinType;
-import javax.persistence.criteria.Root;
-
+import jakarta.persistence.EntityManager;
 import org.keycloak.models.map.authorization.entity.MapPolicyEntity;
 import org.keycloak.models.map.authorization.entity.MapPolicyEntityFields;
 import org.keycloak.models.map.common.EntityField;

@@ -18,7 +18,12 @@
 package org.keycloak.quarkus.runtime.integration.web;
 
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.atomic.LongAdder;
 import java.util.function.Predicate;
+
+import org.apache.http.HttpStatus;
+import org.jboss.logging.Logger;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.util.Resteasy;
 import org.keycloak.models.KeycloakSession;
@@ -31,7 +36,7 @@ import io.vertx.ext.web.RoutingContext;
 /**
  * <p>This filter is responsible for managing the request lifecycle as well as setting up the necessary context to process incoming
  * requests. We need this filter running on the top of the chain in order to push contextual objects before executing Resteasy. It is not
- * possible to use a {@link javax.ws.rs.container.ContainerRequestFilter} for this purpose because some mechanisms like error handling
+ * possible to use a {@link jakarta.ws.rs.container.ContainerRequestFilter} for this purpose because some mechanisms like error handling
  * will not be able to access these contextual objects.
  * 
  * <p>The filter itself runs in an event loop and should delegate to worker threads any blocking code (for now, all requests are handled
@@ -46,6 +51,8 @@ import io.vertx.ext.web.RoutingContext;
  */
 public class QuarkusRequestFilter implements Handler<RoutingContext>, TransactionalSessionHandler {
 
+    private final Logger logger = Logger.getLogger(QuarkusRequestFilter.class);
+
     private final ExecutorService executor;
 
     private Predicate<RoutingContext> contextFilter;
@@ -59,6 +66,9 @@ public class QuarkusRequestFilter implements Handler<RoutingContext>, Transactio
         this.executor = executor;
     }
 
+    private final LongAdder rejectedRequests = new LongAdder();
+    private volatile boolean loadSheddingActive;
+
     @Override
     public void handle(RoutingContext context) {
         if (ignoreContext(context)) {
@@ -67,7 +77,30 @@ public class QuarkusRequestFilter implements Handler<RoutingContext>, Transactio
         }
         // our code should always be run as blocking until we don't provide a better support for running non-blocking code
         // in the event loop
-        executor.execute(createBlockingHandler(context));
+        try {
+            executor.execute(createBlockingHandler(context));
+            if (loadSheddingActive) {
+                synchronized (rejectedRequests) {
+                    if (loadSheddingActive) {
+                        loadSheddingActive = false;
+                        // rejectedRequests.sumThenReset() is approximative when concurrent increments are active, still it should be accurate enough for this log message
+                        logger.warnf("Executor thread pool no longer exhausted, request processing continues after %s discarded request(s)", rejectedRequests.sumThenReset());
+                    }
+                }
+            }
+        } catch (RejectedExecutionException e) {
+            if (!loadSheddingActive) {
+                synchronized (rejectedRequests) {
+                    if (!loadSheddingActive) {
+                        loadSheddingActive = true;
+                        logger.warn("Executor thread pool exhausted, starting to reject requests");
+                    }
+                }
+            }
+            rejectedRequests.increment();
+            // if the thread pool has been configured with a maximum queue size, it might reject the request
+            context.fail(HttpStatus.SC_SERVICE_UNAVAILABLE);
+        }
     }
 
     private boolean ignoreContext(RoutingContext context) {

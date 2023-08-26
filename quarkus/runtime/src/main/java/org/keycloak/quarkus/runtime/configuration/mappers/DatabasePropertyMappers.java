@@ -12,6 +12,7 @@ import java.util.Optional;
 
 import static java.util.Optional.of;
 import static org.keycloak.config.StorageOptions.STORAGE;
+import static org.keycloak.config.StorageOptions.STORAGE_JPA_DB;
 import static org.keycloak.quarkus.runtime.Messages.invalidDatabaseVendor;
 import static org.keycloak.quarkus.runtime.configuration.Configuration.getRawValue;
 import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX;
@@ -26,13 +27,13 @@ final class DatabasePropertyMappers {
         return new PropertyMapper[] {
                 fromOption(DatabaseOptions.DB_DIALECT)
                         .mapFrom("db")
-                        .to("quarkus.hibernate-orm.dialect")
                         .transformer(DatabasePropertyMappers::transformDialect)
                         .build(),
                 fromOption(DatabaseOptions.DB_DRIVER)
                         .mapFrom("db")
                         .to("quarkus.datasource.jdbc.driver")
                         .transformer(DatabasePropertyMappers::getXaOrNonXaDriver)
+                        .paramLabel("driver")
                         .build(),
                 fromOption(DatabaseOptions.DB)
                         .transformer(DatabasePropertyMappers::resolveDatabaseVendor)
@@ -76,7 +77,6 @@ final class DatabasePropertyMappers {
                         .isMasked(true)
                         .build(),
                 fromOption(DatabaseOptions.DB_SCHEMA)
-                        .to("quarkus.hibernate-orm.database.default-schema")
                         .paramLabel("schema")
                         .build(),
                 fromOption(DatabaseOptions.DB_POOL_INITIAL_SIZE)
@@ -99,7 +99,7 @@ final class DatabasePropertyMappers {
 
         if (url.isPresent()) {
             if (isJpaStore()) {
-                return Database.getDefaultUrl(Database.Vendor.POSTGRES.name().toLowerCase());
+                return Database.getDefaultUrl(getJpaStoreDbVendor().name().toLowerCase());
             }
             return url;
         }
@@ -109,18 +109,12 @@ final class DatabasePropertyMappers {
 
     private static Optional<String> getXaOrNonXaDriver(Optional<String> value, ConfigSourceInterceptorContext context) {
         if (isJpaStore()) {
-            return Database.getDriver(Database.Vendor.POSTGRES.name().toLowerCase(), false);
+            // always use XA driver with jpa map store
+            return Database.getDriver(getJpaStoreDbVendor().name().toLowerCase(), true);
         }
 
         ConfigValue xaEnabledConfigValue = context.proceed("kc.transaction-xa-enabled");
-        ConfigValue jtaEnabledConfiguration = context.proceed("kc.transaction-jta-enabled");
-
         boolean isXaEnabled = xaEnabledConfigValue == null || Boolean.parseBoolean(xaEnabledConfigValue.getValue());
-        boolean isJtaEnabled = jtaEnabledConfiguration == null || Boolean.parseBoolean(jtaEnabledConfiguration.getValue());
-
-        if (!isJtaEnabled) {
-            isXaEnabled = false;
-        }
 
         Optional<String> driver = Database.getDriver(value.get(), isXaEnabled);
 
@@ -133,7 +127,7 @@ final class DatabasePropertyMappers {
 
     private static Optional<String> toDatabaseKind(Optional<String> db, ConfigSourceInterceptorContext context) {
         if (isJpaStore()) {
-            return Database.getDatabaseKind(Database.Vendor.POSTGRES.name().toLowerCase());
+            return Database.getDatabaseKind(getJpaStoreDbVendor().name().toLowerCase());
         }
 
         Optional<String> databaseKind = Database.getDatabaseKind(db.get());
@@ -142,14 +136,14 @@ final class DatabasePropertyMappers {
             return databaseKind;
         }
 
-        addInitializationException(invalidDatabaseVendor(db.get(), Database.getAliases()));
+        addInitializationException(invalidDatabaseVendor(db.get(), Database.getLegacyStoreAliases()));
 
         return of("h2");
     }
 
     private static Optional<String> resolveDatabaseVendor(Optional<String> db, ConfigSourceInterceptorContext context) {
         if (isJpaStore()) {
-            return of(Database.Vendor.POSTGRES.name().toLowerCase());
+            return Optional.of(getJpaStoreDbVendor().name().toLowerCase());
         }
 
         if (db.isEmpty()) {
@@ -186,7 +180,7 @@ final class DatabasePropertyMappers {
 
     private static Optional<String> transformDialect(Optional<String> db, ConfigSourceInterceptorContext context) {
         if (isJpaStore()) {
-            return of("org.keycloak.models.map.storage.jpa.hibernate.dialect.JsonbPostgreSQL95Dialect");
+            return Database.getDialect(getJpaStoreDbVendor().name().toLowerCase());
         }
 
         Optional<String> databaseKind = Database.getDatabaseKind(db.get());
@@ -204,16 +198,13 @@ final class DatabasePropertyMappers {
         return Database.getDialect("dev-file");
     }
 
-    private static String getDefaultVendor() {
-        if (isJpaStore()) {
-            return Database.Vendor.POSTGRES.name().toLowerCase();
-        }
-
-        return "dev-file";
-    }
-
     private static boolean isJpaStore() {
         String storage = getRawValue(NS_KEYCLOAK_PREFIX.concat(STORAGE.getKey()));
         return storage != null && StorageOptions.StorageType.jpa.name().equals(storage);
+    }
+
+    private static Database.Vendor getJpaStoreDbVendor() {
+        String storageJpaDb = getRawValue(NS_KEYCLOAK_PREFIX.concat(STORAGE_JPA_DB.getKey()));
+        return StorageOptions.getDatabaseVendor(storageJpaDb).orElse(Database.Vendor.POSTGRES);
     }
 }

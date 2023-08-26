@@ -35,11 +35,9 @@ public class LDAPIdentityStoreRegistry {
 
     private static final Logger logger = Logger.getLogger(LDAPIdentityStoreRegistry.class);
 
-    private Map<String, LDAPIdentityStoreContext> ldapStores = new ConcurrentHashMap<>();
+    private final Map<String, LDAPConfig> ldapStores = new ConcurrentHashMap<>();
 
     public LDAPIdentityStore getLdapStore(KeycloakSession session, ComponentModel ldapModel, Map<ComponentModel, LDAPConfigDecorator> configDecorators) {
-        LDAPIdentityStoreContext context = ldapStores.get(ldapModel.getId());
-
         // Ldap config might have changed for the realm. In this case, we must re-initialize
         MultivaluedHashMap<String, String> configModel = ldapModel.getConfig();
         LDAPConfig ldapConfig = new LDAPConfig(configModel);
@@ -50,14 +48,13 @@ public class LDAPIdentityStoreRegistry {
             decorator.updateLDAPConfig(ldapConfig, mapperModel);
         }
 
-        if (context == null || !ldapConfig.equals(context.config)) {
+        LDAPConfig cachedConfig = ldapStores.get(ldapModel.getId());
+        if (cachedConfig == null || !ldapConfig.equals(cachedConfig)) {
             logLDAPConfig(session, ldapModel, ldapConfig);
-
-            LDAPIdentityStore store = createLdapIdentityStore(session, ldapConfig);
-            context = new LDAPIdentityStoreContext(ldapConfig, store);
-            ldapStores.put(ldapModel.getId(), context);
+            ldapStores.put(ldapModel.getId(), ldapConfig);
         }
-        return context.store;
+
+        return createLdapIdentityStore(session, ldapConfig);
     }
 
     // Don't log LDAP password
@@ -96,17 +93,5 @@ public class LDAPIdentityStoreRegistry {
             value = defaultValue;
         }
         System.setProperty(name, value);
-    }
-
-
-    private static class LDAPIdentityStoreContext {
-
-        private LDAPIdentityStoreContext(LDAPConfig config, LDAPIdentityStore store) {
-            this.config = config;
-            this.store = store;
-        }
-
-        private LDAPConfig config;
-        private LDAPIdentityStore store;
     }
 }

@@ -19,7 +19,7 @@
     <parent>
         <artifactId>keycloak-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>999-SNAPSHOT</version>
+        <version>999.0.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <name>Keycloak Docs Parent</name>
@@ -33,4 +33,19 @@
         <module>maven-plugin</module>
         <module>guides</module>
     </modules>
+
+    <profiles>
+        <profile>
+            <id>documentation</id>
+            <modules>
+                <module>documentation</module>
+            </modules>
+        </profile>
+        <profile>
+            <id>all</id>
+            <modules>
+                <module>documentation</module>
+            </modules>
+        </profile>
+    </profiles>
 </project>

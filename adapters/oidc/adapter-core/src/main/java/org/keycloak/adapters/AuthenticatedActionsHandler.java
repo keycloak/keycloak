@@ -20,6 +20,8 @@ package org.keycloak.adapters;
 import org.jboss.logging.Logger;
 import org.keycloak.AuthorizationContext;
 import org.keycloak.KeycloakSecurityContext;
+import org.keycloak.adapters.pep.HttpAuthzRequest;
+import org.keycloak.adapters.pep.HttpAuthzResponse;
 import org.keycloak.adapters.authorization.PolicyEnforcer;
 import org.keycloak.common.util.UriUtils;
 import org.keycloak.constants.AdapterConstants;
@@ -155,7 +157,7 @@ public class AuthenticatedActionsHandler {
         }
         try {
             OIDCHttpFacade facade = (OIDCHttpFacade) this.facade;
-            AuthorizationContext authorizationContext = policyEnforcer.enforce(facade);
+            AuthorizationContext authorizationContext = policyEnforcer.enforce(new HttpAuthzRequest(facade), new HttpAuthzResponse(facade));
             RefreshableKeycloakSecurityContext session = (RefreshableKeycloakSecurityContext) facade.getSecurityContext();
 
             if (session != null) {

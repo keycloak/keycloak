@@ -43,12 +43,12 @@ import org.keycloak.timer.TimerProvider;
 import org.keycloak.transaction.JtaTransactionManagerLookup;
 
 import javax.naming.InitialContext;
-import javax.persistence.EntityManager;
-import javax.persistence.EntityManagerFactory;
-import javax.persistence.SynchronizationType;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.EntityManagerFactory;
+import jakarta.persistence.SynchronizationType;
 import javax.sql.DataSource;
-import javax.transaction.TransactionManager;
-import javax.transaction.UserTransaction;
+import jakarta.transaction.TransactionManager;
+import jakarta.transaction.UserTransaction;
 import java.io.File;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
@@ -170,9 +170,9 @@ public class DefaultJpaConnectionProviderFactory implements JpaConnectionProvide
                         String dataSource = config.get("dataSource");
                         if (dataSource != null) {
                             if (config.getBoolean("jta", jtaEnabled)) {
-                                properties.put(AvailableSettings.JPA_JTA_DATASOURCE, dataSource);
+                                properties.put(AvailableSettings.JAKARTA_JTA_DATASOURCE, dataSource);
                             } else {
-                                properties.put(AvailableSettings.JPA_NON_JTA_DATASOURCE, dataSource);
+                                properties.put(AvailableSettings.JAKARTA_NON_JTA_DATASOURCE, dataSource);
                             }
                         } else {
                             String url = config.get("url");
@@ -180,16 +180,16 @@ public class DefaultJpaConnectionProviderFactory implements JpaConnectionProvide
                             if (driver.equals("org.h2.Driver")) {
                                 url = addH2NonKeywords(url);
                             }
-                            properties.put(AvailableSettings.JPA_JDBC_URL, url);
-                            properties.put(AvailableSettings.JPA_JDBC_DRIVER, driver);
+                            properties.put(AvailableSettings.JAKARTA_JDBC_URL, url);
+                            properties.put(AvailableSettings.JAKARTA_JDBC_DRIVER, driver);
 
                             String user = config.get("user");
                             if (user != null) {
-                                properties.put(AvailableSettings.JPA_JDBC_USER, user);
+                                properties.put(AvailableSettings.JAKARTA_JDBC_USER, user);
                             }
                             String password = config.get("password");
                             if (password != null) {
-                                properties.put(AvailableSettings.JPA_JDBC_PASSWORD, password);
+                                properties.put(AvailableSettings.JAKARTA_JDBC_PASSWORD, password);
                             }
                         }
 
