@@ -255,6 +255,7 @@ public class UsersResource {
      * @param briefRepresentation Boolean which defines whether brief representations are returned (default: false)
      * @param exact Boolean which defines whether the params "last", "first", "email" and "username" must match exactly
      * @param searchQuery A query to search for custom attributes, in the format 'key1:value2 key2:value2'
+     * @param includeServiceAccounts Include service accounts in search results
      * @return a non-null {@code Stream} of users
      */
     @GET
@@ -276,11 +277,13 @@ public class UsersResource {
             @Parameter(description = "Boolean representing if user is enabled or not") @QueryParam("enabled") Boolean enabled,
             @Parameter(description = "Boolean which defines whether brief representations are returned (default: false)") @QueryParam("briefRepresentation") Boolean briefRepresentation,
             @Parameter(description = "Boolean which defines whether the params \"last\", \"first\", \"email\" and \"username\" must match exactly") @QueryParam("exact") Boolean exact,
+            @Parameter(description = "Boolean which defines whether service accounts are returned (default: false)") @QueryParam("includeServiceAccounts") Boolean includeServiceAccounts,
             @Parameter(description = "A query to search for custom attributes, in the format 'key1:value2 key2:value2'") @QueryParam("q") String searchQuery) {
         UserPermissionEvaluator userPermissionEvaluator = auth.users();
 
         userPermissionEvaluator.requireQuery();
 
+        includeServiceAccounts = includeServiceAccounts != null ? includeServiceAccounts : false;
         firstResult = firstResult != null ? firstResult : -1;
         maxResults = maxResults != null ? maxResults : Constants.DEFAULT_MAX_RESULTS;
 
@@ -303,7 +306,7 @@ public class UsersResource {
                     attributes.put(UserModel.ENABLED, enabled.toString());
                 }
                 return searchForUser(attributes, realm, userPermissionEvaluator, briefRepresentation, firstResult,
-                        maxResults, false);
+                        maxResults, includeServiceAccounts);
             }
         } else if (last != null || first != null || email != null || username != null || emailVerified != null
                 || idpAlias != null || idpUserId != null || enabled != null || exact != null || !searchAttributes.isEmpty()) {
@@ -339,10 +342,10 @@ public class UsersResource {
                     attributes.putAll(searchAttributes);
 
                     return searchForUser(attributes, realm, userPermissionEvaluator, briefRepresentation, firstResult,
-                            maxResults, true);
+                            maxResults, includeServiceAccounts);
                 } else {
                     return searchForUser(new HashMap<>(), realm, userPermissionEvaluator, briefRepresentation,
-                            firstResult, maxResults, false);
+                            firstResult, maxResults, includeServiceAccounts);
                 }
 
         return toRepresentation(realm, userPermissionEvaluator, briefRepresentation, userModels);
