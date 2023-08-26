@@ -56,8 +56,8 @@ public class GroupStorageManager extends AbstractStorageManager<GroupStorageProv
     }
 
     @Override
-    public GroupModel getGroupByName(RealmModel realm, String name, GroupModel parent) {
-        return localStorage().getGroupByName(realm, name, parent);
+    public GroupModel getGroupByName(RealmModel realm, GroupModel parent, String name) {
+        return localStorage().getGroupByName(realm, parent, name);
     }
 
     @Override

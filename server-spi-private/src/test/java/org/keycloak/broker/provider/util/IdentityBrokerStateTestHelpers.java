@@ -1629,7 +1629,7 @@ public class IdentityBrokerStateTestHelpers {
         }
 
         @Override
-        public GroupModel getGroupByName(String name, GroupModel parent) {
+        public GroupModel getGroupByName(GroupModel parent, String name) {
             return null;
         }
 

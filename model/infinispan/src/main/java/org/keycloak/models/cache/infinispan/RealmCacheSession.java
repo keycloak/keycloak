@@ -565,7 +565,7 @@ public class RealmCacheSession implements CacheRealmProvider {
         return realm + ".top.groups";
     }
 
-    static String getGroupByNameCacheKey(String realm, String name, String parentId) {
+    static String getGroupByNameCacheKey(String realm, String parentId, String name) {
         if (parentId != null) {
             return realm + ".group." + parentId + "." + name;
         } else {
@@ -896,26 +896,26 @@ public class RealmCacheSession implements CacheRealmProvider {
     }
 
     @Override
-    public GroupModel getGroupByName(RealmModel realm, String name, GroupModel parent) {
-        String cacheKey = getGroupByNameCacheKey(realm.getId(), name, parent != null? parent.getId(): null);
+    public GroupModel getGroupByName(RealmModel realm, GroupModel parent, String name) {
+        String cacheKey = getGroupByNameCacheKey(realm.getId(), parent != null? parent.getId(): null, name);
         GroupNameQuery query = cache.get(cacheKey, GroupNameQuery.class);
         if (query != null) {
             logger.tracev("Group by name cache hit: {0}", name);
         }
         if (query == null) {
             Long loaded = cache.getCurrentRevision(cacheKey);
-            GroupModel model = getGroupDelegate().getGroupByName(realm, name, parent);
+            GroupModel model = getGroupDelegate().getGroupByName(realm, parent, name);
             if (model == null) return null;
             if (invalidations.contains(model.getId())) return model;
             query = new GroupNameQuery(loaded, cacheKey, model.getId(), realm);
             cache.addRevisioned(query, startupRevision);
             return model;
         } else if (invalidations.contains(cacheKey)) {
-            return getGroupDelegate().getGroupByName(realm, name, parent);
+            return getGroupDelegate().getGroupByName(realm, parent, name);
         } else {
             String groupId = query.getGroupId();
             if (invalidations.contains(groupId)) {
-                return getGroupDelegate().getGroupByName(realm, name, parent);
+                return getGroupDelegate().getGroupByName(realm, parent, name);
             }
             return getGroupById(realm, groupId);
         }

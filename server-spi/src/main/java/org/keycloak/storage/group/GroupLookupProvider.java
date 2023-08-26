@@ -19,9 +19,7 @@ package org.keycloak.storage.group;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.RealmModel;
 
-import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public interface GroupLookupProvider {
@@ -38,12 +36,12 @@ public interface GroupLookupProvider {
     /**
      * Returns a group from the given realm with the corresponding name
      *
-     * @param realm Realm.
-     * @param name name.
+     * @param realm  Realm.
      * @param parent parent Group if not top level
-     * @return GroupModel with the correesponding name.
+     * @param name   name.
+     * @return GroupModel with the corresponding name.
      */
-    GroupModel getGroupByName(RealmModel realm, String name, GroupModel parent);
+    GroupModel getGroupByName(RealmModel realm, GroupModel parent, String name);
 
     /**
      * Returns the group hierarchy with the given string in name for the given realm.

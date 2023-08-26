@@ -644,7 +644,7 @@ public interface RealmModel extends RoleContainerModel {
 
     GroupModel getGroupById(String id);
 
-    GroupModel getGroupByName(String name, GroupModel parent);
+    GroupModel getGroupByName(GroupModel parent, String name);
 
 
     /**

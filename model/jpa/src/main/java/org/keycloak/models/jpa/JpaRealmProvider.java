@@ -436,7 +436,7 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
     }
 
     @Override
-    public GroupModel getGroupByName(RealmModel realm, String name, GroupModel parent) {
+    public GroupModel getGroupByName(RealmModel realm, GroupModel parent, String name) {
         TypedQuery<String> query = em.createNamedQuery("getGroupIdByNameAndParent", String.class);
         query.setParameter("name", name);
         query.setParameter("realm", realm.getId());

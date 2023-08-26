@@ -1899,8 +1899,8 @@ public class RealmAdapter implements LegacyRealmModel, JpaModel<RealmEntity> {
     }
 
     @Override
-    public GroupModel getGroupByName(String name, GroupModel parent) {
-        return session.groups().getGroupByName(this, name, parent);
+    public GroupModel getGroupByName(GroupModel parent, String name) {
+        return session.groups().getGroupByName(this, parent, name);
     }
 
     @Override

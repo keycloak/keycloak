@@ -54,7 +54,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -373,7 +372,7 @@ public class GroupLDAPStorageMapper extends AbstractLDAPStorageMapper implements
                     .filter(group -> Objects.equals(group.getName(), groupName)).findFirst().orElse(null);
         } else {
             // Without preserved inheritance, it's always at groups path
-            return realm.getGroupByName(groupName, parent);
+            return realm.getGroupByName(parent, groupName);
         }
     }
     // TODO how this will work with group names with a / without hitting the db everytime
@@ -390,9 +389,9 @@ public class GroupLDAPStorageMapper extends AbstractLDAPStorageMapper implements
         String[] split = path.split("/");
         if (split.length == 0) return null;
 
-        GroupModel group = realm.getGroupByName(split[0], null);
+        GroupModel group = realm.getGroupByName(null, split[0]);
         for (int i = 1; i < split.length; i++) {
-            group = realm.getGroupByName(split[i], group);
+            group = realm.getGroupByName(group, split[i]);
         }
         return group;
     }

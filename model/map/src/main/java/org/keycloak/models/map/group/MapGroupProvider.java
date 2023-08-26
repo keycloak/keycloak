@@ -94,7 +94,7 @@ public class MapGroupProvider implements GroupProvider {
     }
 
     @Override
-    public GroupModel getGroupByName(RealmModel realm, String name, GroupModel parent) {
+    public GroupModel getGroupByName(RealmModel realm, GroupModel parent, String name) {
         if (name == null) {
             return null;
         }
@@ -109,7 +109,7 @@ public class MapGroupProvider implements GroupProvider {
 
         }
         QueryParameters<GroupModel> queryParameters = withCriteria(mcb);
-        String groupId = tx.read(queryParameters).findFirst().map(MapGroupEntity::getId)
+        String groupId = storeWithRealm(realm).read(queryParameters).findFirst().map(MapGroupEntity::getId)
                 .orElse(null);
         return groupId == null ? null : session.groups().getGroupById(realm, groupId);
     }

@@ -53,7 +53,7 @@ public class HardcodedGroupStorageProvider implements GroupStorageProvider {
     }
 
     @Override
-    public GroupModel getGroupByName(RealmModel realm, String name, GroupModel parent) {
+    public GroupModel getGroupByName(RealmModel realm, GroupModel parent, String name) {
         if (this.groupName.equals(name)) return new HardcodedGroupAdapter(realm);
         return null;
     }
