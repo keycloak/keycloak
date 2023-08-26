@@ -19,7 +19,7 @@ package org.keycloak.models.cache.infinispan.entities;
 
 import org.keycloak.models.RealmModel;
 
-public class GroupNameQuery extends AbstractRevisioned {
+public class GroupNameQuery extends AbstractRevisioned implements InRealm {
     private final String realm;
     private final String realmName;
     private final String groupId;
@@ -41,7 +41,7 @@ public class GroupNameQuery extends AbstractRevisioned {
 
     @Override
     public String toString() {
-        return "GroupListQuery{" +
+        return "GroupNameQuery{" +
                 "id='" + getId() + "'" +
                 "realmName='" + realmName + '\'' +
                 '}';
