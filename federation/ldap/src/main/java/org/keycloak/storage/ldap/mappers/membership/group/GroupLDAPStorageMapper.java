@@ -57,6 +57,8 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static org.keycloak.models.utils.KeycloakModelUtils.GROUP_PATH_SEPARATOR;
+
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
@@ -380,13 +382,13 @@ public class GroupLDAPStorageMapper extends AbstractLDAPStorageMapper implements
         if (path == null) {
             return null;
         }
-        if (path.startsWith("/")) {
+        if (path.startsWith(GROUP_PATH_SEPARATOR)) {
             path = path.substring(1);
         }
-        if (path.endsWith("/")) {
+        if (path.endsWith(GROUP_PATH_SEPARATOR)) {
             path = path.substring(0, path.length() - 1);
         }
-        String[] split = path.split("/");
+        String[] split = path.split(GROUP_PATH_SEPARATOR);
         if (split.length == 0) return null;
 
         GroupModel group = realm.getGroupByName(null, split[0]);
