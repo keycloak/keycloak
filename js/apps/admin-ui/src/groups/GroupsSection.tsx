@@ -87,7 +87,7 @@ export default function GroupsSection() {
           const group =
             i !== "search"
               ? await fetchAdminUI<GroupRepresentation | undefined>(
-                  "ui-ext/groups/" + i,
+                  "groups/" + i,
                 )
               : { name: t("searchGroups"), id: "search" };
           if (group) {

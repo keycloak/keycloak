@@ -75,7 +75,7 @@ export const GroupPickerDialog = ({
       let existingUserGroups;
       if (!groupId) {
         groups = await fetchAdminUI<GroupRepresentation[]>(
-          "ui-ext/groups",
+          "groups",
           Object.assign(
             {
               first: `${first}`,
@@ -90,8 +90,18 @@ export const GroupPickerDialog = ({
         if (!group) {
           throw new Error(t("notFound"));
         }
-        groups = group.subGroups!;
+        groups = await fetchAdminUI<GroupRepresentation[]>(
+          `groups/${groupId}/children`,
+          {
+            first: `${first}`,
+            max: `${max + 1}`,
+          },
+        );
       }
+
+      count = (
+        await adminClient.groups.count({ search: filter, top: !groupId })
+      ).count;
 
       if (id) {
         existingUserGroups = await adminClient.users.listGroups({

@@ -56,11 +56,11 @@ export const GroupTable = ({
     let groupsData = undefined;
     if (id) {
       groupsData = await fetchAdminUI<GroupRepresentation[]>(
-        "ui-ext/groups/subgroup",
-        { ...params, id },
+        `groups/${id}/children`,
+        { ...params },
       );
     } else {
-      groupsData = await fetchAdminUI<GroupRepresentation[]>("ui-ext/groups", {
+      groupsData = await fetchAdminUI<GroupRepresentation[]>("groups", {
         ...params,
         global: "false",
       });
