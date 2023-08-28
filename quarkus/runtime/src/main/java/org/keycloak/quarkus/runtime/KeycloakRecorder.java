@@ -20,7 +20,6 @@ package org.keycloak.quarkus.runtime;
 import java.lang.annotation.Annotation;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ExecutorService;
 import java.util.function.BiConsumer;
 import java.util.function.Predicate;
 
@@ -142,8 +141,8 @@ public class KeycloakRecorder {
         };
     }
 
-    public QuarkusRequestFilter createRequestFilter(List<String> ignoredPaths, ExecutorService executor) {
-        return new QuarkusRequestFilter(createIgnoredHttpPathsPredicate(ignoredPaths), executor);
+    public QuarkusRequestFilter createRequestFilter(List<String> ignoredPaths) {
+        return new QuarkusRequestFilter(createIgnoredHttpPathsPredicate(ignoredPaths));
     }
 
     private Predicate<RoutingContext> createIgnoredHttpPathsPredicate(List<String> ignoredPaths) {

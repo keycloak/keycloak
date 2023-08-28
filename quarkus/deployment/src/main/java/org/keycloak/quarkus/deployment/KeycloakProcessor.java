@@ -29,7 +29,6 @@ import io.quarkus.deployment.annotations.Produce;
 import io.quarkus.deployment.annotations.Record;
 import io.quarkus.deployment.builditem.BootstrapConfigSetupCompleteBuildItem;
 import io.quarkus.deployment.builditem.CombinedIndexBuildItem;
-import io.quarkus.deployment.builditem.ExecutorBuildItem;
 import io.quarkus.deployment.builditem.FeatureBuildItem;
 import io.quarkus.deployment.builditem.GeneratedResourceBuildItem;
 import io.quarkus.deployment.builditem.HotDeploymentWatchedFileBuildItem;
@@ -567,7 +566,7 @@ class KeycloakProcessor {
 
     @Record(ExecutionTime.RUNTIME_INIT)
     @BuildStep
-    void initializeFilter(BuildProducer<FilterBuildItem> filters, KeycloakRecorder recorder, ExecutorBuildItem executor, NonApplicationRootPathBuildItem nonApplicationRootPathBuildItem) {
+    void initializeFilter(BuildProducer<FilterBuildItem> filters, KeycloakRecorder recorder, NonApplicationRootPathBuildItem nonApplicationRootPathBuildItem) {
 
         List<String> ignoredPaths = new ArrayList<>();
 
@@ -583,7 +582,7 @@ class KeycloakProcessor {
                             .orElse(QUARKUS_DEFAULT_METRICS_PATH)));
         }
 
-        filters.produce(new FilterBuildItem(recorder.createRequestFilter(ignoredPaths, executor.getExecutorProxy()),FilterBuildItem.AUTHORIZATION - 10));
+        filters.produce(new FilterBuildItem(recorder.createRequestFilter(ignoredPaths),FilterBuildItem.AUTHORIZATION - 10));
     }
 
     @BuildStep

@@ -17,7 +17,6 @@
 
 package org.keycloak.quarkus.runtime.integration.web;
 
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.atomic.LongAdder;
 import java.util.function.Predicate;
@@ -53,17 +52,14 @@ public class QuarkusRequestFilter implements Handler<RoutingContext>, Transactio
 
     private final Logger logger = Logger.getLogger(QuarkusRequestFilter.class);
 
-    private final ExecutorService executor;
-
-    private Predicate<RoutingContext> contextFilter;
+    private final Predicate<RoutingContext> contextFilter;
 
     public QuarkusRequestFilter() {
-        this(null, null);
+        this(null);
     }
 
-    public QuarkusRequestFilter(Predicate<RoutingContext> contextFilter, ExecutorService executor) {
+    public QuarkusRequestFilter(Predicate<RoutingContext> contextFilter) {
         this.contextFilter = contextFilter;
-        this.executor = executor;
     }
 
     private final LongAdder rejectedRequests = new LongAdder();
@@ -78,7 +74,18 @@ public class QuarkusRequestFilter implements Handler<RoutingContext>, Transactio
         // our code should always be run as blocking until we don't provide a better support for running non-blocking code
         // in the event loop
         try {
-            executor.execute(createBlockingHandler(context));
+            // When running in Quarkus dev mode, this will run on Vert.x default worker pool.
+            // When running in Quarkus production mode, this will run on the Quarkus executor pool.
+            // It should not call the Quarkus executor directly, as this prevents metrics for `worker_pool_*` to be collected.
+            // See https://github.com/quarkusio/quarkus/issues/34998 for a discussion.
+            context.vertx().executeBlocking(ctx -> {
+                try {
+                    runBlockingCode(context);
+                    ctx.complete();
+                } catch (Throwable ex) {
+                    ctx.fail(ex);
+                }
+            }, false, null);
             if (loadSheddingActive) {
                 synchronized (rejectedRequests) {
                     if (loadSheddingActive) {
@@ -107,22 +114,20 @@ public class QuarkusRequestFilter implements Handler<RoutingContext>, Transactio
         return contextFilter != null && contextFilter.test(context);
     }
 
-    private Runnable createBlockingHandler(RoutingContext context) {
-        return () -> {
-            KeycloakSession session = configureContextualData(context);
+    private void runBlockingCode(RoutingContext context) {
+        KeycloakSession session = configureContextualData(context);
 
-            try {
-                context.next();
-            } catch (Throwable cause) {
-                // re-throw so that the any exception is handled from parent
-                throw new RuntimeException(cause);
-            } finally {
-                // force closing the session if not already closed
-                // under some circumstances resteasy might not be invoked like when no route is found for a particular path
-                // in this case context is set with status code 404, and we need to close the session
-                close(session);
-            }
-        };
+        try {
+            context.next();
+        } catch (Throwable cause) {
+            // re-throw so that the any exception is handled from parent
+            throw new RuntimeException(cause);
+        } finally {
+            // force closing the session if not already closed
+            // under some circumstances resteasy might not be invoked like when no route is found for a particular path
+            // in this case context is set with status code 404, and we need to close the session
+            close(session);
+        }
     }
 
     private KeycloakSession configureContextualData(RoutingContext context) {
