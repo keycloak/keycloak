@@ -1088,7 +1088,7 @@ public class RealmCacheSession implements CacheRealmProvider {
     @Override
     public Stream<GroupModel> getTopLevelGroupsStream(RealmModel realm, String search, Integer first, Integer max) {
         String cacheKey = getTopGroupsQueryCacheKey(realm.getId() + search + first + max);
-        boolean queryDB = invalidations.contains(cacheKey) || listInvalidations.contains(realm.getId() + search + first + max)
+        boolean queryDB = invalidations.contains(cacheKey) || listInvalidations.contains(cacheKey)
             || listInvalidations.contains(realm.getId());
         if (queryDB) {
             return getGroupDelegate().getTopLevelGroupsStream(realm, search, first, max);
