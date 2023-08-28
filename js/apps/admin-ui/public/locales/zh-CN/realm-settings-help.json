@@ -10,7 +10,7 @@
   "endpoints": "显示协议端点的配置",
   "loginTheme": "为登录、OTP、授予、注册和忘记密码页面选择主题。",
   "accountTheme": "为用户账户管理页面选择主题。",
-  "adminUITheme": "为管理界面选择主题。",
+  "adminTheme": "为管理界面选择主题。",
   "emailTheme": "为服务器发送的电子邮件选择主题。",
   "displayName": "在管理 UI 中链接时显示提供商的名称",
   "priority": "供应商的优先级",
