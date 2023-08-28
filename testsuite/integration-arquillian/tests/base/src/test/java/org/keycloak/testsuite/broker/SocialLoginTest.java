@@ -370,6 +370,7 @@ public class SocialLoginTest extends AbstractKeycloakTest {
     public void githubLogin() throws InterruptedException {
         setTestProvider(GITHUB);
         performLogin();
+        assertUpdateProfile(true, true, false);
         appPage.assertCurrent();
         testTokenExchange();
     }
@@ -378,6 +379,7 @@ public class SocialLoginTest extends AbstractKeycloakTest {
     public void githubPrivateEmailLogin() throws InterruptedException {
         setTestProvider(GITHUB_PRIVATE_EMAIL);
         performLogin();
+        assertUpdateProfile(true, true, false);
         appPage.assertCurrent();
     }
 
