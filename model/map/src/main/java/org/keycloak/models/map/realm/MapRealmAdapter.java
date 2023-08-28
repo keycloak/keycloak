@@ -1268,6 +1268,16 @@ public class MapRealmAdapter extends AbstractRealmModel<MapRealmEntity> implemen
     }
 
     @Override
+    public String getWelcomeTheme() {
+        return entity.getWelcomeTheme();
+    }
+
+    @Override
+    public void setWelcomeTheme(String name) {
+        entity.setWelcomeTheme(name);
+    }
+
+    @Override
     public int getNotBefore() {
         Long notBefore = entity.getNotBefore();
         return notBefore == null ? 0 : TimeAdapter.fromLongWithTimeInSecondsToIntegerWithTimeInSeconds(notBefore);

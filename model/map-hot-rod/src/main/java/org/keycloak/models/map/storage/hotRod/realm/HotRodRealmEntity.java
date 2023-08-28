@@ -219,6 +219,8 @@ public class HotRodRealmEntity extends AbstractHotRodEntity {
     public String emailTheme;
     @ProtoField(number = 53)
     public String loginTheme;
+    @ProtoField(number = 78)
+    public String welcomeTheme;
     @ProtoField(number = 54)
     public String masterAdminClient;
     @ProtoField(number = 55)

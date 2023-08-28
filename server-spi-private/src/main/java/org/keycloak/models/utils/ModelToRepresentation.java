@@ -458,6 +458,7 @@ public class ModelToRepresentation {
         rep.setLoginTheme(realm.getLoginTheme());
         rep.setAdminTheme(realm.getAdminTheme());
         rep.setEmailTheme(realm.getEmailTheme());
+        rep.setWelcomeTheme(realm.getWelcomeTheme());
         if (realm.getPasswordPolicy() != null) {
             rep.setPasswordPolicy(realm.getPasswordPolicy().toString());
         }

@@ -551,6 +551,9 @@ public interface RealmModel extends RoleContainerModel {
 
     void setEmailTheme(String name);
 
+    String getWelcomeTheme();
+
+    void setWelcomeTheme(String name);
 
     /**
      * Time in seconds since epoc

@@ -1,6 +1,5 @@
 package org.keycloak.theme;
 
-import org.keycloak.Config;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 
@@ -19,9 +18,6 @@ public class DefaultThemeSelectorProvider implements ThemeSelectorProvider {
         String name = null;
 
         switch (type) {
-            case WELCOME:
-                name = Config.scope("theme").get("welcomeTheme");
-                break;
             case LOGIN:
                 ClientModel client = session.getContext().getClient();
                 if (client != null) {
@@ -41,6 +37,9 @@ public class DefaultThemeSelectorProvider implements ThemeSelectorProvider {
                 break;
             case ADMIN:
                 name = session.getContext().getRealm().getAdminTheme();
+                break;
+            case WELCOME:
+                name = session.getContext().getRealm().getWelcomeTheme();
                 break;
         }
 

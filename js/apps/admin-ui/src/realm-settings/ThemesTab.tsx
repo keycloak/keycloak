@@ -32,6 +32,7 @@ export const RealmSettingsThemesTab = ({
   const [accountThemeOpen, setAccountThemeOpen] = useState(false);
   const [adminUIThemeOpen, setAdminUIThemeOpen] = useState(false);
   const [emailThemeOpen, setEmailThemeOpen] = useState(false);
+  const [welcomeThemeOpen, setWelcomeThemeOpen] = useState(false);
 
   const { control, handleSubmit, setValue } = useForm<RealmRepresentation>();
   const themeTypes = useServerInfo().themes!;
@@ -75,7 +76,7 @@ export const RealmSettingsThemesTab = ({
                 variant={SelectVariant.single}
                 aria-label={t("loginTheme")}
                 isOpen={loginThemeOpen}
-                placeholderText="Select a theme"
+                placeholderText={t("selectATheme")}
                 data-testid="select-login-theme"
               >
                 {themeTypes.login.map((theme, idx) => (
@@ -117,7 +118,7 @@ export const RealmSettingsThemesTab = ({
                 variant={SelectVariant.single}
                 aria-label={t("accountTheme")}
                 isOpen={accountThemeOpen}
-                placeholderText="Select a theme"
+                placeholderText={t("selectATheme")}
                 data-testid="select-account-theme"
               >
                 {themeTypes.account
@@ -140,7 +141,7 @@ export const RealmSettingsThemesTab = ({
           fieldId="kc-admin-ui-theme"
           labelIcon={
             <HelpItem
-              helpText={t("realm-settings-help:adminUITheme")}
+              helpText={t("realm-settings-help:adminTheme")}
               fieldLabelId="realm-settings:adminTheme"
             />
           }
@@ -159,9 +160,9 @@ export const RealmSettingsThemesTab = ({
                 }}
                 selections={field.value}
                 variant={SelectVariant.single}
-                aria-label={t("adminUITheme")}
+                aria-label={t("adminTheme")}
                 isOpen={adminUIThemeOpen}
-                placeholderText="Select a theme"
+                placeholderText={t("selectATheme")}
                 data-testid="select-admin-theme"
               >
                 {themeTypes.admin
@@ -205,13 +206,55 @@ export const RealmSettingsThemesTab = ({
                 variant={SelectVariant.single}
                 aria-label={t("emailTheme")}
                 isOpen={emailThemeOpen}
-                placeholderText="Select a theme"
+                placeholderText={t("selectATheme")}
                 data-testid="select-email-theme"
               >
                 {themeTypes.email.map((theme, idx) => (
                   <SelectOption
                     selected={theme.name === field.value}
                     key={`email-theme-${idx}`}
+                    value={theme.name}
+                  >
+                    {t(`${theme.name}`)}
+                  </SelectOption>
+                ))}
+              </Select>
+            )}
+          />
+        </FormGroup>
+        <FormGroup
+          label={t("welcomeTheme")}
+          fieldId="kc-welcome-theme"
+          labelIcon={
+            <HelpItem
+              helpText={t("realm-settings-help:welcomeTheme")}
+              fieldLabelId="realm-settings:welcomeTheme"
+            />
+          }
+        >
+          <Controller
+            name="welcomeTheme"
+            control={control}
+            defaultValue=""
+            render={({ field }) => (
+              <Select
+                toggleId="kc-welcome-theme"
+                onToggle={() => setWelcomeThemeOpen(!welcomeThemeOpen)}
+                onSelect={(_, value) => {
+                  field.onChange(value as string);
+                  setWelcomeThemeOpen(false);
+                }}
+                selections={field.value}
+                variant={SelectVariant.single}
+                aria-label={t("welcomeTheme")}
+                isOpen={welcomeThemeOpen}
+                placeholderText={t("selectATheme")}
+                data-testid="select-welcome-theme"
+              >
+                {themeTypes.welcome.map((theme, idx) => (
+                  <SelectOption
+                    selected={theme.name === field.value}
+                    key={`welcome-theme-${idx}`}
                     value={theme.name}
                   >
                     {t(`${theme.name}`)}

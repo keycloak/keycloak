@@ -160,6 +160,7 @@
             <column name="ACCOUNT_THEME" type="VARCHAR(255)"/>
             <column name="ADMIN_THEME" type="VARCHAR(255)"/>
             <column name="EMAIL_THEME" type="VARCHAR(255)"/>
+            <column name="WELCOME_THEME" type="VARCHAR(255)"/>
             <column name="ENABLED" type="BOOLEAN" defaultValueBoolean="false">
                 <constraints nullable="false"/>
             </column>

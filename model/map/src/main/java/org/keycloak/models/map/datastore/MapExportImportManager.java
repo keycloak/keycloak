@@ -284,6 +284,7 @@ public class MapExportImportManager implements ExportImportManager {
         if (rep.getAccountTheme() != null) newRealm.setAccountTheme(rep.getAccountTheme());
         if (rep.getAdminTheme() != null) newRealm.setAdminTheme(rep.getAdminTheme());
         if (rep.getEmailTheme() != null) newRealm.setEmailTheme(rep.getEmailTheme());
+        if (rep.getWelcomeTheme() != null) newRealm.setWelcomeTheme(rep.getWelcomeTheme());
         if (rep.getLocalizationTexts() != null) {
             Map<String, Map<String, String>> localizationTexts = rep.getLocalizationTexts();
             for (Map.Entry<String, Map<String, String>> entry: localizationTexts.entrySet()) {
@@ -1077,6 +1078,7 @@ public class MapExportImportManager implements ExportImportManager {
         if (rep.getAccountTheme() != null) realm.setAccountTheme(rep.getAccountTheme());
         if (rep.getAdminTheme() != null) realm.setAdminTheme(rep.getAdminTheme());
         if (rep.getEmailTheme() != null) realm.setEmailTheme(rep.getEmailTheme());
+        if (rep.getWelcomeTheme() != null) realm.setWelcomeTheme(rep.getWelcomeTheme());
 
         if (rep.isEventsEnabled() != null) realm.setEventsEnabled(rep.isEventsEnabled());
         if (rep.getEventsExpiration() != null) realm.setEventsExpiration(rep.getEventsExpiration());

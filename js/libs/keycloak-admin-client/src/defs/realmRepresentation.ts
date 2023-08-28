@@ -123,6 +123,7 @@ export default interface RealmRepresentation {
   users?: UserRepresentation[];
   verifyEmail?: boolean;
   waitIncrementSeconds?: number;
+  welcomeTheme?: string;
 }
 
 export type PartialImportRealmRepresentation = RealmRepresentation & {

@@ -923,6 +923,18 @@ public class RealmAdapter implements CachedRealmModel {
     }
 
     @Override
+    public String getWelcomeTheme() {
+        if (isUpdated()) return updated.getWelcomeTheme();
+        return cached.getWelcomeTheme();
+    }
+
+    @Override
+    public void setWelcomeTheme(String name) {
+        getDelegateForUpdate();
+        updated.setWelcomeTheme(name);
+    }
+
+    @Override
     public int getNotBefore() {
         if (isUpdated()) return updated.getNotBefore();
         return cached.getNotBefore();

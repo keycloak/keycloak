@@ -27,6 +27,8 @@ export default class RealmSettingsPage extends CommonPage {
   adminThemeList = "#kc-admin-ui-theme + ul";
   selectEmailTheme = "#kc-email-theme";
   emailThemeList = "#kc-email-theme + ul";
+  selectWelcomeTheme = "#kc-welcome-theme";
+  welcomeThemeList = "#kc-welcome-theme + ul";
   hostInput = "#kc-host";
   ssoSessionIdleSelectMenu = "#kc-sso-session-idle-select-menu";
   ssoSessionIdleSelectMenuList = "#kc-sso-session-idle-select-menu > div > ul";
@@ -284,6 +286,12 @@ export default class RealmSettingsPage extends CommonPage {
   selectEmailThemeType(themeType: string) {
     cy.get(this.selectEmailTheme).click();
     cy.get(this.emailThemeList).contains(themeType).click();
+    return this;
+  }
+
+  selectWelcomeThemeType(themeType: string) {
+    cy.get(this.selectWelcomeTheme).click();
+    cy.get(this.welcomeThemeList).contains(themeType).click();
     return this;
   }
 

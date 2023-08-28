@@ -1494,6 +1494,16 @@ public class IdentityBrokerStateTestHelpers {
         }
 
         @Override
+        public String getWelcomeTheme() {
+            return null;
+        }
+
+        @Override
+        public void setWelcomeTheme(String name) {
+
+        }
+
+        @Override
         public int getNotBefore() {
             return 0;
         }

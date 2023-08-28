@@ -127,6 +127,7 @@ describe("Realm settings tabs tests", () => {
     realmSettingsPage.selectLoginThemeType("keycloak");
     realmSettingsPage.selectAccountThemeType("keycloak");
     realmSettingsPage.selectEmailThemeType("base");
+    realmSettingsPage.selectWelcomeThemeType("keycloak");
 
     realmSettingsPage.saveThemes();
   });

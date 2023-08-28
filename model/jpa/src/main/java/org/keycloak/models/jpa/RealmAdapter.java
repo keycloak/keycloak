@@ -1065,6 +1065,17 @@ public class RealmAdapter implements LegacyRealmModel, JpaModel<RealmEntity> {
     }
 
     @Override
+    public String getWelcomeTheme() {
+        return realm.getWelcomeTheme();
+    }
+
+    @Override
+    public void setWelcomeTheme(String name) {
+        realm.setWelcomeTheme(name);
+        em.flush();
+    }
+
+    @Override
     public boolean isEventsEnabled() {
         return realm.isEventsEnabled();
     }

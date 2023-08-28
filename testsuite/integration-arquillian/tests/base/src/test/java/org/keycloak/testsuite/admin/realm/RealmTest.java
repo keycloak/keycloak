@@ -679,6 +679,7 @@ public class RealmTest extends AbstractAdminTest {
         if (realm.getAccountTheme() != null) assertEquals(realm.getAccountTheme(), storedRealm.getAccountTheme());
         if (realm.getAdminTheme() != null) assertEquals(realm.getAdminTheme(), storedRealm.getAdminTheme());
         if (realm.getEmailTheme() != null) assertEquals(realm.getEmailTheme(), storedRealm.getEmailTheme());
+        if (realm.getWelcomeTheme() != null) assertEquals(realm.getWelcomeTheme(), storedRealm.getWelcomeTheme());
 
         if (realm.getPasswordPolicy() != null) assertEquals(realm.getPasswordPolicy(), storedRealm.getPasswordPolicy());
 

@@ -162,6 +162,7 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
         Assert.assertNull("Login theme was not modified", rep.getLoginTheme());
         Assert.assertNull("Email theme was not modified", rep.getEmailTheme());
         Assert.assertNull("Account theme was not modified", rep.getAccountTheme());
+        Assert.assertNull("Welcome theme was not modified", rep.getWelcomeTheme());
         // check the client theme is also removed
         List<ClientRepresentation> client = realm.clients().findByClientId("migration-saml-client");
         Assert.assertNotNull("migration-saml-client client is missing", client);

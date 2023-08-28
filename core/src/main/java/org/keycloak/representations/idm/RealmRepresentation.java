@@ -175,6 +175,7 @@ public class RealmRepresentation {
     protected String accountTheme;
     protected String adminTheme;
     protected String emailTheme;
+    protected String welcomeTheme;
     
     protected Boolean eventsEnabled;
     protected Long eventsExpiration;
@@ -733,6 +734,14 @@ public class RealmRepresentation {
 
     public void setEmailTheme(String emailTheme) {
         this.emailTheme = emailTheme;
+    }
+
+    public String getWelcomeTheme() {
+        return welcomeTheme;
+    }
+
+    public void setWelcomeTheme(String welcomeTheme) {
+        this.welcomeTheme = welcomeTheme;
     }
 
     public Integer getNotBefore() {

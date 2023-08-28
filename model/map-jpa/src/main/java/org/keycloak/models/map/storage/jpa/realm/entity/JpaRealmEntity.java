@@ -622,6 +622,16 @@ public class JpaRealmEntity extends MapRealmEntity.AbstractRealmEntity implement
     }
 
     @Override
+    public String getWelcomeTheme() {
+        return this.metadata.getWelcomeTheme();
+    }
+
+    @Override
+    public void setWelcomeTheme(String welcomeTheme) {
+        this.metadata.setWelcomeTheme(welcomeTheme);
+    }
+
+    @Override
     public String getMasterAdminClient() {
         return this.metadata.getMasterAdminClient();
     }

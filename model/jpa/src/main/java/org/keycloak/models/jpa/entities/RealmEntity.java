@@ -135,6 +135,8 @@ public class RealmEntity {
     protected String adminTheme;
     @Column(name="EMAIL_THEME")
     protected String emailTheme;
+    @Column(name="WELCOME_THEME")
+    protected String welcomeTheme;
 
     @OneToMany(cascade ={CascadeType.REMOVE}, orphanRemoval = true, mappedBy = "realm", fetch = FetchType.EAGER)
     Collection<RealmAttributeEntity> attributes = new LinkedList<>();
@@ -502,6 +504,14 @@ public class RealmEntity {
 
     public void setEmailTheme(String emailTheme) {
         this.emailTheme = emailTheme;
+    }
+
+    public String getWelcomeTheme() {
+        return welcomeTheme;
+    }
+
+    public void setWelcomeTheme(String welcomeTheme) {
+        this.welcomeTheme = welcomeTheme;
     }
 
     public int getNotBefore() {

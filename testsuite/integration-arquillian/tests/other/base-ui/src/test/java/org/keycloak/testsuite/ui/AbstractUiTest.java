@@ -72,6 +72,7 @@ public abstract class AbstractUiTest extends AbstractAuthTest {
         realm.setLoginTheme(LOCALIZED_THEME);
         realm.setAccountTheme(localizedTheme);
         realm.setEmailTheme(LOCALIZED_THEME);
+        realm.setWelcomeTheme(LOCALIZED_THEME);
     }
 
     protected IdentityProviderRepresentation createIdentityProviderRepresentation(String alias, String providerId) {
