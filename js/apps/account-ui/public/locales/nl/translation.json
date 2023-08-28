@@ -6,7 +6,7 @@
   "accountUpdatedMessage": "Uw account is bijgewerkt.",
   "add": "Toevoegen",
   "application": "Applicatie",
-  "applicationDetails": "Applicatiegegevens",
+  "applicationDetails": "Applicatiegegevens voor {{clientId}}",
   "applications": "Applicaties",
   "applicationsIntroMessage": "Bekijk applicaties waartoe uw account toegang heeft",
   "applicationType": "Applicatietype",
