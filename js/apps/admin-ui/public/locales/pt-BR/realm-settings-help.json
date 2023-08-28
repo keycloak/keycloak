@@ -1,7 +1,7 @@
 {
   "requireSsl": "É necessário SSL? 'Nunca' significa que HTTPS não é requerido para nenhum endereço IP cliente. 'Requisições externas' significa que localhost e IPs privados podem acessar sem HTTPS. 'Todas requisições' significa que HTTPS é requerido para todos os endereços IPs.",
   "accountTheme": "Selecione o tema para as páginas de administração de conta do usuário.",
-  "adminUITheme": "Selecione o tema para o UI de administração.",
+  "adminTheme": "Selecione o tema para o UI de administração.",
   "emailTheme": "Selecione o tema para os e-mail que são enviados pelo servidor.",
   "save-user-events": "If enabled login events are saved to the database which makes events available to the Admin and Account management UIs.",
   "save-admin-events": "If enabled admin events are saved to the database which makes events available to the Admin UI.",
