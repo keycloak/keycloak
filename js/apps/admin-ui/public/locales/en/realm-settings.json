@@ -179,7 +179,7 @@
   "samlIdentityProviderMetadata": "SAML 2.0 Identity Provider Metadata",
   "loginTheme": "Login theme",
   "accountTheme": "Account theme",
-  "adminTheme": "Admin UI theme",
+  "adminTheme": "Admin theme",
   "emailTheme": "Email theme",
   "internationalization": "Internationalization",
   "localization": "Localization",
