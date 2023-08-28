@@ -10,6 +10,7 @@ import environment from "../../environment";
 import { DisplayOrder } from "../component/DisplayOrder";
 import { RedirectUrl } from "../component/RedirectUrl";
 import { TextField } from "../component/TextField";
+import { useState, ChangeEvent } from "react"
 
 import "./saml-general-settings.css";
 
@@ -32,10 +33,16 @@ export const SamlGeneralSettings = ({
   } = useFormContext();
 
   const alias = watch("alias");
+  const [aliasText, setAliasText] = useState(id);
+
+  const onAliasChange = (event : ChangeEvent<HTMLInputElement>) => {
+    console.log("Pressed")
+    setAliasText(event.target.value)
+  };
 
   return (
     <>
-      <RedirectUrl id={id} />
+      <RedirectUrl id={aliasText} />
 
       <FormGroup
         label={t("alias")}
@@ -61,6 +68,8 @@ export const SamlGeneralSettings = ({
             errors.alias ? ValidatedOptions.error : ValidatedOptions.default
           }
           {...register("alias", { required: true })}
+          onChange={onAliasChange}
+
         />
       </FormGroup>
 

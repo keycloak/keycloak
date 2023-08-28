@@ -9,6 +9,7 @@ import { DisplayOrder } from "../component/DisplayOrder";
 import { RedirectUrl } from "../component/RedirectUrl";
 import { TextField } from "../component/TextField";
 import type { IdentityProviderParams } from "../routes/IdentityProvider";
+import { useState, ChangeEvent } from "react"
 
 export const OIDCGeneralSettings = ({ id }: { id: string }) => {
   const { t } = useTranslation("identity-providers");
@@ -19,9 +20,14 @@ export const OIDCGeneralSettings = ({ id }: { id: string }) => {
     formState: { errors },
   } = useFormContext();
 
+  const [aliasText, setAliasText] = useState(id);
+  const onAliasChange = (event : ChangeEvent<HTMLInputElement>) => {
+      setAliasText(event.target.value)
+    };
+
   return (
     <>
-      <RedirectUrl id={id} />
+      <RedirectUrl id={aliasText} />
 
       <FormGroup
         label={t("alias")}
@@ -47,6 +53,7 @@ export const OIDCGeneralSettings = ({ id }: { id: string }) => {
             errors.alias ? ValidatedOptions.error : ValidatedOptions.default
           }
           {...register("alias", { required: true })}
+          onChange={onAliasChange}
         />
       </FormGroup>
 
