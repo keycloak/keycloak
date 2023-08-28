@@ -55,7 +55,7 @@ const Groups = () => {
       <DataList id="groups-list" aria-label={t("groups")} isCompact>
         <DataListItem
           id="groups-list-header"
-          aria-labelledby="Groups list header"
+          aria-label={t("groupsListHeader")}
         >
           <DataListItemRow>
             <DataListItemCells
@@ -74,7 +74,7 @@ const Groups = () => {
         </DataListItem>
         <DataListItem
           id="groups-list-columns-names"
-          aria-labelledby="Groups list columns names"
+          aria-label={t("groupsListColumnsNames")}
         >
           <DataListItemRow>
             <DataListItemCells
