@@ -99,7 +99,9 @@ public interface GroupLookupProvider {
      * @param maxResults Maximum number of results to return. Ignored if negative or {@code null}.
      * @return A Stream of groups that all have the given parent group as their parent.
      */
-    Stream<GroupModel> searchForSubgroupsByParentIdStream(RealmModel realm, String id, Integer firstResult, Integer maxResults);
+    default Stream<GroupModel> searchForSubgroupsByParentIdStream(RealmModel realm, String id, Integer firstResult, Integer maxResults) {
+        return searchForSubgroupsByParentIdNameStream(realm, id, "", firstResult, maxResults);
+    }
 
     Stream<GroupModel> searchForSubgroupsByParentIdNameStream(RealmModel realm, String id, String search, Integer firstResult, Integer maxResults);
 }

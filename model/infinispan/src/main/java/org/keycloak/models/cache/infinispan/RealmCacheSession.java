@@ -1011,81 +1011,6 @@ public class RealmCacheSession implements CacheRealmProvider {
     }
 
     @Override
-    public Stream<GroupModel> getTopLevelGroupsStream(RealmModel realm) {
-        String cacheKey = getTopGroupsQueryCacheKey(realm.getId());
-        boolean queryDB = invalidations.contains(cacheKey) || listInvalidations.contains(realm.getId());
-        if (queryDB) {
-            return getGroupDelegate().getTopLevelGroupsStream(realm);
-        }
-
-        GroupListQuery query = cache.get(cacheKey, GroupListQuery.class);
-        if (query != null) {
-            logger.tracev("getTopLevelGroups cache hit: {0}", realm.getName());
-        }
-
-        if (query == null) {
-            Long loaded = cache.getCurrentRevision(cacheKey);
-            List<GroupModel> model = getGroupDelegate().getTopLevelGroupsStream(realm).collect(Collectors.toList());
-            if (model.isEmpty()) return Stream.empty();
-            Set<String> ids = new HashSet<>();
-            for (GroupModel client : model) ids.add(client.getId());
-            query = new GroupListQuery(loaded, cacheKey, realm, ids);
-            logger.tracev("adding realm getTopLevelGroups cache miss: realm {0} key {1}", realm.getName(), cacheKey);
-            cache.addRevisioned(query, startupRevision);
-            return model.stream();
-        }
-        List<GroupModel> list = new LinkedList<>();
-        for (String id : query.getGroups()) {
-            GroupModel group = session.groups().getGroupById(realm, id);
-            if (group == null) {
-                invalidations.add(cacheKey);
-                return getGroupDelegate().getTopLevelGroupsStream(realm);
-            }
-            list.add(group);
-        }
-
-        return list.stream().sorted(GroupModel.COMPARE_BY_NAME);
-    }
-
-    @Override
-    public Stream<GroupModel> getTopLevelGroupsStream(RealmModel realm, Integer first, Integer max) {
-        String cacheKey = getTopGroupsQueryCacheKey(realm.getId() + first + max);
-        boolean queryDB = invalidations.contains(cacheKey) || listInvalidations.contains(realm.getId() + first + max)
-                || listInvalidations.contains(realm.getId());
-        if (queryDB) {
-            return getGroupDelegate().getTopLevelGroupsStream(realm, first, max);
-        }
-
-        GroupListQuery query = cache.get(cacheKey, GroupListQuery.class);
-        if (Objects.nonNull(query)) {
-            logger.tracev("getTopLevelGroups cache hit: {0}", realm.getName());
-        }
-
-        if (Objects.isNull(query)) {
-            Long loaded = cache.getCurrentRevision(cacheKey);
-            List<GroupModel> model = getGroupDelegate().getTopLevelGroupsStream(realm, first, max).collect(Collectors.toList());
-            if (model.isEmpty()) return Stream.empty();
-            Set<String> ids = new HashSet<>();
-            for (GroupModel client : model) ids.add(client.getId());
-            query = new GroupListQuery(loaded, cacheKey, realm, ids);
-            logger.tracev("adding realm getTopLevelGroups cache miss: realm {0} key {1}", realm.getName(), cacheKey);
-            cache.addRevisioned(query, startupRevision);
-            return model.stream();
-        }
-        List<GroupModel> list = new LinkedList<>();
-        for (String id : query.getGroups()) {
-            GroupModel group = session.groups().getGroupById(realm, id);
-            if (Objects.isNull(group)) {
-                invalidations.add(cacheKey);
-                return getGroupDelegate().getTopLevelGroupsStream(realm);
-            }
-            list.add(group);
-        }
-
-        return list.stream().sorted(GroupModel.COMPARE_BY_NAME);
-    }
-
-    @Override
     public Stream<GroupModel> getTopLevelGroupsStream(RealmModel realm, String search, Integer first, Integer max) {
         String cacheKey = getTopGroupsQueryCacheKey(realm.getId() + search + first + max);
         boolean queryDB = invalidations.contains(cacheKey) || listInvalidations.contains(cacheKey)
@@ -1131,11 +1056,6 @@ public class RealmCacheSession implements CacheRealmProvider {
     @Override
     public Stream<GroupModel> searchForGroupByNameStream(RealmModel realm, String search, Boolean exact, Integer firstResult, Integer maxResults) {
        return getGroupDelegate().searchForGroupByNameStream(realm, search, exact, firstResult, maxResults);
-    }
-
-    @Override
-    public Stream<GroupModel> searchForSubgroupsByParentIdStream(RealmModel realm, String id, Integer firstResult, Integer maxResults) {
-        return getGroupDelegate().searchForSubgroupsByParentIdStream(realm, id, firstResult, maxResults);
     }
 
     @Override

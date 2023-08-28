@@ -134,7 +134,9 @@ public interface GroupProvider extends Provider, GroupLookupProvider {
      * @param realm Realm.
      * @return Stream of all top level groups in the realm. Never returns {@code null}.
      */
-    Stream<GroupModel> getTopLevelGroupsStream(RealmModel realm);
+    default Stream<GroupModel> getTopLevelGroupsStream(RealmModel realm) {
+        return getTopLevelGroupsStream(realm, "", null, null);
+    }
 
     /**
      * Returns top level groups (i.e. groups without parent group) for the given realm.
@@ -144,7 +146,9 @@ public interface GroupProvider extends Provider, GroupLookupProvider {
      * @param maxResults Maximum number of results to return. Ignored if negative or {@code null}.
      * @return Stream of top level groups in the realm. Never returns {@code null}.
      */
-    Stream<GroupModel> getTopLevelGroupsStream(RealmModel realm, Integer firstResult, Integer maxResults);
+    default Stream<GroupModel> getTopLevelGroupsStream(RealmModel realm, Integer firstResult, Integer maxResults) {
+        return getTopLevelGroupsStream(realm, "", firstResult, maxResults);
+    }
 
     /**
      * Returns top level groups (i.e. groups without parent group) for the given realm.

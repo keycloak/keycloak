@@ -87,14 +87,6 @@ public class GroupStorageManager extends AbstractStorageManager<GroupStorageProv
     }
 
     @Override
-    public Stream<GroupModel> searchForSubgroupsByParentIdStream(RealmModel realm, String id, Integer firstResult, Integer maxResults) {
-        Stream<GroupModel> local = localStorage().searchForSubgroupsByParentIdStream(realm, id, firstResult, maxResults);
-        // TODO: not really sure if this is actually external or internal behavior... need to learn more about what's going on with this steorage manager class and legacy providers
-        Stream<GroupModel> ext = flatMapEnabledStorageProvidersWithTimeout(realm, GroupLookupProvider.class, p -> p.searchForSubgroupsByParentIdStream(realm, id, firstResult, maxResults));
-        return Stream.concat(local, ext);
-    }
-
-    @Override
     public Stream<GroupModel> searchForSubgroupsByParentIdNameStream(RealmModel realm, String id, String search, Integer firstResult, Integer maxResults) {
         Stream<GroupModel> local = localStorage().searchForSubgroupsByParentIdNameStream(realm, id, search, firstResult, maxResults);
         // TODO: not really sure if this is actually external or internal behavior... need to learn more about what's going on with this steorage manager class and legacy providers
@@ -132,16 +124,6 @@ public class GroupStorageManager extends AbstractStorageManager<GroupStorageProv
     @Override
     public Stream<GroupModel> getGroupsByRoleStream(RealmModel realm, RoleModel role, Integer firstResult, Integer maxResults) {
         return localStorage().getGroupsByRoleStream(realm, role, firstResult, maxResults);
-    }
-
-    @Override
-    public Stream<GroupModel> getTopLevelGroupsStream(RealmModel realm) {
-        return localStorage().getTopLevelGroupsStream(realm);
-    }
-
-    @Override
-    public Stream<GroupModel> getTopLevelGroupsStream(RealmModel realm, Integer firstResult, Integer maxResults) {
-        return localStorage().getTopLevelGroupsStream(realm, firstResult, maxResults);
     }
 
     @Override

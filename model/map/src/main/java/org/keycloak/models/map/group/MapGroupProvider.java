@@ -189,24 +189,6 @@ public class MapGroupProvider implements GroupProvider {
     }
 
     @Override
-    public Stream<GroupModel> getTopLevelGroupsStream(RealmModel realm) {
-        LOG.tracef("getTopLevelGroupsStream(%s)%s", realm, getShortStackTrace());
-        return getGroupsStreamInternal(realm,
-          (DefaultModelCriteria<GroupModel> mcb) -> mcb.compare(SearchableFields.PARENT_ID, Operator.NOT_EXISTS),
-          null
-        );
-    }
-
-    @Override
-    public Stream<GroupModel> getTopLevelGroupsStream(RealmModel realm, Integer firstResult, Integer maxResults) {
-        LOG.tracef("getTopLevelGroupsStream(%s, %s, %s)%s", realm, firstResult, maxResults, getShortStackTrace());
-        return getGroupsStreamInternal(realm,
-                (DefaultModelCriteria<GroupModel> mcb) -> mcb.compare(SearchableFields.PARENT_ID, Operator.NOT_EXISTS),
-                qp -> qp.offset(firstResult).limit(maxResults)
-        );
-    }
-
-    @Override
     public Stream<GroupModel> getTopLevelGroupsStream(RealmModel realm, String search, Integer firstResult, Integer maxResults) {
         LOG.tracef("getTopLevelGroupsStream(%s, %s, %s,%s)%s", realm, search, firstResult, maxResults, getShortStackTrace());
 
@@ -233,16 +215,6 @@ public class MapGroupProvider implements GroupProvider {
                     .compare(SearchableFields.NAME, Operator.ILIKE, "%" + search + "%");
         }
 
-
-        return storeWithRealm(realm).read(withCriteria(mcb).pagination(firstResult, maxResults, SearchableFields.NAME))
-            .map(entityToAdapterFunc(realm));
-    }
-
-    @Override
-    public Stream<GroupModel> searchForSubgroupsByParentIdStream(RealmModel realm, String id, Integer firstResult, Integer maxResults) {
-        DefaultModelCriteria<GroupModel> mcb = criteria();
-        mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
-            .compare(SearchableFields.PARENT_ID, Operator.EQ, id);
 
         return storeWithRealm(realm).read(withCriteria(mcb).pagination(firstResult, maxResults, SearchableFields.NAME))
             .map(entityToAdapterFunc(realm));
