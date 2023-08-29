@@ -41,7 +41,7 @@ public class GroupRepresentation {
     protected Long subGroupCount;
     // For navigating a hierarchy of groups, we can also include a minimum representation of subGroups
     // These aren't populated by default and are only included as-needed
-    protected List<GroupRepresentation> subGroups = new ArrayList<>();
+    protected List<GroupRepresentation> subGroups;
     protected Map<String, List<String>>  attributes;
     protected List<String> realmRoles;
     protected Map<String, List<String>> clientRoles;
@@ -120,6 +120,9 @@ public class GroupRepresentation {
     }
 
     public List<GroupRepresentation> getSubGroups() {
+        if(subGroups == null) {
+            subGroups = new ArrayList<>();
+        }
         return subGroups;
     }
 

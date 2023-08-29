@@ -240,17 +240,7 @@ public class GroupAdapter implements GroupModel {
     @Override
     public Stream<GroupModel> getSubGroupsStream(String search, Integer firstResult, Integer maxResults) {
         if (isUpdated()) return updated.getSubGroupsStream(search, firstResult, maxResults);
-        Set<GroupModel> subGroups = new HashSet<>();
-        for (String id : cached.getSubGroups(modelSupplier)) {
-            GroupModel subGroup = keycloakSession.groups().getGroupById(realm, id);
-            if (subGroup == null) {
-                // chance that role was removed, so just delegate to persistence and get user invalidated
-                getDelegateForUpdate();
-                return updated.getSubGroupsStream(search, firstResult, maxResults);
-            }
-            subGroups.add(subGroup);
-        }
-        return subGroups.stream().sorted(GroupModel.COMPARE_BY_NAME);
+        return cached.getSubGroups(modelSupplier, search, firstResult, maxResults);
     }
 
 
