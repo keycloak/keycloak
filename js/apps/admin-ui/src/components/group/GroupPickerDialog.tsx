@@ -88,7 +88,7 @@ export const GroupPickerDialog = ({
       } else if (!navigation.map(({ id }) => id).includes(groupId)) {
         group = await adminClient.groups.findOne({ id: groupId });
         if (!group) {
-          throw new Error(t("notFound"));
+          throw new Error(t("common:notFound"));
         }
         groups = await fetchAdminUI<GroupRepresentation[]>(
           `groups/${groupId}/children`,
