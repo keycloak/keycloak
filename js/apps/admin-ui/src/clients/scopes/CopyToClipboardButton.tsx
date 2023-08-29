@@ -11,6 +11,7 @@ enum CopyState {
   Ready,
   Copied,
   Error,
+  Denied,
 }
 
 type CopyToClipboardButtonProps = Pick<ClipboardCopyButtonProps, "variant"> & {
@@ -28,31 +29,54 @@ export const CopyToClipboardButton = ({
   const { t } = useTranslation("clients");
   const setTimeout = useSetTimeout();
 
-  const [copy, setCopy] = useState(CopyState.Ready);
+  const [copyState, setCopyState] = useState(CopyState.Ready);
 
   const copyMessage = useMemo(() => {
-    switch (copy) {
+    switch (copyState) {
       case CopyState.Ready:
         return t("copyToClipboard");
       case CopyState.Copied:
         return t("copySuccess");
       case CopyState.Error:
         return t("clipboardCopyError");
+      case CopyState.Denied:
+        return t("clipboardCopyDenied");
     }
-  }, [copy]);
+  }, [copyState]);
 
   useEffect(() => {
-    if (copy !== CopyState.Ready) {
-      return setTimeout(() => setCopy(CopyState.Ready), 1000);
+    if (copyState !== CopyState.Ready) {
+      return setTimeout(() => setCopyState(CopyState.Ready), 1000);
     }
-  }, [copy]);
+  }, [copyState]);
 
-  const copyToClipboard = async (text: string) => {
+  const copy = async (text: string) => {
     try {
       await navigator.clipboard.writeText(text);
-      setCopy(CopyState.Copied);
+      setCopyState(CopyState.Copied);
     } catch (error) {
-      setCopy(CopyState.Error);
+      setCopyState(CopyState.Error);
+    }
+  };
+
+  const copyToClipboard = async (text: string) => {
+    const permissionStatus = await navigator.permissions.query({
+      //@ts-ignore
+      name: "clipboard-write",
+    });
+    switch (permissionStatus.state) {
+      case "granted":
+        copy(text);
+        break;
+      case "prompt":
+        permissionStatus.onchange = function () {
+          if (this.state === "granted") {
+            copy(text);
+          }
+        };
+        break;
+      case "denied":
+        setCopyState(CopyState.Denied);
     }
   };
 
