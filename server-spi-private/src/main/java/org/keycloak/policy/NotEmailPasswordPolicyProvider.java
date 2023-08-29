@@ -42,7 +42,7 @@ public class NotEmailPasswordPolicyProvider implements PasswordPolicyProvider {
         if (email == null) {
             return null;
         }
-        return email.equals(password) ? POLICY_ERROR : null;
+        return email.equalsIgnoreCase(password) ? POLICY_ERROR : null;
     }
 
     @Override
