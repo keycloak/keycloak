@@ -48,14 +48,20 @@
 
         <project.build-time>${timestamp}</project.build-time>
 
-        <wildfly.version>27.0.1.Final</wildfly.version>
-        <wildfly.build-tools.version>1.2.13.Final</wildfly.build-tools.version>
-        <wildfly.core.version>19.0.1.Final</wildfly.core.version>
+        <!-- Upstream WildFly Versions -->
+        <upstream.wildfly.version>27.0.1.Final</upstream.wildfly.version>
+        <upstream.wildfly.build-tools.version>1.2.13.Final</upstream.wildfly.build-tools.version>
+        <upstream.wildfly.core.version>21.1.0.Final</upstream.wildfly.core.version>
+
+        <!-- Downstream Builds WildFly Versions Override -->
+        <eap8.version>8.0.0.GA-redhat-00007</eap8.version>  <!-- G:A = org.jboss.eap:jboss-eap-parent -->
+        <eap8.wildfly.version>${eap8.version}</eap8.wildfly.version>
+        <eap8.wildfly.core.version>21.1.0.Final</eap8.wildfly.core.version>
+        <eap8.wildfly.build-tools.version>1.2.13.Final</eap8.wildfly.build-tools.version>
+
         <wildfly.jakarta.adapters>true</wildfly.jakarta.adapters>
         <apache.httpcomponents.fuse.version>4.5.2</apache.httpcomponents.fuse.version>
         <apache.httpcomponents.httpcore.fuse.version>4.4.4</apache.httpcomponents.httpcore.fuse.version>
-        <ee.maven.groupId>org.wildfly</ee.maven.groupId>
-        <ee.maven.version>${wildfly.version}</ee.maven.version>
 
         <jboss.as.version>7.2.0.Final</jboss.as.version>
         <jboss.as.subsystem.test.version>7.5.22.Final-redhat-1</jboss.as.subsystem.test.version>
@@ -198,8 +204,8 @@
         <org.apache.kerby.kerby-asn1.version>2.0.3</org.apache.kerby.kerby-asn1.version>
 
         <!-- WildFly Galleon Build related properties -->
-        <org.wildfly.galleon-plugins.version>5.2.7.Final</org.wildfly.galleon-plugins.version>
-        <org.jboss.galleon.version>4.2.8.Final</org.jboss.galleon.version>
+        <org.wildfly.galleon-plugins.version>6.4.2.Final</org.wildfly.galleon-plugins.version>
+        <org.jboss.galleon.version>5.1.0.Final</org.jboss.galleon.version>
 
         <!-- Galleon -->
         <galleon.fork.embedded>true</galleon.fork.embedded>
@@ -723,7 +729,7 @@
                 <scope>test</scope>
             </dependency>
             <dependency>
-                <groupId>org.wildfly</groupId>
+                <groupId>${ee.maven.groupId}</groupId>
                 <artifactId>wildfly-undertow</artifactId>
                 <version>${wildfly.version}</version>
                 <scope>test</scope>
@@ -794,12 +800,12 @@
                 <version>${wildfly.core.version}</version>
             </dependency>
             <dependency>
-                <groupId>org.wildfly</groupId>
+                <groupId>${ee.maven.groupId}</groupId>
                 <artifactId>wildfly-web-common</artifactId>
                 <version>${wildfly.version}</version>
             </dependency>
             <dependency>
-                <groupId>org.wildfly</groupId>
+                <groupId>${ee.maven.groupId}</groupId>
                 <artifactId>wildfly-clustering-infinispan-marshalling</artifactId>
                 <version>${wildfly.version}</version>
             </dependency>
@@ -1944,6 +1950,39 @@
             <modules>
                 <module>examples</module>
             </modules>
+        </profile>
+
+        <!-- Profile to activate EAP8 Adapters Build -->
+        <profile>
+            <id>eap8-adapters</id>
+            <activation>
+                <property>
+                    <name>eap8-adapters</name>
+                </property>
+            </activation>
+            <properties>
+                <ee.maven.groupId>org.jboss.eap</ee.maven.groupId>
+                <ee.maven.version>${eap8.version}</ee.maven.version>
+                <wildfly.version>${eap8.version}</wildfly.version>
+                <wildfly.build-tools.version>${eap8.wildfly.build-tools.version}</wildfly.build-tools.version>
+                <wildfly.core.version>${eap8.wildfly.core.version}</wildfly.core.version>
+            </properties>
+        </profile>
+        <profile>
+            <id>upstream-adapters</id>
+            <activation>
+                <property>
+                    <name>!eap8-adapters</name>
+                </property>
+            </activation>
+            <properties>
+                <ee.maven.groupId>org.wildfly</ee.maven.groupId>
+                <ee.maven.version>${upstream.wildfly.version}</ee.maven.version>
+                <wildfly.version>${upstream.wildfly.version}</wildfly.version>
+                <wildfly.build-tools.version>${upstream.wildfly.build-tools.version}</wildfly.build-tools.version>
+                <wildfly.core.version>${upstream.wildfly.core.version}</wildfly.core.version>
+            </properties>
+
         </profile>
 
         <profile>
