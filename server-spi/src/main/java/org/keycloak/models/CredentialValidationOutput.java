@@ -80,12 +80,13 @@ public class CredentialValidationOutput {
         FAILED,
 
         /**
-         * Federation provider was not able to recognize the user. Fallback to other user storage provider in the chain might be possible
+         * Federation provider was not able to recognize the user. It is possible that credential was valid, but fereration provider was not able to lookup the user in it's storage.
+         * Fallback to other user storage provider in the chain might be possible
          */
         FALLBACK,
 
         /**
-         * Federation provider did not fully authenticate user. It may be needed to ask user for further challenge
+         * Federation provider did not fully authenticate user. It may be needed to ask user for further challenge to then re-try authentication with same federation provider
          */
         CONTINUE,
     }
