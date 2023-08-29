@@ -118,7 +118,7 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>org.wildfly</groupId>
+            <groupId>${ee.maven.groupId}</groupId>
             <artifactId>wildfly-web-common</artifactId>
             <scope>provided</scope>
         </dependency>

@@ -31,10 +31,6 @@
     <packaging>pom</packaging>
 
     <properties>
-        <wildfly.version>27.0.0.Final</wildfly.version>
-        <wildfly.build-tools.version>1.2.13.Final</wildfly.build-tools.version>
-        <wildfly.core.version>19.0.0.Final</wildfly.core.version>
-
         <feature-pack.resources.directory>${basedir}/../../saml-adapters/wildfly-adapter/wildfly-jakarta-modules/src/main/resources</feature-pack.resources.directory>
         <version.org.wildfly.galleon-plugins>6.4.0.Final</version.org.wildfly.galleon-plugins>
         <xmlFileSource>${basedir}/src/main/resources/licenses/keycloak/licenses.xml</xmlFileSource>
@@ -185,7 +181,7 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>org.wildfly</groupId>
+            <groupId>${ee.maven.groupId}</groupId>
             <artifactId>wildfly-ee-galleon-pack</artifactId>
             <version>${wildfly.version}</version>
             <type>zip</type>
@@ -261,4 +257,25 @@
             </plugin>
         </plugins>
     </build>
+    <profiles>
+        <profile>
+            <id>eap8-adapters</id>
+            <activation>
+                <property>
+                    <name>eap8-adapters</name>
+                </property>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.wildfly.galleon-plugins</groupId>
+                        <artifactId>wildfly-galleon-maven-plugin</artifactId>
+                        <configuration>
+                            <config-file>wildfly-feature-pack-build-eap.xml</config-file>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>
