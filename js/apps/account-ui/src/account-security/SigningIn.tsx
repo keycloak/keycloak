@@ -176,6 +176,9 @@ const SigningIn = () => {
                             modalTitle={t("removeCred", [
                               label(meta.credential),
                             ])}
+                            modalMessage={t("stopUsingCred", [
+                              label(meta.credential),
+                            ])}
                             onContinue={async () => {
                               try {
                                 await deleteCredentials(meta.credential);
@@ -194,7 +197,7 @@ const SigningIn = () => {
                                 );
                               }
                             }}
-                          ></ContinueCancelModal>
+                          />
                         ) : (
                           <Button
                             variant="secondary"
