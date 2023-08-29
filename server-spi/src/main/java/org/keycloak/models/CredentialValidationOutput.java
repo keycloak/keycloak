@@ -38,7 +38,11 @@ public class CredentialValidationOutput {
     }
 
     public static CredentialValidationOutput failed() {
-        return new CredentialValidationOutput(null, CredentialValidationOutput.Status.FAILED, new HashMap<String, String>());
+        return new CredentialValidationOutput(null, CredentialValidationOutput.Status.FAILED, new HashMap<>());
+    }
+
+    public static CredentialValidationOutput fallback() {
+        return new CredentialValidationOutput(null, CredentialValidationOutput.Status.FALLBACK, new HashMap<>());
     }
 
     public UserModel getAuthenticatedUser() {
@@ -63,6 +67,27 @@ public class CredentialValidationOutput {
     }
 
     public enum Status {
-        AUTHENTICATED, FAILED, CONTINUE
+
+        /**
+         * User was successfully authenticated. The {@link #getAuthenticatedUser()} must return authenticated user when this is used
+         */
+        AUTHENTICATED,
+
+        /**
+         * Federation provider failed to authenticate user. This is typically used when user storage provider recognizes the user, but credentials
+         * are incorrect, so federation provider can mark whole authentication as not successful without eventual fallback to other user storage provider
+         */
+        FAILED,
+
+        /**
+         * Federation provider was not able to recognize the user. It is possible that credential was valid, but fereration provider was not able to lookup the user in it's storage.
+         * Fallback to other user storage provider in the chain might be possible
+         */
+        FALLBACK,
+
+        /**
+         * Federation provider did not fully authenticate user. It may be needed to ask user for further challenge to then re-try authentication with same federation provider
+         */
+        CONTINUE,
     }
 }
