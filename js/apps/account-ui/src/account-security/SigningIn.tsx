@@ -171,7 +171,7 @@ const SigningIn = () => {
                       >
                         {container.removeable ? (
                           <ContinueCancelModal
-                            buttonTitle={t("delete")}
+                            buttonTitle="remove"
                             buttonVariant="danger"
                             modalTitle={t("removeCred", [
                               label(meta.credential),
@@ -194,9 +194,7 @@ const SigningIn = () => {
                                 );
                               }
                             }}
-                          >
-                            {t("stopUsingCred", [label(meta.credential)])}
-                          </ContinueCancelModal>
+                          ></ContinueCancelModal>
                         ) : (
                           <Button
                             variant="secondary"
