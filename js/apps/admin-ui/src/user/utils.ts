@@ -11,7 +11,6 @@ export const label = (attribute: UserProfileAttribute, t: TFunction) =>
     : attribute.displayName) || attribute.name;
 
 const ROOT_ATTRIBUTES = ["username", "firstName", "lastName", "email"];
-export const DEFAULT_ROLES = ["admin", "user"];
 
 const isRootAttribute = (attr?: string) =>
   attr && ROOT_ATTRIBUTES.includes(attr);

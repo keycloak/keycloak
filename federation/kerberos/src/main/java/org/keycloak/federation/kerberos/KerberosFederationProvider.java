@@ -190,17 +190,27 @@ public class KerberosFederationProvider implements UserStorageProvider,
         if (!(input instanceof UserCredentialModel)) return null;
         UserCredentialModel credential = (UserCredentialModel)input;
         if (credential.getType().equals(UserCredentialModel.KERBEROS)) {
-            String spnegoToken = credential.getChallengeResponse();
-            SPNEGOAuthenticator spnegoAuthenticator = factory.createSPNEGOAuthenticator(spnegoToken, kerberosConfig);
+            SPNEGOAuthenticator spnegoAuthenticator = (SPNEGOAuthenticator) credential.getNote(KerberosConstants.AUTHENTICATED_SPNEGO_CONTEXT);
+            if (spnegoAuthenticator != null) {
+                logger.debugf("SPNEGO authentication already performed by previous provider. Provider '%s' will try to lookup user with principal kerberos principal '%s'", this, spnegoAuthenticator.getAuthenticatedUsername());
+            } else {
+                String spnegoToken = credential.getChallengeResponse();
+                spnegoAuthenticator = factory.createSPNEGOAuthenticator(spnegoToken, kerberosConfig);
 
-            spnegoAuthenticator.authenticate();
+                spnegoAuthenticator.authenticate();
+            }
 
-            Map<String, String> state = new HashMap<String, String>();
+            Map<String, String> state = new HashMap<>();
             if (spnegoAuthenticator.isAuthenticated()) {
                 String username = spnegoAuthenticator.getAuthenticatedUsername();
                 UserModel user = findOrCreateAuthenticatedUser(realm, username);
                 if (user == null) {
-                    return CredentialValidationOutput.failed();
+                    // Adding the authenticated SPNEGO, in case that other LDAP/Kerberos providers in the chain are able to lookup user from their LDAP
+                    // This can be the case with more complex setup (like MSAD Forest Trust environment)
+                    // Note that SPNEGO authentication cannot be done again by the other provider due the Kerberos replay protection
+                    credential.setNote(KerberosConstants.AUTHENTICATED_SPNEGO_CONTEXT, spnegoAuthenticator);
+
+                    return CredentialValidationOutput.fallback();
                 } else {
                     String delegationCredential = spnegoAuthenticator.getSerializedDelegationCredential();
                     if (delegationCredential != null) {
@@ -216,7 +226,7 @@ public class KerberosFederationProvider implements UserStorageProvider,
                 return new CredentialValidationOutput(null, CredentialValidationOutput.Status.CONTINUE, state);
             } else {
                 logger.tracef("SPNEGO Handshake not successful");
-                return CredentialValidationOutput.failed();
+                return CredentialValidationOutput.fallback();
             }
 
         } else {
@@ -281,5 +291,10 @@ public class KerberosFederationProvider implements UserStorageProvider,
         }
 
         return validate(realm, user);
+    }
+
+    @Override
+    public String toString() {
+        return "KerberosFederationProvider - " + model.getName();
     }
 }
