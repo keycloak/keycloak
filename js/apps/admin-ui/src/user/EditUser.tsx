@@ -62,7 +62,7 @@ export default function EditUser() {
   useFetch(
     async () => {
       const [user, currentRealm, attackDetection] = await Promise.all([
-        adminClient.users.findOne({ id: id! }),
+        adminClient.users.findOne({ id: id!, userProfileMetadata: true }),
         adminClient.realms.findOne({ realm }),
         adminClient.attackDetection.findOne({ id: id! }),
       ]);
