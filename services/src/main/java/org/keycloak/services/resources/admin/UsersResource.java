@@ -283,7 +283,7 @@ public class UsersResource {
 
         userPermissionEvaluator.requireQuery();
 
-        includeServiceAccounts = includeServiceAccounts != null ? includeServiceAccounts : false;
+        includeServiceAccounts = includeServiceAccounts != null ? includeServiceAccounts : true;
         firstResult = firstResult != null ? firstResult : -1;
         maxResults = maxResults != null ? maxResults : Constants.DEFAULT_MAX_RESULTS;
 
