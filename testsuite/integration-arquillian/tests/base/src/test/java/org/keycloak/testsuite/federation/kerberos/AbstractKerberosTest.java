@@ -279,7 +279,7 @@ public abstract class AbstractKerberosTest extends AbstractAuthTest {
     }
 
 
-    protected void assertUser(String expectedUsername, String expectedEmail, String expectedFirstname,
+    protected UserRepresentation assertUser(String expectedUsername, String expectedEmail, String expectedFirstname,
                               String expectedLastname, boolean updateProfileActionExpected) {
         try {
             UserRepresentation user = ApiUtil.findUserByUsername(testRealmResource(), expectedUsername);
@@ -294,8 +294,15 @@ public abstract class AbstractKerberosTest extends AbstractAuthTest {
             } else {
                 Assert.assertTrue(user.getRequiredActions().isEmpty());
             }
+            return user;
         } finally {
         }
+    }
+
+    protected void assertUserStorageProvider(UserRepresentation user, String providerName) {
+        if (user.getFederationLink() == null) Assert.fail("Federation link on user " + user.getUsername() + " was null");
+        ComponentRepresentation rep = testRealmResource().components().component(user.getFederationLink()).toRepresentation();
+        Assert.assertEquals(providerName, rep.getName());
     }
 
 
