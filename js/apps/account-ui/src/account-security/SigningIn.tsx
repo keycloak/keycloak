@@ -113,115 +113,111 @@ const SigningIn = () => {
 
   return (
     <Page title={t("signingIn")} description={t("signingInDescription")}>
-      <DataList aria-label="user credential" className="pf-u-mb-xl">
-        {credentials.map((container) => (
-          <PageSection
-            key={container.category}
-            variant="light"
-            className="pf-u-px-0"
-          >
-            <Title headingLevel="h2" size="xl">
-              {t(container.category as TFuncKey)}
-            </Title>
-            <Split className="pf-u-mt-lg pf-u-mb-lg">
-              <SplitItem>
-                <Title headingLevel="h3" size="md" className="pf-u-mb-md">
-                  <span className="cred-title pf-u-display-block">
-                    {t(container.displayName as TFuncKey)}
-                  </span>
-                </Title>
-                {t(container.helptext as TFuncKey)}
+      {credentials.map((container) => (
+        <PageSection
+          key={container.category}
+          variant="light"
+          className="pf-u-px-0"
+        >
+          <Title headingLevel="h2" size="xl">
+            {t(container.category as TFuncKey)}
+          </Title>
+          <Split className="pf-u-mt-lg pf-u-mb-lg">
+            <SplitItem>
+              <Title headingLevel="h3" size="md" className="pf-u-mb-md">
+                <span className="cred-title pf-u-display-block">
+                  {t(container.displayName as TFuncKey)}
+                </span>
+              </Title>
+              {t(container.helptext as TFuncKey)}
+            </SplitItem>
+            {container.createAction && (
+              <SplitItem isFilled>
+                <div className="pf-u-float-right">
+                  <MobileLink
+                    onClick={() =>
+                      login({
+                        action: container.createAction,
+                      })
+                    }
+                    title={t("setUpNew", [
+                      t(container.displayName as TFuncKey),
+                    ])}
+                  />
+                </div>
               </SplitItem>
-              {container.createAction && (
-                <SplitItem isFilled>
-                  <div className="pf-u-float-right">
-                    <MobileLink
-                      onClick={() =>
-                        login({
-                          action: container.createAction,
-                        })
-                      }
-                      title={t("setUpNew", [
-                        t(container.displayName as TFuncKey),
-                      ])}
-                    />
-                  </div>
-                </SplitItem>
-              )}
-            </Split>
+            )}
+          </Split>
 
-            <DataList aria-label="credential list" className="pf-u-mb-xl">
-              {container.userCredentialMetadatas.length === 0 && (
-                <EmptyRow
-                  message={t("notSetUp", [
-                    t(container.displayName as TFuncKey),
-                  ])}
-                />
-              )}
+          <DataList aria-label="credential list" className="pf-u-mb-xl">
+            {container.userCredentialMetadatas.length === 0 && (
+              <EmptyRow
+                message={t("notSetUp", [t(container.displayName as TFuncKey)])}
+              />
+            )}
 
-              {container.userCredentialMetadatas.map((meta) => (
-                <DataListItem key={meta.credential.id}>
-                  <DataListItemRow>
-                    <DataListItemCells
-                      className="pf-u-py-0"
-                      dataListCells={[
-                        ...credentialRowCells(meta),
-                        <DataListAction
-                          key="action"
-                          id={`action-${meta.credential.id}`}
-                          aria-label={t("updateCredAriaLabel")}
-                          aria-labelledby={`cred-${meta.credential.id}`}
-                        >
-                          {container.removeable ? (
-                            <ContinueCancelModal
-                              buttonTitle="remove"
-                              buttonVariant="danger"
-                              modalTitle={t("removeCred", [
-                                label(meta.credential),
-                              ])}
-                              modalMessage={t("stopUsingCred", [
-                                label(meta.credential),
-                              ])}
-                              onContinue={async () => {
-                                try {
-                                  await deleteCredentials(meta.credential);
-                                  addAlert(
-                                    t("successRemovedMessage", {
-                                      userLabel: label(meta.credential),
-                                    }),
-                                  );
-                                  refresh();
-                                } catch (error) {
-                                  addError(
-                                    t("errorRemovedMessage", {
-                                      userLabel: label(meta.credential),
-                                      error,
-                                    }).toString(),
-                                  );
-                                }
-                              }}
-                            />
-                          ) : (
-                            <Button
-                              variant="secondary"
-                              onClick={() => {
-                                if (container.updateAction)
-                                  login({ action: container.updateAction });
-                              }}
-                            >
-                              {t("update")}
-                            </Button>
-                          )}
-                        </DataListAction>,
-                      ]}
-                    />
-                  </DataListItemRow>
-                </DataListItem>
-              ))}
-            </DataList>
-          </PageSection>
-        ))}
-      </DataList>
+            {container.userCredentialMetadatas.map((meta) => (
+              <DataListItem key={meta.credential.id}>
+                <DataListItemRow>
+                  <DataListItemCells
+                    className="pf-u-py-0"
+                    dataListCells={[
+                      ...credentialRowCells(meta),
+                      <DataListAction
+                        key="action"
+                        id={`action-${meta.credential.id}`}
+                        aria-label={t("updateCredAriaLabel")}
+                        aria-labelledby={`cred-${meta.credential.id}`}
+                      >
+                        {container.removeable ? (
+                          <ContinueCancelModal
+                            buttonTitle="remove"
+                            buttonVariant="danger"
+                            modalTitle={t("removeCred", [
+                              label(meta.credential),
+                            ])}
+                            modalMessage={t("stopUsingCred", [
+                              label(meta.credential),
+                            ])}
+                            onContinue={async () => {
+                              try {
+                                await deleteCredentials(meta.credential);
+                                addAlert(
+                                  t("successRemovedMessage", {
+                                    userLabel: label(meta.credential),
+                                  }),
+                                );
+                                refresh();
+                              } catch (error) {
+                                addError(
+                                  t("errorRemovedMessage", {
+                                    userLabel: label(meta.credential),
+                                    error,
+                                  }).toString(),
+                                );
+                              }
+                            }}
+                          />
+                        ) : (
+                          <Button
+                            variant="secondary"
+                            onClick={() => {
+                              if (container.updateAction)
+                                login({ action: container.updateAction });
+                            }}
+                          >
+                            {t("update")}
+                          </Button>
+                        )}
+                      </DataListAction>,
+                    ]}
+                  />
+                </DataListItemRow>
+              </DataListItem>
+            ))}
+          </DataList>
+        </PageSection>
+      ))}
     </Page>
   );
 };
