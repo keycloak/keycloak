@@ -1421,11 +1421,6 @@ public class MapRealmAdapter extends AbstractRealmModel<MapRealmEntity> implemen
     }
 
     @Override
-    public GroupModel getGroupByName(GroupModel parent, String name) {
-        return session.groups().getGroupByName(this, parent, name);
-    }
-
-    @Override
     public Stream<GroupModel> getGroupsStream() {
         return session.groups().getGroupsStream(this);
     }

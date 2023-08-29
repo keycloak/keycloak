@@ -20,6 +20,7 @@ package org.keycloak.storage.ldap.mappers.membership.group;
 import org.jboss.logging.Logger;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.GroupModel;
+import org.keycloak.models.GroupProvider;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
@@ -374,7 +375,7 @@ public class GroupLDAPStorageMapper extends AbstractLDAPStorageMapper implements
                     .filter(group -> Objects.equals(group.getName(), groupName)).findFirst().orElse(null);
         } else {
             // Without preserved inheritance, it's always at groups path
-            return realm.getGroupByName(parent, groupName);
+            return session.groups().getGroupByName(realm, parent, groupName);
         }
     }
     // TODO how this will work with group names with a / without hitting the db everytime
@@ -391,9 +392,10 @@ public class GroupLDAPStorageMapper extends AbstractLDAPStorageMapper implements
         String[] split = path.split(GROUP_PATH_SEPARATOR);
         if (split.length == 0) return null;
 
-        GroupModel group = realm.getGroupByName(null, split[0]);
+        GroupProvider groupProvider = session.groups();
+        GroupModel group = groupProvider.getGroupByName(realm, null, split[0]);
         for (int i = 1; i < split.length; i++) {
-            group = realm.getGroupByName(group, split[i]);
+            group = groupProvider.getGroupByName(realm, group, split[i]);
         }
         return group;
     }
