@@ -157,6 +157,7 @@ public class UpdateEmail implements RequiredActionProvider, RequiredActionFactor
 
     public static UserProfile validateEmailUpdate(KeycloakSession session, UserModel user, String newEmail) {
         MultivaluedMap<String, String> formData = new MultivaluedHashMap<>();
+        formData.putSingle(UserModel.USERNAME, user.getUsername());
         formData.putSingle(UserModel.EMAIL, newEmail);
         UserProfileProvider profileProvider = session.getProvider(UserProfileProvider.class);
         UserProfile profile = profileProvider.create(UserProfileContext.UPDATE_EMAIL, formData, user);

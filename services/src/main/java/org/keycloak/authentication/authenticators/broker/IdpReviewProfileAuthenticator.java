@@ -41,6 +41,9 @@ import org.keycloak.userprofile.UserProfileProvider;
 
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
+
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
@@ -153,7 +156,9 @@ public class IdpReviewProfileAuthenticator extends AbstractIdpAuthenticator {
         };
 
         UserProfileProvider profileProvider = context.getSession().getProvider(UserProfileProvider.class);
-        UserProfile profile = profileProvider.create(UserProfileContext.IDP_REVIEW, formData, updatedProfile);
+        Map<String, List<String>> attributes = new HashMap<>(formData);
+        attributes.putIfAbsent(UserModel.USERNAME, Collections.singletonList(updatedProfile.getUsername()));
+        UserProfile profile = profileProvider.create(UserProfileContext.IDP_REVIEW, attributes, updatedProfile);
 
         try {
             String oldEmail = userCtx.getEmail();

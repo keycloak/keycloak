@@ -4,13 +4,10 @@ import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
 import { Options } from "../UserProfileFields";
-import { DEFAULT_ROLES, fieldName } from "../utils";
+import { fieldName } from "../utils";
 import { UserProfileFieldsProps, UserProfileGroup } from "./UserProfileGroup";
 
-export const SelectComponent = ({
-  roles = [],
-  ...attribute
-}: UserProfileFieldsProps) => {
+export const SelectComponent = (attribute: UserProfileFieldsProps) => {
   const { t } = useTranslation("users");
   const { control } = useFormContext();
   const [open, setOpen] = useState(false);
@@ -46,11 +43,7 @@ export const SelectComponent = ({
             variant={isMultiSelect ? "typeaheadmulti" : "single"}
             aria-label={t("common:selectOne")}
             isOpen={open}
-            isDisabled={
-              !(attribute.permissions?.edit || DEFAULT_ROLES).some((r) =>
-                roles.includes(r),
-              )
-            }
+            readOnly={attribute.readOnly}
           >
             {options.map((option) => (
               <SelectOption

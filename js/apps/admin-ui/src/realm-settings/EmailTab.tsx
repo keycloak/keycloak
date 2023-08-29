@@ -34,6 +34,8 @@ type RealmSettingsEmailTabProps = {
   save: (realm: RealmRepresentation) => void;
 };
 
+type FormFields = Omit<RealmRepresentation, "users" | "federatedUsers">;
+
 export const RealmSettingsEmailTab = ({
   realm,
   save,
@@ -51,7 +53,7 @@ export const RealmSettingsEmailTab = ({
     reset: resetForm,
     getValues,
     formState: { errors },
-  } = useForm<RealmRepresentation>({ defaultValues: realm });
+  } = useForm<FormFields>({ defaultValues: realm });
 
   const reset = () => resetForm(realm);
   const watchFromValue = watch("smtpServer.from", "");
