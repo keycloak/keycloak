@@ -19,13 +19,17 @@ package org.keycloak.storage;
 
 import org.keycloak.exportimport.ExportAdapter;
 import org.keycloak.exportimport.ExportOptions;
+import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.partialimport.PartialImportResults;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 
+import jakarta.ws.rs.BadRequestException;
+
 import java.io.InputStream;
+import java.util.regex.Pattern;
 
 /**
  * Manage importing and updating of realms for the legacy store.
@@ -44,4 +48,15 @@ public interface ExportImportManager {
     void exportRealm(RealmModel realm, ExportOptions options, ExportAdapter callback);
 
     RealmModel importRealm(InputStream requestBody);
+    
+    default String verifyRealmName(String realmName) {
+        String specialCharacter = "[~!@#$%^&*()+{}\\[\\]:;,.<>/?]";
+        Pattern pattern = Pattern.compile(specialCharacter);
+        if(realmName.trim().isEmpty()) {
+            throw new BadRequestException("Realm name can't contain empty space");
+        } else if (pattern.matcher(realmName).find()) {
+            throw new BadRequestException("Realm name can't contain special characters");
+        }
+        return realmName;
+    }
 }

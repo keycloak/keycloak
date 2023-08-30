@@ -153,6 +153,7 @@ public class LegacyExportImportManager implements ExportImportManager {
         RealmRepresentation rep;
         try {
             rep = JsonSerialization.readValue(requestBody, RealmRepresentation.class);
+            verifyRealmName(rep.getRealm());
         } catch (IOException e) {
             throw new ModelException("unable to read contents from stream", e);
         }
@@ -166,7 +167,7 @@ public class LegacyExportImportManager implements ExportImportManager {
         convertDeprecatedApplications(session, rep);
         convertDeprecatedClientTemplates(rep);
 
-        newRealm.setName(rep.getRealm());
+        newRealm.setName(verifyRealmName(rep.getRealm()));
         if (rep.getDisplayName() != null) newRealm.setDisplayName(rep.getDisplayName());
         if (rep.getDisplayNameHtml() != null) newRealm.setDisplayNameHtml(rep.getDisplayNameHtml());
         if (rep.isEnabled() != null) newRealm.setEnabled(rep.isEnabled());

@@ -173,7 +173,7 @@ public class MapExportImportManager implements ExportImportManager {
         convertDeprecatedApplications(session, rep);
         convertDeprecatedClientTemplates(rep);
 
-        newRealm.setName(rep.getRealm());
+        newRealm.setName(verifyRealmName(rep.getRealm()));
         if (rep.getDisplayName() != null) newRealm.setDisplayName(rep.getDisplayName());
         if (rep.getDisplayNameHtml() != null) newRealm.setDisplayNameHtml(rep.getDisplayNameHtml());
         if (rep.isEnabled() != null) newRealm.setEnabled(rep.isEnabled());
@@ -509,12 +509,14 @@ public class MapExportImportManager implements ExportImportManager {
                 inputData = requestBody.readAllBytes();
             }
             rep = JsonSerialization.readValue(new ByteArrayInputStream(inputData), RealmRepresentation.class);
+            verifyRealmName(rep.getRealm());
         } catch (IOException e) {
             /* This is a re-try when unrecognized property is being imported, it may happen e.g. when using admin client of newer version 
                in heterogenous cluster (during zero-downtime upgrade) and the request lands into older version of kc. */
             if (e instanceof UnrecognizedPropertyException && inputData != null) {
                 try {
                     rep = JsonSerialization.mapper.copy().disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES).readValue(new ByteArrayInputStream(inputData), RealmRepresentation.class);
+                    verifyRealmName(rep.getRealm());
                     logger.warnf("%s during an import!", e.getMessage().indexOf(",") > 0 ? e.getMessage().substring(0, e.getMessage().indexOf(",")) : "Unrecognized field");
                 } catch (IOException ex) {
                     throw new ModelException("unable to read contents from stream", ex);
