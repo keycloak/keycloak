@@ -2,15 +2,11 @@ import { defineConfig } from "cypress";
 
 export default defineConfig({
   projectId: "j4yhox",
-  screenshotsFolder: "assets/screenshots",
-  videosFolder: "assets/videos",
   chromeWebSecurity: false,
   viewportWidth: 1360,
   viewportHeight: 768,
   defaultCommandTimeout: 30000,
-  videoCompression: false,
   numTestsKeptInMemory: 30,
-  videoUploadOnPasses: false,
   experimentalMemoryManagement: true,
 
   retries: {
