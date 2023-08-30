@@ -27,10 +27,10 @@ import {
 import { ViewHeader } from "../components/view-header/ViewHeader";
 import { useAccess } from "../context/access/Access";
 import { useRealm } from "../context/realm-context/RealmContext";
-import { useWhoAmI } from "../context/whoami/WhoAmI";
 import { UserProfileProvider } from "../realm-settings/user-profile/UserProfileContext";
 import { useFetch } from "../utils/useFetch";
 import useIsFeatureEnabled, { Feature } from "../utils/useIsFeatureEnabled";
+import useLocaleSort from "../utils/useLocaleSort";
 import { useParams } from "../utils/useParams";
 import { useUpdateEffect } from "../utils/useUpdateEffect";
 import { UserAttributes } from "./UserAttributes";
@@ -58,8 +58,7 @@ export default function EditUser() {
   const [bruteForced, setBruteForced] = useState<BruteForced>();
   const [refreshCount, setRefreshCount] = useState(0);
   const refresh = () => setRefreshCount((count) => count + 1);
-  const { whoAmI } = useWhoAmI();
-  const locale = whoAmI.getLocale();
+  const localeSort = useLocaleSort();
 
   useFetch(
     async () => {
@@ -81,12 +80,9 @@ export default function EditUser() {
     ({ user, bruteForced }) => {
       setUser({
         ...user,
-        attributes: Object.keys(user.attributes || {})
-          .sort((a, b) => a.localeCompare(b, locale))
-          .reduce<Record<string, any>>((attr, value) => {
-            attr[value] = user.attributes?.[value];
-            return attr;
-          }, {}),
+        attributes: Object.fromEntries(
+          localeSort(Object.entries(user.attributes ?? {}), ([key]) => key),
+        ),
       });
       setBruteForced(bruteForced);
     },
