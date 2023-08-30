@@ -49,7 +49,7 @@
         <project.build-time>${timestamp}</project.build-time>
 
         <!-- Upstream WildFly Versions -->
-        <upstream.wildfly.version>27.0.1.Final</upstream.wildfly.version>
+        <upstream.wildfly.version>29.0.0.Final</upstream.wildfly.version>
         <upstream.wildfly.build-tools.version>1.2.13.Final</upstream.wildfly.build-tools.version>
         <upstream.wildfly.core.version>21.1.0.Final</upstream.wildfly.core.version>
 
@@ -206,6 +206,7 @@
         <!-- WildFly Galleon Build related properties -->
         <org.wildfly.galleon-plugins.version>6.4.2.Final</org.wildfly.galleon-plugins.version>
         <org.jboss.galleon.version>5.1.0.Final</org.jboss.galleon.version>
+        <org.wildfly.maven.plugins.licenses-plugin.version>2.3.1.Final</org.wildfly.maven.plugins.licenses-plugin.version>
 
         <!-- Galleon -->
         <galleon.fork.embedded>true</galleon.fork.embedded>
