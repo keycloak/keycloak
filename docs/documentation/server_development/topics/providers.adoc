@@ -304,6 +304,43 @@ should not be at the same level. For example, the authentication flow configurat
 - Your-Script-Authenticator REQUIRED
 ----
 
+==== OpenID Connect Protocol Mapper
+
+OpenID Connect Protocol Mapper scripts are javascript script that allow you
+to change the content of the ID Token and/or the Access Token.
+
+You can use the `javax.script.Bindings` script within the code.
+
+`user`::
+the current `UserModel`
+`realm`::
+the `RealmModel`
+`token`::
+the current `IDToken`. It is available only if the mapper is configured for the ID token.
+`tokenResponse`::
+the current `AccessTokenResponse`. It is available only if the mapper is configured for the Access token.
+`userSession`::
+the active `UserSessionModel`
+`keycloakSession`::
+the active `KeycloakSession`
+
+The exports of the script will be used as the value of the token claim.
+
+[source,javascript]
+----
+// prints can be used to log information for debug purpose.
+print("STARTING CUSTOM MAPPER");
+
+var inputRequest = keycloakSession.getContext().getHttpRequest();
+var params = inputRequest.getDecodedFormParameters();
+var output = params.getFirst("user_input");
+exports = output;
+----
+
+The above script allows to retrieve a `user_input` from the authorization request.
+This will be available to map in the `Token Claim Name` configured in the mapper.
+
+
 ==== Create a JAR with the scripts to deploy
 
 NOTE: JAR files are regular ZIP files with a `.jar` extension.
@@ -391,6 +428,7 @@ The name of the script file. This property is *mandatory* and should map to a fi
 ==== Deploy the script JAR
 
 Once you have a JAR file with a descriptor and the scripts you want to deploy, you just need to copy the JAR to the {project_name} `providers/` directory, then run `bin/kc.[sh|bat] build`.
+Note that you also need to enable the `scripts` feature.
 
 === Available SPIs
 
