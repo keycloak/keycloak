@@ -150,9 +150,9 @@ public class IdentityProvidersResource {
         if (data == null || !(data.containsKey("providerId") && data.containsKey("fromUrl"))) {
             throw new BadRequestException();
         }
-        
-        ReservedCharValidator.validate((String)data.get("alias"));
-        
+
+        ReservedCharValidator.validateNoSpace((String)data.get("alias"));
+
         String providerId = data.get("providerId").toString();
         String from = data.get("fromUrl").toString();
         InputStream inputStream = session.getProvider(HttpClientProvider.class).get(from);
@@ -238,7 +238,7 @@ public class IdentityProvidersResource {
     public Response create(@Parameter(description = "JSON body") IdentityProviderRepresentation representation) {
         this.auth.realm().requireManageIdentityProviders();
 
-        ReservedCharValidator.validate(representation.getAlias());
+        ReservedCharValidator.validateNoSpace(representation.getAlias());
         
         try {
             IdentityProviderModel identityProvider = RepresentationToModel.toModel(realm, representation, session);
