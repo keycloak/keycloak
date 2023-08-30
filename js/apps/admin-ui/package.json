@@ -82,7 +82,7 @@
     "react-dropzone": "^14.2.3",
     "react-error-boundary": "^3.1.4",
     "react-hook-form": "^7.45.4",
-    "react-i18next": "^13.2.0",
+    "react-i18next": "^13.2.1",
     "react-router-dom": "^6.15.0",
     "reactflow": "^11.8.3",
     "ui-shared": "workspace:*",
