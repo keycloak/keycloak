@@ -9,9 +9,10 @@ import {
 import { useTranslation } from "react-i18next";
 
 import { Options } from "../UserProfileFields";
-import { fieldName } from "../utils";
+import { fieldName, unWrap } from "../utils";
 import { UserProfileFieldsProps, UserProfileGroup } from "./UserProfileGroup";
 
+type OptionLabel = Record<string, string> | undefined;
 export const SelectComponent = (attribute: UserProfileFieldsProps) => {
   const { t } = useTranslation("users");
   const { control } = useFormContext();
@@ -41,6 +42,12 @@ export const SelectComponent = (attribute: UserProfileFieldsProps) => {
 
   const options =
     (attribute.validations?.options as Options | undefined)?.options || [];
+
+  const optionLabel = attribute.annotations?.[
+    "inputOptionLabels"
+  ] as OptionLabel;
+  const label = (label: string) =>
+    optionLabel ? t(unWrap(optionLabel[label])) : label;
 
   return (
     <UserProfileGroup {...attribute}>
@@ -79,7 +86,7 @@ export const SelectComponent = (attribute: UserProfileFieldsProps) => {
                 key={option}
                 value={option}
               >
-                {option}
+                {label(option)}
               </SelectOption>
             ))}
           </Select>
