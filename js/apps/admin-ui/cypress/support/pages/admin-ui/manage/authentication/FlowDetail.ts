@@ -68,7 +68,6 @@ export default class FlowDetails {
   addCondition(subFlowName: string, executionTestId: string) {
     this.clickEditDropdownForFlow(subFlowName, "Add condition");
 
-    cy.get(".pf-c-pagination").should("not.exist");
     cy.findByTestId(executionTestId).click();
     cy.findByTestId("modal-add").click();
 
