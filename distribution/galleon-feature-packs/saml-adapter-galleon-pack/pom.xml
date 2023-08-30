@@ -32,8 +32,6 @@
 
     <properties>
         <feature-pack.resources.directory>${basedir}/../../saml-adapters/wildfly-adapter/wildfly-jakarta-modules/src/main/resources</feature-pack.resources.directory>
-        <version.org.wildfly.galleon-plugins>6.4.0.Final</version.org.wildfly.galleon-plugins>
-        <version.org.wildfly.maven.plugins.licenses-plugin>2.3.1.Final</version.org.wildfly.maven.plugins.licenses-plugin>
         <license.directory>${project.build.directory}/resources/packages/docs.licenses/content/docs/licenses</license.directory>
     </properties>
     <dependencies>
@@ -217,7 +215,7 @@
             <plugin>
                 <groupId>org.wildfly.galleon-plugins</groupId>
                 <artifactId>wildfly-galleon-maven-plugin</artifactId>
-                <version>${version.org.wildfly.galleon-plugins}</version>
+                <version>${org.wildfly.galleon-plugins.version}</version>
                 <dependencies>
                     <!--
                         feature-spec-gen uses wildfly-embedded to generate the feature specs, hence the designated
@@ -254,7 +252,7 @@
             <plugin>
                 <groupId>org.wildfly.maven.plugins</groupId>
                 <artifactId>licenses-plugin</artifactId>
-                <version>${version.org.wildfly.maven.plugins.licenses-plugin}</version>
+                <version>${org.wildfly.maven.plugins.licenses-plugin.version}</version>
                 <inherited>false</inherited>
                 <executions>
                     <execution>
