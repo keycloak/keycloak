@@ -9,8 +9,8 @@ on:
   workflow_dispatch:
 
 env:
-  MINIKUBE_VERSION: v1.28.0
-  KUBERNETES_VERSION: v1.22.3
+  MINIKUBE_VERSION: v1.31.2
+  KUBERNETES_VERSION: v1.24.17 # OCP 4.11
 
 defaults:
   run:
