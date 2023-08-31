@@ -44,7 +44,6 @@ export const GroupTable = ({
   const id = getLastId(location.pathname);
 
   const { hasAccess } = useAccess();
-  const isManager = hasAccess("manage-users") || currentGroup()?.access?.manage;
 
   const loader = async (first?: number, max?: number) => {
     const params: Record<string, string> = {
@@ -147,7 +146,7 @@ export const GroupTable = ({
           </>
         }
         actions={
-          !isManager
+          (!hasAccess("manage-users") && !group.access?.manage)
             ? []
             : [
                 {
