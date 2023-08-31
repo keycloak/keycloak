@@ -32,6 +32,7 @@ import io.fabric8.kubernetes.api.model.apps.StatefulSetSpecFluent.TemplateNested
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.readiness.Readiness;
 import io.fabric8.kubernetes.client.utils.Serialization;
+import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.quarkus.logging.Log;
 
 import org.keycloak.common.util.CollectionUtil;
@@ -76,14 +77,14 @@ public class KeycloakDeployment extends OperatorManagedResource<StatefulSet> {
 
     private boolean migrationInProgress;
 
-    public KeycloakDeployment(KubernetesClient client, Config config, Keycloak keycloakCR, StatefulSet existingDeployment, String adminSecretName) {
+    public KeycloakDeployment(KubernetesClient client, Config config, Keycloak keycloakCR, StatefulSet existingDeployment, String adminSecretName, Context<Keycloak> context) {
         super(client, keycloakCR);
         this.operatorConfig = config;
         this.keycloakCR = keycloakCR;
         this.adminSecretName = adminSecretName;
         this.existingDeployment = existingDeployment;
         this.baseDeployment = createBaseDeployment();
-        this.distConfigurator = new KeycloakDistConfigurator(keycloakCR, baseDeployment, client);
+        this.distConfigurator = new KeycloakDistConfigurator(keycloakCR, baseDeployment, client, context);
         this.distConfigurator.configureDistOptions();
         // after the distConfiguration, we can add the remaining default / additionalConfig
         addRemainingEnvVars();

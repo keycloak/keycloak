@@ -19,6 +19,7 @@ package org.keycloak.operator.controllers;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.openshift.api.model.config.v1.Ingress;
 import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
@@ -29,6 +30,7 @@ import io.javaoperatorsdk.operator.api.reconciler.EventSourceInitializer;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
+import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
 import io.javaoperatorsdk.operator.processing.event.source.informer.Mappers;
@@ -39,10 +41,14 @@ import org.keycloak.operator.Constants;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatus;
 import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusAggregator;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.HostnameSpec;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import jakarta.inject.Inject;
 
@@ -56,6 +62,8 @@ import static io.javaoperatorsdk.operator.api.reconciler.Constants.WATCH_CURRENT
         @Dependent(type = KeycloakDiscoveryServiceDependentResource.class, useEventSourceWithName = "serviceSource")
     })
 public class KeycloakController implements Reconciler<Keycloak>, EventSourceInitializer<Keycloak>, ErrorStatusHandler<Keycloak> {
+
+    private static final String CLUSTER_CONFIG_NAME = "cluster";
 
     @Inject
     KubernetesClient client;
@@ -93,7 +101,24 @@ public class KeycloakController implements Reconciler<Keycloak>, EventSourceInit
         sources.put("serviceSource", servicesEvent);
         sources.putAll(EventSourceInitializer.nameEventSources(statefulSetEvent,
                 watchedSecrets.getWatchedSecretsEventSource()));
+
+        if (context.getClient().supports(Ingress.class)) {
+            watchOpenShiftIngress(context, sources);
+        }
+
         return sources;
+    }
+
+    private void watchOpenShiftIngress(EventSourceContext<Keycloak> context, Map<String, EventSource> sources) {
+        InformerConfiguration<Ingress> ingressIC = InformerConfiguration.from(Ingress.class)
+                .withPrimaryToSecondaryMapper(primary -> Set.of(new ResourceID(CLUSTER_CONFIG_NAME)))
+                .withSecondaryToPrimaryMapper(dependentResource -> {
+                    return context.getPrimaryCache().list()
+                            .filter(kc -> Optional.ofNullable(kc.getSpec().getHostnameSpec()).map(HostnameSpec::getHostname).isEmpty())
+                            .map(ResourceID::fromResource).collect(Collectors.toSet());
+                }).build();
+        EventSource ingressEvent = new InformerEventSource<>(ingressIC, context);
+        sources.putAll(EventSourceInitializer.nameEventSources(ingressEvent));
     }
 
     @Override
@@ -112,12 +137,13 @@ public class KeycloakController implements Reconciler<Keycloak>, EventSourceInit
 
         var statusAggregator = new KeycloakStatusAggregator(kc.getStatus(), kc.getMetadata().getGeneration());
 
-        var kcDeployment = new KeycloakDeployment(client, config, kc, context.getSecondaryResource(StatefulSet.class).orElse(null), KeycloakAdminSecretDependentResource.getName(kc));
+        var kcDeployment = new KeycloakDeployment(context.getClient(), config, kc, context.getSecondaryResource(StatefulSet.class).orElse(null), KeycloakAdminSecretDependentResource.getName(kc), context);
         kcDeployment.setWatchedSecrets(watchedSecrets);
         kcDeployment.createOrUpdateReconciled();
         kcDeployment.updateStatus(statusAggregator);
 
         var status = statusAggregator.build();
+        KeycloakIngressDependentResource.getHostname(kc, context).ifPresent(status::setHostname);
 
         Log.info("--- Reconciliation finished successfully");
 

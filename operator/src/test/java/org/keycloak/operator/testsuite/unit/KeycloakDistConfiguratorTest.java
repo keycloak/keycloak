@@ -83,7 +83,7 @@ public class KeycloakDistConfiguratorTest {
     public void featuresEmptyLists() {
         final Keycloak keycloak = K8sUtils.getResourceFromFile("test-serialization-keycloak-cr-with-empty-list.yml", Keycloak.class);
         final StatefulSet deployment = getBasicKcDeployment();
-        final KeycloakDistConfigurator distConfig = new KeycloakDistConfigurator(keycloak, deployment, null);
+        final KeycloakDistConfigurator distConfig = new KeycloakDistConfigurator(keycloak, deployment, null, null);
 
         final List<EnvVar> envVars = deployment.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv();
         distConfig.configureFeatures();
@@ -127,7 +127,7 @@ public class KeycloakDistConfiguratorTest {
     public void missingHostname() {
         final Keycloak keycloak = K8sUtils.getResourceFromFile("test-serialization-keycloak-cr-with-empty-list.yml", Keycloak.class);
         final StatefulSet deployment = getBasicKcDeployment();
-        final KeycloakDistConfigurator distConfig = new KeycloakDistConfigurator(keycloak, deployment, null);
+        final KeycloakDistConfigurator distConfig = new KeycloakDistConfigurator(keycloak, deployment, null, null);
 
         final List<EnvVar> envVars = deployment.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv();
 
@@ -149,7 +149,7 @@ public class KeycloakDistConfiguratorTest {
     private void testFirstClassCitizen(String crName, Map<String, String> expectedValues, Consumer<KeycloakDistConfigurator> config) {
         final Keycloak keycloak = K8sUtils.getResourceFromFile(crName, Keycloak.class);
         final StatefulSet deployment = getBasicKcDeployment();
-        final KeycloakDistConfigurator distConfig = new KeycloakDistConfigurator(keycloak, deployment, null);
+        final KeycloakDistConfigurator distConfig = new KeycloakDistConfigurator(keycloak, deployment, null, null);
 
         final Container container = deployment.getSpec().getTemplate().getSpec().getContainers().get(0);
         assertThat(container).isNotNull();

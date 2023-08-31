@@ -25,7 +25,9 @@ import io.fabric8.kubernetes.api.model.VolumeBuilder;
 import io.fabric8.kubernetes.api.model.VolumeMountBuilder;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.quarkus.logging.Log;
+
 import org.keycloak.common.util.CollectionUtil;
 import org.keycloak.operator.Constants;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
@@ -57,11 +59,13 @@ public class KeycloakDistConfigurator {
     private final Keycloak keycloakCR;
     private final StatefulSet deployment;
     private final KubernetesClient client;
+    private final Context<Keycloak> context;
 
-    public KeycloakDistConfigurator(Keycloak keycloakCR, StatefulSet deployment, KubernetesClient client) {
+    public KeycloakDistConfigurator(Keycloak keycloakCR, StatefulSet deployment, KubernetesClient client, Context<Keycloak> context) {
         this.keycloakCR = keycloakCR;
         this.deployment = deployment;
         this.client = client;
+        this.context = context;
     }
 
     /**
@@ -93,7 +97,7 @@ public class KeycloakDistConfigurator {
 
     public void configureHostname() {
         optionMapper(keycloakCR.getSpec().getHostnameSpec())
-                .mapOption("hostname", HostnameSpec::getHostname)
+                .mapOption("hostname", hns -> KeycloakIngressDependentResource.getHostname(keycloakCR, context).orElse(null))
                 .mapOption("hostname-admin", HostnameSpec::getAdmin)
                 .mapOption("hostname-admin-url", HostnameSpec::getAdminUrl)
                 .mapOption("hostname-strict", HostnameSpec::isStrict)

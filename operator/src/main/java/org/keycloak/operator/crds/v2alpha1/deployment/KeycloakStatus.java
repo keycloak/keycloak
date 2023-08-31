@@ -38,6 +38,7 @@ public class KeycloakStatus implements ObservedGenerationAware {
     @StatusReplicas
     private Integer instances;
     private Long observedGeneration;
+    private String hostname;
 
     private List<KeycloakStatusCondition> conditions;
 
@@ -87,6 +88,14 @@ public class KeycloakStatus implements ObservedGenerationAware {
         this.observedGeneration = generation;
     }
 
+    public String getHostname() {
+        return hostname;
+    }
+
+    public void setHostname(String hostname) {
+        this.hostname = hostname;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -95,6 +104,7 @@ public class KeycloakStatus implements ObservedGenerationAware {
         return Objects.equals(getConditions(), status.getConditions())
                 && Objects.equals(getInstances(), status.getInstances())
                 && Objects.equals(getSelector(), status.getSelector())
+                && Objects.equals(getHostname(), status.getHostname())
                 && Objects.equals(getObservedGeneration(), status.getObservedGeneration());
     }
 

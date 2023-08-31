@@ -40,7 +40,6 @@ import org.keycloak.operator.crds.v2alpha1.deployment.spec.HttpSpecBuilder;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.UnsupportedSpec;
 
 import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -92,7 +91,7 @@ public class PodTemplateTest {
 
         kc.setSpec(keycloakSpecBuilder.build());
 
-        var deployment = new KeycloakDeployment(null, config, kc, existingDeployment, "dummy-admin");
+        var deployment = new KeycloakDeployment(null, config, kc, existingDeployment, "dummy-admin", null);
 
         return deployment.getReconciledResource().get();
     }

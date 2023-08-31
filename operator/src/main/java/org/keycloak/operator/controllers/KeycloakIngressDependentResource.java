@@ -26,6 +26,7 @@ import io.javaoperatorsdk.operator.processing.dependent.workflow.Condition;
 
 import org.keycloak.operator.Constants;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
+import org.keycloak.operator.crds.v2alpha1.deployment.spec.HostnameSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.IngressSpec;
 
 import java.util.HashMap;
@@ -105,12 +106,30 @@ public class KeycloakIngressDependentResource extends CRUDKubernetesDependentRes
                 .endSpec()
                 .build();
 
-        final var hostnameSpec = keycloak.getSpec().getHostnameSpec();
-        if (hostnameSpec != null && hostnameSpec.getHostname() != null) {
-            ingress.getSpec().getRules().get(0).setHost(hostnameSpec.getHostname());
-        }
+        getHostname(keycloak, context).ifPresent(hostname -> ingress.getSpec().getRules().get(0).setHost(hostname));
 
         return ingress;
+    }
+
+    public static Optional<String> getHostname(Keycloak keycloak, Context<Keycloak> context) {
+        return Optional.ofNullable(keycloak.getSpec().getHostnameSpec()).map(HostnameSpec::getHostname)
+                .or(() -> generateOpenshiftHostname(keycloak, context));
+    }
+
+    private static Optional<String> generateOpenshiftHostname(Keycloak keycloak, Context<Keycloak> context) {
+        return Optional.ofNullable(keycloak.getSpec().getIngressSpec())
+                .filter(is -> "openshift-default".equals(is.getIngressClassName()))
+                .flatMap(is -> getAppsDomain(context).map(
+                        s -> String.format("%s-%s.%s", getName(keycloak), keycloak.getMetadata().getNamespace(), s)));
+    }
+
+    public static Optional<String> getAppsDomain(Context<Keycloak> context) {
+        try {
+            return context.getSecondaryResource(io.fabric8.openshift.api.model.config.v1.Ingress.class)
+                    .map(i -> Optional.ofNullable(i.getSpec().getAppsDomain()).orElse(i.getSpec().getDomain()));
+        } catch (IllegalArgumentException e) {
+            return Optional.empty(); // not running on openshift
+        }
     }
 
     public static String getName(Keycloak keycloak) {
