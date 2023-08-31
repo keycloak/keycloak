@@ -40,7 +40,7 @@ image::select-operator.jpeg["Select the Keycloak Operator in the UI"]
 +
 Make sure you are installing from the *fast* channel:
 +
-image::configure-operator.jpeg["Configure Keycloak Operator"]
+image::configure-operator.png["Configure Keycloak Operator"]
 
 <@profile.ifCommunity>
 === Installing by using kubectl without Operator Lifecycle Manager
