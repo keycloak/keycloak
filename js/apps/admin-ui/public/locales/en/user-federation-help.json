@@ -51,6 +51,7 @@
   "kerberosRealmHelp": "Name of kerberos realm. For example, FOO.ORG",
   "serverPrincipalHelp": "Full name of server principal for HTTP service including server and domain name. For example, HTTP/host.foo.org@FOO.ORG",
   "keyTabHelp": "Location of Kerberos KeyTab file containing the credentials of server principal. For example, /etc/krb5.keytab",
+  "krbPrincipalAttributeHelp": "Name of the LDAP attribute, which refers to Kerberos principal. This is used to lookup appropriate LDAP user after successful Kerberos/SPNEGO authentication in Keycloak. When this is empty, the LDAP user will be looked based on LDAP username corresponding to the first part of his Kerberos principal. For instance, for principal 'john@KEYCLOAK.ORG', it will assume that LDAP username is 'john'.",
   "debugHelp": "Enable/disable debug logging to standard output for Krb5LoginModule.",
   "allowPasswordAuthenticationHelp": "Enable/disable possibility of username/password authentication against Kerberos database",
   "editModeKerberosHelp": "READ_ONLY means that password updates are not allowed and user always authenticates with Kerberos password. UNSYNCED means that the user can change the password in the Keycloak database and this one will be used instead of the Kerberos password.",

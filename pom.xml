@@ -43,8 +43,8 @@
         <jboss.snapshots.repo.id>jboss-snapshots-repository</jboss.snapshots.repo.id>
         <jboss.snapshots.repo.url>https://s01.oss.sonatype.org/content/repositories/snapshots/</jboss.snapshots.repo.url>
 
-        <quarkus.version>3.2.4.Final</quarkus.version>
-        <quarkus.build.version>3.2.3.Final</quarkus.build.version>
+        <quarkus.version>3.2.5.Final</quarkus.version>
+        <quarkus.build.version>3.2.5.Final</quarkus.build.version>
 
         <project.build-time>${timestamp}</project.build-time>
 
@@ -212,8 +212,8 @@
         <server.output.dir.version>${project.version}</server.output.dir.version>
 
         <!-- Frontend -->
-        <node.version>v18.16.0</node.version>
-        <pnpm.version>8.6.2</pnpm.version>
+        <node.version>v18.17.1</node.version>
+        <pnpm.version>8.6.12</pnpm.version>
     </properties>
 
     <url>http://keycloak.org</url>

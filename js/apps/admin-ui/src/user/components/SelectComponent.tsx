@@ -9,13 +9,11 @@ import {
 import { useTranslation } from "react-i18next";
 
 import { Options } from "../UserProfileFields";
-import { DEFAULT_ROLES, fieldName } from "../utils";
+import { fieldName, unWrap } from "../utils";
 import { UserProfileFieldsProps, UserProfileGroup } from "./UserProfileGroup";
 
-export const SelectComponent = ({
-  roles = [],
-  ...attribute
-}: UserProfileFieldsProps) => {
+type OptionLabel = Record<string, string> | undefined;
+export const SelectComponent = (attribute: UserProfileFieldsProps) => {
   const { t } = useTranslation("users");
   const { control } = useFormContext();
   const [open, setOpen] = useState(false);
@@ -44,6 +42,12 @@ export const SelectComponent = ({
 
   const options =
     (attribute.validations?.options as Options | undefined)?.options || [];
+
+  const optionLabel = attribute.annotations?.[
+    "inputOptionLabels"
+  ] as OptionLabel;
+  const label = (label: string) =>
+    optionLabel ? t(unWrap(optionLabel[label])) : label;
 
   return (
     <UserProfileGroup {...attribute}>
@@ -74,11 +78,7 @@ export const SelectComponent = ({
             variant={isMultiValue(field) ? "typeaheadmulti" : "single"}
             aria-label={t("common:selectOne")}
             isOpen={open}
-            isDisabled={
-              !(attribute.permissions?.edit || DEFAULT_ROLES).some((r) =>
-                roles.includes(r),
-              )
-            }
+            readOnly={attribute.readOnly}
           >
             {options.map((option) => (
               <SelectOption
@@ -86,7 +86,7 @@ export const SelectComponent = ({
                 key={option}
                 value={option}
               >
-                {option}
+                {label(option)}
               </SelectOption>
             ))}
           </Select>

@@ -61,7 +61,7 @@ export default function EditUser() {
   useFetch(
     async () => {
       const [user, currentRealm, attackDetection] = await Promise.all([
-        adminClient.users.findOne({ id: id! }),
+        adminClient.users.findOne({ id: id!, userProfileMetadata: true }),
         adminClient.realms.findOne({ realm }),
         adminClient.attackDetection.findOne({ id: id! }),
       ]);
@@ -97,13 +97,15 @@ type EditUserFormProps = {
   refresh: () => void;
 };
 
+type FormFields = Omit<UserRepresentation, "userProfileMetadata">;
+
 const EditUserForm = ({ user, bruteForced, refresh }: EditUserFormProps) => {
   const { t } = useTranslation("users");
   const { realm } = useRealm();
   const { addAlert, addError } = useAlerts();
   const navigate = useNavigate();
   const { hasAccess } = useAccess();
-  const userForm = useForm<UserRepresentation>({
+  const userForm = useForm<FormFields>({
     mode: "onChange",
     defaultValues: user,
   });

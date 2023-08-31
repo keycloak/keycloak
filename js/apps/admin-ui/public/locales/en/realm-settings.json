@@ -179,7 +179,7 @@
   "samlIdentityProviderMetadata": "SAML 2.0 Identity Provider Metadata",
   "loginTheme": "Login theme",
   "accountTheme": "Account theme",
-  "adminTheme": "Admin UI theme",
+  "adminTheme": "Admin theme",
   "emailTheme": "Email theme",
   "internationalization": "Internationalization",
   "localization": "Localization",
@@ -824,6 +824,14 @@
     "OAUTH2_DEVICE_AUTH_ERROR": {
       "name": "Oauth2 device authentication error",
       "description": "Oauth2 device authentication error"
+    },
+    "PUSHED_AUTHORIZATION_REQUEST": {
+      "name": "Pushed authorization request",
+      "description": "Pushed authorization request"
+    },
+    "PUSHED_AUTHORIZATION_REQUEST_ERROR": {
+      "name": "Pushed authorization request error",
+      "description": "Pushed authorization request error"
     }
   },
   "emptyEvents": "Nothing to add",

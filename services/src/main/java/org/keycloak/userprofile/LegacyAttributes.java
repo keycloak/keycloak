@@ -1,11 +1,12 @@
 package org.keycloak.userprofile;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 
 /**
@@ -22,28 +23,66 @@ public class LegacyAttributes extends DefaultAttributes {
 
     @Override
     protected boolean isSupportedAttribute(String name) {
-        if (super.isSupportedAttribute(name)) {
+        return true;
+    }
+
+    @Override
+    public boolean isReadOnly(String name) {
+        RealmModel realm = session.getContext().getRealm();
+
+        if (isReadOnlyInternalAttribute(name)) {
             return true;
         }
 
-        if (name.startsWith(Constants.USER_ATTRIBUTES_PREFIX)) {
-            return true;
+        if (user == null) {
+            return false;
+        }
+
+        if (UserModel.USERNAME.equals(name)) {
+            if (isServiceAccountUser()) {
+                return true;
+            }
+            if (UserProfileContext.IDP_REVIEW.equals(context)) {
+                return false;
+            }
+            return !realm.isEditUsernameAllowed();
+        }
+
+        if (UserModel.EMAIL.equals(name)) {
+            if (isServiceAccountUser()) {
+                return false;
+            }
+            if (UserProfileContext.IDP_REVIEW.equals(context)) {
+                return false;
+            }
+            if (realm.isRegistrationEmailAsUsername() && !realm.isEditUsernameAllowed()) {
+                return true;
+            }
         }
 
         return false;
     }
 
     @Override
-    public boolean isReadOnly(String attributeName) {
-        return isReadOnlyFromMetadata(attributeName) || isReadOnlyInternalAttribute(attributeName);
+    public Map<String, List<String>> getReadable() {
+        if(user == null || user.getAttributes() == null) {
+            return Collections.emptyMap();
+        }
+
+        return new HashMap<>(user.getAttributes());
     }
 
     @Override
-    public Map<String, List<String>> getReadable() {
-        if(user == null || user.getAttributes() == null)
-            return new HashMap<>();
+    public Map<String, List<String>> getWritable() {
+        Map<String, List<String>> attributes = new HashMap<>(this);
 
-        return new HashMap<>(user.getAttributes());
+        for (String name : nameSet()) {
+            if (isReadOnly(name)) {
+                attributes.remove(name);
+            }
+        }
+
+        return attributes;
     }
 
     @Override

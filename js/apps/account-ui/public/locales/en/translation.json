@@ -6,7 +6,7 @@
   "accountUpdatedMessage": "Your account has been updated.",
   "add": "Add",
   "application": "Application",
-  "applicationDetails": "Application details",
+  "applicationDetails": "Application details for {{clientId}}",
   "applications": "Applications",
   "applicationsIntroMessage": "View applications your account has access to",
   "applicationType": "Application type",
@@ -158,5 +158,7 @@
   "updateSuccess": "Resource successfully updated.",
   "user": "User",
   "username": "Username",
-  "usernamePlaceholder": "Username or email"
+  "usernamePlaceholder": "Username or email",
+  "groupsListHeader": "Groups list header",
+  "groupsListColumnsNames": "Groups list columns names"
 }

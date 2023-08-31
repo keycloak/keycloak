@@ -47,6 +47,7 @@ export const LdapSettingsGeneral = ({
         form.setValue("config.usernameLDAPAttribute[0]", "cn");
         form.setValue("config.rdnLDAPAttribute[0]", "cn");
         form.setValue("config.uuidLDAPAttribute[0]", "objectGUID");
+        form.setValue("config.krbPrincipalAttribute[0]", "userPrincipalName");
         form.setValue(
           "config.userObjectClasses[0]",
           "person, organizationalPerson, user",
@@ -56,6 +57,7 @@ export const LdapSettingsGeneral = ({
         form.setValue("config.usernameLDAPAttribute[0]", "uid");
         form.setValue("config.rdnLDAPAttribute[0]", "uid");
         form.setValue("config.uuidLDAPAttribute[0]", "nsuniqueid");
+        form.setValue("config.krbPrincipalAttribute[0]", "krbPrincipalName");
         form.setValue(
           "config.userObjectClasses[0]",
           "inetOrgPerson, organizationalPerson",
@@ -65,6 +67,7 @@ export const LdapSettingsGeneral = ({
         form.setValue("config.usernameLDAPAttribute[0]", "uid");
         form.setValue("config.rdnLDAPAttribute[0]", "uid");
         form.setValue("config.uuidLDAPAttribute[0]", "uniqueidentifier");
+        form.setValue("config.krbPrincipalAttribute[0]", "krb5PrincipalName");
         form.setValue(
           "config.userObjectClasses[0]",
           "inetOrgPerson, organizationalPerson",
@@ -74,6 +77,7 @@ export const LdapSettingsGeneral = ({
         form.setValue("config.usernameLDAPAttribute[0]", "uid");
         form.setValue("config.rdnLDAPAttribute[0]", "uid");
         form.setValue("config.uuidLDAPAttribute[0]", "guid");
+        form.setValue("config.krbPrincipalAttribute[0]", "krb5PrincipalName");
         form.setValue(
           "config.userObjectClasses[0]",
           "inetOrgPerson, organizationalPerson",
@@ -83,6 +87,7 @@ export const LdapSettingsGeneral = ({
         form.setValue("config.usernameLDAPAttribute[0]", "uid");
         form.setValue("config.rdnLDAPAttribute[0]", "uid");
         form.setValue("config.uuidLDAPAttribute[0]", "entryUUID");
+        form.setValue("config.krbPrincipalAttribute[0]", "krb5PrincipalName");
         form.setValue(
           "config.userObjectClasses[0]",
           "inetOrgPerson, organizationalPerson",

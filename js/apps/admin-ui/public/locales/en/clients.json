@@ -317,6 +317,7 @@
   "copyInitialAccessToken": "Please copy and paste the initial access token before closing as it can not be retrieved later.",
   "copySuccess": "Successfully copied to clipboard!",
   "clipboardCopyError": "Error copying to clipboard.",
+  "clipboardCopyDenied": "Your browser is blocking access to the clipboard.",
   "copyToClipboard": "Copy to clipboard",
   "clientRegistration": "Client registration",
   "anonymousAccessPolicies": "Anonymous access polices",

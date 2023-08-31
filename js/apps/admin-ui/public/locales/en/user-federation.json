@@ -64,6 +64,7 @@
   "kerberosRealm": "Kerberos realm",
   "serverPrincipal": "Server principal",
   "keyTab": "Key tab",
+  "krbPrincipalAttribute": "Kerberos principal attribute",
   "debug": "Debug",
   "allowPasswordAuthentication": "Allow password authentication",
   "updateFirstLogin": "Update first login",
