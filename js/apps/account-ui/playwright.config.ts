@@ -21,13 +21,13 @@ export default defineConfig({
   projects: [
     { name: "setup", testMatch: /.auth\.setup\.ts/ },
     {
-      name: "import test realm",
-      testMatch: /test-realm\.setup\.ts/,
-      teardown: "del test realm",
+      name: "import realms",
+      testMatch: /realm\.setup\.ts/,
+      teardown: "del realms",
     },
     {
-      name: "del test realm",
-      testMatch: /test-realm\.teardown\.ts/,
+      name: "del realms",
+      testMatch: /realm\.teardown\.ts/,
     },
     {
       name: "chromium",
@@ -35,25 +35,15 @@ export default defineConfig({
         ...devices["Desktop Chrome"],
         storageState: ".auth/user.json",
       },
-      dependencies: ["setup"],
-      testIgnore: ["**/*my-resources.spec.ts"],
+      dependencies: ["setup", "import realms"],
     },
-
     {
       name: "firefox",
       use: {
         ...devices["Desktop Firefox"],
         storageState: ".auth/user.json",
       },
-      dependencies: ["setup"],
-      testIgnore: ["**/*my-resources.spec.ts"],
-    },
-
-    {
-      name: "resources",
-      use: { ...devices["Desktop Chrome"] },
-      dependencies: ["import test realm"],
-      testMatch: ["**/*my-resources.spec.ts"],
+      dependencies: ["setup", "import realms"],
     },
   ],
 });

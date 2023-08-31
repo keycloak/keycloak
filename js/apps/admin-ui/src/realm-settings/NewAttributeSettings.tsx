@@ -158,7 +158,7 @@ export default function NewAttributeSettings() {
         "validations",
         Object.entries(validations || {}).map(([key, value]) => ({
           key,
-          value,
+          value: value as Record<string, unknown>,
         })),
       );
       form.setValue("isRequired", required !== undefined);
