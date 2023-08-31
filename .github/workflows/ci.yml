@@ -77,6 +77,11 @@ jobs:
         if: always()
         uses: ./.github/actions/upload-heapdumps
 
+      - name: Surefire reports
+        uses: ./.github/actions/archive-surefire-reports
+        with:
+          job-id: unit-tests
+
   base-integration-tests:
     name: Base IT
     needs: build
@@ -110,6 +115,37 @@ jobs:
         with:
           job-name: Base IT
 
+      - name: Surefire reports
+        uses: ./.github/actions/archive-surefire-reports
+        with:
+          job-id: base-integration-tests-${{ matrix.group }}
+
+  quarkus-unit-tests:
+    name: Quarkus UT
+    needs: build
+    timeout-minutes: 15
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      # We want to download Keycloak artifacts
+      - id: integration-test-setup
+        name: Integration test setup
+        uses: ./.github/actions/integration-test-setup
+
+      - name: Run unit tests
+        run: |
+          ./mvnw test -f quarkus/pom.xml -pl '!tests,!tests/junit5,!tests/integration,!dist'
+
+      - name: Upload JVM Heapdumps
+        if: always()
+        uses: ./.github/actions/upload-heapdumps
+
+      - name: Surefire reports
+        uses: ./.github/actions/archive-surefire-reports
+        with:
+          job-id: quarkus-unit-tests
+
   quarkus-integration-tests:
     name: Quarkus IT
     needs: build
@@ -142,6 +178,11 @@ jobs:
       - name: Upload JVM Heapdumps
         if: always()
         uses: ./.github/actions/upload-heapdumps
+
+      - name: Surefire reports
+        uses: ./.github/actions/archive-surefire-reports
+        with:
+          job-id: quarkus-integration-tests-${{ matrix.os }}-${{ matrix.server }}
 
   jdk-integration-tests:
     name: Java Distribution IT
@@ -186,6 +227,11 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         with:
           job-name: Java Distribution IT
+
+      - name: Surefire reports
+        uses: ./.github/actions/archive-surefire-reports
+        with:
+          job-id: jdk-integration-tests-${{ matrix.os }}-${{ matrix.dist }}-${{ matrix.version }}
 
   databases-new-store:
     name: Databases New Store
@@ -243,6 +289,11 @@ jobs:
         with:
           job-name: New Store IT
 
+      - name: Surefire reports
+        uses: ./.github/actions/archive-surefire-reports
+        with:
+          job-id: new-store-integration-tests-${{ matrix.db }}
+
   legacy-store-integration-tests:
     name: Legacy Store IT
     needs: build
@@ -276,6 +327,11 @@ jobs:
         with:
           job-name: Legacy Store IT
 
+      - name: Surefire reports
+        uses: ./.github/actions/archive-surefire-reports
+        with:
+          job-id: legacy-store-integration-tests-${{ matrix.db }}
+
   store-model-tests:
     name: Store Model Tests
     runs-on: ubuntu-latest
@@ -301,6 +357,11 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         with:
           job-name: Store Model Tests
+
+      - name: Surefire reports
+        uses: ./.github/actions/archive-surefire-reports
+        with:
+          job-id: store-model-tests
 
   clustering-integration-tests:
     name: Legacy Clustering IT
@@ -331,6 +392,11 @@ jobs:
         with:
           job-name: Legacy Clustering IT
 
+      - name: Surefire reports
+        uses: ./.github/actions/archive-surefire-reports
+        with:
+          job-id: clustering-integration-tests
+
   fips-unit-tests:
     name: FIPS UT
     runs-on: ubuntu-latest
@@ -357,6 +423,11 @@ jobs:
       - name: Upload JVM Heapdumps
         if: always()
         uses: ./.github/actions/upload-heapdumps
+
+      - name: Surefire reports
+        uses: ./.github/actions/archive-surefire-reports
+        with:
+          job-id: fips-unit-tests
 
   fips-integration-tests:
     name: FIPS IT
@@ -399,6 +470,11 @@ jobs:
         with:
           job-name: FIPS IT
 
+      - name: Surefire reports
+        uses: ./.github/actions/archive-surefire-reports
+        with:
+          job-id: fips-integration-tests-${{ matrix.mode }}
+
   account-console-integration-tests:
     name: Account Console IT
     runs-on: ubuntu-latest
@@ -428,6 +504,11 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         with:
           job-name: Account Console IT
+
+      - name: Surefire reports
+        uses: ./.github/actions/archive-surefire-reports
+        with:
+          job-id: account-console-integration-tests-${{ matrix.browser }}
 
   forms-integration-tests:
     name: Forms IT
@@ -462,6 +543,11 @@ jobs:
         with:
           job-name: Forms IT
 
+      - name: Surefire reports
+        uses: ./.github/actions/archive-surefire-reports
+        with:
+          job-id: forms-integration-tests-${{ matrix.browser }}
+
   webauthn-integration-tests:
     name: WebAuthn IT
     runs-on: ubuntu-latest
@@ -491,6 +577,11 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         with:
           job-name: WebAuthn IT
+
+      - name: Surefire reports
+        uses: ./.github/actions/archive-surefire-reports
+        with:
+          job-id: webauthn-integration-tests-${{ matrix.browser }}
 
   sssd-unit-tests:
     name: SSSD
@@ -526,6 +617,11 @@ jobs:
       - name: Run tests
         if: ${{ needs.conditional.outputs.sssd == 'true' }}
         run: .github/scripts/run-ipa.sh "${{ github.workspace }}"
+
+      - name: Surefire reports
+        uses: ./.github/actions/archive-surefire-reports
+        with:
+          job-id: sssd-unit-tests
 
   migration-tests:
     name: Migration Tests
@@ -566,6 +662,11 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         with:
           job-name: Migration Tests
+          
+      - name: Surefire reports
+        uses: ./.github/actions/archive-surefire-reports
+        with:
+          job-id: migration-tests-${{ matrix.old-version }}-${{ matrix.database }}
 
   check-set-status:
     name: Set check conclusion
