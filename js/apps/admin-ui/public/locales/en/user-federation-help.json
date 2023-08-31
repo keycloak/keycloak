@@ -43,7 +43,7 @@
   "maxLifespanHelp": "Max lifespan of cache entry in milliseconds",
   "ldapAdvancedSettingsDescription": "This section contains all the other options for more fine-grained configuration of the LDAP storage provider.",
   "enableLdapv3PasswordHelp": "Use the LDAPv3 Password Modify Extended Operation (RFC-3062). The password modify extended operation usually requires that LDAP user already has password in the LDAP server. So when this is used with 'Sync Registrations', it can be good to add also 'Hardcoded LDAP attribute mapper' with randomly generated initial password.",
-  "validatePasswordPolicyHelp": "Determines if Keycloak should validate the password with the realm password policy before updating it",
+  "validatePasswordPolicyHelp": "Determines if Keycloak should validate the password with the realm password policy before updating it. For the case when user's password is saved in LDAP, some Keycloak password policies will not work (Not Recently Used, Expire Password, Hashing Iterations, Hashing Algorithm) due the fact that Keycloak does not have direct control over the password storage. It is needed to enable password policies at the LDAP server layer if you want to leverage those password policies.",
   "trustEmailHelp": "If enabled, email provided by this provider is not verified even if verification is enabled for the realm.",
   "IDK-periodicChangedUsersSyncHelp": "Should newly created users be created within LDAP store? Priority affects which provider is chosen to sync the new user.",
   "kerberosWizardDescription": "Text needed here.",
