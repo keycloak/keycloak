@@ -99,7 +99,7 @@
     "@types/lodash-es": "^4.17.8",
     "@types/react": "^18.2.21",
     "@types/react-dom": "^18.2.7",
-    "@types/uuid": "^9.0.2",
+    "@types/uuid": "^9.0.3",
     "@vitejs/plugin-react-swc": "^3.3.2",
     "cypress": "^13.0.0",
     "cypress-axe": "^1.4.0",
