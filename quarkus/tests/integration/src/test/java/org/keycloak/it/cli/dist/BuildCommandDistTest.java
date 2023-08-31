@@ -22,6 +22,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand.OPTIMIZED_BUILD_OPTION_LONG;
 
 import org.junit.jupiter.api.Test;
+import org.keycloak.config.database.Database;
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
 
@@ -75,5 +76,24 @@ class BuildCommandDistTest {
 
         CLIResult result = distribution.run("start", "--hostname=mykeycloak", OPTIMIZED_BUILD_OPTION_LONG);
         result.assertMessage("Key material not provided to setup HTTPS");
+    }
+
+    @Test
+    @RawDistOnly(reason = "Containers are immutable")
+    @Launch({"build", "--db=oracle"})
+    void missingOracleJdbcDriver(LaunchResult result) {
+        CLIResult cliResult = (CLIResult) result;
+
+        String dbDriver = Database.getDriver("oracle", true).orElse("");
+        String errorMessage = String.format("ERROR: Unable to find the JDBC driver (%s). You need to install it.", dbDriver);
+
+        boolean isProduct = System.getProperty("product") != null;
+        if (isProduct) {
+            cliResult.assertError(errorMessage);
+            cliResult.assertNoBuild();
+        } else {
+            cliResult.assertNoMessage(errorMessage);
+            cliResult.assertBuild();
+        }
     }
 }
