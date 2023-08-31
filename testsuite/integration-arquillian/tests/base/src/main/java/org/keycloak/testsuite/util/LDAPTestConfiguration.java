@@ -32,8 +32,6 @@ import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.keycloak.testsuite.utils.io.IOUtil.PROJECT_BUILD_DIRECTORY;
-
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
@@ -68,6 +66,7 @@ public class LDAPTestConfiguration {
         PROP_MAPPINGS.put(KerberosConstants.KERBEROS_REALM, "idm.test.kerberos.realm");
         PROP_MAPPINGS.put(KerberosConstants.SERVER_PRINCIPAL, "idm.test.kerberos.server.principal");
         PROP_MAPPINGS.put(KerberosConstants.KEYTAB, "idm.test.kerberos.keytab");
+        PROP_MAPPINGS.put(KerberosConstants.KERBEROS_PRINCIPAL_ATTRIBUTE, "idm.test.kerberos.principal.ldap.attribute");
         PROP_MAPPINGS.put(KerberosConstants.DEBUG, "idm.test.kerberos.debug");
         PROP_MAPPINGS.put(KerberosConstants.ALLOW_PASSWORD_AUTHENTICATION, "idm.test.kerberos.allow.password.authentication");
         PROP_MAPPINGS.put(KerberosConstants.UPDATE_PROFILE_FIRST_LOGIN, "idm.test.kerberos.update.profile.first.login");
@@ -93,6 +92,7 @@ public class LDAPTestConfiguration {
         DEFAULT_VALUES.put(KerberosConstants.SERVER_PRINCIPAL, "HTTP/localhost@KEYCLOAK.ORG");
         String keyTabPath =  getResource("/kerberos/http.keytab");
         DEFAULT_VALUES.put(KerberosConstants.KEYTAB, keyTabPath);
+        DEFAULT_VALUES.put(KerberosConstants.KERBEROS_PRINCIPAL_ATTRIBUTE, KerberosConstants.KERBEROS_PRINCIPAL_LDAP_ATTRIBUTE_KRB5_PRINCIPAL_NAME);
         DEFAULT_VALUES.put(KerberosConstants.DEBUG, "true");
         DEFAULT_VALUES.put(KerberosConstants.ALLOW_PASSWORD_AUTHENTICATION, "true");
         DEFAULT_VALUES.put(KerberosConstants.UPDATE_PROFILE_FIRST_LOGIN, "true");
