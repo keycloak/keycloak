@@ -115,7 +115,7 @@ public class RegistrationUserCreation implements FormAction, FormActionFactory {
     public void success(FormContext context) {
         if (context.getUser() != null) {
             // the user probably did some back navigation in the browser, hitting this page in a strange state
-            throw new AuthenticationFlowException(AuthenticationFlowError.USER_CONFLICT);
+            throw new AuthenticationFlowException(AuthenticationFlowError.EXPIRED_CODE);
         }
 
         MultivaluedMap<String, String> formData = context.getHttpRequest().getDecodedFormParameters();
