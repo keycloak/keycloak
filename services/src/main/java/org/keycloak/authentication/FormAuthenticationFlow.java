@@ -101,7 +101,6 @@ public class FormAuthenticationFlow implements AuthenticationFlow {
 
         @Override
         public void setUser(UserModel user) {
-            processor.clearAuthenticatedUser();
             processor.setAutheticatedUser(user);
         }
 
