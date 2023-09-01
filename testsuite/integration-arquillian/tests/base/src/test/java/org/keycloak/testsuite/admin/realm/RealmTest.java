@@ -39,7 +39,6 @@ import org.keycloak.models.Constants;
 import org.keycloak.models.OAuth2DeviceConfig;
 import org.keycloak.models.OTPPolicy;
 import org.keycloak.models.ParConfig;
-import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.saml.SamlProtocol;
 import org.keycloak.representations.adapters.action.GlobalRequestResult;
@@ -156,6 +155,11 @@ public class RealmTest extends AbstractAdminTest {
         assertEquals(Constants.AUTH_BASE_URL_PROP, accountClient.getRootUrl());
         assertEquals("/realms/new/account/", accountClient.getBaseUrl());
         assertEquals("/realms/new/account/*", accountClient.getRedirectUris().get(0));
+
+        ClientRepresentation accountConsoleClient = adminClient.realm("new").clients().findByClientId(Constants.ACCOUNT_CONSOLE_CLIENT_ID).get(0);
+        assertEquals(Constants.AUTH_BASE_URL_PROP, accountConsoleClient.getRootUrl());
+        assertEquals("/realms/new/account/", accountConsoleClient.getBaseUrl());
+        assertEquals("/realms/new/account/*", accountConsoleClient.getRedirectUris().get(0));
     }
 
     @Test
