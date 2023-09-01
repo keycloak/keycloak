@@ -225,10 +225,10 @@ importers:
     devDependencies:
       '@4tw/cypress-drag-drop':
         specifier: ^2.2.4
-        version: 2.2.4(cypress@13.0.0)
+        version: 2.2.4(cypress@13.1.0)
       '@testing-library/cypress':
         specifier: ^9.0.0
-        version: 9.0.0(cypress@13.0.0)
+        version: 9.0.0(cypress@13.1.0)
       '@testing-library/jest-dom':
         specifier: ^6.1.2
         version: 6.1.2(vitest@0.34.3)
@@ -260,11 +260,11 @@ importers:
         specifier: ^3.3.2
         version: 3.3.2(vite@4.4.9)
       cypress:
-        specifier: ^13.0.0
-        version: 13.0.0
+        specifier: ^13.1.0
+        version: 13.1.0
       cypress-axe:
         specifier: ^1.4.0
-        version: 1.4.0(axe-core@4.7.2)(cypress@13.0.0)
+        version: 1.4.0(axe-core@4.7.2)(cypress@13.1.0)
       jsdom:
         specifier: ^22.1.0
         version: 22.1.0
@@ -467,12 +467,12 @@ importers:
 
 packages:
 
-  /@4tw/cypress-drag-drop@2.2.4(cypress@13.0.0):
+  /@4tw/cypress-drag-drop@2.2.4(cypress@13.1.0):
     resolution: {integrity: sha512-6mmjJ0SHjciI0JNofdVcN1LYLbvUcUT3oY2O+1HaTlQlpKPlX9kBc040Sik6RYFK7cgWvUNwoDoDoGSKA4IS/g==}
     peerDependencies:
       cypress: ^2.1.0 || ^3.1.0 || ^4.0.0 || ^5.0.0 || ^6.0.0 || ^7.0.0 || ^8.0.0 || ^9.0.0 || ^10.0.0 || ^11.0.0 || ^12.0.0
     dependencies:
-      cypress: 13.0.0
+      cypress: 13.1.0
     dev: true
 
   /@aashutoshrathi/word-wrap@1.2.6:
@@ -1530,7 +1530,7 @@ packages:
     resolution: {integrity: sha512-z/G02d+59gyyUb7KYhKi9jOhicek6QD2oMaotUyG+lUkybpXoV49dY9bj7Ah5Q+y7knK2jU67UTX9FyfGzaxQg==}
     dev: true
 
-  /@testing-library/cypress@9.0.0(cypress@13.0.0):
+  /@testing-library/cypress@9.0.0(cypress@13.1.0):
     resolution: {integrity: sha512-c1XiCGeHGGTWn0LAU12sFUfoX3qfId5gcSE2yHode+vsyHDWraxDPALjVnHd4/Fa3j4KBcc5k++Ccy6A9qnkMA==}
     engines: {node: '>=12', npm: '>=6'}
     peerDependencies:
@@ -1538,7 +1538,7 @@ packages:
     dependencies:
       '@babel/runtime': 7.22.11
       '@testing-library/dom': 8.20.1
-      cypress: 13.0.0
+      cypress: 13.1.0
     dev: true
 
   /@testing-library/dom@8.20.1:
@@ -2889,7 +2889,7 @@ packages:
   /csstype@3.1.2:
     resolution: {integrity: sha512-I7K1Uu0MBPzaFKg4nI5Q7Vs2t+3gWWW648spaF+Rg7pI9ds18Ugn+lvg4SHczUdKlHI5LWBXyqfS8+DufyBsgQ==}
 
-  /cypress-axe@1.4.0(axe-core@4.7.2)(cypress@13.0.0):
+  /cypress-axe@1.4.0(axe-core@4.7.2)(cypress@13.1.0):
     resolution: {integrity: sha512-Ut7NKfzjyKm0BEbt2WxuKtLkIXmx6FD2j0RwdvO/Ykl7GmB/qRQkwbKLk3VP35+83hiIr8GKD04PDdrTK5BnyA==}
     engines: {node: '>=10'}
     peerDependencies:
@@ -2897,11 +2897,11 @@ packages:
       cypress: ^10 || ^11 || ^12
     dependencies:
       axe-core: 4.7.2
-      cypress: 13.0.0
+      cypress: 13.1.0
     dev: true
 
-  /cypress@13.0.0:
-    resolution: {integrity: sha512-nWHU5dUxP2Wm/zrMd8SWTTl706aJex/l+H4vi/tbu2SWUr17BUcd/sIYeqyxeoSPW1JFV2pT1pf4JEImH/POMg==}
+  /cypress@13.1.0:
+    resolution: {integrity: sha512-LUKxCYlB973QBFls1Up4FAE9QIYobT+2I8NvvAwMfQS2YwsWbr6yx7y9hmsk97iqbHkKwZW3MRjoK1RToBFVdQ==}
     engines: {node: ^16.0.0 || ^18.0.0 || >=20.0.0}
     hasBin: true
     requiresBuild: true
