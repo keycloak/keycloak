@@ -78,6 +78,7 @@ jobs:
         uses: ./.github/actions/upload-heapdumps
 
       - name: Surefire reports
+        if: always()
         uses: ./.github/actions/archive-surefire-reports
         with:
           job-id: unit-tests
@@ -116,6 +117,7 @@ jobs:
           job-name: Base IT
 
       - name: Surefire reports
+        if: always()
         uses: ./.github/actions/archive-surefire-reports
         with:
           job-id: base-integration-tests-${{ matrix.group }}
@@ -142,6 +144,7 @@ jobs:
         uses: ./.github/actions/upload-heapdumps
 
       - name: Surefire reports
+        if: always()
         uses: ./.github/actions/archive-surefire-reports
         with:
           job-id: quarkus-unit-tests
@@ -180,6 +183,7 @@ jobs:
         uses: ./.github/actions/upload-heapdumps
 
       - name: Surefire reports
+        if: always()
         uses: ./.github/actions/archive-surefire-reports
         with:
           job-id: quarkus-integration-tests-${{ matrix.os }}-${{ matrix.server }}
@@ -229,6 +233,7 @@ jobs:
           job-name: Java Distribution IT
 
       - name: Surefire reports
+        if: always()
         uses: ./.github/actions/archive-surefire-reports
         with:
           job-id: jdk-integration-tests-${{ matrix.os }}-${{ matrix.dist }}-${{ matrix.version }}
@@ -290,6 +295,7 @@ jobs:
           job-name: New Store IT
 
       - name: Surefire reports
+        if: always()
         uses: ./.github/actions/archive-surefire-reports
         with:
           job-id: new-store-integration-tests-${{ matrix.db }}
@@ -328,6 +334,7 @@ jobs:
           job-name: Legacy Store IT
 
       - name: Surefire reports
+        if: always()
         uses: ./.github/actions/archive-surefire-reports
         with:
           job-id: legacy-store-integration-tests-${{ matrix.db }}
@@ -359,6 +366,7 @@ jobs:
           job-name: Store Model Tests
 
       - name: Surefire reports
+        if: always()
         uses: ./.github/actions/archive-surefire-reports
         with:
           job-id: store-model-tests
@@ -393,6 +401,7 @@ jobs:
           job-name: Legacy Clustering IT
 
       - name: Surefire reports
+        if: always()
         uses: ./.github/actions/archive-surefire-reports
         with:
           job-id: clustering-integration-tests
@@ -425,6 +434,7 @@ jobs:
         uses: ./.github/actions/upload-heapdumps
 
       - name: Surefire reports
+        if: always()
         uses: ./.github/actions/archive-surefire-reports
         with:
           job-id: fips-unit-tests
@@ -471,6 +481,7 @@ jobs:
           job-name: FIPS IT
 
       - name: Surefire reports
+        if: always()
         uses: ./.github/actions/archive-surefire-reports
         with:
           job-id: fips-integration-tests-${{ matrix.mode }}
@@ -506,6 +517,7 @@ jobs:
           job-name: Account Console IT
 
       - name: Surefire reports
+        if: always()
         uses: ./.github/actions/archive-surefire-reports
         with:
           job-id: account-console-integration-tests-${{ matrix.browser }}
@@ -544,6 +556,7 @@ jobs:
           job-name: Forms IT
 
       - name: Surefire reports
+        if: always()
         uses: ./.github/actions/archive-surefire-reports
         with:
           job-id: forms-integration-tests-${{ matrix.browser }}
@@ -579,6 +592,7 @@ jobs:
           job-name: WebAuthn IT
 
       - name: Surefire reports
+        if: always()
         uses: ./.github/actions/archive-surefire-reports
         with:
           job-id: webauthn-integration-tests-${{ matrix.browser }}
@@ -619,6 +633,7 @@ jobs:
         run: .github/scripts/run-ipa.sh "${{ github.workspace }}"
 
       - name: Surefire reports
+        if: always()
         uses: ./.github/actions/archive-surefire-reports
         with:
           job-id: sssd-unit-tests
@@ -664,6 +679,7 @@ jobs:
           job-name: Migration Tests
           
       - name: Surefire reports
+        if: always()
         uses: ./.github/actions/archive-surefire-reports
         with:
           job-id: migration-tests-${{ matrix.old-version }}-${{ matrix.database }}
