@@ -137,7 +137,9 @@ public class KeycloakController implements Reconciler<Keycloak>, EventSourceInit
         }
 
         if (status.findCondition(KeycloakStatusCondition.READY)
-                .filter(c -> !Boolean.TRUE.equals(c.getStatus())).isPresent()) {
+                .filter(c -> !Boolean.TRUE.equals(c.getStatus())).isPresent() || context.getSecondaryResource(StatefulSet.class)
+                .map(s -> s.getMetadata().getAnnotations().get(Constants.KEYCLOAK_MISSING_SECRETS_ANNOTATION))
+                .filter(Boolean::valueOf).isPresent()) {
             updateControl.rescheduleAfter(10, TimeUnit.SECONDS);
         }
 
