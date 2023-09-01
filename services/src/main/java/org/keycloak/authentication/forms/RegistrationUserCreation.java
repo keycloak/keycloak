@@ -18,6 +18,8 @@
 package org.keycloak.authentication.forms;
 
 import org.keycloak.Config;
+import org.keycloak.authentication.AuthenticationFlowError;
+import org.keycloak.authentication.AuthenticationFlowException;
 import org.keycloak.authentication.FormAction;
 import org.keycloak.authentication.FormActionFactory;
 import org.keycloak.authentication.FormContext;
@@ -111,6 +113,11 @@ public class RegistrationUserCreation implements FormAction, FormActionFactory {
 
     @Override
     public void success(FormContext context) {
+        if (context.getUser() != null) {
+            // the user probably did some back navigation in the browser, hitting this page in a strange state
+            throw new AuthenticationFlowException(AuthenticationFlowError.USER_CONFLICT);
+        }
+
         MultivaluedMap<String, String> formData = context.getHttpRequest().getDecodedFormParameters();
 
         String email = formData.getFirst(UserModel.EMAIL);
