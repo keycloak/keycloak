@@ -44,6 +44,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -103,6 +104,8 @@ public class WatchedSecretsController implements Reconciler<Secret>, EventSource
     @Override
     public void annotateDeployment(List<String> desiredWatchedSecretsNames, Keycloak keycloakCR, StatefulSet deployment) {
         List<Secret> currentSecrets = fetchSecrets(desiredWatchedSecretsNames, keycloakCR.getMetadata().getNamespace());
+        deployment.getMetadata().getAnnotations().put(Constants.KEYCLOAK_MISSING_SECRETS_ANNOTATION,
+                Boolean.valueOf(currentSecrets.size() < desiredWatchedSecretsNames.size()).toString());
         deployment.getMetadata().getAnnotations().put(Constants.KEYCLOAK_WATCHING_ANNOTATION, desiredWatchedSecretsNames.stream().collect(Collectors.joining(";")));
         deployment.getSpec().getTemplate().getMetadata().getAnnotations().put(Constants.KEYCLOAK_WATCHED_SECRET_HASH_ANNOTATION, getSecretHash(currentSecrets));
     }
@@ -110,7 +113,8 @@ public class WatchedSecretsController implements Reconciler<Secret>, EventSource
     private List<Secret> fetchSecrets(List<String> secretsNames, String namespace) {
         return secretsNames.stream()
                 .map(n -> Optional.ofNullable(secrets).flatMap(cache -> cache.get(new ResourceID(n, namespace)))
-                        .orElseGet(() -> client.secrets().inNamespace(namespace).withName(n).require()))
+                        .orElseGet(() -> client.secrets().inNamespace(namespace).withName(n).get()))
+                .filter(Objects::nonNull)
                 .collect(Collectors.toList());
     }
 

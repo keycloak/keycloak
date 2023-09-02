@@ -63,8 +63,8 @@ importers:
         specifier: ^5.2.2
         version: 5.2.2
       wireit:
-        specifier: ^0.10.0
-        version: 0.10.0
+        specifier: ^0.11.0
+        version: 0.11.0
 
   apps/account-ui:
     dependencies:
@@ -225,10 +225,10 @@ importers:
     devDependencies:
       '@4tw/cypress-drag-drop':
         specifier: ^2.2.4
-        version: 2.2.4(cypress@13.0.0)
+        version: 2.2.4(cypress@13.1.0)
       '@testing-library/cypress':
         specifier: ^9.0.0
-        version: 9.0.0(cypress@13.0.0)
+        version: 9.0.0(cypress@13.1.0)
       '@testing-library/jest-dom':
         specifier: ^6.1.2
         version: 6.1.2(vitest@0.34.3)
@@ -254,17 +254,17 @@ importers:
         specifier: ^18.2.7
         version: 18.2.7
       '@types/uuid':
-        specifier: ^9.0.2
-        version: 9.0.2
+        specifier: ^9.0.3
+        version: 9.0.3
       '@vitejs/plugin-react-swc':
         specifier: ^3.3.2
         version: 3.3.2(vite@4.4.9)
       cypress:
-        specifier: ^13.0.0
-        version: 13.0.0
+        specifier: ^13.1.0
+        version: 13.1.0
       cypress-axe:
         specifier: ^1.4.0
-        version: 1.4.0(axe-core@4.7.2)(cypress@13.0.0)
+        version: 1.4.0(axe-core@4.7.2)(cypress@13.1.0)
       jsdom:
         specifier: ^22.1.0
         version: 22.1.0
@@ -354,8 +354,8 @@ importers:
         specifier: ^1.5.1
         version: 1.5.1
       js-sha256:
-        specifier: ^0.9.0
-        version: 0.9.0
+        specifier: ^0.10.1
+        version: 0.10.1
       jwt-decode:
         specifier: ^3.1.2
         version: 3.1.2
@@ -467,12 +467,12 @@ importers:
 
 packages:
 
-  /@4tw/cypress-drag-drop@2.2.4(cypress@13.0.0):
+  /@4tw/cypress-drag-drop@2.2.4(cypress@13.1.0):
     resolution: {integrity: sha512-6mmjJ0SHjciI0JNofdVcN1LYLbvUcUT3oY2O+1HaTlQlpKPlX9kBc040Sik6RYFK7cgWvUNwoDoDoGSKA4IS/g==}
     peerDependencies:
       cypress: ^2.1.0 || ^3.1.0 || ^4.0.0 || ^5.0.0 || ^6.0.0 || ^7.0.0 || ^8.0.0 || ^9.0.0 || ^10.0.0 || ^11.0.0 || ^12.0.0
     dependencies:
-      cypress: 13.0.0
+      cypress: 13.1.0
     dev: true
 
   /@aashutoshrathi/word-wrap@1.2.6:
@@ -1530,7 +1530,7 @@ packages:
     resolution: {integrity: sha512-z/G02d+59gyyUb7KYhKi9jOhicek6QD2oMaotUyG+lUkybpXoV49dY9bj7Ah5Q+y7knK2jU67UTX9FyfGzaxQg==}
     dev: true
 
-  /@testing-library/cypress@9.0.0(cypress@13.0.0):
+  /@testing-library/cypress@9.0.0(cypress@13.1.0):
     resolution: {integrity: sha512-c1XiCGeHGGTWn0LAU12sFUfoX3qfId5gcSE2yHode+vsyHDWraxDPALjVnHd4/Fa3j4KBcc5k++Ccy6A9qnkMA==}
     engines: {node: '>=12', npm: '>=6'}
     peerDependencies:
@@ -1538,7 +1538,7 @@ packages:
     dependencies:
       '@babel/runtime': 7.22.11
       '@testing-library/dom': 8.20.1
-      cypress: 13.0.0
+      cypress: 13.1.0
     dev: true
 
   /@testing-library/dom@8.20.1:
@@ -1933,8 +1933,8 @@ packages:
       '@types/node': 20.5.7
     dev: false
 
-  /@types/uuid@9.0.2:
-    resolution: {integrity: sha512-kNnC1GFBLuhImSnV7w4njQkUiJi0ZXUycu1rUaouPqiKlXkh77JKgdRnTAp1x5eBwcIwbtI+3otwzuIDEuDoxQ==}
+  /@types/uuid@9.0.3:
+    resolution: {integrity: sha512-taHQQH/3ZyI3zP8M/puluDEIEvtQHVYcC6y3N8ijFtAd28+Ey/G4sg1u2gB01S8MwybLOKAp9/yCMu/uR5l3Ug==}
     dev: true
 
   /@types/yauzl@2.10.0:
@@ -2889,7 +2889,7 @@ packages:
   /csstype@3.1.2:
     resolution: {integrity: sha512-I7K1Uu0MBPzaFKg4nI5Q7Vs2t+3gWWW648spaF+Rg7pI9ds18Ugn+lvg4SHczUdKlHI5LWBXyqfS8+DufyBsgQ==}
 
-  /cypress-axe@1.4.0(axe-core@4.7.2)(cypress@13.0.0):
+  /cypress-axe@1.4.0(axe-core@4.7.2)(cypress@13.1.0):
     resolution: {integrity: sha512-Ut7NKfzjyKm0BEbt2WxuKtLkIXmx6FD2j0RwdvO/Ykl7GmB/qRQkwbKLk3VP35+83hiIr8GKD04PDdrTK5BnyA==}
     engines: {node: '>=10'}
     peerDependencies:
@@ -2897,11 +2897,11 @@ packages:
       cypress: ^10 || ^11 || ^12
     dependencies:
       axe-core: 4.7.2
-      cypress: 13.0.0
+      cypress: 13.1.0
     dev: true
 
-  /cypress@13.0.0:
-    resolution: {integrity: sha512-nWHU5dUxP2Wm/zrMd8SWTTl706aJex/l+H4vi/tbu2SWUr17BUcd/sIYeqyxeoSPW1JFV2pT1pf4JEImH/POMg==}
+  /cypress@13.1.0:
+    resolution: {integrity: sha512-LUKxCYlB973QBFls1Up4FAE9QIYobT+2I8NvvAwMfQS2YwsWbr6yx7y9hmsk97iqbHkKwZW3MRjoK1RToBFVdQ==}
     engines: {node: ^16.0.0 || ^18.0.0 || >=20.0.0}
     hasBin: true
     requiresBuild: true
@@ -4683,8 +4683,8 @@ packages:
     resolution: {integrity: sha512-8wb9Yw966OSxApiCt0K3yNJL8pnNeIv+OEq2YMidz4FKP6nonSRoOXc80iXY4JaN2FC11B9qsNmDsm+ZOfMROA==}
     dev: true
 
-  /js-sha256@0.9.0:
-    resolution: {integrity: sha512-sga3MHh9sgQN2+pJ9VYZ+1LPwXOxuBJBA5nrR5/ofPfuiJBE2hnjsaN8se8JznOmGLN2p49Pe5U/ttafcs/apA==}
+  /js-sha256@0.10.1:
+    resolution: {integrity: sha512-5obBtsz9301ULlsgggLg542s/jqtddfOpV5KJc4hajc9JV8GeY2gZHSVpYBn4nWqAUTJ9v+xwtbJ1mIBgIH5Vw==}
     dev: false
 
   /js-tokens@4.0.0:
@@ -7062,8 +7062,8 @@ packages:
       stackback: 0.0.2
     dev: true
 
-  /wireit@0.10.0:
-    resolution: {integrity: sha512-4TX6V9D/2iXUBzdqQaUG+cRePle0mDx1Q7x4Ka2cA8lgp1+ZBhrOTiLsXYRl2roQEldEFgQ2Ff1W8YgyNWAa6w==}
+  /wireit@0.11.0:
+    resolution: {integrity: sha512-s0/bgBZ6y65BfxpCm7YA/x6QokPTQrA4mAN110FCxvvp4MotAupY8f/RH8f6tGfz74zfJafxEqHo/NyoMc0pNQ==}
     engines: {node: '>=14.14.0'}
     hasBin: true
     dependencies:
