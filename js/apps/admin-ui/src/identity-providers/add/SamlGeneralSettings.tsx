@@ -1,5 +1,5 @@
 import { FormGroup, ValidatedOptions } from "@patternfly/react-core";
-import { useFormContext } from "react-hook-form";
+import { useWatch, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
 import { FormattedLink } from "../../components/external-link/FormattedLink";
@@ -14,12 +14,10 @@ import { TextField } from "../component/TextField";
 import "./saml-general-settings.css";
 
 type SamlGeneralSettingsProps = {
-  id: string;
   isAliasReadonly?: boolean;
 };
 
 export const SamlGeneralSettings = ({
-  id,
   isAliasReadonly = false,
 }: SamlGeneralSettingsProps) => {
   const { t } = useTranslation("identity-providers");
@@ -27,15 +25,15 @@ export const SamlGeneralSettings = ({
 
   const {
     register,
-    watch,
+    control,
     formState: { errors },
   } = useFormContext();
 
-  const alias = watch("alias");
+  const alias = useWatch({ control, name: "alias" });
 
   return (
     <>
-      <RedirectUrl id={id} />
+      <RedirectUrl id={alias} />
 
       <FormGroup
         label={t("alias")}
