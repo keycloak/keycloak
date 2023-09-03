@@ -616,9 +616,18 @@ public class UserResource {
         session.users().setNotBeforeForUser(realm, user, Time.currentTime());
 
         session.sessions().getUserSessionsStream(realm, user)
-                .collect(Collectors.toList()) // collect to avoid concurrent modification as backchannelLogout removes the user sessions.
-                .forEach(userSession -> AuthenticationManager.backchannelLogout(session, realm, userSession,
-                        session.getContext().getUri(), clientConnection, headers, true));
+        .collect(Collectors.toList()) // collect to avoid concurrent modification as backchannelLogout removes the user sessions.
+        .forEach(userSession -> {
+            // Pass a note to the logout token initializer, so it does not add an "sid" claim
+            // Since each RP is only sent one logout message, removing the "sid" claim advises the receiving
+            //  RP to log out of every session for the end-user identified by the iss and sub claims.
+            //  See: https://openid.net/specs/openid-connect-backchannel-1_0.html (Section 2.4 - Logout Token)
+            userSession.setNote(AuthenticationManager.BACKCHANNEL_LOGOUT_ALL_SESSIONS_FOR_USER, "true");
+            
+            AuthenticationManager.backchannelLogout(session, realm, userSession,
+                    session.getContext().getUri(), clientConnection, headers, true);
+        });
+
         adminEvent.operation(OperationType.ACTION).resourcePath(session.getContext().getUri()).success();
     }
 

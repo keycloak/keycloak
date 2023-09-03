@@ -167,6 +167,8 @@ public class AuthenticationManager {
     public static final String KEYCLOAK_LOGOUT_PROTOCOL = "KEYCLOAK_LOGOUT_PROTOCOL";
     // Filled in case that logout was triggered with "initiating idp"
     public static final String LOGOUT_INITIATING_IDP = "LOGOUT_INITIATING_IDP";
+    // Flag to ensure backchannel logouts are sent without an "sid" claim to represent all sessions on the RP for the user should be logged out
+    public static final String BACKCHANNEL_LOGOUT_ALL_SESSIONS_FOR_USER = "BACKCHANNEL_LOGOUT_ALL_SESSIONS_FOR_USER";
 
     // Parameter of LogoutEndpoint
     public static final String INITIATING_IDP_PARAM = "initiating_idp";
