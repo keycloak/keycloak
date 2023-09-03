@@ -263,8 +263,8 @@ importers:
         specifier: ^13.1.0
         version: 13.1.0
       cypress-axe:
-        specifier: ^1.4.0
-        version: 1.4.0(axe-core@4.7.2)(cypress@13.1.0)
+        specifier: ^1.5.0
+        version: 1.5.0(axe-core@4.7.2)(cypress@13.1.0)
       jsdom:
         specifier: ^22.1.0
         version: 22.1.0
@@ -2889,12 +2889,12 @@ packages:
   /csstype@3.1.2:
     resolution: {integrity: sha512-I7K1Uu0MBPzaFKg4nI5Q7Vs2t+3gWWW648spaF+Rg7pI9ds18Ugn+lvg4SHczUdKlHI5LWBXyqfS8+DufyBsgQ==}
 
-  /cypress-axe@1.4.0(axe-core@4.7.2)(cypress@13.1.0):
-    resolution: {integrity: sha512-Ut7NKfzjyKm0BEbt2WxuKtLkIXmx6FD2j0RwdvO/Ykl7GmB/qRQkwbKLk3VP35+83hiIr8GKD04PDdrTK5BnyA==}
+  /cypress-axe@1.5.0(axe-core@4.7.2)(cypress@13.1.0):
+    resolution: {integrity: sha512-Hy/owCjfj+25KMsecvDgo4fC/781ccL+e8p+UUYoadGVM2ogZF9XIKbiM6KI8Y3cEaSreymdD6ZzccbI2bY0lQ==}
     engines: {node: '>=10'}
     peerDependencies:
       axe-core: ^3 || ^4
-      cypress: ^10 || ^11 || ^12
+      cypress: ^10 || ^11 || ^12 || ^13
     dependencies:
       axe-core: 4.7.2
       cypress: 13.1.0
