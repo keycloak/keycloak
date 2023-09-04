@@ -6,17 +6,11 @@ on:
       - main
       - dependabot/**
   pull_request:
-  schedule:
-    - cron: 0 5 * * *
   workflow_dispatch:
-
-env:
-  DEFAULT_JDK_VERSION: 17
-  DEFAULT_JDK_DIST: temurin
 
 concurrency:
   # Only cancel jobs for PR updates
-  group: documentation-${{ github.head_ref || github.run_id }}
+  group: documentation-${{ github.ref }}
   cancel-in-progress: true
 
 defaults:
@@ -27,7 +21,6 @@ jobs:
 
   conditional:
     name: Check conditional workflows and jobs
-    if: github.event_name != 'schedule' || github.repository == 'keycloak/keycloak'
     runs-on: ubuntu-latest
     outputs:
       documentation: ${{ steps.conditional.outputs.documentation }}
@@ -36,6 +29,8 @@ jobs:
 
       - id: conditional
         uses: ./.github/actions/conditional
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
 
   build:
     name: Build
@@ -47,10 +42,7 @@ jobs:
 
       - id: setup-java
         name: Setup Java
-        uses: actions/setup-java@v3
-        with:
-          distribution: ${{ env.DEFAULT_JDK_DIST }}
-          java-version: ${{ env.DEFAULT_JDK_VERSION }}
+        uses: ./.github/actions/java-setup
 
       - id: maven-cache
         name: Maven cache
@@ -87,10 +79,7 @@ jobs:
 
       - id: setup-java
         name: Setup Java
-        uses: actions/setup-java@v3
-        with:
-          distribution: ${{ env.DEFAULT_JDK_DIST }}
-          java-version: ${{ env.DEFAULT_JDK_VERSION }}
+        uses: ./.github/actions/java-setup
 
       - id: maven-cache
         name: Maven cache
@@ -109,33 +98,14 @@ jobs:
         run: |
           ./mvnw test -Dtest=ExternalLinksTest -am -pl docs/documentation/tests,docs/documentation/dist -nsu -B -e -Pdocumentation
 
-  check-set-status:
-    name: Set check conclusion
+  check:
+    name: Status Check - Keycloak Documentation
+    if: always()
     needs:
       - build
     runs-on: ubuntu-latest
-    outputs:
-      conclusion: ${{ steps.check.outputs.conclusion }}
-
     steps:
       - uses: actions/checkout@v3
-
-      - id: check
-        uses: ./.github/actions/checks-success
-
-  check:
-    name: Status Check - Keycloak Documentation
-    if: always() && ( github.event_name != 'schedule' || github.repository == 'keycloak/keycloak' )
-    needs:
-      - conditional
-      - check-set-status
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v3
-
-      - name: Check status
-        uses: ./.github/actions/checks-job-pass
+      - uses: ./.github/actions/status-check
         with:
-          required: ${{ needs.conditional.outputs.documentation == 'true' }}
-          conclusion: ${{ needs.check-set-status.outputs.conclusion }}
+          jobs: ${{ toJSON(needs) }}

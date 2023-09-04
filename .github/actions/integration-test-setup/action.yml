@@ -9,14 +9,14 @@ inputs:
   jdk-version:
     description: JDK version
     required: false
-    default: 17
+    default: "17"
 
 runs:
   using: composite
   steps:
     - id: setup-java
       name: Setup Java
-      uses: actions/setup-java@v3
+      uses: ./.github/actions/java-setup
       with:
         distribution: ${{ inputs.jdk-dist }}
         java-version: ${{ inputs.jdk-version }}
@@ -38,4 +38,8 @@ runs:
     - id: extract-maven-artifacts
       name: Extract Keycloak Maven artifacts
       shell: bash
-      run: tar -C ~/ --use-compress-program unzstd -xf m2-keycloak.tzts
+      run: |
+        if [ "$RUNNER_OS" == "Windows" ]; then
+          choco install zstandard
+        fi
+        tar -C ~/ --use-compress-program="zstd -d" -xf m2-keycloak.tzts

@@ -8,13 +8,9 @@ on:
   pull_request:
   workflow_dispatch:
 
-env:
-  DEFAULT_JDK_VERSION: 17
-  DEFAULT_JDK_DIST: temurin
-
 concurrency:
   # Only cancel jobs for PR updates
-  group: guides-${{ github.head_ref || github.run_id }}
+  group: guides-${{ github.ref }}
   cancel-in-progress: true
 
 defaults:
@@ -25,7 +21,6 @@ jobs:
 
   conditional:
     name: Check conditional workflows and jobs
-    if: github.event_name != 'schedule' || github.repository == 'keycloak/keycloak'
     runs-on: ubuntu-latest
     outputs:
       guides: ${{ steps.conditional.outputs.guides }}
@@ -35,6 +30,8 @@ jobs:
 
       - id: conditional
         uses: ./.github/actions/conditional
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
 
   build:
     name: Build
@@ -48,33 +45,14 @@ jobs:
       - name: Build Keycloak
         uses: ./.github/actions/build-keycloak
 
-  check-set-status:
-    name: Set check conclusion
+  check:
+    name: Status Check - Keycloak Guides
+    if: always()
     needs:
       - build
     runs-on: ubuntu-latest
-    outputs:
-      conclusion: ${{ steps.check.outputs.conclusion }}
-
     steps:
       - uses: actions/checkout@v3
-
-      - id: check
-        uses: ./.github/actions/checks-success
-
-  check:
-    name: Status Check - Keycloak Guides
-    if: always() && ( github.event_name != 'schedule' || github.repository == 'keycloak/keycloak' )
-    needs:
-      - conditional
-      - check-set-status
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v3
-
-      - name: Check status
-        uses: ./.github/actions/checks-job-pass
+      - uses: ./.github/actions/status-check
         with:
-          required: ${{ needs.conditional.outputs.guides == 'true' && needs.conditional.outputs.ci != 'true' }}
-          conclusion: ${{ needs.check-set-status.outputs.conclusion }}
+          jobs: ${{ toJSON(needs) }}

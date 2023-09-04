@@ -6,18 +6,16 @@ on:
       - main
       - dependabot/**
   pull_request:
-  schedule:
-    - cron: 0 20,23,2,5 * * *
   workflow_dispatch:
 
 env:
-  DEFAULT_JDK_VERSION: 17
-  DEFAULT_JDK_DIST: temurin
+  MAVEN_ARGS: "-B -nsu -Dhttp.keepAlive=false -Dmaven.wagon.http.pool=false -Dmaven.wagon.http.retryHandler.class=standard -Dmaven.wagon.http.retryHandler.count=3 -Dmaven.wagon.httpconnectionManager.ttlSeconds=120"
   SUREFIRE_RERUN_FAILING_COUNT: 2
+  SUREFIRE_RETRY: "-Dsurefire.rerunFailingTestsCount=2"
 
 concurrency:
   # Only cancel jobs for PR updates
-  group: ci-${{ github.head_ref || github.run_id }}
+  group: ci-${{ github.ref }}
   cancel-in-progress: true
 
 defaults:
@@ -28,16 +26,18 @@ jobs:
 
   conditional:
     name: Check conditional workflows and jobs
-    if: github.event_name != 'schedule' || github.repository == 'keycloak/keycloak'
     runs-on: ubuntu-latest
     outputs:
       ci: ${{ steps.conditional.outputs.ci }}
-      sssd: ${{ steps.conditional.outputs.sssd }}
+      ci-store: ${{ steps.conditional.outputs.ci-store }}
+      ci-sssd: ${{ steps.conditional.outputs.ci-sssd }}
     steps:
       - uses: actions/checkout@v3
 
       - id: conditional
         uses: ./.github/actions/conditional
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
 
   build:
     name: Build
@@ -71,7 +71,7 @@ jobs:
             SEP=","
           done
 
-          ./mvnw test -nsu -B -pl "$PROJECTS" -am
+          ./mvnw test -pl "$PROJECTS" -am
 
       - name: Upload JVM Heapdumps
         if: always()
@@ -102,7 +102,7 @@ jobs:
         run: |
           TESTS=`testsuite/integration-arquillian/tests/base/testsuites/base-suite.sh ${{ matrix.group }}`
           echo "Tests: $TESTS"
-          ./mvnw test -Dsurefire.rerunFailingTestsCount=${{ env.SUREFIRE_RERUN_FAILING_COUNT }} -nsu -B -Pauth-server-quarkus "-Dwebdriver.chrome.driver=$CHROMEWEBDRIVER/chromedriver" -Dtest=$TESTS -pl testsuite/integration-arquillian/tests/base | misc/log/trimmer.sh
+          ./mvnw test ${{ env.SUREFIRE_RETRY }} -Pauth-server-quarkus "-Dwebdriver.chrome.driver=$CHROMEWEBDRIVER/chromedriver" -Dtest=$TESTS -pl testsuite/integration-arquillian/tests/base | misc/log/trimmer.sh
 
       - name: Upload JVM Heapdumps
         if: always()
@@ -149,12 +149,20 @@ jobs:
   quarkus-integration-tests:
     name: Quarkus IT
     needs: build
-    runs-on: ubuntu-latest
     timeout-minutes: 115
     strategy:
       matrix:
-        server: [zip, container, storage]
+        os: [ubuntu-latest, windows-latest]
+        server: [sanity-check-zip, zip, container, storage]
+        exclude:
+          - os: windows-latest
+            server: zip
+          - os: windows-latest
+            server: container
+          - os: windows-latest
+            server: storage
       fail-fast: false
+    runs-on: ${{ matrix.os }}
     env:
       MAVEN_OPTS: -Xmx1024m
     steps:
@@ -168,12 +176,13 @@ jobs:
       - name: Run Quarkus integration Tests
         run: |
           declare -A PARAMS
+          PARAMS["sanity-check-zip"]="-Dtest=StartCommandDistTest,StartDevCommandDistTest,BuildAndStartDistTest,ImportAtStartupDistTest"
           PARAMS["zip"]=""
           PARAMS["container"]="-Dkc.quarkus.tests.dist=docker"
           PARAMS["storage"]="-Ptest-database -Dtest=PostgreSQLDistTest,MariaDBDistTest#testSuccessful,MySQLDistTest#testSuccessful,DatabaseOptionsDistTest,JPAStoreDistTest,HotRodStoreDistTest,MixedStoreDistTest,TransactionConfigurationDistTest"
 
-          ./mvnw install -nsu -B -pl quarkus/tests/integration -am -DskipTests
-          ./mvnw test -nsu -B -pl quarkus/tests/integration ${PARAMS["${{ matrix.server }}"]} | misc/log/trimmer.sh
+          ./mvnw install -pl quarkus/tests/integration -am -DskipTests
+          ./mvnw test -pl quarkus/tests/integration ${PARAMS["${{ matrix.server }}"]} | misc/log/trimmer.sh
 
       - name: Upload JVM Heapdumps
         if: always()
@@ -187,13 +196,14 @@ jobs:
   jdk-integration-tests:
     name: Java Distribution IT
     needs: build
-    runs-on: ubuntu-latest
     timeout-minutes: 100
     strategy:
       matrix:
+        os: [ubuntu-latest, windows-latest]
         dist: [temurin]
         version: [19]
       fail-fast: false
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v3
 
@@ -205,17 +215,17 @@ jobs:
           jdk-version: ${{ matrix.version }}
 
       - name: Prepare Quarkus distribution with current JDK
-        run: ./mvnw install -nsu -B -e -pl testsuite/integration-arquillian/servers/auth-server/quarkus
+        run: ./mvnw install -e -pl testsuite/integration-arquillian/servers/auth-server/quarkus
 
       - name: Run base tests
         run: |
           TESTS=`testsuite/integration-arquillian/tests/base/testsuites/suite.sh jdk`
           echo "Tests: $TESTS"
-          ./mvnw test -Dsurefire.rerunFailingTestsCount=${{ env.SUREFIRE_RERUN_FAILING_COUNT }} -nsu -B -Pauth-server-quarkus -Dtest=$TESTS -pl testsuite/integration-arquillian/tests/base | misc/log/trimmer.sh
+          ./mvnw test ${{ env.SUREFIRE_RETRY }} -Pauth-server-quarkus -Dtest=$TESTS -pl testsuite/integration-arquillian/tests/base | misc/log/trimmer.sh
 
       - name: Build with JDK
         run:
-          ./mvnw install -nsu -B -e -DskipTests -DskipExamples
+          ./mvnw install -e -DskipTests -DskipExamples
 
       - name: Upload JVM Heapdumps
         if: always()
@@ -236,6 +246,8 @@ jobs:
   databases-new-store:
     name: Databases New Store
     runs-on: ubuntu-latest
+    needs: [conditional]
+    if: needs.conditional.outputs.ci-store == 'true'
     steps:
       - id: matrix-db
         # language=bash
@@ -251,7 +263,8 @@ jobs:
 
   new-store-integration-tests:
     name: New Store IT
-    needs: [build, databases-new-store]
+    needs: [conditional, build, databases-new-store]
+    if: needs.conditional.outputs.ci-store == 'true'
     runs-on: ubuntu-latest
     # Currently, the run of CockroachDB (only branches and nightly runs) is the longest with 50-60 minutes
     timeout-minutes: 90
@@ -276,7 +289,7 @@ jobs:
 
           TESTS=`testsuite/integration-arquillian/tests/base/testsuites/suite.sh database`
           echo "Tests: $TESTS"
-          ./mvnw test -Dsurefire.rerunFailingTestsCount=${{ env.SUREFIRE_RERUN_FAILING_COUNT }} -nsu -B -Pauth-server-quarkus ${PARAMS["${{ matrix.db }}"]} -Dtest=$TESTS -pl testsuite/integration-arquillian/tests/base | misc/log/trimmer.sh
+          ./mvnw test ${{ env.SUREFIRE_RETRY }} -Pauth-server-quarkus ${PARAMS["${{ matrix.db }}"]} -Dtest=$TESTS -pl testsuite/integration-arquillian/tests/base | misc/log/trimmer.sh
 
       - name: Upload JVM Heapdumps
         if: always()
@@ -296,7 +309,8 @@ jobs:
 
   legacy-store-integration-tests:
     name: Legacy Store IT
-    needs: build
+    needs: [build, conditional]
+    if: needs.conditional.outputs.ci-store == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 75
     strategy:
@@ -314,7 +328,7 @@ jobs:
         run: |
           TESTS=`testsuite/integration-arquillian/tests/base/testsuites/suite.sh database`
           echo "Tests: $TESTS"
-          ./mvnw test -Dsurefire.rerunFailingTestsCount=${{ env.SUREFIRE_RERUN_FAILING_COUNT }} -nsu -B -Pauth-server-quarkus -Pdb-${{ matrix.db }} -Dtest=$TESTS -pl testsuite/integration-arquillian/tests/base | misc/log/trimmer.sh
+          ./mvnw test ${{ env.SUREFIRE_RETRY }} -Pauth-server-quarkus -Pdb-${{ matrix.db }} -Dtest=$TESTS -pl testsuite/integration-arquillian/tests/base | misc/log/trimmer.sh
 
       - name: Upload JVM Heapdumps
         if: always()
@@ -335,7 +349,8 @@ jobs:
   store-model-tests:
     name: Store Model Tests
     runs-on: ubuntu-latest
-    needs: build
+    needs: [build, conditional]
+    if: needs.conditional.outputs.ci-store == 'true'
     timeout-minutes: 75
     steps:
       - uses: actions/checkout@v3
@@ -345,7 +360,7 @@ jobs:
         uses: ./.github/actions/integration-test-setup
 
       - name: Run model tests
-        run: testsuite/model/test-all-profiles.sh -Dsurefire.rerunFailingTestsCount=${{ env.SUREFIRE_RERUN_FAILING_COUNT }}
+        run: testsuite/model/test-all-profiles.sh ${{ env.SUREFIRE_RETRY }}
 
       - name: Upload JVM Heapdumps
         if: always()
@@ -379,7 +394,7 @@ jobs:
 
       - name: Run cluster tests
         run: |
-          ./mvnw test -Dsurefire.rerunFailingTestsCount=${{ env.SUREFIRE_RERUN_FAILING_COUNT }} -nsu -B -Pauth-server-cluster-quarkus -Dsession.cache.owners=2 -Dtest=**.cluster.** -pl testsuite/integration-arquillian/tests/base  | misc/log/trimmer.sh
+          ./mvnw test ${{ env.SUREFIRE_RETRY }} -Pauth-server-cluster-quarkus -Dsession.cache.owners=2 -Dtest=**.cluster.** -pl testsuite/integration-arquillian/tests/base  | misc/log/trimmer.sh
 
       - name: Upload JVM Heapdumps
         if: always()
@@ -414,8 +429,6 @@ jobs:
       - id: unit-test-setup
         name: Unit test setup
         uses: ./.github/actions/unit-test-setup
-        with:
-          jdk-version: 17
 
       - name: Run crypto tests
         run: docker run --rm --workdir /github/workspace -v "${{ github.workspace }}":"/github/workspace" -v "$HOME/.m2":"/root/.m2" registry.access.redhat.com/ubi8/ubi:latest .github/scripts/run-fips-ut.sh
@@ -454,7 +467,7 @@ jobs:
           jdk-version: 17
 
       - name: Prepare Quarkus distribution with BCFIPS
-        run: ./mvnw install -nsu -B -e -pl testsuite/integration-arquillian/servers/auth-server/quarkus -Pauth-server-quarkus,auth-server-fips140-2
+        run: ./mvnw install -e -pl testsuite/integration-arquillian/servers/auth-server/quarkus -Pauth-server-quarkus,auth-server-fips140-2
 
       - name: Run base tests
         run: docker run --rm --workdir /github/workspace -e "SUREFIRE_RERUN_FAILING_COUNT" -v "${{ github.workspace }}":"/github/workspace" -v "$HOME/.m2":"/root/.m2" registry.access.redhat.com/ubi8/ubi:latest .github/scripts/run-fips-it.sh ${{ matrix.mode }}
@@ -492,7 +505,7 @@ jobs:
         uses: ./.github/actions/integration-test-setup
 
       - name: Run Account Console IT
-        run: ./mvnw test -Dsurefire.rerunFailingTestsCount=${{ env.SUREFIRE_RERUN_FAILING_COUNT }} -nsu -B -Pauth-server-quarkus -Dtest=**.account2.**,!SigningInTest#passwordlessWebAuthnTest,!SigningInTest#twoFactorWebAuthnTest -Dbrowser=${{ matrix.browser }} "-Dwebdriver.chrome.driver=$CHROMEWEBDRIVER/chromedriver" "-Dwebdriver.gecko.driver=$GECKOWEBDRIVER/geckodriver" -f testsuite/integration-arquillian/tests/other/base-ui/pom.xml | misc/log/trimmer.sh
+        run: ./mvnw test ${{ env.SUREFIRE_RETRY }} -Pauth-server-quarkus -Dtest=**.account2.**,!SigningInTest#passwordlessWebAuthnTest,!SigningInTest#twoFactorWebAuthnTest -Dbrowser=${{ matrix.browser }} "-Dwebdriver.chrome.driver=$CHROMEWEBDRIVER/chromedriver" "-Dwebdriver.gecko.driver=$GECKOWEBDRIVER/geckodriver" -f testsuite/integration-arquillian/tests/other/base-ui/pom.xml | misc/log/trimmer.sh
 
       - name: Upload JVM Heapdumps
         if: always()
@@ -530,7 +543,7 @@ jobs:
         run: |
           TESTS=`testsuite/integration-arquillian/tests/base/testsuites/suite.sh forms`
           echo "Tests: $TESTS"
-          ./mvnw test -Dsurefire.rerunFailingTestsCount=${{ env.SUREFIRE_RERUN_FAILING_COUNT }} -nsu -B -Pauth-server-quarkus -Dtest=$TESTS -Dbrowser=${{ matrix.browser }} "-Dwebdriver.chrome.driver=$CHROMEWEBDRIVER/chromedriver" "-Dwebdriver.gecko.driver=$GECKOWEBDRIVER/geckodriver" -f testsuite/integration-arquillian/tests/base/pom.xml | misc/log/trimmer.sh
+          ./mvnw test ${{ env.SUREFIRE_RETRY }} -Pauth-server-quarkus -Dtest=$TESTS -Dbrowser=${{ matrix.browser }} "-Dwebdriver.chrome.driver=$CHROMEWEBDRIVER/chromedriver" "-Dwebdriver.gecko.driver=$GECKOWEBDRIVER/geckodriver" -f testsuite/integration-arquillian/tests/base/pom.xml | misc/log/trimmer.sh
 
       - name: Upload JVM Heapdumps
         if: always()
@@ -555,7 +568,9 @@ jobs:
     timeout-minutes: 45
     strategy:
       matrix:
-        browser: [chrome, firefox]
+        browser:
+          - chrome
+          # - firefox  disabled until https://github.com/keycloak/keycloak/issues/20777 is resolved
       fail-fast: false
     steps:
       - uses: actions/checkout@v3
@@ -564,8 +579,14 @@ jobs:
         name: Integration test setup
         uses: ./.github/actions/integration-test-setup
 
+      # Don't use Chrome for testing (just regular Chrome) until https://github.com/keycloak/keycloak/issues/22214 is resolved
+      #- id: install-chrome
+      #  name: Install Chrome browser
+      #  uses: ./.github/actions/install-chrome
+      #  if: matrix.browser == 'chrome'
+
       - name: Run WebAuthn IT
-        run: ./mvnw test -Dsurefire.rerunFailingTestsCount=${{ env.SUREFIRE_RERUN_FAILING_COUNT }} -nsu -B -Pauth-server-quarkus -Dtest=org.keycloak.testsuite.webauthn.**.*Test -Dbrowser=${{ matrix.browser }} "-Dwebdriver.chrome.driver=$CHROMEWEBDRIVER/chromedriver" "-Dwebdriver.gecko.driver=$GECKOWEBDRIVER/geckodriver" -Pwebauthn -f testsuite/integration-arquillian/tests/other/pom.xml | misc/log/trimmer.sh
+        run: ./mvnw test ${{ env.SUREFIRE_RETRY }} -Pauth-server-quarkus -Dtest=org.keycloak.testsuite.webauthn.**.*Test -Dbrowser=${{ matrix.browser }} "-Dwebdriver.chrome.driver=$CHROMEWEBDRIVER/chromedriver" "-Dwebdriver.gecko.driver=$GECKOWEBDRIVER/geckodriver" -Pwebauthn -f testsuite/integration-arquillian/tests/other/pom.xml | misc/log/trimmer.sh
 
       - name: Upload JVM Heapdumps
         if: always()
@@ -586,7 +607,7 @@ jobs:
   sssd-unit-tests:
     name: SSSD
     runs-on: ubuntu-latest
-    if: ${{ needs.conditional.outputs.sssd == 'true' }}
+    if: needs.conditional.outputs.ci-sssd == 'true'
     needs:
       - conditional
       - build
@@ -638,7 +659,7 @@ jobs:
 
       - name: Run Migration Tests
         run: |
-          ./mvnw clean install -Dsurefire.rerunFailingTestsCount=${{ env.SUREFIRE_RERUN_FAILING_COUNT }} -B \
+          ./mvnw clean install ${{ env.SUREFIRE_RETRY }} \
           -Pauth-server-quarkus -Pdb-${{ matrix.database }} -Pauth-server-migration \
           -Dtest=MigrationTest \
           -Dmigration.mode=auto \
@@ -664,11 +685,13 @@ jobs:
         with:
           job-id: migration-tests-${{ matrix.old-version }}-${{ matrix.database }}
 
-  check-set-status:
-    name: Set check conclusion
+  check:
+    name: Status Check - Keycloak CI
+    if: always()
     needs:
       - unit-tests
       - base-integration-tests
+      - quarkus-unit-tests
       - quarkus-integration-tests
       - jdk-integration-tests
       - new-store-integration-tests
@@ -683,28 +706,8 @@ jobs:
       - sssd-unit-tests
       - migration-tests
     runs-on: ubuntu-latest
-    outputs:
-      conclusion: ${{ steps.check.outputs.conclusion }}
-
     steps:
       - uses: actions/checkout@v3
-
-      - id: check
-        uses: ./.github/actions/checks-success
-
-  check:
-    name: Status Check - Keycloak CI
-    if: always() && ( github.event_name != 'schedule' || github.repository == 'keycloak/keycloak' )
-    needs:
-      - conditional
-      - check-set-status
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v3
-
-      - name: Check status
-        uses: ./.github/actions/checks-job-pass
+      - uses: ./.github/actions/status-check
         with:
-          required: ${{ needs.conditional.outputs.ci }}
-          conclusion: ${{ needs.check-set-status.outputs.conclusion }}
+          jobs: ${{ toJSON(needs) }}

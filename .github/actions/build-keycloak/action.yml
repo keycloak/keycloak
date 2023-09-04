@@ -5,29 +5,18 @@ inputs:
   upload-m2-repo:
     description: Upload Maven repository for org.keycloak artifacts
     required: false
-    default: true
+    default: "true"
   upload-dist:
     description: Upload distribution
     required: false
-    default: false
-  jdk-dist:
-    description: JDK distribution
-    required: false
-    default: temurin
-  jdk-version:
-    description: JDK version
-    required: false
-    default: 17
+    default: "false"
 
 runs:
   using: composite
   steps:
     - id: setup-java
       name: Setup Java
-      uses: actions/setup-java@v3
-      with:
-        distribution: ${{ inputs.jdk-dist }}
-        java-version: ${{ inputs.jdk-version }}
+      uses: ./.github/actions/java-setup
 
     - id: maven-cache
       name: Maven cache
