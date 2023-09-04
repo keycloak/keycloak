@@ -18,13 +18,16 @@
 package org.keycloak.quarkus.deployment;
 
 import io.quarkus.agroal.spi.JdbcDataSourceBuildItem;
+import io.quarkus.agroal.spi.JdbcDriverBuildItem;
 import io.quarkus.arc.deployment.BuildTimeConditionBuildItem;
+import io.quarkus.bootstrap.logging.InitialConfigurator;
 import io.quarkus.datasource.deployment.spi.DevServicesDatasourceResultBuildItem;
 import io.quarkus.deployment.IsDevelopment;
 import io.quarkus.deployment.annotations.BuildProducer;
 import io.quarkus.deployment.annotations.BuildStep;
 import io.quarkus.deployment.annotations.Consume;
 import io.quarkus.deployment.annotations.ExecutionTime;
+import io.quarkus.deployment.annotations.Produce;
 import io.quarkus.deployment.annotations.Record;
 import io.quarkus.deployment.builditem.BootstrapConfigSetupCompleteBuildItem;
 import io.quarkus.deployment.builditem.CombinedIndexBuildItem;
@@ -39,6 +42,7 @@ import io.quarkus.hibernate.orm.deployment.HibernateOrmConfig;
 import io.quarkus.hibernate.orm.deployment.PersistenceXmlDescriptorBuildItem;
 import io.quarkus.hibernate.orm.deployment.integration.HibernateOrmIntegrationRuntimeConfiguredBuildItem;
 import io.quarkus.resteasy.server.common.deployment.ResteasyDeploymentCustomizerBuildItem;
+import io.quarkus.runtime.configuration.ConfigurationException;
 import io.quarkus.runtime.configuration.ProfileManager;
 import io.quarkus.vertx.http.deployment.FilterBuildItem;
 import io.quarkus.vertx.http.deployment.NonApplicationRootPathBuildItem;
@@ -135,6 +139,7 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
+import java.util.logging.Handler;
 
 import static org.keycloak.connections.jpa.util.JpaUtils.loadSpecificNamedQueries;
 import static org.keycloak.quarkus.runtime.Environment.getCurrentOrCreateFeatureProfile;
@@ -233,6 +238,28 @@ class KeycloakProcessor {
     }
 
     /**
+     * Check whether JDBC driver is present for the specified DB
+     *
+     * @param ignore used for changing build items execution order with regards to AgroalProcessor
+     */
+    @BuildStep(onlyIf = IsJpaStoreEnabled.class)
+    @Produce(CheckJdbcBuildStep.class)
+    void checkJdbcDriver(BuildProducer<JdbcDriverBuildItem> ignore) {
+        final Optional<String> dbDriver = Configuration.getOptionalValue("quarkus.datasource.jdbc.driver");
+
+        if (dbDriver.isPresent()) {
+            try {
+                // We do not want to initialize the JDBC driver class
+                Class.forName(dbDriver.get(), false, Thread.currentThread().getContextClassLoader());
+            } catch (ClassNotFoundException e) {
+                // Ignore queued TRACE and DEBUG messages for not initialized log handlers
+                InitialConfigurator.DELAYED_HANDLER.setBuildTimeHandlers(new Handler[]{});
+                throw new ConfigurationException(String.format("Unable to find the JDBC driver (%s). You need to install it.", dbDriver.get()));
+            }
+        }
+    }
+
+    /**
      * <p>Configures the persistence unit for Quarkus.
      *
      * <p>The main reason we have this build step is because we re-use the same persistence unit from {@code keycloak-model-jpa}
@@ -281,6 +308,7 @@ class KeycloakProcessor {
     }
 
     @BuildStep(onlyIf = IsJpaStoreEnabled.class)
+    @Consume(CheckJdbcBuildStep.class)
     void produceDefaultPersistenceUnit(BuildProducer<PersistenceXmlDescriptorBuildItem> producer) {
         String storage = Configuration.getRawValue(
                 NS_KEYCLOAK_PREFIX.concat(StorageOptions.STORAGE.getKey()));
@@ -559,11 +587,13 @@ class KeycloakProcessor {
     }
 
     @BuildStep(onlyIf = IsJpaStoreEnabled.class, onlyIfNot = IsLegacyStoreEnabled.class)
+    @Consume(CheckJdbcBuildStep.class)
     void indexNewJpaStore(BuildProducer<IndexDependencyBuildItem> indexDependencyBuildItemBuildProducer) {
         indexDependencyBuildItemBuildProducer.produce(new IndexDependencyBuildItem("org.keycloak", "keycloak-model-map-jpa"));
     }
 
     @BuildStep(onlyIf = IsLegacyStoreEnabled.class)
+    @Consume(CheckJdbcBuildStep.class)
     void indexLegacyJpaStore(BuildProducer<IndexDependencyBuildItem> indexDependencyBuildItemBuildProducer) {
         indexDependencyBuildItemBuildProducer.produce(new IndexDependencyBuildItem("org.keycloak", "keycloak-model-jpa"));
     }
