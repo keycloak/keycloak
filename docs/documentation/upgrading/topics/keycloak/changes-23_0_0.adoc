@@ -35,3 +35,14 @@ If you are using a different encoding, convert the files to UTF-8.
 The Oracle Database JDBC driver is no longer part of the Keycloak distribution.
 Administrators will need to install a version of the Oracle Driver matching their environment
 as described in the configuring the database {section}.
+
+= Changes to the value format of claims mapped by the realm and client role mappers
+
+Before this release, both realm (`User Realm Role`) and client (`User Client Role`) protocol mappers
+were mapping a stringfied JSON array when the `Multivalued` setting was disabled.
+
+However, the `Multivalued` setting indicates whether the claim should be mapped as a list or, if disabled, only a single value
+from the same list of values.
+
+In this release, the role and client mappers now map to a single value from the effective roles of a user when
+they are marked as single-valued (`Multivalued` disabled).

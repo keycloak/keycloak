@@ -205,7 +205,7 @@ export const ResetPasswordDialog = ({
             label={t("common:temporaryPassword")}
             labelIcon={
               <HelpItem
-                helpText={t("temporaryPasswordHelpText")}
+                helpText={t("common:temporaryPasswordHelpText")}
                 fieldLabelId="temporaryPassword"
               />
             }
