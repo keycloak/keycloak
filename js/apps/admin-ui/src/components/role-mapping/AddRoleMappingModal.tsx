@@ -18,6 +18,7 @@ import { KeycloakDataTable } from "../table-toolbar/KeycloakDataTable";
 import { ResourcesKey, Row, ServiceRole } from "./RoleMapping";
 import { getAvailableRoles } from "./queries";
 import { getAvailableClientRoles } from "./resource";
+import {useSubGroups} from "../../groups/SubGroupsContext";
 
 type AddRoleMappingModalProps = {
   id: string;
@@ -32,17 +33,20 @@ type AddRoleMappingModalProps = {
 type FilterType = "roles" | "clients";
 
 export const AddRoleMappingModal = ({
-  id,
-  name,
-  type,
-  isRadio = false,
-  isLDAPmapper,
-  onAssign,
-  onClose,
-}: AddRoleMappingModalProps) => {
+                                      id,
+                                      name,
+                                      type,
+                                      isRadio = false,
+                                      isLDAPmapper,
+                                      onAssign,
+                                      onClose,
+                                    }: AddRoleMappingModalProps) => {
   const { t } = useTranslation(type);
   const { hasAccess } = useAccess();
-  const canViewRealmRoles = hasAccess("view-realm") || hasAccess("query-users");
+  const { currentGroup } = useSubGroups();
+  const canViewRealmRoles = hasAccess("view-realm") ||
+    hasAccess("query-users") ||
+    currentGroup()?.access?.manage;
 
   const [searchToggle, setSearchToggle] = useState(false);
 
