@@ -123,6 +123,27 @@ Then start the tests with:
 pnpm test
 ```
 
+## methods
+
+### registerTokenProvider
+
+The term "keycloakAdminClient" refers to an instance of the Keycloak Admin Client library. Keycloak is an open-source identity and access management solution, and the Admin Client is a component that provides programmatic access to the administrative functionalities of a Keycloak server.
+
+In the code:
+
+```
+keycloakAdminClient.registerTokenProvider({
+  getAccessToken: () => Promise.resolve('some access token'),
+});
+```
+
+The code snippet suggests that the `keycloakAdminClient` is an instance of the Admin Client, and we are using its `registerTokenProvider` method to register a custom token provider. Token providers are used to provide access tokens for authentication and authorization purposes.
+
+We are registering a token provider that implements a getAccessToken method. This method is expected to return a Promise that resolves to an access token. In this case, We are using a simple implementation where the Promise resolves immediately with a string 'some access token'.
+
+By providing this custom token provider, We are essentially telling the Keycloak Admin Client to use this mechanism to obtain access tokens when making administrative API requests to the Keycloak server.
+
+
 ## Supported APIs
 
 ### [Realm admin](https://www.keycloak.org/docs-api/20.0.2/rest-api/index.html#_realms_admin_resource)
