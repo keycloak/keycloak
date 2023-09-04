@@ -40,9 +40,10 @@ export const GroupTable = ({
 
   const location = useLocation();
   const id = getLastId(location.pathname);
-
-  const {hasAccess} = useAccess();
-  const isManager = (group: GroupRepresentation) => hasAccess("manage-users") || group?.access?.manage;
+  const displayAsLink = (group: GroupRepresentation) => group?.access?.manage ||
+    group?.access?.manageMembers ||
+    group?.access?.manageMembership ||
+    group?.access?.viewMembers;
 
   const loader = async (first?: number, max?: number) => {
     const params: Record<string, string> = {
@@ -146,7 +147,7 @@ export const GroupTable = ({
         }
         actionResolver={(rowData: IRowData) => {
           const group: GroupRepresentation = rowData.data;
-          if (!isManager(group)) return [];
+          if (!group?.access?.manage) return [];
           return [
               {
                 title: t("rename"),
@@ -188,7 +189,7 @@ export const GroupTable = ({
             name: "name",
             displayKey: "groups:groupName",
             cellRenderer: (group) =>
-              isManager(group) ? (
+              displayAsLink(group) ? (
                 <Link key={group.id} to={`${location.pathname}/${group.id}`}>
                   {group.name}
                 </Link>
