@@ -29,6 +29,7 @@ import java.util.List;
 /**
  * @author Vlastimil Elias (velias at redhat dot com)
  */
+@Deprecated
 public class LinkedInIdentityProviderFactory extends AbstractIdentityProviderFactory<LinkedInIdentityProvider>
         implements SocialIdentityProviderFactory<LinkedInIdentityProvider> {
 
@@ -36,7 +37,7 @@ public class LinkedInIdentityProviderFactory extends AbstractIdentityProviderFac
 
     @Override
     public String getName() {
-        return "LinkedIn";
+        return "LinkedIn (deprecated)";
     }
 
     @Override

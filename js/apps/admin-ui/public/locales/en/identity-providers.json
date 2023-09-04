@@ -98,6 +98,7 @@
   "tokenUrl": "Token URL",
   "logoutUrl": "Logout URL",
   "backchannelLogout": "Backchannel logout",
+  "disableNonce": "Disable nonce",
   "disableUserInfo": "Disable user info",
   "isAccessTokenJWT": "Access Token is JWT",
   "userInfoUrl": "User Info URL",
