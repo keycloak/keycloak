@@ -9,7 +9,7 @@ on:
   workflow_dispatch:
 
 env:
-  MAVEN_ARGS: "-B -nsu -Dhttp.keepAlive=false -Dmaven.wagon.http.pool=false -Dmaven.wagon.http.retryHandler.class=standard -Dmaven.wagon.http.retryHandler.count=3 -Dmaven.wagon.httpconnectionManager.ttlSeconds=120"
+  MAVEN_ARGS: "-B -nsu -Daether.connector.http.connectionMaxTtl=25"
   SUREFIRE_RERUN_FAILING_COUNT: 2
   SUREFIRE_RETRY: "-Dsurefire.rerunFailingTestsCount=2"
 
