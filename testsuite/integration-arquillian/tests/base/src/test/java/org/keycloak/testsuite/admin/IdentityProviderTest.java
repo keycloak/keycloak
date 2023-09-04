@@ -875,7 +875,12 @@ public class IdentityProviderTest extends AbstractAdminTest {
         response = realm.identityProviders().getIdentityProviders("linkedin");
         Assert.assertEquals("Status", 200, response.getStatus());
         body = response.readEntity(Map.class);
-        assertProviderInfo(body, "linkedin", "LinkedIn");
+        assertProviderInfo(body, "linkedin", "LinkedIn (deprecated)");
+
+        response = realm.identityProviders().getIdentityProviders("linkedin-openid-connect");
+        Assert.assertEquals("Status", 200, response.getStatus());
+        body = response.readEntity(Map.class);
+        assertProviderInfo(body, "linkedin-openid-connect", "LinkedIn OpenID Connect");
 
         response = realm.identityProviders().getIdentityProviders("microsoft");
         Assert.assertEquals("Status", 200, response.getStatus());
