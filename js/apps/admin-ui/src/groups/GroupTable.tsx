@@ -1,31 +1,31 @@
 import type GroupRepresentation from "@keycloak/keycloak-admin-client/lib/defs/groupRepresentation";
-import { SearchInput, ToolbarItem } from "@patternfly/react-core";
-import { useState } from "react";
-import { useTranslation } from "react-i18next";
-import { Link, useLocation } from "react-router-dom";
+import {SearchInput, ToolbarItem} from "@patternfly/react-core";
+import {useState} from "react";
+import {useTranslation} from "react-i18next";
+import {Link, useLocation} from "react-router-dom";
 
-import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
-import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
-import { useAccess } from "../context/access/Access";
-import { fetchAdminUI } from "../context/auth/admin-ui-endpoint";
+import {ListEmptyState} from "../components/list-empty-state/ListEmptyState";
+import {KeycloakDataTable} from "../components/table-toolbar/KeycloakDataTable";
+import {useAccess} from "../context/access/Access";
+import {fetchAdminUI} from "../context/auth/admin-ui-endpoint";
 import useToggle from "../utils/useToggle";
-import { GroupsModal } from "./GroupsModal";
-import { useSubGroups } from "./SubGroupsContext";
-import { DeleteGroup } from "./components/DeleteGroup";
-import { GroupToolbar } from "./components/GroupToolbar";
-import { MoveDialog } from "./components/MoveDialog";
-import { getLastId } from "./groupIdUtils";
+import {GroupsModal} from "./GroupsModal";
+import {useSubGroups} from "./SubGroupsContext";
+import {DeleteGroup} from "./components/DeleteGroup";
+import {GroupToolbar} from "./components/GroupToolbar";
+import {MoveDialog} from "./components/MoveDialog";
+import {getLastId} from "./groupIdUtils";
+import {IRowData} from "@patternfly/react-table";
+import UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
 
 type GroupTableProps = {
   refresh: () => void;
-  canViewDetails: boolean;
 };
 
 export const GroupTable = ({
-  refresh: viewRefresh,
-  canViewDetails,
-}: GroupTableProps) => {
-  const { t } = useTranslation("groups");
+                             refresh: viewRefresh
+                           }: GroupTableProps) => {
+  const {t} = useTranslation("groups");
 
   const [selectedRows, setSelectedRows] = useState<GroupRepresentation[]>([]);
 
@@ -34,17 +34,16 @@ export const GroupTable = ({
   const [showDelete, toggleShowDelete] = useToggle();
   const [move, setMove] = useState<GroupRepresentation>();
 
-  const { currentGroup } = useSubGroups();
-
   const [key, setKey] = useState(0);
   const refresh = () => setKey(key + 1);
   const [search, setSearch] = useState<string>();
 
   const location = useLocation();
   const id = getLastId(location.pathname);
-
-  const { hasAccess } = useAccess();
-  const isManager = hasAccess("manage-users") || currentGroup()?.access?.manage;
+  const displayAsLink = (group: GroupRepresentation) => group?.access?.manage ||
+    group?.access?.manageMembers ||
+    group?.access?.manageMembership ||
+    group?.access?.viewMembers;
 
   const loader = async (first?: number, max?: number) => {
     const params: Record<string, string> = {
@@ -57,7 +56,7 @@ export const GroupTable = ({
     if (id) {
       groupsData = await fetchAdminUI<GroupRepresentation[]>(
         "ui-ext/groups/subgroup",
-        { ...params, id },
+        {...params, id},
       );
     } else {
       groupsData = await fetchAdminUI<GroupRepresentation[]>("ui-ext/groups", {
@@ -146,51 +145,51 @@ export const GroupTable = ({
             />
           </>
         }
-        actions={
-          !isManager
-            ? []
-            : [
-                {
-                  title: t("rename"),
-                  onRowClick: async (group) => {
-                    setRename(group);
-                    return false;
-                  },
-                },
-                {
-                  title: t("moveTo"),
-                  onRowClick: async (group) => {
-                    setMove(group);
-                    return false;
-                  },
-                },
-                {
-                  title: t("createChildGroup"),
-                  onRowClick: async (group) => {
-                    setSelectedRows([group]);
-                    toggleCreateOpen();
-                    return false;
-                  },
-                },
-                {
-                  isSeparator: true,
-                },
-                {
-                  title: t("common:delete"),
-                  onRowClick: async (group: GroupRepresentation) => {
-                    setSelectedRows([group]);
-                    toggleShowDelete();
-                    return true;
-                  },
-                },
-              ]
-        }
+        actionResolver={(rowData: IRowData) => {
+          const group: GroupRepresentation = rowData.data;
+          if (!group?.access?.manage) return [];
+          return [
+            {
+              title: t("rename"),
+              onRowClick: async (group: GroupRepresentation) => {
+                setRename(group);
+                return false;
+              },
+            },
+            {
+              title: t("moveTo"),
+              onRowClick: async (group: GroupRepresentation) => {
+                setMove(group);
+                return false;
+              },
+            },
+            {
+              title: t("createChildGroup"),
+              onRowClick: async (group: GroupRepresentation) => {
+                setSelectedRows([group]);
+                toggleCreateOpen();
+                return false;
+              },
+            },
+            {
+              isSeparator: true,
+            },
+            {
+              title: t("common:delete"),
+              onRowClick: async (group: GroupRepresentation) => {
+                setSelectedRows([group]);
+                toggleShowDelete();
+                return true;
+              },
+            },
+          ]
+        }}
         columns={[
           {
             name: "name",
             displayKey: "groups:groupName",
             cellRenderer: (group) =>
-              canViewDetails ? (
+              displayAsLink(group) ? (
                 <Link key={group.id} to={`${location.pathname}/${group.id}`}>
                   {group.name}
                 </Link>

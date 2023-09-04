@@ -87,8 +87,8 @@ export default function GroupsSection() {
           const group =
             i !== "search"
               ? await fetchAdminUI<GroupRepresentation | undefined>(
-                  "ui-ext/groups/" + i,
-                )
+                "ui-ext/groups/" + i,
+              )
               : { name: t("searchGroups"), id: "search" };
           if (group) {
             groups.push(group);
@@ -160,21 +160,21 @@ export default function GroupsSection() {
                 dropdownItems={
                   id && canManageGroup
                     ? [
-                        <DropdownItem
-                          data-testid="renameGroupAction"
-                          key="renameGroup"
-                          onClick={() => setRename(currentGroup())}
-                        >
-                          {t("renameGroup")}
-                        </DropdownItem>,
-                        <DropdownItem
-                          data-testid="deleteGroup"
-                          key="deleteGroup"
-                          onClick={toggleDeleteOpen}
-                        >
-                          {t("deleteGroup")}
-                        </DropdownItem>,
-                      ]
+                      <DropdownItem
+                        data-testid="renameGroupAction"
+                        key="renameGroup"
+                        onClick={() => setRename(currentGroup())}
+                      >
+                        {t("renameGroup")}
+                      </DropdownItem>,
+                      <DropdownItem
+                        data-testid="deleteGroup"
+                        key="deleteGroup"
+                        onClick={toggleDeleteOpen}
+                      >
+                        {t("deleteGroup")}
+                      </DropdownItem>,
+                    ]
                     : undefined
                 }
               />
@@ -199,7 +199,6 @@ export default function GroupsSection() {
                   >
                     <GroupTable
                       refresh={refresh}
-                      canViewDetails={canViewDetails}
                     />
                   </Tab>
                   {canViewMembers && (
@@ -243,7 +242,9 @@ export default function GroupsSection() {
                 </Tabs>
               )}
               {subGroups.length === 0 && (
-                <GroupTable refresh={refresh} canViewDetails={canViewDetails} />
+                <GroupTable
+                  refresh={refresh}
+                />
               )}
             </DrawerContentBody>
           </DrawerContent>
