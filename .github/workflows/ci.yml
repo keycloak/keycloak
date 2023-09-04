@@ -619,6 +619,7 @@ jobs:
         run: .github/scripts/run-ipa.sh "${{ github.workspace }}"
 
       - name: Surefire reports
+        if: ${{ needs.conditional.outputs.sssd == 'true' }}
         uses: ./.github/actions/archive-surefire-reports
         with:
           job-id: sssd-unit-tests
