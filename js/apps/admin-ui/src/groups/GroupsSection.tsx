@@ -199,7 +199,6 @@ export default function GroupsSection() {
                   >
                     <GroupTable
                       refresh={refresh}
-                      canViewDetails={canViewDetails}
                     />
                   </Tab>
                   {canViewMembers && (
@@ -243,7 +242,9 @@ export default function GroupsSection() {
                 </Tabs>
               )}
               {subGroups.length === 0 && (
-                <GroupTable refresh={refresh} canViewDetails={canViewDetails} />
+                <GroupTable
+                  refresh={refresh}
+                />
               )}
             </DrawerContentBody>
           </DrawerContent>
