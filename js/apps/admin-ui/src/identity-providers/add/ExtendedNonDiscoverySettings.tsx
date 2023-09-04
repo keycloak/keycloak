@@ -46,6 +46,7 @@ export const ExtendedNonDiscoverySettings = () => {
           label="backchannelLogout"
         />
         <SwitchField field="config.disableUserInfo" label="disableUserInfo" />
+        <SwitchField field="config.disableNonce" label="disableNonce" />
         <TextField field="config.defaultScope" label="scopes" />
         <FormGroupField label="prompt">
           <Controller

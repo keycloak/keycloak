@@ -14,6 +14,7 @@
   "passCurrentLocale": "Pass the current locale to the identity provider as a ui_locales parameter.",
   "logoutUrl": "End session endpoint to use to logout user from external IDP.",
   "backchannelLogout": "Does the external IDP support backchannel logout?",
+  "disableNonce": "Do not send the nonce parameter in the authentication request. The nonce parameter is sent and verified by default.",
   "disableUserInfo": "Disable usage of User Info service to obtain additional user information?  Default is to use this OIDC service.",
   "userInfoUrl": "The User Info Url. This is optional.",
   "issuer": "The issuer identifier for the issuer of the response. If not provided, no validation will be performed.",
