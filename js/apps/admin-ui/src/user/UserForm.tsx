@@ -29,6 +29,7 @@ import useFormatDate from "../utils/useFormatDate";
 import useIsFeatureEnabled, { Feature } from "../utils/useIsFeatureEnabled";
 import { FederatedUserLink } from "./FederatedUserLink";
 import { UserProfileFields } from "./UserProfileFields";
+import { UserFormFields } from "./form-state";
 import { RequiredActionMultiSelect } from "./user-credentials/RequiredActionMultiSelect";
 
 export type BruteForced = {
@@ -40,13 +41,13 @@ export type UserFormProps = {
   user?: UserRepresentation;
   bruteForce?: BruteForced;
   realm?: RealmRepresentation;
-  save: (user: UserRepresentation) => void;
+  save: (user: UserFormFields) => void;
   onGroupsUpdate?: (groups: GroupRepresentation[]) => void;
 };
 
 const EmailVerified = () => {
   const { t } = useTranslation("users");
-  const { control } = useFormContext();
+  const { control } = useFormContext<UserFormFields>();
   return (
     <FormGroup
       label={t("emailVerified")}
@@ -106,7 +107,7 @@ export const UserForm = ({
     control,
     reset,
     formState: { errors },
-  } = useFormContext();
+  } = useFormContext<UserFormFields>();
   const watchUsernameInput = watch("username");
   const [selectedGroups, setSelectedGroups] = useState<GroupRepresentation[]>(
     [],
