@@ -26,7 +26,7 @@ export const UserProfileGroup = ({
   children,
   ...attribute
 }: PropsWithChildren<UserProfileFieldsProps>) => {
-  const { t } = useTranslation("users");
+  const { t } = useTranslation();
   const helpText = attribute.annotations?.["inputHelperTextBefore"] as string;
 
   const {

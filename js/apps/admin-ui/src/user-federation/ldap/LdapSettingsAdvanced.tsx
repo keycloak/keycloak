@@ -25,8 +25,7 @@ export const LdapSettingsAdvanced = ({
   showSectionHeading = false,
   showSectionDescription = false,
 }: LdapSettingsAdvancedProps) => {
-  const { t } = useTranslation("user-federation");
-  const { t: helpText } = useTranslation("user-federation-help");
+  const { t } = useTranslation();
 
   const { realm } = useRealm();
   const { addAlert, addError } = useAlerts();
@@ -56,7 +55,7 @@ export const LdapSettingsAdvanced = ({
       {showSectionHeading && (
         <WizardSectionHeader
           title={t("advancedSettings")}
-          description={helpText("ldapAdvancedSettingsDescription")}
+          description={t("ldapAdvancedSettingsDescription")}
           showDescription={showSectionDescription}
         />
       )}

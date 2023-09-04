@@ -19,7 +19,7 @@ type ToggleProps = {
   label: string;
 };
 export const Toggle = ({ name, label }: ToggleProps) => {
-  const { t } = useTranslation("clients");
+  const { t } = useTranslation();
   const { control } = useFormContext<FormFields>();
 
   return (
@@ -55,7 +55,7 @@ export const Toggle = ({ name, label }: ToggleProps) => {
 };
 
 export const SamlConfig = () => {
-  const { t } = useTranslation("clients");
+  const { t } = useTranslation();
   const { control } = useFormContext<FormFields>();
 
   const [nameFormatOpen, setNameFormatOpen] = useState(false);
@@ -70,7 +70,7 @@ export const SamlConfig = () => {
         fieldId="nameIdFormat"
         labelIcon={
           <HelpItem
-            helpText={t("clients-help:nameIdFormat")}
+            helpText={t("nameIdFormatHelp")}
             fieldLabelId="clients:nameIdFormat"
           />
         }

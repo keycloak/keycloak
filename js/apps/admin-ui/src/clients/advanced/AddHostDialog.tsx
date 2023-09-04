@@ -30,7 +30,7 @@ export const AddHostDialog = ({
   onAdded,
   onClose,
 }: AddHostDialogProps) => {
-  const { t } = useTranslation("clients");
+  const { t } = useTranslation();
   const {
     register,
     handleSubmit,

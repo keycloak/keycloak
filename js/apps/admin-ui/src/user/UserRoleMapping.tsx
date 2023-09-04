@@ -12,7 +12,7 @@ type UserRoleMappingProps = {
 };
 
 export const UserRoleMapping = ({ id, name }: UserRoleMappingProps) => {
-  const { t } = useTranslation("users");
+  const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
 
   const assignRoles = async (rows: Row[]) => {

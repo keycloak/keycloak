@@ -31,7 +31,7 @@ export const RevocationModal = ({
   handleModalToggle,
   save,
 }: RevocationModalProps) => {
-  const { t } = useTranslation("sessions");
+  const { t } = useTranslation();
   const { addAlert } = useAlerts();
 
   const { realm: realmName } = useRealm();

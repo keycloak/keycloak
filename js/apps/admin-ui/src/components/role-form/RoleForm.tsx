@@ -35,7 +35,7 @@ export const RoleForm = ({
   role,
   editMode,
 }: RoleFormProps) => {
-  const { t } = useTranslation("roles");
+  const { t } = useTranslation();
 
   const roleName = useWatch({
     control,

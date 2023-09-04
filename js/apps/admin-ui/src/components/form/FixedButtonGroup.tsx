@@ -21,7 +21,7 @@ export const FixedButtonsGroup = ({
   children,
   ...rest
 }: PropsWithChildren<FixedButtonGroupProps>) => {
-  const { t } = useTranslation("common");
+  const { t } = useTranslation();
   return (
     <ActionGroup className={style.buttonGroup} {...rest}>
       {(save || isSubmit) && (

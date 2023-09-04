@@ -14,7 +14,7 @@ export const MultiValuedStringComponent = ({
   stringify,
   isDisabled = false,
 }: ComponentProps) => {
-  const { t } = useTranslation("dynamic");
+  const { t } = useTranslation();
   const fieldName = convertToName(name!);
 
   return (

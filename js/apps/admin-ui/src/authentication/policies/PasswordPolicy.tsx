@@ -37,7 +37,7 @@ type PolicySelectProps = {
 };
 
 const PolicySelect = ({ onSelect, selectedPolicies }: PolicySelectProps) => {
-  const { t } = useTranslation("authentication");
+  const { t } = useTranslation();
   const { passwordPolicies } = useServerInfo();
   const [open, setOpen] = useState(false);
 
@@ -79,7 +79,7 @@ export const PasswordPolicy = ({
   realm,
   realmUpdated,
 }: PasswordPolicyProps) => {
-  const { t } = useTranslation("authentication");
+  const { t } = useTranslation();
   const { passwordPolicies } = useServerInfo();
 
   const { addAlert, addError } = useAlerts();

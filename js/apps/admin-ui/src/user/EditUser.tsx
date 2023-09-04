@@ -53,7 +53,7 @@ import "./user-section.css";
 export default function EditUser() {
   const { realm } = useRealm();
   const { id } = useParams<UserParams>();
-  const { t } = useTranslation("users");
+  const { t } = useTranslation();
   const [user, setUser] = useState<UserRepresentation>();
   const [bruteForced, setBruteForced] = useState<BruteForced>();
   const [refreshCount, setRefreshCount] = useState(0);
@@ -99,7 +99,7 @@ type EditUserFormProps = {
 };
 
 const EditUserForm = ({ user, bruteForced, refresh }: EditUserFormProps) => {
-  const { t } = useTranslation("users");
+  const { t } = useTranslation();
   const { realm } = useRealm();
   const { addAlert, addError } = useAlerts();
   const navigate = useNavigate();

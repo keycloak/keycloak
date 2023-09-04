@@ -34,7 +34,7 @@ import { toUserFederationLdapMapper } from "./routes/UserFederationLdapMapper";
 import { ExtendedHeader } from "./shared/ExtendedHeader";
 
 export default function UserFederationLdapSettings() {
-  const { t } = useTranslation("user-federation");
+  const { t } = useTranslation();
   const form = useForm<LdapComponentRepresentation>({ mode: "onChange" });
   const { realm } = useRealm();
   const { id } = useParams<UserFederationLdapParams>();
@@ -82,10 +82,10 @@ export default function UserFederationLdapSettings() {
         { id: id! },
         serializeFormData(formData),
       );
-      addAlert(t("saveSuccess"), AlertVariant.success);
+      addAlert(t("userProviderSaveSuccess"), AlertVariant.success);
       refresh();
     } catch (error) {
-      addError("user-federation:saveError", error);
+      addError("userProviderSaveError", error);
     }
   };
 

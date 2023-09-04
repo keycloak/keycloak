@@ -25,7 +25,7 @@ type DedicatedScopeProps = {
 export const DedicatedScope = ({
   client: initialClient,
 }: DedicatedScopeProps) => {
-  const { t } = useTranslation("clients");
+  const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
 
   const [client, setClient] = useState<ClientRepresentation>(initialClient);
@@ -88,7 +88,7 @@ export const DedicatedScope = ({
           label={t("fullScopeAllowed")}
           labelIcon={
             <HelpItem
-              helpText={t("clients-help:fullScopeAllowed")}
+              helpText={t("fullScopeAllowedHelp")}
               fieldLabelId="clients:fullScopeAllowed"
             />
           }

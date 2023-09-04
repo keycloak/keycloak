@@ -10,7 +10,7 @@ import {
 import "./flow-header.css";
 
 export const FlowHeader = () => {
-  const { t } = useTranslation("authentication");
+  const { t } = useTranslation();
   return (
     <DataListItem aria-labelledby="headerName" id="header">
       <DataListItemRow>

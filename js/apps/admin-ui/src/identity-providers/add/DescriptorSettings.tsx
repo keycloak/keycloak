@@ -25,8 +25,8 @@ type DescriptorSettingsProps = {
 };
 
 const Fields = ({ readOnly }: DescriptorSettingsProps) => {
-  const { t } = useTranslation("identity-providers");
-  const { t: th } = useTranslation("identity-providers-help");
+  const { t } = useTranslation();
+  const { t: th } = useTranslation();
 
   const {
     register,
@@ -67,7 +67,7 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
         fieldId="kc-saml-service-provider-entity-id"
         labelIcon={
           <HelpItem
-            helpText={t("identity-providers-help:serviceProviderEntityId")}
+            helpText={t("serviceProviderEntityIdHelp")}
             fieldLabelId="identity-providers:serviceProviderEntityId"
           />
         }
@@ -83,7 +83,7 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
         fieldId="kc-identity-provider-entity-id"
         labelIcon={
           <HelpItem
-            helpText={t("identity-providers-help:identityProviderEntityId")}
+            helpText={t("identityProviderEntityIdHelp")}
             fieldLabelId="identity-providers:identityProviderEntityId"
           />
         }
@@ -597,7 +597,7 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
 };
 
 export const DescriptorSettings = ({ readOnly }: DescriptorSettingsProps) => {
-  const { t } = useTranslation("identity-providers");
+  const { t } = useTranslation();
   const [isExpanded, setIsExpanded] = useState(false);
 
   return readOnly ? (

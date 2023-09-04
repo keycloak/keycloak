@@ -8,7 +8,7 @@ import { HelpItem } from "ui-shared";
 import "../../realm-settings-section.css";
 
 const Permissions = ({ name }: { name: string }) => {
-  const { t } = useTranslation("realm-settings");
+  const { t } = useTranslation();
   const { control } = useFormContext();
 
   return (
@@ -61,7 +61,7 @@ const Permissions = ({ name }: { name: string }) => {
 };
 
 export const AttributePermission = () => {
-  const { t } = useTranslation("realm-settings");
+  const { t } = useTranslation();
 
   return (
     <FormAccess role="manage-realm" isHorizontal>

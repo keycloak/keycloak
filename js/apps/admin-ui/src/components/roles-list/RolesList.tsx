@@ -124,7 +124,7 @@ export const RolesList = ({
         key={selectedRole ? selectedRole.id : "roleList"}
         loader={loader!}
         ariaLabelKey="roles:roleList"
-        searchPlaceholderKey="roles:searchFor"
+        searchPlaceholderKey="searchForRoles"
         isPaginated={paginated}
         toolbarItem={
           !isReadOnly && (

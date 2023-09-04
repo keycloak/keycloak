@@ -126,7 +126,7 @@ const NumberControl = ({ name, min, max }: NumberControlProps) => {
 };
 
 const FromTo = ({ name, ...rest }: NumberControlProps) => {
-  const { t } = useTranslation("clients");
+  const { t } = useTranslation();
 
   return (
     <FormGroup
@@ -153,7 +153,7 @@ const FromTo = ({ name, ...rest }: NumberControlProps) => {
 };
 
 export const Time = () => {
-  const { t } = useTranslation("clients");
+  const { t } = useTranslation();
   const {
     getValues,
     formState: { errors },
@@ -165,10 +165,7 @@ export const Time = () => {
         label={t("repeat")}
         fieldId="repeat"
         labelIcon={
-          <HelpItem
-            helpText={t("clients-help:repeat")}
-            fieldLabelId="clients:repeat"
-          />
+          <HelpItem helpText={t("repeatHelp")} fieldLabelId="clients:repeat" />
         }
       >
         <Flex>
@@ -209,7 +206,7 @@ export const Time = () => {
         fieldId="notBefore"
         labelIcon={
           <HelpItem
-            helpText={t("clients-help:startTime")}
+            helpText={t("startTimeHelp")}
             fieldLabelId="clients:startTime"
           />
         }
@@ -226,7 +223,7 @@ export const Time = () => {
         fieldId="notOnOrAfter"
         labelIcon={
           <HelpItem
-            helpText={t("clients-help:expireTime")}
+            helpText={t("expireTimeHelp")}
             fieldLabelId="clients:expireTime"
           />
         }

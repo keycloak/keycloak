@@ -19,7 +19,7 @@ export const DiscoveryEndpointField = ({
   fileUpload,
   children,
 }: DiscoveryEndpointFieldProps) => {
-  const { t } = useTranslation("identity-providers");
+  const { t } = useTranslation();
   const {
     setValue,
     register,

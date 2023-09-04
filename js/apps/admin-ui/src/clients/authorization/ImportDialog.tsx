@@ -22,7 +22,7 @@ type ImportDialogProps = {
 };
 
 export const ImportDialog = ({ onConfirm, closeDialog }: ImportDialogProps) => {
-  const { t } = useTranslation("clients");
+  const { t } = useTranslation();
   const [imported, setImported] = useState<ResourceServerRepresentation>({});
   return (
     <Modal
@@ -67,7 +67,7 @@ export const ImportDialog = ({ onConfirm, closeDialog }: ImportDialogProps) => {
               label={t("policyEnforcementMode")}
               labelIcon={
                 <HelpItem
-                  helpText={t("clients-help:policyEnforcementMode")}
+                  helpText={t("policyEnforcementModeHelp")}
                   fieldLabelId="clients:policyEnforcementMode"
                 />
               }
@@ -89,7 +89,7 @@ export const ImportDialog = ({ onConfirm, closeDialog }: ImportDialogProps) => {
               label={t("decisionStrategy")}
               labelIcon={
                 <HelpItem
-                  helpText={t("clients-help:decisionStrategy")}
+                  helpText={t("decisionStrategyHelp")}
                   fieldLabelId="clients:decisionStrategy"
                 />
               }

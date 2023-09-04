@@ -20,7 +20,7 @@ import { useFetch } from "../../../utils/useFetch";
 import type { RequiredIdValue } from "./ClientScope";
 
 export const Role = () => {
-  const { t } = useTranslation("clients");
+  const { t } = useTranslation();
   const {
     control,
     getValues,
@@ -62,7 +62,7 @@ export const Role = () => {
       label={t("roles")}
       labelIcon={
         <HelpItem
-          helpText={t("clients-help:policyRoles")}
+          helpText={t("policyRolesHelp")}
           fieldLabelId="clients:roles"
         />
       }

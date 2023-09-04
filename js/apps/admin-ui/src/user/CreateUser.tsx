@@ -21,7 +21,7 @@ import { toUser } from "./routes/User";
 import "./user-section.css";
 
 export default function CreateUser() {
-  const { t } = useTranslation("users");
+  const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
   const navigate = useNavigate();
   const { realm } = useRealm();

@@ -80,7 +80,7 @@ export const ResourcesPolicySelect = ({
   isRequired = false,
 }: ResourcesPolicySelectProps) => {
   const { realm } = useRealm();
-  const { t } = useTranslation("clients");
+  const { t } = useTranslation();
   const navigate = useNavigate();
 
   const {

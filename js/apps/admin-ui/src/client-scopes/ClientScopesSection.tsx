@@ -54,7 +54,7 @@ type TypeSelectorProps = ClientScopeDefaultOptionalType & {
 };
 
 const TypeSelector = (scope: TypeSelectorProps) => {
-  const { t } = useTranslation("client-scopes");
+  const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
 
   return (
@@ -89,7 +89,7 @@ const ClientScopeDetailLink = ({
 
 export default function ClientScopesSection() {
   const { realm } = useRealm();
-  const { t } = useTranslation("client-scopes");
+  const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
 
   const [kebabOpen, setKebabOpen] = useState(false);
@@ -153,7 +153,7 @@ export default function ClientScopesSection() {
       count: selectedScopes.length,
       name: selectedScopes[0]?.name,
     }),
-    messageKey: "client-scopes:deleteConfirm",
+    messageKey: "deleteConfirmClientScopes",
     continueButtonLabel: "common:delete",
     continueButtonVariant: ButtonVariant.danger,
     onConfirm: async () => {
@@ -169,10 +169,10 @@ export default function ClientScopesSection() {
           }
           await adminClient.clientScopes.del({ id: scope.id! });
         }
-        addAlert(t("deletedSuccess"), AlertVariant.success);
+        addAlert(t("deletedSuccessClientScope"), AlertVariant.success);
         refresh();
       } catch (error) {
-        addError("client-scopes:deleteError", error);
+        addError("deleteErrorClientScope", error);
       }
     },
   });
@@ -191,7 +191,7 @@ export default function ClientScopesSection() {
           loader={loader}
           ariaLabelKey="client-scopes:clientScopeList"
           searchPlaceholderKey={
-            searchType === "name" ? "client-scopes:searchFor" : undefined
+            searchType === "name" ? "searchForClientScope" : undefined
           }
           isSearching={searchType !== "name"}
           searchTypeComponent={

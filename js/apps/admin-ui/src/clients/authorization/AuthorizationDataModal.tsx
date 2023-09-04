@@ -20,7 +20,7 @@ type AuthorizationDataModalProps = {
 export const AuthorizationDataModal = ({
   data,
 }: AuthorizationDataModalProps) => {
-  const { t } = useTranslation("clients");
+  const { t } = useTranslation();
   const [show, toggle] = useToggle();
 
   return (

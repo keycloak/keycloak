@@ -45,7 +45,7 @@ export type Role = RoleRepresentation & {
 };
 
 export default function AddMapper() {
-  const { t } = useTranslation("identity-providers");
+  const { t } = useTranslation();
 
   const form = useForm<IdPMapperRepresentationWithAttributes>({
     shouldUnregister: true,
@@ -134,7 +134,7 @@ export default function AddMapper() {
           toIdentityProvider({ providerId, alias, tab: "mappers", realm }),
         );
       } catch (error) {
-        addError("identity-providers:deleteErrorError", error);
+        addError("deleteErrorIdentityProvider", error);
       }
     },
   });

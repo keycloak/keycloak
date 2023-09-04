@@ -27,7 +27,7 @@ type DiscoverySettingsProps = {
 };
 
 const Fields = ({ readOnly }: DiscoverySettingsProps) => {
-  const { t } = useTranslation("identity-providers");
+  const { t } = useTranslation();
   const [pkceMethodOpen, setPkceMethodOpen] = useState(false);
   const {
     register,
@@ -157,7 +157,7 @@ const Fields = ({ readOnly }: DiscoverySettingsProps) => {
           label={t("pkceMethod")}
           labelIcon={
             <HelpItem
-              helpText={t("identity-providers-help:pkceMethod")}
+              helpText={t("pkceMethodHelp")}
               fieldLabelId="identity-providers:pkceMethod"
             />
           }
@@ -201,7 +201,7 @@ const Fields = ({ readOnly }: DiscoverySettingsProps) => {
 };
 
 export const DiscoverySettings = ({ readOnly }: DiscoverySettingsProps) => {
-  const { t } = useTranslation("identity-providers");
+  const { t } = useTranslation();
   const [isExpanded, setIsExpanded] = useState(false);
 
   return (

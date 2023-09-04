@@ -21,7 +21,7 @@ import { useUserProfile } from "./UserProfileContext";
 
 export const AttributesGroupTab = () => {
   const { config, save } = useUserProfile();
-  const { t } = useTranslation("realm-settings");
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { realm } = useRealm();
   const [key, setKey] = useState(0);

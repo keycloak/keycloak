@@ -103,7 +103,7 @@ const DetailCell = (event: EventRepresentation) => (
 );
 
 const UserDetailLink = (event: EventRepresentation) => {
-  const { t } = useTranslation("events");
+  const { t } = useTranslation();
   const { realm } = useRealm();
 
   return (
@@ -126,7 +126,7 @@ const UserDetailLink = (event: EventRepresentation) => {
 };
 
 export default function EventsSection() {
-  const { t } = useTranslation("events");
+  const { t } = useTranslation();
   const { realm } = useRealm();
   const formatDate = useFormatDate();
   const [key, setKey] = useState(0);
@@ -454,7 +454,7 @@ export default function EventsSection() {
   return (
     <>
       <ViewHeader
-        titleKey="events:title"
+        titleKey="titleEvents"
         subKey={
           <Trans i18nKey="events:eventExplain">
             If you want to configure user events, Admin events or Event
@@ -489,7 +489,7 @@ export default function EventsSection() {
                   },
                 ]}
                 isPaginated
-                ariaLabelKey="events:title"
+                ariaLabelKey="titleEvents"
                 toolbarItem={userEventSearchFormDisplay()}
                 columns={[
                   {

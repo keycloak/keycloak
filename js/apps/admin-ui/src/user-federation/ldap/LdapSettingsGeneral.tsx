@@ -30,8 +30,7 @@ export const LdapSettingsGeneral = ({
   showSectionDescription = false,
   vendorEdit = false,
 }: LdapSettingsGeneralProps) => {
-  const { t } = useTranslation("user-federation");
-  const { t: helpText } = useTranslation("user-federation-help");
+  const { t } = useTranslation();
   const { realm } = useRealm();
 
   useFetch(
@@ -103,7 +102,7 @@ export const LdapSettingsGeneral = ({
       {showSectionHeading && (
         <WizardSectionHeader
           title={t("generalOptions")}
-          description={helpText("ldapGeneralOptionsSettingsDescription")}
+          description={t("ldapGeneralOptionsSettingsDescription")}
           showDescription={showSectionDescription}
         />
       )}

@@ -43,7 +43,7 @@ type FormFields = PolicyRepresentation & {
 };
 
 export default function PermissionDetails() {
-  const { t } = useTranslation("clients");
+  const { t } = useTranslation();
 
   const form = useForm<FormFields>({
     mode: "onChange",
@@ -254,7 +254,7 @@ export default function PermissionDetails() {
               fieldId="applyToResourceTypeFlag"
               labelIcon={
                 <HelpItem
-                  helpText={t("clients-help:applyToResourceTypeFlag")}
+                  helpText={t("applyToResourceTypeFlagHelp")}
                   fieldLabelId="clients:applyToResourceTypeFlag"
                 />
               }
@@ -275,7 +275,7 @@ export default function PermissionDetails() {
                 fieldId="resourceType"
                 labelIcon={
                   <HelpItem
-                    helpText={t("clients-help:resourceType")}
+                    helpText={t("resourceTypeHelp")}
                     fieldLabelId="resourceType"
                   />
                 }
@@ -294,7 +294,7 @@ export default function PermissionDetails() {
                 fieldId="resources"
                 labelIcon={
                   <HelpItem
-                    helpText={t("clients-help:permissionResources")}
+                    helpText={t("permissionResourcesHelp")}
                     fieldLabelId="clients:resources"
                   />
                 }

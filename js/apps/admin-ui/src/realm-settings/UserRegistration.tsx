@@ -13,7 +13,7 @@ import { useFetch } from "../utils/useFetch";
 import { DefaultsGroupsTab } from "./DefaultGroupsTab";
 
 export const UserRegistration = () => {
-  const { t } = useTranslation("realm-settings");
+  const { t } = useTranslation();
   const [realm, setRealm] = useState<RealmRepresentation>();
   const [activeTab, setActiveTab] = useState(10);
   const [key, setKey] = useState(0);

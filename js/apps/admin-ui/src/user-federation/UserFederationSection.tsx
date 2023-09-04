@@ -41,7 +41,7 @@ export default function UserFederationSection() {
   const [userFederations, setUserFederations] =
     useState<ComponentRepresentation[]>();
   const { addAlert, addError } = useAlerts();
-  const { t } = useTranslation("user-federation");
+  const { t } = useTranslation();
   const { realm } = useRealm();
   const [key, setKey] = useState(0);
   const refresh = () => setKey(new Date().getTime());

@@ -11,7 +11,7 @@ import { TextField } from "../component/TextField";
 import type { IdentityProviderParams } from "../routes/IdentityProvider";
 
 export const OIDCGeneralSettings = () => {
-  const { t } = useTranslation("identity-providers");
+  const { t } = useTranslation();
   const { tab } = useParams<IdentityProviderParams>();
 
   const {

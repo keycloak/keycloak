@@ -95,7 +95,7 @@ const EffectiveRoles = ({
     <KeycloakDataTable
       key={key}
       loader={() => Promise.resolve(effectiveRoles)}
-      ariaLabelKey="client:effectiveRoleScopeMappings"
+      ariaLabelKey="effectiveRoleScopeMappings"
       searchPlaceholderKey="clients:searchForRole"
       columns={[
         {
@@ -113,7 +113,7 @@ const EffectiveRoles = ({
 
 export const EvaluateScopes = ({ clientId, protocol }: EvaluateScopesProps) => {
   const prefix = "openid";
-  const { t } = useTranslation("clients");
+  const { t } = useTranslation();
   const { enabled } = useHelp();
   const { realm } = useRealm();
   const mapperTypes = useServerInfo().protocolMapperTypes![protocol];
@@ -238,7 +238,7 @@ export const EvaluateScopes = ({ clientId, protocol }: EvaluateScopesProps) => {
             fieldId="scopeParameter"
             labelIcon={
               <HelpItem
-                helpText={t("clients-help:scopeParameter")}
+                helpText={t("scopeParameterHelp")}
                 fieldLabelId="clients:scopeParameter"
               />
             }
@@ -282,7 +282,7 @@ export const EvaluateScopes = ({ clientId, protocol }: EvaluateScopesProps) => {
               <UserSelect
                 name="user"
                 label="users"
-                helpText={t("clients-help:user")}
+                helpText={t("userHelp")}
                 defaultValue=""
                 variant={SelectVariant.typeahead}
                 isRequired
@@ -368,7 +368,7 @@ export const EvaluateScopes = ({ clientId, protocol }: EvaluateScopesProps) => {
                   {t("effectiveProtocolMappers")}{" "}
                   <HelpItem
                     fieldLabelId="clients:effectiveProtocolMappers"
-                    helpText={t("clients-help:effectiveProtocolMappers")}
+                    helpText={t("effectiveProtocolMappersHelp")}
                     noVerticalAlign={false}
                     unWrap
                   />
@@ -385,7 +385,7 @@ export const EvaluateScopes = ({ clientId, protocol }: EvaluateScopesProps) => {
                   {t("effectiveRoleScopeMappings")}{" "}
                   <HelpItem
                     fieldLabelId="clients:effectiveRoleScopeMappings"
-                    helpText={t("clients-help:effectiveRoleScopeMappings")}
+                    helpText={t("effectiveRoleScopeMappingsHelp")}
                     noVerticalAlign={false}
                     unWrap
                   />
@@ -402,7 +402,7 @@ export const EvaluateScopes = ({ clientId, protocol }: EvaluateScopesProps) => {
                   {t("generatedAccessToken")}{" "}
                   <HelpItem
                     fieldLabelId="clients:generatedAccessToken"
-                    helpText={t("clients-help:generatedAccessToken")}
+                    helpText={t("generatedAccessTokenHelp")}
                     noVerticalAlign={false}
                     unWrap
                   />
@@ -419,7 +419,7 @@ export const EvaluateScopes = ({ clientId, protocol }: EvaluateScopesProps) => {
                   {t("generatedIdToken")}{" "}
                   <HelpItem
                     fieldLabelId="clients:generatedIdToken"
-                    helpText={t("clients-help:generatedIdToken")}
+                    helpText={t("generatedIdTokenHelp")}
                     noVerticalAlign={false}
                     unWrap
                   />
@@ -436,7 +436,7 @@ export const EvaluateScopes = ({ clientId, protocol }: EvaluateScopesProps) => {
                   {t("generatedUserInfo")}{" "}
                   <HelpItem
                     fieldLabelId="clients:generatedUserInfo"
-                    helpText={t("clients-help:generatedUserInfo")}
+                    helpText={t("generatedUserInfoHelp")}
                     noVerticalAlign={false}
                     unWrap
                   />

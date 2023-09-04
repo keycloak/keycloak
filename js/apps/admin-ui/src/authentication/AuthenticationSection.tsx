@@ -59,7 +59,7 @@ export const REALM_FLOWS = new Map<string, string>([
 ]);
 
 const AliasRenderer = ({ id, alias, usedBy, builtIn }: AuthenticationType) => {
-  const { t } = useTranslation("authentication");
+  const { t } = useTranslation();
   const { realm } = useRealm();
 
   return (
@@ -81,7 +81,7 @@ const AliasRenderer = ({ id, alias, usedBy, builtIn }: AuthenticationType) => {
 };
 
 export default function AuthenticationSection() {
-  const { t } = useTranslation("authentication");
+  const { t } = useTranslation();
   const { realm: realmName } = useRealm();
   const [key, setKey] = useState(0);
   const refresh = () => {
@@ -178,7 +178,7 @@ export default function AuthenticationSection() {
         />
       )}
       <ViewHeader
-        titleKey="authentication:title"
+        titleKey="titleAuthentication"
         subKey="authentication:authenticationExplain"
         helpUrl={helpUrls.authenticationUrl}
         divider={false}
@@ -196,7 +196,7 @@ export default function AuthenticationSection() {
             <KeycloakDataTable
               key={key}
               loader={loader}
-              ariaLabelKey="authentication:title"
+              ariaLabelKey="titleAuthentication"
               searchPlaceholderKey="authentication:searchForFlow"
               toolbarItem={
                 <ToolbarItem>

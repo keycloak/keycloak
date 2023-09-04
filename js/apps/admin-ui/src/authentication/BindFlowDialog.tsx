@@ -29,7 +29,7 @@ type BindFlowDialogProps = {
 };
 
 export const BindFlowDialog = ({ flowAlias, onClose }: BindFlowDialogProps) => {
-  const { t } = useTranslation("authentication");
+  const { t } = useTranslation();
   const { control, handleSubmit } = useForm<BindingForm>();
   const { addAlert, addError } = useAlerts();
   const { realm } = useRealm();

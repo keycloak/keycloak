@@ -25,7 +25,7 @@ export const DeleteScopeDialog = ({
   open,
   toggleDialog,
 }: DeleteScopeDialogProps) => {
-  const { t } = useTranslation("clients");
+  const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
 
   return (

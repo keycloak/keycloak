@@ -21,7 +21,7 @@ export const AddProviderDialog = ({
   onConfirm,
   toggleDialog,
 }: AddProviderDialogProps) => {
-  const { t } = useTranslation("clients");
+  const { t } = useTranslation();
   const serverInfo = useServerInfo();
   const providers = Object.keys(
     serverInfo.providers?.["client-registration-policy"].providers || [],

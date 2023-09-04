@@ -70,7 +70,7 @@ export const SamlKeysDialog = ({
   onClose,
   onCancel,
 }: SamlKeysDialogProps) => {
-  const { t } = useTranslation("clients");
+  const { t } = useTranslation();
   const [type, setType] = useState(false);
   const [keys, setKeys] = useState<CertificateRepresentation>();
   const form = useForm<SamlKeysDialogForm>({ mode: "onChange" });
@@ -184,7 +184,7 @@ export const SamlKeysDialog = ({
               fieldId="certificate"
               labelIcon={
                 <HelpItem
-                  helpText={t("clients-help:certificate")}
+                  helpText={t("certificateHelp")}
                   fieldLabelId="clients:certificate"
                 />
               }

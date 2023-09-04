@@ -43,7 +43,7 @@ export type AddMapperDialogProps = AddMapperDialogModalProps & {
 };
 
 export const AddMapperDialog = (props: AddMapperDialogProps) => {
-  const { t } = useTranslation("client-scopes");
+  const { t } = useTranslation();
 
   const serverInfo = useServerInfo();
   const protocol = props.protocol;

@@ -25,7 +25,7 @@ const promptOptions = {
 };
 
 export const ExtendedNonDiscoverySettings = () => {
-  const { t } = useTranslation("identity-providers");
+  const { t } = useTranslation();
   const { control } = useFormContext();
 
   const [isExpanded, setIsExpanded] = useState(false);

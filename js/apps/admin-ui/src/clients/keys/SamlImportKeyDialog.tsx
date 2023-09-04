@@ -19,7 +19,7 @@ export const SamlImportKeyDialog = ({
   attr,
   onClose,
 }: SamlImportKeyDialogProps) => {
-  const { t } = useTranslation("clients");
+  const { t } = useTranslation();
   const form = useFormContext<SamlKeysDialogForm>();
   const { handleSubmit } = form;
 

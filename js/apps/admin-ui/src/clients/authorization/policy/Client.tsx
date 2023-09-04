@@ -15,7 +15,7 @@ import { adminClient } from "../../../admin-client";
 import { useFetch } from "../../../utils/useFetch";
 
 export const Client = () => {
-  const { t } = useTranslation("clients");
+  const { t } = useTranslation();
   const {
     control,
     getValues,

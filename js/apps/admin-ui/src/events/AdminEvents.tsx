@@ -79,7 +79,7 @@ const DisplayDialog = ({
   onClose,
   children,
 }: PropsWithChildren<DisplayDialogProps>) => {
-  const { t } = useTranslation("events");
+  const { t } = useTranslation();
   return (
     <Modal
       variant={ModalVariant.medium}
@@ -93,7 +93,7 @@ const DisplayDialog = ({
 };
 
 export const AdminEvents = () => {
-  const { t } = useTranslation("events");
+  const { t } = useTranslation();
   const { realm } = useRealm();
   const serverInfo = useServerInfo();
   const formatDate = useFormatDate();

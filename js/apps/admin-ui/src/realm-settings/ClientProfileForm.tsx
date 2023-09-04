@@ -55,7 +55,7 @@ const defaultValues: ClientProfileForm = {
 };
 
 export default function ClientProfileForm() {
-  const { t } = useTranslation("realm-settings");
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const {
     handleSubmit,

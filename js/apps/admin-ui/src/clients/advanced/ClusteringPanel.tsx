@@ -35,7 +35,7 @@ export const ClusteringPanel = ({
   save,
   client: { id, registeredNodes, access },
 }: AdvancedProps) => {
-  const { t } = useTranslation("clients");
+  const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
   const formatDate = useFormatDate();
 
@@ -92,7 +92,7 @@ export const ClusteringPanel = ({
           fieldId="kc-node-reregistration-timeout"
           labelIcon={
             <HelpItem
-              helpText={t("clients-help:nodeReRegistrationTimeout")}
+              helpText={t("nodeReRegistrationTimeoutHelp")}
               fieldLabelId="clients:nodeReRegistrationTimeout"
             />
           }

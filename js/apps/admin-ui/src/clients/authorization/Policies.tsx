@@ -62,7 +62,7 @@ const DependentPoliciesRenderer = ({
 };
 
 export const AuthorizationPolicies = ({ clientId }: PoliciesProps) => {
-  const { t } = useTranslation("clients");
+  const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
   const { realm } = useRealm();
   const navigate = useNavigate();

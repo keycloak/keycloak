@@ -80,7 +80,7 @@ export default function SessionsTable({
 }: SessionsTableProps) {
   const { realm } = useRealm();
   const { whoAmI } = useWhoAmI();
-  const { t } = useTranslation("sessions");
+  const { t } = useTranslation();
   const { addError } = useAlerts();
   const formatDate = useFormatDate();
   const [key, setKey] = useState(0);
@@ -153,7 +153,7 @@ export default function SessionsTable({
       <KeycloakDataTable
         key={key}
         loader={loader}
-        ariaLabelKey="sessions:title"
+        ariaLabelKey="titleSessions"
         searchPlaceholderKey="sessions:searchForSession"
         isPaginated={isPaginated}
         isSearching={isSearching}

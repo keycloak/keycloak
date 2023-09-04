@@ -26,7 +26,7 @@ export const CopyToClipboardButton = ({
   text,
   variant = "plain",
 }: CopyToClipboardButtonProps) => {
-  const { t } = useTranslation("clients");
+  const { t } = useTranslation();
   const setTimeout = useSetTimeout();
   const permission = useQueryPermission("clipboard-write" as PermissionName);
   const permissionDenied = permission?.state === "denied";

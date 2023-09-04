@@ -26,7 +26,7 @@ const LoginFlow = ({
   label,
   defaultValue,
 }: FieldProps & { defaultValue: string }) => {
-  const { t } = useTranslation("identity-providers");
+  const { t } = useTranslation();
   const { control } = useFormContext();
 
   const [flows, setFlows] = useState<AuthenticationFlowRepresentation[]>();
@@ -97,7 +97,7 @@ const syncModes = ["import", "legacy", "force"];
 type AdvancedSettingsProps = { isOIDC: boolean; isSAML: boolean };
 
 export const AdvancedSettings = ({ isOIDC, isSAML }: AdvancedSettingsProps) => {
-  const { t } = useTranslation("identity-providers");
+  const { t } = useTranslation();
   const {
     control,
     register,
@@ -169,7 +169,7 @@ export const AdvancedSettings = ({ isOIDC, isSAML }: AdvancedSettingsProps) => {
             label={t("identity-providers:claimFilterName")}
             labelIcon={
               <HelpItem
-                helpText={t("identity-providers-help:claimFilterName")}
+                helpText={t("claimFilterNameHelp")}
                 fieldLabelId="identity-providers:claimFilterName"
               />
             }
@@ -198,7 +198,7 @@ export const AdvancedSettings = ({ isOIDC, isSAML }: AdvancedSettingsProps) => {
             label={t("identity-providers:claimFilterValue")}
             labelIcon={
               <HelpItem
-                helpText={t("identity-providers-help:claimFilterValue")}
+                helpText={t("claimFilterValueHelp")}
                 fieldLabelId="identity-providers:claimFilterName"
               />
             }
@@ -241,7 +241,7 @@ export const AdvancedSettings = ({ isOIDC, isSAML }: AdvancedSettingsProps) => {
         label={t("syncMode")}
         labelIcon={
           <HelpItem
-            helpText={t("identity-providers-help:syncMode")}
+            helpText={t("syncModeHelp")}
             fieldLabelId="identity-providers:syncMode"
           />
         }

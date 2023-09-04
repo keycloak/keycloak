@@ -21,7 +21,7 @@ type EditFlowModalProps = {
 };
 
 export const EditFlowModal = ({ flow, toggleDialog }: EditFlowModalProps) => {
-  const { t } = useTranslation("authentication");
+  const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
   const form = useForm<AuthenticationFlowRepresentation>({ mode: "onChange" });
   const { reset, handleSubmit } = form;

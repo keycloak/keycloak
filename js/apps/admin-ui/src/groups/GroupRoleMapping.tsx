@@ -12,7 +12,7 @@ type GroupRoleMappingProps = {
 };
 
 export const GroupRoleMapping = ({ id, name }: GroupRoleMappingProps) => {
-  const { t } = useTranslation("clients");
+  const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
 
   const assignRoles = async (rows: Row[]) => {
