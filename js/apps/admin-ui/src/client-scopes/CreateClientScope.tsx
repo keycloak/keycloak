@@ -49,7 +49,7 @@ export default function CreateClientScope() {
         }),
       );
     } catch (error) {
-      addError("client-scopes:createError", error);
+      addError("createClientScopeError", error);
     }
   };
 

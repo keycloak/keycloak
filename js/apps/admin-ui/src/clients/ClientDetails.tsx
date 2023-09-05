@@ -478,7 +478,7 @@ export default function ClientDetails() {
               <RolesList
                 loader={loader}
                 paginated={false}
-                messageBundle="clients"
+                messageBundle="client"
                 toCreate={toCreateRole({ realm, clientId: client.id! })}
                 toDetail={(roleId) =>
                   toClientRole({

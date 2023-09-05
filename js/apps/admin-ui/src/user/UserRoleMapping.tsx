@@ -36,7 +36,7 @@ export const UserRoleMapping = ({ id, name }: UserRoleMappingProps) => {
             }),
           ),
       );
-      addAlert(t("roleMappingUpdatedSuccess"), AlertVariant.success);
+      addAlert(t("userRoleMappingUpdatedSuccess"), AlertVariant.success);
     } catch (error) {
       addError("clients:roleMappingUpdatedError", error);
     }
