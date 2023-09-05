@@ -476,7 +476,7 @@ public class JpaUserFederatedStorageProvider implements
     }
     
     @Override
-    public Stream<String> getRoleMembersStream(RealmModel realm, RoleModel role, Integer firstResult,Integer max) {
+    public Stream<String> getRoleMembersFederatedStream(RealmModel realm, RoleModel role, Integer firstResult, Integer max) {
         TypedQuery<String> query = em.createNamedQuery("fedRoleMembership", String.class);
         query.setParameter("roleId", role.getId());
 		query.setParameter("realmId", realm.getId());

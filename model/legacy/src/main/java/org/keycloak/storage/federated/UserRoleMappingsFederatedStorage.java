@@ -18,7 +18,6 @@ package org.keycloak.storage.federated;
 
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
-import org.keycloak.models.UserModel;
 
 import java.util.stream.Stream;
 
@@ -50,7 +49,7 @@ public interface UserRoleMappingsFederatedStorage {
     * @return a non-null {@code Stream} of federated user ids that are members of the role in the realm.
     */
 
-	Stream<String> getRoleMembersStream(RealmModel realm, RoleModel role, Integer firstResult, Integer max);
+	Stream<String> getRoleMembersFederatedStream(RealmModel realm, RoleModel role, Integer firstResult, Integer max);
     
     /**
      * @deprecated This interface is no longer necessary; collection-based methods were removed from the parent interface

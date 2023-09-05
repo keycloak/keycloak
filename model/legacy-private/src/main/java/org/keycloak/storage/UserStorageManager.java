@@ -410,9 +410,9 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
                 return ((UserQueryMethodsProvider)provider).getRoleMembersStream(realm, role, firstResultInQuery, maxResultsInQuery);
             }
             else if (provider instanceof UserFederatedStorageProvider) {
-                return ((UserFederatedStorageProvider)provider).getRoleMembersStream(realm, role, firstResultInQuery, maxResultsInQuery).
+                return ((UserFederatedStorageProvider)provider).getRoleMembersFederatedStream(realm, role, firstResultInQuery, maxResultsInQuery).
                         map(id -> getUserById(realm, id));
-           }
+            }
             return Stream.empty();
         }, realm, firstResult, maxResults);
         return importValidation(realm, results);

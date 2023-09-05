@@ -1,6 +1,7 @@
 package org.keycloak.testsuite.federation.storage;
 
 import org.apache.commons.io.FileUtils;
+import org.hamcrest.Matchers;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.After;
 import org.junit.Assert;
@@ -20,6 +21,7 @@ import org.keycloak.credential.CredentialProvider;
 import org.keycloak.credential.CredentialProviderFactory;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.cache.CachedUserModel;
 import org.keycloak.models.credential.OTPCredentialModel;
@@ -865,6 +867,40 @@ public class UserStorageTest extends AbstractAuthTest {
         // Re-create realm
         RealmRepresentation repOrig = testContext.getTestRealmReps().get(0);
         adminClient.realms().create(repOrig);
+    }
+
+    @Test
+    public void testRoleMembership() {
+        RoleRepresentation role1 = new RoleRepresentation();
+        role1.setName("role1");
+        RoleRepresentation role2 = new RoleRepresentation();
+        role2.setName("role2");
+        testRealmResource().roles().create(role1);
+        testRealmResource().roles().create(role2);
+
+        UserRepresentation thor = ApiUtil.findUserByUsername(testRealmResource(), "thor");
+        ApiUtil.assignRealmRoles(testRealmResource(), thor.getId(), "role1", "role2");
+
+        UserRepresentation zeus = ApiUtil.findUserByUsername(testRealmResource(), "zeus");
+        ApiUtil.assignRealmRoles(testRealmResource(), zeus.getId(), "role1");
+
+
+        testingClient.server().run(session -> {
+            RealmModel realm = session.realms().getRealmByName("test");
+            RoleModel roleModel1 = session.roles().getRealmRole(realm, "role1");
+            RoleModel roleModel2 = session.roles().getRealmRole(realm, "role2");
+
+            List<String> users = session.users().getRoleMembersStream(realm, roleModel1).map(UserModel::getUsername).collect(Collectors.toList());
+            Assert.assertEquals(2, users.size());
+            Assert.assertThat(users, Matchers.containsInAnyOrder("thor", "zeus"));
+
+            users = session.users().getRoleMembersStream(realm, roleModel2).map(UserModel::getUsername).collect(Collectors.toList());
+            Assert.assertEquals(1, users.size());
+            Assert.assertThat(users, Matchers.containsInAnyOrder("thor"));
+        });
+
+        testRealmResource().roles().get("role1").remove();
+        testRealmResource().roles().get("role2").remove();
     }
 
     @Test

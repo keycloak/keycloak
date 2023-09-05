@@ -37,6 +37,7 @@ import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.UserStorageUtil;
 import org.keycloak.storage.adapter.AbstractUserAdapterFederatedStorage;
 import org.keycloak.storage.federated.UserGroupMembershipFederatedStorage;
+import org.keycloak.storage.federated.UserRoleMappingsFederatedStorage;
 import org.keycloak.storage.user.ImportedUserValidation;
 import org.keycloak.storage.user.UserLookupProvider;
 import org.keycloak.storage.user.UserQueryProvider;
@@ -59,7 +60,7 @@ import static org.keycloak.utils.StreamsUtil.paginatedStream;
  * @version $Revision: 1 $
  */
 public class UserMapStorage implements UserLookupProvider, UserStorageProvider, UserRegistrationProvider, CredentialInputUpdater,
-        CredentialInputValidator, UserGroupMembershipFederatedStorage.Streams, UserQueryProvider, ImportedUserValidation {
+        CredentialInputValidator, UserGroupMembershipFederatedStorage.Streams, UserRoleMappingsFederatedStorage, UserQueryProvider, ImportedUserValidation {
 
     private static final Logger log = Logger.getLogger(UserMapStorage.class);
     
@@ -404,4 +405,21 @@ public class UserMapStorage implements UserLookupProvider, UserStorageProvider, 
         return userName == null ? null : userName.toLowerCase();
     }
 
+    @Override
+    public void grantRole(RealmModel realm, String userId, RoleModel role) {
+    }
+
+    @Override
+    public Stream<RoleModel> getRoleMappingsStream(RealmModel realm, String userId) {
+        return Stream.empty();
+    }
+
+    @Override
+    public void deleteRoleMapping(RealmModel realm, String userId, RoleModel role) {
+    }
+
+    @Override
+    public Stream<String> getRoleMembersFederatedStream(RealmModel realm, RoleModel role, Integer firstResult, Integer max) {
+        return Stream.empty();
+    }
 }
