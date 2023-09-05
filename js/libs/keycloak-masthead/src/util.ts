@@ -1,4 +1,4 @@
-import { KeycloakTokenParsed } from "keycloak-js";
+import { type KeycloakTokenParsed } from "keycloak-js";
 
 import { TranslateFunction } from "./translation/useTranslation";
 

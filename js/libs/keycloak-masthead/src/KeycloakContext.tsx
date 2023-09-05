@@ -1,8 +1,14 @@
-import Keycloak, { KeycloakTokenParsed } from "keycloak-js";
-import { createContext, PropsWithChildren, useContext, useState } from "react";
+import Keycloak, { type KeycloakTokenParsed } from "keycloak-js";
+import {
+  createContext,
+  PropsWithChildren,
+  useContext,
+  useMemo,
+  useState,
+} from "react";
 
 type KeycloakProps = {
-  keycloak?: Keycloak;
+  keycloak: Keycloak;
   token?: KeycloakTokenParsed;
   updateToken: () => void;
 };
@@ -20,13 +26,19 @@ export const KeycloakProvider = ({
   children,
 }: PropsWithChildren<KeycloakProviderProps>) => {
   const [token, setToken] = useState(keycloak.tokenParsed);
-  const updateToken = async () => {
-    await keycloak.updateToken(-1);
-    setToken(keycloak.tokenParsed);
-  };
-  console.log("what", keycloak, token, updateToken);
+  const context = useMemo(
+    () => ({
+      keycloak,
+      token,
+      updateToken: async () => {
+        await keycloak.updateToken(-1);
+        setToken(keycloak.tokenParsed);
+      },
+    }),
+    [keycloak, token],
+  );
   return (
-    <KeycloakContext.Provider value={{ keycloak, token, updateToken }}>
+    <KeycloakContext.Provider value={context}>
       {children}
     </KeycloakContext.Provider>
   );
