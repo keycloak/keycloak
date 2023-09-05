@@ -49,6 +49,7 @@ jobs:
     name: Status Check - Keycloak Guides
     if: always()
     needs:
+      - conditional
       - build
     runs-on: ubuntu-latest
     steps:

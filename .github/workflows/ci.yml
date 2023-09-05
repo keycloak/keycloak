@@ -705,6 +705,7 @@ jobs:
     name: Status Check - Keycloak CI
     if: always()
     needs:
+      - conditional
       - unit-tests
       - base-integration-tests
       - quarkus-integration-tests
