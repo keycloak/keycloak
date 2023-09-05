@@ -371,6 +371,13 @@
                                             <type>jar</type>
                                             <outputDirectory>${auth.server.home}/providers</outputDirectory>
                                         </artifactItem>
+                                        <artifactItem>
+                                            <groupId>com.microsoft.sqlserver</groupId>
+                                            <artifactId>mssql-jdbc</artifactId>
+                                            <version>${mssql-jdbc.version}</version>
+                                            <type>jar</type>
+                                            <outputDirectory>${auth.server.home}/providers</outputDirectory>
+                                        </artifactItem>
                                     </artifactItems>
                                 </configuration>
                             </execution>
