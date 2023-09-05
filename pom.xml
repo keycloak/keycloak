@@ -116,7 +116,8 @@
         <elytron.undertow-server.version>1.9.0.Final</elytron.undertow-server.version>
         <jetty94.version>9.4.40.v20210413</jetty94.version>
         <woodstox.version>6.0.3</woodstox.version>
-        <wildfly.common.version>1.6.0.Final</wildfly.common.version>
+        <wildfly.common.quarkus.aligned.version>1.5.4.Final-format-001</wildfly.common.quarkus.aligned.version>
+        <wildfly.common.wildfly.aligned.version>1.6.0.Final</wildfly.common.wildfly.aligned.version>
         <xmlsec.version>2.2.3</xmlsec.version>
         <nashorn.version>15.4</nashorn.version>
         <ua-parser.version>1.5.4</ua-parser.version>
@@ -674,7 +675,7 @@
             <dependency>
                 <groupId>org.wildfly.common</groupId>
                 <artifactId>wildfly-common</artifactId>
-                <version>${wildfly.common.version}</version>
+                <version>${wildfly.common.quarkus.aligned.version}</version>
                 <scope>provided</scope>
             </dependency>
             <dependency>
@@ -1867,7 +1868,7 @@
                         <dependency>
                             <groupId>org.wildfly.common</groupId>
                             <artifactId>wildfly-common</artifactId>
-                            <version>${wildfly.common.version}</version>
+                            <version>${wildfly.common.wildfly.aligned.version}</version>
                         </dependency>
                     </dependencies>
                 </plugin>
