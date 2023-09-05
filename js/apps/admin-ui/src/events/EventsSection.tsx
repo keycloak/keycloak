@@ -59,7 +59,7 @@ type UserEventSearchForm = {
   dateTo: string;
   user: string;
   type: EventType[];
-  authIpAddress: string;
+  ipAddress: string;
 };
 
 const defaultValues: UserEventSearchForm = {
@@ -68,7 +68,7 @@ const defaultValues: UserEventSearchForm = {
   dateTo: "",
   user: "",
   type: [],
-  authIpAddress: "",
+  ipAddress: "",
 };
 
 const StatusRow = (event: EventRepresentation) =>
@@ -143,7 +143,7 @@ export default function EventsSection() {
     dateTo: t("dateTo"),
     user: t("userId"),
     type: t("eventType"),
-    authIpAddress: t("ipAddress"),
+    ipAddress: t("ipAddress"),
   };
 
   const {
@@ -382,7 +382,7 @@ export default function EventsSection() {
                 <KeycloakTextInput
                   id="kc-ipAddress"
                   data-testid="ipAddress-searchField"
-                  {...register("authIpAddress")}
+                  {...register("ipAddress")}
                 />
               </FormGroup>
               <ActionGroup>
