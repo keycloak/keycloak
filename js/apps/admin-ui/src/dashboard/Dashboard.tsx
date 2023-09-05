@@ -69,20 +69,24 @@ const EmptyDashboard = () => {
   );
 };
 
-const FeatureItem = ({ feature }: { feature: FeatureRepresentation }) => {
+type FeatureItemProps = {
+  feature: FeatureRepresentation;
+};
+
+const FeatureItem = ({ feature }: FeatureItemProps) => {
   const { t } = useTranslation("dashboard");
   return (
-    <ListItem key={feature.name} className="pf-u-mb-sm">
-      {feature.name}{" "}
-      {feature.type === FeatureType.EXPERIMENTAL ? (
+    <ListItem className="pf-u-mb-sm">
+      {feature.name}&nbsp;
+      {feature.type === FeatureType.EXPERIMENTAL && (
         <Label color="orange">{t("experimental")}</Label>
-      ) : null}
-      {feature.type === FeatureType.PREVIEW ? (
+      )}
+      {feature.type === FeatureType.PREVIEW && (
         <Label color="blue">{t("preview")}</Label>
-      ) : null}
-      {feature.type === FeatureType.DEFAULT ? (
+      )}
+      {feature.type === FeatureType.DEFAULT && (
         <Label color="green">{t("supported")}</Label>
-      ) : null}
+      )}
     </ListItem>
   );
 };
@@ -93,22 +97,19 @@ const Dashboard = () => {
   const serverInfo = useServerInfo();
   const localeSort = useLocaleSort();
 
+  const sortedFeatures = useMemo(
+    () => localeSort(serverInfo.features ?? [], mapByKey("name")),
+    [serverInfo.features],
+  );
+
   const disabledFeatures = useMemo(
-    () =>
-      localeSort(
-        serverInfo.features?.filter((f) => !f.enabled) || [],
-        mapByKey("name"),
-      ),
-    [localeSort, serverInfo.features],
+    () => sortedFeatures.filter((f) => !f.enabled) || [],
+    [serverInfo.features],
   );
 
   const enabledFeatures = useMemo(
-    () =>
-      localeSort(
-        serverInfo.features?.filter((f) => f.enabled) || [],
-        mapByKey("name"),
-      ),
-    [localeSort, serverInfo.features],
+    () => sortedFeatures.filter((f) => f.enabled) || [],
+    [serverInfo.features],
   );
 
   const useTab = (tab: DashboardTab) =>

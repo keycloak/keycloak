@@ -3,7 +3,7 @@ export default interface FeatureRepresentation {
   label: string;
   type: FeatureType;
   enabled: boolean;
-  dependencies: Set<string>;
+  dependencies: string[];
 }
 
 export enum FeatureType {
