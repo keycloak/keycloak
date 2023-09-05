@@ -66,8 +66,6 @@ public interface FormContext {
 
     /**
      * Attach a specific user to this flow.
-     * 
-     * If there was another user attached to this flow calling this method overrides the previous setting. 
      *
      * @param user
      */
