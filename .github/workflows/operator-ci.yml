@@ -203,6 +203,7 @@ jobs:
     name: Status Check - Keycloak Operator CI
     if: always()
     needs:
+      - conditional
       - test-local
       - test-remote
       - test-olm
