@@ -100,6 +100,9 @@ public class RealmCacheSession implements CacheRealmProvider {
     public static final String ROLES_QUERY_SUFFIX = ".roles";
     private static final String SCOPE_KEY_DEFAULT = "default";
     private static final String SCOPE_KEY_OPTIONAL = "optional";
+
+    private static final Object GET_REALM_BY_NAME_LOCK = new Object();
+
     protected RealmCacheManager cache;
     protected KeycloakSession session;
     protected RealmProvider realmDelegate;
@@ -458,27 +461,31 @@ public class RealmCacheSession implements CacheRealmProvider {
 
     @Override
     public RealmModel getRealmByName(String name) {
-        String cacheKey = getRealmByNameCacheKey(name);
-        RealmListQuery query = cache.get(cacheKey, RealmListQuery.class);
-        if (query != null) {
-            logger.tracev("realm by name cache hit: {0}", name);
-        }
-        if (query == null) {
-            Long loaded = cache.getCurrentRevision(cacheKey);
-            RealmModel model = getRealmDelegate().getRealmByName(name);
-            if (model == null) return null;
-            if (invalidations.contains(model.getId())) return model;
-            query = new RealmListQuery(loaded, cacheKey, model.getId());
-            cache.addRevisioned(query, startupRevision);
-            return model;
-        } else if (invalidations.contains(cacheKey)) {
-            return getRealmDelegate().getRealmByName(name);
-        } else {
-            String realmId = query.getRealms().iterator().next();
-            if (invalidations.contains(realmId)) {
-                return getRealmDelegate().getRealmByName(name);
+        // synchronization is necessary to prevent concurrent requests repopulating the cache after an invalidation event
+        // synchronized method is insufficient because this object has multiple instances at runtime
+        synchronized (GET_REALM_BY_NAME_LOCK) {
+            String cacheKey = getRealmByNameCacheKey(name);
+            RealmListQuery query = cache.get(cacheKey, RealmListQuery.class);
+            if (query != null) {
+                logger.tracev("realm by name cache hit: {0}", name);
             }
-            return getRealm(realmId);
+            if (query == null) {
+                Long loaded = cache.getCurrentRevision(cacheKey);
+                RealmModel model = getRealmDelegate().getRealmByName(name);
+                if (model == null) return null;
+                if (invalidations.contains(model.getId())) return model;
+                query = new RealmListQuery(loaded, cacheKey, model.getId());
+                cache.addRevisioned(query, startupRevision);
+                return model;
+            } else if (invalidations.contains(cacheKey)) {
+                return getRealmDelegate().getRealmByName(name);
+            } else {
+                String realmId = query.getRealms().iterator().next();
+                if (invalidations.contains(realmId)) {
+                    return getRealmDelegate().getRealmByName(name);
+                }
+                return getRealm(realmId);
+            }
         }
     }
 
