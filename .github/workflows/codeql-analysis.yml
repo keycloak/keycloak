@@ -90,6 +90,7 @@ jobs:
     name: Status Check - CodeQL
     if: always()
     needs:
+      - conditional
       - java
       - themes
     runs-on: ubuntu-latest

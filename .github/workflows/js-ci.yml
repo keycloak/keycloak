@@ -269,6 +269,7 @@ jobs:
     name: Status Check - Keycloak JavaScript CI
     if: always()
     needs:
+      - conditional
       - admin-client
       - keycloak-js
       - keycloak-masthead
