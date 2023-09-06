@@ -77,7 +77,7 @@ export default function AddOpenIdConnect() {
             isHorizontal
             onSubmit={handleSubmit(onSubmit)}
           >
-            <OIDCGeneralSettings id={id} />
+            <OIDCGeneralSettings />
             <OpenIdConnectSettings />
             <OIDCAuthentication />
             <ActionGroup>
