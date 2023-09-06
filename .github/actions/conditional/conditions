@@ -26,3 +26,5 @@ js/                                         js
 
 *.java                                      codeql-java
 themes/                                     codeql-themes
+
+testsuite::database-suite                   ci-store
