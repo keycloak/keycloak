@@ -56,6 +56,10 @@ public interface ThemeSelectorProvider extends Provider {
             return DEFAULT_V2;
         }
 
+        if ((type == Theme.Type.WELCOME) && !Profile.isFeatureEnabled(Profile.Feature.LEGACY_WELCOME)) {
+            return DEFAULT_V2;
+        }
+
         return DEFAULT;
     }
 
