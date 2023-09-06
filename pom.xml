@@ -543,6 +543,12 @@
                 <groupId>org.twitter4j</groupId>
                 <artifactId>twitter4j-core</artifactId>
                 <version>${twitter4j.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.jetbrains</groupId>
+                        <artifactId>annotations</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
 
             <!-- QR Code Generator -->
