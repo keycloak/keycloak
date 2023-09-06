@@ -2,6 +2,7 @@
 <#import "/templates/kc.adoc" as kc>
 <#import "/templates/options.adoc" as opts>
 <#import "/templates/links.adoc" as links>
+<#import "/templates/profile.adoc" as profile>
 
 <@tmpl.guide
     title="Configuring the database"
@@ -27,6 +28,8 @@ The server has built-in support for different databases. You can query the avail
 
 By default, the server uses the `dev-file` database. This is the default database that the server will use to persist data and
 only exists for development use-cases. The `dev-file` database is not suitable for production use-cases, and must be replaced before deploying to production.
+
+<@profile.ifProduct>
 
 == Installing a database driver (Oracle)
 
@@ -67,6 +70,8 @@ RUN /opt/keycloak/bin/kc.sh build
 See the <@links.server id="containers" /> {section} for details on how to build optimized images.
 
 Then continue configuring the database as described in the next section.
+
+</@profile.ifProduct>
 
 == Configuring a database
 
