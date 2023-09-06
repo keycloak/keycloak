@@ -81,7 +81,6 @@ public class AccountLoader {
         UriInfo uriInfo = session.getContext().getUri();
 
         AccountResourceProvider accountResourceProvider = getAccountResourceProvider(theme);
-        logger.debugf("Proceed with AccountResourceProvider %s", accountResourceProvider);
         
         if (request.getHttpMethod().equals(HttpMethod.OPTIONS)) {
             return new CorsPreflightService(request);
@@ -89,10 +88,6 @@ public class AccountLoader {
             return getAccountRestService(client, null);
         } else if (accountResourceProvider != null) {
             return accountResourceProvider.getResource();
-        } else if (Profile.isFeatureEnabled(Profile.Feature.ACCOUNT2) || Profile.isFeatureEnabled(Profile.Feature.ACCOUNT3)) {
-            AccountConsole console = new AccountConsole(session, client, theme);
-            console.init();
-            return console;
         } else {
             throw new NotFoundException();
         }
@@ -114,6 +109,7 @@ public class AccountLoader {
             throw new InternalServerErrorException(e);
         }
     }
+
 
     private AccountRestService getAccountRestService(ClientModel client, String versionStr) {
         AuthenticationManager.AuthResult authResult = new AppAuthManager.BearerTokenAuthenticator(session)
@@ -155,19 +151,20 @@ public class AccountLoader {
     }
 
   private AccountResourceProvider getAccountResourceProvider(Theme theme) {
-    logger.debugf("Attempting to get AccountResourceProvider for theme %s", theme.getName());
-    Set<AccountResourceProvider> providers = session.getAllProviders(AccountResourceProvider.class);
-    logger.debugf("Found %d AccountResourceProvider instances", providers != null ? providers.size() : "0");
-    if (providers != null && !providers.isEmpty()) {
-      // has the flaw that it will only return the first match. no provision for multiple providers
-      // that match the same theme.
-      for (AccountResourceProvider provider : providers) {
-        if (provider.useWithTheme(theme)) {
-          logger.debugf("Found provider %s for theme %s", provider.getClass().getName(), theme.getName());
-          return provider;
-        }
-      }
+    String providerId = Constants.DEFAULT_ACCOUNT_RESOURCE_PROVIDER_ID;
+    try {
+      providerId = theme.getProperties().getProperty(Constants.ACCOUNT_RESOURCE_PROVIDER_KEY);
+    } catch (IOException e) {
+      logger.debugf(e, "Error loading theme property %s", Constants.ACCOUNT_RESOURCE_PROVIDER_KEY);
     }
-    return null;
+    logger.debugf("Attempting to get AccountResourceProvider for theme %s %s", theme.getName(), providerId);
+    AccountResourceProvider provider = session.getProvider(AccountResourceProvider.class, providerId);
+    if (provider == null) {
+      // question if we should just return null, or use the default
+      return session.getProvider(AccountResourceProvider.class, Constants.DEFAULT_ACCOUNT_RESOURCE_PROVIDER_ID);
+    } else {
+      logger.debugf("Found provider %s (%s) for theme %s", providerId, provider.getClass().getName(), theme.getName());
+      return provider;
+    }
   }
 }
