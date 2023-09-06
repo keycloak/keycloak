@@ -27,6 +27,8 @@ import { toKeysTab } from "../routes/KeysTab";
 
 import "../realm-settings-section.css";
 
+import useFormatDate from "../../utils/useFormatDate";
+
 const FILTER_OPTIONS = ["ACTIVE", "PASSIVE", "DISABLED"] as const;
 type FilterType = (typeof FILTER_OPTIONS)[number];
 
@@ -82,6 +84,7 @@ const SelectFilter = ({ onFilter }: SelectFilterProps) => {
 export const KeysListTab = ({ realmComponents }: KeysListTabProps) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const formatDate = useFormatDate();
 
   const [publicKey, setPublicKey] = useState("");
   const [certificate, setCertificate] = useState("");
@@ -177,6 +180,14 @@ export const KeysListTab = ({ realmComponents }: KeysListTabProps) => {
             name: "provider",
             displayKey: "realm-settings:provider",
             cellRenderer: ({ provider }: KeyData) => provider || "",
+            cellFormatters: [emptyFormatter()],
+            transforms: [cellWidth(10)],
+          },
+          {
+            name: "validTo",
+            displayKey: "realm-settings:validTo",
+            cellRenderer: ({ validTo }: KeyData) =>
+              validTo ? formatDate(new Date(validTo)) : "",
             cellFormatters: [emptyFormatter()],
             transforms: [cellWidth(10)],
           },
