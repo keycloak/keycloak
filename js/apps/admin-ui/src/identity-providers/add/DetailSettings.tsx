@@ -340,12 +340,15 @@ export default function DetailSettings() {
             <>
               <GeneralSettings create={false} id={alias} />
               {providerInfo && (
-                <DynamicComponents properties={providerInfo.properties} />
+                <DynamicComponents
+                  stringify
+                  properties={providerInfo.properties}
+                />
               )}
             </>
           )}
-          {isOIDC && <OIDCGeneralSettings id={alias} />}
-          {isSAML && <SamlGeneralSettings id={alias} isAliasReadonly />}
+          {isOIDC && <OIDCGeneralSettings />}
+          {isSAML && <SamlGeneralSettings isAliasReadonly />}
         </FormAccess>
       ),
     },

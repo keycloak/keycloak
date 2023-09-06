@@ -70,7 +70,7 @@ export default function AddSamlConnect() {
             isHorizontal
             onSubmit={handleSubmit(onSubmit)}
           >
-            <SamlGeneralSettings id={id} />
+            <SamlGeneralSettings />
             <SamlConnectSettings />
             <ActionGroup>
               <Button

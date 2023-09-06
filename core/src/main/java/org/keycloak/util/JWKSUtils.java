@@ -65,13 +65,19 @@ public class JWKSUtils {
     }
 
     public static PublicKeysWrapper getKeyWrappersForUse(JSONWebKeySet keySet, JWK.Use requestedUse) {
+        return getKeyWrappersForUse(keySet, requestedUse, false);
+    }
+
+    public static PublicKeysWrapper getKeyWrappersForUse(JSONWebKeySet keySet, JWK.Use requestedUse, boolean useRequestedUseWhenNull) {
         List<KeyWrapper> result = new ArrayList<>();
         for (JWK jwk : keySet.getKeys()) {
             JWKParser parser = JWKParser.create(jwk);
-            if (jwk.getPublicKeyUse() == null) {
+            if (jwk.getPublicKeyUse() == null && !useRequestedUseWhenNull) {
                 logger.debugf("Ignoring JWK key '%s'. Missing required field 'use'.", jwk.getKeyId());
-            } else if (requestedUse.asString().equals(jwk.getPublicKeyUse()) && parser.isKeyTypeSupported(jwk.getKeyType())) {
+            } else if ((requestedUse.asString().equals(jwk.getPublicKeyUse()) || (jwk.getPublicKeyUse() == null && useRequestedUseWhenNull))
+                    && parser.isKeyTypeSupported(jwk.getKeyType())) {
                 KeyWrapper keyWrapper = wrap(jwk, parser);
+                keyWrapper.setUse(getKeyUse(requestedUse.asString()));
                 result.add(keyWrapper);
             }
         }
