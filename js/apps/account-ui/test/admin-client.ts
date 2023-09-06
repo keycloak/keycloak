@@ -36,3 +36,15 @@ export async function importUserProfile(
 ) {
   await adminClient.users.updateProfile({ ...userProfile, realm });
 }
+
+export async function enableLocalization(realm: string) {
+  const realmRepresentation = await adminClient.realms.findOne({ realm });
+  await adminClient.realms.update(
+    { realm },
+    {
+      ...realmRepresentation,
+      internationalizationEnabled: true,
+      supportedLocales: ["en", "nl", "de"],
+    },
+  );
+}

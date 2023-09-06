@@ -14,7 +14,7 @@ export type UserProfileFieldsProps = UserProfileAttributeMetadata;
 
 const isRequired = (attribute: UserProfileAttributeMetadata) =>
   Object.keys(attribute.required || {}).length !== 0 ||
-  ((attribute.validators?.length?.min as number) || 0) > 0;
+  ((attribute.validators.length.min as number) || 0) > 0;
 
 export const UserProfileGroup = ({
   children,
@@ -47,7 +47,7 @@ export const UserProfileGroup = ({
       labelIcon={
         helpText ? (
           <Popover bodyContent={helpText}>
-            <HelpIcon />
+            <HelpIcon data-testid={`${attribute.name}-help`} />
           </Popover>
         ) : undefined
       }
