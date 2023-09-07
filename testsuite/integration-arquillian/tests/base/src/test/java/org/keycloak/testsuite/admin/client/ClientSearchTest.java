@@ -27,7 +27,6 @@ import org.keycloak.models.ClientProvider;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.testsuite.arquillian.containers.AbstractQuarkusDeployableContainer;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;

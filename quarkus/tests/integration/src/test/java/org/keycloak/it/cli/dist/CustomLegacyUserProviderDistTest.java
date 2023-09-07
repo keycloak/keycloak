@@ -23,7 +23,6 @@ import org.keycloak.it.junit5.extension.DistributionTest;
 import org.keycloak.it.junit5.extension.LegacyStore;
 import org.keycloak.it.junit5.extension.RawDistOnly;
 import org.keycloak.it.junit5.extension.TestProvider;
-import com.acme.provider.legacy.jpa.entity.CustomLegacyJpaEntityProvider;
 import com.acme.provider.legacy.jpa.user.CustomLegacyUserProvider;
 
 import io.quarkus.test.junit.main.Launch;
