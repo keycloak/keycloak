@@ -145,6 +145,7 @@ SetLocal EnableDelayedExpansion
 set OPTIMIZED_OPTION=--optimized
 set HELP_LONG_OPTION=--help
 set BUILD_OPTION=build
+set SHOW_CONFIG_OPTION=show-config
 set IS_HELP_SHORT=false
 
 echo %CONFIG_ARGS% | findstr /r "\<-h\>" > nul
@@ -160,7 +161,7 @@ if "%PRINT_ENV%" == "true" (
 
 set START_SERVER=true
 
-if "!CONFIG_ARGS:%OPTIMIZED_OPTION%=!"=="!CONFIG_ARGS!" if "!CONFIG_ARGS:%BUILD_OPTION%=!"=="!CONFIG_ARGS!" if "!CONFIG_ARGS:%HELP_LONG_OPTION%=!"=="!CONFIG_ARGS!" if "%IS_HELP_SHORT%" == "false" (
+if "!CONFIG_ARGS:%OPTIMIZED_OPTION%=!"=="!CONFIG_ARGS!" if "!CONFIG_ARGS:%BUILD_OPTION%=!"=="!CONFIG_ARGS!" if "!CONFIG_ARGS:%SHOW_CONFIG_OPTION%=!"=="!CONFIG_ARGS!" if "!CONFIG_ARGS:%HELP_LONG_OPTION%=!"=="!CONFIG_ARGS!" if "%IS_HELP_SHORT%" == "false" (
     setlocal enabledelayedexpansion
 
     "%JAVA%" -Dkc.config.build-and-exit=true %JAVA_RUN_OPTS%

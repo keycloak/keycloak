@@ -123,7 +123,7 @@ if [ "$PRINT_ENV" = "true" ]; then
 fi
 
 case "$CONFIG_ARGS" in
-  " build"* | *--optimized* | *-h | *--help*) ;;
+  " build"* | " show-config"* | *--optimized* | *-h | *--help*) ;;
   *)
     eval "'$JAVA'" -Dkc.config.build-and-exit=true $JAVA_RUN_OPTS || exit $?
     JAVA_RUN_OPTS="-Dkc.config.built=true $JAVA_RUN_OPTS"
