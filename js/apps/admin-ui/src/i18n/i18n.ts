@@ -7,21 +7,22 @@ import { OverridesBackend } from "./OverridesBackend";
 
 export const DEFAULT_LOCALE = "en";
 export const DEFAULT_NAMESPACE = "translation";
-export const NAMESPACE_SEPARATOR = ":";
 export const KEY_SEPARATOR = ".";
 
 export const i18n = createInstance({
   fallbackLng: DEFAULT_LOCALE,
   defaultNS: DEFAULT_NAMESPACE,
   fallbackNS: DEFAULT_NAMESPACE,
-  nsSeparator: NAMESPACE_SEPARATOR,
   keySeparator: KEY_SEPARATOR,
-  ns: [DEFAULT_NAMESPACE],
+  ns: DEFAULT_NAMESPACE,
   interpolation: {
     escapeValue: false,
   },
   backend: {
-    loadPath: joinPath(environment.resourceUrl, "locales/{{lng}}/{{ns}}.json"),
+    loadPath: joinPath(
+      environment.resourceUrl,
+      `locales/{{lng}}/${DEFAULT_NAMESPACE}.json`,
+    ),
   },
 });
 
