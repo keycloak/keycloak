@@ -34,7 +34,7 @@
     }
   },
   "dependencies": {
-    "@patternfly/react-core": "^4.276.8",
+    "@patternfly/react-core": "^5.0.1",
     "@patternfly/react-icons": "^4.93.6",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
