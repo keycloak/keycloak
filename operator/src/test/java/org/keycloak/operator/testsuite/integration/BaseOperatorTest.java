@@ -19,18 +19,20 @@ package org.keycloak.operator.testsuite.integration;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.NamespaceBuilder;
+import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.PodSpecFluent.ContainersNested;
 import io.fabric8.kubernetes.api.model.PodTemplateSpecFluent.SpecNested;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
+import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.client.Config;
 import io.fabric8.kubernetes.client.ConfigBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.NamespacedKubernetesClient;
-import io.fabric8.kubernetes.client.dsl.RollableScalableResource;
-import io.fabric8.kubernetes.client.readiness.Readiness;
+import io.fabric8.kubernetes.client.dsl.Loggable;
+import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.utils.Serialization;
 import io.javaoperatorsdk.operator.Operator;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
@@ -66,6 +68,7 @@ import java.time.Duration;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 
 import jakarta.enterprise.inject.Instance;
 import jakarta.enterprise.inject.spi.CDI;
@@ -278,26 +281,27 @@ public class BaseOperatorTest implements QuarkusTestAfterEachCallback {
           savePodLogs();
           // provide some helpful entries in the main log as well
           logFailedKeycloaks();
-          logFailedOperator();
+          if (operatorDeployment == OperatorDeployment.remote) {
+              logFailed(k8sclient.apps().deployments().withName("keycloak-operator"), Deployment::getStatus);
+          }
+          logFailed(k8sclient.apps().statefulSets().withName("example-kc"), StatefulSet::getStatus);
       } finally {
           cleanup();
       }
   }
 
-  private void logFailedOperator() {
-      if (operatorDeployment != OperatorDeployment.remote) {
+  private <T extends HasMetadata, R extends Resource<T> & Loggable> void logFailed(R resource, Function<T, Object> statusExtractor) {
+      var instance = resource.get();
+      if (resource.isReady()) {
           return;
       }
-      RollableScalableResource<Deployment> deploymentResource = k8sclient.apps().deployments().withName("keycloak-operator");
-      Deployment deployment = deploymentResource.get();
-      if (!Readiness.isDeploymentReady(deployment)) {
-          Log.warnf("Operator failed to become ready %s", Serialization.asYaml(deployment.getStatus()));
-          try {
-              String log = deploymentResource.getLog();
-              Log.warnf("Not ready operator log: %s", log.substring(Math.min(log.length(), log.length() - 5000)));
-          } catch (KubernetesClientException e) {
-              Log.warnf("No operator log: %s", e.getMessage());
-          }
+      Log.warnf("%s failed to become ready %s", instance.getMetadata().getName(), Serialization.asYaml(statusExtractor.apply(instance)));
+      try {
+          String log = resource.getLog();
+          log = log.substring(Math.max(0, log.length() - 5000));
+          Log.warnf("%s not ready log: %s", instance.getMetadata().getName(), log);
+      } catch (KubernetesClientException e) {
+          Log.warnf("No %s log: %s", instance.getMetadata().getName(), e.getMessage());
       }
   }
 
@@ -310,14 +314,7 @@ public class BaseOperatorTest implements QuarkusTestAfterEachCallback {
                   if (statefulSet != null) {
                       Log.warnf("Keycloak \"%s\" StatefulSet status %s", kc.getMetadata().getName(), Serialization.asYaml(statefulSet.getStatus()));
                       k8sclient.pods().withLabels(statefulSet.getSpec().getSelector().getMatchLabels()).list()
-                              .getItems().stream().filter(pod -> !Readiness.isPodReady(pod)).forEach(pod -> {
-                                  try {
-                                      String log = k8sclient.pods().resource(pod).getLog();
-                                      Log.warnf("Not ready pod log \"%s\": %s", pod.getMetadata().getName(), log.substring(Math.min(log.length(), log.length() - 5000)));
-                                  } catch (KubernetesClientException e) {
-                                      Log.warnf("No pod log for \"%s\": %s", pod.getMetadata().getName(), e.getMessage());
-                                  }
-                              });
+                              .getItems().stream().forEach(pod -> logFailed(k8sclient.pods().resource(pod), Pod::getStatus));
                   }
               });
   }
