@@ -19,10 +19,7 @@ export const i18n = createInstance({
     escapeValue: false,
   },
   backend: {
-    loadPath: joinPath(
-      environment.resourceUrl,
-      `locales/{{lng}}/${DEFAULT_NAMESPACE}.json`,
-    ),
+    loadPath: joinPath(environment.resourceUrl, `locales/{{lng}}/{{ns}}.json`),
   },
 });
 
