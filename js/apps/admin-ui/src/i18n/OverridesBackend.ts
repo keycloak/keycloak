@@ -34,7 +34,6 @@ export class OverridesBackend extends HttpBackend {
   }
 
   #applyOverrides(data: ResourceKey, overrides: Record<string, string>) {
-    console.log({ data, overrides });
     if (typeof data === "string") {
       return data;
     }
