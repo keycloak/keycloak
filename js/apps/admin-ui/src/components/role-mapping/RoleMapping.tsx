@@ -250,8 +250,8 @@ export const RoleMapping = ({
         ]}
         emptyState={
           <ListEmptyState
-            message={t("noRoles-" + type)}
-            instructions={t("noRolesInstructions-" + type)}
+            message={t(`noRoles-${type}`)}
+            instructions={t(`noRolesInstructions-${type}`)}
             primaryActionText={t("common:assignRole")}
             onPrimaryAction={() => setShowAssign(true)}
           />

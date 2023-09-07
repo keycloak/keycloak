@@ -74,9 +74,11 @@ export const DiscoveryEndpointField = ({
         fieldId="kc-discovery-endpoint"
         labelIcon={
           <HelpItem
-            helpText={`identity-providers-help:${
-              id === "oidc" ? "useDiscoveryEndpoint" : "useEntityDescriptor"
-            }`}
+            helpText={t(
+              id === "oidc"
+                ? "useDiscoveryEndpointHelp"
+                : "useEntityDescriptorHelp",
+            )}
             fieldLabelId="identity-providers:discoveryEndpoint"
           />
         }
@@ -103,9 +105,11 @@ export const DiscoveryEndpointField = ({
           fieldId="kc-discovery-endpoint"
           labelIcon={
             <HelpItem
-              helpText={`identity-providers-help:${
-                id === "oidc" ? "discoveryEndpoint" : "samlEntityDescriptor"
-              }`}
+              helpText={t(
+                id === "oidc"
+                  ? "discoveryEndpointHelp"
+                  : "samlEntityDescriptorHelp",
+              )}
               fieldLabelId="identity-providers:discoveryEndpoint"
             />
           }

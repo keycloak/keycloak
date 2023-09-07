@@ -38,7 +38,6 @@ type ScopeFormProps = {
 
 export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
   const { t } = useTranslation();
-  const { t: tc } = useTranslation();
   const form = useForm<ClientScopeDefaultOptionalType>({ mode: "onChange" });
   const {
     register,
@@ -235,7 +234,7 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
                     value={option}
                     data-testid={`option-${option}`}
                   >
-                    {getProtocolName(tc, option)}
+                    {getProtocolName(t, option)}
                   </SelectOption>
                 ))}
               </Select>

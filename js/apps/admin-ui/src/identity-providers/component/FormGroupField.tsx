@@ -16,12 +16,7 @@ export const FormGroupField = ({
     <FormGroup
       label={t(label)}
       fieldId={label}
-      labelIcon={
-        <HelpItem
-          helpText={t(`identity-providers-help:${label}`)}
-          fieldLabelId={`identity-providers:${label}`}
-        />
-      }
+      labelIcon={<HelpItem helpText={t(`${label}Help`)} fieldLabelId={label} />}
     >
       {children}
     </FormGroup>
