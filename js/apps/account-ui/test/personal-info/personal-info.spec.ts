@@ -1,6 +1,11 @@
 import type UserProfileConfig from "@keycloak/keycloak-admin-client/lib/defs/userProfileConfig";
 import { expect, test } from "@playwright/test";
-import { enableLocalization, importUserProfile } from "../admin-client";
+import {
+  enableLocalization,
+  importUserProfile,
+  createUser,
+  deleteUser,
+} from "../admin-client";
 import { login } from "../login";
 import userProfileConfig from "./user-profile.json" assert { type: "json" };
 
@@ -20,9 +25,31 @@ test.describe("Personal info page", () => {
 });
 
 test.describe("Personal info with userprofile enabled", async () => {
-  test.beforeAll(() =>
-    importUserProfile(userProfileConfig as UserProfileConfig, realm),
-  );
+  test.beforeAll(async () => {
+    await importUserProfile(userProfileConfig as UserProfileConfig, realm);
+    await createUser(
+      {
+        username: "jdoe",
+        enabled: true,
+        email: "jdoe@keycloak.org",
+        firstName: "John",
+        lastName: "Doe",
+        credentials: [
+          {
+            type: "password",
+            value: "jdoe",
+          },
+        ],
+        realmRoles: [],
+        clientRoles: {
+          account: ["manage-account"],
+        },
+      },
+      realm,
+    );
+  });
+
+  test.afterAll(async () => await deleteUser("jdoe", realm));
 
   test("render user profile fields", async ({ page }) => {
     await login(page, "jdoe", "jdoe", realm);
@@ -57,10 +84,10 @@ test.describe("Personal info with userprofile enabled", async () => {
 });
 
 test.describe("Realm localization", async () => {
-  test.beforeAll(() => enableLocalization(realm));
+  test.beforeAll(() => enableLocalization("master"));
 
   test("change locale", async ({ page }) => {
-    await login(page, "jdoe", "jdoe", realm);
+    await page.goto("./");
     await page
       .locator("div")
       .filter({ hasText: /^Deutsch$/ })

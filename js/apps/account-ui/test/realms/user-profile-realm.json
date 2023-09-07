@@ -12,27 +12,6 @@
   "attributes": {
     "userProfileEnabled": "true"
   },
-  "users": [
-    {
-      "username": "jdoe",
-      "enabled": true,
-      "email": "jdoe@keycloak.org",
-      "firstName": "John",
-      "lastName": "Doe",
-      "credentials": [
-        {
-          "type": "password",
-          "value": "jdoe"
-        }
-      ],
-      "realmRoles": [],
-      "clientRoles": {
-        "account": [
-          "manage-account"
-        ]
-      }
-    }
-  ],
   "clients": [
     {
       "clientId": "security-admin-console-v2",
