@@ -12,7 +12,7 @@
     "@patternfly/patternfly": "^4.224.2",
     "@patternfly/react-core": "^4.276.8",
     "@patternfly/react-icons": "^4.93.6",
-    "@patternfly/react-table": "^4.113.0",
+    "@patternfly/react-table": "^5.0.1",
     "i18next": "^23.4.9",
     "i18next-http-backend": "^2.2.2",
     "keycloak-js": "workspace:*",
