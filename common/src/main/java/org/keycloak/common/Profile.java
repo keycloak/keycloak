@@ -90,7 +90,9 @@ public class Profile {
 
         FIPS("FIPS 140-2 mode", Type.DISABLED_BY_DEFAULT),
 
-        DPOP("OAuth 2.0 Demonstrating Proof-of-Possession at the Application Layer", Type.PREVIEW);
+        DPOP("OAuth 2.0 Demonstrating Proof-of-Possession at the Application Layer", Type.PREVIEW),
+
+        LINKEDIN_OAUTH("LinkedIn Social Identity Provider based on OAuth", Type.DEPRECATED);
 
         private final Type type;
         private String label;
