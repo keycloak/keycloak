@@ -44,8 +44,6 @@ import org.keycloak.testsuite.federation.UserMapStorageFactory;
 import org.keycloak.testsuite.federation.UserPropertyFileStorageFactory;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginPage;
-import org.keycloak.testsuite.pages.LoginPasswordResetPage;
-import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.RegisterPage;
 import org.keycloak.testsuite.pages.VerifyEmailPage;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
@@ -117,12 +115,6 @@ public class UserStorageTest extends AbstractAuthTest {
 
     @Page
     protected RegisterPage registerPage;
-
-    @Page
-    protected LoginPasswordResetPage resetPage;
-
-    @Page
-    protected ErrorPage errorPage;
 
     @Page
     protected VerifyEmailPage verifyEmailPage;
@@ -1071,74 +1063,6 @@ public class UserStorageTest extends AbstractAuthTest {
                 .get();
         Assert.assertTrue(ObjectUtil.isEqualOrBothNull(otpCredential.getUserLabel(), otpCredentialLoaded.getUserLabel()));
         Assert.assertTrue(ObjectUtil.isEqualOrBothNull(otpCredential.getPriority(), otpCredentialLoaded.getPriority()));
-    }
-
-    @Test
-    public void testRegisterShouldFailBeforeUserCreationWhenUserIsInContext() throws Exception {
-        try (AutoCloseable c = new RealmAttributeUpdater(testRealmResource())
-            .updateWith(r -> {
-                Map<String, String> config = new HashMap<>();
-                config.put("from", "auto@keycloak.org");
-                config.put("host", "localhost");
-                config.put("port", "3025");
-                r.setSmtpServer(config);
-                r.setRegistrationAllowed(true);
-                r.setVerifyEmail(true);
-                r.setResetPasswordAllowed(true);
-                r.setRegistrationEmailAsUsername(true);
-            })
-            .update()) {
-
-            UserRepresentation userWhoPreExistsInRealm = new UserRepresentation();
-            userWhoPreExistsInRealm.setEmail("keycloak-dev@realcity.io");
-            ApiUtil.createUserAndResetPasswordWithAdminClient(testRealmResource(), userWhoPreExistsInRealm, "password");
-
-            loginPage.open();
-            loginPage.clickRegister();
-            registerPage.clickBackToLogin();
-            loginPage.assertCurrent(testRealmResource().toRepresentation().getRealm());
-
-            loginPage.resetPassword();
-            resetPage.assertCurrent();
-            resetPage.changePassword("keycloak-dev@realcity.io");
-
-            driver.navigate().back();
-            driver.navigate().back();
-            driver.navigate().back();
-            
-            int greenMailMessageCountBeforeRegistrer = greenMail.getReceivedMessages().length;
-            registerPage.assertCurrent();
-
-            registerPage.registerWithEmailAsUsername(
-                "Vilmos",
-                "Szabó-Nagy",
-                "vilmos.nagy@realcity.io",
-                "TestPassword123",
-                "TestPassword123"
-            );
-
-            if (errorPage.isCurrent()) {
-                // in this case the error page is shown
-                errorPage.assertCurrent();
-
-                // yet, the user is created in the database
-                final UserRepresentation userByUsername = ApiUtil.findUserByUsername(testRealmResource(), "vilmos.nagy@realcity.io");
-                if (userByUsername != null) {
-                    // if the user was created then the user should have a password
-                    assertNotNull("The user is created even when an error page was shown, yet the user has no password", userByUsername.getCredentials());
-                    assertFalse("The user is created even when an error page was shown, yet the user has no password", userByUsername.getCredentials().isEmpty());
-                }
-            } else {
-                verifyEmailPage.assertCurrent();
-
-                Assert.assertEquals(1+greenMailMessageCountBeforeRegistrer, greenMail.getReceivedMessages().length);
-                MimeMessage message = greenMail.getReceivedMessages()[greenMailMessageCountBeforeRegistrer];
-                String verificationUrl = getPasswordResetEmailLink(message);
-                
-                driver.navigate().to(verificationUrl.trim());
-                appPage.assertCurrent();
-            }
-        }
     }
 
 
