@@ -17,6 +17,8 @@
 
 package org.keycloak.testsuite.federation.ldap;
 
+import org.hamcrest.MatcherAssert;
+import org.hamcrest.Matchers;
 import org.junit.Assert;
 import org.junit.ClassRule;
 import org.junit.Test;
@@ -33,6 +35,7 @@ import org.keycloak.testsuite.util.LDAPRule;
 import org.keycloak.testsuite.util.LDAPTestUtils;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.stream.Collectors;
 
@@ -93,10 +96,10 @@ public class LDAPProvidersFullNameMapperTest extends AbstractLDAPTest {
 
             ComponentModel ldapModel = LDAPTestUtils.getLdapProviderModel(appRealm);
             LDAPStorageProvider ldapFedProvider = LDAPTestUtils.getLdapProvider(session, ldapModel);
-            LDAPTestUtils.addLDAPUser(ldapFedProvider, appRealm, "fullname", "James", "Dee", "fullname@email.org", null, "4578");
+            LDAPTestUtils.addLDAPUser(ldapFedProvider, appRealm, "fullname", "James", "Dee", "fullname@email.org", null, "4578", "9876");
 
             // Assert user is successfully imported in Keycloak DB now with correct firstName and lastName
-            LDAPTestAsserts.assertUserImported(session.users(), appRealm, "fullname", "James", "Dee", "fullname@email.org", "4578");
+            LDAPTestAsserts.assertUserImported(session.users(), appRealm, "fullname", "James", "Dee", "fullname@email.org", "4578", "9876");
         });
 
         // Assert user will be changed in LDAP too
@@ -107,6 +110,7 @@ public class LDAPProvidersFullNameMapperTest extends AbstractLDAPTest {
             UserModel fullnameUser = session.users().getUserByUsername(appRealm, "fullname");
             fullnameUser.setFirstName("James2");
             fullnameUser.setLastName("Dee2");
+            fullnameUser.setAttribute("postal_code", Arrays.asList("1234", "2345", "3456"));
         });
 
         // Assert changed user available in Keycloak
@@ -115,7 +119,7 @@ public class LDAPProvidersFullNameMapperTest extends AbstractLDAPTest {
             RealmModel appRealm = ctx.getRealm();
 
             // Assert user is successfully imported in Keycloak DB now with correct firstName and lastName
-            LDAPTestAsserts.assertUserImported(session.users(), appRealm, "fullname", "James2", "Dee2", "fullname@email.org", "4578");
+            LDAPTestAsserts.assertUserImported(session.users(), appRealm, "fullname", "James2", "Dee2", "fullname@email.org", "1234", "2345", "3456");
 
             // Remove "fullnameUser" to assert he is removed from LDAP.
             UserModel fullnameUser = session.users().getUserByUsername(appRealm, "fullname");
@@ -145,6 +149,7 @@ public class LDAPProvidersFullNameMapperTest extends AbstractLDAPTest {
             fullnameUser.setAttribute("myAttribute", Collections.singletonList("test"));
             fullnameUser.setAttribute("myEmptyAttribute", new ArrayList<>());
             fullnameUser.setAttribute("myNullAttribute", null);
+            fullnameUser.setAttribute("myAttrThreeValues", Arrays.asList("one", "two", "three"));
         });
 
         // Assert changed user available in Keycloak
@@ -159,6 +164,8 @@ public class LDAPProvidersFullNameMapperTest extends AbstractLDAPTest {
             assertThat(fullnameUser.getAttributeStream("myAttribute").collect(Collectors.toList()), contains("test"));
             assertThat(fullnameUser.getAttributeStream("myEmptyAttribute").collect(Collectors.toList()), is(empty()));
             assertThat(fullnameUser.getAttributeStream("myNullAttribute").collect(Collectors.toList()), is(empty()));
+            MatcherAssert.assertThat(Arrays.asList("one", "two", "three"),
+                Matchers.containsInAnyOrder(fullnameUser.getAttributeStream("myAttrThreeValues").toArray(String[]::new)));
 
             // Remove "fullnameUser" to assert he is removed from LDAP.
             session.users().removeUser(appRealm, fullnameUser);
