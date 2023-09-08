@@ -389,9 +389,12 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
             if (!inited || (reCreate || !dPath.toFile().exists())) {
                 FileUtil.deleteDirectory(dPath);
                 ZipUtils.unzip(distFile.toPath(), distRootPath);
+
                 if (System.getProperty("product") != null) {
-                    // MS SQL Server driver might be excluded if running as a product build
+                    // JDBC drivers might be excluded if running as a product build
                     copyProvider(dPath, "com.microsoft.sqlserver", "mssql-jdbc");
+                    copyProvider(dPath, "com.oracle.database.jdbc", "ojdbc11");
+                    copyProvider(dPath, "com.oracle.database.nls", "orai18n");
                 }
             }
 
