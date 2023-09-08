@@ -38,6 +38,7 @@ public interface Errors {
     String USER_DISABLED = "user_disabled";
     String USER_TEMPORARILY_DISABLED = "user_temporarily_disabled";
     String INVALID_USER_CREDENTIALS = "invalid_user_credentials";
+    String DIFFERENT_USER_AUTHENTICATING = "different_user_authenticating";
     String DIFFERENT_USER_AUTHENTICATED = "different_user_authenticated";
     String USER_DELETE_ERROR = "user_delete_error";
 
