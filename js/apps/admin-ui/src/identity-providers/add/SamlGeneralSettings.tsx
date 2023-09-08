@@ -70,23 +70,25 @@ export const SamlGeneralSettings = ({
         data-testid="displayName"
       />
       <DisplayOrder />
-      <FormGroup
-        label={t("endpoints")}
-        fieldId="endpoints"
-        labelIcon={
-          <HelpItem
-            helpText={t("identity-providers-help:alias")}
-            fieldLabelId="identity-providers:alias"
+      {isAliasReadonly ? (
+        <FormGroup
+          label={t("endpoints")}
+          fieldId="endpoints"
+          labelIcon={
+            <HelpItem
+              helpText={t("identity-providers-help:alias")}
+              fieldLabelId="identity-providers:alias"
+            />
+          }
+          className="keycloak__identity-providers__saml_link"
+        >
+          <FormattedLink
+            title={t("samlEndpointsLabel")}
+            href={`${environment.authUrl}/realms/${realm}/broker/${alias}/endpoint/descriptor`}
+            isInline
           />
-        }
-        className="keycloak__identity-providers__saml_link"
-      >
-        <FormattedLink
-          title={t("samlEndpointsLabel")}
-          href={`${environment.authUrl}/realms/${realm}/broker/${alias}/endpoint/descriptor`}
-          isInline
-        />
-      </FormGroup>
+        </FormGroup>
+      ) : null}
     </>
   );
 };
