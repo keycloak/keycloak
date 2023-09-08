@@ -230,8 +230,8 @@ importers:
         specifier: ^9.0.0
         version: 9.0.0(cypress@13.1.0)
       '@testing-library/jest-dom':
-        specifier: ^6.1.2
-        version: 6.1.2(vitest@0.34.3)
+        specifier: ^6.1.3
+        version: 6.1.3(vitest@0.34.3)
       '@testing-library/react':
         specifier: ^14.0.0
         version: 14.0.0(react-dom@18.2.0)(react@18.2.0)
@@ -1569,8 +1569,8 @@ packages:
       pretty-format: 27.5.1
     dev: true
 
-  /@testing-library/jest-dom@6.1.2(vitest@0.34.3):
-    resolution: {integrity: sha512-NP9jl1Q2qDDtx+cqogowtQtmgD2OVs37iMSIsTv5eN5ETRkf26Kj6ugVwA93/gZzzFWQAsgkKkcftDe91BJCkQ==}
+  /@testing-library/jest-dom@6.1.3(vitest@0.34.3):
+    resolution: {integrity: sha512-YzpjRHoCBWPzpPNtg6gnhasqtE/5O4qz8WCwDEaxtfnPO6gkaLrnuXusrGSPyhIGPezr1HM7ZH0CFaUTY9PJEQ==}
     engines: {node: '>=14', npm: '>=6', yarn: '>=1'}
     peerDependencies:
       '@jest/globals': '>= 28'
