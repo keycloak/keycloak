@@ -550,8 +550,8 @@ public class IdentityProviderTest extends AbstractAdminTest {
         mapperTypes = provider.getMapperTypes();
         assertMapperTypes(mapperTypes, "oidc-username-idp-mapper");
 
-        create(createRep("linkedin", "linkedin"));
-        provider = realm.identityProviders().get("linkedin");
+        create(createRep("linkedin-openid-connect", "linkedin-openid-connect"));
+        provider = realm.identityProviders().get("linkedin-openid-connect");
         mapperTypes = provider.getMapperTypes();
         assertMapperTypes(mapperTypes, "linkedin-user-attribute-mapper", "oidc-username-idp-mapper");
 
@@ -871,11 +871,6 @@ public class IdentityProviderTest extends AbstractAdminTest {
         Assert.assertEquals("Status", 200, response.getStatus());
         body = response.readEntity(Map.class);
         assertProviderInfo(body, "twitter", "Twitter");
-
-        response = realm.identityProviders().getIdentityProviders("linkedin");
-        Assert.assertEquals("Status", 200, response.getStatus());
-        body = response.readEntity(Map.class);
-        assertProviderInfo(body, "linkedin", "LinkedIn (deprecated)");
 
         response = realm.identityProviders().getIdentityProviders("linkedin-openid-connect");
         Assert.assertEquals("Status", 200, response.getStatus());

@@ -88,7 +88,9 @@ public class Profile {
 
         JS_ADAPTER("Host keycloak.js and keycloak-authz.js through the Keycloak sever", Type.DEFAULT),
 
-        FIPS("FIPS 140-2 mode", Type.DISABLED_BY_DEFAULT);
+        FIPS("FIPS 140-2 mode", Type.DISABLED_BY_DEFAULT),
+
+        LINKEDIN_OAUTH("LinkedIn Social Identity Provider based on OAuth", Type.DEPRECATED);
 
         private final Type type;
         private String label;
