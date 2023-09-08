@@ -23,7 +23,7 @@ type ServiceAccountProps = {
 };
 
 export const ServiceAccount = ({ client }: ServiceAccountProps) => {
-  const { t } = useTranslation("clients");
+  const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
   const { realm } = useRealm();
 

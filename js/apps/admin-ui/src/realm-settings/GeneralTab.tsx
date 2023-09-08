@@ -41,7 +41,7 @@ export const RealmSettingsGeneralTab = ({
   realm,
   save,
 }: RealmSettingsGeneralTabProps) => {
-  const { t } = useTranslation("realm-settings");
+  const { t } = useTranslation();
   const { realm: realmName } = useRealm();
   const form = useForm<FormFields>();
   const {
@@ -122,7 +122,7 @@ export const RealmSettingsGeneralTab = ({
           fieldId="kc-frontend-url"
           labelIcon={
             <HelpItem
-              helpText={t("realm-settings-help:frontendUrl")}
+              helpText={t("frontendUrlHelp")}
               fieldLabelId="realm-settings:frontendUrl"
             />
           }
@@ -138,7 +138,7 @@ export const RealmSettingsGeneralTab = ({
           fieldId="kc-require-ssl"
           labelIcon={
             <HelpItem
-              helpText={t("realm-settings-help:requireSsl")}
+              helpText={t("requireSslHelp")}
               fieldLabelId="realm-settings:requireSsl"
             />
           }
@@ -178,7 +178,7 @@ export const RealmSettingsGeneralTab = ({
           fieldId="acrToLoAMapping"
           labelIcon={
             <HelpItem
-              helpText={t("clients-help:acrToLoAMapping")}
+              helpText={t("acrToLoAMappingHelp")}
               fieldLabelId="clients:acrToLoAMapping"
             />
           }
@@ -194,7 +194,7 @@ export const RealmSettingsGeneralTab = ({
           label={t("userManagedAccess")}
           labelIcon={
             <HelpItem
-              helpText={t("realm-settings-help:userManagedAccess")}
+              helpText={t("userManagedAccessHelp")}
               fieldLabelId="realm-settings:userManagedAccess"
             />
           }
@@ -223,7 +223,7 @@ export const RealmSettingsGeneralTab = ({
             label={t("userProfileEnabled")}
             labelIcon={
               <HelpItem
-                helpText={t("realm-settings-help:userProfileEnabled")}
+                helpText={t("userProfileEnabledHelp")}
                 fieldLabelId="realm-settings:userProfileEnabled"
               />
             }
@@ -255,7 +255,7 @@ export const RealmSettingsGeneralTab = ({
           label={t("endpoints")}
           labelIcon={
             <HelpItem
-              helpText={t("realm-settings-help:endpoints")}
+              helpText={t("endpointsHelp")}
               fieldLabelId="realm-settings:endpoints"
             />
           }

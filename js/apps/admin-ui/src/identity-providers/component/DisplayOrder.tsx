@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 import { HelpItem } from "ui-shared";
 
 export const DisplayOrder = () => {
-  const { t } = useTranslation("identity-providers");
+  const { t } = useTranslation();
 
   const { control } = useFormContext();
 
@@ -14,7 +14,7 @@ export const DisplayOrder = () => {
       label={t("displayOrder")}
       labelIcon={
         <HelpItem
-          helpText={t("identity-providers-help:displayOrder")}
+          helpText={t("displayOrderHelp")}
           fieldLabelId="identity-providers:displayOrder"
         />
       }

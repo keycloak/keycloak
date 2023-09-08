@@ -2,13 +2,11 @@ import { CallbackError, ReadCallback, ResourceKey } from "i18next";
 import HttpBackend from "i18next-http-backend";
 
 import { adminClient } from "../admin-client";
-import { DEFAULT_LOCALE, KEY_SEPARATOR, NAMESPACE_SEPARATOR } from "./i18n";
-
-type ParsedOverrides = { [namespace: string]: { [key: string]: string } };
+import { DEFAULT_LOCALE, KEY_SEPARATOR } from "./i18n";
 
 /** A custom backend that merges the overrides the static labels with those defined by the user in the console. */
 export class OverridesBackend extends HttpBackend {
-  #overridesCache = new Map<string, Promise<ParsedOverrides>>();
+  #overridesCache = new Map<string, Promise<Record<string, string>>>();
 
   async loadUrl(
     url: string,
@@ -29,26 +27,21 @@ export class OverridesBackend extends HttpBackend {
         return callback(null, data);
       }
 
-      callback(null, this.#applyOverrides(namespace, data, overrides));
+      callback(null, this.#applyOverrides(data, overrides));
     } catch (error) {
       callback(error as CallbackError, null);
     }
   }
 
-  #applyOverrides(
-    namespace: string,
-    data: ResourceKey,
-    overrides: ParsedOverrides,
-  ) {
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-    if (typeof data === "string" || !overrides[namespace]) {
+  #applyOverrides(data: ResourceKey, overrides: Record<string, string>) {
+    if (typeof data === "string") {
       return data;
     }
 
-    // Ensure we are operating on a cloned data structure to prevent in place mutations.
+    // Ensure we are operating on a cloned data structure to prevent in-place mutations.
     const target = structuredClone(data);
 
-    for (const [path, value] of Object.entries(overrides[namespace])) {
+    for (const [path, value] of Object.entries(overrides)) {
       this.#applyOverride(target, path, value);
     }
 
@@ -74,12 +67,10 @@ export class OverridesBackend extends HttpBackend {
       return cachedOverrides;
     }
 
-    const overrides = adminClient.realms
-      .getRealmLocalizationTexts({
-        realm: adminClient.realmName,
-        selectedLocale: locale,
-      })
-      .then((data) => this.#parseOverrides(data));
+    const overrides = adminClient.realms.getRealmLocalizationTexts({
+      realm: adminClient.realmName,
+      selectedLocale: locale,
+    });
 
     this.#overridesCache.set(locale, overrides);
 
@@ -90,30 +81,6 @@ export class OverridesBackend extends HttpBackend {
     });
 
     return overrides;
-  }
-
-  #parseOverrides(data: Record<string, string>) {
-    const parsed: ParsedOverrides = {};
-
-    for (const [path, value] of Object.entries(data)) {
-      const parts = path.split(NAMESPACE_SEPARATOR);
-
-      // Omit entry if no namespace has been provided.
-      if (parts.length !== 2) {
-        continue;
-      }
-
-      const [namespace, key] = parts;
-
-      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-      if (!parsed[namespace]) {
-        parsed[namespace] = {};
-      }
-
-      parsed[namespace][key] = value;
-    }
-
-    return parsed;
   }
 
   #determineLocale(languages?: string | string[]) {

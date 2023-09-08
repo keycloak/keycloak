@@ -6,28 +6,28 @@ type ApplicationUrlsProps = {
 };
 
 export const ApplicationUrls = (props: ApplicationUrlsProps) => {
-  const { t } = useTranslation("clients");
+  const { t } = useTranslation();
 
   return (
     <>
       <TextControl
         name="attributes.logoUri"
         label={t("clients:logoUrl")}
-        labelIcon={t("clients-help:logoUrl")}
+        labelIcon={t("logoUrlHelp")}
         type="url"
         {...props}
       />
       <TextControl
         name="attributes.policyUri"
         label={t("clients:policyUrl")}
-        labelIcon={t("clients-help:policyUrl")}
+        labelIcon={t("policyUrlHelp")}
         type="url"
         {...props}
       />
       <TextControl
         name="attributes.tosUri"
         label={t("clients:termsOfServiceUrl")}
-        labelIcon={t("clients-help:termsOfServiceUrl")}
+        labelIcon={t("termsOfServiceUrlHelp")}
         type="url"
         {...props}
       />

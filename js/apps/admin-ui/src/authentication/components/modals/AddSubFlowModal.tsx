@@ -40,7 +40,7 @@ export const AddSubFlowModal = ({
   onConfirm,
   onCancel,
 }: AddSubFlowProps) => {
-  const { t } = useTranslation("authentication");
+  const { t } = useTranslation();
   const {
     register,
     control,
@@ -99,10 +99,7 @@ export const AddSubFlowModal = ({
             errors.name ? ValidatedOptions.error : ValidatedOptions.default
           }
           labelIcon={
-            <HelpItem
-              helpText={t("authentication-help:name")}
-              fieldLabelId="name"
-            />
+            <HelpItem helpText={t("flowNameHelp")} fieldLabelId="name" />
           }
           isRequired
         >
@@ -120,7 +117,7 @@ export const AddSubFlowModal = ({
           fieldId="description"
           labelIcon={
             <HelpItem
-              helpText={t("authentication-help:description")}
+              helpText={t("flowNameDescription")}
               fieldLabelId="description"
             />
           }

@@ -17,7 +17,7 @@ import { convertAttributeNameToForm } from "../../util";
 import { FormFields } from "../ClientDetails";
 
 export const LoginSettingsPanel = ({ access }: { access?: boolean }) => {
-  const { t } = useTranslation("clients");
+  const { t } = useTranslation();
   const { register, control, watch } = useFormContext<FormFields>();
 
   const [loginThemeOpen, setLoginThemeOpen] = useState(false);
@@ -35,7 +35,7 @@ export const LoginSettingsPanel = ({ access }: { access?: boolean }) => {
         label={t("loginTheme")}
         labelIcon={
           <HelpItem
-            helpText={t("clients-help:loginTheme")}
+            helpText={t("loginThemeHelp")}
             fieldLabelId="clients:loginTheme"
           />
         }
@@ -78,7 +78,7 @@ export const LoginSettingsPanel = ({ access }: { access?: boolean }) => {
         label={t("consentRequired")}
         labelIcon={
           <HelpItem
-            helpText={t("clients-help:consentRequired")}
+            helpText={t("consentRequiredHelp")}
             fieldLabelId="clients:consentRequired"
           />
         }
@@ -105,7 +105,7 @@ export const LoginSettingsPanel = ({ access }: { access?: boolean }) => {
         label={t("displayOnClient")}
         labelIcon={
           <HelpItem
-            helpText={t("clients-help:displayOnClient")}
+            helpText={t("displayOnClientHelp")}
             fieldLabelId="clients:displayOnClient"
           />
         }
@@ -135,7 +135,7 @@ export const LoginSettingsPanel = ({ access }: { access?: boolean }) => {
         label={t("consentScreenText")}
         labelIcon={
           <HelpItem
-            helpText={t("clients-help:consentScreenText")}
+            helpText={t("consentScreenTextHelp")}
             fieldLabelId="clients:consentScreenText"
           />
         }

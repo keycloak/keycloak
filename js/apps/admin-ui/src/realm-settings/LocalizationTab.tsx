@@ -79,7 +79,7 @@ const localeToDisplayName = (locale: string) => {
 };
 
 export const LocalizationTab = ({ save, realm }: LocalizationTabProps) => {
-  const { t } = useTranslation("realm-settings");
+  const { t } = useTranslation();
   const [addMessageBundleModalOpen, setAddMessageBundleModalOpen] =
     useState(false);
 
@@ -367,7 +367,7 @@ export const LocalizationTab = ({ save, realm }: LocalizationTabProps) => {
             fieldId="kc-internationalization"
             labelIcon={
               <HelpItem
-                helpText={t("realm-settings-help:internationalization")}
+                helpText={t("internationalizationHelp")}
                 fieldLabelId="realm-settings:internationalization"
               />
             }

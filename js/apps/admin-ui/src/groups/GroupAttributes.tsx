@@ -21,7 +21,7 @@ import { useFetch } from "../utils/useFetch";
 import { getLastId } from "./groupIdUtils";
 
 export const GroupAttributes = () => {
-  const { t } = useTranslation("groups");
+  const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
   const form = useForm<AttributeForm>({
     mode: "onChange",

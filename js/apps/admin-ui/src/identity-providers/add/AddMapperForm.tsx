@@ -32,7 +32,7 @@ export const AddMapperForm = ({
   id,
   updateMapperType,
 }: AddMapperFormProps) => {
-  const { t } = useTranslation("identity-providers");
+  const { t } = useTranslation();
 
   const {
     control,
@@ -76,7 +76,7 @@ export const AddMapperForm = ({
         isRequired
         labelIcon={
           <HelpItem
-            helpText={t("identity-providers-help:syncModeOverride")}
+            helpText={t("syncModeOverrideHelp")}
             fieldLabelId="identity-providers:syncModeOverride"
           />
         }

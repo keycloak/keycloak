@@ -18,7 +18,7 @@ export const ExportSamlKeyDialog = ({
   clientId,
   close,
 }: ExportSamlKeyDialogProps) => {
-  const { t } = useTranslation("clients");
+  const { t } = useTranslation();
   const { realm } = useRealm();
 
   const { addAlert, addError } = useAlerts();

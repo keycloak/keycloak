@@ -15,7 +15,7 @@ type ClientProfile = ClientProfileRepresentation & {
 };
 
 const AliasRenderer = ({ name, global }: ClientProfile) => {
-  const { t } = useTranslation("roles");
+  const { t } = useTranslation();
 
   return (
     <>
@@ -33,7 +33,7 @@ export type AddClientProfileModalProps = {
 };
 
 export const AddClientProfileModal = (props: AddClientProfileModalProps) => {
-  const { t } = useTranslation("roles");
+  const { t } = useTranslation();
   const [selectedRows, setSelectedRows] = useState<RoleRepresentation[]>([]);
 
   const [tableProfiles, setTableProfiles] = useState<ClientProfile[]>();

@@ -82,7 +82,7 @@ export const UserProfileFields = ({
   config,
   roles = ["admin"],
 }: UserProfileFieldsProps) => {
-  const { t } = useTranslation("realm-settings");
+  const { t } = useTranslation();
 
   return (
     <ScrollForm

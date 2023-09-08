@@ -13,7 +13,7 @@ import { PasswordPolicy } from "./PasswordPolicy";
 import { WebauthnPolicy } from "./WebauthnPolicy";
 
 export const Policies = () => {
-  const { t } = useTranslation("authentication");
+  const { t } = useTranslation();
   const [subTab, setSubTab] = useState(1);
   const { realm: realmName } = useRealm();
   const [realm, setRealm] = useState<RealmRepresentation>();

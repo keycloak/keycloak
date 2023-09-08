@@ -34,7 +34,7 @@ import { toClients } from "../routes/Clients";
 const isXml = (text: string) => text.match(/(<.[^(><.)]+>)/g);
 
 export default function ImportForm() {
-  const { t } = useTranslation("clients");
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { realm } = useRealm();
   const form = useForm<FormFields>();

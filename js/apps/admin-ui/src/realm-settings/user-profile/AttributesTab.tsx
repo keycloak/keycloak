@@ -31,7 +31,7 @@ type movedAttributeType = UserProfileAttribute;
 export const AttributesTab = () => {
   const { config, save } = useUserProfile();
   const { realm: realmName } = useRealm();
-  const { t } = useTranslation("realm-settings");
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [filter, setFilter] = useState("allGroups");
   const [isFilterTypeDropdownOpen, toggleIsFilterTypeDropdownOpen] =

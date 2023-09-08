@@ -22,7 +22,7 @@ import { useParams } from "../../utils/useParams";
 import type { ClientParams } from "../routes/Client";
 
 export const AuthorizationExport = () => {
-  const { t } = useTranslation("clients");
+  const { t } = useTranslation();
   const { clientId } = useParams<ClientParams>();
   const { addAlert, addError } = useAlerts();
 
@@ -68,7 +68,7 @@ export const AuthorizationExport = () => {
           label={t("authDetails")}
           labelIcon={
             <HelpItem
-              helpText={t("clients-help:authDetails")}
+              helpText={t("authDetailsHelp")}
               fieldLabelId="clients:authDetails"
             />
           }

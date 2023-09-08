@@ -62,7 +62,7 @@ const COMPONENTS: {
 export const isValidComponentType = (value: string) => value in COMPONENTS;
 
 export default function PolicyDetails() {
-  const { t } = useTranslation("clients");
+  const { t } = useTranslation();
   const { id, realm, policyId, policyType } = useParams<PolicyDetailsParams>();
   const navigate = useNavigate();
   const form = useForm();

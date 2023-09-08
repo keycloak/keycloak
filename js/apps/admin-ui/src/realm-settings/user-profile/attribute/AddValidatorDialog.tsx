@@ -21,7 +21,7 @@ export const AddValidatorDialog = ({
   toggleDialog,
   onConfirm,
 }: AddValidatorDialogProps) => {
-  const { t } = useTranslation("realm-settings");
+  const { t } = useTranslation();
   const [selectedValidator, setSelectedValidator] =
     useState<ComponentTypeRepresentation>();
 

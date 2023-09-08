@@ -35,7 +35,7 @@ export const ImportKeyDialog = ({
   save,
   toggleDialog,
 }: ImportKeyDialogProps) => {
-  const { t } = useTranslation("clients");
+  const { t } = useTranslation();
   const form = useForm<ImportFile>();
   const { control, handleSubmit } = form;
 
@@ -96,7 +96,7 @@ export const ImportKeyDialog = ({
           label={t("archiveFormat")}
           labelIcon={
             <HelpItem
-              helpText={t("clients-help:archiveFormat")}
+              helpText={t("archiveFormatHelp")}
               fieldLabelId="clients:archiveFormat"
             />
           }

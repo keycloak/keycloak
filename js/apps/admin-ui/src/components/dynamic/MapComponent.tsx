@@ -23,7 +23,7 @@ type IdKeyValueType = KeyValueType & {
 };
 
 export const MapComponent = ({ name, label, helpText }: ComponentProps) => {
-  const { t } = useTranslation("dynamic");
+  const { t } = useTranslation();
 
   const { getValues, setValue, register } = useFormContext();
   const [map, setMap] = useState<IdKeyValueType[]>([]);

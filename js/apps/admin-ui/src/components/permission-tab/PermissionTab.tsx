@@ -45,7 +45,7 @@ type PermissionsTabProps = {
 };
 
 export const PermissionsTab = ({ id, type }: PermissionsTabProps) => {
-  const { t } = useTranslation("common");
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { realm } = useRealm();
   const [realmId, setRealmId] = useState("");
@@ -138,7 +138,7 @@ export const PermissionsTab = ({ id, type }: PermissionsTabProps) => {
               fieldId="permissionsEnabled"
               labelIcon={
                 <HelpItem
-                  helpText={t("clients-help:permissionsEnabled")}
+                  helpText={t("permissionsEnabledHelp")}
                   fieldLabelId="clients:permissionsEnabled"
                 />
               }

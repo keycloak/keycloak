@@ -86,7 +86,7 @@ export const RoleMapping = ({
   isManager = true,
   save,
 }: RoleMappingProps) => {
-  const { t } = useTranslation(type);
+  const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
 
   const [key, setKey] = useState(0);
@@ -250,8 +250,8 @@ export const RoleMapping = ({
         ]}
         emptyState={
           <ListEmptyState
-            message={t("noRoles")}
-            instructions={t("noRolesInstructions")}
+            message={t(`noRoles-${type}`)}
+            instructions={t(`noRolesInstructions-${type}`)}
             primaryActionText={t("common:assignRole")}
             onPrimaryAction={() => setShowAssign(true)}
           />

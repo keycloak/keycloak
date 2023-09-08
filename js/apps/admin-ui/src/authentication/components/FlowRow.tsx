@@ -47,7 +47,7 @@ export const FlowRow = ({
   onAddFlow,
   onDelete,
 }: FlowRowProps) => {
-  const { t } = useTranslation("authentication");
+  const { t } = useTranslation();
   const hasSubList = !!execution.executionList?.length;
 
   return (

@@ -18,7 +18,7 @@ export const OpenIdConnectCompatibilityModes = ({
   reset,
   hasConfigureAccess,
 }: OpenIdConnectCompatibilityModesProps) => {
-  const { t } = useTranslation("clients");
+  const { t } = useTranslation();
   const { control } = useFormContext();
   return (
     <FormAccess
@@ -63,7 +63,7 @@ export const OpenIdConnectCompatibilityModes = ({
         hasNoPaddingTop
         labelIcon={
           <HelpItem
-            helpText={t("clients-help:excludeIssuerFromAuthenticationResponse")}
+            helpText={t("excludeIssuerFromAuthenticationResponseHelp")}
             fieldLabelId="clients:excludeIssuerFromAuthenticationResponse"
           />
         }
@@ -92,7 +92,7 @@ export const OpenIdConnectCompatibilityModes = ({
         hasNoPaddingTop
         labelIcon={
           <HelpItem
-            helpText={t("clients-help:useRefreshTokens")}
+            helpText={t("useRefreshTokensHelp")}
             fieldLabelId="clients:useRefreshTokens"
           />
         }
@@ -152,7 +152,7 @@ export const OpenIdConnectCompatibilityModes = ({
         hasNoPaddingTop
         labelIcon={
           <HelpItem
-            helpText={t("clients-help:useLowerCaseBearerType")}
+            helpText={t("useLowerCaseBearerTypeHelp")}
             fieldLabelId="clients:useLowerCaseBearerType"
           />
         }

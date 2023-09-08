@@ -46,7 +46,7 @@ export function DraggableTable<T>({
   onDragFinish,
   ...props
 }: DraggableTableProps<T>) {
-  const { t } = useTranslation("authentication");
+  const { t } = useTranslation();
   const bodyRef = useRef<HTMLTableSectionElement>(null);
 
   const [state, setState] = useState({

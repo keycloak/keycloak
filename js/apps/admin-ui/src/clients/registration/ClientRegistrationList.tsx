@@ -44,7 +44,7 @@ const DetailLink = (comp: ComponentRepresentation) => {
 export const ClientRegistrationList = ({
   subType,
 }: ClientRegistrationListProps) => {
-  const { t } = useTranslation("clients");
+  const { t } = useTranslation();
   const { subTab } = useParams<ClientRegistrationParams>();
   const navigate = useNavigate();
 

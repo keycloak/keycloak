@@ -30,7 +30,7 @@ type SessionFilterProps = {
 };
 
 const SessionFilter = ({ filterType, onChange }: SessionFilterProps) => {
-  const { t } = useTranslation("sessions");
+  const { t } = useTranslation();
 
   const [open, toggle] = useToggle();
 
@@ -61,7 +61,7 @@ const SessionFilter = ({ filterType, onChange }: SessionFilterProps) => {
 };
 
 export default function SessionsSection() {
-  const { t } = useTranslation("sessions");
+  const { t } = useTranslation();
 
   const [key, setKey] = useState(0);
   const refresh = () => setKey(key + 1);
@@ -129,7 +129,7 @@ export default function SessionsSection() {
       <LogoutConfirm />
       <ViewHeader
         dropdownItems={dropdownItems}
-        titleKey="sessions:title"
+        titleKey="titleSessions"
         subKey="sessions:sessionExplain"
         helpUrl={helpUrls.sessionsUrl}
       />

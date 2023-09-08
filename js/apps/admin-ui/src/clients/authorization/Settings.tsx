@@ -35,7 +35,7 @@ export type FormFields = Omit<
 >;
 
 export const AuthorizationSettings = ({ clientId }: { clientId: string }) => {
-  const { t } = useTranslation("clients");
+  const { t } = useTranslation();
   const [resource, setResource] = useState<ResourceServerRepresentation>();
   const [importDialog, toggleImportDialog] = useToggle();
 
@@ -97,7 +97,7 @@ export const AuthorizationSettings = ({ clientId }: { clientId: string }) => {
           fieldId="import"
           labelIcon={
             <HelpItem
-              helpText={t("clients-help:import")}
+              helpText={t("importHelp")}
               fieldLabelId="clients:import"
             />
           }
@@ -111,7 +111,7 @@ export const AuthorizationSettings = ({ clientId }: { clientId: string }) => {
           label={t("policyEnforcementMode")}
           labelIcon={
             <HelpItem
-              helpText={t("clients-help:policyEnforcementMode")}
+              helpText={t("policyEnforcementModeHelp")}
               fieldLabelId="clients:policyEnforcementMode"
             />
           }
@@ -150,7 +150,7 @@ export const AuthorizationSettings = ({ clientId }: { clientId: string }) => {
           fieldId="allowRemoteResourceManagement"
           labelIcon={
             <HelpItem
-              helpText={t("clients-help:allowRemoteResourceManagement")}
+              helpText={t("allowRemoteResourceManagementHelp")}
               fieldLabelId="clients:allowRemoteResourceManagement"
             />
           }

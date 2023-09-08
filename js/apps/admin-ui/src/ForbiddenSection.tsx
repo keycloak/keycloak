@@ -10,7 +10,7 @@ type ForbiddenSectionProps = {
 export const ForbiddenSection = ({
   permissionNeeded,
 }: ForbiddenSectionProps) => {
-  const { t } = useTranslation("common");
+  const { t } = useTranslation();
   const count = Array.isArray(permissionNeeded) ? permissionNeeded.length : 1;
 
   return (

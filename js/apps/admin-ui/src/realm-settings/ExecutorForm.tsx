@@ -39,7 +39,7 @@ const defaultValues: ExecutorForm = {
 };
 
 export default function ExecutorForm() {
-  const { t } = useTranslation("realm-settings");
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { realm, profileName } = useParams<ClientProfileParams>();
   const { executorName } = useParams<ExecutorParams>();

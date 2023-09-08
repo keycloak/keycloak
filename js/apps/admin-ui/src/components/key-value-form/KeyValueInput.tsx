@@ -38,7 +38,7 @@ export const KeyValueInput = ({
   name,
   defaultKeyValue,
 }: KeyValueInputProps) => {
-  const { t } = useTranslation("common");
+  const { t } = useTranslation();
   const {
     control,
     register,

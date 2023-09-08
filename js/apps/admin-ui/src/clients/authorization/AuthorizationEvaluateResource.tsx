@@ -26,7 +26,7 @@ export const AuthorizationEvaluateResource = ({
   evaluateResults,
 }: Props) => {
   const [expanded, setExpanded] = useState<boolean>(false);
-  const { t } = useTranslation("clients");
+  const { t } = useTranslation();
 
   return (
     <Tbody isExpanded={expanded}>

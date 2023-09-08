@@ -18,8 +18,7 @@ export const LdapSettingsKerberosIntegration = ({
   showSectionHeading = false,
   showSectionDescription = false,
 }: LdapSettingsKerberosIntegrationProps) => {
-  const { t } = useTranslation("user-federation");
-  const { t: helpText } = useTranslation("user-federation-help");
+  const { t } = useTranslation();
 
   const allowKerberosAuth: [string] = useWatch({
     control: form.control,
@@ -32,7 +31,7 @@ export const LdapSettingsKerberosIntegration = ({
       {showSectionHeading && (
         <WizardSectionHeader
           title={t("kerberosIntegration")}
-          description={helpText("ldapKerberosSettingsDescription")}
+          description={t("ldapKerberosSettingsDescription")}
           showDescription={showSectionDescription}
         />
       )}

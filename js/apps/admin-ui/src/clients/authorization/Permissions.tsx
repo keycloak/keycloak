@@ -67,7 +67,7 @@ const AssociatedPoliciesRenderer = ({
 };
 
 export const AuthorizationPermissions = ({ clientId }: PermissionsProps) => {
-  const { t } = useTranslation("clients");
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { addAlert, addError } = useAlerts();
   const { realm } = useRealm();

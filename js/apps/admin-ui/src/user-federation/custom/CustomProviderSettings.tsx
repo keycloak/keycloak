@@ -31,7 +31,7 @@ import { adminClient } from "../../admin-client";
 import "./custom-provider-settings.css";
 
 export default function CustomProviderSettings() {
-  const { t } = useTranslation("user-federation");
+  const { t } = useTranslation();
   const { id, providerId } = useParams<CustomUserFederationRouteParams>();
   const navigate = useNavigate();
   const form = useForm<ComponentRepresentation>({
@@ -103,9 +103,15 @@ export default function CustomProviderSettings() {
         await adminClient.components.update({ id }, saveComponent);
       }
       reset({ ...component });
-      addAlert(t(!id ? "createSuccess" : "saveSuccess"), AlertVariant.success);
+      addAlert(
+        t(!id ? "createUserProviderSuccess" : "userProviderSaveSuccess"),
+        AlertVariant.success,
+      );
     } catch (error) {
-      addError(`user-federation:${!id ? "createError" : "saveError"}`, error);
+      addError(
+        `${!id ? "createUserProviderError" : "userProviderSaveError"}`,
+        error,
+      );
     }
   };
 

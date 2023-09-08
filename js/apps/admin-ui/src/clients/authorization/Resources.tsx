@@ -50,7 +50,7 @@ const UriRenderer = ({ row }: { row: ResourceRepresentation }) => (
 );
 
 export const AuthorizationResources = ({ clientId }: ResourcesProps) => {
-  const { t } = useTranslation("clients");
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { addAlert, addError } = useAlerts();
   const { realm } = useRealm();

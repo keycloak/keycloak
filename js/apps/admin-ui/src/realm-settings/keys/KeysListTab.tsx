@@ -43,7 +43,7 @@ type SelectFilterProps = {
 };
 
 const SelectFilter = ({ onFilter }: SelectFilterProps) => {
-  const { t } = useTranslation("realm-settings");
+  const { t } = useTranslation();
   const [filterType, setFilterType] = useState<FilterType>(FILTER_OPTIONS[0]);
 
   const [filterDropdownOpen, toggleFilter] = useToggle();
@@ -80,7 +80,7 @@ const SelectFilter = ({ onFilter }: SelectFilterProps) => {
 };
 
 export const KeysListTab = ({ realmComponents }: KeysListTabProps) => {
-  const { t } = useTranslation("realm-settings");
+  const { t } = useTranslation();
   const navigate = useNavigate();
 
   const [publicKey, setPublicKey] = useState("");

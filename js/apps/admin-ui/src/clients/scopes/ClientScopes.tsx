@@ -71,7 +71,7 @@ const TypeSelector = ({
   fineGrainedAccess,
   ...scope
 }: TypeSelectorProps) => {
-  const { t } = useTranslation("clients");
+  const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
 
   const { hasAccess } = useAccess();
@@ -108,7 +108,7 @@ export const ClientScopes = ({
   clientName,
   fineGrainedAccess,
 }: ClientScopesProps) => {
-  const { t } = useTranslation("clients");
+  const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
   const { realm } = useRealm();
   const localeSort = useLocaleSort();
@@ -195,7 +195,7 @@ export const ClientScopes = ({
       count: selectedRows.length,
       name: selectedRows[0]?.name,
     }),
-    messageKey: "client-scopes:deleteConfirm",
+    messageKey: "deleteConfirmClientScopes",
     continueButtonLabel: "common:delete",
     continueButtonVariant: ButtonVariant.danger,
     onConfirm: async () => {

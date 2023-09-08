@@ -37,7 +37,7 @@ const SecretInput = ({
   secret,
   toggle,
 }: SecretInputProps) => {
-  const { t } = useTranslation("clients");
+  const { t } = useTranslation();
   const form = useFormContext<ClientRepresentation>();
   const { hasAccess } = useAccess();
   const isManager = hasAccess("manage-clients") || client.access?.configure;
@@ -69,7 +69,7 @@ const SecretInput = ({
 };
 
 const ExpireDateFormatter = ({ time }: { time: number }) => {
-  const { t } = useTranslation("clients");
+  const { t } = useTranslation();
   const formatDate = useFormatDate();
   const unixTimeToString = (time: number) =>
     time
@@ -85,7 +85,7 @@ const ExpireDateFormatter = ({ time }: { time: number }) => {
 };
 
 export const ClientSecret = ({ client, secret, toggle }: ClientSecretProps) => {
-  const { t } = useTranslation("clients");
+  const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
 
   const [secretRotated, setSecretRotated] = useState<string | undefined>(

@@ -15,7 +15,7 @@ export const DecisionStrategySelect = ({
   helpLabel,
   isLimited = false,
 }: DecisionStrategySelectProps) => {
-  const { t } = useTranslation("clients");
+  const { t } = useTranslation();
   const { control } = useFormContext();
 
   return (

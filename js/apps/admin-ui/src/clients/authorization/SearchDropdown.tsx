@@ -41,7 +41,7 @@ export const SearchDropdown = ({
   onSearch,
   isResource = false,
 }: SearchDropdownProps) => {
-  const { t } = useTranslation("clients");
+  const { t } = useTranslation();
   const {
     register,
     control,

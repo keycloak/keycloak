@@ -18,7 +18,7 @@ import useFormatDate, { FORMAT_DATE_AND_TIME } from "../../utils/useFormatDate";
 import { toCreateInitialAccessToken } from "../routes/CreateInitialAccessToken";
 
 export const InitialAccessTokenList = () => {
-  const { t } = useTranslation("clients");
+  const { t } = useTranslation();
 
   const { addAlert, addError } = useAlerts();
   const { realm } = useRealm();

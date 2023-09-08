@@ -37,8 +37,7 @@ type ScopeFormProps = {
 };
 
 export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
-  const { t } = useTranslation("client-scopes");
-  const { t: tc } = useTranslation("clients");
+  const { t } = useTranslation();
   const form = useForm<ClientScopeDefaultOptionalType>({ mode: "onChange" });
   const {
     register,
@@ -126,7 +125,7 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
               "attributes.is.dynamic.scope",
             )}
             label={t("dynamicScope")}
-            labelIcon={t("client-scopes-help:dynamicScope")}
+            labelIcon={t("dynamicScopeHelp")}
             onChange={(value) => {
               setDynamicRegex(value ? form.getValues("name") || "" : "", value);
             }}
@@ -138,7 +137,7 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
                 "attributes.dynamic.scope.regexp",
               )}
               label={t("dynamicScopeFormat")}
-              labelIcon={t("client-scopes-help:dynamicScopeFormat")}
+              labelIcon={t("dynamicScopeFormatHelp")}
               isDisabled
             />
           )}
@@ -206,7 +205,7 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
           label={t("protocol")}
           labelIcon={
             <HelpItem
-              helpText={t("client-scopes-help:protocol")}
+              helpText={t("protocolHelp")}
               fieldLabelId="client-scopes:protocol"
             />
           }
@@ -235,7 +234,7 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
                     value={option}
                     data-testid={`option-${option}`}
                   >
-                    {getProtocolName(tc, option)}
+                    {getProtocolName(t, option)}
                   </SelectOption>
                 ))}
               </Select>
@@ -248,7 +247,7 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
         label={t("displayOnConsentScreen")}
         labelIcon={
           <HelpItem
-            helpText={t("client-scopes-help:displayOnConsentScreen")}
+            helpText={t("displayOnConsentScreenHelp")}
             fieldLabelId="client-scopes:displayOnConsentScreen"
           />
         }
@@ -276,7 +275,7 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
           label={t("consentScreenText")}
           labelIcon={
             <HelpItem
-              helpText={t("client-scopes-help:consentScreenText")}
+              helpText={t("consentScreenTextHelp")}
               fieldLabelId="client-scopes:consentScreenText"
             />
           }
@@ -297,7 +296,7 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
         label={t("includeInTokenScope")}
         labelIcon={
           <HelpItem
-            helpText={t("client-scopes-help:includeInTokenScope")}
+            helpText={t("includeInTokenScopeHelp")}
             fieldLabelId="client-scopes:includeInTokenScope"
           />
         }
@@ -324,7 +323,7 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
         label={t("guiOrder")}
         labelIcon={
           <HelpItem
-            helpText={t("client-scopes-help:guiOrder")}
+            helpText={t("guiOrderHelp")}
             fieldLabelId="client-scopes:guiOrder"
           />
         }

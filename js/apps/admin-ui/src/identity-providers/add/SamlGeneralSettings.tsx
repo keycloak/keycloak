@@ -20,7 +20,7 @@ type SamlGeneralSettingsProps = {
 export const SamlGeneralSettings = ({
   isAliasReadonly = false,
 }: SamlGeneralSettingsProps) => {
-  const { t } = useTranslation("identity-providers");
+  const { t } = useTranslation();
   const { realm } = useRealm();
 
   const {

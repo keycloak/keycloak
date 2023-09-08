@@ -14,7 +14,7 @@ export const ScriptComponent = ({
   defaultValue,
   isDisabled = false,
 }: ComponentProps) => {
-  const { t } = useTranslation("dynamic");
+  const { t } = useTranslation();
   const { control } = useFormContext();
 
   return (

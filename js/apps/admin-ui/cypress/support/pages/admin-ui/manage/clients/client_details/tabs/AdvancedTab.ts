@@ -12,9 +12,9 @@ export default class AdvancedTab extends PageObject {
   private emptyClusterElement = "empty-state";
   private registerNodeManuallyBtn = "no-nodes-registered-empty-action";
   private deleteClusterNodeDrpDwn =
-    '[aria-label="registeredClusterNodes"] [aria-label="Actions"]';
+    '[aria-label="Registered cluster nodes"] [aria-label="Actions"]';
   private deleteClusterNodeBtn =
-    '[aria-label="registeredClusterNodes"] [role="menu"] button';
+    '[aria-label="Registered cluster nodes"] [role="menu"] button';
   private nodeHostInput = "#nodeHost";
   private addNodeConfirmBtn = "#add-node-confirm";
 

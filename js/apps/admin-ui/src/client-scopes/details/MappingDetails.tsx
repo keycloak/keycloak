@@ -33,7 +33,7 @@ import { toClientScope } from "../routes/ClientScope";
 import { MapperParams, MapperRoute } from "../routes/Mapper";
 
 export default function MappingDetails() {
-  const { t } = useTranslation("client-scopes");
+  const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
 
   const { id, mapperId } = useParams<MapperParams>();

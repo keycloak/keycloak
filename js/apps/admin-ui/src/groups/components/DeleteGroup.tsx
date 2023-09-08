@@ -19,7 +19,7 @@ export const DeleteGroup = ({
   toggleDialog,
   refresh,
 }: DeleteConfirmProps) => {
-  const { t } = useTranslation("groups");
+  const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
 
   const multiDelete = async () => {
@@ -39,7 +39,7 @@ export const DeleteGroup = ({
   return (
     <ConfirmDialogModal
       titleKey={t("deleteConfirmTitle", { count: selectedRows.length })}
-      messageKey={t("deleteConfirm", {
+      messageKey={t("deleteConfirmGroup", {
         count: selectedRows.length,
         groupName: selectedRows[0]?.name,
       })}
