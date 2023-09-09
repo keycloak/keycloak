@@ -3,12 +3,11 @@ package org.keycloak.utils;
 import java.net.IDN;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import org.keycloak.Config;
 
 import static java.util.regex.Pattern.CASE_INSENSITIVE;
 
 public class EmailValidationUtil {
-    private static final int MAX_LOCAL_PART_LENGTH = 64;
-
     private static final String LOCAL_PART_ATOM = "[a-z0-9!#$%&'*+/=?^_`{|}~\u0080-\uFFFF-]";
     private static final String LOCAL_PART_INSIDE_QUOTES_ATOM = "(?:[a-z0-9!#$%&'*.(),<>\\[\\]:;  @+/=?^_`{|}~\u0080-\uFFFF-]|\\\\\\\\|\\\\\\\")";
     /**
@@ -28,6 +27,8 @@ public class EmailValidationUtil {
      * Regular expression for the domain part of an email address (everything after '@')
      */
     private static final Pattern EMAIL_DOMAIN_PATTERN = Pattern.compile(DOMAIN + "|\\[" + IP_DOMAIN + "\\]|" + "\\[IPv6:" + IP_V6_DOMAIN + "\\]", CASE_INSENSITIVE);
+
+    public static final String MAX_EMAIL_LOCAL_PART_LENGTH = "max-email-local-part-length";
 
 
     public static boolean isValidEmail(String value) {
@@ -56,7 +57,8 @@ public class EmailValidationUtil {
     }
 
     private static boolean isValidEmailLocalPart(String localPart) {
-        if ( localPart.length() > MAX_LOCAL_PART_LENGTH ) {
+
+        if ( localPart.length() > Config.scope("user-profile-declarative-user-profile").getInt(MAX_EMAIL_LOCAL_PART_LENGTH,64) ) {
             return false;
         }
         Matcher matcher = LOCAL_PART_PATTERN.matcher( localPart );

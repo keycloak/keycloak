@@ -71,6 +71,7 @@ public abstract class AbstractUserProfileProvider<U extends UserProfileProvider>
 
     public static final String CONFIG_ADMIN_READ_ONLY_ATTRIBUTES = "admin-read-only-attributes";
     public static final String CONFIG_READ_ONLY_ATTRIBUTES = "read-only-attributes";
+    public static final String MAX_EMAIL_LOCAL_PART_LENGTH = "max-email-local-part-length";
 
     private static boolean editUsernameCondition(AttributeContext c) {
         KeycloakSession session = c.getSession();
@@ -439,6 +440,12 @@ public abstract class AbstractUserProfileProvider<U extends UserProfileProvider>
                 .name(CONFIG_ADMIN_READ_ONLY_ATTRIBUTES)
                 .type(ProviderConfigProperty.MULTIVALUED_STRING_TYPE)
                 .helpText("Array of regular expressions to identify fields that should be treated read-only so administrators can't change them.")
+                .add()
+
+                .property()
+                .name(MAX_EMAIL_LOCAL_PART_LENGTH)
+                .type(ProviderConfigProperty.STRING_TYPE)
+                .helpText("To set user profile max email local part length")
                 .add()
 
                 .build();
