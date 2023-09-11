@@ -180,7 +180,7 @@ public class WebAuthnCredentialProvider implements CredentialProvider<WebAuthnCr
         WebAuthnCredentialModelInput context = WebAuthnCredentialModelInput.class.cast(input);
         List<WebAuthnCredentialModelInput> auths = getWebAuthnCredentialModelList(realm, user);
 
-        WebAuthnAuthenticationManager webAuthnAuthenticationManager = new WebAuthnAuthenticationManager();
+        WebAuthnAuthenticationManager webAuthnAuthenticationManager = getWebAuthnAuthenticationManager();
         AuthenticationData authenticationData = null;
 
         try {
@@ -233,6 +233,9 @@ public class WebAuthnCredentialProvider implements CredentialProvider<WebAuthnCr
         return false;
     }
 
+    protected WebAuthnAuthenticationManager getWebAuthnAuthenticationManager() {
+        return new WebAuthnAuthenticationManager();
+    }
 
     @Override
     public String getType() {
