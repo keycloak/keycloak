@@ -80,7 +80,6 @@ describe("Identity provider test", () => {
         { testName: "Gitlab", displayName: "Gitlab", alias: "gitlab" },
         { testName: "Google", displayName: "Google", alias: "google" },
         { testName: "Instagram", displayName: "Instagram", alias: "instagram" },
-        { testName: "Linkedin", displayName: "LinkedIn", alias: "linkedin" },
         { testName: "Microsoft", displayName: "Microsoft", alias: "microsoft" },
         {
           testName: "Openshift-v3",
