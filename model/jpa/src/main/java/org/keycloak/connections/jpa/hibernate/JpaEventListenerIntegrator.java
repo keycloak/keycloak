@@ -23,18 +23,26 @@ import org.hibernate.event.service.spi.EventListenerRegistry;
 import org.hibernate.event.spi.EventType;
 import org.hibernate.integrator.spi.Integrator;
 import org.hibernate.service.spi.SessionFactoryServiceRegistry;
+import org.jboss.logging.Logger;
+import org.keycloak.common.Profile;
 
 /**
  * Adding listeners to Hibernate's event registry for the JPA legacy store.
  */
 public class JpaEventListenerIntegrator implements Integrator {
 
+    private final Logger log = Logger.getLogger(JpaEventListenerIntegrator.class);
+
     @Override
     public void integrate(Metadata metadata, SessionFactoryImplementor sessionFactoryImplementor,
             SessionFactoryServiceRegistry sessionFactoryServiceRegistry) {
+
+        if (Profile.isFeatureEnabled(Profile.Feature.MAP_STORAGE)) return;
+
         final EventListenerRegistry eventListenerRegistry =
                 sessionFactoryServiceRegistry.getService(EventListenerRegistry.class);
 
+        log.debugf("Registering custom AutoFlushListener: %s", JpaAutoFlushListener.class.getName());
         // replace auto-flush listener
         eventListenerRegistry.setListeners(EventType.AUTO_FLUSH, JpaAutoFlushListener.INSTANCE);
     }

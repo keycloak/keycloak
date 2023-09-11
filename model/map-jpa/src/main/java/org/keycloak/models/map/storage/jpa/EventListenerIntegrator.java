@@ -26,6 +26,8 @@ import org.hibernate.event.spi.EventType;
 import org.hibernate.integrator.spi.Integrator;
 import org.hibernate.mapping.RootClass;
 import org.hibernate.service.spi.SessionFactoryServiceRegistry;
+import org.jboss.logging.Logger;
+import org.keycloak.common.Profile;
 import org.keycloak.models.map.storage.jpa.hibernate.listeners.JpaAutoFlushListener;
 import org.keycloak.models.map.storage.jpa.hibernate.listeners.JpaEntityVersionListener;
 import org.keycloak.models.map.storage.jpa.hibernate.listeners.JpaOptimisticLockingListener;
@@ -35,9 +37,15 @@ import org.keycloak.models.map.storage.jpa.hibernate.listeners.JpaOptimisticLock
  */
 public class EventListenerIntegrator implements Integrator {
 
+    private final Logger log = Logger.getLogger(EventListenerIntegrator.class);
+
     @Override
     public void integrate(Metadata metadata, SessionFactoryImplementor sessionFactoryImplementor,
             SessionFactoryServiceRegistry sessionFactoryServiceRegistry) {
+        if (!Profile.isFeatureEnabled(Profile.Feature.MAP_STORAGE)) return;
+
+        log.debugf("Registering custom hibernate listeners fo jpa map store.");
+
         final EventListenerRegistry eventListenerRegistry =
                 sessionFactoryServiceRegistry.getService(EventListenerRegistry.class);
 
