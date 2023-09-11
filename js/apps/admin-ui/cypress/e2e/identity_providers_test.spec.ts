@@ -83,7 +83,7 @@ describe("Identity provider test", () => {
         {
           testName: "LinkedIn OpenID Connect",
           displayName: "LinkedIn OpenID Connect",
-          alias: "linkedin-openid-connect"
+          alias: "linkedin-openid-connect",
         },
         { testName: "Microsoft", displayName: "Microsoft", alias: "microsoft" },
         {
