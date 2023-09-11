@@ -20,7 +20,6 @@ package org.keycloak.storage.ldap.mappers.membership.group;
 import org.jboss.logging.Logger;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.GroupModel;
-import org.keycloak.models.GroupProvider;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
@@ -57,8 +56,6 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import static org.keycloak.models.utils.KeycloakModelUtils.GROUP_PATH_SEPARATOR;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -377,27 +374,6 @@ public class GroupLDAPStorageMapper extends AbstractLDAPStorageMapper implements
             // Without preserved inheritance, it's always at groups path
             return session.groups().getGroupByName(realm, parent, groupName);
         }
-    }
-    // TODO how this will work with group names with a / without hitting the db everytime
-    private GroupModel findGroupByPath(RealmModel realm, String path) {
-        if (path == null) {
-            return null;
-        }
-        if (path.startsWith(GROUP_PATH_SEPARATOR)) {
-            path = path.substring(1);
-        }
-        if (path.endsWith(GROUP_PATH_SEPARATOR)) {
-            path = path.substring(0, path.length() - 1);
-        }
-        String[] split = path.split(GROUP_PATH_SEPARATOR);
-        if (split.length == 0) return null;
-
-        GroupProvider groupProvider = session.groups();
-        GroupModel group = groupProvider.getGroupByName(realm, null, split[0]);
-        for (int i = 1; i < split.length; i++) {
-            group = groupProvider.getGroupByName(realm, group, split[i]);
-        }
-        return group;
     }
 
     protected GroupModel findKcGroupOrSyncFromLDAP(RealmModel realm, GroupModel parent, LDAPObject ldapGroup, UserModel user) {
@@ -814,7 +790,7 @@ public class GroupLDAPStorageMapper extends AbstractLDAPStorageMapper implements
      * Provides KC group defined as groups path or null (top-level group) if corresponding group is not available.
      */
     protected GroupModel getKcGroupsPathGroup(RealmModel realm) {
-        return config.isTopLevelGroupsPath() ? null : findGroupByPath(realm, config.getGroupsPath());
+        return config.isTopLevelGroupsPath() ? null : KeycloakModelUtils.findGroupByPath(session.groups(), realm, config.getGroupsPath());
     }
 
     /**
