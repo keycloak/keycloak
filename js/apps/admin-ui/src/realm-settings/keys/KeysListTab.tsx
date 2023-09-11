@@ -185,7 +185,7 @@ export const KeysListTab = ({ realmComponents }: KeysListTabProps) => {
           },
           {
             name: "validTo",
-            displayKey: "realm-settings:validTo",
+            displayKey: "validTo",
             cellRenderer: ({ validTo }: KeyData) =>
               validTo ? formatDate(new Date(validTo)) : "",
             cellFormatters: [emptyFormatter()],
