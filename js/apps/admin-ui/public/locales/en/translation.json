@@ -3153,7 +3153,7 @@
   },
   "client-accesstype": {
     "label": "Client Access Type",
-    "tooltip": "Access Type of the client, for which the condition will be applied. Confidential client has enabled client authentication when public client has disabled client authentication. Bearer-only is deprecated client type."
+    "tooltip": "Access Type of the client, for which the condition will be applied. Confidential client has enabled client authentication when public client has disabled client authentication. Bearer-only is a deprecated client type."
   },
   "client-roles": {
     "label": "Client Roles"
