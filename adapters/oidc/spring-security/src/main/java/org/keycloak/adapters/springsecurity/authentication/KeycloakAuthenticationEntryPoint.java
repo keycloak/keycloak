@@ -109,7 +109,7 @@ public class KeycloakAuthenticationEntryPoint implements AuthenticationEntryPoin
 
         String queryParameters = "";
         if (!StringUtils.isEmpty(request.getQueryString())) {
-            queryParameters = "?" + request.getQueryString();
+            queryParameters = (loginUri.contains("?")?"&":"?") + request.getQueryString();
         }
 
         String contextAwareLoginUri = request.getContextPath() + loginUri + queryParameters;
