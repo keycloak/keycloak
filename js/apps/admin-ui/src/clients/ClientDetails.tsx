@@ -92,7 +92,7 @@ const ClientDetailHeader = ({
   toggleDownloadDialog,
   toggleDeleteDialog,
 }: ClientDetailHeaderProps) => {
-  const { t } = useTranslation("clients");
+  const { t } = useTranslation();
   const [toggleDisableDialog, DisableConfirm] = useConfirmDialog({
     titleKey: "clients:disableConfirmTitle",
     messageKey: "clients:disableConfirm",
@@ -188,7 +188,7 @@ export type FormFields = Omit<
 >;
 
 export default function ClientDetails() {
-  const { t } = useTranslation("clients");
+  const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
   const { realm } = useRealm();
   const { hasAccess } = useAccess();
@@ -478,7 +478,7 @@ export default function ClientDetails() {
               <RolesList
                 loader={loader}
                 paginated={false}
-                messageBundle="clients"
+                messageBundle="client"
                 toCreate={toCreateRole({ realm, clientId: client.id! })}
                 toDetail={(roleId) =>
                   toClientRole({

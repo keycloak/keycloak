@@ -49,7 +49,7 @@ type ExpandableRow = {
 };
 
 export const AuthorizationScopes = ({ clientId }: ScopesProps) => {
-  const { t } = useTranslation("clients");
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { realm } = useRealm();
 

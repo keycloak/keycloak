@@ -52,7 +52,7 @@ export const providerConditionFilter = (
 ) => value.displayName?.startsWith("Condition ");
 
 export default function FlowDetails() {
-  const { t } = useTranslation("authentication");
+  const { t } = useTranslation();
   const { realm } = useRealm();
   const { addAlert, addError } = useAlerts();
   const { id, usedBy, builtIn } = useParams<FlowParams>();

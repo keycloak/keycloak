@@ -41,7 +41,7 @@ type FormFields = Omit<
 >;
 
 export const CibaPolicy = ({ realm, realmUpdated }: CibaPolicyProps) => {
-  const { t } = useTranslation("authentication");
+  const { t } = useTranslation();
   const {
     control,
     register,
@@ -137,7 +137,7 @@ export const CibaPolicy = ({ realm, realmUpdated }: CibaPolicyProps) => {
           label={t("cibaExpiresIn")}
           labelIcon={
             <HelpItem
-              helpText={t("authentication-help:cibaExpiresIn")}
+              helpText={t("cibaExpiresInHelp")}
               fieldLabelId="authentication:cibaExpiresIn"
             />
           }
@@ -181,7 +181,7 @@ export const CibaPolicy = ({ realm, realmUpdated }: CibaPolicyProps) => {
           label={t("cibaInterval")}
           labelIcon={
             <HelpItem
-              helpText={t("authentication-help:cibaInterval")}
+              helpText={t("cibaIntervalHelp")}
               fieldLabelId="authentication:cibaInterval"
             />
           }
@@ -223,7 +223,7 @@ export const CibaPolicy = ({ realm, realmUpdated }: CibaPolicyProps) => {
           label={t("cibaAuthRequestedUserHint")}
           labelIcon={
             <HelpItem
-              helpText={t("authentication-help:cibaAuthRequestedUserHint")}
+              helpText={t("cibaAuthRequestedUserHintHelp")}
               fieldLabelId="authentication:cibaAuthRequestedUserHint"
             />
           }

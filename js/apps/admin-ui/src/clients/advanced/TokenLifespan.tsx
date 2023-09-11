@@ -32,7 +32,7 @@ export const TokenLifespan = ({
   defaultValue,
   units,
 }: TokenLifespanProps) => {
-  const { t } = useTranslation("clients");
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
 
   const [focused, setFocused] = useState(false);

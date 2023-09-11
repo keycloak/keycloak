@@ -37,7 +37,7 @@ import { toEditClientPolicy } from "./routes/EditClientPolicy";
 import "./realm-settings-section.css";
 
 export const PoliciesTab = () => {
-  const { t } = useTranslation("realm-settings");
+  const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
   const { realm } = useRealm();
   const navigate = useNavigate();

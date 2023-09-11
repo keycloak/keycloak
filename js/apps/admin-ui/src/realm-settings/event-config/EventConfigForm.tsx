@@ -27,7 +27,7 @@ export const EventConfigForm = ({
   reset,
   clear,
 }: EventConfigFormProps) => {
-  const { t } = useTranslation("realm-settings");
+  const { t } = useTranslation();
   const {
     control,
     watch,
@@ -90,7 +90,7 @@ export const EventConfigForm = ({
               fieldId="includeRepresentation"
               labelIcon={
                 <HelpItem
-                  helpText={t("realm-settings-help:includeRepresentation")}
+                  helpText={t("includeRepresentationHelp")}
                   fieldLabelId="realm-settings:includeRepresentation"
                 />
               }
@@ -118,7 +118,7 @@ export const EventConfigForm = ({
             fieldId="expiration"
             labelIcon={
               <HelpItem
-                helpText={t("realm-settings-help:expiration")}
+                helpText={t("expirationHelp")}
                 fieldLabelId="realm-settings:expiration"
               />
             }

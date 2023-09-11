@@ -26,7 +26,7 @@ export function EventsTypeTable({
   onSelect,
   onDelete,
 }: EventsTypeTableProps) {
-  const { t } = useTranslation("realm-settings");
+  const { t } = useTranslation();
 
   const data = eventTypes.map((type) => ({
     id: type,

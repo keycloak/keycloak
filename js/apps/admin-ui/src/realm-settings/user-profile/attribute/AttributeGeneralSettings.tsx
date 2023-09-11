@@ -33,7 +33,7 @@ const REQUIRED_FOR = [
 ] as const;
 
 export const AttributeGeneralSettings = () => {
-  const { t } = useTranslation("realm-settings");
+  const { t } = useTranslation();
   const form = useFormContext();
   const [clientScopes, setClientScopes] =
     useState<ClientScopeRepresentation[]>();
@@ -82,7 +82,7 @@ export const AttributeGeneralSettings = () => {
         fieldId="kc-attribute-name"
         isRequired
         validated={form.formState.errors.name ? "error" : "default"}
-        helperTextInvalid={t("validateName")}
+        helperTextInvalid={t("validateAttributeName")}
       >
         <KeycloakTextInput
           isRequired

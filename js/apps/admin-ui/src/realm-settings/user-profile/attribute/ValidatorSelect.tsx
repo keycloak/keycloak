@@ -14,7 +14,7 @@ export const ValidatorSelect = ({
   selectedValidators,
   onChange,
 }: ValidatorSelectProps) => {
-  const { t } = useTranslation("realm-settings");
+  const { t } = useTranslation();
   const allValidator: ComponentTypeRepresentation[] =
     useServerInfo().componentTypes?.["org.keycloak.validate.Validator"] || [];
   const validators = useMemo(

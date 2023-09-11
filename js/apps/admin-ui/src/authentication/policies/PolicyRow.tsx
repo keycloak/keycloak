@@ -26,7 +26,7 @@ export const PolicyRow = ({
   policy: { id, configType, defaultValue, displayName },
   onRemove,
 }: PolicyRowProps) => {
-  const { t } = useTranslation("authentication");
+  const { t } = useTranslation();
   const {
     control,
     register,

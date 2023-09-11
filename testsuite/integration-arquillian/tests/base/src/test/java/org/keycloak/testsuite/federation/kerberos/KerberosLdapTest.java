@@ -78,7 +78,7 @@ public class KerberosLdapTest extends AbstractKerberosSingleRealmTest {
         assertSuccessfulSpnegoLogin("hnelson", "hnelson", "secret");
 
         // Assert user was imported and hasn't any required action on him. Profile info is synced from LDAP
-        assertUser("hnelson", "hnelson@keycloak.org", "Horatio", "Nelson", false);
+        assertUser("hnelson", "hnelson@keycloak.org", "Horatio", "Nelson", "hnelson@KEYCLOAK.ORG", false);
     }
 
     @Test

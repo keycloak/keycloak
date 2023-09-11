@@ -33,7 +33,7 @@ import {
 import { toClientRegistration } from "../routes/ClientRegistration";
 
 export default function DetailProvider() {
-  const { t } = useTranslation("clients");
+  const { t } = useTranslation();
   const { id, providerId, subTab } = useParams<RegistrationProviderParams>();
   const navigate = useNavigate();
   const form = useForm<ComponentRepresentation>({

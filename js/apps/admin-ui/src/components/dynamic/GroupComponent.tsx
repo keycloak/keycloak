@@ -16,7 +16,7 @@ import type { ComponentProps } from "./components";
 import { convertToName } from "./DynamicComponents";
 
 export const GroupComponent = ({ name, label, helpText }: ComponentProps) => {
-  const { t } = useTranslation("dynamic");
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [groups, setGroups] = useState<GroupRepresentation[]>();
   const { control } = useFormContext();

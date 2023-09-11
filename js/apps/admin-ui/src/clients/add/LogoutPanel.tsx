@@ -22,7 +22,7 @@ export const LogoutPanel = ({
   reset,
   client: { access },
 }: ClientSettingsProps) => {
-  const { t } = useTranslation("clients");
+  const { t } = useTranslation();
   const {
     register,
     control,
@@ -46,7 +46,7 @@ export const LogoutPanel = ({
         label={t("frontchannelLogout")}
         labelIcon={
           <HelpItem
-            helpText={t("clients-help:frontchannelLogout")}
+            helpText={t("frontchannelLogoutHelp")}
             fieldLabelId="clients:frontchannelLogout"
           />
         }
@@ -75,7 +75,7 @@ export const LogoutPanel = ({
           fieldId="frontchannelLogoutUrl"
           labelIcon={
             <HelpItem
-              helpText={t("clients-help:frontchannelLogoutUrl")}
+              helpText={t("frontchannelLogoutUrlHelp")}
               fieldLabelId="clients:frontchannelLogoutUrl"
             />
           }
@@ -116,7 +116,7 @@ export const LogoutPanel = ({
             fieldId="backchannelLogoutUrl"
             labelIcon={
               <HelpItem
-                helpText={t("clients-help:backchannelLogoutUrl")}
+                helpText={t("backchannelLogoutUrlHelp")}
                 fieldLabelId="clients:backchannelLogoutUrl"
               />
             }
@@ -153,7 +153,7 @@ export const LogoutPanel = ({
             label={t("backchannelLogoutSessionRequired")}
             labelIcon={
               <HelpItem
-                helpText={t("clients-help:backchannelLogoutSessionRequired")}
+                helpText={t("backchannelLogoutSessionRequiredHelp")}
                 fieldLabelId="clients:backchannelLogoutSessionRequired"
               />
             }

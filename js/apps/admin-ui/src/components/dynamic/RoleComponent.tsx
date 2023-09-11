@@ -30,7 +30,7 @@ export const RoleComponent = ({
   defaultValue,
   isDisabled = false,
 }: ComponentProps) => {
-  const { t } = useTranslation("dynamic");
+  const { t } = useTranslation();
 
   const [openModal, toggleModal] = useToggle();
   const {

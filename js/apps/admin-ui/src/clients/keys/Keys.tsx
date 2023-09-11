@@ -41,7 +41,7 @@ type KeysProps = {
 const attr = "jwt.credential";
 
 export const Keys = ({ clientId, save, hasConfigureAccess }: KeysProps) => {
-  const { t } = useTranslation("clients");
+  const { t } = useTranslation();
   const {
     control,
     register,
@@ -144,7 +144,7 @@ export const Keys = ({ clientId, save, hasConfigureAccess }: KeysProps) => {
               fieldId="useJwksUrl"
               labelIcon={
                 <HelpItem
-                  helpText={t("clients-help:useJwksUrl")}
+                  helpText={t("useJwksUrlHelp")}
                   fieldLabelId="clients:useJwksUrl"
                 />
               }
@@ -177,7 +177,7 @@ export const Keys = ({ clientId, save, hasConfigureAccess }: KeysProps) => {
                 fieldId="jwksUrl"
                 labelIcon={
                   <HelpItem
-                    helpText={t("clients-help:jwksUrl")}
+                    helpText={t("jwksUrlHelp")}
                     fieldLabelId="clients:jwksUrl"
                   />
                 }

@@ -16,7 +16,7 @@ export const AddEventTypesDialog = ({
   onClose,
   configured,
 }: AddEventTypesDialogProps) => {
-  const { t } = useTranslation("realm-settings");
+  const { t } = useTranslation();
   const { enums } = useServerInfo();
 
   const [selectedTypes, setSelectedTypes] = useState<EventType[]>([]);

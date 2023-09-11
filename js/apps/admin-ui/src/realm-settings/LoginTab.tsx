@@ -20,7 +20,7 @@ export const RealmSettingsLoginTab = ({
   realm,
   refresh,
 }: RealmSettingsLoginTabProps) => {
-  const { t } = useTranslation("realm-settings");
+  const { t } = useTranslation();
 
   const { addAlert, addError } = useAlerts();
   const { realm: realmName } = useRealm();

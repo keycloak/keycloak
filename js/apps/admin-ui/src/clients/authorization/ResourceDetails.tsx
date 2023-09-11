@@ -46,7 +46,7 @@ type SubmittedResource = Omit<
 };
 
 export default function ResourceDetails() {
-  const { t } = useTranslation("clients");
+  const { t } = useTranslation();
   const [client, setClient] = useState<ClientRepresentation>();
   const [resource, setResource] = useState<ResourceRepresentation>();
 
@@ -195,7 +195,7 @@ export default function ResourceDetails() {
               fieldId="owner"
               labelIcon={
                 <HelpItem
-                  helpText={t("clients-help:owner")}
+                  helpText={t("ownerHelp")}
                   fieldLabelId="clients:owner"
                 />
               }
@@ -235,10 +235,7 @@ export default function ResourceDetails() {
               label={t("displayName")}
               fieldId="displayName"
               labelIcon={
-                <HelpItem
-                  helpText={t("clients-help:displayName")}
-                  fieldLabelId="name"
-                />
+                <HelpItem helpText={t("displayNameHelp")} fieldLabelId="name" />
               }
             >
               <KeycloakTextInput
@@ -263,7 +260,7 @@ export default function ResourceDetails() {
               fieldId="uris"
               labelIcon={
                 <HelpItem
-                  helpText={t("clients-help:uris")}
+                  helpText={t("urisHelp")}
                   fieldLabelId="clients:uris"
                 />
               }
@@ -281,7 +278,7 @@ export default function ResourceDetails() {
               fieldId="iconUri"
               labelIcon={
                 <HelpItem
-                  helpText={t("clients-help:iconUri")}
+                  helpText={t("iconUriHelp")}
                   fieldLabelId="clients:iconUri"
                 />
               }
@@ -297,7 +294,7 @@ export default function ResourceDetails() {
               label={t("ownerManagedAccess")}
               labelIcon={
                 <HelpItem
-                  helpText={t("clients-help:ownerManagedAccess")}
+                  helpText={t("ownerManagedAccessHelp")}
                   fieldLabelId="clients:ownerManagedAccess"
                 />
               }
@@ -325,7 +322,7 @@ export default function ResourceDetails() {
               label={t("resourceAttribute")}
               labelIcon={
                 <HelpItem
-                  helpText={t("clients-help:resourceAttribute")}
+                  helpText={t("resourceAttributeHelp")}
                   fieldLabelId="clients:resourceAttribute"
                 />
               }

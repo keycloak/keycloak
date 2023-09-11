@@ -88,7 +88,7 @@ public class KerberosLdapMultipleLDAPProvidersTest extends AbstractKerberosTest 
         OAuthClient.AccessTokenResponse tokenResponse = assertSuccessfulSpnegoLogin("hnelson2@KC2.COM", "hnelson2", "secret");
         AccessToken token = oauth.verifyToken(tokenResponse.getAccessToken());
         Assert.assertEquals(token.getEmail(), "hnelson2@kc2.com");
-        UserRepresentation user = assertUser("hnelson2", "hnelson2@kc2.com", "Horatio", "Nelson", false);
+        UserRepresentation user = assertUser("hnelson2", "hnelson2@kc2.com", "Horatio", "Nelson", "hnelson2@KC2.COM", false);
         assertUserStorageProvider(user, "kerberos-ldap");
     }
 
@@ -107,7 +107,7 @@ public class KerberosLdapMultipleLDAPProvidersTest extends AbstractKerberosTest 
         OAuthClient.AccessTokenResponse tokenResponse = assertSuccessfulSpnegoLogin("hnelson2@KC2.COM", "hnelson2", "secret");
         AccessToken token = oauth.verifyToken(tokenResponse.getAccessToken());
         Assert.assertEquals(token.getEmail(), "hnelson2@kc2.com");
-        UserRepresentation user = assertUser("hnelson2", "hnelson2@kc2.com", "Horatio", "Nelson", false);
+        UserRepresentation user = assertUser("hnelson2", "hnelson2@kc2.com", "Horatio", "Nelson", "hnelson2@KC2.COM", false);
         assertUserStorageProvider(user, "kerberos-ldap");
     }
 }

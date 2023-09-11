@@ -19,7 +19,7 @@ type Scope = {
 };
 
 export const ScopePicker = ({ clientId }: { clientId: string }) => {
-  const { t } = useTranslation("clients");
+  const { t } = useTranslation();
   const { control } = useFormContext();
 
   const [open, setOpen] = useState(false);

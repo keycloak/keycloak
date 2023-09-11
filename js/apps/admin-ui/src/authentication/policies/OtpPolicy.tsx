@@ -46,7 +46,7 @@ type FormFields = Omit<
 >;
 
 export const OtpPolicy = ({ realm, realmUpdated }: OtpPolicyProps) => {
-  const { t } = useTranslation("authentication");
+  const { t } = useTranslation();
   const {
     control,
     reset,
@@ -102,7 +102,7 @@ export const OtpPolicy = ({ realm, realmUpdated }: OtpPolicyProps) => {
           label={t("otpType")}
           labelIcon={
             <HelpItem
-              helpText={t("authentication-help:otpType")}
+              helpText={t("otpTypeHelp")}
               fieldLabelId="authentication:otpType"
             />
           }
@@ -135,7 +135,7 @@ export const OtpPolicy = ({ realm, realmUpdated }: OtpPolicyProps) => {
           label={t("otpHashAlgorithm")}
           labelIcon={
             <HelpItem
-              helpText={t("authentication-help:otpHashAlgorithm")}
+              helpText={t("otpHashAlgorithmHelp")}
               fieldLabelId="authentication:otpHashAlgorithm"
             />
           }
@@ -174,7 +174,7 @@ export const OtpPolicy = ({ realm, realmUpdated }: OtpPolicyProps) => {
           label={t("otpPolicyDigits")}
           labelIcon={
             <HelpItem
-              helpText={t("authentication-help:otpPolicyDigits")}
+              helpText={t("otpPolicyDigitsHelp")}
               fieldLabelId="authentication:otpPolicyDigits"
             />
           }
@@ -207,7 +207,7 @@ export const OtpPolicy = ({ realm, realmUpdated }: OtpPolicyProps) => {
           label={t("lookAround")}
           labelIcon={
             <HelpItem
-              helpText={t("authentication-help:lookAround")}
+              helpText={t("lookAroundHelp")}
               fieldLabelId="authentication:lookAround"
             />
           }
@@ -251,7 +251,7 @@ export const OtpPolicy = ({ realm, realmUpdated }: OtpPolicyProps) => {
             }
             labelIcon={
               <HelpItem
-                helpText={t("authentication-help:otpPolicyPeriod")}
+                helpText={t("otpPolicyPeriodHelp")}
                 fieldLabelId="authentication:otpPolicyPeriod"
               />
             }
@@ -294,7 +294,7 @@ export const OtpPolicy = ({ realm, realmUpdated }: OtpPolicyProps) => {
             }
             labelIcon={
               <HelpItem
-                helpText={t("authentication-help:initialCounter")}
+                helpText={t("initialCounterHelp")}
                 fieldLabelId="authentication:initialCounter"
               />
             }
@@ -331,7 +331,7 @@ export const OtpPolicy = ({ realm, realmUpdated }: OtpPolicyProps) => {
           label={t("supportedApplications")}
           labelIcon={
             <HelpItem
-              helpText={t("authentication-help:supportedApplications")}
+              helpText={t("supportedApplicationsHelp")}
               fieldLabelId="authentication:supportedApplications"
             />
           }
@@ -351,7 +351,7 @@ export const OtpPolicy = ({ realm, realmUpdated }: OtpPolicyProps) => {
             fieldId="otpPolicyCodeReusable"
             labelIcon={
               <HelpItem
-                helpText={t("authentication-help:otpPolicyCodeReusable")}
+                helpText={t("otpPolicyCodeReusableHelp")}
                 fieldLabelId="authentication:otpPolicyCodeReusable"
               />
             }

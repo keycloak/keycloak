@@ -30,7 +30,7 @@ export const UserIdpModal = ({
   onClose,
   onRefresh,
 }: UserIdpModalProps) => {
-  const { t } = useTranslation("users");
+  const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
   const {
     register,

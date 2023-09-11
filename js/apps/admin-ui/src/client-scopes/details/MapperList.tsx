@@ -47,7 +47,7 @@ export const MapperList = ({
   onDelete,
   detailLink,
 }: MapperListProps) => {
-  const { t } = useTranslation("client-scopes");
+  const { t } = useTranslation();
 
   const [mapperAction, setMapperAction] = useState(false);
   const mapperList = model.protocolMappers;

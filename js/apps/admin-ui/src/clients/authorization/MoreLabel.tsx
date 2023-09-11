@@ -6,7 +6,7 @@ type MoreLabelProps = {
 };
 
 export const MoreLabel = ({ array }: MoreLabelProps) => {
-  const { t } = useTranslation("clients");
+  const { t } = useTranslation();
 
   if (!array || array.length <= 1) {
     return null;

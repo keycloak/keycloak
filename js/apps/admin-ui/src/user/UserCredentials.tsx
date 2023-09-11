@@ -53,7 +53,7 @@ type ExpandableCredentialRepresentation = {
 };
 
 export const UserCredentials = ({ user }: UserCredentialsProps) => {
-  const { t } = useTranslation("users");
+  const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
   const [key, setKey] = useState(0);
   const refresh = () => setKey(key + 1);

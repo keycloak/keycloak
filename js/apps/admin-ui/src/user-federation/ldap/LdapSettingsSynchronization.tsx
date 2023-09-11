@@ -18,8 +18,7 @@ export const LdapSettingsSynchronization = ({
   showSectionHeading = false,
   showSectionDescription = false,
 }: LdapSettingsSynchronizationProps) => {
-  const { t } = useTranslation("user-federation");
-  const { t: helpText } = useTranslation("user-federation-help");
+  const { t } = useTranslation();
 
   const watchPeriodicSync = form.watch("config.periodicFullSync", false);
   const watchChangedSync = form.watch("config.periodicChangedUsersSync", false);
@@ -29,7 +28,7 @@ export const LdapSettingsSynchronization = ({
       {showSectionHeading && (
         <WizardSectionHeader
           title={t("synchronizationSettings")}
-          description={helpText("ldapSynchronizationSettingsDescription")}
+          description={t("ldapSynchronizationSettingsDescription")}
           showDescription={showSectionDescription}
         />
       )}

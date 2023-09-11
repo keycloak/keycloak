@@ -25,7 +25,7 @@ export const SignedJWT = ({ clientAuthenticatorType }: SignedJWTProps) => {
       ? cryptoInfo?.clientSignatureAsymmetricAlgorithms ?? []
       : cryptoInfo?.clientSignatureSymmetricAlgorithms ?? [];
 
-  const { t } = useTranslation("clients");
+  const { t } = useTranslation();
 
   const [open, isOpen] = useState(false);
   return (

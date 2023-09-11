@@ -29,7 +29,7 @@ export const Header = ({
   noDivider = false,
   dropdownItems = [],
 }: HeaderProps) => {
-  const { t } = useTranslation("user-federation");
+  const { t } = useTranslation();
   const { id } = useParams<Partial<CustomUserFederationRouteParams>>();
   const navigate = useNavigate();
 

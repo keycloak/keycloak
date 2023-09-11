@@ -18,8 +18,7 @@ export const LdapSettingsKerberosIntegration = ({
   showSectionHeading = false,
   showSectionDescription = false,
 }: LdapSettingsKerberosIntegrationProps) => {
-  const { t } = useTranslation("user-federation");
-  const { t: helpText } = useTranslation("user-federation-help");
+  const { t } = useTranslation();
 
   const allowKerberosAuth: [string] = useWatch({
     control: form.control,
@@ -32,7 +31,7 @@ export const LdapSettingsKerberosIntegration = ({
       {showSectionHeading && (
         <WizardSectionHeader
           title={t("kerberosIntegration")}
-          description={helpText("ldapKerberosSettingsDescription")}
+          description={t("ldapKerberosSettingsDescription")}
           showDescription={showSectionDescription}
         />
       )}
@@ -182,6 +181,40 @@ export const LdapSettingsKerberosIntegration = ({
                     message: `${t("validateKeyTab")}`,
                   },
                 })}
+              />
+            </FormGroup>
+
+            <FormGroup
+              label={t("krbPrincipalAttribute")}
+              labelIcon={
+                <HelpItem
+                  helpText={t("user-federation-help:krbPrincipalAttributeHelp")}
+                  fieldLabelId="user-federation:krbPrincipalAttribute"
+                />
+              }
+              fieldId="kc-krb-principal-attribute"
+              validated={
+                (form.formState.errors.config as any)
+                  ?.krbPrincipalAttribute?.[0]
+                  ? "error"
+                  : "default"
+              }
+              helperTextInvalid={
+                (form.formState.errors.config as any)
+                  ?.krbPrincipalAttribute?.[0].message
+              }
+            >
+              <KeycloakTextInput
+                defaultValue="userPrincipalName"
+                id="kc-krb-principal-attribute"
+                data-testid="krb-principal-attribute"
+                validated={
+                  (form.formState.errors.config as any)
+                    ?.krbPrincipalAttribute?.[0]
+                    ? "error"
+                    : "default"
+                }
+                {...form.register("config.krbPrincipalAttribute.0")}
               />
             </FormGroup>
 

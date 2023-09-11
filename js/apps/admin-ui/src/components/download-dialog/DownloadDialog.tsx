@@ -36,7 +36,7 @@ export const DownloadDialog = ({
   protocol = "openid-connect",
 }: DownloadDialogProps) => {
   const { realm } = useRealm();
-  const { t } = useTranslation("common");
+  const { t } = useTranslation();
   const { enabled } = useHelp();
   const serverInfo = useServerInfo();
 
@@ -154,7 +154,7 @@ export const DownloadDialog = ({
                 label={t("details")}
                 labelIcon={
                   <HelpItem
-                    helpText={t("clients-help:details")}
+                    helpText={t("detailsHelp")}
                     fieldLabelId="clients:details"
                   />
                 }

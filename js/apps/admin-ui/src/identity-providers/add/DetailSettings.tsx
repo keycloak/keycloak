@@ -76,7 +76,7 @@ type IdPWithMapperAttributes = IdentityProviderMapperRepresentation & {
 };
 
 const Header = ({ onChange, value, save, toggleDeleteDialog }: HeaderProps) => {
-  const { t } = useTranslation("identity-providers");
+  const { t } = useTranslation();
   const { alias: displayName } = useParams<{ alias: string }>();
   const [provider, setProvider] = useState<IdentityProviderRepresentation>();
 
@@ -93,7 +93,7 @@ const Header = ({ onChange, value, save, toggleDeleteDialog }: HeaderProps) => {
 
   const [toggleDisableDialog, DisableConfirm] = useConfirmDialog({
     titleKey: "identity-providers:disableProvider",
-    messageKey: t("disableConfirm", { provider: displayName }),
+    messageKey: t("disableConfirmIdentityProvider", { provider: displayName }),
     continueButtonLabel: "common:disable",
     onConfirm: () => {
       onChange(!value);
@@ -155,7 +155,7 @@ const MapperLink = ({ name, mapperId, provider }: MapperLinkProps) => {
 };
 
 export default function DetailSettings() {
-  const { t } = useTranslation("identity-providers");
+  const { t } = useTranslation();
   const { alias, providerId } = useParams<IdentityProviderParams>();
   const isFeatureEnabled = useIsFeatureEnabled();
   const form = useForm<IdentityProviderRepresentation>();
@@ -249,24 +249,24 @@ export default function DetailSettings() {
           providerId,
         },
       );
-      addAlert(t("updateSuccess"), AlertVariant.success);
+      addAlert(t("updateSuccessIdentityProvider"), AlertVariant.success);
     } catch (error) {
-      addError("identity-providers:updateError", error);
+      addError("updateErrorIdentityProvider", error);
     }
   };
 
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
     titleKey: "identity-providers:deleteProvider",
-    messageKey: t("identity-providers:deleteConfirm", { provider: alias }),
+    messageKey: t("deleteConfirmIdentityProvider", { provider: alias }),
     continueButtonLabel: "common:delete",
     continueButtonVariant: ButtonVariant.danger,
     onConfirm: async () => {
       try {
         await adminClient.identityProviders.del({ alias: alias });
-        addAlert(t("deletedSuccess"), AlertVariant.success);
+        addAlert(t("deletedSuccessIdentityProvider"), AlertVariant.success);
         navigate(toIdentityProviders({ realm }));
       } catch (error) {
-        addError("identity-providers:deleteErrorError", error);
+        addError("deleteErrorIdentityProvider", error);
       }
     },
   });
@@ -290,7 +290,7 @@ export default function DetailSettings() {
           toIdentityProvider({ providerId, alias, tab: "mappers", realm }),
         );
       } catch (error) {
-        addError("identity-providers:deleteErrorError", error);
+        addError("deleteErrorIdentityProvider", error);
       }
     },
   });
@@ -340,12 +340,15 @@ export default function DetailSettings() {
             <>
               <GeneralSettings create={false} id={alias} />
               {providerInfo && (
-                <DynamicComponents properties={providerInfo.properties} />
+                <DynamicComponents
+                  stringify
+                  properties={providerInfo.properties}
+                />
               )}
             </>
           )}
-          {isOIDC && <OIDCGeneralSettings id={alias} />}
-          {isSAML && <SamlGeneralSettings id={alias} isAliasReadonly />}
+          {isOIDC && <OIDCGeneralSettings />}
+          {isSAML && <SamlGeneralSettings isAliasReadonly />}
         </FormAccess>
       ),
     },

@@ -30,8 +30,13 @@ Previous versions of Keycloak supported specifying the encoding in the first lin
 Message properties files for themes are now read in UTF-8 encoding, with an automatic fallback to ISO-8859-1 encoding.
 If you are using a different encoding, convert the files to UTF-8.
 
-= Oracle Database driver not part of the distribution
+= Changes to the value format of claims mapped by the realm and client role mappers
 
-The Oracle Database JDBC driver is no longer part of the Keycloak distribution.
-Administrators will need to install a version of the Oracle Driver matching their environment
-as described in the configuring the database {section}.
+Before this release, both realm (`User Realm Role`) and client (`User Client Role`) protocol mappers
+were mapping a stringfied JSON array when the `Multivalued` setting was disabled.
+
+However, the `Multivalued` setting indicates whether the claim should be mapped as a list or, if disabled, only a single value
+from the same list of values.
+
+In this release, the role and client mappers now map to a single value from the effective roles of a user when
+they are marked as single-valued (`Multivalued` disabled).

@@ -15,7 +15,7 @@ import { ClientDescription } from "../ClientDescription";
 import { getProtocolName } from "../utils";
 
 export const GeneralSettings = () => {
-  const { t } = useTranslation("clients");
+  const { t } = useTranslation();
   const {
     control,
     formState: { errors },

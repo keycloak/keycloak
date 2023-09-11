@@ -29,6 +29,7 @@ import useFormatDate from "../utils/useFormatDate";
 import useIsFeatureEnabled, { Feature } from "../utils/useIsFeatureEnabled";
 import { FederatedUserLink } from "./FederatedUserLink";
 import { UserProfileFields } from "./UserProfileFields";
+import { UserFormFields } from "./form-state";
 import { RequiredActionMultiSelect } from "./user-credentials/RequiredActionMultiSelect";
 
 export type BruteForced = {
@@ -40,13 +41,13 @@ export type UserFormProps = {
   user?: UserRepresentation;
   bruteForce?: BruteForced;
   realm?: RealmRepresentation;
-  save: (user: UserRepresentation) => void;
+  save: (user: UserFormFields) => void;
   onGroupsUpdate?: (groups: GroupRepresentation[]) => void;
 };
 
 const EmailVerified = () => {
-  const { t } = useTranslation("users");
-  const { control } = useFormContext();
+  const { t } = useTranslation();
+  const { control } = useFormContext<UserFormFields>();
   return (
     <FormGroup
       label={t("emailVerified")}
@@ -54,7 +55,7 @@ const EmailVerified = () => {
       helperTextInvalid={t("common:required")}
       labelIcon={
         <HelpItem
-          helpText={t("users-help:emailVerified")}
+          helpText={t("emailVerifiedHelp")}
           fieldLabelId="users:emailVerified"
         />
       }
@@ -88,7 +89,7 @@ export const UserForm = ({
   save,
   onGroupsUpdate,
 }: UserFormProps) => {
-  const { t } = useTranslation("users");
+  const { t } = useTranslation();
   const { realm: realmName } = useRealm();
   const formatDate = useFormatDate();
   const isFeatureEnabled = useIsFeatureEnabled();
@@ -106,7 +107,7 @@ export const UserForm = ({
     control,
     reset,
     formState: { errors },
-  } = useFormContext();
+  } = useFormContext<UserFormFields>();
   const watchUsernameInput = watch("username");
   const [selectedGroups, setSelectedGroups] = useState<GroupRepresentation[]>(
     [],
@@ -208,14 +209,14 @@ export const UserForm = ({
       <RequiredActionMultiSelect
         name="requiredActions"
         label="requiredUserActions"
-        help="users-help:requiredUserActions"
+        help="requiredUserActionsHelp"
       />
       {(user?.federationLink || user?.origin) && canViewFederationLink && (
         <FormGroup
           label={t("federationLink")}
           labelIcon={
             <HelpItem
-              helpText={t("users-help:federationLink")}
+              helpText={t("federationLinkHelp")}
               fieldLabelId="users:federationLink"
             />
           }
@@ -294,7 +295,7 @@ export const UserForm = ({
           fieldId="temporaryLocked"
           labelIcon={
             <HelpItem
-              helpText={t("users-help:temporaryLocked")}
+              helpText={t("temporaryLockedHelp")}
               fieldLabelId="users:temporaryLocked"
             />
           }

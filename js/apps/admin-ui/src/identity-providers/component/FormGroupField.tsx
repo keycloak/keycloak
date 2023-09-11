@@ -11,17 +11,12 @@ export const FormGroupField = ({
   label,
   children,
 }: PropsWithChildren<FormGroupFieldProps>) => {
-  const { t } = useTranslation("identity-providers");
+  const { t } = useTranslation();
   return (
     <FormGroup
       label={t(label)}
       fieldId={label}
-      labelIcon={
-        <HelpItem
-          helpText={t(`identity-providers-help:${label}`)}
-          fieldLabelId={`identity-providers:${label}`}
-        />
-      }
+      labelIcon={<HelpItem helpText={t(`${label}Help`)} fieldLabelId={label} />}
     >
       {children}
     </FormGroup>

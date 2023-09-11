@@ -7,7 +7,7 @@ import { beerify, convertAttributeNameToForm } from "../../util";
 import { FormFields } from "../ClientDetails";
 
 export const X509 = () => {
-  const { t } = useTranslation("clients");
+  const { t } = useTranslation();
   const {
     register,
     control,
@@ -19,7 +19,7 @@ export const X509 = () => {
         label={t("allowRegexComparison")}
         labelIcon={
           <HelpItem
-            helpText={t("clients-help:allowRegexComparison")}
+            helpText={t("allowRegexComparisonHelp")}
             fieldLabelId="clients:allowRegexComparison"
           />
         }
@@ -49,7 +49,7 @@ export const X509 = () => {
         fieldId="kc-subject"
         labelIcon={
           <HelpItem
-            helpText={t("clients-help:subject")}
+            helpText={t("subjectHelp")}
             fieldLabelId="clients:subject"
           />
         }

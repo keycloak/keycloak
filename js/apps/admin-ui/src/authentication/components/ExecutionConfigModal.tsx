@@ -38,7 +38,7 @@ type ExecutionConfigModalProps = {
 export const ExecutionConfigModal = ({
   execution,
 }: ExecutionConfigModalProps) => {
-  const { t } = useTranslation("authentication");
+  const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
 
   const [show, setShow] = useState(false);

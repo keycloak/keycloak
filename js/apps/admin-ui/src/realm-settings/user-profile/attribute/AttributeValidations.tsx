@@ -27,7 +27,7 @@ import { AddValidatorDialog } from "../attribute/AddValidatorDialog";
 import "../../realm-settings-section.css";
 
 export const AttributeValidations = () => {
-  const { t } = useTranslation("realm-settings");
+  const { t } = useTranslation();
   const [addValidatorModalOpen, toggleModal] = useToggle();
   const [validatorToDelete, setValidatorToDelete] = useState<string>();
   const { setValue, control, register, getValues } = useFormContext();

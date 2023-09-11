@@ -45,7 +45,7 @@ export const ResetPasswordDialog = ({
   refresh,
   onClose,
 }: ResetPasswordDialogProps) => {
-  const { t } = useTranslation("users");
+  const { t } = useTranslation();
   const {
     register,
     control,
@@ -205,7 +205,7 @@ export const ResetPasswordDialog = ({
             label={t("common:temporaryPassword")}
             labelIcon={
               <HelpItem
-                helpText={t("temporaryPasswordHelpText")}
+                helpText={t("common:temporaryPasswordHelpText")}
                 fieldLabelId="temporaryPassword"
               />
             }

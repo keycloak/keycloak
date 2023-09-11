@@ -32,6 +32,7 @@ import java.util.stream.Collectors;
 import javax.naming.directory.SearchControls;
 
 import org.jboss.logging.Logger;
+import org.keycloak.common.constants.KerberosConstants;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.component.ComponentValidationException;
 import org.keycloak.models.LDAPConstants;
@@ -136,6 +137,12 @@ public class LDAPUtils {
                 .getComponentsStream(ldapProvider.getModel().getId(), LDAPStorageMapper.class.getName())
                 .collect(Collectors.toList());
         ldapQuery.addMappers(mapperModels);
+
+        String kerberosPrincipalAttr = ldapProvider.getKerberosConfig().getKerberosPrincipalAttribute();
+        if (kerberosPrincipalAttr != null) {
+            ldapQuery.addReturningLdapAttribute(kerberosPrincipalAttr);
+            ldapQuery.addReturningReadOnlyLdapAttribute(kerberosPrincipalAttr);
+        }
 
         return ldapQuery;
     }
@@ -376,5 +383,18 @@ public class LDAPUtils {
         }
 
         return userModelProperties;
+    }
+
+    public static String getDefaultKerberosUserPrincipalAttribute(String vendor) {
+        if (vendor != null) {
+            switch (vendor) {
+                case LDAPConstants.VENDOR_RHDS:
+                    return KerberosConstants.KERBEROS_PRINCIPAL_LDAP_ATTRIBUTE_KRB_PRINCIPAL_NAME;
+                case LDAPConstants.VENDOR_ACTIVE_DIRECTORY:
+                    return KerberosConstants.KERBEROS_PRINCIPAL_LDAP_ATTRIBUTE_USER_PRINCIPAL_NAME;
+            }
+        }
+
+        return KerberosConstants.KERBEROS_PRINCIPAL_LDAP_ATTRIBUTE_KRB5_PRINCIPAL_NAME;
     }
 }

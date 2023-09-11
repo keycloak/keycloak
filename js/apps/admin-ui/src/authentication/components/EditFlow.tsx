@@ -27,7 +27,7 @@ type EditFlowProps = {
 type FormFields = Omit<ExpandableExecution, "executionList">;
 
 export const EditFlow = ({ execution, onRowChange }: EditFlowProps) => {
-  const { t } = useTranslation("authentication");
+  const { t } = useTranslation();
   const {
     register,
     reset,
@@ -96,10 +96,7 @@ export const EditFlow = ({ execution, onRowChange }: EditFlowProps) => {
                   : ValidatedOptions.default
               }
               labelIcon={
-                <HelpItem
-                  helpText={t("authentication-help:name")}
-                  fieldLabelId="name"
-                />
+                <HelpItem helpText={t("flowNameHelp")} fieldLabelId="name" />
               }
               isRequired
             >
@@ -120,7 +117,7 @@ export const EditFlow = ({ execution, onRowChange }: EditFlowProps) => {
               fieldId="kc-description"
               labelIcon={
                 <HelpItem
-                  helpText={t("authentication-help:description")}
+                  helpText={t("flowDescriptionHelp")}
                   fieldLabelId="description"
                 />
               }

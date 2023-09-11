@@ -197,14 +197,17 @@ The cross-realm trust is unidirectional by default. You must add the principal `
 
 ** When using an LDAP storage provider with Kerberos support, configure the server principal for realm B, as in this example: `HTTP/mydomain.com@B`. The LDAP server must find the users from realm A if users from realm A are to successfully authenticate to {project_name}, because {project_name} must perform the SPNEGO flow and then find the users.
 
-For example, Kerberos principal user `john@A` must be available in the LDAP under an LDAP DN such as `uid=john,ou=People,dc=example,dc=com`. If you want users from realm A and B to authenticate, ensure that LDAP can find users from both realms A and B.
+Finding users is based on the LDAP storage provider option `Kerberos principal attribute`. When this is configured for instance with value like `userPrincipalName`, then
+after SPNEGO authentication of user `john@A`, {project_name} will try to lookup LDAP user with attribute `userPrincipalName` equivalent to `john@A`. If `Kerberos principal attribute` is left
+empty, then {project_name} will lookup the LDAP user based on the prefix of his kerberos principal with the realm omitted.
+For example, Kerberos principal user `john@A` must be available in the LDAP under username `john`, so typically under an LDAP DN such as `uid=john,ou=People,dc=example,dc=com`. If you want users from realm A and B to authenticate, ensure that LDAP can find users from both realms A and B.
 
 ** When using a Kerberos user storage provider (typically, Kerberos without LDAP integration), configure the server principal as `HTTP/mydomain.com@B`, and users from Kerberos realms A and B must be able to authenticate.
 
-[WARNING]
-====
-When using the Kerberos user storage provider, there cannot be conflicting users among Kerberos realms. If conflicting users exist, {project_name} maps them to the same user.
-====
+Users from multiple Kerberos realms are allowed to authenticate as every user would have attribute `KERBEROS_PRINCIPAL` referring to the kerberos principal used for authentication and this is used
+for further lookups of this user. To avoid conflicts when there is user `john` in both kerberos realms `A` and `B`, the username of the {project_name} user might contain the kerberos realm
+lowercased. For instance username would be `john@a`. Just in case when realm matches with the configured `Kerberos realm`, the realm suffix might be omitted from the generated username. For
+instance username would be `john` for the Kerberos principal `john@A` as long as the `Kerberos realm` is configured on the Kerberos provider is `A`.
 
 ==== Troubleshooting
 

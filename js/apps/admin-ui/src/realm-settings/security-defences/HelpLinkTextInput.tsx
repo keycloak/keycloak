@@ -15,7 +15,7 @@ export const HelpLinkTextInput = ({
   fieldName,
   url,
 }: HelpLinkTextInputProps) => {
-  const { t } = useTranslation("realm-settings");
+  const { t } = useTranslation();
   const { register } = useFormContext();
   const name = fieldName.substr(fieldName.indexOf(".") + 1);
   return (

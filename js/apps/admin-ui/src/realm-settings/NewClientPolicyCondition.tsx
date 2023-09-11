@@ -38,7 +38,7 @@ type ConfigProperty = ConfigPropertyRepresentation & {
 };
 
 export default function NewClientPolicyCondition() {
-  const { t } = useTranslation("realm-settings");
+  const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
   const navigate = useNavigate();
   const { realm } = useRealm();

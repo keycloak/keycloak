@@ -38,7 +38,7 @@ export function UserDataTableAttributeSearchForm({
   createAttributeSearchChips,
   searchUserWithAttributes,
 }: UserDataTableAttributeSearchFormProps) {
-  const { t } = useTranslation("users");
+  const { t } = useTranslation();
   const { addAlert } = useAlerts();
   const [selectAttributeKeyOpen, setSelectAttributeKeyOpen] = useState(false);
 

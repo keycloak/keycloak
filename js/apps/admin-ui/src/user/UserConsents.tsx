@@ -26,7 +26,7 @@ import { useParams } from "../utils/useParams";
 export const UserConsents = () => {
   const [selectedClient, setSelectedClient] =
     useState<UserConsentRepresentation>();
-  const { t } = useTranslation("roles");
+  const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
   const formatDate = useFormatDate();
   const [key, setKey] = useState(0);

@@ -20,7 +20,7 @@ import { FlowType } from "./FlowType";
 import { NameDescription } from "./NameDescription";
 
 export default function CreateFlow() {
-  const { t } = useTranslation("authentication");
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { realm } = useRealm();
   const { addAlert } = useAlerts();

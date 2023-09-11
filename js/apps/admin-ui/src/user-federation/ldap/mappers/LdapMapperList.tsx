@@ -35,7 +35,7 @@ const MapperLink = ({ toDetail, ...mapper }: MapperLinkProps) => (
 
 export const LdapMapperList = ({ toCreate, toDetail }: LdapMapperListProps) => {
   const navigate = useNavigate();
-  const { t } = useTranslation("user-federation");
+  const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
   const [key, setKey] = useState(0);
   const refresh = () => setKey(key + 1);

@@ -22,7 +22,7 @@ const moveToGroup = async (
 ) => adminClient.groups.updateChildGroup({ id: dest.id! }, source);
 
 export const MoveDialog = ({ source, onClose, refresh }: MoveDialogProps) => {
-  const { t } = useTranslation("groups");
+  const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
 
   const moveGroup = async (group?: GroupRepresentation[]) => {

@@ -15,7 +15,7 @@ export const NameDescription = ({
   prefix,
   isDisabled,
 }: NameDescriptionProps) => {
-  const { t } = useTranslation("clients");
+  const { t } = useTranslation();
   const {
     register,
     formState: { errors },

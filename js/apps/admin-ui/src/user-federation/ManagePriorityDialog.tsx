@@ -30,7 +30,7 @@ export const ManagePriorityDialog = ({
   components,
   onClose,
 }: ManagePriorityDialogProps) => {
-  const { t } = useTranslation("user-federation");
+  const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
 
   const [id, setId] = useState("");
@@ -79,9 +79,9 @@ export const ManagePriorityDialog = ({
 
             try {
               await Promise.all(updates);
-              addAlert(t("orderChangeSuccess"));
+              addAlert(t("orderChangeSuccessUserFed"));
             } catch (error) {
-              addError("orderChangeError", error);
+              addError("orderChangeErrorUserFed", error);
             }
 
             onClose();

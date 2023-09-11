@@ -31,7 +31,7 @@ export const DuplicateFlowModal = ({
   toggleDialog,
   onComplete,
 }: DuplicateFlowModalProps) => {
-  const { t } = useTranslation("authentication");
+  const { t } = useTranslation();
   const form = useForm<AuthenticationFlowRepresentation>({ mode: "onChange" });
   const { setValue, getValues, handleSubmit } = form;
   const { addAlert, addError } = useAlerts();

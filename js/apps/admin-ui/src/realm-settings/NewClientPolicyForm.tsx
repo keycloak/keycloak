@@ -67,7 +67,7 @@ type PolicyDetailAttributes = {
 };
 
 export default function NewClientPolicyForm() {
-  const { t } = useTranslation("realm-settings");
+  const { t } = useTranslation();
   const { realm } = useRealm();
   const { addAlert, addError } = useAlerts();
   const [policies, setPolicies] = useState<ClientPolicyRepresentation[]>();
@@ -113,7 +113,7 @@ export default function NewClientPolicyForm() {
     onChange,
     value,
   }: ClientPoliciesHeaderProps) => {
-    const { t } = useTranslation("realm-settings");
+    const { t } = useTranslation();
 
     const [toggleDisableDialog, DisableConfirm] = useConfirmDialog({
       titleKey: "realm-settings:disablePolicyConfirmTitle",
@@ -532,7 +532,7 @@ export default function NewClientPolicyForm() {
                   <Text className="kc-conditions" component={TextVariants.h1}>
                     {t("conditions")}
                     <HelpItem
-                      helpText={t("realm-settings-help:conditions")}
+                      helpText={t("conditionsHelp")}
                       fieldLabelId="realm-settings:conditions"
                     />
                   </Text>
@@ -650,7 +650,7 @@ export default function NewClientPolicyForm() {
                   >
                     {t("clientProfiles")}
                     <HelpItem
-                      helpText={t("realm-settings-help:clientProfiles")}
+                      helpText={t("clientProfilesHelp")}
                       fieldLabelId="realm-settings:clientProfiles"
                     />
                   </Text>

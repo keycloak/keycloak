@@ -25,7 +25,7 @@ export const GroupTable = ({
   refresh: viewRefresh,
   canViewDetails,
 }: GroupTableProps) => {
-  const { t } = useTranslation("groups");
+  const { t } = useTranslation();
 
   const [selectedRows, setSelectedRows] = useState<GroupRepresentation[]>([]);
 

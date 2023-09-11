@@ -26,7 +26,7 @@ export const RealmSettingsThemesTab = ({
   realm,
   save,
 }: RealmSettingsThemesTabProps) => {
-  const { t } = useTranslation("realm-settings");
+  const { t } = useTranslation();
 
   const [loginThemeOpen, setLoginThemeOpen] = useState(false);
   const [accountThemeOpen, setAccountThemeOpen] = useState(false);
@@ -54,7 +54,7 @@ export const RealmSettingsThemesTab = ({
           fieldId="kc-login-theme"
           labelIcon={
             <HelpItem
-              helpText={t("realm-settings-help:loginTheme")}
+              helpText={t("loginThemeHelp")}
               fieldLabelId="realm-settings:loginTheme"
             />
           }
@@ -95,7 +95,7 @@ export const RealmSettingsThemesTab = ({
           fieldId="kc-account-theme"
           labelIcon={
             <HelpItem
-              helpText={t("realm-settings-help:accountTheme")}
+              helpText={t("accountThemeHelp")}
               fieldLabelId="realm-settings:accountTheme"
             />
           }
@@ -139,7 +139,7 @@ export const RealmSettingsThemesTab = ({
           fieldId="kc-admin-ui-theme"
           labelIcon={
             <HelpItem
-              helpText={t("realm-settings-help:adminTheme")}
+              helpText={t("adminThemeHelp")}
               fieldLabelId="realm-settings:adminTheme"
             />
           }
@@ -182,7 +182,7 @@ export const RealmSettingsThemesTab = ({
           fieldId="kc-email-theme"
           labelIcon={
             <HelpItem
-              helpText={t("realm-settings-help:emailTheme")}
+              helpText={t("emailThemeHelp")}
               fieldLabelId="realm-settings:emailTheme"
             />
           }

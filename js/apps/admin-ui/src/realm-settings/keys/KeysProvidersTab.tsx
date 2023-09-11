@@ -49,7 +49,7 @@ export const KeysProvidersTab = ({
   realmComponents,
   refresh,
 }: KeysProvidersTabProps) => {
-  const { t } = useTranslation("realm-settings");
+  const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
   const { realm } = useRealm();
 

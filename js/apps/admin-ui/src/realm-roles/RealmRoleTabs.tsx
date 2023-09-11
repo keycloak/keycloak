@@ -52,7 +52,7 @@ import { toRealmRoles } from "./routes/RealmRoles";
 
 export default function RealmRoleTabs() {
   const isFeatureEnabled = useIsFeatureEnabled();
-  const { t } = useTranslation("roles");
+  const { t } = useTranslation();
   const form = useForm<AttributeForm>({
     mode: "onChange",
   });

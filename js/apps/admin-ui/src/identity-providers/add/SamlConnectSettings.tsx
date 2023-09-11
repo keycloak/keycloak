@@ -19,7 +19,7 @@ type FormFields = IdentityProviderRepresentation & {
 };
 
 export const SamlConnectSettings = () => {
-  const { t } = useTranslation("identity-providers");
+  const { t } = useTranslation();
   const id = "saml";
 
   const { realm } = useRealm();
@@ -85,7 +85,7 @@ export const SamlConnectSettings = () => {
         fieldId="kc-service-provider-entity-id"
         labelIcon={
           <HelpItem
-            helpText={t("identity-providers-help:serviceProviderEntityId")}
+            helpText={t("serviceProviderEntityIdHelp")}
             fieldLabelId="identity-providers:serviceProviderEntityId"
           />
         }
@@ -110,7 +110,7 @@ export const SamlConnectSettings = () => {
             fieldId="kc-import-config"
             labelIcon={
               <HelpItem
-                helpText={t("identity-providers-help:importConfig")}
+                helpText={t("importConfigHelp")}
                 fieldLabelId="identity-providers:importConfig"
               />
             }

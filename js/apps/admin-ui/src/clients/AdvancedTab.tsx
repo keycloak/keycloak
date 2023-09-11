@@ -52,7 +52,7 @@ export type AdvancedProps = {
 };
 
 export const AdvancedTab = ({ save, client }: AdvancedProps) => {
-  const { t } = useTranslation("clients");
+  const { t } = useTranslation();
   const openIdConnect = "openid-connect";
 
   const { setValue } = useFormContext();
@@ -92,7 +92,7 @@ export const AdvancedTab = ({ save, client }: AdvancedProps) => {
             panel: (
               <>
                 <Text className="pf-u-pb-lg">
-                  {t("clients-help:fineGrainOpenIdConnectConfiguration")}
+                  {t("fineGrainOpenIdConnectConfigurationHelp")}
                 </Text>
                 <FineGrainOpenIdConnect
                   save={save}

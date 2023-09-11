@@ -6,8 +6,8 @@ So:
 [source]
 ----
 Let's pretend to have an extremely \
-long line that \
-does not fit
+  long line that \
+  does not fit
 This one is short
 ----         
 Is really: 
