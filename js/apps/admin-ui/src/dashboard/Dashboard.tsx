@@ -74,7 +74,7 @@ type FeatureItemProps = {
 };
 
 const FeatureItem = ({ feature }: FeatureItemProps) => {
-  const { t } = useTranslation("dashboard");
+  const { t } = useTranslation();
   return (
     <ListItem className="pf-u-mb-sm">
       {feature.name}&nbsp;
