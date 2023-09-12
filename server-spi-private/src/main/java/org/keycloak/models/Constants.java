@@ -37,9 +37,6 @@ public final class Constants {
     public static final String BROKER_SERVICE_CLIENT_ID = "broker";
     public static final String REALM_MANAGEMENT_CLIENT_ID = "realm-management";
 
-    public static final String ACCOUNT_RESOURCE_PROVIDER_KEY = "accountResourceProvider";
-    public static final String DEFAULT_ACCOUNT_RESOURCE_PROVIDER_ID = "account-console";
-
     public static final String AUTH_BASE_URL_PROP = "${authBaseUrl}";
     public static final String AUTH_ADMIN_URL_PROP = "${authAdminUrl}";
 

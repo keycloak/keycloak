@@ -19,7 +19,7 @@ public class AccountResourceSpi implements Spi {
 
     @Override
     public String getName() {
-        return "account-console-extension";
+        return "account-console";
     }
 
     @Override

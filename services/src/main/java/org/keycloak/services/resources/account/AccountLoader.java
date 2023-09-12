@@ -32,6 +32,7 @@ import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.resource.AccountResourceProvider;
 import org.keycloak.services.resources.Cors;
 import org.keycloak.theme.Theme;
+import org.keycloak.theme.ThemeProperties;
 
 import jakarta.ws.rs.HttpMethod;
 import jakarta.ws.rs.InternalServerErrorException;
@@ -149,21 +150,12 @@ public class AccountLoader {
         return client;
     }
 
-  private AccountResourceProvider getAccountResourceProvider(Theme theme) {
-    String providerId = Constants.DEFAULT_ACCOUNT_RESOURCE_PROVIDER_ID;
-    try {
-      providerId = theme.getProperties().getProperty(Constants.ACCOUNT_RESOURCE_PROVIDER_KEY);
-    } catch (IOException e) {
-      logger.debugf(e, "Error loading theme property %s", Constants.ACCOUNT_RESOURCE_PROVIDER_KEY);
+    private AccountResourceProvider getAccountResourceProvider(Theme theme) {
+      try {
+        if (theme.getProperties().containsKey(ThemeProperties.ACCOUNT_RESOURCE_PROVIDER_KEY)) {
+          return session.getProvider(AccountResourceProvider.class, theme.getProperties().getProperty(ThemeProperties.ACCOUNT_RESOURCE_PROVIDER_KEY));
+        }
+      } catch (IOException ignore) {}
+      return session.getProvider(AccountResourceProvider.class);
     }
-    logger.debugf("Attempting to get AccountResourceProvider for theme %s %s", theme.getName(), providerId);
-    AccountResourceProvider provider = session.getProvider(AccountResourceProvider.class, providerId);
-    if (provider == null) {
-      // question if we should just return null, or use the default
-      return session.getProvider(AccountResourceProvider.class, Constants.DEFAULT_ACCOUNT_RESOURCE_PROVIDER_ID);
-    } else {
-      logger.debugf("Found provider %s (%s) for theme %s", providerId, provider.getClass().getName(), theme.getName());
-      return provider;
-    }
-  }
 }

@@ -18,11 +18,10 @@ import jakarta.ws.rs.NotFoundException;
 import org.keycloak.models.Constants;
 
 public class AccountConsoleFactory implements AccountResourceProviderFactory {
-  public static final String ID = "account-console";
 
   @Override
   public String getId() {
-    return ID;
+    return "default";
   }
 
   @Override
