@@ -78,13 +78,13 @@ const FeatureItem = ({ feature }: FeatureItemProps) => {
   return (
     <ListItem className="pf-u-mb-sm">
       {feature.name}&nbsp;
-      {feature.type === FeatureType.EXPERIMENTAL && (
+      {feature.type === FeatureType.Experimental && (
         <Label color="orange">{t("experimental")}</Label>
       )}
-      {feature.type === FeatureType.PREVIEW && (
+      {feature.type === FeatureType.Preview && (
         <Label color="blue">{t("preview")}</Label>
       )}
-      {feature.type === FeatureType.DEFAULT && (
+      {feature.type === FeatureType.Default && (
         <Label color="green">{t("supported")}</Label>
       )}
     </ListItem>

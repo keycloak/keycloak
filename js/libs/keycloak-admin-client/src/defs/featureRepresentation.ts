@@ -7,10 +7,10 @@ export default interface FeatureRepresentation {
 }
 
 export enum FeatureType {
-  DEFAULT = "DEFAULT",
-  DISABLED_BY_DEFAULT = "DISABLED_BY_DEFAULT",
-  PREVIEW = "PREVIEW",
-  PREVIEW_DISABLED_BY_DEFAULT = "PREVIEW_DISABLED_BY_DEFAULT",
-  EXPERIMENTAL = "EXPERIMENTAL",
-  DEPRECATED = "DEPRECATED",
+  Default = "DEFAULT",
+  DisabledByDefault = "DISABLED_BY_DEFAULT",
+  Preview = "PREVIEW",
+  PreviewDisabledByDefault = "PREVIEW_DISABLED_BY_DEFAULT",
+  Experimental = "EXPERIMENTAL",
+  Deprecated = "DEPRECATED",
 }
