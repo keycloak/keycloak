@@ -56,12 +56,13 @@ When setting up audience checking:
 [[_audience_resolve]]
 == Automatically add audience
 
-An _Audience Resolve_ protocol mapper is defined in the default client scope _roles_. The mapper checks for clients that have at least one client role available for the current token. The client ID of each client is then added as an audience, which is useful if your service (usually bearer-only) clients rely on client roles.
+An _Audience Resolve_ protocol mapper is defined in the default client scope _roles_. The mapper checks for clients that have at least one client role available for the current token. The client ID of each client is then added as an audience, which is useful
+if your service clients rely on client roles. Service client could be usually a client without any flows enabled, which may not have any tokens issued directly to itself. It represents an OAuth 2 _Resource Server_.
 
-For example, for a bearer-only client and a confidential client,
-you can use the access token issued for the confidential client to invoke the bearer-only client REST service. The bearer-only client will be automatically added as an audience to the access token issued for the confidential client if the following are true:
+For example, for a service client and a confidential client,
+you can use the access token issued for the confidential client to invoke the service client REST service. The service client will be automatically added as an audience to the access token issued for the confidential client if the following are true:
 
-* The bearer-only client has any client roles defined on itself.
+* The service client has any client roles defined on itself.
 
 * Target user has at least one of those client roles assigned.
 
