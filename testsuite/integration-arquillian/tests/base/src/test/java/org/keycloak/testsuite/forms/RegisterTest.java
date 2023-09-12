@@ -65,6 +65,7 @@ import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -373,6 +374,10 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
 
         String userId = events.expectRegister(username, "registerUserSuccess@email").assertEvent().getUserId();
         assertUserRegistered(userId, username.toLowerCase(), "registerusersuccess@email");
+
+        UserRepresentation user = getUser(userId);
+
+        assertNull(user.getAttributes());
     }
 
     private void assertUserRegistered(String userId, String username, String email) {
