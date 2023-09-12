@@ -50,6 +50,11 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
     name: "config.wantAuthnRequestsSigned",
   });
 
+  const wantAssertionsEncrypted = useWatch({
+    control,
+    name: "config.wantAssertionsEncrypted",
+  });
+
   const validateSignature = useWatch({
     control,
     name: "config.validateSignature",
@@ -378,41 +383,6 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
             ></Controller>
           </FormGroup>
           <FormGroup
-            label={t("encryptionAlgorithm")}
-            labelIcon={
-              <HelpItem
-                helpText={th("encryptionAlgorithm")}
-                fieldLabelId="identity-provider:encryptionAlgorithm"
-              />
-            }
-            fieldId="kc-encryptionAlgorithm"
-          >
-            <Controller
-              name="config.encryptionAlgorithm"
-              defaultValue="RSA-OAEP"
-              control={control}
-              render={({ field }) => (
-                <Select
-                  toggleId="kc-encryptionAlgorithm"
-                  onToggle={(isExpanded) =>
-                    setEncryptionAlgorithmDropdownOpen(isExpanded)
-                  }
-                  isOpen={encryptionAlgorithmDropdownOpen}
-                  onSelect={(_, value) => {
-                    field.onChange(value.toString());
-                    setEncryptionAlgorithmDropdownOpen(false);
-                  }}
-                  selections={field.value}
-                  variant={SelectVariant.single}
-                  isDisabled={readOnly}
-                >
-                  <SelectOption value="RSA-OAEP" />
-                  <SelectOption value="RSA1_5" />
-                </Select>
-              )}
-            ></Controller>
-          </FormGroup>
-          <FormGroup
             label={t("samlSignatureKeyName")}
             labelIcon={
               <HelpItem
@@ -462,6 +432,45 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
         label="wantAssertionsEncrypted"
         isReadOnly={readOnly}
       />
+
+      {wantAssertionsEncrypted === "true" && (
+        <FormGroup
+          label={t("encryptionAlgorithm")}
+          labelIcon={
+            <HelpItem
+              helpText={th("encryptionAlgorithm")}
+              fieldLabelId="encryptionAlgorithm"
+            />
+          }
+          fieldId="kc-encryptionAlgorithm"
+        >
+          <Controller
+            name="config.encryptionAlgorithm"
+            defaultValue="RSA-OAEP"
+            control={control}
+            render={({ field }) => (
+              <Select
+                toggleId="kc-encryptionAlgorithm"
+                onToggle={(isExpanded) =>
+                  setEncryptionAlgorithmDropdownOpen(isExpanded)
+                }
+                isOpen={encryptionAlgorithmDropdownOpen}
+                onSelect={(_, value) => {
+                  field.onChange(value.toString());
+                  setEncryptionAlgorithmDropdownOpen(false);
+                }}
+                selections={field.value}
+                variant={SelectVariant.single}
+                isDisabled={readOnly}
+              >
+                <SelectOption value="RSA-OAEP" />
+                <SelectOption value="RSA1_5" />
+              </Select>
+            )}
+          ></Controller>
+        </FormGroup>
+      )}
+
       <SwitchField
         field="config.forceAuthn"
         label="forceAuthentication"
