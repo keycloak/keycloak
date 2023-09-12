@@ -36,6 +36,7 @@ export default defineConfig({
         storageState: ".auth/user.json",
       },
       dependencies: ["setup", "import realms"],
+      testIgnore: ["**/personal-info.spec.ts"],
     },
     {
       name: "firefox",
@@ -44,6 +45,15 @@ export default defineConfig({
         storageState: ".auth/user.json",
       },
       dependencies: ["setup", "import realms"],
+      testIgnore: ["**/personal-info.spec.ts"],
+    },
+    {
+      name: "personal-info",
+      use: {
+        ...devices["Desktop Chrome"],
+      },
+      dependencies: ["import realms"],
+      testMatch: ["**/personal-info.spec.ts"],
     },
   ],
 });
