@@ -272,6 +272,9 @@ public class ElytronCertificateUtils  implements CertificateUtilsProvider {
                 }
 
             } catch(Exception e) {
+                // Just log this error. Likely the Dist points have been parsed, but
+                // the end of the cert is failing to parse.
+                log.warn("There is an issue parsing the certificate for Distribution Points", e);
 
             }
         }
