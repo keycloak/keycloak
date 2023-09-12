@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
@@ -23,7 +24,19 @@ public class LegacyAttributes extends DefaultAttributes {
 
     @Override
     protected boolean isSupportedAttribute(String name) {
-        return true;
+        if (UserProfileContext.USER_API.equals(context) || UserProfileContext.ACCOUNT.equals(context)) {
+            return true;
+        }
+
+        if (super.isSupportedAttribute(name)) {
+            return true;
+        }
+
+        if (name.startsWith(Constants.USER_ATTRIBUTES_PREFIX)) {
+            return true;
+        }
+
+        return false;
     }
 
     @Override
