@@ -15,4 +15,5 @@ export interface KeyMetadataRepresentation {
   algorithm?: string;
   publicKey?: string;
   certificate?: string;
+  validTo?: string;
 }

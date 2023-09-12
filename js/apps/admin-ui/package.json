@@ -76,7 +76,7 @@
     "i18next-http-backend": "^2.2.2",
     "keycloak-js": "workspace:*",
     "lodash-es": "^4.17.21",
-    "monaco-editor": "^0.41.0",
+    "monaco-editor": "^0.43.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-dropzone": "^14.2.3",
@@ -109,6 +109,6 @@
     "uuid": "^9.0.0",
     "vite": "^4.4.9",
     "vite-plugin-checker": "^0.6.2",
-    "vitest": "^0.34.3"
+    "vitest": "^0.34.4"
   }
 }

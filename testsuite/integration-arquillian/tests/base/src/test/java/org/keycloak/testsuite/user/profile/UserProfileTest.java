@@ -1584,4 +1584,51 @@ public class UserProfileTest extends AbstractUserProfileTest {
         assertEquals("new-email@test.com", userAttributes.getFirstValue(UserModel.EMAIL));
         assertNull(userAttributes.getFirstValue("test-attribute"));
     }
+
+    @Test
+    public void testRemoveEmptyRootAttribute() {
+        getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) UserProfileTest::testRemoveEmptyRootAttribute);
+    }
+
+    private static void testRemoveEmptyRootAttribute(KeycloakSession session) {
+        Map<String, List<String>> attributes = new HashMap<>();
+
+        attributes.put(UserModel.USERNAME, List.of(org.keycloak.models.utils.KeycloakModelUtils.generateId()));
+        attributes.put(UserModel.EMAIL, List.of(""));
+        attributes.put(UserModel.FIRST_NAME, List.of(""));
+        attributes.put("test-attribute", List.of(""));
+
+        UserProfileProvider provider = getDynamicUserProfileProvider(session);
+
+        provider.setConfiguration("{\"attributes\": ["
+                + "{\"name\": \"test-attribute\", \"permissions\": {\"edit\": [\"admin\", \"user\"]}},"
+                + "{\"name\": \"firstName\", \"permissions\": {\"edit\": [\"admin\", \"user\"]}},"
+                + "{\"name\": \"lastName\", \"permissions\": {\"edit\": [\"admin\", \"user\"]}},"
+                + "{\"name\": \"email\", \"permissions\": {\"edit\": [\"admin\", \"user\"]}}]}");
+
+        UserProfile profile = provider.create(UserProfileContext.USER_API, attributes);
+        UserModel user = profile.create();
+        assertNull(user.getEmail());
+        assertNull(user.getFirstName());
+        assertNull(user.getLastName());
+
+        attributes.remove(UserModel.EMAIL);
+        attributes.put(UserModel.FIRST_NAME, List.of("myfname"));
+        profile = provider.create(UserProfileContext.USER_API, attributes);
+        Attributes upAttributes = profile.getAttributes();
+        assertRemoveEmptyRootAttribute(attributes, user, upAttributes);
+
+        profile = provider.create(UserProfileContext.USER_API, attributes, user);
+        profile.update(false);
+        upAttributes = profile.getAttributes();
+        assertRemoveEmptyRootAttribute(attributes, user, upAttributes);
+    }
+
+    private static void assertRemoveEmptyRootAttribute(Map<String, List<String>> attributes, UserModel user, Attributes upAttributes) {
+        assertNull(upAttributes.getFirstValue(UserModel.LAST_NAME));
+        assertNull(user.getLastName());
+        assertNull(upAttributes.getFirstValue(UserModel.EMAIL));
+        assertNull(user.getEmail());
+        assertEquals(upAttributes.getFirstValue(UserModel.FIRST_NAME), attributes.get(UserModel.FIRST_NAME).get(0));
+    }
 }
