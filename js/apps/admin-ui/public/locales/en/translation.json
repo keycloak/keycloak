@@ -1455,6 +1455,7 @@
   "providerDescription": "Provider description",
   "addProvider": "Add provider",
   "publicKeys": "Public keys",
+  "validTo": "Valid to",
   "keysFilter": {
     "ACTIVE": "Active keys",
     "PASSIVE": "Passive keys",
