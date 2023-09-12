@@ -43,6 +43,7 @@ It also provides built-in support for enabling the policy enforcer to Jakarta ap
 For now, this dependency is not yet GA as we are still working on the quickstarts and documentation.
 
 This work should not impact existing applications using the deprecated adapters.
+
 = Javascript engine available by default
 
 In the previous version, when Keycloak was used on Java 17 with Javascript providers it was needed to add the Nashorn
