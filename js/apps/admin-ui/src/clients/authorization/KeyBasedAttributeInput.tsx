@@ -119,8 +119,8 @@ const ValueInput = ({
               onToggle={(open) => toggleValueSelect(rowIndex, open)}
               isOpen={isValueOpenArray[rowIndex]}
               variant={SelectVariant.typeahead}
-              typeAheadAriaLabel={t("clients:selectOrTypeAKey")}
-              placeholderText={t("clients:selectOrTypeAKey")}
+              typeAheadAriaLabel={t("selectOrTypeAKey")}
+              placeholderText={t("selectOrTypeAKey")}
               selections={field.value}
               onSelect={(_, v) => {
                 field.onChange(v);
@@ -201,8 +201,8 @@ export const KeyBasedAttributeInput = ({
                     onToggle={(open) => toggleKeySelect(rowIndex, open)}
                     isOpen={isKeyOpenArray[rowIndex]}
                     variant={SelectVariant.typeahead}
-                    typeAheadAriaLabel={t("clients:selectOrTypeAKey")}
-                    placeholderText={t("clients:selectOrTypeAKey")}
+                    typeAheadAriaLabel={t("selectOrTypeAKey")}
+                    placeholderText={t("selectOrTypeAKey")}
                     selections={field.value}
                     onSelect={(_, v) => {
                       field.onChange(v.toString());

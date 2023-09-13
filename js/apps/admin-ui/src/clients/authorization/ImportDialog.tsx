@@ -68,7 +68,7 @@ export const ImportDialog = ({ onConfirm, closeDialog }: ImportDialogProps) => {
               labelIcon={
                 <HelpItem
                   helpText={t("policyEnforcementModeHelp")}
-                  fieldLabelId="clients:policyEnforcementMode"
+                  fieldLabelId="policyEnforcementMode"
                 />
               }
               fieldId="policyEnforcementMode"
@@ -90,7 +90,7 @@ export const ImportDialog = ({ onConfirm, closeDialog }: ImportDialogProps) => {
               labelIcon={
                 <HelpItem
                   helpText={t("decisionStrategyHelp")}
-                  fieldLabelId="clients:decisionStrategy"
+                  fieldLabelId="decisionStrategy"
                 />
               }
               fieldId="decisionStrategy"
@@ -112,7 +112,7 @@ export const ImportDialog = ({ onConfirm, closeDialog }: ImportDialogProps) => {
               labelIcon={
                 <HelpItem
                   helpText={t("allowRemoteResourceManagement")}
-                  fieldLabelId="clients:allowRemoteResourceManagement"
+                  fieldLabelId="allowRemoteResourceManagement"
                 />
               }
             >

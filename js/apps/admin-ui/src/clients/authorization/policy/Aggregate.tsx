@@ -17,10 +17,7 @@ export const Aggregate = () => {
         label={t("applyPolicy")}
         fieldId="policies"
         labelIcon={
-          <HelpItem
-            helpText={t("applyPolicyHelp")}
-            fieldLabelId="clients:policies"
-          />
+          <HelpItem helpText={t("applyPolicyHelp")} fieldLabelId="policies" />
         }
       >
         <ResourcesPolicySelect name="policies" clientId={id} />

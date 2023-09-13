@@ -55,7 +55,7 @@ export const ChangeTypeDropdown = ({
           refresh();
           addAlert(t("clientScopeSuccess"), AlertVariant.success);
         } catch (error) {
-          addError("clients:clientScopeError", error);
+          addError("clientScopeError", error);
         }
       }}
     >

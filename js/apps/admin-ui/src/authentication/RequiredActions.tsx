@@ -78,7 +78,7 @@ export const RequiredActions = () => {
       refresh();
       addAlert(t("updatedRequiredActionSuccess"), AlertVariant.success);
     } catch (error) {
-      addError("authentication:updatedRequiredActionError", error);
+      addError("updatedRequiredActionError", error);
     }
   };
 
@@ -107,7 +107,7 @@ export const RequiredActions = () => {
 
       addAlert(t("updatedRequiredActionSuccess"), AlertVariant.success);
     } catch (error) {
-      addError("authentication:updatedRequiredActionError", error);
+      addError("updatedRequiredActionError", error);
     }
   };
 
@@ -131,7 +131,7 @@ export const RequiredActions = () => {
       columns={[
         {
           name: "name",
-          displayKey: "authentication:requiredActions",
+          displayKey: "requiredActions",
         },
         {
           name: "enabled",
@@ -151,8 +151,8 @@ export const RequiredActions = () => {
         },
         {
           name: "default",
-          displayKey: "authentication:setAsDefaultAction",
-          thTooltipText: "authentication-help:authDefaultActionTooltip",
+          displayKey: "setAsDefaultAction",
+          thTooltipText: "authDefaultActionTooltip",
           cellRenderer: (row) => (
             <Switch
               id={`default-${toKey(row.name)}`}

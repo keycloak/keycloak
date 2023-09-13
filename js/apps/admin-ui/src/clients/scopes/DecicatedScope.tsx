@@ -61,7 +61,7 @@ export const DedicatedScope = ({
 
       addAlert(t("clientScopeSuccess"), AlertVariant.success);
     } catch (error) {
-      addError("clients:clientScopeError", error);
+      addError("clientScopeError", error);
     }
   };
 
@@ -72,7 +72,7 @@ export const DedicatedScope = ({
       addAlert(t("clientScopeSuccess"), AlertVariant.success);
       setClient(newClient);
     } catch (error) {
-      addError("clients:clientScopeError", error);
+      addError("clientScopeError", error);
     }
   };
 
@@ -89,7 +89,7 @@ export const DedicatedScope = ({
           labelIcon={
             <HelpItem
               helpText={t("fullScopeAllowedHelp")}
-              fieldLabelId="clients:fullScopeAllowed"
+              fieldLabelId="fullScopeAllowed"
             />
           }
           fieldId="fullScopeAllowed"

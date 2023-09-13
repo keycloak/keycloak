@@ -202,7 +202,7 @@ export const AddScopeDialog = ({
     >
       <KeycloakDataTable
         loader={clientScopes}
-        ariaLabelKey="client-scopes:chooseAMapperType"
+        ariaLabelKey="chooseAMapperType"
         searchPlaceholderKey={
           filterType === FilterType.Name ? "searchForClientScope" : undefined
         }
@@ -288,7 +288,7 @@ export const AddScopeDialog = ({
           },
           {
             name: "protocol",
-            displayKey: "clients:protocol",
+            displayKey: "protocol",
             cellRenderer: (client) =>
               getProtocolName(t, client.protocol ?? "openid-connect"),
           },

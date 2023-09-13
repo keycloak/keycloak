@@ -65,7 +65,7 @@ export const ClientRegistrationList = ({
   );
 
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
-    titleKey: "clients:clientRegisterPolicyDeleteConfirmTitle",
+    titleKey: "clientRegisterPolicyDeleteConfirmTitle",
     messageKey: t("clientRegisterPolicyDeleteConfirm", {
       name: selectedPolicy?.name,
     }),
@@ -80,7 +80,7 @@ export const ClientRegistrationList = ({
         addAlert(t("clientRegisterPolicyDeleteSuccess"));
         setSelectedPolicy(undefined);
       } catch (error) {
-        addError("clients:clientRegisterPolicyDeleteError", error);
+        addError("clientRegisterPolicyDeleteError", error);
       }
     },
   });
@@ -103,8 +103,8 @@ export const ClientRegistrationList = ({
       )}
       <DeleteConfirm />
       <KeycloakDataTable
-        ariaLabelKey="clients:initialAccessToken"
-        searchPlaceholderKey="clients:searchInitialAccessToken"
+        ariaLabelKey="initialAccessToken"
+        searchPlaceholderKey="searchInitialAccessToken"
         loader={policies}
         toolbarItem={
           <ToolbarItem>
@@ -130,7 +130,7 @@ export const ClientRegistrationList = ({
           },
           {
             name: "providerId",
-            displayKey: "clients:providerId",
+            displayKey: "providerId",
           },
         ]}
       />

@@ -586,5 +586,12 @@
   "titleEvents": "Eventos",
   "titleRoles": "Roles do Realm",
   "titleUsers": "Usuários",
-  "titleSessions": "Sessões"
+  "titleSessions": "Sessões",
+  "authenticationAliasHelp": "Name of the configuration",
+  "authenticationFlowTypeHelp": "What kind of form is it",
+  "scopeNameHelp": "Nome do modelo de cliente. Deve ser único neste Realm.",
+  "scopeDescriptionHelp": "Descrição do modelo de cliente.",
+  "clientDescriptionHelp": "Especifica a descrição do cliente. Por exemplo 'Meu cliente para TimeSheets'. Também aceita chaves para valores localizados. Por exemplo: ${meu_cliente_descricao}",
+  "clientsClientTypeHelp": "'OpenID connect' permite aos Clientes verificarem a identidade do usuário final baseado na autenticação realizada por um servidor de Autorização. 'SAML' permite cenários de autenticação e autorização web-based incluindo cross-domain single sign-on (SSO) e utiliza tokens de segurança contendo assertions para trafegar informações.",
+  "clientsClientScopesHelp": "The scopes associated with this resource."
 }

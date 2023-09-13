@@ -45,7 +45,7 @@ export const BindFlowDialog = ({ flowAlias, onClose }: BindFlowDialogProps) => {
       );
       addAlert(t("updateFlowSuccess"), AlertVariant.success);
     } catch (error) {
-      addError("authentication:updateFlowError", error);
+      addError("updateFlowError", error);
     }
 
     onClose();

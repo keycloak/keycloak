@@ -70,7 +70,7 @@ export const AuthenticationOverrides = ({
         labelIcon={
           <HelpItem
             helpText={t("browserFlowHelp")}
-            fieldLabelId="clients:browserFlow"
+            fieldLabelId="browserFlow"
           />
         }
       >
@@ -102,7 +102,7 @@ export const AuthenticationOverrides = ({
           labelIcon={
             <HelpItem
               helpText={t("directGrantHelp")}
-              fieldLabelId="clients:directGrant"
+              fieldLabelId="directGrant"
             />
           }
         >

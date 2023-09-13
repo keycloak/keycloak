@@ -78,7 +78,7 @@ export const CibaPolicy = ({ realm, realmUpdated }: CibaPolicyProps) => {
       setupForm(updatedRealm!);
       addAlert(t("updateCibaSuccess"), AlertVariant.success);
     } catch (error) {
-      addError("authentication:updateCibaError", error);
+      addError("updateCibaError", error);
     }
   };
 
@@ -94,10 +94,8 @@ export const CibaPolicy = ({ realm, realmUpdated }: CibaPolicyProps) => {
           label={t("cibaBackchannelTokenDeliveryMode")}
           labelIcon={
             <HelpItem
-              helpText={t(
-                "authentication-help:cibaBackchannelTokenDeliveryMode",
-              )}
-              fieldLabelId="authentication:cibaBackchannelTokenDeliveryMode"
+              helpText={t("cibaBackchannelTokenDeliveryModeHelp")}
+              fieldLabelId="cibaBackchannelTokenDeliveryMode"
             />
           }
         >
@@ -138,7 +136,7 @@ export const CibaPolicy = ({ realm, realmUpdated }: CibaPolicyProps) => {
           labelIcon={
             <HelpItem
               helpText={t("cibaExpiresInHelp")}
-              fieldLabelId="authentication:cibaExpiresIn"
+              fieldLabelId="cibaExpiresIn"
             />
           }
           validated={errors.attributes?.cibaExpiresIn ? "error" : "default"}
@@ -182,7 +180,7 @@ export const CibaPolicy = ({ realm, realmUpdated }: CibaPolicyProps) => {
           labelIcon={
             <HelpItem
               helpText={t("cibaIntervalHelp")}
-              fieldLabelId="authentication:cibaInterval"
+              fieldLabelId="cibaInterval"
             />
           }
           validated={errors.attributes?.cibaInterval ? "error" : "default"}
@@ -224,7 +222,7 @@ export const CibaPolicy = ({ realm, realmUpdated }: CibaPolicyProps) => {
           labelIcon={
             <HelpItem
               helpText={t("cibaAuthRequestedUserHintHelp")}
-              fieldLabelId="authentication:cibaAuthRequestedUserHint"
+              fieldLabelId="cibaAuthRequestedUserHint"
             />
           }
         >

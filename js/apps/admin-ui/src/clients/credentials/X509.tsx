@@ -20,7 +20,7 @@ export const X509 = () => {
         labelIcon={
           <HelpItem
             helpText={t("allowRegexComparisonHelp")}
-            fieldLabelId="clients:allowRegexComparison"
+            fieldLabelId="allowRegexComparison"
           />
         }
         fieldId="allowRegexComparison"
@@ -48,10 +48,7 @@ export const X509 = () => {
         label={t("subject")}
         fieldId="kc-subject"
         labelIcon={
-          <HelpItem
-            helpText={t("subjectHelp")}
-            fieldLabelId="clients:subject"
-          />
+          <HelpItem helpText={t("subjectHelp")} fieldLabelId="subject" />
         }
         helperTextInvalid={t("common:required")}
         validated={

@@ -149,12 +149,12 @@ export const AuthorizationPermissions = ({ clientId }: PermissionsProps) => {
   );
 
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
-    titleKey: "clients:deletePermission",
+    titleKey: "deletePermission",
     messageKey: t("deletePermissionConfirm", {
       permission: selectedPermission?.name,
     }),
     continueButtonVariant: ButtonVariant.danger,
-    continueButtonLabel: "clients:confirm",
+    continueButtonLabel: "confirm",
     onConfirm: async () => {
       try {
         await adminClient.clients.delPermission({
@@ -165,7 +165,7 @@ export const AuthorizationPermissions = ({ clientId }: PermissionsProps) => {
         addAlert(t("permissionDeletedSuccess"), AlertVariant.success);
         refresh();
       } catch (error) {
-        addError("clients:permissionDeletedError", error);
+        addError("permissionDeletedError", error);
       }
     },
   });

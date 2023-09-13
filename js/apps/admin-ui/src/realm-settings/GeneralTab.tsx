@@ -174,12 +174,12 @@ export const RealmSettingsGeneralTab = ({
           />
         </FormGroup>
         <FormGroup
-          label={t("clients:acrToLoAMapping")}
+          label={t("acrToLoAMapping")}
           fieldId="acrToLoAMapping"
           labelIcon={
             <HelpItem
               helpText={t("acrToLoAMappingHelp")}
-              fieldLabelId="clients:acrToLoAMapping"
+              fieldLabelId="acrToLoAMapping"
             />
           }
         >

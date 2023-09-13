@@ -91,7 +91,7 @@ export default function ScopeDetails() {
         AlertVariant.success,
       );
     } catch (error) {
-      addError("clients:scopeSaveError", error);
+      addError("scopeSaveError", error);
     }
   };
 
@@ -107,9 +107,7 @@ export default function ScopeDetails() {
         }
       />
       <ViewHeader
-        titleKey={
-          scopeId ? scope?.name! : t("clients:createAuthorizationScope")
-        }
+        titleKey={scopeId ? scope?.name! : t("createAuthorizationScope")}
         dropdownItems={
           scopeId
             ? [
@@ -134,10 +132,7 @@ export default function ScopeDetails() {
             label={t("common:name")}
             fieldId="name"
             labelIcon={
-              <HelpItem
-                helpText={t("clients-help:scopeName")}
-                fieldLabelId="name"
-              />
+              <HelpItem helpText={t("scopeName")} fieldLabelId="name" />
             }
             helperTextInvalid={t("common:required")}
             validated={
@@ -159,7 +154,7 @@ export default function ScopeDetails() {
             fieldId="displayName"
             labelIcon={
               <HelpItem
-                helpText={t("clients-help:scopeDisplayName")}
+                helpText={t("scopeDisplayName")}
                 fieldLabelId="displayName"
               />
             }
@@ -170,10 +165,7 @@ export default function ScopeDetails() {
             label={t("iconUri")}
             fieldId="iconUri"
             labelIcon={
-              <HelpItem
-                helpText={t("iconUriHelp")}
-                fieldLabelId="clients:iconUri"
-              />
+              <HelpItem helpText={t("iconUriHelp")} fieldLabelId="iconUri" />
             }
           >
             <KeycloakTextInput id="iconUri" {...register("iconUri")} />

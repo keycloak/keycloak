@@ -29,7 +29,7 @@ export const ClientDescription = ({
       <TextAreaControl
         name="description"
         label={t("common:description")}
-        labelIcon={t("clients-help:description")}
+        labelIcon={t("clientDescriptionHelp")}
         rules={{
           maxLength: {
             value: 255,

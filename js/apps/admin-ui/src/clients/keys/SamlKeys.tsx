@@ -195,7 +195,7 @@ export const SamlKeys = ({ clientId, save }: SamlKeysProps) => {
 
       addAlert(t("generateSuccess"), AlertVariant.success);
     } catch (error) {
-      addError("clients:generateError", error);
+      addError("generateError", error);
     }
   };
 
@@ -216,8 +216,8 @@ export const SamlKeys = ({ clientId, save }: SamlKeysProps) => {
   });
 
   const [toggleReGenerateDialog, ReGenerateConfirm] = useConfirmDialog({
-    titleKey: "clients:reGenerateSigning",
-    messageKey: "clients:reGenerateSigningExplain",
+    titleKey: "reGenerateSigning",
+    messageKey: "reGenerateSigningExplain",
     continueButtonLabel: "common:yes",
     cancelButtonLabel: "common:no",
     onConfirm: () => {

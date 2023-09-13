@@ -16,7 +16,7 @@ const DetailProvider = lazy(() => import("../registration/DetailProvider"));
 export const AddRegistrationProviderRoute: AppRouteObject = {
   path: "/:realm/clients/client-registration/:subTab/:providerId",
   element: <DetailProvider />,
-  breadcrumb: (t) => t("clients:clientSettings"),
+  breadcrumb: (t) => t("clientSettings"),
   handle: {
     access: "manage-clients",
   },

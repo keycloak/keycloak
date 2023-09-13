@@ -47,7 +47,7 @@ export const CapabilityConfig = ({
             labelIcon={
               <HelpItem
                 helpText={t("authenticationHelp")}
-                fieldLabelId="clients:authentication"
+                fieldLabelId="authentication"
               />
             }
           >
@@ -87,7 +87,7 @@ export const CapabilityConfig = ({
             labelIcon={
               <HelpItem
                 helpText={t("authorizationHelp")}
-                fieldLabelId="clients:authorization"
+                fieldLabelId="authorization"
               />
             }
           >
@@ -136,7 +136,7 @@ export const CapabilityConfig = ({
                       />
                       <HelpItem
                         helpText={t("standardFlowHelp")}
-                        fieldLabelId="clients:standardFlow"
+                        fieldLabelId="standardFlow"
                       />
                     </InputGroup>
                   )}
@@ -158,7 +158,7 @@ export const CapabilityConfig = ({
                       />
                       <HelpItem
                         helpText={t("directAccessHelp")}
-                        fieldLabelId="clients:directAccess"
+                        fieldLabelId="directAccess"
                       />
                     </InputGroup>
                   )}
@@ -180,7 +180,7 @@ export const CapabilityConfig = ({
                       />
                       <HelpItem
                         helpText={t("implicitFlowHelp")}
-                        fieldLabelId="clients:implicitFlow"
+                        fieldLabelId="implicitFlow"
                       />
                     </InputGroup>
                   )}
@@ -209,7 +209,7 @@ export const CapabilityConfig = ({
                       />
                       <HelpItem
                         helpText={t("serviceAccountHelp")}
-                        fieldLabelId="clients:serviceAccount"
+                        fieldLabelId="serviceAccount"
                       />
                     </InputGroup>
                   )}
@@ -233,10 +233,8 @@ export const CapabilityConfig = ({
                         onChange={field.onChange}
                       />
                       <HelpItem
-                        helpText={t(
-                          "clients-help:oauthDeviceAuthorizationGrant",
-                        )}
-                        fieldLabelId="clients:oauthDeviceAuthorizationGrant"
+                        helpText={t("oauthDeviceAuthorizationGrantHelp")}
+                        fieldLabelId="oauthDeviceAuthorizationGrant"
                       />
                     </InputGroup>
                   )}
@@ -262,7 +260,7 @@ export const CapabilityConfig = ({
                       />
                       <HelpItem
                         helpText={t("oidcCibaGrantHelp")}
-                        fieldLabelId="clients:oidcCibaGrant"
+                        fieldLabelId="oidcCibaGrant"
                       />
                     </InputGroup>
                   )}
@@ -278,7 +276,7 @@ export const CapabilityConfig = ({
             labelIcon={
               <HelpItem
                 helpText={t("encryptAssertionsHelp")}
-                fieldLabelId="clients:encryptAssertions"
+                fieldLabelId="encryptAssertions"
               />
             }
             label={t("encryptAssertions")}
@@ -308,7 +306,7 @@ export const CapabilityConfig = ({
             labelIcon={
               <HelpItem
                 helpText={t("clientSignatureHelp")}
-                fieldLabelId="clients:clientSignature"
+                fieldLabelId="clientSignature"
               />
             }
             label={t("clientSignature")}

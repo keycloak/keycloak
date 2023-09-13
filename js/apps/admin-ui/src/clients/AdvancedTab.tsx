@@ -128,7 +128,7 @@ export const AdvancedTab = ({ save, client }: AdvancedProps) => {
             panel: (
               <>
                 <Text className="pf-u-pb-lg">
-                  {t("clients-help:openIdConnectCompatibilityModes")}
+                  {t("openIdConnectCompatibilityModesHelp")}
                 </Text>
                 <OpenIdConnectCompatibilityModes
                   save={() => save()}
@@ -150,7 +150,7 @@ export const AdvancedTab = ({ save, client }: AdvancedProps) => {
             panel: (
               <>
                 <Text className="pf-u-pb-lg">
-                  {t("clients-help:fineGrainSamlEndpointConfig")}
+                  {t("fineGrainSamlEndpointConfigHelp")}
                 </Text>
                 <FineGrainSamlEndpointConfig
                   save={() => save()}
@@ -177,10 +177,7 @@ export const AdvancedTab = ({ save, client }: AdvancedProps) => {
             panel: (
               <>
                 <Text className="pf-u-pb-lg">
-                  {t(
-                    "clients-help:advancedSettings" +
-                      toUpperCase(protocol || ""),
-                  )}
+                  {t("advancedSettings" + toUpperCase(protocol || ""))}
                 </Text>
                 <AdvancedSettings
                   protocol={protocol}
@@ -202,7 +199,7 @@ export const AdvancedTab = ({ save, client }: AdvancedProps) => {
             panel: (
               <>
                 <Text className="pf-u-pb-lg">
-                  {t("clients-help:authenticationOverrides")}
+                  {t("authenticationOverridesHelp")}
                 </Text>
                 <AuthenticationOverrides
                   protocol={protocol}

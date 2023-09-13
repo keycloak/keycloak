@@ -55,7 +55,7 @@ export default function CreateClientScope() {
 
   return (
     <>
-      <ViewHeader titleKey="client-scopes:createClientScope" />
+      <ViewHeader titleKey="createClientScope" />
       <PageSection variant="light" className="pf-u-p-0">
         <PageSection variant="light">
           <ScopeForm save={onSubmit} />

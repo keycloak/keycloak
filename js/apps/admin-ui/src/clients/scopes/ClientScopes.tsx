@@ -95,7 +95,7 @@ const TypeSelector = ({
           addAlert(t("clientScopeSuccess"), AlertVariant.success);
           refresh();
         } catch (error) {
-          addError("clients:clientScopeError", error);
+          addError("clientScopeError", error);
         }
       }}
     />
@@ -191,7 +191,7 @@ export const ClientScopes = ({
   };
 
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
-    titleKey: t("client-scopes:deleteClientScope", {
+    titleKey: t("deleteClientScope", {
       count: selectedRows.length,
       name: selectedRows[0]?.name,
     }),
@@ -208,7 +208,7 @@ export const ClientScopes = ({
         addAlert(t("clientScopeRemoveSuccess"), AlertVariant.success);
         refresh();
       } catch (error) {
-        addError("clients:clientScopeRemoveError", error);
+        addError("clientScopeRemoveError", error);
       }
     },
   });
@@ -232,7 +232,7 @@ export const ClientScopes = ({
               addAlert(t("clientScopeSuccess"), AlertVariant.success);
               refresh();
             } catch (error) {
-              addError("clients:clientScopeError", error);
+              addError("clientScopeError", error);
             }
           }}
         />
@@ -243,7 +243,7 @@ export const ClientScopes = ({
         loader={loader}
         ariaLabelKey={`clients:clientScopeList-${key}`}
         searchPlaceholderKey={
-          searchType === "name" ? "clients:searchByName" : undefined
+          searchType === "name" ? "searchByName" : undefined
         }
         canSelectAll
         isPaginated
@@ -306,10 +306,10 @@ export const ClientScopes = ({
 
                             setKebabOpen(false);
                             setSelectedRows([]);
-                            addAlert(t("clients:clientScopeRemoveSuccess"));
+                            addAlert(t("clientScopeRemoveSuccess"));
                             refresh();
                           } catch (error) {
-                            addError("clients:clientScopeRemoveError", error);
+                            addError("clientScopeRemoveError", error);
                           }
                         }}
                       >
@@ -325,7 +325,7 @@ export const ClientScopes = ({
         columns={[
           {
             name: "name",
-            displayKey: "clients:assignedClientScope",
+            displayKey: "assignedClientScope",
             cellRenderer: (row) => {
               if (isDedicatedRow(row)) {
                 return (
@@ -339,7 +339,7 @@ export const ClientScopes = ({
           },
           {
             name: "type",
-            displayKey: "clients:assignedType",
+            displayKey: "assignedType",
             cellRenderer: (row) => (
               <TypeSelector clientId={clientId} refresh={refresh} {...row} />
             ),
@@ -362,9 +362,9 @@ export const ClientScopes = ({
         }
         emptyState={
           <ListEmptyState
-            message={t("clients:emptyClientScopes")}
-            instructions={t("clients:emptyClientScopesInstructions")}
-            primaryActionText={t("clients:emptyClientScopesPrimaryAction")}
+            message={t("emptyClientScopes")}
+            instructions={t("emptyClientScopesInstructions")}
+            primaryActionText={t("emptyClientScopesPrimaryAction")}
             onPrimaryAction={() => setAddDialogOpen(true)}
           />
         }

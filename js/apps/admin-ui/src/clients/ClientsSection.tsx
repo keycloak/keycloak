@@ -146,7 +146,7 @@ export default function ClientsSection() {
 
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
     titleKey: t("clientDelete", { clientId: selectedClient?.clientId }),
-    messageKey: "clients:clientDeleteConfirm",
+    messageKey: "clientDeleteConfirm",
     continueButtonLabel: "common:delete",
     continueButtonVariant: ButtonVariant.danger,
     onConfirm: async () => {
@@ -157,7 +157,7 @@ export default function ClientsSection() {
         addAlert(t("clientDeletedSuccess"), AlertVariant.success);
         refresh();
       } catch (error) {
-        addError("clients:clientDeleteError", error);
+        addError("clientDeleteError", error);
       }
     },
   });
@@ -165,8 +165,8 @@ export default function ClientsSection() {
   return (
     <>
       <ViewHeader
-        titleKey="clients:clientList"
-        subKey="clients:clientsExplain"
+        titleKey="clientList"
+        subKey="clientsExplain"
         helpUrl={helpUrls.clientsUrl}
         divider={false}
       />
@@ -189,8 +189,8 @@ export default function ClientsSection() {
               key={key}
               loader={loader}
               isPaginated
-              ariaLabelKey="clients:clientList"
-              searchPlaceholderKey="clients:searchForClient"
+              ariaLabelKey="clientList"
+              searchPlaceholderKey="searchForClient"
               toolbarItem={<ToolbarItems />}
               actionResolver={(rowData: IRowData) => {
                 const client: ClientRepresentation = rowData.data;
@@ -246,7 +246,7 @@ export default function ClientsSection() {
                 },
                 {
                   name: "baseUrl",
-                  displayKey: "clients:homeURL",
+                  displayKey: "homeURL",
                   transforms: [cellWidth(20)],
                   cellRenderer: ClientHomeLink,
                 },

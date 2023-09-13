@@ -61,10 +61,7 @@ export const Role = () => {
     <FormGroup
       label={t("roles")}
       labelIcon={
-        <HelpItem
-          helpText={t("policyRolesHelp")}
-          fieldLabelId="clients:roles"
-        />
+        <HelpItem helpText={t("policyRolesHelp")} fieldLabelId="roles" />
       }
       fieldId="roles"
       helperTextInvalid={t("requiredRoles")}

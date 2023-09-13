@@ -118,7 +118,7 @@ export const AuthorizationPolicies = ({ clientId }: PoliciesProps) => {
   );
 
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
-    titleKey: "clients:deletePolicy",
+    titleKey: "deletePolicy",
     children: (
       <>
         {t("deletePolicyConfirm")}
@@ -143,7 +143,7 @@ export const AuthorizationPolicies = ({ clientId }: PoliciesProps) => {
           )}
       </>
     ),
-    continueButtonLabel: "clients:confirm",
+    continueButtonLabel: "confirm",
     onConfirm: async () => {
       try {
         await adminClient.clients.delPolicy({
@@ -153,7 +153,7 @@ export const AuthorizationPolicies = ({ clientId }: PoliciesProps) => {
         addAlert(t("policyDeletedSuccess"), AlertVariant.success);
         refresh();
       } catch (error) {
-        addError("clients:policyDeletedError", error);
+        addError("policyDeletedError", error);
       }
     },
   });

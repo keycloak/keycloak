@@ -187,7 +187,7 @@ export const AddMapperDialog = (props: AddMapperDialogProps) => {
           loader={rows}
           onSelect={setSelectedRows}
           canSelectAll
-          ariaLabelKey="client-scopes:addPredefinedMappers"
+          ariaLabelKey="addPredefinedMappers"
           searchPlaceholderKey="common:searchForMapper"
           columns={[
             {
@@ -202,7 +202,7 @@ export const AddMapperDialog = (props: AddMapperDialogProps) => {
           emptyState={
             <ListEmptyState
               message={t("common:emptyMappers")}
-              instructions={t("client-scopes:emptyBuiltInMappersInstructions")}
+              instructions={t("emptyBuiltInMappersInstructions")}
             />
           }
         />

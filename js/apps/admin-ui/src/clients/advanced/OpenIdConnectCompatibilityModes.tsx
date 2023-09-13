@@ -32,10 +32,8 @@ export const OpenIdConnectCompatibilityModes = ({
         hasNoPaddingTop
         labelIcon={
           <HelpItem
-            helpText={t(
-              "clients-help:excludeSessionStateFromAuthenticationResponse",
-            )}
-            fieldLabelId="clients:excludeSessionStateFromAuthenticationResponse"
+            helpText={t("excludeSessionStateFromAuthenticationResponseHelp")}
+            fieldLabelId="excludeSessionStateFromAuthenticationResponse"
           />
         }
       >
@@ -64,7 +62,7 @@ export const OpenIdConnectCompatibilityModes = ({
         labelIcon={
           <HelpItem
             helpText={t("excludeIssuerFromAuthenticationResponseHelp")}
-            fieldLabelId="clients:excludeIssuerFromAuthenticationResponse"
+            fieldLabelId="excludeIssuerFromAuthenticationResponse"
           />
         }
       >
@@ -93,7 +91,7 @@ export const OpenIdConnectCompatibilityModes = ({
         labelIcon={
           <HelpItem
             helpText={t("useRefreshTokensHelp")}
-            fieldLabelId="clients:useRefreshTokens"
+            fieldLabelId="useRefreshTokens"
           />
         }
       >
@@ -121,10 +119,8 @@ export const OpenIdConnectCompatibilityModes = ({
         hasNoPaddingTop
         labelIcon={
           <HelpItem
-            helpText={t(
-              "clients-help:useRefreshTokenForClientCredentialsGrant",
-            )}
-            fieldLabelId="clients:useRefreshTokenForClientCredentialsGrant"
+            helpText={t("useRefreshTokenForClientCredentialsGrantHelp")}
+            fieldLabelId="useRefreshTokenForClientCredentialsGrant"
           />
         }
       >
@@ -153,7 +149,7 @@ export const OpenIdConnectCompatibilityModes = ({
         labelIcon={
           <HelpItem
             helpText={t("useLowerCaseBearerTypeHelp")}
-            fieldLabelId="clients:useLowerCaseBearerType"
+            fieldLabelId="useLowerCaseBearerType"
           />
         }
       >

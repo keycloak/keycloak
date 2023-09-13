@@ -36,7 +36,7 @@ export const EditFlowModal = ({ flow, toggleDialog }: EditFlowModalProps) => {
       );
       addAlert(t("updateFlowSuccess"), AlertVariant.success);
     } catch (error) {
-      addError("authentication:updateFlowError", error);
+      addError("updateFlowError", error);
     }
     toggleDialog();
   };

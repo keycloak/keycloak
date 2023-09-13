@@ -38,7 +38,7 @@ export const GroupRoleMapping = ({ id, name }: GroupRoleMappingProps) => {
       );
       addAlert(t("roleMappingUpdatedSuccess"), AlertVariant.success);
     } catch (error) {
-      addError("clients:roleMappingUpdatedError", error);
+      addError("roleMappingUpdatedError", error);
     }
   };
 

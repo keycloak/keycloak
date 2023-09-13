@@ -34,10 +34,7 @@ export const LoginSettings = ({
         label={t("rootUrl")}
         fieldId="kc-root-url"
         labelIcon={
-          <HelpItem
-            helpText={t("rootURLHelp")}
-            fieldLabelId="clients:rootUrl"
-          />
+          <HelpItem helpText={t("rootURLHelp")} fieldLabelId="rootUrl" />
         }
       >
         <KeycloakTextInput
@@ -51,10 +48,7 @@ export const LoginSettings = ({
         label={t("homeURL")}
         fieldId="kc-home-url"
         labelIcon={
-          <HelpItem
-            helpText={t("homeURLHelp")}
-            fieldLabelId="clients:homeURL"
-          />
+          <HelpItem helpText={t("homeURLHelp")} fieldLabelId="homeURL" />
         }
       >
         <KeycloakTextInput
@@ -72,7 +66,7 @@ export const LoginSettings = ({
             labelIcon={
               <HelpItem
                 helpText={t("validRedirectURIsHelp")}
-                fieldLabelId="clients:validRedirectUri"
+                fieldLabelId="validRedirectUri"
               />
             }
           >
@@ -80,7 +74,7 @@ export const LoginSettings = ({
               id="kc-redirect"
               name="redirectUris"
               aria-label={t("validRedirectUri")}
-              addButtonLabel="clients:addRedirectUri"
+              addButtonLabel="addRedirectUri"
               {...rest}
             />
           </FormGroup>
@@ -90,7 +84,7 @@ export const LoginSettings = ({
             labelIcon={
               <HelpItem
                 helpText={t("validPostLogoutRedirectURIsHelp")}
-                fieldLabelId="clients:validPostLogoutRedirectUri"
+                fieldLabelId="validPostLogoutRedirectUri"
               />
             }
           >
@@ -100,7 +94,7 @@ export const LoginSettings = ({
                 "attributes.post.logout.redirect.uris",
               )}
               aria-label={t("validPostLogoutRedirectUri")}
-              addButtonLabel="clients:addPostLogoutRedirectUri"
+              addButtonLabel="addPostLogoutRedirectUri"
               stringify
               {...rest}
             />
@@ -115,7 +109,7 @@ export const LoginSettings = ({
             labelIcon={
               <HelpItem
                 helpText={t("idpInitiatedSsoUrlNameHelp")}
-                fieldLabelId="clients:idpInitiatedSsoUrlName"
+                fieldLabelId="idpInitiatedSsoUrlName"
               />
             }
             helperText={
@@ -138,7 +132,7 @@ export const LoginSettings = ({
             labelIcon={
               <HelpItem
                 helpText={t("idpInitiatedSsoRelayStateHelp")}
-                fieldLabelId="clients:idpInitiatedSsoRelayState"
+                fieldLabelId="idpInitiatedSsoRelayState"
               />
             }
           >
@@ -155,7 +149,7 @@ export const LoginSettings = ({
             labelIcon={
               <HelpItem
                 helpText={t("masterSamlProcessingUrlHelp")}
-                fieldLabelId="clients:masterSamlProcessingUrl"
+                fieldLabelId="masterSamlProcessingUrl"
               />
             }
           >
@@ -176,7 +170,7 @@ export const LoginSettings = ({
           labelIcon={
             <HelpItem
               helpText={t("webOriginsHelp")}
-              fieldLabelId="clients:webOrigins"
+              fieldLabelId="webOrigins"
             />
           }
         >
@@ -184,7 +178,7 @@ export const LoginSettings = ({
             id="kc-web-origins"
             name="webOrigins"
             aria-label={t("webOrigins")}
-            addButtonLabel="clients:addWebOrigins"
+            addButtonLabel="addWebOrigins"
             {...rest}
           />
         </FormGroup>

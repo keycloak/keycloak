@@ -12,21 +12,21 @@ export const ApplicationUrls = (props: ApplicationUrlsProps) => {
     <>
       <TextControl
         name="attributes.logoUri"
-        label={t("clients:logoUrl")}
+        label={t("logoUrl")}
         labelIcon={t("logoUrlHelp")}
         type="url"
         {...props}
       />
       <TextControl
         name="attributes.policyUri"
-        label={t("clients:policyUrl")}
+        label={t("policyUrl")}
         labelIcon={t("policyUrlHelp")}
         type="url"
         {...props}
       />
       <TextControl
         name="attributes.tosUri"
-        label={t("clients:termsOfServiceUrl")}
+        label={t("termsOfServiceUrl")}
         labelIcon={t("termsOfServiceUrlHelp")}
         type="url"
         {...props}

@@ -43,7 +43,7 @@ export const ExportSamlKeyDialog = ({
       addAlert(t("samlKeysExportSuccess"));
       close();
     } catch (error) {
-      addError("clients:samlKeysExportError", error);
+      addError("samlKeysExportError", error);
     }
   };
 
