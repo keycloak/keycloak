@@ -16,12 +16,35 @@
  */
 package org.keycloak.testsuite.oauth;
 
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.TreeNode;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.TextNode;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.allOf;
+import static org.hamcrest.Matchers.greaterThanOrEqualTo;
+import static org.hamcrest.Matchers.hasItemInArray;
+import static org.hamcrest.Matchers.lessThanOrEqualTo;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.keycloak.testsuite.Assert.assertExpiration;
+import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
+import static org.keycloak.testsuite.admin.ApiUtil.findClientByClientId;
+import static org.keycloak.testsuite.admin.ApiUtil.findUserByUsername;
+import static org.keycloak.testsuite.admin.ApiUtil.findUserByUsernameId;
+import static org.keycloak.testsuite.util.OAuthClient.AUTH_SERVER_ROOT;
+import static org.keycloak.testsuite.util.ProtocolMapperUtil.createRoleNameMapper;
+import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_SSL_REQUIRED;
+
+import java.io.IOException;
+import java.net.URI;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Stream;
+
 import org.apache.http.NameValuePair;
+import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -84,39 +107,20 @@ import org.keycloak.util.JsonSerialization;
 import org.keycloak.util.TokenUtil;
 import org.openqa.selenium.By;
 
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.TreeNode;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.TextNode;
+
 import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.client.Entity;
 import jakarta.ws.rs.client.WebTarget;
 import jakarta.ws.rs.core.Form;
 import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriBuilder;
-import java.io.IOException;
-import java.net.URI;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.Stream;
-
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.allOf;
-import static org.hamcrest.Matchers.greaterThanOrEqualTo;
-import static org.hamcrest.Matchers.hasItemInArray;
-import static org.hamcrest.Matchers.lessThanOrEqualTo;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.keycloak.testsuite.Assert.assertExpiration;
-import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
-import static org.keycloak.testsuite.admin.ApiUtil.findClientByClientId;
-import static org.keycloak.testsuite.admin.ApiUtil.findUserByUsername;
-import static org.keycloak.testsuite.admin.ApiUtil.findUserByUsernameId;
-import static org.keycloak.testsuite.util.OAuthClient.AUTH_SERVER_ROOT;
-import static org.keycloak.testsuite.util.ProtocolMapperUtil.createRoleNameMapper;
-import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_SSL_REQUIRED;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -175,6 +179,20 @@ public class AccessTokenTest extends AbstractKeycloakTest {
         oauth.openLoginForm();
         
         assertEquals("Username or email", driver.findElement(By.xpath("//label[@for='username']")).getText());
+    }
+
+    @Test
+    public void accessTokenRequestShouldFailDueWrongCharset() throws ClientProtocolException, IOException, Exception {
+        try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
+            HttpPost post = new HttpPost(oauth.getAccessTokenUrl());
+            String authorization = BasicAuthHelper.createHeader(OAuth2Constants.CLIENT_ID, "password");
+            post.setHeader(HttpHeaders.AUTHORIZATION, authorization);
+            post.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_FORM_URLENCODED + ";charset='utf-8'");
+            
+            OAuthClient.AccessTokenResponse response = new OAuthClient.AccessTokenResponse(client.execute(post));
+            assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatusCode());
+            assertEquals("Incorrect form parameters: java.io.UnsupportedEncodingException: 'utf-8'", response.getError());
+        }
     }
 
     @Test
