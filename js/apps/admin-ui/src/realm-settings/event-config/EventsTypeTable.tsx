@@ -54,7 +54,7 @@ export function EventsTypeTable({
           ? []
           : [
               {
-                title: t("common:remove"),
+                title: t("remove"),
                 onRowClick: onDelete,
               } as Action<EventType>,
             ]

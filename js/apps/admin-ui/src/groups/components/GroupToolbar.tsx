@@ -58,7 +58,7 @@ export const GroupToolbar = ({
                 toggleKebab();
               }}
             >
-              {t("common:delete")}
+              {t("delete")}
             </DropdownItem>,
           ]}
         />

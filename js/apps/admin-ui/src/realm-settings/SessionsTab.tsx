@@ -273,8 +273,8 @@ export const RealmSettingsSessionsTab = ({
                   id="kc-offline-session-max"
                   data-testid="offline-session-max-switch"
                   aria-label={t("offlineSessionMaxLimited")}
-                  label={t("common:enabled")}
-                  labelOff={t("common:disabled")}
+                  label={t("enabled")}
+                  labelOff={t("disabled")}
                   isChecked={field.value}
                   onChange={field.onChange}
                 />
@@ -378,10 +378,10 @@ export const RealmSettingsSessionsTab = ({
               data-testid="sessions-tab-save"
               isDisabled={!formState.isDirty}
             >
-              {t("common:save")}
+              {t("save")}
             </Button>
             <Button variant="link" onClick={setupForm}>
-              {t("common:revert")}
+              {t("revert")}
             </Button>
           </ActionGroup>
         </FormAccess>

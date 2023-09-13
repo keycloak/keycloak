@@ -56,7 +56,7 @@ export const ClusteringPanel = ({
     messageKey: t("deleteNodeBody", {
       node: selectedNode,
     }),
-    continueButtonLabel: "common:delete",
+    continueButtonLabel: "delete",
     continueButtonVariant: ButtonVariant.danger,
     onConfirm: async () => {
       try {
@@ -103,7 +103,7 @@ export const ClusteringPanel = ({
             </SplitItem>
             <SplitItem>
               <Button variant={ButtonVariant.secondary} onClick={() => save()}>
-                {t("common:save")}
+                {t("save")}
               </Button>
             </SplitItem>
           </Split>
@@ -160,7 +160,7 @@ export const ClusteringPanel = ({
             }
             actions={[
               {
-                title: t("common:delete"),
+                title: t("delete"),
                 onRowClick: (node) => {
                   setSelectedNode(node.host);
                   toggleDeleteNodeConfirm();

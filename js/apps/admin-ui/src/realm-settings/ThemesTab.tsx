@@ -220,10 +220,10 @@ export const RealmSettingsThemesTab = ({
         </FormGroup>
         <ActionGroup>
           <Button variant="primary" type="submit" data-testid="themes-tab-save">
-            {t("common:save")}
+            {t("save")}
           </Button>
           <Button variant="link" onClick={setupForm}>
-            {t("common:revert")}
+            {t("revert")}
           </Button>
         </ActionGroup>
       </FormAccess>

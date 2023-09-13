@@ -24,9 +24,9 @@ export const NameDescription = ({
   return (
     <>
       <FormGroup
-        label={t("common:name")}
+        label={t("name")}
         fieldId="kc-name"
-        helperTextInvalid={t("common:required")}
+        helperTextInvalid={t("required")}
         validated={
           errors.name ? ValidatedOptions.error : ValidatedOptions.default
         }
@@ -49,7 +49,7 @@ export const NameDescription = ({
         />
       </FormGroup>
       <FormGroup
-        label={t("common:description")}
+        label={t("description")}
         fieldId="kc-description"
         labelIcon={
           <HelpItem
@@ -60,7 +60,7 @@ export const NameDescription = ({
         validated={
           errors.description ? ValidatedOptions.error : ValidatedOptions.default
         }
-        helperTextInvalid={t("common:maxLength", { length: 255 })}
+        helperTextInvalid={t("maxLength", { length: 255 })}
       >
         <KeycloakTextArea
           isDisabled={isDisabled}

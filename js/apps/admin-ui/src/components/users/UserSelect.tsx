@@ -86,7 +86,7 @@ export const UserSelect = ({
       }
       fieldId={name!}
       validated={errors[name!] ? "error" : "default"}
-      helperTextInvalid={t("common:required")}
+      helperTextInvalid={t("required")}
     >
       <Controller
         name={name!}

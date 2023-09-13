@@ -121,7 +121,7 @@ export default function AddMapper() {
     messageKey: t("identity-providers:deleteMapperConfirm", {
       mapper: currentMapper?.name,
     }),
-    continueButtonLabel: "common:delete",
+    continueButtonLabel: "delete",
     continueButtonVariant: ButtonVariant.danger,
     onConfirm: async () => {
       try {
@@ -189,7 +189,7 @@ export default function AddMapper() {
           id
             ? [
                 <DropdownItem key="delete" onClick={toggleDeleteMapperDialog}>
-                  {t("common:delete")}
+                  {t("delete")}
                 </DropdownItem>,
               ]
             : undefined
@@ -204,12 +204,12 @@ export default function AddMapper() {
       >
         {id && (
           <FormGroup
-            label={t("common:id")}
+            label={t("id")}
             fieldId="kc-name"
             validated={
               errors.name ? ValidatedOptions.error : ValidatedOptions.default
             }
-            helperTextInvalid={t("common:required")}
+            helperTextInvalid={t("required")}
           >
             <KeycloakTextInput
               value={currentMapper.id}
@@ -243,7 +243,7 @@ export default function AddMapper() {
             variant="primary"
             type="submit"
           >
-            {t("common:save")}
+            {t("save")}
           </Button>
           <Button
             data-testid="new-mapper-cancel-button"
@@ -260,7 +260,7 @@ export default function AddMapper() {
               />
             )}
           >
-            {t("common:cancel")}
+            {t("cancel")}
           </Button>
         </ActionGroup>
       </FormAccess>

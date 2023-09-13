@@ -135,12 +135,12 @@ export const RequiredActions = () => {
         },
         {
           name: "enabled",
-          displayKey: "common:enabled",
+          displayKey: "enabled",
           cellRenderer: (row) => (
             <Switch
               id={`enable-${toKey(row.name)}`}
-              label={t("common:on")}
-              labelOff={t("common:off")}
+              label={t("on")}
+              labelOff={t("off")}
               isChecked={row.enabled}
               onChange={() => {
                 updateAction(row.data, "enabled");
@@ -156,9 +156,9 @@ export const RequiredActions = () => {
           cellRenderer: (row) => (
             <Switch
               id={`default-${toKey(row.name)}`}
-              label={t("common:on")}
+              label={t("on")}
               isDisabled={!row.enabled}
-              labelOff={!row.enabled ? t("disabledOff") : t("common:off")}
+              labelOff={!row.enabled ? t("disabledOff") : t("off")}
               isChecked={row.defaultAction}
               onChange={() => {
                 updateAction(row.data, "defaultAction");

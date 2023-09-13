@@ -48,7 +48,7 @@ export const SamlGeneralSettings = ({
         validated={
           errors.alias ? ValidatedOptions.error : ValidatedOptions.default
         }
-        helperTextInvalid={t("common:required")}
+        helperTextInvalid={t("required")}
       >
         <KeycloakTextInput
           isRequired

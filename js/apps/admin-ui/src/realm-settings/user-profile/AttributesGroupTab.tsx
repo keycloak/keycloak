@@ -42,7 +42,7 @@ export const AttributesGroupTab = () => {
         <strong>{{ group: groupToDelete?.name }}</strong>.
       </Trans>
     ),
-    continueButtonLabel: "common:delete",
+    continueButtonLabel: "delete",
     continueButtonVariant: ButtonVariant.danger,
     onConfirm() {
       const groups = (config?.groups ?? []).filter(
@@ -103,7 +103,7 @@ export const AttributesGroupTab = () => {
         ]}
         actions={[
           {
-            title: t("common:delete"),
+            title: t("delete"),
             onRowClick: deleteAttributeGroup,
           } as Action<UserProfileGroup>,
         ]}

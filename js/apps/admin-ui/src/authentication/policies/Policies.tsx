@@ -22,7 +22,7 @@ export const Policies = () => {
     async () => {
       const realm = await adminClient.realms.findOne({ realm: realmName });
       if (!realm) {
-        throw new Error(t("common:notFound"));
+        throw new Error(t("notFound"));
       }
       return realm;
     },

@@ -39,7 +39,7 @@ export const InitialAccessTokenList = () => {
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
     titleKey: "tokenDeleteConfirmTitle",
     messageKey: t("tokenDeleteConfirm", { id: token?.id }),
-    continueButtonLabel: "common:delete",
+    continueButtonLabel: "delete",
     continueButtonVariant: ButtonVariant.danger,
     onConfirm: async () => {
       try {
@@ -69,12 +69,12 @@ export const InitialAccessTokenList = () => {
               <Link {...props} to={toCreateInitialAccessToken({ realm })} />
             )}
           >
-            {t("common:create")}
+            {t("create")}
           </Button>
         }
         actions={[
           {
-            title: t("common:delete"),
+            title: t("delete"),
             onRowClick: (token) => {
               setToken(token);
               toggleDeleteDialog();
@@ -84,7 +84,7 @@ export const InitialAccessTokenList = () => {
         columns={[
           {
             name: "id",
-            displayKey: "common:id",
+            displayKey: "id",
           },
           {
             name: "timestamp",
@@ -115,7 +115,7 @@ export const InitialAccessTokenList = () => {
           <ListEmptyState
             message={t("noTokens")}
             instructions={t("noTokensInstructions")}
-            primaryActionText={t("common:create")}
+            primaryActionText={t("create")}
             onPrimaryAction={() =>
               navigate(toCreateInitialAccessToken({ realm }))
             }

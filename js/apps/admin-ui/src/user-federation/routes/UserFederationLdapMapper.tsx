@@ -16,7 +16,7 @@ const LdapMapperDetails = lazy(
 export const UserFederationLdapMapperRoute: AppRouteObject = {
   path: "/:realm/user-federation/ldap/:id/mappers/:mapperId",
   element: <LdapMapperDetails />,
-  breadcrumb: (t) => t("common:mappingDetails"),
+  breadcrumb: (t) => t("mappingDetails"),
   handle: {
     access: "view-realm",
   },

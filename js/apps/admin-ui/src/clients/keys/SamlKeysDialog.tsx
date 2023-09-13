@@ -146,7 +146,7 @@ export const SamlKeysDialog = ({
           variant={ButtonVariant.link}
           onClick={onCancel}
         >
-          {t("common:cancel")}
+          {t("cancel")}
         </Button>,
       ]}
     >

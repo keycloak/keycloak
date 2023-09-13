@@ -46,7 +46,7 @@ export const AuthenticationOverrides = ({
       filteredFlows = sortBy(filteredFlows, [(f) => f.alias]);
       setFlows([
         <SelectOption key="empty" value="">
-          {t("common:choose")}
+          {t("choose")}
         </SelectOption>,
         ...filteredFlows.map((flow) => (
           <SelectOption key={flow.id} value={flow.id}>
@@ -134,14 +134,14 @@ export const AuthenticationOverrides = ({
           onClick={save}
           data-testid="OIDCAuthFlowOverrideSave"
         >
-          {t("common:save")}
+          {t("save")}
         </Button>
         <Button
           variant="link"
           onClick={reset}
           data-testid="OIDCAuthFlowOverrideRevert"
         >
-          {t("common:revert")}
+          {t("revert")}
         </Button>
       </ActionGroup>
     </FormAccess>

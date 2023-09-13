@@ -109,7 +109,7 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
             ? ValidatedOptions.error
             : ValidatedOptions.default
         }
-        helperTextInvalid={t("common:required")}
+        helperTextInvalid={t("required")}
       >
         <KeycloakTextInput
           type="url"
@@ -139,7 +139,7 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
             ? ValidatedOptions.error
             : ValidatedOptions.default
         }
-        helperTextInvalid={t("common:required")}
+        helperTextInvalid={t("required")}
       >
         <KeycloakTextInput
           type="url"
@@ -163,7 +163,7 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
           />
         }
         fieldId="kc-nameIdPolicyFormat"
-        helperTextInvalid={t("common:required")}
+        helperTextInvalid={t("required")}
       >
         <Controller
           name="config.nameIDPolicyFormat"
@@ -242,7 +242,7 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
           />
         }
         fieldId="kc-principalType"
-        helperTextInvalid={t("common:required")}
+        helperTextInvalid={t("required")}
       >
         <Controller
           name="config.principalType"
@@ -505,7 +505,7 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
           />
         }
         fieldId="allowedClockSkew"
-        helperTextInvalid={t("common:required")}
+        helperTextInvalid={t("required")}
       >
         <Controller
           name="config.allowedClockSkew"
@@ -544,7 +544,7 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
           />
         }
         fieldId="attributeConsumingServiceIndex"
-        helperTextInvalid={t("common:required")}
+        helperTextInvalid={t("required")}
       >
         <Controller
           name="config.attributeConsumingServiceIndex"
@@ -583,7 +583,7 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
           />
         }
         fieldId="attributeConsumingServiceName"
-        helperTextInvalid={t("common:required")}
+        helperTextInvalid={t("required")}
       >
         <KeycloakTextInput
           id="attributeConsumingServiceName"

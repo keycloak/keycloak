@@ -38,7 +38,7 @@ export const ClientIdSecret = ({
             ? ValidatedOptions.error
             : ValidatedOptions.default
         }
-        helperTextInvalid={t("common:required")}
+        helperTextInvalid={t("required")}
       >
         <KeycloakTextInput
           isRequired
@@ -62,7 +62,7 @@ export const ClientIdSecret = ({
             ? ValidatedOptions.error
             : ValidatedOptions.default
         }
-        helperTextInvalid={t("common:required")}
+        helperTextInvalid={t("required")}
       >
         {create ? (
           <PasswordInput

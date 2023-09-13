@@ -51,7 +51,7 @@ export const GroupAttributes = () => {
       setCurrentGroup({ ...currentGroup, attributes });
       addAlert(t("groupUpdated"), AlertVariant.success);
     } catch (error) {
-      addError("groups:groupUpdateError", error);
+      addError("groupUpdateError", error);
     }
   };
 

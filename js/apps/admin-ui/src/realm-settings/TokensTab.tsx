@@ -233,8 +233,8 @@ export const RealmSettingsTokensTab = ({
                   id="kc-revoke-refresh-token"
                   data-testid="revoke-refresh-token-switch"
                   aria-label={t("revokeRefreshToken")}
-                  label={t("common:enabled")}
-                  labelOff={t("common:disabled")}
+                  label={t("enabled")}
+                  labelOff={t("disabled")}
                   isChecked={field.value}
                   onChange={field.onChange}
                 />
@@ -557,10 +557,10 @@ export const RealmSettingsTokensTab = ({
               data-testid="tokens-tab-save"
               isDisabled={!form.formState.isDirty}
             >
-              {t("common:save")}
+              {t("save")}
             </Button>
             <Button variant="link" onClick={reset}>
-              {t("common:revert")}
+              {t("revert")}
             </Button>
           </ActionGroup>
         </FormAccess>

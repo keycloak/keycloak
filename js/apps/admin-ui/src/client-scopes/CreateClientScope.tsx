@@ -34,7 +34,7 @@ export default function CreateClientScope() {
       });
 
       if (!scope) {
-        throw new Error(t("common:notFound"));
+        throw new Error(t("notFound"));
       }
 
       await changeScope({ ...clientScope, id: scope.id }, clientScope.type);

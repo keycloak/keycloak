@@ -164,7 +164,7 @@ export type DataListProps<T> = Omit<
  *   <KeycloakDataTable columns={[
  *     {
  *        name: "clientId", //name of the field from the array of object the loader returns to display in this column
- *        displayKey: "common:clientId", //i18n key to use to lookup the name of the column header
+ *        displayKey: "clientId", //i18n key to use to lookup the name of the column header
  *        cellRenderer: ClientDetailLink, //optionally you can use a component to render the column when you don't want just the content of the field, the whole row / entire object is passed in.
  *     }
  *   ]}

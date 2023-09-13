@@ -108,8 +108,8 @@ const KeySection = ({
                 <Switch
                   data-testid={key}
                   id={key}
-                  label={t("common:on")}
-                  labelOff={t("common:off")}
+                  label={t("on")}
+                  labelOff={t("off")}
                   isChecked={field.value === "true"}
                   onChange={(value) => {
                     const v = value.toString();
@@ -143,7 +143,7 @@ const KeySection = ({
                   {t("importKey")}
                 </Button>
                 <Button variant="tertiary" onClick={toggleImportDialog}>
-                  {t("common:export")}
+                  {t("export")}
                 </Button>
               </ActionGroup>
             </Form>
@@ -207,8 +207,8 @@ export const SamlKeys = ({ clientId, save }: SamlKeysProps) => {
     messageKey: t("disableSigningExplain", {
       key: t(key),
     }),
-    continueButtonLabel: "common:yes",
-    cancelButtonLabel: "common:no",
+    continueButtonLabel: "yes",
+    cancelButtonLabel: "no",
     onConfirm: () => {
       setValue(KEYS_MAPPING[selectedType!].name, "false");
       save();
@@ -218,8 +218,8 @@ export const SamlKeys = ({ clientId, save }: SamlKeysProps) => {
   const [toggleReGenerateDialog, ReGenerateConfirm] = useConfirmDialog({
     titleKey: "reGenerateSigning",
     messageKey: "reGenerateSigningExplain",
-    continueButtonLabel: "common:yes",
-    cancelButtonLabel: "common:no",
+    continueButtonLabel: "yes",
+    cancelButtonLabel: "no",
     onConfirm: () => {
       generate(selectedType!);
     },

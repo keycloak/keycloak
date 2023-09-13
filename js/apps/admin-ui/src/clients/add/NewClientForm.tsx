@@ -144,7 +144,7 @@ export default function NewClientForm() {
                           forward(onNext);
                         }}
                       >
-                        {isFinalStep() ? t("common:save") : t("common:next")}
+                        {isFinalStep() ? t("save") : t("next")}
                       </Button>
                       <Button
                         variant="secondary"
@@ -155,14 +155,14 @@ export default function NewClientForm() {
                         }}
                         isDisabled={activeStep.name === t("generalSettings")}
                       >
-                        {t("common:back")}
+                        {t("back")}
                       </Button>
                       <Button
                         data-testid="cancel"
                         variant="link"
                         onClick={onClose}
                       >
-                        {t("common:cancel")}
+                        {t("cancel")}
                       </Button>
                     </>
                   )}

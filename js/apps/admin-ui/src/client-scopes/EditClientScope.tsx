@@ -63,7 +63,7 @@ export default function EditClientScope() {
       const clientScope = await adminClient.clientScopes.findOne({ id });
 
       if (!clientScope) {
-        throw new Error(t("common:notFound"));
+        throw new Error(t("notFound"));
       }
 
       return {
@@ -132,7 +132,7 @@ export default function EditClientScope() {
       name: clientScope?.name,
     }),
     messageKey: "deleteConfirmClientScopes",
-    continueButtonLabel: "common:delete",
+    continueButtonLabel: "delete",
     continueButtonVariant: ButtonVariant.danger,
     onConfirm: async () => {
       try {
@@ -195,9 +195,9 @@ export default function EditClientScope() {
           mappers as ProtocolMapperRepresentation[],
         );
         refresh();
-        addAlert(t("common:mappingCreatedSuccess"), AlertVariant.success);
+        addAlert(t("mappingCreatedSuccess"), AlertVariant.success);
       } catch (error) {
-        addError("common:mappingCreatedError", error);
+        addError("mappingCreatedError", error);
       }
     }
   };
@@ -208,10 +208,10 @@ export default function EditClientScope() {
         id: clientScope!.id!,
         mapperId: mapper.id!,
       });
-      addAlert(t("common:mappingDeletedSuccess"), AlertVariant.success);
+      addAlert(t("mappingDeletedSuccess"), AlertVariant.success);
       refresh();
     } catch (error) {
-      addError("common:mappingDeletedError", error);
+      addError("mappingDeletedError", error);
     }
     return true;
   };
@@ -227,7 +227,7 @@ export default function EditClientScope() {
         titleKey={clientScope.name!}
         dropdownItems={[
           <DropdownItem key="delete" onClick={toggleDeleteDialog}>
-            {t("common:delete")}
+            {t("delete")}
           </DropdownItem>,
         ]}
         badges={[{ text: clientScope.protocol }]}
@@ -239,7 +239,7 @@ export default function EditClientScope() {
           <Tab
             id="settings"
             data-testid="settings"
-            title={<TabTitleText>{t("common:settings")}</TabTitleText>}
+            title={<TabTitleText>{t("settings")}</TabTitleText>}
             {...settingsTab}
           >
             <PageSection variant="light">
@@ -249,7 +249,7 @@ export default function EditClientScope() {
           <Tab
             id="mappers"
             data-testid="mappers"
-            title={<TabTitleText>{t("common:mappers")}</TabTitleText>}
+            title={<TabTitleText>{t("mappers")}</TabTitleText>}
             {...mappersTab}
           >
             <MapperList

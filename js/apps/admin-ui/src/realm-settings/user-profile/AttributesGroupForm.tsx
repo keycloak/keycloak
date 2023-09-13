@@ -120,7 +120,7 @@ export default function AttributesGroupForm() {
             label={t("realm-settings:nameField")}
             fieldId="kc-name"
             isRequired
-            helperTextInvalid={t("common:required")}
+            helperTextInvalid={t("required")}
             validated={form.formState.errors.name ? "error" : "default"}
             labelIcon={
               <HelpItem
@@ -181,7 +181,7 @@ export default function AttributesGroupForm() {
           </FormGroup>
           <ActionGroup>
             <Button variant="primary" type="submit">
-              {t("common:save")}
+              {t("save")}
             </Button>
             <Button
               variant="link"
@@ -192,7 +192,7 @@ export default function AttributesGroupForm() {
                 />
               )}
             >
-              {t("common:cancel")}
+              {t("cancel")}
             </Button>
           </ActionGroup>
         </FormAccess>

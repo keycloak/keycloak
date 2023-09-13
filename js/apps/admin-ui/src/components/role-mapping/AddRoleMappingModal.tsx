@@ -107,9 +107,7 @@ export const AddRoleMappingModal = ({
     <Modal
       variant={ModalVariant.large}
       title={
-        isLDAPmapper
-          ? t("common:assignRole")
-          : t("common:assignRolesTo", { client: name })
+        isLDAPmapper ? t("assignRole") : t("assignRolesTo", { client: name })
       }
       isOpen
       onClose={onClose}
@@ -124,7 +122,7 @@ export const AddRoleMappingModal = ({
             onClose();
           }}
         >
-          {t("common:assign")}
+          {t("assign")}
         </Button>,
         <Button
           data-testid="cancel"
@@ -132,7 +130,7 @@ export const AddRoleMappingModal = ({
           variant="link"
           onClick={onClose}
         >
-          {t("common:cancel")}
+          {t("cancel")}
         </Button>,
       ]}
     >
@@ -157,16 +155,16 @@ export const AddRoleMappingModal = ({
                     icon={<FilterIcon />}
                   >
                     {filterType === "roles"
-                      ? t("common:filterByRoles")
-                      : t("common:filterByClients")}
+                      ? t("filterByRoles")
+                      : t("filterByClients")}
                   </DropdownToggle>
                 }
                 isOpen={searchToggle}
                 dropdownItems={[
                   <DropdownItem key="filter-type" data-testid={filterType}>
                     {filterType === "roles"
-                      ? t("common:filterByClients")
-                      : t("common:filterByRoles")}
+                      ? t("filterByClients")
+                      : t("filterByRoles")}
                   </DropdownItem>,
                 ]}
               />
@@ -184,16 +182,16 @@ export const AddRoleMappingModal = ({
           },
           {
             name: "role.description",
-            displayKey: "common:description",
+            displayKey: "description",
           },
         ]}
         emptyState={
           <ListEmptyState
             message={t("noRoles")}
-            instructions={t("common:noRealmRolesToAssign")}
+            instructions={t("noRealmRolesToAssign")}
             secondaryActions={[
               {
-                text: t("common:filterByClients"),
+                text: t("filterByClients"),
                 onClick: () => {
                   setFilterType("clients");
                   refresh();

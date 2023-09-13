@@ -239,7 +239,7 @@ export default function ExecutorForm() {
                 onClick={() => handleSubmit(save)()}
                 data-testid="addExecutor-saveBtn"
               >
-                {editMode ? t("common:save") : t("common:add")}
+                {editMode ? t("save") : t("add")}
               </Button>
               <Button
                 variant="link"
@@ -251,7 +251,7 @@ export default function ExecutorForm() {
                 )}
                 data-testid="addExecutor-cancelBtn"
               >
-                {t("common:cancel")}
+                {t("cancel")}
               </Button>
             </ActionGroup>
           )}

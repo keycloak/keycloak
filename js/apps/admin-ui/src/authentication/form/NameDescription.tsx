@@ -17,9 +17,9 @@ export const NameDescription = () => {
   return (
     <>
       <FormGroup
-        label={t("common:name")}
+        label={t("name")}
         fieldId="kc-name"
-        helperTextInvalid={t("common:required")}
+        helperTextInvalid={t("required")}
         validated={
           errors.alias ? ValidatedOptions.error : ValidatedOptions.default
         }
@@ -38,7 +38,7 @@ export const NameDescription = () => {
         />
       </FormGroup>
       <FormGroup
-        label={t("common:description")}
+        label={t("description")}
         fieldId="kc-description"
         labelIcon={
           <HelpItem
@@ -62,7 +62,7 @@ export const NameDescription = () => {
           {...register("description", {
             maxLength: {
               value: 255,
-              message: t("common:maxLength", { length: 255 }),
+              message: t("maxLength", { length: 255 }),
             },
           })}
         />

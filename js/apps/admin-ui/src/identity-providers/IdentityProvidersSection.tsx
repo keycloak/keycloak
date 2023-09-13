@@ -64,7 +64,7 @@ const DetailLink = (identityProvider: IdentityProviderRepresentation) => {
           isRead
           className="pf-u-ml-sm"
         >
-          {t("common:disabled")}
+          {t("disabled")}
         </Badge>
       )}
     </Link>
@@ -94,7 +94,7 @@ export default function IdentityProvidersSection() {
     async () => {
       const provider = await adminClient.realms.findOne({ realm });
       if (!provider) {
-        throw new Error(t("common:notFound"));
+        throw new Error(t("notFound"));
       }
       return provider.identityProviders!;
     },
@@ -138,7 +138,7 @@ export default function IdentityProvidersSection() {
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
     titleKey: "identity-providers:deleteProvider",
     messageKey: t("deleteConfirm", { provider: selectedProvider?.alias }),
-    continueButtonLabel: "common:delete",
+    continueButtonLabel: "delete",
     continueButtonVariant: ButtonVariant.danger,
     onConfirm: async () => {
       try {
@@ -173,7 +173,7 @@ export default function IdentityProvidersSection() {
         />
       )}
       <ViewHeader
-        titleKey="common:identityProviders"
+        titleKey="identityProviders"
         subKey="identity-providers:listExplain"
         helpUrl={helpUrls.identityProvidersUrl}
       />
@@ -219,7 +219,7 @@ export default function IdentityProvidersSection() {
         {providers.length !== 0 && (
           <KeycloakDataTable
             loader={providers}
-            ariaLabelKey="common:identityProviders"
+            ariaLabelKey="identityProviders"
             searchPlaceholderKey="identity-providers:searchForProvider"
             toolbarItem={
               <>
@@ -252,7 +252,7 @@ export default function IdentityProvidersSection() {
             }
             actions={[
               {
-                title: t("common:delete"),
+                title: t("delete"),
                 onRowClick: (provider) => {
                   setSelectedProvider(provider);
                   toggleDeleteDialog();
@@ -262,7 +262,7 @@ export default function IdentityProvidersSection() {
             columns={[
               {
                 name: "alias",
-                displayKey: "common:name",
+                displayKey: "name",
                 cellRenderer: DetailLink,
               },
               {

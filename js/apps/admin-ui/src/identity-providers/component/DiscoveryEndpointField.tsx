@@ -85,8 +85,8 @@ export const DiscoveryEndpointField = ({
       >
         <Switch
           id="kc-discovery-endpoint-switch"
-          label={t("common:on")}
-          labelOff={t("common:off")}
+          label={t("on")}
+          labelOff={t("off")}
           isChecked={discovery}
           onChange={(checked) => {
             clearErrors("discoveryError");
@@ -122,7 +122,7 @@ export const DiscoveryEndpointField = ({
           }
           helperTextInvalid={
             errors.discoveryEndpoint
-              ? t("common:required")
+              ? t("required")
               : t("noValidMetaDataFound", {
                   error: errors.discoveryError?.message,
                 })

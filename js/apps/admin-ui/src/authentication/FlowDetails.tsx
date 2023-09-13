@@ -81,7 +81,7 @@ export default function FlowDetails() {
       const flows = await adminClient.authenticationManagement.getFlows();
       const flow = flows.find((f) => f.id === id);
       if (!flow) {
-        throw new Error(t("common:notFound"));
+        throw new Error(t("notFound"));
       }
 
       const executions =
@@ -206,7 +206,7 @@ export default function FlowDetails() {
         <strong>{{ name: selectedExecution?.displayName }}</strong>.
       </Trans>
     ),
-    continueButtonLabel: "common:delete",
+    continueButtonLabel: "delete",
     continueButtonVariant: ButtonVariant.danger,
     onConfirm: async () => {
       try {
@@ -229,7 +229,7 @@ export default function FlowDetails() {
         <strong>{{ flow: flow?.alias || "" }}</strong>.
       </Trans>
     ),
-    continueButtonLabel: "common:delete",
+    continueButtonLabel: "delete",
     continueButtonVariant: ButtonVariant.danger,
     onConfirm: async () => {
       try {
@@ -275,7 +275,7 @@ export default function FlowDetails() {
             key="delete"
             onClick={() => toggleDeleteFlow()}
           >
-            {t("common:delete")}
+            {t("delete")}
           </DropdownItem>,
         ]
       : []),
@@ -377,7 +377,7 @@ export default function FlowDetails() {
                 onDragFinish={(order) => {
                   const withoutHeaderId = order.slice(1);
                   setLiveText(
-                    t("common:onDragFinish", { list: dragged?.displayName }),
+                    t("onDragFinish", { list: dragged?.displayName }),
                   );
                   const change = executionList.getChange(
                     dragged!,
@@ -387,9 +387,7 @@ export default function FlowDetails() {
                 }}
                 onDragStart={(id) => {
                   const item = executionList.findExecution(id)!;
-                  setLiveText(
-                    t("common:onDragStart", { item: item.displayName }),
-                  );
+                  setLiveText(t("onDragStart", { item: item.displayName }));
                   setDragged(item);
                   if (!item.isCollapsed) {
                     item.isCollapsed = true;
@@ -397,11 +395,9 @@ export default function FlowDetails() {
                   }
                 }}
                 onDragMove={() =>
-                  setLiveText(
-                    t("common:onDragMove", { item: dragged?.displayName }),
-                  )
+                  setLiveText(t("onDragMove", { item: dragged?.displayName }))
                 }
-                onDragCancel={() => setLiveText(t("common:onDragCancel"))}
+                onDragCancel={() => setLiveText(t("onDragCancel"))}
                 itemOrder={[
                   "header",
                   ...executionList.order().map((ex) => ex.id!),

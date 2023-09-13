@@ -131,7 +131,7 @@ const Dashboard = () => {
     <>
       <PageSection variant="light">
         <TextContent className="pf-u-mr-sm">
-          <Text component="h1">{t("realmName", { name: realm })}</Text>
+          <Text component="h1">{t("realmNameTitle", { name: realm })}</Text>
         </TextContent>
       </PageSection>
       <PageSection variant="light" className="pf-u-p-0">
@@ -209,8 +209,8 @@ const Dashboard = () => {
                           <DescriptionListTerm>
                             {t("enabledFeatures")}{" "}
                             <HelpItem
-                              fieldLabelId="dashboard:enabledFeatures"
-                              helpText={t("dashboard:infoEnabledFeatures")}
+                              fieldLabelId="enabledFeatures"
+                              helpText={t("infoEnabledFeatures")}
                             />
                           </DescriptionListTerm>
                           <DescriptionListDescription>
@@ -228,8 +228,8 @@ const Dashboard = () => {
                           <DescriptionListTerm>
                             {t("disabledFeatures")}{" "}
                             <HelpItem
-                              fieldLabelId="dashboard:disabledFeatures"
-                              helpText={t("dashboard:infoDisabledFeatures")}
+                              fieldLabelId="disabledFeatures"
+                              helpText={t("infoDisabledFeatures")}
                             />
                           </DescriptionListTerm>
                           <DescriptionListDescription>

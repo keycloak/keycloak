@@ -64,7 +64,7 @@ export default function UsersSection() {
             <Tab
               id="permissions"
               data-testid="permissionsTab"
-              title={<TabTitleText>{t("common:permissions")}</TabTitleText>}
+              title={<TabTitleText>{t("permissions")}</TabTitleText>}
               {...permissionsTab}
             >
               <PermissionsTab type="users" />

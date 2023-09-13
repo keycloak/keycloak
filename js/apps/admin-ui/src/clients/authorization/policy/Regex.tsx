@@ -17,7 +17,7 @@ export const Regex = () => {
       <FormGroup
         label={t("targetClaim")}
         fieldId="targetClaim"
-        helperTextInvalid={t("common:required")}
+        helperTextInvalid={t("required")}
         validated={errors.targetClaim ? "error" : "default"}
         isRequired
         labelIcon={
@@ -45,7 +45,7 @@ export const Regex = () => {
         }
         isRequired
         validated={errors.pattern ? "error" : "default"}
-        helperTextInvalid={t("common:required")}
+        helperTextInvalid={t("required")}
       >
         <KeycloakTextInput
           id="pattern"

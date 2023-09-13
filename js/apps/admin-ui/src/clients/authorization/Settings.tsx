@@ -160,8 +160,8 @@ export const AuthorizationSettings = ({ clientId }: { clientId: string }) => {
             render={({ field }) => (
               <Switch
                 id="allowRemoteResourceManagement"
-                label={t("common:on")}
-                labelOff={t("common:off")}
+                label={t("on")}
+                labelOff={t("off")}
                 isChecked={field.value}
                 onChange={field.onChange}
                 aria-label={t("allowRemoteResourceManagement")}

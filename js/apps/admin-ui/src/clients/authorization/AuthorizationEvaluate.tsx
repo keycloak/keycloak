@@ -228,7 +228,7 @@ const AuthorizationEvaluateContent = ({ client }: Props) => {
                 }
                 fieldId="realmRole"
                 validated={errors.roleIds ? "error" : "default"}
-                helperTextInvalid={t("common:required")}
+                helperTextInvalid={t("required")}
                 isRequired={user.length === 0}
               >
                 <Controller
@@ -298,8 +298,8 @@ const AuthorizationEvaluateContent = ({ client }: Props) => {
               >
                 <Switch
                   id="applyToResource-switch"
-                  label={t("common:on")}
-                  labelOff={t("common:off")}
+                  label={t("on")}
+                  labelOff={t("off")}
                   isChecked={applyToResourceType}
                   onChange={setApplyToResourceType}
                   aria-label={t("applyToResourceType")}
@@ -340,7 +340,7 @@ const AuthorizationEvaluateContent = ({ client }: Props) => {
                     }
                     fieldId="client"
                     validated={errors.alias ? "error" : "default"}
-                    helperTextInvalid={t("common:required")}
+                    helperTextInvalid={t("required")}
                   >
                     <KeycloakTextInput
                       id="alias"
@@ -412,7 +412,7 @@ const AuthorizationEvaluateContent = ({ client }: Props) => {
                       fieldLabelId={`contextualAttributes`}
                     />
                   }
-                  helperTextInvalid={t("common:required")}
+                  helperTextInvalid={t("required")}
                   fieldId="contextualAttributes"
                 >
                   <KeyBasedAttributeInput
@@ -441,7 +441,7 @@ const AuthorizationEvaluateContent = ({ client }: Props) => {
             variant="link"
             onClick={() => reset()}
           >
-            {t("common:revert")}
+            {t("revert")}
           </Button>
         </ActionGroup>
       </FormProvider>
