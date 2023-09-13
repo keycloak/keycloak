@@ -61,8 +61,8 @@ export const ClientScope = () => {
       label={t("clientScopes")}
       labelIcon={
         <HelpItem
-          helpText={t("clientScopesHelp")}
-          fieldLabelId="clients:clientScopes"
+          helpText={t("clientsClientScopesHelp")}
+          fieldLabelId="clientScopes"
         />
       }
       fieldId="clientScopes"

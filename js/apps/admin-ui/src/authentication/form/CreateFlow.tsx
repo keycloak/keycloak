@@ -53,10 +53,7 @@ export default function CreateFlow() {
 
   return (
     <>
-      <ViewHeader
-        titleKey="authentication:createFlow"
-        subKey="authentication-help:createFlow"
-      />
+      <ViewHeader titleKey="createFlow" subKey="authenticationCreateFlowHelp" />
       <PageSection variant="light">
         <FormProvider {...form}>
           <FormAccess

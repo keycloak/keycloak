@@ -132,10 +132,7 @@ export const AddSubFlowModal = ({
           label={t("flowType")}
           fieldId="flowType"
           labelIcon={
-            <HelpItem
-              helpText={t("authentication-help:flowType")}
-              fieldLabelId="authentication:flowType"
-            />
+            <HelpItem helpText={t("flowTypeHelp")} fieldLabelId="flowType" />
           }
         >
           <Controller
@@ -173,8 +170,8 @@ export const AddSubFlowModal = ({
             label={t("flowType")}
             labelIcon={
               <HelpItem
-                helpText={t("authentication-help:flowType")}
-                fieldLabelId="authentication:flowType"
+                helpText={t("authenticationFlowTypeHelp")}
+                fieldLabelId="flowType"
               />
             }
             fieldId="flowType"

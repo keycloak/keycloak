@@ -44,7 +44,7 @@ export default function CreateInitialAccessToken() {
       );
       setToken(access.token!);
     } catch (error) {
-      addError("clients:tokenSaveError", error);
+      addError("tokenSaveError", error);
     }
   };
 
@@ -60,10 +60,7 @@ export default function CreateInitialAccessToken() {
           }}
         />
       )}
-      <ViewHeader
-        titleKey="clients:createToken"
-        subKey="clients-help:createToken"
-      />
+      <ViewHeader titleKey="createToken" subKey="createTokenHelp" />
       <PageSection variant="light">
         <FormAccess
           isHorizontal
@@ -76,7 +73,7 @@ export default function CreateInitialAccessToken() {
             labelIcon={
               <HelpItem
                 helpText={t("expirationHelp")}
-                fieldLabelId="clients:expiration"
+                fieldLabelId="expiration"
               />
             }
             helperTextInvalid={t("expirationValueNotValid")}
@@ -102,10 +99,7 @@ export default function CreateInitialAccessToken() {
             label={t("count")}
             fieldId="count"
             labelIcon={
-              <HelpItem
-                helpText={t("countHelp")}
-                fieldLabelId="clients:count"
-              />
+              <HelpItem helpText={t("countHelp")} fieldLabelId="count" />
             }
           >
             <Controller

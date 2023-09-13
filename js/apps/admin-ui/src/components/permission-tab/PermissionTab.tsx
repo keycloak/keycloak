@@ -139,7 +139,7 @@ export const PermissionsTab = ({ id, type }: PermissionsTabProps) => {
               labelIcon={
                 <HelpItem
                   helpText={t("permissionsEnabledHelp")}
-                  fieldLabelId="clients:permissionsEnabled"
+                  fieldLabelId="permissionsEnabled"
                 />
               }
             >

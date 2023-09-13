@@ -71,7 +71,7 @@ export const DuplicateFlowModal = ({
         }),
       );
     } catch (error) {
-      addError("authentication:copyFlowError", error);
+      addError("copyFlowError", error);
     }
     onComplete();
   };

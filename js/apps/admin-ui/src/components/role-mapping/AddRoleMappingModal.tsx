@@ -139,7 +139,7 @@ export const AddRoleMappingModal = ({
       <KeycloakDataTable
         key={key}
         onSelect={(rows) => setSelectedRows([...rows])}
-        searchPlaceholderKey="clients:searchByRoleName"
+        searchPlaceholderKey="searchByRoleName"
         isPaginated={!(filterType === "roles" && type !== "roles")}
         searchTypeComponent={
           canViewRealmRoles && (
@@ -176,7 +176,7 @@ export const AddRoleMappingModal = ({
         canSelectAll
         isRadio={isRadio}
         loader={filterType === "roles" ? loader : clientRolesLoader}
-        ariaLabelKey="clients:roles"
+        ariaLabelKey="roles"
         columns={[
           {
             name: "name",

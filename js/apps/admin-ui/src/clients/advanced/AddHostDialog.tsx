@@ -47,7 +47,7 @@ export const AddHostDialog = ({
       onAdded(node);
       addAlert(t("addedNodeSuccess"), AlertVariant.success);
     } catch (error) {
-      addError("clients:addedNodeFail", error);
+      addError("addedNodeFail", error);
     }
 
     onClose();

@@ -99,7 +99,7 @@ export default function DedicatedScopes() {
     <>
       <ViewHeader
         titleKey={client.clientId!}
-        subKey="clients-help:dedicatedScopeExplain"
+        subKey="dedicatedScopeExplain"
         divider={false}
       />
       <PageSection variant="light" className="pf-u-p-0">

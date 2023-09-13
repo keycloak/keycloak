@@ -107,7 +107,7 @@ export const ExecutionConfigModal = ({
       addAlert(t("configSaveSuccess"), AlertVariant.success);
       setShow(false);
     } catch (error) {
-      addError("authentication:configSaveError", error);
+      addError("configSaveError", error);
     }
   };
 
@@ -140,8 +140,8 @@ export const ExecutionConfigModal = ({
               isRequired
               labelIcon={
                 <HelpItem
-                  helpText={t("authentication-help:alias")}
-                  fieldLabelId="authentication:alias"
+                  helpText={t("authenticationAliasHelp")}
+                  fieldLabelId="alias"
                 />
               }
             >

@@ -184,7 +184,7 @@ export default function MappingDetails() {
       <DeleteConfirm />
       <ViewHeader
         titleKey={isUpdating ? mapping?.name! : t("common:addMapper")}
-        subKey={isUpdating ? mapperId : "client-scopes:addMapperExplain"}
+        subKey={isUpdating ? mapperId : "addMapperExplain"}
         dropdownItems={
           isUpdating
             ? [
@@ -217,10 +217,7 @@ export default function MappingDetails() {
           <FormGroup
             label={t("common:name")}
             labelIcon={
-              <HelpItem
-                helpText={t("client-scopes-help:mapperName")}
-                fieldLabelId="name"
-              />
+              <HelpItem helpText={t("mapperName")} fieldLabelId="name" />
             }
             fieldId="name"
             isRequired

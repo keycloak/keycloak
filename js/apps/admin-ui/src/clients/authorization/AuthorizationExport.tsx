@@ -69,7 +69,7 @@ export const AuthorizationExport = () => {
           labelIcon={
             <HelpItem
               helpText={t("authDetailsHelp")}
-              fieldLabelId="clients:authDetails"
+              fieldLabelId="authDetails"
             />
           }
           fieldId="client"

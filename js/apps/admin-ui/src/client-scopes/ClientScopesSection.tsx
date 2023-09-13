@@ -68,7 +68,7 @@ const TypeSelector = (scope: TypeSelectorProps) => {
           addAlert(t("clientScopeSuccess"), AlertVariant.success);
           scope.refresh();
         } catch (error) {
-          addError("client-scopes:clientScopeError", error);
+          addError("clientScopeError", error);
         }
       }}
     />
@@ -182,14 +182,14 @@ export default function ClientScopesSection() {
       <DeleteConfirm />
       <ViewHeader
         titleKey="clientScopes"
-        subKey="client-scopes:clientScopeExplain"
+        subKey="clientScopeExplain"
         helpUrl={helpUrls.clientScopesUrl}
       />
       <PageSection variant="light" className="pf-u-p-0">
         <KeycloakDataTable
           key={key}
           loader={loader}
-          ariaLabelKey="client-scopes:clientScopeList"
+          ariaLabelKey="clientScopeList"
           searchPlaceholderKey={
             searchType === "name" ? "searchForClientScope" : undefined
           }
@@ -281,21 +281,21 @@ export default function ClientScopesSection() {
             },
             {
               name: "type",
-              displayKey: "client-scopes:assignedType",
+              displayKey: "assignedType",
               cellRenderer: (row) => (
                 <TypeSelector {...row} refresh={refresh} />
               ),
             },
             {
               name: "protocol",
-              displayKey: "client-scopes:protocol",
+              displayKey: "protocol",
               cellRenderer: (client) =>
                 getProtocolName(t, client.protocol ?? "openid-connect"),
               transforms: [cellWidth(15)],
             },
             {
               name: "attributes['gui.order']",
-              displayKey: "client-scopes:displayOrder",
+              displayKey: "displayOrder",
               cellFormatters: [emptyFormatter()],
               transforms: [cellWidth(15)],
             },

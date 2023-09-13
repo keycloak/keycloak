@@ -186,7 +186,7 @@ export const Results = ({ evaluateResult, refresh, back }: ResultProps) => {
             variant="secondary"
             onClick={refresh}
           >
-            {t("clients:reevaluate")}
+            {t("reevaluate")}
           </Button>{" "}
           <AuthorizationDataModal data={evaluateResult.rpt!} />
         </FixedButtonsGroup>

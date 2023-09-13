@@ -82,7 +82,7 @@ const UsedByModal = ({ id, isSpecificClient, onClose }: UsedByModalProps) => {
       <KeycloakDataTable
         loader={loader}
         isPaginated
-        ariaLabelKey="authentication:usedBy"
+        ariaLabelKey="usedBy"
         searchPlaceholderKey="common:search"
         columns={[
           {

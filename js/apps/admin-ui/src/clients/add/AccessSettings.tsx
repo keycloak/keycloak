@@ -36,10 +36,7 @@ export const AccessSettings = ({
           label={t("adminURL")}
           fieldId="kc-admin-url"
           labelIcon={
-            <HelpItem
-              helpText={t("adminURLHelp")}
-              fieldLabelId="clients:adminURL"
-            />
+            <HelpItem helpText={t("adminURLHelp")} fieldLabelId="adminURL" />
           }
         >
           <KeycloakTextInput

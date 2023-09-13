@@ -69,7 +69,7 @@ export const AdvancedSettings = ({
           labelIcon={
             <HelpItem
               helpText={t("assertionLifespanHelp")}
-              fieldLabelId="clients:assertionLifespan"
+              fieldLabelId="assertionLifespan"
             />
           }
         >
@@ -147,7 +147,7 @@ export const AdvancedSettings = ({
             labelIcon={
               <HelpItem
                 helpText={t("oAuthMutualHelp")}
-                fieldLabelId="clients:oAuthMutual"
+                fieldLabelId="oAuthMutual"
               />
             }
           >
@@ -177,7 +177,7 @@ export const AdvancedSettings = ({
               labelIcon={
                 <HelpItem
                   helpText={t("oAuthDPoPHelp")}
-                  fieldLabelId="clients:oAuthDPoP"
+                  fieldLabelId="oAuthDPoP"
                 />
               }
             >
@@ -207,7 +207,7 @@ export const AdvancedSettings = ({
             labelIcon={
               <HelpItem
                 helpText={t("keyForCodeExchangeHelp")}
-                fieldLabelId="clients:keyForCodeExchange"
+                fieldLabelId="keyForCodeExchange"
               />
             }
           >
@@ -244,7 +244,7 @@ export const AdvancedSettings = ({
             labelIcon={
               <HelpItem
                 helpText={t("pushedAuthorizationRequestRequiredHelp")}
-                fieldLabelId="clients:pushedAuthorizationRequestRequired"
+                fieldLabelId="pushedAuthorizationRequestRequired"
               />
             }
           >
@@ -272,7 +272,7 @@ export const AdvancedSettings = ({
             labelIcon={
               <HelpItem
                 helpText={t("acrToLoAMappingHelp")}
-                fieldLabelId="clients:acrToLoAMapping"
+                fieldLabelId="acrToLoAMapping"
               />
             }
           >
@@ -286,7 +286,7 @@ export const AdvancedSettings = ({
             labelIcon={
               <HelpItem
                 helpText={t("defaultACRValuesHelp")}
-                fieldLabelId="clients:defaultACRValues"
+                fieldLabelId="defaultACRValues"
               />
             }
           >

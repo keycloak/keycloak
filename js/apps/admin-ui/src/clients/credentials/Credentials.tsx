@@ -106,8 +106,8 @@ export const Credentials = ({ client, save, refresh }: CredentialsProps) => {
   };
 
   const [toggleClientSecretConfirm, ClientSecretConfirm] = useConfirmDialog({
-    titleKey: "clients:confirmClientSecretTitle",
-    messageKey: "clients:confirmClientSecretBody",
+    titleKey: "confirmClientSecretTitle",
+    messageKey: "confirmClientSecretBody",
     continueButtonLabel: "common:yes",
     cancelButtonLabel: "common:no",
     onConfirm: regenerateClientSecret,
@@ -123,8 +123,8 @@ export const Credentials = ({ client, save, refresh }: CredentialsProps) => {
   };
 
   const [toggleAccessTokenConfirm, AccessTokenConfirm] = useConfirmDialog({
-    titleKey: "clients:confirmAccessTokenTitle",
-    messageKey: "clients:confirmAccessTokenBody",
+    titleKey: "confirmAccessTokenTitle",
+    messageKey: "confirmAccessTokenBody",
     continueButtonLabel: "common:yes",
     cancelButtonLabel: "common:no",
     onConfirm: regenerateAccessToken,
@@ -148,8 +148,8 @@ export const Credentials = ({ client, save, refresh }: CredentialsProps) => {
               fieldId="kc-client-authenticator-type"
               labelIcon={
                 <HelpItem
-                  helpText={t("clients-help:client-authenticator-type")}
-                  fieldLabelId="clients:clientAuthenticator"
+                  helpText={t("client-authenticator-type")}
+                  fieldLabelId="clientAuthenticator"
                 />
               }
             >
@@ -220,8 +220,8 @@ export const Credentials = ({ client, save, refresh }: CredentialsProps) => {
               fieldId="kc-access-token"
               labelIcon={
                 <HelpItem
-                  helpText={t("clients-help:registration-access-token")}
-                  fieldLabelId="clients:registrationAccessToken"
+                  helpText={t("registration-access-token")}
+                  fieldLabelId="registrationAccessToken"
                 />
               }
             >

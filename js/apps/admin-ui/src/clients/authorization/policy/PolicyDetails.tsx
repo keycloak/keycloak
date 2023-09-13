@@ -139,14 +139,14 @@ export default function PolicyDetails() {
         AlertVariant.success,
       );
     } catch (error) {
-      addError("clients:policySaveError", error);
+      addError("policySaveError", error);
     }
   };
 
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
-    titleKey: "clients:deletePolicy",
-    messageKey: "clients:deletePolicyConfirm",
-    continueButtonLabel: "clients:confirm",
+    titleKey: "deletePolicy",
+    messageKey: "deletePolicyConfirm",
+    continueButtonLabel: "confirm",
     onConfirm: async () => {
       try {
         await adminClient.clients.delPolicy({
@@ -156,7 +156,7 @@ export default function PolicyDetails() {
         addAlert(t("policyDeletedSuccess"), AlertVariant.success);
         navigate(toAuthorizationTab({ realm, clientId: id, tab: "policies" }));
       } catch (error) {
-        addError("clients:policyDeletedError", error);
+        addError("policyDeletedError", error);
       }
     },
   });
@@ -178,9 +178,7 @@ export default function PolicyDetails() {
       <DeleteConfirm />
       <ViewHeader
         titleKey={
-          policyId
-            ? policy?.name!
-            : t("clients:createPolicyOfType", { policyType })
+          policyId ? policy?.name! : t("createPolicyOfType", { policyType })
         }
         dropdownItems={
           policyId

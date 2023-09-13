@@ -180,7 +180,7 @@ const AuthorizationEvaluateContent = ({ client }: Props) => {
 
       setEvaluateResult(evaluation);
     } catch (error) {
-      addError("clients:evaluateError", error);
+      addError("evaluateError", error);
     }
   };
 
@@ -202,7 +202,7 @@ const AuthorizationEvaluateContent = ({ client }: Props) => {
       <FormProvider {...form}>
         <Panel>
           <PanelHeader>
-            <Title headingLevel="h2">{t("clients:identityInformation")}</Title>
+            <Title headingLevel="h2">{t("identityInformation")}</Title>
           </PanelHeader>
           <PanelMainBody>
             <FormAccess isHorizontal role="view-clients">
@@ -210,13 +210,13 @@ const AuthorizationEvaluateContent = ({ client }: Props) => {
                 name="client"
                 label="client"
                 namespace="clients"
-                helpText={"clients-help:client"}
+                helpText={"clientHelp"}
                 defaultValue={client.clientId}
               />
               <UserSelect
                 name="user"
                 label="users"
-                helpText={t("clients-help:selectUser")}
+                helpText={t("selectUser")}
                 defaultValue={[]}
                 variant={SelectVariant.typeahead}
                 isRequired={roles?.length === 0}
@@ -224,10 +224,7 @@ const AuthorizationEvaluateContent = ({ client }: Props) => {
               <FormGroup
                 label={t("roles")}
                 labelIcon={
-                  <HelpItem
-                    helpText={t("clients-help:roles")}
-                    fieldLabelId="clients:roles"
-                  />
+                  <HelpItem helpText={t("rolesHelp")} fieldLabelId="roles" />
                 }
                 fieldId="realmRole"
                 validated={errors.roleIds ? "error" : "default"}
@@ -285,7 +282,7 @@ const AuthorizationEvaluateContent = ({ client }: Props) => {
         </Panel>
         <Panel>
           <PanelHeader>
-            <Title headingLevel="h2">{t("clients:identityInformation")}</Title>
+            <Title headingLevel="h2">{t("identityInformation")}</Title>
           </PanelHeader>
           <PanelMainBody>
             <FormAccess isHorizontal role="view-clients">
@@ -295,7 +292,7 @@ const AuthorizationEvaluateContent = ({ client }: Props) => {
                 labelIcon={
                   <HelpItem
                     helpText={t("applyToResourceTypeHelp")}
-                    fieldLabelId="clients:applyToResourceType"
+                    fieldLabelId="applyToResourceType"
                   />
                 }
               >
@@ -338,7 +335,7 @@ const AuthorizationEvaluateContent = ({ client }: Props) => {
                     labelIcon={
                       <HelpItem
                         helpText={t("resourceTypeHelp")}
-                        fieldLabelId="clients:resourceType"
+                        fieldLabelId="resourceType"
                       />
                     }
                     fieldId="client"
@@ -356,8 +353,8 @@ const AuthorizationEvaluateContent = ({ client }: Props) => {
                     label={t("authScopes")}
                     labelIcon={
                       <HelpItem
-                        helpText={t("clients-help:scopesSelect")}
-                        fieldLabelId="clients:client"
+                        helpText={t("scopesSelect")}
+                        fieldLabelId="client"
                       />
                     }
                     fieldId="authScopes"
@@ -411,7 +408,7 @@ const AuthorizationEvaluateContent = ({ client }: Props) => {
                   id="contextualAttributes"
                   labelIcon={
                     <HelpItem
-                      helpText={t("clients-help:contextualAttributes")}
+                      helpText={t("contextualAttributesHelp")}
                       fieldLabelId={`contextualAttributes`}
                     />
                   }

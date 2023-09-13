@@ -139,17 +139,17 @@ export default function PermissionDetails() {
         AlertVariant.success,
       );
     } catch (error) {
-      addError("clients:permissionSaveError", error);
+      addError("permissionSaveError", error);
     }
   };
 
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
-    titleKey: "clients:deletePermission",
+    titleKey: "deletePermission",
     messageKey: t("deletePermissionConfirm", {
       permission: permission?.name,
     }),
     continueButtonVariant: ButtonVariant.danger,
-    continueButtonLabel: "clients:confirm",
+    continueButtonLabel: "confirm",
     onConfirm: async () => {
       try {
         await adminClient.clients.delPermission({
@@ -162,7 +162,7 @@ export default function PermissionDetails() {
           toAuthorizationTab({ realm, clientId: id, tab: "permissions" }),
         );
       } catch (error) {
-        addError("clients:permissionDeletedError", error);
+        addError("permissionDeletedError", error);
       }
     },
   });
@@ -214,10 +214,7 @@ export default function PermissionDetails() {
               validated={errors.name ? "error" : "default"}
               fieldId="name"
               labelIcon={
-                <HelpItem
-                  helpText={t("clients-help:permissionName")}
-                  fieldLabelId="name"
-                />
+                <HelpItem helpText={t("permissionName")} fieldLabelId="name" />
               }
             >
               <KeycloakTextInput
@@ -231,7 +228,7 @@ export default function PermissionDetails() {
               fieldId="description"
               labelIcon={
                 <HelpItem
-                  helpText={t("clients-help:permissionDescription")}
+                  helpText={t("permissionDescription")}
                   fieldLabelId="description"
                 />
               }
@@ -255,7 +252,7 @@ export default function PermissionDetails() {
               labelIcon={
                 <HelpItem
                   helpText={t("applyToResourceTypeFlagHelp")}
-                  fieldLabelId="clients:applyToResourceTypeFlag"
+                  fieldLabelId="applyToResourceTypeFlag"
                 />
               }
             >
@@ -295,7 +292,7 @@ export default function PermissionDetails() {
                 labelIcon={
                   <HelpItem
                     helpText={t("permissionResourcesHelp")}
-                    fieldLabelId="clients:resources"
+                    fieldLabelId="resources"
                   />
                 }
                 helperTextInvalid={t("common:required")}
@@ -324,8 +321,8 @@ export default function PermissionDetails() {
                 fieldId="scopes"
                 labelIcon={
                   <HelpItem
-                    helpText={t("clients-help:permissionScopes")}
-                    fieldLabelId="clients:scopesSelect"
+                    helpText={t("permissionScopes")}
+                    fieldLabelId="scopesSelect"
                   />
                 }
                 helperTextInvalid={t("common:required")}
@@ -344,8 +341,8 @@ export default function PermissionDetails() {
               fieldId="policies"
               labelIcon={
                 <HelpItem
-                  helpText={t("clients-help:permissionPolicies")}
-                  fieldLabelId="clients:policies"
+                  helpText={t("permissionPolicies")}
+                  fieldLabelId="policies"
                 />
               }
             >
@@ -359,8 +356,8 @@ export default function PermissionDetails() {
               label={t("decisionStrategy")}
               labelIcon={
                 <HelpItem
-                  helpText={t("clients-help:permissionDecisionStrategy")}
-                  fieldLabelId="clients:decisionStrategy"
+                  helpText={t("permissionDecisionStrategy")}
+                  fieldLabelId="decisionStrategy"
                 />
               }
               fieldId="policyEnforcementMode"
