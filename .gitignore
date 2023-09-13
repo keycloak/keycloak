@@ -6,6 +6,7 @@
 ###################
 .idea
 *.iml
+!.idea/icon.png
 
 # Eclipse #
 ###########
