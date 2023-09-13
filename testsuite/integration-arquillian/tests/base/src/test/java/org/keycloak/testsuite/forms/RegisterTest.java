@@ -34,6 +34,7 @@ import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.utils.DefaultAuthenticationFlows;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -378,6 +379,62 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
         UserRepresentation user = getUser(userId);
 
         assertNull(user.getAttributes());
+    }
+
+    @Test
+    public void registerUserSuccessEditUsernameDisabled() {
+        RealmRepresentation realm = testRealm().toRepresentation();
+        Boolean editUsernameAllowed = realm.isEditUsernameAllowed();
+        Boolean registrationEmailAsUsername = realm.isRegistrationEmailAsUsername();
+        realm.setEditUsernameAllowed(false);
+        realm.setRegistrationEmailAsUsername(false);
+        getCleanup().addCleanup(() -> {
+            realm.setEditUsernameAllowed(editUsernameAllowed);
+            realm.setRegistrationEmailAsUsername(registrationEmailAsUsername);
+            testRealm().update(realm);
+        });
+        testRealm().update(realm);
+        loginPage.open();
+        loginPage.clickRegister();
+        registerPage.assertCurrent();
+
+        String username = KeycloakModelUtils.generateId();
+        String email = username + "@email.com";
+        registerPage.register("firstName", "lastName", email, username, "password", "password");
+
+        appPage.assertCurrent();
+        assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+
+        String userId = events.expectRegister(username, email).assertEvent().getUserId();
+        assertUserRegistered(userId, username, email);
+    }
+
+    @Test
+    public void registerUserSuccessEditUsernameEnabled() {
+        RealmRepresentation realm = testRealm().toRepresentation();
+        Boolean editUsernameAllowed = realm.isEditUsernameAllowed();
+        Boolean registrationEmailAsUsername = realm.isRegistrationEmailAsUsername();
+        realm.setEditUsernameAllowed(true);
+        realm.setRegistrationEmailAsUsername(false);
+        getCleanup().addCleanup(() -> {
+            realm.setEditUsernameAllowed(editUsernameAllowed);
+            realm.setRegistrationEmailAsUsername(registrationEmailAsUsername);
+            testRealm().update(realm);
+        });
+        testRealm().update(realm);
+        loginPage.open();
+        loginPage.clickRegister();
+        registerPage.assertCurrent();
+
+        String username = KeycloakModelUtils.generateId();
+        String email = username + "@email.com";
+        registerPage.register("firstName", "lastName", email, username, "password", "password");
+
+        appPage.assertCurrent();
+        assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+
+        String userId = events.expectRegister(username, email).assertEvent().getUserId();
+        assertUserRegistered(userId, username, email);
     }
 
     private void assertUserRegistered(String userId, String username, String email) {
