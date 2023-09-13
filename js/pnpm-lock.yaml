@@ -275,8 +275,8 @@ importers:
         specifier: ^10.9.1
         version: 10.9.1(@types/node@20.6.0)(typescript@5.2.2)
       uuid:
-        specifier: ^9.0.0
-        version: 9.0.0
+        specifier: ^9.0.1
+        version: 9.0.1
       vite:
         specifier: ^4.4.9
         version: 4.4.9(@types/node@20.6.0)
@@ -6655,8 +6655,8 @@ packages:
     hasBin: true
     dev: true
 
-  /uuid@9.0.0:
-    resolution: {integrity: sha512-MXcSTerfPa4uqyzStbRoTgt5XIe3x5+42+q1sDuy3R5MDk66URdLMOZe5aPX/SQd+kuYAh0FdP/pO28IkQyTeg==}
+  /uuid@9.0.1:
+    resolution: {integrity: sha512-b+1eJOlsR9K8HJpow9Ok3fiWOWSIcIzXodvv0rQjVoOVNpWMpxf1wZNpt4y9h10odCNrqnYp1OBzRktckBe3sA==}
     hasBin: true
     dev: true
 
