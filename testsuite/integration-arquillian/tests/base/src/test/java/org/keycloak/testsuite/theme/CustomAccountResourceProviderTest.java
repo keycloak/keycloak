@@ -1,9 +1,13 @@
 package org.keycloak.testsuite.theme;
 
-import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
-import org.keycloak.theme.Theme;
-import org.keycloak.representations.idm.RealmRepresentation;
+import java.io.IOException;
+import org.junit.Assert;
 import org.junit.Test;
+import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.services.resource.AccountResourceProvider;
+import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
+import org.keycloak.testsuite.theme.CustomAccountResourceProviderFactory;
+import org.keycloak.theme.Theme;
 
 public class CustomAccountResourceProviderTest extends AbstractTestRealmKeycloakTest {
 
@@ -15,12 +19,8 @@ public class CustomAccountResourceProviderTest extends AbstractTestRealmKeycloak
     @Test
     public void testProviderOverride() {
         testingClient.server().run(session -> {
-            try {
-              AccountResourceProvider arp = session.getProvider(AccountResourceProvider.class, "ext-custom-account-provider");
-              Assert.assertTrue(arp instanceof CustomAccountResourceProviderFactory);
-            } catch (IOException e) {
-              Assert.fail(e.getMessage());
-            }
+            AccountResourceProvider arp = session.getProvider(AccountResourceProvider.class, "ext-custom-account-console");
+            Assert.assertTrue(arp instanceof CustomAccountResourceProviderFactory);
         });
     }
 

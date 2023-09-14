@@ -3,7 +3,11 @@ package org.keycloak.testsuite.theme;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 import org.jboss.resteasy.annotations.cache.NoCache;
+import org.keycloak.Config.Scope;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.services.resource.AccountResourceProvider;
 import org.keycloak.services.resource.AccountResourceProviderFactory;
 
@@ -29,7 +33,7 @@ public class CustomAccountResourceProviderFactory implements AccountResourceProv
   @NoCache
   @Produces(MediaType.TEXT_HTML)
   public Response getMainPage() {
-    return Response.ok().entity("<html><head><title>Account</title></head><body><h1>Custom Account Console</h1></body></html>");
+    return Response.ok().entity("<html><head><title>Account</title></head><body><h1>Custom Account Console</h1></body></html>").build();
   }
   
   @Override
