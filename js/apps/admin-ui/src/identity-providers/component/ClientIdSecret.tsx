@@ -26,10 +26,7 @@ export const ClientIdSecret = ({
       <FormGroup
         label={t("clientId")}
         labelIcon={
-          <HelpItem
-            helpText={t("clientIdHelp")}
-            fieldLabelId="identity-providers:clientId"
-          />
+          <HelpItem helpText={t("clientIdHelp")} fieldLabelId="clientId" />
         }
         fieldId="kc-client-id"
         isRequired
@@ -52,7 +49,7 @@ export const ClientIdSecret = ({
         labelIcon={
           <HelpItem
             helpText={t("clientSecretHelp")}
-            fieldLabelId="identity-providers:clientSecret"
+            fieldLabelId="clientSecret"
           />
         }
         fieldId="kc-client-secret"

@@ -6,7 +6,7 @@ export default class UserGroupsPage {
   #userGroupsTab = "user-groups-tab";
   #noGroupsAddGroupButton = "no-groups-empty-action";
   #addGroupButton = "add-group-button";
-  #joinGroupButton = "users:join-button";
+  #joinGroupButton = "join-button";
   #leaveGroupButton = "leave-group-button";
 
   goToGroupsTab() {

@@ -73,7 +73,7 @@ export const LdapSettingsConnection = ({
       );
       addAlert(t("testSuccess"), AlertVariant.success);
     } catch (error) {
-      addError("user-federation:testError", error);
+      addError("testError", error);
     }
   };
 
@@ -103,7 +103,7 @@ export const LdapSettingsConnection = ({
           labelIcon={
             <HelpItem
               helpText={t("consoleDisplayConnectionUrlHelp")}
-              fieldLabelId="user-federation:connectionURL"
+              fieldLabelId="connectionURL"
             />
           }
           fieldId="kc-ui-connection-url"
@@ -140,7 +140,7 @@ export const LdapSettingsConnection = ({
           labelIcon={
             <HelpItem
               helpText={t("enableStartTlsHelp")}
-              fieldLabelId="user-federation:enableStartTls"
+              fieldLabelId="enableStartTls"
             />
           }
           fieldId="kc-enable-start-tls"
@@ -170,7 +170,7 @@ export const LdapSettingsConnection = ({
           labelIcon={
             <HelpItem
               helpText={t("useTruststoreSpiHelp")}
-              fieldLabelId="user-federation:useTruststoreSpi"
+              fieldLabelId="useTruststoreSpi"
             />
           }
           fieldId="kc-use-truststore-spi"
@@ -203,7 +203,7 @@ export const LdapSettingsConnection = ({
           labelIcon={
             <HelpItem
               helpText={t("connectionPoolingHelp")}
-              fieldLabelId="user-federation:connectionPooling"
+              fieldLabelId="connectionPooling"
             />
           }
           fieldId="kc-connection-pooling"
@@ -232,7 +232,7 @@ export const LdapSettingsConnection = ({
           labelIcon={
             <HelpItem
               helpText={t("connectionTimeoutHelp")}
-              fieldLabelId="user-federation:consoleTimeout"
+              fieldLabelId="consoleTimeout"
             />
           }
           fieldId="kc-ui-connection-timeout"
@@ -258,10 +258,7 @@ export const LdapSettingsConnection = ({
         <FormGroup
           label={t("bindType")}
           labelIcon={
-            <HelpItem
-              helpText={t("bindTypeHelp")}
-              fieldLabelId="user-federation:bindType"
-            />
+            <HelpItem helpText={t("bindTypeHelp")} fieldLabelId="bindType" />
           }
           fieldId="kc-bind-type"
           isRequired
@@ -298,10 +295,7 @@ export const LdapSettingsConnection = ({
             <FormGroup
               label={t("bindDn")}
               labelIcon={
-                <HelpItem
-                  helpText={t("bindDnHelp")}
-                  fieldLabelId="user-federation:bindDn"
-                />
+                <HelpItem helpText={t("bindDnHelp")} fieldLabelId="bindDn" />
               }
               fieldId="kc-ui-bind-dn"
               helperTextInvalid={t("validateBindDn")}
@@ -329,7 +323,7 @@ export const LdapSettingsConnection = ({
               labelIcon={
                 <HelpItem
                   helpText={t("bindCredentialsHelp")}
-                  fieldLabelId="user-federation:bindCredentials"
+                  fieldLabelId="bindCredentials"
                 />
               }
               fieldId="kc-ui-bind-credentials"

@@ -339,7 +339,7 @@ export const LocalizationTab = ({ save, realm }: LocalizationTabProps) => {
       refreshTable();
       addAlert(t("deleteMessageBundleSuccess"));
     } catch (error) {
-      addError("realm-settings:deleteMessageBundleError", error);
+      addError("deleteMessageBundleError", error);
     }
   };
 
@@ -368,7 +368,7 @@ export const LocalizationTab = ({ save, realm }: LocalizationTabProps) => {
             labelIcon={
               <HelpItem
                 helpText={t("internationalizationHelp")}
-                fieldLabelId="realm-settings:internationalization"
+                fieldLabelId="internationalization"
               />
             }
           >

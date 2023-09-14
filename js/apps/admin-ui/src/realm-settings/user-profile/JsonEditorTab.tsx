@@ -29,7 +29,7 @@ export const JsonEditorTab = () => {
     try {
       await save(JSON.parse(value));
     } catch (error) {
-      addError("realm-settings:invalidJsonError", error);
+      addError("invalidJsonError", error);
       return;
     }
   }

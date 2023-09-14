@@ -55,8 +55,8 @@ export const AttributesTab = () => {
     save(
       { attributes: config?.attributes!, groups: config?.groups },
       {
-        successMessageKey: "realm-settings:updatedUserProfileSuccess",
-        errorMessageKey: "realm-settings:updatedUserProfileError",
+        successMessageKey: "updatedUserProfileSuccess",
+        errorMessageKey: "updatedUserProfileError",
       },
     );
   };
@@ -76,8 +76,8 @@ export const AttributesTab = () => {
       save(
         { attributes: updatedAttributes!, groups: config?.groups },
         {
-          successMessageKey: "realm-settings:deleteAttributeSuccess",
-          errorMessageKey: "realm-settings:deleteAttributeError",
+          successMessageKey: "deleteAttributeSuccess",
+          errorMessageKey: "deleteAttributeError",
         },
       );
       setAttributeToDelete("");

@@ -34,7 +34,7 @@ export default function UsersSection() {
     <>
       <ViewHeader
         titleKey="titleUsers"
-        subKey="users:usersExplain"
+        subKey="usersExplain"
         helpUrl={helpUrls.usersUrl}
         divider={false}
       />

@@ -137,7 +137,7 @@ export default function RealmRoleTabs() {
       setAttributes(attributes);
       addAlert(t("roleSaveSuccess"), AlertVariant.success);
     } catch (error) {
-      addError("roles:roleSaveError", error);
+      addError("roleSaveError", error);
     }
   };
 
@@ -191,8 +191,8 @@ export default function RealmRoleTabs() {
   const permissionsTab = useTab("permissions");
 
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
-    titleKey: "roles:roleDeleteConfirm",
-    messageKey: t("roles:roleDeleteConfirmDialog", {
+    titleKey: "roleDeleteConfirm",
+    messageKey: t("roleDeleteConfirmDialog", {
       selectedRoleName: roleName || t("createRole"),
     }),
     continueButtonLabel: "delete",
@@ -210,7 +210,7 @@ export default function RealmRoleTabs() {
         addAlert(t("roleDeletedSuccess"), AlertVariant.success);
         navigate(toOverview());
       } catch (error) {
-        addError("roles:roleDeleteError", error);
+        addError("roleDeleteError", error);
       }
     },
   });
@@ -222,7 +222,7 @@ export default function RealmRoleTabs() {
           component="button"
           onClick={() => toggleDeleteAllAssociatedRolesDialog()}
         >
-          {t("roles:removeAllAssociatedRoles")}
+          {t("removeAllAssociatedRoles")}
         </DropdownItem>,
         <DropdownItem
           key="delete-role"
@@ -256,8 +256,8 @@ export default function RealmRoleTabs() {
     toggleDeleteAllAssociatedRolesDialog,
     DeleteAllAssociatedRolesConfirm,
   ] = useConfirmDialog({
-    titleKey: t("roles:removeAllAssociatedRoles") + "?",
-    messageKey: t("roles:removeAllAssociatedRolesConfirmDialog", {
+    titleKey: t("removeAllAssociatedRoles") + "?",
+    messageKey: t("removeAllAssociatedRolesConfirmDialog", {
       name: roleName || t("createRole"),
     }),
     continueButtonLabel: "delete",
@@ -276,7 +276,7 @@ export default function RealmRoleTabs() {
         navigate(toTab("details"));
         refresh();
       } catch (error) {
-        addError("roles:roleDeleteError", error);
+        addError("roleDeleteError", error);
       }
     },
   });
@@ -295,7 +295,7 @@ export default function RealmRoleTabs() {
       navigate(toTab("associated-roles"));
       addAlert(t("addAssociatedRolesSuccess"), AlertVariant.success);
     } catch (error) {
-      addError("roles:addAssociatedRolesError", error);
+      addError("addAssociatedRolesError", error);
     }
   };
 

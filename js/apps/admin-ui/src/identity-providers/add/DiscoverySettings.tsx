@@ -158,7 +158,7 @@ const Fields = ({ readOnly }: DiscoverySettingsProps) => {
           labelIcon={
             <HelpItem
               helpText={t("pkceMethodHelp")}
-              fieldLabelId="identity-providers:pkceMethod"
+              fieldLabelId="pkceMethod"
             />
           }
           fieldId="pkceMethod"

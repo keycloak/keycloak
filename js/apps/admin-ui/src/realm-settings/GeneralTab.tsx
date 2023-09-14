@@ -123,7 +123,7 @@ export const RealmSettingsGeneralTab = ({
           labelIcon={
             <HelpItem
               helpText={t("frontendUrlHelp")}
-              fieldLabelId="realm-settings:frontendUrl"
+              fieldLabelId="frontendUrl"
             />
           }
         >
@@ -139,7 +139,7 @@ export const RealmSettingsGeneralTab = ({
           labelIcon={
             <HelpItem
               helpText={t("requireSslHelp")}
-              fieldLabelId="realm-settings:requireSsl"
+              fieldLabelId="requireSsl"
             />
           }
         >
@@ -195,7 +195,7 @@ export const RealmSettingsGeneralTab = ({
           labelIcon={
             <HelpItem
               helpText={t("userManagedAccessHelp")}
-              fieldLabelId="realm-settings:userManagedAccess"
+              fieldLabelId="userManagedAccess"
             />
           }
           fieldId="kc-user-managed-access"
@@ -224,7 +224,7 @@ export const RealmSettingsGeneralTab = ({
             labelIcon={
               <HelpItem
                 helpText={t("userProfileEnabledHelp")}
-                fieldLabelId="realm-settings:userProfileEnabled"
+                fieldLabelId="userProfileEnabled"
               />
             }
             fieldId="kc-user-profile-enabled"
@@ -254,10 +254,7 @@ export const RealmSettingsGeneralTab = ({
         <FormGroup
           label={t("endpoints")}
           labelIcon={
-            <HelpItem
-              helpText={t("endpointsHelp")}
-              fieldLabelId="realm-settings:endpoints"
-            />
+            <HelpItem helpText={t("endpointsHelp")} fieldLabelId="endpoints" />
           }
           fieldId="kc-endpoints"
         >

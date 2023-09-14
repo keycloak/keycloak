@@ -239,12 +239,9 @@ export default function NewAttributeSettings() {
 
       navigate(toUserProfile({ realm, tab: "attributes" }));
 
-      addAlert(
-        t("realm-settings:createAttributeSuccess"),
-        AlertVariant.success,
-      );
+      addAlert(t("createAttributeSuccess"), AlertVariant.success);
     } catch (error) {
-      addError("realm-settings:createAttributeError", error);
+      addError("createAttributeError", error);
     }
   };
 

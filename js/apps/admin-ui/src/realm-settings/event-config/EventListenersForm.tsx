@@ -41,7 +41,7 @@ export const EventListenersForm = ({
         labelIcon={
           <HelpItem
             helpText={t("eventListenersHelpTextHelp")}
-            fieldLabelId="realm-settings:eventListeners"
+            fieldLabelId="eventListeners"
           />
         }
       >

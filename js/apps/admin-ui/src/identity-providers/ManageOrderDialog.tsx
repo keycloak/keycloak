@@ -79,7 +79,7 @@ export const ManageOrderDialog = ({
               await Promise.all(updates);
               addAlert(t("orderChangeSuccess"));
             } catch (error) {
-              addError("identity-providers:orderChangeError", error);
+              addError("orderChangeError", error);
             }
 
             onClose();

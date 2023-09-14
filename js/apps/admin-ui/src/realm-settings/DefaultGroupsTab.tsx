@@ -75,7 +75,7 @@ export const DefaultsGroupsTab = () => {
       );
       setSelectedRows([]);
     } catch (error) {
-      addError("realm-settings:groupRemoveError", error);
+      addError("groupRemoveError", error);
     }
     reload();
   };
@@ -95,7 +95,7 @@ export const DefaultsGroupsTab = () => {
         AlertVariant.success,
       );
     } catch (error) {
-      addError("realm-settings:defaultGroupAddedError", error);
+      addError("defaultGroupAddedError", error);
     }
     reload();
   };
@@ -119,7 +119,7 @@ export const DefaultsGroupsTab = () => {
         <GroupPickerDialog
           type="selectMany"
           text={{
-            title: "realm-settings:addDefaultGroups",
+            title: "addDefaultGroups",
             ok: "add",
           }}
           onConfirm={(groups) => {
@@ -155,8 +155,8 @@ export const DefaultsGroupsTab = () => {
         canSelectAll
         onSelect={(rows) => setSelectedRows([...rows])}
         loader={loader}
-        ariaLabelKey="realm-settings:defaultGroups"
-        searchPlaceholderKey="realm-settings:searchForGroups"
+        ariaLabelKey="defaultGroups"
+        searchPlaceholderKey="searchForGroups"
         toolbarItem={
           <>
             <ToolbarItem>
@@ -219,7 +219,7 @@ export const DefaultsGroupsTab = () => {
             hasIcon
             message={t("noDefaultGroups")}
             instructions={
-              <Trans i18nKey="realm-settings:noDefaultGroupsInstructions">
+              <Trans i18nKey="noDefaultGroupsInstructions">
                 {" "}
                 <Link
                   className="pf-u-font-weight-light"

@@ -71,7 +71,7 @@ export const AttributePermission = () => {
         labelIcon={
           <HelpItem
             helpText={t("whoCanEditHelp")}
-            fieldLabelId="realm-settings:whoCanEdit"
+            fieldLabelId="whoCanEdit"
           />
         }
         fieldId="kc-who-can-edit"
@@ -84,7 +84,7 @@ export const AttributePermission = () => {
         labelIcon={
           <HelpItem
             helpText={t("whoCanViewHelp")}
-            fieldLabelId="realm-settings:whoCanView"
+            fieldLabelId="whoCanView"
           />
         }
         fieldId="kc-who-can-view"

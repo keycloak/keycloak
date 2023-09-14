@@ -79,7 +79,7 @@ export const DiscoveryEndpointField = ({
                 ? "useDiscoveryEndpointHelp"
                 : "useEntityDescriptorHelp",
             )}
-            fieldLabelId="identity-providers:discoveryEndpoint"
+            fieldLabelId="discoveryEndpoint"
           />
         }
       >
@@ -110,7 +110,7 @@ export const DiscoveryEndpointField = ({
                   ? "discoveryEndpointHelp"
                   : "samlEntityDescriptorHelp",
               )}
-              fieldLabelId="identity-providers:discoveryEndpoint"
+              fieldLabelId="discoveryEndpoint"
             />
           }
           validated={

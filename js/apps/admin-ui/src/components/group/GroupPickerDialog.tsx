@@ -180,7 +180,7 @@ export const GroupPickerDialog = ({
           setNavigation([]);
           setGroupId(undefined);
         }}
-        inputGroupPlaceholder={t("users:searchForGroups")}
+        inputGroupPlaceholder={t("searchForGroups")}
       >
         <Breadcrumb>
           {navigation.length > 0 && (

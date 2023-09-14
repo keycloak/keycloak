@@ -56,7 +56,7 @@ const EmailVerified = () => {
       labelIcon={
         <HelpItem
           helpText={t("emailVerifiedHelp")}
-          fieldLabelId="users:emailVerified"
+          fieldLabelId="emailVerified"
         />
       }
     >
@@ -120,7 +120,7 @@ export const UserForm = ({
       await adminClient.attackDetection.del({ id: user!.id! });
       addAlert(t("unlockSuccess"), AlertVariant.success);
     } catch (error) {
-      addError("users:unlockError", error);
+      addError("unlockError", error);
     }
   };
 
@@ -143,9 +143,9 @@ export const UserForm = ({
           id: user!.id!,
           groupId: group.id!,
         });
-        addAlert(t("users:addedGroupMembership"), AlertVariant.success);
+        addAlert(t("addedGroupMembership"), AlertVariant.success);
       } catch (error) {
-        addError("users:addedGroupMembershipError", error);
+        addError("addedGroupMembershipError", error);
       }
     });
   };
@@ -170,8 +170,8 @@ export const UserForm = ({
         <GroupPickerDialog
           type="selectMany"
           text={{
-            title: "users:selectGroups",
-            ok: "users:join",
+            title: "selectGroups",
+            ok: "join",
           }}
           canBrowse={isManager}
           onConfirm={(groups) => {
@@ -216,7 +216,7 @@ export const UserForm = ({
           labelIcon={
             <HelpItem
               helpText={t("federationLinkHelp")}
-              fieldLabelId="users:federationLink"
+              fieldLabelId="federationLink"
             />
           }
         >
@@ -250,7 +250,7 @@ export const UserForm = ({
             label={t("email")}
             fieldId="kc-email"
             validated={errors.email ? "error" : "default"}
-            helperTextInvalid={t("users:emailInvalid")}
+            helperTextInvalid={t("emailInvalid")}
           >
             <KeycloakTextInput
               type="email"
@@ -295,7 +295,7 @@ export const UserForm = ({
           labelIcon={
             <HelpItem
               helpText={t("temporaryLockedHelp")}
-              fieldLabelId="users:temporaryLocked"
+              fieldLabelId="temporaryLocked"
             />
           }
         >
@@ -343,7 +343,7 @@ export const UserForm = ({
                   variant="secondary"
                   data-testid="join-groups-button"
                 >
-                  {t("users:joinGroups")}
+                  {t("joinGroups")}
                 </Button>
               </InputGroup>
             )}

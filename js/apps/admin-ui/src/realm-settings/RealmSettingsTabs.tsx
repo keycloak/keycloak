@@ -72,7 +72,7 @@ const RealmSettingsHeader = ({
   const [partialExportOpen, setPartialExportOpen] = useState(false);
 
   const [toggleDisableDialog, DisableConfirm] = useConfirmDialog({
-    titleKey: "realm-settings:disableConfirmTitle",
+    titleKey: "disableConfirmTitle",
     messageKey: "disableConfirmRealm",
     continueButtonLabel: "disable",
     onConfirm: () => {
@@ -82,7 +82,7 @@ const RealmSettingsHeader = ({
   });
 
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
-    titleKey: "realm-settings:deleteConfirmTitle",
+    titleKey: "deleteConfirmTitle",
     messageKey: "deleteConfirmRealmSetting",
     continueButtonLabel: "delete",
     continueButtonVariant: ButtonVariant.danger,
@@ -113,7 +113,7 @@ const RealmSettingsHeader = ({
       />
       <ViewHeader
         titleKey={realmName}
-        subKey="realm-settings:realmSettingsExplain"
+        subKey="realmSettingsExplain"
         helpUrl={helpUrls.realmSettingsUrl}
         divider={false}
         dropdownItems={[
@@ -306,7 +306,7 @@ export const RealmSettingsTabs = ({
             <RealmSettingsThemesTab realm={realm} save={save} />
           </Tab>
           <Tab
-            title={<TabTitleText>{t("realm-settings:keys")}</TabTitleText>}
+            title={<TabTitleText>{t("keys")}</TabTitleText>}
             data-testid="rs-keys-tab"
             {...keysTab}
           >
@@ -339,14 +339,14 @@ export const RealmSettingsTabs = ({
             <SecurityDefenses realm={realm} save={save} />
           </Tab>
           <Tab
-            title={<TabTitleText>{t("realm-settings:sessions")}</TabTitleText>}
+            title={<TabTitleText>{t("sessions")}</TabTitleText>}
             data-testid="rs-sessions-tab"
             {...sessionsTab}
           >
             <RealmSettingsSessionsTab key={key} realm={realm} save={save} />
           </Tab>
           <Tab
-            title={<TabTitleText>{t("realm-settings:tokens")}</TabTitleText>}
+            title={<TabTitleText>{t("tokens")}</TabTitleText>}
             data-testid="rs-tokens-tab"
             {...tokensTab}
           >
@@ -354,11 +354,7 @@ export const RealmSettingsTabs = ({
           </Tab>
           {isFeatureEnabled(Feature.ClientPolicies) && (
             <Tab
-              title={
-                <TabTitleText>
-                  {t("realm-settings:clientPolicies")}
-                </TabTitleText>
-              }
+              title={<TabTitleText>{t("clientPolicies")}</TabTitleText>}
               data-testid="rs-clientPolicies-tab"
               {...clientPoliciesTab}
             >
@@ -375,11 +371,7 @@ export const RealmSettingsTabs = ({
                   aria-label={t("clientProfilesSubTab")}
                   title={<TabTitleText>{t("profiles")}</TabTitleText>}
                   tooltip={
-                    <Tooltip
-                      content={t(
-                        "realm-settings:clientPoliciesProfilesHelpText",
-                      )}
-                    />
+                    <Tooltip content={t("clientPoliciesProfilesHelpText")} />
                   }
                   {...clientPoliciesProfilesTab}
                 >
@@ -392,11 +384,7 @@ export const RealmSettingsTabs = ({
                   {...clientPoliciesPoliciesTab}
                   title={<TabTitleText>{t("policies")}</TabTitleText>}
                   tooltip={
-                    <Tooltip
-                      content={t(
-                        "realm-settings:clientPoliciesPoliciesHelpText",
-                      )}
-                    />
+                    <Tooltip content={t("clientPoliciesPoliciesHelpText")} />
                   }
                 >
                   <PoliciesTab />
@@ -407,9 +395,7 @@ export const RealmSettingsTabs = ({
           {isFeatureEnabled(Feature.DeclarativeUserProfile) &&
             realm.attributes?.userProfileEnabled === "true" && (
               <Tab
-                title={
-                  <TabTitleText>{t("realm-settings:userProfile")}</TabTitleText>
-                }
+                title={<TabTitleText>{t("userProfile")}</TabTitleText>}
                 data-testid="rs-user-profile-tab"
                 {...userProfileTab}
               >

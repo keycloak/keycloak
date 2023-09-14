@@ -160,12 +160,12 @@ export default function NewClientPolicyCondition() {
       navigate(toEditClientPolicy({ realm, policyName: policyName! }));
       addAlert(
         conditionName
-          ? t("realm-settings:updateClientConditionSuccess")
-          : t("realm-settings:createClientConditionSuccess"),
+          ? t("updateClientConditionSuccess")
+          : t("createClientConditionSuccess"),
         AlertVariant.success,
       );
     } catch (error) {
-      addError("realm-settings:createClientConditionError", error);
+      addError("createClientConditionError", error);
     }
   };
 
@@ -191,7 +191,7 @@ export default function NewClientPolicyCondition() {
                     ? `${camelCase(conditionType.replace(/-/g, " "))}Help`
                     : "conditionsHelp"
                 }
-                fieldLabelId="realm-settings:conditionType"
+                fieldLabelId="conditionType"
               />
             }
           >

@@ -40,7 +40,7 @@ export const OIDCAuthentication = ({ create = true }: { create?: boolean }) => {
         labelIcon={
           <HelpItem
             helpText={t("clientAuthenticationHelp")}
-            fieldLabelId="identity-providers:clientAuthentication"
+            fieldLabelId="clientAuthentication"
           />
         }
         fieldId="clientAuthentication"
@@ -85,7 +85,7 @@ export const OIDCAuthentication = ({ create = true }: { create?: boolean }) => {
         labelIcon={
           <HelpItem
             helpText={t("clientAssertionSigningAlgHelp")}
-            fieldLabelId="identity-providers:clientAssertionSigningAlg"
+            fieldLabelId="clientAssertionSigningAlg"
           />
         }
         fieldId="clientAssertionSigningAlg"

@@ -63,7 +63,7 @@ export const KerberosSettingsRequired = ({
           labelIcon={
             <HelpItem
               helpText={t("uiDisplayNameHelp")}
-              fieldLabelId="user-federation:uiDisplayName"
+              fieldLabelId="uiDisplayName"
             />
           }
           fieldId="kc-ui-display-name"
@@ -111,7 +111,7 @@ export const KerberosSettingsRequired = ({
           labelIcon={
             <HelpItem
               helpText={t("kerberosRealmHelp")}
-              fieldLabelId="user-federation:kc-kerberos-realm"
+              fieldLabelId="kc-kerberos-realm"
             />
           }
           fieldId="kc-kerberos-realm"
@@ -148,7 +148,7 @@ export const KerberosSettingsRequired = ({
           labelIcon={
             <HelpItem
               helpText={t("serverPrincipalHelp")}
-              fieldLabelId="user-federation:serverPrincipal"
+              fieldLabelId="serverPrincipal"
             />
           }
           fieldId="kc-server-principal"
@@ -183,10 +183,7 @@ export const KerberosSettingsRequired = ({
         <FormGroup
           label={t("keyTab")}
           labelIcon={
-            <HelpItem
-              helpText={t("keyTabHelp")}
-              fieldLabelId="user-federation:keyTab"
-            />
+            <HelpItem helpText={t("keyTabHelp")} fieldLabelId="keyTab" />
           }
           fieldId="kc-key-tab"
           isRequired
@@ -220,10 +217,7 @@ export const KerberosSettingsRequired = ({
         <FormGroup
           label={t("debug")}
           labelIcon={
-            <HelpItem
-              helpText={t("debugHelp")}
-              fieldLabelId="user-federation:debug"
-            />
+            <HelpItem helpText={t("debugHelp")} fieldLabelId="debug" />
           }
           fieldId="kc-debug"
           hasNoPaddingTop
@@ -252,7 +246,7 @@ export const KerberosSettingsRequired = ({
           labelIcon={
             <HelpItem
               helpText={t("allowPasswordAuthenticationHelp")}
-              fieldLabelId="user-federation:allowPasswordAuthentication"
+              fieldLabelId="allowPasswordAuthentication"
             />
           }
           fieldId="kc-allow-password-authentication"
@@ -282,7 +276,7 @@ export const KerberosSettingsRequired = ({
             labelIcon={
               <HelpItem
                 helpText={t("editModeKerberosHelp")}
-                fieldLabelId="user-federation:editMode"
+                fieldLabelId="editMode"
               />
             }
             isRequired
@@ -322,7 +316,7 @@ export const KerberosSettingsRequired = ({
           labelIcon={
             <HelpItem
               helpText={t("updateFirstLoginHelp")}
-              fieldLabelId="user-federation:updateFirstLogin"
+              fieldLabelId="updateFirstLogin"
             />
           }
           fieldId="kc-update-first-login"

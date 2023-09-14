@@ -112,7 +112,7 @@ export const LdapSettingsGeneral = ({
           labelIcon={
             <HelpItem
               helpText={t("uiDisplayNameHelp")}
-              fieldLabelId="user-federation:uiDisplayName"
+              fieldLabelId="uiDisplayName"
             />
           }
           fieldId="kc-ui-display-name"
@@ -156,10 +156,7 @@ export const LdapSettingsGeneral = ({
         <FormGroup
           label={t("vendor")}
           labelIcon={
-            <HelpItem
-              helpText={t("vendorHelp")}
-              fieldLabelId="user-federation:vendor"
-            />
+            <HelpItem helpText={t("vendorHelp")} fieldLabelId="vendor" />
           }
           fieldId="kc-vendor"
           isRequired

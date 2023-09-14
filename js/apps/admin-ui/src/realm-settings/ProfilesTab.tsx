@@ -152,13 +152,10 @@ export default function ProfilesTab() {
           profiles: changedProfiles,
           globalProfiles: changedGlobalProfiles,
         });
-        addAlert(
-          t("realm-settings:updateClientProfilesSuccess"),
-          AlertVariant.success,
-        );
+        addAlert(t("updateClientProfilesSuccess"), AlertVariant.success);
         setKey(key + 1);
       } catch (error) {
-        addError("realm-settings:updateClientProfilesError", error);
+        addError("updateClientProfilesError", error);
       }
     } catch (error) {
       console.warn("Invalid json, ignoring value using {}");
@@ -203,8 +200,8 @@ export default function ProfilesTab() {
       {!show ? (
         <KeycloakDataTable
           key={tableProfiles.length}
-          ariaLabelKey="realm-settings:profiles"
-          searchPlaceholderKey="realm-settings:clientProfileSearch"
+          ariaLabelKey="profiles"
+          searchPlaceholderKey="clientProfileSearch"
           loader={loader}
           toolbarItem={
             <ToolbarItem>

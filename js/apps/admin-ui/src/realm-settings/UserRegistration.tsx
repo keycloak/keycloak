@@ -40,9 +40,9 @@ export const UserRegistration = () => {
         compositeArray,
       );
       setKey(key + 1);
-      addAlert(t("roles:addAssociatedRolesSuccess"), AlertVariant.success);
+      addAlert(t("addAssociatedRolesSuccess"), AlertVariant.success);
     } catch (error) {
-      addError("roles:addAssociatedRolesError", error);
+      addError("addAssociatedRolesError", error);
     }
   };
 

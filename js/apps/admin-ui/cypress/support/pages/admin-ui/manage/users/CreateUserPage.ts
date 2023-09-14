@@ -17,7 +17,7 @@ export default class CreateUserPage {
     this.searchPgCreateUserBtn = "create-new-user";
     this.addUserBtn = "add-user";
     this.joinGroupsBtn = "join-groups-button";
-    this.joinBtn = "users:join-button";
+    this.joinBtn = "join-button";
     this.saveBtn = "create-user";
     this.cancelBtn = "cancel-create-user";
   }

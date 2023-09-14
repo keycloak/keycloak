@@ -40,7 +40,7 @@ export default function CreateRealmRole() {
       addAlert(t("roleCreated"), AlertVariant.success);
       navigate(toRealmRole({ realm, id: createdRole.id!, tab: "details" }));
     } catch (error) {
-      addError("roles:roleCreateError", error);
+      addError("roleCreateError", error);
     }
   };
 

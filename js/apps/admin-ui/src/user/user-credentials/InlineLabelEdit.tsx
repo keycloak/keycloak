@@ -42,7 +42,7 @@ export const InlineLabelEdit = ({
       addAlert(t("updateCredentialUserLabelSuccess"), AlertVariant.success);
       toggle();
     } catch (error) {
-      addError("users:updateCredentialUserLabelError", error);
+      addError("updateCredentialUserLabelError", error);
     }
   };
 

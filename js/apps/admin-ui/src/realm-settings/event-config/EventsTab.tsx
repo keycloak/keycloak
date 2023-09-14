@@ -62,8 +62,8 @@ export const EventsTab = ({ realm }: EventsTabProps) => {
   };
 
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
-    titleKey: "realm-settings:deleteEvents",
-    messageKey: "realm-settings:deleteEventsConfirm",
+    titleKey: "deleteEvents",
+    messageKey: "deleteEventsConfirm",
     continueButtonLabel: "clear",
     continueButtonVariant: ButtonVariant.danger,
     onConfirm: async () => {
@@ -120,15 +120,15 @@ export const EventsTab = ({ realm }: EventsTabProps) => {
       setupForm({ ...events, ...eventConfig, adminEventsExpiration });
       addAlert(
         updatedEventListener
-          ? t("realm-settings:saveEventListenersSuccess")
-          : t("realm-settings:eventConfigSuccessfully"),
+          ? t("saveEventListenersSuccess")
+          : t("eventConfigSuccessfully"),
         AlertVariant.success,
       );
     } catch (error) {
       addError(
         updatedEventListener
-          ? t("realm-settings:saveEventListenersError")
-          : t("realm-settings:eventConfigError"),
+          ? t("saveEventListenersError")
+          : t("eventConfigError"),
         error,
       );
     }

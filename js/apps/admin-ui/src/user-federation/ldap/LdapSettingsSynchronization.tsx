@@ -39,7 +39,7 @@ export const LdapSettingsSynchronization = ({
           labelIcon={
             <HelpItem
               helpText={t("importUsersHelp")}
-              fieldLabelId="user-federation:importUsers"
+              fieldLabelId="importUsers"
             />
           }
           fieldId="kc-import-users"
@@ -69,7 +69,7 @@ export const LdapSettingsSynchronization = ({
           labelIcon={
             <HelpItem
               helpText={t("syncRegistrations")}
-              fieldLabelId="user-federation:syncRegistrations"
+              fieldLabelId="syncRegistrations"
             />
           }
           fieldId="syncRegistrations"
@@ -94,10 +94,7 @@ export const LdapSettingsSynchronization = ({
         <FormGroup
           label={t("batchSize")}
           labelIcon={
-            <HelpItem
-              helpText={t("batchSizeHelp")}
-              fieldLabelId="user-federation:batchSize"
-            />
+            <HelpItem helpText={t("batchSizeHelp")} fieldLabelId="batchSize" />
           }
           fieldId="kc-batch-size"
         >
@@ -114,7 +111,7 @@ export const LdapSettingsSynchronization = ({
           labelIcon={
             <HelpItem
               helpText={t("periodicFullSyncHelp")}
-              fieldLabelId="user-federation:periodicFullSync"
+              fieldLabelId="periodicFullSync"
             />
           }
           fieldId="kc-periodic-full-sync"
@@ -145,7 +142,7 @@ export const LdapSettingsSynchronization = ({
             labelIcon={
               <HelpItem
                 helpText={t("fullSyncPeriodHelp")}
-                fieldLabelId="user-federation:fullSyncPeriod"
+                fieldLabelId="fullSyncPeriod"
               />
             }
             fieldId="kc-full-sync-period"
@@ -165,7 +162,7 @@ export const LdapSettingsSynchronization = ({
           labelIcon={
             <HelpItem
               helpText={t("periodicChangedUsersSyncHelp")}
-              fieldLabelId="user-federation:periodicChangedUsersSync"
+              fieldLabelId="periodicChangedUsersSync"
             />
           }
           fieldId="kc-periodic-changed-users-sync"
@@ -195,7 +192,7 @@ export const LdapSettingsSynchronization = ({
             labelIcon={
               <HelpItem
                 helpText={t("changedUsersSyncHelp")}
-                fieldLabelId="user-federation:changedUsersSyncPeriod"
+                fieldLabelId="changedUsersSyncPeriod"
               />
             }
             fieldId="kc-changed-users-sync-period"

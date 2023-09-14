@@ -42,12 +42,7 @@ const LoginFlow = ({
   return (
     <FormGroup
       label={t(label)}
-      labelIcon={
-        <HelpItem
-          helpText={t(`${label}Help`)}
-          fieldLabelId={`identity-providers:${label}`}
-        />
-      }
+      labelIcon={<HelpItem helpText={t(`${label}Help`)} fieldLabelId={label} />}
       fieldId={label}
     >
       <Controller
@@ -166,11 +161,11 @@ export const AdvancedSettings = ({ isOIDC, isSAML }: AdvancedSettingsProps) => {
       {(!isSAML || isOIDC) && claimFilterRequired && (
         <>
           <FormGroup
-            label={t("identity-providers:claimFilterName")}
+            label={t("claimFilterName")}
             labelIcon={
               <HelpItem
                 helpText={t("claimFilterNameHelp")}
-                fieldLabelId="identity-providers:claimFilterName"
+                fieldLabelId="claimFilterName"
               />
             }
             fieldId="kc-claim-filter-name"
@@ -195,11 +190,11 @@ export const AdvancedSettings = ({ isOIDC, isSAML }: AdvancedSettingsProps) => {
             />
           </FormGroup>
           <FormGroup
-            label={t("identity-providers:claimFilterValue")}
+            label={t("claimFilterValue")}
             labelIcon={
               <HelpItem
                 helpText={t("claimFilterValueHelp")}
-                fieldLabelId="identity-providers:claimFilterName"
+                fieldLabelId="claimFilterName"
               />
             }
             fieldId="kc-claim-filter-value"
@@ -240,10 +235,7 @@ export const AdvancedSettings = ({ isOIDC, isSAML }: AdvancedSettingsProps) => {
         className="pf-u-pb-3xl"
         label={t("syncMode")}
         labelIcon={
-          <HelpItem
-            helpText={t("syncModeHelp")}
-            fieldLabelId="identity-providers:syncMode"
-          />
+          <HelpItem helpText={t("syncModeHelp")} fieldLabelId="syncMode" />
         }
         fieldId="syncMode"
       >

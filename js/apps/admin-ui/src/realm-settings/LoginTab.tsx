@@ -59,7 +59,7 @@ export const RealmSettingsLoginTab = ({
             labelIcon={
               <HelpItem
                 helpText={t("userRegistrationHelpText")}
-                fieldLabelId="realm-settings:registrationAllowed"
+                fieldLabelId="registrationAllowed"
               />
             }
             hasNoPaddingTop
@@ -83,7 +83,7 @@ export const RealmSettingsLoginTab = ({
             labelIcon={
               <HelpItem
                 helpText={t("forgotPasswordHelpText")}
-                fieldLabelId="realm-settings:resetPasswordAllowed"
+                fieldLabelId="resetPasswordAllowed"
               />
             }
             hasNoPaddingTop
@@ -108,7 +108,7 @@ export const RealmSettingsLoginTab = ({
             labelIcon={
               <HelpItem
                 helpText={t("rememberMeHelpText")}
-                fieldLabelId="realm-settings:rememberMe"
+                fieldLabelId="rememberMe"
               />
             }
             hasNoPaddingTop
@@ -136,7 +136,7 @@ export const RealmSettingsLoginTab = ({
             labelIcon={
               <HelpItem
                 helpText={t("emailAsUsernameHelpText")}
-                fieldLabelId="realm-settings:registrationEmailAsUsername"
+                fieldLabelId="registrationEmailAsUsername"
               />
             }
             hasNoPaddingTop
@@ -167,7 +167,7 @@ export const RealmSettingsLoginTab = ({
             labelIcon={
               <HelpItem
                 helpText={t("loginWithEmailHelpText")}
-                fieldLabelId="realm-settings:loginWithEmailAllowed"
+                fieldLabelId="loginWithEmailAllowed"
               />
             }
             hasNoPaddingTop
@@ -196,7 +196,7 @@ export const RealmSettingsLoginTab = ({
             labelIcon={
               <HelpItem
                 helpText={t("duplicateEmailsHelpText")}
-                fieldLabelId="realm-settings:duplicateEmailsAllowed"
+                fieldLabelId="duplicateEmailsAllowed"
               />
             }
             hasNoPaddingTop
@@ -228,7 +228,7 @@ export const RealmSettingsLoginTab = ({
             labelIcon={
               <HelpItem
                 helpText={t("verifyEmailHelpText")}
-                fieldLabelId="realm-settings:verifyEmail"
+                fieldLabelId="verifyEmail"
               />
             }
             hasNoPaddingTop
@@ -260,7 +260,7 @@ export const RealmSettingsLoginTab = ({
             labelIcon={
               <HelpItem
                 helpText={t("editUsernameHelp")}
-                fieldLabelId="realm-settings:editUsernameAllowed"
+                fieldLabelId="editUsernameAllowed"
               />
             }
             hasNoPaddingTop

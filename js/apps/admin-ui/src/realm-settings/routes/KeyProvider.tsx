@@ -26,7 +26,7 @@ const KeyProviderForm = lazy(
 export const KeyProviderFormRoute: AppRouteObject = {
   path: "/:realm/realm-settings/keys/providers/:id/:providerType/settings",
   element: <KeyProviderForm />,
-  breadcrumb: (t) => t("realm-settings:editProvider"),
+  breadcrumb: (t) => t("editProvider"),
   handle: {
     access: "view-realm",
   },

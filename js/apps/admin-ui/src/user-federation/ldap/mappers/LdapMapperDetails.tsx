@@ -132,7 +132,7 @@ export default function LdapMapperDetails() {
         }),
       );
     } catch (error) {
-      addError("user-federation:syncLDAPGroupsError", error);
+      addError("syncLDAPGroupsError", error);
     }
     refresh();
   };

@@ -72,7 +72,7 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
         labelIcon={
           <HelpItem
             helpText={t("serviceProviderEntityIdHelp")}
-            fieldLabelId="identity-providers:serviceProviderEntityId"
+            fieldLabelId="serviceProviderEntityId"
           />
         }
       >
@@ -88,7 +88,7 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
         labelIcon={
           <HelpItem
             helpText={t("identityProviderEntityIdHelp")}
-            fieldLabelId="identity-providers:identityProviderEntityId"
+            fieldLabelId="identityProviderEntityId"
           />
         }
       >
@@ -103,7 +103,7 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
         labelIcon={
           <HelpItem
             helpText={t("ssoServiceUrlHelp")}
-            fieldLabelId="identity-providers:ssoServiceUrl"
+            fieldLabelId="ssoServiceUrl"
           />
         }
         fieldId="kc-sso-service-url"
@@ -133,7 +133,7 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
         labelIcon={
           <HelpItem
             helpText={t("singleLogoutServiceUrlHelp")}
-            fieldLabelId="identity-providers:singleLogoutServiceUrl"
+            fieldLabelId="singleLogoutServiceUrl"
           />
         }
         fieldId="single-logout-service-url"
@@ -163,7 +163,7 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
         labelIcon={
           <HelpItem
             helpText={t("nameIdPolicyFormatHelp")}
-            fieldLabelId="identity-providers:nameIdPolicyFormat"
+            fieldLabelId="nameIdPolicyFormat"
           />
         }
         fieldId="kc-nameIdPolicyFormat"
@@ -242,7 +242,7 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
         labelIcon={
           <HelpItem
             helpText={t("principalTypeHelp")}
-            fieldLabelId="identity-providers:principalType"
+            fieldLabelId="principalType"
           />
         }
         fieldId="kc-principalType"
@@ -297,7 +297,7 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
           labelIcon={
             <HelpItem
               helpText={t("principalAttributeHelp")}
-              fieldLabelId="identity-providers:principalAttribute"
+              fieldLabelId="principalAttribute"
             />
           }
           fieldId="principalAttribute"
@@ -347,7 +347,7 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
             labelIcon={
               <HelpItem
                 helpText={t("signatureAlgorithmHelp")}
-                fieldLabelId="identity-providers:signatureAlgorithm"
+                fieldLabelId="signatureAlgorithm"
               />
             }
             fieldId="kc-signatureAlgorithm"
@@ -386,7 +386,7 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
             labelIcon={
               <HelpItem
                 helpText={t("samlSignatureKeyNameHelp")}
-                fieldLabelId="identity-providers:samlSignatureKeyName"
+                fieldLabelId="samlSignatureKeyName"
               />
             }
             fieldId="kc-samlSignatureKeyName"
@@ -509,7 +509,7 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
         labelIcon={
           <HelpItem
             helpText={t("allowedClockSkewHelp")}
-            fieldLabelId="identity-providers:allowedClockSkew"
+            fieldLabelId="allowedClockSkew"
           />
         }
         fieldId="allowedClockSkew"
@@ -548,7 +548,7 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
         labelIcon={
           <HelpItem
             helpText={t("attributeConsumingServiceIndexHelp")}
-            fieldLabelId="identity-providers:attributeConsumingServiceIndex"
+            fieldLabelId="attributeConsumingServiceIndex"
           />
         }
         fieldId="attributeConsumingServiceIndex"
@@ -587,7 +587,7 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
         labelIcon={
           <HelpItem
             helpText={t("attributeConsumingServiceNameHelp")}
-            fieldLabelId="identity-providers:attributeConsumingServiceName"
+            fieldLabelId="attributeConsumingServiceName"
           />
         }
         fieldId="attributeConsumingServiceName"

@@ -10,7 +10,7 @@ const AddSamlConnect = lazy(() => import("../add/AddSamlConnect"));
 export const IdentityProviderSamlRoute: AppRouteObject = {
   path: "/:realm/identity-providers/saml/add",
   element: <AddSamlConnect />,
-  breadcrumb: (t) => t("identity-providers:addSamlProvider"),
+  breadcrumb: (t) => t("addSamlProvider"),
   handle: {
     access: "manage-identity-providers",
   },

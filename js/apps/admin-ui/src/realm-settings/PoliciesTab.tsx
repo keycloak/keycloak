@@ -84,12 +84,9 @@ export const PoliciesTab = () => {
         policies: updatedPolicies,
       });
       navigate(toClientPolicies({ realm, tab: "policies" }));
-      addAlert(
-        t("realm-settings:updateClientPolicySuccess"),
-        AlertVariant.success,
-      );
+      addAlert(t("updateClientPolicySuccess"), AlertVariant.success);
     } catch (error) {
-      addError("realm-settings:updateClientPolicyError", error);
+      addError("updateClientPolicyError", error);
     }
   };
 
@@ -103,8 +100,8 @@ export const PoliciesTab = () => {
     clientPolicy: ClientPolicyRepresentation;
   }) => {
     const [toggleDisableDialog, DisableConfirm] = useConfirmDialog({
-      titleKey: "realm-settings:disablePolicyConfirmTitle",
-      messageKey: "realm-settings:disablePolicyConfirm",
+      titleKey: "disablePolicyConfirmTitle",
+      messageKey: "disablePolicyConfirm",
       continueButtonLabel: "disable",
       onConfirm: () => {
         form.setValue(clientPolicy.name!, false);
@@ -153,17 +150,14 @@ export const PoliciesTab = () => {
         await adminClient.clientPolicies.updatePolicy({
           policies: obj,
         });
-        addAlert(
-          t("realm-settings:updateClientPoliciesSuccess"),
-          AlertVariant.success,
-        );
+        addAlert(t("updateClientPoliciesSuccess"), AlertVariant.success);
         refresh();
       } catch (error) {
-        addError("realm-settings:updateClientPoliciesError", error);
+        addError("updateClientPoliciesError", error);
       }
     } catch (error) {
       console.warn("Invalid json, ignoring value using {}");
-      addError("realm-settings:updateClientPoliciesError", error);
+      addError("updateClientPoliciesError", error);
     }
   };
 
@@ -234,14 +228,14 @@ export const PoliciesTab = () => {
           key={policies.length}
           emptyState={
             <ListEmptyState
-              message={t("realm-settings:noClientPolicies")}
-              instructions={t("realm-settings:noClientPoliciesInstructions")}
-              primaryActionText={t("realm-settings:createClientPolicy")}
+              message={t("noClientPolicies")}
+              instructions={t("noClientPoliciesInstructions")}
+              primaryActionText={t("createClientPolicy")}
               onPrimaryAction={() => navigate(toAddClientPolicy({ realm }))}
             />
           }
-          ariaLabelKey="realm-settings:clientPolicies"
-          searchPlaceholderKey="realm-settings:clientPolicySearch"
+          ariaLabelKey="clientPolicies"
+          searchPlaceholderKey="clientPolicySearch"
           loader={loader}
           toolbarItem={
             <ToolbarItem>
@@ -272,7 +266,7 @@ export const PoliciesTab = () => {
             },
             {
               name: "enabled",
-              displayKey: "realm-settings:status",
+              displayKey: "status",
               cellRenderer: (clientPolicy) => (
                 <SwitchRenderer clientPolicy={clientPolicy} />
               ),

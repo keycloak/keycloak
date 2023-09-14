@@ -39,8 +39,8 @@ export const Header = ({
   const { control, setValue } = useFormContext();
 
   const [toggleDisableDialog, DisableConfirm] = useConfirmDialog({
-    titleKey: "user-federation:userFedDisableConfirmTitle",
-    messageKey: "user-federation:userFedDisableConfirm",
+    titleKey: "userFedDisableConfirmTitle",
+    messageKey: "userFedDisableConfirm",
     continueButtonLabel: "disable",
     onConfirm: () => {
       setValue("config.enabled[0]", "false");
@@ -49,8 +49,8 @@ export const Header = ({
   });
 
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
-    titleKey: "user-federation:userFedDeleteConfirmTitle",
-    messageKey: "user-federation:userFedDeleteConfirm",
+    titleKey: "userFedDeleteConfirmTitle",
+    messageKey: "userFedDeleteConfirm",
     continueButtonLabel: "delete",
     continueButtonVariant: ButtonVariant.danger,
     onConfirm: async () => {
@@ -59,7 +59,7 @@ export const Header = ({
         addAlert(t("userFedDeletedSuccess"), AlertVariant.success);
         navigate(toUserFederation({ realm }), { replace: true });
       } catch (error) {
-        addError("user-federation:userFedDeleteError", error);
+        addError("userFedDeleteError", error);
       }
     },
   });

@@ -91,15 +91,15 @@ export default function SessionsSection() {
   };
 
   const [toggleLogoutDialog, LogoutConfirm] = useConfirmDialog({
-    titleKey: "sessions:logoutAllSessions",
-    messageKey: "sessions:logoutAllDescription",
+    titleKey: "logoutAllSessions",
+    messageKey: "logoutAllDescription",
     continueButtonLabel: "confirm",
     onConfirm: async () => {
       try {
         await adminClient.realms.logoutAll({ realm });
         refresh();
       } catch (error) {
-        addError("sessions:logoutAllSessionsError", error);
+        addError("logoutAllSessionsError", error);
       }
     },
   });
@@ -130,7 +130,7 @@ export default function SessionsSection() {
       <ViewHeader
         dropdownItems={dropdownItems}
         titleKey="titleSessions"
-        subKey="sessions:sessionExplain"
+        subKey="sessionExplain"
         helpUrl={helpUrls.sessionsUrl}
       />
       <PageSection variant="light" className="pf-u-p-0">
