@@ -102,9 +102,7 @@ export const FlowRow = ({
                 />
               </DataListCell>,
               <DataListCell key={`${execution.id}-config`}>
-                {execution.configurable && (
-                  <ExecutionConfigModal execution={execution} />
-                )}
+                <ExecutionConfigModal execution={execution} />
                 {execution.authenticationFlow && !builtIn && (
                   <>
                     <AddFlowDropdown
