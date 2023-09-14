@@ -66,20 +66,18 @@ export default function GroupsSection() {
     isFeatureEnabled(Feature.AdminFineGrainedAuthz) &&
     hasAccess("manage-authorization", "manage-users", "manage-clients");
   const canManageGroup =
-    hasAccess("manage-users") ||
-    currentGroup()?.access?.manage;
+    hasAccess("manage-users") || !!currentGroup()?.access?.manage;
   const canManageRoles =
-    hasAccess("manage-users") ||
-    currentGroup()?.access?.manage;
+    hasAccess("manage-users") || !!currentGroup()?.access?.manage;
   const canViewDetails =
     hasAccess("query-groups", "view-users") ||
     hasAccess("manage-users", "query-groups") ||
-    currentGroup()?.access?.manage ||
-    currentGroup()?.access?.view;
+    !!currentGroup()?.access?.manage ||
+    !!currentGroup()?.access?.view;
   const canViewMembers =
     hasAccess("view-users") ||
-    currentGroup()?.access?.viewMembers ||
-    currentGroup()?.access?.manageMembers;
+    !!currentGroup()?.access?.viewMembers ||
+    !!currentGroup()?.access?.manageMembers;
 
   useFetch(
     async () => {
@@ -92,8 +90,8 @@ export default function GroupsSection() {
           const group =
             i !== "search"
               ? await fetchAdminUI<GroupRepresentation | undefined>(
-                "ui-ext/groups/" + i,
-              )
+                  "ui-ext/groups/" + i,
+                )
               : { name: t("searchGroups"), id: "search" };
           if (group) {
             groups.push(group);
@@ -165,21 +163,21 @@ export default function GroupsSection() {
                 dropdownItems={
                   id && canManageGroup
                     ? [
-                      <DropdownItem
-                        data-testid="renameGroupAction"
-                        key="renameGroup"
-                        onClick={() => setRename(currentGroup())}
-                      >
-                        {t("renameGroup")}
-                      </DropdownItem>,
-                      <DropdownItem
-                        data-testid="deleteGroup"
-                        key="deleteGroup"
-                        onClick={toggleDeleteOpen}
-                      >
-                        {t("deleteGroup")}
-                      </DropdownItem>,
-                    ]
+                        <DropdownItem
+                          data-testid="renameGroupAction"
+                          key="renameGroup"
+                          onClick={() => setRename(currentGroup())}
+                        >
+                          {t("renameGroup")}
+                        </DropdownItem>,
+                        <DropdownItem
+                          data-testid="deleteGroup"
+                          key="deleteGroup"
+                          onClick={toggleDeleteOpen}
+                        >
+                          {t("deleteGroup")}
+                        </DropdownItem>,
+                      ]
                     : undefined
                 }
               />
@@ -202,9 +200,7 @@ export default function GroupsSection() {
                     eventKey={0}
                     title={<TabTitleText>{t("childGroups")}</TabTitleText>}
                   >
-                    <GroupTable
-                      refresh={refresh}
-                    />
+                    <GroupTable refresh={refresh} />
                   </Tab>
                   {canViewMembers && (
                     <Tab
@@ -242,9 +238,7 @@ export default function GroupsSection() {
                   )}
                 </Tabs>
               )}
-              {subGroups.length === 0 && (
-                <GroupTable refresh={refresh} />
-              )}
+              {subGroups.length === 0 && <GroupTable refresh={refresh} />}
             </DrawerContentBody>
           </DrawerContent>
         </Drawer>

@@ -1,30 +1,28 @@
 import type GroupRepresentation from "@keycloak/keycloak-admin-client/lib/defs/groupRepresentation";
-import {SearchInput, ToolbarItem} from "@patternfly/react-core";
-import {useState} from "react";
-import {useTranslation} from "react-i18next";
-import {Link, useLocation} from "react-router-dom";
+import { SearchInput, ToolbarItem } from "@patternfly/react-core";
+import { useState } from "react";
+import { useTranslation } from "react-i18next";
+import { Link, useLocation } from "react-router-dom";
 
-import {ListEmptyState} from "../components/list-empty-state/ListEmptyState";
-import {KeycloakDataTable} from "../components/table-toolbar/KeycloakDataTable";
-import {useAccess} from "../context/access/Access";
-import {fetchAdminUI} from "../context/auth/admin-ui-endpoint";
+import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
+import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
+import { useAccess } from "../context/access/Access";
+import { fetchAdminUI } from "../context/auth/admin-ui-endpoint";
 import useToggle from "../utils/useToggle";
-import {GroupsModal} from "./GroupsModal";
-import {useSubGroups} from "./SubGroupsContext";
-import {DeleteGroup} from "./components/DeleteGroup";
-import {GroupToolbar} from "./components/GroupToolbar";
-import {MoveDialog} from "./components/MoveDialog";
-import {getLastId} from "./groupIdUtils";
-import {IRowData} from "@patternfly/react-table";
+import { GroupsModal } from "./GroupsModal";
+import { useSubGroups } from "./SubGroupsContext";
+import { DeleteGroup } from "./components/DeleteGroup";
+import { GroupToolbar } from "./components/GroupToolbar";
+import { MoveDialog } from "./components/MoveDialog";
+import { getLastId } from "./groupIdUtils";
+import { IRowData } from "@patternfly/react-table";
 import UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
 
 type GroupTableProps = {
   refresh: () => void;
 };
 
-export const GroupTable = ({
-  refresh: viewRefresh
-}: GroupTableProps) => {
+export const GroupTable = ({ refresh: viewRefresh }: GroupTableProps) => {
   const { t } = useTranslation();
 
   const [selectedRows, setSelectedRows] = useState<GroupRepresentation[]>([]);
@@ -40,7 +38,8 @@ export const GroupTable = ({
 
   const location = useLocation();
   const id = getLastId(location.pathname);
-  const displayAsLink = (group: GroupRepresentation) => group?.access?.manage ||
+  const displayAsLink = (group: GroupRepresentation) =>
+    group?.access?.manage ||
     group?.access?.manageMembers ||
     group?.access?.manageMembership ||
     group?.access?.viewMembers;
@@ -182,7 +181,7 @@ export const GroupTable = ({
                 return true;
               },
             },
-          ]
+          ];
         }}
         columns={[
           {
