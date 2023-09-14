@@ -5,6 +5,7 @@ import {
   FormGroup,
   Modal,
   ModalVariant,
+  TextArea,
   Tooltip,
   ValidatedOptions,
 } from "@patternfly/react-core";
@@ -12,9 +13,8 @@ import { PencilAltIcon } from "@patternfly/react-icons";
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-
 import { HelpItem } from "ui-shared";
-import { KeycloakTextArea } from "../../components/keycloak-text-area/KeycloakTextArea";
+
 import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 import useToggle from "../../utils/useToggle";
 import type { ExpandableExecution } from "../execution-model";
@@ -128,7 +128,7 @@ export const EditFlow = ({ execution, onRowChange }: EditFlowProps) => {
               }
               helperTextInvalid={errors.description?.message}
             >
-              <KeycloakTextArea
+              <TextArea
                 id="kc-description"
                 data-testid="description"
                 validated={

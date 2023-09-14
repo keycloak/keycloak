@@ -3,6 +3,7 @@ import {
   Button,
   FormGroup,
   PageSection,
+  TextArea,
   ValidatedOptions,
 } from "@patternfly/react-core";
 import { SubmitHandler, UseFormReturn, useWatch } from "react-hook-form";
@@ -11,7 +12,6 @@ import { Link, To } from "react-router-dom";
 
 import { FormAccess } from "../form/FormAccess";
 import { AttributeForm } from "../key-value-form/AttributeForm";
-import { KeycloakTextArea } from "../keycloak-text-area/KeycloakTextArea";
 import { KeycloakTextInput } from "../keycloak-text-input/KeycloakTextInput";
 import { ViewHeader } from "../view-header/ViewHeader";
 
@@ -85,7 +85,7 @@ export const RoleForm = ({
             }
             helperTextInvalid={errors.description?.message}
           >
-            <KeycloakTextArea
+            <TextArea
               id="kc-description"
               validated={
                 errors.description

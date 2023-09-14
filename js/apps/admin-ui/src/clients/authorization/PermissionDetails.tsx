@@ -11,6 +11,7 @@ import {
   Radio,
   SelectVariant,
   Switch,
+  TextArea,
 } from "@patternfly/react-core";
 import { useState } from "react";
 import { Controller, FormProvider, useForm, useWatch } from "react-hook-form";
@@ -23,11 +24,10 @@ import { useAlerts } from "../../components/alert/Alerts";
 import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
 import { FormAccess } from "../../components/form/FormAccess";
 import { KeycloakSpinner } from "../../components/keycloak-spinner/KeycloakSpinner";
-import { KeycloakTextArea } from "../../components/keycloak-text-area/KeycloakTextArea";
 import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 import { ViewHeader } from "../../components/view-header/ViewHeader";
-import { useFetch } from "../../utils/useFetch";
 import { toUpperCase } from "../../util";
+import { useFetch } from "../../utils/useFetch";
 import { useParams } from "../../utils/useParams";
 import { toAuthorizationTab } from "../routes/AuthenticationTab";
 import type { NewPermissionParams } from "../routes/NewPermission";
@@ -235,7 +235,7 @@ export default function PermissionDetails() {
               validated={errors.description ? "error" : "default"}
               helperTextInvalid={errors.description?.message}
             >
-              <KeycloakTextArea
+              <TextArea
                 id="description"
                 validated={errors.description ? "error" : "default"}
                 {...register("description", {

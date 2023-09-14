@@ -4,14 +4,14 @@ import {
   SelectOption,
   SelectVariant,
   Switch,
+  TextArea,
 } from "@patternfly/react-core";
 import { useState } from "react";
 import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
+import { HelpItem } from "ui-shared";
 
 import { FormAccess } from "../../components/form/FormAccess";
-import { HelpItem } from "ui-shared";
-import { KeycloakTextArea } from "../../components/keycloak-text-area/KeycloakTextArea";
 import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
 import { convertAttributeNameToForm } from "../../util";
 import { FormFields } from "../ClientDetails";
@@ -138,7 +138,7 @@ export const LoginSettingsPanel = ({ access }: { access?: boolean }) => {
         }
         fieldId="kc-consent-screen-text"
       >
-        <KeycloakTextArea
+        <TextArea
           id="kc-consent-screen-text"
           {...register(
             convertAttributeNameToForm<FormFields>(

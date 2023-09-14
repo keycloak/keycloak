@@ -5,6 +5,7 @@ import {
   Button,
   FormGroup,
   PageSection,
+  TextArea,
 } from "@patternfly/react-core";
 import { saveAs } from "file-saver";
 import { useState } from "react";
@@ -15,9 +16,8 @@ import { adminClient } from "../../admin-client";
 import { useAlerts } from "../../components/alert/Alerts";
 import { FormAccess } from "../../components/form/FormAccess";
 import { KeycloakSpinner } from "../../components/keycloak-spinner/KeycloakSpinner";
-import { KeycloakTextArea } from "../../components/keycloak-text-area/KeycloakTextArea";
-import { useFetch } from "../../utils/useFetch";
 import { prettyPrintJSON } from "../../util";
+import { useFetch } from "../../utils/useFetch";
 import { useParams } from "../../utils/useParams";
 import type { ClientParams } from "../routes/Client";
 
@@ -74,7 +74,7 @@ export const AuthorizationExport = () => {
           }
           fieldId="client"
         >
-          <KeycloakTextArea
+          <TextArea
             id="authorizationDetails"
             readOnly
             resizeOrientation="vertical"

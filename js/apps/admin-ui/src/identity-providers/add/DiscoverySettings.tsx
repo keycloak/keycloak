@@ -5,14 +5,14 @@ import {
   Select,
   SelectOption,
   SelectVariant,
+  TextArea,
   ValidatedOptions,
 } from "@patternfly/react-core";
 import { useState } from "react";
 import { Controller, useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-
 import { HelpItem } from "ui-shared";
-import { KeycloakTextArea } from "../../components/keycloak-text-area/KeycloakTextArea";
+
 import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 import { FormGroupField } from "../component/FormGroupField";
 import { SwitchField } from "../component/SwitchField";
@@ -132,7 +132,7 @@ const Fields = ({ readOnly }: DiscoverySettingsProps) => {
           ) : (
             <>
               <FormGroupField label="validatingPublicKey">
-                <KeycloakTextArea
+                <TextArea
                   data-testid="validatingPublicKey"
                   {...register("config.publicKeySignatureVerifier")}
                 />

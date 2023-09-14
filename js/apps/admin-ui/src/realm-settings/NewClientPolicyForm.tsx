@@ -17,6 +17,7 @@ import {
   FormGroup,
   PageSection,
   Text,
+  TextArea,
   TextVariants,
   ValidatedOptions,
 } from "@patternfly/react-core";
@@ -32,7 +33,6 @@ import { useAlerts } from "../components/alert/Alerts";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import { FormAccess } from "../components/form/FormAccess";
 import { KeycloakSpinner } from "../components/keycloak-spinner/KeycloakSpinner";
-import { KeycloakTextArea } from "../components/keycloak-text-area/KeycloakTextArea";
 import { KeycloakTextInput } from "../components/keycloak-text-input/KeycloakTextInput";
 import { ViewHeader } from "../components/view-header/ViewHeader";
 import { useRealm } from "../context/realm-context/RealmContext";
@@ -489,7 +489,7 @@ export default function NewClientPolicyForm() {
             />
           </FormGroup>
           <FormGroup label={t("description")} fieldId="kc-description">
-            <KeycloakTextArea
+            <TextArea
               aria-label={t("description")}
               id="kc-client-policy-description"
               data-testid="client-policy-description"

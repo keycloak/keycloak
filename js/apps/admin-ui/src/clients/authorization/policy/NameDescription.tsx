@@ -1,10 +1,9 @@
-import { useTranslation } from "react-i18next";
+import { FormGroup, TextArea, ValidatedOptions } from "@patternfly/react-core";
 import { useFormContext } from "react-hook-form";
-import { FormGroup, ValidatedOptions } from "@patternfly/react-core";
-
+import { useTranslation } from "react-i18next";
 import { HelpItem } from "ui-shared";
+
 import { KeycloakTextInput } from "../../../components/keycloak-text-input/KeycloakTextInput";
-import { KeycloakTextArea } from "../../../components/keycloak-text-area/KeycloakTextArea";
 
 type NameDescriptionProps = {
   prefix: string;
@@ -62,7 +61,7 @@ export const NameDescription = ({
         }
         helperTextInvalid={t("maxLength", { length: 255 })}
       >
-        <KeycloakTextArea
+        <TextArea
           isDisabled={isDisabled}
           id="kc-description"
           data-testid="description"

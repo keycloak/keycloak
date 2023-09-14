@@ -7,6 +7,7 @@ import {
   SelectOption,
   SelectVariant,
   Switch,
+  TextArea,
   ValidatedOptions,
 } from "@patternfly/react-core";
 import { useEffect, useState } from "react";
@@ -14,7 +15,6 @@ import { Controller, FormProvider, useForm, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import { HelpItem, TextControl } from "ui-shared";
-
 import { getProtocolName } from "../../clients/utils";
 import { DefaultSwitchControl } from "../../components/SwitchControl";
 import {
@@ -23,7 +23,6 @@ import {
   clientScopeTypesSelectOptions,
 } from "../../components/client-scope/ClientScopeTypes";
 import { FormAccess } from "../../components/form/FormAccess";
-import { KeycloakTextArea } from "../../components/keycloak-text-area/KeycloakTextArea";
 import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { useLoginProviders } from "../../context/server-info/ServerInfoProvider";
@@ -272,7 +271,7 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
           }
           fieldId="kc-consent-screen-text"
         >
-          <KeycloakTextArea
+          <TextArea
             id="kc-consent-screen-text"
             {...register(
               convertAttributeNameToForm<ClientScopeDefaultOptionalType>(

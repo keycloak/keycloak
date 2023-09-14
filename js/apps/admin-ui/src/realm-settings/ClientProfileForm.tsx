@@ -18,6 +18,7 @@ import {
   Label,
   PageSection,
   Text,
+  TextArea,
   TextVariants,
   ValidatedOptions,
 } from "@patternfly/react-core";
@@ -33,7 +34,6 @@ import { useAlerts } from "../components/alert/Alerts";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import { FormAccess } from "../components/form/FormAccess";
 import { KeycloakSpinner } from "../components/keycloak-spinner/KeycloakSpinner";
-import { KeycloakTextArea } from "../components/keycloak-text-area/KeycloakTextArea";
 import { KeycloakTextInput } from "../components/keycloak-text-input/KeycloakTextInput";
 import { ViewHeader } from "../components/view-header/ViewHeader";
 import { useServerInfo } from "../context/server-info/ServerInfoProvider";
@@ -241,7 +241,7 @@ export default function ClientProfileForm() {
             />
           </FormGroup>
           <FormGroup label={t("description")} fieldId="kc-description">
-            <KeycloakTextArea
+            <TextArea
               id="kc-description"
               data-testid="client-profile-description"
               isReadOnly={isGlobalProfile}

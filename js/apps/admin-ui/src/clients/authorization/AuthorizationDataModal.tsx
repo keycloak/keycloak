@@ -1,17 +1,17 @@
-import { useTranslation } from "react-i18next";
+import type AccessTokenRepresentation from "@keycloak/keycloak-admin-client/lib/defs/accessTokenRepresentation";
 import {
   Button,
   Modal,
   ModalVariant,
-  TextContent,
   Text,
+  TextArea,
+  TextContent,
   TextVariants,
 } from "@patternfly/react-core";
+import { useTranslation } from "react-i18next";
 
-import type AccessTokenRepresentation from "@keycloak/keycloak-admin-client/lib/defs/accessTokenRepresentation";
-import { KeycloakTextArea } from "../../components/keycloak-text-area/KeycloakTextArea";
-import useToggle from "../../utils/useToggle";
 import { prettyPrintJSON } from "../../util";
+import useToggle from "../../utils/useToggle";
 
 type AuthorizationDataModalProps = {
   data: AccessTokenRepresentation;
@@ -54,7 +54,7 @@ export const AuthorizationDataModal = ({
           </Button>,
         ]}
       >
-        <KeycloakTextArea readOnly rows={20} value={prettyPrintJSON(data)} />
+        <TextArea readOnly rows={20} value={prettyPrintJSON(data)} />
       </Modal>
     </>
   );

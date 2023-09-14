@@ -7,12 +7,13 @@ import {
   SelectVariant,
   Stack,
   StackItem,
+  TextArea,
 } from "@patternfly/react-core";
 import { saveAs } from "file-saver";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-
 import { HelpItem, useHelp } from "ui-shared";
+
 import { adminClient } from "../../admin-client";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
@@ -20,7 +21,6 @@ import { addTrailingSlash, prettyPrintJSON } from "../../util";
 import { getAuthorizationHeaders } from "../../utils/getAuthorizationHeaders";
 import { useFetch } from "../../utils/useFetch";
 import { ConfirmDialogModal } from "../confirm-dialog/ConfirmDialog";
-import { KeycloakTextArea } from "../keycloak-text-area/KeycloakTextArea";
 
 type DownloadDialogProps = {
   id: string;
@@ -159,7 +159,7 @@ export const DownloadDialog = ({
                   />
                 }
               >
-                <KeycloakTextArea
+                <TextArea
                   id="details"
                   readOnly
                   rows={12}

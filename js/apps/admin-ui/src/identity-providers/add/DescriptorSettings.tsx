@@ -6,14 +6,14 @@ import {
   Select,
   SelectOption,
   SelectVariant,
+  TextArea,
   ValidatedOptions,
 } from "@patternfly/react-core";
 import { useState } from "react";
 import { Controller, useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-
 import { HelpItem } from "ui-shared";
-import { KeycloakTextArea } from "../../components/keycloak-text-area/KeycloakTextArea";
+
 import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 import { FormGroupField } from "../component/FormGroupField";
 import { SwitchField } from "../component/SwitchField";
@@ -475,12 +475,12 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
       />
       {validateSignature === "true" && (
         <FormGroupField label="validatingX509Certs">
-          <KeycloakTextArea
+          <TextArea
             id="validatingX509Certs"
             data-testid="validatingX509Certs"
             isReadOnly={readOnly}
             {...register("config.signingCertificate")}
-          ></KeycloakTextArea>
+          />
         </FormGroupField>
       )}
       <SwitchField

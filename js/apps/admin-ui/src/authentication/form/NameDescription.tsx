@@ -1,10 +1,8 @@
 import AuthenticationFlowRepresentation from "@keycloak/keycloak-admin-client/lib/defs/authenticationFlowRepresentation";
-import { FormGroup, ValidatedOptions } from "@patternfly/react-core";
+import { FormGroup, TextArea, ValidatedOptions } from "@patternfly/react-core";
 import { useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-
 import { HelpItem } from "ui-shared";
-import { KeycloakTextArea } from "../../components/keycloak-text-area/KeycloakTextArea";
 import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 
 export const NameDescription = () => {
@@ -51,7 +49,7 @@ export const NameDescription = () => {
         }
         helperTextInvalid={errors.description?.message}
       >
-        <KeycloakTextArea
+        <TextArea
           id="kc-description"
           data-testid="description"
           validated={
