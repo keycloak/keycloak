@@ -70,7 +70,7 @@ const KeySection = ({
   onGenerate,
   onImport,
 }: KeySectionProps) => {
-  const { t } = useTranslation("clients");
+  const { t } = useTranslation();
   const { control, watch } = useFormContext<FormFields>();
   const title = KEYS_MAPPING[attr].title;
   const key = KEYS_MAPPING[attr].key;
@@ -155,7 +155,7 @@ const KeySection = ({
 };
 
 export const SamlKeys = ({ clientId, save }: SamlKeysProps) => {
-  const { t } = useTranslation("clients");
+  const { t } = useTranslation();
   const [isChanged, setIsChanged] = useState<KeyTypes>();
   const [keyInfo, setKeyInfo] = useState<CertificateRepresentation[]>();
   const [selectedType, setSelectedType] = useState<KeyTypes>();

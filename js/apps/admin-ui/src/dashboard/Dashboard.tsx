@@ -43,7 +43,7 @@ import { ProviderInfo } from "./ProviderInfo";
 import "./dashboard.css";
 
 const EmptyDashboard = () => {
-  const { t } = useTranslation("dashboard");
+  const { t } = useTranslation();
   const { realm } = useRealm();
   const brandImage = environment.logo ? environment.logo : "/icon.svg";
 
@@ -68,7 +68,7 @@ const EmptyDashboard = () => {
 };
 
 const Dashboard = () => {
-  const { t } = useTranslation("dashboard");
+  const { t } = useTranslation();
   const { realm } = useRealm();
   const serverInfo = useServerInfo();
   const localeSort = useLocaleSort();

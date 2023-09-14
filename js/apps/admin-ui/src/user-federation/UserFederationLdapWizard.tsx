@@ -19,7 +19,7 @@ import { SettingsCache } from "./shared/SettingsCache";
 
 export const UserFederationLdapWizard = () => {
   const form = useForm<ComponentRepresentation>();
-  const { t } = useTranslation("user-federation");
+  const { t } = useTranslation();
   const isFeatureEnabled = useIsFeatureEnabled();
 
   const steps = [

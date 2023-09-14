@@ -47,7 +47,7 @@ import { toMapper } from "./routes/Mapper";
 import { toClientScopes } from "./routes/ClientScopes";
 
 export default function EditClientScope() {
-  const { t } = useTranslation("client-scopes");
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { realm } = useRealm();
   const { id } = useParams<ClientScopeParams>();
@@ -120,9 +120,9 @@ export default function EditClientScope() {
       await adminClient.clientScopes.update({ id }, clientScope);
       await changeScope({ ...clientScope, id }, clientScope.type);
 
-      addAlert(t("updateSuccess"), AlertVariant.success);
+      addAlert(t("updateSuccessClientScope"), AlertVariant.success);
     } catch (error) {
-      addError("client-scopes:updateError", error);
+      addError("updateErrorClientScope", error);
     }
   };
 
@@ -131,16 +131,16 @@ export default function EditClientScope() {
       count: 1,
       name: clientScope?.name,
     }),
-    messageKey: "client-scopes:deleteConfirm",
+    messageKey: "deleteConfirmClientScopes",
     continueButtonLabel: "common:delete",
     continueButtonVariant: ButtonVariant.danger,
     onConfirm: async () => {
       try {
         await adminClient.clientScopes.del({ id });
-        addAlert(t("deletedSuccess"), AlertVariant.success);
+        addAlert(t("deletedSuccessClientScope"), AlertVariant.success);
         navigate(toClientScopes({ realm }));
       } catch (error) {
-        addError("client-scopes:deleteError", error);
+        addError("deleteErrorClientScope", error);
       }
     },
   });

@@ -17,7 +17,6 @@
 
 package org.keycloak.protocol.oidc;
 
-import com.google.common.collect.Streams;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.authentication.ClientAuthenticator;
 import org.keycloak.authentication.ClientAuthenticatorFactory;
@@ -242,7 +241,7 @@ public class OIDCWellKnownProvider implements WellKnownProvider {
                 .map(ProviderFactory::getId);
 
         if (includeNone) {
-            supportedAlgorithms = Streams.concat(supportedAlgorithms, Stream.of("none"));
+            supportedAlgorithms = Stream.concat(supportedAlgorithms, Stream.of("none"));
         }
         return supportedAlgorithms.collect(Collectors.toList());
     }

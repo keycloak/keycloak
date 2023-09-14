@@ -8,7 +8,7 @@ import { KeycloakTextArea } from "../../components/keycloak-text-area/KeycloakTe
 import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 
 export const NameDescription = () => {
-  const { t } = useTranslation("authentication");
+  const { t } = useTranslation();
   const {
     register,
     formState: { errors },
@@ -24,10 +24,7 @@ export const NameDescription = () => {
           errors.alias ? ValidatedOptions.error : ValidatedOptions.default
         }
         labelIcon={
-          <HelpItem
-            helpText={t("authentication-help:name")}
-            fieldLabelId="name"
-          />
+          <HelpItem helpText={t("flowNameHelp")} fieldLabelId="name" />
         }
         isRequired
       >
@@ -45,7 +42,7 @@ export const NameDescription = () => {
         fieldId="kc-description"
         labelIcon={
           <HelpItem
-            helpText={t("authentication-help:description")}
+            helpText={t("flowDescriptionHelp")}
             fieldLabelId="description"
           />
         }

@@ -14,7 +14,7 @@ export const ClientIdSecret = ({
   secretRequired?: boolean;
   create?: boolean;
 }) => {
-  const { t } = useTranslation("identity-providers");
+  const { t } = useTranslation();
 
   const {
     register,
@@ -27,7 +27,7 @@ export const ClientIdSecret = ({
         label={t("clientId")}
         labelIcon={
           <HelpItem
-            helpText={t("identity-providers-help:clientId")}
+            helpText={t("clientIdHelp")}
             fieldLabelId="identity-providers:clientId"
           />
         }
@@ -51,7 +51,7 @@ export const ClientIdSecret = ({
         label={t("clientSecret")}
         labelIcon={
           <HelpItem
-            helpText={t("identity-providers-help:clientSecret")}
+            helpText={t("clientSecretHelp")}
             fieldLabelId="identity-providers:clientSecret"
           />
         }

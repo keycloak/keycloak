@@ -30,7 +30,7 @@ import { DeleteScopeDialog } from "./DeleteScopeDialog";
 type FormFields = Omit<ScopeRepresentation, "resources">;
 
 export default function ScopeDetails() {
-  const { t } = useTranslation("clients");
+  const { t } = useTranslation();
   const { id, scopeId, realm } = useParams<ScopeDetailsParams>();
   const navigate = useNavigate();
 
@@ -171,7 +171,7 @@ export default function ScopeDetails() {
             fieldId="iconUri"
             labelIcon={
               <HelpItem
-                helpText={t("clients-help:iconUri")}
+                helpText={t("iconUriHelp")}
                 fieldLabelId="clients:iconUri"
               />
             }

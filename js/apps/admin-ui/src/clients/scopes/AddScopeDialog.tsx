@@ -61,7 +61,7 @@ export const AddScopeDialog = ({
   onAdd,
   isClientScopesConditionType,
 }: AddScopeDialogProps) => {
-  const { t } = useTranslation("clients");
+  const { t } = useTranslation();
   const [addToggle, setAddToggle] = useState(false);
   const [rows, setRows] = useState<ClientScopeRepresentation[]>([]);
   const [filterType, setFilterType] = useState(FilterType.Name);
@@ -119,7 +119,7 @@ export const AddScopeDialog = ({
       {t("protocolTypes.saml")}
     </SelectOption>,
     <SelectOption key={2} value={ProtocolType.OpenIDConnect}>
-      {t("protocolTypes.openIdConnect")}
+      {t("protocolTypes.openid-connect")}
     </SelectOption>,
     <SelectOption key={3} value={ProtocolType.All} isPlaceholder>
       {t("protocolTypes.all")}
@@ -204,7 +204,7 @@ export const AddScopeDialog = ({
         loader={clientScopes}
         ariaLabelKey="client-scopes:chooseAMapperType"
         searchPlaceholderKey={
-          filterType === FilterType.Name ? "client-scopes:searchFor" : undefined
+          filterType === FilterType.Name ? "searchForClientScope" : undefined
         }
         isSearching={filterType !== FilterType.Name}
         searchTypeComponent={

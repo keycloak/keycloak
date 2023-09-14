@@ -30,7 +30,7 @@ export type GroupValue = {
 };
 
 export const Group = () => {
-  const { t } = useTranslation("clients");
+  const { t } = useTranslation();
   const {
     control,
     register,
@@ -66,7 +66,7 @@ export const Group = () => {
         label={t("groupsClaim")}
         labelIcon={
           <HelpItem
-            helpText={t("clients-help:groupsClaim")}
+            helpText={t("groupsClaimHelp")}
             fieldLabelId="clients:groupsClaim"
           />
         }
@@ -83,7 +83,7 @@ export const Group = () => {
         label={t("groups")}
         labelIcon={
           <HelpItem
-            helpText={t("clients-help:policyGroups")}
+            helpText={t("policyGroupsHelp")}
             fieldLabelId="clients:groups"
           />
         }

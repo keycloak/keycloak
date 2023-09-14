@@ -13,7 +13,7 @@ export const Time = ({
   name: string;
   style?: CSSProperties;
 }) => {
-  const { t } = useTranslation("realm-settings");
+  const { t } = useTranslation();
   const {
     control,
     formState: { errors },

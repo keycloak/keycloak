@@ -14,7 +14,7 @@ export const BooleanComponent = ({
   defaultValue,
   isNew = true,
 }: ComponentProps) => {
-  const { t } = useTranslation("dynamic");
+  const { t } = useTranslation();
   const { control } = useFormContext();
 
   return (

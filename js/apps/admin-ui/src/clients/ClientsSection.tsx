@@ -42,7 +42,7 @@ import { toImportClient } from "./routes/ImportClient";
 import { getProtocolName, isRealmClient } from "./utils";
 
 const ClientDetailLink = (client: ClientRepresentation) => {
-  const { t } = useTranslation("clients");
+  const { t } = useTranslation();
   const { realm } = useRealm();
   return (
     <Link
@@ -82,7 +82,7 @@ const ClientHomeLink = (client: ClientRepresentation) => {
 };
 
 const ToolbarItems = () => {
-  const { t } = useTranslation("clients");
+  const { t } = useTranslation();
   const { realm } = useRealm();
 
   const { hasAccess } = useAccess();
@@ -115,7 +115,7 @@ const ToolbarItems = () => {
 };
 
 export default function ClientsSection() {
-  const { t } = useTranslation("clients");
+  const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
   const { realm } = useRealm();
 

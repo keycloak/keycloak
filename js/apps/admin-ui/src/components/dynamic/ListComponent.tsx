@@ -20,7 +20,7 @@ export const ListComponent = ({
   options,
   isDisabled = false,
 }: ComponentProps) => {
-  const { t } = useTranslation("dynamic");
+  const { t } = useTranslation();
   const { control } = useFormContext();
   const [open, setOpen] = useState(false);
 

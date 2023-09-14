@@ -25,7 +25,7 @@ import { GeneralSettings } from "./GeneralSettings";
 import { LoginSettings } from "./LoginSettings";
 
 export default function NewClientForm() {
-  const { t } = useTranslation("clients");
+  const { t } = useTranslation();
   const { realm } = useRealm();
   const navigate = useNavigate();
 
@@ -60,10 +60,10 @@ export default function NewClientForm() {
         ...client,
         clientId: client.clientId?.trim(),
       });
-      addAlert(t("createSuccess"), AlertVariant.success);
+      addAlert(t("createClientSuccess"), AlertVariant.success);
       navigate(toClient({ realm, clientId: newClient.id, tab: "settings" }));
     } catch (error) {
-      addError("clients:createError", error);
+      addError("createClientError", error);
     }
   };
 

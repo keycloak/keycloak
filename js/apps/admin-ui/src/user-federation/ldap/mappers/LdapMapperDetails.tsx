@@ -44,7 +44,7 @@ export default function LdapMapperDetails() {
   const { id, mapperId } = useParams<UserFederationLdapMapperParams>();
   const navigate = useNavigate();
   const { realm } = useRealm();
-  const { t } = useTranslation("user-federation");
+  const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
 
   const [isMapperDropdownOpen, setIsMapperDropdownOpen] = useState(false);
@@ -188,7 +188,7 @@ export default function LdapMapperDetails() {
                         key="fedSync"
                         onClick={() => sync("fedToKeycloak")}
                       >
-                        {t(mapper?.metadata.fedToKeycloakSyncMessage)}
+                        {t(mapper.metadata.fedToKeycloakSyncMessage)}
                       </DropdownItem>,
                     ]
                   : []),
@@ -200,7 +200,7 @@ export default function LdapMapperDetails() {
                           sync("keycloakToFed");
                         }}
                       >
-                        {t(mapper?.metadata.keycloakToFedSyncMessage)}
+                        {t(mapper.metadata.keycloakToFedSyncMessage)}
                       </DropdownItem>,
                     ]
                   : []),

@@ -40,7 +40,7 @@ export const AdvancedSettings = ({
   protocol,
   hasConfigureAccess,
 }: AdvancedSettingsProps) => {
-  const { t } = useTranslation("clients");
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
 
   const [realm, setRealm] = useState<RealmRepresentation>();
@@ -68,7 +68,7 @@ export const AdvancedSettings = ({
           fieldId="assertionLifespan"
           labelIcon={
             <HelpItem
-              helpText={t("clients-help:assertionLifespan")}
+              helpText={t("assertionLifespanHelp")}
               fieldLabelId="clients:assertionLifespan"
             />
           }
@@ -134,7 +134,7 @@ export const AdvancedSettings = ({
             )}
             defaultValue={
               realm?.offlineSessionMaxLifespanEnabled
-                ? realm?.offlineSessionMaxLifespan
+                ? realm.offlineSessionMaxLifespan
                 : undefined
             }
             units={["minute", "day", "hour"]}
@@ -146,7 +146,7 @@ export const AdvancedSettings = ({
             hasNoPaddingTop
             labelIcon={
               <HelpItem
-                helpText={t("clients-help:oAuthMutual")}
+                helpText={t("oAuthMutualHelp")}
                 fieldLabelId="clients:oAuthMutual"
               />
             }
@@ -176,7 +176,7 @@ export const AdvancedSettings = ({
               hasNoPaddingTop
               labelIcon={
                 <HelpItem
-                  helpText={t("clients-help:oAuthDPoP")}
+                  helpText={t("oAuthDPoPHelp")}
                   fieldLabelId="clients:oAuthDPoP"
                 />
               }
@@ -206,7 +206,7 @@ export const AdvancedSettings = ({
             hasNoPaddingTop
             labelIcon={
               <HelpItem
-                helpText={t("clients-help:keyForCodeExchange")}
+                helpText={t("keyForCodeExchangeHelp")}
                 fieldLabelId="clients:keyForCodeExchange"
               />
             }
@@ -243,7 +243,7 @@ export const AdvancedSettings = ({
             fieldId="pushedAuthorizationRequestRequired"
             labelIcon={
               <HelpItem
-                helpText={t("clients-help:pushedAuthorizationRequestRequired")}
+                helpText={t("pushedAuthorizationRequestRequiredHelp")}
                 fieldLabelId="clients:pushedAuthorizationRequestRequired"
               />
             }
@@ -271,7 +271,7 @@ export const AdvancedSettings = ({
             fieldId="acrToLoAMapping"
             labelIcon={
               <HelpItem
-                helpText={t("clients-help:acrToLoAMapping")}
+                helpText={t("acrToLoAMappingHelp")}
                 fieldLabelId="clients:acrToLoAMapping"
               />
             }
@@ -285,7 +285,7 @@ export const AdvancedSettings = ({
             fieldId="defaultACRValues"
             labelIcon={
               <HelpItem
-                helpText={t("clients-help:defaultACRValues")}
+                helpText={t("defaultACRValuesHelp")}
                 fieldLabelId="clients:defaultACRValues"
               />
             }

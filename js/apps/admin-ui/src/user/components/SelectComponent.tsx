@@ -14,7 +14,7 @@ import { UserProfileFieldsProps, UserProfileGroup } from "./UserProfileGroup";
 
 type OptionLabel = Record<string, string> | undefined;
 export const SelectComponent = (attribute: UserProfileFieldsProps) => {
-  const { t } = useTranslation("users");
+  const { t } = useTranslation();
   const { control } = useFormContext();
   const [open, setOpen] = useState(false);
 

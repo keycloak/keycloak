@@ -36,7 +36,7 @@ export const KeyProviderForm = ({
   providerType,
   onClose,
 }: KeyProviderFormProps) => {
-  const { t } = useTranslation("realm-settings");
+  const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const { addAlert, addError } = useAlerts();
 
@@ -104,7 +104,7 @@ export const KeyProviderForm = ({
           label={t("providerId")}
           labelIcon={
             <HelpItem
-              helpText={t("client-scopes-help:mapperName")}
+              helpText={t("mapperNameHelp")}
               fieldLabelId="providerId"
             />
           }
@@ -122,10 +122,7 @@ export const KeyProviderForm = ({
       <FormGroup
         label={t("common:name")}
         labelIcon={
-          <HelpItem
-            helpText={t("client-scopes-help:mapperName")}
-            fieldLabelId="name"
-          />
+          <HelpItem helpText={t("mapperNameHelp")} fieldLabelId="name" />
         }
         fieldId="name"
         isRequired
@@ -174,7 +171,7 @@ export const KeyProviderForm = ({
 };
 
 export default function KeyProviderFormPage() {
-  const { t } = useTranslation("realm-settings");
+  const { t } = useTranslation();
   const params = useParams<KeyProviderParams>();
   const navigate = useNavigate();
 

@@ -31,7 +31,7 @@ export const NewPolicyDialog = ({
   onSelect,
   toggleDialog,
 }: NewPolicyDialogProps) => {
-  const { t } = useTranslation("clients");
+  const { t } = useTranslation();
   const localeSort = useLocaleSort();
 
   const sortedPolicies = useMemo(

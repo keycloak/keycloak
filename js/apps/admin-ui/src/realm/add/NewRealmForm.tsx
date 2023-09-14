@@ -23,7 +23,7 @@ import { toDashboard } from "../../dashboard/routes/Dashboard";
 import { convertFormValuesToObject, convertToFormValues } from "../../util";
 
 export default function NewRealmForm() {
-  const { t } = useTranslation("realm");
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { refresh, whoAmI } = useWhoAmI();
   const { refresh: refreshRealms } = useRealms();
@@ -76,7 +76,7 @@ export default function NewRealmForm() {
             onChange={handleFileChange}
           />
           <FormGroup
-            label={t("realmName")}
+            label={t("realmNameField")}
             isRequired
             fieldId="kc-realm-name"
             validated={errors.realm ? "error" : "default"}

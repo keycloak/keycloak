@@ -7,7 +7,7 @@ import type ComponentRepresentation from "@keycloak/keycloak-admin-client/lib/de
 import { useForm } from "react-hook-form";
 
 export const UserFederationKerberosWizard = () => {
-  const { t } = useTranslation("user-federation");
+  const { t } = useTranslation();
   const form = useForm<ComponentRepresentation>({ mode: "onChange" });
 
   const steps = [

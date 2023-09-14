@@ -64,7 +64,7 @@ const RealmSettingsHeader = ({
   realmName,
   refresh,
 }: RealmSettingsHeaderProps) => {
-  const { t } = useTranslation("realm-settings");
+  const { t } = useTranslation();
   const { refresh: refreshRealms } = useRealms();
   const { addAlert, addError } = useAlerts();
   const navigate = useNavigate();
@@ -73,7 +73,7 @@ const RealmSettingsHeader = ({
 
   const [toggleDisableDialog, DisableConfirm] = useConfirmDialog({
     titleKey: "realm-settings:disableConfirmTitle",
-    messageKey: "realm-settings:disableConfirm",
+    messageKey: "disableConfirmRealm",
     continueButtonLabel: "common:disable",
     onConfirm: () => {
       onChange(!value);
@@ -83,18 +83,18 @@ const RealmSettingsHeader = ({
 
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
     titleKey: "realm-settings:deleteConfirmTitle",
-    messageKey: "realm-settings:deleteConfirm",
+    messageKey: "deleteConfirmRealmSetting",
     continueButtonLabel: "common:delete",
     continueButtonVariant: ButtonVariant.danger,
     onConfirm: async () => {
       try {
         await adminClient.realms.del({ realm: realmName });
-        addAlert(t("deletedSuccess"), AlertVariant.success);
+        addAlert(t("deletedSuccessRealmSetting"), AlertVariant.success);
         await refreshRealms();
         navigate(toDashboard({ realm: environment.masterRealm }));
         refresh();
       } catch (error) {
-        addError("realm-settings:deleteError", error);
+        addError("deleteErrorRealmSetting", error);
       }
     },
   });
@@ -161,7 +161,7 @@ export const RealmSettingsTabs = ({
   realm,
   refresh,
 }: RealmSettingsTabsProps) => {
-  const { t } = useTranslation("realm-settings");
+  const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
   const { realm: realmName } = useRealm();
   const { refresh: refreshRealms } = useRealms();
@@ -210,9 +210,9 @@ export const RealmSettingsTabs = ({
         savedRealm.smtpServer = { ...savedRealm.smtpServer, port: null };
       }
       await adminClient.realms.update({ realm: realmName }, savedRealm);
-      addAlert(t("saveSuccess"), AlertVariant.success);
+      addAlert(t("realmSaveSuccess"), AlertVariant.success);
     } catch (error) {
-      addError("realm-settings:saveError", error);
+      addError("realmSaveError", error);
     }
 
     const isRealmRenamed = realmName !== (r.realm || realm.realm);

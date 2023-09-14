@@ -14,7 +14,7 @@ export const StoreSettings = ({
   hidePassword?: boolean;
   isSaml?: boolean;
 }) => {
-  const { t } = useTranslation("clients");
+  const { t } = useTranslation();
   const {
     register,
     formState: { errors },
@@ -28,7 +28,7 @@ export const StoreSettings = ({
         isRequired
         labelIcon={
           <HelpItem
-            helpText={t("clients-help:keyAlias")}
+            helpText={t("keyAliasHelp")}
             fieldLabelId="clients:keyAlias"
           />
         }
@@ -49,7 +49,7 @@ export const StoreSettings = ({
           isRequired
           labelIcon={
             <HelpItem
-              helpText={t("clients-help:keyPassword")}
+              helpText={t("keyPasswordHelp")}
               fieldLabelId="clients:keyPassword"
             />
           }
@@ -70,7 +70,7 @@ export const StoreSettings = ({
           fieldId="realmCertificateAlias"
           labelIcon={
             <HelpItem
-              helpText={t("clients-help:realmCertificateAlias")}
+              helpText={t("realmCertificateAliasHelp")}
               fieldLabelId="clients:realmCertificateAlias"
             />
           }
@@ -88,7 +88,7 @@ export const StoreSettings = ({
         isRequired
         labelIcon={
           <HelpItem
-            helpText={t("clients-help:storePassword")}
+            helpText={t("storePasswordHelp")}
             fieldLabelId="clients:storePassword"
           />
         }

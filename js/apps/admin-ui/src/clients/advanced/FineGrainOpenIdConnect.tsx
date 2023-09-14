@@ -29,7 +29,7 @@ export const FineGrainOpenIdConnect = ({
   reset,
   hasConfigureAccess,
 }: FineGrainOpenIdConnectProps) => {
-  const { t } = useTranslation("clients");
+  const { t } = useTranslation();
   const providers = useServerInfo().providers;
   const clientSignatureProviders = providers?.clientSignature.providers;
   const contentEncryptionProviders = providers?.contentencryption.providers;
@@ -165,7 +165,7 @@ export const FineGrainOpenIdConnect = ({
         fieldId="accessTokenSignatureAlgorithm"
         labelIcon={
           <HelpItem
-            helpText={t("clients-help:accessTokenSignatureAlgorithm")}
+            helpText={t("accessTokenSignatureAlgorithmHelp")}
             fieldLabelId="clients:accessTokenSignatureAlgorithm"
           />
         }
@@ -198,7 +198,7 @@ export const FineGrainOpenIdConnect = ({
         fieldId="kc-id-token-signature"
         labelIcon={
           <HelpItem
-            helpText={t("clients-help:idTokenSignatureAlgorithm")}
+            helpText={t("idTokenSignatureAlgorithmHelp")}
             fieldLabelId="clients:idTokenSignatureAlgorithm"
           />
         }
@@ -231,7 +231,7 @@ export const FineGrainOpenIdConnect = ({
         fieldId="idTokenEncryptionKeyManagementAlgorithm"
         labelIcon={
           <HelpItem
-            helpText={t("clients-help:idTokenEncryptionKeyManagementAlgorithm")}
+            helpText={t("idTokenEncryptionKeyManagementAlgorithmHelp")}
             fieldLabelId="clients:idTokenEncryptionKeyManagementAlgorithm"
           />
         }
@@ -299,7 +299,7 @@ export const FineGrainOpenIdConnect = ({
         fieldId="userInfoSignedResponseAlgorithm"
         labelIcon={
           <HelpItem
-            helpText={t("clients-help:userInfoSignedResponseAlgorithm")}
+            helpText={t("userInfoSignedResponseAlgorithmHelp")}
             fieldLabelId="clients:userInfoSignedResponseAlgorithm"
           />
         }
@@ -402,7 +402,7 @@ export const FineGrainOpenIdConnect = ({
         fieldId="requestObjectSignatureAlgorithm"
         labelIcon={
           <HelpItem
-            helpText={t("clients-help:requestObjectSignatureAlgorithm")}
+            helpText={t("requestObjectSignatureAlgorithmHelp")}
             fieldLabelId="clients:requestObjectSignatureAlgorithm"
           />
         }
@@ -435,7 +435,7 @@ export const FineGrainOpenIdConnect = ({
         fieldId="requestObjectEncryption"
         labelIcon={
           <HelpItem
-            helpText={t("clients-help:requestObjectEncryption")}
+            helpText={t("requestObjectEncryptionHelp")}
             fieldLabelId="clients:requestObjectEncryption"
           />
         }
@@ -468,7 +468,7 @@ export const FineGrainOpenIdConnect = ({
         fieldId="requestObjectEncoding"
         labelIcon={
           <HelpItem
-            helpText={t("clients-help:requestObjectEncoding")}
+            helpText={t("requestObjectEncodingHelp")}
             fieldLabelId="clients:requestObjectEncoding"
           />
         }
@@ -501,7 +501,7 @@ export const FineGrainOpenIdConnect = ({
         fieldId="requestObjectRequired"
         labelIcon={
           <HelpItem
-            helpText={t("clients-help:requestObjectRequired")}
+            helpText={t("requestObjectRequiredHelp")}
             fieldLabelId="clients:requestObjectRequired"
           />
         }
@@ -534,7 +534,7 @@ export const FineGrainOpenIdConnect = ({
         fieldId="validRequestURIs"
         labelIcon={
           <HelpItem
-            helpText={t("clients-help:validRequestURIs")}
+            helpText={t("validRequestURIsHelp")}
             fieldLabelId="clients:validRequestURIs"
           />
         }
@@ -551,7 +551,7 @@ export const FineGrainOpenIdConnect = ({
         fieldId="authorizationSignedResponseAlg"
         labelIcon={
           <HelpItem
-            helpText={t("clients-help:authorizationSignedResponseAlg")}
+            helpText={t("authorizationSignedResponseAlgHelp")}
             fieldLabelId="clients:authorizationSignedResponseAlg"
           />
         }
@@ -584,7 +584,7 @@ export const FineGrainOpenIdConnect = ({
         fieldId="authorizationEncryptedResponseAlg"
         labelIcon={
           <HelpItem
-            helpText={t("clients-help:authorizationEncryptedResponseAlg")}
+            helpText={t("authorizationEncryptedResponseAlgHelp")}
             fieldLabelId="clients:authorizationEncryptedResponseAlg"
           />
         }
@@ -617,7 +617,7 @@ export const FineGrainOpenIdConnect = ({
         fieldId="authorizationEncryptedResponseEnc"
         labelIcon={
           <HelpItem
-            helpText={t("clients-help:authorizationEncryptedResponseEnc")}
+            helpText={t("authorizationEncryptedResponseEncHelp")}
             fieldLabelId="clients:authorizationEncryptedResponseEnc"
           />
         }

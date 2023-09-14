@@ -59,7 +59,7 @@ const UserDetailLink = (user: MembersOf) => {
 };
 
 export const Members = () => {
-  const { t } = useTranslation("groups");
+  const { t } = useTranslation();
 
   const { addAlert, addError } = useAlerts();
   const location = useLocation();

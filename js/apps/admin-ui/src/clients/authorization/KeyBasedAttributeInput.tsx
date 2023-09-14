@@ -54,7 +54,7 @@ const ValueInput = ({
   selectableValues,
   resources,
 }: ValueInputProps) => {
-  const { t } = useTranslation("common");
+  const { t } = useTranslation();
   const { control, register, getValues } = useFormContext();
   const [isValueOpenArray, setIsValueOpenArray] = useState([false]);
 
@@ -151,7 +151,7 @@ export const KeyBasedAttributeInput = ({
   selectableValues,
   resources,
 }: AttributeInputProps) => {
-  const { t } = useTranslation("common");
+  const { t } = useTranslation();
   const { control, watch } = useFormContext();
   const { fields, append, remove } = useFieldArray({
     control: control,

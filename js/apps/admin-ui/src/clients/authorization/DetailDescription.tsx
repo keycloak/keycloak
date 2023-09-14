@@ -26,7 +26,7 @@ export function DetailDescriptionLink<T>({
   convert,
   link,
 }: DetailDescriptionLinkProps<T>) {
-  const { t } = useTranslation("clients");
+  const { t } = useTranslation();
   return (
     <DescriptionListGroup>
       <DescriptionListTerm>{t(name)}</DescriptionListTerm>

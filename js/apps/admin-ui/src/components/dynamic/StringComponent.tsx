@@ -14,7 +14,7 @@ export const StringComponent = ({
   defaultValue,
   isDisabled = false,
 }: ComponentProps) => {
-  const { t } = useTranslation("dynamic");
+  const { t } = useTranslation();
   const { register } = useFormContext();
 
   return (

@@ -59,8 +59,7 @@ export const LdapSettingsConnection = ({
   showSectionHeading = false,
   showSectionDescription = false,
 }: LdapSettingsConnectionProps) => {
-  const { t } = useTranslation("user-federation");
-  const { t: helpText } = useTranslation("user-federation-help");
+  const { t } = useTranslation();
   const { realm } = useRealm();
   const { addAlert, addError } = useAlerts();
   const edit = !!id;
@@ -94,9 +93,7 @@ export const LdapSettingsConnection = ({
       {showSectionHeading && (
         <WizardSectionHeader
           title={t("connectionAndAuthenticationSettings")}
-          description={helpText(
-            "ldapConnectionAndAuthorizationSettingsDescription",
-          )}
+          description={t("ldapConnectionAndAuthorizationSettingsDescription")}
           showDescription={showSectionDescription}
         />
       )}

@@ -53,7 +53,7 @@ function filterResults(
 }
 
 export const Results = ({ evaluateResult, refresh, back }: ResultProps) => {
-  const { t } = useTranslation("clients");
+  const { t } = useTranslation();
 
   const [filterDropdownOpen, toggleFilterDropdown] = useToggle();
 

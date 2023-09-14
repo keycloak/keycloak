@@ -11,17 +11,14 @@ type LogicSelectorProps = {
 };
 
 export const LogicSelector = ({ isDisabled }: LogicSelectorProps) => {
-  const { t } = useTranslation("clients");
+  const { t } = useTranslation();
   const { control } = useFormContext();
 
   return (
     <FormGroup
       label={t("logic")}
       labelIcon={
-        <HelpItem
-          helpText={t("clients-help:logic")}
-          fieldLabelId="clients:logic"
-        />
+        <HelpItem helpText={t("logicHelp")} fieldLabelId="clients:logic" />
       }
       fieldId="logic"
       hasNoPaddingTop

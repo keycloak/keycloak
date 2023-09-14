@@ -787,6 +787,11 @@ public class UserTest extends AbstractAdminTest {
 
         users = realm.users().searchByAttributes(mapToSearchQuery(attributes));
         assertEquals(9, users.size());
+
+        attributes.clear();
+        attributes.put("x", "common");
+        users = realm.users().searchByAttributes(mapToSearchQuery(attributes));
+        assertEquals(0, users.size());
     }
 
     @Test

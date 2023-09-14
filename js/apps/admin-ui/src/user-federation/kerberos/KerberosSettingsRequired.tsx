@@ -29,8 +29,7 @@ export const KerberosSettingsRequired = ({
   showSectionHeading = false,
   showSectionDescription = false,
 }: KerberosSettingsRequiredProps) => {
-  const { t } = useTranslation("user-federation");
-  const { t: helpText } = useTranslation("user-federation-help");
+  const { t } = useTranslation();
 
   const { realm } = useRealm();
 
@@ -52,7 +51,7 @@ export const KerberosSettingsRequired = ({
       {showSectionHeading && (
         <WizardSectionHeader
           title={t("requiredSettings")}
-          description={helpText("kerberosRequiredSettingsDescription")}
+          description={t("kerberosRequiredSettingsDescription")}
           showDescription={showSectionDescription}
         />
       )}

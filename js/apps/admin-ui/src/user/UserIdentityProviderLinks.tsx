@@ -39,7 +39,7 @@ export const UserIdentityProviderLinks = ({
 
   const { realm } = useRealm();
   const { addAlert, addError } = useAlerts();
-  const { t } = useTranslation("users");
+  const { t } = useTranslation();
 
   const refresh = () => setKey(new Date().getTime());
 

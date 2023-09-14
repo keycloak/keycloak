@@ -45,7 +45,7 @@ export const ResetPasswordDialog = ({
   refresh,
   onClose,
 }: ResetPasswordDialogProps) => {
-  const { t } = useTranslation("users");
+  const { t } = useTranslation();
   const {
     register,
     control,

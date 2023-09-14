@@ -24,7 +24,7 @@ export const BruteForceDetection = ({
   realm,
   save,
 }: BruteForceDetectionProps) => {
-  const { t } = useTranslation("realm-settings");
+  const { t } = useTranslation();
   const form = useForm();
   const {
     setValue,
@@ -79,7 +79,7 @@ export const BruteForceDetection = ({
               label={t("failureFactor")}
               labelIcon={
                 <HelpItem
-                  helpText={t("realm-settings-help:failureFactor")}
+                  helpText={t("failureFactorHelp")}
                   fieldLabelId="realm-settings:failureFactor"
                 />
               }

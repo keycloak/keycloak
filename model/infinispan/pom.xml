@@ -81,7 +81,7 @@
         <!-- Needed for externalizers in package "org.keycloak.models.sessions.infinispan.entities.wildfly" .
              Hopefully can be removed once we start to use the protobuf marshalling -->
         <dependency>
-            <groupId>org.wildfly</groupId>
+            <groupId>${ee.maven.groupId}</groupId>
             <artifactId>wildfly-clustering-infinispan-marshalling</artifactId>
         </dependency>
 

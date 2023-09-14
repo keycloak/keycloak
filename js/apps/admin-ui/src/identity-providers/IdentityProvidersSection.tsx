@@ -44,7 +44,7 @@ import { toIdentityProvider } from "./routes/IdentityProvider";
 import { toIdentityProviderCreate } from "./routes/IdentityProviderCreate";
 
 const DetailLink = (identityProvider: IdentityProviderRepresentation) => {
-  const { t } = useTranslation("identity-providers");
+  const { t } = useTranslation();
   const { realm } = useRealm();
 
   return (
@@ -72,7 +72,7 @@ const DetailLink = (identityProvider: IdentityProviderRepresentation) => {
 };
 
 export default function IdentityProvidersSection() {
-  const { t } = useTranslation("identity-providers");
+  const { t } = useTranslation();
   const identityProviders = groupBy(
     useServerInfo().identityProviders,
     "groupName",
@@ -149,9 +149,9 @@ export default function IdentityProvidersSection() {
           ...providers!.filter((p) => p.alias !== selectedProvider?.alias),
         ]);
         refresh();
-        addAlert(t("deletedSuccess"), AlertVariant.success);
+        addAlert(t("deletedSuccessIdentityProvider"), AlertVariant.success);
       } catch (error) {
-        addError("identity-providers:deleteError", error);
+        addError("deleteErrorIdentityProvider", error);
       }
     },
   });

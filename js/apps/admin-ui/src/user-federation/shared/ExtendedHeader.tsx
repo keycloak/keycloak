@@ -25,7 +25,7 @@ export const ExtendedHeader = ({
   save,
   noDivider = false,
 }: ExtendedHeaderProps) => {
-  const { t } = useTranslation("user-federation");
+  const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const { addAlert, addError } = useAlerts();
 

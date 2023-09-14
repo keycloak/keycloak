@@ -22,7 +22,7 @@ export const EventListenersForm = ({
   form,
   reset,
 }: EventListenersFormProps) => {
-  const { t } = useTranslation("realm-settings");
+  const { t } = useTranslation();
   const {
     control,
     formState: { isDirty },

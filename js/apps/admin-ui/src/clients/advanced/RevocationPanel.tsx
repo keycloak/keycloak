@@ -28,7 +28,7 @@ export const RevocationPanel = ({
   const revocationFieldName = "notBefore";
   const pushRevocationButtonRef = useRef<HTMLElement>();
 
-  const { t } = useTranslation("clients");
+  const { t } = useTranslation();
   const { realm } = useRealm();
   const { addAlert } = useAlerts();
   const formatDate = useFormatDate();
@@ -81,7 +81,7 @@ export const RevocationPanel = ({
           fieldId="kc-not-before"
           labelIcon={
             <HelpItem
-              helpText={t("clients-help:notBefore")}
+              helpText={t("notBeforeHelp")}
               fieldLabelId="clients:notBefore"
             />
           }

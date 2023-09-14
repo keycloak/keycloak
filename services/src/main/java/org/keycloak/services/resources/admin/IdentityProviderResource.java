@@ -18,7 +18,6 @@ package org.keycloak.services.resources.admin;
 
 import static jakarta.ws.rs.core.Response.Status.BAD_REQUEST;
 
-import com.google.common.collect.Streams;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
@@ -245,7 +244,7 @@ public class IdentityProviderResource {
 
 
     private IdentityProviderFactory getIdentityProviderFactory() {
-        return Streams.concat(session.getKeycloakSessionFactory().getProviderFactoriesStream(IdentityProvider.class),
+        return Stream.concat(session.getKeycloakSessionFactory().getProviderFactoriesStream(IdentityProvider.class),
                 session.getKeycloakSessionFactory().getProviderFactoriesStream(SocialIdentityProvider.class))
                 .filter(providerFactory -> Objects.equals(providerFactory.getId(), identityProviderModel.getProviderId()))
                 .map(IdentityProviderFactory.class::cast)

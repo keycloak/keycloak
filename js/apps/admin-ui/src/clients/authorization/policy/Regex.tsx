@@ -6,7 +6,7 @@ import { HelpItem } from "ui-shared";
 import { KeycloakTextInput } from "../../../components/keycloak-text-input/KeycloakTextInput";
 
 export const Regex = () => {
-  const { t } = useTranslation("clients");
+  const { t } = useTranslation();
   const {
     register,
     formState: { errors },
@@ -22,7 +22,7 @@ export const Regex = () => {
         isRequired
         labelIcon={
           <HelpItem
-            helpText={t("clients-help:targetClaim")}
+            helpText={t("targetClaimHelp")}
             fieldLabelId="clients:targetClaim"
           />
         }
@@ -39,7 +39,7 @@ export const Regex = () => {
         fieldId="pattern"
         labelIcon={
           <HelpItem
-            helpText={t("clients-help:regexPattern")}
+            helpText={t("regexPatternHelp")}
             fieldLabelId="clients:regexPattern"
           />
         }

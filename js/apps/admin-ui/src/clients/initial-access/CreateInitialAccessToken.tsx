@@ -23,7 +23,7 @@ import { toClients } from "../routes/Clients";
 import { AccessTokenDialog } from "./AccessTokenDialog";
 
 export default function CreateInitialAccessToken() {
-  const { t } = useTranslation("clients");
+  const { t } = useTranslation();
   const {
     handleSubmit,
     control,
@@ -75,7 +75,7 @@ export default function CreateInitialAccessToken() {
             fieldId="expiration"
             labelIcon={
               <HelpItem
-                helpText={t("clients-help:expiration")}
+                helpText={t("expirationHelp")}
                 fieldLabelId="clients:expiration"
               />
             }
@@ -103,7 +103,7 @@ export default function CreateInitialAccessToken() {
             fieldId="count"
             labelIcon={
               <HelpItem
-                helpText={t("clients-help:count")}
+                helpText={t("countHelp")}
                 fieldLabelId="clients:count"
               />
             }

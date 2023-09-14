@@ -42,7 +42,7 @@ const CANONICALIZATION = [
 ] as const;
 
 export const SamlSignature = () => {
-  const { t } = useTranslation("clients");
+  const { t } = useTranslation();
   const [algOpen, setAlgOpen] = useState(false);
   const [keyOpen, setKeyOpen] = useState(false);
   const [canOpen, setCanOpen] = useState(false);
@@ -79,7 +79,7 @@ export const SamlSignature = () => {
             fieldId="signatureAlgorithm"
             labelIcon={
               <HelpItem
-                helpText={t("clients-help:signatureAlgorithm")}
+                helpText={t("signatureAlgorithmHelp")}
                 fieldLabelId="clients:signatureAlgorithm"
               />
             }
@@ -119,7 +119,7 @@ export const SamlSignature = () => {
             fieldId="signatureKeyName"
             labelIcon={
               <HelpItem
-                helpText={t("clients-help:signatureKeyName")}
+                helpText={t("signatureKeyNameHelp")}
                 fieldLabelId="clients:signatureKeyName"
               />
             }
@@ -159,7 +159,7 @@ export const SamlSignature = () => {
             fieldId="canonicalization"
             labelIcon={
               <HelpItem
-                helpText={t("clients-help:canonicalization")}
+                helpText={t("canonicalizationHelp")}
                 fieldLabelId="clients:canonicalization"
               />
             }

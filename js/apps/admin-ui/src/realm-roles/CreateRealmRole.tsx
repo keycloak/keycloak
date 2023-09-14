@@ -13,7 +13,7 @@ import { toRealmRole } from "./routes/RealmRole";
 import { toRealmRoles } from "./routes/RealmRoles";
 
 export default function CreateRealmRole() {
-  const { t } = useTranslation("roles");
+  const { t } = useTranslation();
   const form = useForm<AttributeForm>({ mode: "onChange" });
   const navigate = useNavigate();
   const { realm } = useRealm();

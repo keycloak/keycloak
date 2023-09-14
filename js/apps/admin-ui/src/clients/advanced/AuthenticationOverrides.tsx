@@ -30,7 +30,7 @@ export const AuthenticationOverrides = ({
   reset,
   hasConfigureAccess,
 }: AuthenticationOverridesProps) => {
-  const { t } = useTranslation("clients");
+  const { t } = useTranslation();
   const [flows, setFlows] = useState<JSX.Element[]>([]);
   const [browserFlowOpen, setBrowserFlowOpen] = useState(false);
   const [directGrantOpen, setDirectGrantOpen] = useState(false);
@@ -69,7 +69,7 @@ export const AuthenticationOverrides = ({
         fieldId="browserFlow"
         labelIcon={
           <HelpItem
-            helpText={t("clients-help:browserFlow")}
+            helpText={t("browserFlowHelp")}
             fieldLabelId="clients:browserFlow"
           />
         }
@@ -101,7 +101,7 @@ export const AuthenticationOverrides = ({
           fieldId="directGrant"
           labelIcon={
             <HelpItem
-              helpText={t("clients-help:directGrant")}
+              helpText={t("directGrantHelp")}
               fieldLabelId="clients:directGrant"
             />
           }

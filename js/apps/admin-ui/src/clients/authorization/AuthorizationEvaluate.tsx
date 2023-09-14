@@ -101,7 +101,7 @@ const AuthorizationEvaluateContent = ({ client }: Props) => {
     trigger,
     formState: { isValid, errors },
   } = form;
-  const { t } = useTranslation("clients");
+  const { t } = useTranslation();
   const { addError } = useAlerts();
   const realm = useRealm();
 
@@ -294,7 +294,7 @@ const AuthorizationEvaluateContent = ({ client }: Props) => {
                 fieldId="applyToResourceType"
                 labelIcon={
                   <HelpItem
-                    helpText={t("clients-help:applyToResourceType")}
+                    helpText={t("applyToResourceTypeHelp")}
                     fieldLabelId="clients:applyToResourceType"
                   />
                 }
@@ -315,7 +315,7 @@ const AuthorizationEvaluateContent = ({ client }: Props) => {
                   id="resourcesAndScopes"
                   labelIcon={
                     <HelpItem
-                      helpText={t("clients-help:contextualAttributes")}
+                      helpText={t("contextualAttributesHelp")}
                       fieldLabelId={`resourcesAndScopes`}
                     />
                   }
@@ -337,7 +337,7 @@ const AuthorizationEvaluateContent = ({ client }: Props) => {
                     isRequired
                     labelIcon={
                       <HelpItem
-                        helpText={t("clients-help:resourceType")}
+                        helpText={t("resourceTypeHelp")}
                         fieldLabelId="clients:resourceType"
                       />
                     }

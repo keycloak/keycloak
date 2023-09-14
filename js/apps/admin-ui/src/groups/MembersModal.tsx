@@ -21,7 +21,7 @@ type MemberModalProps = {
 };
 
 export const MemberModal = ({ groupId, onClose }: MemberModalProps) => {
-  const { t } = useTranslation("groups");
+  const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
   const [selectedRows, setSelectedRows] = useState<UserRepresentation[]>([]);
 
@@ -85,7 +85,7 @@ export const MemberModal = ({ groupId, onClose }: MemberModalProps) => {
       <KeycloakDataTable
         loader={loader}
         isPaginated
-        ariaLabelKey="users:title"
+        ariaLabelKey="titleUsers"
         searchPlaceholderKey="users:searchForUser"
         canSelectAll
         onSelect={(rows) => setSelectedRows([...rows])}

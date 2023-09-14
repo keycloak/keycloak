@@ -33,7 +33,7 @@ import { useFetch } from "../utils/useFetch";
 import useToggle from "../utils/useToggle";
 
 export const DefaultsGroupsTab = () => {
-  const { t } = useTranslation("realm-settings");
+  const { t } = useTranslation();
 
   const [isKebabOpen, toggleKebab] = useToggle();
   const [isGroupPickerOpen, toggleGroupPicker] = useToggle();

@@ -30,7 +30,7 @@ export const UserSelect = ({
   isRequired,
   variant = SelectVariant.typeaheadMulti,
 }: UserSelectProps) => {
-  const { t } = useTranslation("clients");
+  const { t } = useTranslation();
   const {
     control,
     getValues,

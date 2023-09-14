@@ -29,7 +29,7 @@ export const GroupsModal = ({
   handleModalToggle,
   refresh,
 }: GroupsModalProps) => {
-  const { t } = useTranslation("groups");
+  const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
   const {
     register,

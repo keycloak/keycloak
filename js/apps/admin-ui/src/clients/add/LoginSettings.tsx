@@ -19,7 +19,7 @@ export const LoginSettings = ({
   protocol = "openid-connect",
   ...rest
 }: LoginSettingsProps) => {
-  const { t } = useTranslation("clients");
+  const { t } = useTranslation();
   const { register, watch } = useFormContext<FormFields>();
   const { realm } = useRealm();
 
@@ -35,7 +35,7 @@ export const LoginSettings = ({
         fieldId="kc-root-url"
         labelIcon={
           <HelpItem
-            helpText={t("clients-help:rootURL")}
+            helpText={t("rootURLHelp")}
             fieldLabelId="clients:rootUrl"
           />
         }
@@ -52,7 +52,7 @@ export const LoginSettings = ({
         fieldId="kc-home-url"
         labelIcon={
           <HelpItem
-            helpText={t("clients-help:homeURL")}
+            helpText={t("homeURLHelp")}
             fieldLabelId="clients:homeURL"
           />
         }
@@ -71,7 +71,7 @@ export const LoginSettings = ({
             fieldId="kc-redirect"
             labelIcon={
               <HelpItem
-                helpText={t("clients-help:validRedirectURIs")}
+                helpText={t("validRedirectURIsHelp")}
                 fieldLabelId="clients:validRedirectUri"
               />
             }
@@ -89,7 +89,7 @@ export const LoginSettings = ({
             fieldId="kc-postLogoutRedirect"
             labelIcon={
               <HelpItem
-                helpText={t("clients-help:validPostLogoutRedirectURIs")}
+                helpText={t("validPostLogoutRedirectURIsHelp")}
                 fieldLabelId="clients:validPostLogoutRedirectUri"
               />
             }
@@ -114,7 +114,7 @@ export const LoginSettings = ({
             fieldId="idpInitiatedSsoUrlName"
             labelIcon={
               <HelpItem
-                helpText={t("clients-help:idpInitiatedSsoUrlName")}
+                helpText={t("idpInitiatedSsoUrlNameHelp")}
                 fieldLabelId="clients:idpInitiatedSsoUrlName"
               />
             }
@@ -137,7 +137,7 @@ export const LoginSettings = ({
             fieldId="idpInitiatedSsoRelayState"
             labelIcon={
               <HelpItem
-                helpText={t("clients-help:idpInitiatedSsoRelayState")}
+                helpText={t("idpInitiatedSsoRelayStateHelp")}
                 fieldLabelId="clients:idpInitiatedSsoRelayState"
               />
             }
@@ -154,7 +154,7 @@ export const LoginSettings = ({
             fieldId="masterSamlProcessingUrl"
             labelIcon={
               <HelpItem
-                helpText={t("clients-help:masterSamlProcessingUrl")}
+                helpText={t("masterSamlProcessingUrlHelp")}
                 fieldLabelId="clients:masterSamlProcessingUrl"
               />
             }
@@ -175,7 +175,7 @@ export const LoginSettings = ({
           fieldId="kc-web-origins"
           labelIcon={
             <HelpItem
-              helpText={t("clients-help:webOrigins")}
+              helpText={t("webOriginsHelp")}
               fieldLabelId="clients:webOrigins"
             />
           }

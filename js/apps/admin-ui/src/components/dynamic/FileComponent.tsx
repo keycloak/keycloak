@@ -15,7 +15,7 @@ export const FileComponent = ({
   defaultValue,
   isDisabled = false,
 }: ComponentProps) => {
-  const { t } = useTranslation("dynamic");
+  const { t } = useTranslation();
   const { control } = useFormContext();
   const [filename, setFilename] = useState("");
   const [isLoading, setIsLoading] = useState(false);

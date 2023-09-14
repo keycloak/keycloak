@@ -43,7 +43,7 @@ import { toGroups } from "./routes/Groups";
 import "./GroupsSection.css";
 
 export default function GroupsSection() {
-  const { t } = useTranslation("groups");
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState(0);
 
   const { subGroups, setSubGroups, currentGroup } = useSubGroups();

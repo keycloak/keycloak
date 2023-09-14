@@ -6,7 +6,7 @@ import { HelpItem } from "ui-shared";
 import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 
 export const SyncSettings = () => {
-  const { t } = useTranslation("user-federation");
+  const { t } = useTranslation();
   const { control, register, watch } = useFormContext();
   const watchPeriodicSync = watch("config.fullSyncPeriod", "-1");
   const watchChangedSync = watch("config.changedSyncPeriod", "-1");

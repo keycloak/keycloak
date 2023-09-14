@@ -16,7 +16,7 @@ export const AccessSettings = ({
   save,
   reset,
 }: ClientSettingsProps) => {
-  const { t } = useTranslation("clients");
+  const { t } = useTranslation();
   const { register, watch } = useFormContext<FormFields>();
 
   const { hasAccess } = useAccess();
@@ -37,7 +37,7 @@ export const AccessSettings = ({
           fieldId="kc-admin-url"
           labelIcon={
             <HelpItem
-              helpText={t("clients-help:adminURL")}
+              helpText={t("adminURLHelp")}
               fieldLabelId="clients:adminURL"
             />
           }

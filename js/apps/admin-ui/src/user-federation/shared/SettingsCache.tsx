@@ -22,7 +22,7 @@ export type SettingsCacheProps = {
 };
 
 const CacheFields = ({ form }: { form: UseFormReturn }) => {
-  const { t } = useTranslation("user-federation");
+  const { t } = useTranslation();
 
   const [isCachePolicyOpen, toggleCachePolicy] = useToggle();
   const [isEvictionHourOpen, toggleEvictionHour] = useToggle();
@@ -287,15 +287,14 @@ export const SettingsCache = ({
   showSectionDescription = false,
   unWrap = false,
 }: SettingsCacheProps) => {
-  const { t } = useTranslation("user-federation");
-  const { t: helpText } = useTranslation("user-federation-help");
+  const { t } = useTranslation();
 
   return (
     <>
       {showSectionHeading && (
         <WizardSectionHeader
           title={t("cacheSettings")}
-          description={helpText("cacheSettingsDescription")}
+          description={t("cacheSettingsDescription")}
           showDescription={showSectionDescription}
         />
       )}

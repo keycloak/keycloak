@@ -30,7 +30,7 @@ export const ManageOrderDialog = ({
   providers,
   onClose,
 }: ManageOrderDialogProps) => {
-  const { t } = useTranslation("identity-providers");
+  const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
 
   const [alias, setAlias] = useState("");

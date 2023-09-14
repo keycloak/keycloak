@@ -82,7 +82,7 @@ const WebauthnSelect = ({
   labelPrefix,
   isMultiSelect = false,
 }: WeauthnSelectProps) => {
-  const { t } = useTranslation("authentication");
+  const { t } = useTranslation();
   const { control } = useFormContext();
 
   const [open, toggle] = useState(false);
@@ -157,7 +157,7 @@ export const WebauthnPolicy = ({
   realmUpdated,
   isPasswordLess = false,
 }: WebauthnPolicyProps) => {
-  const { t } = useTranslation("authentication");
+  const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
   const { realm: realmName } = useRealm();
   const { enabled } = useHelp();
@@ -197,7 +197,7 @@ export const WebauthnPolicy = ({
         <Popover bodyContent={t(`authentication-help:${namePrefix}FormHelp`)}>
           <TextContent className="keycloak__section_intro__help">
             <Text>
-              <QuestionCircleIcon /> {t("authentication-help:webauthnIntro")}
+              <QuestionCircleIcon /> {t("webauthnIntro")}
             </Text>
           </TextContent>
         </Popover>
@@ -217,7 +217,7 @@ export const WebauthnPolicy = ({
           isRequired
           labelIcon={
             <HelpItem
-              helpText={t("authentication-help:webAuthnPolicyRpEntityName")}
+              helpText={t("webAuthnPolicyRpEntityNameHelp")}
               fieldLabelId="authentication:webAuthnPolicyRpEntityName"
             />
           }
@@ -240,7 +240,7 @@ export const WebauthnPolicy = ({
             label={t("webAuthnPolicyRpId")}
             labelIcon={
               <HelpItem
-                helpText={t("authentication-help:webAuthnPolicyRpId")}
+                helpText={t("webAuthnPolicyRpIdHelp")}
                 fieldLabelId="authentication:webAuthnPolicyRpId"
               />
             }
@@ -283,7 +283,7 @@ export const WebauthnPolicy = ({
             validated={errors.webAuthnPolicyCreateTimeout ? "error" : "default"}
             labelIcon={
               <HelpItem
-                helpText={t("authentication-help:webAuthnPolicyCreateTimeout")}
+                helpText={t("webAuthnPolicyCreateTimeoutHelp")}
                 fieldLabelId="authentication:webAuthnPolicyCreateTimeout"
               />
             }

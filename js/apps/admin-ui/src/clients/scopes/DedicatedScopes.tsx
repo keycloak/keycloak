@@ -31,7 +31,7 @@ import { toMapper } from "../routes/Mapper";
 import { DedicatedScope } from "./DecicatedScope";
 
 export default function DedicatedScopes() {
-  const { t } = useTranslation("clients");
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { realm, clientId } = useParams<DedicatedScopeDetailsParams>();
   const { addAlert, addError } = useAlerts();

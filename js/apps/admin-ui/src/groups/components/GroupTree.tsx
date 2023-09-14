@@ -45,7 +45,7 @@ const GroupTreeContextMenu = ({
   group,
   refresh,
 }: GroupTreeContextMenuProps) => {
-  const { t } = useTranslation("groups");
+  const { t } = useTranslation();
 
   const [isOpen, toggleOpen] = useToggle();
   const [renameOpen, toggleRenameOpen] = useToggle();
@@ -117,7 +117,7 @@ export const GroupTree = ({
   refresh: viewRefresh,
   canViewDetails,
 }: GroupTreeProps) => {
-  const { t } = useTranslation("groups");
+  const { t } = useTranslation();
   const { realm } = useRealm();
   const navigate = useNavigate();
   const { addAlert } = useAlerts();

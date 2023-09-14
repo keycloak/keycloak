@@ -16,7 +16,7 @@ export const UsersInRoleTab = () => {
   const navigate = useNavigate();
   const { realm } = useRealm();
 
-  const { t } = useTranslation("roles");
+  const { t } = useTranslation();
   const { id, clientId } = useParams<ClientRoleParams>();
 
   const loader = async (first?: number, max?: number) => {
@@ -57,7 +57,7 @@ export const UsersInRoleTab = () => {
               position="bottom"
               bodyContent={
                 <div>
-                  {t("roles:whoWillAppearPopoverText")}
+                  {t("whoWillAppearPopoverTextRoles")}
                   <Button
                     className="kc-groups-link"
                     variant="link"
@@ -83,7 +83,7 @@ export const UsersInRoleTab = () => {
                 key="who-will-appear-button"
                 icon={<QuestionCircleIcon />}
               >
-                {t("roles:whoWillAppearLinkText")}
+                {t("whoWillAppearLinkTextRoles")}
               </Button>
             </Popover>
           )
