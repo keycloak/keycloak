@@ -13,7 +13,7 @@ export type UserProfileFieldsProps = UserProfileAttribute & {
 
 const isRequired = (attribute: UserProfileAttribute) =>
   Object.keys(attribute.required || {}).length !== 0 ||
-  ((attribute.validations?.length?.min as number) || 0) > 0;
+  (((attribute.validators?.length as LengthValidator)?.min as number) || 0) > 0;
 
 export const UserProfileGroup = ({
   children,
