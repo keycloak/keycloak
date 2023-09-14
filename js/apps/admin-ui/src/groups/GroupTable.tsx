@@ -16,13 +16,14 @@ import { GroupToolbar } from "./components/GroupToolbar";
 import { MoveDialog } from "./components/MoveDialog";
 import { getLastId } from "./groupIdUtils";
 import { IRowData } from "@patternfly/react-table";
-import UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
 
 type GroupTableProps = {
   refresh: () => void;
 };
 
-export const GroupTable = ({ refresh: viewRefresh }: GroupTableProps) => {
+export const GroupTable = ({
+  refresh: viewRefresh,
+}: GroupTableProps) => {
   const { t } = useTranslation();
 
   const [selectedRows, setSelectedRows] = useState<GroupRepresentation[]>([]);
@@ -39,10 +40,10 @@ export const GroupTable = ({ refresh: viewRefresh }: GroupTableProps) => {
   const location = useLocation();
   const id = getLastId(location.pathname);
   const displayAsLink = (group: GroupRepresentation) =>
-    group?.access?.manage ||
-    group?.access?.manageMembers ||
-    group?.access?.manageMembership ||
-    group?.access?.viewMembers;
+    !!group.access?.manage ||
+    !!group.access?.manageMembers ||
+    !!group.access?.manageMembership ||
+    !!group.access?.viewMembers;
 
   const loader = async (first?: number, max?: number) => {
     const params: Record<string, string> = {
@@ -146,7 +147,7 @@ export const GroupTable = ({ refresh: viewRefresh }: GroupTableProps) => {
         }
         actionResolver={(rowData: IRowData) => {
           const group: GroupRepresentation = rowData.data;
-          if (!group?.access?.manage) return [];
+          if (!group.access?.manage) return [];
           return [
             {
               title: t("rename"),
