@@ -7,16 +7,8 @@ database is automatically migrated when you start the new installation for the f
 
 === Automatic relational database migration
 
-To enable automatic upgrading of the database schema, set the migration-strategy property value to "update" for the
-default connections-jpa provider:
-
-[source,bash]
-----
-kc.[sh|bat] start --spi-connections-jpa-legacy-migration-strategy=update
-----
-
-When you start the server with this setting your database is automatically migrated if the database schema has changed
-in the new version.
+To perform an automatic migration, start the server connected to the desired database.
+If the database schema has changed for the new version of the server, it will be migrated.
 
 Creating an index on huge tables with millions of records can easily take a huge amount of time
 and potentially cause major service disruption on upgrades.
@@ -34,16 +26,25 @@ kc.[sh|bat] start --spi-connections-liquibase-default-index-creation-threshold=3
 
 === Manual relational database migration
 
-To enable manual upgrading of the database schema, set the migration-strategy property value to "manual" for the default
-connections-jpa provider:
+To enable manual upgrading of the database schema, set the `migration-strategy` property value to "manual" for the
+default `connections-jpa` provider:
 
 [source,bash]
 ----
 kc.[sh|bat] start --spi-connections-jpa-legacy-migration-strategy=manual
 ----
 
-When you start the server with this configuration it checks if the database needs to be migrated. The required changes
-are written to an SQL file that you can review and manually run against the database. For further details on how to
-apply this file to the database, see the documentation for the relational database you're using. After the changes have
-been written to the file, the server exits.
+When you start the server with this configuration it checks if the database needs to be migrated.
+The required changes are written to the `bin/keycloak-database-update.sql` SQL file that you can review and manually run against the database.
+
+To change the path and name of the exported SQL file, set the `migration-export` property for the
+default `connections-jpa` provider:
+
+[source,bash]
+----
+kc.[sh|bat] start --spi-connections-jpa-legacy-migration-export=<path>/<file.sql>
+----
+
+For further details on how to apply this file to the database, see the documentation for the relational database you're using.
+After the changes have been written to the file, the server exits.
 
