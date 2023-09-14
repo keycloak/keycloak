@@ -224,8 +224,8 @@ importers:
         version: 4.0.1(react-router-dom@6.15.0)(react@18.2.0)
     devDependencies:
       '@4tw/cypress-drag-drop':
-        specifier: ^2.2.4
-        version: 2.2.4(cypress@13.2.0)
+        specifier: ^2.2.5
+        version: 2.2.5(cypress@13.2.0)
       '@testing-library/cypress':
         specifier: ^10.0.1
         version: 10.0.1(cypress@13.2.0)
@@ -467,10 +467,10 @@ importers:
 
 packages:
 
-  /@4tw/cypress-drag-drop@2.2.4(cypress@13.2.0):
-    resolution: {integrity: sha512-6mmjJ0SHjciI0JNofdVcN1LYLbvUcUT3oY2O+1HaTlQlpKPlX9kBc040Sik6RYFK7cgWvUNwoDoDoGSKA4IS/g==}
+  /@4tw/cypress-drag-drop@2.2.5(cypress@13.2.0):
+    resolution: {integrity: sha512-3ghTmzhOmUqeN6U3QmUnKRUxI7OMLbJA4hHUY/eS/FhWJgxbiGgcaELbolWnBAOpajPXcsNQGYEj9brd59WH6A==}
     peerDependencies:
-      cypress: ^2.1.0 || ^3.1.0 || ^4.0.0 || ^5.0.0 || ^6.0.0 || ^7.0.0 || ^8.0.0 || ^9.0.0 || ^10.0.0 || ^11.0.0 || ^12.0.0
+      cypress: 2 - 13
     dependencies:
       cypress: 13.2.0
     dev: true
