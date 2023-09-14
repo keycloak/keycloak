@@ -66,12 +66,16 @@ export default function GroupsSection() {
     isFeatureEnabled(Feature.AdminFineGrainedAuthz) &&
     hasAccess("manage-authorization", "manage-users", "manage-clients");
   const canManageGroup =
-    hasAccess("manage-users") || currentGroup()?.access?.manage;
+    hasAccess("manage-users") ||
+    currentGroup()?.access?.manage;
   const canManageRoles =
-    hasAccess("manage-users") || currentGroup()?.access?.manage;
+    hasAccess("manage-users") ||
+    currentGroup()?.access?.manage;
   const canViewDetails =
     hasAccess("query-groups", "view-users") ||
-    hasAccess("manage-users", "query-groups");
+    hasAccess("manage-users", "query-groups") ||
+    currentGroup()?.access?.manage ||
+    currentGroup()?.access?.view;
   const canViewMembers =
     hasAccess("view-users") ||
     currentGroup()?.access?.viewMembers ||
@@ -94,7 +98,7 @@ export default function GroupsSection() {
           if (group) {
             groups.push(group);
           } else {
-            throw new Error(t("common:notFound"));
+            throw new Error(t("notFound"));
           }
         }
         return groups;
@@ -144,9 +148,9 @@ export default function GroupsSection() {
             }
           >
             <DrawerContentBody>
-              <Tooltip content={open ? t("common:hide") : t("common:show")}>
+              <Tooltip content={open ? t("hide") : t("show")}>
                 <Button
-                  aria-label={open ? t("common:hide") : t("common:show")}
+                  aria-label={open ? t("hide") : t("show")}
                   variant="plain"
                   icon={open ? <AngleLeftIcon /> : <TreeIcon />}
                   onClick={toggle}
@@ -154,8 +158,8 @@ export default function GroupsSection() {
               </Tooltip>
               <GroupBreadCrumbs />
               <ViewHeader
-                titleKey={!id ? "groups:groups" : currentGroup()?.name!}
-                subKey={!id ? "groups:groupsDescription" : ""}
+                titleKey={!id ? "groups" : currentGroup()?.name!}
+                subKey={!id ? "groupsDescription" : ""}
                 helpUrl={!id ? helpUrls.groupsUrl : ""}
                 divider={!id}
                 dropdownItems={
@@ -214,9 +218,7 @@ export default function GroupsSection() {
                   <Tab
                     data-testid="attributes"
                     eventKey={2}
-                    title={
-                      <TabTitleText>{t("common:attributes")}</TabTitleText>
-                    }
+                    title={<TabTitleText>{t("attributes")}</TabTitleText>}
                   >
                     <GroupAttributes />
                   </Tab>
@@ -233,9 +235,7 @@ export default function GroupsSection() {
                     <Tab
                       eventKey={4}
                       data-testid="permissionsTab"
-                      title={
-                        <TabTitleText>{t("common:permissions")}</TabTitleText>
-                      }
+                      title={<TabTitleText>{t("permissions")}</TabTitleText>}
                     >
                       <PermissionsTab id={id} type="groups" />
                     </Tab>
@@ -243,9 +243,7 @@ export default function GroupsSection() {
                 </Tabs>
               )}
               {subGroups.length === 0 && (
-                <GroupTable
-                  refresh={refresh}
-                />
+                <GroupTable refresh={refresh} />
               )}
             </DrawerContentBody>
           </DrawerContent>
