@@ -112,7 +112,9 @@ export const AddRoleMappingModal = ({
     <Modal
       variant={ModalVariant.large}
       title={
-        isLDAPmapper ? t("assignRole") : t("assignRolesTo", { client: name })
+        isLDAPmapper
+          ? t("common:assignRole")
+          : t("common:assignRolesTo", { client: name })
       }
       isOpen
       onClose={onClose}
@@ -127,7 +129,7 @@ export const AddRoleMappingModal = ({
             onClose();
           }}
         >
-          {t("assign")}
+          {t("common:assign")}
         </Button>,
         <Button
           data-testid="cancel"
@@ -135,14 +137,14 @@ export const AddRoleMappingModal = ({
           variant="link"
           onClick={onClose}
         >
-          {t("cancel")}
+          {t("common:cancel")}
         </Button>,
       ]}
     >
       <KeycloakDataTable
         key={key}
         onSelect={(rows) => setSelectedRows([...rows])}
-        searchPlaceholderKey="searchByRoleName"
+        searchPlaceholderKey="clients:searchByRoleName"
         isPaginated={!(filterType === "roles" && type !== "roles")}
         searchTypeComponent={
           canViewRealmRoles && (
@@ -160,8 +162,8 @@ export const AddRoleMappingModal = ({
                     icon={<FilterIcon />}
                   >
                     {filterType === "roles"
-                      ? t("filterByRoles")
-                      : t("filterByClients")}
+                      ? t("common:filterByRoles")
+                      : t("common:filterByClients")}
                   </DropdownToggle>
                 }
                 isOpen={searchToggle}
@@ -179,7 +181,7 @@ export const AddRoleMappingModal = ({
         canSelectAll
         isRadio={isRadio}
         loader={filterType === "roles" ? loader : clientRolesLoader}
-        ariaLabelKey="roles"
+        ariaLabelKey="clients:roles"
         columns={[
           {
             name: "name",
@@ -187,16 +189,16 @@ export const AddRoleMappingModal = ({
           },
           {
             name: "role.description",
-            displayKey: "description",
+            displayKey: "common:description",
           },
         ]}
         emptyState={
           <ListEmptyState
             message={t("noRoles")}
-            instructions={t("noRealmRolesToAssign")}
+            instructions={t("common:noRealmRolesToAssign")}
             secondaryActions={[
               {
-                text: t("filterByClients"),
+                text: t("common:filterByClients"),
                 onClick: () => {
                   setFilterType("clients");
                   refresh();
