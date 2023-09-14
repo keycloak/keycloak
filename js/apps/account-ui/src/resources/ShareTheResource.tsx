@@ -6,6 +6,7 @@ import {
   FormGroup,
   InputGroup,
   Modal,
+  TextInput,
   ValidatedOptions,
 } from "@patternfly/react-core";
 import { useEffect } from "react";
@@ -16,10 +17,9 @@ import {
   useWatch,
 } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-
+import { SelectControl, useAlerts } from "ui-shared";
 import { updateRequest } from "../api";
 import { Permission, Resource } from "../api/representations";
-import { useAlerts, SelectControl, KeycloakTextInput } from "ui-shared";
 import { SharedWith } from "./SharedWith";
 
 type ShareTheResourceProps = {
@@ -145,7 +145,7 @@ export const ShareTheResource = ({
           }
         >
           <InputGroup>
-            <KeycloakTextInput
+            <TextInput
               id="users"
               placeholder={t("usernamePlaceholder")}
               validated={

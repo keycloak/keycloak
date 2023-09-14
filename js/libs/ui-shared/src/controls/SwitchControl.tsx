@@ -48,9 +48,9 @@ export const SwitchControl = <
             label={props.labelOn}
             labelOff={props.labelOff}
             isChecked={props.stringify ? value === "true" : value}
-            onChange={(checked, e) => {
+            onChange={(event, checked) => {
               const value = props.stringify ? checked.toString() : checked;
-              props.onChange?.(checked, e);
+              props.onChange?.(event, checked);
               onChange(value);
             }}
           />

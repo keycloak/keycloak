@@ -1,15 +1,16 @@
+import { TextArea } from "@patternfly/react-core";
 import { useFormContext } from "react-hook-form";
+
 import { UserProfileAttributeMetadata } from "../../api/representations";
 import { fieldName } from "../utils";
 import { UserProfileGroup } from "./UserProfileGroup";
-import { KeycloakTextArea } from "ui-shared";
 
 export const TextAreaComponent = (attr: UserProfileAttributeMetadata) => {
   const { register } = useFormContext();
 
   return (
     <UserProfileGroup {...attr}>
-      <KeycloakTextArea
+      <TextArea
         id={attr.name}
         data-testid={attr.name}
         {...register(fieldName(attr))}

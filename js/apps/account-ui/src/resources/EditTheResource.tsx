@@ -1,9 +1,15 @@
-import { Button, Form, FormGroup, Modal } from "@patternfly/react-core";
+import {
+  Button,
+  Form,
+  FormGroup,
+  Modal,
+  TextInput,
+} from "@patternfly/react-core";
 import { Fragment, useEffect } from "react";
 import { FormProvider, useFieldArray, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
+import { SelectControl, useAlerts } from "ui-shared";
 
-import { KeycloakTextInput, SelectControl, useAlerts } from "ui-shared";
 import { updatePermissions } from "../api";
 import type { Permission, Resource } from "../api/representations";
 
@@ -72,7 +78,7 @@ export const EditTheResource = ({
           {fields.map((p, index) => (
             <Fragment key={p.id}>
               <FormGroup label={t("user")} fieldId={`user-${p.id}`}>
-                <KeycloakTextInput
+                <TextInput
                   id={`user-${p.id}`}
                   type="text"
                   {...register(`permissions.${index}.username`)}

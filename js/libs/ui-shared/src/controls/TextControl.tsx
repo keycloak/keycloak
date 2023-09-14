@@ -1,13 +1,16 @@
-import { TextInputProps, ValidatedOptions } from "@patternfly/react-core";
+import {
+  TextInput,
+  TextInputProps,
+  ValidatedOptions,
+} from "@patternfly/react-core";
 import {
   FieldPath,
   FieldValues,
   PathValue,
-  useController,
   UseControllerProps,
+  useController,
 } from "react-hook-form";
 
-import { KeycloakTextInput } from "../keycloak-text-input/KeycloakTextInput";
 import { FormLabel } from "./FormLabel";
 
 export type TextControlProps<
@@ -43,7 +46,7 @@ export const TextControl = <
       isRequired={required}
       error={fieldState.error}
     >
-      <KeycloakTextInput
+      <TextInput
         isRequired={required}
         id={props.name}
         data-testid={props.name}

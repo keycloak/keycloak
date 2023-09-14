@@ -1,8 +1,9 @@
+import { TextInput } from "@patternfly/react-core";
 import { useFormContext } from "react-hook-form";
-import { KeycloakTextInput } from "ui-shared";
+
+import { UserProfileAttributeMetadata } from "../../api/representations";
 import { fieldName } from "../utils";
 import { UserProfileGroup } from "./UserProfileGroup";
-import { UserProfileAttributeMetadata } from "../../api/representations";
 
 export const TextComponent = (attr: UserProfileAttributeMetadata) => {
   const { register } = useFormContext();
@@ -13,7 +14,7 @@ export const TextComponent = (attr: UserProfileAttributeMetadata) => {
 
   return (
     <UserProfileGroup {...attr}>
-      <KeycloakTextInput
+      <TextInput
         id={attr.name}
         data-testid={attr.name}
         type={type}

@@ -1,4 +1,4 @@
-import { Popover } from "@patternfly/react-core";
+import { Icon, Popover } from "@patternfly/react-core";
 import { HelpIcon } from "@patternfly/react-icons";
 import { ReactNode } from "react";
 import { useHelp } from "../context/HelpContext";
@@ -6,14 +6,14 @@ import { useHelp } from "../context/HelpContext";
 type HelpItemProps = {
   helpText: string | ReactNode;
   fieldLabelId: string;
-  noVerticalAlign?: boolean;
+  isInline?: boolean;
   unWrap?: boolean;
 };
 
 export const HelpItem = ({
   helpText,
   fieldLabelId,
-  noVerticalAlign = true,
+  isInline = false,
   unWrap = false,
 }: HelpItemProps) => {
   const { enabled } = useHelp();
@@ -27,10 +27,16 @@ export const HelpItem = ({
             onClick={(e) => e.preventDefault()}
             className="pf-c-form__group-label-help"
           >
-            <HelpIcon noVerticalAlign={noVerticalAlign} />
+            <Icon isInline={isInline}>
+              <HelpIcon />
+            </Icon>
           </button>
         )}
-        {unWrap && <HelpIcon noVerticalAlign={noVerticalAlign} />}
+        {unWrap && (
+          <Icon isInline={isInline}>
+            <HelpIcon />
+          </Icon>
+        )}
       </>
     </Popover>
   ) : null;
