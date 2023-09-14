@@ -63,6 +63,8 @@ public class Profile {
 
         WEB_AUTHN("W3C Web Authentication (WebAuthn)", Type.DEFAULT),
 
+        LEGACY_WELCOME("Disables the new 'welcome' theme, and restores the legacy version.", Type.DEPRECATED),
+
         CLIENT_POLICIES("Client configuration policies", Type.DEFAULT),
 
         CIBA("OpenID Connect Client Initiated Backchannel Authentication (CIBA)", Type.DEFAULT),

@@ -26,6 +26,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.keycloak.it.junit5.extension.DistributionTest;
 import org.keycloak.it.junit5.extension.RawDistOnly;
+import org.keycloak.it.junit5.extension.WithEnvVars;
 import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
 
 import io.quarkus.test.junit.main.Launch;
@@ -56,6 +57,7 @@ public class ProxyDistTest {
     }
 
     @Test
+    @WithEnvVars({ "KEYCLOAK_ADMIN", "admin", "KEYCLOAK_ADMIN_PASSWORD", "admin" })
     @Launch({ "start-dev", "--hostname=mykeycloak.org", "--proxy=edge" })
     public void testForwardedHeadersWithEdge() {
         given().header("Forwarded", "for=12.34.56.78;host=test:1234;proto=https, for=23.45.67.89").when().get("http://mykeycloak.org:8080").then().body(containsString("https://test:1234/admin"));
