@@ -11,7 +11,7 @@ export const OptionComponent = (attr: UserProfileAttribute) => {
   const isMultiSelect = type.includes("multiselect");
   const Component = isMultiSelect ? Checkbox : Radio;
 
-  const options = (attr.validations?.options as Options).options || [];
+  const options = (attr.validators?.options as Options).options || [];
 
   return (
     <UserProfileGroup {...attr}>
