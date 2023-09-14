@@ -3282,5 +3282,10 @@
   "scopeTypeHelp": "Client scopes, which will be added as default scopes to each created client",
   "clientDescriptionHelp": "Specifies description of the client. For example 'My Client for TimeSheets'. Supports keys for localized values as well. For example: ${my_client_description}",
   "clientsClientTypeHelp": "'OpenID Connect' allows Clients to verify the identity of the End-User based on the authentication performed by an Authorization Server.'SAML' enables web-based authentication and authorization scenarios including cross-domain single sign-on (SSO) and uses security tokens containing assertions to pass information.",
-  "clientsClientScopesHelp": "The scopes associated with this resource."
+  "clientsClientScopesHelp": "The scopes associated with this resource.",
+  "locales": "Locales",
+  "realmOverrides": "Realm overrides ",
+  "realmOverridesHelp": "You can edit the supported locales. If you haven't selected supported locale yet, you only can edit English locale.",
+  "effectiveMessageBundles": "Effective message bundles ",
+  "effectiveMessageBundlesHelp": "Todo"
 }
