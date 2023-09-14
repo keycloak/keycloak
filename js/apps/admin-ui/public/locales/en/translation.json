@@ -2154,7 +2154,6 @@
   "events-disable-confirm": "If \"Save events\" is disabled, subsequent events will not be displayed in the \"Events\" menu",
   "noMessageBundles": "No message bundles",
   "noMessageBundlesInstructions": "Add a message bundle to get started.",
-  "messageBundleDescription": "You can edit the supported locales. If you haven't selected supported locales yet, you can only edit the English locale.",
   "defaultRoles": "Default roles",
   "defaultGroups": "Default groups",
   "whatIsDefaultGroups": "What is the function of default groups?",

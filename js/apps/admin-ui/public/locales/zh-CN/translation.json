@@ -2113,7 +2113,6 @@
   "events-disable-confirm": "如果禁用“保存事件”，后续事件将不会展示在“事件”菜单中。",
   "noMessageBundles": "没有消息包",
   "noMessageBundlesInstructions": "添加消息包以开始使用。",
-  "messageBundleDescription": "您可以编辑支持的语言环境。如果您还没有选择支持的语言环境，您只能编辑英文语言环境。",
   "defaultRoles": "默认角色",
   "defaultGroups": "默认群组",
   "whatIsDefaultGroups": "默认群组的作用是什么？",

@@ -3,16 +3,13 @@ import {
   AlertVariant,
   Button,
   Divider,
-  PageSection,
   Select,
   SelectGroup,
   SelectOption,
   SelectVariant,
-  TextContent,
   ToolbarItem,
 } from "@patternfly/react-core";
 import { useTranslation } from "react-i18next";
-import { FormPanel } from "../../components/scroll-form/FormPanel";
 import { PaginatingTableToolbar } from "../../components/table-toolbar/PaginatingTableToolbar";
 import { useFetch } from "../../utils/useFetch";
 import { adminClient } from "../../admin-client";
@@ -316,111 +313,104 @@ export const RealmOverrides = ({
           form={bundleForm}
         />
       )}
-      <PageSection variant="light">
-        <FormPanel className="kc-message-bundles" title="Edit message bundles">
-          <TextContent className="messageBundleDescription">
-            {t("messageBundleDescription")}
-          </TextContent>
-          <div className="tableBorder">
-            <PaginatingTableToolbar
-              count={messageBundles.length}
-              first={first}
-              max={max}
-              onNextClick={setFirst}
-              onPreviousClick={setFirst}
-              onPerPageSelect={(first, max) => {
-                setFirst(first);
-                setMax(max);
-              }}
-              inputGroupName={"search"}
-              inputGroupOnEnter={(search) => {
-                setFilter(search);
-                setFirst(0);
-                setMax(10);
-              }}
-              inputGroupPlaceholder={t("searchForMessageBundle")}
-              toolbarItem={
-                <Button
-                  data-testid="add-bundle-button"
-                  onClick={() => setAddMessageBundleModalOpen(true)}
-                >
-                  {t("addMessageBundle")}
-                </Button>
-              }
-              searchTypeComponent={
-                <ToolbarItem>
-                  <Select
-                    width={180}
-                    data-testid="filter-by-locale-select"
-                    isOpen={filterDropdownOpen}
-                    className="kc-filter-by-locale-select"
-                    variant={SelectVariant.single}
-                    isDisabled={!internationalizationEnabled}
-                    onToggle={(isExpanded) => setFilterDropdownOpen(isExpanded)}
-                    onSelect={(_, value) => {
-                      setSelectMenuLocale(value.toString());
-                      setSelectMenuValueSelected(true);
-                      refreshTable();
-                      setFilterDropdownOpen(false);
-                    }}
-                    selections={
-                      selectMenuValueSelected
-                        ? localeToDisplayName(selectMenuLocale)
-                        : realm.defaultLocale !== ""
-                        ? localeToDisplayName(DEFAULT_LOCALE)
-                        : t("placeholderText")
-                    }
-                  >
-                    {options}
-                  </Select>
-                </ToolbarItem>
-              }
+      <div className="kc-localization-table">
+        <PaginatingTableToolbar
+          count={messageBundles.length}
+          first={first}
+          max={max}
+          onNextClick={setFirst}
+          onPreviousClick={setFirst}
+          onPerPageSelect={(first, max) => {
+            setFirst(first);
+            setMax(max);
+          }}
+          inputGroupName={"search"}
+          inputGroupOnEnter={(search) => {
+            setFilter(search);
+            setFirst(0);
+            setMax(10);
+          }}
+          inputGroupPlaceholder={t("searchForMessageBundle")}
+          toolbarItem={
+            <Button
+              data-testid="add-bundle-button"
+              onClick={() => setAddMessageBundleModalOpen(true)}
             >
-              {messageBundles.length === 0 && !filter && (
-                <ListEmptyState
-                  hasIcon
-                  message={t("noMessageBundles")}
-                  instructions={t("noMessageBundlesInstructions")}
-                  onPrimaryAction={handleModalToggle}
-                />
-              )}
-              {messageBundles.length === 0 && filter && (
-                <ListEmptyState
-                  hasIcon
-                  icon={SearchIcon}
-                  isSearchVariant
-                  message={t("noSearchResults")}
-                  instructions={t("noSearchResultsInstructions")}
-                />
-              )}
-              {messageBundles.length !== 0 && (
-                <Table
-                  aria-label={t("editableRowsTable")}
-                  data-testid="editable-rows-table"
-                  variant={TableVariant.compact}
-                  cells={[t("key"), t("value")]}
-                  rows={tableRows}
-                  onRowEdit={(_, type, _b, rowIndex, validation) =>
-                    updateEditableRows(type, rowIndex, validation)
-                  }
-                  actions={[
-                    {
-                      title: t("delete"),
-                      onClick: (_, row) =>
-                        deleteKey(
-                          (tableRows[row].cells?.[0] as IRowCell).props.value,
-                        ),
-                    },
-                  ]}
-                >
-                  <TableHeader />
-                  <TableBody />
-                </Table>
-              )}
-            </PaginatingTableToolbar>
-          </div>
-        </FormPanel>
-      </PageSection>
+              {t("addMessageBundle")}
+            </Button>
+          }
+          searchTypeComponent={
+            <ToolbarItem>
+              <Select
+                width={180}
+                data-testid="filter-by-locale-select"
+                isOpen={filterDropdownOpen}
+                className="kc-filter-by-locale-select"
+                variant={SelectVariant.single}
+                isDisabled={!internationalizationEnabled}
+                onToggle={(isExpanded) => setFilterDropdownOpen(isExpanded)}
+                onSelect={(_, value) => {
+                  setSelectMenuLocale(value.toString());
+                  setSelectMenuValueSelected(true);
+                  refreshTable();
+                  setFilterDropdownOpen(false);
+                }}
+                selections={
+                  selectMenuValueSelected
+                    ? localeToDisplayName(selectMenuLocale)
+                    : realm.defaultLocale !== ""
+                    ? localeToDisplayName(DEFAULT_LOCALE)
+                    : t("placeholderText")
+                }
+              >
+                {options}
+              </Select>
+            </ToolbarItem>
+          }
+        >
+          {messageBundles.length === 0 && !filter && (
+            <ListEmptyState
+              hasIcon
+              message={t("noMessageBundles")}
+              instructions={t("noMessageBundlesInstructions")}
+              onPrimaryAction={handleModalToggle}
+            />
+          )}
+          {messageBundles.length === 0 && filter && (
+            <ListEmptyState
+              hasIcon
+              icon={SearchIcon}
+              isSearchVariant
+              message={t("noSearchResults")}
+              instructions={t("noSearchResultsInstructions")}
+            />
+          )}
+          {messageBundles.length !== 0 && (
+            <Table
+              aria-label={t("editableRowsTable")}
+              data-testid="editable-rows-table"
+              variant={TableVariant.compact}
+              cells={[t("key"), t("value")]}
+              rows={tableRows}
+              onRowEdit={(_, type, _b, rowIndex, validation) =>
+                updateEditableRows(type, rowIndex, validation)
+              }
+              actions={[
+                {
+                  title: t("delete"),
+                  onClick: (_, row) =>
+                    deleteKey(
+                      (tableRows[row].cells?.[0] as IRowCell).props.value,
+                    ),
+                },
+              ]}
+            >
+              <TableHeader />
+              <TableBody />
+            </Table>
+          )}
+        </PaginatingTableToolbar>
+      </div>
     </>
   );
 };
