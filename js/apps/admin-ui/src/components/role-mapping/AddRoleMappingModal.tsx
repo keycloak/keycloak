@@ -170,8 +170,8 @@ export const AddRoleMappingModal = ({
                 dropdownItems={[
                   <DropdownItem key="filter-type" data-testid={filterType}>
                     {filterType === "roles"
-                      ? t("filterByClients")
-                      : t("filterByRoles")}
+                      ? t("common:filterByClients")
+                      : t("common:filterByRoles")}
                   </DropdownItem>,
                 ]}
               />
