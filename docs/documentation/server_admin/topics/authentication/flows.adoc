@@ -111,6 +111,12 @@ Executions have a wide variety of actions, from sending a reset email to validat
 .Adding an authentication execution
 image:images/Create-authentication-execution.png[Adding an Authentication Execution]
 
+Authentication executions can optionally have a reference value configured. This can be utilized by the _Authentication Method Reference (AMR)_ protocol mapper to populate the _amr_ claim in OIDC access and ID tokens (for more information on the
+AMR claim, see https://www.rfc-editor.org/rfc/rfc8176.html[RFC-8176]). When the _Authentication Method Reference (AMR)_ protocol mapper is configured for a client, it will populate the _amr_ claim with the reference value for any authenticator execution the user successfully completes during the authentication flow.
+
+.Adding an authenticator reference value
+image:images/config-authenticator-reference.png[Configuring an Authenticator Reference Value]
+
 Two types of executions exist, _automatic executions_ and _interactive executions_. _Automatic executions_ are similar to the *Cookie* execution and will automatically
 perform their action in the flow. _Interactive executions_ halt the flow to get input. Executions executing successfully set their status to _success_.  For a flow to complete, it needs at least one execution with a status of _success_. 
 

@@ -19,6 +19,7 @@ package org.keycloak.authentication;
 
 import org.jboss.logging.Logger;
 import org.keycloak.authentication.authenticators.conditional.ConditionalAuthenticator;
+import org.keycloak.authentication.authenticators.util.AuthenticatorUtils;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.Constants;
@@ -31,12 +32,8 @@ import org.keycloak.utils.StringUtil;
 import jakarta.ws.rs.HttpMethod;
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
+
+import java.util.*;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -485,6 +482,7 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
             case SUCCESS:
                 logger.debugv("authenticator SUCCESS: {0}", execution.getAuthenticator());
                 setExecutionStatus(execution, AuthenticationSessionModel.ExecutionStatus.SUCCESS);
+                AuthenticatorUtils.updateCompletedExecutions(processor.getAuthenticationSession(), processor.getUserSession(), execution.getId());
                 return null;
             case FAILED:
                 logger.debugv("authenticator FAILED: {0}", execution.getAuthenticator());
