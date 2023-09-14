@@ -118,8 +118,8 @@ importers:
         specifier: workspace:*
         version: link:../../libs/keycloak-admin-client
       '@playwright/test':
-        specifier: ^1.37.1
-        version: 1.37.1
+        specifier: ^1.38.0
+        version: 1.38.0
       '@types/lodash-es':
         specifier: ^4.17.9
         version: 4.17.9
@@ -1149,15 +1149,12 @@ packages:
       tslib: 2.6.2
     dev: true
 
-  /@playwright/test@1.37.1:
-    resolution: {integrity: sha512-bq9zTli3vWJo8S3LwB91U0qDNQDpEXnw7knhxLM0nwDvexQAwx9tO8iKDZSqqneVq+URd/WIoz+BALMqUTgdSg==}
+  /@playwright/test@1.38.0:
+    resolution: {integrity: sha512-xis/RXXsLxwThKnlIXouxmIvvT3zvQj1JE39GsNieMUrMpb3/GySHDh2j8itCG22qKVD4MYLBp7xB73cUW/UUw==}
     engines: {node: '>=16'}
     hasBin: true
     dependencies:
-      '@types/node': 20.5.9
-      playwright-core: 1.37.1
-    optionalDependencies:
-      fsevents: 2.3.2
+      playwright: 1.38.0
     dev: true
 
   /@reactflow/background@11.2.8(@types/react@18.2.21)(react-dom@18.2.0)(react@18.2.0):
@@ -1884,6 +1881,7 @@ packages:
 
   /@types/node@20.5.9:
     resolution: {integrity: sha512-PcGNd//40kHAS3sTlzKB9C9XL4K0sTup8nbG5lC14kzEteTNuAFh9u5nA0o5TWnSG2r/JNPRXFVcHJIIeRlmqQ==}
+    dev: false
 
   /@types/node@20.6.0:
     resolution: {integrity: sha512-najjVq5KN2vsH2U/xyh2opaSEz6cZMR2SetLIlxlj08nOcmPOemJmUK2o4kUzfLqfrWE0PIrNeE16XhYDd3nqg==}
@@ -5468,10 +5466,20 @@ packages:
       pathe: 1.1.1
     dev: true
 
-  /playwright-core@1.37.1:
-    resolution: {integrity: sha512-17EuQxlSIYCmEMwzMqusJ2ztDgJePjrbttaefgdsiqeLWidjYz9BxXaTaZWxH1J95SHGk6tjE+dwgWILJoUZfA==}
+  /playwright-core@1.38.0:
+    resolution: {integrity: sha512-f8z1y8J9zvmHoEhKgspmCvOExF2XdcxMW8jNRuX4vkQFrzV4MlZ55iwb5QeyiFQgOFCUolXiRHgpjSEnqvO48g==}
     engines: {node: '>=16'}
     hasBin: true
+    dev: true
+
+  /playwright@1.38.0:
+    resolution: {integrity: sha512-fJGw+HO0YY+fU/F1N57DMO+TmXHTrmr905J05zwAQE9xkuwP/QLDk63rVhmyxh03dYnEhnRbsdbH9B0UVVRB3A==}
+    engines: {node: '>=16'}
+    hasBin: true
+    dependencies:
+      playwright-core: 1.38.0
+    optionalDependencies:
+      fsevents: 2.3.2
     dev: true
 
   /popper.js@1.16.1:
