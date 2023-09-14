@@ -45,7 +45,7 @@ export const AddFlowDropdown = ({
   );
 
   return (
-    <Tooltip content={t("common:add")}>
+    <Tooltip content={t("add")}>
       <>
         <Dropdown
           isPlain
@@ -53,7 +53,7 @@ export const AddFlowDropdown = ({
           data-testid={`${execution.displayName}-edit-dropdown`}
           isOpen={open}
           toggle={
-            <DropdownToggle onToggle={setOpen} aria-label={t("common:add")}>
+            <DropdownToggle onToggle={setOpen} aria-label={t("add")}>
               <PlusIcon />
             </DropdownToggle>
           }

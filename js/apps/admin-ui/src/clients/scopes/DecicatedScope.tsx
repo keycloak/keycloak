@@ -96,8 +96,8 @@ export const DedicatedScope = ({
         >
           <Switch
             id="fullScopeAllowed"
-            label={t("common:on")}
-            labelOff={t("common:off")}
+            label={t("on")}
+            labelOff={t("off")}
             isChecked={client.fullScopeAllowed}
             onChange={update}
             aria-label={t("fullScopeAllowed")}

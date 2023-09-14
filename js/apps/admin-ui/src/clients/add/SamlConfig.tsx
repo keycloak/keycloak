@@ -42,8 +42,8 @@ export const Toggle = ({ name, label }: ToggleProps) => {
           <Switch
             id={name!}
             data-testid={label}
-            label={t("common:on")}
-            labelOff={t("common:off")}
+            label={t("on")}
+            labelOff={t("off")}
             isChecked={field.value === "true"}
             onChange={(value) => field.onChange(value.toString())}
             aria-label={t(label)}

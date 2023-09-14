@@ -61,7 +61,7 @@ export const ExportSamlKeyDialog = ({
           type="submit"
           form="export-saml-key-form"
         >
-          {t("common:export")}
+          {t("export")}
         </Button>,
         <Button
           id="modal-cancel"
@@ -72,7 +72,7 @@ export const ExportSamlKeyDialog = ({
             close();
           }}
         >
-          {t("common:cancel")}
+          {t("cancel")}
         </Button>,
       ]}
     >

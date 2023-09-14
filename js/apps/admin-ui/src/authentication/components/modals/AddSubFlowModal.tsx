@@ -77,7 +77,7 @@ export const AddSubFlowModal = ({
           type="submit"
           form="sub-flow-form"
         >
-          {t("common:add")}
+          {t("add")}
         </Button>,
         <Button
           key="cancel"
@@ -85,16 +85,16 @@ export const AddSubFlowModal = ({
           variant={ButtonVariant.link}
           onClick={onCancel}
         >
-          {t("common:cancel")}
+          {t("cancel")}
         </Button>,
       ]}
       isOpen
     >
       <Form id="sub-flow-form" onSubmit={handleSubmit(onConfirm)} isHorizontal>
         <FormGroup
-          label={t("common:name")}
+          label={t("name")}
           fieldId="name"
-          helperTextInvalid={t("common:required")}
+          helperTextInvalid={t("required")}
           validated={
             errors.name ? ValidatedOptions.error : ValidatedOptions.default
           }
@@ -113,7 +113,7 @@ export const AddSubFlowModal = ({
           />
         </FormGroup>
         <FormGroup
-          label={t("common:description")}
+          label={t("description")}
           fieldId="description"
           labelIcon={
             <HelpItem

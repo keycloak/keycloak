@@ -33,7 +33,7 @@ export const AddEventTypesDialog = ({
           variant="primary"
           onClick={() => onConfirm(selectedTypes)}
         >
-          {t("common:add")}
+          {t("add")}
         </Button>,
         <Button
           data-testid="moveCancel"
@@ -41,7 +41,7 @@ export const AddEventTypesDialog = ({
           variant="link"
           onClick={onClose}
         >
-          {t("common:cancel")}
+          {t("cancel")}
         </Button>,
       ]}
     >

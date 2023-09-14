@@ -142,7 +142,7 @@ export const RoleMapping = ({
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
     titleKey: "removeMappingTitle",
     messageKey: t("removeMappingConfirm", { count: selected.length }),
-    continueButtonLabel: "common:remove",
+    continueButtonLabel: "remove",
     continueButtonVariant: ButtonVariant.danger,
     onConfirm: async () => {
       try {
@@ -182,7 +182,7 @@ export const RoleMapping = ({
           <>
             <ToolbarItem>
               <Checkbox
-                label={t("common:hideInheritedRoles")}
+                label={t("hideInheritedRoles")}
                 id="hideInheritedRoles"
                 data-testid="hideInheritedRoles"
                 isChecked={hide}
@@ -199,7 +199,7 @@ export const RoleMapping = ({
                     data-testid="assignRole"
                     onClick={() => setShowAssign(true)}
                   >
-                    {t("common:assignRole")}
+                    {t("assignRole")}
                   </Button>
                 </ToolbarItem>
                 <ToolbarItem>
@@ -209,7 +209,7 @@ export const RoleMapping = ({
                     onClick={toggleDeleteDialog}
                     isDisabled={selected.length === 0}
                   >
-                    {t("common:unAssignRole")}
+                    {t("unAssignRole")}
                   </Button>
                 </ToolbarItem>
               </>
@@ -220,7 +220,7 @@ export const RoleMapping = ({
           isManager
             ? [
                 {
-                  title: t("common:unAssignRole"),
+                  title: t("unAssignRole"),
                   onRowClick: async (role) => {
                     setSelected([role]);
                     toggleDeleteDialog();
@@ -233,18 +233,18 @@ export const RoleMapping = ({
         columns={[
           {
             name: "role.name",
-            displayKey: t("common:name"),
+            displayKey: t("name"),
             transforms: [cellWidth(30)],
             cellRenderer: ServiceRole,
           },
           {
             name: "role.isInherited",
-            displayKey: t("common:inherent"),
+            displayKey: t("inherent"),
             cellFormatters: [upperCaseFormatter(), emptyFormatter()],
           },
           {
             name: "role.description",
-            displayKey: t("common:description"),
+            displayKey: t("description"),
             cellFormatters: [emptyFormatter()],
           },
         ]}
@@ -252,7 +252,7 @@ export const RoleMapping = ({
           <ListEmptyState
             message={t(`noRoles-${type}`)}
             instructions={t(`noRolesInstructions-${type}`)}
-            primaryActionText={t("common:assignRole")}
+            primaryActionText={t("assignRole")}
             onPrimaryAction={() => setShowAssign(true)}
           />
         }

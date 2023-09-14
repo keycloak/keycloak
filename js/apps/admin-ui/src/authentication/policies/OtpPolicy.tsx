@@ -360,8 +360,8 @@ export const OtpPolicy = ({ realm, realmUpdated }: OtpPolicyProps) => {
               render={({ field }) => (
                 <Switch
                   id="otpPolicyCodeReusable"
-                  label={t("common:on")}
-                  labelOff={t("common:off")}
+                  label={t("on")}
+                  labelOff={t("off")}
                   isChecked={field.value}
                   onChange={field.onChange}
                 />
@@ -377,14 +377,14 @@ export const OtpPolicy = ({ realm, realmUpdated }: OtpPolicyProps) => {
             type="submit"
             isDisabled={!isValid || !isDirty}
           >
-            {t("common:save")}
+            {t("save")}
           </Button>
           <Button
             data-testid="reload"
             variant={ButtonVariant.link}
             onClick={() => reset({ ...realm })}
           >
-            {t("common:reload")}
+            {t("reload")}
           </Button>
         </ActionGroup>
       </FormAccess>

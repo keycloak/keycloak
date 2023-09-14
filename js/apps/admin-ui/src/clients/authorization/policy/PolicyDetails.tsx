@@ -89,7 +89,7 @@ export default function PolicyDetails() {
         ]);
 
         if (!result[0]) {
-          throw new Error(t("common:notFound"));
+          throw new Error(t("notFound"));
         }
 
         return {
@@ -188,7 +188,7 @@ export default function PolicyDetails() {
                   data-testid="delete-policy"
                   onClick={() => toggleDeleteDialog()}
                 >
-                  {t("common:delete")}
+                  {t("delete")}
                 </DropdownItem>,
               ]
             : undefined
@@ -214,7 +214,7 @@ export default function PolicyDetails() {
                 type="submit"
                 data-testid="save"
               >
-                {t("common:save")}
+                {t("save")}
               </Button>
 
               <Button
@@ -231,7 +231,7 @@ export default function PolicyDetails() {
                   />
                 )}
               >
-                {t("common:cancel")}
+                {t("cancel")}
               </Button>
             </div>
           </ActionGroup>

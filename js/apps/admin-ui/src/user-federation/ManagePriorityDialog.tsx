@@ -41,19 +41,19 @@ export const ManagePriorityDialog = ({
 
   const onDragStart = (id: string) => {
     setId(id);
-    setLiveText(t("common:onDragStart", { item: id }));
+    setLiveText(t("onDragStart", { item: id }));
   };
 
   const onDragMove = () => {
-    setLiveText(t("common:onDragMove", { item: id }));
+    setLiveText(t("onDragMove", { item: id }));
   };
 
   const onDragCancel = () => {
-    setLiveText(t("common:onDragCancel"));
+    setLiveText(t("onDragCancel"));
   };
 
   const onDragFinish = (providerOrder: string[]) => {
-    setLiveText(t("common:onDragFinish", { list: providerOrder }));
+    setLiveText(t("onDragFinish", { list: providerOrder }));
     setOrder(providerOrder);
   };
 
@@ -87,7 +87,7 @@ export const ManagePriorityDialog = ({
             onClose();
           }}
         >
-          {t("common:save")}
+          {t("save")}
         </Button>,
         <Button
           id="modal-cancel"
@@ -95,7 +95,7 @@ export const ManagePriorityDialog = ({
           variant={ButtonVariant.link}
           onClick={onClose}
         >
-          {t("common:cancel")}
+          {t("cancel")}
         </Button>,
       ]}
     >
@@ -121,7 +121,7 @@ export const ManagePriorityDialog = ({
           >
             <DataListItemRow>
               <DataListControl>
-                <DataListDragButton aria-label={t("common-help:dragHelp")} />
+                <DataListDragButton aria-label={t("dragHelp")} />
               </DataListControl>
               <DataListItemCells
                 dataListCells={[

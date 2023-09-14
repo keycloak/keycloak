@@ -113,10 +113,10 @@ export const ExecutionConfigModal = ({
 
   return (
     <>
-      <Tooltip content={t("common:settings")}>
+      <Tooltip content={t("settings")}>
         <Button
           variant="plain"
-          aria-label={t("common:settings")}
+          aria-label={t("settings")}
           onClick={() => setShow(true)}
         >
           <CogIcon />
@@ -133,7 +133,7 @@ export const ExecutionConfigModal = ({
             <FormGroup
               label={t("alias")}
               fieldId="alias"
-              helperTextInvalid={t("common:required")}
+              helperTextInvalid={t("required")}
               validated={
                 errors.alias ? ValidatedOptions.error : ValidatedOptions.default
               }
@@ -165,7 +165,7 @@ export const ExecutionConfigModal = ({
             </FormProvider>
             <ActionGroup>
               <Button data-testid="save" variant="primary" type="submit">
-                {t("common:save")}
+                {t("save")}
               </Button>
               <Button
                 data-testid="cancel"
@@ -174,7 +174,7 @@ export const ExecutionConfigModal = ({
                   setShow(false);
                 }}
               >
-                {t("common:cancel")}
+                {t("cancel")}
               </Button>
               {config && (
                 <Button
@@ -189,7 +189,7 @@ export const ExecutionConfigModal = ({
                     setShow(false);
                   }}
                 >
-                  {t("common:clear")} <TrashIcon />
+                  {t("clear")} <TrashIcon />
                 </Button>
               )}
             </ActionGroup>

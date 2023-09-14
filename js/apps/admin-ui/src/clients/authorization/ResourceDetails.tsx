@@ -85,7 +85,7 @@ export default function ResourceDetails() {
       ]),
     ([client, resource, permissions]) => {
       if (!client) {
-        throw new Error(t("common:notFound"));
+        throw new Error(t("notFound"));
       }
       setClient(client);
       setPermission(permissions);
@@ -176,7 +176,7 @@ export default function ResourceDetails() {
                   data-testid="delete-resource"
                   onClick={() => toggleDeleteDialog()}
                 >
-                  {t("common:delete")}
+                  {t("delete")}
                 </DropdownItem>,
               ]
             : undefined
@@ -204,12 +204,12 @@ export default function ResourceDetails() {
               />
             </FormGroup>
             <FormGroup
-              label={t("common:name")}
+              label={t("name")}
               fieldId="name"
               labelIcon={
                 <HelpItem helpText={t("resourceName")} fieldLabelId="name" />
               }
-              helperTextInvalid={t("common:required")}
+              helperTextInvalid={t("required")}
               validated={
                 errors.name ? ValidatedOptions.error : ValidatedOptions.default
               }
@@ -292,8 +292,8 @@ export default function ResourceDetails() {
                 render={({ field }) => (
                   <Switch
                     id="ownerManagedAccess"
-                    label={t("common:on")}
-                    labelOff={t("common:off")}
+                    label={t("on")}
+                    labelOff={t("off")}
                     isChecked={field.value}
                     onChange={field.onChange}
                     aria-label={t("ownerManagedAccess")}
@@ -322,7 +322,7 @@ export default function ResourceDetails() {
                   type="submit"
                   data-testid="save"
                 >
-                  {t("common:save")}
+                  {t("save")}
                 </Button>
 
                 <Button
@@ -339,7 +339,7 @@ export default function ResourceDetails() {
                     ></Link>
                   )}
                 >
-                  {t("common:cancel")}
+                  {t("cancel")}
                 </Button>
               </div>
             </ActionGroup>

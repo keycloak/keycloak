@@ -49,7 +49,7 @@ export const RevocationPanel = ({
     if (date > 0) {
       return formatDate(new Date(date * 1000), FORMAT_DATE_AND_TIME);
     } else {
-      return t("common:none");
+      return t("none");
     }
   };
 

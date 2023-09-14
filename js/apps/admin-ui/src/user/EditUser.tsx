@@ -95,7 +95,7 @@ export default function EditUser() {
       ]);
 
       if (!user || !currentRealm || !attackDetection) {
-        throw new Error(t("common:notFound"));
+        throw new Error(t("notFound"));
       }
 
       const isBruteForceProtected = currentRealm.bruteForceProtected;
@@ -140,7 +140,7 @@ export default function EditUser() {
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
     titleKey: "users:deleteConfirm",
     messageKey: "users:deleteConfirmCurrentUser",
-    continueButtonLabel: "common:delete",
+    continueButtonLabel: "delete",
     continueButtonVariant: ButtonVariant.danger,
     onConfirm: async () => {
       try {
@@ -199,7 +199,7 @@ export default function EditUser() {
             isDisabled={!user.access?.manage}
             onClick={() => toggleDeleteDialog()}
           >
-            {t("common:delete")}
+            {t("delete")}
           </DropdownItem>,
         ]}
         onToggle={(value) =>
@@ -218,7 +218,7 @@ export default function EditUser() {
             >
               <Tab
                 data-testid="user-details-tab"
-                title={<TabTitleText>{t("common:details")}</TabTitleText>}
+                title={<TabTitleText>{t("details")}</TabTitleText>}
                 {...settingsTab}
               >
                 <PageSection variant="light">
@@ -233,7 +233,7 @@ export default function EditUser() {
               {!isUserProfileEnabled && (
                 <Tab
                   data-testid="attributes"
-                  title={<TabTitleText>{t("common:attributes")}</TabTitleText>}
+                  title={<TabTitleText>{t("attributes")}</TabTitleText>}
                   {...attributesTab}
                 >
                   <UserAttributes user={user} save={save} />
@@ -242,7 +242,7 @@ export default function EditUser() {
               <Tab
                 data-testid="credentials"
                 isHidden={!user.access?.view}
-                title={<TabTitleText>{t("common:credentials")}</TabTitleText>}
+                title={<TabTitleText>{t("credentials")}</TabTitleText>}
                 {...credentialsTab}
               >
                 <UserCredentials user={user} />
@@ -258,7 +258,7 @@ export default function EditUser() {
               {hasAccess("query-groups") && (
                 <Tab
                   data-testid="user-groups-tab"
-                  title={<TabTitleText>{t("common:groups")}</TabTitleText>}
+                  title={<TabTitleText>{t("groups")}</TabTitleText>}
                   {...groupsTab}
                 >
                   <UserGroups user={user} />

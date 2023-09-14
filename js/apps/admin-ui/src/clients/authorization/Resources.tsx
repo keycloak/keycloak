@@ -186,9 +186,9 @@ export const AuthorizationResources = ({ clientId }: ResourcesProps) => {
               <Thead>
                 <Tr>
                   <Th aria-hidden="true" />
-                  <Th>{t("common:name")}</Th>
+                  <Th>{t("name")}</Th>
                   <Th>{t("displayName")}</Th>
-                  <Th>{t("common:type")}</Th>
+                  <Th>{t("type")}</Th>
                   <Th>{t("owner")}</Th>
                   <Th>{t("uris")}</Th>
                   <Th aria-hidden="true" />
@@ -254,7 +254,7 @@ export const AuthorizationResources = ({ clientId }: ResourcesProps) => {
                       actions={{
                         items: [
                           {
-                            title: t("common:delete"),
+                            title: t("delete"),
                             onClick: async () => {
                               setSelectedResource(resource);
                               setPermission(
@@ -293,8 +293,8 @@ export const AuthorizationResources = ({ clientId }: ResourcesProps) => {
       {noData && searching && (
         <ListEmptyState
           isSearchVariant
-          message={t("common:noSearchResults")}
-          instructions={t("common:noSearchResultsInstructions")}
+          message={t("noSearchResults")}
+          instructions={t("noSearchResultsInstructions")}
         />
       )}
       {noData && !searching && (

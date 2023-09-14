@@ -112,7 +112,7 @@ export const KeysListTab = ({ realmComponents }: KeysListTabProps) => {
   const [togglePublicKeyDialog, PublicKeyDialog] = useConfirmDialog({
     titleKey: t("publicKeys").slice(0, -1),
     messageKey: publicKey,
-    continueButtonLabel: "common:close",
+    continueButtonLabel: "close",
     continueButtonVariant: ButtonVariant.primary,
     onConfirm: () => Promise.resolve(),
   });
@@ -120,7 +120,7 @@ export const KeysListTab = ({ realmComponents }: KeysListTabProps) => {
   const [toggleCertificateDialog, CertificateDialog] = useConfirmDialog({
     titleKey: t("certificate"),
     messageKey: certificate,
-    continueButtonLabel: "common:close",
+    continueButtonLabel: "close",
     continueButtonVariant: ButtonVariant.primary,
     onConfirm: () => Promise.resolve(),
   });

@@ -48,7 +48,7 @@ export default function UserFederationLdapSettings() {
     () => adminClient.components.findOne({ id: id! }),
     (component) => {
       if (!component) {
-        throw new Error(t("common:notFound"));
+        throw new Error(t("notFound"));
       }
 
       setComponent(component);
@@ -112,7 +112,7 @@ export default function UserFederationLdapSettings() {
         >
           <Tab
             id="settings"
-            title={<TabTitleText>{t("common:settings")}</TabTitleText>}
+            title={<TabTitleText>{t("settings")}</TabTitleText>}
             {...settingsTab}
           >
             <PageSection variant="light">
@@ -121,7 +121,7 @@ export default function UserFederationLdapSettings() {
           </Tab>
           <Tab
             id="mappers"
-            title={<TabTitleText>{t("common:mappers")}</TabTitleText>}
+            title={<TabTitleText>{t("mappers")}</TabTitleText>}
             data-testid="ldap-mappers-tab"
             {...mappersTab}
           >

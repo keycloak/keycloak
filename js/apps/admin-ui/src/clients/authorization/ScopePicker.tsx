@@ -66,8 +66,8 @@ export const ScopePicker = ({ clientId }: { clientId: string }) => {
             variant={SelectVariant.typeaheadMulti}
             chipGroupProps={{
               numChips: 3,
-              expandedText: t("common:hide"),
-              collapsedText: t("common:showRemaining"),
+              expandedText: t("hide"),
+              collapsedText: t("showRemaining"),
             }}
             onToggle={setOpen}
             isOpen={open}

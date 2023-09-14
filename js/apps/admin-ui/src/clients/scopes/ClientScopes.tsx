@@ -196,7 +196,7 @@ export const ClientScopes = ({
       name: selectedRows[0]?.name,
     }),
     messageKey: "deleteConfirmClientScopes",
-    continueButtonLabel: "common:delete",
+    continueButtonLabel: "delete",
     continueButtonVariant: ButtonVariant.danger,
     onConfirm: async () => {
       try {
@@ -313,7 +313,7 @@ export const ClientScopes = ({
                           }
                         }}
                       >
-                        {t("common:remove")}
+                        {t("remove")}
                       </DropdownItem>,
                     ]}
                   />
@@ -350,7 +350,7 @@ export const ClientScopes = ({
           isManager
             ? [
                 {
-                  title: t("common:remove"),
+                  title: t("remove"),
                   onRowClick: async (row) => {
                     setSelectedRows([row]);
                     toggleDeleteDialog();

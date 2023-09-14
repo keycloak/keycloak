@@ -84,7 +84,7 @@ const Header = ({ onChange, value, save, toggleDeleteDialog }: HeaderProps) => {
     () => adminClient.identityProviders.findOne({ alias: displayName }),
     (fetchedProvider) => {
       if (!fetchedProvider) {
-        throw new Error(t("common:notFound"));
+        throw new Error(t("notFound"));
       }
       setProvider(fetchedProvider);
     },
@@ -94,7 +94,7 @@ const Header = ({ onChange, value, save, toggleDeleteDialog }: HeaderProps) => {
   const [toggleDisableDialog, DisableConfirm] = useConfirmDialog({
     titleKey: "identity-providers:disableProvider",
     messageKey: t("disableConfirmIdentityProvider", { provider: displayName }),
-    continueButtonLabel: "common:disable",
+    continueButtonLabel: "disable",
     onConfirm: () => {
       onChange(!value);
       save();
@@ -115,7 +115,7 @@ const Header = ({ onChange, value, save, toggleDeleteDialog }: HeaderProps) => {
         divider={false}
         dropdownItems={[
           <DropdownItem key="delete" onClick={() => toggleDeleteDialog()}>
-            {t("common:delete")}
+            {t("delete")}
           </DropdownItem>,
         ]}
         isEnabled={value}
@@ -191,7 +191,7 @@ export default function DetailSettings() {
     () => adminClient.identityProviders.findOne({ alias }),
     (fetchedProvider) => {
       if (!fetchedProvider) {
-        throw new Error(t("common:notFound"));
+        throw new Error(t("notFound"));
       }
 
       reset(fetchedProvider);
@@ -258,7 +258,7 @@ export default function DetailSettings() {
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
     titleKey: "identity-providers:deleteProvider",
     messageKey: t("deleteConfirmIdentityProvider", { provider: alias }),
-    continueButtonLabel: "common:delete",
+    continueButtonLabel: "delete",
     continueButtonVariant: ButtonVariant.danger,
     onConfirm: async () => {
       try {
@@ -276,7 +276,7 @@ export default function DetailSettings() {
     messageKey: t("identity-providers:deleteMapperConfirm", {
       mapper: selectedMapper?.name,
     }),
-    continueButtonLabel: "common:delete",
+    continueButtonLabel: "delete",
     continueButtonVariant: ButtonVariant.danger,
     onConfirm: async () => {
       try {
@@ -422,7 +422,7 @@ export default function DetailSettings() {
         <RoutableTabs isBox defaultLocation={toTab("settings")}>
           <Tab
             id="settings"
-            title={<TabTitleText>{t("common:settings")}</TabTitleText>}
+            title={<TabTitleText>{t("settings")}</TabTitleText>}
             {...settingsTab}
           >
             <ScrollForm className="pf-u-px-lg" sections={sections} />
@@ -430,7 +430,7 @@ export default function DetailSettings() {
           <Tab
             id="mappers"
             data-testid="mappers-tab"
-            title={<TabTitleText>{t("common:mappers")}</TabTitleText>}
+            title={<TabTitleText>{t("mappers")}</TabTitleText>}
             {...mappersTab}
           >
             <KeycloakDataTable
@@ -479,23 +479,23 @@ export default function DetailSettings() {
               columns={[
                 {
                   name: "name",
-                  displayKey: "common:name",
+                  displayKey: "name",
                   cellRenderer: (row) => (
                     <MapperLink {...row} provider={provider} />
                   ),
                 },
                 {
                   name: "category",
-                  displayKey: "common:category",
+                  displayKey: "category",
                 },
                 {
                   name: "type",
-                  displayKey: "common:type",
+                  displayKey: "type",
                 },
               ]}
               actions={[
                 {
-                  title: t("common:delete"),
+                  title: t("delete"),
                   onRowClick: (mapper) => {
                     setSelectedMapper(mapper);
                     toggleDeleteMapperDialog();
@@ -508,7 +508,7 @@ export default function DetailSettings() {
             <Tab
               id="permissions"
               data-testid="permissionsTab"
-              title={<TabTitleText>{t("common:permissions")}</TabTitleText>}
+              title={<TabTitleText>{t("permissions")}</TabTitleText>}
               {...permissionsTab}
             >
               <PermissionsTab id={alias} type="identityProviders" />

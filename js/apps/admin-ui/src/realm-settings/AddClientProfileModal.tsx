@@ -87,7 +87,7 @@ export const AddClientProfileModal = (props: AddClientProfileModalProps) => {
             props.onConfirm(selectedRows);
           }}
         >
-          {t("common:add")}
+          {t("add")}
         </Button>,
         <Button
           key="cancel"
@@ -96,7 +96,7 @@ export const AddClientProfileModal = (props: AddClientProfileModalProps) => {
             props.toggleDialog();
           }}
         >
-          {t("common:cancel")}
+          {t("cancel")}
         </Button>,
       ]}
     >
@@ -116,7 +116,7 @@ export const AddClientProfileModal = (props: AddClientProfileModalProps) => {
           },
           {
             name: "description",
-            displayKey: "common:description",
+            displayKey: "description",
           },
         ]}
         emptyState={

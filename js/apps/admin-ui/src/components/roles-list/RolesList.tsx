@@ -92,7 +92,7 @@ export const RolesList = ({
     messageKey: t("roles:roleDeleteConfirmDialog", {
       selectedRoleName: selectedRole ? selectedRole!.name : "",
     }),
-    continueButtonLabel: "common:delete",
+    continueButtonLabel: "delete",
     continueButtonVariant: ButtonVariant.danger,
     onConfirm: async () => {
       try {
@@ -141,7 +141,7 @@ export const RolesList = ({
             ? []
             : [
                 {
-                  title: t("common:delete"),
+                  title: t("delete"),
                   onRowClick: (role) => {
                     setSelectedRole(role);
                     if (
@@ -177,7 +177,7 @@ export const RolesList = ({
           },
           {
             name: "description",
-            displayKey: "common:description",
+            displayKey: "description",
             cellFormatters: [emptyFormatter()],
           },
         ]}

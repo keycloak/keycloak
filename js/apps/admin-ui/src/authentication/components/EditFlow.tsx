@@ -45,11 +45,11 @@ export const EditFlow = ({ execution, onRowChange }: EditFlowProps) => {
 
   return (
     <>
-      <Tooltip content={t("common:edit")}>
+      <Tooltip content={t("edit")}>
         <Button
           variant="plain"
           data-testid={`${execution.id}-edit`}
-          aria-label={t("common:edit")}
+          aria-label={t("edit")}
           onClick={toggle}
         >
           <PencilAltIcon />
@@ -76,7 +76,7 @@ export const EditFlow = ({ execution, onRowChange }: EditFlowProps) => {
               variant={ButtonVariant.link}
               onClick={toggle}
             >
-              {t("common:cancel")}
+              {t("cancel")}
             </Button>,
           ]}
           isOpen
@@ -87,9 +87,9 @@ export const EditFlow = ({ execution, onRowChange }: EditFlowProps) => {
             isHorizontal
           >
             <FormGroup
-              label={t("common:name")}
+              label={t("name")}
               fieldId="name"
-              helperTextInvalid={t("common:required")}
+              helperTextInvalid={t("required")}
               validated={
                 errors.displayName
                   ? ValidatedOptions.error
@@ -113,7 +113,7 @@ export const EditFlow = ({ execution, onRowChange }: EditFlowProps) => {
               />
             </FormGroup>
             <FormGroup
-              label={t("common:description")}
+              label={t("description")}
               fieldId="kc-description"
               labelIcon={
                 <HelpItem
@@ -139,7 +139,7 @@ export const EditFlow = ({ execution, onRowChange }: EditFlowProps) => {
                 {...register("description", {
                   maxLength: {
                     value: 255,
-                    message: t("common:maxLength", { length: 255 }),
+                    message: t("maxLength", { length: 255 }),
                   },
                 })}
               />

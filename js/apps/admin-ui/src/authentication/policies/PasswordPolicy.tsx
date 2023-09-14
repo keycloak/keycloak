@@ -164,14 +164,14 @@ export const PasswordPolicy = ({
                     type="submit"
                     isDisabled={!isDirty}
                   >
-                    {t("common:save")}
+                    {t("save")}
                   </Button>
                   <Button
                     data-testid="reload"
                     variant={ButtonVariant.link}
                     onClick={() => setupForm(realm)}
                   >
-                    {t("common:reload")}
+                    {t("reload")}
                   </Button>
                 </ActionGroup>
               </FormAccess>

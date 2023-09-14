@@ -59,13 +59,11 @@ export const AddProviderDialog = ({
         <DataListItem aria-label={t("headerName")} id="header">
           <DataListItemRow>
             <DataListItemCells
-              dataListCells={[t("common:name"), t("common:description")].map(
-                (name) => (
-                  <DataListCell style={{ fontWeight: 700 }} key={name}>
-                    {name}
-                  </DataListCell>
-                ),
-              )}
+              dataListCells={[t("name"), t("description")].map((name) => (
+                <DataListCell style={{ fontWeight: 700 }} key={name}>
+                  {name}
+                </DataListCell>
+              ))}
             />
           </DataListItemRow>
         </DataListItem>

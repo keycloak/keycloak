@@ -178,7 +178,7 @@ export const RevocationModal = ({
             handleModalToggle();
           }}
         >
-          {t("common:cancel")}
+          {t("cancel")}
         </Button>,
       ]}
     >

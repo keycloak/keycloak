@@ -63,7 +63,7 @@ export const UserConsents = () => {
     messageKey: t("users:revokeClientScopes", {
       clientId: selectedClient?.clientId,
     }),
-    continueButtonLabel: "common:revoke",
+    continueButtonLabel: "revoke",
     continueButtonVariant: ButtonVariant.danger,
     onConfirm: async () => {
       try {

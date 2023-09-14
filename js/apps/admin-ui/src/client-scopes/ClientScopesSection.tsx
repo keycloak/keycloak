@@ -154,7 +154,7 @@ export default function ClientScopesSection() {
       name: selectedScopes[0]?.name,
     }),
     messageKey: "deleteConfirmClientScopes",
-    continueButtonLabel: "common:delete",
+    continueButtonLabel: "delete",
     continueButtonVariant: ButtonVariant.danger,
     onConfirm: async () => {
       try {
@@ -258,7 +258,7 @@ export default function ClientScopesSection() {
                         setKebabOpen(false);
                       }}
                     >
-                      {t("common:delete")}
+                      {t("delete")}
                     </DropdownItem>,
                   ]}
                 />
@@ -267,7 +267,7 @@ export default function ClientScopesSection() {
           }
           actions={[
             {
-              title: t("common:delete"),
+              title: t("delete"),
               onRowClick: (clientScope) => {
                 setSelectedScopes([clientScope]);
                 toggleDeleteDialog();

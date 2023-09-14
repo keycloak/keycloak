@@ -39,7 +39,7 @@ export const OIDCGeneralSettings = () => {
         validated={
           errors.alias ? ValidatedOptions.error : ValidatedOptions.default
         }
-        helperTextInvalid={t("common:required")}
+        helperTextInvalid={t("required")}
       >
         <KeycloakTextInput
           isReadOnly={tab === "settings"}

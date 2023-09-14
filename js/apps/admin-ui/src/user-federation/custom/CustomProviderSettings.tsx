@@ -66,7 +66,7 @@ export default function CustomProviderSettings() {
       if (fetchedComponent) {
         convertToFormValues(fetchedComponent, setValue);
       } else if (id) {
-        throw new Error(t("common:notFound"));
+        throw new Error(t("notFound"));
       }
     },
     [],
@@ -160,7 +160,7 @@ export default function CustomProviderSettings() {
               type="submit"
               data-testid="custom-save"
             >
-              {t("common:save")}
+              {t("save")}
             </Button>
             <Button
               variant="link"
@@ -169,7 +169,7 @@ export default function CustomProviderSettings() {
               )}
               data-testid="custom-cancel"
             >
-              {t("common:cancel")}
+              {t("cancel")}
             </Button>
           </ActionGroup>
         </FormAccess>

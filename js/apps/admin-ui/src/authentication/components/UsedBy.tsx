@@ -75,7 +75,7 @@ const UsedByModal = ({ id, isSpecificClient, onClose }: UsedByModalProps) => {
           key="cancel"
           onClick={onClose}
         >
-          {t("common:close")}
+          {t("close")}
         </Button>,
       ]}
     >
@@ -83,7 +83,7 @@ const UsedByModal = ({ id, isSpecificClient, onClose }: UsedByModalProps) => {
         loader={loader}
         isPaginated
         ariaLabelKey="usedBy"
-        searchPlaceholderKey="common:search"
+        searchPlaceholderKey="search"
         columns={[
           {
             name: "name",

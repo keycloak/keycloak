@@ -87,7 +87,7 @@ export default function AddOpenIdConnect() {
                 type="submit"
                 data-testid="createProvider"
               >
-                {t("common:add")}
+                {t("add")}
               </Button>
               <Button
                 variant="link"
@@ -96,7 +96,7 @@ export default function AddOpenIdConnect() {
                   <Link {...props} to={toIdentityProviders({ realm })} />
                 )}
               >
-                {t("common:cancel")}
+                {t("cancel")}
               </Button>
             </ActionGroup>
           </FormAccess>

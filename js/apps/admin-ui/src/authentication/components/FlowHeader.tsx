@@ -16,7 +16,7 @@ export const FlowHeader = () => {
       <DataListItemRow>
         <DataListDragButton
           className="keycloak__authentication__header-drag-button"
-          aria-label={t("common:disabled")}
+          aria-label={t("disabled")}
         />
         <DataListItemCells
           className="keycloak__authentication__header"

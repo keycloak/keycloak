@@ -91,7 +91,7 @@ export const RealmSettingsGeneralTab = ({
             name="realm"
             control={control}
             rules={{
-              required: { value: true, message: t("common:required") },
+              required: { value: true, message: t("required") },
               pattern: {
                 value: /^[a-zA-Z0-9-_]+$/,
                 message: t("realm:invalidRealmName"),
@@ -208,8 +208,8 @@ export const RealmSettingsGeneralTab = ({
               <Switch
                 id="kc-user-managed-access"
                 data-testid="user-managed-access-switch"
-                label={t("common:on")}
-                labelOff={t("common:off")}
+                label={t("on")}
+                labelOff={t("off")}
                 isChecked={field.value}
                 onChange={field.onChange}
                 aria-label={t("userManagedAccess")}
@@ -241,8 +241,8 @@ export const RealmSettingsGeneralTab = ({
                 <Switch
                   id="kc-user-profile-enabled"
                   data-testid="user-profile-enabled-switch"
-                  label={t("common:on")}
-                  labelOff={t("common:off")}
+                  label={t("on")}
+                  labelOff={t("off")}
                   isChecked={field.value === "true"}
                   onChange={(value) => field.onChange(value.toString())}
                   aria-label={t("userProfileEnabled")}
@@ -288,14 +288,14 @@ export const RealmSettingsGeneralTab = ({
             data-testid="general-tab-save"
             isDisabled={!isDirty}
           >
-            {t("common:save")}
+            {t("save")}
           </Button>
           <Button
             data-testid="general-tab-revert"
             variant="link"
             onClick={setupForm}
           >
-            {t("common:revert")}
+            {t("revert")}
           </Button>
         </ActionGroup>
       </FormAccess>

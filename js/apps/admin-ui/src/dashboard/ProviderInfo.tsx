@@ -39,7 +39,7 @@ export const ProviderInfo = () => {
     <PageSection variant="light">
       <TableToolbar
         inputGroupName="search"
-        inputGroupPlaceholder={t("common:search")}
+        inputGroupPlaceholder={t("search")}
         inputGroupOnEnter={setFilter}
       >
         <TableComposable variant="compact">

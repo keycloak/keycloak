@@ -64,7 +64,7 @@ export const EventsTab = ({ realm }: EventsTabProps) => {
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
     titleKey: "realm-settings:deleteEvents",
     messageKey: "realm-settings:deleteEventsConfirm",
-    continueButtonLabel: "common:clear",
+    continueButtonLabel: "clear",
     continueButtonVariant: ButtonVariant.danger,
     onConfirm: async () => {
       try {

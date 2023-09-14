@@ -84,7 +84,7 @@ export const ImportKeyDialog = ({
             toggleDialog();
           }}
         >
-          {t("common:cancel")}
+          {t("cancel")}
         </Button>,
       ]}
     >

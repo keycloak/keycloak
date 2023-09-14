@@ -108,8 +108,8 @@ export const Credentials = ({ client, save, refresh }: CredentialsProps) => {
   const [toggleClientSecretConfirm, ClientSecretConfirm] = useConfirmDialog({
     titleKey: "confirmClientSecretTitle",
     messageKey: "confirmClientSecretBody",
-    continueButtonLabel: "common:yes",
-    cancelButtonLabel: "common:no",
+    continueButtonLabel: "yes",
+    cancelButtonLabel: "no",
     onConfirm: regenerateClientSecret,
   });
 
@@ -125,8 +125,8 @@ export const Credentials = ({ client, save, refresh }: CredentialsProps) => {
   const [toggleAccessTokenConfirm, AccessTokenConfirm] = useConfirmDialog({
     titleKey: "confirmAccessTokenTitle",
     messageKey: "confirmAccessTokenBody",
-    continueButtonLabel: "common:yes",
-    cancelButtonLabel: "common:no",
+    continueButtonLabel: "yes",
+    cancelButtonLabel: "no",
     onConfirm: regenerateAccessToken,
   });
 
@@ -196,7 +196,7 @@ export const Credentials = ({ client, save, refresh }: CredentialsProps) => {
             {clientAuthenticatorType === "client-x509" && <X509 />}
             <ActionGroup>
               <Button variant="primary" type="submit" isDisabled={!isDirty}>
-                {t("common:save")}
+                {t("save")}
               </Button>
             </ActionGroup>
           </CardBody>

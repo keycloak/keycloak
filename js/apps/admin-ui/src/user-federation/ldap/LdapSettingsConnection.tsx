@@ -159,8 +159,8 @@ export const LdapSettingsConnection = ({
                 isDisabled={false}
                 onChange={(value) => field.onChange([`${value}`])}
                 isChecked={field.value[0] === "true"}
-                label={t("common:on")}
-                labelOff={t("common:off")}
+                label={t("on")}
+                labelOff={t("off")}
                 aria-label={t("enableStartTls")}
               />
             )}
@@ -222,8 +222,8 @@ export const LdapSettingsConnection = ({
                 isDisabled={false}
                 onChange={(value) => field.onChange([`${value}`])}
                 isChecked={field.value[0] === "true"}
-                label={t("common:on")}
-                labelOff={t("common:off")}
+                label={t("on")}
+                labelOff={t("off")}
                 aria-label={t("connectionPooling")}
               />
             )}
@@ -254,7 +254,7 @@ export const LdapSettingsConnection = ({
             data-testid="test-connection-button"
             onClick={() => testLdap("testConnection")}
           >
-            {t("common:testConnection")}
+            {t("testConnection")}
           </Button>
         </FormGroup>
         <FormGroup
