@@ -27,7 +27,6 @@ import { UserProfileProvider } from "../realm-settings/user-profile/UserProfileC
 import { useFetch } from "../utils/useFetch";
 import useIsFeatureEnabled, { Feature } from "../utils/useIsFeatureEnabled";
 import { useParams } from "../utils/useParams";
-import { useUpdateEffect } from "../utils/useUpdateEffect";
 import { UserAttributes } from "./UserAttributes";
 import { UserConsents } from "./UserConsents";
 import { UserCredentials } from "./UserCredentials";
@@ -58,6 +57,34 @@ export default function EditUser() {
   const [bruteForced, setBruteForced] = useState<BruteForced>();
   const [refreshCount, setRefreshCount] = useState(0);
   const refresh = () => setRefreshCount((count) => count + 1);
+  const [isUserProfileEnabled, setIsUserProfileEnabled] = useState(false);
+  const [realmRepresentation, setRealmRepresentation] =
+    useState<RealmRepresentation>();
+  const isFeatureEnabled = useIsFeatureEnabled();
+  const { addAlert, addError } = useAlerts();
+  const navigate = useNavigate();
+  const { hasAccess } = useAccess();
+  const userForm = useForm<UserFormFields>({
+    mode: "onChange",
+  });
+
+  const toTab = (tab: UserTab) =>
+    toUser({
+      realm,
+      id: user?.id || "",
+      tab,
+    });
+
+  const useTab = (tab: UserTab) => useRoutableTab(toTab(tab));
+
+  const settingsTab = useTab("settings");
+  const attributesTab = useTab("attributes");
+  const credentialsTab = useTab("credentials");
+  const roleMappingTab = useTab("role-mapping");
+  const groupsTab = useTab("groups");
+  const consentsTab = useTab("consents");
+  const identityProviderLinksTab = useTab("identity-provider-links");
+  const sessionsTab = useTab("sessions");
 
   useFetch(
     async () => {
@@ -74,85 +101,29 @@ export default function EditUser() {
       const isBruteForceProtected = currentRealm.bruteForceProtected;
       const isLocked = isBruteForceProtected && attackDetection.disabled;
 
-      return { user, bruteForced: { isBruteForceProtected, isLocked } };
+      return {
+        user,
+        bruteForced: { isBruteForceProtected, isLocked },
+        currentRealm,
+      };
     },
-    ({ user, bruteForced }) => {
+    ({ user, bruteForced, currentRealm }) => {
       setUser(user);
+      const isUserProfileEnabled =
+        isFeatureEnabled(Feature.DeclarativeUserProfile) &&
+        currentRealm.attributes?.userProfileEnabled === "true";
+      userForm.reset(isUserProfileEnabled ? user : toUserFormFields(user));
+      setIsUserProfileEnabled(isUserProfileEnabled);
+      setRealmRepresentation(currentRealm);
       setBruteForced(bruteForced);
     },
     [refreshCount],
   );
 
-  if (!user || !bruteForced) {
-    return <KeycloakSpinner />;
-  }
-
-  return (
-    <EditUserForm user={user} bruteForced={bruteForced} refresh={refresh} />
-  );
-}
-
-type EditUserFormProps = {
-  user: UserRepresentation;
-  bruteForced: BruteForced;
-  refresh: () => void;
-};
-
-const EditUserForm = ({ user, bruteForced, refresh }: EditUserFormProps) => {
-  const { t } = useTranslation("users");
-  const { realm } = useRealm();
-  const { addAlert, addError } = useAlerts();
-  const navigate = useNavigate();
-  const { hasAccess } = useAccess();
-  const userForm = useForm<UserFormFields>({
-    mode: "onChange",
-    defaultValues: toUserFormFields(user),
-  });
-
-  const [realmRepresentation, setRealmRepresentattion] =
-    useState<RealmRepresentation>();
-
-  useFetch(
-    () => adminClient.realms.findOne({ realm }),
-    (realm) => {
-      if (!realm) {
-        throw new Error(t("common:notFound"));
-      }
-      setRealmRepresentattion(realm);
-    },
-    [],
-  );
-
-  const isFeatureEnabled = useIsFeatureEnabled();
-  const isUserProfileEnabled =
-    isFeatureEnabled(Feature.DeclarativeUserProfile) &&
-    realmRepresentation?.attributes?.userProfileEnabled === "true";
-
-  const toTab = (tab: UserTab) =>
-    toUser({
-      realm,
-      id: user.id!,
-      tab,
-    });
-
-  const useTab = (tab: UserTab) => useRoutableTab(toTab(tab));
-
-  const settingsTab = useTab("settings");
-  const attributesTab = useTab("attributes");
-  const credentialsTab = useTab("credentials");
-  const roleMappingTab = useTab("role-mapping");
-  const groupsTab = useTab("groups");
-  const consentsTab = useTab("consents");
-  const identityProviderLinksTab = useTab("identity-provider-links");
-  const sessionsTab = useTab("sessions");
-
-  // Ensure the form remains up-to-date when the user is updated.
-  useUpdateEffect(() => userForm.reset(toUserFormFields(user)), [user]);
-
   const save = async (data: UserFormFields) => {
     try {
       await adminClient.users.update(
-        { id: user.id! },
+        { id: user!.id! },
         toUserRepresentation(data),
       );
       addAlert(t("userSaved"), AlertVariant.success);
@@ -173,7 +144,7 @@ const EditUserForm = ({ user, bruteForced, refresh }: EditUserFormProps) => {
     continueButtonVariant: ButtonVariant.danger,
     onConfirm: async () => {
       try {
-        await adminClient.users.del({ id: user.id! });
+        await adminClient.users.del({ id: user!.id! });
         addAlert(t("userDeletedSuccess"), AlertVariant.success);
         navigate(toUsers({ realm }));
       } catch (error) {
@@ -189,8 +160,8 @@ const EditUserForm = ({ user, bruteForced, refresh }: EditUserFormProps) => {
     onConfirm: async () => {
       try {
         const data = await adminClient.users.impersonation(
-          { id: user.id! },
-          { user: user.id!, realm },
+          { id: user!.id! },
+          { user: user!.id!, realm },
         );
         if (data.sameRealm) {
           window.location = data.redirect;
@@ -202,6 +173,10 @@ const EditUserForm = ({ user, bruteForced, refresh }: EditUserFormProps) => {
       }
     },
   });
+
+  if (!user || !bruteForced) {
+    return <KeycloakSpinner />;
+  }
 
   return (
     <>
@@ -320,4 +295,4 @@ const EditUserForm = ({ user, bruteForced, refresh }: EditUserFormProps) => {
       </PageSection>
     </>
   );
-};
+}
