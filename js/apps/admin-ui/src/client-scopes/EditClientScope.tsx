@@ -172,7 +172,7 @@ export default function EditClientScope() {
       );
       addAlert(t("roleMappingUpdatedSuccess"), AlertVariant.success);
     } catch (error) {
-      addError("client-scopes:roleMappingUpdatedError", error);
+      addError("roleMappingUpdatedError", error);
     }
   };
 
@@ -272,7 +272,7 @@ export default function EditClientScope() {
                 <Alert
                   variant="info"
                   isInline
-                  title={t("client-scopes-help:rolesScope")}
+                  title={t("clientScopesRolesScope")}
                   component="h2"
                 />
               </PageSection>

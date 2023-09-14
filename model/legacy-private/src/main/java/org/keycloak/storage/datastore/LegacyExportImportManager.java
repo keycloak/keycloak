@@ -685,6 +685,18 @@ public class LegacyExportImportManager implements ExportImportManager {
             }
             accountClient.setRedirectUris(accountRedirectUris);
         }
+
+        ClientModel accountConsoleClient = realm.getClientByClientId(Constants.ACCOUNT_CONSOLE_CLIENT_ID);
+        if (accountConsoleClient != null) {
+            if (accountConsoleClient.getBaseUrl() != null) {
+                accountConsoleClient.setBaseUrl(accountConsoleClient.getBaseUrl().replace("/realms/" + oldName + "/", "/realms/" + name + "/"));
+            }
+            Set<String> accountConsoleRedirectUris = new HashSet<>();
+            for (String r : accountConsoleClient.getRedirectUris()) {
+                accountConsoleRedirectUris.add(replace(r, "/realms/" + oldName + "/", "/realms/" + name + "/"));
+            }
+            accountConsoleClient.setRedirectUris(accountConsoleRedirectUris);
+        }
     }
 
     private static String replace(String url, String target, String replacement) {

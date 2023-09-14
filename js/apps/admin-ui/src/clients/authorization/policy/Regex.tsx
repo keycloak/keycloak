@@ -23,7 +23,7 @@ export const Regex = () => {
         labelIcon={
           <HelpItem
             helpText={t("targetClaimHelp")}
-            fieldLabelId="clients:targetClaim"
+            fieldLabelId="targetClaim"
           />
         }
       >
@@ -40,7 +40,7 @@ export const Regex = () => {
         labelIcon={
           <HelpItem
             helpText={t("regexPatternHelp")}
-            fieldLabelId="clients:regexPattern"
+            fieldLabelId="regexPattern"
           />
         }
         isRequired

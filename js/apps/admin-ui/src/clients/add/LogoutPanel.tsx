@@ -47,7 +47,7 @@ export const LogoutPanel = ({
         labelIcon={
           <HelpItem
             helpText={t("frontchannelLogoutHelp")}
-            fieldLabelId="clients:frontchannelLogout"
+            fieldLabelId="frontchannelLogout"
           />
         }
         fieldId="kc-frontchannelLogout"
@@ -76,7 +76,7 @@ export const LogoutPanel = ({
           labelIcon={
             <HelpItem
               helpText={t("frontchannelLogoutUrlHelp")}
-              fieldLabelId="clients:frontchannelLogoutUrl"
+              fieldLabelId="frontchannelLogoutUrl"
             />
           }
           helperTextInvalid={
@@ -117,7 +117,7 @@ export const LogoutPanel = ({
             labelIcon={
               <HelpItem
                 helpText={t("backchannelLogoutUrlHelp")}
-                fieldLabelId="clients:backchannelLogoutUrl"
+                fieldLabelId="backchannelLogoutUrl"
               />
             }
             helperTextInvalid={
@@ -154,7 +154,7 @@ export const LogoutPanel = ({
             labelIcon={
               <HelpItem
                 helpText={t("backchannelLogoutSessionRequiredHelp")}
-                fieldLabelId="clients:backchannelLogoutSessionRequired"
+                fieldLabelId="backchannelLogoutSessionRequired"
               />
             }
             fieldId="backchannelLogoutSessionRequired"
@@ -182,10 +182,8 @@ export const LogoutPanel = ({
             label={t("backchannelLogoutRevokeOfflineSessions")}
             labelIcon={
               <HelpItem
-                helpText={t(
-                  "clients-help:backchannelLogoutRevokeOfflineSessions",
-                )}
-                fieldLabelId="clients:backchannelLogoutRevokeOfflineSessions"
+                helpText={t("backchannelLogoutRevokeOfflineSessionsHelp")}
+                fieldLabelId="backchannelLogoutRevokeOfflineSessions"
               />
             }
             fieldId="backchannelLogoutRevokeOfflineSessions"

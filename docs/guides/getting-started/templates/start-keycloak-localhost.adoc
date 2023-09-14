@@ -13,5 +13,5 @@ bin/kc.sh start-dev
 +
 [source,bash,subs="attributes+"]
 ----
-bin/kc.bat start-dev
+bin\kc.bat start-dev
 ----

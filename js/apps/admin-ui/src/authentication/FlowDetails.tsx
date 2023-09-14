@@ -144,7 +144,7 @@ export default function FlowDetails() {
       refresh();
       addAlert(t("updateFlowSuccess"), AlertVariant.success);
     } catch (error: any) {
-      addError("authentication:updateFlowError", error);
+      addError("updateFlowError", error);
     }
   };
 
@@ -159,7 +159,7 @@ export default function FlowDetails() {
       refresh();
       addAlert(t("updateFlowSuccess"), AlertVariant.success);
     } catch (error: any) {
-      addError("authentication:updateFlowError", error);
+      addError("updateFlowError", error);
     }
   };
 
@@ -175,7 +175,7 @@ export default function FlowDetails() {
       refresh();
       addAlert(t("updateFlowSuccess"), AlertVariant.success);
     } catch (error) {
-      addError("authentication:updateFlowError", error);
+      addError("updateFlowError", error);
     }
   };
 
@@ -194,14 +194,14 @@ export default function FlowDetails() {
       refresh();
       addAlert(t("updateFlowSuccess"), AlertVariant.success);
     } catch (error) {
-      addError("authentication:updateFlowError", error);
+      addError("updateFlowError", error);
     }
   };
 
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
-    titleKey: "authentication:deleteConfirmExecution",
+    titleKey: "deleteConfirmExecution",
     children: (
-      <Trans i18nKey="authentication:deleteConfirmExecutionMessage">
+      <Trans i18nKey="deleteConfirmExecutionMessage">
         {" "}
         <strong>{{ name: selectedExecution?.displayName }}</strong>.
       </Trans>
@@ -216,15 +216,15 @@ export default function FlowDetails() {
         addAlert(t("deleteExecutionSuccess"), AlertVariant.success);
         refresh();
       } catch (error) {
-        addError("authentication:deleteExecutionError", error);
+        addError("deleteExecutionError", error);
       }
     },
   });
 
   const [toggleDeleteFlow, DeleteFlowConfirm] = useConfirmDialog({
-    titleKey: "authentication:deleteConfirmFlow",
+    titleKey: "deleteConfirmFlow",
     children: (
-      <Trans i18nKey="authentication:deleteConfirmFlowMessage">
+      <Trans i18nKey="deleteConfirmFlowMessage">
         {" "}
         <strong>{{ flow: flow?.alias || "" }}</strong>.
       </Trans>
@@ -239,7 +239,7 @@ export default function FlowDetails() {
         navigate(toAuthentication({ realm }));
         addAlert(t("deleteFlowSuccess"), AlertVariant.success);
       } catch (error) {
-        addError("authentication:deleteFlowError", error);
+        addError("deleteFlowError", error);
       }
     },
   });

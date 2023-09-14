@@ -34,7 +34,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -52,7 +51,7 @@ public class JpaUtils {
 
     public static String getTableNameForNativeQuery(String tableName, EntityManager em) {
         String schema = (String) em.getEntityManagerFactory().getProperties().get(HIBERNATE_DEFAULT_SCHEMA);
-        return (schema==null) ? tableName : schema + "." + tableName;
+        return (schema==null) ? tableName : "\"" + schema + "\"." + tableName;
     }
 
     public static EntityManagerFactory createEntityManagerFactory(KeycloakSession session, String unitName, Map<String, Object> properties, boolean jta) {

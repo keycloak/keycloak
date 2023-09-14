@@ -90,10 +90,7 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
       <FormGroup
         label={t("common:name")}
         labelIcon={
-          <HelpItem
-            helpText={t("client-scopes-help:name")}
-            fieldLabelId="name"
-          />
+          <HelpItem helpText={t("scopeNameHelp")} fieldLabelId="name" />
         }
         fieldId="kc-name"
         validated={
@@ -147,7 +144,7 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
         label={t("common:description")}
         labelIcon={
           <HelpItem
-            helpText={t("client-scopes-help:description")}
+            helpText={t("scopeDescriptionHelp")}
             fieldLabelId="description"
           />
         }
@@ -172,10 +169,7 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
       <FormGroup
         label={t("type")}
         labelIcon={
-          <HelpItem
-            helpText={t("client-scopes-help:type")}
-            fieldLabelId="client-scopes:type"
-          />
+          <HelpItem helpText={t("scopeTypeHelp")} fieldLabelId="type" />
         }
         fieldId="kc-type"
       >
@@ -204,10 +198,7 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
         <FormGroup
           label={t("protocol")}
           labelIcon={
-            <HelpItem
-              helpText={t("protocolHelp")}
-              fieldLabelId="client-scopes:protocol"
-            />
+            <HelpItem helpText={t("protocolHelp")} fieldLabelId="protocol" />
           }
           fieldId="kc-protocol"
         >
@@ -248,7 +239,7 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
         labelIcon={
           <HelpItem
             helpText={t("displayOnConsentScreenHelp")}
-            fieldLabelId="client-scopes:displayOnConsentScreen"
+            fieldLabelId="displayOnConsentScreen"
           />
         }
         fieldId="kc-display-on-consent-screen"
@@ -276,7 +267,7 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
           labelIcon={
             <HelpItem
               helpText={t("consentScreenTextHelp")}
-              fieldLabelId="client-scopes:consentScreenText"
+              fieldLabelId="consentScreenText"
             />
           }
           fieldId="kc-consent-screen-text"
@@ -297,7 +288,7 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
         labelIcon={
           <HelpItem
             helpText={t("includeInTokenScopeHelp")}
-            fieldLabelId="client-scopes:includeInTokenScope"
+            fieldLabelId="includeInTokenScope"
           />
         }
         fieldId="kc-include-in-token-scope"
@@ -322,10 +313,7 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
       <FormGroup
         label={t("guiOrder")}
         labelIcon={
-          <HelpItem
-            helpText={t("guiOrderHelp")}
-            fieldLabelId="client-scopes:guiOrder"
-          />
+          <HelpItem helpText={t("guiOrderHelp")} fieldLabelId="guiOrder" />
         }
         fieldId="kc-gui-order"
       >

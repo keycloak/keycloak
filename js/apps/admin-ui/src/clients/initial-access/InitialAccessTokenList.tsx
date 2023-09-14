@@ -37,7 +37,7 @@ export const InitialAccessTokenList = () => {
   };
 
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
-    titleKey: "clients:tokenDeleteConfirmTitle",
+    titleKey: "tokenDeleteConfirmTitle",
     messageKey: t("tokenDeleteConfirm", { id: token?.id }),
     continueButtonLabel: "common:delete",
     continueButtonVariant: ButtonVariant.danger,
@@ -50,7 +50,7 @@ export const InitialAccessTokenList = () => {
         addAlert(t("tokenDeleteSuccess"), AlertVariant.success);
         setToken(undefined);
       } catch (error) {
-        addError("clients:tokenDeleteError", error);
+        addError("tokenDeleteError", error);
       }
     },
   });
@@ -60,8 +60,8 @@ export const InitialAccessTokenList = () => {
       <DeleteConfirm />
       <KeycloakDataTable
         key={token?.id}
-        ariaLabelKey="clients:initialAccessToken"
-        searchPlaceholderKey="clients:searchInitialAccessToken"
+        ariaLabelKey="initialAccessToken"
+        searchPlaceholderKey="searchInitialAccessToken"
         loader={loader}
         toolbarItem={
           <Button
@@ -88,13 +88,13 @@ export const InitialAccessTokenList = () => {
           },
           {
             name: "timestamp",
-            displayKey: "clients:timestamp",
+            displayKey: "timestamp",
             cellRenderer: (row) =>
               formatDate(new Date(row.timestamp! * 1000), FORMAT_DATE_AND_TIME),
           },
           {
             name: "expiration",
-            displayKey: "clients:expires",
+            displayKey: "expires",
             cellRenderer: (row) =>
               formatDate(
                 new Date(row.timestamp! * 1000 + row.expiration! * 1000),
@@ -103,11 +103,11 @@ export const InitialAccessTokenList = () => {
           },
           {
             name: "count",
-            displayKey: "clients:count",
+            displayKey: "count",
           },
           {
             name: "remainingCount",
-            displayKey: "clients:remainingCount",
+            displayKey: "remainingCount",
             transforms: [wrappable],
           },
         ]}

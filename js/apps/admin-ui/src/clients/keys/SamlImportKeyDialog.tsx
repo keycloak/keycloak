@@ -28,7 +28,7 @@ export const SamlImportKeyDialog = ({
   const submit = (form: SamlKeysDialogForm) => {
     submitForm(form, id, attr, (error) => {
       if (error) {
-        addError("clients:importError", error);
+        addError("importError", error);
       } else {
         addAlert(t("importSuccess"), AlertVariant.success);
       }
@@ -39,8 +39,8 @@ export const SamlImportKeyDialog = ({
     <ConfirmDialogModal
       open={true}
       toggleDialog={onClose}
-      continueButtonLabel="clients:import"
-      titleKey="clients:importKey"
+      continueButtonLabel="import"
+      titleKey="importKey"
       onConfirm={() => {
         handleSubmit(submit)();
         onClose();

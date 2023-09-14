@@ -105,7 +105,7 @@ export const MapperList = ({
       <KeycloakDataTable
         key={key}
         loader={loader}
-        ariaLabelKey="client-scopes:clientScopeList"
+        ariaLabelKey="clientScopeList"
         searchPlaceholderKey="common:searchForMapper"
         toolbarItem={
           <Dropdown

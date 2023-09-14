@@ -94,8 +94,8 @@ const ClientDetailHeader = ({
 }: ClientDetailHeaderProps) => {
   const { t } = useTranslation();
   const [toggleDisableDialog, DisableConfirm] = useConfirmDialog({
-    titleKey: "clients:disableConfirmTitle",
-    messageKey: "clients:disableConfirm",
+    titleKey: "disableConfirmTitle",
+    messageKey: "disableConfirm",
     continueButtonLabel: "common:disable",
     onConfirm: () => {
       onChange(!value);
@@ -157,11 +157,11 @@ const ClientDetailHeader = ({
       <DisableConfirm />
       <ViewHeader
         titleKey={client.clientId!}
-        subKey="clients:clientsExplain"
+        subKey="clientsExplain"
         badges={badges}
         divider={false}
         isReadOnly={!isManager}
-        helpTextKey="clients-help:enableDisable"
+        helpTextKey="enableDisable"
         dropdownItems={dropdownItems}
         isEnabled={value}
         onToggle={(value) => {
@@ -273,8 +273,8 @@ export default function ClientDetails() {
   const authorizationExportTab = useAuthorizationTab("export");
 
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
-    titleKey: "clients:clientDeleteConfirmTitle",
-    messageKey: "clients:clientDeleteConfirm",
+    titleKey: "clientDeleteConfirmTitle",
+    messageKey: "clientDeleteConfirm",
     continueButtonLabel: "common:delete",
     continueButtonVariant: ButtonVariant.danger,
     onConfirm: async () => {
@@ -283,7 +283,7 @@ export default function ClientDetails() {
         addAlert(t("clientDeletedSuccess"), AlertVariant.success);
         navigate(toClients({ realm }));
       } catch (error) {
-        addError("clients:clientDeleteError", error);
+        addError("clientDeleteError", error);
       }
     },
   });
@@ -361,7 +361,7 @@ export default function ClientDetails() {
       setClient(newClient);
       addAlert(t(messageKey), AlertVariant.success);
     } catch (error) {
-      addError("clients:clientSaveError", error);
+      addError("clientSaveError", error);
     }
   };
 

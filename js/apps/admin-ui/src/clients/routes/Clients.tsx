@@ -18,7 +18,7 @@ const ClientsSection = lazy(() => import("../ClientsSection"));
 export const ClientsRoute: AppRouteObject = {
   path: "/:realm/clients",
   element: <ClientsSection />,
-  breadcrumb: (t) => t("clients:clientList"),
+  breadcrumb: (t) => t("clientList"),
   handle: {
     access: "query-clients",
   },

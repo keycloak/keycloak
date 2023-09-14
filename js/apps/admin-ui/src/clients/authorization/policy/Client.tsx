@@ -66,10 +66,7 @@ export const Client = () => {
     <FormGroup
       label={t("clients")}
       labelIcon={
-        <HelpItem
-          helpText={t("clients-help:policyClient")}
-          fieldLabelId="clients:client"
-        />
+        <HelpItem helpText={t("policyClient")} fieldLabelId="client" />
       }
       fieldId="clients"
       helperTextInvalid={t("requiredClient")}

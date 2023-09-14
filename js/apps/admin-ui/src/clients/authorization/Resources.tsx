@@ -97,7 +97,7 @@ export const AuthorizationResources = ({ clientId }: ResourcesProps) => {
   };
 
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
-    titleKey: "clients:deleteResource",
+    titleKey: "deleteResource",
     children: (
       <>
         {t("deleteResourceConfirm")}
@@ -120,7 +120,7 @@ export const AuthorizationResources = ({ clientId }: ResourcesProps) => {
         )}
       </>
     ),
-    continueButtonLabel: "clients:confirm",
+    continueButtonLabel: "confirm",
     onConfirm: async () => {
       try {
         await adminClient.clients.delResource({
@@ -130,7 +130,7 @@ export const AuthorizationResources = ({ clientId }: ResourcesProps) => {
         addAlert(t("resourceDeletedSuccess"), AlertVariant.success);
         refresh();
       } catch (error) {
-        addError("clients:resourceDeletedError", error);
+        addError("resourceDeletedError", error);
       }
     },
   });

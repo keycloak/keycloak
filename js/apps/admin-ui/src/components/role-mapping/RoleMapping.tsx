@@ -140,17 +140,17 @@ export const RoleMapping = ({
   };
 
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
-    titleKey: "clients:removeMappingTitle",
-    messageKey: t("clients:removeMappingConfirm", { count: selected.length }),
+    titleKey: "removeMappingTitle",
+    messageKey: t("removeMappingConfirm", { count: selected.length }),
     continueButtonLabel: "common:remove",
     continueButtonVariant: ButtonVariant.danger,
     onConfirm: async () => {
       try {
         await Promise.all(deleteMapping(type, id, selected));
-        addAlert(t("clients:clientScopeRemoveSuccess"), AlertVariant.success);
+        addAlert(t("clientScopeRemoveSuccess"), AlertVariant.success);
         refresh();
       } catch (error) {
-        addError("clients:clientScopeRemoveError", error);
+        addError("clientScopeRemoveError", error);
       }
     },
   });
@@ -173,8 +173,8 @@ export const RoleMapping = ({
         loader={loader}
         canSelectAll
         onSelect={(rows) => setSelected(rows)}
-        searchPlaceholderKey="clients:searchByName"
-        ariaLabelKey="clients:clientScopeList"
+        searchPlaceholderKey="searchByName"
+        ariaLabelKey="clientScopeList"
         isRowDisabled={(value) =>
           (value.role as CompositeRole).isInherited || false
         }

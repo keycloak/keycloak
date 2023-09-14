@@ -92,12 +92,12 @@ export default function DetailProvider() {
       }
       addAlert(t(`provider${id ? "Updated" : "Create"}Success`));
     } catch (error) {
-      addError(`clients:provider${id ? "Updated" : "Create"}Error`, error);
+      addError(`provider${id ? "Updated" : "Create"}Error`, error);
     }
   };
 
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
-    titleKey: "clients:clientRegisterPolicyDeleteConfirmTitle",
+    titleKey: "clientRegisterPolicyDeleteConfirmTitle",
     messageKey: t("clientRegisterPolicyDeleteConfirm", {
       name: providerName,
     }),
@@ -112,7 +112,7 @@ export default function DetailProvider() {
         addAlert(t("clientRegisterPolicyDeleteSuccess"));
         navigate(toClientRegistration({ realm, subTab }));
       } catch (error) {
-        addError("clients:clientRegisterPolicyDeleteError", error);
+        addError("clientRegisterPolicyDeleteError", error);
       }
     },
   });
@@ -124,7 +124,7 @@ export default function DetailProvider() {
   return (
     <>
       <ViewHeader
-        titleKey={id ? providerName! : "clients:createPolicy"}
+        titleKey={id ? providerName! : "createPolicy"}
         subKey={id}
         dropdownItems={
           id
@@ -164,7 +164,7 @@ export default function DetailProvider() {
             }
             labelIcon={
               <HelpItem
-                helpText={t("clients-help:clientPolicyName")}
+                helpText={t("clientPolicyName")}
                 fieldLabelId="kc-name"
               />
             }

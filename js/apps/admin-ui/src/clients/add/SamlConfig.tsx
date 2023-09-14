@@ -71,7 +71,7 @@ export const SamlConfig = () => {
         labelIcon={
           <HelpItem
             helpText={t("nameIdFormatHelp")}
-            fieldLabelId="clients:nameIdFormat"
+            fieldLabelId="nameIdFormat"
           />
         }
       >

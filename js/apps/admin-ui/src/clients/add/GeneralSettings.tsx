@@ -31,10 +31,7 @@ export const GeneralSettings = () => {
         fieldId="kc-type"
         validated={errors.protocol ? "error" : "default"}
         labelIcon={
-          <HelpItem
-            helpText={t("clients-help:clientType")}
-            fieldLabelId="clients:clientType"
-          />
+          <HelpItem helpText={t("clientTypeHelp")} fieldLabelId="clientType" />
         }
       >
         <Controller

@@ -50,7 +50,7 @@ export default function ImportForm() {
       convertToFormValues(parsed, setValue);
       setImported(parsed);
     } catch (error) {
-      addError("clients:importParseError", error);
+      addError("importParseError", error);
     }
   };
 
@@ -93,16 +93,13 @@ export default function ImportForm() {
       addAlert(t("clientImportSuccess"), AlertVariant.success);
       navigate(toClient({ realm, clientId: newClient.id, tab: "settings" }));
     } catch (error) {
-      addError("clients:clientImportError", error);
+      addError("clientImportError", error);
     }
   };
 
   return (
     <>
-      <ViewHeader
-        titleKey="clients:importClient"
-        subKey="clients:clientsExplain"
-      />
+      <ViewHeader titleKey="importClient" subKey="clientsExplain" />
       <PageSection variant="light">
         <FormAccess
           isHorizontal

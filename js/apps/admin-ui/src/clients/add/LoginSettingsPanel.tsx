@@ -34,10 +34,7 @@ export const LoginSettingsPanel = ({ access }: { access?: boolean }) => {
       <FormGroup
         label={t("loginTheme")}
         labelIcon={
-          <HelpItem
-            helpText={t("loginThemeHelp")}
-            fieldLabelId="clients:loginTheme"
-          />
+          <HelpItem helpText={t("loginThemeHelp")} fieldLabelId="loginTheme" />
         }
         fieldId="loginTheme"
       >
@@ -79,7 +76,7 @@ export const LoginSettingsPanel = ({ access }: { access?: boolean }) => {
         labelIcon={
           <HelpItem
             helpText={t("consentRequiredHelp")}
-            fieldLabelId="clients:consentRequired"
+            fieldLabelId="consentRequired"
           />
         }
         fieldId="kc-consent"
@@ -106,7 +103,7 @@ export const LoginSettingsPanel = ({ access }: { access?: boolean }) => {
         labelIcon={
           <HelpItem
             helpText={t("displayOnClientHelp")}
-            fieldLabelId="clients:displayOnClient"
+            fieldLabelId="displayOnClient"
           />
         }
         fieldId="kc-display-on-client"
@@ -136,7 +133,7 @@ export const LoginSettingsPanel = ({ access }: { access?: boolean }) => {
         labelIcon={
           <HelpItem
             helpText={t("consentScreenTextHelp")}
-            fieldLabelId="clients:consentScreenText"
+            fieldLabelId="consentScreenText"
           />
         }
         fieldId="kc-consent-screen-text"

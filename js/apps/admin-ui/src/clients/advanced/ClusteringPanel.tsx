@@ -52,7 +52,7 @@ export const ClusteringPanel = ({
   };
 
   const [toggleDeleteNodeConfirm, DeleteNodeConfirm] = useConfirmDialog({
-    titleKey: "clients:deleteNode",
+    titleKey: "deleteNode",
     messageKey: t("deleteNodeBody", {
       node: selectedNode,
     }),
@@ -75,7 +75,7 @@ export const ClusteringPanel = ({
         refresh();
         addAlert(t("deleteNodeSuccess"), AlertVariant.success);
       } catch (error) {
-        addError("clients:deleteNodeFail", error);
+        addError("deleteNodeFail", error);
       }
     },
   });
@@ -93,7 +93,7 @@ export const ClusteringPanel = ({
           labelIcon={
             <HelpItem
               helpText={t("nodeReRegistrationTimeoutHelp")}
-              fieldLabelId="clients:nodeReRegistrationTimeout"
+              fieldLabelId="nodeReRegistrationTimeout"
             />
           }
         >
@@ -170,11 +170,11 @@ export const ClusteringPanel = ({
             columns={[
               {
                 name: "host",
-                displayKey: "clients:nodeHost",
+                displayKey: "nodeHost",
               },
               {
                 name: "registration",
-                displayKey: "clients:lastRegistration",
+                displayKey: "lastRegistration",
                 cellFormatters: [
                   (value) =>
                     value
