@@ -16,12 +16,12 @@ import { useEffect, useMemo, useState } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { HelpItem } from "ui-shared";
-import { FormAccess } from "../components/form/FormAccess";
-import { useServerInfo } from "../context/server-info/ServerInfoProvider";
-import { DEFAULT_LOCALE } from "../i18n/i18n";
-import { convertToFormValues } from "../util";
-import { RealmOverrides } from "./localization/RealmOverrides";
-import { EffectiveMessageBundles } from "./localization/EffectiveMessageBundles";
+import { FormAccess } from "../../components/form/FormAccess";
+import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
+import { DEFAULT_LOCALE } from "../../i18n/i18n";
+import { convertToFormValues } from "../../util";
+import { RealmOverrides } from "./RealmOverrides";
+import { EffectiveMessageBundles } from "./EffectiveMessageBundles";
 
 type LocalizationTabProps = {
   save: (realm: RealmRepresentation) => void;
@@ -62,11 +62,13 @@ export const LocalizationTab = ({ save, realm }: LocalizationTabProps) => {
   };
 
   useEffect(setupForm, []);
+
   const watchSupportedLocales: string[] = useWatch({
     control,
     name: "supportedLocales",
     defaultValue: defaultSupportedLocales,
   });
+
   const internationalizationEnabled = useWatch({
     control,
     name: "internationalizationEnabled",
@@ -243,7 +245,7 @@ export const LocalizationTab = ({ save, realm }: LocalizationTabProps) => {
           <TabTitleText>
             {t("realmOverrides")}{" "}
             <HelpItem
-              fieldLabelId=""
+              fieldLabelId="realm-overrides"
               helpText={t("realmOverridesHelp")}
               noVerticalAlign={false}
               unWrap
@@ -253,7 +255,11 @@ export const LocalizationTab = ({ save, realm }: LocalizationTabProps) => {
         data-testid="rs-localization-realm-overrides-tab"
       >
         <PageSection>
-          <RealmOverrides />
+          <RealmOverrides
+            internationalizationEnabled={internationalizationEnabled}
+            watchSupportedLocales={watchSupportedLocales}
+            realm={realm}
+          />
         </PageSection>
       </Tab>
       <Tab
@@ -263,7 +269,7 @@ export const LocalizationTab = ({ save, realm }: LocalizationTabProps) => {
           <TabTitleText>
             {t("effectiveMessageBundles")}
             <HelpItem
-              fieldLabelId=""
+              fieldLabelId="effective-message-bundles"
               helpText={t("effectiveMessageBundlesHelp")}
               noVerticalAlign={false}
               unWrap
