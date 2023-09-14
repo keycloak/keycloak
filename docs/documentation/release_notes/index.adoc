@@ -13,6 +13,9 @@ include::topics/templates/document-attributes.adoc[]
 :release_header_latest_link: {releasenotes_link_latest}
 include::topics/templates/release-header.adoc[]
 
+== {project_name_full} 22.0.3
+include::topics/22_0_3.adoc[leveloffset=2]
+
 == {project_name_full} 22.0.2
 include::topics/22_0_2.adoc[leveloffset=2]
 
