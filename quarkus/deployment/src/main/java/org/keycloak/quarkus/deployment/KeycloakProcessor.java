@@ -380,7 +380,7 @@ class KeycloakProcessor {
      */
     @Record(ExecutionTime.STATIC_INIT)
     @BuildStep
-    @Consume(ProfileBuildItem.class)
+    @Consume(CryptoProviderInitBuildItem.class)
     KeycloakSessionFactoryPreInitBuildItem configureKeycloakSessionFactory(KeycloakRecorder recorder, List<PersistenceXmlDescriptorBuildItem> descriptors) {
         Map<Spi, Map<Class<? extends Provider>, Map<String, Class<? extends ProviderFactory>>>> factories = new HashMap<>();
         Map<Class<? extends Provider>, String> defaultProviders = new HashMap<>();
@@ -661,6 +661,7 @@ class KeycloakProcessor {
 
     @Consume(BootstrapConfigSetupCompleteBuildItem.class)
     @Consume(ProfileBuildItem.class)
+    @Produce(CryptoProviderInitBuildItem.class)
     @BuildStep
     @Record(ExecutionTime.STATIC_INIT)
     void setCryptoProvider(KeycloakRecorder recorder) {
