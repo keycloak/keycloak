@@ -1057,7 +1057,7 @@ public class OAuthClient {
                 parameters.add(new BasicNameValuePair(OAuth2Constants.SCOPE, scopeParam));
             }
             if (nonce != null) {
-                parameters.add(new BasicNameValuePair(OIDCLoginProtocol.NONCE_PARAM, scope));
+                parameters.add(new BasicNameValuePair(OIDCLoginProtocol.NONCE_PARAM, nonce));
             }
             if (codeChallenge != null) {
                 parameters.add(new BasicNameValuePair(OAuth2Constants.CODE_CHALLENGE, codeChallenge));
