@@ -290,6 +290,7 @@ public class AuthenticationManagementResource {
         if (flow.getAlias() == null || flow.getAlias().isEmpty()) {
             throw ErrorResponse.exists("Failed to update flow with empty alias name");
         }
+        ReservedCharValidator.validate(flow.getAlias());
 
         //check if updating a correct flow
         AuthenticationFlowModel checkFlow = realm.getAuthenticationFlowById(id);
@@ -368,6 +369,7 @@ public class AuthenticationManagementResource {
         auth.realm().requireManageRealm();
 
         String newName = data.get("newName");
+        ReservedCharValidator.validate(newName);
         if (realm.getFlowByAlias(newName) != null) {
             throw ErrorResponse.exists("New flow alias name already exists");
         }
@@ -467,6 +469,7 @@ public class AuthenticationManagementResource {
             throw new BadRequestException("It is illegal to add sub-flow to a built in flow");
         }
         String alias = data.get("alias");
+        ReservedCharValidator.validate(alias);
         String type = data.get("type");
         String provider = data.get("provider");
         

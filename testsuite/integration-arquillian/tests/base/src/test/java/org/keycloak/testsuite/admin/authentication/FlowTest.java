@@ -266,7 +266,17 @@ public class FlowTest extends AbstractAuthenticationTest {
             response.close();
         }
 
+        // copy existing flow with newName containing reserved characters
+        params.put("newName", "Copy/of:browser");
+        response = authMgmtResource.copy("browser", params);
+        try {
+            assertThat("Copy existing flow with newName containing reserved characters", response, statusCodeIs(Status.BAD_REQUEST));
+        } finally {
+            response.close();
+        }
+
         // copy that should succeed
+        params.clear();
         params.put("newName", "Copy of browser");
         response = authMgmtResource.copy("browser", params);
         assertAdminEvents.assertEvent(testRealmId, OperationType.CREATE, AdminEventPaths.authCopyFlowPath("browser"), params, ResourceType.AUTH_FLOW);
@@ -315,6 +325,17 @@ public class FlowTest extends AbstractAuthenticationTest {
 
         authMgmtResource.addExecutionFlow("parent", params);
         assertAdminEvents.assertEvent(testRealmId, OperationType.CREATE, AdminEventPaths.authAddExecutionFlowPath("parent"), params, ResourceType.AUTH_EXECUTION_FLOW);
+
+        // add execution flow with alias that contains reserved characters
+        params.put("alias", "Child/of:browser");
+        try {
+            authMgmtResource.addExecutionFlow("parent", params);
+        } catch (ClientErrorException exception){
+            // expected
+        }
+        List<AuthenticationExecutionInfoRepresentation> executions = authMgmtResource.getExecutions("parent");
+        // Execution with flow's displayName should not exist
+        Assert.assertNull("Child/of:browser", findExecutionByDisplayName("Child/of:browser", executions));
     }
 
     @Test
@@ -360,6 +381,18 @@ public class FlowTest extends AbstractAuthenticationTest {
             authMgmtResource.updateFlow(found.getId(), testFlow);
         } catch (ClientErrorException exception){
             //expoected
+        }
+        flows = authMgmtResource.getFlows();
+
+        //name should be the same for the old Flow
+        Assert.assertEquals("Copy of browser2", findFlowByAlias("Copy of browser2", flows).getAlias());
+
+        //try to update old flow with alias that contains reserved characters
+        testFlow.setAlias("Copy/of:browser2");
+        try {
+            authMgmtResource.updateFlow(testFlow.getId(), testFlow);
+        } catch (ClientErrorException exception){
+            //expected
         }
         flows = authMgmtResource.getFlows();
 

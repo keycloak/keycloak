@@ -84,6 +84,15 @@ public abstract class AbstractAuthenticationTest extends AbstractKeycloakTest {
         return null;
     }
 
+    public static AuthenticationExecutionInfoRepresentation findExecutionByDisplayName(String displayName, List<AuthenticationExecutionInfoRepresentation> executions) {
+        for (AuthenticationExecutionInfoRepresentation exec : executions) {
+            if (displayName.equals(exec.getDisplayName())) {
+                return exec;
+            }
+        }
+        return null;
+    }
+
 
     public static AuthenticationFlowRepresentation findFlowByAlias(String alias, List<AuthenticationFlowRepresentation> flows) {
         for (AuthenticationFlowRepresentation flow : flows) {
