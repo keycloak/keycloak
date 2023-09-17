@@ -26,6 +26,8 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserModel.RequiredAction;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.oidc.utils.RedirectUtils;
 import org.keycloak.services.Urls;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.AuthenticationSessionManager;
@@ -106,6 +108,13 @@ public class VerifyEmailActionTokenHandler extends AbstractActionTokenHandler<Ve
         user.setEmailVerified(true);
         user.removeRequiredAction(RequiredAction.VERIFY_EMAIL);
         authSession.removeRequiredAction(RequiredAction.VERIFY_EMAIL);
+
+        String redirectUri = RedirectUtils.verifyRedirectUri(tokenContext.getSession(), token.getRedirectUri(), authSession.getClient());
+        if (redirectUri != null) {
+            authSession.setAuthNote(AuthenticationManager.SET_REDIRECT_URI_AFTER_REQUIRED_ACTIONS, "true");
+            authSession.setRedirectUri(redirectUri);
+            authSession.setClientNote(OIDCLoginProtocol.REDIRECT_URI_PARAM, redirectUri);
+        }
 
         event.success();
 
