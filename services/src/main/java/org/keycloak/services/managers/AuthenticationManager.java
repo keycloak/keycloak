@@ -287,7 +287,8 @@ public class AuthenticationManager {
 
         if (logger.isDebugEnabled()) {
             UserModel user = userSession.getUser();
-            logger.debugv("Logging out: {0} ({1}) offline: {2}", user.getUsername(), userSession.getId(),
+            String username = user == null ? null : user.getUsername();
+            logger.debugv("Logging out: {0} ({1}) offline: {2}", username, userSession.getId(),
                     userSession.isOffline());
         }
 
