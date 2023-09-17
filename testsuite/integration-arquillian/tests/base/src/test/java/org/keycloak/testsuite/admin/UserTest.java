@@ -84,6 +84,7 @@ import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.GreenMailRule;
 import org.keycloak.testsuite.util.GroupBuilder;
 import org.keycloak.testsuite.util.MailUtils;
+import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.RoleBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
@@ -2273,9 +2274,7 @@ public class UserTest extends AbstractAdminTest {
     public void sendVerifyEmail() throws IOException {
         UserRepresentation userRep = new UserRepresentation();
         userRep.setUsername("user1");
-
         String id = createUser(userRep);
-
         UserResource user = realm.users().get(id);
 
         try {
@@ -2326,17 +2325,118 @@ public class UserTest extends AbstractAdminTest {
         driver.navigate().to(link);
 
         proceedPage.assertCurrent();
-        assertThat(proceedPage.getInfo(), Matchers.containsString("Verify Email"));
+        assertThat(proceedPage.getInfo(), Matchers.containsString("Confirm validity of e-mail address"));
         proceedPage.clickProceedLink();
-        Assert.assertEquals("Your account has been updated.", infoPage.getInfo());
 
+        Assert.assertEquals("Your account has been updated.", infoPage.getInfo());
         driver.navigate().to("about:blank");
 
-        driver.navigate().to(link); // It should be possible to use the same action token multiple times
+        driver.navigate().to(link);
+        infoPage.assertCurrent();
+        assertEquals("Your email address has been verified already.", infoPage.getInfo());
+    }
+
+    @Test
+    public void sendVerifyEmailWithRedirect() throws IOException {
+        UserRepresentation userRep = new UserRepresentation();
+        userRep.setEnabled(true);
+        userRep.setUsername("user1");
+        userRep.setEmail("user1@test.com");
+
+        String id = createUser(userRep);
+
+        UserResource user = realm.users().get(id);
+
+        String clientId = "test-app";
+        String redirectUri = OAuthClient.SERVER_ROOT + "/auth/some-page";
+        try {
+            // test that an invalid redirect uri is rejected.
+            user.sendVerifyEmail(clientId, "http://unregistered-uri.com/");
+            fail("Expected failure");
+        } catch (ClientErrorException e) {
+            assertEquals(400, e.getResponse().getStatus());
+
+            ErrorRepresentation error = e.getResponse().readEntity(ErrorRepresentation.class);
+            Assert.assertEquals("Invalid redirect uri.", error.getErrorMessage());
+        }
+
+
+        user.sendVerifyEmail(clientId, redirectUri);
+        assertAdminEvents.assertEvent(realmId, OperationType.ACTION, AdminEventPaths.userResourcePath(id) + "/send-verify-email", ResourceType.USER);
+
+        Assert.assertEquals(1, greenMail.getReceivedMessages().length);
+
+        MimeMessage message = greenMail.getReceivedMessages()[0];
+
+        String link = MailUtils.getPasswordResetEmailLink(message);
+
+        driver.navigate().to(link);
+
         proceedPage.assertCurrent();
-        assertThat(proceedPage.getInfo(), Matchers.containsString("Verify Email"));
+        assertThat(proceedPage.getInfo(), Matchers.containsString("Confirm validity of e-mail address"));
         proceedPage.clickProceedLink();
-        Assert.assertEquals("Your account has been updated.", infoPage.getInfo());
+
+        assertEquals("Your account has been updated.", infoPage.getInfo());
+
+        String pageSource = driver.getPageSource();
+        Assert.assertTrue(pageSource.contains(redirectUri));
+    }
+
+    @Test
+    public void sendVerifyEmailWithRedirectAndCustomLifespan() throws IOException {
+        UserRepresentation userRep = new UserRepresentation();
+        userRep.setEnabled(true);
+        userRep.setUsername("user1");
+        userRep.setEmail("user1@test.com");
+
+        String id = createUser(userRep);
+
+        UserResource user = realm.users().get(id);
+
+        final int lifespan = (int) TimeUnit.DAYS.toSeconds(1);
+        String redirectUri = OAuthClient.SERVER_ROOT + "/auth/some-page";
+        try {
+            // test that an invalid redirect uri is rejected.
+            user.sendVerifyEmail("test-app", "http://unregistered-uri.com/", lifespan);
+            fail("Expected failure");
+        } catch (ClientErrorException e) {
+            assertEquals(400, e.getResponse().getStatus());
+
+            ErrorRepresentation error = e.getResponse().readEntity(ErrorRepresentation.class);
+            Assert.assertEquals("Invalid redirect uri.", error.getErrorMessage());
+        }
+
+
+        user.sendVerifyEmail("test-app", redirectUri, lifespan);
+        assertAdminEvents.assertEvent(realmId, OperationType.ACTION, AdminEventPaths.userResourcePath(id) + "/send-verify-email", ResourceType.USER);
+
+        Assert.assertEquals(1, greenMail.getReceivedMessages().length);
+        MimeMessage message = greenMail.getReceivedMessages()[0];
+
+        MailUtils.EmailBody body = MailUtils.getBody(message);
+        assertThat(body.getText(), Matchers.containsString("This link will expire within 1 day"));
+        assertThat(body.getHtml(), Matchers.containsString("This link will expire within 1 day"));
+
+        String link = MailUtils.getPasswordResetEmailLink(message);
+        String token = link.substring(link.indexOf("key=") + "key=".length());
+
+        try {
+            final AccessToken accessToken = TokenVerifier.create(token, AccessToken.class).getToken();
+            assertEquals(lifespan, accessToken.getExp() - accessToken.getIat());
+        } catch (VerificationException e) {
+            throw new IOException(e);
+        }
+
+        driver.navigate().to(link);
+
+        proceedPage.assertCurrent();
+        assertThat(proceedPage.getInfo(), Matchers.containsString("Confirm validity of e-mail address"));
+        proceedPage.clickProceedLink();
+
+        assertEquals("Your account has been updated.", infoPage.getInfo());
+
+        String pageSource = driver.getPageSource();
+        Assert.assertTrue(pageSource.contains(redirectUri));
     }
 
     @Test
