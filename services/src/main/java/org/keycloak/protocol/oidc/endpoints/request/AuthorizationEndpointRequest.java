@@ -36,6 +36,7 @@ public class AuthorizationEndpointRequest {
     String state;
     String scope;
     String loginHint;
+    String idTokenHint;
     String display;
     String prompt;
     String nonce;
@@ -84,6 +85,10 @@ public class AuthorizationEndpointRequest {
 
     public String getLoginHint() {
         return loginHint;
+    }
+
+    public String getIdTokenHint() {
+        return idTokenHint;
     }
 
     public String getPrompt() {

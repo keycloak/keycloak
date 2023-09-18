@@ -59,6 +59,7 @@ public abstract class AuthzEndpointRequestParser {
         KNOWN_REQ_PARAMS.add(OIDCLoginProtocol.STATE_PARAM);
         KNOWN_REQ_PARAMS.add(OIDCLoginProtocol.SCOPE_PARAM);
         KNOWN_REQ_PARAMS.add(OIDCLoginProtocol.LOGIN_HINT_PARAM);
+        KNOWN_REQ_PARAMS.add(OIDCLoginProtocol.ID_TOKEN_HINT);
         KNOWN_REQ_PARAMS.add(OIDCLoginProtocol.PROMPT_PARAM);
         KNOWN_REQ_PARAMS.add(AdapterConstants.KC_IDP_HINT);
         KNOWN_REQ_PARAMS.add(Constants.KC_ACTION);
@@ -95,6 +96,7 @@ public abstract class AuthzEndpointRequestParser {
         request.state = replaceIfNotNull(request.state, getParameter(OIDCLoginProtocol.STATE_PARAM));
         request.scope = replaceIfNotNull(request.scope, getParameter(OIDCLoginProtocol.SCOPE_PARAM));
         request.loginHint = replaceIfNotNull(request.loginHint, getParameter(OIDCLoginProtocol.LOGIN_HINT_PARAM));
+        request.idTokenHint = replaceIfNotNull(request.idTokenHint, getParameter(OIDCLoginProtocol.ID_TOKEN_HINT));
         request.prompt = replaceIfNotNull(request.prompt, getParameter(OIDCLoginProtocol.PROMPT_PARAM));
         request.idpHint = replaceIfNotNull(request.idpHint, getParameter(AdapterConstants.KC_IDP_HINT));
         request.action = replaceIfNotNull(request.action, getParameter(Constants.KC_ACTION));

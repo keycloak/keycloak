@@ -395,6 +395,7 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
         paramAction.accept(OIDCLoginProtocol.CODE_CHALLENGE_METHOD_PARAM, request.getCodeChallengeMethod());
         paramAction.accept(OIDCLoginProtocol.CODE_CHALLENGE_PARAM, request.getCodeChallenge());
         paramAction.accept(OIDCLoginProtocol.LOGIN_HINT_PARAM, request.getLoginHint());
+        paramAction.accept(OIDCLoginProtocol.ID_TOKEN_HINT, request.getIdTokenHint());
         paramAction.accept(OIDCLoginProtocol.NONCE_PARAM, request.getNonce());
         paramAction.accept(OIDCLoginProtocol.PROMPT_PARAM, request.getPrompt());
         paramAction.accept(OIDCLoginProtocol.RESPONSE_MODE_PARAM, request.getResponseMode());
