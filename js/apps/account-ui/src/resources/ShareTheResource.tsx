@@ -4,16 +4,12 @@ import {
   ChipGroup,
   Form,
   FormGroup,
-  FormHelperText,
-  HelperText,
-  HelperTextItem,
   InputGroup,
   InputGroupItem,
   Modal,
   TextInput,
   ValidatedOptions,
 } from "@patternfly/react-core";
-import { ExclamationCircleIcon } from "@patternfly/react-icons";
 import { useEffect } from "react";
 import {
   FormProvider,
@@ -22,7 +18,7 @@ import {
   useWatch,
 } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { SelectControl, useAlerts } from "ui-shared";
+import { FormValidationMessage, SelectControl, useAlerts } from "ui-shared";
 import { updateRequest } from "../api";
 import { Permission, Resource } from "../api/representations";
 import { SharedWith } from "./SharedWith";
@@ -185,16 +181,7 @@ export const ShareTheResource = ({
             </ChipGroup>
           )}
           {errors.usernames?.message && (
-            <FormHelperText>
-              <HelperText>
-                <HelperTextItem
-                  icon={<ExclamationCircleIcon />}
-                  variant="error"
-                >
-                  {errors.usernames.message}
-                </HelperTextItem>
-              </HelperText>
-            </FormHelperText>
+            <FormValidationMessage message={errors.usernames.message} />
           )}
         </FormGroup>
         <FormProvider {...form}>

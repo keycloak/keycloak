@@ -1,21 +1,10 @@
-import {
-  Button,
-  FormGroup,
-  FormHelperText,
-  HelperText,
-  HelperTextItem,
-  InputGroup,
-  Popover,
-} from "@patternfly/react-core";
-import {
-  ExclamationCircleIcon,
-  ExternalLinkSquareAltIcon,
-  HelpIcon,
-} from "@patternfly/react-icons";
+import { Button, FormGroup, InputGroup, Popover } from "@patternfly/react-core";
+import { ExternalLinkSquareAltIcon, HelpIcon } from "@patternfly/react-icons";
 import { get } from "lodash-es";
 import { PropsWithChildren } from "react";
 import { useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
+import { FormValidationMessage } from "ui-shared";
 import { UserProfileAttributeMetadata } from "../../api/representations";
 import { environment } from "../../environment";
 import { TFuncKey } from "../../i18n";
@@ -86,13 +75,7 @@ export const UserProfileGroup = ({
           )}
       </InputGroup>
       {error && (
-        <FormHelperText>
-          <HelperText>
-            <HelperTextItem icon={<ExclamationCircleIcon />} variant="error">
-              {t(error.message as TFuncKey)}
-            </HelperTextItem>
-          </HelperText>
-        </FormHelperText>
+        <FormValidationMessage message={t(error.message as TFuncKey)} />
       )}
     </FormGroup>
   );

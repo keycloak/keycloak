@@ -1,13 +1,8 @@
-import {
-  FormGroup,
-  FormHelperText,
-  HelperText,
-  HelperTextItem,
-} from "@patternfly/react-core";
-import { ExclamationCircleIcon } from "@patternfly/react-icons";
+import { FormGroup } from "@patternfly/react-core";
 import { PropsWithChildren } from "react";
 import { FieldError, FieldValues, Merge } from "react-hook-form";
 
+import { FormValidationMessage } from "./FormValidationMessage";
 import { HelpItem } from "./HelpItem";
 
 export type FormLabelProps<T extends FieldValues = FieldValues> = {
@@ -37,14 +32,6 @@ export const FormLabel = ({
     {...rest}
   >
     {children}
-    {error?.message && (
-      <FormHelperText>
-        <HelperText>
-          <HelperTextItem icon={<ExclamationCircleIcon />} variant="error">
-            {error.message}
-          </HelperTextItem>
-        </HelperText>
-      </FormHelperText>
-    )}
+    {error?.message && <FormValidationMessage message={error.message} />}
   </FormGroup>
 );
