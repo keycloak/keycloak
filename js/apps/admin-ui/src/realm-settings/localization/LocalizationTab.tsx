@@ -25,7 +25,6 @@ import { EffectiveMessageBundles } from "./EffectiveMessageBundles";
 
 type LocalizationTabProps = {
   save: (realm: RealmRepresentation) => void;
-  refresh: () => void;
   realm: RealmRepresentation;
 };
 

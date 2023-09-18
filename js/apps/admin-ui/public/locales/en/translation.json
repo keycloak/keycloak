@@ -3286,5 +3286,6 @@
   "realmOverrides": "Realm overrides ",
   "realmOverridesHelp": "You can edit the supported locales. If you haven't selected supported locale yet, you only can edit English locale.",
   "effectiveMessageBundles": "Effective message bundles ",
-  "effectiveMessageBundlesHelp": "Todo"
+  "effectiveMessageBundlesHelp": "Todo",
+  "deleteMessageBundle": "Delete message bundle {{key}}"
 }

@@ -324,12 +324,7 @@ export const RealmSettingsTabs = ({
             data-testid="rs-localization-tab"
             {...localizationTab}
           >
-            <LocalizationTab
-              key={key}
-              refresh={refresh}
-              save={save}
-              realm={realm}
-            />
+            <LocalizationTab key={key} save={save} realm={realm} />
           </Tab>
           <Tab
             title={<TabTitleText>{t("securityDefences")}</TabTitleText>}

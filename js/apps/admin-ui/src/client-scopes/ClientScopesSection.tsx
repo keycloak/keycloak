@@ -142,6 +142,8 @@ export default function ClientScopesSection() {
       })
       .filter(filter);
 
+    console.log(">>>> transformed ", transformed);
+
     return localeSort(transformed, mapByKey("name")).slice(
       first,
       Number(first) + Number(max),

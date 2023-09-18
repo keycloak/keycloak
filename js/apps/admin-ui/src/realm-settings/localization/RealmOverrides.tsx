@@ -3,6 +3,9 @@ import {
   AlertVariant,
   Button,
   Divider,
+  Dropdown,
+  DropdownItem,
+  KebabToggle,
   Select,
   SelectGroup,
   SelectOption,
@@ -78,6 +81,7 @@ export const RealmOverrides = ({
   const [filterDropdownOpen, setFilterDropdownOpen] = useState(false);
   const [messageBundles, setMessageBundles] = useState<[string, string][]>([]);
   const [selectMenuLocale, setSelectMenuLocale] = useState(DEFAULT_LOCALE);
+  const [kebabOpen, setKebabOpen] = useState(false);
   const { getValues } = useForm();
   const [selectMenuValueSelected, setSelectMenuValueSelected] = useState(false);
   const [tableRows, setTableRows] = useState<IRow[]>([]);
@@ -89,10 +93,14 @@ export const RealmOverrides = ({
   const { addAlert, addError } = useAlerts();
   const { realm: currentRealm } = useRealm();
   const { whoAmI } = useWhoAmI();
+  // const [selectedRows, setSelectedRows] = useState<number[]>([]);
+  const [selectedRows, setSelectedRows] = useState<IRow[]>([]);
 
   const refreshTable = () => {
     setTableKey(tableKey + 1);
   };
+
+  console.log(">>> selectedRows ", selectedRows);
 
   useFetch(
     async () => {
@@ -174,6 +182,7 @@ export const RealmOverrides = ({
             },
           },
         ],
+        isSelected: false,
       }));
       setTableRows(updatedRows);
 
@@ -297,12 +306,53 @@ export const RealmOverrides = ({
       refreshTable();
       addAlert(t("deleteMessageBundleSuccess"));
     } catch (error) {
-      addError("realm-settings:deleteMessageBundleError", error);
+      addError("deleteMessageBundleError", error);
     }
   };
 
+  // const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
+  //   titleKey: t("deleteMessageBundle", {
+  //     count: selectedMessageBundles.length,
+  //     name: selectedMessageBundles[0]?.key,
+  //   }),
+  //   messageKey: "",
+  //   continueButtonLabel: "delete",
+  //   continueButtonVariant: ButtonVariant.danger,
+  //   onConfirm: async () => {
+  //     try {
+  //       await adminClient.realms.deleteRealmLocalizationTexts({
+  //         realm: currentRealm!,
+  //         selectedLocale: selectMenuLocale,
+  //         key: selectedMessageBundles[0]?.key,
+  //       });
+  //       refreshTable();
+  //       addAlert(t("deleteMessageBundleSuccess"));
+  //     } catch (error) {
+  //       addError("deleteMessageBundleError", error);
+  //     }
+  //   },
+  // });
+
+  const handleRowSelect = (isSelected: boolean, rowIndex: number) => {
+    if (isSelected) {
+      const updatedTableRows = [...tableRows];
+      updatedTableRows[rowIndex].isSelected = isSelected;
+      setSelectedRows((prevSelected) => [
+        ...prevSelected,
+        updatedTableRows[rowIndex],
+      ]);
+    } else {
+      setSelectedRows((prevSelected) =>
+        prevSelected.filter((row) => row !== tableRows[rowIndex]),
+      );
+    }
+  };
+
+  console.log("selectedRows ", selectedRows);
+
   return (
     <>
+      {/* <DeleteConfirm /> */}
       {addMessageBundleModalOpen && (
         <AddMessageBundleModal
           handleModalToggle={handleModalToggle}
@@ -332,12 +382,34 @@ export const RealmOverrides = ({
           }}
           inputGroupPlaceholder={t("searchForMessageBundle")}
           toolbarItem={
-            <Button
-              data-testid="add-bundle-button"
-              onClick={() => setAddMessageBundleModalOpen(true)}
-            >
-              {t("addMessageBundle")}
-            </Button>
+            <>
+              <Button
+                data-testid="add-bundle-button"
+                onClick={() => setAddMessageBundleModalOpen(true)}
+              >
+                {t("addMessageBundle")}
+              </Button>
+              <ToolbarItem>
+                <Dropdown
+                  toggle={<KebabToggle onToggle={setKebabOpen} />}
+                  isOpen={kebabOpen}
+                  isPlain
+                  dropdownItems={[
+                    <DropdownItem
+                      key="action"
+                      component="button"
+                      isDisabled={messageBundles.length === 0}
+                      onClick={() => {
+                        // toggleDeleteDialog();
+                        setKebabOpen(false);
+                      }}
+                    >
+                      {t("delete")}
+                    </DropdownItem>,
+                  ]}
+                />
+              </ToolbarItem>
+            </>
           }
           searchTypeComponent={
             <ToolbarItem>
@@ -392,16 +464,23 @@ export const RealmOverrides = ({
               variant={TableVariant.compact}
               cells={[t("key"), t("value")]}
               rows={tableRows}
+              onSelect={(event, isSelected, rowIndex) => {
+                console.log("isSelected ", isSelected, rowIndex);
+                handleRowSelect(isSelected, rowIndex);
+              }}
+              // canSelectAll={canSelectAll}
+              selectVariant="checkbox"
               onRowEdit={(_, type, _b, rowIndex, validation) =>
                 updateEditableRows(type, rowIndex, validation)
               }
               actions={[
                 {
                   title: t("delete"),
-                  onClick: (_, row) =>
+                  onClick: (_, row) => {
                     deleteKey(
                       (tableRows[row].cells?.[0] as IRowCell).props.value,
-                    ),
+                    );
+                  },
                 },
               ]}
             >
