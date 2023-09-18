@@ -5,6 +5,7 @@ import {
   DataListItem,
   DataListItemCells,
   DataListItemRow,
+  Icon,
   Label,
   Split,
   SplitItem,
@@ -97,7 +98,10 @@ export const AccountRow = ({ account, isLinked = false }: AccountRowProps) => {
               variant="link"
               onClick={() => unLink(account)}
             >
-              <UnlinkIcon size="sm" /> {t("unLink")}
+              <Icon size="sm">
+                <UnlinkIcon />
+              </Icon>
+              &nbsp;{t("unLink")}
             </Button>
           )}
           {!isLinked && (
@@ -106,7 +110,10 @@ export const AccountRow = ({ account, isLinked = false }: AccountRowProps) => {
               variant="link"
               onClick={() => link(account)}
             >
-              <LinkIcon size="sm" /> {t("link")}
+              <Icon size="sm">
+                <LinkIcon />
+              </Icon>
+              &nbsp;{t("link")}
             </Button>
           )}
         </DataListAction>

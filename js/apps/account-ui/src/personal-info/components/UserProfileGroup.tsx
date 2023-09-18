@@ -1,14 +1,26 @@
-import { Button, FormGroup, InputGroup, Popover } from "@patternfly/react-core";
-import { ExternalLinkSquareAltIcon, HelpIcon } from "@patternfly/react-icons";
+import {
+  Button,
+  FormGroup,
+  FormHelperText,
+  HelperText,
+  HelperTextItem,
+  InputGroup,
+  Popover,
+} from "@patternfly/react-core";
+import {
+  ExclamationCircleIcon,
+  ExternalLinkSquareAltIcon,
+  HelpIcon,
+} from "@patternfly/react-icons";
 import { get } from "lodash-es";
 import { PropsWithChildren } from "react";
 import { useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { UserProfileAttributeMetadata } from "../../api/representations";
 import { environment } from "../../environment";
+import { TFuncKey } from "../../i18n";
 import { keycloak } from "../../keycloak";
 import { fieldName, label } from "../utils";
-import { TFuncKey } from "../../i18n";
 
 export type UserProfileFieldsProps = UserProfileAttributeMetadata;
 
@@ -40,16 +52,14 @@ export const UserProfileGroup = ({
     isEditUserNameAllowed,
   } = environment.features;
 
+  const error = get(errors, fieldName(attribute));
+
   return (
     <FormGroup
       key={attribute.name}
       label={label(attribute, t) || ""}
       fieldId={attribute.name}
       isRequired={isRequired(attribute)}
-      validated={get(errors, fieldName(attribute)) ? "error" : "default"}
-      helperTextInvalid={t(
-        get(errors, fieldName(attribute))?.message as TFuncKey,
-      )}
       labelIcon={
         helpText ? (
           <Popover bodyContent={helpText}>
@@ -75,6 +85,15 @@ export const UserProfileGroup = ({
             </Button>
           )}
       </InputGroup>
+      {error && (
+        <FormHelperText>
+          <HelperText>
+            <HelperTextItem icon={<ExclamationCircleIcon />} variant="error">
+              {t(error.message as TFuncKey)}
+            </HelperTextItem>
+          </HelperText>
+        </FormHelperText>
+      )}
     </FormGroup>
   );
 };

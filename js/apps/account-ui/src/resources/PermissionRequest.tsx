@@ -2,6 +2,7 @@ import {
   Badge,
   Button,
   Chip,
+  Icon,
   Modal,
   ModalVariant,
   Text,
@@ -59,7 +60,9 @@ export const PermissionRequest = ({
   return (
     <>
       <Button variant="link" onClick={toggle}>
-        <UserCheckIcon size="lg" />
+        <Icon size="lg">
+          <UserCheckIcon />
+        </Icon>
         <Badge>{resource.shareRequests?.length}</Badge>
       </Button>
       <Modal

@@ -1,22 +1,19 @@
+import { Avatar, AvatarProps, Brand, BrandProps } from "@patternfly/react-core";
 import {
-  Avatar,
-  AvatarProps,
-  Brand,
-  BrandProps,
   DropdownItem,
   PageHeader,
   PageHeaderProps,
   PageHeaderTools,
   PageHeaderToolsGroup,
   PageHeaderToolsItem,
-} from "@patternfly/react-core";
+} from "@patternfly/react-core/deprecated";
 import Keycloak from "keycloak-js";
 import { ReactNode } from "react";
 
+import { DefaultAvatar } from "./DefaultAvatar";
 import { KeycloakDropdown } from "./KeycloakDropdown";
 import { useTranslation } from "./translation/useTranslation";
 import { loggedInUserName } from "./util";
-import { DefaultAvatar } from "./DefaultAvatar";
 
 type BrandLogo = BrandProps & {
   href: string;

@@ -4,12 +4,16 @@ import {
   ChipGroup,
   Form,
   FormGroup,
+  FormHelperText,
+  HelperText,
+  HelperTextItem,
   InputGroup,
   InputGroupItem,
   Modal,
   TextInput,
   ValidatedOptions,
 } from "@patternfly/react-core";
+import { ExclamationCircleIcon } from "@patternfly/react-icons";
 import { useEffect } from "react";
 import {
   FormProvider,
@@ -138,12 +142,8 @@ export const ShareTheResource = ({
         <FormGroup
           label={t("shareUser")}
           type="string"
-          helperTextInvalid={errors.usernames?.message}
           fieldId="users"
           isRequired
-          validated={
-            errors.usernames ? ValidatedOptions.error : ValidatedOptions.default
-          }
         >
           <InputGroup>
             <InputGroupItem isFill>
@@ -183,6 +183,18 @@ export const ShareTheResource = ({
                   ),
               )}
             </ChipGroup>
+          )}
+          {errors.usernames?.message && (
+            <FormHelperText>
+              <HelperText>
+                <HelperTextItem
+                  icon={<ExclamationCircleIcon />}
+                  variant="error"
+                >
+                  {errors.usernames.message}
+                </HelperTextItem>
+              </HelperText>
+            </FormHelperText>
           )}
         </FormGroup>
         <FormProvider {...form}>
