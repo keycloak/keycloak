@@ -269,7 +269,7 @@ public class KeycloakInstalled {
         // pass the id_token_hint so that sessions is invalidated for this particular session
         String logoutUrl = deployment.getLogoutUrl().clone()
                 .queryParam(OAuth2Constants.POST_LOGOUT_REDIRECT_URI, redirectUri)
-                .queryParam("id_token_hint", idTokenString)
+                .queryParam(OAuth2Constants.ID_TOKEN_HINT, idTokenString)
                 .build().toString();
 
         desktopProvider.browse(new URI(logoutUrl));

@@ -607,7 +607,7 @@ public class BrokerLinkAndTokenExchangeTest extends AbstractServletsAdapterTest 
 
                 // test logout
                 response = childLogoutWebTarget(httpClient)
-                        .queryParam("id_token_hint", idToken)
+                        .queryParam(OAuth2Constants.ID_TOKEN_HINT, idToken)
                         .request()
                         .get();
                 response.close();
@@ -648,7 +648,7 @@ public class BrokerLinkAndTokenExchangeTest extends AbstractServletsAdapterTest 
 
                 // test logout
                 response = childLogoutWebTarget(httpClient)
-                        .queryParam("id_token_hint", idToken)
+                        .queryParam(OAuth2Constants.ID_TOKEN_HINT, idToken)
                         .request()
                         .get();
                 response.close();
@@ -688,7 +688,7 @@ public class BrokerLinkAndTokenExchangeTest extends AbstractServletsAdapterTest 
 
                 // test logout
                 response = childLogoutWebTarget(httpClient)
-                        .queryParam("id_token_hint", idToken)
+                        .queryParam(OAuth2Constants.ID_TOKEN_HINT, idToken)
                         .request()
                         .get();
                 response.close();
@@ -884,7 +884,7 @@ public class BrokerLinkAndTokenExchangeTest extends AbstractServletsAdapterTest 
 
                     // test logout
                     response = childLogoutWebTarget(httpClient)
-                            .queryParam("id_token_hint", idToken)
+                            .queryParam(OAuth2Constants.ID_TOKEN_HINT, idToken)
                             .request()
                             .get();
                     response.close();
