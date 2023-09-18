@@ -5,6 +5,7 @@ import {
   Form,
   FormGroup,
   InputGroup,
+  InputGroupItem,
   Modal,
   TextInput,
   ValidatedOptions,
@@ -145,27 +146,31 @@ export const ShareTheResource = ({
           }
         >
           <InputGroup>
-            <TextInput
-              id="users"
-              placeholder={t("usernamePlaceholder")}
-              validated={
-                errors.usernames
-                  ? ValidatedOptions.error
-                  : ValidatedOptions.default
-              }
-              {...register(`usernames.${fields.length - 1}.value`, {
-                validate: validateUser,
-              })}
-            />
-            <Button
-              key="add-user"
-              variant="primary"
-              id="add"
-              onClick={() => append({ value: "" })}
-              isDisabled={isDisabled}
-            >
-              {t("add")}
-            </Button>
+            <InputGroupItem isFill>
+              <TextInput
+                id="users"
+                placeholder={t("usernamePlaceholder")}
+                validated={
+                  errors.usernames
+                    ? ValidatedOptions.error
+                    : ValidatedOptions.default
+                }
+                {...register(`usernames.${fields.length - 1}.value`, {
+                  validate: validateUser,
+                })}
+              />
+            </InputGroupItem>
+            <InputGroupItem>
+              <Button
+                key="add-user"
+                variant="primary"
+                id="add"
+                onClick={() => append({ value: "" })}
+                isDisabled={isDisabled}
+              >
+                {t("add")}
+              </Button>
+            </InputGroupItem>
           </InputGroup>
           {fields.length > 1 && (
             <ChipGroup categoryName={t("shareWith")}>

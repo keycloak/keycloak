@@ -1,4 +1,4 @@
-import { Select, SelectOption } from "@patternfly/react-core";
+import { Select, SelectOption } from "@patternfly/react-core/deprecated";
 import { useState } from "react";
 import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -23,7 +23,7 @@ export const SelectComponent = ({ ...attribute }: UserProfileFieldsProps) => {
         render={({ field }) => (
           <Select
             toggleId={attribute.name}
-            onToggle={(b) => setOpen(b)}
+            onToggle={(_, isOpen) => setOpen(isOpen)}
             onSelect={(_, value) => {
               const option = value.toString();
               if (Array.isArray(field.value)) {

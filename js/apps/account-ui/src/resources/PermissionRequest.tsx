@@ -7,18 +7,11 @@ import {
   Text,
 } from "@patternfly/react-core";
 import { UserCheckIcon } from "@patternfly/react-icons";
-
-import {
-  TableComposable,
-  Tbody,
-  Td,
-  Th,
-  Thead,
-  Tr,
-} from "@patternfly/react-table";
+import { Table, Tbody, Td, Th, Thead, Tr } from "@patternfly/react-table";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useAlerts } from "ui-shared";
+
 import { fetchPermission, updateRequest } from "../api";
 import { Permission, Resource } from "../api/representations";
 
@@ -80,7 +73,7 @@ export const PermissionRequest = ({
           </Button>,
         ]}
       >
-        <TableComposable aria-label={t("resources")}>
+        <Table aria-label={t("resources")}>
           <Thead>
             <Tr>
               <Th>{t("requestor")}</Th>
@@ -125,7 +118,7 @@ export const PermissionRequest = ({
               </Tr>
             ))}
           </Tbody>
-        </TableComposable>
+        </Table>
       </Modal>
     </>
   );

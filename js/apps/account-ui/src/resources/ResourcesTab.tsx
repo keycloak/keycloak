@@ -2,9 +2,6 @@ import {
   Button,
   Chip,
   ChipGroup,
-  Dropdown,
-  DropdownItem,
-  KebabToggle,
   OverflowMenu,
   OverflowMenuContent,
   OverflowMenuControl,
@@ -14,6 +11,11 @@ import {
   Spinner,
 } from "@patternfly/react-core";
 import {
+  Dropdown,
+  DropdownItem,
+  KebabToggle,
+} from "@patternfly/react-core/deprecated";
+import {
   EditAltIcon,
   ExternalLinkAltIcon,
   Remove2Icon,
@@ -21,7 +23,7 @@ import {
 } from "@patternfly/react-icons";
 import {
   ExpandableRowContent,
-  TableComposable,
+  Table,
   Tbody,
   Td,
   Th,
@@ -148,7 +150,7 @@ export const ResourcesTab = ({ isShared = false }: ResourcesTabProps) => {
         }
         hasNext={!!links?.next}
       />
-      <TableComposable aria-label={t("resources")}>
+      <Table aria-label={t("resources")}>
         <Thead>
           <Tr>
             <Th aria-hidden="true" />
@@ -248,8 +250,12 @@ export const ResourcesTab = ({ isShared = false }: ResourcesTabProps) => {
                             position="right"
                             toggle={
                               <KebabToggle
-                                onToggle={(open) =>
-                                  toggleOpen(resource._id, "contextOpen", open)
+                                onToggle={(_, isOpen) =>
+                                  toggleOpen(
+                                    resource._id,
+                                    "contextOpen",
+                                    isOpen,
+                                  )
                                 }
                               />
                             }
@@ -301,8 +307,8 @@ export const ResourcesTab = ({ isShared = false }: ResourcesTabProps) => {
                         position="right"
                         toggle={
                           <KebabToggle
-                            onToggle={(open) =>
-                              toggleOpen(resource._id, "contextOpen", open)
+                            onToggle={(_, isOpen) =>
+                              toggleOpen(resource._id, "contextOpen", isOpen)
                             }
                           />
                         }
@@ -363,7 +369,7 @@ export const ResourcesTab = ({ isShared = false }: ResourcesTabProps) => {
             </Tr>
           </Tbody>
         ))}
-      </TableComposable>
+      </Table>
     </>
   );
 };

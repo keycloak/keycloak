@@ -4,6 +4,7 @@ import {
   NavItem,
   NavList,
   PageSidebar,
+  PageSidebarBody,
 } from "@patternfly/react-core";
 import {
   PropsWithChildren,
@@ -75,8 +76,8 @@ const menuItems: MenuItem[] = [
 ];
 
 export const PageNav = () => (
-  <PageSidebar
-    nav={
+  <PageSidebar>
+    <PageSidebarBody>
       <Nav>
         <NavList>
           {menuItems
@@ -86,8 +87,8 @@ export const PageNav = () => (
             ))}
         </NavList>
       </Nav>
-    }
-  />
+    </PageSidebarBody>
+  </PageSidebar>
 );
 
 type NavMenuItemProps = {
