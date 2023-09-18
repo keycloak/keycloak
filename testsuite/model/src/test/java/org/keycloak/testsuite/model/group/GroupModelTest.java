@@ -22,6 +22,7 @@ import org.keycloak.models.Constants;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.testsuite.model.KeycloakModelTest;
 
 import java.util.Arrays;
@@ -153,5 +154,31 @@ public class GroupModelTest extends KeycloakModelTest {
         });
 
     }
+    @Test
+    public void testFindGroupByPath() {
+        String subGroupId1 = withRealm(realmId, (session, realm) -> {
+            GroupModel group = session.groups().createGroup(realm, "parent-1");
+            GroupModel subGroup = session.groups().createGroup(realm, "sub-group-1", group);
+            return subGroup.getId();
+        });
 
+        String subGroupIdWithSlash = withRealm(realmId, (session, realm) -> {
+            GroupModel group = session.groups().createGroup(realm, "parent-2");
+            GroupModel subGroup = session.groups().createGroup(realm, "sub-group/1", group);
+            return subGroup.getId();
+        });
+
+        withRealm(realmId, (session, realm) -> {
+            GroupModel group1 = KeycloakModelUtils.findGroupByPath(session.groups(), realm, "/parent-1");
+            GroupModel group2 = KeycloakModelUtils.findGroupByPath(session.groups(), realm, "/parent-2");
+            assertThat(group1.getName(), equalTo("parent-1"));
+            assertThat(group2.getName(), equalTo("parent-2"));
+
+            GroupModel subGroup1 = KeycloakModelUtils.findGroupByPath(session.groups(), realm, "/parent-1/sub-group-1");
+            GroupModel subGroup2 = KeycloakModelUtils.findGroupByPath(session.groups(), realm, "/parent-2/sub-group/1");
+            assertThat(subGroup1.getId(), equalTo(subGroupId1));
+            assertThat(subGroup2.getId(), equalTo(subGroupIdWithSlash));
+            return null;
+        });
+    }
 }
