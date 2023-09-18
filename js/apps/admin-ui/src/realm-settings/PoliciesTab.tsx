@@ -125,7 +125,7 @@ export const PoliciesTab = () => {
               label={t("enabled")}
               labelOff={t("disabled")}
               isChecked={field.value}
-              onChange={(value) => {
+              onChange={(_, value) => {
                 if (!value) {
                   toggleDisableDialog();
                 } else {

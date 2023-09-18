@@ -1,15 +1,15 @@
+import { FormGroup } from "@patternfly/react-core";
 import {
-  FormGroup,
   Select,
   SelectOption,
   SelectVariant,
-} from "@patternfly/react-core";
+} from "@patternfly/react-core/deprecated";
 import { useState } from "react";
 import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
+import { HelpItem } from "ui-shared";
 
 import { FormAccess } from "../../components/form/FormAccess";
-import { HelpItem } from "ui-shared";
 import { convertAttributeNameToForm } from "../../util";
 import { FormFields } from "../ClientDetails";
 import { Toggle } from "./SamlConfig";
@@ -93,7 +93,7 @@ export const SamlSignature = () => {
               render={({ field }) => (
                 <Select
                   toggleId="signatureAlgorithm"
-                  onToggle={setAlgOpen}
+                  onToggle={(_, isOpen) => setAlgOpen(isOpen)}
                   onSelect={(_, value) => {
                     field.onChange(value.toString());
                     setAlgOpen(false);
@@ -133,7 +133,7 @@ export const SamlSignature = () => {
               render={({ field }) => (
                 <Select
                   toggleId="signatureKeyName"
-                  onToggle={setKeyOpen}
+                  onToggle={(_, isOpen) => setKeyOpen(isOpen)}
                   onSelect={(_, value) => {
                     field.onChange(value.toString());
                     setKeyOpen(false);
@@ -171,7 +171,7 @@ export const SamlSignature = () => {
               render={({ field }) => (
                 <Select
                   toggleId="canonicalization"
-                  onToggle={setCanOpen}
+                  onToggle={(_, isOpen) => setCanOpen(isOpen)}
                   onSelect={(_, value) => {
                     field.onChange(value.toString());
                     setCanOpen(false);

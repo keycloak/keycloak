@@ -3,18 +3,19 @@ import {
   ExpandableSection,
   FormGroup,
   NumberInput,
-  Select,
-  SelectOption,
-  SelectVariant,
   TextArea,
   ValidatedOptions,
 } from "@patternfly/react-core";
+import {
+  Select,
+  SelectOption,
+  SelectVariant,
+} from "@patternfly/react-core/deprecated";
 import { useState } from "react";
 import { Controller, useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { HelpItem } from "ui-shared";
 
-import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 import { FormGroupField } from "../component/FormGroupField";
 import { SwitchField } from "../component/SwitchField";
 
@@ -72,7 +73,7 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
           />
         }
       >
-        <KeycloakTextInput
+        <TextInput
           data-testid="serviceProviderEntityId"
           id="kc-saml-service-provider-entity-id"
           {...register("config.entityId")}
@@ -88,7 +89,7 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
           />
         }
       >
-        <KeycloakTextInput
+        <TextInput
           data-testid="identityProviderEntityId"
           id="kc-identity-provider-entity-id"
           {...register("config.idpEntityId")}
@@ -111,7 +112,7 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
         }
         helperTextInvalid={t("required")}
       >
-        <KeycloakTextInput
+        <TextInput
           type="url"
           data-testid="sso-service-url"
           id="kc-sso-service-url"
@@ -141,7 +142,7 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
         }
         helperTextInvalid={t("required")}
       >
-        <KeycloakTextInput
+        <TextInput
           type="url"
           id="single-logout-service-url"
           isReadOnly={readOnly}
@@ -172,7 +173,9 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
           render={({ field }) => (
             <Select
               toggleId="kc-nameIdPolicyFormat"
-              onToggle={(isExpanded) => setNamedPolicyDropdownOpen(isExpanded)}
+              onToggle={(_, isExpanded) =>
+                setNamedPolicyDropdownOpen(isExpanded)
+              }
               isOpen={namedPolicyDropdownOpen}
               onSelect={(_, value) => {
                 field.onChange(value as string);
@@ -251,7 +254,7 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
           render={({ field }) => (
             <Select
               toggleId="kc-principalType"
-              onToggle={(isExpanded) =>
+              onToggle={(_, isExpanded) =>
                 setPrincipalTypeDropdownOpen(isExpanded)
               }
               isOpen={principalTypeDropdownOpen}
@@ -298,7 +301,7 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
           }
           fieldId="principalAttribute"
         >
-          <KeycloakTextInput
+          <TextInput
             id="principalAttribute"
             data-testid="principalAttribute"
             isReadOnly={readOnly}
@@ -355,7 +358,7 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
               render={({ field }) => (
                 <Select
                   toggleId="kc-signatureAlgorithm"
-                  onToggle={(isExpanded) =>
+                  onToggle={(_, isExpanded) =>
                     setSignatureAlgorithmDropdownOpen(isExpanded)
                   }
                   isOpen={signatureAlgorithmDropdownOpen}
@@ -394,7 +397,7 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
               render={({ field }) => (
                 <Select
                   toggleId="kc-encryptionAlgorithm"
-                  onToggle={(isExpanded) =>
+                  onToggle={(_, isExpanded) =>
                     setEncryptionAlgorithmDropdownOpen(isExpanded)
                   }
                   isOpen={encryptionAlgorithmDropdownOpen}
@@ -429,7 +432,7 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
               render={({ field }) => (
                 <Select
                   toggleId="kc-samlSignatureKeyName"
-                  onToggle={(isExpanded) =>
+                  onToggle={(_, isExpanded) =>
                     setSamlSignatureKeyNameDropdownOpen(isExpanded)
                   }
                   isOpen={samlSignatureKeyNameDropdownOpen}
@@ -478,8 +481,8 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
           <TextArea
             id="validatingX509Certs"
             data-testid="validatingX509Certs"
-            isReadOnly={readOnly}
             {...register("config.signingCertificate")}
+            readOnlyVariant="default"
           />
         </FormGroupField>
       )}
@@ -585,7 +588,7 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
         fieldId="attributeConsumingServiceName"
         helperTextInvalid={t("required")}
       >
-        <KeycloakTextInput
+        <TextInput
           id="attributeConsumingServiceName"
           data-testid="attributeConsumingServiceName"
           isReadOnly={readOnly}
@@ -604,7 +607,7 @@ export const DescriptorSettings = ({ readOnly }: DescriptorSettingsProps) => {
     <ExpandableSection
       className="keycloak__discovery-settings__metadata"
       toggleText={isExpanded ? t("hideMetaData") : t("showMetaData")}
-      onToggle={(isOpen) => setIsExpanded(isOpen)}
+      onToggle={(_, isOpen) => setIsExpanded(isOpen)}
       isExpanded={isExpanded}
     >
       <Fields readOnly={readOnly} />

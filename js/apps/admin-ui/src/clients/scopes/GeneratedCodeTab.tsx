@@ -4,8 +4,8 @@ import {
   CodeBlockAction,
   EmptyState,
   EmptyStateBody,
+  EmptyStateHeader,
   TextArea,
-  Title,
 } from "@patternfly/react-core";
 import { useTranslation } from "react-i18next";
 
@@ -36,10 +36,8 @@ export const GeneratedCodeTab = ({
       <TextArea id={`text-area-${label}`} rows={20} value={text} />
     </CodeBlock>
   ) : (
-    <EmptyState variant="large" id={label}>
-      <Title headingLevel="h2" size="lg">
-        {t(`${label}No`)}
-      </Title>
+    <EmptyState variant="lg" id={label}>
+      <EmptyStateHeader titleText={t(`${label}No`)} headingLevel="h2" />
       <EmptyStateBody>{t(`${label}IsDisabled`)}</EmptyStateBody>
     </EmptyState>
   );

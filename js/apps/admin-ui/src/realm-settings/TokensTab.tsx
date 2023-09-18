@@ -5,20 +5,21 @@ import {
   FormGroup,
   NumberInput,
   PageSection,
-  Select,
-  SelectOption,
-  SelectVariant,
   Switch,
   Text,
   TextVariants,
 } from "@patternfly/react-core";
+import {
+  Select,
+  SelectOption,
+  SelectVariant,
+} from "@patternfly/react-core/deprecated";
 import { useEffect, useState } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
+import { HelpItem } from "ui-shared";
 
 import { FormAccess } from "../components/form/FormAccess";
-import { HelpItem } from "ui-shared";
-import { KeycloakTextInput } from "../components/keycloak-text-input/KeycloakTextInput";
 import { FormPanel } from "../components/scroll-form/FormPanel";
 import {
   TimeSelector,
@@ -195,7 +196,7 @@ export const RealmSettingsTokensTab = ({
               />
             }
           >
-            <KeycloakTextInput
+            <TextInput
               id="shortVerificationUri"
               placeholder={t("shortVerificationUri")}
               {...form.register("attributes.shortVerificationUri")}

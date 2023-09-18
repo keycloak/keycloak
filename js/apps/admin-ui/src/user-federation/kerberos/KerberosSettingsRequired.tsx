@@ -1,10 +1,9 @@
+import { FormGroup, Switch } from "@patternfly/react-core";
 import {
-  FormGroup,
   Select,
   SelectOption,
   SelectVariant,
-  Switch,
-} from "@patternfly/react-core";
+} from "@patternfly/react-core/deprecated";
 import { isEqual } from "lodash-es";
 import { useState } from "react";
 import { Controller, UseFormReturn, useWatch } from "react-hook-form";
@@ -13,7 +12,6 @@ import { HelpItem } from "ui-shared";
 
 import { adminClient } from "../../admin-client";
 import { FormAccess } from "../../components/form/FormAccess";
-import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 import { WizardSectionHeader } from "../../components/wizard-section-header/WizardSectionHeader";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { useFetch } from "../../utils/useFetch";
@@ -72,26 +70,26 @@ export const KerberosSettingsRequired = ({
           helperTextInvalid={(form.formState.errors.name as any)?.message}
         >
           {/* These hidden fields are required so data object written back matches data retrieved */}
-          <KeycloakTextInput
+          <TextInput
             hidden
             id="kc-ui-providerId"
             defaultValue="kerberos"
             {...form.register("providerId")}
           />
-          <KeycloakTextInput
+          <TextInput
             hidden
             id="kc-ui-providerType"
             defaultValue="org.keycloak.storage.UserStorageProvider"
             {...form.register("providerType")}
           />
-          <KeycloakTextInput
+          <TextInput
             hidden
             id="kc-ui-parentId"
             defaultValue={realm}
             {...form.register("parentId")}
           />
 
-          <KeycloakTextInput
+          <TextInput
             isRequired
             id="kc-ui-name"
             data-testid="kerberos-name"
@@ -125,7 +123,7 @@ export const KerberosSettingsRequired = ({
             (form.formState.errors.config as any)?.kerberosRealm?.[0].message
           }
         >
-          <KeycloakTextInput
+          <TextInput
             isRequired
             id="kc-kerberos-realm"
             data-testid="kerberos-realm"
@@ -162,7 +160,7 @@ export const KerberosSettingsRequired = ({
             (form.formState.errors.config as any)?.serverPrincipal?.[0].message
           }
         >
-          <KeycloakTextInput
+          <TextInput
             isRequired
             id="kc-server-principal"
             data-testid="kerberos-principal"
@@ -199,7 +197,7 @@ export const KerberosSettingsRequired = ({
             (form.formState.errors.config as any)?.keyTab?.[0].message
           }
         >
-          <KeycloakTextInput
+          <TextInput
             isRequired
             id="kc-key-tab"
             data-testid="kerberos-keytab"
@@ -237,7 +235,7 @@ export const KerberosSettingsRequired = ({
               <Switch
                 id={"kc-debug"}
                 data-testid="debug"
-                onChange={(value) => field.onChange([`${value}`])}
+                onChange={(_, value) => field.onChange([`${value}`])}
                 isChecked={field.value?.[0] === "true"}
                 label={t("on")}
                 labelOff={t("off")}
@@ -268,7 +266,7 @@ export const KerberosSettingsRequired = ({
               <Switch
                 id={"kc-allow-password-authentication"}
                 data-testid="allow-password-authentication"
-                onChange={(value) => field.onChange([`${value}`])}
+                onChange={(_, value) => field.onChange([`${value}`])}
                 isChecked={field.value?.[0] === "true"}
                 label={t("on")}
                 labelOff={t("off")}
@@ -338,7 +336,7 @@ export const KerberosSettingsRequired = ({
               <Switch
                 id={"kc-update-first-login"}
                 data-testid="update-first-login"
-                onChange={(value) => field.onChange([`${value}`])}
+                onChange={(_, value) => field.onChange([`${value}`])}
                 isChecked={field.value?.[0] === "true"}
                 label={t("on")}
                 labelOff={t("off")}

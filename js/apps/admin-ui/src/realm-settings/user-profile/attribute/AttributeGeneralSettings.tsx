@@ -1,14 +1,11 @@
 import type ClientScopeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientScopeRepresentation";
 import type UserProfileConfig from "@keycloak/keycloak-admin-client/lib/defs/userProfileConfig";
+import { Divider, FormGroup, Radio, Switch } from "@patternfly/react-core";
 import {
-  Divider,
-  FormGroup,
-  Radio,
   Select,
   SelectOption,
   SelectVariant,
-  Switch,
-} from "@patternfly/react-core";
+} from "@patternfly/react-core/deprecated";
 import { isEqual } from "lodash-es";
 import { useState } from "react";
 import { Controller, useFormContext, useWatch } from "react-hook-form";
@@ -18,7 +15,6 @@ import { HelpItem } from "ui-shared";
 import { adminClient } from "../../../admin-client";
 import { FormAccess } from "../../../components/form/FormAccess";
 import { KeycloakSpinner } from "../../../components/keycloak-spinner/KeycloakSpinner";
-import { KeycloakTextInput } from "../../../components/keycloak-text-input/KeycloakTextInput";
 import { useFetch } from "../../../utils/useFetch";
 import { useParams } from "../../../utils/useParams";
 import { USERNAME_EMAIL } from "../../NewAttributeSettings";
@@ -84,7 +80,7 @@ export const AttributeGeneralSettings = () => {
         validated={form.formState.errors.name ? "error" : "default"}
         helperTextInvalid={t("validateAttributeName")}
       >
-        <KeycloakTextInput
+        <TextInput
           isRequired
           id="kc-attribute-name"
           defaultValue=""
@@ -104,7 +100,7 @@ export const AttributeGeneralSettings = () => {
         }
         fieldId="kc-attribute-display-name"
       >
-        <KeycloakTextInput
+        <TextInput
           id="kc-attribute-display-name"
           defaultValue=""
           data-testid="attribute-display-name"
@@ -167,7 +163,7 @@ export const AttributeGeneralSettings = () => {
               isChecked={selectedScopes.length === clientScopes.length}
               name="enabledWhen"
               label={t("always")}
-              onChange={(value) => {
+              onChange={(_, value) => {
                 if (value) {
                   form.setValue(
                     "selector.scopes",
@@ -185,7 +181,7 @@ export const AttributeGeneralSettings = () => {
               isChecked={selectedScopes.length !== clientScopes.length}
               name="enabledWhen"
               label={t("scopesAsRequested")}
-              onChange={(value) => {
+              onChange={(_, value) => {
                 if (value) {
                   form.setValue("selector.scopes", []);
                 } else {
@@ -214,7 +210,7 @@ export const AttributeGeneralSettings = () => {
                     expandedText: t("hide"),
                     collapsedText: t("showRemaining"),
                   }}
-                  onToggle={(isOpen) => setSelectEnabledWhenOpen(isOpen)}
+                  onToggle={(_, isOpen) => setSelectEnabledWhenOpen(isOpen)}
                   selections={field.value}
                   onSelect={(_, selectedValue) => {
                     const option = selectedValue.toString();
@@ -317,7 +313,7 @@ export const AttributeGeneralSettings = () => {
                   isChecked={requiredScopes.length === clientScopes.length}
                   name="requiredWhen"
                   label={t("always")}
-                  onChange={(value) => {
+                  onChange={(_, value) => {
                     if (value) {
                       form.setValue(
                         "required.scopes",
@@ -335,7 +331,7 @@ export const AttributeGeneralSettings = () => {
                   isChecked={requiredScopes.length !== clientScopes.length}
                   name="requiredWhen"
                   label={t("scopesAsRequested")}
-                  onChange={(value) => {
+                  onChange={(_, value) => {
                     if (value) {
                       form.setValue("required.scopes", []);
                     } else {
@@ -364,7 +360,7 @@ export const AttributeGeneralSettings = () => {
                         expandedText: t("hide"),
                         collapsedText: t("showRemaining"),
                       }}
-                      onToggle={(isOpen) => setSelectRequiredForOpen(isOpen)}
+                      onToggle={(_, isOpen) => setSelectRequiredForOpen(isOpen)}
                       selections={field.value}
                       onSelect={(_, selectedValue) => {
                         const option = selectedValue.toString();

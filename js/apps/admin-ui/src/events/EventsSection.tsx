@@ -11,20 +11,22 @@ import {
   DescriptionListDescription,
   DescriptionListGroup,
   DescriptionListTerm,
-  Dropdown,
-  DropdownToggle,
   Flex,
   FlexItem,
   Form,
   FormGroup,
   PageSection,
-  Select,
-  SelectOption,
-  SelectVariant,
   Tab,
   TabTitleText,
   Tooltip,
 } from "@patternfly/react-core";
+import {
+  Dropdown,
+  DropdownToggle,
+  Select,
+  SelectOption,
+  SelectVariant,
+} from "@patternfly/react-core/deprecated";
 import { CheckCircleIcon, WarningTriangleIcon } from "@patternfly/react-icons";
 import { cellWidth, expandable } from "@patternfly/react-table";
 import { pickBy } from "lodash-es";
@@ -34,7 +36,6 @@ import { Trans, useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 
 import { adminClient } from "../admin-client";
-import { KeycloakTextInput } from "../components/keycloak-text-input/KeycloakTextInput";
 import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
 import {
   RoutableTabs,
@@ -239,7 +240,7 @@ export default function EventsSection() {
             toggle={
               <DropdownToggle
                 data-testid="userEventsSearchSelectorToggle"
-                onToggle={(isOpen) => setSearchDropdownOpen(isOpen)}
+                onToggle={(_, isOpen) => setSearchDropdownOpen(isOpen)}
                 className="keycloak__events_search_selector_dropdown__toggle"
               >
                 {t("searchForUserEvent")}
@@ -258,7 +259,7 @@ export default function EventsSection() {
                 fieldId="kc-userId"
                 className="keycloak__events_search__form_label"
               >
-                <KeycloakTextInput
+                <TextInput
                   id="kc-userId"
                   data-testid="userId-searchField"
                   {...register("user")}
@@ -284,7 +285,7 @@ export default function EventsSection() {
                       }}
                       variant={SelectVariant.typeaheadMulti}
                       typeAheadAriaLabel="Select"
-                      onToggle={(isOpen) => setSelectOpen(isOpen)}
+                      onToggle={(_, isOpen) => setSelectOpen(isOpen)}
                       selections={field.value}
                       onSelect={(_, selectedValue) => {
                         const option = selectedValue.toString() as EventType;
@@ -332,7 +333,7 @@ export default function EventsSection() {
                 fieldId="kc-client"
                 className="keycloak__events_search__form_label"
               >
-                <KeycloakTextInput
+                <TextInput
                   id="kc-client"
                   data-testid="client-searchField"
                   {...register("client")}
@@ -379,7 +380,7 @@ export default function EventsSection() {
                 fieldId="kc-ipAddress"
                 className="keycloak__events_search__form_label"
               >
-                <KeycloakTextInput
+                <TextInput
                   id="kc-ipAddress"
                   data-testid="ipAddress-searchField"
                   {...register("ipAddress")}

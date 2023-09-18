@@ -1,13 +1,11 @@
 import type AuthenticationFlowRepresentation from "@keycloak/keycloak-admin-client/lib/defs/authenticationFlowRepresentation";
 import type IdentityProviderRepresentation from "@keycloak/keycloak-admin-client/lib/defs/identityProviderRepresentation";
+import { FormGroup, Switch, ValidatedOptions } from "@patternfly/react-core";
 import {
-  FormGroup,
   Select,
   SelectOption,
   SelectVariant,
-  Switch,
-  ValidatedOptions,
-} from "@patternfly/react-core";
+} from "@patternfly/react-core/deprecated";
 import { useState } from "react";
 import { Controller, useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -19,7 +17,6 @@ import type { FieldProps } from "../component/FormGroupField";
 import { FormGroupField } from "../component/FormGroupField";
 import { SwitchField } from "../component/SwitchField";
 import { TextField } from "../component/TextField";
-import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 
 const LoginFlow = ({
   field,
@@ -155,7 +152,7 @@ export const AdvancedSettings = ({ isOIDC, isSAML }: AdvancedSettingsProps) => {
                 label={t("on")}
                 labelOff={t("off")}
                 isChecked={field.value === "true"}
-                onChange={(value) => {
+                onChange={(_, value) => {
                   field.onChange(value.toString());
                 }}
               />
@@ -182,7 +179,7 @@ export const AdvancedSettings = ({ isOIDC, isSAML }: AdvancedSettingsProps) => {
             }
             helperTextInvalid={t("required")}
           >
-            <KeycloakTextInput
+            <TextInput
               isRequired
               id="kc-claim-filter-name"
               data-testid="claimFilterName"
@@ -211,7 +208,7 @@ export const AdvancedSettings = ({ isOIDC, isSAML }: AdvancedSettingsProps) => {
             }
             helperTextInvalid={t("required")}
           >
-            <KeycloakTextInput
+            <TextInput
               isRequired
               id="kc-claim-filter-value"
               data-testid="claimFilterValue"

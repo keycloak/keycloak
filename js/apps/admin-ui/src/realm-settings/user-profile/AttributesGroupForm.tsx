@@ -11,12 +11,11 @@ import { useEffect, useMemo } from "react";
 import { FormProvider, SubmitHandler, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate, useParams } from "react-router-dom";
+import { HelpItem } from "ui-shared";
 
 import { FormAccess } from "../../components/form/FormAccess";
-import { HelpItem } from "ui-shared";
-import type { KeyValueType } from "../../components/key-value-form/key-value-convert";
 import { KeyValueInput } from "../../components/key-value-form/KeyValueInput";
-import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
+import type { KeyValueType } from "../../components/key-value-form/key-value-convert";
 import { ViewHeader } from "../../components/view-header/ViewHeader";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import type { EditAttributesGroupParams } from "../routes/EditAttributesGroup";
@@ -129,7 +128,7 @@ export default function AttributesGroupForm() {
               />
             }
           >
-            <KeycloakTextInput
+            <TextInput
               id="kc-name"
               isReadOnly={!!matchingGroup}
               {...form.register("name", { required: true })}
@@ -148,7 +147,7 @@ export default function AttributesGroupForm() {
               />
             }
           >
-            <KeycloakTextInput
+            <TextInput
               id="kc-display-header"
               {...form.register("displayHeader")}
             />
@@ -163,7 +162,7 @@ export default function AttributesGroupForm() {
               />
             }
           >
-            <KeycloakTextInput
+            <TextInput
               id="kc-display-description"
               {...form.register("displayDescription")}
             />

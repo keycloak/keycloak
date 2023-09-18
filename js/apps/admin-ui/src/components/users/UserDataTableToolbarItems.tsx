@@ -3,21 +3,24 @@ import type UserProfileConfig from "@keycloak/keycloak-admin-client/lib/defs/use
 import {
   Button,
   ButtonVariant,
-  Dropdown,
-  DropdownItem,
-  DropdownToggle,
   InputGroup,
-  KebabToggle,
+  InputGroupItem,
   SearchInput,
   ToolbarItem,
 } from "@patternfly/react-core";
+import {
+  Dropdown,
+  DropdownItem,
+  DropdownToggle,
+  KebabToggle,
+} from "@patternfly/react-core/deprecated";
+import { ArrowRightIcon } from "@patternfly/react-icons";
 import { ReactNode, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useAccess } from "../../context/access/Access";
-import { UserDataTableAttributeSearchForm } from "./UserDataTableAttributeSearchForm";
-import { ArrowRightIcon } from "@patternfly/react-icons";
 import { SearchDropdown, SearchType } from "../../user/details/SearchFilter";
 import { UserAttribute } from "./UserDataTable";
+import { UserDataTableAttributeSearchForm } from "./UserDataTableAttributeSearchForm";
 
 type UserDataTableToolbarItemsProps = {
   realm: RealmRepresentation;
@@ -72,13 +75,15 @@ export function UserDataTableToolbarItems({
     return (
       <ToolbarItem>
         <InputGroup>
-          <SearchDropdown
-            searchType={searchType}
-            onSelect={(searchType) => {
-              clearAllFilters();
-              setSearchType(searchType);
-            }}
-          />
+          <InputGroupItem>
+            <SearchDropdown
+              searchType={searchType}
+              onSelect={(searchType) => {
+                clearAllFilters();
+                setSearchType(searchType);
+              }}
+            />
+          </InputGroupItem>
           {searchType === "default" && defaultSearchInput()}
           {searchType === "attribute" && attributeSearchInput()}
         </InputGroup>
@@ -123,7 +128,7 @@ export function UserDataTableToolbarItems({
           toggle={
             <DropdownToggle
               data-testid="userAttributeSearchSelectorToggle"
-              onToggle={(isOpen) => {
+              onToggle={(_, isOpen) => {
                 setSearchDropdownOpen(isOpen);
               }}
               className="keycloak__user_attribute_search_selector_dropdown__toggle"
@@ -164,7 +169,7 @@ export function UserDataTableToolbarItems({
   ) : (
     <ToolbarItem>
       <Dropdown
-        toggle={<KebabToggle onToggle={(open) => setKebabOpen(open)} />}
+        toggle={<KebabToggle onToggle={(_, open) => setKebabOpen(open)} />}
         isOpen={kebabOpen}
         isPlain
         dropdownItems={[

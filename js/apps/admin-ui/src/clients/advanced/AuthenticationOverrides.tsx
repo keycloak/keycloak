@@ -1,20 +1,17 @@
+import { ActionGroup, Button, FormGroup } from "@patternfly/react-core";
 import {
-  ActionGroup,
-  Button,
-  FormGroup,
   Select,
   SelectOption,
   SelectVariant,
-} from "@patternfly/react-core";
+} from "@patternfly/react-core/deprecated";
 import { sortBy } from "lodash-es";
 import { useState } from "react";
 import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-
-import { FormAccess } from "../../components/form/FormAccess";
 import { HelpItem } from "ui-shared";
 
 import { adminClient } from "../../admin-client";
+import { FormAccess } from "../../components/form/FormAccess";
 import { useFetch } from "../../utils/useFetch";
 
 type AuthenticationOverridesProps = {
@@ -82,7 +79,7 @@ export const AuthenticationOverrides = ({
             <Select
               toggleId="browserFlow"
               variant={SelectVariant.single}
-              onToggle={setBrowserFlowOpen}
+              onToggle={(_, isOpen) => setBrowserFlowOpen(isOpen)}
               isOpen={browserFlowOpen}
               onSelect={(_, value) => {
                 field.onChange(value);
@@ -114,7 +111,7 @@ export const AuthenticationOverrides = ({
               <Select
                 toggleId="directGrant"
                 variant={SelectVariant.single}
-                onToggle={setDirectGrantOpen}
+                onToggle={(_, isOpen) => setDirectGrantOpen(isOpen)}
                 isOpen={directGrantOpen}
                 onSelect={(_, value) => {
                   field.onChange(value);

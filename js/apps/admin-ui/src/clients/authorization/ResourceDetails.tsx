@@ -7,26 +7,24 @@ import {
   AlertVariant,
   Button,
   ButtonVariant,
-  DropdownItem,
   FormGroup,
   PageSection,
   Switch,
   ValidatedOptions,
 } from "@patternfly/react-core";
+import { DropdownItem } from "@patternfly/react-core/deprecated";
 import { useState } from "react";
 import { Controller, FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
 import { HelpItem } from "ui-shared";
-
 import { adminClient } from "../../admin-client";
 import { useAlerts } from "../../components/alert/Alerts";
 import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
 import { FormAccess } from "../../components/form/FormAccess";
-import type { KeyValueType } from "../../components/key-value-form/key-value-convert";
 import { KeyValueInput } from "../../components/key-value-form/KeyValueInput";
+import type { KeyValueType } from "../../components/key-value-form/key-value-convert";
 import { KeycloakSpinner } from "../../components/keycloak-spinner/KeycloakSpinner";
-import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 import { MultiLineInput } from "../../components/multi-line-input/MultiLineInput";
 import { ViewHeader } from "../../components/view-header/ViewHeader";
 import { convertFormValuesToObject, convertToFormValues } from "../../util";
@@ -197,11 +195,7 @@ export default function ResourceDetails() {
                 <HelpItem helpText={t("ownerHelp")} fieldLabelId="owner" />
               }
             >
-              <KeycloakTextInput
-                id="owner"
-                value={client.clientId}
-                isReadOnly
-              />
+              <TextInput id="owner" value={client.clientId} isReadOnly />
             </FormGroup>
             <FormGroup
               label={t("name")}
@@ -215,7 +209,7 @@ export default function ResourceDetails() {
               }
               isRequired
             >
-              <KeycloakTextInput
+              <TextInput
                 id="name"
                 validated={
                   errors.name
@@ -232,10 +226,7 @@ export default function ResourceDetails() {
                 <HelpItem helpText={t("displayNameHelp")} fieldLabelId="name" />
               }
             >
-              <KeycloakTextInput
-                id="displayName"
-                {...register("displayName")}
-              />
+              <TextInput id="displayName" {...register("displayName")} />
             </FormGroup>
             <FormGroup
               label={t("type")}
@@ -244,7 +235,7 @@ export default function ResourceDetails() {
                 <HelpItem helpText={t("clientTypeHelp")} fieldLabelId="type" />
               }
             >
-              <KeycloakTextInput id="type" {...register("type")} />
+              <TextInput id="type" {...register("type")} />
             </FormGroup>
             <FormGroup
               label={t("uris")}
@@ -268,11 +259,7 @@ export default function ResourceDetails() {
                 <HelpItem helpText={t("iconUriHelp")} fieldLabelId="iconUri" />
               }
             >
-              <KeycloakTextInput
-                id="iconUri"
-                type="url"
-                {...register("icon_uri")}
-              />
+              <TextInput id="iconUri" type="url" {...register("icon_uri")} />
             </FormGroup>
             <FormGroup
               hasNoPaddingTop

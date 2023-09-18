@@ -1,11 +1,9 @@
 import { FormGroup } from "@patternfly/react-core";
 import { useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-
 import { HelpItem } from "ui-shared";
 import { FixedButtonsGroup } from "../../components/form/FixedButtonGroup";
 import { FormAccess } from "../../components/form/FormAccess";
-import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 import { useAccess } from "../../context/access/Access";
 import { FormFields } from "../ClientDetails";
 import type { ClientSettingsProps } from "../ClientSettings";
@@ -39,11 +37,7 @@ export const AccessSettings = ({
             <HelpItem helpText={t("adminURLHelp")} fieldLabelId="adminURL" />
           }
         >
-          <KeycloakTextInput
-            id="kc-admin-url"
-            type="url"
-            {...register("adminUrl")}
-          />
+          <TextInput id="kc-admin-url" type="url" {...register("adminUrl")} />
         </FormGroup>
       )}
       {client.bearerOnly && (

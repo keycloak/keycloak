@@ -19,14 +19,16 @@ import {
   Label,
   Modal,
   ModalVariant,
-  Select,
-  SelectOption,
-  SelectOptionObject,
   Stack,
   StackItem,
   Text,
   TextContent,
 } from "@patternfly/react-core";
+import {
+  Select,
+  SelectOption,
+  SelectOptionObject,
+} from "@patternfly/react-core/deprecated";
 import {
   ChangeEvent,
   FormEvent,
@@ -124,8 +126,8 @@ export const PartialImportDialog = (props: PartialImportProps) => {
   };
 
   const handleResourceCheckBox = (
-    checked: boolean,
     event: FormEvent<HTMLInputElement>,
+    checked: boolean,
   ) => {
     const resource = event.currentTarget.name as Resource;
 

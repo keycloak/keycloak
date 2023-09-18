@@ -1,11 +1,10 @@
-import { useTranslation } from "react-i18next";
-import { useFormContext } from "react-hook-form";
-import { FormGroup } from "@patternfly/react-core";
-
 import type KeyStoreConfig from "@keycloak/keycloak-admin-client/lib/defs/keystoreConfig";
+import { FormGroup } from "@patternfly/react-core";
+import { useFormContext } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 import { HelpItem } from "ui-shared";
+
 import { PasswordInput } from "../../components/password-input/PasswordInput";
-import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 
 export const StoreSettings = ({
   hidePassword = false,
@@ -32,7 +31,7 @@ export const StoreSettings = ({
         helperTextInvalid={t("required")}
         validated={errors.keyAlias ? "error" : "default"}
       >
-        <KeycloakTextInput
+        <TextInput
           data-testid="keyAlias"
           id="keyAlias"
           validated={errors.keyAlias ? "error" : "default"}
@@ -72,7 +71,7 @@ export const StoreSettings = ({
             />
           }
         >
-          <KeycloakTextInput
+          <TextInput
             data-testid="realmCertificateAlias"
             id="realmCertificateAlias"
             {...register("realmAlias")}

@@ -15,7 +15,6 @@ import { useTranslation } from "react-i18next";
 
 import { adminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
-import { KeycloakTextInput } from "../components/keycloak-text-input/KeycloakTextInput";
 
 type UserIdpModalProps = {
   userId: string;
@@ -91,7 +90,7 @@ export const UserIdpModal = ({
           label={t("users:identityProvider")}
           fieldId="identityProvider"
         >
-          <KeycloakTextInput
+          <TextInput
             id="identityProvider"
             data-testid="idpNameInput"
             value={capitalize(federatedId)}
@@ -108,7 +107,7 @@ export const UserIdpModal = ({
           }
           isRequired
         >
-          <KeycloakTextInput
+          <TextInput
             id="userID"
             data-testid="userIdInput"
             validated={
@@ -128,7 +127,7 @@ export const UserIdpModal = ({
           }
           isRequired
         >
-          <KeycloakTextInput
+          <TextInput
             id="username"
             data-testid="usernameInput"
             validated={

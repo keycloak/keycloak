@@ -5,7 +5,6 @@ import { useTranslation } from "react-i18next";
 import { HelpItem } from "ui-shared";
 
 import { adminClient } from "../../admin-client";
-import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 import environment from "../../environment";
 
 type DiscoveryEndpointFieldProps = {
@@ -88,7 +87,7 @@ export const DiscoveryEndpointField = ({
           label={t("on")}
           labelOff={t("off")}
           isChecked={discovery}
-          onChange={(checked) => {
+          onChange={(_, checked) => {
             clearErrors("discoveryError");
             setDiscovery(checked);
           }}
@@ -129,7 +128,7 @@ export const DiscoveryEndpointField = ({
           }
           isRequired
         >
-          <KeycloakTextInput
+          <TextInput
             type="url"
             data-testid="discoveryEndpoint"
             id="kc-discovery-endpoint"

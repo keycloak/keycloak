@@ -4,7 +4,7 @@ import {
   Select,
   SelectOption,
   SelectProps,
-} from "@patternfly/react-core";
+} from "@patternfly/react-core/deprecated";
 import type { TFunction } from "i18next";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";

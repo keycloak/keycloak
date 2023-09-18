@@ -1,10 +1,10 @@
-import { Select, SelectOption } from "@patternfly/react-core";
+import { Select, SelectOption } from "@patternfly/react-core/deprecated";
 import { useState } from "react";
 import {
   Controller,
-  useFormContext,
   ControllerRenderProps,
   FieldValues,
+  useFormContext,
 } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
@@ -58,7 +58,7 @@ export const SelectComponent = (attribute: UserProfileFieldsProps) => {
         render={({ field }) => (
           <Select
             toggleId={attribute.name}
-            onToggle={(b) => setOpen(b)}
+            onToggle={(_, b) => setOpen(b)}
             isCreatable
             onCreateOption={(value) => setValue(value, field)}
             onSelect={(_, value) => {

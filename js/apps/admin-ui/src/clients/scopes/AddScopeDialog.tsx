@@ -2,16 +2,18 @@ import type ClientScopeRepresentation from "@keycloak/keycloak-admin-client/lib/
 import {
   Button,
   ButtonVariant,
+  Modal,
+  ModalVariant,
+} from "@patternfly/react-core";
+import {
   Dropdown,
   DropdownDirection,
   DropdownItem,
   DropdownToggle,
-  Modal,
-  ModalVariant,
   Select,
   SelectOption,
   SelectVariant,
-} from "@patternfly/react-core";
+} from "@patternfly/react-core/deprecated";
 import {
   CaretDownIcon,
   CaretUpIcon,

@@ -14,7 +14,6 @@ import { useTranslation } from "react-i18next";
 
 import { adminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
-import { KeycloakTextInput } from "../components/keycloak-text-input/KeycloakTextInput";
 
 type GroupsModalProps = {
   id?: string;
@@ -107,7 +106,7 @@ export const GroupsModal = ({
           }
           isRequired
         >
-          <KeycloakTextInput
+          <TextInput
             data-testid="groupNameInput"
             autoFocus
             id="create-group-name"

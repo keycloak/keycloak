@@ -1,19 +1,19 @@
-import { ReactNode, useMemo } from "react";
-import { useTranslation } from "react-i18next";
-import { Td } from "@patternfly/react-table";
+import { Button } from "@patternfly/react-core";
 import {
-  Button,
   Dropdown,
+  DropdownItem,
   DropdownPosition,
   KebabToggle,
-  DropdownItem,
-} from "@patternfly/react-core";
+} from "@patternfly/react-core/deprecated";
+import { Td } from "@patternfly/react-table";
+import { ReactNode, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 
 import type CredentialRepresentation from "@keycloak/keycloak-admin-client/lib/defs/credentialRepresentation";
-import useToggle from "../../utils/useToggle";
-import useLocaleSort from "../../utils/useLocaleSort";
-import { CredentialDataDialog } from "./CredentialDataDialog";
 import useFormatDate from "../../utils/useFormatDate";
+import useLocaleSort from "../../utils/useLocaleSort";
+import useToggle from "../../utils/useToggle";
+import { CredentialDataDialog } from "./CredentialDataDialog";
 
 type CredentialRowProps = {
   credential: CredentialRepresentation;

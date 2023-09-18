@@ -8,7 +8,7 @@ import {
 } from "@patternfly/react-core";
 import {
   ExpandableRowContent,
-  TableComposable,
+  Table,
   Tbody,
   Td,
   Th,
@@ -180,7 +180,7 @@ export const AuthorizationScopes = ({ clientId }: ScopesProps) => {
           }
         >
           {!noData && (
-            <TableComposable aria-label={t("scopes")} variant="compact">
+            <Table aria-label={t("scopes")} variant="compact">
               <Thead>
                 <Tr>
                   <Th aria-hidden="true" />
@@ -197,7 +197,7 @@ export const AuthorizationScopes = ({ clientId }: ScopesProps) => {
                       expand={{
                         rowIndex,
                         isExpanded: isExpanded(scope.id),
-                        onToggle: (_event, index, isExpanded) => {
+                        onToggle: (_, index, isExpanded) => {
                           setCollapsed([
                             ...collapsed.slice(0, index),
                             { id: scope.id!, isExpanded },
@@ -297,7 +297,7 @@ export const AuthorizationScopes = ({ clientId }: ScopesProps) => {
                   </Tr>
                 </Tbody>
               ))}
-            </TableComposable>
+            </Table>
           )}
         </PaginatingTableToolbar>
       )}

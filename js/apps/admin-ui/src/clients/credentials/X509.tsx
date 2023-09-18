@@ -1,8 +1,7 @@
-import { useTranslation } from "react-i18next";
-import { Controller, useFormContext } from "react-hook-form";
 import { FormGroup, Switch, ValidatedOptions } from "@patternfly/react-core";
+import { Controller, useFormContext } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 import { HelpItem } from "ui-shared";
-import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 import { beerify, convertAttributeNameToForm } from "../../util";
 import { FormFields } from "../ClientDetails";
 
@@ -38,7 +37,7 @@ export const X509 = () => {
               label={t("on")}
               labelOff={t("off")}
               isChecked={field.value === "true"}
-              onChange={(value) => field.onChange(value.toString())}
+              onChange={(_, value) => field.onChange(value.toString())}
               aria-label={t("allowRegexComparison")}
             />
           )}
@@ -58,7 +57,7 @@ export const X509 = () => {
         }
         isRequired
       >
-        <KeycloakTextInput
+        <TextInput
           type="text"
           id="kc-subject"
           validated={

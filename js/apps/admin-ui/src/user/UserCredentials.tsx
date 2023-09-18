@@ -9,14 +9,7 @@ import {
   PageSectionVariants,
 } from "@patternfly/react-core";
 import styles from "@patternfly/react-styles/css/components/Table/table";
-import {
-  TableComposable,
-  Tbody,
-  Td,
-  Th,
-  Thead,
-  Tr,
-} from "@patternfly/react-table";
+import { Table, Tbody, Td, Th, Thead, Tr } from "@patternfly/react-table";
 import {
   Fragment,
   DragEvent as ReactDragEvent,
@@ -396,7 +389,7 @@ export const UserCredentials = ({ user }: UserCredentialsProps) => {
       )}
       {groupedUserCredentials.length !== 0 && (
         <PageSection variant={PageSectionVariants.light}>
-          <TableComposable variant={"compact"}>
+          <Table variant={"compact"}>
             <Thead>
               <Tr className="kc-table-header">
                 <Th>
@@ -505,12 +498,12 @@ export const UserCredentials = ({ user }: UserCredentialsProps) => {
                 </Fragment>
               ))}
             </Tbody>
-          </TableComposable>
+          </Table>
         </PageSection>
       )}
       {useFederatedCredentials && hasCredentialTypes && (
         <PageSection variant={PageSectionVariants.light}>
-          <TableComposable variant="compact">
+          <Table variant="compact">
             <Thead>
               <Tr>
                 <Th>{t("type")}</Th>
@@ -537,7 +530,7 @@ export const UserCredentials = ({ user }: UserCredentialsProps) => {
                 </Tr>
               ))}
             </Tbody>
-          </TableComposable>
+          </Table>
         </PageSection>
       )}
       {emptyState && (

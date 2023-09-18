@@ -4,6 +4,7 @@ import {
   Button,
   FormGroup,
   InputGroup,
+  InputGroupItem,
   Split,
   SplitItem,
 } from "@patternfly/react-core";
@@ -46,13 +47,17 @@ const SecretInput = ({
     <Split hasGutter>
       <SplitItem isFilled>
         <InputGroup>
-          <PasswordInput id={id} value={secret} isReadOnly />
-          <CopyToClipboardButton
-            id={id}
-            text={secret}
-            label="clientSecret"
-            variant="control"
-          />
+          <InputGroupItem>
+            <PasswordInput id={id} value={secret} isReadOnly />
+          </InputGroupItem>
+          <InputGroupItem>
+            <CopyToClipboardButton
+              id={id}
+              text={secret}
+              label="clientSecret"
+              variant="control"
+            />
+          </InputGroupItem>
         </InputGroup>
       </SplitItem>
       <SplitItem>

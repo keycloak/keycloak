@@ -1,24 +1,17 @@
-import { useTranslation } from "react-i18next";
 import {
   Modal,
   ModalVariant,
-  TextContent,
   Text,
+  TextContent,
   TextVariants,
 } from "@patternfly/react-core";
-import {
-  TableComposable,
-  Tbody,
-  Td,
-  Th,
-  Thead,
-  Tr,
-} from "@patternfly/react-table";
+import { Table, Tbody, Td, Th, Thead, Tr } from "@patternfly/react-table";
+import { useTranslation } from "react-i18next";
 
 import type PolicyProviderRepresentation from "@keycloak/keycloak-admin-client/lib/defs/policyProviderRepresentation";
-import { isValidComponentType } from "./policy/PolicyDetails";
 import { useMemo } from "react";
 import useLocaleSort, { mapByKey } from "../../utils/useLocaleSort";
+import { isValidComponentType } from "./policy/PolicyDetails";
 
 type NewPolicyDialogProps = {
   policyProviders?: PolicyProviderRepresentation[];
@@ -53,7 +46,7 @@ export const NewPolicyDialog = ({
       isOpen
       onClose={toggleDialog}
     >
-      <TableComposable aria-label={t("policies")} variant="compact">
+      <Table aria-label={t("policies")} variant="compact">
         <Thead>
           <Tr>
             <Th>{t("name")}</Th>
@@ -66,7 +59,7 @@ export const NewPolicyDialog = ({
               key={provider.type}
               data-testid={provider.type}
               onRowClick={() => onSelect(provider)}
-              isHoverable
+              isClickable
             >
               <Td>{provider.name}</Td>
               <Td>
@@ -76,7 +69,7 @@ export const NewPolicyDialog = ({
             </Tr>
           ))}
         </Tbody>
-      </TableComposable>
+      </Table>
     </Modal>
   );
 };

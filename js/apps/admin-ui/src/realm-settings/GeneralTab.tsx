@@ -5,13 +5,15 @@ import {
   ClipboardCopy,
   FormGroup,
   PageSection,
-  Select,
-  SelectOption,
-  SelectVariant,
   Stack,
   StackItem,
   Switch,
 } from "@patternfly/react-core";
+import {
+  Select,
+  SelectOption,
+  SelectVariant,
+} from "@patternfly/react-core/deprecated";
 import { useEffect, useState } from "react";
 import { Controller, FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -21,7 +23,6 @@ import { adminClient } from "../admin-client";
 import { FormattedLink } from "../components/external-link/FormattedLink";
 import { FormAccess } from "../components/form/FormAccess";
 import { KeyValueInput } from "../components/key-value-form/KeyValueInput";
-import { KeycloakTextInput } from "../components/keycloak-text-input/KeycloakTextInput";
 import { useRealm } from "../context/realm-context/RealmContext";
 import {
   addTrailingSlash,
@@ -106,13 +107,10 @@ export const RealmSettingsGeneralTab = ({
           />
         </FormGroup>
         <FormGroup label={t("displayName")} fieldId="kc-display-name">
-          <KeycloakTextInput
-            id="kc-display-name"
-            {...register("displayName")}
-          />
+          <TextInput id="kc-display-name" {...register("displayName")} />
         </FormGroup>
         <FormGroup label={t("htmlDisplayName")} fieldId="kc-html-display-name">
-          <KeycloakTextInput
+          <TextInput
             id="kc-html-display-name"
             {...register("displayNameHtml")}
           />
@@ -127,7 +125,7 @@ export const RealmSettingsGeneralTab = ({
             />
           }
         >
-          <KeycloakTextInput
+          <TextInput
             type="url"
             id="kc-frontend-url"
             {...register(convertAttributeNameToForm("attributes.frontendUrl"))}
@@ -244,7 +242,7 @@ export const RealmSettingsGeneralTab = ({
                   label={t("on")}
                   labelOff={t("off")}
                   isChecked={field.value === "true"}
-                  onChange={(value) => field.onChange(value.toString())}
+                  onChange={(_, value) => field.onChange(value.toString())}
                   aria-label={t("userProfileEnabled")}
                 />
               )}

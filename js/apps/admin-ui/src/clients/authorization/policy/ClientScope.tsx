@@ -1,14 +1,7 @@
 import type ClientScopeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientScopeRepresentation";
 import { Button, Checkbox, FormGroup } from "@patternfly/react-core";
 import { MinusCircleIcon } from "@patternfly/react-icons";
-import {
-  TableComposable,
-  Tbody,
-  Td,
-  Th,
-  Thead,
-  Tr,
-} from "@patternfly/react-table";
+import { Table, Tbody, Td, Th, Thead, Tr } from "@patternfly/react-table";
 import { useState } from "react";
 import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -118,7 +111,7 @@ export const ClientScope = () => {
         )}
       />
       {selectedScopes.length > 0 && (
-        <TableComposable variant="compact">
+        <Table variant="compact">
           <Thead>
             <Tr>
               <Th>{t("clientScopeTitle")}</Th>
@@ -166,7 +159,7 @@ export const ClientScope = () => {
               </Tr>
             ))}
           </Tbody>
-        </TableComposable>
+        </Table>
       )}
     </FormGroup>
   );

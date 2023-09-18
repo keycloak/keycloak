@@ -1,18 +1,18 @@
-import { useState } from "react";
+import type EvaluationResultRepresentation from "@keycloak/keycloak-admin-client/lib/defs/evaluationResultRepresentation";
+import type PolicyResultRepresentation from "@keycloak/keycloak-admin-client/lib/defs/policyResultRepresentation";
+import { DescriptionList } from "@patternfly/react-core/dist/esm/components";
 import {
   ExpandableRowContent,
-  TableComposable,
+  Table,
   Tbody,
   Td,
   Th,
   Thead,
   Tr,
 } from "@patternfly/react-table";
-import { DescriptionList } from "@patternfly/react-core/dist/esm/components";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { AuthorizationEvaluateResourcePolicies } from "./AuthorizationEvaluateResourcePolicies";
-import type EvaluationResultRepresentation from "@keycloak/keycloak-admin-client/lib/defs/evaluationResultRepresentation";
-import type PolicyResultRepresentation from "@keycloak/keycloak-admin-client/lib/defs/policyResultRepresentation";
 
 type Props = {
   rowIndex: number;
@@ -59,7 +59,7 @@ export const AuthorizationEvaluateResource = ({
                 isHorizontal
                 className="keycloak_resource_details"
               >
-                <TableComposable aria-label={t("evaluationResults")}>
+                <Table aria-label={t("evaluationResults")}>
                   <Thead>
                     <Tr>
                       <Th aria-hidden="true" />
@@ -82,7 +82,7 @@ export const AuthorizationEvaluateResource = ({
                       />
                     ),
                   )}
-                </TableComposable>
+                </Table>
               </DescriptionList>
             )}
           </ExpandableRowContent>

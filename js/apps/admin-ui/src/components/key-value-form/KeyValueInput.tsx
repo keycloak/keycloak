@@ -4,6 +4,7 @@ import {
   Button,
   EmptyState,
   EmptyStateBody,
+  EmptyStateFooter,
   Grid,
   GridItem,
   HelperText,
@@ -19,7 +20,6 @@ import {
 } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
-import { KeycloakTextInput } from "../keycloak-text-input/KeycloakTextInput";
 import { KeySelect } from "./KeySelect";
 import { ValueSelect } from "./ValueSelect";
 
@@ -82,7 +82,7 @@ export const KeyValueInput = ({
                     rules={{ required: true }}
                   />
                 ) : (
-                  <KeycloakTextInput
+                  <TextInput
                     placeholder={t("keyPlaceholder")}
                     aria-label={t("key")}
                     data-testid={`${name}-key`}
@@ -108,7 +108,7 @@ export const KeyValueInput = ({
                     rules={{ required: true }}
                   />
                 ) : (
-                  <KeycloakTextInput
+                  <TextInput
                     placeholder={t("valuePlaceholder")}
                     aria-label={t("value")}
                     data-testid={`${name}-value`}
@@ -160,15 +160,17 @@ export const KeyValueInput = ({
       variant="xs"
     >
       <EmptyStateBody>{t("missingAttributes")}</EmptyStateBody>
-      <Button
-        data-testid={`${name}-add-row`}
-        variant="link"
-        icon={<PlusCircleIcon />}
-        isSmall
-        onClick={appendNew}
-      >
-        {t("addAttribute")}
-      </Button>
+      <EmptyStateFooter>
+        <Button
+          data-testid={`${name}-add-row`}
+          variant="link"
+          icon={<PlusCircleIcon />}
+          size="sm"
+          onClick={appendNew}
+        >
+          {t("addAttribute")}
+        </Button>
+      </EmptyStateFooter>
     </EmptyState>
   );
 };

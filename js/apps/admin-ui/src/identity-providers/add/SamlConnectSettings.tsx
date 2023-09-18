@@ -6,7 +6,6 @@ import { HelpItem } from "ui-shared";
 
 import { adminClient } from "../../admin-client";
 import { FileUploadForm } from "../../components/json-file-upload/FileUploadForm";
-import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import environment from "../../environment";
 import { addTrailingSlash } from "../../util";
@@ -93,7 +92,7 @@ export const SamlConnectSettings = () => {
         helperTextInvalid={t("required")}
         validated={errors.config?.entityId ? "error" : "default"}
       >
-        <KeycloakTextInput
+        <TextInput
           data-testid="serviceProviderEntityId"
           id="kc-service-provider-entity-id"
           validated={errors.config?.entityId ? "error" : "default"}

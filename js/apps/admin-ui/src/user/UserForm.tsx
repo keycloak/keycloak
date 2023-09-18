@@ -9,6 +9,7 @@ import {
   ChipGroup,
   FormGroup,
   InputGroup,
+  InputGroupItem,
   Switch,
 } from "@patternfly/react-core";
 import { useState } from "react";
@@ -21,7 +22,6 @@ import { adminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
 import { FormAccess } from "../components/form/FormAccess";
 import { GroupPickerDialog } from "../components/group/GroupPickerDialog";
-import { KeycloakTextInput } from "../components/keycloak-text-input/KeycloakTextInput";
 import { useAccess } from "../context/access/Access";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { emailRegexPattern } from "../util";
@@ -68,7 +68,7 @@ const EmailVerified = () => {
           <Switch
             data-testid="email-verified-switch"
             id="kc-user-email-verified"
-            onChange={(value) => field.onChange(value)}
+            onChange={(_, value) => field.onChange(value)}
             isChecked={field.value}
             label={t("yes")}
             labelOff={t("no")}
@@ -186,7 +186,7 @@ export const UserForm = ({
       {user?.id && (
         <>
           <FormGroup label={t("id")} fieldId="kc-id" isRequired>
-            <KeycloakTextInput
+            <TextInput
               id={user.id}
               aria-label={t("userID")}
               value={user.id}
@@ -195,7 +195,7 @@ export const UserForm = ({
             />
           </FormGroup>
           <FormGroup label={t("createdAt")} fieldId="kc-created-at" isRequired>
-            <KeycloakTextInput
+            <TextInput
               value={formatDate(new Date(user.createdTimestamp!))}
               type="text"
               id="kc-created-at"
@@ -236,7 +236,7 @@ export const UserForm = ({
               validated={errors.username ? "error" : "default"}
               helperTextInvalid={t("required")}
             >
-              <KeycloakTextInput
+              <TextInput
                 id="kc-username"
                 isReadOnly={
                   !!user?.id &&
@@ -253,7 +253,7 @@ export const UserForm = ({
             validated={errors.email ? "error" : "default"}
             helperTextInvalid={t("users:emailInvalid")}
           >
-            <KeycloakTextInput
+            <TextInput
               type="email"
               id="kc-email"
               data-testid="email-input"
@@ -269,7 +269,7 @@ export const UserForm = ({
             validated={errors.firstName ? "error" : "default"}
             helperTextInvalid={t("required")}
           >
-            <KeycloakTextInput
+            <TextInput
               data-testid="firstName-input"
               id="kc-firstName"
               {...register("firstName")}
@@ -280,7 +280,7 @@ export const UserForm = ({
             fieldId="kc-lastName"
             validated={errors.lastName ? "error" : "default"}
           >
-            <KeycloakTextInput
+            <TextInput
               data-testid="lastName-input"
               id="kc-lastname"
               aria-label={t("lastName")}
@@ -303,7 +303,7 @@ export const UserForm = ({
           <Switch
             data-testid="user-locked-switch"
             id="temporaryLocked"
-            onChange={(value) => {
+            onChange={(_, value) => {
               unLockUser();
               setLocked(value);
             }}
@@ -330,24 +330,28 @@ export const UserForm = ({
             control={control}
             render={() => (
               <InputGroup>
-                <ChipGroup categoryName={" "}>
-                  {selectedGroups.map((currentChip) => (
-                    <Chip
-                      key={currentChip.id}
-                      onClick={() => deleteItem(currentChip.name!)}
-                    >
-                      {currentChip.path}
-                    </Chip>
-                  ))}
-                </ChipGroup>
-                <Button
-                  id="kc-join-groups-button"
-                  onClick={toggleModal}
-                  variant="secondary"
-                  data-testid="join-groups-button"
-                >
-                  {t("users:joinGroups")}
-                </Button>
+                <InputGroupItem>
+                  <ChipGroup categoryName={" "}>
+                    {selectedGroups.map((currentChip) => (
+                      <Chip
+                        key={currentChip.id}
+                        onClick={() => deleteItem(currentChip.name!)}
+                      >
+                        {currentChip.path}
+                      </Chip>
+                    ))}
+                  </ChipGroup>
+                </InputGroupItem>
+                <InputGroupItem>
+                  <Button
+                    id="kc-join-groups-button"
+                    onClick={toggleModal}
+                    variant="secondary"
+                    data-testid="join-groups-button"
+                  >
+                    {t("users:joinGroups")}
+                  </Button>
+                </InputGroupItem>
               </InputGroup>
             )}
           />

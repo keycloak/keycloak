@@ -2,9 +2,6 @@ import {
   Badge,
   Button,
   Divider,
-  Dropdown,
-  DropdownPosition,
-  DropdownToggle,
   Level,
   LevelItem,
   PageSection,
@@ -16,16 +13,21 @@ import {
   ToolbarItem,
 } from "@patternfly/react-core";
 import {
+  Dropdown,
+  DropdownPosition,
+  DropdownToggle,
+} from "@patternfly/react-core/deprecated";
+import {
+  Fragment,
   ReactElement,
   ReactNode,
-  useState,
   isValidElement,
-  Fragment,
+  useState,
 } from "react";
 import { useTranslation } from "react-i18next";
-import { FormattedLink } from "../external-link/FormattedLink";
-import { useHelp, HelpItem } from "ui-shared";
+import { HelpItem, useHelp } from "ui-shared";
 import "../../help-urls";
+import { FormattedLink } from "../external-link/FormattedLink";
 
 export type ViewHeaderProps = {
   titleKey: string;
@@ -130,7 +132,7 @@ export const ViewHeader = ({
                       isDisabled={isReadOnly}
                       isChecked={isEnabled}
                       aria-label={t("enabled")}
-                      onChange={(value) => {
+                      onChange={(_, value) => {
                         onToggle(value);
                       }}
                     />

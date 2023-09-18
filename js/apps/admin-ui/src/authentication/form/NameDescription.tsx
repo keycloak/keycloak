@@ -3,7 +3,6 @@ import { FormGroup, TextArea, ValidatedOptions } from "@patternfly/react-core";
 import { useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { HelpItem } from "ui-shared";
-import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 
 export const NameDescription = () => {
   const { t } = useTranslation();
@@ -26,7 +25,7 @@ export const NameDescription = () => {
         }
         isRequired
       >
-        <KeycloakTextInput
+        <TextInput
           id="kc-name"
           data-testid="name"
           validated={

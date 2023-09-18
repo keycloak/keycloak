@@ -111,7 +111,7 @@ const KeySection = ({
                   label={t("on")}
                   labelOff={t("off")}
                   isChecked={field.value === "true"}
-                  onChange={(value) => {
+                  onChange={(_, value) => {
                     const v = value.toString();
                     if (v === "true") {
                       onChanged(attr);

@@ -6,15 +6,17 @@ import {
   AlertVariant,
   Button,
   ButtonVariant,
-  DropdownItem,
   Form,
   FormGroup,
   PageSection,
+  ValidatedOptions,
+} from "@patternfly/react-core";
+import {
+  DropdownItem,
   Select,
   SelectOption,
   SelectVariant,
-  ValidatedOptions,
-} from "@patternfly/react-core";
+} from "@patternfly/react-core/deprecated";
 import { useState } from "react";
 import { Controller, FormProvider, useForm, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -27,7 +29,6 @@ import { useConfirmDialog } from "../../../components/confirm-dialog/ConfirmDial
 import { DynamicComponents } from "../../../components/dynamic/DynamicComponents";
 import { FormAccess } from "../../../components/form/FormAccess";
 import { KeycloakSpinner } from "../../../components/keycloak-spinner/KeycloakSpinner";
-import { KeycloakTextInput } from "../../../components/keycloak-text-input/KeycloakTextInput";
 import { ViewHeader } from "../../../components/view-header/ViewHeader";
 import { useRealm } from "../../../context/realm-context/RealmContext";
 import { convertFormValuesToObject, convertToFormValues } from "../../../util";
@@ -208,7 +209,7 @@ export default function LdapMapperDetails() {
         <FormAccess role="manage-realm" isHorizontal>
           {!isNew && (
             <FormGroup label={t("id")} fieldId="kc-ldap-mapper-id">
-              <KeycloakTextInput
+              <TextInput
                 isDisabled
                 id="kc-ldap-mapper-id"
                 data-testid="ldap-mapper-id"
@@ -227,7 +228,7 @@ export default function LdapMapperDetails() {
             fieldId="kc-ldap-mapper-name"
             isRequired
           >
-            <KeycloakTextInput
+            <TextInput
               isDisabled={!isNew}
               isRequired
               id="kc-ldap-mapper-name"
@@ -239,14 +240,14 @@ export default function LdapMapperDetails() {
               }
               {...form.register("name", { required: true })}
             />
-            <KeycloakTextInput
+            <TextInput
               hidden
               defaultValue={isNew ? id : mapping ? mapping.parentId : ""}
               id="kc-ldap-parentId"
               data-testid="ldap-mapper-parentId"
               {...form.register("parentId")}
             />
-            <KeycloakTextInput
+            <TextInput
               hidden
               defaultValue="org.keycloak.storage.ldap.mappers.LDAPStorageMapper"
               id="kc-ldap-provider-type"
@@ -270,7 +271,7 @@ export default function LdapMapperDetails() {
               fieldId="kc-ldap-mapper-type"
               isRequired
             >
-              <KeycloakTextInput
+              <TextInput
                 isDisabled={!isNew}
                 isRequired
                 id="kc-ldap-mapper-type"

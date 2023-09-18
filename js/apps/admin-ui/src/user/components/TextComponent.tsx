@@ -1,6 +1,5 @@
 import { UserProfileAttribute } from "@keycloak/keycloak-admin-client/lib/defs/userProfileConfig";
 import { useFormContext } from "react-hook-form";
-import { KeycloakTextInput } from "ui-shared";
 import { fieldName } from "../utils";
 import { UserProfileGroup } from "./UserProfileGroup";
 
@@ -13,7 +12,7 @@ export const TextComponent = (attr: UserProfileAttribute) => {
 
   return (
     <UserProfileGroup {...attr}>
-      <KeycloakTextInput
+      <TextInput
         id={attr.name}
         data-testid={attr.name}
         type={type}

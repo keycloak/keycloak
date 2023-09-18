@@ -9,6 +9,7 @@ import {
   FormGroup,
   Modal,
   ModalVariant,
+  TextInput,
   Tooltip,
   ValidatedOptions,
 } from "@patternfly/react-core";
@@ -21,9 +22,8 @@ import { HelpItem } from "ui-shared";
 import { adminClient } from "../../admin-client";
 import { useAlerts } from "../../components/alert/Alerts";
 import { DynamicComponents } from "../../components/dynamic/DynamicComponents";
-import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
-import { useFetch } from "../../utils/useFetch";
 import { convertFormValuesToObject, convertToFormValues } from "../../util";
+import { useFetch } from "../../utils/useFetch";
 import type { ExpandableExecution } from "../execution-model";
 
 type ExecutionConfigModalForm = {
@@ -145,7 +145,7 @@ export const ExecutionConfigModal = ({
                 />
               }
             >
-              <KeycloakTextInput
+              <TextInput
                 isReadOnly={!!config}
                 id="alias"
                 data-testid="alias"

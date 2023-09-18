@@ -3,8 +3,6 @@ import { useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { HelpItem } from "ui-shared";
 
-import { KeycloakTextInput } from "../../../components/keycloak-text-input/KeycloakTextInput";
-
 type NameDescriptionProps = {
   prefix: string;
   isDisabled: boolean;
@@ -37,7 +35,7 @@ export const NameDescription = ({
           />
         }
       >
-        <KeycloakTextInput
+        <TextInput
           isDisabled={isDisabled}
           id="kc-name"
           data-testid="name"

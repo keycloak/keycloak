@@ -5,6 +5,7 @@ import {
   NavItem,
   NavList,
   PageSidebar,
+  PageSidebarBody,
 } from "@patternfly/react-core";
 import { FormEvent } from "react";
 import { useTranslation } from "react-i18next";
@@ -63,12 +64,11 @@ export const PageNav = () => {
     groupId: number | string;
     itemId: number | string;
     to: string;
-    event: FormEvent<HTMLInputElement>;
   };
 
-  const onSelect = (item: SelectedItem) => {
+  const onSelect = (event: FormEvent<HTMLInputElement>, item: SelectedItem) => {
     navigate(item.to);
-    item.event.preventDefault();
+    event.preventDefault();
   };
 
   const showManage = hasSomeAccess(
@@ -88,9 +88,8 @@ export const PageNav = () => {
   const isOnAddRealm = !!useMatch(AddRealmRoute.path);
 
   return (
-    <PageSidebar
-      className="keycloak__page_nav__nav"
-      nav={
+    <PageSidebar className="keycloak__page_nav__nav">
+      <PageSidebarBody>
         <Nav onSelect={onSelect}>
           <NavList>
             <NavItem className="keycloak__page_nav__nav_item__realm-selector">
@@ -119,7 +118,7 @@ export const PageNav = () => {
             </NavGroup>
           )}
         </Nav>
-      }
-    />
+      </PageSidebarBody>
+    </PageSidebar>
   );
 };

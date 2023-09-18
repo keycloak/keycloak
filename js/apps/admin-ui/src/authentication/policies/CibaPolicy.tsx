@@ -6,12 +6,15 @@ import {
   ButtonVariant,
   FormGroup,
   InputGroup,
+  InputGroupItem,
   InputGroupText,
   PageSection,
+} from "@patternfly/react-core";
+import {
   Select,
   SelectOption,
   SelectVariant,
-} from "@patternfly/react-core";
+} from "@patternfly/react-core/deprecated";
 import { useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -20,7 +23,6 @@ import { HelpItem } from "ui-shared";
 import { adminClient } from "../../admin-client";
 import { useAlerts } from "../../components/alert/Alerts";
 import { FormAccess } from "../../components/form/FormAccess";
-import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { convertFormValuesToObject, convertToFormValues } from "../../util";
 
@@ -113,7 +115,7 @@ export const CibaPolicy = ({ realm, realmUpdated }: CibaPolicyProps) => {
                 selections={field.value}
                 variant={SelectVariant.single}
                 isOpen={backchannelTokenDeliveryModeOpen}
-                onToggle={(isExpanded) =>
+                onToggle={(_, isExpanded) =>
                   setBackchannelTokenDeliveryModeOpen(isExpanded)
                 }
               >
@@ -146,32 +148,34 @@ export const CibaPolicy = ({ realm, realmUpdated }: CibaPolicyProps) => {
           isRequired
         >
           <InputGroup>
-            <KeycloakTextInput
-              id="cibaExpiresIn"
-              type="number"
-              min={CIBA_EXPIRES_IN_MIN}
-              max={CIBA_EXPIRES_IN_MAX}
-              {...register("attributes.cibaExpiresIn", {
-                min: {
-                  value: CIBA_EXPIRES_IN_MIN,
-                  message: t("greaterThan", {
+            <InputGroupItem>
+              <TextInput
+                id="cibaExpiresIn"
+                type="number"
+                min={CIBA_EXPIRES_IN_MIN}
+                max={CIBA_EXPIRES_IN_MAX}
+                {...register("attributes.cibaExpiresIn", {
+                  min: {
                     value: CIBA_EXPIRES_IN_MIN,
-                  }),
-                },
-                max: {
-                  value: CIBA_EXPIRES_IN_MAX,
-                  message: t("lessThan", { value: CIBA_EXPIRES_IN_MAX }),
-                },
-                required: {
-                  value: true,
-                  message: t("required"),
-                },
-              })}
-              validated={errors.attributes?.cibaExpiresIn ? "error" : "default"}
-            />
-            <InputGroupText variant="plain">
-              {t("times:seconds")}
-            </InputGroupText>
+                    message: t("greaterThan", {
+                      value: CIBA_EXPIRES_IN_MIN,
+                    }),
+                  },
+                  max: {
+                    value: CIBA_EXPIRES_IN_MAX,
+                    message: t("lessThan", { value: CIBA_EXPIRES_IN_MAX }),
+                  },
+                  required: {
+                    value: true,
+                    message: t("required"),
+                  },
+                })}
+                validated={
+                  errors.attributes?.cibaExpiresIn ? "error" : "default"
+                }
+              />
+            </InputGroupItem>
+            <InputGroupText>{t("times:seconds")}</InputGroupText>
           </InputGroup>
         </FormGroup>
         <FormGroup
@@ -188,32 +192,34 @@ export const CibaPolicy = ({ realm, realmUpdated }: CibaPolicyProps) => {
           isRequired
         >
           <InputGroup>
-            <KeycloakTextInput
-              id="cibaInterval"
-              type="number"
-              min={CIBA_INTERVAL_MIN}
-              max={CIBA_INTERVAL_MAX}
-              {...register("attributes.cibaInterval", {
-                min: {
-                  value: CIBA_INTERVAL_MIN,
-                  message: t("greaterThan", {
+            <InputGroupItem>
+              <TextInput
+                id="cibaInterval"
+                type="number"
+                min={CIBA_INTERVAL_MIN}
+                max={CIBA_INTERVAL_MAX}
+                {...register("attributes.cibaInterval", {
+                  min: {
                     value: CIBA_INTERVAL_MIN,
-                  }),
-                },
-                max: {
-                  value: CIBA_INTERVAL_MAX,
-                  message: t("lessThan", { value: CIBA_INTERVAL_MAX }),
-                },
-                required: {
-                  value: true,
-                  message: t("required"),
-                },
-              })}
-              validated={errors.attributes?.cibaInterval ? "error" : "default"}
-            />
-            <InputGroupText variant="plain">
-              {t("times:seconds")}
-            </InputGroupText>
+                    message: t("greaterThan", {
+                      value: CIBA_INTERVAL_MIN,
+                    }),
+                  },
+                  max: {
+                    value: CIBA_INTERVAL_MAX,
+                    message: t("lessThan", { value: CIBA_INTERVAL_MAX }),
+                  },
+                  required: {
+                    value: true,
+                    message: t("required"),
+                  },
+                })}
+                validated={
+                  errors.attributes?.cibaInterval ? "error" : "default"
+                }
+              />
+            </InputGroupItem>
+            <InputGroupText>{t("times:seconds")}</InputGroupText>
           </InputGroup>
         </FormGroup>
         <FormGroup
@@ -230,7 +236,9 @@ export const CibaPolicy = ({ realm, realmUpdated }: CibaPolicyProps) => {
             toggleId="cibaAuthRequestedUserHint"
             selections="login_hint"
             isOpen={authRequestedUserHintOpen}
-            onToggle={(isExpanded) => setAuthRequestedUserHintOpen(isExpanded)}
+            onToggle={(_, isExpanded) =>
+              setAuthRequestedUserHintOpen(isExpanded)
+            }
             isDisabled
           >
             <SelectOption value="login_hint">login_hint</SelectOption>

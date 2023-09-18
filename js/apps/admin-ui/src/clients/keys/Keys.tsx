@@ -23,7 +23,6 @@ import { HelpItem } from "ui-shared";
 import { adminClient } from "../../admin-client";
 import { useAlerts } from "../../components/alert/Alerts";
 import { FormAccess } from "../../components/form/FormAccess";
-import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 import { convertAttributeNameToForm } from "../../util";
 import { useFetch } from "../../utils/useFetch";
 import useToggle from "../../utils/useToggle";
@@ -159,7 +158,7 @@ export const Keys = ({ clientId, save, hasConfigureAccess }: KeysProps) => {
                     label={t("on")}
                     labelOff={t("off")}
                     isChecked={field.value === "true"}
-                    onChange={(value) => field.onChange(`${value}`)}
+                    onChange={(_, value) => field.onChange(`${value}`)}
                     aria-label={t("useJwksUrl")}
                   />
                 )}
@@ -182,7 +181,7 @@ export const Keys = ({ clientId, save, hasConfigureAccess }: KeysProps) => {
                   />
                 }
               >
-                <KeycloakTextInput
+                <TextInput
                   id="jwksUrl"
                   type="url"
                   {...register(

@@ -1,10 +1,9 @@
 import { FormGroup, ValidatedOptions } from "@patternfly/react-core";
-import { useWatch, useFormContext } from "react-hook-form";
+import { useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useParams } from "react-router-dom";
-
 import { HelpItem } from "ui-shared";
-import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
+
 import { DisplayOrder } from "../component/DisplayOrder";
 import { RedirectUrl } from "../component/RedirectUrl";
 import { TextField } from "../component/TextField";
@@ -41,7 +40,7 @@ export const OIDCGeneralSettings = () => {
         }
         helperTextInvalid={t("required")}
       >
-        <KeycloakTextInput
+        <TextInput
           isReadOnly={tab === "settings"}
           isRequired
           id="alias"

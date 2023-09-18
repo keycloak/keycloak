@@ -3,7 +3,6 @@ import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
 import { HelpItem } from "ui-shared";
-import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 
 export const SyncSettings = () => {
   const { t } = useTranslation();
@@ -32,7 +31,7 @@ export const SyncSettings = () => {
             <Switch
               id="kc-periodic-full-sync"
               data-testid="periodic-full-sync"
-              onChange={(value) => {
+              onChange={(_, value) => {
                 field.onChange(value ? "604800" : "-1");
               }}
               isChecked={field.value !== "-1"}
@@ -55,7 +54,7 @@ export const SyncSettings = () => {
           }
           fieldId="kc-full-sync-period"
         >
-          <KeycloakTextInput
+          <TextInput
             type="number"
             min={-1}
             defaultValue="604800"
@@ -84,7 +83,7 @@ export const SyncSettings = () => {
             <Switch
               id="kc-periodic-changed-users-sync"
               data-testid="periodic-changed-users-sync"
-              onChange={(value) => {
+              onChange={(_, value) => {
                 field.onChange(value ? "86400" : "-1");
               }}
               isChecked={field.value !== "-1"}
@@ -107,7 +106,7 @@ export const SyncSettings = () => {
           fieldId="kc-changed-users-sync-period"
           hasNoPaddingTop
         >
-          <KeycloakTextInput
+          <TextInput
             type="number"
             min={-1}
             defaultValue="86400"

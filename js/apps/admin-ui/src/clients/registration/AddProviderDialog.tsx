@@ -49,7 +49,7 @@ export const AddProviderDialog = ({
       onClose={toggleDialog}
     >
       <DataList
-        onSelectDataListItem={(id) => {
+        onSelectDataListItem={(_, id) => {
           onConfirm(id);
           toggleDialog();
         }}

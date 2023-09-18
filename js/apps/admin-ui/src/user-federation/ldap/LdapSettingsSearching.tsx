@@ -1,17 +1,15 @@
+import { FormGroup, Switch } from "@patternfly/react-core";
 import {
-  FormGroup,
   Select,
   SelectOption,
   SelectVariant,
-  Switch,
-} from "@patternfly/react-core";
+} from "@patternfly/react-core/deprecated";
 import { useState } from "react";
 import { Controller, UseFormReturn } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
-import { FormAccess } from "../../components/form/FormAccess";
 import { HelpItem } from "ui-shared";
-import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
+import { FormAccess } from "../../components/form/FormAccess";
 import { WizardSectionHeader } from "../../components/wizard-section-header/WizardSectionHeader";
 
 export type LdapSettingsSearchingProps = {
@@ -115,7 +113,7 @@ export const LdapSettingsSearching = ({
             (form.formState.errors.config as any)?.usersDn?.[0].message
           }
         >
-          <KeycloakTextInput
+          <TextInput
             isRequired
             defaultValue=""
             id="kc-ui-users-dn"
@@ -153,7 +151,7 @@ export const LdapSettingsSearching = ({
               .message
           }
         >
-          <KeycloakTextInput
+          <TextInput
             isRequired
             defaultValue="cn"
             id="kc-username-ldap-attribute"
@@ -190,7 +188,7 @@ export const LdapSettingsSearching = ({
             (form.formState.errors.config as any)?.rdnLDAPAttribute?.[0].message
           }
         >
-          <KeycloakTextInput
+          <TextInput
             isRequired
             defaultValue="cn"
             id="kc-rdn-ldap-attribute"
@@ -228,7 +226,7 @@ export const LdapSettingsSearching = ({
               .message
           }
         >
-          <KeycloakTextInput
+          <TextInput
             isRequired
             defaultValue="objectGUID"
             id="kc-uuid-ldap-attribute"
@@ -266,7 +264,7 @@ export const LdapSettingsSearching = ({
               .message
           }
         >
-          <KeycloakTextInput
+          <TextInput
             isRequired
             defaultValue="person, organizationalPerson, user"
             id="kc-user-object-classes"
@@ -303,7 +301,7 @@ export const LdapSettingsSearching = ({
               .message
           }
         >
-          <KeycloakTextInput
+          <TextInput
             id="kc-user-ldap-filter"
             data-testid="user-ldap-filter"
             validated={
@@ -369,7 +367,7 @@ export const LdapSettingsSearching = ({
           }
           fieldId="kc-read-timeout"
         >
-          <KeycloakTextInput
+          <TextInput
             type="number"
             min={0}
             id="kc-read-timeout"
@@ -397,7 +395,7 @@ export const LdapSettingsSearching = ({
                 id="kc-ui-pagination"
                 data-testid="ui-pagination"
                 isDisabled={false}
-                onChange={(value) => field.onChange([`${value}`])}
+                onChange={(_, value) => field.onChange([`${value}`])}
                 isChecked={field.value[0] === "true"}
                 label={t("on")}
                 labelOff={t("off")}

@@ -4,11 +4,11 @@ import {
   ActionGroup,
   Button,
   ButtonVariant,
-  DropdownItem,
   FormGroup,
   PageSection,
   ValidatedOptions,
 } from "@patternfly/react-core";
+import { DropdownItem } from "@patternfly/react-core/deprecated";
 import { useState } from "react";
 import { FormProvider, useForm, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -21,7 +21,6 @@ import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog"
 import { DynamicComponents } from "../../components/dynamic/DynamicComponents";
 import { FormAccess } from "../../components/form/FormAccess";
 import { KeycloakSpinner } from "../../components/keycloak-spinner/KeycloakSpinner";
-import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 import { ViewHeader } from "../../components/view-header/ViewHeader";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { useFetch } from "../../utils/useFetch";
@@ -148,7 +147,7 @@ export default function DetailProvider() {
           onSubmit={handleSubmit(onSubmit)}
         >
           <FormGroup label={t("provider")} fieldId="provider">
-            <KeycloakTextInput
+            <TextInput
               id="providerId"
               data-testid="providerId"
               {...register("providerId")}
@@ -170,7 +169,7 @@ export default function DetailProvider() {
             }
             isRequired
           >
-            <KeycloakTextInput
+            <TextInput
               id="kc-name"
               data-testid="name"
               validated={

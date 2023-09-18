@@ -1,6 +1,6 @@
 import {
   Pagination,
-  ToggleTemplateProps,
+  PaginationToggleTemplateProps,
   ToolbarItem,
 } from "@patternfly/react-core";
 import { PropsWithChildren, ReactNode } from "react";
@@ -44,10 +44,13 @@ const KeycloakPagination = ({
     <Pagination
       widgetId={id}
       titles={{
-        paginationTitle: `${t("pagination")} ${variant} `,
+        paginationAriaLabel: `${t("pagination")} ${variant} `,
       }}
       isCompact
-      toggleTemplate={({ firstIndex, lastIndex }: ToggleTemplateProps) => (
+      toggleTemplate={({
+        firstIndex,
+        lastIndex,
+      }: PaginationToggleTemplateProps) => (
         <b>
           {firstIndex} - {lastIndex}
         </b>

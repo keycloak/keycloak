@@ -6,11 +6,11 @@ import {
   AlertVariant,
   Button,
   ButtonVariant,
-  DropdownItem,
   FormGroup,
   PageSection,
   ValidatedOptions,
 } from "@patternfly/react-core";
+import { DropdownItem } from "@patternfly/react-core/deprecated";
 import { useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -23,7 +23,6 @@ import { DynamicComponents } from "../../components/dynamic/DynamicComponents";
 import { FormAccess } from "../../components/form/FormAccess";
 import type { AttributeForm } from "../../components/key-value-form/AttributeForm";
 import { KeycloakSpinner } from "../../components/keycloak-spinner/KeycloakSpinner";
-import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 import { ViewHeader } from "../../components/view-header/ViewHeader";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { convertFormValuesToObject, convertToFormValues } from "../../util";
@@ -211,7 +210,7 @@ export default function AddMapper() {
             }
             helperTextInvalid={t("required")}
           >
-            <KeycloakTextInput
+            <TextInput
               value={currentMapper.id}
               id="kc-name"
               isDisabled={!!id}

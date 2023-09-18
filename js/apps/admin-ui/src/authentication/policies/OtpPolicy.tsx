@@ -10,12 +10,14 @@ import {
   NumberInput,
   PageSection,
   Radio,
-  Select,
-  SelectOption,
-  SelectVariant,
   Switch,
   ValidatedOptions,
 } from "@patternfly/react-core";
+import {
+  Select,
+  SelectOption,
+  SelectVariant,
+} from "@patternfly/react-core/deprecated";
 import { useEffect, useMemo } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";

@@ -7,13 +7,15 @@ import {
   FormGroup,
   PageSection,
   Popover,
-  Select,
-  SelectOption,
-  SelectVariant,
   Switch,
   Text,
   TextContent,
 } from "@patternfly/react-core";
+import {
+  Select,
+  SelectOption,
+  SelectVariant,
+} from "@patternfly/react-core/deprecated";
 import { QuestionCircleIcon } from "@patternfly/react-icons";
 import { useEffect, useState } from "react";
 import {
@@ -28,7 +30,6 @@ import { HelpItem, useHelp } from "ui-shared";
 import { adminClient } from "../../admin-client";
 import { useAlerts } from "../../components/alert/Alerts";
 import { FormAccess } from "../../components/form/FormAccess";
-import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 import { MultiLineInput } from "../../components/multi-line-input/MultiLineInput";
 import { TimeSelector } from "../../components/time-selector/TimeSelector";
 import { useRealm } from "../../context/realm-context/RealmContext";
@@ -104,7 +105,7 @@ const WebauthnSelect = ({
         render={({ field }) => (
           <Select
             toggleId={name}
-            onToggle={toggle}
+            onToggle={(_, isOpen) => toggle(isOpen)}
             onSelect={(_, selectedValue) => {
               if (isMultiSelect) {
                 const changedValue = field.value.find(
@@ -222,7 +223,7 @@ export const WebauthnPolicy = ({
             />
           }
         >
-          <KeycloakTextInput
+          <TextInput
             id="webAuthnPolicyRpEntityName"
             data-testid="webAuthnPolicyRpEntityName"
             validated={errors.webAuthnPolicyRpEntityName ? "error" : "default"}
@@ -246,7 +247,7 @@ export const WebauthnPolicy = ({
             }
             fieldId="webAuthnPolicyRpId"
           >
-            <KeycloakTextInput
+            <TextInput
               id="webAuthnPolicyRpId"
               data-testid="webAuthnPolicyRpId"
               {...register(`${namePrefix}RpId`)}

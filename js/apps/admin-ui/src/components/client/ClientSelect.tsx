@@ -1,11 +1,11 @@
 import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
 import type { ClientQuery } from "@keycloak/keycloak-admin-client/lib/resources/clients";
+import { FormGroup } from "@patternfly/react-core";
 import {
-  FormGroup,
   Select,
   SelectOption,
   SelectVariant,
-} from "@patternfly/react-core";
+} from "@patternfly/react-core/deprecated";
 import { useState } from "react";
 import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -86,7 +86,7 @@ export const ClientSelect = ({
           <Select
             toggleId={name}
             variant={SelectVariant.typeahead}
-            onToggle={(open) => setOpen(open)}
+            onToggle={(_, isOpen) => setOpen(isOpen)}
             isOpen={open}
             isDisabled={isDisabled}
             selections={field.value}

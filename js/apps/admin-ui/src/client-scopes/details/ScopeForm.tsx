@@ -3,13 +3,15 @@ import {
   ActionGroup,
   Button,
   FormGroup,
-  Select,
-  SelectOption,
-  SelectVariant,
   Switch,
   TextArea,
   ValidatedOptions,
 } from "@patternfly/react-core";
+import {
+  Select,
+  SelectOption,
+  SelectVariant,
+} from "@patternfly/react-core/deprecated";
 import { useEffect, useState } from "react";
 import { Controller, FormProvider, useForm, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -23,7 +25,6 @@ import {
   clientScopeTypesSelectOptions,
 } from "../../components/client-scope/ClientScopeTypes";
 import { FormAccess } from "../../components/form/FormAccess";
-import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { useLoginProviders } from "../../context/server-info/ServerInfoProvider";
 import { convertAttributeNameToForm, convertToFormValues } from "../../util";
@@ -50,7 +51,7 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
   const providers = useLoginProviders();
   const isFeatureEnabled = useIsFeatureEnabled();
   const isDynamicScopesEnabled = isFeatureEnabled(Feature.DynamicScopes);
-  const [open, isOpen] = useState(false);
+  const [open, setIsOpen] = useState(false);
   const [openType, setOpenType] = useState(false);
 
   const displayOnConsentScreen: string = useWatch({
@@ -98,7 +99,7 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
         helperTextInvalid={t("required")}
         isRequired
       >
-        <KeycloakTextInput
+        <TextInput
           id="kc-name"
           validated={
             errors.name ? ValidatedOptions.error : ValidatedOptions.default
@@ -153,7 +154,7 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
         }
         helperTextInvalid={t("maxLength", { length: 255 })}
       >
-        <KeycloakTextInput
+        <TextInput
           id="kc-description"
           validated={
             errors.description
@@ -182,7 +183,7 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
               variant={SelectVariant.single}
               isOpen={openType}
               selections={field.value}
-              onToggle={setOpenType}
+              onToggle={(_, isOpen) => setOpenType(isOpen)}
               onSelect={(_, value) => {
                 field.onChange(value);
                 setOpenType(false);
@@ -208,10 +209,10 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
             render={({ field }) => (
               <Select
                 toggleId="kc-protocol"
-                onToggle={isOpen}
+                onToggle={(_, isOpen) => setIsOpen(isOpen)}
                 onSelect={(_, value) => {
                   field.onChange(value);
-                  isOpen(false);
+                  setIsOpen(false);
                 }}
                 selections={field.value}
                 variant={SelectVariant.single}
@@ -255,7 +256,7 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
               label={t("on")}
               labelOff={t("off")}
               isChecked={field.value === "true"}
-              onChange={(value) => field.onChange(value.toString())}
+              onChange={(_, value) => field.onChange(value.toString())}
             />
           )}
         />
@@ -304,7 +305,7 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
               label={t("on")}
               labelOff={t("off")}
               isChecked={field.value === "true"}
-              onChange={(value) => field.onChange(value.toString())}
+              onChange={(_, value) => field.onChange(value.toString())}
             />
           )}
         />
@@ -323,7 +324,7 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
           defaultValue=""
           control={control}
           render={({ field }) => (
-            <KeycloakTextInput
+            <TextInput
               id="kc-gui-order"
               type="number"
               value={field.value}

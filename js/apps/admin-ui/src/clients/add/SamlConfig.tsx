@@ -1,16 +1,15 @@
+import { FormGroup, Switch } from "@patternfly/react-core";
 import {
-  FormGroup,
   Select,
   SelectOption,
   SelectVariant,
-  Switch,
-} from "@patternfly/react-core";
+} from "@patternfly/react-core/deprecated";
 import { useState } from "react";
 import { Controller, Path, PathValue, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
-import { FormAccess } from "../../components/form/FormAccess";
 import { HelpItem } from "ui-shared";
+import { FormAccess } from "../../components/form/FormAccess";
 import { convertAttributeNameToForm } from "../../util";
 import { FormFields } from "../ClientDetails";
 
@@ -45,7 +44,7 @@ export const Toggle = ({ name, label }: ToggleProps) => {
             label={t("on")}
             labelOff={t("off")}
             isChecked={field.value === "true"}
-            onChange={(value) => field.onChange(value.toString())}
+            onChange={(_, value) => field.onChange(value.toString())}
             aria-label={t(label)}
           />
         )}
@@ -82,7 +81,7 @@ export const SamlConfig = () => {
           render={({ field }) => (
             <Select
               toggleId="samlNameIdFormat"
-              onToggle={setNameFormatOpen}
+              onToggle={(_, isOpen) => setNameFormatOpen(isOpen)}
               onSelect={(_, value) => {
                 field.onChange(value.toString());
                 setNameFormatOpen(false);

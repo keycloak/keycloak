@@ -15,7 +15,6 @@ import { HelpItem } from "ui-shared";
 import { useAlerts } from "../../components/alert/Alerts";
 import { DynamicComponents } from "../../components/dynamic/DynamicComponents";
 import { FormAccess } from "../../components/form/FormAccess";
-import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
 import { convertFormValuesToObject, convertToFormValues } from "../../util";
@@ -138,7 +137,7 @@ export default function CustomProviderSettings() {
             fieldId="kc-ui-display-name"
             isRequired
           >
-            <KeycloakTextInput
+            <TextInput
               isRequired
               id="kc-ui-display-name"
               data-testid="ui-name"

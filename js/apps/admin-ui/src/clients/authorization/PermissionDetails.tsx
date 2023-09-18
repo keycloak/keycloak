@@ -5,26 +5,23 @@ import {
   AlertVariant,
   Button,
   ButtonVariant,
-  DropdownItem,
   FormGroup,
   PageSection,
   Radio,
-  SelectVariant,
   Switch,
   TextArea,
 } from "@patternfly/react-core";
+import { DropdownItem, SelectVariant } from "@patternfly/react-core/deprecated";
 import { useState } from "react";
 import { Controller, FormProvider, useForm, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
 import { HelpItem } from "ui-shared";
-
 import { adminClient } from "../../admin-client";
 import { useAlerts } from "../../components/alert/Alerts";
 import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
 import { FormAccess } from "../../components/form/FormAccess";
 import { KeycloakSpinner } from "../../components/keycloak-spinner/KeycloakSpinner";
-import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 import { ViewHeader } from "../../components/view-header/ViewHeader";
 import { toUpperCase } from "../../util";
 import { useFetch } from "../../utils/useFetch";
@@ -217,7 +214,7 @@ export default function PermissionDetails() {
                 <HelpItem helpText={t("permissionName")} fieldLabelId="name" />
               }
             >
-              <KeycloakTextInput
+              <TextInput
                 id="name"
                 validated={errors.name ? "error" : "default"}
                 {...register("name", { required: true })}
@@ -262,7 +259,7 @@ export default function PermissionDetails() {
                 label={t("on")}
                 labelOff={t("off")}
                 isChecked={applyToResourceTypeFlag}
-                onChange={setApplyToResourceTypeFlag}
+                onChange={(_, value) => setApplyToResourceTypeFlag(value)}
                 aria-label={t("applyToResourceTypeFlag")}
               />
             </FormGroup>
@@ -278,7 +275,7 @@ export default function PermissionDetails() {
                 }
                 isRequired={permissionType === "scope"}
               >
-                <KeycloakTextInput
+                <TextInput
                   id="resourceType"
                   {...register("resourceType", {
                     required: permissionType === "scope",

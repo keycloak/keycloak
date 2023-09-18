@@ -1,19 +1,21 @@
 import {
   Button,
-  ContextSelector,
-  ContextSelectorItem,
-  ContextSelectorItemProps,
   Divider,
-  Dropdown,
-  DropdownItem,
-  DropdownToggle,
   Label,
   Spinner,
   Split,
   SplitItem,
 } from "@patternfly/react-core";
+import {
+  ContextSelector,
+  ContextSelectorItem,
+  ContextSelectorItemProps,
+  Dropdown,
+  DropdownItem,
+  DropdownToggle,
+} from "@patternfly/react-core/deprecated";
 import { CheckIcon } from "@patternfly/react-icons";
-import { Fragment, useState, useMemo } from "react";
+import { Fragment, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, To, useHref } from "react-router-dom";
 

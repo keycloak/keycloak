@@ -2,9 +2,8 @@ import IdentityProviderRepresentation from "@keycloak/keycloak-admin-client/lib/
 import { FormGroup, ValidatedOptions } from "@patternfly/react-core";
 import { useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-
 import { HelpItem } from "ui-shared";
-import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
+
 import { PasswordInput } from "../../components/password-input/PasswordInput";
 
 export const ClientIdSecret = ({
@@ -40,7 +39,7 @@ export const ClientIdSecret = ({
         }
         helperTextInvalid={t("required")}
       >
-        <KeycloakTextInput
+        <TextInput
           isRequired
           id="kc-client-id"
           data-testid="clientId"
@@ -72,7 +71,7 @@ export const ClientIdSecret = ({
             {...register("config.clientSecret", { required: secretRequired })}
           />
         ) : (
-          <KeycloakTextInput
+          <TextInput
             isRequired={secretRequired}
             type="password"
             id="kc-client-secret"

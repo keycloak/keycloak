@@ -6,32 +6,32 @@ import {
   Chip,
   ChipGroup,
   DatePicker,
-  Dropdown,
-  DropdownToggle,
   Flex,
   FlexItem,
   Form,
   FormGroup,
   Modal,
   ModalVariant,
+} from "@patternfly/react-core";
+import {
+  Dropdown,
+  DropdownToggle,
   Select,
   SelectOption,
   SelectVariant,
-} from "@patternfly/react-core";
+} from "@patternfly/react-core/deprecated";
+import { TableVariant, cellWidth } from "@patternfly/react-table";
 import {
   Table,
   TableBody,
   TableHeader,
-  TableVariant,
-  cellWidth,
-} from "@patternfly/react-table";
+} from "@patternfly/react-table/deprecated";
 import { pickBy } from "lodash-es";
 import { PropsWithChildren, useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
 import { adminClient } from "../admin-client";
-import { KeycloakTextInput } from "../components/keycloak-text-input/KeycloakTextInput";
 import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
 import {
   Action,
@@ -206,7 +206,7 @@ export const AdminEvents = () => {
             toggle={
               <DropdownToggle
                 data-testid="adminEventsSearchSelectorToggle"
-                onToggle={(isOpen) => setSearchDropdownOpen(isOpen)}
+                onToggle={(_, isOpen) => setSearchDropdownOpen(isOpen)}
                 className="keycloak__events_search_selector_dropdown__toggle"
               >
                 {t("searchForAdminEvent")}
@@ -239,7 +239,9 @@ export const AdminEvents = () => {
                       }}
                       variant={SelectVariant.typeaheadMulti}
                       typeAheadAriaLabel="Select"
-                      onToggle={(isOpen) => setSelectResourceTypesOpen(isOpen)}
+                      onToggle={(_, isOpen) =>
+                        setSelectResourceTypesOpen(isOpen)
+                      }
                       selections={field.value}
                       onSelect={(_, selectedValue) => {
                         const option = selectedValue.toString();
@@ -300,7 +302,9 @@ export const AdminEvents = () => {
                       }}
                       variant={SelectVariant.typeaheadMulti}
                       typeAheadAriaLabel="Select"
-                      onToggle={(isOpen) => setSelectOperationTypesOpen(isOpen)}
+                      onToggle={(_, isOpen) =>
+                        setSelectOperationTypesOpen(isOpen)
+                      }
                       selections={field.value}
                       onSelect={(_, selectedValue) => {
                         const option = selectedValue.toString();
@@ -346,7 +350,7 @@ export const AdminEvents = () => {
                 fieldId="kc-resourcePath"
                 className="keycloak__events_search__form_label"
               >
-                <KeycloakTextInput
+                <TextInput
                   id="kc-resourcePath"
                   data-testid="resourcePath-searchField"
                   {...register("resourcePath")}
@@ -357,7 +361,7 @@ export const AdminEvents = () => {
                 fieldId="kc-realm"
                 className="keycloak__events_search__form_label"
               >
-                <KeycloakTextInput
+                <TextInput
                   id="kc-realm"
                   data-testid="realm-searchField"
                   {...register("authRealm")}
@@ -368,7 +372,7 @@ export const AdminEvents = () => {
                 fieldId="kc-client"
                 className="keycloak__events_search__form_label"
               >
-                <KeycloakTextInput
+                <TextInput
                   id="kc-client"
                   data-testid="client-searchField"
                   {...register("authClient")}
@@ -379,7 +383,7 @@ export const AdminEvents = () => {
                 fieldId="kc-user"
                 className="keycloak__events_search__form_label"
               >
-                <KeycloakTextInput
+                <TextInput
                   id="kc-user"
                   data-testid="user-searchField"
                   {...register("authUser")}
@@ -390,7 +394,7 @@ export const AdminEvents = () => {
                 fieldId="kc-ipAddress"
                 className="keycloak__events_search__form_label"
               >
-                <KeycloakTextInput
+                <TextInput
                   id="kc-ipAddress"
                   data-testid="ipAddress-searchField"
                   {...register("authIpAddress")}

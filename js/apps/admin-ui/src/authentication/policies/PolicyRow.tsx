@@ -11,9 +11,7 @@ import {
 import { MinusCircleIcon } from "@patternfly/react-icons";
 import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-
 import { HelpItem } from "ui-shared";
-import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 
 import "./policy-row.css";
 
@@ -52,7 +50,7 @@ export const PolicyRow = ({
       <Split>
         <SplitItem isFilled>
           {configType && configType !== "int" && (
-            <KeycloakTextInput
+            <TextInput
               id={id}
               data-testid={id}
               {...register(id!, { required: true })}

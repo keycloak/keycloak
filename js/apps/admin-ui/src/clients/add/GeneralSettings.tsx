@@ -1,9 +1,9 @@
+import { FormGroup } from "@patternfly/react-core";
 import {
-  FormGroup,
   Select,
   SelectOption,
   SelectVariant,
-} from "@patternfly/react-core";
+} from "@patternfly/react-core/deprecated";
 import { useState } from "react";
 import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -22,7 +22,7 @@ export const GeneralSettings = () => {
   } = useFormContext();
 
   const providers = useLoginProviders();
-  const [open, isOpen] = useState(false);
+  const [open, setIsOpen] = useState(false);
 
   return (
     <FormAccess isHorizontal role="manage-clients">
@@ -41,10 +41,10 @@ export const GeneralSettings = () => {
           render={({ field }) => (
             <Select
               id="kc-type"
-              onToggle={isOpen}
+              onToggle={(_, isOpen) => setIsOpen(isOpen)}
               onSelect={(_, value) => {
                 field.onChange(value.toString());
-                isOpen(false);
+                setIsOpen(false);
               }}
               selections={field.value}
               variant={SelectVariant.single}

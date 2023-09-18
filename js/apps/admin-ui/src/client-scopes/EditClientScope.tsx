@@ -6,11 +6,11 @@ import {
   Alert,
   AlertVariant,
   ButtonVariant,
-  DropdownItem,
   PageSection,
   Tab,
   TabTitleText,
 } from "@patternfly/react-core";
+import { DropdownItem } from "@patternfly/react-core/deprecated";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
@@ -43,8 +43,8 @@ import {
   ClientScopeTab,
   toClientScope,
 } from "./routes/ClientScope";
-import { toMapper } from "./routes/Mapper";
 import { toClientScopes } from "./routes/ClientScopes";
+import { toMapper } from "./routes/Mapper";
 
 export default function EditClientScope() {
   const { t } = useTranslation();

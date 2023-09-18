@@ -1,15 +1,15 @@
-import { useState } from "react";
-import { useTranslation } from "react-i18next";
-import { Controller, useFormContext } from "react-hook-form";
+import { FormGroup } from "@patternfly/react-core";
 import {
-  FormGroup,
   Select,
   SelectOption,
   SelectVariant,
-} from "@patternfly/react-core";
+} from "@patternfly/react-core/deprecated";
+import { useState } from "react";
+import { Controller, useFormContext } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 
-import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
 import { HelpItem } from "ui-shared";
+import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
 import { convertAttributeNameToForm } from "../../util";
 import { FormFields } from "../ClientDetails";
 
@@ -27,7 +27,7 @@ export const SignedJWT = ({ clientAuthenticatorType }: SignedJWTProps) => {
 
   const { t } = useTranslation();
 
-  const [open, isOpen] = useState(false);
+  const [open, setIsOpen] = useState(false);
   return (
     <FormGroup
       label={t("signatureAlgorithm")}
@@ -49,10 +49,10 @@ export const SignedJWT = ({ clientAuthenticatorType }: SignedJWTProps) => {
           <Select
             maxHeight={200}
             toggleId="kc-signature-algorithm"
-            onToggle={isOpen}
+            onToggle={(_, isOpen) => setIsOpen(isOpen)}
             onSelect={(_, value) => {
               field.onChange(value.toString());
-              isOpen(false);
+              setIsOpen(false);
             }}
             selections={field.value || t("anyAlgorithm")}
             variant={SelectVariant.single}

@@ -3,7 +3,6 @@ import {
   AlertVariant,
   ButtonVariant,
   CardTitle,
-  DropdownItem,
   Gallery,
   GalleryItem,
   PageSection,
@@ -13,6 +12,7 @@ import {
   TextContent,
   TextVariants,
 } from "@patternfly/react-core";
+import { DropdownItem } from "@patternfly/react-core/deprecated";
 import { DatabaseIcon } from "@patternfly/react-icons";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";

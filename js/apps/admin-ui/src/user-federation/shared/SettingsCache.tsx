@@ -1,16 +1,15 @@
+import { FormGroup, NumberInput } from "@patternfly/react-core";
 import {
-  FormGroup,
-  NumberInput,
   Select,
   SelectOption,
   SelectVariant,
-} from "@patternfly/react-core";
+} from "@patternfly/react-core/deprecated";
 import { isEqual } from "lodash-es";
 import { Controller, UseFormReturn, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
-import { FormAccess } from "../../components/form/FormAccess";
 import { HelpItem } from "ui-shared";
+import { FormAccess } from "../../components/form/FormAccess";
 import { WizardSectionHeader } from "../../components/wizard-section-header/WizardSectionHeader";
 import useToggle from "../../utils/useToggle";
 

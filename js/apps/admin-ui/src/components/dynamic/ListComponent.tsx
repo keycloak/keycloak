@@ -1,16 +1,16 @@
+import { FormGroup } from "@patternfly/react-core";
 import {
-  FormGroup,
   Select,
   SelectOption,
   SelectVariant,
-} from "@patternfly/react-core";
+} from "@patternfly/react-core/deprecated";
 import { useState } from "react";
 import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
 import { HelpItem } from "ui-shared";
-import type { ComponentProps } from "./components";
 import { convertToName } from "./DynamicComponents";
+import type { ComponentProps } from "./components";
 
 export const ListComponent = ({
   name,
@@ -39,7 +39,7 @@ export const ListComponent = ({
           <Select
             toggleId={name}
             isDisabled={isDisabled}
-            onToggle={(toggle) => setOpen(toggle)}
+            onToggle={(_, isOpen) => setOpen(isOpen)}
             onSelect={(_, value) => {
               field.onChange(value as string);
               setOpen(false);

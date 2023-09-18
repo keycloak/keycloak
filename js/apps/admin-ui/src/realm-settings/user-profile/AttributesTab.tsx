@@ -1,28 +1,30 @@
-import { useState } from "react";
-import { useTranslation } from "react-i18next";
 import {
   Button,
   ButtonVariant,
   Divider,
-  Select,
-  SelectOption,
-  SelectVariant,
   Toolbar,
   ToolbarContent,
   ToolbarItem,
 } from "@patternfly/react-core";
+import {
+  Select,
+  SelectOption,
+  SelectVariant,
+} from "@patternfly/react-core/deprecated";
 import { FilterIcon } from "@patternfly/react-icons";
+import { useState } from "react";
+import { useTranslation } from "react-i18next";
 
-import { KeycloakSpinner } from "../../components/keycloak-spinner/KeycloakSpinner";
-import { DraggableTable } from "../../authentication/components/DraggableTable";
-import { Link, useNavigate } from "react-router-dom";
-import { toAddAttribute } from "../routes/AddAttribute";
-import { useRealm } from "../../context/realm-context/RealmContext";
-import { useUserProfile } from "./UserProfileContext";
-import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
-import { toAttribute } from "../routes/Attribute";
 import type { UserProfileAttribute } from "@keycloak/keycloak-admin-client/lib/defs/userProfileConfig";
+import { Link, useNavigate } from "react-router-dom";
+import { DraggableTable } from "../../authentication/components/DraggableTable";
+import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
+import { KeycloakSpinner } from "../../components/keycloak-spinner/KeycloakSpinner";
+import { useRealm } from "../../context/realm-context/RealmContext";
 import useToggle from "../../utils/useToggle";
+import { toAddAttribute } from "../routes/AddAttribute";
+import { toAttribute } from "../routes/Attribute";
+import { useUserProfile } from "./UserProfileContext";
 
 const RESTRICTED_ATTRIBUTES = ["username", "email"];
 

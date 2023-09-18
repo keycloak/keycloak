@@ -2,9 +2,8 @@ import { FormGroup, Switch } from "@patternfly/react-core";
 import { Controller, UseFormReturn, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
-import { FormAccess } from "../../components/form/FormAccess";
 import { HelpItem } from "ui-shared";
-import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
+import { FormAccess } from "../../components/form/FormAccess";
 import { WizardSectionHeader } from "../../components/wizard-section-header/WizardSectionHeader";
 
 export type LdapSettingsKerberosIntegrationProps = {
@@ -59,7 +58,7 @@ export const LdapSettingsKerberosIntegration = ({
                 id="kc-allow-kerberos-authentication"
                 data-testid="allow-kerberos-auth"
                 isDisabled={false}
-                onChange={(value) => field.onChange([`${value}`])}
+                onChange={(_, value) => field.onChange([`${value}`])}
                 isChecked={field.value[0] === "true"}
                 label={t("on")}
                 labelOff={t("off")}
@@ -91,7 +90,7 @@ export const LdapSettingsKerberosIntegration = ({
                   .message
               }
             >
-              <KeycloakTextInput
+              <TextInput
                 isRequired
                 id="kc-kerberos-realm"
                 data-testid="kerberos-realm"
@@ -129,7 +128,7 @@ export const LdapSettingsKerberosIntegration = ({
                   .message
               }
             >
-              <KeycloakTextInput
+              <TextInput
                 isRequired
                 id="kc-server-principal"
                 data-testid="kerberos-principal"
@@ -166,7 +165,7 @@ export const LdapSettingsKerberosIntegration = ({
                 (form.formState.errors.config as any)?.keyTab?.[0].message
               }
             >
-              <KeycloakTextInput
+              <TextInput
                 isRequired
                 id="kc-key-tab"
                 data-testid="kerberos-keytab"
@@ -204,7 +203,7 @@ export const LdapSettingsKerberosIntegration = ({
                   ?.krbPrincipalAttribute?.[0].message
               }
             >
-              <KeycloakTextInput
+              <TextInput
                 defaultValue="userPrincipalName"
                 id="kc-krb-principal-attribute"
                 data-testid="krb-principal-attribute"
@@ -239,7 +238,7 @@ export const LdapSettingsKerberosIntegration = ({
                     id="kc-debug"
                     data-testid="debug"
                     isDisabled={false}
-                    onChange={(value) => field.onChange([`${value}`])}
+                    onChange={(_, value) => field.onChange([`${value}`])}
                     isChecked={field.value[0] === "true"}
                     label={t("on")}
                     labelOff={t("off")}
@@ -272,7 +271,7 @@ export const LdapSettingsKerberosIntegration = ({
                 id="kc-use-kerberos-password-authentication"
                 data-testid="use-kerberos-pw-auth"
                 isDisabled={false}
-                onChange={(value) => field.onChange([`${value}`])}
+                onChange={(_, value) => field.onChange([`${value}`])}
                 isChecked={field.value[0] === "true"}
                 label={t("on")}
                 labelOff={t("off")}

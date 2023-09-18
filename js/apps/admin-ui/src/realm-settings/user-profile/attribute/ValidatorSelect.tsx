@@ -1,5 +1,6 @@
 import ComponentTypeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/componentTypeRepresentation";
-import { FormGroup, Select, SelectOption } from "@patternfly/react-core";
+import { FormGroup } from "@patternfly/react-core";
+import { Select, SelectOption } from "@patternfly/react-core/deprecated";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useServerInfo } from "../../../context/server-info/ServerInfoProvider";

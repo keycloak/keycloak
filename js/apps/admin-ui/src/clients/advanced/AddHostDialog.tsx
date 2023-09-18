@@ -8,10 +8,8 @@ import {
 } from "@patternfly/react-core";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-
 import { adminClient } from "../../admin-client";
 import { useAlerts } from "../../components/alert/Alerts";
-import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 
 type FormFields = {
   node: string;
@@ -81,7 +79,7 @@ export const AddHostDialog = ({
     >
       <Form id="add-host-form" onSubmit={handleSubmit(onSubmit)} isHorizontal>
         <FormGroup label={t("nodeHost")} fieldId="nodeHost" isRequired>
-          <KeycloakTextInput
+          <TextInput
             id="nodeHost"
             {...register("node", { required: true })}
             isRequired

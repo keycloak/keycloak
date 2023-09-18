@@ -6,6 +6,7 @@ import {
   Button,
   ButtonVariant,
   InputGroup,
+  InputGroupItem,
   PageSection,
   TextInput,
   Toolbar,
@@ -130,10 +131,6 @@ export const KeysProvidersTab = ({
     }
   };
 
-  const handleInputChange = (value: string) => {
-    setSearchVal(value);
-  };
-
   return (
     <>
       {providerOpen && (
@@ -161,23 +158,27 @@ export const KeysProvidersTab = ({
           <ToolbarGroup className="providers-toolbar">
             <ToolbarItem>
               <InputGroup>
-                <TextInput
-                  name={"inputGroupName"}
-                  id={"inputGroupName"}
-                  data-testid="provider-search-input"
-                  type="search"
-                  aria-label={t("search")}
-                  placeholder={t("search")}
-                  onChange={handleInputChange}
-                  onKeyDown={handleKeyDown}
-                />
-                <Button
-                  variant={ButtonVariant.control}
-                  aria-label={t("search")}
-                  onClick={onSearch}
-                >
-                  <SearchIcon />
-                </Button>
+                <InputGroupItem isFill>
+                  <TextInput
+                    name={"inputGroupName"}
+                    id={"inputGroupName"}
+                    data-testid="provider-search-input"
+                    type="search"
+                    aria-label={t("search")}
+                    placeholder={t("search")}
+                    onChange={(_, value) => setSearchVal(value)}
+                    onKeyDown={handleKeyDown}
+                  />
+                </InputGroupItem>
+                <InputGroupItem>
+                  <Button
+                    variant={ButtonVariant.control}
+                    aria-label={t("search")}
+                    onClick={onSearch}
+                  >
+                    <SearchIcon />
+                  </Button>
+                </InputGroupItem>
               </InputGroup>
             </ToolbarItem>
             <ToolbarItem>

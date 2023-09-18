@@ -5,11 +5,11 @@ import {
   AlertVariant,
   Button,
   ButtonVariant,
-  DropdownItem,
   FormGroup,
   PageSection,
   ValidatedOptions,
 } from "@patternfly/react-core";
+import { DropdownItem } from "@patternfly/react-core/deprecated";
 import { useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -22,7 +22,6 @@ import { useAlerts } from "../../components/alert/Alerts";
 import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
 import { DynamicComponents } from "../../components/dynamic/DynamicComponents";
 import { FormAccess } from "../../components/form/FormAccess";
-import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 import { ViewHeader } from "../../components/view-header/ViewHeader";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
@@ -206,7 +205,7 @@ export default function MappingDetails() {
           role="manage-clients"
         >
           <FormGroup label={t("mapperType")} fieldId="mapperType">
-            <KeycloakTextInput
+            <TextInput
               type="text"
               id="mapperType"
               name="mapperType"
@@ -226,7 +225,7 @@ export default function MappingDetails() {
             }
             helperTextInvalid={t("required")}
           >
-            <KeycloakTextInput
+            <TextInput
               id="name"
               isReadOnly={isUpdating}
               validated={

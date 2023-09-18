@@ -1,9 +1,7 @@
 import { FormGroup } from "@patternfly/react-core";
 import { useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-
 import { HelpItem } from "ui-shared";
-import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 import { MultiLineInput } from "../../components/multi-line-input/MultiLineInput";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import environment from "../../environment";
@@ -37,7 +35,7 @@ export const LoginSettings = ({
           <HelpItem helpText={t("rootURLHelp")} fieldLabelId="rootUrl" />
         }
       >
-        <KeycloakTextInput
+        <TextInput
           id="kc-root-url"
           type="url"
           {...register("rootUrl")}
@@ -51,7 +49,7 @@ export const LoginSettings = ({
           <HelpItem helpText={t("homeURLHelp")} fieldLabelId="homeURL" />
         }
       >
-        <KeycloakTextInput
+        <TextInput
           id="kc-home-url"
           type="url"
           {...register("baseUrl")}
@@ -119,7 +117,7 @@ export const LoginSettings = ({
               })
             }
           >
-            <KeycloakTextInput
+            <TextInput
               id="idpInitiatedSsoUrlName"
               data-testid="idpInitiatedSsoUrlName"
               {...register("attributes.saml_idp_initiated_sso_url_name")}
@@ -136,7 +134,7 @@ export const LoginSettings = ({
               />
             }
           >
-            <KeycloakTextInput
+            <TextInput
               id="idpInitiatedSsoRelayState"
               data-testid="idpInitiatedSsoRelayState"
               {...register("attributes.saml_idp_initiated_sso_relay_state")}
@@ -153,7 +151,7 @@ export const LoginSettings = ({
               />
             }
           >
-            <KeycloakTextInput
+            <TextInput
               id="masterSamlProcessingUrl"
               type="url"
               data-testid="masterSamlProcessingUrl"

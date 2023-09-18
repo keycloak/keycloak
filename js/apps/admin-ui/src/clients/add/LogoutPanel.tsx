@@ -2,10 +2,8 @@ import { FormGroup, Switch, ValidatedOptions } from "@patternfly/react-core";
 import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { HelpItem } from "ui-shared";
-
 import { FixedButtonsGroup } from "../../components/form/FixedButtonGroup";
 import { FormAccess } from "../../components/form/FormAccess";
-import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 import { useAccess } from "../../context/access/Access";
 import { beerify, convertAttributeNameToForm } from "../../util";
 import { FormFields } from "../ClientDetails";
@@ -89,7 +87,7 @@ export const LogoutPanel = ({
               : ValidatedOptions.default
           }
         >
-          <KeycloakTextInput
+          <TextInput
             id="frontchannelLogoutUrl"
             type="url"
             {...register(
@@ -130,7 +128,7 @@ export const LogoutPanel = ({
                 : ValidatedOptions.default
             }
           >
-            <KeycloakTextInput
+            <TextInput
               id="backchannelLogoutUrl"
               type="url"
               {...register(
@@ -172,7 +170,7 @@ export const LogoutPanel = ({
                   label={t("on")}
                   labelOff={t("off")}
                   isChecked={field.value === "true"}
-                  onChange={(value) => field.onChange(value.toString())}
+                  onChange={(_, value) => field.onChange(value.toString())}
                   aria-label={t("backchannelLogoutSessionRequired")}
                 />
               )}
@@ -201,7 +199,7 @@ export const LogoutPanel = ({
                   label={t("on")}
                   labelOff={t("off")}
                   isChecked={field.value === "true"}
-                  onChange={(value) => field.onChange(value.toString())}
+                  onChange={(_, value) => field.onChange(value.toString())}
                   aria-label={t("backchannelLogoutRevokeOfflineSessions")}
                 />
               )}

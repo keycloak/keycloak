@@ -1,6 +1,10 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Select, SelectOption, SelectVariant } from "@patternfly/react-core";
+import {
+  Select,
+  SelectOption,
+  SelectVariant,
+} from "@patternfly/react-core/deprecated";
 
 import type { ExpandableExecution } from "../execution-model";
 
@@ -28,8 +32,8 @@ export const FlowRequirementDropdown = ({
         <Select
           className="keycloak__authentication__requirement-dropdown"
           variant={SelectVariant.single}
-          onToggle={setOpen}
-          onSelect={(_event, value) => {
+          onToggle={(_, isOpen) => setOpen(isOpen)}
+          onSelect={(_, value) => {
             flow.requirement = value.toString();
             onChange(flow);
             setOpen(false);

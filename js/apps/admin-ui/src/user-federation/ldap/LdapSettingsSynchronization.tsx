@@ -2,9 +2,8 @@ import { FormGroup, Switch } from "@patternfly/react-core";
 import { Controller, UseFormReturn } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
-import { FormAccess } from "../../components/form/FormAccess";
 import { HelpItem } from "ui-shared";
-import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
+import { FormAccess } from "../../components/form/FormAccess";
 import { WizardSectionHeader } from "../../components/wizard-section-header/WizardSectionHeader";
 
 export type LdapSettingsSynchronizationProps = {
@@ -55,7 +54,7 @@ export const LdapSettingsSynchronization = ({
                 name="importEnabled"
                 label={t("on")}
                 labelOff={t("off")}
-                onChange={(value) => field.onChange([`${value}`])}
+                onChange={(_, value) => field.onChange([`${value}`])}
                 isChecked={field.value[0] === "true"}
                 isDisabled={false}
                 aria-label={t("importUsers")}
@@ -84,7 +83,7 @@ export const LdapSettingsSynchronization = ({
                 data-testid="syncRegistrations"
                 label={t("on")}
                 labelOff={t("off")}
-                onChange={(value) => field.onChange([`${value}`])}
+                onChange={(_, value) => field.onChange([`${value}`])}
                 isChecked={field.value[0] === "true"}
                 aria-label={t("syncRegistrations")}
               />
@@ -101,7 +100,7 @@ export const LdapSettingsSynchronization = ({
           }
           fieldId="kc-batch-size"
         >
-          <KeycloakTextInput
+          <TextInput
             type="number"
             min={0}
             id="kc-batch-size"
@@ -129,7 +128,7 @@ export const LdapSettingsSynchronization = ({
                 id="kc-periodic-full-sync"
                 data-testid="periodic-full-sync"
                 isDisabled={false}
-                onChange={(value) => field.onChange(value)}
+                onChange={(_, value) => field.onChange(value)}
                 isChecked={field.value === true}
                 label={t("on")}
                 labelOff={t("off")}
@@ -150,7 +149,7 @@ export const LdapSettingsSynchronization = ({
             }
             fieldId="kc-full-sync-period"
           >
-            <KeycloakTextInput
+            <TextInput
               type="number"
               min={-1}
               defaultValue={604800}
@@ -180,7 +179,7 @@ export const LdapSettingsSynchronization = ({
                 id="kc-periodic-changed-users-sync"
                 data-testid="periodic-changed-users-sync"
                 isDisabled={false}
-                onChange={(value) => field.onChange(value)}
+                onChange={(_, value) => field.onChange(value)}
                 isChecked={field.value === true}
                 label={t("on")}
                 labelOff={t("off")}
@@ -201,7 +200,7 @@ export const LdapSettingsSynchronization = ({
             fieldId="kc-changed-users-sync-period"
             hasNoPaddingTop
           >
-            <KeycloakTextInput
+            <TextInput
               type="number"
               min={-1}
               defaultValue={86400}

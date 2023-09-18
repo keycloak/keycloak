@@ -11,7 +11,6 @@ import {
   DataListItemCells,
   DataListItemRow,
   Divider,
-  DropdownItem,
   Flex,
   FlexItem,
   FormGroup,
@@ -21,6 +20,7 @@ import {
   TextVariants,
   ValidatedOptions,
 } from "@patternfly/react-core";
+import { DropdownItem } from "@patternfly/react-core/deprecated";
 import { PlusCircleIcon, TrashIcon } from "@patternfly/react-icons";
 import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
@@ -33,7 +33,6 @@ import { useAlerts } from "../components/alert/Alerts";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import { FormAccess } from "../components/form/FormAccess";
 import { KeycloakSpinner } from "../components/keycloak-spinner/KeycloakSpinner";
-import { KeycloakTextInput } from "../components/keycloak-text-input/KeycloakTextInput";
 import { ViewHeader } from "../components/view-header/ViewHeader";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { useServerInfo } from "../context/server-info/ServerInfoProvider";
@@ -471,7 +470,7 @@ export default function NewClientPolicyForm() {
                 : ValidatedOptions.default
             }
           >
-            <KeycloakTextInput
+            <TextInput
               id="kc-client-profile-name"
               data-testid="client-policy-name"
               validated={

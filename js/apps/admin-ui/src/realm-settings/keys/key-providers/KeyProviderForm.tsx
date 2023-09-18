@@ -17,7 +17,6 @@ import { adminClient } from "../../../admin-client";
 import { useAlerts } from "../../../components/alert/Alerts";
 import { DynamicComponents } from "../../../components/dynamic/DynamicComponents";
 import { FormAccess } from "../../../components/form/FormAccess";
-import { KeycloakTextInput } from "../../../components/keycloak-text-input/KeycloakTextInput";
 import { ViewHeader } from "../../../components/view-header/ViewHeader";
 import { useServerInfo } from "../../../context/server-info/ServerInfoProvider";
 import { KEY_PROVIDER_TYPE } from "../../../util";
@@ -111,7 +110,7 @@ export const KeyProviderForm = ({
           fieldId="providerId"
           isRequired
         >
-          <KeycloakTextInput
+          <TextInput
             id="providerId"
             data-testid="providerId-input"
             isReadOnly

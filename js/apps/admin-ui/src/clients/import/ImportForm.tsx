@@ -16,7 +16,6 @@ import { adminClient } from "../../admin-client";
 import { useAlerts } from "../../components/alert/Alerts";
 import { FormAccess } from "../../components/form/FormAccess";
 import { FileUploadForm } from "../../components/json-file-upload/FileUploadForm";
-import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 import { ViewHeader } from "../../components/view-header/ViewHeader";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import {
@@ -116,11 +115,7 @@ export default function ImportForm() {
             />
             <ClientDescription hasConfigureAccess />
             <FormGroup label={t("type")} fieldId="kc-type">
-              <KeycloakTextInput
-                id="kc-type"
-                isReadOnly
-                {...register("protocol")}
-              />
+              <TextInput id="kc-type" isReadOnly {...register("protocol")} />
             </FormGroup>
             <CapabilityConfig unWrap={true} />
             <ActionGroup>

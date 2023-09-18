@@ -11,7 +11,6 @@ import { SubmitHandler, UseFormReturn } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
 import type { KeyValueType } from "../components/key-value-form/key-value-convert";
-import { KeycloakTextInput } from "../components/keycloak-text-input/KeycloakTextInput";
 
 type AddMessageBundleModalProps = {
   id?: string;
@@ -77,7 +76,7 @@ export const AddMessageBundleModal = ({
           }
           isRequired
         >
-          <KeycloakTextInput
+          <TextInput
             data-testid="key-input"
             autoFocus
             id="key-id"
@@ -97,7 +96,7 @@ export const AddMessageBundleModal = ({
           }
           isRequired
         >
-          <KeycloakTextInput
+          <TextInput
             data-testid="value-input"
             id="value-id"
             validated={

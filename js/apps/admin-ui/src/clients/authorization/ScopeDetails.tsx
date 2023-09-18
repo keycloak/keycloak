@@ -4,11 +4,11 @@ import {
   AlertVariant,
   Button,
   ButtonVariant,
-  DropdownItem,
   FormGroup,
   PageSection,
   ValidatedOptions,
 } from "@patternfly/react-core";
+import { DropdownItem } from "@patternfly/react-core/deprecated";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -18,7 +18,6 @@ import { HelpItem } from "ui-shared";
 import { adminClient } from "../../admin-client";
 import { useAlerts } from "../../components/alert/Alerts";
 import { FormAccess } from "../../components/form/FormAccess";
-import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 import { ViewHeader } from "../../components/view-header/ViewHeader";
 import { useFetch } from "../../utils/useFetch";
 import { useParams } from "../../utils/useParams";
@@ -140,7 +139,7 @@ export default function ScopeDetails() {
             }
             isRequired
           >
-            <KeycloakTextInput
+            <TextInput
               id="name"
               validated={
                 errors.name ? ValidatedOptions.error : ValidatedOptions.default
@@ -159,7 +158,7 @@ export default function ScopeDetails() {
               />
             }
           >
-            <KeycloakTextInput id="displayName" {...register("displayName")} />
+            <TextInput id="displayName" {...register("displayName")} />
           </FormGroup>
           <FormGroup
             label={t("iconUri")}
@@ -168,7 +167,7 @@ export default function ScopeDetails() {
               <HelpItem helpText={t("iconUriHelp")} fieldLabelId="iconUri" />
             }
           >
-            <KeycloakTextInput id="iconUri" {...register("iconUri")} />
+            <TextInput id="iconUri" {...register("iconUri")} />
           </FormGroup>
           <ActionGroup>
             <div className="pf-u-mt-md">

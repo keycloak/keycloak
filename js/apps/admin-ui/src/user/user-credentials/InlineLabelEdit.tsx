@@ -6,7 +6,6 @@ import { useTranslation } from "react-i18next";
 
 import { adminClient } from "../../admin-client";
 import { useAlerts } from "../../components/alert/Alerts";
-import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 
 type UserLabelForm = {
   userLabel: string;
@@ -56,7 +55,7 @@ export const InlineLabelEdit = ({
         <div className="kc-form-group-userLabel">
           {isEditable ? (
             <>
-              <KeycloakTextInput
+              <TextInput
                 data-testid="userLabelFld"
                 defaultValue={credential.userLabel}
                 className="kc-userLabel"

@@ -7,12 +7,14 @@ import {
   IFormatter,
   IRow,
   ITransform,
+  TableVariant,
+} from "@patternfly/react-table";
+import {
   Table,
   TableBody,
   TableHeader,
   TableProps,
-  TableVariant,
-} from "@patternfly/react-table";
+} from "@patternfly/react-table/deprecated";
 import { cloneDeep, differenceBy, get } from "lodash-es";
 import {
   ComponentClass,

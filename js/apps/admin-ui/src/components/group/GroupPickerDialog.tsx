@@ -22,9 +22,9 @@ import { useFetch } from "../../utils/useFetch";
 import { ListEmptyState } from "../list-empty-state/ListEmptyState";
 import { PaginatingTableToolbar } from "../table-toolbar/PaginatingTableToolbar";
 import { GroupPath } from "./GroupPath";
+import { fetchAdminUI } from "../../context/auth/admin-ui-endpoint";
 
 import "./group-picker-dialog.css";
-import { fetchAdminUI } from "../../context/auth/admin-ui-endpoint";
 
 export type GroupPickerDialogProps = {
   id?: string;
@@ -329,7 +329,7 @@ const GroupRow = ({
             aria-label={group.name}
             checked={group.checked}
             isDisabled={isRowDisabled(group)}
-            onChange={(checked) => {
+            onChange={(_, checked) => {
               group.checked = checked;
               let newSelectedRows: SelectableGroup[] = [];
               if (!group.checked) {

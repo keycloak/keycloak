@@ -3,11 +3,11 @@ import type UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/us
 import {
   AlertVariant,
   ButtonVariant,
-  DropdownItem,
   PageSection,
   Tab,
   TabTitleText,
 } from "@patternfly/react-core";
+import { DropdownItem } from "@patternfly/react-core/deprecated";
 import { useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";

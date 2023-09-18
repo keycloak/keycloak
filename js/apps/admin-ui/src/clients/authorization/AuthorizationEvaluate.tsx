@@ -14,17 +14,18 @@ import {
   Panel,
   PanelHeader,
   PanelMainBody,
-  Select,
-  SelectOption,
-  SelectVariant,
   Switch,
   Title,
 } from "@patternfly/react-core";
+import {
+  Select,
+  SelectOption,
+  SelectVariant,
+} from "@patternfly/react-core/deprecated";
 import { useState } from "react";
 import { Controller, FormProvider, useForm, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { HelpItem } from "ui-shared";
-
 import { ForbiddenSection } from "../../ForbiddenSection";
 import { adminClient } from "../../admin-client";
 import { useAlerts } from "../../components/alert/Alerts";
@@ -34,7 +35,6 @@ import {
   KeyValueType,
   keyValueToArray,
 } from "../../components/key-value-form/key-value-convert";
-import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 import { UserSelect } from "../../components/users/UserSelect";
 import { useAccess } from "../../context/access/Access";
 import { useRealm } from "../../context/realm-context/RealmContext";
@@ -244,7 +244,7 @@ const AuthorizationEvaluateContent = ({ client }: Props) => {
                       placeholderText={t("selectARole")}
                       variant={SelectVariant.typeaheadMulti}
                       toggleId="role"
-                      onToggle={setRoleDropdownOpen}
+                      onToggle={(_, isOpen) => setRoleDropdownOpen(isOpen)}
                       selections={field.value}
                       onSelect={(_, v) => {
                         const option = v.toString();
@@ -301,7 +301,7 @@ const AuthorizationEvaluateContent = ({ client }: Props) => {
                   label={t("on")}
                   labelOff={t("off")}
                   isChecked={applyToResourceType}
-                  onChange={setApplyToResourceType}
+                  onChange={(_, value) => setApplyToResourceType(value)}
                   aria-label={t("applyToResourceType")}
                 />
               </FormGroup>
@@ -342,7 +342,7 @@ const AuthorizationEvaluateContent = ({ client }: Props) => {
                     validated={errors.alias ? "error" : "default"}
                     helperTextInvalid={t("required")}
                   >
-                    <KeycloakTextInput
+                    <TextInput
                       id="alias"
                       aria-label="resource-type"
                       data-testid="alias"
@@ -366,7 +366,9 @@ const AuthorizationEvaluateContent = ({ client }: Props) => {
                       render={({ field }) => (
                         <Select
                           toggleId="authScopes"
-                          onToggle={setScopesDropdownOpen}
+                          onToggle={(_, isOpen) =>
+                            setScopesDropdownOpen(isOpen)
+                          }
                           onSelect={(_, v) => {
                             const option = v.toString();
                             if (field.value.includes(option)) {

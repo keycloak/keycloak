@@ -12,12 +12,14 @@ import {
   Divider,
   FormGroup,
   PageSection,
-  Select,
-  SelectOption,
-  SelectVariant,
   Split,
   SplitItem,
 } from "@patternfly/react-core";
+import {
+  Select,
+  SelectOption,
+  SelectVariant,
+} from "@patternfly/react-core/deprecated";
 import { useState } from "react";
 import { Controller, useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -65,7 +67,7 @@ export const Credentials = ({ client, save, refresh }: CredentialsProps) => {
 
   const [secret, setSecret] = useState("");
   const [accessToken, setAccessToken] = useState("");
-  const [open, isOpen] = useState(false);
+  const [open, setIsOpen] = useState(false);
 
   useFetch(
     () =>
@@ -161,10 +163,10 @@ export const Credentials = ({ client, save, refresh }: CredentialsProps) => {
                   <Select
                     toggleId="kc-client-authenticator-type"
                     required
-                    onToggle={isOpen}
+                    onToggle={(_, isOpen) => setIsOpen(isOpen)}
                     onSelect={(_, value) => {
                       field.onChange(value as string);
-                      isOpen(false);
+                      setIsOpen(false);
                     }}
                     selections={field.value}
                     variant={SelectVariant.single}

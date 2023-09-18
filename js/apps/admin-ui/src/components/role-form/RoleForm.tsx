@@ -12,7 +12,6 @@ import { Link, To } from "react-router-dom";
 
 import { FormAccess } from "../form/FormAccess";
 import { AttributeForm } from "../key-value-form/AttributeForm";
-import { KeycloakTextInput } from "../keycloak-text-input/KeycloakTextInput";
 import { ViewHeader } from "../view-header/ViewHeader";
 
 export type RoleFormProps = {
@@ -62,7 +61,7 @@ export const RoleForm = ({
             helperTextInvalid={t("required")}
             isRequired={!editMode}
           >
-            <KeycloakTextInput
+            <TextInput
               id="kc-name"
               isReadOnly={editMode}
               {...register("name", {

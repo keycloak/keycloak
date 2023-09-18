@@ -15,8 +15,8 @@ import { generateId } from "../../util";
 
 import { HelpItem } from "ui-shared";
 import { KeyValueType } from "../key-value-form/key-value-convert";
-import type { ComponentProps } from "./components";
 import { convertToName } from "./DynamicComponents";
+import type { ComponentProps } from "./components";
 
 type IdKeyValueType = KeyValueType & {
   id: number;
@@ -87,7 +87,7 @@ export const MapComponent = ({ name, label, helpText }: ComponentProps) => {
                 aria-label={t("key")}
                 defaultValue={attribute.key}
                 data-testid={`${fieldName}.${index}.key`}
-                onChange={(value) => updateKey(index, value)}
+                onChange={(_, value) => updateKey(index, value)}
                 onBlur={() => update()}
               />
             </FlexItem>
@@ -101,7 +101,7 @@ export const MapComponent = ({ name, label, helpText }: ComponentProps) => {
                 aria-label={t("value")}
                 defaultValue={attribute.value}
                 data-testid={`${fieldName}.${index}.value`}
-                onChange={(value) => updateValue(index, value)}
+                onChange={(_, value) => updateValue(index, value)}
                 onBlur={() => update()}
               />
             </FlexItem>

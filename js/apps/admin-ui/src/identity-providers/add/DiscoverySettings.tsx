@@ -2,18 +2,19 @@ import IdentityProviderRepresentation from "@keycloak/keycloak-admin-client/lib/
 import {
   ExpandableSection,
   FormGroup,
-  Select,
-  SelectOption,
-  SelectVariant,
   TextArea,
   ValidatedOptions,
 } from "@patternfly/react-core";
+import {
+  Select,
+  SelectOption,
+  SelectVariant,
+} from "@patternfly/react-core/deprecated";
 import { useState } from "react";
 import { Controller, useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { HelpItem } from "ui-shared";
 
-import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 import { FormGroupField } from "../component/FormGroupField";
 import { SwitchField } from "../component/SwitchField";
 import { TextField } from "../component/TextField";
@@ -61,7 +62,7 @@ const Fields = ({ readOnly }: DiscoverySettingsProps) => {
         }
         helperTextInvalid={t("required")}
       >
-        <KeycloakTextInput
+        <TextInput
           type="url"
           data-testid="authorizationUrl"
           id="kc-authorization-url"
@@ -86,7 +87,7 @@ const Fields = ({ readOnly }: DiscoverySettingsProps) => {
         }
         helperTextInvalid={t("required")}
       >
-        <KeycloakTextInput
+        <TextInput
           type="url"
           id="tokenUrl"
           data-testid="tokenUrl"

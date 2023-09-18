@@ -11,7 +11,6 @@ import {
   DataListItemCells,
   DataListItemRow,
   Divider,
-  DropdownItem,
   Flex,
   FlexItem,
   FormGroup,
@@ -22,6 +21,7 @@ import {
   TextVariants,
   ValidatedOptions,
 } from "@patternfly/react-core";
+import { DropdownItem } from "@patternfly/react-core/deprecated";
 import { PlusCircleIcon, TrashIcon } from "@patternfly/react-icons";
 import { Fragment, useMemo, useState } from "react";
 import { useFieldArray, useForm } from "react-hook-form";
@@ -34,7 +34,6 @@ import { useAlerts } from "../components/alert/Alerts";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import { FormAccess } from "../components/form/FormAccess";
 import { KeycloakSpinner } from "../components/keycloak-spinner/KeycloakSpinner";
-import { KeycloakTextInput } from "../components/keycloak-text-input/KeycloakTextInput";
 import { ViewHeader } from "../components/view-header/ViewHeader";
 import { useServerInfo } from "../context/server-info/ServerInfoProvider";
 import { useFetch } from "../utils/useFetch";
@@ -233,7 +232,7 @@ export default function ClientProfileForm() {
               errors.name ? ValidatedOptions.error : ValidatedOptions.default
             }
           >
-            <KeycloakTextInput
+            <TextInput
               id="kc-name"
               data-testid="client-profile-name"
               isReadOnly={isGlobalProfile}
@@ -244,8 +243,8 @@ export default function ClientProfileForm() {
             <TextArea
               id="kc-description"
               data-testid="client-profile-description"
-              isReadOnly={isGlobalProfile}
               {...register("description")}
+              readOnlyVariant="default"
             />
           </FormGroup>
           <ActionGroup>

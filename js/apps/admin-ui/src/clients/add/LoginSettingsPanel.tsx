@@ -1,11 +1,9 @@
+import { FormGroup, Switch, TextArea } from "@patternfly/react-core";
 import {
-  FormGroup,
   Select,
   SelectOption,
   SelectVariant,
-  Switch,
-  TextArea,
-} from "@patternfly/react-core";
+} from "@patternfly/react-core/deprecated";
 import { useState } from "react";
 import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -45,7 +43,7 @@ export const LoginSettingsPanel = ({ access }: { access?: boolean }) => {
           render={({ field }) => (
             <Select
               toggleId="loginTheme"
-              onToggle={setLoginThemeOpen}
+              onToggle={(_, isOpen) => setLoginThemeOpen(isOpen)}
               onSelect={(_, value) => {
                 field.onChange(value.toString());
                 setLoginThemeOpen(false);
@@ -121,7 +119,7 @@ export const LoginSettingsPanel = ({ access }: { access?: boolean }) => {
               label={t("on")}
               labelOff={t("off")}
               isChecked={field.value === "true"}
-              onChange={(value) => field.onChange("" + value)}
+              onChange={(_, value) => field.onChange("" + value)}
               isDisabled={!consentRequired}
               aria-label={t("displayOnClient")}
             />

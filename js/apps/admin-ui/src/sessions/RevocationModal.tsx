@@ -17,7 +17,6 @@ import { useTranslation } from "react-i18next";
 
 import { adminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
-import { KeycloakTextInput } from "../components/keycloak-text-input/KeycloakTextInput";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { emailRegexPattern } from "../util";
 import { useFetch } from "../utils/useFetch";
@@ -199,7 +198,7 @@ export const RevocationModal = ({
             errors.email ? ValidatedOptions.error : ValidatedOptions.default
           }
         >
-          <KeycloakTextInput
+          <TextInput
             data-testid="not-before-input"
             autoFocus
             isReadOnly

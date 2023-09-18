@@ -3,12 +3,14 @@ import {
   AlertVariant,
   Button,
   FormGroup,
-  Select,
-  SelectOption,
-  SelectVariant,
   Switch,
   ValidatedOptions,
 } from "@patternfly/react-core";
+import {
+  Select,
+  SelectOption,
+  SelectVariant,
+} from "@patternfly/react-core/deprecated";
 import { get, isEqual } from "lodash-es";
 import { useState } from "react";
 import { Controller, UseFormReturn, useWatch } from "react-hook-form";
@@ -18,7 +20,6 @@ import { HelpItem } from "ui-shared";
 import { adminClient } from "../../admin-client";
 import { useAlerts } from "../../components/alert/Alerts";
 import { FormAccess } from "../../components/form/FormAccess";
-import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 import { PasswordInput } from "../../components/password-input/PasswordInput";
 import { WizardSectionHeader } from "../../components/wizard-section-header/WizardSectionHeader";
 import { useRealm } from "../../context/realm-context/RealmContext";
@@ -119,7 +120,7 @@ export const LdapSettingsConnection = ({
             (form.formState.errors.config as any)?.connectionUrl?.[0].message
           }
         >
-          <KeycloakTextInput
+          <TextInput
             isRequired
             type="url"
             id="kc-ui-connection-url"
@@ -157,7 +158,7 @@ export const LdapSettingsConnection = ({
                 id={"kc-enable-start-tls"}
                 data-testid="enable-start-tls"
                 isDisabled={false}
-                onChange={(value) => field.onChange([`${value}`])}
+                onChange={(_, value) => field.onChange([`${value}`])}
                 isChecked={field.value[0] === "true"}
                 label={t("on")}
                 labelOff={t("off")}
@@ -220,7 +221,7 @@ export const LdapSettingsConnection = ({
                 id={"kc-connection-pooling"}
                 data-testid="connection-pooling"
                 isDisabled={false}
-                onChange={(value) => field.onChange([`${value}`])}
+                onChange={(_, value) => field.onChange([`${value}`])}
                 isChecked={field.value[0] === "true"}
                 label={t("on")}
                 labelOff={t("off")}
@@ -239,7 +240,7 @@ export const LdapSettingsConnection = ({
           }
           fieldId="kc-ui-connection-timeout"
         >
-          <KeycloakTextInput
+          <TextInput
             type="number"
             min={0}
             id="kc-ui-connection-timeout"
@@ -314,7 +315,7 @@ export const LdapSettingsConnection = ({
               }
               isRequired
             >
-              <KeycloakTextInput
+              <TextInput
                 type="text"
                 id="kc-ui-bind-dn"
                 data-testid="ldap-bind-dn"

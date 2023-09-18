@@ -51,7 +51,7 @@ export const FileUploadForm = ({
   const [fileUpload, setFileUpload] = useState<FileUploadType>(defaultUpload);
   const removeDialog = () => setFileUpload({ ...fileUpload, modal: false });
 
-  const handleFileInputChange = (_event: DropEvent, file: File) => {
+  const handleFileInputChange = (_: DropEvent, file: File) => {
     setFileUpload({ ...fileUpload, filename: file.name });
   };
 

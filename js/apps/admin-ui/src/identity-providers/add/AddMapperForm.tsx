@@ -1,18 +1,16 @@
 import type IdentityProviderMapperRepresentation from "@keycloak/keycloak-admin-client/lib/defs/identityProviderMapperRepresentation";
 import type { IdentityProviderMapperTypeRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/identityProviderMapperTypeRepresentation";
+import { FormGroup, ValidatedOptions } from "@patternfly/react-core";
 import {
-  FormGroup,
   Select,
   SelectOption,
   SelectVariant,
-  ValidatedOptions,
-} from "@patternfly/react-core";
+} from "@patternfly/react-core/deprecated";
 import { useState } from "react";
 import { Controller, UseFormReturn } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-
 import { HelpItem } from "ui-shared";
-import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
+
 import type { IdPMapperRepresentationWithAttributes } from "./AddMapper";
 
 type AddMapperFormProps = {
@@ -62,7 +60,7 @@ export const AddMapperForm = ({
         }
         helperTextInvalid={t("required")}
       >
-        <KeycloakTextInput
+        <TextInput
           id="kc-name"
           isDisabled={!!id}
           validated={

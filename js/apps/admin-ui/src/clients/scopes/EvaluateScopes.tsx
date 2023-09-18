@@ -9,9 +9,6 @@ import {
   Grid,
   GridItem,
   PageSection,
-  Select,
-  SelectOption,
-  SelectVariant,
   Split,
   SplitItem,
   Tab,
@@ -21,6 +18,11 @@ import {
   Text,
   TextContent,
 } from "@patternfly/react-core";
+import {
+  Select,
+  SelectOption,
+  SelectVariant,
+} from "@patternfly/react-core/deprecated";
 import { QuestionCircleIcon } from "@patternfly/react-icons";
 import { useEffect, useRef, useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
@@ -30,12 +32,12 @@ import { HelpItem, useHelp } from "ui-shared";
 import { adminClient } from "../../admin-client";
 import { KeycloakDataTable } from "../../components/table-toolbar/KeycloakDataTable";
 import { UserSelect } from "../../components/users/UserSelect";
+import { useAccess } from "../../context/access/Access";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
 import { prettyPrintJSON } from "../../util";
 import { useFetch } from "../../utils/useFetch";
 import { GeneratedCodeTab } from "./GeneratedCodeTab";
-import { useAccess } from "../../context/access/Access";
 
 import "./evaluate.css";
 

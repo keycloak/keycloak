@@ -34,7 +34,7 @@ export const SwitchField = ({
                 ? field.value === "true"
                 : (field.value as boolean)
             }
-            onChange={(value) =>
+            onChange={(_, value) =>
               field.onChange(fieldType === "string" ? "" + value : value)
             }
             isDisabled={isReadOnly}

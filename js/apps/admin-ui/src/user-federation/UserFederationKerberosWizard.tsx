@@ -1,10 +1,10 @@
-import { Wizard } from "@patternfly/react-core";
+import { Wizard } from "@patternfly/react-core/deprecated";
 import { useTranslation } from "react-i18next";
 
-import { KerberosSettingsRequired } from "./kerberos/KerberosSettingsRequired";
-import { SettingsCache } from "./shared/SettingsCache";
 import type ComponentRepresentation from "@keycloak/keycloak-admin-client/lib/defs/componentRepresentation";
 import { useForm } from "react-hook-form";
+import { KerberosSettingsRequired } from "./kerberos/KerberosSettingsRequired";
+import { SettingsCache } from "./shared/SettingsCache";
 
 export const UserFederationKerberosWizard = () => {
   const { t } = useTranslation();

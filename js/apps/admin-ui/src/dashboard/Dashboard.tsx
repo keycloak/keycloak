@@ -1,5 +1,3 @@
-import { useMemo } from "react";
-import { useTranslation } from "react-i18next";
 import {
   Brand,
   Card,
@@ -11,6 +9,7 @@ import {
   DescriptionListTerm,
   EmptyState,
   EmptyStateBody,
+  EmptyStateHeader,
   Grid,
   GridItem,
   Label,
@@ -22,25 +21,26 @@ import {
   TabTitleText,
   Text,
   TextContent,
-  Title,
 } from "@patternfly/react-core";
+import { useMemo } from "react";
+import { useTranslation } from "react-i18next";
 
 import FeatureRepresentation, {
   FeatureType,
 } from "@keycloak/keycloak-admin-client/lib/defs/featureRepresentation";
-import { useRealm } from "../context/realm-context/RealmContext";
-import { useServerInfo } from "../context/server-info/ServerInfoProvider";
-import { toUpperCase } from "../util";
 import { HelpItem } from "ui-shared";
-import environment from "../environment";
 import { KeycloakSpinner } from "../components/keycloak-spinner/KeycloakSpinner";
-import useLocaleSort, { mapByKey } from "../utils/useLocaleSort";
 import {
   RoutableTabs,
   useRoutableTab,
 } from "../components/routable-tabs/RoutableTabs";
-import { DashboardTab, toDashboard } from "./routes/Dashboard";
+import { useRealm } from "../context/realm-context/RealmContext";
+import { useServerInfo } from "../context/server-info/ServerInfoProvider";
+import environment from "../environment";
+import { toUpperCase } from "../util";
+import useLocaleSort, { mapByKey } from "../utils/useLocaleSort";
 import { ProviderInfo } from "./ProviderInfo";
+import { DashboardTab, toDashboard } from "./routes/Dashboard";
 
 import "./dashboard.css";
 
@@ -51,18 +51,14 @@ const EmptyDashboard = () => {
 
   return (
     <PageSection variant="light">
-      <EmptyState variant="large">
+      <EmptyState variant="lg">
         <Brand
           src={environment.resourceUrl + brandImage}
           alt="Keycloak icon"
           className="keycloak__dashboard_icon"
         />
-        <Title headingLevel="h2" size="3xl">
-          {t("welcome")}
-        </Title>
-        <Title headingLevel="h1" size="4xl">
-          {realm}
-        </Title>
+        <EmptyStateHeader titleText={t("welcome")} headingLevel="h2" />
+        <EmptyStateHeader titleText={realm} headingLevel="h1" />
         <EmptyStateBody>{t("introduction")}</EmptyStateBody>
       </EmptyState>
     </PageSection>

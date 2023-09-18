@@ -1,11 +1,3 @@
-import { useState } from "react";
-import { useTranslation } from "react-i18next";
-import {
-  Controller,
-  FormProvider,
-  useForm,
-  useFormContext,
-} from "react-hook-form";
 import {
   Button,
   ButtonVariant,
@@ -13,18 +5,28 @@ import {
   FormGroup,
   Modal,
   ModalVariant,
-  Select,
-  SelectOption,
-  SelectVariant,
   Text,
   TextContent,
 } from "@patternfly/react-core";
+import {
+  Select,
+  SelectOption,
+  SelectVariant,
+} from "@patternfly/react-core/deprecated";
+import { useState } from "react";
+import {
+  Controller,
+  FormProvider,
+  useForm,
+  useFormContext,
+} from "react-hook-form";
+import { useTranslation } from "react-i18next";
 
 import type KeyStoreConfig from "@keycloak/keycloak-admin-client/lib/defs/keystoreConfig";
 import { HelpItem } from "ui-shared";
-import { StoreSettings } from "./StoreSettings";
 import { FileUpload } from "../../components/json-file-upload/patternfly/FileUpload";
 import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
+import { StoreSettings } from "./StoreSettings";
 
 type GenerateKeyDialogProps = {
   clientId: string;
@@ -90,7 +92,7 @@ export const KeyForm = ({
           render={({ field }) => (
             <Select
               toggleId="archiveFormat"
-              onToggle={setOpenArchiveFormat}
+              onToggle={(_, isOpen) => setOpenArchiveFormat(isOpen)}
               onSelect={(_, value) => {
                 field.onChange(value.toString());
                 setOpenArchiveFormat(false);

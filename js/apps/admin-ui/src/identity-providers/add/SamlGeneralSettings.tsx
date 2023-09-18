@@ -1,10 +1,9 @@
 import { FormGroup, ValidatedOptions } from "@patternfly/react-core";
-import { useWatch, useFormContext } from "react-hook-form";
+import { useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
+import { HelpItem } from "ui-shared";
 
 import { FormattedLink } from "../../components/external-link/FormattedLink";
-import { HelpItem } from "ui-shared";
-import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import environment from "../../environment";
 import { DisplayOrder } from "../component/DisplayOrder";
@@ -50,7 +49,7 @@ export const SamlGeneralSettings = ({
         }
         helperTextInvalid={t("required")}
       >
-        <KeycloakTextInput
+        <TextInput
           isRequired
           id="alias"
           data-testid="alias"

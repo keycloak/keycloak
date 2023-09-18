@@ -1,11 +1,9 @@
+import { ActionGroup, Button, FormGroup } from "@patternfly/react-core";
 import {
-  ActionGroup,
-  Button,
-  FormGroup,
   Select,
   SelectOption,
   SelectVariant,
-} from "@patternfly/react-core";
+} from "@patternfly/react-core/deprecated";
 import { useState } from "react";
 import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -180,7 +178,7 @@ export const FineGrainOpenIdConnect = ({
             <Select
               toggleId="accessTokenSignatureAlgorithm"
               variant={SelectVariant.single}
-              onToggle={setAccessTokenOpen}
+              onToggle={(_, isOpen) => setAccessTokenOpen(isOpen)}
               isOpen={accessTokenOpen}
               onSelect={(_, value) => {
                 field.onChange(value);
@@ -213,7 +211,7 @@ export const FineGrainOpenIdConnect = ({
             <Select
               toggleId="idTokenSignatureAlgorithm"
               variant={SelectVariant.single}
-              onToggle={setIdTokenOpen}
+              onToggle={(_, isOpen) => setIdTokenOpen(isOpen)}
               isOpen={idTokenOpen}
               onSelect={(_, value) => {
                 field.onChange(value);
@@ -246,7 +244,7 @@ export const FineGrainOpenIdConnect = ({
             <Select
               toggleId="idTokenEncryptionKeyManagementAlgorithm"
               variant={SelectVariant.single}
-              onToggle={setIdTokenKeyManagementOpen}
+              onToggle={(_, isOpen) => setIdTokenKeyManagementOpen(isOpen)}
               isOpen={idTokenKeyManagementOpen}
               onSelect={(_, value) => {
                 field.onChange(value);
@@ -279,7 +277,7 @@ export const FineGrainOpenIdConnect = ({
             <Select
               toggleId="idTokenEncryptionContentEncryptionAlgorithm"
               variant={SelectVariant.single}
-              onToggle={setIdTokenContentOpen}
+              onToggle={(_, isOpen) => setIdTokenContentOpen(isOpen)}
               isOpen={idTokenContentOpen}
               onSelect={(_, value) => {
                 field.onChange(value);
@@ -312,7 +310,7 @@ export const FineGrainOpenIdConnect = ({
             <Select
               toggleId="userInfoSignedResponseAlgorithm"
               variant={SelectVariant.single}
-              onToggle={setUserInfoSignedResponseOpen}
+              onToggle={(_, isOpen) => setUserInfoSignedResponseOpen(isOpen)}
               isOpen={userInfoSignedResponseOpen}
               onSelect={(_, value) => {
                 field.onChange(value);
@@ -345,7 +343,9 @@ export const FineGrainOpenIdConnect = ({
             <Select
               toggleId="userInfoResponseEncryptionKeyManagementAlgorithm"
               variant={SelectVariant.single}
-              onToggle={setUserInfoResponseEncryptionKeyManagementOpen}
+              onToggle={(_, isOpen) =>
+                setUserInfoResponseEncryptionKeyManagementOpen(isOpen)
+              }
               isOpen={userInfoResponseEncryptionKeyManagementOpen}
               onSelect={(_, value) => {
                 field.onChange(value);
@@ -380,7 +380,9 @@ export const FineGrainOpenIdConnect = ({
             <Select
               toggleId="userInfoResponseEncryptionContentEncryptionAlgorithm"
               variant={SelectVariant.single}
-              onToggle={setUserInfoResponseEncryptionContentEncryptionOpen}
+              onToggle={(_, isOpen) =>
+                setUserInfoResponseEncryptionContentEncryptionOpen(isOpen)
+              }
               isOpen={userInfoResponseEncryptionContentEncryptionOpen}
               onSelect={(_, value) => {
                 field.onChange(value);
@@ -413,7 +415,7 @@ export const FineGrainOpenIdConnect = ({
             <Select
               toggleId="requestObjectSignatureAlgorithm"
               variant={SelectVariant.single}
-              onToggle={setRequestObjectSignatureOpen}
+              onToggle={(_, isOpen) => setRequestObjectSignatureOpen(isOpen)}
               isOpen={requestObjectSignatureOpen}
               onSelect={(_, value) => {
                 field.onChange(value);
@@ -446,7 +448,7 @@ export const FineGrainOpenIdConnect = ({
             <Select
               toggleId="requestObjectEncryption"
               variant={SelectVariant.single}
-              onToggle={setRequestObjectEncryptionOpen}
+              onToggle={(_, isOpen) => setRequestObjectEncryptionOpen(isOpen)}
               isOpen={requestObjectEncryptionOpen}
               onSelect={(_, value) => {
                 field.onChange(value);
@@ -479,7 +481,7 @@ export const FineGrainOpenIdConnect = ({
             <Select
               toggleId="requestObjectEncoding"
               variant={SelectVariant.single}
-              onToggle={setRequestObjectEncodingOpen}
+              onToggle={(_, isOpen) => setRequestObjectEncodingOpen(isOpen)}
               isOpen={requestObjectEncodingOpen}
               onSelect={(_, value) => {
                 field.onChange(value);
@@ -512,7 +514,7 @@ export const FineGrainOpenIdConnect = ({
             <Select
               toggleId="requestObjectRequired"
               variant={SelectVariant.single}
-              onToggle={setRequestObjectRequiredOpen}
+              onToggle={(_, isOpen) => setRequestObjectRequiredOpen(isOpen)}
               isOpen={requestObjectRequiredOpen}
               onSelect={(_, value) => {
                 field.onChange(value);
@@ -562,7 +564,7 @@ export const FineGrainOpenIdConnect = ({
             <Select
               toggleId="authorizationSignedResponseAlg"
               variant={SelectVariant.single}
-              onToggle={setAuthorizationSignedOpen}
+              onToggle={(_, isOpen) => setAuthorizationSignedOpen(isOpen)}
               isOpen={authorizationSignedOpen}
               onSelect={(_, value) => {
                 field.onChange(value);
@@ -595,7 +597,7 @@ export const FineGrainOpenIdConnect = ({
             <Select
               toggleId="authorizationEncryptedResponseAlg"
               variant={SelectVariant.single}
-              onToggle={setAuthorizationEncryptedOpen}
+              onToggle={(_, isOpen) => setAuthorizationEncryptedOpen(isOpen)}
               isOpen={authorizationEncryptedOpen}
               onSelect={(_, value) => {
                 field.onChange(value);
@@ -628,7 +630,9 @@ export const FineGrainOpenIdConnect = ({
             <Select
               toggleId="authorizationEncryptedResponseEnc"
               variant={SelectVariant.single}
-              onToggle={setAuthorizationEncryptedResponseOpen}
+              onToggle={(_, isOpen) =>
+                setAuthorizationEncryptedResponseOpen(isOpen)
+              }
               isOpen={authorizationEncryptedResponseOpen}
               onSelect={(_, value) => {
                 field.onChange(value);

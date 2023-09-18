@@ -1,20 +1,16 @@
 import type PolicyProviderRepresentation from "@keycloak/keycloak-admin-client/lib/defs/policyProviderRepresentation";
+import { ActionGroup, Button, Form, FormGroup } from "@patternfly/react-core";
 import {
-  ActionGroup,
-  Button,
   Dropdown,
   DropdownToggle,
-  Form,
-  FormGroup,
   Select,
   SelectOption,
   SelectVariant,
-} from "@patternfly/react-core";
+} from "@patternfly/react-core/deprecated";
 import { useEffect } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
-import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 import useToggle from "../../utils/useToggle";
 
 import "./search-dropdown.css";
@@ -95,7 +91,7 @@ export const SearchDropdown = ({
         onSubmit={handleSubmit(submit)}
       >
         <FormGroup label={t("name")} fieldId="name">
-          <KeycloakTextInput
+          <TextInput
             id="name"
             data-testid="searchdropdown_name"
             {...register("name")}
@@ -104,21 +100,21 @@ export const SearchDropdown = ({
         {isResource && (
           <>
             <FormGroup label={t("type")} fieldId="type">
-              <KeycloakTextInput
+              <TextInput
                 id="type"
                 data-testid="searchdropdown_type"
                 {...register("type")}
               />
             </FormGroup>
             <FormGroup label={t("uris")} fieldId="uri">
-              <KeycloakTextInput
+              <TextInput
                 id="uri"
                 data-testid="searchdropdown_uri"
                 {...register("uri")}
               />
             </FormGroup>
             <FormGroup label={t("owner")} fieldId="owner">
-              <KeycloakTextInput
+              <TextInput
                 id="owner"
                 data-testid="searchdropdown_owner"
                 {...register("owner")}
@@ -128,7 +124,7 @@ export const SearchDropdown = ({
         )}
         {!isResource && (
           <FormGroup label={t("resource")} fieldId="resource">
-            <KeycloakTextInput
+            <TextInput
               id="resource"
               data-testid="searchdropdown_resource"
               {...register("resource")}
@@ -136,7 +132,7 @@ export const SearchDropdown = ({
           </FormGroup>
         )}
         <FormGroup label={t("scope")} fieldId="scope">
-          <KeycloakTextInput
+          <TextInput
             id="scope"
             data-testid="searchdropdown_scope"
             {...register("scope")}

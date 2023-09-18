@@ -2,13 +2,15 @@ import {
   Form,
   FormGroup,
   ModalVariant,
-  Select,
-  SelectOption,
-  SelectVariant,
   Stack,
   StackItem,
   TextArea,
 } from "@patternfly/react-core";
+import {
+  Select,
+  SelectOption,
+  SelectVariant,
+} from "@patternfly/react-core/deprecated";
 import { saveAs } from "file-saver";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -123,7 +125,7 @@ export const DownloadDialog = ({
               <Select
                 toggleId="type"
                 isOpen={openType}
-                onToggle={(isExpanded) => setOpenType(isExpanded)}
+                onToggle={(_, isOpen) => setOpenType(isOpen)}
                 variant={SelectVariant.single}
                 value={selected}
                 selections={selected}

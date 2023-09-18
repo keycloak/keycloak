@@ -5,13 +5,13 @@ import {
   Button,
   ButtonVariant,
   Divider,
-  DropdownItem,
   Form,
   PageSection,
   Tab,
   TabTitleText,
   ToolbarItem,
 } from "@patternfly/react-core";
+import { DropdownItem } from "@patternfly/react-core/deprecated";
 import { useMemo, useState } from "react";
 import { Controller, FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";

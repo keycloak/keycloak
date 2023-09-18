@@ -6,6 +6,7 @@ import {
   Modal,
   ModalVariant,
   TextArea,
+  TextInput,
   Tooltip,
   ValidatedOptions,
 } from "@patternfly/react-core";
@@ -15,7 +16,6 @@ import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { HelpItem } from "ui-shared";
 
-import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 import useToggle from "../../utils/useToggle";
 import type { ExpandableExecution } from "../execution-model";
 
@@ -100,7 +100,7 @@ export const EditFlow = ({ execution, onRowChange }: EditFlowProps) => {
               }
               isRequired
             >
-              <KeycloakTextInput
+              <TextInput
                 id="name"
                 data-testid="displayName"
                 validated={

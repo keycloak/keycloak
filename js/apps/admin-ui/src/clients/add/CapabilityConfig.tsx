@@ -1,17 +1,18 @@
+import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
 import {
   Checkbox,
   FormGroup,
   Grid,
   GridItem,
   InputGroup,
+  InputGroupItem,
   Switch,
 } from "@patternfly/react-core";
 import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-
-import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
-import { FormAccess } from "../../components/form/FormAccess";
 import { HelpItem } from "ui-shared";
+
+import { FormAccess } from "../../components/form/FormAccess";
 import { convertAttributeNameToForm } from "../../util";
 import { FormFields } from "../ClientDetails";
 
@@ -62,7 +63,7 @@ export const CapabilityConfig = ({
                   label={t("on")}
                   labelOff={t("off")}
                   isChecked={!field.value}
-                  onChange={(value) => {
+                  onChange={(_, value) => {
                     field.onChange(!value);
                     if (!value) {
                       setValue("authorizationServicesEnabled", false);
@@ -102,7 +103,7 @@ export const CapabilityConfig = ({
                   label={t("on")}
                   labelOff={t("off")}
                   isChecked={field.value && !clientAuthentication}
-                  onChange={(value) => {
+                  onChange={(_, value) => {
                     field.onChange(value);
                     if (value) {
                       setValue("serviceAccountsEnabled", true);
@@ -127,17 +128,21 @@ export const CapabilityConfig = ({
                   control={control}
                   render={({ field }) => (
                     <InputGroup>
-                      <Checkbox
-                        data-testid="standard"
-                        label={t("standardFlow")}
-                        id="kc-flow-standard"
-                        isChecked={field.value?.toString() === "true"}
-                        onChange={field.onChange}
-                      />
-                      <HelpItem
-                        helpText={t("standardFlowHelp")}
-                        fieldLabelId="standardFlow"
-                      />
+                      <InputGroupItem>
+                        <Checkbox
+                          data-testid="standard"
+                          label={t("standardFlow")}
+                          id="kc-flow-standard"
+                          isChecked={field.value?.toString() === "true"}
+                          onChange={field.onChange}
+                        />
+                      </InputGroupItem>
+                      <InputGroupItem>
+                        <HelpItem
+                          helpText={t("standardFlowHelp")}
+                          fieldLabelId="standardFlow"
+                        />
+                      </InputGroupItem>
                     </InputGroup>
                   )}
                 />
@@ -149,17 +154,21 @@ export const CapabilityConfig = ({
                   control={control}
                   render={({ field }) => (
                     <InputGroup>
-                      <Checkbox
-                        data-testid="direct"
-                        label={t("directAccess")}
-                        id="kc-flow-direct"
-                        isChecked={field.value}
-                        onChange={field.onChange}
-                      />
-                      <HelpItem
-                        helpText={t("directAccessHelp")}
-                        fieldLabelId="directAccess"
-                      />
+                      <InputGroupItem>
+                        <Checkbox
+                          data-testid="direct"
+                          label={t("directAccess")}
+                          id="kc-flow-direct"
+                          isChecked={field.value}
+                          onChange={field.onChange}
+                        />
+                      </InputGroupItem>
+                      <InputGroupItem>
+                        <HelpItem
+                          helpText={t("directAccessHelp")}
+                          fieldLabelId="directAccess"
+                        />
+                      </InputGroupItem>
                     </InputGroup>
                   )}
                 />
@@ -171,17 +180,21 @@ export const CapabilityConfig = ({
                   control={control}
                   render={({ field }) => (
                     <InputGroup>
-                      <Checkbox
-                        data-testid="implicit"
-                        label={t("implicitFlow")}
-                        id="kc-flow-implicit"
-                        isChecked={field.value?.toString() === "true"}
-                        onChange={field.onChange}
-                      />
-                      <HelpItem
-                        helpText={t("implicitFlowHelp")}
-                        fieldLabelId="implicitFlow"
-                      />
+                      <InputGroupItem>
+                        <Checkbox
+                          data-testid="implicit"
+                          label={t("implicitFlow")}
+                          id="kc-flow-implicit"
+                          isChecked={field.value?.toString() === "true"}
+                          onChange={field.onChange}
+                        />
+                      </InputGroupItem>
+                      <InputGroupItem>
+                        <HelpItem
+                          helpText={t("implicitFlowHelp")}
+                          fieldLabelId="implicitFlow"
+                        />
+                      </InputGroupItem>
                     </InputGroup>
                   )}
                 />
@@ -193,24 +206,28 @@ export const CapabilityConfig = ({
                   control={control}
                   render={({ field }) => (
                     <InputGroup>
-                      <Checkbox
-                        data-testid="service-account"
-                        label={t("serviceAccount")}
-                        id="kc-flow-service-account"
-                        isChecked={
-                          field.value?.toString() === "true" ||
-                          (clientAuthentication && authorization)
-                        }
-                        onChange={field.onChange}
-                        isDisabled={
-                          (clientAuthentication && !authorization) ||
-                          (!clientAuthentication && authorization)
-                        }
-                      />
-                      <HelpItem
-                        helpText={t("serviceAccountHelp")}
-                        fieldLabelId="serviceAccount"
-                      />
+                      <InputGroupItem>
+                        <Checkbox
+                          data-testid="service-account"
+                          label={t("serviceAccount")}
+                          id="kc-flow-service-account"
+                          isChecked={
+                            field.value?.toString() === "true" ||
+                            (clientAuthentication && authorization)
+                          }
+                          onChange={field.onChange}
+                          isDisabled={
+                            (clientAuthentication && !authorization) ||
+                            (!clientAuthentication && authorization)
+                          }
+                        />
+                      </InputGroupItem>
+                      <InputGroupItem>
+                        <HelpItem
+                          helpText={t("serviceAccountHelp")}
+                          fieldLabelId="serviceAccount"
+                        />
+                      </InputGroupItem>
                     </InputGroup>
                   )}
                 />
@@ -224,18 +241,22 @@ export const CapabilityConfig = ({
                   control={control}
                   render={({ field }) => (
                     <InputGroup>
-                      <Checkbox
-                        data-testid="oauth-device-authorization-grant"
-                        label={t("oauthDeviceAuthorizationGrant")}
-                        id="kc-oauth-device-authorization-grant"
-                        name="oauth2.device.authorization.grant.enabled"
-                        isChecked={field.value.toString() === "true"}
-                        onChange={field.onChange}
-                      />
-                      <HelpItem
-                        helpText={t("oauthDeviceAuthorizationGrantHelp")}
-                        fieldLabelId="oauthDeviceAuthorizationGrant"
-                      />
+                      <InputGroupItem>
+                        <Checkbox
+                          data-testid="oauth-device-authorization-grant"
+                          label={t("oauthDeviceAuthorizationGrant")}
+                          id="kc-oauth-device-authorization-grant"
+                          name="oauth2.device.authorization.grant.enabled"
+                          isChecked={field.value.toString() === "true"}
+                          onChange={field.onChange}
+                        />
+                      </InputGroupItem>
+                      <InputGroupItem>
+                        <HelpItem
+                          helpText={t("oauthDeviceAuthorizationGrantHelp")}
+                          fieldLabelId="oauthDeviceAuthorizationGrant"
+                        />
+                      </InputGroupItem>
                     </InputGroup>
                   )}
                 />
@@ -249,19 +270,23 @@ export const CapabilityConfig = ({
                   control={control}
                   render={({ field }) => (
                     <InputGroup>
-                      <Checkbox
-                        data-testid="oidc-ciba-grant"
-                        label={t("oidcCibaGrant")}
-                        id="kc-oidc-ciba-grant"
-                        name="oidc.ciba.grant.enabled"
-                        isChecked={field.value.toString() === "true"}
-                        onChange={field.onChange}
-                        isDisabled={clientAuthentication}
-                      />
-                      <HelpItem
-                        helpText={t("oidcCibaGrantHelp")}
-                        fieldLabelId="oidcCibaGrant"
-                      />
+                      <InputGroupItem>
+                        <Checkbox
+                          data-testid="oidc-ciba-grant"
+                          label={t("oidcCibaGrant")}
+                          id="kc-oidc-ciba-grant"
+                          name="oidc.ciba.grant.enabled"
+                          isChecked={field.value.toString() === "true"}
+                          onChange={field.onChange}
+                          isDisabled={clientAuthentication}
+                        />
+                      </InputGroupItem>
+                      <InputGroupItem>
+                        <HelpItem
+                          helpText={t("oidcCibaGrantHelp")}
+                          fieldLabelId="oidcCibaGrant"
+                        />
+                      </InputGroupItem>
                     </InputGroup>
                   )}
                 />

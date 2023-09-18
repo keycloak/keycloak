@@ -26,7 +26,7 @@ export const KeyProvidersPicker = ({
   return (
     <Modal variant="medium" title={t("addProvider")} isOpen onClose={onClose}>
       <DataList
-        onSelectDataListItem={(id) => {
+        onSelectDataListItem={(_, id) => {
           onConfirm(id);
         }}
         aria-label={t("addPredefinedMappers")}

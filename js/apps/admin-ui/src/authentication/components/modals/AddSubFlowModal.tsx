@@ -6,18 +6,19 @@ import {
   FormGroup,
   Modal,
   ModalVariant,
+  ValidatedOptions,
+} from "@patternfly/react-core";
+import {
   Select,
   SelectOption,
   SelectVariant,
-  ValidatedOptions,
-} from "@patternfly/react-core";
+} from "@patternfly/react-core/deprecated";
 import { useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { HelpItem } from "ui-shared";
 
 import { adminClient } from "../../../admin-client";
-import { KeycloakTextInput } from "../../../components/keycloak-text-input/KeycloakTextInput";
 import { useFetch } from "../../../utils/useFetch";
 
 type AddSubFlowProps = {
@@ -103,7 +104,7 @@ export const AddSubFlowModal = ({
           }
           isRequired
         >
-          <KeycloakTextInput
+          <TextInput
             id="name"
             data-testid="name"
             validated={
@@ -122,7 +123,7 @@ export const AddSubFlowModal = ({
             />
           }
         >
-          <KeycloakTextInput
+          <TextInput
             id="description"
             data-testid="description"
             {...register("description")}
@@ -143,7 +144,7 @@ export const AddSubFlowModal = ({
               <Select
                 menuAppendTo="parent"
                 toggleId="flowType"
-                onToggle={setOpen}
+                onToggle={(_, isOpen) => setOpen(isOpen)}
                 onSelect={(_, value) => {
                   field.onChange(value.toString());
                   setOpen(false);
@@ -184,7 +185,7 @@ export const AddSubFlowModal = ({
                 <Select
                   menuAppendTo="parent"
                   toggleId="provider"
-                  onToggle={setOpenProvider}
+                  onToggle={(_, isOpen) => setOpenProvider(isOpen)}
                   onSelect={(_, value) => {
                     field.onChange(value.toString());
                     setOpenProvider(false);
