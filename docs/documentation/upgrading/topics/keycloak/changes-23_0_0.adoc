@@ -72,3 +72,9 @@ New code example:
     </button>
 </div>
 ----
+
+= Default Keycloak CR Hostname
+
+When running on OpenShift, with ingress enabled, and with the spec.ingress.classname set to openshift-default, you may leave the spec.hostname.hostname unpopulated in the Keycloak CR.
+The operator will assign a default hostname to the stored version of the CR similar to what would be created by an OpenShift Route without an explicit host - that is ingress-namespace.appsDomain
+If the appsDomain changes, or should you need a different hostname for any reason, then update the Keycloak CR.

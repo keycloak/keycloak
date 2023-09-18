@@ -49,7 +49,6 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.inject.Inject;
 
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.WATCH_CURRENT_NAMESPACE;
 
@@ -57,8 +56,7 @@ import static io.javaoperatorsdk.operator.api.reconciler.Constants.WATCH_CURRENT
 @ControllerConfiguration(namespaces = WATCH_CURRENT_NAMESPACE, labelSelector = Constants.KEYCLOAK_COMPONENT_LABEL + "=" + WatchedSecrets.WATCHED_SECRETS_LABEL_VALUE)
 public class WatchedSecretsController implements Reconciler<Secret>, EventSourceInitializer<Secret>, WatchedSecrets {
 
-    @Inject
-    KubernetesClient client;
+    private volatile KubernetesClient client;
 
     private final SimpleInboundEventSource eventSource = new SimpleInboundEventSource();
 
@@ -67,6 +65,7 @@ public class WatchedSecretsController implements Reconciler<Secret>, EventSource
     @Override
     public Map<String, EventSource> prepareEventSources(EventSourceContext<Secret> context) {
         this.secrets = context.getPrimaryCache();
+        this.client = context.getClient();
         return Map.of();
     }
 
