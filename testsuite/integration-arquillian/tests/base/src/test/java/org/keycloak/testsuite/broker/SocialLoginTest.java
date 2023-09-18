@@ -250,7 +250,7 @@ public class SocialLoginTest extends AbstractKeycloakTest {
     public void openshiftLogin() {
         setTestProvider(OPENSHIFT);
         performLogin();
-        assertUpdateProfile(false, false, true);
+        assertUpdateProfile(true, true, true);
         appPage.assertCurrent();
         testTokenExchange();
     }
