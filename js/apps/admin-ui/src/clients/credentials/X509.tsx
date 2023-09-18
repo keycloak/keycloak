@@ -20,7 +20,7 @@ export const X509 = () => {
         labelIcon={
           <HelpItem
             helpText={t("allowRegexComparisonHelp")}
-            fieldLabelId="clients:allowRegexComparison"
+            fieldLabelId="allowRegexComparison"
           />
         }
         fieldId="allowRegexComparison"
@@ -35,8 +35,8 @@ export const X509 = () => {
           render={({ field }) => (
             <Switch
               id="allowRegexComparison"
-              label={t("common:on")}
-              labelOff={t("common:off")}
+              label={t("on")}
+              labelOff={t("off")}
               isChecked={field.value === "true"}
               onChange={(value) => field.onChange(value.toString())}
               aria-label={t("allowRegexComparison")}
@@ -48,12 +48,9 @@ export const X509 = () => {
         label={t("subject")}
         fieldId="kc-subject"
         labelIcon={
-          <HelpItem
-            helpText={t("subjectHelp")}
-            fieldLabelId="clients:subject"
-          />
+          <HelpItem helpText={t("subjectHelp")} fieldLabelId="subject" />
         }
-        helperTextInvalid={t("common:required")}
+        helperTextInvalid={t("required")}
         validated={
           errors.attributes?.[beerify("x509.subjectdn")]
             ? ValidatedOptions.error

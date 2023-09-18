@@ -75,15 +75,15 @@ const UsedByModal = ({ id, isSpecificClient, onClose }: UsedByModalProps) => {
           key="cancel"
           onClick={onClose}
         >
-          {t("common:close")}
+          {t("close")}
         </Button>,
       ]}
     >
       <KeycloakDataTable
         loader={loader}
         isPaginated
-        ariaLabelKey="authentication:usedBy"
-        searchPlaceholderKey="common:search"
+        ariaLabelKey="usedBy"
+        searchPlaceholderKey="search"
         columns={[
           {
             name: "name",

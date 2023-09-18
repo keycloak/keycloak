@@ -80,7 +80,11 @@ describe("Identity provider test", () => {
         { testName: "Gitlab", displayName: "Gitlab", alias: "gitlab" },
         { testName: "Google", displayName: "Google", alias: "google" },
         { testName: "Instagram", displayName: "Instagram", alias: "instagram" },
-        { testName: "Linkedin", displayName: "LinkedIn", alias: "linkedin" },
+        {
+          testName: "LinkedIn OpenID Connect",
+          displayName: "LinkedIn OpenID Connect",
+          alias: "linkedin-openid-connect",
+        },
         { testName: "Microsoft", displayName: "Microsoft", alias: "microsoft" },
         {
           testName: "Openshift-v3",
@@ -177,8 +181,8 @@ describe("Identity provider test", () => {
     it("create and delete provider by item details", () => {
       createProviderPage
         .clickCreateDropdown()
-        .clickItem("linkedin")
-        .fill("linkedin", "123")
+        .clickItem("linkedin-openid-connect")
+        .fill("linkedin-openid-connect", "123")
         .clickAdd();
       masthead.checkNotificationMessage(createSuccessMsg, true);
 

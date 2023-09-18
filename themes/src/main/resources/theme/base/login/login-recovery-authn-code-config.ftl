@@ -160,7 +160,7 @@
                 `@page { size: auto;  margin-top: 0; }
                 body { width: 480px; }
                 div { list-style-type: none; font-family: monospace }
-                p:first-of-type { margin-top: 48px }`
+                p:first-of-type { margin-top: 48px }`;
 
             return printFileContent =
                 "<html><style>" + styles + "</style><body>" +

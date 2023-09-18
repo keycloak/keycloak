@@ -32,6 +32,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.UserModel;
 import org.keycloak.storage.ReadOnlyException;
+import org.keycloak.utils.StringUtil;
 
 /**
  * <p>The default implementation for {@link UserProfile}. Should be reused as much as possible by the different implementations
@@ -106,23 +107,29 @@ public final class DefaultUserProfile implements UserProfile {
         try {
             for (Map.Entry<String, List<String>> attribute : attributes.getWritable().entrySet()) {
                 String name = attribute.getKey();
-                List<String> currentValue = user.getAttributeStream(name).filter(Objects::nonNull).collect(Collectors.toList());
-                List<String> updatedValue = attribute.getValue().stream().filter(Objects::nonNull).collect(Collectors.toList());
+                List<String> currentValue = user.getAttributeStream(name)
+                        .filter(Objects::nonNull).collect(Collectors.toList());
+                List<String> updatedValue = attribute.getValue().stream()
+                        .filter(StringUtil::isNotBlank).collect(Collectors.toList());
 
-                if (!CollectionUtil.collectionEquals(currentValue, updatedValue)) {
-                    if (!removeAttributes && updatedValue.isEmpty()) {
-                        continue;
-                    }
+                if (CollectionUtil.collectionEquals(currentValue, updatedValue)) {
+                    continue;
+                }
 
-                    user.setAttribute(name, updatedValue);
+                boolean ignoreEmptyValue = !removeAttributes && updatedValue.isEmpty();
 
-                    if (UserModel.EMAIL.equals(name) && metadata.getContext().isResetEmailVerified()) {
-                        user.setEmailVerified(false);
-                    }
+                if (isCustomAttribute(name) && ignoreEmptyValue) {
+                    continue;
+                }
 
-                    for (AttributeChangeListener listener : changeListener) {
-                        listener.onChange(name, user, currentValue);
-                    }
+                user.setAttribute(name, updatedValue);
+
+                if (UserModel.EMAIL.equals(name) && metadata.getContext().isResetEmailVerified()) {
+                    user.setEmailVerified(false);
+                }
+
+                for (AttributeChangeListener listener : changeListener) {
+                    listener.onChange(name, user, currentValue);
                 }
             }
 
@@ -155,6 +162,10 @@ public final class DefaultUserProfile implements UserProfile {
         }
 
         return user;
+    }
+
+    private boolean isCustomAttribute(String name) {
+        return !getAttributes().isRootAttribute(name);
     }
 
     @Override

@@ -78,7 +78,7 @@ export const KeyForm = ({
         labelIcon={
           <HelpItem
             helpText={t("archiveFormatHelp")}
-            fieldLabelId="clients:archiveFormat"
+            fieldLabelId="archiveFormat"
           />
         }
         fieldId="archiveFormat"
@@ -118,7 +118,7 @@ export const KeyForm = ({
           labelIcon={
             <HelpItem
               helpText={t("importFileHelp")}
-              fieldLabelId="clients:importFile"
+              fieldLabelId="importFile"
             />
           }
           fieldId="importFile"
@@ -195,12 +195,12 @@ export const GenerateKeyDialog = ({
             toggleDialog();
           }}
         >
-          {t("common:cancel")}
+          {t("cancel")}
         </Button>,
       ]}
     >
       <TextContent>
-        <Text>{t("clients-help:generateKeysDescription")}</Text>
+        <Text>{t("generateKeysDescription")}</Text>
       </TextContent>
       <FormProvider {...form}>
         <KeyForm />

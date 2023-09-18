@@ -34,10 +34,7 @@ export const LoginSettingsPanel = ({ access }: { access?: boolean }) => {
       <FormGroup
         label={t("loginTheme")}
         labelIcon={
-          <HelpItem
-            helpText={t("loginThemeHelp")}
-            fieldLabelId="clients:loginTheme"
-          />
+          <HelpItem helpText={t("loginThemeHelp")} fieldLabelId="loginTheme" />
         }
         fieldId="loginTheme"
       >
@@ -53,14 +50,14 @@ export const LoginSettingsPanel = ({ access }: { access?: boolean }) => {
                 field.onChange(value.toString());
                 setLoginThemeOpen(false);
               }}
-              selections={field.value || t("common:choose")}
+              selections={field.value || t("choose")}
               variant={SelectVariant.single}
               aria-label={t("loginTheme")}
               isOpen={loginThemeOpen}
             >
               {[
                 <SelectOption key="empty" value="">
-                  {t("common:choose")}
+                  {t("choose")}
                 </SelectOption>,
                 ...loginThemes.map((theme) => (
                   <SelectOption
@@ -79,7 +76,7 @@ export const LoginSettingsPanel = ({ access }: { access?: boolean }) => {
         labelIcon={
           <HelpItem
             helpText={t("consentRequiredHelp")}
-            fieldLabelId="clients:consentRequired"
+            fieldLabelId="consentRequired"
           />
         }
         fieldId="kc-consent"
@@ -92,8 +89,8 @@ export const LoginSettingsPanel = ({ access }: { access?: boolean }) => {
           render={({ field }) => (
             <Switch
               id="kc-consent-switch"
-              label={t("common:on")}
-              labelOff={t("common:off")}
+              label={t("on")}
+              labelOff={t("off")}
               isChecked={field.value}
               onChange={field.onChange}
               aria-label={t("consentRequired")}
@@ -106,7 +103,7 @@ export const LoginSettingsPanel = ({ access }: { access?: boolean }) => {
         labelIcon={
           <HelpItem
             helpText={t("displayOnClientHelp")}
-            fieldLabelId="clients:displayOnClient"
+            fieldLabelId="displayOnClient"
           />
         }
         fieldId="kc-display-on-client"
@@ -121,8 +118,8 @@ export const LoginSettingsPanel = ({ access }: { access?: boolean }) => {
           render={({ field }) => (
             <Switch
               id="kc-display-on-client-switch"
-              label={t("common:on")}
-              labelOff={t("common:off")}
+              label={t("on")}
+              labelOff={t("off")}
               isChecked={field.value === "true"}
               onChange={(value) => field.onChange("" + value)}
               isDisabled={!consentRequired}
@@ -136,7 +133,7 @@ export const LoginSettingsPanel = ({ access }: { access?: boolean }) => {
         labelIcon={
           <HelpItem
             helpText={t("consentScreenTextHelp")}
-            fieldLabelId="clients:consentScreenText"
+            fieldLabelId="consentScreenText"
           />
         }
         fieldId="kc-consent-screen-text"

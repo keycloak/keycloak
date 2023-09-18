@@ -39,7 +39,7 @@ export const ValidatorSelect = ({
         variant="single"
         aria-label={t("selectOne")}
         isOpen={open}
-        placeholderText={t("common:choose")}
+        placeholderText={t("choose")}
         menuAppendTo="parent"
         maxHeight={300}
       >

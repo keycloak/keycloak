@@ -67,7 +67,7 @@ export const Group = () => {
         labelIcon={
           <HelpItem
             helpText={t("groupsClaimHelp")}
-            fieldLabelId="clients:groupsClaim"
+            fieldLabelId="groupsClaim"
           />
         }
         fieldId="groups"
@@ -82,10 +82,7 @@ export const Group = () => {
       <FormGroup
         label={t("groups")}
         labelIcon={
-          <HelpItem
-            helpText={t("policyGroupsHelp")}
-            fieldLabelId="clients:groups"
-          />
+          <HelpItem helpText={t("policyGroupsHelp")} fieldLabelId="groups" />
         }
         fieldId="groups"
         helperTextInvalid={t("requiredGroups")}
@@ -106,8 +103,8 @@ export const Group = () => {
                 <GroupPickerDialog
                   type="selectMany"
                   text={{
-                    title: "clients:addGroupsToGroupPolicy",
-                    ok: "common:add",
+                    title: "addGroupsToGroupPolicy",
+                    ok: "add",
                   }}
                   onConfirm={(groups) => {
                     field.onChange([

@@ -7,8 +7,6 @@ Usage:
 kc.bat [OPTIONS] [COMMAND]
 
 Use this command-line tool to manage your Keycloak cluster.
-Make sure the command is available on your "PATH" or prefix it with "./" (e.g.:
-"./kc.bat") to execute from the current folder.
 
 Options:
 
@@ -52,4 +50,4 @@ Examples:
 production.
 
 Use "kc.bat start --help" for the available options when starting the server.
-Use "kc.bat <command> --help" for more information about other commands.
+Use "kc.bat <command> --help" for more information about other commands.

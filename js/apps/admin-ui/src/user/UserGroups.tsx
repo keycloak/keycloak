@@ -169,7 +169,7 @@ export const UserGroups = ({ user }: UserGroupsProps) => {
         className="keycloak_user-section_groups-table"
         isPaginated
         ariaLabelKey="roles:roleList"
-        searchPlaceholderKey="groups:searchGroup"
+        searchPlaceholderKey="searchGroup"
         canSelectAll
         onSelect={(groups) =>
           isDirectMembership

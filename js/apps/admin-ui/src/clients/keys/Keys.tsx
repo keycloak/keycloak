@@ -85,7 +85,7 @@ export const Keys = ({ clientId, save, hasConfigureAccess }: KeysProps) => {
       addAlert(t("generateSuccess"), AlertVariant.success);
       refresh();
     } catch (error) {
-      addError("clients:generateError", error);
+      addError("generateError", error);
     }
   };
 
@@ -107,7 +107,7 @@ export const Keys = ({ clientId, save, hasConfigureAccess }: KeysProps) => {
       addAlert(t("importSuccess"), AlertVariant.success);
       refresh();
     } catch (error) {
-      addError("clients:importError", error);
+      addError("importError", error);
     }
   };
 
@@ -145,7 +145,7 @@ export const Keys = ({ clientId, save, hasConfigureAccess }: KeysProps) => {
               labelIcon={
                 <HelpItem
                   helpText={t("useJwksUrlHelp")}
-                  fieldLabelId="clients:useJwksUrl"
+                  fieldLabelId="useJwksUrl"
                 />
               }
             >
@@ -156,8 +156,8 @@ export const Keys = ({ clientId, save, hasConfigureAccess }: KeysProps) => {
                   <Switch
                     data-testid="useJwksUrl"
                     id="useJwksUrl-switch"
-                    label={t("common:on")}
-                    labelOff={t("common:off")}
+                    label={t("on")}
+                    labelOff={t("off")}
                     isChecked={field.value === "true"}
                     onChange={(value) => field.onChange(`${value}`)}
                     aria-label={t("useJwksUrl")}
@@ -178,7 +178,7 @@ export const Keys = ({ clientId, save, hasConfigureAccess }: KeysProps) => {
                 labelIcon={
                   <HelpItem
                     helpText={t("jwksUrlHelp")}
-                    fieldLabelId="clients:jwksUrl"
+                    fieldLabelId="jwksUrl"
                   />
                 }
               >
@@ -197,7 +197,7 @@ export const Keys = ({ clientId, save, hasConfigureAccess }: KeysProps) => {
                 onClick={save}
                 isDisabled={!isDirty}
               >
-                {t("common:save")}
+                {t("save")}
               </Button>
               <Button
                 data-testid="generate"

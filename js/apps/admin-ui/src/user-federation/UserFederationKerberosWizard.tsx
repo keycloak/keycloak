@@ -26,7 +26,7 @@ export const UserFederationKerberosWizard = () => {
       component: (
         <SettingsCache form={form} showSectionHeading showSectionDescription />
       ),
-      nextButtonText: t("common:finish"), // TODO: needs to disable until cache policy is valid
+      nextButtonText: t("finish"), // TODO: needs to disable until cache policy is valid
     },
   ];
 

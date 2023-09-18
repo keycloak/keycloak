@@ -187,7 +187,7 @@ export const WebauthnPolicy = ({
       setupForm(submittedRealm);
       addAlert(t("webAuthnUpdateSuccess"), AlertVariant.success);
     } catch (error) {
-      addError("authentication:webAuthnUpdateError", error);
+      addError("webAuthnUpdateError", error);
     }
   };
 
@@ -212,13 +212,13 @@ export const WebauthnPolicy = ({
         <FormGroup
           label={t("webAuthnPolicyRpEntityName")}
           fieldId="webAuthnPolicyRpEntityName"
-          helperTextInvalid={t("common:required")}
+          helperTextInvalid={t("required")}
           validated={errors.webAuthnPolicyRpEntityName ? "error" : "default"}
           isRequired
           labelIcon={
             <HelpItem
               helpText={t("webAuthnPolicyRpEntityNameHelp")}
-              fieldLabelId="authentication:webAuthnPolicyRpEntityName"
+              fieldLabelId="webAuthnPolicyRpEntityName"
             />
           }
         >
@@ -241,7 +241,7 @@ export const WebauthnPolicy = ({
             labelIcon={
               <HelpItem
                 helpText={t("webAuthnPolicyRpIdHelp")}
-                fieldLabelId="authentication:webAuthnPolicyRpId"
+                fieldLabelId="webAuthnPolicyRpId"
               />
             }
             fieldId="webAuthnPolicyRpId"
@@ -284,7 +284,7 @@ export const WebauthnPolicy = ({
             labelIcon={
               <HelpItem
                 helpText={t("webAuthnPolicyCreateTimeoutHelp")}
-                fieldLabelId="authentication:webAuthnPolicyCreateTimeout"
+                fieldLabelId="webAuthnPolicyCreateTimeout"
               />
             }
           >
@@ -312,10 +312,8 @@ export const WebauthnPolicy = ({
             fieldId="webAuthnPolicyAvoidSameAuthenticatorRegister"
             labelIcon={
               <HelpItem
-                helpText={t(
-                  "authentication-help:webAuthnPolicyAvoidSameAuthenticatorRegister",
-                )}
-                fieldLabelId="authentication:webAuthnPolicyAvoidSameAuthenticatorRegister"
+                helpText={t("webAuthnPolicyAvoidSameAuthenticatorRegisterHelp")}
+                fieldLabelId="webAuthnPolicyAvoidSameAuthenticatorRegister"
               />
             }
           >
@@ -326,8 +324,8 @@ export const WebauthnPolicy = ({
               render={({ field }) => (
                 <Switch
                   id="webAuthnPolicyAvoidSameAuthenticatorRegister"
-                  label={t("common:on")}
-                  labelOff={t("common:off")}
+                  label={t("on")}
+                  labelOff={t("off")}
                   isChecked={field.value}
                   onChange={field.onChange}
                   aria-label={t("webAuthnPolicyAvoidSameAuthenticatorRegister")}
@@ -340,17 +338,15 @@ export const WebauthnPolicy = ({
             fieldId="webAuthnPolicyAcceptableAaguids"
             labelIcon={
               <HelpItem
-                helpText={t(
-                  "authentication-help:webAuthnPolicyAcceptableAaguids",
-                )}
-                fieldLabelId="authentication:webAuthnPolicyAcceptableAaguids"
+                helpText={t("webAuthnPolicyAcceptableAaguidsHelp")}
+                fieldLabelId="webAuthnPolicyAcceptableAaguids"
               />
             }
           >
             <MultiLineInput
               name={`${namePrefix}AcceptableAaguids`}
               aria-label={t("webAuthnPolicyAcceptableAaguids")}
-              addButtonLabel="authentication:addAaguids"
+              addButtonLabel="addAaguids"
             />
           </FormGroup>
         </FormProvider>
@@ -362,14 +358,14 @@ export const WebauthnPolicy = ({
             type="submit"
             isDisabled={!isDirty}
           >
-            {t("common:save")}
+            {t("save")}
           </Button>
           <Button
             data-testid="reload"
             variant={ButtonVariant.link}
             onClick={() => setupForm(realm)}
           >
-            {t("common:reload")}
+            {t("reload")}
           </Button>
         </ActionGroup>
       </FormAccess>

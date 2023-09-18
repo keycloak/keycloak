@@ -17,13 +17,13 @@ export const Regex = () => {
       <FormGroup
         label={t("targetClaim")}
         fieldId="targetClaim"
-        helperTextInvalid={t("common:required")}
+        helperTextInvalid={t("required")}
         validated={errors.targetClaim ? "error" : "default"}
         isRequired
         labelIcon={
           <HelpItem
             helpText={t("targetClaimHelp")}
-            fieldLabelId="clients:targetClaim"
+            fieldLabelId="targetClaim"
           />
         }
       >
@@ -40,12 +40,12 @@ export const Regex = () => {
         labelIcon={
           <HelpItem
             helpText={t("regexPatternHelp")}
-            fieldLabelId="clients:regexPattern"
+            fieldLabelId="regexPattern"
           />
         }
         isRequired
         validated={errors.pattern ? "error" : "default"}
-        helperTextInvalid={t("common:required")}
+        helperTextInvalid={t("required")}
       >
         <KeycloakTextInput
           id="pattern"

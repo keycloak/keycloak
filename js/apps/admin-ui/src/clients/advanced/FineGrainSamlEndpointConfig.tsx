@@ -69,10 +69,10 @@ export const FineGrainSamlEndpointConfig = ({
 
       <ActionGroup>
         <Button variant="tertiary" onClick={save} data-testid="fineGrainSave">
-          {t("common:save")}
+          {t("save")}
         </Button>
         <Button variant="link" onClick={reset} data-testid="fineGrainRevert">
-          {t("common:revert")}
+          {t("revert")}
         </Button>
       </ActionGroup>
     </FormAccess>

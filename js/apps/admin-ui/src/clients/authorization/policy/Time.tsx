@@ -143,7 +143,7 @@ const FromTo = ({ name, ...rest }: NumberControlProps) => {
         <SplitItem>
           <NumberControl name={name} {...rest} />
         </SplitItem>
-        <SplitItem>{t("common:to")}</SplitItem>
+        <SplitItem>{t("to")}</SplitItem>
         <SplitItem>
           <NumberControl name={`${name}End`} {...rest} />
         </SplitItem>
@@ -165,7 +165,7 @@ export const Time = () => {
         label={t("repeat")}
         fieldId="repeat"
         labelIcon={
-          <HelpItem helpText={t("repeatHelp")} fieldLabelId="clients:repeat" />
+          <HelpItem helpText={t("repeatHelp")} fieldLabelId="repeat" />
         }
       >
         <Flex>
@@ -205,13 +205,10 @@ export const Time = () => {
         label={t("startTime")}
         fieldId="notBefore"
         labelIcon={
-          <HelpItem
-            helpText={t("startTimeHelp")}
-            fieldLabelId="clients:startTime"
-          />
+          <HelpItem helpText={t("startTimeHelp")} fieldLabelId="startTime" />
         }
         isRequired
-        helperTextInvalid={t("common:required")}
+        helperTextInvalid={t("required")}
         validated={
           errors.notBefore ? ValidatedOptions.error : ValidatedOptions.default
         }
@@ -222,13 +219,10 @@ export const Time = () => {
         label={t("expireTime")}
         fieldId="notOnOrAfter"
         labelIcon={
-          <HelpItem
-            helpText={t("expireTimeHelp")}
-            fieldLabelId="clients:expireTime"
-          />
+          <HelpItem helpText={t("expireTimeHelp")} fieldLabelId="expireTime" />
         }
         isRequired
-        helperTextInvalid={t("common:required")}
+        helperTextInvalid={t("required")}
         validated={
           errors.notOnOrAfter
             ? ValidatedOptions.error

@@ -309,7 +309,7 @@ export function UserDataTable() {
               clearAllFilters();
             }}
           >
-            {t("common:clearAllFilters")}
+            {t("clearAllFilters")}
           </Button>
         </ToolbarItem>
       </div>
@@ -357,7 +357,7 @@ export function UserDataTable() {
 
           return [
             {
-              title: t("common:delete"),
+              title: t("delete"),
               onClick: () => {
                 setSelectedRows([user]);
                 toggleDeleteDialog();

@@ -84,7 +84,7 @@ export const SamlKeysDialog = ({
   const submit = (form: SamlKeysDialogForm) => {
     submitForm(form, id, attr, (error) => {
       if (error) {
-        addError("clients:importError", error);
+        addError("importError", error);
       } else {
         addAlert(t("importSuccess"), AlertVariant.success);
       }
@@ -107,7 +107,7 @@ export const SamlKeysDialog = ({
 
       addAlert(t("generateSuccess"), AlertVariant.success);
     } catch (error) {
-      addError("clients:generateError", error);
+      addError("generateError", error);
     }
   };
 
@@ -146,7 +146,7 @@ export const SamlKeysDialog = ({
           variant={ButtonVariant.link}
           onClick={onCancel}
         >
-          {t("common:cancel")}
+          {t("cancel")}
         </Button>,
       ]}
     >
@@ -185,7 +185,7 @@ export const SamlKeysDialog = ({
               labelIcon={
                 <HelpItem
                   helpText={t("certificateHelp")}
-                  fieldLabelId="clients:certificate"
+                  fieldLabelId="certificate"
                 />
               }
             >

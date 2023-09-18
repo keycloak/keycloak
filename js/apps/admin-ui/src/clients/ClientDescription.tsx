@@ -17,23 +17,23 @@ export const ClientDescription = ({
     <FormAccess role="manage-clients" fineGrainedAccess={configure} unWrap>
       <TextControl
         name="clientId"
-        label={t("common:clientId")}
+        label={t("clientId")}
         labelIcon={t("clientIdHelp")}
-        rules={{ required: { value: true, message: t("common:required") } }}
+        rules={{ required: { value: true, message: t("required") } }}
       />
       <TextControl
         name="name"
-        label={t("common:name")}
+        label={t("name")}
         labelIcon={t("clientNameHelp")}
       />
       <TextAreaControl
         name="description"
-        label={t("common:description")}
-        labelIcon={t("clients-help:description")}
+        label={t("description")}
+        labelIcon={t("clientDescriptionHelp")}
         rules={{
           maxLength: {
             value: 255,
-            message: t("common:maxLength", { length: 255 }),
+            message: t("maxLength", { length: 255 }),
           },
         }}
       />

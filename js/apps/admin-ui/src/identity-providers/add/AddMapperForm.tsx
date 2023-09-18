@@ -48,7 +48,7 @@ export const AddMapperForm = ({
   return (
     <>
       <FormGroup
-        label={t("common:name")}
+        label={t("name")}
         labelIcon={
           <HelpItem
             helpText={t("identity-providers-help:addIdpMapperName")}
@@ -60,7 +60,7 @@ export const AddMapperForm = ({
         validated={
           errors.name ? ValidatedOptions.error : ValidatedOptions.default
         }
-        helperTextInvalid={t("common:required")}
+        helperTextInvalid={t("required")}
       >
         <KeycloakTextInput
           id="kc-name"

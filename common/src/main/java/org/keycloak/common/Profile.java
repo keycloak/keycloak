@@ -63,6 +63,8 @@ public class Profile {
 
         WEB_AUTHN("W3C Web Authentication (WebAuthn)", Type.DEFAULT),
 
+        LEGACY_WELCOME("Disables the new 'welcome' theme, and restores the legacy version.", Type.DEPRECATED),
+
         CLIENT_POLICIES("Client configuration policies", Type.DEFAULT),
 
         CIBA("OpenID Connect Client Initiated Backchannel Authentication (CIBA)", Type.DEFAULT),
@@ -95,7 +97,7 @@ public class Profile {
         LINKEDIN_OAUTH("LinkedIn Social Identity Provider based on OAuth", Type.DEPRECATED);
 
         private final Type type;
-        private String label;
+        private final String label;
 
         private Set<Feature> dependencies;
         Feature(String label, Type type) {
@@ -133,7 +135,7 @@ public class Profile {
             EXPERIMENTAL("Experimental"),
             DEPRECATED("Deprecated");
 
-            private String label;
+            private final String label;
 
             Type(String label) {
                 this.label = label;
@@ -248,7 +250,7 @@ public class Profile {
                     case DEFAULT:
                         return true;
                     case PREVIEW:
-                        return profile.equals(ProfileName.PREVIEW) ? true : false;
+                        return profile.equals(ProfileName.PREVIEW);
                     default:
                         return false;
                 }
@@ -268,12 +270,12 @@ public class Profile {
     }
 
     private void logUnsupportedFeatures() {
-        logUnsuportedFeatures(Feature.Type.PREVIEW, getPreviewFeatures(), Logger.Level.INFO);
-        logUnsuportedFeatures(Feature.Type.EXPERIMENTAL, getExperimentalFeatures(), Logger.Level.WARN);
-        logUnsuportedFeatures(Feature.Type.DEPRECATED, getDeprecatedFeatures(), Logger.Level.WARN);
+        logUnsupportedFeatures(Feature.Type.PREVIEW, getPreviewFeatures(), Logger.Level.INFO);
+        logUnsupportedFeatures(Feature.Type.EXPERIMENTAL, getExperimentalFeatures(), Logger.Level.WARN);
+        logUnsupportedFeatures(Feature.Type.DEPRECATED, getDeprecatedFeatures(), Logger.Level.WARN);
     }
 
-    private void logUnsuportedFeatures(Feature.Type type, Set<Feature> checkedFeatures, Logger.Level level) {
+    private void logUnsupportedFeatures(Feature.Type type, Set<Feature> checkedFeatures, Logger.Level level) {
         Set<Feature.Type> checkedFeatureTypes = checkedFeatures.stream()
                 .map(Feature::getType)
                 .collect(Collectors.toSet());

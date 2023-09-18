@@ -114,7 +114,7 @@ export const AddStepModal = ({ name, type, onSelect }: AddStepModalProps) => {
           key="add"
           onClick={() => onSelect(value)}
         >
-          {t("common:add")}
+          {t("add")}
         </Button>,
         <Button
           data-testid="cancel"
@@ -125,7 +125,7 @@ export const AddStepModal = ({ name, type, onSelect }: AddStepModalProps) => {
             onSelect();
           }}
         >
-          {t("common:cancel")}
+          {t("cancel")}
         </Button>,
       ]}
     >
@@ -141,7 +141,7 @@ export const AddStepModal = ({ name, type, onSelect }: AddStepModalProps) => {
             setMax(max);
           }}
           inputGroupName="search"
-          inputGroupPlaceholder={t("common:search")}
+          inputGroupPlaceholder={t("search")}
           inputGroupOnEnter={setSearch}
         >
           <AuthenticationProviderList

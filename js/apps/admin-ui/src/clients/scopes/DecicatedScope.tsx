@@ -61,7 +61,7 @@ export const DedicatedScope = ({
 
       addAlert(t("clientScopeSuccess"), AlertVariant.success);
     } catch (error) {
-      addError("clients:clientScopeError", error);
+      addError("clientScopeError", error);
     }
   };
 
@@ -72,7 +72,7 @@ export const DedicatedScope = ({
       addAlert(t("clientScopeSuccess"), AlertVariant.success);
       setClient(newClient);
     } catch (error) {
-      addError("clients:clientScopeError", error);
+      addError("clientScopeError", error);
     }
   };
 
@@ -89,15 +89,15 @@ export const DedicatedScope = ({
           labelIcon={
             <HelpItem
               helpText={t("fullScopeAllowedHelp")}
-              fieldLabelId="clients:fullScopeAllowed"
+              fieldLabelId="fullScopeAllowed"
             />
           }
           fieldId="fullScopeAllowed"
         >
           <Switch
             id="fullScopeAllowed"
-            label={t("common:on")}
-            labelOff={t("common:off")}
+            label={t("on")}
+            labelOff={t("off")}
             isChecked={client.fullScopeAllowed}
             onChange={update}
             aria-label={t("fullScopeAllowed")}

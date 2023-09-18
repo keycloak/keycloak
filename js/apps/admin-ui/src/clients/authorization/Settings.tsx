@@ -59,7 +59,7 @@ export const AuthorizationSettings = ({ clientId }: { clientId: string }) => {
       addAlert(t("importResourceSuccess"), AlertVariant.success);
       reset({ ...value });
     } catch (error) {
-      addError("clients:importResourceError", error);
+      addError("importResourceError", error);
     }
   };
 
@@ -71,7 +71,7 @@ export const AuthorizationSettings = ({ clientId }: { clientId: string }) => {
       );
       addAlert(t("updateResourceSuccess"), AlertVariant.success);
     } catch (error) {
-      addError("clients:resourceSaveError", error);
+      addError("resourceSaveError", error);
     }
   };
 
@@ -96,10 +96,7 @@ export const AuthorizationSettings = ({ clientId }: { clientId: string }) => {
           label={t("import")}
           fieldId="import"
           labelIcon={
-            <HelpItem
-              helpText={t("importHelp")}
-              fieldLabelId="clients:import"
-            />
+            <HelpItem helpText={t("importHelp")} fieldLabelId="import" />
           }
         >
           <Button variant="secondary" onClick={toggleImportDialog}>
@@ -112,7 +109,7 @@ export const AuthorizationSettings = ({ clientId }: { clientId: string }) => {
           labelIcon={
             <HelpItem
               helpText={t("policyEnforcementModeHelp")}
-              fieldLabelId="clients:policyEnforcementMode"
+              fieldLabelId="policyEnforcementMode"
             />
           }
           fieldId="policyEnforcementMode"
@@ -151,7 +148,7 @@ export const AuthorizationSettings = ({ clientId }: { clientId: string }) => {
           labelIcon={
             <HelpItem
               helpText={t("allowRemoteResourceManagementHelp")}
-              fieldLabelId="clients:allowRemoteResourceManagement"
+              fieldLabelId="allowRemoteResourceManagement"
             />
           }
         >
@@ -163,8 +160,8 @@ export const AuthorizationSettings = ({ clientId }: { clientId: string }) => {
             render={({ field }) => (
               <Switch
                 id="allowRemoteResourceManagement"
-                label={t("common:on")}
-                labelOff={t("common:off")}
+                label={t("on")}
+                labelOff={t("off")}
                 isChecked={field.value}
                 onChange={field.onChange}
                 aria-label={t("allowRemoteResourceManagement")}

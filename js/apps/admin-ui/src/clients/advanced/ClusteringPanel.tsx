@@ -52,11 +52,11 @@ export const ClusteringPanel = ({
   };
 
   const [toggleDeleteNodeConfirm, DeleteNodeConfirm] = useConfirmDialog({
-    titleKey: "clients:deleteNode",
+    titleKey: "deleteNode",
     messageKey: t("deleteNodeBody", {
       node: selectedNode,
     }),
-    continueButtonLabel: "common:delete",
+    continueButtonLabel: "delete",
     continueButtonVariant: ButtonVariant.danger,
     onConfirm: async () => {
       try {
@@ -75,7 +75,7 @@ export const ClusteringPanel = ({
         refresh();
         addAlert(t("deleteNodeSuccess"), AlertVariant.success);
       } catch (error) {
-        addError("clients:deleteNodeFail", error);
+        addError("deleteNodeFail", error);
       }
     },
   });
@@ -93,7 +93,7 @@ export const ClusteringPanel = ({
           labelIcon={
             <HelpItem
               helpText={t("nodeReRegistrationTimeoutHelp")}
-              fieldLabelId="clients:nodeReRegistrationTimeout"
+              fieldLabelId="nodeReRegistrationTimeout"
             />
           }
         >
@@ -103,7 +103,7 @@ export const ClusteringPanel = ({
             </SplitItem>
             <SplitItem>
               <Button variant={ButtonVariant.secondary} onClick={() => save()}>
-                {t("common:save")}
+                {t("save")}
               </Button>
             </SplitItem>
           </Split>
@@ -160,7 +160,7 @@ export const ClusteringPanel = ({
             }
             actions={[
               {
-                title: t("common:delete"),
+                title: t("delete"),
                 onRowClick: (node) => {
                   setSelectedNode(node.host);
                   toggleDeleteNodeConfirm();
@@ -170,11 +170,11 @@ export const ClusteringPanel = ({
             columns={[
               {
                 name: "host",
-                displayKey: "clients:nodeHost",
+                displayKey: "nodeHost",
               },
               {
                 name: "registration",
-                displayKey: "clients:lastRegistration",
+                displayKey: "lastRegistration",
                 cellFormatters: [
                   (value) =>
                     value

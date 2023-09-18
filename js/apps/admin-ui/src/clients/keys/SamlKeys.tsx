@@ -108,8 +108,8 @@ const KeySection = ({
                 <Switch
                   data-testid={key}
                   id={key}
-                  label={t("common:on")}
-                  labelOff={t("common:off")}
+                  label={t("on")}
+                  labelOff={t("off")}
                   isChecked={field.value === "true"}
                   onChange={(value) => {
                     const v = value.toString();
@@ -143,7 +143,7 @@ const KeySection = ({
                   {t("importKey")}
                 </Button>
                 <Button variant="tertiary" onClick={toggleImportDialog}>
-                  {t("common:export")}
+                  {t("export")}
                 </Button>
               </ActionGroup>
             </Form>
@@ -195,7 +195,7 @@ export const SamlKeys = ({ clientId, save }: SamlKeysProps) => {
 
       addAlert(t("generateSuccess"), AlertVariant.success);
     } catch (error) {
-      addError("clients:generateError", error);
+      addError("generateError", error);
     }
   };
 
@@ -207,8 +207,8 @@ export const SamlKeys = ({ clientId, save }: SamlKeysProps) => {
     messageKey: t("disableSigningExplain", {
       key: t(key),
     }),
-    continueButtonLabel: "common:yes",
-    cancelButtonLabel: "common:no",
+    continueButtonLabel: "yes",
+    cancelButtonLabel: "no",
     onConfirm: () => {
       setValue(KEYS_MAPPING[selectedType!].name, "false");
       save();
@@ -216,10 +216,10 @@ export const SamlKeys = ({ clientId, save }: SamlKeysProps) => {
   });
 
   const [toggleReGenerateDialog, ReGenerateConfirm] = useConfirmDialog({
-    titleKey: "clients:reGenerateSigning",
-    messageKey: "clients:reGenerateSigningExplain",
-    continueButtonLabel: "common:yes",
-    cancelButtonLabel: "common:no",
+    titleKey: "reGenerateSigning",
+    messageKey: "reGenerateSigningExplain",
+    continueButtonLabel: "yes",
+    cancelButtonLabel: "no",
     onConfirm: () => {
       generate(selectedType!);
     },

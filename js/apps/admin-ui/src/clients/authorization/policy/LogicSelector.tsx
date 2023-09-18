@@ -17,9 +17,7 @@ export const LogicSelector = ({ isDisabled }: LogicSelectorProps) => {
   return (
     <FormGroup
       label={t("logic")}
-      labelIcon={
-        <HelpItem helpText={t("logicHelp")} fieldLabelId="clients:logic" />
-      }
+      labelIcon={<HelpItem helpText={t("logicHelp")} fieldLabelId="logic" />}
       fieldId="logic"
       hasNoPaddingTop
     >

@@ -634,5 +634,12 @@
   "titleEvents": "Įvykiai",
   "titleRoles": "Srities rolės",
   "titleUsers": "Naudotojai",
-  "titleSessions": "Sesijos"
+  "titleSessions": "Sesijos",
+  "authenticationAliasHelp": "Konfigūracijos pavadinimas",
+  "authenticationFlowTypeHelp": "Kokios rūšies ši forma?",
+  "scopeNameHelp": "Kliento šablono pavadinimas. Privalo būti unikalus šioje srityje",
+  "scopeDescriptionHelp": "Kliento šablono aprašymas",
+  "clientDescriptionHelp": "Nurodomas kliento aprašas. Pavyzdžiui 'Mano laiko lentelių klientas'. Palaikomos lokalizuotos reikšmės. Pavyzdžiui: ${my_client_description}",
+  "clientsClientTypeHelp": "'OpenID connect' leidžia klientams tikrinti galutinio naudotojo tapatybę remiantis autorizacijos serverio atlikta autentifikacija. 'SAML' įgalina žiniatinklio, įskaitant skirtingų domenų atvejus, vieningos autentifikacijos ir autorizacijos scenarijus perduodant informaciją saugiose žinutėse.",
+  "clientsClientScopesHelp": "Su šiuo resursu susietos taikymo sritys."
 }

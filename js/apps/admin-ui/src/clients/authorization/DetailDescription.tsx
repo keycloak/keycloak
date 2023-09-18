@@ -44,7 +44,7 @@ export function DetailDescriptionLink<T>({
             </span>
           );
         })}
-        {array?.length === 0 && <i>{t("common:none")}</i>}
+        {array?.length === 0 && <i>{t("none")}</i>}
       </DescriptionListDescription>
     </DescriptionListGroup>
   );

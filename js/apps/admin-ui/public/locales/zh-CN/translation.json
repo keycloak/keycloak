@@ -3243,5 +3243,16 @@
   "updateSuccessIdentityProvider": "供应商更新成功",
   "updateErrorIdentityProvider": "无法更新供应商 {{error}}",
   "orderChangeSuccessUserFed": "成功更改用户联盟供应商的优先顺序",
-  "orderChangeErrorUserFed": "由于{{error}}，无法更改用户联盟供应商的优先顺序。"
+  "orderChangeErrorUserFed": "由于{{error}}，无法更改用户联盟供应商的优先顺序。",
+  "authenticationAliasHelp": "配置名称",
+  "authenticationFlowTypeHelp": "它是一种什么样的形式？",
+  "clientScopeTypes": { "default": "默认", "optional": "非必需", "none": "无" },
+  "realmNameTitle": "{{name}} 领域",
+  "authenticationCreateFlowHelp": "创建流程",
+  "scopeNameHelp": "客户端作用域的名称。在领域中必须是唯一的。名称不应包含空格字符，因为它用作作用域参数的值。",
+  "scopeDescriptionHelp": "客户作用域说明",
+  "scopeTypeHelp": "客户端作用域，将以默认作用域的形式添加到每个创建的客户端",
+  "clientDescriptionHelp": "指定客户端的描述。例如'My Client for TimeSheets'。也支持本地化值的键。例如：${my_client_description}",
+  "clientsClientTypeHelp": "'OpenID Connect' 允许客户端根据授权服务器执行的身份验证来验证最终用户的身份。'SAML' 启用基于 Web 的身份验证和授权方案，包括跨域单点登录（ SSO) 并使用包含断言的安全令牌来传递信息。",
+  "clientsClientScopesHelp": "与此资源关联的范围。"
 }

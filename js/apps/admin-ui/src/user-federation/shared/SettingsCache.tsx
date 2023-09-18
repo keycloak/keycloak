@@ -143,25 +143,25 @@ const CacheFields = ({ form }: { form: UseFormReturn }) => {
                 variant={SelectVariant.single}
               >
                 <SelectOption key={0} value="1" isPlaceholder>
-                  {t("common:Sunday")}
+                  {t("Sunday")}
                 </SelectOption>
                 <SelectOption key={1} value="2">
-                  {t("common:Monday")}
+                  {t("Monday")}
                 </SelectOption>
                 <SelectOption key={2} value="3">
-                  {t("common:Tuesday")}
+                  {t("Tuesday")}
                 </SelectOption>
                 <SelectOption key={3} value="4">
-                  {t("common:Wednesday")}
+                  {t("Wednesday")}
                 </SelectOption>
                 <SelectOption key={4} value="5">
-                  {t("common:Thursday")}
+                  {t("Thursday")}
                 </SelectOption>
                 <SelectOption key={5} value="6">
-                  {t("common:Friday")}
+                  {t("Friday")}
                 </SelectOption>
                 <SelectOption key={6} value="7">
-                  {t("common:Saturday")}
+                  {t("Saturday")}
                 </SelectOption>
               </Select>
             )}

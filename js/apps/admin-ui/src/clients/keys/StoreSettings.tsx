@@ -27,12 +27,9 @@ export const StoreSettings = ({
         fieldId="keyAlias"
         isRequired
         labelIcon={
-          <HelpItem
-            helpText={t("keyAliasHelp")}
-            fieldLabelId="clients:keyAlias"
-          />
+          <HelpItem helpText={t("keyAliasHelp")} fieldLabelId="keyAlias" />
         }
-        helperTextInvalid={t("common:required")}
+        helperTextInvalid={t("required")}
         validated={errors.keyAlias ? "error" : "default"}
       >
         <KeycloakTextInput
@@ -50,10 +47,10 @@ export const StoreSettings = ({
           labelIcon={
             <HelpItem
               helpText={t("keyPasswordHelp")}
-              fieldLabelId="clients:keyPassword"
+              fieldLabelId="keyPassword"
             />
           }
-          helperTextInvalid={t("common:required")}
+          helperTextInvalid={t("required")}
           validated={errors.keyPassword ? "error" : "default"}
         >
           <PasswordInput
@@ -71,7 +68,7 @@ export const StoreSettings = ({
           labelIcon={
             <HelpItem
               helpText={t("realmCertificateAliasHelp")}
-              fieldLabelId="clients:realmCertificateAlias"
+              fieldLabelId="realmCertificateAlias"
             />
           }
         >
@@ -89,10 +86,10 @@ export const StoreSettings = ({
         labelIcon={
           <HelpItem
             helpText={t("storePasswordHelp")}
-            fieldLabelId="clients:storePassword"
+            fieldLabelId="storePassword"
           />
         }
-        helperTextInvalid={t("common:required")}
+        helperTextInvalid={t("required")}
         validated={errors.storePassword ? "error" : "default"}
       >
         <PasswordInput

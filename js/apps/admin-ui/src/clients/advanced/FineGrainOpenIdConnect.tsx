@@ -72,7 +72,7 @@ export const FineGrainOpenIdConnect = ({
 
   const keyOptions = [
     <SelectOption key="empty" value="">
-      {t("common:choose")}
+      {t("choose")}
     </SelectOption>,
     ...sortProviders(clientSignatureProviders!).map((p) => (
       <SelectOption key={p} value={p} />
@@ -80,7 +80,7 @@ export const FineGrainOpenIdConnect = ({
   ];
   const cekManagementOptions = [
     <SelectOption key="empty" value="">
-      {t("common:choose")}
+      {t("choose")}
     </SelectOption>,
     ...sortProviders(cekManagementProviders!).map((p) => (
       <SelectOption key={p} value={p} />
@@ -96,7 +96,7 @@ export const FineGrainOpenIdConnect = ({
   ];
   const contentOptions = [
     <SelectOption key="empty" value="">
-      {t("common:choose")}
+      {t("choose")}
     </SelectOption>,
     ...sortProviders(contentEncryptionProviders!).map((p) => (
       <SelectOption key={p} value={p} />
@@ -105,10 +105,10 @@ export const FineGrainOpenIdConnect = ({
 
   const requestObjectOptions = [
     <SelectOption key="any" value="any">
-      {t("common:any")}
+      {t("any")}
     </SelectOption>,
     <SelectOption key="none" value="none">
-      {t("common:none")}
+      {t("none")}
     </SelectOption>,
     ...sortProviders(clientSignatureProviders!).map((p) => (
       <SelectOption key={p} value={p} />
@@ -117,7 +117,7 @@ export const FineGrainOpenIdConnect = ({
 
   const requestObjectEncryptionOptions = [
     <SelectOption key="any" value="any">
-      {t("common:any")}
+      {t("any")}
     </SelectOption>,
     ...sortProviders(cekManagementProviders!).map((p) => (
       <SelectOption key={p} value={p} />
@@ -126,7 +126,7 @@ export const FineGrainOpenIdConnect = ({
 
   const requestObjectEncodingOptions = [
     <SelectOption key="any" value="any">
-      {t("common:any")}
+      {t("any")}
     </SelectOption>,
     ...sortProviders(contentEncryptionProviders!).map((p) => (
       <SelectOption key={p} value={p} />
@@ -135,7 +135,7 @@ export const FineGrainOpenIdConnect = ({
 
   const authorizationSignedResponseOptions = [
     <SelectOption key="empty" value="">
-      {t("common:choose")}
+      {t("choose")}
     </SelectOption>,
     ...sortProviders(signatureProviders!).map((p) => (
       <SelectOption key={p} value={p} />
@@ -166,7 +166,7 @@ export const FineGrainOpenIdConnect = ({
         labelIcon={
           <HelpItem
             helpText={t("accessTokenSignatureAlgorithmHelp")}
-            fieldLabelId="clients:accessTokenSignatureAlgorithm"
+            fieldLabelId="accessTokenSignatureAlgorithm"
           />
         }
       >
@@ -199,7 +199,7 @@ export const FineGrainOpenIdConnect = ({
         labelIcon={
           <HelpItem
             helpText={t("idTokenSignatureAlgorithmHelp")}
-            fieldLabelId="clients:idTokenSignatureAlgorithm"
+            fieldLabelId="idTokenSignatureAlgorithm"
           />
         }
       >
@@ -232,7 +232,7 @@ export const FineGrainOpenIdConnect = ({
         labelIcon={
           <HelpItem
             helpText={t("idTokenEncryptionKeyManagementAlgorithmHelp")}
-            fieldLabelId="clients:idTokenEncryptionKeyManagementAlgorithm"
+            fieldLabelId="idTokenEncryptionKeyManagementAlgorithm"
           />
         }
       >
@@ -264,10 +264,8 @@ export const FineGrainOpenIdConnect = ({
         fieldId="idTokenEncryptionContentEncryptionAlgorithm"
         labelIcon={
           <HelpItem
-            helpText={t(
-              "clients-help:idTokenEncryptionContentEncryptionAlgorithm",
-            )}
-            fieldLabelId="clients:idTokenEncryptionContentEncryptionAlgorithm"
+            helpText={t("idTokenEncryptionContentEncryptionAlgorithmHelp")}
+            fieldLabelId="idTokenEncryptionContentEncryptionAlgorithm"
           />
         }
       >
@@ -300,7 +298,7 @@ export const FineGrainOpenIdConnect = ({
         labelIcon={
           <HelpItem
             helpText={t("userInfoSignedResponseAlgorithmHelp")}
-            fieldLabelId="clients:userInfoSignedResponseAlgorithm"
+            fieldLabelId="userInfoSignedResponseAlgorithm"
           />
         }
       >
@@ -332,10 +330,8 @@ export const FineGrainOpenIdConnect = ({
         fieldId="userInfoResponseEncryptionKeyManagementAlgorithm"
         labelIcon={
           <HelpItem
-            helpText={t(
-              "clients-help:userInfoResponseEncryptionKeyManagementAlgorithm",
-            )}
-            fieldLabelId="clients:userInfoResponseEncryptionKeyManagementAlgorithm"
+            helpText={t("userInfoResponseEncryptionKeyManagementAlgorithmHelp")}
+            fieldLabelId="userInfoResponseEncryptionKeyManagementAlgorithm"
           />
         }
       >
@@ -368,9 +364,9 @@ export const FineGrainOpenIdConnect = ({
         labelIcon={
           <HelpItem
             helpText={t(
-              "clients-help:userInfoResponseEncryptionContentEncryptionAlgorithm",
+              "userInfoResponseEncryptionContentEncryptionAlgorithmHelp",
             )}
-            fieldLabelId="clients:userInfoResponseEncryptionContentEncryptionAlgorithm"
+            fieldLabelId="userInfoResponseEncryptionContentEncryptionAlgorithm"
           />
         }
       >
@@ -403,7 +399,7 @@ export const FineGrainOpenIdConnect = ({
         labelIcon={
           <HelpItem
             helpText={t("requestObjectSignatureAlgorithmHelp")}
-            fieldLabelId="clients:requestObjectSignatureAlgorithm"
+            fieldLabelId="requestObjectSignatureAlgorithm"
           />
         }
       >
@@ -436,7 +432,7 @@ export const FineGrainOpenIdConnect = ({
         labelIcon={
           <HelpItem
             helpText={t("requestObjectEncryptionHelp")}
-            fieldLabelId="clients:requestObjectEncryption"
+            fieldLabelId="requestObjectEncryption"
           />
         }
       >
@@ -469,7 +465,7 @@ export const FineGrainOpenIdConnect = ({
         labelIcon={
           <HelpItem
             helpText={t("requestObjectEncodingHelp")}
-            fieldLabelId="clients:requestObjectEncoding"
+            fieldLabelId="requestObjectEncoding"
           />
         }
       >
@@ -502,7 +498,7 @@ export const FineGrainOpenIdConnect = ({
         labelIcon={
           <HelpItem
             helpText={t("requestObjectRequiredHelp")}
-            fieldLabelId="clients:requestObjectRequired"
+            fieldLabelId="requestObjectRequired"
           />
         }
       >
@@ -535,14 +531,14 @@ export const FineGrainOpenIdConnect = ({
         labelIcon={
           <HelpItem
             helpText={t("validRequestURIsHelp")}
-            fieldLabelId="clients:validRequestURIs"
+            fieldLabelId="validRequestURIs"
           />
         }
       >
         <MultiLineInput
           name={convertAttributeNameToForm("attributes.request.uris")}
           aria-label={t("validRequestURIs")}
-          addButtonLabel="clients:addRequestUri"
+          addButtonLabel="addRequestUri"
           stringify
         />
       </FormGroup>
@@ -552,7 +548,7 @@ export const FineGrainOpenIdConnect = ({
         labelIcon={
           <HelpItem
             helpText={t("authorizationSignedResponseAlgHelp")}
-            fieldLabelId="clients:authorizationSignedResponseAlg"
+            fieldLabelId="authorizationSignedResponseAlg"
           />
         }
       >
@@ -585,7 +581,7 @@ export const FineGrainOpenIdConnect = ({
         labelIcon={
           <HelpItem
             helpText={t("authorizationEncryptedResponseAlgHelp")}
-            fieldLabelId="clients:authorizationEncryptedResponseAlg"
+            fieldLabelId="authorizationEncryptedResponseAlg"
           />
         }
       >
@@ -618,7 +614,7 @@ export const FineGrainOpenIdConnect = ({
         labelIcon={
           <HelpItem
             helpText={t("authorizationEncryptedResponseEncHelp")}
-            fieldLabelId="clients:authorizationEncryptedResponseEnc"
+            fieldLabelId="authorizationEncryptedResponseEnc"
           />
         }
       >
@@ -647,10 +643,10 @@ export const FineGrainOpenIdConnect = ({
       </FormGroup>
       <ActionGroup>
         <Button variant="secondary" id="fineGrainSave" onClick={save}>
-          {t("common:save")}
+          {t("save")}
         </Button>
         <Button id="fineGrainRevert" variant="link" onClick={reset}>
-          {t("common:revert")}
+          {t("revert")}
         </Button>
       </ActionGroup>
     </FormAccess>

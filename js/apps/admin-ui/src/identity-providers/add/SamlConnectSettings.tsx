@@ -90,7 +90,7 @@ export const SamlConnectSettings = () => {
           />
         }
         isRequired
-        helperTextInvalid={t("common:required")}
+        helperTextInvalid={t("required")}
         validated={errors.config?.entityId ? "error" : "default"}
       >
         <KeycloakTextInput

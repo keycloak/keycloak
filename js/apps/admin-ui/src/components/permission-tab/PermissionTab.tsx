@@ -110,9 +110,9 @@ export const PermissionsTab = ({ id, type }: PermissionsTabProps) => {
   );
 
   const [toggleDisableDialog, DisableConfirm] = useConfirmDialog({
-    titleKey: "common:permissionsDisable",
-    messageKey: "common:permissionsDisableConfirm",
-    continueButtonLabel: "common:confirm",
+    titleKey: "permissionsDisable",
+    messageKey: "permissionsDisableConfirm",
+    continueButtonLabel: "confirm",
     onConfirm: async () => {
       const permission = await togglePermissionEnabled(false);
       setPermission(permission);
@@ -139,15 +139,15 @@ export const PermissionsTab = ({ id, type }: PermissionsTabProps) => {
               labelIcon={
                 <HelpItem
                   helpText={t("permissionsEnabledHelp")}
-                  fieldLabelId="clients:permissionsEnabled"
+                  fieldLabelId="permissionsEnabled"
                 />
               }
             >
               <Switch
                 id="permissionsEnabled"
                 data-testid="permissionSwitch"
-                label={t("common:on")}
-                labelOff={t("common:off")}
+                label={t("on")}
+                labelOff={t("off")}
                 isChecked={permission.enabled}
                 onChange={async (enabled) => {
                   if (enabled) {
@@ -168,7 +168,7 @@ export const PermissionsTab = ({ id, type }: PermissionsTabProps) => {
           <Card isFlat className="pf-u-mt-lg">
             <CardTitle>{t("permissionsList")}</CardTitle>
             <CardBody>
-              <Trans i18nKey="common:permissionsListIntro">
+              <Trans i18nKey="permissionsListIntro">
                 {" "}
                 <strong>
                   {{
@@ -219,7 +219,7 @@ export const PermissionsTab = ({ id, type }: PermissionsTabProps) => {
                         <ActionsColumn
                           items={[
                             {
-                              title: t("common:edit"),
+                              title: t("edit"),
                               onClick() {
                                 navigate(
                                   toPermissionDetails({

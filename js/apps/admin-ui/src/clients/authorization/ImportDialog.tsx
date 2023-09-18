@@ -51,7 +51,7 @@ export const ImportDialog = ({ onConfirm, closeDialog }: ImportDialogProps) => {
             closeDialog();
           }}
         >
-          {t("common:cancel")}
+          {t("cancel")}
         </Button>,
       ]}
     >
@@ -68,7 +68,7 @@ export const ImportDialog = ({ onConfirm, closeDialog }: ImportDialogProps) => {
               labelIcon={
                 <HelpItem
                   helpText={t("policyEnforcementModeHelp")}
-                  fieldLabelId="clients:policyEnforcementMode"
+                  fieldLabelId="policyEnforcementMode"
                 />
               }
               fieldId="policyEnforcementMode"
@@ -90,7 +90,7 @@ export const ImportDialog = ({ onConfirm, closeDialog }: ImportDialogProps) => {
               labelIcon={
                 <HelpItem
                   helpText={t("decisionStrategyHelp")}
-                  fieldLabelId="clients:decisionStrategy"
+                  fieldLabelId="decisionStrategy"
                 />
               }
               fieldId="decisionStrategy"
@@ -112,14 +112,14 @@ export const ImportDialog = ({ onConfirm, closeDialog }: ImportDialogProps) => {
               labelIcon={
                 <HelpItem
                   helpText={t("allowRemoteResourceManagement")}
-                  fieldLabelId="clients:allowRemoteResourceManagement"
+                  fieldLabelId="allowRemoteResourceManagement"
                 />
               }
             >
               <Switch
                 id="allowRemoteResourceManagement"
-                label={t("common:on")}
-                labelOff={t("common:off")}
+                label={t("on")}
+                labelOff={t("off")}
                 isChecked={imported.allowRemoteResourceManagement}
                 isDisabled
                 aria-label={t("allowRemoteResourceManagement")}

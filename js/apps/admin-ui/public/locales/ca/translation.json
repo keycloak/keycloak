@@ -309,5 +309,7 @@
   },
   "name-id-format": "Format de NameID",
   "titleRoles": "Rols de domini",
-  "titleSessions": "Sessions"
+  "titleSessions": "Sessions",
+  "clientDescriptionHelp": "Indica la descripció del client. Per exemple ''My Client for TimeSheets''. També suporta claus per a valors localitzats. Per exemple: ${my_client_description}",
+  "clientsClientTypeHelp": "''OpenID connect'' permet als clients verificar la identitat de l''usuari final basat en l''autenticació realitzada per un servidor d''autorització. ''SAML'' habilita l''autenticació i autorització d''escenaris basats en web incloent cross-domain i single sign-on (SSO) i utilitza tokens de seguretat que contenen afirmacions per passar informació."
 }

@@ -592,5 +592,12 @@
   "titleEvents": "Hendelser",
   "titleRoles": "Sikkerhetsdomeneroller",
   "titleUsers": "Brukere",
-  "titleSessions": "Sesjoner"
+  "titleSessions": "Sesjoner",
+  "authenticationAliasHelp": "Navn på konfigurasjonen",
+  "authenticationFlowTypeHelp": "Hva slags skjema det er",
+  "scopeNameHelp": "Navn på klientmal. Må være unik i sikkerhetsdomenet.",
+  "scopeDescriptionHelp": "Beskrivelse av klientmal",
+  "clientDescriptionHelp": "Angir beskrivelse av klienten. For eksempel: 'Min klient for timelister'. Støtter nøkler for lokaliserte verdier. For eksempel: ${my_client_description}",
+  "clientsClientTypeHelp": "'OpenID connect' tillater klienter å verifisere identiteten til sluttbrukeren basert på autentisering utført av en autorisasjonsserver. 'SAML' aktiverer en web-basert autentisering og autoriseringsscenarier som inkluderer cross-domain single sign-on (SSO) og som bruker security tokens som inneholder assertions for å dele informasjon videre.",
+  "clientsClientScopesHelp": "Scopes assosiert med denne ressursen."
 }

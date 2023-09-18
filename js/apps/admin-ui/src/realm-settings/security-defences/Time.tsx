@@ -32,7 +32,7 @@ export const Time = ({
       validated={
         errors[name] ? ValidatedOptions.error : ValidatedOptions.default
       }
-      helperTextInvalid={t("common:required")}
+      helperTextInvalid={t("required")}
     >
       <Controller
         name={name}

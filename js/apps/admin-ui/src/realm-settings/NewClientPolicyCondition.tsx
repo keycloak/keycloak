@@ -256,7 +256,7 @@ export default function NewClientPolicyCondition() {
               data-testid="addCondition-saveBtn"
               isDisabled={conditionType === "" && !conditionName}
             >
-              {conditionName ? t("common:save") : t("common:add")}
+              {conditionName ? t("save") : t("add")}
             </Button>
             <Button
               variant="link"
@@ -265,7 +265,7 @@ export default function NewClientPolicyCondition() {
                 navigate(toEditClientPolicy({ realm, policyName: policyName! }))
               }
             >
-              {t("common:cancel")}
+              {t("cancel")}
             </Button>
           </ActionGroup>
         </FormAccess>

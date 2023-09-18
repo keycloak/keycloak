@@ -922,5 +922,14 @@
   "titleEvents": "イベント",
   "titleRoles": "レルムロール",
   "titleUsers": "ユーザー",
-  "titleSessions": "セッション"
+  "titleSessions": "セッション",
+  "authenticationAliasHelp": "この設定の名前を設定します。",
+  "clientScopeTypes": { "default": "DEFAULT" },
+  "authenticationFlowTypeHelp": "どの種類のフォームかを設定します。",
+  "scopeNameHelp": "クライアント・スコープの名前。レルム内でユニークでなければなりません。スコープ・パラメーターの値として使用されるため、名前には空白文字を含めないでください",
+  "scopeDescriptionHelp": "クライアント・スコープの説明",
+  "scopeTypeHelp": "作成された各クライアントにデフォルト・スコープとして追加されるクライアント・スコープ",
+  "clientDescriptionHelp": "クライアントの説明を指定します。例えば「タイムシート用のクライアント」です。ローカライズ用のキーもサポートしています。例: ${my_client_description}",
+  "clientsClientTypeHelp": "「OpenID Connect」により、クライアントは認可サーバーによって実行される認証に基づいてエンドユーザーのアイデンティティーを検証できます。「SAML」は、クロスドメインのシングル・サインオン（SSO）を含むWebベースの認証および認可のシナリオを可能にし、アサーションを含むセキュリティー・トークンを使用して情報を渡します。",
+  "clientsClientScopesHelp": "このリソースに関連付けるスコープを設定します。"
 }

@@ -69,9 +69,9 @@ export default function DedicatedScopes() {
           mappers as ProtocolMapperRepresentation[],
         );
         setClient(await adminClient.clients.findOne({ id: client.id! }));
-        addAlert(t("common:mappingCreatedSuccess"), AlertVariant.success);
+        addAlert(t("mappingCreatedSuccess"), AlertVariant.success);
       } catch (error) {
-        addError("common:mappingCreatedError", error);
+        addError("mappingCreatedError", error);
       }
     }
   };
@@ -88,9 +88,9 @@ export default function DedicatedScopes() {
           (m) => m.id !== mapper.id,
         ),
       });
-      addAlert(t("common:mappingDeletedSuccess"), AlertVariant.success);
+      addAlert(t("mappingDeletedSuccess"), AlertVariant.success);
     } catch (error) {
-      addError("common:mappingDeletedError", error);
+      addError("mappingDeletedError", error);
     }
     return true;
   };
@@ -99,7 +99,7 @@ export default function DedicatedScopes() {
     <>
       <ViewHeader
         titleKey={client.clientId!}
-        subKey="clients-help:dedicatedScopeExplain"
+        subKey="dedicatedScopeExplain"
         divider={false}
       />
       <PageSection variant="light" className="pf-u-p-0">

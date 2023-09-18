@@ -70,7 +70,7 @@ export const AttributesTab = () => {
     messageKey: t("deleteAttributeConfirm", {
       attributeName: attributeToDelete,
     }),
-    continueButtonLabel: t("common:delete"),
+    continueButtonLabel: t("delete"),
     continueButtonVariant: ButtonVariant.danger,
     onConfirm: async () => {
       save(
@@ -174,7 +174,7 @@ export const AttributesTab = () => {
         }}
         actions={[
           {
-            title: t("common:edit"),
+            title: t("edit"),
             onClick: (_key, _idx, component) => {
               navigate(
                 toAttribute({
@@ -185,7 +185,7 @@ export const AttributesTab = () => {
             },
           },
           {
-            title: t("common:delete"),
+            title: t("delete"),
             isActionable: ({ name }) => !RESTRICTED_ATTRIBUTES.includes(name!),
             onClick: (_key, _idx, component) => {
               setAttributeToDelete(component.name);

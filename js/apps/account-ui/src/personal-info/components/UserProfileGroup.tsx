@@ -12,9 +12,15 @@ import { TFuncKey } from "../../i18n";
 
 export type UserProfileFieldsProps = UserProfileAttributeMetadata;
 
+type LengthValidator =
+  | {
+      min: number;
+    }
+  | undefined;
+
 const isRequired = (attribute: UserProfileAttributeMetadata) =>
   Object.keys(attribute.required || {}).length !== 0 ||
-  ((attribute.validators?.length?.min as number) || 0) > 0;
+  (((attribute.validators.length as LengthValidator)?.min as number) || 0) > 0;
 
 export const UserProfileGroup = ({
   children,
@@ -47,7 +53,7 @@ export const UserProfileGroup = ({
       labelIcon={
         helpText ? (
           <Popover bodyContent={helpText}>
-            <HelpIcon />
+            <HelpIcon data-testid={`${attribute.name}-help`} />
           </Popover>
         ) : undefined
       }

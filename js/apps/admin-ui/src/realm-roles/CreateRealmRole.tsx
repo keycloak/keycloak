@@ -34,7 +34,7 @@ export default function CreateRealmRole() {
       });
 
       if (!createdRole) {
-        throw new Error(t("common:notFound"));
+        throw new Error(t("notFound"));
       }
 
       addAlert(t("roleCreated"), AlertVariant.success);

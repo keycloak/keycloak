@@ -69,7 +69,7 @@ export const AuthorizationExport = () => {
           labelIcon={
             <HelpItem
               helpText={t("authDetailsHelp")}
-              fieldLabelId="clients:authDetails"
+              fieldLabelId="authDetails"
             />
           }
           fieldId="client"
@@ -88,7 +88,7 @@ export const AuthorizationExport = () => {
             data-testid="authorization-export-download"
             onClick={() => exportAuthDetails()}
           >
-            {t("common:download")}
+            {t("download")}
           </Button>
           <Button
             data-testid="authorization-export-copy"

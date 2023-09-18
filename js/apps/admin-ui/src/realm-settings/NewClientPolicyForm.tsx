@@ -118,7 +118,7 @@ export default function NewClientPolicyForm() {
     const [toggleDisableDialog, DisableConfirm] = useConfirmDialog({
       titleKey: "realm-settings:disablePolicyConfirmTitle",
       messageKey: "realm-settings:disablePolicyConfirm",
-      continueButtonLabel: "common:disable",
+      continueButtonLabel: "disable",
       onConfirm: () => {
         onChange(!value);
         save();
@@ -461,7 +461,7 @@ export default function NewClientPolicyForm() {
           className="pf-u-mt-lg"
         >
           <FormGroup
-            label={t("common:name")}
+            label={t("name")}
             fieldId="kc-client-profile-name"
             isRequired
             helperTextInvalid={form.formState.errors.name?.message}
@@ -480,7 +480,7 @@ export default function NewClientPolicyForm() {
                   : ValidatedOptions.default
               }
               {...form.register("name", {
-                required: { value: true, message: t("common:required") },
+                required: { value: true, message: t("required") },
                 validate: (value) =>
                   policies?.some((policy) => policy.name === value)
                     ? t("createClientProfileNameHelperText").toString()
@@ -488,7 +488,7 @@ export default function NewClientPolicyForm() {
               })}
             />
           </FormGroup>
-          <FormGroup label={t("common:description")} fieldId="kc-description">
+          <FormGroup label={t("description")} fieldId="kc-description">
             <KeycloakTextArea
               aria-label={t("description")}
               id="kc-client-policy-description"
@@ -503,7 +503,7 @@ export default function NewClientPolicyForm() {
               data-testid="saveCreatePolicy"
               isDisabled={!form.formState.isValid}
             >
-              {t("common:save")}
+              {t("save")}
             </Button>
             <Button
               id="cancelCreatePolicy"
@@ -520,9 +520,7 @@ export default function NewClientPolicyForm() {
               }
               data-testid="cancelCreatePolicy"
             >
-              {showAddConditionsAndProfilesForm
-                ? t("common:reload")
-                : t("common:cancel")}
+              {showAddConditionsAndProfilesForm ? t("reload") : t("cancel")}
             </Button>
           </ActionGroup>
           {(showAddConditionsAndProfilesForm || form.formState.isSubmitted) && (

@@ -104,14 +104,14 @@ const CreateAttributeFormContent = ({
             type="submit"
             data-testid="attribute-create"
           >
-            {editMode ? t("common:save") : t("common:create")}
+            {editMode ? t("save") : t("create")}
           </Button>
           <Link
             to={toUserProfile({ realm, tab: "attributes" })}
             data-testid="attribute-cancel"
             className="kc-attributeCancel"
           >
-            {t("common:cancel")}
+            {t("cancel")}
           </Link>
         </FixedButtonsGroup>
       </Form>

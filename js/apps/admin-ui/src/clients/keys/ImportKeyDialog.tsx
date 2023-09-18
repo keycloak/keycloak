@@ -84,12 +84,12 @@ export const ImportKeyDialog = ({
             toggleDialog();
           }}
         >
-          {t("common:cancel")}
+          {t("cancel")}
         </Button>,
       ]}
     >
       <TextContent>
-        <Text>{t("clients-help:generateKeysDescription")}</Text>
+        <Text>{t("generateKeysDescription")}</Text>
       </TextContent>
       <Form className="pf-u-pt-lg">
         <FormGroup
@@ -97,7 +97,7 @@ export const ImportKeyDialog = ({
           labelIcon={
             <HelpItem
               helpText={t("archiveFormatHelp")}
-              fieldLabelId="clients:archiveFormat"
+              fieldLabelId="archiveFormat"
             />
           }
           fieldId="archiveFormat"

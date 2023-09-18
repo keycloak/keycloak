@@ -99,9 +99,9 @@ export const ClientSecret = ({ client, secret, toggle }: ClientSecretProps) => {
   const expired = (time: number) => new Date().getTime() >= time * 1000;
 
   const [toggleInvalidateConfirm, InvalidateConfirm] = useConfirmDialog({
-    titleKey: "clients:invalidateRotatedSecret",
-    messageKey: "clients:invalidateRotatedSecretExplain",
-    continueButtonLabel: "common:confirm",
+    titleKey: "invalidateRotatedSecret",
+    messageKey: "invalidateRotatedSecretExplain",
+    continueButtonLabel: "confirm",
     onConfirm: async () => {
       try {
         await adminClient.clients.invalidateSecret({
@@ -110,7 +110,7 @@ export const ClientSecret = ({ client, secret, toggle }: ClientSecretProps) => {
         setSecretRotated(undefined);
         addAlert(t("invalidateRotatedSuccess"));
       } catch (error) {
-        addError("clients:invalidateRotatedError", error);
+        addError("invalidateRotatedError", error);
       }
     },
   });

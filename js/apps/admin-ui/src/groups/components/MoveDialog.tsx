@@ -31,7 +31,7 @@ export const MoveDialog = ({ source, onClose, refresh }: MoveDialogProps) => {
       refresh();
       addAlert(t("moveGroupSuccess"));
     } catch (error) {
-      addError("groups:moveGroupError", error);
+      addError("moveGroupError", error);
     }
   };
 
@@ -40,8 +40,8 @@ export const MoveDialog = ({ source, onClose, refresh }: MoveDialogProps) => {
       type="selectOne"
       filterGroups={[source]}
       text={{
-        title: "groups:moveToGroup",
-        ok: "groups:moveHere",
+        title: "moveToGroup",
+        ok: "moveHere",
       }}
       onClose={onClose}
       onConfirm={moveGroup}

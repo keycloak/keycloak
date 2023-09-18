@@ -11,9 +11,3 @@ The old LinkedIn way based on OAuth seems to be completely removed from the link
 ```
 kc.[sh|bat] start --features linkedin-oauth ...
 ```
-
-= A new parameter --spi-user-profile-declarative-user-profile-max-email-local-part-length is added to set max email local part length taking backwards compatibility into consideration. The default value is 64.
-
-```
-kc.[sh|bat] start --spi-user-profile-declarative-user-profile-max-email-local-part-length=100 ...
-```

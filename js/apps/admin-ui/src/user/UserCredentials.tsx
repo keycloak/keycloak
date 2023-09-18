@@ -124,7 +124,7 @@ export const UserCredentials = ({ user }: UserCredentialsProps) => {
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
     titleKey: t("deleteCredentialsConfirmTitle"),
     messageKey: t("deleteCredentialsConfirm"),
-    continueButtonLabel: t("common:delete"),
+    continueButtonLabel: t("delete"),
     continueButtonVariant: ButtonVariant.danger,
     onConfirm: async () => {
       try {

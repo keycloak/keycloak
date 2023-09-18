@@ -40,3 +40,35 @@ from the same list of values.
 
 In this release, the role and client mappers now map to a single value from the effective roles of a user when
 they are marked as single-valued (`Multivalued` disabled).
+
+= Changes to password fields in Login UI
+
+In this version we want to introduce a toggle to hide/show password inputs.
+
+.Affected pages:
+- login.ftl
+- login-password.ftl
+- login-update-password.ftl
+- register.ftl
+- register-user-profile.ftl
+
+In general all `<input type="password" name="password" />` are encapsulated within a div now. The input element is followed by a button which toggles the visibility of the password input.
+
+Old code example:
+[source,html]
+----
+<input type="password" id="password" name="password" autocomplete="current-password" style="display:none;"/>
+----
+
+New code example:
+[source,html]
+----
+<div class="${properties.kcInputGroup!}">
+    <input type="password" id="password" name="password" autocomplete="current-password" style="display:none;"/>
+    <button class="pf-c-button pf-m-control" type="button" aria-label="${msg('showPassword')}"
+            aria-controls="password" data-password-toggle
+            data-label-show="${msg('showPassword')}" data-label-hide="${msg('hidePassword')}">
+        <i class="fa fa-eye" aria-hidden="true"></i>
+    </button>
+</div>
+----

@@ -63,7 +63,7 @@
   "testConnection": "Test connection",
   "name": "Name",
   "role": "Role",
-  "description": "description",
+  "description": "Description",
   "type": "Type",
   "category": "Category",
   "priority": "Priority",
@@ -1455,6 +1455,7 @@
   "providerDescription": "Provider description",
   "addProvider": "Add provider",
   "publicKeys": "Public keys",
+  "validTo": "Valid to",
   "keysFilter": {
     "ACTIVE": "Active keys",
     "PASSIVE": "Passive keys",
@@ -2284,7 +2285,7 @@
   "defaultLocaleHelp": "The initial locale to use. It is used on the login screen and other screens in the Admin UI and Account UI.",
   "conditionsHelp": "Conditions, which will be evaluated to determine if client policy should be applied during particular action or not.",
   "clientProfilesHelp": "Client profiles applied on this policy.",
-  "clientAccessType": "It uses the client's access type (confidential, public, bearer-only) to determine whether the policy is applied. Condition is checked during most of OpenID Connect requests (Authorization requests, token requests, introspection endpoint request, etc.)",
+  "clientAccessType": "It uses the client's access type (confidential, public, bearer-only) to determine whether the policy is applied. Condition is checked during most of OpenID Connect requests (Authorization requests, token requests, introspection endpoint request, etc.). Confidential client has enabled client authentication when public client has disabled client authentication. Bearer-only is a deprecated client type.",
   "clientAccesstypeTooltip": "Access Type of the client, for which the condition will be applied.",
   "clientRolesHelp": "The condition checks whether one of the specified client roles exists on the client to determine whether the policy is applied. This effectively allows client administrator to create client role of specified name on the client to make sure that particular client policy will be applied on requests of this client. Condition is checked during most of OpenID Connect requests (Authorization requests, token requests, introspection endpoint request, etc.)",
   "clientRolesConditionTooltip": "Client roles, which will be checked during this condition evaluation. Condition evaluates to true if client has at least one client role with the name as the client roles specified in the configuration.",
@@ -2881,7 +2882,7 @@
     "client_secret_jwt": "Client secret as jwt",
     "private_key_jwt": "JWT signed with private key"
   },
-  "clientAssertionSigningAlg": "Client asserion signature algorithm",
+  "clientAssertionSigningAlg": "Client assertion signature algorithm",
   "algorithmNotSpecified": "Algorithm not specified",
   "acceptsPromptNone": "Accepts prompt=none forward from client",
   "validateSignature": "Validate Signatures",
@@ -3153,7 +3154,7 @@
   },
   "client-accesstype": {
     "label": "Client Access Type",
-    "tooltip": "Access Type of the client, for which the condition will be applied."
+    "tooltip": "Access Type of the client, for which the condition will be applied. Confidential client has enabled client authentication when public client has disabled client authentication. Bearer-only is a deprecated client type."
   },
   "client-roles": {
     "label": "Client Roles"
@@ -3265,5 +3266,21 @@
   "orderChangeSuccessUserFed": "Successfully changed the priority order of user federation providers",
   "orderChangeErrorUserFed": "Could not change the priority order of user federation providers {{error}}",
   "disableNonceHelp": "Do not send the nonce parameter in the authentication request. The nonce parameter is sent and verified by default.",
-  "disableNonce": "Disable nonce"
+  "disableNonce": "Disable nonce",
+  "authenticationAliasHelp": "Name of the configuration",
+  "authenticationFlowTypeHelp": "What kind of form is it",
+  "authenticationCreateFlowHelp": "Create flow",
+  "clientScopesRolesScope": "If there is no role scope mapping defined, each user is permitted to use this client scope. If there are role scope mappings defined, the user must be a member of at least one of the roles.",
+  "scopeNameHelp": "Name of the client scope. Must be unique in the realm. Name should not contain space characters as it is used as value of scope parameter",
+  "scopeDescriptionHelp": "Description of the client scope",
+  "clientScopeTypes": {
+    "default": "Default",
+    "optional": "Optional",
+    "none": "None"
+  },
+  "realmNameTitle": "{{name}} realm",
+  "scopeTypeHelp": "Client scopes, which will be added as default scopes to each created client",
+  "clientDescriptionHelp": "Specifies description of the client. For example 'My Client for TimeSheets'. Supports keys for localized values as well. For example: ${my_client_description}",
+  "clientsClientTypeHelp": "'OpenID Connect' allows Clients to verify the identity of the End-User based on the authentication performed by an Authorization Server.'SAML' enables web-based authentication and authorization scenarios including cross-domain single sign-on (SSO) and uses security tokens containing assertions to pass information.",
+  "clientsClientScopesHelp": "The scopes associated with this resource."
 }

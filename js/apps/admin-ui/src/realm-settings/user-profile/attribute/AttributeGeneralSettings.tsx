@@ -136,12 +136,12 @@ export const AttributeGeneralSettings = () => {
                 field.onChange(value.toString());
                 setIsAttributeGroupDropdownOpen(false);
               }}
-              selections={[field.value || t("common:none")]}
+              selections={[field.value || t("none")]}
               variant={SelectVariant.single}
             >
               {[
                 <SelectOption key="empty" value="">
-                  {t("common:none")}
+                  {t("none")}
                 </SelectOption>,
                 ...(config?.groups?.map((group) => (
                   <SelectOption key={group.name} value={group.name}>
@@ -211,8 +211,8 @@ export const AttributeGeneralSettings = () => {
                   typeAheadAriaLabel="Select"
                   chipGroupProps={{
                     numChips: 3,
-                    expandedText: t("common:hide"),
-                    collapsedText: t("common:showRemaining"),
+                    expandedText: t("hide"),
+                    collapsedText: t("showRemaining"),
                   }}
                   onToggle={(isOpen) => setSelectEnabledWhenOpen(isOpen)}
                   selections={field.value}
@@ -267,8 +267,8 @@ export const AttributeGeneralSettings = () => {
                   id={"kc-required"}
                   onChange={field.onChange}
                   isChecked={field.value}
-                  label={t("common:on")}
-                  labelOff={t("common:off")}
+                  label={t("on")}
+                  labelOff={t("off")}
                   aria-label={t("required")}
                 />
               )}
@@ -361,8 +361,8 @@ export const AttributeGeneralSettings = () => {
                       typeAheadAriaLabel="Select"
                       chipGroupProps={{
                         numChips: 3,
-                        expandedText: t("common:hide"),
-                        collapsedText: t("common:showRemaining"),
+                        expandedText: t("hide"),
+                        collapsedText: t("showRemaining"),
                       }}
                       onToggle={(isOpen) => setSelectRequiredForOpen(isOpen)}
                       selections={field.value}

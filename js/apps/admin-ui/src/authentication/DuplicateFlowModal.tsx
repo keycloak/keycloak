@@ -71,7 +71,7 @@ export const DuplicateFlowModal = ({
         }),
       );
     } catch (error) {
-      addError("authentication:copyFlowError", error);
+      addError("copyFlowError", error);
     }
     onComplete();
   };
@@ -96,7 +96,7 @@ export const DuplicateFlowModal = ({
           variant={ButtonVariant.link}
           onClick={toggleDialog}
         >
-          {t("common:cancel")}
+          {t("cancel")}
         </Button>,
       ]}
       isOpen

@@ -32,7 +32,7 @@ export const DeleteGroup = ({
       refresh();
       addAlert(t("groupDeleted", { count: selectedRows.length }));
     } catch (error) {
-      addError("groups:groupDeleteError", error);
+      addError("groupDeleteError", error);
     }
   };
 
@@ -43,7 +43,7 @@ export const DeleteGroup = ({
         count: selectedRows.length,
         groupName: selectedRows[0]?.name,
       })}
-      continueButtonLabel="common:delete"
+      continueButtonLabel="delete"
       continueButtonVariant={ButtonVariant.danger}
       onConfirm={multiDelete}
       open={show}

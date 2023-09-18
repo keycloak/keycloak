@@ -147,7 +147,7 @@ export const ResourcesPolicySelect = ({
   const [toggleUnsavedChangesDialog, UnsavedChangesConfirm] = useConfirmDialog({
     titleKey: t("unsavedChangesTitle"),
     messageKey: t("unsavedChangesConfirm"),
-    continueButtonLabel: t("common:continue"),
+    continueButtonLabel: t("continue"),
     continueButtonVariant: ButtonVariant.danger,
     onConfirm: () => onUnsavedChangesConfirm?.(),
   });

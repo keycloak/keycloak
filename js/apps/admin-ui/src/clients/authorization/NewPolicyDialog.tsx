@@ -56,8 +56,8 @@ export const NewPolicyDialog = ({
       <TableComposable aria-label={t("policies")} variant="compact">
         <Thead>
           <Tr>
-            <Th>{t("common:name")}</Th>
-            <Th>{t("common:description")}</Th>
+            <Th>{t("name")}</Th>
+            <Th>{t("description")}</Th>
           </Tr>
         </Thead>
         <Tbody>

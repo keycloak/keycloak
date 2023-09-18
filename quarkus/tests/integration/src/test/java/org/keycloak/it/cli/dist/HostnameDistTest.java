@@ -24,6 +24,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.keycloak.it.junit5.extension.DistributionTest;
 import org.keycloak.it.junit5.extension.RawDistOnly;
+import org.keycloak.it.junit5.extension.WithEnvVars;
 import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
 import org.keycloak.quarkus.runtime.services.resources.DebugHostnameSettingsResource;
 
@@ -107,6 +108,7 @@ public class HostnameDistTest {
     }
 
     @Test
+    @WithEnvVars({ "KEYCLOAK_ADMIN", "admin", "KEYCLOAK_ADMIN_PASSWORD", "admin" })
     @Launch({ "start", "--hostname=mykeycloak.org", "--hostname-port=8543" })
     public void testWelcomePageAdminUrl() {
         Assert.assertTrue(when().get("http://mykeycloak.org:8080").asString().contains("http://mykeycloak.org:8080/admin/"));
@@ -172,6 +174,7 @@ public class HostnameDistTest {
     }
 
     @Test
+    @WithEnvVars({ "KEYCLOAK_ADMIN", "admin", "KEYCLOAK_ADMIN_PASSWORD", "admin" })
     @Launch({ "start", "--proxy=edge", "--hostname=mykeycloak.org", "--hostname-admin-url=http://mykeycloakadmin.org:1234" })
     public void testAdminUrl() {
         Assert.assertTrue(when().get("https://mykeycloak.org:8443").asString().contains("http://mykeycloakadmin.org:1234/admin/"));

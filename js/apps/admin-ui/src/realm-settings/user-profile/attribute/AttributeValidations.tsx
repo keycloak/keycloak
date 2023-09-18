@@ -47,7 +47,7 @@ export const AttributeValidations = () => {
     messageKey: t("deleteValidatorConfirmMsg", {
       validatorName: validatorToDelete,
     }),
-    continueButtonLabel: "common:delete",
+    continueButtonLabel: "delete",
     continueButtonVariant: ButtonVariant.danger,
     onConfirm: async () => {
       const updatedValidators = validators.filter(
@@ -123,7 +123,7 @@ export const AttributeValidations = () => {
                         setValidatorToDelete(validator.key);
                       }}
                     >
-                      {t("common:delete")}
+                      {t("delete")}
                     </Button>
                   </Td>
                 </Tr>

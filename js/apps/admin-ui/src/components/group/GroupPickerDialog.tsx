@@ -86,7 +86,7 @@ export const GroupPickerDialog = ({
       } else if (!navigation.map(({ id }) => id).includes(groupId)) {
         group = await adminClient.groups.findOne({ id: groupId });
         if (!group) {
-          throw new Error(t("common:notFound"));
+          throw new Error(t("notFound"));
         }
         groups = group.subGroups!;
       }
@@ -171,7 +171,7 @@ export const GroupPickerDialog = ({
           setFirst(first);
           setMax(max);
         }}
-        inputGroupName={"common:search"}
+        inputGroupName={"search"}
         inputGroupOnEnter={(search) => {
           setFilter(search);
           setIsSearching(search !== "");
@@ -256,14 +256,14 @@ export const GroupPickerDialog = ({
         {groups.length === 0 && !isSearching && (
           <ListEmptyState
             hasIcon={false}
-            message={t("groups:moveGroupEmpty")}
-            instructions={t("groups:moveGroupEmptyInstructions")}
+            message={t("moveGroupEmpty")}
+            instructions={t("moveGroupEmptyInstructions")}
           />
         )}
         {groups.length === 0 && isSearching && (
           <ListEmptyState
-            message={t("common:noSearchResults")}
-            instructions={t("common:noSearchResultsInstructions")}
+            message={t("noSearchResults")}
+            instructions={t("noSearchResultsInstructions")}
           />
         )}
       </PaginatingTableToolbar>
@@ -365,7 +365,7 @@ const GroupRow = ({
           isPlainButtonAction
         >
           {((hasSubgroups(group) && canBrowse) || type === "selectOne") && (
-            <Button variant="link" aria-label={t("common:select")}>
+            <Button variant="link" aria-label={t("select")}>
               <AngleRightIcon />
             </Button>
           )}
