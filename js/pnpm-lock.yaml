@@ -175,8 +175,8 @@ importers:
         specifier: ^0.6.0
         version: 0.6.0
       flat:
-        specifier: ^5.0.2
-        version: 5.0.2
+        specifier: ^6.0.0
+        version: 6.0.0
       i18next:
         specifier: ^23.4.9
         version: 23.4.9
@@ -3897,6 +3897,13 @@ packages:
   /flat@5.0.2:
     resolution: {integrity: sha512-b6suED+5/3rTpUBdG1gupIl8MPFCAMA0QXwmljLhvCUKcUvdE4gWky9zpuGCcXHOsz4J9wPGNWq6OKpmIzz3hQ==}
     hasBin: true
+    dev: true
+
+  /flat@6.0.0:
+    resolution: {integrity: sha512-/aYW7n5yD9HyW9ZHCzW2LGSpyTmbXEdRWdH5ded6K/a2ETgowOripjBqJorQ4/PBa3VPFub28fNruWp+onmIUg==}
+    engines: {node: '>=18'}
+    hasBin: true
+    dev: false
 
   /flatted@3.2.7:
     resolution: {integrity: sha512-5nqDSxl8nn5BSNxyR3n4I6eDmbolI6WT+QqR547RwxQapgjQBmtktdP+HTBb/a/zLsbzERTONyUB5pefh5TtjQ==}
@@ -7251,7 +7258,7 @@ packages:
       dagre: 0.8.5
       file-saver: 2.0.5
       file-selector: 0.6.0
-      flat: 5.0.2
+      flat: 6.0.0
       i18next: 23.4.9
       i18next-http-backend: 2.2.2
       keycloak-js: link:libs/keycloak-js
