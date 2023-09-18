@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Red Hat, Inc. and/or its affiliates
+ * Copyright 2022 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,15 +15,14 @@
  * limitations under the License.
  */
 
-package org.keycloak.quarkus.runtime.integration.jaxrs;
+package org.keycloak.quarkus.runtime.integration.resteasy;
 
+import io.quarkus.arc.Arc;
+import io.quarkus.vertx.http.runtime.CurrentVertxRequest;
 import io.vertx.ext.web.RoutingContext;
 import org.jboss.resteasy.core.ResteasyContext;
 import org.keycloak.common.util.ResteasyProvider;
 
-/**
- * TODO: we should probably rely on the vert.x routing context instead of resteasy context data
- */
 public class ResteasyVertxProvider implements ResteasyProvider {
 
     @Override
@@ -31,7 +30,7 @@ public class ResteasyVertxProvider implements ResteasyProvider {
         R data = ResteasyContext.getContextData(type);
 
         if (data == null) {
-            RoutingContext contextData = ResteasyContext.getContextData(RoutingContext.class);
+            RoutingContext contextData = Arc.container().instance(CurrentVertxRequest.class).get().getCurrent();
 
             if (contextData == null) {
                 return null;
@@ -44,14 +43,13 @@ public class ResteasyVertxProvider implements ResteasyProvider {
     }
 
     @Override
-    public void pushDefaultContextObject(Class type, Object instance) {
-        ResteasyContext.getContextData(org.jboss.resteasy.spi.Dispatcher.class).getDefaultContextObjects()
-                .put(type, instance);
+    public void pushContext(Class type, Object instance) {
+        ResteasyContext.pushContext(type, instance);
     }
 
     @Override
-    public void pushContext(Class type, Object instance) {
-        ResteasyContext.pushContext(type, instance);
+    public void pushDefaultContextObject(Class type, Object instance) {
+        pushContext(type, instance);
     }
 
     @Override

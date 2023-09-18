@@ -15,19 +15,23 @@
  * limitations under the License.
  */
 
-package org.keycloak.models;
+package org.keycloak.quarkus.runtime.integration.cdi;
 
-import org.keycloak.provider.Provider;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.enterprise.inject.Produces;
+import org.keycloak.common.util.Resteasy;
+import org.keycloak.models.KeycloakSession;
 
-/**
- * Support for elements in Keycloak's session that are deprecated.
- * This allows the deprecated implementations to be moved to the legacy module.
- *
- * @author Alexander Schwartz
- */
-public interface LegacySessionSupportProvider extends Provider {
+import io.quarkus.arc.Unremovable;
 
-    @Deprecated
-    UserCredentialManager userCredentialManager();
+@ApplicationScoped
+@Unremovable
+public class KeycloakBeanProducer {
 
+    @Produces
+    @RequestScoped
+    public KeycloakSession getKeycloakSession() {
+        return Resteasy.getContextData(KeycloakSession.class);
+    }
 }

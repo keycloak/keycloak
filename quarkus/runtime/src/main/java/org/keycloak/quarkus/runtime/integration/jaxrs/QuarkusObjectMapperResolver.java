@@ -15,13 +15,20 @@
  * limitations under the License.
  */
 
-package org.keycloak.services.legacysessionsupport;
+package org.keycloak.quarkus.runtime.integration.jaxrs;
 
-import org.keycloak.models.LegacySessionSupportProvider;
-import org.keycloak.provider.ProviderFactory;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.inject.Produces;
+import jakarta.ws.rs.ext.Provider;
+import org.keycloak.services.util.ObjectMapperResolver;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
-/**
- * @author Alexander Schwartz
- */
-public interface LegacySessionSupportProviderFactory<T extends LegacySessionSupportProvider> extends ProviderFactory<T> {
+@Provider
+@ApplicationScoped
+public class QuarkusObjectMapperResolver extends ObjectMapperResolver {
+
+    @Produces
+    public ObjectMapper getObjectMapper() {
+        return mapper;
+    }
 }
