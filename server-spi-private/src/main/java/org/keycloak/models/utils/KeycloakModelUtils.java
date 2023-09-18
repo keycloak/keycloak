@@ -796,6 +796,11 @@ public final class KeycloakModelUtils {
         return null;
     }
 
+    /**
+     *
+     * @deprecated please use {@link #findGroupByPath(GroupProvider, RealmModel, String)} instead
+     */
+    @Deprecated
     public static GroupModel findGroupByPath(RealmModel realm, String path) {
         if (path == null) {
             return null;
