@@ -304,7 +304,7 @@ public class GroupLDAPStorageMapperFactory extends AbstractLDAPStorageMapperFact
         LDAPUtils.validateCustomLdapFilter(config.getConfig().getFirst(GroupMapperConfig.GROUPS_LDAP_FILTER));
 
         String group = new GroupMapperConfig(config).getGroupsPath();
-        if (!GroupMapperConfig.DEFAULT_LDAP_GROUPS_PATH.equals(group) && KeycloakModelUtils.findGroupByPath(realm, group) == null) {
+        if (!GroupMapperConfig.DEFAULT_LDAP_GROUPS_PATH.equals(group) && KeycloakModelUtils.findGroupByPath(session.groups(), realm, group) == null) {
             throw new ComponentValidationException("ldapErrorMissingGroupsPathGroup");
         }
     }
