@@ -360,7 +360,7 @@ public class OAuthGrantTest extends AbstractKeycloakTest {
         String logoutUrl = oauth.getLogoutUrl().idTokenHint(res.getIdToken()).build();
         driver.navigate().to(logoutUrl);
 
-        events.expectLogout(loginEvent.getSessionId()).removeDetail(Details.REDIRECT_URI).assertEvent();
+        events.expectLogout(loginEvent.getSessionId()).client(THIRD_PARTY_APP).removeDetail(Details.REDIRECT_URI).assertEvent();
 
         // login again to check whether the Dynamic scope and only the dynamic scope is requested again
         oauth.scope("foo-dynamic-scope:withparam");

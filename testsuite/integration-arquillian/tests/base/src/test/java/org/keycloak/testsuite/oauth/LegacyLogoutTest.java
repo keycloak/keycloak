@@ -144,7 +144,7 @@ public class LegacyLogoutTest extends AbstractTestRealmKeycloakTest {
         logoutConfirmPage.confirmLogout();
 
         // Redirected back to the application with expected state
-        events.expectLogout(sessionId).removeDetail(Details.REDIRECT_URI).assertEvent();
+        events.expectLogout(sessionId).client("account").removeDetail(Details.REDIRECT_URI).assertEvent();
         assertThat(false, is(isSessionActive(sessionId)));
         assertCurrentUrlEquals(APP_REDIRECT_URI);
     }
@@ -165,7 +165,7 @@ public class LegacyLogoutTest extends AbstractTestRealmKeycloakTest {
         logoutConfirmPage.confirmLogout();
 
         // Redirected back to the application with expected state
-        events.expectLogout(sessionId).removeDetail(Details.REDIRECT_URI).assertEvent();
+        events.expectLogout(sessionId).client("account").removeDetail(Details.REDIRECT_URI).assertEvent();
         assertThat(false, is(isSessionActive(sessionId)));
         assertCurrentUrlEquals(APP_REDIRECT_URI);
     }
@@ -230,7 +230,7 @@ public class LegacyLogoutTest extends AbstractTestRealmKeycloakTest {
             logoutConfirmPage.confirmLogout();
 
             // Redirected back to the application with expected state
-            events.expectLogout(sessionId).removeDetail(Details.REDIRECT_URI).assertEvent();
+            events.expectLogout(sessionId).client("account").removeDetail(Details.REDIRECT_URI).assertEvent();
             MatcherAssert.assertThat(false, is(isSessionActive(sessionId)));
             assertCurrentUrlEquals(APP_REDIRECT_URI);
         }
@@ -248,7 +248,7 @@ public class LegacyLogoutTest extends AbstractTestRealmKeycloakTest {
         String logoutUrl = oauth.getLogoutUrl().postLogoutRedirectUri(APP_REDIRECT_URI).build();
         driver.navigate().to(logoutUrl);
 
-        events.expectLogout(sessionId).detail(Details.REDIRECT_URI, APP_REDIRECT_URI).assertEvent();
+        events.expectLogout(sessionId).client("account").detail(Details.REDIRECT_URI, APP_REDIRECT_URI).assertEvent();
         assertThat(false, is(isSessionActive(sessionId)));
         assertCurrentUrlEquals(APP_REDIRECT_URI);
     }

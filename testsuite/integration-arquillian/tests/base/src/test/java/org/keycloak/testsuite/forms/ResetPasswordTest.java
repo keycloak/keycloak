@@ -1293,7 +1293,11 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
             logoutConfirmPage.assertCurrent();
             logoutConfirmPage.confirmLogout();
 
-            events.expectLogout(sessionId).user(user.getId()).removeDetail(Details.REDIRECT_URI).assertEvent();
+            events.expectLogout(sessionId)
+                    .client("account")
+                    .user(user.getId())
+                    .removeDetail(Details.REDIRECT_URI)
+                    .assertEvent();
         }
 
         BrowserTabUtil util = BrowserTabUtil.getInstanceAndSetEnv(driver);
