@@ -15,13 +15,23 @@
  * limitations under the License.
  */
 
-package org.keycloak.services.legacysessionsupport;
+package org.keycloak.quarkus.runtime.integration.cdi;
 
-import org.keycloak.models.LegacySessionSupportProvider;
-import org.keycloak.provider.ProviderFactory;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.enterprise.inject.Produces;
+import org.keycloak.common.util.Resteasy;
+import org.keycloak.models.KeycloakSession;
 
-/**
- * @author Alexander Schwartz
- */
-public interface LegacySessionSupportProviderFactory<T extends LegacySessionSupportProvider> extends ProviderFactory<T> {
+import io.quarkus.arc.Unremovable;
+
+@ApplicationScoped
+@Unremovable
+public class KeycloakBeanProducer {
+
+    @Produces
+    @RequestScoped
+    public KeycloakSession getKeycloakSession() {
+        return Resteasy.getContextData(KeycloakSession.class);
+    }
 }

@@ -58,7 +58,7 @@ public class UriUtils {
         }
     }
 
-    public static MultivaluedHashMap<String, String> decodeQueryString(String queryString) {
+    public static MultivaluedHashMap<String, String> parseQueryParameters(String queryString, boolean decode) {
         MultivaluedHashMap<String, String> map = new MultivaluedHashMap<String, String>();
         if (queryString == null || queryString.equals("")) return map;
 
@@ -71,9 +71,9 @@ public class UriUtils {
                 String[] nv = param.split("=", 2);
                 try
                 {
-                    String name = URLDecoder.decode(nv[0], "UTF-8");
+                    String name = decode ? URLDecoder.decode(nv[0], "UTF-8") : nv[0];
                     String val = nv.length > 1 ? nv[1] : "";
-                    map.add(name, URLDecoder.decode(val, "UTF-8"));
+                    map.add(name, decode ? URLDecoder.decode(val, "UTF-8") : val);
                 }
                 catch (UnsupportedEncodingException e)
                 {
@@ -84,7 +84,7 @@ public class UriUtils {
             {
                 try
                 {
-                    String name = URLDecoder.decode(param, "UTF-8");
+                    String name = decode ? URLDecoder.decode(param, "UTF-8") : param;
                     map.add(name, "");
                 }
                 catch (UnsupportedEncodingException e)
@@ -94,6 +94,10 @@ public class UriUtils {
             }
         }
         return map;
+    }
+
+    public static MultivaluedHashMap<String, String> decodeQueryString(String queryString) {
+        return parseQueryParameters(queryString, true);
     }
 
     public static String stripQueryParam(String url, String name){

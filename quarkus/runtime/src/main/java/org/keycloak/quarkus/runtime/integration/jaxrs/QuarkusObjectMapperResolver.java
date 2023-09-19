@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2022 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,21 +15,20 @@
  * limitations under the License.
  */
 
-package org.keycloak.services.util;
+package org.keycloak.quarkus.runtime.integration.jaxrs;
 
-import org.keycloak.http.HttpResponse;
-import org.keycloak.models.KeycloakSession;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.inject.Produces;
+import jakarta.ws.rs.ext.Provider;
+import org.keycloak.services.util.ObjectMapperResolver;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
-/**
- * IE requires P3P header to allow loading cookies from iframes when domain differs from main page (see KEYCLOAK-2828 for more details)
- *
- * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
- */
-public class P3PHelper {
+@Provider
+@ApplicationScoped
+public class QuarkusObjectMapperResolver extends ObjectMapperResolver {
 
-    public static void addP3PHeader(KeycloakSession session) {
-        HttpResponse response = session.getContext().getHttpResponse();
-        response.setHeader("P3P", "CP=\"This is not a P3P policy!\"");
+    @Produces
+    public ObjectMapper getObjectMapper() {
+        return mapper;
     }
-
 }

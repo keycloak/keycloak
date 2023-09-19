@@ -18,11 +18,12 @@
 package org.keycloak.quarkus.runtime.integration;
 
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.quarkus.runtime.integration.resteasy.QuarkusKeycloakContext;
 import org.keycloak.services.DefaultKeycloakContext;
 import org.keycloak.services.DefaultKeycloakSession;
 import org.keycloak.services.DefaultKeycloakSessionFactory;
 
-public class QuarkusKeycloakSession extends DefaultKeycloakSession {
+public final class QuarkusKeycloakSession extends DefaultKeycloakSession {
 
     public QuarkusKeycloakSession(DefaultKeycloakSessionFactory factory) {
         super(factory);

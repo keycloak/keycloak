@@ -123,7 +123,7 @@ public class OidcClaimToUserSessionNoteMapperTest extends AbstractIdentityProvid
 
     @Test
     public void claimIsNotPropagatedWhenNameDoesNotMatch() {
-        createUserSessionNoteIdpMapper(IdentityProviderMapperSyncMode.IMPORT, "something-unexpected");
+        createUserSessionNoteIdpMapper(IdentityProviderMapperSyncMode.IMPORT, "something-unexpected-1", "something-unexpected-2");
 
         AccessToken accessToken = login();
 
@@ -157,7 +157,7 @@ public class OidcClaimToUserSessionNoteMapperTest extends AbstractIdentityProvid
     }
 
     private IdentityProviderMapperRepresentation createUserSessionNoteIdpMapper(IdentityProviderMapperSyncMode syncMode,
-            String matchingValue) {
+            String... matchingValue) {
         IdentityProviderMapperRepresentation mapper = new IdentityProviderMapperRepresentation();
         mapper.setName("User Session Note Idp Mapper");
         mapper.setIdentityProviderMapper(ClaimToUserSessionNoteMapper.PROVIDER_ID);
@@ -170,8 +170,17 @@ public class OidcClaimToUserSessionNoteMapperTest extends AbstractIdentityProvid
         return persistMapper(mapper);
     }
 
-    private String createClaimsConfig(String matchingValue) {
-        return "[{\"key\":\"" + CLAIM_NAME + "\",\"value\":\"" + matchingValue + "\"}]";
+    private String createClaimsConfig(String... matchingValue) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("[");
+        if (matchingValue != null) {
+            for (String value : matchingValue) {
+                sb.append("{\"key\":\"").append(CLAIM_NAME).append("\",\"value\":\"").append(value).append("\"},");
+            }
+            sb.setLength(sb.length() - 1);
+        }
+        sb.append("]");
+        return sb.toString();
     }
 
     private void updateProviderHardcodedClaimMapper(String value) {

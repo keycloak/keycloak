@@ -24,7 +24,7 @@ import java.lang.reflect.Type;
 import org.jboss.resteasy.spi.ContextInjector;
 import org.keycloak.common.util.Resteasy;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.quarkus.runtime.integration.web.QuarkusRequestFilter;
+import org.keycloak.quarkus.runtime.integration.resteasy.ResteasyVertxProvider;
 
 /**
  * <p>This {@link ContextInjector} allows injecting {@link KeycloakSession} to JAX-RS resources.
@@ -32,13 +32,12 @@ import org.keycloak.quarkus.runtime.integration.web.QuarkusRequestFilter;
  * <p>Due to the latest changes in Quarkus, the context map is cleared prior to dispatching to JAX-RS resources, so we need
  * to delegate to the {@link ResteasyVertxProvider} provider the lookup of Keycloak contextual objects.
  *
- * @see QuarkusRequestFilter
  * @see ResteasyVertxProvider
  *
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
 @Provider
-public class KeycloakContextInjector implements ContextInjector<KeycloakSession, KeycloakSession> {
+public class KeycloakSessionContextInjector implements ContextInjector<KeycloakSession, KeycloakSession> {
     @Override
     public KeycloakSession resolve(Class rawType, Type genericType, Annotation[] annotations) {
         return Resteasy.getContextData(KeycloakSession.class);

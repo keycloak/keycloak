@@ -6,6 +6,7 @@ import {
   Form,
   Spinner,
 } from "@patternfly/react-core";
+import { useKeycloak } from "keycloak-masthead";
 import { useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -18,7 +19,6 @@ import {
 import { Page } from "../components/page/Page";
 import { environment } from "../environment";
 import { TFuncKey } from "../i18n";
-import { keycloak } from "../keycloak";
 import { usePromise } from "../utils/usePromise";
 import { UserProfileFields } from "./UserProfileFields";
 
@@ -38,6 +38,7 @@ export const fieldName = (name: string) =>
 
 const PersonalInfo = () => {
   const { t } = useTranslation();
+  const keycloak = useKeycloak();
   const [userProfileMetadata, setUserProfileMetadata] =
     useState<UserProfileMetadata>();
   const form = useForm<UserRepresentation>({ mode: "onChange" });
@@ -55,6 +56,7 @@ const PersonalInfo = () => {
   const onSubmit = async (user: UserRepresentation) => {
     try {
       await savePersonalInfo(user);
+      keycloak?.updateToken();
       addAlert(t("accountUpdatedMessage"));
     } catch (error) {
       addError(t("accountUpdatedError").toString());
@@ -114,7 +116,7 @@ const PersonalInfo = () => {
                   id="delete-account-btn"
                   variant="danger"
                   onClick={() =>
-                    keycloak.login({
+                    keycloak?.keycloak.login({
                       action: "delete_account",
                     })
                   }
