@@ -175,7 +175,7 @@ public class AssertEvents implements TestRule {
     }
 
     public ExpectedEvent expectLogout(String sessionId) {
-        return expect(EventType.LOGOUT).client((String) null)
+        return expect(EventType.LOGOUT)
                 .detail(Details.REDIRECT_URI, Matchers.equalTo(DEFAULT_REDIRECT_URI))
                 .session(sessionId);
     }

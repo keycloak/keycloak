@@ -293,7 +293,10 @@ public class LogoutTest extends AbstractKeycloakTest {
         }
 
         // Assert logout event triggered for backchannel logout
-        events.expectLogout(sessionId).detail(Details.REDIRECT_URI, oauth.APP_AUTH_ROOT).assertEvent();
+        events.expectLogout(sessionId)
+                .client(AssertEvents.DEFAULT_CLIENT_ID)
+                .detail(Details.REDIRECT_URI, oauth.APP_AUTH_ROOT)
+                .assertEvent();
 
         assertNotNull(testingClient.testApp().getAdminLogoutAction());
     }

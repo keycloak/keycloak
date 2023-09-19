@@ -232,6 +232,7 @@ public class LogoutEndpoint {
         }
         if (client != null) {
             session.getContext().setClient(client);
+            event.client(client);
         }
 
         String validatedRedirectUri = null;
