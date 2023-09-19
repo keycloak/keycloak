@@ -15,6 +15,20 @@ See https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/9/htm
 for the details. When the system is in FIPS mode, it makes sure that the underlying OpenJDK is in FIPS mode as well and would use only
 https://access.redhat.com/documentation/en-us/openjdk/17/html/configuring_openjdk_17_on_rhel_with_fips/openjdk-default-fips-configuration[FIPS enabled security providers].
 
+To check that the system is in FIPS mode, you can check it with the following command from the command line:
+
+[source,bash]
+----
+fips-mode-setup --check
+----
+
+If the system is not in FIPS mode, you can enable it with the following command, however it is recommended that system is in FIPS mode since the installation rather than later enabled this way:
+
+[source,bash]
+----
+fips-mode-setup --enable
+----
+
 == BouncyCastle library
 
 Keycloak internally uses the BouncyCastle library for many cryptography utilities. However, the default flavor of the BouncyCastle library that shipped with Keycloak is not FIPS compliant, 
@@ -28,28 +42,30 @@ BouncyCastle FIPS can be downloaded from the https://www.bouncycastle.org/fips-j
 `KEYCLOAK_HOME/providers` of your distribution. Make sure to use proper versions compatible with BouncyCastle Keycloak dependencies. The supported BCFIPS bits needed are:
 
 * `bc-fips-1.0.2.3.jar`
-* `bctls-fips-1.0.14.jar`
+* `bctls-fips-1.0.16.jar`
 * `bcpkix-fips-1.0.7.jar`
 
 == Generating keystore
 
-You can create either `pkcs12` or `bcfks` keystore to be used for the Keycloak server SSL. The `pkcs12` works well in BCFIPS non-approved mode.
+You can create either `pkcs12` or `bcfks` keystore to be used for the Keycloak server SSL.
 
-PKCS12 keystore can be generated with OpenJDK 17 Java on RHEL 9 in the standard way. Make sure that the system is in FIPS mode, you can check it with the following command:
+=== PKCS12 keystore
 
-[source,bash]
-----
-fips-mode-setup --check
-----
+The `p12` (or `pkcs12`) keystore (and/or truststore) works well in BCFIPS non-approved mode.
 
-If the system is not in FIPS mode, you can enable it with the following command:
+PKCS12 keystore can be generated with OpenJDK 17 Java on RHEL 9 in the standard way. For instance this command can be used to generate such keystore:
 
 [source,bash]
 ----
-fips-mode-setup --enable
+keytool -genkeypair -sigalg SHA512withRSA -keyalg RSA -storepass passwordpassword \
+  -keystore $KEYCLOAK_HOME/conf/server.keystore \
+  -alias localhost \
+  -dname CN=localhost -keypass passwordpassword
 ----
 
-The command changes the default `java.security` file in order to use FIPS enabled security providers, so no additional configuration is needed. Additionally, in PKCS12 keystore you can store PBE (password-based encryption) keys simply via the keytool command, which makes it ideal for using it with Keycloak KeyStore Vault and/or to store configuration properties in the KeyStore Config Source. For more details, see the <@links.server id="configuration"/> and the <@links.server id="vault"/>.
+When system is in FIPS mode, the default `java.security` file is changed in order to use FIPS enabled security providers, so no additional configuration is needed. Additionally, in PKCS12 keystore you can store PBE (password-based encryption) keys simply via the keytool command, which makes it ideal for using it with Keycloak KeyStore Vault and/or to store configuration properties in the KeyStore Config Source. For more details, see the <@links.server id="configuration"/> and the <@links.server id="vault"/>.
+
+=== BCFKS keystore
 
 BCFKS keystore generation requires the use of the BouncyCastle FIPS libraries and a custom security file.
 
@@ -86,6 +102,9 @@ To run the server with BCFIPS in non-approved mode, enter the following command:
 
 <@kc.start parameters="--features=fips --hostname=localhost --https-key-store-password=passwordpassword --log-level=INFO,org.keycloak.common.crypto:TRACE,org.keycloak.crypto:TRACE"/>
 
+NOTE: In non-approved mode, the default keystore type (as well as default truststore type) is PKCS12. Hence if you generated BCFKS keystore as described above,
+it is also needed to use command `--https-key-store-type=bcfks`. Similar might be needed for the truststore as well if you want to use it.
+
 NOTE: You can disable logging in production if everything works as expected.
 
 == Strict mode
@@ -93,6 +112,9 @@ NOTE: You can disable logging in production if everything works as expected.
 There is the `fips-mode` option, which is automatically set to `non-strict` when the `fips` feature is enabled. This means to run BCFIPS in the "non-approved mode".
 The more secure alternative is to use `--features=fips --fips-mode=strict` in which case BouncyCastle FIPS will use "approved mode".
 Using that option results in stricter security requirements on cryptography and security algorithms.
+
+NOTE: In strict mode, the default keystore type (as well as default truststore type) is BCFKS. If you want to use different keystore type
+it is needed to use option `--https-key-store-type` with appropriate type. Similar might be needed for the truststore as well if you want to use it.
 
 When starting server, you can check that the startup log contains `KC` provider with the note about `Approved Mode` such as the following:
 
