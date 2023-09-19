@@ -18,6 +18,7 @@ package org.keycloak.credential;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -25,6 +26,13 @@ import java.util.stream.Collectors;
 import com.webauthn4j.WebAuthnAuthenticationManager;
 import com.webauthn4j.converter.util.ObjectConverter;
 import com.webauthn4j.data.AuthenticatorTransport;
+import com.webauthn4j.data.client.CollectedClientData;
+import com.webauthn4j.data.client.Origin;
+import com.webauthn4j.server.ServerProperty;
+import com.webauthn4j.util.AssertUtil;
+import com.webauthn4j.validator.OriginValidatorImpl;
+import com.webauthn4j.validator.exception.BadOriginException;
+import org.checkerframework.checker.nullness.qual.NonNull;
 import org.jboss.logging.Logger;
 import org.keycloak.authentication.requiredactions.WebAuthnRegisterFactory;
 import org.keycloak.common.util.Base64;
@@ -55,13 +63,21 @@ public class WebAuthnCredentialProvider implements CredentialProvider<WebAuthnCr
 
     private CredentialPublicKeyConverter credentialPublicKeyConverter;
     private AttestationStatementConverter attestationStatementConverter;
+    private Set<Origin> origins;
 
     public WebAuthnCredentialProvider(KeycloakSession session, ObjectConverter objectConverter) {
+        this(session, objectConverter,null);
+    }
+
+    public WebAuthnCredentialProvider(KeycloakSession session, ObjectConverter objectConverter, Set<Origin> origins) {
         this.session = session;
         if (credentialPublicKeyConverter == null)
             credentialPublicKeyConverter = new CredentialPublicKeyConverter(objectConverter);
         if (attestationStatementConverter == null)
             attestationStatementConverter = new AttestationStatementConverter(objectConverter);
+        if (origins == null){
+            this.origins = new HashSet<>();
+        }
     }
 
     @Override
@@ -234,7 +250,21 @@ public class WebAuthnCredentialProvider implements CredentialProvider<WebAuthnCr
     }
 
     protected WebAuthnAuthenticationManager getWebAuthnAuthenticationManager() {
-        return new WebAuthnAuthenticationManager();
+        WebAuthnAuthenticationManager webAuthnAuthenticationManager = new WebAuthnAuthenticationManager();
+        webAuthnAuthenticationManager.getAuthenticationDataValidator().setOriginValidator(new OriginValidatorImpl(){
+            @Override
+            protected void validate(@NonNull CollectedClientData collectedClientData,
+                                    @NonNull ServerProperty serverProperty) {
+                AssertUtil.notNull(collectedClientData, "collectedClientData must not be null");
+                AssertUtil.notNull(serverProperty, "serverProperty must not be null");
+                final Origin clientOrigin = collectedClientData.getOrigin();
+                if (serverProperty.getOrigins().contains(clientOrigin)) return;
+                // https://github.com/w3c/webauthn/issues/1297
+                if (origins.contains(clientOrigin)) return;
+                throw new BadOriginException("The collectedClientData '" + clientOrigin + "' origin doesn't match any of the preconfigured origins.");
+            }
+        });
+        return webAuthnAuthenticationManager;
     }
 
     @Override

@@ -19,9 +19,12 @@
 package org.keycloak.credential;
 
 import com.webauthn4j.converter.util.ObjectConverter;
+import com.webauthn4j.data.client.Origin;
 import org.keycloak.authentication.requiredactions.WebAuthnPasswordlessRegisterFactory;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.credential.WebAuthnCredentialModel;
+
+import java.util.Set;
 
 /**
  * Credential provider for WebAuthn passwordless credential of the user
@@ -32,6 +35,10 @@ public class WebAuthnPasswordlessCredentialProvider extends WebAuthnCredentialPr
 
     public WebAuthnPasswordlessCredentialProvider(KeycloakSession session, ObjectConverter objectConverter) {
         super(session, objectConverter);
+    }
+
+    public WebAuthnPasswordlessCredentialProvider(KeycloakSession session, ObjectConverter objectConverter, Set<Origin> extraOrigins) {
+        super(session, objectConverter, extraOrigins);
     }
 
     @Override
