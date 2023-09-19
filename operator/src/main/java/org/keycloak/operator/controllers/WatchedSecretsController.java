@@ -51,10 +51,8 @@ import java.util.stream.Collectors;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
-import static io.javaoperatorsdk.operator.api.reconciler.Constants.WATCH_CURRENT_NAMESPACE;
-
 @ApplicationScoped
-@ControllerConfiguration(namespaces = WATCH_CURRENT_NAMESPACE, labelSelector = Constants.KEYCLOAK_COMPONENT_LABEL + "=" + WatchedSecrets.WATCHED_SECRETS_LABEL_VALUE)
+@ControllerConfiguration(labelSelector = Constants.KEYCLOAK_COMPONENT_LABEL + "=" + WatchedSecrets.WATCHED_SECRETS_LABEL_VALUE)
 public class WatchedSecretsController implements Reconciler<Secret>, EventSourceInitializer<Secret>, WatchedSecrets {
 
     @Inject
