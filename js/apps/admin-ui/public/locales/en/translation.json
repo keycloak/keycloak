@@ -3000,7 +3000,7 @@
   "comparisonHelp": "Specifies the comparison method used to evaluate the requested context classes or statements. The default is \"Exact\".",
   "authnContextClassRefsHelp": "Ordered list of requested AuthnContext ClassRefs.",
   "authnContextDeclRefsHelp": "Ordered list of requested AuthnContext DeclRefs.",
-  "addIdpMapperName": "Name of the mapper.",
+  "addIdpMapperNameHelp": "Name of the mapper.",
   "syncModeOverrideHelp": "Overrides the default sync mode of the IDP for this mapper. Values are: 'legacy' to keep the behaviour before this option was introduced, 'import' to only import the user once during first login of the user with this identity provider, 'force' to always update the user during every login with this identity provider and 'inherit' to use the sync mode defined in the identity provider for this mapper.",
   "advancedAttributeToRole": "If the set of attributes exists and can be matched, grant the user the specified realm or client role.",
   "usernameTemplateImporter": "Format the username to import.",

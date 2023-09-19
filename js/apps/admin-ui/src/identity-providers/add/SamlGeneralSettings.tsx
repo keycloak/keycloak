@@ -39,7 +39,7 @@ export const SamlGeneralSettings = ({
         label={t("alias")}
         labelIcon={
           <HelpItem
-            helpText={t("identity-providers-help:alias")}
+            helpText={t("aliasHelp")}
             fieldLabelId="identity-providers:alias"
           />
         }
@@ -74,7 +74,7 @@ export const SamlGeneralSettings = ({
           fieldId="endpoints"
           labelIcon={
             <HelpItem
-              helpText={t("identity-providers-help:alias")}
+              helpText={t("aliasHelp")}
               fieldLabelId="identity-providers:alias"
             />
           }
