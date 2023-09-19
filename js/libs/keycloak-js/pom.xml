@@ -73,4 +73,63 @@
             </plugin>
         </plugins>
     </build>
+    <profiles>
+        <profile>
+            <id>deploy-js-to-maven-repo</id>
+            <activation>
+                <property>
+                    <name>deploy-js-to-maven-repo</name>
+                </property>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-antrun-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>get-npm-package-version</id>
+                                <phase>prepare-package</phase>
+                                <goals>
+                                    <goal>run</goal>
+                                </goals>
+                                <configuration>
+                                    <exportAntProperties>true</exportAntProperties>
+                                    <target>
+                                        <exec executable="jq">
+                                            <arg line="--raw-output '.version' package.json"/>
+                                            <redirector outputProperty="nodejs.package.version"/>
+                                        </exec>
+                                    </target>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-deploy-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>deploy-keycloak-js-adapter-to-maven-repo</id>
+                                <phase>deploy</phase>
+                                <goals>
+                                    <goal>deploy-file</goal>
+                                </goals>
+                                <configuration>
+                                    <generatePom>true</generatePom>
+                                    <artifactId>keycloak-js-adapter</artifactId>
+                                    <groupId>${project.groupId}</groupId>
+                                    <version>${project.version}</version>
+                                    <packaging>tgz</packaging>
+                                    <file>target/keycloak-js-${nodejs.package.version}.tgz</file>
+                                    <url>${maven.deploy.url}</url>
+                                    <repositoryId>${maven.repository.id}</repositoryId>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>
