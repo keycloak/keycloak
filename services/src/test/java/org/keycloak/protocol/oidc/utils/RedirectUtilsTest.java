@@ -127,4 +127,19 @@ public class RedirectUtilsTest {
 
         Assert.assertNull(RedirectUtils.verifyRedirectUri(session, null, "https://keycloak.org/%7Babc%7D", set, false));
     }
+
+    @Test
+    public void testverifyInvalidRedirectUri() {
+        Set<String> set = Stream.of(
+                "https://keycloak.org/*"
+        ).collect(Collectors.toSet());
+
+        Assert.assertEquals("https://keycloak.org/path%20space/", RedirectUtils.verifyRedirectUri(session, null, "https://keycloak.org/path%20space/", set, false));
+        Assert.assertEquals("https://keycloak.org/path%3Cless/", RedirectUtils.verifyRedirectUri(session, null, "https://keycloak.org/path%3Cless/", set, false));
+        Assert.assertEquals("https://keycloak.org/path/index.jsp?param=v1+v2", RedirectUtils.verifyRedirectUri(session, null, "https://keycloak.org/path/index.jsp?param=v1+v2", set, false));
+
+        Assert.assertNull(RedirectUtils.verifyRedirectUri(session, null, "https://keycloak.org/path space/", set, false));
+        Assert.assertNull(RedirectUtils.verifyRedirectUri(session, null, "https://keycloak.org/path<less/", set, false));
+        Assert.assertNull(RedirectUtils.verifyRedirectUri(session, null, "https://keycloak.org/path/index.jsp?param=v1 v2", set, false));
+    }
 }
