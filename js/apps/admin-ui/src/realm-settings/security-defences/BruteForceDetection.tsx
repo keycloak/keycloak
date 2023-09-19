@@ -140,9 +140,7 @@ export const BruteForceDetection = ({
               label={t("quickLoginCheckMilliSeconds")}
               labelIcon={
                 <HelpItem
-                  helpText={t(
-                    "realm-settings-help:quickLoginCheckMilliSeconds",
-                  )}
+                  helpText={t("quickLoginCheckMilliSecondsHelp")}
                   fieldLabelId="realm-settings:quickLoginCheckMilliSeconds"
                 />
               }

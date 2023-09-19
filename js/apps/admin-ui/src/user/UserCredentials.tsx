@@ -401,7 +401,7 @@ export const UserCredentials = ({ user }: UserCredentialsProps) => {
               <Tr className="kc-table-header">
                 <Th>
                   <HelpItem
-                    helpText={t("users:userCredentialsHelpText")}
+                    helpText={t("userCredentialsHelpText")}
                     fieldLabelId="users:userCredentialsHelpTextLabel"
                   />
                 </Th>

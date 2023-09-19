@@ -38,7 +38,7 @@ export const LdapSettingsSynchronization = ({
           label={t("importUsers")}
           labelIcon={
             <HelpItem
-              helpText={t("user-federation-help:importUsersHelp")}
+              helpText={t("importUsersHelp")}
               fieldLabelId="user-federation:importUsers"
             />
           }
@@ -68,7 +68,7 @@ export const LdapSettingsSynchronization = ({
           label={t("syncRegistrations")}
           labelIcon={
             <HelpItem
-              helpText={t("user-federation-help:syncRegistrations")}
+              helpText={t("syncRegistrations")}
               fieldLabelId="user-federation:syncRegistrations"
             />
           }
@@ -95,7 +95,7 @@ export const LdapSettingsSynchronization = ({
           label={t("batchSize")}
           labelIcon={
             <HelpItem
-              helpText={t("user-federation-help:batchSizeHelp")}
+              helpText={t("batchSizeHelp")}
               fieldLabelId="user-federation:batchSize"
             />
           }
@@ -113,7 +113,7 @@ export const LdapSettingsSynchronization = ({
           label={t("periodicFullSync")}
           labelIcon={
             <HelpItem
-              helpText={t("user-federation-help:periodicFullSyncHelp")}
+              helpText={t("periodicFullSyncHelp")}
               fieldLabelId="user-federation:periodicFullSync"
             />
           }
@@ -144,7 +144,7 @@ export const LdapSettingsSynchronization = ({
             label={t("fullSyncPeriod")}
             labelIcon={
               <HelpItem
-                helpText={t("user-federation-help:fullSyncPeriodHelp")}
+                helpText={t("fullSyncPeriodHelp")}
                 fieldLabelId="user-federation:fullSyncPeriod"
               />
             }
@@ -164,7 +164,7 @@ export const LdapSettingsSynchronization = ({
           label={t("periodicChangedUsersSync")}
           labelIcon={
             <HelpItem
-              helpText={t("user-federation-help:periodicChangedUsersSyncHelp")}
+              helpText={t("periodicChangedUsersSyncHelp")}
               fieldLabelId="user-federation:periodicChangedUsersSync"
             />
           }
@@ -194,7 +194,7 @@ export const LdapSettingsSynchronization = ({
             label={t("changedUsersSyncPeriod")}
             labelIcon={
               <HelpItem
-                helpText={t("user-federation-help:changedUsersSyncHelp")}
+                helpText={t("changedUsersSyncHelp")}
                 fieldLabelId="user-federation:changedUsersSyncPeriod"
               />
             }

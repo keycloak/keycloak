@@ -188,10 +188,8 @@ export default function NewClientPolicyCondition() {
               <HelpItem
                 helpText={
                   conditionType
-                    ? `realm-settings-help:${camelCase(
-                        conditionType.replace(/-/g, " "),
-                      )}`
-                    : "realm-settings-help:conditions"
+                    ? `${camelCase(conditionType.replace(/-/g, " "))}Help`
+                    : "conditionsHelp"
                 }
                 fieldLabelId="realm-settings:conditionType"
               />

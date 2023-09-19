@@ -293,7 +293,7 @@ export default function ClientProfileForm() {
                   <Text className="kc-executors" component={TextVariants.h1}>
                     {t("executors")}
                     <HelpItem
-                      helpText={t("realm-settings:executorsHelpText")}
+                      helpText={t("executorsHelpText")}
                       fieldLabelId="realm-settings:executors"
                     />
                   </Text>
