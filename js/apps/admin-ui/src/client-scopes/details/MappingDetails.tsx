@@ -217,7 +217,7 @@ export default function MappingDetails() {
           <FormGroup
             label={t("name")}
             labelIcon={
-              <HelpItem helpText={t("mapperName")} fieldLabelId="name" />
+              <HelpItem helpText={t("mapperNameHelp")} fieldLabelId="name" />
             }
             fieldId="name"
             isRequired

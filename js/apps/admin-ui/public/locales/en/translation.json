@@ -1012,7 +1012,7 @@
   },
   "claimJsonType": "JSON type that should be used to populate the json claim in the token. long, int, boolean, String and JSON are valid values.",
   "protocolMapper": "Protocol...",
-  "mapperName": "Name of the mapper",
+  "mapperNameHelp": "Name of the mapper",
   "roleHelp": "Role to grant to user if all attributes are present. Click 'Select Role' button to browse roles, or just type it in the textbox. To reference a client role the syntax is clientname.clientrole, i.e. myclient.myrole",
   "newRoleNameHelp": "The new role name.  The new name format corresponds to where in the access token the role will be mapped to.  So, a new name of 'myapp.newname' will map the role to that position in the access token.  A new name of 'newname' will map the role to the realm roles in the token.",
   "rolesScope": "If there is no role scope mapping defined, each user is permitted to use this client scope. If there are role scope mappings defined, the user must be a member of at least one of the roles.",
