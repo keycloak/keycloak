@@ -48,18 +48,12 @@ jobs:
         name: Maven cache
         uses: ./.github/actions/maven-cache
 
-      - id: build-documentation
-        name: Build Keycloak
+      - id: build-test-documentation
+        name: Build and verify Keycloak documentation
         shell: bash
         run: |
           MVN_HTTP_CONFIG="-Dhttp.keepAlive=false -Dmaven.wagon.http.pool=false -Dmaven.wagon.http.retryHandler.class=standard -Dmaven.wagon.http.retryHandler.count=3 -Dmaven.wagon.httpconnectionManager.ttlSeconds=120"
-          ./mvnw install -DskipTests -am -pl docs/documentation/tests,docs/documentation/dist -nsu -B -e $MVN_HTTP_CONFIG -Pdocumentation
-
-      - id: test-documentation
-        name: Verify Keycloak documentation
-        shell: bash
-        run: |
-          ./mvnw test -Dtest=!ExternalLinksTest -am -pl docs/documentation/tests,docs/documentation/dist -nsu -B -e -Pdocumentation 
+          ./mvnw install -Dtest=!ExternalLinksTest -am -pl docs/documentation/tests,docs/documentation/dist -nsu -B -e $MVN_HTTP_CONFIG -Pdocumentation
 
       - id: upload-keycloak-documentation
         name: Upload Keycloak documentation
@@ -85,18 +79,12 @@ jobs:
         name: Maven cache
         uses: ./.github/actions/maven-cache
 
-      - id: build-documentation
-        name: Build Keycloak
+      - id: build-test-documentation
+        name: Build and verify Keycloak documentation
         shell: bash
         run: |
           MVN_HTTP_CONFIG="-Dhttp.keepAlive=false -Dmaven.wagon.http.pool=false -Dmaven.wagon.http.retryHandler.class=standard -Dmaven.wagon.http.retryHandler.count=3 -Dmaven.wagon.httpconnectionManager.ttlSeconds=120"
-          ./mvnw install -DskipTests -am -pl docs/documentation/tests -nsu -B -e -Pdocumentation $MVN_HTTP_CONFIG 
-
-      - id: test-documentation
-        name: Verify Keycloak documentation
-        shell: bash
-        run: |
-          ./mvnw test -Dtest=ExternalLinksTest -am -pl docs/documentation/tests,docs/documentation/dist -nsu -B -e -Pdocumentation
+          ./mvnw install -Dtest=ExternalLinksTest -am -pl docs/documentation/tests -nsu -B -e -Pdocumentation $MVN_HTTP_CONFIG 
 
   check:
     name: Status Check - Keycloak Documentation
