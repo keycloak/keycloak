@@ -134,7 +134,7 @@ const FromTo = ({ name, ...rest }: NumberControlProps) => {
       fieldId={name}
       labelIcon={
         <HelpItem
-          helpText={t(`clients-help:${name}`)}
+          helpText={t(`${name}Help`)}
           fieldLabelId={`clients:${name}`}
         />
       }

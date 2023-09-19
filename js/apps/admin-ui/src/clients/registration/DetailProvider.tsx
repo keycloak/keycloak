@@ -164,7 +164,7 @@ export default function DetailProvider() {
             }
             labelIcon={
               <HelpItem
-                helpText={t("clientPolicyName")}
+                helpText={t("clientPolicyNameHelp")}
                 fieldLabelId="kc-name"
               />
             }
