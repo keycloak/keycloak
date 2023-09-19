@@ -28,6 +28,9 @@ public class KcSamlAdvancedAttributeToGroupMapperTest extends AbstractGroupBroke
             "  {\n" +
             "    \"key\": \"" + ATTRIBUTE_TO_MAP_FRIENDLY_NAME + "\",\n" +
             "    \"value\": \"value 1\"\n" +
+            "  },\n" +"  {\n" +
+            "    \"key\": \"" + ATTRIBUTE_TO_MAP_FRIENDLY_NAME + "\",\n" +
+            "    \"value\": \"value 2\"\n" +
             "  },\n" +
             "  {\n" +
             "    \"key\": \"" + KcOidcBrokerConfiguration.ATTRIBUTE_TO_MAP_NAME_2 + "\",\n" +
@@ -65,7 +68,7 @@ public class KcSamlAdvancedAttributeToGroupMapperTest extends AbstractGroupBroke
     public void attributeFriendlyNameGetsConsideredAndMatchedToGroup() {
         createAdvancedGroupMapper(ATTRIBUTES, false,KcOidcBrokerConfiguration.ATTRIBUTE_TO_MAP_NAME_2);
         createUserInProviderRealm(ImmutableMap.<String, List<String>> builder()
-                .put(ATTRIBUTE_TO_MAP_FRIENDLY_NAME, ImmutableList.<String> builder().add("value 1").build())
+                .put(ATTRIBUTE_TO_MAP_FRIENDLY_NAME, ImmutableList.<String> builder().add("value 1").add("value 2").build())
                 .put(KcOidcBrokerConfiguration.ATTRIBUTE_TO_MAP_NAME_2,
                         ImmutableList.<String> builder().add("value 2").build())
                 .build());
