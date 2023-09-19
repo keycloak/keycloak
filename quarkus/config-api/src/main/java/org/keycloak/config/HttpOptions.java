@@ -110,4 +110,11 @@ public class HttpOptions {
             .description("Enables or disables the HTTP/s and Socket serving.")
             .defaultValue(Boolean.TRUE)
             .build();
+
+    public static final Option<Integer> HTTP_MAX_CONCURRENT_REQUESTS = new OptionBuilder<>("http-max-concurrent-requests", Integer.class)
+            .category(OptionCategory.HTTP)
+            .description("Experimental: Maximum concurrent number of HTTP requests to handle. " +
+                    "Use this to shed load in an overload situation. Excess requests will return a \"503 Server not Available\" response.")
+            .build();
+
 }

@@ -43,6 +43,8 @@ import io.quarkus.hibernate.orm.deployment.spi.AdditionalJpaModelBuildItem;
 import io.quarkus.resteasy.reactive.server.spi.MethodScannerBuildItem;
 import io.quarkus.runtime.configuration.ConfigurationException;
 import io.quarkus.runtime.configuration.ProfileManager;
+import io.quarkus.vertx.http.deployment.FilterBuildItem;
+import io.quarkus.vertx.http.deployment.NonApplicationRootPathBuildItem;
 import io.quarkus.vertx.http.deployment.RouteBuildItem;
 import io.smallrye.config.ConfigValue;
 import org.hibernate.cfg.AvailableSettings;
@@ -185,6 +187,10 @@ class KeycloakProcessor {
             ClasspathThemeResourceProviderFactory.class,
             JarThemeProviderFactory.class,
             JpaMapStorageProviderFactory.class);
+    public static final String QUARKUS_HEALTH_ROOT_PROPERTY = "quarkus.smallrye-health.root-path";
+    public static final String QUARKUS_METRICS_PATH_PROPERTY = "quarkus.micrometer.export.prometheus.path";
+    public static final String QUARKUS_DEFAULT_HEALTH_PATH = "health";
+    public static final String QUARKUS_DEFAULT_METRICS_PATH = "metrics";
 
     static {
         DEPLOYEABLE_SCRIPT_PROVIDERS.put(AUTHENTICATORS, KeycloakProcessor::registerScriptAuthenticator);
@@ -591,6 +597,27 @@ class KeycloakProcessor {
     @Consume(CheckJdbcBuildStep.class)
     void indexLegacyJpaStore(BuildProducer<IndexDependencyBuildItem> indexDependencyBuildItemBuildProducer) {
         indexDependencyBuildItemBuildProducer.produce(new IndexDependencyBuildItem("org.keycloak", "keycloak-model-jpa"));
+    }
+
+    @Record(ExecutionTime.RUNTIME_INIT)
+    @BuildStep
+    void initializeFilter(BuildProducer<FilterBuildItem> filters, KeycloakRecorder recorder, NonApplicationRootPathBuildItem nonApplicationRootPathBuildItem) {
+
+        List<String> ignoredPaths = new ArrayList<>();
+
+        if (isHealthEnabled()) {
+            ignoredPaths.add(nonApplicationRootPathBuildItem.
+                    resolvePath(getOptionalValue(QUARKUS_HEALTH_ROOT_PROPERTY)
+                            .orElse(QUARKUS_DEFAULT_HEALTH_PATH)));
+        }
+
+        if (isMetricsEnabled()) {
+            ignoredPaths.add(nonApplicationRootPathBuildItem.
+                    resolvePath(getOptionalValue(QUARKUS_METRICS_PATH_PROPERTY)
+                            .orElse(QUARKUS_DEFAULT_METRICS_PATH)));
+        }
+
+        filters.produce(new FilterBuildItem(recorder.createRequestFilter(ignoredPaths),FilterBuildItem.AUTHORIZATION - 10));
     }
 
     @BuildStep
