@@ -44,7 +44,7 @@ export const PolicyRow = ({
       }
       labelIcon={
         <HelpItem
-          helpText={t(`authentication-help:passwordPolicies.${id}`)}
+          helpText={t(`passwordPoliciesHelp.${id}`)}
           fieldLabelId={`authentication:${id}`}
         />
       }

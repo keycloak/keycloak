@@ -2470,7 +2470,7 @@
   "updatedRequiredActionError": "Could not update required action: {{error}}",
   "createFlowHelp": "You can create a top level flow within this from",
   "flowTypeHelp": "What kind of form is it",
-  "topLevelFlowType": "What kind of top level flow is it? Type 'client' is used for authentication of clients (applications) when generic is for users and everything else",
+  "topLevelFlowTypeHelp": "What kind of top level flow is it? Type 'client' is used for authentication of clients (applications) when generic is for users and everything else",
   "addExecutionHelp": "Execution can have a wide range of actions, from sending a reset email to validating an OTP",
   "addSubFlowHelp": "Sub-Flows can be either generic or form. The form type is used to construct a sub-flow that generates a single flow for the user. Sub-flows are a special type of execution that evaluate as successful depending on how the executions they contain evaluate.",
   "aliasHelp": "The alias uniquely identifies an identity provider and it is also used to build the redirect uri.",
@@ -2495,7 +2495,7 @@
   "webAuthnPolicyCreateTimeoutHelp": "Timeout value for creating user's public key credential in seconds. if set to 0, this timeout option is not adapted.",
   "webAuthnPolicyAvoidSameAuthenticatorRegisterHelp": "Avoid registering the authenticator that has already been registered.",
   "webAuthnPolicyAcceptableAaguidsHelp": "The list of AAGUID of which an authenticator can be registered.",
-  "passwordPolicies": {
+  "passwordPoliciesHelp": {
     "forceExpiredPasswordChange": "The number of days the password is valid before a new password is required.",
     "hashIterations": "The number of times a password is hashed before storage or verification. Default: 27,500.",
     "passwordHistory": "Prevents a recently used password from being reused.",
@@ -3217,6 +3217,7 @@
   "createUserProviderError": "User federation provider could not be created: {{error}}",
   "flowNameHelp": "Help text for the name of the new flow",
   "flowDescriptionHelp": "Help text for the description of the new flow",
+  "flowNameDescriptionHelp": "Help text for the name description of the new flow",
   "noRoles-clientScopes": "No roles for this client scope",
   "noRolesInstructions-clientScopes": "You haven't created any roles for this client scope. Create a role to get started.",
   "noRoles-user": "No roles for this user",
