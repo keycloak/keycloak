@@ -106,7 +106,8 @@ public class MapGroupProvider implements GroupProvider {
                 .compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId());
         if (parent != null) {
             mcb = mcb.compare(SearchableFields.PARENT_ID, Operator.EQ, parent.getId());
-
+        } else {
+            mcb = mcb.compare(SearchableFields.PARENT_ID, Operator.NOT_EXISTS);
         }
         QueryParameters<GroupModel> queryParameters = withCriteria(mcb);
         String groupId = storeWithRealm(realm).read(queryParameters).findFirst().map(MapGroupEntity::getId)
