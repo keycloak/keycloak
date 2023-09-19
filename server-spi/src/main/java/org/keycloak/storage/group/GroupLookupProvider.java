@@ -34,10 +34,10 @@ public interface GroupLookupProvider {
     GroupModel getGroupById(RealmModel realm, String id);
 
     /**
-     * Returns a group from the given realm with the corresponding name
+     * Returns a group from the given realm with the corresponding name and parent
      *
      * @param realm  Realm.
-     * @param parent parent Group if not top level
+     * @param parent parent Group. If {@code null} top level groups are searched
      * @param name   name.
      * @return GroupModel with the corresponding name.
      */

@@ -1897,6 +1897,7 @@ public class RealmAdapter implements LegacyRealmModel, JpaModel<RealmEntity> {
     public GroupModel getGroupById(String id) {
         return session.groups().getGroupById(this, id);
     }
+
     @Override
     public Stream<GroupModel> getGroupsStream() {
         return session.groups().getGroupsStream(this);
