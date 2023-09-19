@@ -1,6 +1,8 @@
 import { Button, Page, Spinner } from "@patternfly/react-core";
+import { ExternalLinkSquareAltIcon } from "@patternfly/react-icons";
 import {
   KeycloakMasthead,
+  KeycloakProvider,
   Translations,
   TranslationsProvider,
 } from "keycloak-masthead";
@@ -8,8 +10,6 @@ import { Suspense, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { Outlet, useHref } from "react-router-dom";
 import { AlertProvider } from "ui-shared";
-
-import { ExternalLinkSquareAltIcon } from "@patternfly/react-icons";
 import { environment } from "../environment";
 import { keycloak } from "../keycloak";
 import { joinPath } from "../utils/joinPath";
@@ -56,31 +56,32 @@ export const Root = () => {
   );
 
   return (
-    <Page
-      header={
-        <TranslationsProvider translations={translations}>
-          <KeycloakMasthead
-            features={{ hasManageAccount: false }}
-            showNavToggle
-            brand={{
-              href: indexHref,
-              src: joinPath(environment.resourceUrl, brandImage),
-              alt: t("logo"),
-              className: style.brand,
-            }}
-            toolbarItems={[<ReferrerLink key="link" />]}
-            keycloak={keycloak}
-          />
-        </TranslationsProvider>
-      }
-      sidebar={<PageNav />}
-      isManagedSidebar
-    >
-      <AlertProvider>
-        <Suspense fallback={<Spinner />}>
-          <Outlet />
-        </Suspense>
-      </AlertProvider>
-    </Page>
+    <KeycloakProvider keycloak={keycloak}>
+      <Page
+        header={
+          <TranslationsProvider translations={translations}>
+            <KeycloakMasthead
+              features={{ hasManageAccount: false }}
+              showNavToggle
+              brand={{
+                href: indexHref,
+                src: joinPath(environment.resourceUrl, brandImage),
+                alt: t("logo"),
+                className: style.brand,
+              }}
+              toolbarItems={[<ReferrerLink key="link" />]}
+            />
+          </TranslationsProvider>
+        }
+        sidebar={<PageNav />}
+        isManagedSidebar
+      >
+        <AlertProvider>
+          <Suspense fallback={<Spinner />}>
+            <Outlet />
+          </Suspense>
+        </AlertProvider>
+      </Page>
+    </KeycloakProvider>
   );
 };
