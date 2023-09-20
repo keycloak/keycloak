@@ -117,7 +117,7 @@ export const AddSubFlowModal = ({
           fieldId="description"
           labelIcon={
             <HelpItem
-              helpText={t("flowNameDescription")}
+              helpText={t("flowNameDescriptionHelp")}
               fieldLabelId="description"
             />
           }

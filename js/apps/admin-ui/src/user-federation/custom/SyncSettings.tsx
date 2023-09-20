@@ -17,7 +17,7 @@ export const SyncSettings = () => {
         label={t("periodicFullSync")}
         labelIcon={
           <HelpItem
-            helpText={t("user-federation-help:periodicFullSyncHelp")}
+            helpText={t("periodicFullSyncHelp")}
             fieldLabelId="user-federation:periodicFullSync"
           />
         }
@@ -49,7 +49,7 @@ export const SyncSettings = () => {
           label={t("fullSyncPeriod")}
           labelIcon={
             <HelpItem
-              helpText={t("user-federation-help:fullSyncPeriodHelp")}
+              helpText={t("fullSyncPeriodHelp")}
               fieldLabelId="user-federation:fullSyncPeriod"
             />
           }
@@ -69,7 +69,7 @@ export const SyncSettings = () => {
         label={t("periodicChangedUsersSync")}
         labelIcon={
           <HelpItem
-            helpText={t("user-federation-help:periodicChangedUsersSyncHelp")}
+            helpText={t("periodicChangedUsersSyncHelp")}
             fieldLabelId="user-federation:periodicChangedUsersSync"
           />
         }
@@ -100,7 +100,7 @@ export const SyncSettings = () => {
           label={t("changedUsersSyncPeriod")}
           labelIcon={
             <HelpItem
-              helpText={t("user-federation-help:changedUsersSyncHelp")}
+              helpText={t("changedUsersSyncHelp")}
               fieldLabelId="user-federation:changedUsersSyncPeriod"
             />
           }

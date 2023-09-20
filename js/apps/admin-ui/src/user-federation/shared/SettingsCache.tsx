@@ -79,7 +79,7 @@ const CacheFields = ({ form }: { form: UseFormReturn }) => {
         label={t("cachePolicy")}
         labelIcon={
           <HelpItem
-            helpText={t("user-federation-help:cachePolicyHelp")}
+            helpText={t("cachePolicyHelp")}
             fieldLabelId="user-federation:cachePolicy"
           />
         }
@@ -117,7 +117,7 @@ const CacheFields = ({ form }: { form: UseFormReturn }) => {
           label={t("evictionDay")}
           labelIcon={
             <HelpItem
-              helpText={t("user-federation-help:evictionDayHelp")}
+              helpText={t("evictionDayHelp")}
               fieldLabelId="user-federation:evictionDay"
             />
           }
@@ -175,7 +175,7 @@ const CacheFields = ({ form }: { form: UseFormReturn }) => {
             label={t("evictionHour")}
             labelIcon={
               <HelpItem
-                helpText={t("user-federation-help:evictionHourHelp")}
+                helpText={t("evictionHourHelp")}
                 fieldLabelId="user-federation:evictionHour"
               />
             }
@@ -207,7 +207,7 @@ const CacheFields = ({ form }: { form: UseFormReturn }) => {
             label={t("evictionMinute")}
             labelIcon={
               <HelpItem
-                helpText={t("user-federation-help:evictionMinuteHelp")}
+                helpText={t("evictionMinuteHelp")}
                 fieldLabelId="user-federation:evictionMinute"
               />
             }
@@ -242,7 +242,7 @@ const CacheFields = ({ form }: { form: UseFormReturn }) => {
           label={t("maxLifespan")}
           labelIcon={
             <HelpItem
-              helpText={t("user-federation-help:maxLifespanHelp")}
+              helpText={t("maxLifespanHelp")}
               fieldLabelId="user-federation:maxLifespan"
             />
           }

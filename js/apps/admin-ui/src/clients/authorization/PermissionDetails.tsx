@@ -321,7 +321,7 @@ export default function PermissionDetails() {
                 fieldId="scopes"
                 labelIcon={
                   <HelpItem
-                    helpText={t("permissionScopes")}
+                    helpText={t("permissionScopesHelp")}
                     fieldLabelId="scopesSelect"
                   />
                 }
@@ -341,7 +341,7 @@ export default function PermissionDetails() {
               fieldId="policies"
               labelIcon={
                 <HelpItem
-                  helpText={t("permissionPolicies")}
+                  helpText={t("permissionPoliciesHelp")}
                   fieldLabelId="policies"
                 />
               }
@@ -356,7 +356,7 @@ export default function PermissionDetails() {
               label={t("decisionStrategy")}
               labelIcon={
                 <HelpItem
-                  helpText={t("permissionDecisionStrategy")}
+                  helpText={t("permissionDecisionStrategyHelp")}
                   fieldLabelId="decisionStrategy"
                 />
               }

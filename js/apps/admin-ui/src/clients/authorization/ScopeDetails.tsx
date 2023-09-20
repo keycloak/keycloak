@@ -132,7 +132,7 @@ export default function ScopeDetails() {
             label={t("name")}
             fieldId="name"
             labelIcon={
-              <HelpItem helpText={t("scopeName")} fieldLabelId="name" />
+              <HelpItem helpText={t("scopeNameHelp")} fieldLabelId="name" />
             }
             helperTextInvalid={t("required")}
             validated={
@@ -154,7 +154,7 @@ export default function ScopeDetails() {
             fieldId="displayName"
             labelIcon={
               <HelpItem
-                helpText={t("scopeDisplayName")}
+                helpText={t("scopeDisplayNameHelp")}
                 fieldLabelId="displayName"
               />
             }

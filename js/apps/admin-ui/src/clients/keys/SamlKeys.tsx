@@ -82,7 +82,11 @@ const KeySection = ({
   return (
     <>
       {showImportDialog && (
-        <ExportSamlKeyDialog clientId={clientId} close={toggleImportDialog} />
+        <ExportSamlKeyDialog
+          keyType={attr}
+          clientId={clientId}
+          close={toggleImportDialog}
+        />
       )}
       <FormPanel title={t(title)} className="kc-form-panel__panel">
         <TextContent className="pf-u-pb-lg">
@@ -92,7 +96,7 @@ const KeySection = ({
           <FormGroup
             labelIcon={
               <HelpItem
-                helpText={t(`clients-help:${key}`)}
+                helpText={t(`${key}Help`)}
                 fieldLabelId={`clients:${key}`}
               />
             }

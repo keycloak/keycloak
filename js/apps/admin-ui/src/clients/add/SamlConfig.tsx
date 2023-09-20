@@ -29,7 +29,7 @@ export const Toggle = ({ name, label }: ToggleProps) => {
       fieldId={label}
       labelIcon={
         <HelpItem
-          helpText={t(`clients-help:${label}`)}
+          helpText={t(`${label}Help`)}
           fieldLabelId={`clients:${label}`}
         />
       }

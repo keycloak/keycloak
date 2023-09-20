@@ -20,6 +20,7 @@ import org.apache.xml.security.encryption.EncryptedData;
 import org.apache.xml.security.encryption.EncryptedKey;
 import org.apache.xml.security.encryption.XMLCipher;
 import org.apache.xml.security.encryption.XMLEncryptionException;
+import org.apache.xml.security.exceptions.XMLSecurityException;
 import org.apache.xml.security.utils.EncryptionConstants;
 
 import org.keycloak.saml.common.PicketLinkLogger;
@@ -252,18 +253,6 @@ public class XMLEncryptionUtil {
         if (encDataElement == null)
             throw logger.domMissingElementError("No element representing the encrypted data found");
 
-        // Look at siblings for the key
-        Element encKeyElement = getNextElementNode(encDataElement.getNextSibling());
-        if (encKeyElement == null) {
-            // Search the enc data element for enc key
-            NodeList nodeList = encDataElement.getElementsByTagNameNS(EncryptionConstants.EncryptionSpecNS, EncryptionConstants._TAG_ENCRYPTEDKEY);
-
-            if (nodeList == null || nodeList.getLength() == 0)
-                throw logger.nullValueError("Encrypted Key not found in the enc data");
-
-            encKeyElement = (Element) nodeList.item(0);
-        }
-
         XMLCipher cipher;
         EncryptedData encryptedData;
         EncryptedKey encryptedKey;
@@ -271,8 +260,18 @@ public class XMLEncryptionUtil {
             cipher = XMLCipher.getInstance();
             cipher.init(XMLCipher.DECRYPT_MODE, null);
             encryptedData = cipher.loadEncryptedData(documentWithEncryptedElement, encDataElement);
-            encryptedKey = cipher.loadEncryptedKey(documentWithEncryptedElement, encKeyElement);
-        } catch (XMLEncryptionException e1) {
+            if (encryptedData.getKeyInfo() == null) {
+                throw logger.domMissingElementError("No element representing KeyInfo found in the EncryptedData");
+            }
+
+            encryptedKey = encryptedData.getKeyInfo().itemEncryptedKey(0);
+            if (encryptedKey == null) {
+                // the encrypted key is not inside the encrypted data, locate it
+                Element encKeyElement = locateEncryptedKeyElement(encDataElement);
+                encryptedKey = cipher.loadEncryptedKey(documentWithEncryptedElement, encKeyElement);
+                encryptedData.getKeyInfo().add(encryptedKey);
+            }
+        } catch (XMLSecurityException e1) {
             throw logger.processingError(e1);
         }
 
@@ -323,6 +322,28 @@ public class XMLEncryptionUtil {
         decryptedDoc.replaceChild(dataElement, decryptedRoot);
 
         return decryptedDoc.getDocumentElement();
+    }
+
+    /**
+     * Locates the EncryptedKey element once the EncryptedData element is found.
+     * A exception is thrown if not found.
+     *
+     * @param encDataElement The EncryptedData element found
+     * @return The EncryptedKey element
+     */
+    private static Element locateEncryptedKeyElement(Element encDataElement) {
+        // Look at siblings for the key
+        Element encKeyElement = getNextElementNode(encDataElement.getNextSibling());
+        if (encKeyElement == null) {
+            // Search the enc data element for enc key
+            NodeList nodeList = encDataElement.getElementsByTagNameNS(EncryptionConstants.EncryptionSpecNS, EncryptionConstants._TAG_ENCRYPTEDKEY);
+
+            if (nodeList == null || nodeList.getLength() == 0)
+                throw logger.nullValueError("Encrypted Key not found in the enc data");
+
+            encKeyElement = (Element) nodeList.item(0);
+        }
+        return encKeyElement;
     }
 
     /**

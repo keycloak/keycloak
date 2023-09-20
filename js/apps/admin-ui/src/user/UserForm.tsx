@@ -320,9 +320,7 @@ export const UserForm = ({
           fieldId="kc-groups"
           validated={errors.requiredActions ? "error" : "default"}
           helperTextInvalid={t("required")}
-          labelIcon={
-            <HelpItem helpText={t("users-help:groups")} fieldLabelId="groups" />
-          }
+          labelIcon={<HelpItem helpText={t("groups")} fieldLabelId="groups" />}
         >
           <Controller
             name="groups"

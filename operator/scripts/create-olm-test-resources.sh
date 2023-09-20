@@ -6,6 +6,8 @@ DOCKER_REGISTRY=$2
 
 UUID=${3:-""}
 
+TARGET_NAMESPACES=${4-default}
+
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
 rm -rf $SCRIPT_DIR/../olm/testing-resources
@@ -27,23 +29,28 @@ spec:
       interval: 10m
 EOF
 
-cat << EOF >> $SCRIPT_DIR/../olm/testing-resources/operatorgroup.yaml
+
+OPERATOR_GROUP_FILE=$SCRIPT_DIR/../olm/testing-resources/operatorgroup.yaml
+
+cat << EOF >> $OPERATOR_GROUP_FILE
 kind: OperatorGroup
 apiVersion: operators.coreos.com/v1
 metadata:
-  name: og-single
-  namespace: default
+  name: og
 spec:
-  targetNamespaces:
-  - default
 EOF
+
+IFS=', ' read -r -a array <<< "$TARGET_NAMESPACES"
+for element in "${array[@]}"
+do
+    yq ea -i ".spec.targetNamespaces += [\"$element\"]" $OPERATOR_GROUP_FILE
+done
 
 cat << EOF >> $SCRIPT_DIR/../olm/testing-resources/subscription.yaml
 apiVersion: operators.coreos.com/v1alpha1
 kind: Subscription
 metadata:
   name: keycloak-operator
-  namespace: default
 spec:
   installPlanApproval: Automatic
   name: keycloak-operator

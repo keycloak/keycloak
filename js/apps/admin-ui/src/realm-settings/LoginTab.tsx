@@ -82,7 +82,7 @@ export const RealmSettingsLoginTab = ({
             fieldId="kc-forgot-pw"
             labelIcon={
               <HelpItem
-                helpText={t("realm-settings:forgotPasswordHelpText")}
+                helpText={t("forgotPasswordHelpText")}
                 fieldLabelId="realm-settings:resetPasswordAllowed"
               />
             }
@@ -107,7 +107,7 @@ export const RealmSettingsLoginTab = ({
             fieldId="kc-remember-me"
             labelIcon={
               <HelpItem
-                helpText={t("realm-settings:rememberMeHelpText")}
+                helpText={t("rememberMeHelpText")}
                 fieldLabelId="realm-settings:rememberMe"
               />
             }
@@ -135,7 +135,7 @@ export const RealmSettingsLoginTab = ({
             fieldId="kc-email-as-username"
             labelIcon={
               <HelpItem
-                helpText={t("realm-settings:emailAsUsernameHelpText")}
+                helpText={t("emailAsUsernameHelpText")}
                 fieldLabelId="realm-settings:registrationEmailAsUsername"
               />
             }
@@ -166,7 +166,7 @@ export const RealmSettingsLoginTab = ({
             fieldId="kc-login-with-email"
             labelIcon={
               <HelpItem
-                helpText={t("realm-settings:loginWithEmailHelpText")}
+                helpText={t("loginWithEmailHelpText")}
                 fieldLabelId="realm-settings:loginWithEmailAllowed"
               />
             }
@@ -195,7 +195,7 @@ export const RealmSettingsLoginTab = ({
             fieldId="kc-duplicate-emails"
             labelIcon={
               <HelpItem
-                helpText={t("realm-settings:duplicateEmailsHelpText")}
+                helpText={t("duplicateEmailsHelpText")}
                 fieldLabelId="realm-settings:duplicateEmailsAllowed"
               />
             }
@@ -227,7 +227,7 @@ export const RealmSettingsLoginTab = ({
             fieldId="kc-verify-email"
             labelIcon={
               <HelpItem
-                helpText={t("realm-settings:verifyEmailHelpText")}
+                helpText={t("verifyEmailHelpText")}
                 fieldLabelId="realm-settings:verifyEmail"
               />
             }
@@ -259,7 +259,7 @@ export const RealmSettingsLoginTab = ({
             fieldId="kc-edit-username"
             labelIcon={
               <HelpItem
-                helpText={t("realm-settings-help:editUsername")}
+                helpText={t("editUsernameHelp")}
                 fieldLabelId="realm-settings:editUsernameAllowed"
               />
             }

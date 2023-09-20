@@ -32,10 +32,7 @@ export const NameDescription = ({
         }
         isRequired
         labelIcon={
-          <HelpItem
-            helpText={t(`clients-help:${prefix}-name`)}
-            fieldLabelId="name"
-          />
+          <HelpItem helpText={t(`${prefix}-nameHelp`)} fieldLabelId="name" />
         }
       >
         <KeycloakTextInput
@@ -53,7 +50,7 @@ export const NameDescription = ({
         fieldId="kc-description"
         labelIcon={
           <HelpItem
-            helpText={t(`clients-help:${prefix}-description`)}
+            helpText={t(`${prefix}-descriptionHelp`)}
             fieldLabelId="description"
           />
         }
