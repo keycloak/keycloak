@@ -8,15 +8,18 @@ import { adminClient } from "../../admin-client";
 import { useAlerts } from "../../components/alert/Alerts";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { KeyForm, getFileExtension } from "./GenerateKeyDialog";
+import { KeyTypes } from "./SamlKeys";
 
 type ExportSamlKeyDialogProps = {
   clientId: string;
   close: () => void;
+  keyType: KeyTypes;
 };
 
 export const ExportSamlKeyDialog = ({
   clientId,
   close,
+  keyType,
 }: ExportSamlKeyDialogProps) => {
   const { t } = useTranslation("clients");
   const { realm } = useRealm();
@@ -32,7 +35,7 @@ export const ExportSamlKeyDialog = ({
       const keyStore = await adminClient.clients.downloadKey(
         {
           id: clientId,
-          attr: "saml.signing",
+          attr: keyType,
         },
         config,
       );
