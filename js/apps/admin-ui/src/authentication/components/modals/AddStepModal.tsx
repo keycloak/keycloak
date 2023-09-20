@@ -95,7 +95,8 @@ export const AddStepModal = ({ name, type, onSelect }: AddStepModalProps) => {
       localeSort(providers ?? [], mapByKey("displayName"))
         .filter(
           (p) =>
-            p.displayName?.includes(search) || p.description?.includes(search),
+            p.displayName?.toLowerCase().includes(search) ||
+            p.description?.toLowerCase().includes(search),
         )
         .slice(first, first + max + 1),
     [providers, search, first, max],
@@ -142,7 +143,7 @@ export const AddStepModal = ({ name, type, onSelect }: AddStepModalProps) => {
           }}
           inputGroupName="search"
           inputGroupPlaceholder={t("search")}
-          inputGroupOnEnter={setSearch}
+          inputGroupOnEnter={(_) => setSearch(_.toLowerCase())}
         >
           <AuthenticationProviderList
             list={page.slice(0, max)}
