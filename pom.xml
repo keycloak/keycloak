@@ -48,6 +48,9 @@
 
         <project.build-time>${timestamp}</project.build-time>
 
+        <!-- core version for app-server-wildfly/eap tests, should match wildfly/eap server -->
+        <tests.wildfly.core.version>19.0.1.Final</tests.wildfly.core.version>
+
         <!-- Upstream WildFly Versions -->
         <upstream.wildfly.version>29.0.0.Final</upstream.wildfly.version>
         <upstream.wildfly.build-tools.version>1.2.13.Final</upstream.wildfly.build-tools.version>
