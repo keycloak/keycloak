@@ -1063,6 +1063,9 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
         AuthenticatedClientSessionEntity entity = createAuthenticatedClientSessionInstance(clientSession,
                 sessionToImportInto.getRealm().getId(), clientSession.getClient().getId(), offline);
 
+        // Update timestamp to same value as userSession. LastSessionRefresh of userSession from DB will have correct value
+        entity.setTimestamp(sessionToImportInto.getLastSessionRefresh());
+
         if (checkExpiration) {
             SessionFunction<AuthenticatedClientSessionEntity> lifespanChecker = offline
                     ? SessionTimeouts::getOfflineClientSessionLifespanMs : SessionTimeouts::getClientSessionLifespanMs;
