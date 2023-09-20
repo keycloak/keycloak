@@ -360,7 +360,7 @@ public class RemoveRolesCmd extends AbstractAuthOptionsCmd {
         out.println("    --cid                 Client's 'id' attribute");
         out.println("    --rolename            Role's 'name' attribute");
         out.println("    --roleid              Role's 'id' attribute");
-        out.println("    -a, --admin-root URL      URL of Admin REST endpoint root if not default - e.g. http://localhost:8080/auth/admin");
+        out.println("    -a, --admin-root URL      URL of Admin REST endpoint root if not default - e.g. http://localhost:8080/admin");
         out.println("    -r, --target-realm REALM  Target realm to issue requests against if not the one authenticated against");
         out.println();
         out.println("Examples:");
