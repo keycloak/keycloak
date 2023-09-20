@@ -36,6 +36,7 @@ import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.ClientSecretConstants;
 import org.keycloak.models.Constants;
 import org.keycloak.models.GroupModel;
+import org.keycloak.models.GroupProvider;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
@@ -763,6 +764,43 @@ public final class KeycloakModelUtils {
         return segments;
     }
 
+    public static GroupModel findGroupByPath(GroupProvider groupProvider, RealmModel realm, String path) {
+        if (path == null) {
+            return null;
+        }
+        if (path.startsWith(GROUP_PATH_SEPARATOR)) {
+            path = path.substring(1);
+        }
+        if (path.endsWith(GROUP_PATH_SEPARATOR)) {
+            path = path.substring(0, path.length() - 1);
+        }
+        String[] split = path.split(GROUP_PATH_SEPARATOR);
+        if (split.length == 0) return null;
+        return getGroupModel(groupProvider, realm, null, split, 0);
+    }
+
+    private static GroupModel getGroupModel(GroupProvider groupProvider, RealmModel realm, GroupModel parent, String[] split, int index) {
+        StringBuilder nameBuilder = new StringBuilder();
+        for (int i = index; i < split.length; i++) {
+            nameBuilder.append(split[i]);
+            GroupModel group = groupProvider.getGroupByName(realm, parent, nameBuilder.toString());
+            if (group != null) {
+                if (i < split.length-1) {
+                    return getGroupModel(groupProvider, realm, group, split, i+1);
+                } else {
+                    return group;
+                }
+            }
+            nameBuilder.append(GROUP_PATH_SEPARATOR);
+        }
+        return null;
+    }
+
+    /**
+     *
+     * @deprecated please use {@link #findGroupByPath(GroupProvider, RealmModel, String)} instead
+     */
+    @Deprecated
     public static GroupModel findGroupByPath(RealmModel realm, String path) {
         if (path == null) {
             return null;

@@ -94,31 +94,31 @@ public class LDAPGroupMapperTest extends AbstractLDAPTest {
             // 1 - Grant some groups in LDAP
 
             // This group should already exists as it was imported from LDAP
-            GroupModel group1 = KeycloakModelUtils.findGroupByPath(appRealm, "/group1");
+            GroupModel group1 = KeycloakModelUtils.findGroupByPath(session.groups(), appRealm, "/group1");
             john.joinGroup(group1);
 
             // This group should already exists as it was imported from LDAP
-            GroupModel group11 = KeycloakModelUtils.findGroupByPath(appRealm, "/group1/group11");
+            GroupModel group11 = KeycloakModelUtils.findGroupByPath(session.groups(), appRealm, "/group1/group11");
             mary.joinGroup(group11);
 
             // This group should already exists as it was imported from LDAP
-            GroupModel group12 = KeycloakModelUtils.findGroupByPath(appRealm, "/group1/group12");
+            GroupModel group12 = KeycloakModelUtils.findGroupByPath(session.groups(), appRealm, "/group1/group12");
             john.joinGroup(group12);
             mary.joinGroup(group12);
 
             // This group should already exists as it was imported from LDAP
-            GroupModel groupWithSlashesInName = KeycloakModelUtils.findGroupByPath(appRealm, "Team 2016/2017");
+            GroupModel groupWithSlashesInName = KeycloakModelUtils.findGroupByPath(session.groups(), appRealm, "Team 2016/2017");
             john.joinGroup(groupWithSlashesInName);
             mary.joinGroup(groupWithSlashesInName);
 
             // This group should already exists as it was imported from LDAP
-            GroupModel groupChildWithSlashesInName = KeycloakModelUtils.findGroupByPath(appRealm, "defaultGroup1/Team Child 2018/2019");
+            GroupModel groupChildWithSlashesInName = KeycloakModelUtils.findGroupByPath(session.groups(), appRealm, "defaultGroup1/Team Child 2018/2019");
             john.joinGroup(groupChildWithSlashesInName);
             mary.joinGroup(groupChildWithSlashesInName);
 
-            Assert.assertEquals("Team SubChild 2020/2021", KeycloakModelUtils.findGroupByPath(appRealm, "defaultGroup1/Team Child 2018/2019/Team SubChild 2020/2021").getName());
-            Assert.assertEquals("defaultGroup14", KeycloakModelUtils.findGroupByPath(appRealm, "defaultGroup13/Team SubChild 2022/2023/A/B/C/D/E/defaultGroup14").getName());
-            Assert.assertEquals("Team SubChild 2026/2027", KeycloakModelUtils.findGroupByPath(appRealm, "Team Root 2024/2025/A/B/C/D/defaultGroup15/Team SubChild 2026/2027").getName());
+            Assert.assertEquals("Team SubChild 2020/2021", KeycloakModelUtils.findGroupByPath(session.groups(), appRealm, "defaultGroup1/Team Child 2018/2019/Team SubChild 2020/2021").getName());
+            Assert.assertEquals("defaultGroup14", KeycloakModelUtils.findGroupByPath(session.groups(), appRealm, "defaultGroup13/Team SubChild 2022/2023/A/B/C/D/E/defaultGroup14").getName());
+            Assert.assertEquals("Team SubChild 2026/2027", KeycloakModelUtils.findGroupByPath(session.groups(), appRealm, "Team Root 2024/2025/A/B/C/D/defaultGroup15/Team SubChild 2026/2027").getName());
         });
 
 
@@ -146,11 +146,11 @@ public class LDAPGroupMapperTest extends AbstractLDAPTest {
             LDAPTestContext ctx = LDAPTestContext.init(session);
             RealmModel appRealm = ctx.getRealm();
 
-            GroupModel group1 = KeycloakModelUtils.findGroupByPath(appRealm, "/group1");
-            GroupModel group11 = KeycloakModelUtils.findGroupByPath(appRealm, "/group1/group11");
-            GroupModel group12 = KeycloakModelUtils.findGroupByPath(appRealm, "/group1/group12");
-            GroupModel groupTeam20162017 = KeycloakModelUtils.findGroupByPath(appRealm, "Team 2016/2017");
-            GroupModel groupTeamChild20182019 = KeycloakModelUtils.findGroupByPath(appRealm, "defaultGroup1/Team Child 2018/2019");
+            GroupModel group1 = KeycloakModelUtils.findGroupByPath(session.groups(), appRealm, "/group1");
+            GroupModel group11 = KeycloakModelUtils.findGroupByPath(session.groups(), appRealm, "/group1/group11");
+            GroupModel group12 = KeycloakModelUtils.findGroupByPath(session.groups(), appRealm, "/group1/group12");
+            GroupModel groupTeam20162017 = KeycloakModelUtils.findGroupByPath(session.groups(), appRealm, "Team 2016/2017");
+            GroupModel groupTeamChild20182019 = KeycloakModelUtils.findGroupByPath(session.groups(), appRealm, "defaultGroup1/Team Child 2018/2019");
             UserModel john = session.users().getUserByUsername(appRealm, "johnkeycloak");
             UserModel mary = session.users().getUserByUsername(appRealm, "marykeycloak");
 
