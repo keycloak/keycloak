@@ -37,8 +37,8 @@ public class WebAuthnPasswordlessCredentialProvider extends WebAuthnCredentialPr
         super(session, objectConverter);
     }
 
-    public WebAuthnPasswordlessCredentialProvider(KeycloakSession session, ObjectConverter objectConverter, Set<Origin> extraOrigins) {
-        super(session, objectConverter, extraOrigins);
+    public WebAuthnPasswordlessCredentialProvider(KeycloakSession session, ObjectConverter objectConverter, Set<Origin> origins) {
+        super(session, objectConverter, origins);
     }
 
     @Override
