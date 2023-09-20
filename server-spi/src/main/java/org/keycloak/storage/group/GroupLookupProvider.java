@@ -42,13 +42,8 @@ public interface GroupLookupProvider {
      * @return GroupModel with the corresponding name.
      */
     default GroupModel getGroupByName(RealmModel realm, GroupModel parent, String name) {
-        if (parent == null) {
-            return searchForGroupByNameStream(realm, name, true, null, null)
-                    .filter(groupModel -> groupModel.getName().equals(name)).findFirst().orElse(null);
-        } else {
-            return parent.getSubGroupsStream()
-                    .filter(groupModel -> groupModel.getName().equals(name)).findFirst().orElse(null);
-        }
+        return (parent == null ? realm.getTopLevelGroupsStream() : parent.getSubGroupsStream())
+                .filter(groupModel -> groupModel.getName().equals(name)).findFirst().orElse(null);
     }
 
     /**
