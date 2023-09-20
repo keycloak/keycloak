@@ -50,10 +50,7 @@ export const AddMapperForm = ({
       <FormGroup
         label={t("name")}
         labelIcon={
-          <HelpItem
-            helpText={t("identity-providers-help:addIdpMapperName")}
-            fieldLabelId="name"
-          />
+          <HelpItem helpText={t("addIdpMapperName")} fieldLabelId="name" />
         }
         fieldId="kc-name"
         isRequired

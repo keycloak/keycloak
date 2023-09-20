@@ -88,7 +88,7 @@ export const ExtendedNonDiscoverySettings = () => {
           label={t("allowedClockSkew")}
           labelIcon={
             <HelpItem
-              helpText={"identity-providers-help:allowedClockSkew"}
+              helpText={t("allowedClockSkewHelp")}
               fieldLabelId="identity-providers:allowedClockSkew"
             />
           }

@@ -26,7 +26,6 @@ type DescriptorSettingsProps = {
 
 const Fields = ({ readOnly }: DescriptorSettingsProps) => {
   const { t } = useTranslation();
-  const { t: th } = useTranslation();
 
   const {
     register,
@@ -98,7 +97,7 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
         label={t("ssoServiceUrl")}
         labelIcon={
           <HelpItem
-            helpText={th("ssoServiceUrl")}
+            helpText={t("ssoServiceUrlHelp")}
             fieldLabelId="identity-providers:ssoServiceUrl"
           />
         }
@@ -128,7 +127,7 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
         label={t("singleLogoutServiceUrl")}
         labelIcon={
           <HelpItem
-            helpText={th("singleLogoutServiceUrl")}
+            helpText={t("singleLogoutServiceUrlHelp")}
             fieldLabelId="identity-providers:singleLogoutServiceUrl"
           />
         }
@@ -158,7 +157,7 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
         label={t("nameIdPolicyFormat")}
         labelIcon={
           <HelpItem
-            helpText={th("nameIdPolicyFormat")}
+            helpText={t("nameIdPolicyFormatHelp")}
             fieldLabelId="identity-providers:nameIdPolicyFormat"
           />
         }
@@ -237,7 +236,7 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
         label={t("principalType")}
         labelIcon={
           <HelpItem
-            helpText={th("principalType")}
+            helpText={t("principalTypeHelp")}
             fieldLabelId="identity-providers:principalType"
           />
         }
@@ -292,7 +291,7 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
           label={t("principalAttribute")}
           labelIcon={
             <HelpItem
-              helpText={th("principalAttribute")}
+              helpText={t("principalAttributeHelp")}
               fieldLabelId="identity-providers:principalAttribute"
             />
           }
@@ -342,7 +341,7 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
             label={t("signatureAlgorithm")}
             labelIcon={
               <HelpItem
-                helpText={th("signatureAlgorithm")}
+                helpText={t("signatureAlgorithmHelp")}
                 fieldLabelId="identity-providers:signatureAlgorithm"
               />
             }
@@ -381,7 +380,7 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
             label={t("encryptionAlgorithm")}
             labelIcon={
               <HelpItem
-                helpText={th("encryptionAlgorithm")}
+                helpText={t("encryptionAlgorithmHelp")}
                 fieldLabelId="identity-provider:encryptionAlgorithm"
               />
             }
@@ -416,7 +415,7 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
             label={t("samlSignatureKeyName")}
             labelIcon={
               <HelpItem
-                helpText={th("samlSignatureKeyName")}
+                helpText={t("samlSignatureKeyNameHelp")}
                 fieldLabelId="identity-providers:samlSignatureKeyName"
               />
             }
@@ -500,7 +499,7 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
         label={t("allowedClockSkew")}
         labelIcon={
           <HelpItem
-            helpText={th("allowedClockSkew")}
+            helpText={t("allowedClockSkewHelp")}
             fieldLabelId="identity-providers:allowedClockSkew"
           />
         }
@@ -539,7 +538,7 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
         label={t("attributeConsumingServiceIndex")}
         labelIcon={
           <HelpItem
-            helpText={th("attributeConsumingServiceIndex")}
+            helpText={t("attributeConsumingServiceIndexHelp")}
             fieldLabelId="identity-providers:attributeConsumingServiceIndex"
           />
         }
@@ -578,7 +577,7 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
         label={t("attributeConsumingServiceName")}
         labelIcon={
           <HelpItem
-            helpText={th("attributeConsumingServiceName")}
+            helpText={t("attributeConsumingServiceNameHelp")}
             fieldLabelId="identity-providers:attributeConsumingServiceName"
           />
         }

@@ -44,7 +44,7 @@ const LoginFlow = ({
       label={t(label)}
       labelIcon={
         <HelpItem
-          helpText={t(`identity-providers-help:${label}`)}
+          helpText={t(`${label}Help`)}
           fieldLabelId={`identity-providers:${label}`}
         />
       }
