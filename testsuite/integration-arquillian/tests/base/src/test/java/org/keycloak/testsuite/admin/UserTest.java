@@ -645,6 +645,22 @@ public class UserTest extends AbstractAdminTest {
         }
     }
 
+    @Test
+    public void createUserWithCreateTimestamp() {
+        UserRepresentation user = new UserRepresentation();
+        user.setUsername("user1");
+        user.setEmail("user1@localhost");
+        Long createdTimestamp = 1695238476L;
+        user.setCreatedTimestamp(createdTimestamp);
+
+        String userId = createUser(user);
+
+        // fetch user again and see created timestamp filled in
+        UserRepresentation createdUser = realm.users().get(userId).toRepresentation();
+        assertNotNull(createdUser);
+        assertEquals(user.getCreatedTimestamp(), createdUser.getCreatedTimestamp());
+    }
+
     private List<String> createUsers() {
         List<String> ids = new ArrayList<>();
 
