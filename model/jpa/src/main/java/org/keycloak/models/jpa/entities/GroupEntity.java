@@ -37,7 +37,8 @@ import java.util.LinkedList;
         @NamedQuery(name="getGroupCountByNameContainingFromIdList", query="select count(u) from GroupEntity u where u.realm = :realm and lower(u.name) like lower(concat('%',:search,'%')) and u.id in :ids"),
         @NamedQuery(name="getTopLevelGroupIds", query="select u.id from GroupEntity u where u.parentId = :parent and u.realm = :realm order by u.name ASC"),
         @NamedQuery(name="getGroupCount", query="select count(u) from GroupEntity u where u.realm = :realm"),
-        @NamedQuery(name="getTopLevelGroupCount", query="select count(u) from GroupEntity u where u.realm = :realm and u.parentId = :parent")
+        @NamedQuery(name="getTopLevelGroupCount", query="select count(u) from GroupEntity u where u.realm = :realm and u.parentId = :parent"),
+        @NamedQuery(name="getGroupIdByNameAndParent", query="select u.id from GroupEntity u where u.realm = :realm and u.parentId = :parent and u.name = :name")
 })
 @Entity
 @Table(name="KEYCLOAK_GROUP",

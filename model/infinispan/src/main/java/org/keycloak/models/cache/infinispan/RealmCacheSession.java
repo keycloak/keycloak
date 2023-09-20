@@ -277,6 +277,7 @@ public class RealmCacheSession implements CacheRealmProvider {
 
     private void invalidateGroup(String id, String realmId, boolean invalidateQueries) {
         invalidateGroup(id);
+        cache.groupNameInvalidations(id, invalidations);
         if (invalidateQueries) {
             cache.groupQueriesInvalidations(realmId, invalidations);
         }
@@ -562,6 +563,14 @@ public class RealmCacheSession implements CacheRealmProvider {
 
     static String getTopGroupsQueryCacheKey(String realm) {
         return realm + ".top.groups";
+    }
+
+    static String getGroupByNameCacheKey(String realm, String parentId, String name) {
+        if (parentId != null) {
+            return realm + ".group." + parentId + "." + name;
+        } else {
+            return realm + ".group.top." + name;
+        }
     }
 
     static String getRolesCacheKey(String container) {
@@ -884,6 +893,33 @@ public class RealmCacheSession implements CacheRealmProvider {
         GroupAdapter adapter = new GroupAdapter(cached, this, session, realm);
         managedGroups.put(id, adapter);
         return adapter;
+    }
+
+    @Override
+    public GroupModel getGroupByName(RealmModel realm, GroupModel parent, String name) {
+        String cacheKey = getGroupByNameCacheKey(realm.getId(), parent != null? parent.getId(): null, name);
+        GroupNameQuery query = cache.get(cacheKey, GroupNameQuery.class);
+        if (query != null) {
+            logger.tracev("Group by name cache hit: {0}", name);
+        }
+        if (query == null) {
+            Long loaded = cache.getCurrentRevision(cacheKey);
+            GroupModel model = getGroupDelegate().getGroupByName(realm, parent, name);
+            if (model == null) return null;
+            if (invalidations.contains(model.getId())) return model;
+            query = new GroupNameQuery(loaded, cacheKey, model.getId(), realm);
+            cache.addRevisioned(query, startupRevision);
+            return model;
+        } else if (invalidations.contains(cacheKey)) {
+            return getGroupDelegate().getGroupByName(realm, parent, name);
+        } else {
+            String groupId = query.getGroupId();
+            if (invalidations.contains(groupId)) {
+                return getGroupDelegate().getGroupByName(realm, parent, name);
+            }
+            return getGroupById(realm, groupId);
+        }
+
     }
 
     @Override
