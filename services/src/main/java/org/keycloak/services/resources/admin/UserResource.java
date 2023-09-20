@@ -268,7 +268,7 @@ public class UserResource {
 
         if (rep.isEnabled() != null) user.setEnabled(rep.isEnabled());
         if (rep.isEmailVerified() != null) user.setEmailVerified(rep.isEmailVerified());
-        if (rep.getCreatedTimestamp() != null) user.setCreatedTimestamp(rep.getCreatedTimestamp());
+        if (rep.getCreatedTimestamp() != null && !isUpdateExistingUser) user.setCreatedTimestamp(rep.getCreatedTimestamp());
 
         if (rep.getFederationLink() != null) user.setFederationLink(rep.getFederationLink());
 
