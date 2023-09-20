@@ -53,7 +53,7 @@ export const EventConfigForm = ({
         fieldId={eventKey}
         labelIcon={
           <HelpItem
-            helpText={t(`realm-settings-help:save-${type}-events`)}
+            helpText={t(`save-${type}-eventsHelp`)}
             fieldLabelId="realm-settings:saveEvents"
           />
         }
@@ -160,7 +160,7 @@ export const EventConfigForm = ({
         fieldId={`clear-${type}-events`}
         labelIcon={
           <HelpItem
-            helpText={t(`realm-settings-help:${type}-clearEvents`)}
+            helpText={t(`${type}-clearEventsHelp`)}
             fieldLabelId={`realm-settings:clear-${type}-events`}
           />
         }

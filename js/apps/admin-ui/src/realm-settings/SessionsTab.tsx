@@ -59,7 +59,7 @@ export const RealmSettingsSessionsTab = ({
             fieldId="SSOSessionIdle"
             labelIcon={
               <HelpItem
-                helpText={t("realm-settings-help:ssoSessionIdle")}
+                helpText={t("ssoSessionIdle")}
                 fieldLabelId="realm-settings:SSOSessionIdle"
               />
             }
@@ -85,7 +85,7 @@ export const RealmSettingsSessionsTab = ({
             fieldId="SSOSessionMax"
             labelIcon={
               <HelpItem
-                helpText={t("realm-settings-help:ssoSessionMax")}
+                helpText={t("ssoSessionMax")}
                 fieldLabelId="realm-settings:SSOSessionMax"
               />
             }
@@ -110,7 +110,7 @@ export const RealmSettingsSessionsTab = ({
             fieldId="SSOSessionIdleRememberMe"
             labelIcon={
               <HelpItem
-                helpText={t("realm-settings-help:ssoSessionIdleRememberMe")}
+                helpText={t("ssoSessionIdleRememberMe")}
                 fieldLabelId="realm-settings:SSOSessionIdleRememberMe"
               />
             }
@@ -135,7 +135,7 @@ export const RealmSettingsSessionsTab = ({
             fieldId="SSOSessionMaxRememberMe"
             labelIcon={
               <HelpItem
-                helpText={t("realm-settings-help:ssoSessionMaxRememberMe")}
+                helpText={t("ssoSessionMaxRememberMe")}
                 fieldLabelId="realm-settings:SSOSessionMaxRememberMe"
               />
             }

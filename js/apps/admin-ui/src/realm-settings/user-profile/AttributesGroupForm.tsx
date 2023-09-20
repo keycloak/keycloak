@@ -124,7 +124,7 @@ export default function AttributesGroupForm() {
             validated={form.formState.errors.name ? "error" : "default"}
             labelIcon={
               <HelpItem
-                helpText={t("realm-settings:nameHint")}
+                helpText={t("nameHintHelp")}
                 fieldLabelId="realm-settings:nameField"
               />
             }
@@ -143,7 +143,7 @@ export default function AttributesGroupForm() {
             fieldId="kc-display-header"
             labelIcon={
               <HelpItem
-                helpText={t("realm-settings:displayHeaderHint")}
+                helpText={t("displayHeaderHintHelp")}
                 fieldLabelId="realm-settings:displayHeaderField"
               />
             }
@@ -158,7 +158,7 @@ export default function AttributesGroupForm() {
             fieldId="kc-display-description"
             labelIcon={
               <HelpItem
-                helpText={t("realm-settings:displayDescriptionHint")}
+                helpText={t("displayDescriptionHintHelp")}
                 fieldLabelId="realm-settings:displayDescriptionField"
               />
             }

@@ -190,7 +190,7 @@ export const RealmSettingsTokensTab = ({
             fieldId="shortVerificationUri"
             labelIcon={
               <HelpItem
-                helpText={t("realm-settings-help:shortVerificationUriTooltip")}
+                helpText={t("shortVerificationUriTooltipHelp")}
                 fieldLabelId="realm-settings:shortVerificationUri"
               />
             }
@@ -324,9 +324,7 @@ export const RealmSettingsTokensTab = ({
             fieldId="accessTokenLifespanImplicitFlow"
             labelIcon={
               <HelpItem
-                helpText={t(
-                  "realm-settings-help:accessTokenLifespanImplicitFlow",
-                )}
+                helpText={t("accessTokenLifespanImplicitFlow")}
                 fieldLabelId="realm-settings:accessTokenLifespanImplicitFlow"
               />
             }
@@ -442,9 +440,7 @@ export const RealmSettingsTokensTab = ({
             id="default-admin-initiated-label"
             labelIcon={
               <HelpItem
-                helpText={t(
-                  "realm-settings-help:defaultAdminInitiatedActionLifespan",
-                )}
+                helpText={t("defaultAdminInitiatedActionLifespanHelp")}
                 fieldLabelId="realm-settings:defaultAdminInitiated"
               />
             }

@@ -92,7 +92,7 @@ const KeySection = ({
           <FormGroup
             labelIcon={
               <HelpItem
-                helpText={t(`clients-help:${key}`)}
+                helpText={t(`${key}Help`)}
                 fieldLabelId={`clients:${key}`}
               />
             }

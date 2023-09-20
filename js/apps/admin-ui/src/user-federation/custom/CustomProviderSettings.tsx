@@ -129,7 +129,7 @@ export default function CustomProviderSettings() {
             label={t("uiDisplayName")}
             labelIcon={
               <HelpItem
-                helpText={t("user-federation-help:uiDisplayNameHelp")}
+                helpText={t("uiDisplayNameHelp")}
                 fieldLabelId="user-federation:uiDisplayName"
               />
             }

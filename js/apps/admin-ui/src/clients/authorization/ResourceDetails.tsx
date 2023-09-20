@@ -207,7 +207,10 @@ export default function ResourceDetails() {
               label={t("name")}
               fieldId="name"
               labelIcon={
-                <HelpItem helpText={t("resourceName")} fieldLabelId="name" />
+                <HelpItem
+                  helpText={t("resourceNameHelp")}
+                  fieldLabelId="name"
+                />
               }
               helperTextInvalid={t("required")}
               validated={
