@@ -70,7 +70,7 @@ public abstract class AbstractParEndpoint {
 
             cors.allowedOrigins(session, client);
 
-            if (client == null || client.isPublicClient()) {
+            if (client == null) {
                 throw throwErrorResponseException(OAuthErrorException.INVALID_REQUEST, "Client not allowed.", Response.Status.FORBIDDEN);
             }
         } catch (Exception e) {
