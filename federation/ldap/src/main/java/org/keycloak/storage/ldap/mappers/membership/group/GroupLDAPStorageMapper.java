@@ -790,7 +790,7 @@ public class GroupLDAPStorageMapper extends AbstractLDAPStorageMapper implements
      * Provides KC group defined as groups path or null (top-level group) if corresponding group is not available.
      */
     protected GroupModel getKcGroupsPathGroup(RealmModel realm) {
-        return config.isTopLevelGroupsPath() ? null : KeycloakModelUtils.findGroupByPath(session.groups(), realm, config.getGroupsPath());
+        return config.isTopLevelGroupsPath() ? null : KeycloakModelUtils.findGroupByPath(session, realm, config.getGroupsPath());
     }
 
     /**

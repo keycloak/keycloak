@@ -211,13 +211,13 @@ public class GroupModelTest extends KeycloakModelTest {
         });
 
         withRealm(realmId, (session, realm) -> {
-            GroupModel group1 = KeycloakModelUtils.findGroupByPath(session.groups(), realm, "/parent-1");
-            GroupModel group2 = KeycloakModelUtils.findGroupByPath(session.groups(), realm, "/parent-2");
+            GroupModel group1 = KeycloakModelUtils.findGroupByPath(session, realm, "/parent-1");
+            GroupModel group2 = KeycloakModelUtils.findGroupByPath(session, realm, "/parent-2");
             assertThat(group1.getName(), equalTo("parent-1"));
             assertThat(group2.getName(), equalTo("parent-2"));
 
-            GroupModel subGroup1 = KeycloakModelUtils.findGroupByPath(session.groups(), realm, "/parent-1/sub-group-1");
-            GroupModel subGroup2 = KeycloakModelUtils.findGroupByPath(session.groups(), realm, "/parent-2/sub-group/1");
+            GroupModel subGroup1 = KeycloakModelUtils.findGroupByPath(session, realm, "/parent-1/sub-group-1");
+            GroupModel subGroup2 = KeycloakModelUtils.findGroupByPath(session, realm, "/parent-2/sub-group/1");
             assertThat(subGroup1.getId(), equalTo(subGroupId1));
             assertThat(subGroup2.getId(), equalTo(subGroupIdWithSlash));
             return null;
