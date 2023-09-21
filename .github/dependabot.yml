@@ -23,17 +23,6 @@ updates:
       - area/dependencies
       - team/ui
   - package-ecosystem: npm
-    directory: /themes/src/main/resources/theme/keycloak.v2/welcome
-    schedule:
-      interval: daily
-      time: "00:00"
-      timezone: Etc/GMT
-    open-pull-requests-limit: 999
-    rebase-strategy: disabled
-    labels:
-      - area/dependencies
-      - team/ui
-  - package-ecosystem: npm
     directory: js
     open-pull-requests-limit: 999
     rebase-strategy: disabled
