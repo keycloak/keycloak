@@ -241,9 +241,6 @@ importers:
       '@types/file-saver':
         specifier: ^2.0.5
         version: 2.0.5
-      '@types/flat':
-        specifier: ^5.0.2
-        version: 5.0.2
       '@types/lodash-es':
         specifier: ^4.17.9
         version: 4.17.9
@@ -1823,10 +1820,6 @@ packages:
 
   /@types/file-saver@2.0.5:
     resolution: {integrity: sha512-zv9kNf3keYegP5oThGLaPk8E081DFDuwfqjtiTzm6PoxChdJ1raSuADf2YGCVIyrSynLrgc8JWv296s7Q7pQSQ==}
-    dev: true
-
-  /@types/flat@5.0.2:
-    resolution: {integrity: sha512-3zsplnP2djeps5P9OyarTxwRpMLoe5Ash8aL9iprw0JxB+FAHjY+ifn4yZUuW4/9hqtnmor6uvjSRzJhiVbrEQ==}
     dev: true
 
   /@types/geojson@7946.0.10:
