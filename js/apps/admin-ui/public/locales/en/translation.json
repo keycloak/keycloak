@@ -2385,7 +2385,9 @@
   "webAuthnPolicyCreateTimeoutHint": "Timeout needs to be between 0 seconds and 8 hours",
   "webAuthnPolicyAvoidSameAuthenticatorRegister": "Avoid same authenticator registration",
   "webAuthnPolicyAcceptableAaguids": "Acceptable AAGUIDs",
+  "webAuthnPolicyExtraOrigins": "Extra Origins",
   "addAaguids": "Add AAGUID",
+  "addOrigins": "Add Origin",
   "webAuthnUpdateSuccess": "Updated webauthn policies successfully",
   "webAuthnUpdateError": "Could not update webauthn policies due to {{error}}",
   "flowName": "Flow name",
@@ -2495,6 +2497,7 @@
   "webAuthnPolicyCreateTimeoutHelp": "Timeout value for creating user's public key credential in seconds. if set to 0, this timeout option is not adapted.",
   "webAuthnPolicyAvoidSameAuthenticatorRegisterHelp": "Avoid registering the authenticator that has already been registered.",
   "webAuthnPolicyAcceptableAaguidsHelp": "The list of AAGUID of which an authenticator can be registered.",
+  "webAuthnPolicyExtraOriginsHelp": "The list of extra origin for non-web application.",
   "passwordPolicies": {
     "forceExpiredPasswordChange": "The number of days the password is valid before a new password is required.",
     "hashIterations": "The number of times a password is hashed before storage or verification. Default: 27,500.",

@@ -2342,7 +2342,9 @@
   "webAuthnPolicyCreateTimeoutHint": "超时时间需要在 0 秒到 8 小时之间",
   "webAuthnPolicyAvoidSameAuthenticatorRegister": "避免相同的身份验证器注册",
   "webAuthnPolicyAcceptableAaguids": "可接受的 AAGUID",
+  "webAuthnPolicyExtraOrigins": "额外的 Origin",
   "addAaguids": "添加 AAGUID",
+  "addOrigins": "添加 Origin",
   "webAuthnUpdateSuccess": "已成功更新 webauthn 策略",
   "webAuthnUpdateError": "由于{{error}}，无法更新 webauthn 策略",
   "flowName": "流程名称",
@@ -2451,6 +2453,7 @@
   "webAuthnPolicyCreateTimeoutHelp": "以秒为单位创建用户公钥凭证的超时值。如果设置为 0，则不适应此超时选项。",
   "webAuthnPolicyAvoidSameAuthenticatorRegisterHelp": "避免注册已经被注册过的验证器。",
   "webAuthnPolicyAcceptableAaguidsHelp": "AAGUID 列表，其中可以注册验证者。",
+  "webAuthnPolicyExtraOriginsHelp": "额外的 Origin 列表，用于非网络应用程序。",
   "密码策略": {
     "forceExpiredPasswordChange": "在需要新密码之前，当前密码的有效天数。",
     "hashIterations": "密码在存储或验证之前被散列的次数。默认值：27,500。",

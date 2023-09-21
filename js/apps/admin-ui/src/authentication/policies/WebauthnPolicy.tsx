@@ -349,6 +349,22 @@ export const WebauthnPolicy = ({
               addButtonLabel="addAaguids"
             />
           </FormGroup>
+          <FormGroup
+            label={t("webAuthnPolicyExtraOrigins")}
+            fieldId="webAuthnPolicyExtraOrigins"
+            labelIcon={
+              <HelpItem
+                helpText={t("webAuthnPolicyExtraOriginsHelp")}
+                fieldLabelId="webAuthnPolicyExtraOrigins"
+              />
+            }
+          >
+            <MultiLineInput
+              name={`${namePrefix}ExtraOrigins`}
+              aria-label={t("webAuthnPolicyExtraOrigins")}
+              addButtonLabel="addOrigins"
+            />
+          </FormGroup>
         </FormProvider>
 
         <ActionGroup>

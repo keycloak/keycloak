@@ -16,20 +16,21 @@
 
 package org.keycloak.credential;
 
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
-
 import com.webauthn4j.WebAuthnAuthenticationManager;
+import com.webauthn4j.authenticator.Authenticator;
+import com.webauthn4j.authenticator.AuthenticatorImpl;
 import com.webauthn4j.converter.util.ObjectConverter;
+import com.webauthn4j.data.AuthenticationData;
+import com.webauthn4j.data.AuthenticationParameters;
 import com.webauthn4j.data.AuthenticatorTransport;
+import com.webauthn4j.data.attestation.authenticator.AAGUID;
+import com.webauthn4j.data.attestation.authenticator.AttestedCredentialData;
+import com.webauthn4j.data.attestation.authenticator.COSEKey;
 import com.webauthn4j.data.client.CollectedClientData;
 import com.webauthn4j.data.client.Origin;
 import com.webauthn4j.server.ServerProperty;
 import com.webauthn4j.util.AssertUtil;
+import com.webauthn4j.util.exception.WebAuthnException;
 import com.webauthn4j.validator.OriginValidatorImpl;
 import com.webauthn4j.validator.exception.BadOriginException;
 import org.checkerframework.checker.nullness.qual.NonNull;
@@ -40,17 +41,15 @@ import org.keycloak.common.util.Time;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
-
-import com.webauthn4j.authenticator.Authenticator;
-import com.webauthn4j.authenticator.AuthenticatorImpl;
-import com.webauthn4j.data.AuthenticationData;
-import com.webauthn4j.data.AuthenticationParameters;
-import com.webauthn4j.data.attestation.authenticator.AAGUID;
-import com.webauthn4j.data.attestation.authenticator.AttestedCredentialData;
-import com.webauthn4j.data.attestation.authenticator.COSEKey;
-import com.webauthn4j.util.exception.WebAuthnException;
+import org.keycloak.models.WebAuthnPolicy;
 import org.keycloak.models.credential.WebAuthnCredentialModel;
 import org.keycloak.models.credential.dto.WebAuthnCredentialData;
+
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Credential provider for WebAuthn 2-factor credential of the user
@@ -63,21 +62,13 @@ public class WebAuthnCredentialProvider implements CredentialProvider<WebAuthnCr
 
     private CredentialPublicKeyConverter credentialPublicKeyConverter;
     private AttestationStatementConverter attestationStatementConverter;
-    private Set<Origin> origins;
 
     public WebAuthnCredentialProvider(KeycloakSession session, ObjectConverter objectConverter) {
-        this(session, objectConverter,null);
-    }
-
-    public WebAuthnCredentialProvider(KeycloakSession session, ObjectConverter objectConverter, Set<Origin> origins) {
         this.session = session;
         if (credentialPublicKeyConverter == null)
             credentialPublicKeyConverter = new CredentialPublicKeyConverter(objectConverter);
         if (attestationStatementConverter == null)
             attestationStatementConverter = new AttestationStatementConverter(objectConverter);
-        if (origins == null){
-            this.origins = new HashSet<>();
-        }
     }
 
     @Override
@@ -250,6 +241,10 @@ public class WebAuthnCredentialProvider implements CredentialProvider<WebAuthnCr
     }
 
     protected WebAuthnAuthenticationManager getWebAuthnAuthenticationManager() {
+        WebAuthnPolicy policy = session.getContext().getRealm().getWebAuthnPolicy();
+        Set<Origin> origins = policy.getExtraOrigins().stream()
+                .map(Origin::new)
+                .collect(Collectors.toSet());
         WebAuthnAuthenticationManager webAuthnAuthenticationManager = new WebAuthnAuthenticationManager();
         webAuthnAuthenticationManager.getAuthenticationDataValidator().setOriginValidator(new OriginValidatorImpl(){
             @Override

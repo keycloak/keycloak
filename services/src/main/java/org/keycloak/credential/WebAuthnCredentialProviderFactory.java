@@ -17,38 +17,19 @@
 package org.keycloak.credential;
 
 import com.webauthn4j.converter.util.ObjectConverter;
-import com.webauthn4j.data.client.Origin;
-import org.keycloak.Config;
 import org.keycloak.common.Profile;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
-
-import java.util.Arrays;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class WebAuthnCredentialProviderFactory implements CredentialProviderFactory<WebAuthnCredentialProvider>, EnvironmentDependentProviderFactory {
 
     public static final String PROVIDER_ID = "keycloak-webauthn";
 
     private ObjectConverter converter;
-    private Config.Scope config;
-
-    @Override
-    public void init(Config.Scope config) {
-        this.config = config;
-    }
 
     @Override
     public CredentialProvider create(KeycloakSession session) {
-        Set<Origin> origins = Optional.ofNullable(config.getArray("fido2-origins"))
-                .map(Arrays::stream)
-                .orElseGet(Stream::empty)
-                .map(Origin::new)
-                .collect(Collectors.toSet());
-        return new WebAuthnCredentialProvider(session, createOrGetObjectConverter(), origins);
+        return new WebAuthnCredentialProvider(session, createOrGetObjectConverter());
     }
 
     private ObjectConverter createOrGetObjectConverter() {
