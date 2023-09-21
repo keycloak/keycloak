@@ -274,6 +274,7 @@ export const GroupTree = ({
         setFirst(first);
         setMax(max);
       }}
+      exactSearch={true}
       inputGroupName="searchForGroups"
       inputGroupPlaceholder={t("searchForGroups")}
       inputGroupOnEnter={setSearch}

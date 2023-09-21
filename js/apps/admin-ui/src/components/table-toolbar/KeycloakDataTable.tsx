@@ -288,10 +288,7 @@ export function KeycloakDataTable<T>({
             .filter((row) =>
               row.cells.some(
                 (cell) =>
-                  cell &&
-                  getNodeText(cell)
-                    .toLowerCase()
-                    .includes(search.toLowerCase()),
+                  cell && getNodeText(cell).toLowerCase().includes(search),
               ),
             )
             .slice(first, first + max + 1),

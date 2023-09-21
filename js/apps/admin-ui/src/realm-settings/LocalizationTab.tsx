@@ -152,7 +152,9 @@ export const LocalizationTab = ({ save, realm }: LocalizationTabProps) => {
         .catch(() => []);
 
       const searchInBundles = (idx: number) => {
-        return Object.entries(result).filter((i) => i[idx].includes(filter));
+        return Object.entries(result).filter((i) =>
+          i[idx].toLowerCase().includes(filter),
+        );
       };
 
       if (filter) {

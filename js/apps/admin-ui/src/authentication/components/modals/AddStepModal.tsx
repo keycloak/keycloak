@@ -143,7 +143,7 @@ export const AddStepModal = ({ name, type, onSelect }: AddStepModalProps) => {
           }}
           inputGroupName="search"
           inputGroupPlaceholder={t("search")}
-          inputGroupOnEnter={(_) => setSearch(_.toLowerCase())}
+          inputGroupOnEnter={setSearch}
         >
           <AuthenticationProviderList
             list={page.slice(0, max)}
