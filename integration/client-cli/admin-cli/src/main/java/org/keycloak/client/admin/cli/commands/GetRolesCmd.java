@@ -374,7 +374,7 @@ public class GetRolesCmd extends GetCmd {
         out.println("    -c, --compressed          Don't pretty print the output");
         out.println("    --format FORMAT           Set output format to comma-separated-values by using 'csv'. Default format is 'json'");
         out.println("    --noquotes                Don't quote strings when output format is 'csv'");
-        out.println("    -a, --admin-root URL      URL of Admin REST endpoint root if not default - e.g. http://localhost:8080/auth/admin");
+        out.println("    -a, --admin-root URL      URL of Admin REST endpoint root if not default - e.g. http://localhost:8080/admin");
         out.println("    -r, --target-realm REALM  Target realm to issue requests against if not the one authenticated against");
         out.println();
         out.println("Examples:");
