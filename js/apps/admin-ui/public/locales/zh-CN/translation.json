@@ -355,7 +355,7 @@
   "decisionStrategies": {
     "UNANIMOUS": "无异议",
     "AFFIRMATIVE": "肯定的",
-    "CONSENSUS": "一致同意"
+    "CONSENSUS": "共识"
   },
   "importResources": "将导入以下设置和数据：",
   "importWarning": "上面导入的数据和设置可能会覆盖已经存在的数据和设置。",
