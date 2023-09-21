@@ -171,7 +171,6 @@ export const GroupPickerDialog = ({
           setFirst(first);
           setMax(max);
         }}
-        exactSearch={true}
         inputGroupName={"search"}
         inputGroupOnEnter={(search) => {
           setFilter(search);

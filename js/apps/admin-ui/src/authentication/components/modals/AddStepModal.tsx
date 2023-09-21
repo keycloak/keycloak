@@ -95,8 +95,8 @@ export const AddStepModal = ({ name, type, onSelect }: AddStepModalProps) => {
       localeSort(providers ?? [], mapByKey("displayName"))
         .filter(
           (p) =>
-            p.displayName?.toLowerCase().includes(search) ||
-            p.description?.toLowerCase().includes(search),
+            p.displayName?.toLowerCase().includes(search.toLowerCase()) ||
+            p.description?.toLowerCase().includes(search.toLowerCase()),
         )
         .slice(first, first + max + 1),
     [providers, search, first, max],

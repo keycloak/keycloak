@@ -14,7 +14,6 @@ type TableToolbarProps = {
   subToolbar?: ReactNode;
   toolbarItemFooter?: ReactNode;
   searchTypeComponent?: ReactNode;
-  exactSearch?: boolean;
   inputGroupName?: string;
   inputGroupPlaceholder?: string;
   inputGroupOnEnter?: (value: string) => void;
@@ -26,7 +25,6 @@ export const TableToolbar = ({
   toolbarItemFooter,
   children,
   searchTypeComponent,
-  exactSearch,
   inputGroupName,
   inputGroupPlaceholder,
   inputGroupOnEnter,
@@ -37,9 +35,7 @@ export const TableToolbar = ({
   const onSearch = () => {
     if (searchValue !== "") {
       setSearchValue(searchValue);
-      inputGroupOnEnter?.(
-        exactSearch ? searchValue : searchValue.toLowerCase(),
-      );
+      inputGroupOnEnter?.(searchValue);
     } else {
       setSearchValue("");
       inputGroupOnEnter?.("");

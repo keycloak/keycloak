@@ -23,7 +23,6 @@ type TableToolbarProps = KeycloakPaginationProps & {
   searchTypeComponent?: ReactNode;
   toolbarItem?: ReactNode;
   subToolbar?: ReactNode;
-  exactSearch?: boolean;
   inputGroupName?: string;
   inputGroupPlaceholder?: string;
   inputGroupOnEnter?: (value: string) => void;
@@ -70,7 +69,6 @@ export const PaginatingTableToolbar = ({
   toolbarItem,
   subToolbar,
   children,
-  exactSearch,
   inputGroupName,
   inputGroupPlaceholder,
   inputGroupOnEnter,
@@ -95,7 +93,6 @@ export const PaginatingTableToolbar = ({
           </ToolbarItem>
         ) : null
       }
-      exactSearch={exactSearch}
       inputGroupName={inputGroupName}
       inputGroupPlaceholder={inputGroupPlaceholder}
       inputGroupOnEnter={inputGroupOnEnter}
