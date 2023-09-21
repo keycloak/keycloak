@@ -15,14 +15,12 @@
     <properties>
         <dir.common>src/main/resources/theme/keycloak/common/resources</dir.common>
         <dir.account2>src/main/resources/theme/keycloak.v2/account/src</dir.account2>
-        <dir.welcome2>src/main/resources/theme/keycloak.v2/welcome</dir.welcome2>
         <args.npm.install>ci --no-optional --ignore-scripts</args.npm.install>
         <!-- ignore folders for incremental builds by the maven build cache plugin -->
         <maven.build.cache.exclude.1>${project.basedir}/src/main/resources/theme/keycloak/common/resources/node_modules</maven.build.cache.exclude.1>
         <maven.build.cache.exclude.2>${project.basedir}/src/main/resources/theme/keycloak/common/resources/web_modules</maven.build.cache.exclude.2>
         <maven.build.cache.exclude.3>${project.basedir}/src/main/resources/theme/keycloak.v2/account/src/node_modules</maven.build.cache.exclude.3>
         <maven.build.cache.exclude.4>${project.basedir}/src/main/resources/theme/keycloak.v2/account/src/web_modules</maven.build.cache.exclude.4>
-        <maven.build.cache.exclude.5>${project.basedir}/src/main/resources/theme/keycloak.v2/welcome/node_modules</maven.build.cache.exclude.5>
     </properties>
 
     <build>
@@ -163,83 +161,6 @@
                             <nodeVersion>${node.version}</nodeVersion>
                             <installDirectory>../</installDirectory>
                         </configuration>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-
-        <profile>
-            <id>welcome2</id>
-            <activation>
-                <property>
-                    <name>!skipWelcome2</name>
-                </property>
-            </activation>
-            <build>
-                <plugins>
-                    <plugin>
-                        <artifactId>maven-clean-plugin</artifactId>
-                        <configuration>
-                            <filesets>
-                                <fileset>
-                                    <directory>${dir.welcome2}/node_modules</directory>
-                                    <directory>${dir.welcome2}/resources/vendor</directory>
-                                </fileset>
-                            </filesets>
-                        </configuration>
-                    </plugin>
-                    <plugin>
-                        <groupId>com.github.eirslett</groupId>
-                        <artifactId>frontend-maven-plugin</artifactId>
-                        <executions>
-                            <execution>
-                                <id>setup-node</id>
-                                <goals>
-                                    <goal>install-node-and-npm</goal>
-                                </goals>
-                                <phase>initialize</phase>
-                            </execution>
-                            <execution>
-                                <id>npm-install-welcome2</id>
-                                <phase>initialize</phase>
-                                <goals>
-                                    <goal>npm</goal>
-                                </goals>
-                                <configuration>
-                                    <workingDirectory>${dir.welcome2}</workingDirectory>
-                                    <arguments>${args.npm.install}</arguments>
-                                </configuration>
-                            </execution>
-                        </executions>
-                        <configuration>
-                            <nodeVersion>${node.version}</nodeVersion>
-                            <installDirectory>../</installDirectory>
-                        </configuration>
-                    </plugin>
-                    <plugin>
-                        <artifactId>maven-resources-plugin</artifactId>
-                        <executions>
-                            <execution>
-                                <id>copy-patternfly</id>
-                                <phase>generate-resources</phase>
-                                <goals>
-                                    <goal>copy-resources</goal>
-                                </goals>
-                                <configuration>
-                                    <outputDirectory>${dir.welcome2}/resources/vendor/patternfly</outputDirectory>
-                                    <resources>
-                                        <resource>
-                                            <directory>${dir.welcome2}/node_modules/@patternfly/patternfly</directory>
-                                            <includes>
-                                                <include>patternfly.css</include>
-                                                <include>patternfly-addons.css</include>
-                                                <include>assets/fonts/**/*</include>
-                                            </includes>
-                                        </resource>
-                                    </resources>
-                                </configuration>
-                            </execution>
-                        </executions>
                     </plugin>
                 </plugins>
             </build>
