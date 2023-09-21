@@ -57,7 +57,6 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
-import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.Config;
 import org.keycloak.KeyPairVerifier;
 import org.keycloak.authentication.CredentialRegistrator;
@@ -1074,7 +1073,7 @@ public class RealmAdminResource {
     @Tag(name = KeycloakOpenAPI.Admin.Tags.REALMS_ADMIN)
     @Operation()
     public GroupRepresentation getGroupByPath(@PathParam("path") String path) {
-        GroupModel found = KeycloakModelUtils.findGroupByPath(realm, path);
+        GroupModel found = KeycloakModelUtils.findGroupByPath(session, realm, path);
         if (found == null) {
             throw new NotFoundException("Group path does not exist");
 

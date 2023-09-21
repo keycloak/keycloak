@@ -243,7 +243,7 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
         // group management
         AdminPermissionManagement permissions = AdminPermissions.management(session, realm);
 
-        GroupModel group =  KeycloakModelUtils.findGroupByPath(realm, "top");
+        GroupModel group =  KeycloakModelUtils.findGroupByPath(session, realm, "top");
         UserModel groupMember = session.users().addUser(realm, "groupMember");
         groupMember.joinGroup(group);
         groupMember.setEnabled(true);
@@ -820,7 +820,7 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
         ClientModel client = realm.getClientByClientId("removedClient");
         RoleModel removedClientRole = client.getRole("removedClientRole");
         client.removeRole(removedClientRole);
-        GroupModel group = KeycloakModelUtils.findGroupByPath(realm, "removedGroup");
+        GroupModel group = KeycloakModelUtils.findGroupByPath(session, realm, "removedGroup");
         realm.removeGroup(group);
         byResourceServer = management.authz().getStoreFactory().getResourceStore().findByResourceServer(management.realmResourceServer());
         Assert.assertEquals(2, byResourceServer.size());
