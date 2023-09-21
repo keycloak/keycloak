@@ -120,7 +120,7 @@ export const KeyProviderForm = ({
         </FormGroup>
       )}
       <FormGroup
-        label={t("common:name")}
+        label={t("name")}
         labelIcon={
           <HelpItem helpText={t("mapperNameHelp")} fieldLabelId="name" />
         }
@@ -129,7 +129,7 @@ export const KeyProviderForm = ({
         validated={
           errors.name ? ValidatedOptions.error : ValidatedOptions.default
         }
-        helperTextInvalid={t("common:required")}
+        helperTextInvalid={t("required")}
       >
         <Controller
           name="name"
@@ -160,10 +160,10 @@ export const KeyProviderForm = ({
           variant="primary"
           type="submit"
         >
-          {t("common:save")}
+          {t("save")}
         </Button>
         <Button onClick={() => onClose?.()} variant="link">
-          {t("common:cancel")}
+          {t("cancel")}
         </Button>
       </ActionGroup>
     </FormAccess>

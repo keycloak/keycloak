@@ -102,9 +102,7 @@ export const LdapSettingsConnection = ({
           label={t("connectionURL")}
           labelIcon={
             <HelpItem
-              helpText={t(
-                "user-federation-help:consoleDisplayConnectionUrlHelp",
-              )}
+              helpText={t("consoleDisplayConnectionUrlHelp")}
               fieldLabelId="user-federation:connectionURL"
             />
           }
@@ -141,7 +139,7 @@ export const LdapSettingsConnection = ({
           label={t("enableStartTls")}
           labelIcon={
             <HelpItem
-              helpText={t("user-federation-help:enableStartTlsHelp")}
+              helpText={t("enableStartTlsHelp")}
               fieldLabelId="user-federation:enableStartTls"
             />
           }
@@ -159,8 +157,8 @@ export const LdapSettingsConnection = ({
                 isDisabled={false}
                 onChange={(value) => field.onChange([`${value}`])}
                 isChecked={field.value[0] === "true"}
-                label={t("common:on")}
-                labelOff={t("common:off")}
+                label={t("on")}
+                labelOff={t("off")}
                 aria-label={t("enableStartTls")}
               />
             )}
@@ -171,7 +169,7 @@ export const LdapSettingsConnection = ({
           label={t("useTruststoreSpi")}
           labelIcon={
             <HelpItem
-              helpText={t("user-federation-help:useTruststoreSpiHelp")}
+              helpText={t("useTruststoreSpiHelp")}
               fieldLabelId="user-federation:useTruststoreSpi"
             />
           }
@@ -204,7 +202,7 @@ export const LdapSettingsConnection = ({
           label={t("connectionPooling")}
           labelIcon={
             <HelpItem
-              helpText={t("user-federation-help:connectionPoolingHelp")}
+              helpText={t("connectionPoolingHelp")}
               fieldLabelId="user-federation:connectionPooling"
             />
           }
@@ -222,8 +220,8 @@ export const LdapSettingsConnection = ({
                 isDisabled={false}
                 onChange={(value) => field.onChange([`${value}`])}
                 isChecked={field.value[0] === "true"}
-                label={t("common:on")}
-                labelOff={t("common:off")}
+                label={t("on")}
+                labelOff={t("off")}
                 aria-label={t("connectionPooling")}
               />
             )}
@@ -233,7 +231,7 @@ export const LdapSettingsConnection = ({
           label={t("connectionTimeout")}
           labelIcon={
             <HelpItem
-              helpText={t("user-federation-help:connectionTimeoutHelp")}
+              helpText={t("connectionTimeoutHelp")}
               fieldLabelId="user-federation:consoleTimeout"
             />
           }
@@ -254,14 +252,14 @@ export const LdapSettingsConnection = ({
             data-testid="test-connection-button"
             onClick={() => testLdap("testConnection")}
           >
-            {t("common:testConnection")}
+            {t("testConnection")}
           </Button>
         </FormGroup>
         <FormGroup
           label={t("bindType")}
           labelIcon={
             <HelpItem
-              helpText={t("user-federation-help:bindTypeHelp")}
+              helpText={t("bindTypeHelp")}
               fieldLabelId="user-federation:bindType"
             />
           }
@@ -301,7 +299,7 @@ export const LdapSettingsConnection = ({
               label={t("bindDn")}
               labelIcon={
                 <HelpItem
-                  helpText={t("user-federation-help:bindDnHelp")}
+                  helpText={t("bindDnHelp")}
                   fieldLabelId="user-federation:bindDn"
                 />
               }
@@ -330,7 +328,7 @@ export const LdapSettingsConnection = ({
               label={t("bindCredentials")}
               labelIcon={
                 <HelpItem
-                  helpText={t("user-federation-help:bindCredentialsHelp")}
+                  helpText={t("bindCredentialsHelp")}
                   fieldLabelId="user-federation:bindCredentials"
                 />
               }

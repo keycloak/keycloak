@@ -104,7 +104,7 @@ export const Group = () => {
                   type="selectMany"
                   text={{
                     title: "addGroupsToGroupPolicy",
-                    ok: "common:add",
+                    ok: "add",
                   }}
                   onConfirm={(groups) => {
                     field.onChange([

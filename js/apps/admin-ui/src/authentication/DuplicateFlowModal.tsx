@@ -96,7 +96,7 @@ export const DuplicateFlowModal = ({
           variant={ButtonVariant.link}
           onClick={toggleDialog}
         >
-          {t("common:cancel")}
+          {t("cancel")}
         </Button>,
       ]}
       isOpen

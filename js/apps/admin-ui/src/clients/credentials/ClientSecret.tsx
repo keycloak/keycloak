@@ -101,7 +101,7 @@ export const ClientSecret = ({ client, secret, toggle }: ClientSecretProps) => {
   const [toggleInvalidateConfirm, InvalidateConfirm] = useConfirmDialog({
     titleKey: "invalidateRotatedSecret",
     messageKey: "invalidateRotatedSecretExplain",
-    continueButtonLabel: "common:confirm",
+    continueButtonLabel: "confirm",
     onConfirm: async () => {
       try {
         await adminClient.clients.invalidateSecret({

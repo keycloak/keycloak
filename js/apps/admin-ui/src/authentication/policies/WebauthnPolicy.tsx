@@ -91,7 +91,7 @@ const WebauthnSelect = ({
       label={t(label)}
       labelIcon={
         <HelpItem
-          helpText={t(`authentication-help:${label}`)}
+          helpText={t(`${label}Help`)}
           fieldLabelId={`authentication:${label}`}
         />
       }
@@ -212,7 +212,7 @@ export const WebauthnPolicy = ({
         <FormGroup
           label={t("webAuthnPolicyRpEntityName")}
           fieldId="webAuthnPolicyRpEntityName"
-          helperTextInvalid={t("common:required")}
+          helperTextInvalid={t("required")}
           validated={errors.webAuthnPolicyRpEntityName ? "error" : "default"}
           isRequired
           labelIcon={
@@ -324,8 +324,8 @@ export const WebauthnPolicy = ({
               render={({ field }) => (
                 <Switch
                   id="webAuthnPolicyAvoidSameAuthenticatorRegister"
-                  label={t("common:on")}
-                  labelOff={t("common:off")}
+                  label={t("on")}
+                  labelOff={t("off")}
                   isChecked={field.value}
                   onChange={field.onChange}
                   aria-label={t("webAuthnPolicyAvoidSameAuthenticatorRegister")}
@@ -374,14 +374,14 @@ export const WebauthnPolicy = ({
             type="submit"
             isDisabled={!isDirty}
           >
-            {t("common:save")}
+            {t("save")}
           </Button>
           <Button
             data-testid="reload"
             variant={ButtonVariant.link}
             onClick={() => setupForm(realm)}
           >
-            {t("common:reload")}
+            {t("reload")}
           </Button>
         </ActionGroup>
       </FormAccess>

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Red Hat, Inc. and/or its affiliates
+ * Copyright 2023 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,19 +15,12 @@
  * limitations under the License.
  */
 
-package org.keycloak.models;
+package org.keycloak.quarkus.deployment;
 
-import org.keycloak.provider.Provider;
+import io.quarkus.builder.item.EmptyBuildItem;
 
 /**
- * Support for elements in Keycloak's session that are deprecated.
- * This allows the deprecated implementations to be moved to the legacy module.
- *
- * @author Alexander Schwartz
+ * A barrier build item that can be consumed by other build steps when Crypto provider is initialized
  */
-public interface LegacySessionSupportProvider extends Provider {
-
-    @Deprecated
-    UserCredentialManager userCredentialManager();
-
+public final class CryptoProviderInitBuildItem extends EmptyBuildItem {
 }

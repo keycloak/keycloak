@@ -46,7 +46,7 @@ public class AdvancedClaimToRoleMapper extends AbstractClaimToRoleMapper {
     public static final String[] COMPATIBLE_PROVIDERS = {KeycloakOIDCIdentityProviderFactory.PROVIDER_ID, OIDCIdentityProviderFactory.PROVIDER_ID};
     private static final Set<IdentityProviderSyncMode> IDENTITY_PROVIDER_SYNC_MODES = new HashSet<>(Arrays.asList(IdentityProviderSyncMode.values()));
 
-    private static final List<ProviderConfigProperty> configProperties = new ArrayList<ProviderConfigProperty>();
+    private static final List<ProviderConfigProperty> configProperties = new ArrayList<>();
 
     static {
         ProviderConfigProperty claimsProperty = new ProviderConfigProperty();
@@ -108,15 +108,16 @@ public class AdvancedClaimToRoleMapper extends AbstractClaimToRoleMapper {
 
     @Override
     protected boolean applies(IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
-        Map<String, String> claims = mapperModel.getConfigMap(CLAIM_PROPERTY_NAME);
+        Map<String, List<String>> claims = mapperModel.getConfigMap(CLAIM_PROPERTY_NAME);
         boolean areClaimValuesRegex = Boolean.parseBoolean(mapperModel.getConfig().get(ARE_CLAIM_VALUES_REGEX_PROPERTY_NAME));
 
-        for (Map.Entry<String, String> claim : claims.entrySet()) {
-            Object value = getClaimValue(context, claim.getKey());
-
-            boolean claimValuesMismatch = !(areClaimValuesRegex ? valueMatchesRegex(claim.getValue(), value) : valueEquals(claim.getValue(), value));
-            if (claimValuesMismatch) {
-                return false;
+        for (Map.Entry<String, List<String>> claim : claims.entrySet()) {
+            Object claimValue = getClaimValue(context, claim.getKey());
+            for (String value : claim.getValue()) {
+                boolean claimValuesMismatch = !(areClaimValuesRegex ? valueMatchesRegex(value, claimValue) : valueEquals(value, claimValue));
+                if (claimValuesMismatch) {
+                    return false;
+                }
             }
         }
 

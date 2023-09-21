@@ -18,7 +18,10 @@
 package org.keycloak.quarkus.runtime.integration.jaxrs;
 
 import java.io.IOException;
+import java.io.OutputStream;
 import java.util.stream.Stream;
+import jakarta.annotation.Priority;
+import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerResponseContext;
 import jakarta.ws.rs.container.ContainerResponseFilter;
@@ -29,28 +32,40 @@ import org.keycloak.common.util.Resteasy;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.quarkus.runtime.transaction.TransactionalSessionHandler;
 
-import jakarta.annotation.Priority;
-
 @Provider
 @PreMatching
 @Priority(1)
-public class TransactionalResponseFilter implements ContainerResponseFilter, TransactionalSessionHandler {
+public class CloseSessionHandler implements ContainerResponseFilter, TransactionalSessionHandler {
 
     @Override
     public void filter(ContainerRequestContext requestContext, ContainerResponseContext responseContext)
             throws IOException {
         Object entity = responseContext.getEntity();
 
-        if (shouldDelaySessionClose(entity)) {
+        if (entity instanceof Stream) {
+            Stream entityStream = (Stream) entity;
+            entityStream.onClose(this::closeSession);
             return;
         }
 
-        close(Resteasy.getContextData(KeycloakSession.class));
+        if (entity instanceof StreamingOutput) {
+            responseContext.setEntity(new StreamingOutput() {
+                @Override
+                public void write(OutputStream output) throws IOException, WebApplicationException {
+                    try {
+                        ((StreamingOutput) entity).write(output);
+                    } finally {
+                        closeSession();
+                    }
+                }
+            });
+            return;
+        }
+
+        closeSession();
     }
 
-    private static boolean shouldDelaySessionClose(Object entity) {
-        // do not close the session if the response entity is a stream
-        // that is because we need the session open until the stream is transformed as it might require access to the database
-        return entity instanceof Stream || entity instanceof StreamingOutput;
+    private void closeSession() {
+        close(Resteasy.getContextData(KeycloakSession.class));
     }
 }

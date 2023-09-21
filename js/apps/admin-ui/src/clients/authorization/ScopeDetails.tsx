@@ -55,7 +55,7 @@ export default function ScopeDetails() {
           scopeId,
         });
         if (!scope) {
-          throw new Error(t("common:notFound"));
+          throw new Error(t("notFound"));
         }
         return scope;
       }
@@ -116,7 +116,7 @@ export default function ScopeDetails() {
                   data-testid="delete-resource"
                   onClick={() => toggleDeleteDialog()}
                 >
-                  {t("common:delete")}
+                  {t("delete")}
                 </DropdownItem>,
               ]
             : undefined
@@ -129,12 +129,12 @@ export default function ScopeDetails() {
           onSubmit={handleSubmit(onSubmit)}
         >
           <FormGroup
-            label={t("common:name")}
+            label={t("name")}
             fieldId="name"
             labelIcon={
-              <HelpItem helpText={t("scopeName")} fieldLabelId="name" />
+              <HelpItem helpText={t("scopeNameHelp")} fieldLabelId="name" />
             }
-            helperTextInvalid={t("common:required")}
+            helperTextInvalid={t("required")}
             validated={
               errors.name ? ValidatedOptions.error : ValidatedOptions.default
             }
@@ -154,7 +154,7 @@ export default function ScopeDetails() {
             fieldId="displayName"
             labelIcon={
               <HelpItem
-                helpText={t("scopeDisplayName")}
+                helpText={t("scopeDisplayNameHelp")}
                 fieldLabelId="displayName"
               />
             }
@@ -177,7 +177,7 @@ export default function ScopeDetails() {
                 type="submit"
                 data-testid="save"
               >
-                {t("common:save")}
+                {t("save")}
               </Button>
 
               {!scope ? (
@@ -195,7 +195,7 @@ export default function ScopeDetails() {
                     ></Link>
                   )}
                 >
-                  {t("common:cancel")}
+                  {t("cancel")}
                 </Button>
               ) : (
                 <Button
@@ -203,7 +203,7 @@ export default function ScopeDetails() {
                   data-testid="revert"
                   onClick={() => reset({ ...scope })}
                 >
-                  {t("common:revert")}
+                  {t("revert")}
                 </Button>
               )}
             </div>

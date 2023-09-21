@@ -134,7 +134,7 @@ const FromTo = ({ name, ...rest }: NumberControlProps) => {
       fieldId={name}
       labelIcon={
         <HelpItem
-          helpText={t(`clients-help:${name}`)}
+          helpText={t(`${name}Help`)}
           fieldLabelId={`clients:${name}`}
         />
       }
@@ -143,7 +143,7 @@ const FromTo = ({ name, ...rest }: NumberControlProps) => {
         <SplitItem>
           <NumberControl name={name} {...rest} />
         </SplitItem>
-        <SplitItem>{t("common:to")}</SplitItem>
+        <SplitItem>{t("to")}</SplitItem>
         <SplitItem>
           <NumberControl name={`${name}End`} {...rest} />
         </SplitItem>
@@ -208,7 +208,7 @@ export const Time = () => {
           <HelpItem helpText={t("startTimeHelp")} fieldLabelId="startTime" />
         }
         isRequired
-        helperTextInvalid={t("common:required")}
+        helperTextInvalid={t("required")}
         validated={
           errors.notBefore ? ValidatedOptions.error : ValidatedOptions.default
         }
@@ -222,7 +222,7 @@ export const Time = () => {
           <HelpItem helpText={t("expireTimeHelp")} fieldLabelId="expireTime" />
         }
         isRequired
-        helperTextInvalid={t("common:required")}
+        helperTextInvalid={t("required")}
         validated={
           errors.notOnOrAfter
             ? ValidatedOptions.error

@@ -22,7 +22,7 @@ export const UsersInRoleTab = () => {
   const loader = async (first?: number, max?: number) => {
     const role = await adminClient.roles.findOneById({ id: id });
     if (!role) {
-      throw new Error(t("common:notFound"));
+      throw new Error(t("notFound"));
     }
 
     if (role.clientRole) {
@@ -63,7 +63,7 @@ export const UsersInRoleTab = () => {
                     variant="link"
                     onClick={() => navigate(`/${realm}/groups`)}
                   >
-                    {t("common:groups")}
+                    {t("groups")}
                   </Button>
                   {t("or")}
                   <Button
@@ -100,7 +100,7 @@ export const UsersInRoleTab = () => {
                   variant="link"
                   onClick={() => navigate(`/${realm}/groups`)}
                 >
-                  {t("common:groups")}
+                  {t("groups")}
                 </Button>
                 {t("or")}
                 <Button

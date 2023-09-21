@@ -190,7 +190,7 @@ export const RealmSettingsTokensTab = ({
             fieldId="shortVerificationUri"
             labelIcon={
               <HelpItem
-                helpText={t("realm-settings-help:shortVerificationUriTooltip")}
+                helpText={t("shortVerificationUriTooltipHelp")}
                 fieldLabelId="realm-settings:shortVerificationUri"
               />
             }
@@ -233,8 +233,8 @@ export const RealmSettingsTokensTab = ({
                   id="kc-revoke-refresh-token"
                   data-testid="revoke-refresh-token-switch"
                   aria-label={t("revokeRefreshToken")}
-                  label={t("common:enabled")}
-                  labelOff={t("common:disabled")}
+                  label={t("enabled")}
+                  labelOff={t("disabled")}
                   isChecked={field.value}
                   onChange={field.onChange}
                 />
@@ -324,9 +324,7 @@ export const RealmSettingsTokensTab = ({
             fieldId="accessTokenLifespanImplicitFlow"
             labelIcon={
               <HelpItem
-                helpText={t(
-                  "realm-settings-help:accessTokenLifespanImplicitFlow",
-                )}
+                helpText={t("accessTokenLifespanImplicitFlow")}
                 fieldLabelId="realm-settings:accessTokenLifespanImplicitFlow"
               />
             }
@@ -442,9 +440,7 @@ export const RealmSettingsTokensTab = ({
             id="default-admin-initiated-label"
             labelIcon={
               <HelpItem
-                helpText={t(
-                  "realm-settings-help:defaultAdminInitiatedActionLifespan",
-                )}
+                helpText={t("defaultAdminInitiatedActionLifespanHelp")}
                 fieldLabelId="realm-settings:defaultAdminInitiated"
               />
             }
@@ -557,10 +553,10 @@ export const RealmSettingsTokensTab = ({
               data-testid="tokens-tab-save"
               isDisabled={!form.formState.isDirty}
             >
-              {t("common:save")}
+              {t("save")}
             </Button>
             <Button variant="link" onClick={reset}>
-              {t("common:revert")}
+              {t("revert")}
             </Button>
           </ActionGroup>
         </FormAccess>

@@ -3249,6 +3249,8 @@
   "orderChangeErrorUserFed": "由于{{error}}，无法更改用户联盟供应商的优先顺序。",
   "authenticationAliasHelp": "配置名称",
   "authenticationFlowTypeHelp": "它是一种什么样的形式？",
+  "clientScopeTypes": { "default": "默认", "optional": "非必需", "none": "无" },
+  "realmNameTitle": "{{name}} 领域",
   "authenticationCreateFlowHelp": "创建流程",
   "scopeNameHelp": "客户端作用域的名称。在领域中必须是唯一的。名称不应包含空格字符，因为它用作作用域参数的值。",
   "scopeDescriptionHelp": "客户作用域说明",

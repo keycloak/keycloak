@@ -27,8 +27,8 @@ export const SwitchField = ({
         render={({ field }) => (
           <Switch
             id={label}
-            label={t("common:on")}
-            labelOff={t("common:off")}
+            label={t("on")}
+            labelOff={t("off")}
             isChecked={
               fieldType === "string"
                 ? field.value === "true"

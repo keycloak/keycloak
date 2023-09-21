@@ -43,10 +43,13 @@
         <jboss.snapshots.repo.id>jboss-snapshots-repository</jboss.snapshots.repo.id>
         <jboss.snapshots.repo.url>https://s01.oss.sonatype.org/content/repositories/snapshots/</jboss.snapshots.repo.url>
 
-        <quarkus.version>3.2.5.Final</quarkus.version>
-        <quarkus.build.version>3.2.5.Final</quarkus.build.version>
+        <quarkus.version>3.2.6.Final</quarkus.version>
+        <quarkus.build.version>3.2.6.Final</quarkus.build.version>
 
         <project.build-time>${timestamp}</project.build-time>
+
+        <!-- core version for app-server-wildfly/eap tests, should match wildfly/eap server -->
+        <tests.wildfly.core.version>19.0.1.Final</tests.wildfly.core.version>
 
         <!-- Upstream WildFly Versions -->
         <upstream.wildfly.version>29.0.0.Final</upstream.wildfly.version>

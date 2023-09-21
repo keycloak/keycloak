@@ -30,7 +30,7 @@ export const OIDCGeneralSettings = () => {
         label={t("alias")}
         labelIcon={
           <HelpItem
-            helpText={t("identity-providers-help:alias")}
+            helpText={t("aliasHelp")}
             fieldLabelId="identity-providers:alias"
           />
         }
@@ -39,7 +39,7 @@ export const OIDCGeneralSettings = () => {
         validated={
           errors.alias ? ValidatedOptions.error : ValidatedOptions.default
         }
-        helperTextInvalid={t("common:required")}
+        helperTextInvalid={t("required")}
       >
         <KeycloakTextInput
           isReadOnly={tab === "settings"}

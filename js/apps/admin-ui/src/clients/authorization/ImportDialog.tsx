@@ -51,7 +51,7 @@ export const ImportDialog = ({ onConfirm, closeDialog }: ImportDialogProps) => {
             closeDialog();
           }}
         >
-          {t("common:cancel")}
+          {t("cancel")}
         </Button>,
       ]}
     >
@@ -118,8 +118,8 @@ export const ImportDialog = ({ onConfirm, closeDialog }: ImportDialogProps) => {
             >
               <Switch
                 id="allowRemoteResourceManagement"
-                label={t("common:on")}
-                labelOff={t("common:off")}
+                label={t("on")}
+                labelOff={t("off")}
                 isChecked={imported.allowRemoteResourceManagement}
                 isDisabled
                 aria-label={t("allowRemoteResourceManagement")}

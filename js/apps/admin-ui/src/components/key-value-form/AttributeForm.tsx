@@ -48,10 +48,10 @@ export const AttributesForm = ({
             type="submit"
             isDisabled={!isDirty}
           >
-            {t("common:save")}
+            {t("save")}
           </Button>
           <Button onClick={reset} variant="link" isDisabled={!isDirty}>
-            {t("common:revert")}
+            {t("revert")}
           </Button>
         </ActionGroup>
       )}

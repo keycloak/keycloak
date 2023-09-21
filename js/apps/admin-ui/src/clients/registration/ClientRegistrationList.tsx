@@ -69,7 +69,7 @@ export const ClientRegistrationList = ({
     messageKey: t("clientRegisterPolicyDeleteConfirm", {
       name: selectedPolicy?.name,
     }),
-    continueButtonLabel: "common:delete",
+    continueButtonLabel: "delete",
     continueButtonVariant: ButtonVariant.danger,
     onConfirm: async () => {
       try {
@@ -115,7 +115,7 @@ export const ClientRegistrationList = ({
         }
         actions={[
           {
-            title: t("common:delete"),
+            title: t("delete"),
             onRowClick: (policy) => {
               setSelectedPolicy(policy);
               toggleDeleteDialog();
@@ -125,7 +125,7 @@ export const ClientRegistrationList = ({
         columns={[
           {
             name: "name",
-            displayKey: "common:name",
+            displayKey: "name",
             cellRenderer: DetailLink,
           },
           {

@@ -1,1 +1,1 @@
-org.keycloak.quarkus.runtime.integration.jaxrs.ResteasyVertxProvider
+org.keycloak.quarkus.runtime.integration.resteasy.ResteasyVertxProvider

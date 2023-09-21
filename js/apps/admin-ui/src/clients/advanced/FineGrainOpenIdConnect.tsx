@@ -72,7 +72,7 @@ export const FineGrainOpenIdConnect = ({
 
   const keyOptions = [
     <SelectOption key="empty" value="">
-      {t("common:choose")}
+      {t("choose")}
     </SelectOption>,
     ...sortProviders(clientSignatureProviders!).map((p) => (
       <SelectOption key={p} value={p} />
@@ -80,7 +80,7 @@ export const FineGrainOpenIdConnect = ({
   ];
   const cekManagementOptions = [
     <SelectOption key="empty" value="">
-      {t("common:choose")}
+      {t("choose")}
     </SelectOption>,
     ...sortProviders(cekManagementProviders!).map((p) => (
       <SelectOption key={p} value={p} />
@@ -96,7 +96,7 @@ export const FineGrainOpenIdConnect = ({
   ];
   const contentOptions = [
     <SelectOption key="empty" value="">
-      {t("common:choose")}
+      {t("choose")}
     </SelectOption>,
     ...sortProviders(contentEncryptionProviders!).map((p) => (
       <SelectOption key={p} value={p} />
@@ -105,10 +105,10 @@ export const FineGrainOpenIdConnect = ({
 
   const requestObjectOptions = [
     <SelectOption key="any" value="any">
-      {t("common:any")}
+      {t("any")}
     </SelectOption>,
     <SelectOption key="none" value="none">
-      {t("common:none")}
+      {t("none")}
     </SelectOption>,
     ...sortProviders(clientSignatureProviders!).map((p) => (
       <SelectOption key={p} value={p} />
@@ -117,7 +117,7 @@ export const FineGrainOpenIdConnect = ({
 
   const requestObjectEncryptionOptions = [
     <SelectOption key="any" value="any">
-      {t("common:any")}
+      {t("any")}
     </SelectOption>,
     ...sortProviders(cekManagementProviders!).map((p) => (
       <SelectOption key={p} value={p} />
@@ -126,7 +126,7 @@ export const FineGrainOpenIdConnect = ({
 
   const requestObjectEncodingOptions = [
     <SelectOption key="any" value="any">
-      {t("common:any")}
+      {t("any")}
     </SelectOption>,
     ...sortProviders(contentEncryptionProviders!).map((p) => (
       <SelectOption key={p} value={p} />
@@ -135,7 +135,7 @@ export const FineGrainOpenIdConnect = ({
 
   const authorizationSignedResponseOptions = [
     <SelectOption key="empty" value="">
-      {t("common:choose")}
+      {t("choose")}
     </SelectOption>,
     ...sortProviders(signatureProviders!).map((p) => (
       <SelectOption key={p} value={p} />
@@ -643,10 +643,10 @@ export const FineGrainOpenIdConnect = ({
       </FormGroup>
       <ActionGroup>
         <Button variant="secondary" id="fineGrainSave" onClick={save}>
-          {t("common:save")}
+          {t("save")}
         </Button>
         <Button id="fineGrainRevert" variant="link" onClick={reset}>
-          {t("common:revert")}
+          {t("revert")}
         </Button>
       </ActionGroup>
     </FormAccess>

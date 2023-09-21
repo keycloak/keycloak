@@ -40,7 +40,7 @@ export default function UserFederationKerberosSettings() {
       if (fetchedComponent) {
         setupForm(fetchedComponent);
       } else if (id) {
-        throw new Error(t("common:notFound"));
+        throw new Error(t("notFound"));
       }
     },
     [],
@@ -89,14 +89,14 @@ export default function UserFederationKerberosSettings() {
               type="submit"
               data-testid="kerberos-save"
             >
-              {t("common:save")}
+              {t("save")}
             </Button>
             <Button
               variant="link"
               onClick={() => navigate(toUserFederation({ realm }))}
               data-testid="kerberos-cancel"
             >
-              {t("common:cancel")}
+              {t("cancel")}
             </Button>
           </ActionGroup>
         </Form>

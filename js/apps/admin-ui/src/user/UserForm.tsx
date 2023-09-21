@@ -52,7 +52,7 @@ const EmailVerified = () => {
     <FormGroup
       label={t("emailVerified")}
       fieldId="kc-email-verified"
-      helperTextInvalid={t("common:required")}
+      helperTextInvalid={t("required")}
       labelIcon={
         <HelpItem
           helpText={t("emailVerifiedHelp")}
@@ -70,8 +70,8 @@ const EmailVerified = () => {
             id="kc-user-email-verified"
             onChange={(value) => field.onChange(value)}
             isChecked={field.value}
-            label={t("common:yes")}
-            labelOff={t("common:no")}
+            label={t("yes")}
+            labelOff={t("no")}
           />
         )}
       />
@@ -185,7 +185,7 @@ export const UserForm = ({
       {isUserProfileEnabled && <EmailVerified />}
       {user?.id && (
         <>
-          <FormGroup label={t("common:id")} fieldId="kc-id" isRequired>
+          <FormGroup label={t("id")} fieldId="kc-id" isRequired>
             <KeycloakTextInput
               id={user.id}
               aria-label={t("userID")}
@@ -234,7 +234,7 @@ export const UserForm = ({
               fieldId="kc-username"
               isRequired
               validated={errors.username ? "error" : "default"}
-              helperTextInvalid={t("common:required")}
+              helperTextInvalid={t("required")}
             >
               <KeycloakTextInput
                 id="kc-username"
@@ -267,7 +267,7 @@ export const UserForm = ({
             label={t("firstName")}
             fieldId="kc-firstName"
             validated={errors.firstName ? "error" : "default"}
-            helperTextInvalid={t("common:required")}
+            helperTextInvalid={t("required")}
           >
             <KeycloakTextInput
               data-testid="firstName-input"
@@ -309,20 +309,18 @@ export const UserForm = ({
             }}
             isChecked={locked}
             isDisabled={!locked}
-            label={t("common:on")}
-            labelOff={t("common:off")}
+            label={t("on")}
+            labelOff={t("off")}
           />
         </FormGroup>
       )}
       {!user?.id && (
         <FormGroup
-          label={t("common:groups")}
+          label={t("groups")}
           fieldId="kc-groups"
           validated={errors.requiredActions ? "error" : "default"}
-          helperTextInvalid={t("common:required")}
-          labelIcon={
-            <HelpItem helpText={t("users-help:groups")} fieldLabelId="groups" />
-          }
+          helperTextInvalid={t("required")}
+          labelIcon={<HelpItem helpText={t("groups")} fieldLabelId="groups" />}
         >
           <Controller
             name="groups"
@@ -365,7 +363,7 @@ export const UserForm = ({
           variant="primary"
           type="submit"
         >
-          {user?.id ? t("common:save") : t("common:create")}
+          {user?.id ? t("save") : t("create")}
         </Button>
         <Button
           data-testid="cancel-create-user"
@@ -374,7 +372,7 @@ export const UserForm = ({
           }
           variant="link"
         >
-          {user?.id ? t("common:revert") : t("common:cancel")}
+          {user?.id ? t("revert") : t("cancel")}
         </Button>
       </ActionGroup>
     </FormAccess>

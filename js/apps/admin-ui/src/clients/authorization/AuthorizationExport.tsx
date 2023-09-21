@@ -88,7 +88,7 @@ export const AuthorizationExport = () => {
             data-testid="authorization-export-download"
             onClick={() => exportAuthDetails()}
           >
-            {t("common:download")}
+            {t("download")}
           </Button>
           <Button
             data-testid="authorization-export-copy"

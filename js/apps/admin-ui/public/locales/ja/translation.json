@@ -927,6 +927,7 @@
   "titleUsers": "ユーザー",
   "titleSessions": "セッション",
   "authenticationAliasHelp": "この設定の名前を設定します。",
+  "clientScopeTypes": { "default": "DEFAULT" },
   "authenticationFlowTypeHelp": "どの種類のフォームかを設定します。",
   "scopeNameHelp": "クライアント・スコープの名前。レルム内でユニークでなければなりません。スコープ・パラメーターの値として使用されるため、名前には空白文字を含めないでください",
   "scopeDescriptionHelp": "クライアント・スコープの説明",

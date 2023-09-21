@@ -124,7 +124,7 @@ export const UserCredentials = ({ user }: UserCredentialsProps) => {
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
     titleKey: t("deleteCredentialsConfirmTitle"),
     messageKey: t("deleteCredentialsConfirm"),
-    continueButtonLabel: t("common:delete"),
+    continueButtonLabel: t("delete"),
     continueButtonVariant: ButtonVariant.danger,
     onConfirm: async () => {
       try {
@@ -401,7 +401,7 @@ export const UserCredentials = ({ user }: UserCredentialsProps) => {
               <Tr className="kc-table-header">
                 <Th>
                   <HelpItem
-                    helpText={t("users:userCredentialsHelpText")}
+                    helpText={t("userCredentialsHelpText")}
                     fieldLabelId="users:userCredentialsHelpTextLabel"
                   />
                 </Th>

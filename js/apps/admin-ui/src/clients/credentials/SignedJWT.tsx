@@ -34,7 +34,7 @@ export const SignedJWT = ({ clientAuthenticatorType }: SignedJWTProps) => {
       fieldId="kc-signature-algorithm"
       labelIcon={
         <HelpItem
-          helpText={t("signature-algorithm")}
+          helpText={t("signatureAlgorithmHelp")}
           fieldLabelId="signatureAlgorithm"
         />
       }

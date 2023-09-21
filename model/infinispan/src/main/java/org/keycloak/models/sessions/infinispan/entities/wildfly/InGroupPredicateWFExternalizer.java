@@ -15,13 +15,13 @@
  * limitations under the License.
  */
 
-package org.keycloak.services.legacysessionsupport;
+package org.keycloak.models.sessions.infinispan.entities.wildfly;
 
-import org.keycloak.models.LegacySessionSupportProvider;
-import org.keycloak.provider.ProviderFactory;
+import org.keycloak.models.cache.infinispan.stream.InGroupPredicate;
 
-/**
- * @author Alexander Schwartz
- */
-public interface LegacySessionSupportProviderFactory<T extends LegacySessionSupportProvider> extends ProviderFactory<T> {
+public class InGroupPredicateWFExternalizer extends InfinispanExternalizerAdapter<InGroupPredicate> {
+
+    public InGroupPredicateWFExternalizer() {
+        super(InGroupPredicate.class, new InGroupPredicate.ExternalizerImpl());
+    }
 }

@@ -382,14 +382,6 @@
         </profile>
 
         <profile>
-            <id>map-jpa-cockroachdb</id>
-            <properties>
-                <keycloak.profile.feature.map_storage>enabled</keycloak.profile.feature.map_storage>
-                <keycloak.model.parameters>Map,JpaMapStorageCockroachdb</keycloak.model.parameters>
-            </properties>
-        </profile>
-
-        <profile>
             <id>.asyncProfiler</id>
             <activation>
                 <property><name>libasyncProfilerPath</name></property>

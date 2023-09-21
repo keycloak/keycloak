@@ -132,7 +132,7 @@ export default function CreateInitialAccessToken() {
               data-testid="save"
               isDisabled={!isValid}
             >
-              {t("common:save")}
+              {t("save")}
             </Button>
             <Button
               data-testid="cancel"
@@ -144,7 +144,7 @@ export default function CreateInitialAccessToken() {
                 />
               )}
             >
-              {t("common:cancel")}
+              {t("cancel")}
             </Button>
           </ActionGroup>
         </FormAccess>

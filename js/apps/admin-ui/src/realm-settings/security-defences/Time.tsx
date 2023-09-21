@@ -25,14 +25,14 @@ export const Time = ({
       fieldId={name}
       labelIcon={
         <HelpItem
-          helpText={t(`realm-settings-help:${name}`)}
+          helpText={t(`${name}Help`)}
           fieldLabelId={`realm-settings:${name}`}
         />
       }
       validated={
         errors[name] ? ValidatedOptions.error : ValidatedOptions.default
       }
-      helperTextInvalid={t("common:required")}
+      helperTextInvalid={t("required")}
     >
       <Controller
         name={name}

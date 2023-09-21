@@ -93,7 +93,7 @@ export default function SessionsSection() {
   const [toggleLogoutDialog, LogoutConfirm] = useConfirmDialog({
     titleKey: "sessions:logoutAllSessions",
     messageKey: "sessions:logoutAllDescription",
-    continueButtonLabel: "common:confirm",
+    continueButtonLabel: "confirm",
     onConfirm: async () => {
       try {
         await adminClient.realms.logoutAll({ realm });

@@ -59,7 +59,7 @@ export const RealmSettingsSessionsTab = ({
             fieldId="SSOSessionIdle"
             labelIcon={
               <HelpItem
-                helpText={t("realm-settings-help:ssoSessionIdle")}
+                helpText={t("ssoSessionIdle")}
                 fieldLabelId="realm-settings:SSOSessionIdle"
               />
             }
@@ -85,7 +85,7 @@ export const RealmSettingsSessionsTab = ({
             fieldId="SSOSessionMax"
             labelIcon={
               <HelpItem
-                helpText={t("realm-settings-help:ssoSessionMax")}
+                helpText={t("ssoSessionMax")}
                 fieldLabelId="realm-settings:SSOSessionMax"
               />
             }
@@ -110,7 +110,7 @@ export const RealmSettingsSessionsTab = ({
             fieldId="SSOSessionIdleRememberMe"
             labelIcon={
               <HelpItem
-                helpText={t("realm-settings-help:ssoSessionIdleRememberMe")}
+                helpText={t("ssoSessionIdleRememberMe")}
                 fieldLabelId="realm-settings:SSOSessionIdleRememberMe"
               />
             }
@@ -135,7 +135,7 @@ export const RealmSettingsSessionsTab = ({
             fieldId="SSOSessionMaxRememberMe"
             labelIcon={
               <HelpItem
-                helpText={t("realm-settings-help:ssoSessionMaxRememberMe")}
+                helpText={t("ssoSessionMaxRememberMe")}
                 fieldLabelId="realm-settings:SSOSessionMaxRememberMe"
               />
             }
@@ -273,8 +273,8 @@ export const RealmSettingsSessionsTab = ({
                   id="kc-offline-session-max"
                   data-testid="offline-session-max-switch"
                   aria-label={t("offlineSessionMaxLimited")}
-                  label={t("common:enabled")}
-                  labelOff={t("common:disabled")}
+                  label={t("enabled")}
+                  labelOff={t("disabled")}
                   isChecked={field.value}
                   onChange={field.onChange}
                 />
@@ -378,10 +378,10 @@ export const RealmSettingsSessionsTab = ({
               data-testid="sessions-tab-save"
               isDisabled={!formState.isDirty}
             >
-              {t("common:save")}
+              {t("save")}
             </Button>
             <Button variant="link" onClick={setupForm}>
-              {t("common:revert")}
+              {t("revert")}
             </Button>
           </ActionGroup>
         </FormAccess>

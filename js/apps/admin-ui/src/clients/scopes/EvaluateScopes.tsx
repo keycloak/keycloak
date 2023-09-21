@@ -62,7 +62,7 @@ const ProtocolMappers = ({
       columns={[
         {
           name: "mapperName",
-          displayKey: "common:name",
+          displayKey: "name",
         },
         {
           name: "containerName",
@@ -70,11 +70,11 @@ const ProtocolMappers = ({
         },
         {
           name: "type.category",
-          displayKey: "common:category",
+          displayKey: "category",
         },
         {
           name: "type.priority",
-          displayKey: "common:priority",
+          displayKey: "priority",
         },
       ]}
     />

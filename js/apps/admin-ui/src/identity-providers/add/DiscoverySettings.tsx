@@ -59,7 +59,7 @@ const Fields = ({ readOnly }: DiscoverySettingsProps) => {
             ? ValidatedOptions.error
             : ValidatedOptions.default
         }
-        helperTextInvalid={t("common:required")}
+        helperTextInvalid={t("required")}
       >
         <KeycloakTextInput
           type="url"
@@ -84,7 +84,7 @@ const Fields = ({ readOnly }: DiscoverySettingsProps) => {
             ? ValidatedOptions.error
             : ValidatedOptions.default
         }
-        helperTextInvalid={t("common:required")}
+        helperTextInvalid={t("required")}
       >
         <KeycloakTextInput
           type="url"

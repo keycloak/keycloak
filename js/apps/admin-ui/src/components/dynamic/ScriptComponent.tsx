@@ -23,7 +23,7 @@ export const ScriptComponent = ({
       labelIcon={
         <HelpItem
           helpText={<span style={{ whiteSpace: "pre-wrap" }}>{helpText}</span>}
-          fieldLabelId={`dynamic:${label}`}
+          fieldLabelId={`${label}`}
         />
       }
       fieldId={name!}

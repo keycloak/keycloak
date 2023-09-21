@@ -154,23 +154,23 @@ export const CibaPolicy = ({ realm, realmUpdated }: CibaPolicyProps) => {
               {...register("attributes.cibaExpiresIn", {
                 min: {
                   value: CIBA_EXPIRES_IN_MIN,
-                  message: t("common:greaterThan", {
+                  message: t("greaterThan", {
                     value: CIBA_EXPIRES_IN_MIN,
                   }),
                 },
                 max: {
                   value: CIBA_EXPIRES_IN_MAX,
-                  message: t("common:lessThan", { value: CIBA_EXPIRES_IN_MAX }),
+                  message: t("lessThan", { value: CIBA_EXPIRES_IN_MAX }),
                 },
                 required: {
                   value: true,
-                  message: t("common:required"),
+                  message: t("required"),
                 },
               })}
               validated={errors.attributes?.cibaExpiresIn ? "error" : "default"}
             />
             <InputGroupText variant="plain">
-              {t("common:times:seconds")}
+              {t("times:seconds")}
             </InputGroupText>
           </InputGroup>
         </FormGroup>
@@ -196,23 +196,23 @@ export const CibaPolicy = ({ realm, realmUpdated }: CibaPolicyProps) => {
               {...register("attributes.cibaInterval", {
                 min: {
                   value: CIBA_INTERVAL_MIN,
-                  message: t("common:greaterThan", {
+                  message: t("greaterThan", {
                     value: CIBA_INTERVAL_MIN,
                   }),
                 },
                 max: {
                   value: CIBA_INTERVAL_MAX,
-                  message: t("common:lessThan", { value: CIBA_INTERVAL_MAX }),
+                  message: t("lessThan", { value: CIBA_INTERVAL_MAX }),
                 },
                 required: {
                   value: true,
-                  message: t("common:required"),
+                  message: t("required"),
                 },
               })}
               validated={errors.attributes?.cibaInterval ? "error" : "default"}
             />
             <InputGroupText variant="plain">
-              {t("common:times:seconds")}
+              {t("times:seconds")}
             </InputGroupText>
           </InputGroup>
         </FormGroup>
@@ -247,14 +247,14 @@ export const CibaPolicy = ({ realm, realmUpdated }: CibaPolicyProps) => {
             type="submit"
             isDisabled={!isValid || !isDirty}
           >
-            {t("common:save")}
+            {t("save")}
           </Button>
           <Button
             data-testid="reload"
             variant={ButtonVariant.link}
             onClick={() => setupForm({ ...realm })}
           >
-            {t("common:reload")}
+            {t("reload")}
           </Button>
         </ActionGroup>
       </FormAccess>

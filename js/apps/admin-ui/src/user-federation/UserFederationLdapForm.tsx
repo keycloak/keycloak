@@ -82,7 +82,7 @@ export const UserFederationLdapForm = ({
             onClick={() => navigate(toUserFederation({ realm }))}
             data-testid="ldap-cancel"
           >
-            {t("common:cancel")}
+            {t("cancel")}
           </Button>
         </FixedButtonsGroup>
       </Form>

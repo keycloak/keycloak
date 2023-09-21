@@ -195,7 +195,7 @@ export const GenerateKeyDialog = ({
             toggleDialog();
           }}
         >
-          {t("common:cancel")}
+          {t("cancel")}
         </Button>,
       ]}
     >

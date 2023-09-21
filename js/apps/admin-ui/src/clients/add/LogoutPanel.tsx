@@ -60,8 +60,8 @@ export const LogoutPanel = ({
           render={({ field }) => (
             <Switch
               id="kc-frontchannelLogout-switch"
-              label={t("common:on")}
-              labelOff={t("common:off")}
+              label={t("on")}
+              labelOff={t("off")}
               isChecked={field.value}
               onChange={field.onChange}
               aria-label={t("frontchannelLogout")}
@@ -169,8 +169,8 @@ export const LogoutPanel = ({
               render={({ field }) => (
                 <Switch
                   id="backchannelLogoutSessionRequired"
-                  label={t("common:on")}
-                  labelOff={t("common:off")}
+                  label={t("on")}
+                  labelOff={t("off")}
                   isChecked={field.value === "true"}
                   onChange={(value) => field.onChange(value.toString())}
                   aria-label={t("backchannelLogoutSessionRequired")}
@@ -198,8 +198,8 @@ export const LogoutPanel = ({
               render={({ field }) => (
                 <Switch
                   id="backchannelLogoutRevokeOfflineSessions"
-                  label={t("common:on")}
-                  labelOff={t("common:off")}
+                  label={t("on")}
+                  labelOff={t("off")}
                   isChecked={field.value === "true"}
                   onChange={(value) => field.onChange(value.toString())}
                   aria-label={t("backchannelLogoutRevokeOfflineSessions")}

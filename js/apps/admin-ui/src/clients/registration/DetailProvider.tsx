@@ -101,7 +101,7 @@ export default function DetailProvider() {
     messageKey: t("clientRegisterPolicyDeleteConfirm", {
       name: providerName,
     }),
-    continueButtonLabel: "common:delete",
+    continueButtonLabel: "delete",
     continueButtonVariant: ButtonVariant.danger,
     onConfirm: async () => {
       try {
@@ -134,7 +134,7 @@ export default function DetailProvider() {
                   key="delete"
                   onClick={toggleDeleteDialog}
                 >
-                  {t("common:delete")}
+                  {t("delete")}
                 </DropdownItem>,
               ]
             : undefined
@@ -156,15 +156,15 @@ export default function DetailProvider() {
             />
           </FormGroup>
           <FormGroup
-            label={t("common:name")}
+            label={t("name")}
             fieldId="kc-name"
-            helperTextInvalid={t("common:required")}
+            helperTextInvalid={t("required")}
             validated={
               errors.name ? ValidatedOptions.error : ValidatedOptions.default
             }
             labelIcon={
               <HelpItem
-                helpText={t("clientPolicyName")}
+                helpText={t("clientPolicyNameHelp")}
                 fieldLabelId="kc-name"
               />
             }
@@ -184,7 +184,7 @@ export default function DetailProvider() {
           </FormProvider>
           <ActionGroup>
             <Button data-testid="save" type="submit">
-              {t("common:save")}
+              {t("save")}
             </Button>
             <Button
               variant="link"
@@ -195,7 +195,7 @@ export default function DetailProvider() {
                 ></Link>
               )}
             >
-              {t("common:cancel")}
+              {t("cancel")}
             </Button>
           </ActionGroup>
         </FormAccess>

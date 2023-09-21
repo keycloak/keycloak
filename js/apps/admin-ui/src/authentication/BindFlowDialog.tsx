@@ -58,7 +58,7 @@ export const BindFlowDialog = ({ flowAlias, onClose }: BindFlowDialogProps) => {
       onClose={onClose}
       actions={[
         <Button key="confirm" data-testid="save" type="submit" form="bind-form">
-          {t("common:save")}
+          {t("save")}
         </Button>,
         <Button
           data-testid="cancel"
@@ -66,7 +66,7 @@ export const BindFlowDialog = ({ flowAlias, onClose }: BindFlowDialogProps) => {
           variant={ButtonVariant.link}
           onClick={onClose}
         >
-          {t("common:cancel")}
+          {t("cancel")}
         </Button>,
       ]}
       isOpen

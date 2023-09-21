@@ -105,7 +105,7 @@ export default function AddIdentityProvider() {
               type="submit"
               data-testid="createProvider"
             >
-              {t("common:add")}
+              {t("add")}
             </Button>
             <Button
               variant="link"
@@ -114,7 +114,7 @@ export default function AddIdentityProvider() {
                 <Link {...props} to={toIdentityProviders({ realm })} />
               )}
             >
-              {t("common:cancel")}
+              {t("cancel")}
             </Button>
           </ActionGroup>
         </FormAccess>

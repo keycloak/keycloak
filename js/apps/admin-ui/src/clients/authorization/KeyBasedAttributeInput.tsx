@@ -113,8 +113,8 @@ const ValueInput = ({
               name={`${name}.${rowIndex}.value`}
               chipGroupProps={{
                 numChips: 1,
-                expandedText: t("common:hide"),
-                collapsedText: t("common:showRemaining"),
+                expandedText: t("hide"),
+                collapsedText: t("showRemaining"),
               }}
               onToggle={(open) => toggleValueSelect(rowIndex, open)}
               isOpen={isValueOpenArray[rowIndex]}
@@ -138,7 +138,7 @@ const ValueInput = ({
           className="value-input"
           defaultValue={attribute.value}
           data-testid="attribute-value-input"
-          aria-label={t("common:value")}
+          aria-label={t("value")}
           {...register(`${name}.${rowIndex}.value`)}
         />
       )}
@@ -236,7 +236,7 @@ export const KeyBasedAttributeInput = ({
                 variant="link"
                 className="kc-attributes__minus-icon"
                 onClick={() => remove(rowIndex)}
-                aria-label={t("common:remove")}
+                aria-label={t("remove")}
               >
                 <MinusCircleIcon />
               </Button>

@@ -137,7 +137,7 @@ export default function AuthenticationSection() {
         <strong>{{ flow: selectedFlow ? selectedFlow.alias : "" }}</strong>.
       </Trans>
     ),
-    continueButtonLabel: "common:delete",
+    continueButtonLabel: "delete",
     continueButtonVariant: ButtonVariant.danger,
     onConfirm: async () => {
       try {
@@ -234,7 +234,7 @@ export default function AuthenticationSection() {
                 ...(!data.builtIn && !data.usedBy
                   ? [
                       {
-                        title: t("common:delete"),
+                        title: t("delete"),
                         onClick: () => {
                           setSelectedFlow(data);
                           toggleDeleteDialog();
@@ -258,7 +258,7 @@ export default function AuthenticationSection() {
                 },
                 {
                   name: "description",
-                  displayKey: "common:description",
+                  displayKey: "description",
                 },
               ]}
               emptyState={

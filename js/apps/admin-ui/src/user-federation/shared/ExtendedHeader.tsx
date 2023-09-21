@@ -46,7 +46,7 @@ export const ExtendedHeader = ({
   const [toggleRemoveUsersDialog, RemoveUsersConfirm] = useConfirmDialog({
     titleKey: t("removeImportedUsers"),
     messageKey: t("removeImportedUsersMessage"),
-    continueButtonLabel: "common:remove",
+    continueButtonLabel: "remove",
     onConfirm: async () => {
       try {
         removeImportedUsers();

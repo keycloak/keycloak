@@ -111,11 +111,11 @@ export default function ImportForm() {
               id="realm-file"
               language={Language.json}
               extension=".json,.xml"
-              helpText={t("common-help:helpFileUploadClient")}
+              helpText={t("helpFileUploadClient")}
               onChange={handleFileChange}
             />
             <ClientDescription hasConfigureAccess />
-            <FormGroup label={t("common:type")} fieldId="kc-type">
+            <FormGroup label={t("type")} fieldId="kc-type">
               <KeycloakTextInput
                 id="kc-type"
                 isReadOnly
@@ -125,7 +125,7 @@ export default function ImportForm() {
             <CapabilityConfig unWrap={true} />
             <ActionGroup>
               <Button variant="primary" type="submit">
-                {t("common:save")}
+                {t("save")}
               </Button>
               <Button
                 variant="link"
@@ -133,7 +133,7 @@ export default function ImportForm() {
                   <Link {...props} to={toClients({ realm })} />
                 )}
               >
-                {t("common:cancel")}
+                {t("cancel")}
               </Button>
             </ActionGroup>
           </FormProvider>

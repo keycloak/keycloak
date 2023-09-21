@@ -65,7 +65,7 @@ export default function CreateFlow() {
             <FlowType />
             <ActionGroup>
               <Button data-testid="create" type="submit">
-                {t("common:create")}
+                {t("create")}
               </Button>
               <Button
                 data-testid="cancel"
@@ -74,7 +74,7 @@ export default function CreateFlow() {
                   <Link {...props} to={toAuthentication({ realm })}></Link>
                 )}
               >
-                {t("common:cancel")}
+                {t("cancel")}
               </Button>
             </ActionGroup>
           </FormAccess>

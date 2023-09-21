@@ -20,6 +20,9 @@ package org.keycloak.services.managers;
 import org.jboss.logging.Logger;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.util.Time;
+import org.keycloak.events.Details;
+import org.keycloak.events.EventBuilder;
+import org.keycloak.events.EventType;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
@@ -59,12 +62,12 @@ public class DefaultBruteForceProtector implements Runnable, BruteForceProtector
     protected abstract class LoginEvent implements Comparable<LoginEvent> {
         protected final String realmId;
         protected final String userId;
-        protected final String ip;
+        protected final ClientConnection clientConnection;
 
-        protected LoginEvent(String realmId, String userId, String ip) {
+        protected LoginEvent(String realmId, String userId, ClientConnection clientConnection) {
             this.realmId = realmId;
             this.userId = userId;
-            this.ip = ip;
+            this.clientConnection = new AdaptedClientConnection(clientConnection);
         }
 
         @Override
@@ -82,16 +85,58 @@ public class DefaultBruteForceProtector implements Runnable, BruteForceProtector
     protected class FailedLogin extends LoginEvent {
         protected final CountDownLatch latch = new CountDownLatch(1);
 
-        public FailedLogin(String realmId, String userId, String ip) {
-            super(realmId, userId, ip);
+        public FailedLogin(String realmId, String userId, ClientConnection clientConnection) {
+            super(realmId, userId, clientConnection);
         }
     }
 
     protected class SuccessfulLogin extends LoginEvent {
         protected final CountDownLatch latch = new CountDownLatch(1);
 
-        public SuccessfulLogin(String realmId, String userId, String ip) {
-            super(realmId, userId, ip);
+        public SuccessfulLogin(String realmId, String userId, ClientConnection clientConnection) {
+            super(realmId, userId, clientConnection);
+        }
+    }
+
+    protected static class AdaptedClientConnection implements ClientConnection {
+
+        private final String remoteAddr;
+        private final String remoteHost;
+        private final int remotePort;
+        private final String localAddr;
+        private final int localPort;
+
+        public AdaptedClientConnection(ClientConnection c) {
+            this.remoteAddr = c == null ? null : c.getRemoteAddr();
+            this.remoteHost = c == null ? null : c.getRemoteHost();
+            this.remotePort = c == null ? 0 : c.getRemotePort();
+            this.localAddr = c == null ? null : c.getLocalAddr();
+            this.localPort = c == null ? 0 : c.getLocalPort();
+        }
+
+        @Override
+        public String getRemoteAddr() {
+            return this.remoteAddr;
+        }
+
+        @Override
+        public String getRemoteHost() {
+            return this.remoteHost;
+        }
+
+        @Override
+        public int getRemotePort() {
+            return this.remotePort;
+        }
+
+        @Override
+        public String getLocalAddr() {
+            return this.localAddr;
+        }
+
+        @Override
+        public int getLocalPort() {
+            return this.localPort;
         }
     }
 
@@ -110,7 +155,7 @@ public class DefaultBruteForceProtector implements Runnable, BruteForceProtector
         if (userLoginFailure == null) {
             userLoginFailure = session.loginFailures().addUserLoginFailure(realm, userId);
         }
-        userLoginFailure.setLastIPFailure(event.ip);
+        userLoginFailure.setLastIPFailure(event.clientConnection.getRemoteAddr());
         long currentTime = Time.currentTimeMillis();
         long last = userLoginFailure.getLastFailure();
         long deltaTime = 0;
@@ -131,6 +176,12 @@ public class DefaultBruteForceProtector implements Runnable, BruteForceProtector
                 logger.debugv("user {0} locked permanently due to too many login attempts", user.getUsername());
                 user.setEnabled(false);
                 user.setSingleAttribute(DISABLED_REASON, DISABLED_BY_PERMANENT_LOCKOUT);
+                // Send event
+                new EventBuilder(realm, session, event.clientConnection)
+                        .event(EventType.USER_DISABLED_BY_PERMANENT_LOCKOUT)
+                        .detail(Details.REASON, "brute_force_attack detected")
+                        .user(user)
+                        .success();
                 return;
             }
 
@@ -264,7 +315,7 @@ public class DefaultBruteForceProtector implements Runnable, BruteForceProtector
     }
 
     protected void logFailure(LoginEvent event) {
-        ServicesLogger.LOGGER.loginFailure(event.userId, event.ip);
+        ServicesLogger.LOGGER.loginFailure(event.userId, event.clientConnection.getRemoteAddr());
         failures++;
         long delta = 0;
         if (lastFailure > 0) {
@@ -281,7 +332,7 @@ public class DefaultBruteForceProtector implements Runnable, BruteForceProtector
     @Override
     public void failedLogin(RealmModel realm, UserModel user, ClientConnection clientConnection) {
         try {
-            FailedLogin event = new FailedLogin(realm.getId(), user.getId(), clientConnection.getRemoteAddr());
+            FailedLogin event = new FailedLogin(realm.getId(), user.getId(), clientConnection);
             queue.offer(event);
             // wait a minimum of seconds for type to process so that a hacker
             // cannot flood with failed logins and overwhelm the queue and not have notBefore updated to block next requests
@@ -294,7 +345,7 @@ public class DefaultBruteForceProtector implements Runnable, BruteForceProtector
 
     @Override
     public void successfulLogin(final RealmModel realm, final UserModel user, final ClientConnection clientConnection) {
-        SuccessfulLogin event = new SuccessfulLogin(realm.getId(), user.getId(), clientConnection.getRemoteAddr());
+        SuccessfulLogin event = new SuccessfulLogin(realm.getId(), user.getId(), clientConnection);
         queue.offer(event);
         logger.trace("sent success event");
     }

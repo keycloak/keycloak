@@ -50,7 +50,7 @@ export const AuthorizationDataModal = ({
             key="cancel"
             onClick={toggle}
           >
-            {t("common:cancel")}
+            {t("cancel")}
           </Button>,
         ]}
       >

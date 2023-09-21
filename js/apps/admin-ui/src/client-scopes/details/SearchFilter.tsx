@@ -111,8 +111,8 @@ export const SearchToolbar = ({
               isOpen={open}
               selections={[
                 type === AllClientScopes.none
-                  ? t("common:allTypes")
-                  : t(`common:clientScope.${type}`),
+                  ? t("allTypes")
+                  : t(`clientScopeTypes.${type}`),
               ]}
               onSelect={(_, value) => {
                 onType(value as AllClientScopes);
@@ -120,7 +120,7 @@ export const SearchToolbar = ({
               }}
             >
               <SelectOption value={AllClientScopes.none}>
-                {t("common:allTypes")}
+                {t("allTypes")}
               </SelectOption>
               <>{clientScopeTypesSelectOptions(t)}</>
             </Select>

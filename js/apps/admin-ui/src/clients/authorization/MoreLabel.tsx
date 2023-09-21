@@ -11,7 +11,5 @@ export const MoreLabel = ({ array }: MoreLabelProps) => {
   if (!array || array.length <= 1) {
     return null;
   }
-  return (
-    <Label color="blue">{t("common:more", { count: array.length - 1 })}</Label>
-  );
+  return <Label color="blue">{t("more", { count: array.length - 1 })}</Label>;
 };

@@ -279,8 +279,8 @@ export default function EventsSection() {
                       data-testid="event-type-searchField"
                       chipGroupProps={{
                         numChips: 1,
-                        expandedText: t("common:hide"),
-                        collapsedText: t("common:showRemaining"),
+                        expandedText: t("hide"),
+                        collapsedText: t("showRemaining"),
                       }}
                       variant={SelectVariant.typeaheadMulti}
                       typeAheadAriaLabel="Select"
@@ -456,7 +456,7 @@ export default function EventsSection() {
       <ViewHeader
         titleKey="titleEvents"
         subKey={
-          <Trans i18nKey="events:eventExplain">
+          <Trans i18nKey="eventExplain">
             If you want to configure user events, Admin events or Event
             listeners, please enter
             <Link to={toRealmSettings({ realm, tab: "events" })}>
@@ -494,29 +494,29 @@ export default function EventsSection() {
                 columns={[
                   {
                     name: "time",
-                    displayKey: "events:time",
+                    displayKey: "time",
                     cellFormatters: [expandable],
                     cellRenderer: (row) =>
                       formatDate(new Date(row.time!), FORMAT_DATE_AND_TIME),
                   },
                   {
                     name: "userId",
-                    displayKey: "events:user",
+                    displayKey: "user",
                     cellRenderer: UserDetailLink,
                   },
                   {
                     name: "type",
-                    displayKey: "events:eventType",
+                    displayKey: "eventType",
                     cellRenderer: StatusRow,
                   },
                   {
                     name: "ipAddress",
-                    displayKey: "events:ipAddress",
+                    displayKey: "ipAddress",
                     transforms: [cellWidth(10)],
                   },
                   {
                     name: "clientId",
-                    displayKey: "events:client",
+                    displayKey: "client",
                   },
                 ]}
                 emptyState={

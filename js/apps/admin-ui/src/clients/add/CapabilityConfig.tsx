@@ -59,8 +59,8 @@ export const CapabilityConfig = ({
                 <Switch
                   data-testid="authentication"
                   id="kc-authentication-switch"
-                  label={t("common:on")}
-                  labelOff={t("common:off")}
+                  label={t("on")}
+                  labelOff={t("off")}
                   isChecked={!field.value}
                   onChange={(value) => {
                     field.onChange(!value);
@@ -99,8 +99,8 @@ export const CapabilityConfig = ({
                 <Switch
                   data-testid="authorization"
                   id="kc-authorization-switch"
-                  label={t("common:on")}
-                  labelOff={t("common:off")}
+                  label={t("on")}
+                  labelOff={t("off")}
                   isChecked={field.value && !clientAuthentication}
                   onChange={(value) => {
                     field.onChange(value);
@@ -293,8 +293,8 @@ export const CapabilityConfig = ({
                 <Switch
                   data-testid="encrypt"
                   id="kc-encrypt"
-                  label={t("common:on")}
-                  labelOff={t("common:off")}
+                  label={t("on")}
+                  labelOff={t("off")}
                   isChecked={field.value}
                   onChange={field.onChange}
                   aria-label={t("encryptAssertions")}
@@ -323,8 +323,8 @@ export const CapabilityConfig = ({
                 <Switch
                   data-testid="client-signature"
                   id="kc-client-signature"
-                  label={t("common:on")}
-                  labelOff={t("common:off")}
+                  label={t("on")}
+                  labelOff={t("off")}
                   isChecked={field.value}
                   onChange={field.onChange}
                   aria-label={t("clientSignature")}

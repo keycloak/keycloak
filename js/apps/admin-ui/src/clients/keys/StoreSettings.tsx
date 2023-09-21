@@ -29,7 +29,7 @@ export const StoreSettings = ({
         labelIcon={
           <HelpItem helpText={t("keyAliasHelp")} fieldLabelId="keyAlias" />
         }
-        helperTextInvalid={t("common:required")}
+        helperTextInvalid={t("required")}
         validated={errors.keyAlias ? "error" : "default"}
       >
         <KeycloakTextInput
@@ -50,7 +50,7 @@ export const StoreSettings = ({
               fieldLabelId="keyPassword"
             />
           }
-          helperTextInvalid={t("common:required")}
+          helperTextInvalid={t("required")}
           validated={errors.keyPassword ? "error" : "default"}
         >
           <PasswordInput
@@ -89,7 +89,7 @@ export const StoreSettings = ({
             fieldLabelId="storePassword"
           />
         }
-        helperTextInvalid={t("common:required")}
+        helperTextInvalid={t("required")}
         validated={errors.storePassword ? "error" : "default"}
       >
         <PasswordInput

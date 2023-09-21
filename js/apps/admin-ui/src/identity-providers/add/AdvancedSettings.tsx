@@ -44,7 +44,7 @@ const LoginFlow = ({
       label={t(label)}
       labelIcon={
         <HelpItem
-          helpText={t(`identity-providers-help:${label}`)}
+          helpText={t(`${label}Help`)}
           fieldLabelId={`identity-providers:${label}`}
         />
       }
@@ -63,7 +63,7 @@ const LoginFlow = ({
               field.onChange(value as string);
               setOpen(false);
             }}
-            selections={field.value || t("common:none")}
+            selections={field.value || t("none")}
             variant={SelectVariant.single}
             aria-label={t(label)}
             isOpen={open}
@@ -72,7 +72,7 @@ const LoginFlow = ({
               ...(defaultValue === ""
                 ? [
                     <SelectOption key="empty" value="">
-                      {t("common:none")}
+                      {t("none")}
                     </SelectOption>,
                   ]
                 : []),
@@ -152,8 +152,8 @@ export const AdvancedSettings = ({ isOIDC, isSAML }: AdvancedSettingsProps) => {
             render={({ field }) => (
               <Switch
                 id="filteredByClaim"
-                label={t("common:on")}
-                labelOff={t("common:off")}
+                label={t("on")}
+                labelOff={t("off")}
                 isChecked={field.value === "true"}
                 onChange={(value) => {
                   field.onChange(value.toString());
@@ -180,7 +180,7 @@ export const AdvancedSettings = ({ isOIDC, isSAML }: AdvancedSettingsProps) => {
                 ? ValidatedOptions.error
                 : ValidatedOptions.default
             }
-            helperTextInvalid={t("common:required")}
+            helperTextInvalid={t("required")}
           >
             <KeycloakTextInput
               isRequired
@@ -209,7 +209,7 @@ export const AdvancedSettings = ({ isOIDC, isSAML }: AdvancedSettingsProps) => {
                 ? ValidatedOptions.error
                 : ValidatedOptions.default
             }
-            helperTextInvalid={t("common:required")}
+            helperTextInvalid={t("required")}
           >
             <KeycloakTextInput
               isRequired

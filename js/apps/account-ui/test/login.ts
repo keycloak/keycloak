@@ -11,6 +11,6 @@ export const login = async (
       process.env.CI ? `/realms/${realm}/account` : `/?realm=${realm}`,
     );
   await page.getByLabel("Username").fill(username);
-  await page.getByLabel("Password").fill(password);
+  await page.getByLabel("Password", { exact: true }).fill(password);
   await page.getByRole("button", { name: "Sign In" }).click();
 };

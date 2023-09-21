@@ -36,9 +36,7 @@ export const MultiValuedListComponent = ({
   return (
     <FormGroup
       label={t(label!)}
-      labelIcon={
-        <HelpItem helpText={t(helpText!)} fieldLabelId={`dynamic:${label}`} />
-      }
+      labelIcon={<HelpItem helpText={t(helpText!)} fieldLabelId={`${label}`} />}
       fieldId={name!}
     >
       <Controller
@@ -52,8 +50,8 @@ export const MultiValuedListComponent = ({
             isDisabled={isDisabled}
             chipGroupProps={{
               numChips: 3,
-              expandedText: t("common:hide"),
-              collapsedText: t("common:showRemaining"),
+              expandedText: t("hide"),
+              collapsedText: t("showRemaining"),
             }}
             variant={SelectVariant.typeaheadMulti}
             typeAheadAriaLabel="Select"

@@ -39,7 +39,7 @@ export const SamlGeneralSettings = ({
         label={t("alias")}
         labelIcon={
           <HelpItem
-            helpText={t("identity-providers-help:alias")}
+            helpText={t("aliasHelp")}
             fieldLabelId="identity-providers:alias"
           />
         }
@@ -48,7 +48,7 @@ export const SamlGeneralSettings = ({
         validated={
           errors.alias ? ValidatedOptions.error : ValidatedOptions.default
         }
-        helperTextInvalid={t("common:required")}
+        helperTextInvalid={t("required")}
       >
         <KeycloakTextInput
           isRequired
@@ -74,7 +74,7 @@ export const SamlGeneralSettings = ({
           fieldId="endpoints"
           labelIcon={
             <HelpItem
-              helpText={t("identity-providers-help:alias")}
+              helpText={t("aliasHelp")}
               fieldLabelId="identity-providers:alias"
             />
           }

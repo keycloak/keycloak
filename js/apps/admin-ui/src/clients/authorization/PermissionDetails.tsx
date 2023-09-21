@@ -91,7 +91,7 @@ export default function PermissionDetails() {
       ]);
 
       if (!permission) {
-        throw new Error(t("common:notFound"));
+        throw new Error(t("notFound"));
       }
 
       return {
@@ -194,7 +194,7 @@ export default function PermissionDetails() {
                   data-testid="delete-resource"
                   onClick={() => toggleDeleteDialog()}
                 >
-                  {t("common:delete")}
+                  {t("delete")}
                 </DropdownItem>,
               ]
             : undefined
@@ -208,9 +208,9 @@ export default function PermissionDetails() {
         >
           <FormProvider {...form}>
             <FormGroup
-              label={t("common:name")}
+              label={t("name")}
               isRequired
-              helperTextInvalid={t("common:required")}
+              helperTextInvalid={t("required")}
               validated={errors.name ? "error" : "default"}
               fieldId="name"
               labelIcon={
@@ -224,7 +224,7 @@ export default function PermissionDetails() {
               />
             </FormGroup>
             <FormGroup
-              label={t("common:description")}
+              label={t("description")}
               fieldId="description"
               labelIcon={
                 <HelpItem
@@ -241,7 +241,7 @@ export default function PermissionDetails() {
                 {...register("description", {
                   maxLength: {
                     value: 255,
-                    message: t("common:maxLength", { length: 255 }),
+                    message: t("maxLength", { length: 255 }),
                   },
                 })}
               />
@@ -259,8 +259,8 @@ export default function PermissionDetails() {
               <Switch
                 id="applyToResourceTypeFlag"
                 name="applyToResourceTypeFlag"
-                label={t("common:on")}
-                labelOff={t("common:off")}
+                label={t("on")}
+                labelOff={t("off")}
                 isChecked={applyToResourceTypeFlag}
                 onChange={setApplyToResourceTypeFlag}
                 aria-label={t("applyToResourceTypeFlag")}
@@ -295,7 +295,7 @@ export default function PermissionDetails() {
                     fieldLabelId="resources"
                   />
                 }
-                helperTextInvalid={t("common:required")}
+                helperTextInvalid={t("required")}
                 validated={errors.resources ? "error" : "default"}
                 isRequired={permissionType !== "scope"}
               >
@@ -321,11 +321,11 @@ export default function PermissionDetails() {
                 fieldId="scopes"
                 labelIcon={
                   <HelpItem
-                    helpText={t("permissionScopes")}
+                    helpText={t("permissionScopesHelp")}
                     fieldLabelId="scopesSelect"
                   />
                 }
-                helperTextInvalid={t("common:required")}
+                helperTextInvalid={t("required")}
                 validated={errors.scopes ? "error" : "default"}
                 isRequired
               >
@@ -341,7 +341,7 @@ export default function PermissionDetails() {
               fieldId="policies"
               labelIcon={
                 <HelpItem
-                  helpText={t("permissionPolicies")}
+                  helpText={t("permissionPoliciesHelp")}
                   fieldLabelId="policies"
                 />
               }
@@ -356,7 +356,7 @@ export default function PermissionDetails() {
               label={t("decisionStrategy")}
               labelIcon={
                 <HelpItem
-                  helpText={t("permissionDecisionStrategy")}
+                  helpText={t("permissionDecisionStrategyHelp")}
                   fieldLabelId="decisionStrategy"
                 />
               }
@@ -393,7 +393,7 @@ export default function PermissionDetails() {
                   type="submit"
                   data-testid="save"
                 >
-                  {t("common:save")}
+                  {t("save")}
                 </Button>
 
                 <Button
@@ -410,7 +410,7 @@ export default function PermissionDetails() {
                     ></Link>
                   )}
                 >
-                  {t("common:cancel")}
+                  {t("cancel")}
                 </Button>
               </div>
             </ActionGroup>
