@@ -85,7 +85,7 @@ export const PermissionRequest = ({
             <Tr>
               <Th>{t("requestor")}</Th>
               <Th>{t("permissionRequests")}</Th>
-              <Th></Th>
+              <Th aria-hidden="true"></Th>
             </Tr>
           </Thead>
           <Tbody>

@@ -42,11 +42,8 @@
         <!-- Fabric8 -->
         <dependency>
             <groupId>io.fabric8</groupId>
-            <artifactId>crd-generator-api</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.fabric8</groupId>
             <artifactId>crd-generator-apt</artifactId>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>io.fabric8</groupId>
@@ -58,10 +55,17 @@
         <dependency>
             <groupId>io.quarkiverse.operatorsdk</groupId>
             <artifactId>quarkus-operator-sdk</artifactId>
+            <exclusions>
+            	<exclusion>
+            		<groupId>io.vertx</groupId>
+            		<artifactId>vertx-uri-template</artifactId>
+            	</exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>io.quarkiverse.operatorsdk</groupId>
             <artifactId>quarkus-operator-sdk-bundle-generator</artifactId>
+            <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>io.quarkus</groupId>
@@ -77,15 +81,17 @@
         </dependency>
         <dependency>
             <groupId>io.quarkus</groupId>
-            <artifactId>quarkus-openshift</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.quarkus</groupId>
-            <artifactId>quarkus-minikube</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.quarkus</groupId>
             <artifactId>quarkus-kubernetes-client</artifactId>
+            <exclusions>
+            	<exclusion>
+            		<groupId>io.vertx</groupId>
+            		<artifactId>vertx-uri-template</artifactId>
+            	</exclusion>
+                <exclusion>
+                    <groupId>com.aayushatharva.brotli4j</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
           <groupId>io.quarkus</groupId>
@@ -162,6 +168,11 @@
                     <goals>
                         <goal>build</goal>
                     </goals>
+                    <configuration>
+                        <properties>
+                            <quarkus.package.filter-optional-dependencies>true</quarkus.package.filter-optional-dependencies> 
+                        </properties>
+                    </configuration>
                     </execution>
                 </executions>
             </plugin>

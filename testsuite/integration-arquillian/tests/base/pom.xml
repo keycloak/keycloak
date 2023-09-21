@@ -527,6 +527,7 @@
             <properties>
                 <app.server>wildfly</app.server> <!--in case the profile is called directly-->
                 <app.server.skip.unpack>false</app.server.skip.unpack>
+                <wildfly.core.version>${tests.wildfly.core.version}</wildfly.core.version>
             </properties>
             <dependencies>
                 <dependency>
@@ -563,6 +564,7 @@
             <properties>
                 <app.server>eap</app.server> <!--in case the profile is called directly-->
                 <app.server.skip.unpack>false</app.server.skip.unpack>
+                <wildfly.core.version>${tests.wildfly.core.version}</wildfly.core.version>
             </properties>
             <dependencies>
                 <dependency>

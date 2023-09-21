@@ -69,7 +69,7 @@ Author of a client (Checked by presence to the particular role or group)::
     like the administrator of the {project_name}.
 
 Client Access Type (confidential, public, bearer-only)::
-    For example when a client sends an authorization request, a policy is adopted if this client is confidential.
+    For example when a client sends an authorization request, a policy is adopted if this client is confidential. Confidential client has enabled client authentication when public client has disabled client authentication. Bearer-only is a deprecated client type.
 
 Client Scope::
     Evaluates to true if the client has a particular client scope (either as default or as an optional scope used in current request). This can be used for example to ensure that

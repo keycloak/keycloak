@@ -83,7 +83,6 @@ import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.GOOGLE_HOST
 import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.GOOGLE_NON_MATCHING_HOSTED_DOMAIN;
 import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.INSTAGRAM;
 import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.LINKEDIN;
-import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.LINKEDIN_WITH_PROJECTION;
 import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.MICROSOFT;
 import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.OPENSHIFT;
 import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.OPENSHIFT4;
@@ -125,8 +124,7 @@ public class SocialLoginTest extends AbstractKeycloakTest {
         GITHUB("github", GitHubLoginPage.class),
         GITHUB_PRIVATE_EMAIL("github", "github-private-email", GitHubLoginPage.class),
         TWITTER("twitter", TwitterConsentLoginPage.class),
-        LINKEDIN("linkedin", LinkedInLoginPage.class),
-        LINKEDIN_WITH_PROJECTION("linkedin", LinkedInLoginPage.class),
+        LINKEDIN("linkedin-openid-connect", LinkedInLoginPage.class),
         MICROSOFT("microsoft", MicrosoftLoginPage.class),
         PAYPAL("paypal", PayPalLoginPage.class),
         STACKOVERFLOW("stackoverflow", StackOverflowLoginPage.class),
@@ -372,6 +370,7 @@ public class SocialLoginTest extends AbstractKeycloakTest {
     public void githubLogin() throws InterruptedException {
         setTestProvider(GITHUB);
         performLogin();
+        assertUpdateProfile(true, true, false);
         appPage.assertCurrent();
         testTokenExchange();
     }
@@ -380,6 +379,7 @@ public class SocialLoginTest extends AbstractKeycloakTest {
     public void githubPrivateEmailLogin() throws InterruptedException {
         setTestProvider(GITHUB_PRIVATE_EMAIL);
         performLogin();
+        assertUpdateProfile(true, true, false);
         appPage.assertCurrent();
     }
 
@@ -393,15 +393,7 @@ public class SocialLoginTest extends AbstractKeycloakTest {
     @Test
     public void linkedinLogin() {
         setTestProvider(LINKEDIN);
-        performLogin();
-        appPage.assertCurrent();
-    }
-
-    @Test
-    public void linkedinLoginWithProjection() {
-        setTestProvider(LINKEDIN_WITH_PROJECTION);
-        addAttributeMapper("picture",
-            "profilePicture.displayImage~.elements[0].identifiers[0].identifier");
+        addAttributeMapper("picture", "picture", "linkedin-user-attribute-mapper");
         performLogin();
         appPage.assertCurrent();
         assertAttribute("picture", getConfig("profile.picture"));
@@ -449,9 +441,6 @@ public class SocialLoginTest extends AbstractKeycloakTest {
         if (provider == GOOGLE_NON_MATCHING_HOSTED_DOMAIN) {
             idp.getConfig().put("hostedDomain", "non-matching-hosted-domain");
         }
-        if (provider == LINKEDIN_WITH_PROJECTION) {
-            idp.getConfig().put("profileProjection", "(id,firstName,lastName,profilePicture(displayImage~:playableStreams))");
-        }
         if (provider == STACKOVERFLOW) {
             idp.getConfig().put("key", getConfig(provider, "clientKey"));
         }
@@ -469,13 +458,17 @@ public class SocialLoginTest extends AbstractKeycloakTest {
     }
 
     private void addAttributeMapper(String name, String jsonField) {
+        addAttributeMapper(name, jsonField, currentTestProvider.id + "-user-attribute-mapper");
+    }
+
+    private void addAttributeMapper(String name, String jsonField, String mapperName) {
         IdentityProviderResource identityProvider = adminClient.realm(REALM).identityProviders().get(currentTestProvider.id);
         IdentityProviderRepresentation identityProviderRepresentation = identityProvider.toRepresentation();
         //Add birthday mapper
         IdentityProviderMapperRepresentation mapperRepresentation = new IdentityProviderMapperRepresentation();
         mapperRepresentation.setName(name);
         mapperRepresentation.setIdentityProviderAlias(identityProviderRepresentation.getAlias());
-        mapperRepresentation.setIdentityProviderMapper(currentTestProvider.id + "-user-attribute-mapper");
+        mapperRepresentation.setIdentityProviderMapper(mapperName);
         mapperRepresentation.setConfig(ImmutableMap.<String, String>builder()
                 .put(IdentityProviderMapperModel.SYNC_MODE, IdentityProviderMapperSyncMode.IMPORT.toString())
                 .put(AbstractJsonUserAttributeMapper.CONF_JSON_FIELD, jsonField)

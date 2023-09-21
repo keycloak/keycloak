@@ -25,7 +25,7 @@ export const ExtendedHeader = ({
   save,
   noDivider = false,
 }: ExtendedHeaderProps) => {
-  const { t } = useTranslation("user-federation");
+  const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const { addAlert, addError } = useAlerts();
 
@@ -46,7 +46,7 @@ export const ExtendedHeader = ({
   const [toggleRemoveUsersDialog, RemoveUsersConfirm] = useConfirmDialog({
     titleKey: t("removeImportedUsers"),
     messageKey: t("removeImportedUsersMessage"),
-    continueButtonLabel: "common:remove",
+    continueButtonLabel: "remove",
     onConfirm: async () => {
       try {
         removeImportedUsers();

@@ -1,5 +1,4 @@
 import type GroupRepresentation from "@keycloak/keycloak-admin-client/lib/defs/groupRepresentation";
-import type UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
 import { AlertVariant, PageSection } from "@patternfly/react-core";
 import { useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
@@ -16,23 +15,23 @@ import {
   isUserProfileError,
   userProfileErrorToString,
 } from "./UserProfileFields";
+import { UserFormFields, toUserRepresentation } from "./form-state";
 import { toUser } from "./routes/User";
 
 import "./user-section.css";
 
 export default function CreateUser() {
-  const { t } = useTranslation("users");
+  const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
   const navigate = useNavigate();
   const { realm } = useRealm();
-  const userForm = useForm<UserRepresentation>({ mode: "onChange" });
+  const userForm = useForm<UserFormFields>({ mode: "onChange" });
   const [addedGroups, setAddedGroups] = useState<GroupRepresentation[]>([]);
 
-  const save = async (formUser: UserRepresentation) => {
+  const save = async (data: UserFormFields) => {
     try {
       const createdUser = await adminClient.users.create({
-        ...formUser,
-        username: formUser.username?.trim(),
+        ...toUserRepresentation(data),
         groups: addedGroups.map((group) => group.path!),
         enabled: true,
       });

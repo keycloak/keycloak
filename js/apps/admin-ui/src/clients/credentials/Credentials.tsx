@@ -43,7 +43,7 @@ export type CredentialsProps = {
 };
 
 export const Credentials = ({ client, save, refresh }: CredentialsProps) => {
-  const { t } = useTranslation("clients");
+  const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
   const clientId = client.id!;
 
@@ -106,10 +106,10 @@ export const Credentials = ({ client, save, refresh }: CredentialsProps) => {
   };
 
   const [toggleClientSecretConfirm, ClientSecretConfirm] = useConfirmDialog({
-    titleKey: "clients:confirmClientSecretTitle",
-    messageKey: "clients:confirmClientSecretBody",
-    continueButtonLabel: "common:yes",
-    cancelButtonLabel: "common:no",
+    titleKey: "confirmClientSecretTitle",
+    messageKey: "confirmClientSecretBody",
+    continueButtonLabel: "yes",
+    cancelButtonLabel: "no",
     onConfirm: regenerateClientSecret,
   });
 
@@ -123,10 +123,10 @@ export const Credentials = ({ client, save, refresh }: CredentialsProps) => {
   };
 
   const [toggleAccessTokenConfirm, AccessTokenConfirm] = useConfirmDialog({
-    titleKey: "clients:confirmAccessTokenTitle",
-    messageKey: "clients:confirmAccessTokenBody",
-    continueButtonLabel: "common:yes",
-    cancelButtonLabel: "common:no",
+    titleKey: "confirmAccessTokenTitle",
+    messageKey: "confirmAccessTokenBody",
+    continueButtonLabel: "yes",
+    cancelButtonLabel: "no",
     onConfirm: regenerateAccessToken,
   });
 
@@ -148,8 +148,8 @@ export const Credentials = ({ client, save, refresh }: CredentialsProps) => {
               fieldId="kc-client-authenticator-type"
               labelIcon={
                 <HelpItem
-                  helpText={t("clients-help:client-authenticator-type")}
-                  fieldLabelId="clients:clientAuthenticator"
+                  helpText={t("clientAuthenticatorTypeHelp")}
+                  fieldLabelId="clientAuthenticator"
                 />
               }
             >
@@ -196,7 +196,7 @@ export const Credentials = ({ client, save, refresh }: CredentialsProps) => {
             {clientAuthenticatorType === "client-x509" && <X509 />}
             <ActionGroup>
               <Button variant="primary" type="submit" isDisabled={!isDirty}>
-                {t("common:save")}
+                {t("save")}
               </Button>
             </ActionGroup>
           </CardBody>
@@ -220,8 +220,8 @@ export const Credentials = ({ client, save, refresh }: CredentialsProps) => {
               fieldId="kc-access-token"
               labelIcon={
                 <HelpItem
-                  helpText={t("clients-help:registration-access-token")}
-                  fieldLabelId="clients:registrationAccessToken"
+                  helpText={t("registrationAccessTokenHelp")}
+                  fieldLabelId="registrationAccessToken"
                 />
               }
             >

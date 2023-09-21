@@ -41,6 +41,8 @@ Storage (Experimental):
 
 Database:
 
+--db-driver <driver> The fully qualified class name of the JDBC driver. If not set, a default
+                       driver is set accordingly to the chosen database.
 --db-password <password>
                      The password of the database user.
 --db-pool-initial-size <size>
@@ -62,8 +64,10 @@ Database:
 --db-url-port <port> Sets the port of the default JDBC URL of the chosen vendor. If the `db-url`
                        option is set, this option is ignored.
 --db-url-properties <properties>
-                     Sets the properties of the default JDBC URL of the chosen vendor. If the
-                       `db-url` option is set, this option is ignored.
+                     Sets the properties of the default JDBC URL of the chosen vendor. Make sure to
+                       set the properties accordingly to the format expected by the database
+                       vendor, as well as appending the right character at the beginning of this
+                       property value. If the `db-url` option is set, this option is ignored.
 --db-username <username>
                      The username of the database user.
 
@@ -78,6 +82,9 @@ Hostname:
 --hostname-admin-url <url>
                      Set the base URL for accessing the administration console, including scheme,
                        host, port and path
+--hostname-debug <true|false>
+                     Toggle the hostname debug page that is accessible at
+                       /realms/master/hostname-debug Default: false.
 --hostname-path <path>
                      This should be set if proxy uses a different context-path for Keycloak.
 --hostname-port <port>
@@ -130,6 +137,15 @@ HTTP/TLS:
                        detected based on the file name. If 'fips-mode' is set to 'strict' and no
                        value is set, it defaults to 'BCFKS'.
 
+Config:
+
+--config-keystore <config-keystore>
+                     Specifies a path to the KeyStore Configuration Source.
+--config-keystore-password <config-keystore-password>
+                     Specifies a password to the KeyStore Configuration Source.
+--config-keystore-type <config-keystore-type>
+                     Specifies a type of the KeyStore Configuration Source. Default: PKCS12.
+
 Proxy:
 
 --proxy <mode>       The proxy address forwarding mode if the server is behind a reverse proxy.
@@ -139,6 +155,9 @@ Vault:
 
 --vault-dir <dir>    If set, secrets can be obtained by reading the content of files within the
                        given directory.
+--vault-file <file>  Path to the keystore file.
+--vault-pass <pass>  Password for the vault keystore.
+--vault-type <type>  Specifies the type of the keystore file. Default: PKCS12.
 
 Logging:
 
@@ -153,7 +172,7 @@ Logging:
 --log-console-output <output>
                      Set the log output to JSON or default (plain) unstructured logging. Possible
                        values are: default, json. Default: default.
---log-file <file>    Set the log file path and filename. Default: data/log/keycloak.log.
+--log-file <file>    Set the log file path and filename. Default: data\log\keycloak.log.
 --log-file-format <format>
                      Set a format specific to file log entries. Default: %d{yyyy-MM-dd HH:mm:ss,
                        SSS} %-5p [%c] (%t) %s%e%n.

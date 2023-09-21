@@ -59,7 +59,7 @@ const UserDetailLink = (user: MembersOf) => {
 };
 
 export const Members = () => {
-  const { t } = useTranslation("groups");
+  const { t } = useTranslation();
 
   const { addAlert, addError } = useAlerts();
   const location = useLocation();
@@ -141,7 +141,7 @@ export const Members = () => {
         data-testid="members-table"
         key={`${id}${key}${includeSubGroup}`}
         loader={loader}
-        ariaLabelKey="groups:members"
+        ariaLabelKey="members"
         isPaginated
         canSelectAll
         onSelect={(rows) => setSelectedRows([...rows])}
@@ -196,7 +196,7 @@ export const Members = () => {
                             AlertVariant.success,
                           );
                         } catch (error) {
-                          addError("groups:usersLeftError", error);
+                          addError("usersLeftError", error);
                         }
 
                         refresh();
@@ -226,7 +226,7 @@ export const Members = () => {
                         AlertVariant.success,
                       );
                     } catch (error) {
-                      addError("groups:usersLeftError", error);
+                      addError("usersLeftError", error);
                     }
 
                     return true;
@@ -238,27 +238,27 @@ export const Members = () => {
         columns={[
           {
             name: "username",
-            displayKey: "common:name",
+            displayKey: "name",
             cellRenderer: UserDetailLink,
           },
           {
             name: "email",
-            displayKey: "groups:email",
+            displayKey: "email",
             cellFormatters: [emptyFormatter()],
           },
           {
             name: "firstName",
-            displayKey: "groups:firstName",
+            displayKey: "firstName",
             cellFormatters: [emptyFormatter()],
           },
           {
             name: "lastName",
-            displayKey: "groups:lastName",
+            displayKey: "lastName",
             cellFormatters: [emptyFormatter()],
           },
           {
             name: "membership",
-            displayKey: "groups:membership",
+            displayKey: "membership",
             cellRenderer: MemberOfRenderer,
           },
         ]}

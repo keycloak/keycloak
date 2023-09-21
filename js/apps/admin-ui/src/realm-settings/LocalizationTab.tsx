@@ -79,7 +79,7 @@ const localeToDisplayName = (locale: string) => {
 };
 
 export const LocalizationTab = ({ save, realm }: LocalizationTabProps) => {
-  const { t } = useTranslation("realm-settings");
+  const { t } = useTranslation();
   const [addMessageBundleModalOpen, setAddMessageBundleModalOpen] =
     useState(false);
 
@@ -367,7 +367,7 @@ export const LocalizationTab = ({ save, realm }: LocalizationTabProps) => {
             fieldId="kc-internationalization"
             labelIcon={
               <HelpItem
-                helpText={t("realm-settings-help:internationalization")}
+                helpText={t("internationalizationHelp")}
                 fieldLabelId="realm-settings:internationalization"
               />
             }
@@ -379,8 +379,8 @@ export const LocalizationTab = ({ save, realm }: LocalizationTabProps) => {
               render={({ field }) => (
                 <Switch
                   id="kc-l-internationalization"
-                  label={t("common:enabled")}
-                  labelOff={t("common:disabled")}
+                  label={t("enabled")}
+                  labelOff={t("disabled")}
                   isChecked={field.value}
                   data-testid={
                     field.value
@@ -495,10 +495,10 @@ export const LocalizationTab = ({ save, realm }: LocalizationTabProps) => {
               type="submit"
               data-testid="localization-tab-save"
             >
-              {t("common:save")}
+              {t("save")}
             </Button>
             <Button variant="link" onClick={setupForm}>
-              {t("common:revert")}
+              {t("revert")}
             </Button>
           </ActionGroup>
         </FormAccess>
@@ -518,7 +518,7 @@ export const LocalizationTab = ({ save, realm }: LocalizationTabProps) => {
                 setFirst(first);
                 setMax(max);
               }}
-              inputGroupName={"common:search"}
+              inputGroupName={"search"}
               inputGroupOnEnter={(search) => {
                 setFilter(search);
                 setFirst(0);
@@ -575,8 +575,8 @@ export const LocalizationTab = ({ save, realm }: LocalizationTabProps) => {
                   hasIcon
                   icon={SearchIcon}
                   isSearchVariant
-                  message={t("common:noSearchResults")}
-                  instructions={t("common:noSearchResultsInstructions")}
+                  message={t("noSearchResults")}
+                  instructions={t("noSearchResultsInstructions")}
                 />
               )}
               {messageBundles.length !== 0 && (
@@ -584,14 +584,14 @@ export const LocalizationTab = ({ save, realm }: LocalizationTabProps) => {
                   aria-label={t("editableRowsTable")}
                   data-testid="editable-rows-table"
                   variant={TableVariant.compact}
-                  cells={[t("common:key"), t("common:value")]}
+                  cells={[t("key"), t("value")]}
                   rows={tableRows}
                   onRowEdit={(_, type, _b, rowIndex, validation) =>
                     updateEditableRows(type, rowIndex, validation)
                   }
                   actions={[
                     {
-                      title: t("common:delete"),
+                      title: t("delete"),
                       onClick: (_, row) =>
                         deleteKey(
                           (tableRows[row].cells?.[0] as IRowCell).props.value,

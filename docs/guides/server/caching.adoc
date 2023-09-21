@@ -31,8 +31,10 @@ The cache configuration is a regular https://infinispan.org/docs/stable/titles/c
 The following table gives an overview of the specific caches Keycloak uses.
 You configure these caches in `conf/cache-ispn.xml`:
 
-|====
+[%autowidth]
+|===
 |Cache name|Cache Type|Description
+
 |realms|Local|Cache persisted realm data
 |users|Local|Cache persisted user data
 |authorization|Local|Cache persisted authorization data
@@ -45,7 +47,7 @@ You configure these caches in `conf/cache-ispn.xml`:
 |offlineClientSessions|Distributed|Caches client sessions, created upon successful authentication to a specific client and destroyed during logout, token revocation, or due to expiration
 |loginFailures|Distributed|keep track of failed logins, fraud detection
 |actionTokens|Distributed|Caches action Tokens
-|====
+|===
 
 === Cache types and defaults
 
@@ -157,16 +159,23 @@ To apply a specific cache stack, enter this command:
 The default stack is set to `UDP` when distributed caches are enabled.
 
 === Available transport stacks
+
 The following table shows transport stacks that are available without any further configuration than using the `--cache-stack` build option:
+
+[%autowidth]
 |===
 |Stack name|Transport protocol|Discovery
+
 |tcp|TCP|MPING (uses UDP multicast).
 |udp|UDP|UDP multicast
 |===
 
 The following table shows transport stacks that are available using the `--cache-stack` build option and a minimum configuration:
+
+[%autowidth]
 |===
 |Stack name|Transport protocol|Discovery
+
 |kubernetes|TCP|DNS_PING (requires `-Djgroups.dns.query=<headless-service-FQDN>` to be added to JAVA_OPTS or JAVA_OPTS_APPEND environment variable).
 |===
 
@@ -176,8 +185,10 @@ Note that _none_  of these stacks are Kubernetes / OpenShift stacks, so no need 
 In that case, use the `kubernetes` stack.
 Instead, when you have a distributed cache setup running on AWS EC2 instances, you would need to set the stack to `ec2`, because ec2 does not support a default discovery mechanism such as `UDP`.
 
+[%autowidth]
 |===
 |Stack name|Transport protocol|Discovery
+
 |ec2|TCP|NATIVE_S3_PING
 |google|TCP|GOOGLE_PING2
 |azure|TCP|AZURE_PING

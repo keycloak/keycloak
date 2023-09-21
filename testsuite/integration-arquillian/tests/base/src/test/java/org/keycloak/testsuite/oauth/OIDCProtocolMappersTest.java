@@ -79,6 +79,7 @@ import static org.hamcrest.Matchers.arrayContainingInAnyOrder;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasItems;
+import static org.hamcrest.Matchers.in;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.isEmptyOrNullString;
@@ -581,8 +582,8 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
         // Verify attribute is filled
         Map<String, Object> roleMappings = (Map<String, Object>)idToken.getOtherClaims().get("roles-custom");
         assertThat(roleMappings.keySet(), containsInAnyOrder("realm", "test-app"));
-        String realmRoleMappings = (String) roleMappings.get("realm");
-        String testAppMappings = (String) roleMappings.get("test-app");
+        List<String> realmRoleMappings = (List<String>) roleMappings.get("realm");
+        List<String> testAppMappings = (List<String>) roleMappings.get("test-app");
         assertRolesString(realmRoleMappings,
                 "pref.user",                      // from direct assignment in user definition
                 "pref.offline_access"             // from direct assignment in user definition
@@ -808,7 +809,7 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
         // Verify attribute is filled AND it is filled only once
         Map<String, Object> roleMappings = (Map<String, Object>)idToken.getOtherClaims().get("roles-custom");
         assertThat(roleMappings.keySet(), containsInAnyOrder(clientId));
-        String testAppScopeMappings = (String) roleMappings.get(clientId);
+        List<String> testAppScopeMappings = (List<String>) roleMappings.get(clientId);
         assertRolesString(testAppScopeMappings,
                 "customer-user"      // from assignment to level2group or level2group2. It is filled just once
         );
@@ -837,8 +838,8 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
         // Verify attribute is filled
         Map<String, Object> roleMappings = (Map<String, Object>)idToken.getOtherClaims().get("roles-custom");
         assertThat(roleMappings.keySet(), containsInAnyOrder("realm", clientId));
-        String realmRoleMappings = (String) roleMappings.get("realm");
-        String testAppMappings = (String) roleMappings.get(clientId);
+        List<String> realmRoleMappings = (List<String>) roleMappings.get("realm");
+        List<String> testAppMappings = (List<String>) roleMappings.get(clientId);
         assertRolesString(realmRoleMappings,
           "pref.admin",                     // from direct assignment to /roleRichGroup/level2group
           "pref.user",                      // from parent group of /roleRichGroup/level2group, i.e. from /roleRichGroup
@@ -882,8 +883,8 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
         // Verify attribute is filled
         Map<String, Object> roleMappings = (Map<String, Object>)idToken.getOtherClaims().get("roles-custom");
         assertThat(roleMappings.keySet(), containsInAnyOrder("realm"));
-        String realmRoleMappings = (String) roleMappings.get("realm");
-        String testAppAuthzMappings = (String) roleMappings.get(clientId);
+        List<String> realmRoleMappings = (List<String>) roleMappings.get("realm");
+        List<String> testAppAuthzMappings = (List<String>) roleMappings.get(clientId);
         assertRolesString(realmRoleMappings,
           "pref.admin",                     // from direct assignment to /roleRichGroup/level2group
           "pref.user",                      // from parent group of /roleRichGroup/level2group, i.e. from /roleRichGroup
@@ -915,8 +916,8 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
         // Verify attribute is filled
         Map<String, Object> roleMappings = (Map<String, Object>)idToken.getOtherClaims().get("roles-custom");
         assertThat(roleMappings.keySet(), containsInAnyOrder("realm", clientId));
-        String realmRoleMappings = (String) roleMappings.get("realm");
-        String testAppScopeMappings = (String) roleMappings.get(clientId);
+        List<String> realmRoleMappings = (List<String>) roleMappings.get("realm");
+        List<String> testAppScopeMappings = (List<String>) roleMappings.get(clientId);
         assertRolesString(realmRoleMappings,
           "pref.admin",                     // from direct assignment to /roleRichGroup/level2group
           "pref.user",                       // from parent group of /roleRichGroup/level2group, i.e. from /roleRichGroup
@@ -949,8 +950,8 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
         // Verify attribute is filled
         Map<String, Object> roleMappings = (Map<String, Object>)idToken.getOtherClaims().get("roles-custom");
         assertThat(roleMappings.keySet(), containsInAnyOrder("realm", clientId));
-        String realmRoleMappings = (String) roleMappings.get("realm");
-        String testAppScopeMappings = (String) roleMappings.get(clientId);
+        List<String> realmRoleMappings = (List<String>) roleMappings.get("realm");
+        List<String> testAppScopeMappings = (List<String>) roleMappings.get(clientId);
         assertRolesString(realmRoleMappings,
           "pref.admin",                     // from direct assignment to /roleRichGroup/level2group
           "pref.user",  // from parent group of /roleRichGroup/level2group, i.e. from /roleRichGroup
@@ -959,6 +960,40 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
         assertRolesString(testAppScopeMappings,
           "test-app-allowed-by-scope",      // from direct assignment to roleRichUser, present as scope allows it
           "test-app-disallowed-by-scope"   // from direct assignment to /roleRichGroup/level2group, present as scope allows it
+        );
+
+        // Revert
+        deleteMappers(protocolMappers);
+    }
+
+    @Test
+    public void testSingleValuedRoleMapping() throws Exception {
+        String clientId = "test-app-scope";
+        ProtocolMapperRepresentation realmMapper = ProtocolMapperUtil.createUserRealmRoleMappingMapper("pref.", "Realm roles mapper", "roles-custom.realm", true, true, false);
+        ProtocolMapperRepresentation clientMapper = ProtocolMapperUtil.createUserClientRoleMappingMapper(null, null, "Client roles mapper", "roles-custom.test-app-scope", true, true, false);
+
+        ProtocolMappersResource protocolMappers = ApiUtil.findClientResourceByClientId(adminClient.realm("test"), clientId).getProtocolMappers();
+        protocolMappers.createMapper(Arrays.asList(realmMapper, clientMapper));
+
+        // Login user
+        ClientManager.realm(adminClient.realm("test")).clientId(clientId).directAccessGrant(true);
+        oauth.clientId(clientId);
+        OAuthClient.AccessTokenResponse response = browserLogin("password", "rich.roles@redhat.com", "password");
+        IDToken idToken = oauth.verifyIDToken(response.getIdToken());
+
+        // Verify attribute is filled
+        Map<String, Object> roleMappings = (Map<String, Object>)idToken.getOtherClaims().get("roles-custom");
+        assertThat(roleMappings.keySet(), containsInAnyOrder("realm", clientId));
+        String realmRoleMappings = (String) roleMappings.get("realm");
+        String testAppScopeMappings = (String) roleMappings.get(clientId);
+        assertSingleValuedRolesString(realmRoleMappings,
+                "pref.admin",                     // from direct assignment to /roleRichGroup/level2group
+                "pref.user",  // from parent group of /roleRichGroup/level2group, i.e. from /roleRichGroup
+                "pref.customer-user-premium"
+        );
+        assertSingleValuedRolesString(testAppScopeMappings,
+                "test-app-allowed-by-scope",      // from direct assignment to roleRichUser, present as scope allows it
+                "test-app-disallowed-by-scope"   // from direct assignment to /roleRichGroup/level2group, present as scope allows it
         );
 
         // Revert
@@ -988,8 +1023,8 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
             Map<String, Object> roleMappings = (Map<String, Object>) idToken.getOtherClaims().get("roles-custom");
             assertNotNull(roleMappings);
             assertThat(roleMappings.keySet(), containsInAnyOrder("realm", diffClient));
-            String realmRoleMappings = (String) roleMappings.get("realm");
-            String testAppScopeMappings = (String) roleMappings.get(diffClient);
+            List<String> realmRoleMappings = (List<String>) roleMappings.get("realm");
+            List<String> testAppScopeMappings = (List<String>) roleMappings.get(diffClient);
             assertRolesString(realmRoleMappings,
                     "pref.admin",
                     "pref.user",
@@ -1769,26 +1804,12 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
         Assert.assertNames(actualRoleList, expectedRoles);
     }
 
-    private void assertRolesString(String actualRoleString, String...expectedRoles) {
-
-        assertThat(actualRoleString.matches("^\\[.*\\]$"), is(true));
-        String[] roles = actualRoleString.substring(1, actualRoleString.length() - 1).split(",\\s*");
-
-        if (expectedRoles == null || expectedRoles.length == 0) {
-            assertThat(roles, arrayContainingInAnyOrder(""));
-        } else {
-            assertThat(roles, arrayContainingInAnyOrder(expectedRoles));
-        }
+    private void assertRolesString(List<String> actualRoleString, String...expectedRoles) {
+        assertThat(actualRoleString, containsInAnyOrder(expectedRoles));
     }
 
-
-    private ProtocolMapperRepresentation makeMapper(String name, String mapperType, Map<String, String> config) {
-        ProtocolMapperRepresentation rep = new ProtocolMapperRepresentation();
-        rep.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
-        rep.setName(name);
-        rep.setProtocolMapper(mapperType);
-        rep.setConfig(config);
-        return rep;
+    private void assertSingleValuedRolesString(String actualRoleString, String... expectedRoles) {
+        assertThat(actualRoleString, is(in(expectedRoles)));
     }
 
     private OAuthClient.AccessTokenResponse browserLogin(String clientSecret, String username, String password) {

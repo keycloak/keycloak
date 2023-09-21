@@ -29,7 +29,7 @@ type UserGroupsProps = {
 };
 
 export const UserGroups = ({ user }: UserGroupsProps) => {
-  const { t } = useTranslation("users");
+  const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
   const [key, setKey] = useState(0);
   const refresh = () => setKey(key + 1);
@@ -169,7 +169,7 @@ export const UserGroups = ({ user }: UserGroupsProps) => {
         className="keycloak_user-section_groups-table"
         isPaginated
         ariaLabelKey="roles:roleList"
-        searchPlaceholderKey="groups:searchGroup"
+        searchPlaceholderKey="searchGroup"
         canSelectAll
         onSelect={(groups) =>
           isDirectMembership
@@ -216,7 +216,7 @@ export const UserGroups = ({ user }: UserGroupsProps) => {
               <Popover
                 aria-label="Basic popover"
                 position="bottom"
-                bodyContent={<div>{t("whoWillAppearPopoverText")}</div>}
+                bodyContent={<div>{t("whoWillAppearPopoverTextUsers")}</div>}
               >
                 <Button
                   variant="link"
@@ -224,7 +224,7 @@ export const UserGroups = ({ user }: UserGroupsProps) => {
                   key="who-will-appear-button"
                   icon={<QuestionCircleIcon />}
                 >
-                  {t("whoWillAppearLinkText")}
+                  {t("whoWillAppearLinkTextUsers")}
                 </Button>
               </Popover>
             )}

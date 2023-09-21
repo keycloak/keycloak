@@ -1,8 +1,10 @@
 package org.keycloak.config;
 
 import java.io.File;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
+import java.util.function.Predicate;
 
 public class LoggingOptions {
 
@@ -11,6 +13,7 @@ public class LoggingOptions {
     public static final Output DEFAULT_CONSOLE_OUTPUT = Output.DEFAULT;
     public static final String DEFAULT_LOG_FILENAME = "keycloak.log";
     public static final String DEFAULT_LOG_PATH = "data" + File.separator + "log" + File.separator + DEFAULT_LOG_FILENAME;
+    public static final Boolean GELF_ACTIVATED = isGelfActivated();
 
     public enum Handler {
         console,
@@ -18,9 +21,19 @@ public class LoggingOptions {
         gelf
     }
 
+    public static List<String> getAvailableHandlerNames() {
+        final Predicate<Handler> checkGelf = (handler) -> GELF_ACTIVATED || !handler.equals(Handler.gelf);
+
+        return Arrays.stream(Handler.values())
+                .filter(checkGelf)
+                .map(Handler::name)
+                .toList();
+    }
+
     public static final Option LOG = new OptionBuilder("log", List.class, Handler.class)
             .category(OptionCategory.LOGGING)
             .description("Enable one or more log handlers in a comma-separated list.")
+            .expectedValues(() -> getAvailableHandlerNames())
             .defaultValue(DEFAULT_LOG_HANDLER)
             .build();
 
@@ -168,4 +181,13 @@ public class LoggingOptions {
             .description("Include source code location.")
             .defaultValue(Boolean.TRUE)
             .build();
+
+    private static boolean isGelfActivated() {
+        try {
+            Thread.currentThread().getContextClassLoader().loadClass("io.quarkus.logging.gelf.GelfConfig");
+            return true;
+        } catch (ClassNotFoundException e) {
+            return false;
+        }
+    }
 }

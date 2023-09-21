@@ -71,29 +71,21 @@ public abstract class AbstractUserProfileProvider<U extends UserProfileProvider>
 
     public static final String CONFIG_ADMIN_READ_ONLY_ATTRIBUTES = "admin-read-only-attributes";
     public static final String CONFIG_READ_ONLY_ATTRIBUTES = "read-only-attributes";
+    public static final String MAX_EMAIL_LOCAL_PART_LENGTH = "max-email-local-part-length";
 
     private static boolean editUsernameCondition(AttributeContext c) {
         KeycloakSession session = c.getSession();
         KeycloakContext context = session.getContext();
         RealmModel realm = context.getRealm();
 
-        switch (c.getContext()) {
-            case REGISTRATION_PROFILE:
-            case IDP_REVIEW:
-                return !realm.isRegistrationEmailAsUsername();
-            case ACCOUNT_OLD:
-            case ACCOUNT:
-            case UPDATE_PROFILE:
-                return realm.isEditUsernameAllowed();
-            case UPDATE_EMAIL:
-                return realm.isRegistrationEmailAsUsername();
-            case USER_API:
-                return true;
-            default:
-                return false;
+        if (REGISTRATION_PROFILE.equals(c.getContext()) || REGISTRATION_USER_CREATION.equals(c.getContext())
+                || IDP_REVIEW.equals(c.getContext())) {
+            return !realm.isRegistrationEmailAsUsername();
         }
+
+        return realm.isEditUsernameAllowed();
     }
-    
+
     private static boolean readUsernameCondition(AttributeContext c) {
         KeycloakSession session = c.getSession();
         KeycloakContext context = session.getContext();
@@ -110,27 +102,47 @@ public abstract class AbstractUserProfileProvider<U extends UserProfileProvider>
                 return realm.isEditUsernameAllowed();
             case UPDATE_EMAIL:
                 return false;
-            default:
-                return true;
         }
+
+        return true;
     }
 
     private static boolean editEmailCondition(AttributeContext c) {
-        return !Profile.isFeatureEnabled(Profile.Feature.UPDATE_EMAIL) || (c.getContext() != UPDATE_PROFILE && c.getContext() != ACCOUNT);
+        RealmModel realm = c.getSession().getContext().getRealm();
+
+        if (REGISTRATION_PROFILE.equals(c.getContext())) {
+            return true;
+        }
+
+        if (Profile.isFeatureEnabled(Feature.UPDATE_EMAIL)) {
+            return !(UPDATE_PROFILE.equals(c.getContext()) || ACCOUNT.equals(c.getContext()));
+        }
+
+        UserModel user = c.getUser();
+
+        if (user != null && realm.isRegistrationEmailAsUsername() && !realm.isEditUsernameAllowed()) {
+            return false;
+        }
+
+        return true;
     }
 
     private static boolean readEmailCondition(AttributeContext c) {
         UserProfileContext context = c.getContext();
 
-        if (UPDATE_PROFILE.equals(context)) {
-            if (Profile.isFeatureEnabled(Feature.UPDATE_EMAIL)) {
-                return false;
-            }
+        if (REGISTRATION_PROFILE.equals(context)) {
+            return true;
+        }
 
+        if (Profile.isFeatureEnabled(Feature.UPDATE_EMAIL)) {
+            return !UPDATE_PROFILE.equals(context);
+        }
+
+        if (UPDATE_PROFILE.equals(context)) {
             RealmModel realm = c.getSession().getContext().getRealm();
 
-            if (realm.isRegistrationEmailAsUsername() && !realm.isEditUsernameAllowed()) {
-                return false;
+            if (realm.isRegistrationEmailAsUsername()) {
+                return realm.isEditUsernameAllowed();
             }
         }
 
@@ -396,8 +408,10 @@ public abstract class AbstractUserProfileProvider<U extends UserProfileProvider>
         UserProfileMetadata metadata = new UserProfileMetadata(USER_API);
 
 
-        metadata.addAttribute(UserModel.USERNAME, -2, new AttributeValidatorMetadata(UsernameHasValueValidator.ID));
-        metadata.addAttribute(UserModel.EMAIL, -1, new AttributeValidatorMetadata(EmailValidator.ID, ValidatorConfig.builder().config(EmailValidator.IGNORE_EMPTY_VALUE, true).build()));
+        metadata.addAttribute(UserModel.USERNAME, -2, new AttributeValidatorMetadata(UsernameHasValueValidator.ID))
+                .addWriteCondition(AbstractUserProfileProvider::editUsernameCondition);
+        metadata.addAttribute(UserModel.EMAIL, -1, new AttributeValidatorMetadata(EmailValidator.ID, ValidatorConfig.builder().config(EmailValidator.IGNORE_EMPTY_VALUE, true).build()))
+                .addWriteCondition(AbstractUserProfileProvider::editEmailCondition);
 
         List<AttributeValidatorMetadata> readonlyValidators = new ArrayList<>();
 
@@ -427,6 +441,12 @@ public abstract class AbstractUserProfileProvider<U extends UserProfileProvider>
                 .name(CONFIG_ADMIN_READ_ONLY_ATTRIBUTES)
                 .type(ProviderConfigProperty.MULTIVALUED_STRING_TYPE)
                 .helpText("Array of regular expressions to identify fields that should be treated read-only so administrators can't change them.")
+                .add()
+
+                .property()
+                .name(MAX_EMAIL_LOCAL_PART_LENGTH)
+                .type(ProviderConfigProperty.STRING_TYPE)
+                .helpText("To set user profile max email local part length")
                 .add()
 
                 .build();

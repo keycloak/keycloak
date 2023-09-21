@@ -174,6 +174,11 @@ public final class DefaultHostnameProvider implements HostnameProvider, Hostname
 
     protected URI getRealmFrontEndUrl() {
         KeycloakSession session = Resteasy.getContextData(KeycloakSession.class);
+
+        if (session == null) {
+            return null;
+        }
+
         RealmModel realm = session.getContext().getRealm();
 
         if (realm == null) {
@@ -300,8 +305,7 @@ public final class DefaultHostnameProvider implements HostnameProvider, Hostname
     }
 
     private int getRequestPort(UriInfo uriInfo) {
-        KeycloakSession session = Resteasy.getContextData(KeycloakSession.class);
-        return session.getContext().getHttpRequest().getUri().getBaseUri().getPort();
+        return uriInfo.getBaseUri().getPort();
     }
 
     private <T> T fromBaseUriOrDefault(Function<URI, T> resolver, URI baseUri, T defaultValue) {

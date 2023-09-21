@@ -71,7 +71,7 @@ export const RolesList = ({
   toDetail,
   isReadOnly,
 }: RolesListProps) => {
-  const { t } = useTranslation(messageBundle);
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { addAlert, addError } = useAlerts();
   const { realm: realmName } = useRealm();
@@ -92,7 +92,7 @@ export const RolesList = ({
     messageKey: t("roles:roleDeleteConfirmDialog", {
       selectedRoleName: selectedRole ? selectedRole!.name : "",
     }),
-    continueButtonLabel: "common:delete",
+    continueButtonLabel: "delete",
     continueButtonVariant: ButtonVariant.danger,
     onConfirm: async () => {
       try {
@@ -124,7 +124,7 @@ export const RolesList = ({
         key={selectedRole ? selectedRole.id : "roleList"}
         loader={loader!}
         ariaLabelKey="roles:roleList"
-        searchPlaceholderKey="roles:searchFor"
+        searchPlaceholderKey="searchForRoles"
         isPaginated={paginated}
         toolbarItem={
           !isReadOnly && (
@@ -141,7 +141,7 @@ export const RolesList = ({
             ? []
             : [
                 {
-                  title: t("common:delete"),
+                  title: t("delete"),
                   onRowClick: (role) => {
                     setSelectedRole(role);
                     if (
@@ -177,15 +177,17 @@ export const RolesList = ({
           },
           {
             name: "description",
-            displayKey: "common:description",
+            displayKey: "description",
             cellFormatters: [emptyFormatter()],
           },
         ]}
         emptyState={
           <ListEmptyState
             hasIcon={true}
-            message={t("noRoles")}
-            instructions={isReadOnly ? "" : t("noRolesInstructions")}
+            message={t(`noRoles-${messageBundle}`)}
+            instructions={
+              isReadOnly ? "" : t(`noRolesInstructions-${messageBundle}`)
+            }
             primaryActionText={isReadOnly ? "" : t("createRole")}
             onPrimaryAction={() => navigate(toCreate)}
           />

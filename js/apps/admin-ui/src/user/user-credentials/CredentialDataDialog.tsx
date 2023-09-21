@@ -16,7 +16,7 @@ export const CredentialDataDialog = ({
   credentialData,
   onClose,
 }: CredentialDataDialogProps) => {
-  const { t } = useTranslation("users");
+  const { t } = useTranslation();
   return (
     <Modal
       variant={ModalVariant.medium}

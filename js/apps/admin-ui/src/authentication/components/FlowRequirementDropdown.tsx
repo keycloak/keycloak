@@ -13,7 +13,7 @@ export const FlowRequirementDropdown = ({
   flow,
   onChange,
 }: FlowRequirementDropdownProps) => {
-  const { t } = useTranslation("authentication");
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
 
   const options = flow.requirementChoices!.map((option, index) => (

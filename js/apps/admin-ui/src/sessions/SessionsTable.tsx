@@ -80,7 +80,7 @@ export default function SessionsTable({
 }: SessionsTableProps) {
   const { realm } = useRealm();
   const { whoAmI } = useWhoAmI();
-  const { t } = useTranslation("sessions");
+  const { t } = useTranslation();
   const { addError } = useAlerts();
   const formatDate = useFormatDate();
   const [key, setKey] = useState(0);
@@ -95,7 +95,7 @@ export default function SessionsTable({
       },
       {
         name: "type",
-        displayKey: "common:type",
+        displayKey: "type",
       },
       {
         name: "start",
@@ -109,7 +109,7 @@ export default function SessionsTable({
       },
       {
         name: "ipAddress",
-        displayKey: "events:ipAddress",
+        displayKey: "ipAddress",
       },
       {
         name: "clients",
@@ -126,7 +126,7 @@ export default function SessionsTable({
   const [toggleLogoutDialog, LogoutConfirm] = useConfirmDialog({
     titleKey: "sessions:logoutAllSessions",
     messageKey: "sessions:logoutAllDescription",
-    continueButtonLabel: "common:confirm",
+    continueButtonLabel: "confirm",
     onConfirm: async () => {
       try {
         await adminClient.users.logout({ id: logoutUser! });
@@ -153,7 +153,7 @@ export default function SessionsTable({
       <KeycloakDataTable
         key={key}
         loader={loader}
-        ariaLabelKey="sessions:title"
+        ariaLabelKey="titleSessions"
         searchPlaceholderKey="sessions:searchForSession"
         isPaginated={isPaginated}
         isSearching={isSearching}
@@ -170,7 +170,7 @@ export default function SessionsTable({
         columns={columns}
         actions={[
           {
-            title: t("common:signOut"),
+            title: t("signOut"),
             onRowClick: onClickSignOut,
           } as Action<UserSessionRepresentation>,
         ]}

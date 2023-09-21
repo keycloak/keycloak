@@ -9,7 +9,7 @@ summary="Understand how to configure and start Keycloak">
 This {section} explains the configuration methods for Keycloak and how to start and apply the preferred configuration. It includes configuration guidelines for optimizing Keycloak for faster startup and low memory footprint.
 
 == Configuring sources for Keycloak
-Keycloak loads the configuration from four sources, which are listed here in order of application. 
+Keycloak loads the configuration from four sources, which are listed here in order of application.
 
 . Command-line parameters
 . Environment variables
@@ -23,8 +23,9 @@ When an option is set in more than one source, the one that comes first in the l
 
 The following example shows how the `db-url` value is set in four configuration sources:
 
+[%autowidth]
 |===
-|*Source* | *Format*
+|Source | Format
 
 |Command line parameters
 |`--db-url=cliValue`
@@ -125,7 +126,7 @@ When the KeyStore is created, you can start the server using the following param
 <@kc.start parameters="--config-keystore=/path/to/keystore.p12 --config-keystore-password=storepass --config-keystore-type=PKCS12"/>
 
 === Format for raw Quarkus properties
-In most cases, the available configuration options should suffice to configure the server. 
+In most cases, the available configuration options should suffice to configure the server.
 However, for a specific behavior or capability that is missing in the Keycloak configuration, you can use properties from the underlying Quarkus framework.
 
 If possible, avoid using properties directly from Quarkus, because they are unsupported by Keycloak. If your need is essential, consider opening an https://github.com/keycloak/keycloak/issues/new?assignees=&labels=kind%2Fenhancement%2Cstatus%2Ftriage&template=enhancement.yml[enhancement request] first. This approach helps us improve the configuration of Keycloak to fit your needs.
@@ -138,7 +139,7 @@ If an enhancement request is not possible, you can configure the server using ra
 You can use only a https://github.com/keycloak/keycloak/blob/main/quarkus/runtime/pom.xml#L17[subset] of the Quarkus extensions that are defined in the https://quarkus.io/guides/all-config[Quarkus documentation]. Also, note these differences for Quarkus properties:
 
 * A lock icon for a Quarkus property in the https://quarkus.io/guides/all-config[Quarkus documentation] indicates a build time property. You run the `build` command to apply this property. For details about the build command, see the subsequent sections on optimizing Keycloak.
-* No lock icon for a property in the Quarkus guide indicates a runtime property for Quarkus and Keycloak. 
+* No lock icon for a property in the Quarkus guide indicates a runtime property for Quarkus and Keycloak.
 
 . Use the `[-cf|--config-file]` command line parameter to include that file.
 

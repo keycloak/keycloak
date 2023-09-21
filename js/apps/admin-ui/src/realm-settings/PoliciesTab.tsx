@@ -37,7 +37,7 @@ import { toEditClientPolicy } from "./routes/EditClientPolicy";
 import "./realm-settings-section.css";
 
 export const PoliciesTab = () => {
-  const { t } = useTranslation("realm-settings");
+  const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
   const { realm } = useRealm();
   const navigate = useNavigate();
@@ -105,7 +105,7 @@ export const PoliciesTab = () => {
     const [toggleDisableDialog, DisableConfirm] = useConfirmDialog({
       titleKey: "realm-settings:disablePolicyConfirmTitle",
       messageKey: "realm-settings:disablePolicyConfirm",
-      continueButtonLabel: "common:disable",
+      continueButtonLabel: "disable",
       onConfirm: () => {
         form.setValue(clientPolicy.name!, false);
         saveStatus();
@@ -122,8 +122,8 @@ export const PoliciesTab = () => {
           control={form.control}
           render={({ field }) => (
             <Switch
-              label={t("common:enabled")}
-              labelOff={t("common:disabled")}
+              label={t("enabled")}
+              labelOff={t("disabled")}
               isChecked={field.value}
               onChange={(value) => {
                 if (!value) {
@@ -258,7 +258,7 @@ export const PoliciesTab = () => {
           }
           actions={[
             {
-              title: t("common:delete"),
+              title: t("delete"),
               onRowClick: (item) => {
                 toggleDeleteDialog();
                 setSelectedPolicy(item);

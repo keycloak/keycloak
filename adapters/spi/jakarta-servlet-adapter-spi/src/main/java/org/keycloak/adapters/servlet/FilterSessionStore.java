@@ -171,7 +171,6 @@ public class FilterSessionStore implements AdapterSessionStore {
 
                 @Override
                 public ServletInputStream getInputStream() throws IOException {
-
                     if (needRequestRestore && body != null) {
                         final ByteArrayInputStream is = new ByteArrayInputStream(body);
                         return new ServletInputStream() {
@@ -179,14 +178,18 @@ public class FilterSessionStore implements AdapterSessionStore {
                             public int read() throws IOException {
                                 return is.read();
                             }
+
                             @Override
                             public boolean isFinished() {
-                                return isFinished();
+                                return is.available() == 0; // Check if the underlying stream has data available.
                             }
+
                             @Override
                             public boolean isReady() {
-                                return isReady();
+                                return true; // Return true to indicate that the data is always ready to be read.
                             }
+
+                            @Override
                             public void setReadListener(ReadListener readListener) {
                                 throw new UnsupportedOperationException();
                             }

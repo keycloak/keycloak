@@ -34,7 +34,7 @@ type EventsConfigForm = RealmEventsConfigRepresentation & {
 };
 
 export const EventsTab = ({ realm }: EventsTabProps) => {
-  const { t } = useTranslation("realm-settings");
+  const { t } = useTranslation();
   const form = useForm<EventsConfigForm>();
   const { setValue, handleSubmit } = form;
 
@@ -64,7 +64,7 @@ export const EventsTab = ({ realm }: EventsTabProps) => {
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
     titleKey: "realm-settings:deleteEvents",
     messageKey: "realm-settings:deleteEventsConfirm",
-    continueButtonLabel: "common:clear",
+    continueButtonLabel: "clear",
     continueButtonVariant: ButtonVariant.danger,
     onConfirm: async () => {
       try {

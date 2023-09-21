@@ -19,11 +19,13 @@ package org.keycloak.it.cli.dist;
 
 import io.quarkus.test.junit.main.Launch;
 import io.restassured.RestAssured;
+import org.hamcrest.Matchers;
 import org.junit.Assert;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.keycloak.it.junit5.extension.DistributionTest;
 import org.keycloak.it.junit5.extension.RawDistOnly;
+import org.keycloak.it.junit5.extension.WithEnvVars;
 import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
 import org.keycloak.quarkus.runtime.services.resources.DebugHostnameSettingsResource;
 
@@ -107,62 +109,58 @@ public class HostnameDistTest {
     }
 
     @Test
+    @WithEnvVars({ "KEYCLOAK_ADMIN", "admin", "KEYCLOAK_ADMIN_PASSWORD", "admin" })
     @Launch({ "start", "--hostname=mykeycloak.org", "--hostname-port=8543" })
     public void testWelcomePageAdminUrl() {
-        Assert.assertTrue(when().get("http://mykeycloak.org:8080").asString().contains("http://mykeycloak.org:8080/admin/"));
-        Assert.assertTrue(when().get("https://mykeycloak.org:8443").asString().contains("https://mykeycloak.org:8443/admin/"));
-        Assert.assertTrue(when().get("http://localhost:8080").asString().contains("http://localhost:8080/admin/"));
-        Assert.assertTrue(when().get("https://localhost:8443").asString().contains("https://localhost:8443/admin/"));
+        when().get("http://mykeycloak.org:8080").then().body(Matchers.containsString("http://mykeycloak.org:8080/admin/"));
+        when().get("https://mykeycloak.org:8443").then().body(Matchers.containsString("https://mykeycloak.org:8443/admin/"));
+        when().get("http://localhost:8080").then().body(Matchers.containsString("http://localhost:8080/admin/"));
+        when().get("https://localhost:8443").then().body(Matchers.containsString("https://localhost:8443/admin/"));
     }
 
     @Test
     @Launch({ "start", "--hostname=mykeycloak.org", "--hostname-debug=true" })
     public void testDebugHostnameSettingsEnabled() {
-        Assert.assertTrue(when().get("http://localhost:8080/realms/master/"  + DebugHostnameSettingsResource.DEFAULT_PATH_SUFFIX).getStatusCode() == 200);
-        Assert.assertTrue(when().get("http://localhost:8080/realms/master/"  + DebugHostnameSettingsResource.DEFAULT_PATH_SUFFIX).asString().contains("Configuration property"));
-        Assert.assertTrue(when().get("http://localhost:8080/realms/master/"  + DebugHostnameSettingsResource.DEFAULT_PATH_SUFFIX).asString().contains("Server mode"));
-        Assert.assertTrue(when().get("http://localhost:8080/realms/master/"  + DebugHostnameSettingsResource.DEFAULT_PATH_SUFFIX).asString().contains("production [start]"));
+        when().get("http://localhost:8080/realms/master/"  + DebugHostnameSettingsResource.DEFAULT_PATH_SUFFIX).then().statusCode(200);
+        when().get("http://localhost:8080/realms/master/"  + DebugHostnameSettingsResource.DEFAULT_PATH_SUFFIX).then().body(Matchers.containsString("Configuration property"));
+        when().get("http://localhost:8080/realms/master/"  + DebugHostnameSettingsResource.DEFAULT_PATH_SUFFIX).then().body(Matchers.containsString("Server mode"));
+        when().get("http://localhost:8080/realms/master/"  + DebugHostnameSettingsResource.DEFAULT_PATH_SUFFIX).then().body(Matchers.containsString("production [start]"));
 
-        Assert.assertTrue(
-                when().get("http://mykeycloak.org:8080/realms/master/" +
+        when().get("http://mykeycloak.org:8080/realms/master/" +
                                     DebugHostnameSettingsResource.DEFAULT_PATH_SUFFIX  +
-                                    "/" + DebugHostnameSettingsResource.PATH_FOR_TEST_CORS_IN_HEADERS)
-                               .getStatusCode() == 200
-        );
-        Assert.assertTrue(
-                when().get("http://localhost:8080/realms/master/" +
-                           DebugHostnameSettingsResource.DEFAULT_PATH_SUFFIX +
-                           "/" + DebugHostnameSettingsResource.PATH_FOR_TEST_CORS_IN_HEADERS)
-                      .asString()
-                      .contains(DebugHostnameSettingsResource.PATH_FOR_TEST_CORS_IN_HEADERS + "-OK")
-        );
+                                    "/" + DebugHostnameSettingsResource.PATH_FOR_TEST_CORS_IN_HEADERS
+        ).then().statusCode(200);
+        when().get("http://localhost:8080/realms/master/" +
+                   DebugHostnameSettingsResource.DEFAULT_PATH_SUFFIX +
+                   "/" + DebugHostnameSettingsResource.PATH_FOR_TEST_CORS_IN_HEADERS)
+              .then()
+              .body(Matchers.containsString(DebugHostnameSettingsResource.PATH_FOR_TEST_CORS_IN_HEADERS + "-OK"));
+        when().get("http://localhost:8080/realms/non-existent/" + DebugHostnameSettingsResource.DEFAULT_PATH_SUFFIX).then().statusCode(404);
     }
 
     @Test
     @Launch({ "start", "--hostname=mykeycloak.org", "--hostname-debug=false" })
     public void testDebugHostnameSettingsDisabledBySetting() {
-        Assert.assertTrue(when().get("http://localhost:8080/realms/master/"  + DebugHostnameSettingsResource.DEFAULT_PATH_SUFFIX).getStatusCode() == 404);
-        Assert.assertTrue(when().get("http://localhost:8080/realms/master/"  + DebugHostnameSettingsResource.DEFAULT_PATH_SUFFIX).asString().contains("404"));
+        when().get("http://localhost:8080/realms/master/"  + DebugHostnameSettingsResource.DEFAULT_PATH_SUFFIX).then().statusCode(404);
     }
 
     @Test
     @Launch({ "start", "--hostname=mykeycloak.org"})
     public void testDebugHostnameSettingsDisabledByDefault() {
-        Assert.assertTrue(when().get("http://localhost:8080/realms/master/"  + DebugHostnameSettingsResource.DEFAULT_PATH_SUFFIX).getStatusCode() == 404);
-        Assert.assertTrue(when().get("http://localhost:8080/realms/master/"  + DebugHostnameSettingsResource.DEFAULT_PATH_SUFFIX).asString().contains("404"));
+        when().get("http://localhost:8080/realms/master/"  + DebugHostnameSettingsResource.DEFAULT_PATH_SUFFIX).then().statusCode(404);
     }
 
     @Test
     @Launch({ "start", "--hostname=mykeycloak.org", "--hostname-admin=mykeycloakadmin.org" })
     public void testHostnameAdminSet() {
-        Assert.assertTrue(when().get("https://mykeycloak.org:8443/admin/master/console").asString().contains("\"authUrl\": \"https://mykeycloakadmin.org:8443\""));
-        Assert.assertTrue(when().get("https://mykeycloak.org:8443/realms/master/protocol/openid-connect/auth?client_id=security-admin-console&redirect_uri=https://mykeycloakadmin.org:8443/admin/master/console&state=02234324-d91e-4bf2-8396-57498e96b12a&response_mode=fragment&response_type=code&scope=openid&nonce=f8f3812e-e349-4bbf-8d15-cbba4927f5e5&code_challenge=7qjD_v11WGkt1ig-ZFHxJdrEvuTlzjFRgRGQ_5ADcko&code_challenge_method=S256").asString().contains("Sign in to your account"));
+        when().get("https://mykeycloak.org:8443/admin/master/console").then().body(Matchers.containsString("\"authUrl\": \"https://mykeycloakadmin.org:8443\""));
+        when().get("https://mykeycloak.org:8443/realms/master/protocol/openid-connect/auth?client_id=security-admin-console&redirect_uri=https://mykeycloakadmin.org:8443/admin/master/console&state=02234324-d91e-4bf2-8396-57498e96b12a&response_mode=fragment&response_type=code&scope=openid&nonce=f8f3812e-e349-4bbf-8d15-cbba4927f5e5&code_challenge=7qjD_v11WGkt1ig-ZFHxJdrEvuTlzjFRgRGQ_5ADcko&code_challenge_method=S256").then().body(Matchers.containsString("Sign in to your account"));
     }
 
     @Test
     @Launch({ "start", "--hostname=mykeycloak.org" })
     public void testInvalidRedirectUriWhenAdminNotSet() {
-        Assert.assertTrue(when().get("https://mykeycloak.org:8443/realms/master/protocol/openid-connect/auth?client_id=security-admin-console&redirect_uri=https://mykeycloakadmin.127.0.0.1.nip.io:8443/admin/master/console&state=02234324-d91e-4bf2-8396-57498e96b12a&response_mode=fragment&response_type=code&scope=openid&nonce=f8f3812e-e349-4bbf-8d15-cbba4927f5e5&code_challenge=7qjD_v11WGkt1ig-ZFHxJdrEvuTlzjFRgRGQ_5ADcko&code_challenge_method=S256").asString().contains("Invalid parameter: redirect_uri"));
+        when().get("https://mykeycloak.org:8443/realms/master/protocol/openid-connect/auth?client_id=security-admin-console&redirect_uri=https://mykeycloakadmin.127.0.0.1.nip.io:8443/admin/master/console&state=02234324-d91e-4bf2-8396-57498e96b12a&response_mode=fragment&response_type=code&scope=openid&nonce=f8f3812e-e349-4bbf-8d15-cbba4927f5e5&code_challenge=7qjD_v11WGkt1ig-ZFHxJdrEvuTlzjFRgRGQ_5ADcko&code_challenge_method=S256").then().body(Matchers.containsString("Invalid parameter: redirect_uri"));
     }
 
     @Test
@@ -172,9 +170,10 @@ public class HostnameDistTest {
     }
 
     @Test
+    @WithEnvVars({ "KEYCLOAK_ADMIN", "admin", "KEYCLOAK_ADMIN_PASSWORD", "admin" })
     @Launch({ "start", "--proxy=edge", "--hostname=mykeycloak.org", "--hostname-admin-url=http://mykeycloakadmin.org:1234" })
     public void testAdminUrl() {
-        Assert.assertTrue(when().get("https://mykeycloak.org:8443").asString().contains("http://mykeycloakadmin.org:1234/admin/"));
+        when().get("https://mykeycloak.org:8443").then().body(Matchers.containsString("http://mykeycloakadmin.org:1234/admin/"));
     }
 
     @Test

@@ -16,7 +16,7 @@ import type { ComponentProps } from "./components";
 import { convertToName } from "./DynamicComponents";
 
 export const GroupComponent = ({ name, label, helpText }: ComponentProps) => {
-  const { t } = useTranslation("dynamic");
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [groups, setGroups] = useState<GroupRepresentation[]>();
   const { control } = useFormContext();
@@ -32,8 +32,8 @@ export const GroupComponent = ({ name, label, helpText }: ComponentProps) => {
             <GroupPickerDialog
               type="selectOne"
               text={{
-                title: "dynamic:selectGroup",
-                ok: "common:select",
+                title: "selectGroup",
+                ok: "select",
               }}
               onConfirm={(groups) => {
                 field.onChange(groups?.[0].path);
@@ -48,10 +48,7 @@ export const GroupComponent = ({ name, label, helpText }: ComponentProps) => {
           <FormGroup
             label={t(label!)}
             labelIcon={
-              <HelpItem
-                helpText={t(helpText!)}
-                fieldLabelId={`dynamic:${label}`}
-              />
+              <HelpItem helpText={t(helpText!)} fieldLabelId={`${label}`} />
             }
             fieldId={name!}
           >

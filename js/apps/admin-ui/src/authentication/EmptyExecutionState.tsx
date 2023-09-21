@@ -30,7 +30,7 @@ export const EmptyExecutionState = ({
   onAddExecution,
   onAddFlow,
 }: EmptyExecutionStateProps) => {
-  const { t } = useTranslation("authentication");
+  const { t } = useTranslation();
   const [show, setShow] = useState<SectionType>();
 
   return (

@@ -10,20 +10,39 @@ includedOptions="health-enabled">
 
 Keycloak has built in support for health checks. This {section} describes how to enable and use the Keycloak health checks.
 
-== Keycloak Health checks
+== Keycloak health check endpoints
 
-Keycloak exposed health endpoints are three:
+Keycloak exposes 4 health endpoints:
 
-* `/health`
 * `/health/live`
 * `/health/ready`
+* `/health/started`
+* `/health`
 
-The result is returned in json format and it looks as follows:
+See the https://quarkus.io/guides/smallrye-health#running-the-health-check[Quarkus SmallRye Health docs] for information on the meaning of each endpoint.
+
+These endpoints respond with HTTP status `200 OK` on success or `503 Service Unavailable` on failure, and a JSON object like the following:
+
+.Successful response for endpoints without additional per-check information:
 [source, json]
 ----
 {
     "status": "UP",
     "checks": []
+}
+----
+
+.Successful response for endpoints with information on the database connection:
+[source, json]
+----
+{
+    "status": "UP",
+    "checks": [
+        {
+            "name": "Keycloak database connections health check",
+            "status": "UP"
+        }
+    ]
 }
 ----
 
@@ -65,8 +84,9 @@ The Dockerfile image `+HEALTHCHECK+` instruction defines a command that will be 
 
 The table below shows the available checks.
 
+[%autowidth]
 |===
-|*Check* | *Description* | *Requires Metrics*
+|Check | Description | Requires Metrics
 
 |Database
 |Returns the status of the database connection pool.

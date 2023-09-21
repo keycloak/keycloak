@@ -49,7 +49,7 @@ export const SearchDropdown = ({
   withProtocol = false,
   onSelect,
 }: SearchDropdownProps) => {
-  const { t } = useTranslation("clients");
+  const { t } = useTranslation();
   const [searchToggle, setSearchToggle] = useState(false);
 
   const createDropdown = (searchType: SearchType) => (
@@ -90,7 +90,7 @@ export const SearchToolbar = ({
   protocol,
   onProtocol,
 }: SearchToolbarProps) => {
-  const { t } = useTranslation("client-scopes");
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
 
   return (
@@ -111,8 +111,8 @@ export const SearchToolbar = ({
               isOpen={open}
               selections={[
                 type === AllClientScopes.none
-                  ? t("common:allTypes")
-                  : t(`common:clientScope.${type}`),
+                  ? t("allTypes")
+                  : t(`clientScopeTypes.${type}`),
               ]}
               onSelect={(_, value) => {
                 onType(value as AllClientScopes);
@@ -120,7 +120,7 @@ export const SearchToolbar = ({
               }}
             >
               <SelectOption value={AllClientScopes.none}>
-                {t("common:allTypes")}
+                {t("allTypes")}
               </SelectOption>
               <>{clientScopeTypesSelectOptions(t)}</>
             </Select>

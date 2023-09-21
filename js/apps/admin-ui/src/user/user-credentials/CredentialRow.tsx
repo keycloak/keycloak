@@ -29,7 +29,7 @@ export const CredentialRow = ({
   children,
 }: CredentialRowProps) => {
   const formatDate = useFormatDate();
-  const { t } = useTranslation("users");
+  const { t } = useTranslation();
   const [showData, toggleShow] = useToggle();
   const [kebabOpen, toggleKebab] = useToggle();
   const localeSort = useLocaleSort();

@@ -142,7 +142,7 @@ const DeviceActivity = () => {
         className="signed-in-device-list"
         aria-label={t("signedInDevices")}
       >
-        <DataListItem aria-labelledby="sessions">
+        <DataListItem aria-labelledby={`sessions-${key}`}>
           {devices.map((device) =>
             device.sessions.map((session) => (
               <DataListItemRow key={device.id}>

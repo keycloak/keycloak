@@ -4,7 +4,9 @@ import {
   Button,
   ExpandableSection,
   Form,
+  Spinner,
 } from "@patternfly/react-core";
+import { useKeycloak } from "keycloak-masthead";
 import { useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -17,9 +19,8 @@ import {
 import { Page } from "../components/page/Page";
 import { environment } from "../environment";
 import { TFuncKey } from "../i18n";
-import { keycloak } from "../keycloak";
 import { usePromise } from "../utils/usePromise";
-import { FormField } from "./FormField";
+import { UserProfileFields } from "./UserProfileFields";
 
 type FieldError = {
   field: string;
@@ -37,6 +38,7 @@ export const fieldName = (name: string) =>
 
 const PersonalInfo = () => {
   const { t } = useTranslation();
+  const keycloak = useKeycloak();
   const [userProfileMetadata, setUserProfileMetadata] =
     useState<UserProfileMetadata>();
   const form = useForm<UserRepresentation>({ mode: "onChange" });
@@ -54,6 +56,7 @@ const PersonalInfo = () => {
   const onSubmit = async (user: UserRepresentation) => {
     try {
       await savePersonalInfo(user);
+      keycloak?.updateToken();
       addAlert(t("accountUpdatedMessage"));
     } catch (error) {
       addError(t("accountUpdatedError").toString());
@@ -61,7 +64,7 @@ const PersonalInfo = () => {
       (error as FieldError[]).forEach((e) => {
         const params = Object.assign(
           {},
-          e.params.map((p) => (isBundleKey(p) ? unWrap(p) : p)),
+          e.params.map((p) => t((isBundleKey(p) ? unWrap(p) : p) as TFuncKey)),
         );
         setError(fieldName(e.field) as keyof UserRepresentation, {
           message: t(e.errorMessage as TFuncKey, {
@@ -74,13 +77,15 @@ const PersonalInfo = () => {
     }
   };
 
+  if (!userProfileMetadata) {
+    return <Spinner />;
+  }
+
   return (
     <Page title={t("personalInfo")} description={t("personalInfoDescription")}>
       <Form isHorizontal onSubmit={handleSubmit(onSubmit)}>
         <FormProvider {...form}>
-          {(userProfileMetadata?.attributes || []).map((attribute) => (
-            <FormField key={attribute.name} attribute={attribute} />
-          ))}
+          <UserProfileFields metaData={userProfileMetadata} />
         </FormProvider>
         <ActionGroup>
           <Button
@@ -111,7 +116,7 @@ const PersonalInfo = () => {
                   id="delete-account-btn"
                   variant="danger"
                   onClick={() =>
-                    keycloak.login({
+                    keycloak?.keycloak.login({
                       action: "delete_account",
                     })
                   }

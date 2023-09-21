@@ -36,7 +36,7 @@ export const DownloadDialog = ({
   protocol = "openid-connect",
 }: DownloadDialogProps) => {
   const { realm } = useRealm();
-  const { t } = useTranslation("common");
+  const { t } = useTranslation();
   const { enabled } = useHelp();
   const serverInfo = useServerInfo();
 
@@ -55,7 +55,7 @@ export const DownloadDialog = ({
   const sanitizeSnippet = (snippet: string) =>
     snippet.replace(
       /<PrivateKeyPem>.*<\/PrivateKeyPem>/gs,
-      `<PrivateKeyPem>${t("clients:privateKeyMask")}</PrivateKeyPem>`,
+      `<PrivateKeyPem>${t("privateKeyMask")}</PrivateKeyPem>`,
     );
 
   useFetch(
@@ -95,7 +95,7 @@ export const DownloadDialog = ({
 
   return (
     <ConfirmDialogModal
-      titleKey={t("clients:downloadAdaptorTitle")}
+      titleKey={t("downloadAdaptorTitle")}
       continueButtonLabel={t("download")}
       onConfirm={() => {
         saveAs(
@@ -112,11 +112,11 @@ export const DownloadDialog = ({
           <StackItem>
             <FormGroup
               fieldId="type"
-              label={t("clients:formatOption")}
+              label={t("formatOption")}
               labelIcon={
                 <HelpItem
-                  helpText={t("clients-help:downloadType")}
-                  fieldLabelId="clients:formatOption"
+                  helpText={t("downloadType")}
+                  fieldLabelId="formatOption"
                 />
               }
             >
@@ -154,8 +154,8 @@ export const DownloadDialog = ({
                 label={t("details")}
                 labelIcon={
                   <HelpItem
-                    helpText={t("clients-help:details")}
-                    fieldLabelId="clients:details"
+                    helpText={t("detailsHelp")}
+                    fieldLabelId="details"
                   />
                 }
               >

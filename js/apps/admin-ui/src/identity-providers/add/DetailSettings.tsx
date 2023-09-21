@@ -76,7 +76,7 @@ type IdPWithMapperAttributes = IdentityProviderMapperRepresentation & {
 };
 
 const Header = ({ onChange, value, save, toggleDeleteDialog }: HeaderProps) => {
-  const { t } = useTranslation("identity-providers");
+  const { t } = useTranslation();
   const { alias: displayName } = useParams<{ alias: string }>();
   const [provider, setProvider] = useState<IdentityProviderRepresentation>();
 
@@ -84,7 +84,7 @@ const Header = ({ onChange, value, save, toggleDeleteDialog }: HeaderProps) => {
     () => adminClient.identityProviders.findOne({ alias: displayName }),
     (fetchedProvider) => {
       if (!fetchedProvider) {
-        throw new Error(t("common:notFound"));
+        throw new Error(t("notFound"));
       }
       setProvider(fetchedProvider);
     },
@@ -93,8 +93,8 @@ const Header = ({ onChange, value, save, toggleDeleteDialog }: HeaderProps) => {
 
   const [toggleDisableDialog, DisableConfirm] = useConfirmDialog({
     titleKey: "identity-providers:disableProvider",
-    messageKey: t("disableConfirm", { provider: displayName }),
-    continueButtonLabel: "common:disable",
+    messageKey: t("disableConfirmIdentityProvider", { provider: displayName }),
+    continueButtonLabel: "disable",
     onConfirm: () => {
       onChange(!value);
       save();
@@ -115,7 +115,7 @@ const Header = ({ onChange, value, save, toggleDeleteDialog }: HeaderProps) => {
         divider={false}
         dropdownItems={[
           <DropdownItem key="delete" onClick={() => toggleDeleteDialog()}>
-            {t("common:delete")}
+            {t("delete")}
           </DropdownItem>,
         ]}
         isEnabled={value}
@@ -155,7 +155,7 @@ const MapperLink = ({ name, mapperId, provider }: MapperLinkProps) => {
 };
 
 export default function DetailSettings() {
-  const { t } = useTranslation("identity-providers");
+  const { t } = useTranslation();
   const { alias, providerId } = useParams<IdentityProviderParams>();
   const isFeatureEnabled = useIsFeatureEnabled();
   const form = useForm<IdentityProviderRepresentation>();
@@ -191,7 +191,7 @@ export default function DetailSettings() {
     () => adminClient.identityProviders.findOne({ alias }),
     (fetchedProvider) => {
       if (!fetchedProvider) {
-        throw new Error(t("common:notFound"));
+        throw new Error(t("notFound"));
       }
 
       reset(fetchedProvider);
@@ -249,24 +249,24 @@ export default function DetailSettings() {
           providerId,
         },
       );
-      addAlert(t("updateSuccess"), AlertVariant.success);
+      addAlert(t("updateSuccessIdentityProvider"), AlertVariant.success);
     } catch (error) {
-      addError("identity-providers:updateError", error);
+      addError("updateErrorIdentityProvider", error);
     }
   };
 
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
     titleKey: "identity-providers:deleteProvider",
-    messageKey: t("identity-providers:deleteConfirm", { provider: alias }),
-    continueButtonLabel: "common:delete",
+    messageKey: t("deleteConfirmIdentityProvider", { provider: alias }),
+    continueButtonLabel: "delete",
     continueButtonVariant: ButtonVariant.danger,
     onConfirm: async () => {
       try {
         await adminClient.identityProviders.del({ alias: alias });
-        addAlert(t("deletedSuccess"), AlertVariant.success);
+        addAlert(t("deletedSuccessIdentityProvider"), AlertVariant.success);
         navigate(toIdentityProviders({ realm }));
       } catch (error) {
-        addError("identity-providers:deleteErrorError", error);
+        addError("deleteErrorIdentityProvider", error);
       }
     },
   });
@@ -276,7 +276,7 @@ export default function DetailSettings() {
     messageKey: t("identity-providers:deleteMapperConfirm", {
       mapper: selectedMapper?.name,
     }),
-    continueButtonLabel: "common:delete",
+    continueButtonLabel: "delete",
     continueButtonVariant: ButtonVariant.danger,
     onConfirm: async () => {
       try {
@@ -290,7 +290,7 @@ export default function DetailSettings() {
           toIdentityProvider({ providerId, alias, tab: "mappers", realm }),
         );
       } catch (error) {
-        addError("identity-providers:deleteErrorError", error);
+        addError("deleteErrorIdentityProvider", error);
       }
     },
   });
@@ -340,12 +340,15 @@ export default function DetailSettings() {
             <>
               <GeneralSettings create={false} id={alias} />
               {providerInfo && (
-                <DynamicComponents properties={providerInfo.properties} />
+                <DynamicComponents
+                  stringify
+                  properties={providerInfo.properties}
+                />
               )}
             </>
           )}
-          {isOIDC && <OIDCGeneralSettings id={alias} />}
-          {isSAML && <SamlGeneralSettings id={alias} isAliasReadonly />}
+          {isOIDC && <OIDCGeneralSettings />}
+          {isSAML && <SamlGeneralSettings isAliasReadonly />}
         </FormAccess>
       ),
     },
@@ -419,7 +422,7 @@ export default function DetailSettings() {
         <RoutableTabs isBox defaultLocation={toTab("settings")}>
           <Tab
             id="settings"
-            title={<TabTitleText>{t("common:settings")}</TabTitleText>}
+            title={<TabTitleText>{t("settings")}</TabTitleText>}
             {...settingsTab}
           >
             <ScrollForm className="pf-u-px-lg" sections={sections} />
@@ -427,7 +430,7 @@ export default function DetailSettings() {
           <Tab
             id="mappers"
             data-testid="mappers-tab"
-            title={<TabTitleText>{t("common:mappers")}</TabTitleText>}
+            title={<TabTitleText>{t("mappers")}</TabTitleText>}
             {...mappersTab}
           >
             <KeycloakDataTable
@@ -476,23 +479,23 @@ export default function DetailSettings() {
               columns={[
                 {
                   name: "name",
-                  displayKey: "common:name",
+                  displayKey: "name",
                   cellRenderer: (row) => (
                     <MapperLink {...row} provider={provider} />
                   ),
                 },
                 {
                   name: "category",
-                  displayKey: "common:category",
+                  displayKey: "category",
                 },
                 {
                   name: "type",
-                  displayKey: "common:type",
+                  displayKey: "type",
                 },
               ]}
               actions={[
                 {
-                  title: t("common:delete"),
+                  title: t("delete"),
                   onRowClick: (mapper) => {
                     setSelectedMapper(mapper);
                     toggleDeleteMapperDialog();
@@ -505,7 +508,7 @@ export default function DetailSettings() {
             <Tab
               id="permissions"
               data-testid="permissionsTab"
-              title={<TabTitleText>{t("common:permissions")}</TabTitleText>}
+              title={<TabTitleText>{t("permissions")}</TabTitleText>}
               {...permissionsTab}
             >
               <PermissionsTab id={alias} type="identityProviders" />

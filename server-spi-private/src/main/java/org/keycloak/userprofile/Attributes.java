@@ -105,11 +105,11 @@ public interface Attributes {
     Set<String> nameSet();
 
     /**
-     * Returns all attributes defined.
+     * Returns all attributes that can be written.
      *
      * @return the attributes
      */
-    Set<Map.Entry<String, List<String>>> attributeSet();
+    Map<String, List<String>> getWritable();
 
     /**
      * <p>Returns the metadata associated with the attribute with the given {@code name}.

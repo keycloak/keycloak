@@ -578,6 +578,7 @@ declare class Keycloak {
 	* If the token expires within `minValidity` seconds, the token is refreshed.
 	* If the session status iframe is enabled, the session status is also
 	* checked.
+	* @param minValidity If not specified, `5` is used.
 	* @returns A promise to set functions that can be invoked if the token is
 	*          still valid, or if the token is no longer valid.
 	* @example
@@ -592,7 +593,7 @@ declare class Keycloak {
 	*   alert('Failed to refresh the token, or the session has expired');
 	* });
 	*/
-	updateToken(minValidity: number): Promise<boolean>;
+	updateToken(minValidity?: number): Promise<boolean>;
 
 	/**
 	* Clears authentication state, including tokens. This can be useful if

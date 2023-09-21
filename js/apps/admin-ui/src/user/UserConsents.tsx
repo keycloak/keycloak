@@ -26,7 +26,7 @@ import { useParams } from "../utils/useParams";
 export const UserConsents = () => {
   const [selectedClient, setSelectedClient] =
     useState<UserConsentRepresentation>();
-  const { t } = useTranslation("roles");
+  const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
   const formatDate = useFormatDate();
   const [key, setKey] = useState(0);
@@ -63,7 +63,7 @@ export const UserConsents = () => {
     messageKey: t("users:revokeClientScopes", {
       clientId: selectedClient?.clientId,
     }),
-    continueButtonLabel: "common:revoke",
+    continueButtonLabel: "revoke",
     continueButtonVariant: ButtonVariant.danger,
     onConfirm: async () => {
       try {
@@ -92,27 +92,27 @@ export const UserConsents = () => {
         columns={[
           {
             name: "clientId",
-            displayKey: "clients:Client",
+            displayKey: "Client",
             cellFormatters: [emptyFormatter()],
             transforms: [cellWidth(20)],
           },
           {
             name: "grantedClientScopes",
-            displayKey: "client-scopes:grantedClientScopes",
+            displayKey: "grantedClientScopes",
             cellFormatters: [emptyFormatter()],
             cellRenderer: clientScopesRenderer,
             transforms: [cellWidth(30)],
           },
           {
             name: "createDate",
-            displayKey: "clients:created",
+            displayKey: "created",
             transforms: [cellWidth(20)],
             cellRenderer: ({ createDate }) =>
               createDate ? formatDate(new Date(createDate)) : "—",
           },
           {
             name: "lastUpdatedDate",
-            displayKey: "clients:lastUpdated",
+            displayKey: "lastUpdated",
             transforms: [cellWidth(10)],
             cellRenderer: ({ lastUpdatedDate }) =>
               lastUpdatedDate ? formatDate(new Date(lastUpdatedDate)) : "—",

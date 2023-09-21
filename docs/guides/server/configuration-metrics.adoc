@@ -56,8 +56,9 @@ system_load_average_1m 4.005859375
 
 The table below summarizes the available metrics groups:
 
+[%autowidth]
 |===
-|*Metric* | *Description*
+|Metric | Description
 
 |System
 |A set of system-level metrics related to CPU and memory usage.

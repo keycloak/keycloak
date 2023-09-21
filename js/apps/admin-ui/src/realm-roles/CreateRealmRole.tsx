@@ -13,7 +13,7 @@ import { toRealmRole } from "./routes/RealmRole";
 import { toRealmRoles } from "./routes/RealmRoles";
 
 export default function CreateRealmRole() {
-  const { t } = useTranslation("roles");
+  const { t } = useTranslation();
   const form = useForm<AttributeForm>({ mode: "onChange" });
   const navigate = useNavigate();
   const { realm } = useRealm();
@@ -34,7 +34,7 @@ export default function CreateRealmRole() {
       });
 
       if (!createdRole) {
-        throw new Error(t("common:notFound"));
+        throw new Error(t("notFound"));
       }
 
       addAlert(t("roleCreated"), AlertVariant.success);

@@ -58,7 +58,10 @@ import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.models.utils.RoleUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.utils.RedirectUtils;
+import org.keycloak.provider.ConfiguredProvider;
 import org.keycloak.provider.ProviderFactory;
+import org.keycloak.representations.idm.UserProfileAttributeMetadata;
+import org.keycloak.representations.idm.UserProfileMetadata;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.ErrorRepresentation;
 import org.keycloak.representations.idm.FederatedIdentityRepresentation;
@@ -80,6 +83,8 @@ import org.keycloak.services.resources.LoginActionsService;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 import org.keycloak.services.validation.Validation;
 import org.keycloak.storage.ReadOnlyException;
+import org.keycloak.userprofile.AttributeMetadata;
+import org.keycloak.userprofile.AttributeValidatorMetadata;
 import org.keycloak.userprofile.UserProfile;
 import org.keycloak.userprofile.UserProfileProvider;
 import org.keycloak.userprofile.ValidationException;
@@ -102,6 +107,8 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 import jakarta.ws.rs.core.UriBuilder;
+import org.keycloak.validate.Validators;
+
 import java.net.URI;
 import java.text.MessageFormat;
 import java.util.ArrayList;
@@ -302,7 +309,9 @@ public class UserResource {
     @Produces(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.USERS)
     @Operation( summary = "Get representation of the user")
-    public UserRepresentation getUser() {
+    public UserRepresentation getUser(
+            @Parameter(description = "Indicates if the user profile metadata should be added to the response") @QueryParam("userProfileMetadata") boolean userProfileMetadata
+    ) {
         auth.users().requireView(user);
 
         UserRepresentation rep = ModelToRepresentation.toRepresentation(session, realm, user);
@@ -323,6 +332,10 @@ public class UserResource {
 
         if (rep.getAttributes() != null) {
             rep.setAttributes(readableAttributes);
+        }
+
+        if (userProfileMetadata) {
+            rep.setUserProfileMetadata(createUserProfileMetadata(profile));
         }
 
         return rep;
@@ -1053,5 +1066,36 @@ public class UserResource {
         }
         rep.setLastAccess(Time.toMillis(clientSession.getTimestamp()));
         return rep;
+    }
+
+    private UserProfileMetadata createUserProfileMetadata(final UserProfile profile) {
+        Map<String, List<String>> am = profile.getAttributes().getReadable();
+
+        if(am == null)
+            return null;
+
+        List<UserProfileAttributeMetadata> attributes = am.keySet().stream()
+                .map(name -> profile.getAttributes().getMetadata(name))
+                .filter(Objects::nonNull)
+                .sorted((a,b) -> Integer.compare(a.getGuiOrder(), b.getGuiOrder()))
+                .map(sam -> toRestMetadata(sam, profile))
+                .collect(Collectors.toList());
+        return new UserProfileMetadata(attributes);
+    }
+
+    private UserProfileAttributeMetadata toRestMetadata(AttributeMetadata am, UserProfile profile) {
+        return new UserProfileAttributeMetadata(am.getName(),
+                am.getAttributeDisplayName(),
+                profile.getAttributes().isRequired(am.getName()),
+                profile.getAttributes().isReadOnly(am.getName()),
+                am.getAnnotations(),
+                toValidatorMetadata(am));
+    }
+
+    private Map<String, Map<String, Object>> toValidatorMetadata(AttributeMetadata am){
+        // we return only validators which are instance of ConfiguredProvider. Others are expected as internal.
+        return am.getValidators() == null ? null : am.getValidators().stream()
+                .filter(avm -> (Validators.validator(session, avm.getValidatorId()) instanceof ConfiguredProvider))
+                .collect(Collectors.toMap(AttributeValidatorMetadata::getValidatorId, AttributeValidatorMetadata::getValidatorConfig));
     }
 }

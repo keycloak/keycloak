@@ -16,10 +16,11 @@ Options:
 
 Cache:
 
---cache <type>       Defines the cache mechanism for high-availability. By default, a 'ispn' cache
-                       is used to create a cluster between multiple server nodes. A 'local' cache
-                       disables clustering and is intended for development and testing purposes.
-                       Possible values are: ispn, local. Default: ispn.
+--cache <type>       Defines the cache mechanism for high-availability. By default in production
+                       mode, a 'ispn' cache is used to create a cluster between multiple server
+                       nodes. By default in development mode, a 'local' cache disables clustering
+                       and is intended for development and testing purposes. Possible values are:
+                       ispn, local. Default: ispn.
 --cache-config-file <file>
                      Defines the file from which cache configuration should be loaded from. The
                        configuration file is relative to the 'conf/' directory.
@@ -55,8 +56,10 @@ Database:
 --db-url-port <port> Sets the port of the default JDBC URL of the chosen vendor. If the `db-url`
                        option is set, this option is ignored.
 --db-url-properties <properties>
-                     Sets the properties of the default JDBC URL of the chosen vendor. If the
-                       `db-url` option is set, this option is ignored.
+                     Sets the properties of the default JDBC URL of the chosen vendor. Make sure to
+                       set the properties accordingly to the format expected by the database
+                       vendor, as well as appending the right character at the beginning of this
+                       property value. If the `db-url` option is set, this option is ignored.
 --db-username <username>
                      The username of the database user.
 
@@ -72,15 +75,17 @@ Feature:
                        account2, account3, admin-api, admin-fine-grained-authz, admin2,
                        authorization, ciba, client-policies, client-secret-rotation,
                        declarative-user-profile, docker, dpop, dynamic-scopes, fips, impersonation,
-                       js-adapter, kerberos, map-storage, par, preview, recovery-codes, scripts,
-                       step-up-authentication, token-exchange, update-email, web-authn.
+                       js-adapter, kerberos, legacy-welcome, linkedin-oauth, map-storage, par,
+                       preview, recovery-codes, scripts, step-up-authentication, token-exchange,
+                       update-email, web-authn.
 --features-disabled <feature>
                      Disables a set of one or more features. Possible values are: account-api,
                        account2, account3, admin-api, admin-fine-grained-authz, admin2,
                        authorization, ciba, client-policies, client-secret-rotation,
                        declarative-user-profile, docker, dpop, dynamic-scopes, fips, impersonation,
-                       js-adapter, kerberos, map-storage, par, preview, recovery-codes, scripts,
-                       step-up-authentication, token-exchange, update-email, web-authn.
+                       js-adapter, kerberos, legacy-welcome, linkedin-oauth, map-storage, par,
+                       preview, recovery-codes, scripts, step-up-authentication, token-exchange,
+                       update-email, web-authn.
 
 Hostname:
 
@@ -93,6 +98,9 @@ Hostname:
 --hostname-admin-url <url>
                      Set the base URL for accessing the administration console, including scheme,
                        host, port and path
+--hostname-debug <true|false>
+                     Toggle the hostname debug page that is accessible at
+                       /realms/master/hostname-debug Default: false.
 --hostname-path <path>
                      This should be set if proxy uses a different context-path for Keycloak.
 --hostname-port <port>
@@ -155,6 +163,15 @@ Health:
                        are available at the '/health', '/health/ready' and '/health/live'
                        endpoints. Default: false.
 
+Config:
+
+--config-keystore <config-keystore>
+                     Specifies a path to the KeyStore Configuration Source.
+--config-keystore-password <config-keystore-password>
+                     Specifies a password to the KeyStore Configuration Source.
+--config-keystore-type <config-keystore-type>
+                     Specifies a type of the KeyStore Configuration Source. Default: PKCS12.
+
 Metrics:
 
 --metrics-enabled <true|false>
@@ -168,9 +185,12 @@ Proxy:
 
 Vault:
 
---vault <provider>   Enables a vault provider. Possible values are: file.
+--vault <provider>   Enables a vault provider. Possible values are: file, keystore.
 --vault-dir <dir>    If set, secrets can be obtained by reading the content of files within the
                        given directory.
+--vault-file <file>  Path to the keystore file.
+--vault-pass <pass>  Password for the vault keystore.
+--vault-type <type>  Specifies the type of the keystore file. Default: PKCS12.
 
 Logging:
 
@@ -185,7 +205,7 @@ Logging:
 --log-console-output <output>
                      Set the log output to JSON or default (plain) unstructured logging. Possible
                        values are: default, json. Default: default.
---log-file <file>    Set the log file path and filename. Default: data/log/keycloak.log.
+--log-file <file>    Set the log file path and filename. Default: data\log\keycloak.log.
 --log-file-format <format>
                      Set a format specific to file log entries. Default: %d{yyyy-MM-dd HH:mm:ss,
                        SSS} %-5p [%c] (%t) %s%e%n.

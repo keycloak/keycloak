@@ -1,6 +1,5 @@
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { union, filter } from "lodash-es";
 import {
   Brand,
   Card,
@@ -26,13 +25,16 @@ import {
   Title,
 } from "@patternfly/react-core";
 
+import FeatureRepresentation, {
+  FeatureType,
+} from "@keycloak/keycloak-admin-client/lib/defs/featureRepresentation";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { useServerInfo } from "../context/server-info/ServerInfoProvider";
 import { toUpperCase } from "../util";
 import { HelpItem } from "ui-shared";
 import environment from "../environment";
 import { KeycloakSpinner } from "../components/keycloak-spinner/KeycloakSpinner";
-import useLocaleSort from "../utils/useLocaleSort";
+import useLocaleSort, { mapByKey } from "../utils/useLocaleSort";
 import {
   RoutableTabs,
   useRoutableTab,
@@ -43,7 +45,7 @@ import { ProviderInfo } from "./ProviderInfo";
 import "./dashboard.css";
 
 const EmptyDashboard = () => {
-  const { t } = useTranslation("dashboard");
+  const { t } = useTranslation();
   const { realm } = useRealm();
   const brandImage = environment.logo ? environment.logo : "/icon.svg";
 
@@ -67,48 +69,47 @@ const EmptyDashboard = () => {
   );
 };
 
+type FeatureItemProps = {
+  feature: FeatureRepresentation;
+};
+
+const FeatureItem = ({ feature }: FeatureItemProps) => {
+  const { t } = useTranslation();
+  return (
+    <ListItem className="pf-u-mb-sm">
+      {feature.name}&nbsp;
+      {feature.type === FeatureType.Experimental && (
+        <Label color="orange">{t("experimental")}</Label>
+      )}
+      {feature.type === FeatureType.Preview && (
+        <Label color="blue">{t("preview")}</Label>
+      )}
+      {feature.type === FeatureType.Default && (
+        <Label color="green">{t("supported")}</Label>
+      )}
+    </ListItem>
+  );
+};
+
 const Dashboard = () => {
-  const { t } = useTranslation("dashboard");
+  const { t } = useTranslation();
   const { realm } = useRealm();
   const serverInfo = useServerInfo();
   const localeSort = useLocaleSort();
 
-  const isDeprecatedFeature = (feature: string) =>
-    disabledFeatures.includes(feature);
-
-  const isExperimentalFeature = (feature: string) =>
-    serverInfo.profileInfo?.experimentalFeatures?.includes(feature);
-
-  const isPreviewFeature = (feature: string) =>
-    serverInfo.profileInfo?.previewFeatures?.includes(feature);
-
-  const isSupportedFeature = (feature: string) =>
-    !isExperimentalFeature(feature) && !isPreviewFeature(feature);
+  const sortedFeatures = useMemo(
+    () => localeSort(serverInfo.features ?? [], mapByKey("name")),
+    [serverInfo.features],
+  );
 
   const disabledFeatures = useMemo(
-    () =>
-      localeSort(
-        serverInfo.profileInfo?.disabledFeatures ?? [],
-        (item) => item,
-      ),
-    [serverInfo.profileInfo],
+    () => sortedFeatures.filter((f) => !f.enabled) || [],
+    [serverInfo.features],
   );
 
   const enabledFeatures = useMemo(
-    () =>
-      localeSort(
-        filter(
-          union(
-            serverInfo.profileInfo?.experimentalFeatures,
-            serverInfo.profileInfo?.previewFeatures,
-          ),
-          (feature) => {
-            return !isDeprecatedFeature(feature);
-          },
-        ),
-        (item) => item,
-      ),
-    [serverInfo.profileInfo],
+    () => sortedFeatures.filter((f) => f.enabled) || [],
+    [serverInfo.features],
   );
 
   const useTab = (tab: DashboardTab) =>
@@ -130,7 +131,7 @@ const Dashboard = () => {
     <>
       <PageSection variant="light">
         <TextContent className="pf-u-mr-sm">
-          <Text component="h1">{t("realmName", { name: realm })}</Text>
+          <Text component="h1">{t("realmNameTitle", { name: realm })}</Text>
         </TextContent>
       </PageSection>
       <PageSection variant="light" className="pf-u-p-0">
@@ -208,24 +209,17 @@ const Dashboard = () => {
                           <DescriptionListTerm>
                             {t("enabledFeatures")}{" "}
                             <HelpItem
-                              fieldLabelId="dashboard:enabledFeatures"
-                              helpText={t("dashboard:infoEnabledFeatures")}
+                              fieldLabelId="enabledFeatures"
+                              helpText={t("infoEnabledFeatures")}
                             />
                           </DescriptionListTerm>
                           <DescriptionListDescription>
                             <List variant={ListVariant.inline}>
                               {enabledFeatures.map((feature) => (
-                                <ListItem key={feature} className="pf-u-mb-sm">
-                                  {feature}{" "}
-                                  {isExperimentalFeature(feature) ? (
-                                    <Label color="orange">
-                                      {t("experimental")}
-                                    </Label>
-                                  ) : null}
-                                  {isPreviewFeature(feature) ? (
-                                    <Label color="blue">{t("preview")}</Label>
-                                  ) : null}
-                                </ListItem>
+                                <FeatureItem
+                                  key={feature.name}
+                                  feature={feature}
+                                />
                               ))}
                             </List>
                           </DescriptionListDescription>
@@ -234,29 +228,17 @@ const Dashboard = () => {
                           <DescriptionListTerm>
                             {t("disabledFeatures")}{" "}
                             <HelpItem
-                              fieldLabelId="dashboard:disabledFeatures"
-                              helpText={t("dashboard:infoDisabledFeatures")}
+                              fieldLabelId="disabledFeatures"
+                              helpText={t("infoDisabledFeatures")}
                             />
                           </DescriptionListTerm>
                           <DescriptionListDescription>
                             <List variant={ListVariant.inline}>
                               {disabledFeatures.map((feature) => (
-                                <ListItem key={feature} className="pf-u-mb-sm">
-                                  {feature}{" "}
-                                  {isExperimentalFeature(feature) ? (
-                                    <Label color="orange">
-                                      {t("experimental")}
-                                    </Label>
-                                  ) : null}
-                                  {isPreviewFeature(feature) ? (
-                                    <Label color="blue">{t("preview")}</Label>
-                                  ) : null}
-                                  {isSupportedFeature(feature) ? (
-                                    <Label color="green">
-                                      {t("supported")}
-                                    </Label>
-                                  ) : null}
-                                </ListItem>
+                                <FeatureItem
+                                  key={feature.name}
+                                  feature={feature}
+                                />
                               ))}
                             </List>
                           </DescriptionListDescription>

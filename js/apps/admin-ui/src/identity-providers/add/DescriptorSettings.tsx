@@ -25,8 +25,7 @@ type DescriptorSettingsProps = {
 };
 
 const Fields = ({ readOnly }: DescriptorSettingsProps) => {
-  const { t } = useTranslation("identity-providers");
-  const { t: th } = useTranslation("identity-providers-help");
+  const { t } = useTranslation();
 
   const {
     register,
@@ -50,6 +49,11 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
     name: "config.wantAuthnRequestsSigned",
   });
 
+  const wantAssertionsEncrypted = useWatch({
+    control,
+    name: "config.wantAssertionsEncrypted",
+  });
+
   const validateSignature = useWatch({
     control,
     name: "config.validateSignature",
@@ -67,7 +71,7 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
         fieldId="kc-saml-service-provider-entity-id"
         labelIcon={
           <HelpItem
-            helpText={t("identity-providers-help:serviceProviderEntityId")}
+            helpText={t("serviceProviderEntityIdHelp")}
             fieldLabelId="identity-providers:serviceProviderEntityId"
           />
         }
@@ -83,7 +87,7 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
         fieldId="kc-identity-provider-entity-id"
         labelIcon={
           <HelpItem
-            helpText={t("identity-providers-help:identityProviderEntityId")}
+            helpText={t("identityProviderEntityIdHelp")}
             fieldLabelId="identity-providers:identityProviderEntityId"
           />
         }
@@ -98,7 +102,7 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
         label={t("ssoServiceUrl")}
         labelIcon={
           <HelpItem
-            helpText={th("ssoServiceUrl")}
+            helpText={t("ssoServiceUrlHelp")}
             fieldLabelId="identity-providers:ssoServiceUrl"
           />
         }
@@ -109,7 +113,7 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
             ? ValidatedOptions.error
             : ValidatedOptions.default
         }
-        helperTextInvalid={t("common:required")}
+        helperTextInvalid={t("required")}
       >
         <KeycloakTextInput
           type="url"
@@ -128,7 +132,7 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
         label={t("singleLogoutServiceUrl")}
         labelIcon={
           <HelpItem
-            helpText={th("singleLogoutServiceUrl")}
+            helpText={t("singleLogoutServiceUrlHelp")}
             fieldLabelId="identity-providers:singleLogoutServiceUrl"
           />
         }
@@ -139,7 +143,7 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
             ? ValidatedOptions.error
             : ValidatedOptions.default
         }
-        helperTextInvalid={t("common:required")}
+        helperTextInvalid={t("required")}
       >
         <KeycloakTextInput
           type="url"
@@ -158,12 +162,12 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
         label={t("nameIdPolicyFormat")}
         labelIcon={
           <HelpItem
-            helpText={th("nameIdPolicyFormat")}
+            helpText={t("nameIdPolicyFormatHelp")}
             fieldLabelId="identity-providers:nameIdPolicyFormat"
           />
         }
         fieldId="kc-nameIdPolicyFormat"
-        helperTextInvalid={t("common:required")}
+        helperTextInvalid={t("required")}
       >
         <Controller
           name="config.nameIDPolicyFormat"
@@ -237,12 +241,12 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
         label={t("principalType")}
         labelIcon={
           <HelpItem
-            helpText={th("principalType")}
+            helpText={t("principalTypeHelp")}
             fieldLabelId="identity-providers:principalType"
           />
         }
         fieldId="kc-principalType"
-        helperTextInvalid={t("common:required")}
+        helperTextInvalid={t("required")}
       >
         <Controller
           name="config.principalType"
@@ -292,7 +296,7 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
           label={t("principalAttribute")}
           labelIcon={
             <HelpItem
-              helpText={th("principalAttribute")}
+              helpText={t("principalAttributeHelp")}
               fieldLabelId="identity-providers:principalAttribute"
             />
           }
@@ -342,7 +346,7 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
             label={t("signatureAlgorithm")}
             labelIcon={
               <HelpItem
-                helpText={th("signatureAlgorithm")}
+                helpText={t("signatureAlgorithmHelp")}
                 fieldLabelId="identity-providers:signatureAlgorithm"
               />
             }
@@ -378,45 +382,10 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
             ></Controller>
           </FormGroup>
           <FormGroup
-            label={t("encryptionAlgorithm")}
-            labelIcon={
-              <HelpItem
-                helpText={th("encryptionAlgorithm")}
-                fieldLabelId="identity-provider:encryptionAlgorithm"
-              />
-            }
-            fieldId="kc-encryptionAlgorithm"
-          >
-            <Controller
-              name="config.encryptionAlgorithm"
-              defaultValue="RSA-OAEP"
-              control={control}
-              render={({ field }) => (
-                <Select
-                  toggleId="kc-encryptionAlgorithm"
-                  onToggle={(isExpanded) =>
-                    setEncryptionAlgorithmDropdownOpen(isExpanded)
-                  }
-                  isOpen={encryptionAlgorithmDropdownOpen}
-                  onSelect={(_, value) => {
-                    field.onChange(value.toString());
-                    setEncryptionAlgorithmDropdownOpen(false);
-                  }}
-                  selections={field.value}
-                  variant={SelectVariant.single}
-                  isDisabled={readOnly}
-                >
-                  <SelectOption value="RSA-OAEP" />
-                  <SelectOption value="RSA1_5" />
-                </Select>
-              )}
-            ></Controller>
-          </FormGroup>
-          <FormGroup
             label={t("samlSignatureKeyName")}
             labelIcon={
               <HelpItem
-                helpText={th("samlSignatureKeyName")}
+                helpText={t("samlSignatureKeyNameHelp")}
                 fieldLabelId="identity-providers:samlSignatureKeyName"
               />
             }
@@ -462,6 +431,45 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
         label="wantAssertionsEncrypted"
         isReadOnly={readOnly}
       />
+
+      {wantAssertionsEncrypted === "true" && (
+        <FormGroup
+          label={t("encryptionAlgorithm")}
+          labelIcon={
+            <HelpItem
+              helpText={t("encryptionAlgorithmHelp")}
+              fieldLabelId="encryptionAlgorithm"
+            />
+          }
+          fieldId="kc-encryptionAlgorithm"
+        >
+          <Controller
+            name="config.encryptionAlgorithm"
+            defaultValue="RSA-OAEP"
+            control={control}
+            render={({ field }) => (
+              <Select
+                toggleId="kc-encryptionAlgorithm"
+                onToggle={(isExpanded) =>
+                  setEncryptionAlgorithmDropdownOpen(isExpanded)
+                }
+                isOpen={encryptionAlgorithmDropdownOpen}
+                onSelect={(_, value) => {
+                  field.onChange(value.toString());
+                  setEncryptionAlgorithmDropdownOpen(false);
+                }}
+                selections={field.value}
+                variant={SelectVariant.single}
+                isDisabled={readOnly}
+              >
+                <SelectOption value="RSA-OAEP" />
+                <SelectOption value="RSA1_5" />
+              </Select>
+            )}
+          ></Controller>
+        </FormGroup>
+      )}
+
       <SwitchField
         field="config.forceAuthn"
         label="forceAuthentication"
@@ -500,12 +508,12 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
         label={t("allowedClockSkew")}
         labelIcon={
           <HelpItem
-            helpText={th("allowedClockSkew")}
+            helpText={t("allowedClockSkewHelp")}
             fieldLabelId="identity-providers:allowedClockSkew"
           />
         }
         fieldId="allowedClockSkew"
-        helperTextInvalid={t("common:required")}
+        helperTextInvalid={t("required")}
       >
         <Controller
           name="config.allowedClockSkew"
@@ -539,12 +547,12 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
         label={t("attributeConsumingServiceIndex")}
         labelIcon={
           <HelpItem
-            helpText={th("attributeConsumingServiceIndex")}
+            helpText={t("attributeConsumingServiceIndexHelp")}
             fieldLabelId="identity-providers:attributeConsumingServiceIndex"
           />
         }
         fieldId="attributeConsumingServiceIndex"
-        helperTextInvalid={t("common:required")}
+        helperTextInvalid={t("required")}
       >
         <Controller
           name="config.attributeConsumingServiceIndex"
@@ -578,12 +586,12 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
         label={t("attributeConsumingServiceName")}
         labelIcon={
           <HelpItem
-            helpText={th("attributeConsumingServiceName")}
+            helpText={t("attributeConsumingServiceNameHelp")}
             fieldLabelId="identity-providers:attributeConsumingServiceName"
           />
         }
         fieldId="attributeConsumingServiceName"
-        helperTextInvalid={t("common:required")}
+        helperTextInvalid={t("required")}
       >
         <KeycloakTextInput
           id="attributeConsumingServiceName"
@@ -597,7 +605,7 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
 };
 
 export const DescriptorSettings = ({ readOnly }: DescriptorSettingsProps) => {
-  const { t } = useTranslation("identity-providers");
+  const { t } = useTranslation();
   const [isExpanded, setIsExpanded] = useState(false);
 
   return readOnly ? (

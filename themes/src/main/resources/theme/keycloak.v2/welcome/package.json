@@ -1,0 +1,6 @@
+{
+  "name": "welcome-v2",
+  "dependencies": {
+    "@patternfly/patternfly": "^5.0.2"
+  }
+}

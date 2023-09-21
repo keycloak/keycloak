@@ -28,6 +28,10 @@ public class StringUtil {
         return str != null && !"".equals(str.trim());
     }
 
+    public static boolean isNullOrEmpty(String str) {
+        return str == null || str.isEmpty();
+    }
+
     /**
      * Calling:
      * <pre>joinValuesWithLogicalCondition("or", Arrays.asList("foo", "bar", "baz", "caz" ))</pre>

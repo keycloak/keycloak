@@ -30,3 +30,45 @@ Previous versions of Keycloak supported specifying the encoding in the first lin
 Message properties files for themes are now read in UTF-8 encoding, with an automatic fallback to ISO-8859-1 encoding.
 If you are using a different encoding, convert the files to UTF-8.
 
+= Changes to the value format of claims mapped by the realm and client role mappers
+
+Before this release, both realm (`User Realm Role`) and client (`User Client Role`) protocol mappers
+were mapping a stringfied JSON array when the `Multivalued` setting was disabled.
+
+However, the `Multivalued` setting indicates whether the claim should be mapped as a list or, if disabled, only a single value
+from the same list of values.
+
+In this release, the role and client mappers now map to a single value from the effective roles of a user when
+they are marked as single-valued (`Multivalued` disabled).
+
+= Changes to password fields in Login UI
+
+In this version we want to introduce a toggle to hide/show password inputs.
+
+.Affected pages:
+- login.ftl
+- login-password.ftl
+- login-update-password.ftl
+- register.ftl
+- register-user-profile.ftl
+
+In general all `<input type="password" name="password" />` are encapsulated within a div now. The input element is followed by a button which toggles the visibility of the password input.
+
+Old code example:
+[source,html]
+----
+<input type="password" id="password" name="password" autocomplete="current-password" style="display:none;"/>
+----
+
+New code example:
+[source,html]
+----
+<div class="${properties.kcInputGroup!}">
+    <input type="password" id="password" name="password" autocomplete="current-password" style="display:none;"/>
+    <button class="pf-c-button pf-m-control" type="button" aria-label="${msg('showPassword')}"
+            aria-controls="password" data-password-toggle
+            data-label-show="${msg('showPassword')}" data-label-hide="${msg('hidePassword')}">
+        <i class="fa fa-eye" aria-hidden="true"></i>
+    </button>
+</div>
+----

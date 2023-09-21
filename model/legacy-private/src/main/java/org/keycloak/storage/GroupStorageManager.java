@@ -56,6 +56,11 @@ public class GroupStorageManager extends AbstractStorageManager<GroupStorageProv
     }
 
     @Override
+    public GroupModel getGroupByName(RealmModel realm, GroupModel parent, String name) {
+        return localStorage().getGroupByName(realm, parent, name);
+    }
+
+    @Override
     public Stream<GroupModel> searchGroupsByAttributes(RealmModel realm, Map<String, String> attributes, Integer firstResult, Integer maxResults) {
         Stream<GroupModel> local = localStorage().searchGroupsByAttributes(realm, attributes, firstResult, maxResults);
         Stream<GroupModel> ext = flatMapEnabledStorageProvidersWithTimeout(realm, GroupProvider.class,

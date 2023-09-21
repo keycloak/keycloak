@@ -3,6 +3,7 @@
 To secure the first application, you start by registering the application with your Keycloak instance:
 
 . Open the {links-admin-console}.
+. Click the word *master* in the top-left corner, then click *myrealm*.
 . Click *Clients*.
 . Click *Create client*
 . Fill in the form with the following values:
@@ -10,13 +11,11 @@ To secure the first application, you start by registering the application with y
 ** *Client ID*: `myclient`
 . Click *Next*
 . Confirm that *Standard flow* is enabled.
-. Click *Save*.
-
+. Click *Next*.
++
 image::add-client-1.png[Add Client]
 
-After the client is created, make these updates to the client:
-
-. Scroll down to *Access settings*.
+. Make these changes under *Login settings*.
 * Set *Valid redirect URIs* to `+https://www.keycloak.org/app/*+`
 * Set *Web origins* to `+https://www.keycloak.org+`
 . Click *Save*.

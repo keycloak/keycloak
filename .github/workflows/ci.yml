@@ -9,7 +9,7 @@ on:
   workflow_dispatch:
 
 env:
-  MAVEN_ARGS: "-B -nsu -Dhttp.keepAlive=false -Dmaven.wagon.http.pool=false -Dmaven.wagon.http.retryHandler.class=standard -Dmaven.wagon.http.retryHandler.count=3 -Dmaven.wagon.httpconnectionManager.ttlSeconds=120"
+  MAVEN_ARGS: "-B -nsu -Daether.connector.http.connectionMaxTtl=25"
   SUREFIRE_RERUN_FAILING_COUNT: 2
   SUREFIRE_RETRY: "-Dsurefire.rerunFailingTestsCount=2"
 
@@ -32,7 +32,7 @@ jobs:
       ci-store: ${{ steps.conditional.outputs.ci-store }}
       ci-sssd: ${{ steps.conditional.outputs.ci-sssd }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - id: conditional
         uses: ./.github/actions/conditional
@@ -45,7 +45,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: conditional
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Build Keycloak
         uses: ./.github/actions/build-keycloak
@@ -56,7 +56,7 @@ jobs:
     needs: build
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - id: unit-test-setup
         name: Unit test setup
@@ -77,6 +77,12 @@ jobs:
         if: always()
         uses: ./.github/actions/upload-heapdumps
 
+      - name: Surefire reports
+        if: always()
+        uses: ./.github/actions/archive-surefire-reports
+        with:
+          job-id: unit-tests
+
   base-integration-tests:
     name: Base IT
     needs: build
@@ -87,7 +93,7 @@ jobs:
         group: [1, 2, 3, 4, 5, 6]
       fail-fast: false
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - id: integration-test-setup
         name: Integration test setup
@@ -110,6 +116,42 @@ jobs:
         with:
           job-name: Base IT
 
+      - name: Surefire reports
+        if: always()
+        uses: ./.github/actions/archive-surefire-reports
+        with:
+          job-id: base-integration-tests-${{ matrix.group }}
+
+  quarkus-unit-tests:
+    name: Quarkus UT
+    needs: build
+    timeout-minutes: 15
+    strategy:
+      matrix:
+        os: [ ubuntu-latest, windows-latest ]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      # We want to download Keycloak artifacts
+      - id: integration-test-setup
+        name: Integration test setup
+        uses: ./.github/actions/integration-test-setup
+
+      - name: Run unit tests
+        run: |
+          ./mvnw test -f quarkus/pom.xml -pl '!tests,!tests/junit5,!tests/integration,!dist'
+
+      - name: Upload JVM Heapdumps
+        if: always()
+        uses: ./.github/actions/upload-heapdumps
+
+      - name: Surefire reports
+        if: always()
+        uses: ./.github/actions/archive-surefire-reports
+        with:
+          job-id: quarkus-unit-tests
+
   quarkus-integration-tests:
     name: Quarkus IT
     needs: build
@@ -130,7 +172,7 @@ jobs:
     env:
       MAVEN_OPTS: -Xmx1024m
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - id: unit-test-setup
         name: Unit test setup
@@ -152,6 +194,12 @@ jobs:
         if: always()
         uses: ./.github/actions/upload-heapdumps
 
+      - name: Surefire reports
+        if: always()
+        uses: ./.github/actions/archive-surefire-reports
+        with:
+          job-id: quarkus-integration-tests-${{ matrix.os }}-${{ matrix.server }}
+
   jdk-integration-tests:
     name: Java Distribution IT
     needs: build
@@ -164,7 +212,7 @@ jobs:
       fail-fast: false
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - id: integration-test-setup
         name: Integration test setup
@@ -197,6 +245,12 @@ jobs:
         with:
           job-name: Java Distribution IT
 
+      - name: Surefire reports
+        if: always()
+        uses: ./.github/actions/archive-surefire-reports
+        with:
+          job-id: jdk-integration-tests-${{ matrix.os }}-${{ matrix.dist }}-${{ matrix.version }}
+
   databases-new-store:
     name: Databases New Store
     runs-on: ubuntu-latest
@@ -227,7 +281,7 @@ jobs:
         db: ${{ fromJson(needs.databases-new-store.outputs.db) }}
       fail-fast: false
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - id: integration-test-setup
         name: Integration test setup
@@ -256,6 +310,12 @@ jobs:
         with:
           job-name: New Store IT
 
+      - name: Surefire reports
+        if: always()
+        uses: ./.github/actions/archive-surefire-reports
+        with:
+          job-id: new-store-integration-tests-${{ matrix.db }}
+
   legacy-store-integration-tests:
     name: Legacy Store IT
     needs: [build, conditional]
@@ -267,7 +327,7 @@ jobs:
         db: [postgres, mysql, oracle, mssql, mariadb]
       fail-fast: false
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - id: integration-test-setup
         name: Integration test setup
@@ -290,6 +350,12 @@ jobs:
         with:
           job-name: Legacy Store IT
 
+      - name: Surefire reports
+        if: always()
+        uses: ./.github/actions/archive-surefire-reports
+        with:
+          job-id: legacy-store-integration-tests-${{ matrix.db }}
+
   store-model-tests:
     name: Store Model Tests
     runs-on: ubuntu-latest
@@ -297,7 +363,7 @@ jobs:
     if: needs.conditional.outputs.ci-store == 'true'
     timeout-minutes: 75
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - id: integration-test-setup
         name: Integration test setup
@@ -317,6 +383,12 @@ jobs:
         with:
           job-name: Store Model Tests
 
+      - name: Surefire reports
+        if: always()
+        uses: ./.github/actions/archive-surefire-reports
+        with:
+          job-id: store-model-tests
+
   clustering-integration-tests:
     name: Legacy Clustering IT
     needs: build
@@ -325,7 +397,7 @@ jobs:
     env:
       MAVEN_OPTS: -Xmx1024m
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - id: integration-test-setup
         name: Integration test setup
@@ -346,13 +418,19 @@ jobs:
         with:
           job-name: Legacy Clustering IT
 
+      - name: Surefire reports
+        if: always()
+        uses: ./.github/actions/archive-surefire-reports
+        with:
+          job-id: clustering-integration-tests
+
   fips-unit-tests:
     name: FIPS UT
     runs-on: ubuntu-latest
     needs: build
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Fake fips
         run: |
@@ -371,6 +449,12 @@ jobs:
         if: always()
         uses: ./.github/actions/upload-heapdumps
 
+      - name: Surefire reports
+        if: always()
+        uses: ./.github/actions/archive-surefire-reports
+        with:
+          job-id: fips-unit-tests
+
   fips-integration-tests:
     name: FIPS IT
     needs: build
@@ -381,7 +465,7 @@ jobs:
         mode: [non-strict, strict]
       fail-fast: false
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Fake fips
         run: |
@@ -412,6 +496,12 @@ jobs:
         with:
           job-name: FIPS IT
 
+      - name: Surefire reports
+        if: always()
+        uses: ./.github/actions/archive-surefire-reports
+        with:
+          job-id: fips-integration-tests-${{ matrix.mode }}
+
   account-console-integration-tests:
     name: Account Console IT
     runs-on: ubuntu-latest
@@ -422,7 +512,7 @@ jobs:
         browser: [chrome, firefox]
       fail-fast: false
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - id: integration-test-setup
         name: Integration test setup
@@ -442,6 +532,12 @@ jobs:
         with:
           job-name: Account Console IT
 
+      - name: Surefire reports
+        if: always()
+        uses: ./.github/actions/archive-surefire-reports
+        with:
+          job-id: account-console-integration-tests-${{ matrix.browser }}
+
   forms-integration-tests:
     name: Forms IT
     runs-on: ubuntu-latest
@@ -452,7 +548,7 @@ jobs:
         browser: [chrome, firefox]
       fail-fast: false
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - id: integration-test-setup
         name: Integration test setup
@@ -475,6 +571,12 @@ jobs:
         with:
           job-name: Forms IT
 
+      - name: Surefire reports
+        if: always()
+        uses: ./.github/actions/archive-surefire-reports
+        with:
+          job-id: forms-integration-tests-${{ matrix.browser }}
+
   webauthn-integration-tests:
     name: WebAuthn IT
     runs-on: ubuntu-latest
@@ -487,7 +589,7 @@ jobs:
           # - firefox  disabled until https://github.com/keycloak/keycloak/issues/20777 is resolved
       fail-fast: false
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - id: integration-test-setup
         name: Integration test setup
@@ -513,6 +615,12 @@ jobs:
         with:
           job-name: WebAuthn IT
 
+      - name: Surefire reports
+        if: always()
+        uses: ./.github/actions/archive-surefire-reports
+        with:
+          job-id: webauthn-integration-tests-${{ matrix.browser }}
+
   sssd-unit-tests:
     name: SSSD
     runs-on: ubuntu-latest
@@ -523,7 +631,7 @@ jobs:
     timeout-minutes: 30
     steps:
       - name: checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - id: integration-test-setup
         name: Integration test setup
@@ -544,6 +652,12 @@ jobs:
       - name: Run tests
         run: .github/scripts/run-ipa.sh "${{ github.workspace }}"
 
+      - name: Surefire reports
+        if: always()
+        uses: ./.github/actions/archive-surefire-reports
+        with:
+          job-id: sssd-unit-tests
+
   migration-tests:
     name: Migration Tests
     runs-on: ubuntu-latest
@@ -555,7 +669,7 @@ jobs:
         database: [postgres, mysql, oracle, mssql, mariadb]
       fail-fast: false
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - id: integration-test-setup
         name: Integration test setup
@@ -583,13 +697,21 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         with:
           job-name: Migration Tests
+          
+      - name: Surefire reports
+        if: always()
+        uses: ./.github/actions/archive-surefire-reports
+        with:
+          job-id: migration-tests-${{ matrix.old-version }}-${{ matrix.database }}
 
   check:
     name: Status Check - Keycloak CI
     if: always()
     needs:
+      - conditional
       - unit-tests
       - base-integration-tests
+      - quarkus-unit-tests
       - quarkus-integration-tests
       - jdk-integration-tests
       - new-store-integration-tests
@@ -605,7 +727,7 @@ jobs:
       - migration-tests
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: ./.github/actions/status-check
         with:
           jobs: ${{ toJSON(needs) }}

@@ -11,7 +11,7 @@ type ClientSessionsProps = {
 };
 
 export const ClientSessions = ({ client }: ClientSessionsProps) => {
-  const { t } = useTranslation("sessions");
+  const { t } = useTranslation();
 
   const loader: LoaderFunction<UserSessionRepresentation> = async (
     first,

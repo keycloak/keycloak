@@ -25,8 +25,7 @@ export const LdapSettingsSearching = ({
   showSectionHeading = false,
   showSectionDescription = false,
 }: LdapSettingsSearchingProps) => {
-  const { t } = useTranslation("user-federation");
-  const { t: helpText } = useTranslation("user-federation-help");
+  const { t } = useTranslation();
 
   const [isSearchScopeDropdownOpen, setIsSearchScopeDropdownOpen] =
     useState(false);
@@ -37,7 +36,7 @@ export const LdapSettingsSearching = ({
       {showSectionHeading && (
         <WizardSectionHeader
           title={t("ldapSearchingAndUpdatingSettings")}
-          description={helpText("ldapSearchingAndUpdatingSettingsDescription")}
+          description={t("ldapSearchingAndUpdatingSettingsDescription")}
           showDescription={showSectionDescription}
         />
       )}
@@ -47,7 +46,7 @@ export const LdapSettingsSearching = ({
           label={t("editMode")}
           labelIcon={
             <HelpItem
-              helpText={t("user-federation-help:editModeLdapHelp")}
+              helpText={t("editModeLdapHelp")}
               fieldLabelId="user-federation:editMode"
             />
           }
@@ -101,7 +100,7 @@ export const LdapSettingsSearching = ({
           label={t("usersDN")}
           labelIcon={
             <HelpItem
-              helpText={t("user-federation-help:usersDNHelp")}
+              helpText={t("usersDNHelp")}
               fieldLabelId="user-federation:usersDn"
             />
           }
@@ -138,7 +137,7 @@ export const LdapSettingsSearching = ({
           label={t("usernameLdapAttribute")}
           labelIcon={
             <HelpItem
-              helpText={t("user-federation-help:usernameLdapAttributeHelp")}
+              helpText={t("usernameLdapAttributeHelp")}
               fieldLabelId="user-federation:usernameLdapAttribute"
             />
           }
@@ -176,7 +175,7 @@ export const LdapSettingsSearching = ({
           label={t("rdnLdapAttribute")}
           labelIcon={
             <HelpItem
-              helpText={t("user-federation-help:rdnLdapAttributeHelp")}
+              helpText={t("rdnLdapAttributeHelp")}
               fieldLabelId="user-federation:rdnLdapAttribute"
             />
           }
@@ -213,7 +212,7 @@ export const LdapSettingsSearching = ({
           label={t("uuidLdapAttribute")}
           labelIcon={
             <HelpItem
-              helpText={t("user-federation-help:uuidLdapAttributeHelp")}
+              helpText={t("uuidLdapAttributeHelp")}
               fieldLabelId="user-federation:uuidLdapAttribute"
             />
           }
@@ -251,7 +250,7 @@ export const LdapSettingsSearching = ({
           label={t("userObjectClasses")}
           labelIcon={
             <HelpItem
-              helpText={t("user-federation-help:userObjectClassesHelp")}
+              helpText={t("userObjectClassesHelp")}
               fieldLabelId="user-federation:userObjectClasses"
             />
           }
@@ -289,7 +288,7 @@ export const LdapSettingsSearching = ({
           label={t("userLdapFilter")}
           labelIcon={
             <HelpItem
-              helpText={t("user-federation-help:userLdapFilterHelp")}
+              helpText={t("userLdapFilterHelp")}
               fieldLabelId="user-federation:userLdapFilter"
             />
           }
@@ -325,7 +324,7 @@ export const LdapSettingsSearching = ({
           label={t("searchScope")}
           labelIcon={
             <HelpItem
-              helpText={t("user-federation-help:searchScopeHelp")}
+              helpText={t("searchScopeHelp")}
               fieldLabelId="user-federation:searchScope"
             />
           }
@@ -364,7 +363,7 @@ export const LdapSettingsSearching = ({
           label={t("readTimeout")}
           labelIcon={
             <HelpItem
-              helpText={t("user-federation-help:readTimeoutHelp")}
+              helpText={t("readTimeoutHelp")}
               fieldLabelId="user-federation:readTimeout"
             />
           }
@@ -382,7 +381,7 @@ export const LdapSettingsSearching = ({
           label={t("pagination")}
           labelIcon={
             <HelpItem
-              helpText={t("user-federation-help:paginationHelp")}
+              helpText={t("paginationHelp")}
               fieldLabelId="user-federation:pagination"
             />
           }
@@ -400,8 +399,8 @@ export const LdapSettingsSearching = ({
                 isDisabled={false}
                 onChange={(value) => field.onChange([`${value}`])}
                 isChecked={field.value[0] === "true"}
-                label={t("common:on")}
-                labelOff={t("common:off")}
+                label={t("on")}
+                labelOff={t("off")}
                 aria-label={t("pagination")}
               />
             )}

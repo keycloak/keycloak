@@ -154,7 +154,9 @@ export const ResourcesTab = ({ isShared = false }: ResourcesTabProps) => {
             <Th aria-hidden="true" />
             <Th>{t("resourceName")}</Th>
             <Th>{t("application")}</Th>
-            <Th>{!isShared ? t("permissionRequests") : ""}</Th>
+            <Th aria-hidden={isShared}>
+              {!isShared ? t("permissionRequests") : ""}
+            </Th>
           </Tr>
         </Thead>
         {resources.map((resource, index) => (
@@ -179,7 +181,12 @@ export const ResourcesTab = ({ isShared = false }: ResourcesTabProps) => {
                     : undefined
                 }
               />
-              <Td dataLabel={t("resourceName")}>{resource.name}</Td>
+              <Td
+                dataLabel={t("resourceName")}
+                data-testid={`row[${index}].name`}
+              >
+                {resource.name}
+              </Td>
               <Td dataLabel={t("application")}>
                 <a href={resource.client.baseUrl}>
                   {resource.client.name || resource.client.clientId}{" "}

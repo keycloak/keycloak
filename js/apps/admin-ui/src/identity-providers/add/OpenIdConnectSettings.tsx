@@ -9,7 +9,7 @@ import { DiscoveryEndpointField } from "../component/DiscoveryEndpointField";
 import { DiscoverySettings } from "./DiscoverySettings";
 
 export const OpenIdConnectSettings = () => {
-  const { t } = useTranslation("identity-providers");
+  const { t } = useTranslation();
   const id = "oidc";
 
   const {
@@ -34,9 +34,8 @@ export const OpenIdConnectSettings = () => {
     formData.append("file", new Blob([JSON.stringify(obj)]));
 
     try {
-      const result = await adminClient.identityProviders.importFromUrl(
-        formData,
-      );
+      const result =
+        await adminClient.identityProviders.importFromUrl(formData);
       setupForm(result);
     } catch (error) {
       setError("discoveryError", {
@@ -60,7 +59,7 @@ export const OpenIdConnectSettings = () => {
             fieldId="kc-import-config"
             labelIcon={
               <HelpItem
-                helpText={t("identity-providers-help:importConfig")}
+                helpText={t("importConfigHelp")}
                 fieldLabelId="identity-providers:importConfig"
               />
             }

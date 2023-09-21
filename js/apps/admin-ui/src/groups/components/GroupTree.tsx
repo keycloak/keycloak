@@ -45,7 +45,7 @@ const GroupTreeContextMenu = ({
   group,
   refresh,
 }: GroupTreeContextMenuProps) => {
-  const { t } = useTranslation("groups");
+  const { t } = useTranslation();
 
   const [isOpen, toggleOpen] = useToggle();
   const [renameOpen, toggleRenameOpen] = useToggle();
@@ -98,7 +98,7 @@ const GroupTreeContextMenu = ({
           </DropdownItem>,
           <DropdownSeparator key="separator" />,
           <DropdownItem key="delete" onClick={toggleDeleteOpen}>
-            {t("common:delete")}
+            {t("delete")}
           </DropdownItem>,
         ]}
       />
@@ -117,7 +117,7 @@ export const GroupTree = ({
   refresh: viewRefresh,
   canViewDetails,
 }: GroupTreeProps) => {
-  const { t } = useTranslation("groups");
+  const { t } = useTranslation();
   const { realm } = useRealm();
   const navigate = useNavigate();
   const { addAlert } = useAlerts();
@@ -275,7 +275,7 @@ export const GroupTree = ({
         setMax(max);
       }}
       inputGroupName="searchForGroups"
-      inputGroupPlaceholder={t("groups:searchForGroups")}
+      inputGroupPlaceholder={t("searchForGroups")}
       inputGroupOnEnter={setSearch}
       toolbarItem={
         <InputGroup className="pf-u-pt-sm">

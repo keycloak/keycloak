@@ -32,7 +32,7 @@ export default function RealmRolesSection() {
   return (
     <>
       <ViewHeader
-        titleKey="roles:title"
+        titleKey="titleRoles"
         subKey="roles:roleExplain"
         helpUrl={helpUrls.realmRolesUrl}
       />
