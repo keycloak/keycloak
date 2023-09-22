@@ -58,6 +58,11 @@ public class LegacyAttributes extends DefaultAttributes {
             if (UserProfileContext.IDP_REVIEW.equals(context)) {
                 return false;
             }
+            if (UserProfileContext.USER_API.equals(context)) {
+                if (realm.isRegistrationEmailAsUsername()) {
+                    return false;
+                }
+            }
             return !realm.isEditUsernameAllowed();
         }
 
@@ -65,7 +70,8 @@ public class LegacyAttributes extends DefaultAttributes {
             if (isServiceAccountUser()) {
                 return false;
             }
-            if (UserProfileContext.IDP_REVIEW.equals(context)) {
+            if (UserProfileContext.IDP_REVIEW.equals(context)
+                    || UserProfileContext.USER_API.equals(context)) {
                 return false;
             }
             if (realm.isRegistrationEmailAsUsername() && !realm.isEditUsernameAllowed()) {
