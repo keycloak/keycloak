@@ -164,4 +164,9 @@ public class RealmAttributeUpdater extends ServerResourceUpdater<RealmAttributeU
         rep.setOtpPolicyCodeReusable(isCodeReusable);
         return this;
     }
+
+    public RealmAttributeUpdater setSmtpServer(String name, String value) {
+        rep.getSmtpServer().put(name, value);
+        return this;
+    }
 }
