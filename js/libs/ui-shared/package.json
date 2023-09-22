@@ -38,16 +38,16 @@
     "@patternfly/react-icons": "^4.93.6",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "react-hook-form": "7.46.1"
+    "react-hook-form": "7.46.2"
   },
   "devDependencies": {
-    "@types/react": "^18.2.21",
+    "@types/react": "^18.2.22",
     "@types/react-dom": "^18.2.7",
     "@vitejs/plugin-react-swc": "^3.3.2",
     "rollup-plugin-peer-deps-external": "^2.2.4",
     "vite": "^4.4.9",
     "vite-plugin-checker": "^0.6.2",
-    "vite-plugin-dts": "^3.5.3",
-    "vitest": "^0.34.4"
+    "vite-plugin-dts": "^3.5.4",
+    "vitest": "^0.34.5"
   }
 }
