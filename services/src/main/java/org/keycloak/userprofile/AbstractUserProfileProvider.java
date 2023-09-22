@@ -83,6 +83,12 @@ public abstract class AbstractUserProfileProvider<U extends UserProfileProvider>
             return !realm.isRegistrationEmailAsUsername();
         }
 
+        if (USER_API.equals(c.getContext())) {
+            if (realm.isRegistrationEmailAsUsername()) {
+                return false;
+            }
+        }
+
         return realm.isEditUsernameAllowed();
     }
 
@@ -112,6 +118,12 @@ public abstract class AbstractUserProfileProvider<U extends UserProfileProvider>
 
         if (REGISTRATION_PROFILE.equals(c.getContext())) {
             return true;
+        }
+
+        if (USER_API.equals(c.getContext())) {
+            if (realm.isRegistrationEmailAsUsername()) {
+                return true;
+            }
         }
 
         if (Profile.isFeatureEnabled(Feature.UPDATE_EMAIL)) {
