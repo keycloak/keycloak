@@ -19,7 +19,7 @@ import { UserFormFields, toUserRepresentation } from "./form-state";
 import { toUser } from "./routes/User";
 
 import "./user-section.css";
-import RealmRepresentation from "libs/keycloak-admin-client/lib/defs/realmRepresentation";
+import RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
 import { useFetch } from "../utils/useFetch";
 
 export default function CreateUser() {

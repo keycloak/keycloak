@@ -124,11 +124,7 @@ export default function EditUser() {
     try {
       await adminClient.users.update(
         { id: user!.id! },
-        {
-          ...data,
-          username: data.username?.trim(),
-          attributes: { ...user?.attributes, ...data.attributes },
-        },
+        toUserRepresentation(data),
       );
       addAlert(t("userSaved"), AlertVariant.success);
       refresh();
