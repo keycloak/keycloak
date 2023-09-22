@@ -2376,7 +2376,8 @@ public class UserTest extends AbstractAdminTest {
         updateUser(user, userRep);
 
         userRep = realm.users().get(id).toRepresentation();
-        assertEquals("user1@localhost", userRep.getUsername());
+        assertEquals("user11@localhost", userRep.getUsername());
+        assertEquals("user11@localhost", userRep.getEmail());
     }
 
     @Test
@@ -2396,6 +2397,7 @@ public class UserTest extends AbstractAdminTest {
 
         userRep = realm.users().get(id).toRepresentation();
         assertEquals("user11@localhost", userRep.getUsername());
+        assertEquals("user11@localhost", userRep.getEmail());
     }
 
     @Test
@@ -2914,7 +2916,7 @@ public class UserTest extends AbstractAdminTest {
         assertAdminEvents.assertEvent(realmId, OperationType.UPDATE, Matchers.nullValue(String.class), rep, ResourceType.REALM);
     }
 
-    private void switchRegistrationEmailAsUsername(boolean enable) {
+    protected void switchRegistrationEmailAsUsername(boolean enable) {
         RealmRepresentation rep = realm.toRepresentation();
         rep.setRegistrationEmailAsUsername(enable);
         realm.update(rep);
