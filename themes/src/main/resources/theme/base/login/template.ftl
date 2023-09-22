@@ -34,6 +34,11 @@
             <script src="${script}" type="text/javascript"></script>
         </#list>
     </#if>
+    <#if authenticationSession??>
+        <script type="text/javascript">
+            new kcAuthChecker().checkCookiesAndSetTimer("${authenticationSession.authSessionId}", "${authenticationSession.tabId}", "${url.ssoLoginInOtherTabsUrl}");
+        </script>
+    </#if>
 </head>
 
 <body class="${properties.kcBodyClass!}">

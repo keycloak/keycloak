@@ -57,7 +57,11 @@ public class UrlBean {
     }
 
     public String getLoginRestartFlowUrl() {
-        return Urls.realmLoginRestartPage(baseURI, realm).toString();
+        return Urls.realmLoginRestartPage(baseURI, realm, false).toString();
+    }
+
+    public String getSsoLoginInOtherTabsUrl() {
+        return Urls.realmLoginRestartPage(baseURI, realm, true).toString();
     }
 
     public boolean hasAction()  {
