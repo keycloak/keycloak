@@ -19,6 +19,8 @@ import { UserFormFields, toUserRepresentation } from "./form-state";
 import { toUser } from "./routes/User";
 
 import "./user-section.css";
+import RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
+import { useFetch } from "../utils/useFetch";
 
 export default function CreateUser() {
   const { t } = useTranslation("users");
@@ -27,6 +29,15 @@ export default function CreateUser() {
   const { realm } = useRealm();
   const userForm = useForm<UserFormFields>({ mode: "onChange" });
   const [addedGroups, setAddedGroups] = useState<GroupRepresentation[]>([]);
+
+  const [realmRepresentation, setRealmRepresentation] =
+    useState<RealmRepresentation>();
+
+  useFetch(
+    () => adminClient.realms.findOne({ realm }),
+    (result) => setRealmRepresentation(result),
+    [],
+  );
 
   const save = async (data: UserFormFields) => {
     try {
@@ -57,7 +68,11 @@ export default function CreateUser() {
         <UserProfileProvider>
           <FormProvider {...userForm}>
             <PageSection variant="light">
-              <UserForm onGroupsUpdate={setAddedGroups} save={save} />
+              <UserForm
+                realm={realmRepresentation}
+                onGroupsUpdate={setAddedGroups}
+                save={save}
+              />
             </PageSection>
           </FormProvider>
         </UserProfileProvider>
