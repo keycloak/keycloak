@@ -41,7 +41,7 @@
     "react-hook-form": "7.46.1"
   },
   "devDependencies": {
-    "@types/react": "^18.2.21",
+    "@types/react": "^18.2.22",
     "@types/react-dom": "^18.2.7",
     "@vitejs/plugin-react-swc": "^3.3.2",
     "rollup-plugin-peer-deps-external": "^2.2.4",
