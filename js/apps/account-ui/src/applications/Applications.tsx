@@ -250,7 +250,7 @@ const Applications = () => {
                       buttonVariant="secondary"
                       onContinue={() => removeConsent(application.clientId)}
                     >
-                      {t("removeModalMessage", [application.clientId])}
+                      {t("removeModalMessage", { name: application.clientId })}
                     </ContinueCancelModal>
                   </GridItem>
                   <GridItem>

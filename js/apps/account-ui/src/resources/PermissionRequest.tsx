@@ -70,7 +70,7 @@ export const PermissionRequest = ({
         <Badge>{resource.shareRequests?.length}</Badge>
       </Button>
       <Modal
-        title={t("permissionRequest", [resource.name])}
+        title={t("permissionRequest", { name: resource.name })}
         variant={ModalVariant.large}
         isOpen={open}
         onClose={toggle}
