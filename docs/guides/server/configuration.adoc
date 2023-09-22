@@ -9,7 +9,7 @@ summary="Understand how to configure and start Keycloak">
 This {section} explains the configuration methods for Keycloak and how to start and apply the preferred configuration. It includes configuration guidelines for optimizing Keycloak for faster startup and low memory footprint.
 
 == Configuring sources for Keycloak
-Keycloak loads the configuration from four sources, which are listed here in order of application. 
+Keycloak loads the configuration from five sources, which are listed here in order of application. 
 
 . Command-line parameters
 . Environment variables
