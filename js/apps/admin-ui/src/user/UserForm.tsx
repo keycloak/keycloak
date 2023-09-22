@@ -182,7 +182,6 @@ export const UserForm = ({
           filterGroups={selectedGroups}
         />
       )}
-      {isUserProfileEnabled && <EmailVerified />}
       {user?.id && (
         <>
           <FormGroup label={t("id")} fieldId="kc-id" isRequired>
@@ -224,8 +223,8 @@ export const UserForm = ({
           <FederatedUserLink user={user} />
         </FormGroup>
       )}
-      {isUserProfileEnabled ? (
-        <UserProfileFields config={user?.userProfileMetadata!} />
+      {isUserProfileEnabled && user?.userProfileMetadata ? (
+        <UserProfileFields config={user.userProfileMetadata!} />
       ) : (
         <>
           {!realm?.registrationEmailAsUsername && (
