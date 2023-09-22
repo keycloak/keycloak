@@ -185,8 +185,6 @@ public class DefaultEmailSenderProvider implements EmailSenderProvider {
     }
 
     private void setupTruststore(Properties props) {
-        boolean checkServerIdentity = true;
-
         JSSETruststoreConfigurator configurator = new JSSETruststoreConfigurator(session);
 
         SSLSocketFactory factory = configurator.getSSLSocketFactory();
@@ -194,12 +192,8 @@ public class DefaultEmailSenderProvider implements EmailSenderProvider {
             props.put("mail.smtp.ssl.socketFactory", factory);
             if (configurator.getProvider().getPolicy() == HostnameVerificationPolicy.ANY) {
                 props.setProperty("mail.smtp.ssl.trust", "*");
-                checkServerIdentity = false;
+                props.put("mail.smtp.ssl.checkserveridentity", Boolean.FALSE.toString());
             }
-        }
-
-        if (checkServerIdentity) {
-            props.put("mail.smtp.ssl.checkserveridentity", "true");
         }
     }
 
