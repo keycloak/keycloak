@@ -17,17 +17,18 @@
 
 package org.keycloak.testsuite.admin;
 
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
-import java.util.HashSet;
 import java.util.Set;
 
 import org.jetbrains.annotations.Nullable;
 import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.common.Profile.Feature;
-import org.keycloak.models.LDAPConstants;
+import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.UserProfileAttributeMetadata;
 import org.keycloak.representations.idm.UserProfileMetadata;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -72,6 +73,40 @@ public class UserTestWithUserProfile extends UserTest {
         for (String name : managedAttributes) {
             assertNotNull(getAttributeMetadata(metadata, name));
         }
+    }
+
+    @Test
+    public void testUsernameReadOnlyIfEmailAsUsernameEnabled() {
+        switchRegistrationEmailAsUsername(true);
+        getCleanup().addCleanup(() -> switchRegistrationEmailAsUsername(false));
+        String userId = createUser("user-metadata", "user-metadata@keycloak.org");
+        UserRepresentation user = realm.users().get(userId).toRepresentation(true);
+        UserProfileMetadata metadata = user.getUserProfileMetadata();
+        assertNotNull(metadata);
+        UserProfileAttributeMetadata username = getAttributeMetadata(metadata, UserModel.USERNAME);
+        assertNotNull(username);
+        assertTrue(username.isReadOnly());
+        UserProfileAttributeMetadata email = getAttributeMetadata(metadata, UserModel.EMAIL);
+        assertNotNull(email);
+        assertFalse(email.isReadOnly());
+    }
+
+    @Test
+    public void testEmailNotReadOnlyIfEmailAsUsernameEnabledAndEditUsernameDisabled() {
+        switchRegistrationEmailAsUsername(true);
+        getCleanup().addCleanup(() -> switchRegistrationEmailAsUsername(false));
+        RealmRepresentation rep = realm.toRepresentation();
+        assertFalse(rep.isEditUsernameAllowed());
+        String userId = createUser("user-metadata", "user-metadata@keycloak.org");
+        UserRepresentation user = realm.users().get(userId).toRepresentation(true);
+        UserProfileMetadata metadata = user.getUserProfileMetadata();
+        assertNotNull(metadata);
+        UserProfileAttributeMetadata username = getAttributeMetadata(metadata, UserModel.USERNAME);
+        assertNotNull(username);
+        assertTrue(username.isReadOnly());
+        UserProfileAttributeMetadata email = getAttributeMetadata(metadata, UserModel.EMAIL);
+        assertNotNull(email);
+        assertFalse(email.isReadOnly());
     }
 
     @Nullable
