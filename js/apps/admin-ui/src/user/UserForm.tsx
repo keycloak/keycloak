@@ -224,7 +224,7 @@ export const UserForm = ({
         </FormGroup>
       )}
       {isUserProfileEnabled && user?.userProfileMetadata ? (
-        <UserProfileFields config={user.userProfileMetadata!} />
+        <UserProfileFields config={user.userProfileMetadata} />
       ) : (
         <>
           {!realm?.registrationEmailAsUsername && (
