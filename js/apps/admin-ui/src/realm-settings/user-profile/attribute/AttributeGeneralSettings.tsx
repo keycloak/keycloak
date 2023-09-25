@@ -249,10 +249,7 @@ export const AttributeGeneralSettings = () => {
           <FormGroup
             label={t("required")}
             labelIcon={
-              <HelpItem
-                helpText={t("requiredHelp")}
-                fieldLabelId="required"
-              />
+              <HelpItem helpText={t("requiredHelp")} fieldLabelId="required" />
             }
             fieldId="kc-required"
             hasNoPaddingTop
