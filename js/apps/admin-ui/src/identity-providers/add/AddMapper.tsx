@@ -117,8 +117,8 @@ export default function AddMapper() {
   };
 
   const [toggleDeleteMapperDialog, DeleteMapperConfirm] = useConfirmDialog({
-    titleKey: "identity-providers:deleteProviderMapper",
-    messageKey: t("identity-providers:deleteMapperConfirm", {
+    titleKey: "deleteProviderMapper",
+    messageKey: t("deleteMapperConfirm", {
       mapper: currentMapper?.name,
     }),
     continueButtonLabel: "delete",

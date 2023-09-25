@@ -28,12 +28,7 @@ export const OIDCGeneralSettings = () => {
 
       <FormGroup
         label={t("alias")}
-        labelIcon={
-          <HelpItem
-            helpText={t("aliasHelp")}
-            fieldLabelId="identity-providers:alias"
-          />
-        }
+        labelIcon={<HelpItem helpText={t("aliasHelp")} fieldLabelId="alias" />}
         fieldId="alias"
         isRequired
         validated={

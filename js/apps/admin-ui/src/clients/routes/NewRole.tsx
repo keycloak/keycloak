@@ -10,7 +10,7 @@ const CreateClientRole = lazy(() => import("../roles/CreateClientRole"));
 export const NewRoleRoute: AppRouteObject = {
   path: "/:realm/clients/:clientId/roles/new",
   element: <CreateClientRole />,
-  breadcrumb: (t) => t("roles:createRole"),
+  breadcrumb: (t) => t("createRole"),
   handle: {
     access: "manage-clients",
   },

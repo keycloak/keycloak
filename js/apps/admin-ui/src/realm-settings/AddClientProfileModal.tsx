@@ -19,8 +19,7 @@ const AliasRenderer = ({ name, global }: ClientProfile) => {
 
   return (
     <>
-      {name}{" "}
-      {global && <Label color="blue">{t("realm-settings:global")}</Label>}
+      {name} {global && <Label color="blue">{t("global")}</Label>}
     </>
   );
 };
@@ -72,7 +71,7 @@ export const AddClientProfileModal = (props: AddClientProfileModalProps) => {
   return (
     <Modal
       data-testid="addClientProfile"
-      title={t("realm-settings:addClientProfile")}
+      title={t("addClientProfile")}
       isOpen={props.open}
       onClose={props.toggleDialog}
       variant={ModalVariant.large}
@@ -102,8 +101,8 @@ export const AddClientProfileModal = (props: AddClientProfileModalProps) => {
     >
       <KeycloakDataTable
         loader={loader}
-        ariaLabelKey="realm-settings:profilesList"
-        searchPlaceholderKey="realm-settings:searchProfile"
+        ariaLabelKey="profilesList"
+        searchPlaceholderKey="searchProfile"
         canSelectAll
         onSelect={(rows) => {
           setSelectedRows([...rows]);
@@ -111,7 +110,7 @@ export const AddClientProfileModal = (props: AddClientProfileModalProps) => {
         columns={[
           {
             name: "name",
-            displayKey: "realm-settings:clientProfileName",
+            displayKey: "clientProfileName",
             cellRenderer: AliasRenderer,
           },
           {

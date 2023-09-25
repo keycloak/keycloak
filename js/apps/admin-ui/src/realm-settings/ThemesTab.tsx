@@ -55,7 +55,7 @@ export const RealmSettingsThemesTab = ({
           labelIcon={
             <HelpItem
               helpText={t("loginThemeHelp")}
-              fieldLabelId="realm-settings:loginTheme"
+              fieldLabelId="loginTheme"
             />
           }
         >
@@ -96,7 +96,7 @@ export const RealmSettingsThemesTab = ({
           labelIcon={
             <HelpItem
               helpText={t("accountThemeHelp")}
-              fieldLabelId="realm-settings:accountTheme"
+              fieldLabelId="accountTheme"
             />
           }
         >
@@ -140,7 +140,7 @@ export const RealmSettingsThemesTab = ({
           labelIcon={
             <HelpItem
               helpText={t("adminThemeHelp")}
-              fieldLabelId="realm-settings:adminTheme"
+              fieldLabelId="adminTheme"
             />
           }
         >
@@ -183,7 +183,7 @@ export const RealmSettingsThemesTab = ({
           labelIcon={
             <HelpItem
               helpText={t("emailThemeHelp")}
-              fieldLabelId="realm-settings:emailTheme"
+              fieldLabelId="emailTheme"
             />
           }
         >

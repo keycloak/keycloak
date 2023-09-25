@@ -59,8 +59,8 @@ export const UserConsents = () => {
   };
 
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
-    titleKey: "users:revokeClientScopesTitle",
-    messageKey: t("users:revokeClientScopes", {
+    titleKey: "revokeClientScopesTitle",
+    messageKey: t("revokeClientScopes", {
       clientId: selectedClient?.clientId,
     }),
     continueButtonLabel: "revoke",
@@ -76,7 +76,7 @@ export const UserConsents = () => {
 
         addAlert(t("deleteGrantsSuccess"), AlertVariant.success);
       } catch (error) {
-        addError("roles:deleteGrantsError", error);
+        addError("deleteGrantsError", error);
       }
     },
   });
@@ -87,7 +87,7 @@ export const UserConsents = () => {
       <KeycloakDataTable
         loader={loader}
         key={key}
-        ariaLabelKey="roles:roleList"
+        ariaLabelKey="roleList"
         searchPlaceholderKey=" "
         columns={[
           {
@@ -120,7 +120,7 @@ export const UserConsents = () => {
         ]}
         actions={[
           {
-            title: t("users:revoke"),
+            title: t("revoke"),
             onRowClick: (client) => {
               setSelectedClient(client);
               toggleDeleteDialog();
@@ -131,8 +131,8 @@ export const UserConsents = () => {
           <ListEmptyState
             hasIcon={true}
             icon={CubesIcon}
-            message={t("users:noConsents")}
-            instructions={t("users:noConsentsText")}
+            message={t("noConsents")}
+            instructions={t("noConsentsText")}
           />
         }
       />

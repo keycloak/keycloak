@@ -86,7 +86,7 @@ export const SamlConnectSettings = () => {
         labelIcon={
           <HelpItem
             helpText={t("serviceProviderEntityIdHelp")}
-            fieldLabelId="identity-providers:serviceProviderEntityId"
+            fieldLabelId="serviceProviderEntityId"
           />
         }
         isRequired
@@ -111,7 +111,7 @@ export const SamlConnectSettings = () => {
             labelIcon={
               <HelpItem
                 helpText={t("importConfigHelp")}
-                fieldLabelId="identity-providers:importConfig"
+                fieldLabelId="importConfig"
               />
             }
             validated={errors.discoveryError ? "error" : "default"}

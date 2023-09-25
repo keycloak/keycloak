@@ -76,7 +76,7 @@ export const AttributeGeneralSettings = () => {
         labelIcon={
           <HelpItem
             helpText={t("attributeNameHelp")}
-            fieldLabelId="realm-settings:attributeName"
+            fieldLabelId="attributeName"
           />
         }
         fieldId="kc-attribute-name"
@@ -99,7 +99,7 @@ export const AttributeGeneralSettings = () => {
         labelIcon={
           <HelpItem
             helpText={t("attributeDisplayNameHelp")}
-            fieldLabelId="realm-settings:attributeDisplayName"
+            fieldLabelId="attributeDisplayName"
           />
         }
         fieldId="kc-attribute-display-name"
@@ -249,10 +249,7 @@ export const AttributeGeneralSettings = () => {
           <FormGroup
             label={t("required")}
             labelIcon={
-              <HelpItem
-                helpText={t("requiredHelp")}
-                fieldLabelId="realm-settings:required"
-              />
+              <HelpItem helpText={t("requiredHelp")} fieldLabelId="required" />
             }
             fieldId="kc-required"
             hasNoPaddingTop

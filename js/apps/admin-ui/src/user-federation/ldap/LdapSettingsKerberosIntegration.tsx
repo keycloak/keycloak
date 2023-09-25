@@ -42,7 +42,7 @@ export const LdapSettingsKerberosIntegration = ({
           labelIcon={
             <HelpItem
               helpText={t("allowKerberosAuthenticationHelp")}
-              fieldLabelId="user-federation:allowKerberosAuthentication"
+              fieldLabelId="allowKerberosAuthentication"
             />
           }
           fieldId="kc-allow-kerberos-authentication"
@@ -74,7 +74,7 @@ export const LdapSettingsKerberosIntegration = ({
               labelIcon={
                 <HelpItem
                   helpText={t("kerberosRealmHelp")}
-                  fieldLabelId="user-federation:kerberosRealm"
+                  fieldLabelId="kerberosRealm"
                 />
               }
               fieldId="kc-kerberos-realm"
@@ -112,7 +112,7 @@ export const LdapSettingsKerberosIntegration = ({
               labelIcon={
                 <HelpItem
                   helpText={t("serverPrincipalHelp")}
-                  fieldLabelId="user-federation:serverPrincipal"
+                  fieldLabelId="serverPrincipal"
                 />
               }
               fieldId="kc-server-principal"
@@ -148,10 +148,7 @@ export const LdapSettingsKerberosIntegration = ({
             <FormGroup
               label={t("keyTab")}
               labelIcon={
-                <HelpItem
-                  helpText={t("keyTabHelp")}
-                  fieldLabelId="user-federation:keyTab"
-                />
+                <HelpItem helpText={t("keyTabHelp")} fieldLabelId="keyTab" />
               }
               fieldId="kc-key-tab"
               isRequired
@@ -187,7 +184,7 @@ export const LdapSettingsKerberosIntegration = ({
               labelIcon={
                 <HelpItem
                   helpText={t("krbPrincipalAttributeHelp")}
-                  fieldLabelId="user-federation:krbPrincipalAttribute"
+                  fieldLabelId="krbPrincipalAttribute"
                 />
               }
               fieldId="kc-krb-principal-attribute"
@@ -219,10 +216,7 @@ export const LdapSettingsKerberosIntegration = ({
             <FormGroup
               label={t("debug")}
               labelIcon={
-                <HelpItem
-                  helpText={t("debugHelp")}
-                  fieldLabelId="user-federation:debug"
-                />
+                <HelpItem helpText={t("debugHelp")} fieldLabelId="debug" />
               }
               fieldId="kc-debug"
               hasNoPaddingTop
@@ -253,7 +247,7 @@ export const LdapSettingsKerberosIntegration = ({
           labelIcon={
             <HelpItem
               helpText={t("useKerberosForPasswordAuthenticationHelp")}
-              fieldLabelId="user-federation:useKerberosForPasswordAuthentication"
+              fieldLabelId="useKerberosForPasswordAuthentication"
             />
           }
           fieldId="kc-use-kerberos-password-authentication"

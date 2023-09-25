@@ -132,14 +132,14 @@ export default function EditUser() {
       if (isUserProfileError(error)) {
         addError(userProfileErrorToString(error), error);
       } else {
-        addError("users:userCreateError", error);
+        addError("userCreateError", error);
       }
     }
   };
 
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
-    titleKey: "users:deleteConfirm",
-    messageKey: "users:deleteConfirmCurrentUser",
+    titleKey: "deleteConfirm",
+    messageKey: "deleteConfirmCurrentUser",
     continueButtonLabel: "delete",
     continueButtonVariant: ButtonVariant.danger,
     onConfirm: async () => {
@@ -148,15 +148,15 @@ export default function EditUser() {
         addAlert(t("userDeletedSuccess"), AlertVariant.success);
         navigate(toUsers({ realm }));
       } catch (error) {
-        addError("users:userDeletedError", error);
+        addError("userDeletedError", error);
       }
     },
   });
 
   const [toggleImpersonateDialog, ImpersonateConfirm] = useConfirmDialog({
-    titleKey: "users:impersonateConfirm",
-    messageKey: "users:impersonateConfirmDialog",
-    continueButtonLabel: "users:impersonate",
+    titleKey: "impersonateConfirm",
+    messageKey: "impersonateConfirmDialog",
+    continueButtonLabel: "impersonate",
     onConfirm: async () => {
       try {
         const data = await adminClient.users.impersonation(
@@ -169,7 +169,7 @@ export default function EditUser() {
           window.open(data.redirect, "_blank");
         }
       } catch (error) {
-        addError("users:impersonateError", error);
+        addError("impersonateError", error);
       }
     },
   });

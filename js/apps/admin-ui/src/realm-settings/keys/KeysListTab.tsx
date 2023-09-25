@@ -137,8 +137,8 @@ export const KeysListTab = ({ realmComponents }: KeysListTabProps) => {
         isNotCompact
         className="kc-keys-list"
         loader={filteredKeyData || keyData}
-        ariaLabelKey="realm-settings:keysList"
-        searchPlaceholderKey="realm-settings:searchKey"
+        ariaLabelKey="keysList"
+        searchPlaceholderKey="searchKey"
         searchTypeComponent={
           <SelectFilter
             onFilter={(filterType) =>
@@ -154,7 +154,7 @@ export const KeysListTab = ({ realmComponents }: KeysListTabProps) => {
         columns={[
           {
             name: "algorithm",
-            displayKey: "realm-settings:algorithm",
+            displayKey: "algorithm",
             cellFormatters: [emptyFormatter()],
             transforms: [cellWidth(15)],
           },
@@ -166,19 +166,19 @@ export const KeysListTab = ({ realmComponents }: KeysListTabProps) => {
           },
           {
             name: "kid",
-            displayKey: "realm-settings:kid",
+            displayKey: "kid",
             cellFormatters: [emptyFormatter()],
             transforms: [cellWidth(10)],
           },
           {
             name: "use",
-            displayKey: "realm-settings:use",
+            displayKey: "use",
             cellFormatters: [emptyFormatter()],
             transforms: [cellWidth(10)],
           },
           {
             name: "provider",
-            displayKey: "realm-settings:provider",
+            displayKey: "provider",
             cellRenderer: ({ provider }: KeyData) => provider || "",
             cellFormatters: [emptyFormatter()],
             transforms: [cellWidth(10)],
@@ -193,7 +193,7 @@ export const KeysListTab = ({ realmComponents }: KeysListTabProps) => {
           },
           {
             name: "publicKeys",
-            displayKey: "realm-settings:publicKeys",
+            displayKey: "publicKeys",
             cellRenderer: ({ type, publicKey, certificate }: KeyData) => {
               if (type === "EC") {
                 return (

@@ -88,8 +88,8 @@ export const RolesList = ({
   );
 
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
-    titleKey: "roles:roleDeleteConfirm",
-    messageKey: t("roles:roleDeleteConfirmDialog", {
+    titleKey: "roleDeleteConfirm",
+    messageKey: t("roleDeleteConfirmDialog", {
       selectedRoleName: selectedRole ? selectedRole!.name : "",
     }),
     continueButtonLabel: "delete",
@@ -106,9 +106,9 @@ export const RolesList = ({
           ]);
         }
         setSelectedRole(undefined);
-        addAlert(t("roles:roleDeletedSuccess"), AlertVariant.success);
+        addAlert(t("roleDeletedSuccess"), AlertVariant.success);
       } catch (error) {
-        addError("roles:roleDeleteError", error);
+        addError("roleDeleteError", error);
       }
     },
   });
@@ -123,7 +123,7 @@ export const RolesList = ({
       <KeycloakDataTable
         key={selectedRole ? selectedRole.id : "roleList"}
         loader={loader!}
-        ariaLabelKey="roles:roleList"
+        ariaLabelKey="roleList"
         searchPlaceholderKey="searchForRoles"
         isPaginated={paginated}
         toolbarItem={
@@ -160,7 +160,7 @@ export const RolesList = ({
         columns={[
           {
             name: "name",
-            displayKey: "roles:roleName",
+            displayKey: "roleName",
             cellRenderer: (row) => (
               <RoleDetailLink
                 {...row}
@@ -172,7 +172,7 @@ export const RolesList = ({
           },
           {
             name: "composite",
-            displayKey: "roles:composite",
+            displayKey: "composite",
             cellFormatters: [upperCaseFormatter(), emptyFormatter()],
           },
           {

@@ -86,32 +86,32 @@ export const MemberModal = ({ groupId, onClose }: MemberModalProps) => {
         loader={loader}
         isPaginated
         ariaLabelKey="titleUsers"
-        searchPlaceholderKey="users:searchForUser"
+        searchPlaceholderKey="searchForUser"
         canSelectAll
         onSelect={(rows) => setSelectedRows([...rows])}
         emptyState={
           <ListEmptyState
-            message={t("users:noUsersFound")}
-            instructions={t("users:emptyInstructions")}
+            message={t("noUsersFound")}
+            instructions={t("emptyInstructions")}
           />
         }
         columns={[
           {
             name: "username",
-            displayKey: "users:username",
+            displayKey: "username",
           },
           {
             name: "email",
-            displayKey: "users:email",
+            displayKey: "email",
           },
           {
             name: "lastName",
-            displayKey: "users:lastName",
+            displayKey: "lastName",
             cellFormatters: [emptyFormatter()],
           },
           {
             name: "firstName",
-            displayKey: "users:firstName",
+            displayKey: "firstName",
             cellFormatters: [emptyFormatter()],
           },
         ]}

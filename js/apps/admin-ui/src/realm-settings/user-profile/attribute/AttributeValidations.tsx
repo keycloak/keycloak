@@ -92,7 +92,7 @@ export const AttributeValidations = () => {
           className="kc--attributes-validations--add-validation-button"
           icon={<PlusCircleIcon />}
         >
-          {t("realm-settings:addValidator")}
+          {t("addValidator")}
         </Button>
         <Divider />
         {validators.length !== 0 ? (
@@ -132,7 +132,7 @@ export const AttributeValidations = () => {
           </TableComposable>
         ) : (
           <Text className="kc-emptyValidators" component={TextVariants.h6}>
-            {t("realm-settings:emptyValidators")}
+            {t("emptyValidators")}
           </Text>
         )}
       </div>

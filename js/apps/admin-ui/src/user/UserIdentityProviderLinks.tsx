@@ -83,13 +83,13 @@ export const UserIdentityProviderLinks = ({
   };
 
   const [toggleUnlinkDialog, UnlinkConfirm] = useConfirmDialog({
-    titleKey: t("users:unlinkAccountTitle", {
+    titleKey: t("unlinkAccountTitle", {
       provider: capitalize(federatedId),
     }),
-    messageKey: t("users:unlinkAccountConfirm", {
+    messageKey: t("unlinkAccountConfirm", {
       provider: capitalize(federatedId),
     }),
-    continueButtonLabel: "users:unlink",
+    continueButtonLabel: "unlink",
     continueButtonVariant: ButtonVariant.primary,
     onConfirm: async () => {
       try {
@@ -97,7 +97,7 @@ export const UserIdentityProviderLinks = ({
           id: userId,
           federatedIdentityId: federatedId,
         });
-        addAlert(t("users:idpUnlinkSuccess"), AlertVariant.success);
+        addAlert(t("idpUnlinkSuccess"), AlertVariant.success);
         refresh();
       } catch (error) {
         addError("mappingDeletedError", error);
@@ -126,9 +126,7 @@ export const UserIdentityProviderLinks = ({
     )?.groupName!;
     return (
       <Label color={groupName === "Social" ? "blue" : "orange"}>
-        {groupName === "Social"
-          ? t("users:idpType.social")
-          : t("users:idpType.custom")}
+        {groupName === "Social" ? t("idpType.social") : t("idpType.custom")}
       </Label>
     );
   };
@@ -142,7 +140,7 @@ export const UserIdentityProviderLinks = ({
         {groupName === "User-defined"
           ? "Custom"
           : groupName! === "Social"
-          ? t("users:idpType.social")
+          ? t("idpType.social")
           : groupName!}
       </Label>
     );
@@ -198,7 +196,7 @@ export const UserIdentityProviderLinks = ({
             loader={linkedIdPsLoader}
             key={key}
             isPaginated={false}
-            ariaLabelKey="users:LinkedIdPs"
+            ariaLabelKey="LinkedIdPs"
             className="kc-linked-IdPs-table"
             columns={[
               {
@@ -217,13 +215,13 @@ export const UserIdentityProviderLinks = ({
               },
               {
                 name: "userId",
-                displayKey: "users:userID",
+                displayKey: "userID",
                 cellFormatters: [emptyFormatter()],
                 transforms: [cellWidth(30)],
               },
               {
                 name: "userName",
-                displayKey: "users:username",
+                displayKey: "username",
                 cellFormatters: [emptyFormatter()],
                 transforms: [cellWidth(20)],
               },
@@ -236,7 +234,7 @@ export const UserIdentityProviderLinks = ({
             ]}
             emptyState={
               <TextContent className="kc-no-providers-text">
-                <Text>{t("users:noProvidersLinked")}</Text>
+                <Text>{t("noProvidersLinked")}</Text>
               </TextContent>
             }
           />
@@ -251,7 +249,7 @@ export const UserIdentityProviderLinks = ({
             loader={availableIdPsLoader}
             key={key}
             isPaginated={false}
-            ariaLabelKey="users:LinkedIdPs"
+            ariaLabelKey="LinkedIdPs"
             className="kc-linked-IdPs-table"
             columns={[
               {
@@ -275,7 +273,7 @@ export const UserIdentityProviderLinks = ({
             ]}
             emptyState={
               <TextContent className="kc-no-providers-text">
-                <Text>{t("users:noAvailableIdentityProviders")}</Text>
+                <Text>{t("noAvailableIdentityProviders")}</Text>
               </TextContent>
             }
           />

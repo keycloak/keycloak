@@ -49,7 +49,7 @@ export default function CreateClientRole() {
         }),
       );
     } catch (error) {
-      addError("roles:roleCreateError", error);
+      addError("roleCreateError", error);
     }
   };
 

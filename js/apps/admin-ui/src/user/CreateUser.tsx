@@ -53,7 +53,7 @@ export default function CreateUser() {
       if (isUserProfileError(error)) {
         addError(userProfileErrorToString(error), error);
       } else {
-        addError("users:userCreateError", error);
+        addError("userCreateError", error);
       }
     }
   };

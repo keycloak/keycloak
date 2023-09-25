@@ -79,10 +79,7 @@ export const RealmSettingsTokensTab = ({
 
   return (
     <PageSection variant="light">
-      <FormPanel
-        title={t("realm-settings:general")}
-        className="kc-sso-session-template"
-      >
+      <FormPanel title={t("general")} className="kc-sso-session-template">
         <FormAccess
           isHorizontal
           role="manage-realm"
@@ -94,7 +91,7 @@ export const RealmSettingsTokensTab = ({
             labelIcon={
               <HelpItem
                 helpText={t("defaultSigAlgHelp")}
-                fieldLabelId="realm-settings:algorithm"
+                fieldLabelId="algorithm"
               />
             }
           >
@@ -136,7 +133,7 @@ export const RealmSettingsTokensTab = ({
             labelIcon={
               <HelpItem
                 helpText={t("oAuthDeviceCodeLifespanHelp")}
-                fieldLabelId="realm-settings:oAuthDeviceCodeLifespan"
+                fieldLabelId="oAuthDeviceCodeLifespan"
               />
             }
           >
@@ -161,7 +158,7 @@ export const RealmSettingsTokensTab = ({
             labelIcon={
               <HelpItem
                 helpText={t("oAuthDevicePollingIntervalHelp")}
-                fieldLabelId="realm-settings:oAuthDevicePollingInterval"
+                fieldLabelId="oAuthDevicePollingInterval"
               />
             }
           >
@@ -191,7 +188,7 @@ export const RealmSettingsTokensTab = ({
             labelIcon={
               <HelpItem
                 helpText={t("shortVerificationUriTooltipHelp")}
-                fieldLabelId="realm-settings:shortVerificationUri"
+                fieldLabelId="shortVerificationUri"
               />
             }
           >
@@ -204,7 +201,7 @@ export const RealmSettingsTokensTab = ({
         </FormAccess>
       </FormPanel>
       <FormPanel
-        title={t("realm-settings:refreshTokens")}
+        title={t("refreshTokens")}
         className="kc-client-session-template"
       >
         <FormAccess
@@ -220,7 +217,7 @@ export const RealmSettingsTokensTab = ({
             labelIcon={
               <HelpItem
                 helpText={t("revokeRefreshTokenHelp")}
-                fieldLabelId="realm-settings:revokeRefreshToken"
+                fieldLabelId="revokeRefreshToken"
               />
             }
           >
@@ -247,7 +244,7 @@ export const RealmSettingsTokensTab = ({
               labelIcon={
                 <HelpItem
                   helpText={t("refreshTokenMaxReuseHelp")}
-                  fieldLabelId="realm-settings:refreshTokenMaxReuse"
+                  fieldLabelId="refreshTokenMaxReuse"
                 />
               }
               fieldId="refreshTokenMaxReuse"
@@ -276,7 +273,7 @@ export const RealmSettingsTokensTab = ({
         </FormAccess>
       </FormPanel>
       <FormPanel
-        title={t("realm-settings:accessTokens")}
+        title={t("accessTokens")}
         className="kc-offline-session-template"
       >
         <FormAccess
@@ -294,7 +291,7 @@ export const RealmSettingsTokensTab = ({
             labelIcon={
               <HelpItem
                 helpText={t("accessTokenLifespanHelp")}
-                fieldLabelId="realm-settings:accessTokenLifespan"
+                fieldLabelId="accessTokenLifespan"
               />
             }
           >
@@ -325,7 +322,7 @@ export const RealmSettingsTokensTab = ({
             labelIcon={
               <HelpItem
                 helpText={t("accessTokenLifespanImplicitFlow")}
-                fieldLabelId="realm-settings:accessTokenLifespanImplicitFlow"
+                fieldLabelId="accessTokenLifespanImplicitFlow"
               />
             }
           >
@@ -349,7 +346,7 @@ export const RealmSettingsTokensTab = ({
             labelIcon={
               <HelpItem
                 helpText={t("clientLoginTimeoutHelp")}
-                fieldLabelId="realm-settings:clientLoginTimeout"
+                fieldLabelId="clientLoginTimeout"
               />
             }
           >
@@ -377,7 +374,7 @@ export const RealmSettingsTokensTab = ({
               labelIcon={
                 <HelpItem
                   helpText={t("offlineSessionMaxHelp")}
-                  fieldLabelId="realm-settings:offlineSessionMax"
+                  fieldLabelId="offlineSessionMax"
                 />
               }
             >
@@ -415,7 +412,7 @@ export const RealmSettingsTokensTab = ({
             labelIcon={
               <HelpItem
                 helpText={t("userInitiatedActionLifespanHelp")}
-                fieldLabelId="realm-settings:userInitiatedActionLifespan"
+                fieldLabelId="userInitiatedActionLifespan"
               />
             }
           >
@@ -441,7 +438,7 @@ export const RealmSettingsTokensTab = ({
             labelIcon={
               <HelpItem
                 helpText={t("defaultAdminInitiatedActionLifespanHelp")}
-                fieldLabelId="realm-settings:defaultAdminInitiated"
+                fieldLabelId="defaultAdminInitiated"
               />
             }
           >
