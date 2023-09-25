@@ -66,15 +66,12 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.ServiceLoader;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
 public class KeycloakApplication extends Application {
-
-    public static final AtomicBoolean BOOTSTRAP_ADMIN_USER = new AtomicBoolean(false);
 
     private static final Logger logger = Logger.getLogger(KeycloakApplication.class);
 
@@ -152,16 +149,6 @@ public class KeycloakApplication extends Application {
         if (exportImportManager[0].isRunExport()) {
             exportImportManager[0].runExport();
         }
-
-        KeycloakModelUtils.runJobInTransaction(sessionFactory, new KeycloakSessionTask() {
-
-            @Override
-            public void run(KeycloakSession session) {
-                boolean shouldBootstrapAdmin = new ApplianceBootstrap(session).isNoMasterUser();
-                BOOTSTRAP_ADMIN_USER.set(shouldBootstrapAdmin);
-            }
-
-        });
 
         sessionFactory.publish(new PostMigrationEvent(sessionFactory));
     }
