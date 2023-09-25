@@ -1100,6 +1100,7 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
         assertEvents.expectLogout(null)
                 .realm(realm.getId())
                 .user(userId)
+                .client("account")
                 .session(AssertEvents.isUUID())
                 .removeDetail(Details.REDIRECT_URI)
                 .assertEvent();

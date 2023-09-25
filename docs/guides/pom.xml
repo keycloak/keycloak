@@ -100,6 +100,11 @@
                         <sections>guides</sections>
                         <attribute-missing>warn</attribute-missing>
                     </attributes>
+                    <logHandler>
+                        <failIf>
+                            <severity>ERROR</severity>
+                        </failIf>
+                    </logHandler>
                 </configuration>
                 <executions>
                     <execution>

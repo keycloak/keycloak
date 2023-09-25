@@ -22,7 +22,7 @@ export type SettingsCacheProps = {
 };
 
 const CacheFields = ({ form }: { form: UseFormReturn }) => {
-  const { t } = useTranslation("user-federation");
+  const { t } = useTranslation();
 
   const [isCachePolicyOpen, toggleCachePolicy] = useToggle();
   const [isEvictionHourOpen, toggleEvictionHour] = useToggle();
@@ -79,8 +79,8 @@ const CacheFields = ({ form }: { form: UseFormReturn }) => {
         label={t("cachePolicy")}
         labelIcon={
           <HelpItem
-            helpText={t("user-federation-help:cachePolicyHelp")}
-            fieldLabelId="user-federation:cachePolicy"
+            helpText={t("cachePolicyHelp")}
+            fieldLabelId="cachePolicy"
           />
         }
         fieldId="kc-cache-policy"
@@ -117,8 +117,8 @@ const CacheFields = ({ form }: { form: UseFormReturn }) => {
           label={t("evictionDay")}
           labelIcon={
             <HelpItem
-              helpText={t("user-federation-help:evictionDayHelp")}
-              fieldLabelId="user-federation:evictionDay"
+              helpText={t("evictionDayHelp")}
+              fieldLabelId="evictionDay"
             />
           }
           isRequired
@@ -143,25 +143,25 @@ const CacheFields = ({ form }: { form: UseFormReturn }) => {
                 variant={SelectVariant.single}
               >
                 <SelectOption key={0} value="1" isPlaceholder>
-                  {t("common:Sunday")}
+                  {t("Sunday")}
                 </SelectOption>
                 <SelectOption key={1} value="2">
-                  {t("common:Monday")}
+                  {t("Monday")}
                 </SelectOption>
                 <SelectOption key={2} value="3">
-                  {t("common:Tuesday")}
+                  {t("Tuesday")}
                 </SelectOption>
                 <SelectOption key={3} value="4">
-                  {t("common:Wednesday")}
+                  {t("Wednesday")}
                 </SelectOption>
                 <SelectOption key={4} value="5">
-                  {t("common:Thursday")}
+                  {t("Thursday")}
                 </SelectOption>
                 <SelectOption key={5} value="6">
-                  {t("common:Friday")}
+                  {t("Friday")}
                 </SelectOption>
                 <SelectOption key={6} value="7">
-                  {t("common:Saturday")}
+                  {t("Saturday")}
                 </SelectOption>
               </Select>
             )}
@@ -175,8 +175,8 @@ const CacheFields = ({ form }: { form: UseFormReturn }) => {
             label={t("evictionHour")}
             labelIcon={
               <HelpItem
-                helpText={t("user-federation-help:evictionHourHelp")}
-                fieldLabelId="user-federation:evictionHour"
+                helpText={t("evictionHourHelp")}
+                fieldLabelId="evictionHour"
               />
             }
             isRequired
@@ -207,8 +207,8 @@ const CacheFields = ({ form }: { form: UseFormReturn }) => {
             label={t("evictionMinute")}
             labelIcon={
               <HelpItem
-                helpText={t("user-federation-help:evictionMinuteHelp")}
-                fieldLabelId="user-federation:evictionMinute"
+                helpText={t("evictionMinuteHelp")}
+                fieldLabelId="evictionMinute"
               />
             }
             isRequired
@@ -242,8 +242,8 @@ const CacheFields = ({ form }: { form: UseFormReturn }) => {
           label={t("maxLifespan")}
           labelIcon={
             <HelpItem
-              helpText={t("user-federation-help:maxLifespanHelp")}
-              fieldLabelId="user-federation:maxLifespan"
+              helpText={t("maxLifespanHelp")}
+              fieldLabelId="maxLifespan"
             />
           }
           fieldId="kc-max-lifespan"
@@ -287,15 +287,14 @@ export const SettingsCache = ({
   showSectionDescription = false,
   unWrap = false,
 }: SettingsCacheProps) => {
-  const { t } = useTranslation("user-federation");
-  const { t: helpText } = useTranslation("user-federation-help");
+  const { t } = useTranslation();
 
   return (
     <>
       {showSectionHeading && (
         <WizardSectionHeader
           title={t("cacheSettings")}
-          description={helpText("cacheSettingsDescription")}
+          description={t("cacheSettingsDescription")}
           showDescription={showSectionDescription}
         />
       )}

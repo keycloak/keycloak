@@ -66,7 +66,7 @@ public class HardcodedLDAPGroupStorageMapperFactory extends AbstractLDAPStorageM
         if (groupName == null) {
             throw new ComponentValidationException("Group can't be null");
         }
-        GroupModel group = KeycloakModelUtils.findGroupByPath(realm, groupName);
+        GroupModel group = KeycloakModelUtils.findGroupByPath(session, realm, groupName);
         if (group == null) {
             throw new ComponentValidationException("There is no group corresponding to configured value");
         }

@@ -13,7 +13,7 @@ import {
   TreeView,
   TreeViewDataItem,
 } from "@patternfly/react-core";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 
@@ -45,7 +45,7 @@ const GroupTreeContextMenu = ({
   group,
   refresh,
 }: GroupTreeContextMenuProps) => {
-  const { t } = useTranslation("groups");
+  const { t } = useTranslation();
 
   const [isOpen, toggleOpen] = useToggle();
   const [renameOpen, toggleRenameOpen] = useToggle();
@@ -98,7 +98,7 @@ const GroupTreeContextMenu = ({
           </DropdownItem>,
           <DropdownSeparator key="separator" />,
           <DropdownItem key="delete" onClick={toggleDeleteOpen}>
-            {t("common:delete")}
+            {t("delete")}
           </DropdownItem>,
         ]}
       />
@@ -117,7 +117,7 @@ export const GroupTree = ({
   refresh: viewRefresh,
   canViewDetails,
 }: GroupTreeProps) => {
-  const { t } = useTranslation("groups");
+  const { t } = useTranslation();
   const { realm } = useRealm();
   const navigate = useNavigate();
   const { addAlert } = useAlerts();
@@ -130,6 +130,8 @@ export const GroupTree = ({
   const [search, setSearch] = useState("");
   const [max, setMax] = useState(20);
   const [first, setFirst] = useState(0);
+  const prefFirst = useRef(0);
+  const prefMax = useRef(20);
   const [count, setCount] = useState(0);
   const [exact, setExact] = useState(false);
   const [activeItem, setActiveItem] = useState<TreeViewDataItem>();
@@ -220,7 +222,7 @@ export const GroupTree = ({
         ];
       }
       setGroups(groups);
-      if (search) {
+      if (search || prefFirst.current !== first || prefMax.current !== max) {
         setData(groups.map((g) => mapGroup(g, refresh)));
       } else {
         setData(
@@ -232,6 +234,8 @@ export const GroupTree = ({
         );
       }
       setCount(count);
+      prefFirst.current = first;
+      prefMax.current = max;
     },
     [key, first, firstSub, max, search, exact, activeItem],
   );
@@ -271,7 +275,7 @@ export const GroupTree = ({
         setMax(max);
       }}
       inputGroupName="searchForGroups"
-      inputGroupPlaceholder={t("groups:searchForGroups")}
+      inputGroupPlaceholder={t("searchForGroups")}
       inputGroupOnEnter={setSearch}
       toolbarItem={
         <InputGroup className="pf-u-pt-sm">

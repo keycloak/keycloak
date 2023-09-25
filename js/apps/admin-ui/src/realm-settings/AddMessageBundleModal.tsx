@@ -35,7 +35,7 @@ export const AddMessageBundleModal = ({
     formState: { errors },
   },
 }: AddMessageBundleModalProps) => {
-  const { t } = useTranslation("realm-settings");
+  const { t } = useTranslation();
 
   return (
     <Modal
@@ -51,7 +51,7 @@ export const AddMessageBundleModal = ({
           type="submit"
           form="bundle-form"
         >
-          {t("common:create")}
+          {t("create")}
         </Button>,
         <Button
           id="modal-cancel"
@@ -62,16 +62,16 @@ export const AddMessageBundleModal = ({
             handleModalToggle();
           }}
         >
-          {t("common:cancel")}
+          {t("cancel")}
         </Button>,
       ]}
     >
       <Form id="bundle-form" isHorizontal onSubmit={handleSubmit(save)}>
         <FormGroup
-          label={t("common:key")}
+          label={t("key")}
           name="key"
           fieldId="key-id"
-          helperTextInvalid={t("common:required")}
+          helperTextInvalid={t("required")}
           validated={
             errors.key ? ValidatedOptions.error : ValidatedOptions.default
           }
@@ -88,10 +88,10 @@ export const AddMessageBundleModal = ({
           />
         </FormGroup>
         <FormGroup
-          label={t("common:value")}
+          label={t("value")}
           name="add-value"
           fieldId="value-id"
-          helperTextInvalid={t("common:required")}
+          helperTextInvalid={t("required")}
           validated={
             errors.value ? ValidatedOptions.error : ValidatedOptions.default
           }

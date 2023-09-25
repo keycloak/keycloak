@@ -11,7 +11,9 @@ export default defineConfig({
   workers: process.env.CI ? 1 : undefined,
   reporter: "html",
   use: {
-    baseURL: "http://localhost:8080/",
+    baseURL: process.env.CI
+      ? "http://localhost:8080/realms/master/account/"
+      : "http://localhost:8080/",
     trace: "on-first-retry",
   },
 
@@ -19,13 +21,13 @@ export default defineConfig({
   projects: [
     { name: "setup", testMatch: /.auth\.setup\.ts/ },
     {
-      name: "import realm",
-      testMatch: /import\.setup\.ts/,
-      teardown: "del realm",
+      name: "import realms",
+      testMatch: /realm\.setup\.ts/,
+      teardown: "del realms",
     },
     {
-      name: "del realm",
-      testMatch: /import\.teardown\.ts/,
+      name: "del realms",
+      testMatch: /realm\.teardown\.ts/,
     },
     {
       name: "chromium",
@@ -33,25 +35,25 @@ export default defineConfig({
         ...devices["Desktop Chrome"],
         storageState: ".auth/user.json",
       },
-      dependencies: ["setup"],
-      testIgnore: ["**/*my-resources.spec.ts"],
+      dependencies: ["setup", "import realms"],
+      testIgnore: ["**/personal-info.spec.ts"],
     },
-
     {
       name: "firefox",
       use: {
         ...devices["Desktop Firefox"],
         storageState: ".auth/user.json",
       },
-      dependencies: ["setup"],
-      testIgnore: ["**/*my-resources.spec.ts"],
+      dependencies: ["setup", "import realms"],
+      testIgnore: ["**/personal-info.spec.ts"],
     },
-
     {
-      name: "photoz realm chromium",
-      use: { ...devices["Desktop Chrome"] },
-      dependencies: ["import realm"],
-      testMatch: ["**/*my-resources.spec.ts"],
+      name: "personal-info",
+      use: {
+        ...devices["Desktop Chrome"],
+      },
+      dependencies: ["import realms"],
+      testMatch: ["**/personal-info.spec.ts"],
     },
   ],
 });

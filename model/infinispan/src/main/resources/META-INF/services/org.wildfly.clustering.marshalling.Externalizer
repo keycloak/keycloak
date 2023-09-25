@@ -55,6 +55,7 @@ org.keycloak.models.sessions.infinispan.entities.wildfly.LockEntryWFExternalizer
 org.keycloak.models.sessions.infinispan.entities.wildfly.ActionTokenValueEntityWFExternalizer
 org.keycloak.models.sessions.infinispan.entities.wildfly.RoleAddedEventWFExternalizer
 org.keycloak.models.sessions.infinispan.entities.wildfly.InClientPredicateWFExternalizer
+org.keycloak.models.sessions.infinispan.entities.wildfly.InGroupPredicateWFExternalizer
 org.keycloak.models.sessions.infinispan.entities.wildfly.UserFullInvalidationEventWFExternalizer
 org.keycloak.models.sessions.infinispan.entities.wildfly.ClientRemovedSessionEventWFExternalizer
 org.keycloak.models.sessions.infinispan.entities.wildfly.SessionPredicateWFExternalizer

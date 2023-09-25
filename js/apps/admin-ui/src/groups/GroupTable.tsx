@@ -25,7 +25,7 @@ export const GroupTable = ({
   refresh: viewRefresh,
   canViewDetails,
 }: GroupTableProps) => {
-  const { t } = useTranslation("groups");
+  const { t } = useTranslation();
 
   const [selectedRows, setSelectedRows] = useState<GroupRepresentation[]>([]);
 
@@ -119,7 +119,7 @@ export const GroupTable = ({
         onSelect={(rows) => setSelectedRows([...rows])}
         canSelectAll
         loader={loader}
-        ariaLabelKey="groups:groups"
+        ariaLabelKey="groups"
         isPaginated
         isSearching={!!search}
         toolbarItem={
@@ -176,7 +176,7 @@ export const GroupTable = ({
                   isSeparator: true,
                 },
                 {
-                  title: t("common:delete"),
+                  title: t("delete"),
                   onRowClick: async (group: GroupRepresentation) => {
                     setSelectedRows([group]);
                     toggleShowDelete();
@@ -188,7 +188,7 @@ export const GroupTable = ({
         columns={[
           {
             name: "name",
-            displayKey: "groups:groupName",
+            displayKey: "groupName",
             cellRenderer: (group) =>
               canViewDetails ? (
                 <Link key={group.id} to={`${location.pathname}/${group.id}`}>

@@ -1,6 +1,7 @@
 <#import "/templates/guide.adoc" as tmpl>
 <#import "/templates/kc.adoc" as kc>
 <#import "/templates/links.adoc" as links>
+<#import "/templates/profile.adoc" as profile>
 
 <@tmpl.guide
 title="Configuring logging"
@@ -12,7 +13,9 @@ Keycloak uses the JBoss Logging framework. The following is a high-level overvie
 * root
 ** console (_default_)
 ** file
+<@profile.ifCommunity>
 ** GELF
+</@profile.ifCommunity>
 
 == Logging configuration
 Logging is done on a per-category basis in Keycloak. You can configure logging for the root log level or for more specific categories such as `org.hibernate` or `org.keycloak`. This {section} describes how to configure logging.
@@ -21,8 +24,10 @@ Logging is done on a per-category basis in Keycloak. You can configure logging f
 
 The following table defines the available log levels.
 
-|====
+[%autowidth]
+|===
 |Level|Description
+
 |FATAL|Critical failures with complete inability to serve any kind of request.
 |ERROR|A significant error or problem leading to the inability to process requests.
 |WARN|A non-critical error or problem that might not require immediate correction.
@@ -31,7 +36,7 @@ The following table defines the available log levels.
 |TRACE|Most detailed debugging information. Very high frequency.
 |ALL|Special level for all log messages.
 |OFF|Special level to turn logging off entirely (not recommended).
-|====
+|===
 
 === Configuring the root log level
 When no log level configuration exists for a more specific category logger, the enclosing category is used instead. When there is no enclosing category, the root logger level is used.
@@ -67,7 +72,14 @@ To enable log handlers, enter the following command:
 
 <@kc.start parameters="--log=\"<handler1>,<handler2>\""/>
 
-The available handlers are `console`, `file` and `gelf`. The more specific handler configuration mentioned below will only take effect when the handler is added to this comma-separated list.
+The available handlers are
+<@profile.ifCommunity>
+`console`, `file` and `gelf`.
+</@profile.ifCommunity>
+<@profile.ifProduct>
+`console` and `file`.
+</@profile.ifProduct>
+The more specific handler configuration mentioned below will only take effect when the handler is added to this comma-separated list.
 
 == Console log handler
 The console log handler is enabled by default, providing unstructured log messages for the console.
@@ -81,8 +93,10 @@ The logging format template for these lines can be applied at the root level. Th
 
 The format string supports the symbols in the following table:
 
-|====
+[%autowidth]
+|===
 |Symbol|Summary|Description
+
 |%%|%|Renders a simple % character.
 |%c|Category|Renders the log category name.
 |++%d{xxx}++|Date|Renders a date with the given date format string.String syntax defined by `java.text.SimpleDateFormat`
@@ -100,7 +114,7 @@ The format string supports the symbols in the following table:
 |%t++{id}++|Thread ID|Render the thread ID.
 |%z{<zone name>}|Timezone|Set the time zone of log output to <zone name>.
 |%L|Line number|Render the line number of the log message.
-|====
+|===
 
 === Setting the logging format
 To set the logging format for a logged line, perform these steps:
@@ -173,6 +187,8 @@ To configure a different logging format for the file log handler, enter the foll
 <@kc.start parameters="--log-file-format=\"<pattern>\""/>
 
 See <<Configuring the console log format>> for more information and a table of the available pattern configuration.
+
+<@profile.ifCommunity>
 
 == Centralized logging using GELF
 Keycloak can send logs to a centralized log management system such as the following:
@@ -492,5 +508,7 @@ nothing below the error level will be sent to your logging stack. That means tha
 Currently, the Keycloak configuration does not support partly dynamic configuration keys, as they are used in quarkus properties. For example, they are used when defining `quarkus.log.handler.gelf.additional-field.<my-name>.value`.
 
 To add user-defined fields, you can provide these fields through a quarkus.properties file. See <@links.server id="configuration"/> and the _Using raw Quarkus properties_ section.
+
+</@profile.ifCommunity>
 
 </@tmpl.guide>

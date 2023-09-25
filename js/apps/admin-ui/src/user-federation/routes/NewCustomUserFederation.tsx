@@ -16,7 +16,7 @@ const CustomProviderSettings = lazy(
 export const NewCustomUserFederationRoute: AppRouteObject = {
   path: "/:realm/user-federation/:providerId/new",
   element: <CustomProviderSettings />,
-  breadcrumb: (t) => t("user-federation:addCustomProvider"),
+  breadcrumb: (t) => t("addCustomProvider"),
   handle: {
     access: "view-realm",
   },

@@ -54,12 +54,23 @@ The build process includes multiple stages:
 * In the final image, additional configuration options for the hostname and database are set so that you don't need to set them again when running the container.
 * In the entrypoint, the `kc.sh` enables access to all the distribution sub-commands.
 
-To install custom providers, you just need to define a step to include the JAR file(s) into the `/opt/keycloak/providers` directory:
+To install custom providers, you just need to define a step to include the JAR file(s) into the `/opt/keycloak/providers` directory.
+This step must be placed before the line that `RUNs` the `build` command, as below: 
 
 [source, dockerfile]
 ----
 # A example build step that downloads a JAR file from a URL and adds it to the providers directory
+FROM quay.io/keycloak/keycloak:latest as builder
+
+...
+
+# Add the provider JAR file to the providers directory
 ADD --chown=keycloak:keycloak <MY_PROVIDER_JAR_URL> /opt/keycloak/providers/myprovider.jar
+
+...
+
+# Context: RUN the build command
+RUN /opt/keycloak/bin/kc.sh build
 ----
 
 === Installing additional RPM packages

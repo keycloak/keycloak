@@ -41,7 +41,7 @@ export const GroupBreadCrumbs = () => {
               </Link>
             )}
             {isLastGroup &&
-              (group.id === "search" ? group.name : t("groups:groupDetails"))}
+              (group.id === "search" ? group.name : t("groupDetails"))}
           </BreadcrumbItem>
         );
       })}

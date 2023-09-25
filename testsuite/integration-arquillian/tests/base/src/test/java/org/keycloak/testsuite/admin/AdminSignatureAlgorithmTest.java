@@ -57,12 +57,6 @@ public class AdminSignatureAlgorithmTest extends AbstractKeycloakTest {
             assertEquals(Algorithm.ES256, verifier.getHeader().getAlgorithm().name());
 
             assertNotNull(adminClient.realms().findAll());
-
-            String whoAmiUrl = suiteContext.getAuthServerInfo().getContextRoot().toString() + "/auth/admin/master/console/whoami";
-
-            JsonNode jsonNode = SimpleHttp.doGet(whoAmiUrl, client).auth(accessToken.getToken()).asJson();
-            assertNotNull(jsonNode.get("realm"));
-            assertNotNull(jsonNode.get("userId"));
         } finally {
             TokenSignatureUtil.changeRealmTokenSignatureProvider("master", adminClient, defaultSignatureAlgorithm);
         }

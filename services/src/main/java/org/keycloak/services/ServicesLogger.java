@@ -471,4 +471,8 @@ public interface ServicesLogger extends BasicLogger {
     @LogMessage(level = DEBUG)
     @Message(id=107, value="Skipping create admin user. Admin already exists in realm '%s'.")
     void addAdminUserFailedAdminExists(String realm);
+
+    @LogMessage(level = WARN)
+    @Message(id=108, value="URI '%s' doesn't match any trustedHost or trustedDomain")
+    void uriDoesntMatch(String uri);
 }

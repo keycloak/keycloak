@@ -20,7 +20,6 @@ package org.keycloak.quarkus.runtime;
 import java.lang.annotation.Annotation;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ExecutorService;
 import java.util.function.BiConsumer;
 import java.util.function.Predicate;
 
@@ -43,7 +42,6 @@ import org.keycloak.common.crypto.FipsMode;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
 import org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider;
 import org.keycloak.quarkus.runtime.integration.QuarkusKeycloakSessionFactory;
-import org.keycloak.quarkus.runtime.integration.web.QuarkusRequestFilter;
 import org.keycloak.quarkus.runtime.storage.database.liquibase.FastServiceLocator;
 import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
@@ -138,29 +136,6 @@ public class KeycloakRecorder {
             @Override
             public void contributeRuntimeProperties(BiConsumer<String, Object> propertyCollector) {
                 propertyCollector.accept(AvailableSettings.DEFAULT_SCHEMA, Configuration.getRawValue("kc.db-schema"));
-            }
-        };
-    }
-
-    public QuarkusRequestFilter createRequestFilter(List<String> ignoredPaths, ExecutorService executor) {
-        return new QuarkusRequestFilter(createIgnoredHttpPathsPredicate(ignoredPaths), executor);
-    }
-
-    private Predicate<RoutingContext> createIgnoredHttpPathsPredicate(List<String> ignoredPaths) {
-        if (ignoredPaths == null || ignoredPaths.isEmpty()) {
-            return null;
-        }
-
-        return new Predicate<>() {
-            @Override
-            public boolean test(RoutingContext context) {
-                for (String ignoredPath : ignoredPaths) {
-                    if (context.request().uri().startsWith(ignoredPath)) {
-                        return true;
-                    }
-                }
-
-                return false;
             }
         };
     }

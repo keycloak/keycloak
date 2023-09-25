@@ -6,6 +6,7 @@ import {
 } from "@patternfly/react-core";
 
 import useSetTimeout from "../../utils/useSetTimeout";
+import useQueryPermission from "../../utils/useQueryPermission";
 
 enum CopyState {
   Ready,
@@ -25,34 +26,41 @@ export const CopyToClipboardButton = ({
   text,
   variant = "plain",
 }: CopyToClipboardButtonProps) => {
-  const { t } = useTranslation("clients");
+  const { t } = useTranslation();
   const setTimeout = useSetTimeout();
+  const permission = useQueryPermission("clipboard-write" as PermissionName);
+  const permissionDenied = permission?.state === "denied";
+  const [copyState, setCopyState] = useState(CopyState.Ready);
 
-  const [copy, setCopy] = useState(CopyState.Ready);
+  // Determine the message to use for the copy button.
+  const copyMessageKey = useMemo(() => {
+    if (permissionDenied) {
+      return "clipboardCopyDenied";
+    }
 
-  const copyMessage = useMemo(() => {
-    switch (copy) {
+    switch (copyState) {
       case CopyState.Ready:
-        return t("copyToClipboard");
+        return "copyToClipboard";
       case CopyState.Copied:
-        return t("copySuccess");
+        return "copySuccess";
       case CopyState.Error:
-        return t("clipboardCopyError");
+        return "clipboardCopyError";
     }
-  }, [copy]);
+  }, [permissionDenied, copyState]);
 
+  // Reset the message of the copy button after copying to the clipboard.
   useEffect(() => {
-    if (copy !== CopyState.Ready) {
-      return setTimeout(() => setCopy(CopyState.Ready), 1000);
+    if (copyState !== CopyState.Ready) {
+      return setTimeout(() => setCopyState(CopyState.Ready), 1000);
     }
-  }, [copy]);
+  }, [copyState, setTimeout]);
 
   const copyToClipboard = async (text: string) => {
     try {
       await navigator.clipboard.writeText(text);
-      setCopy(CopyState.Copied);
+      setCopyState(CopyState.Copied);
     } catch (error) {
-      setCopy(CopyState.Error);
+      setCopyState(CopyState.Error);
     }
   };
 
@@ -65,7 +73,7 @@ export const CopyToClipboardButton = ({
       exitDelay={600}
       variant={variant}
     >
-      {copyMessage}
+      {t(copyMessageKey)}
     </ClipboardCopyButton>
   );
 };

@@ -17,22 +17,18 @@
 
 package org.keycloak.operator.testsuite.unit;
 
-import java.util.Collections;
-import java.util.Map;
-import java.util.Optional;
+import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.api.model.networking.v1.Ingress;
 
-import io.fabric8.kubernetes.api.model.OwnerReference;
-import io.fabric8.kubernetes.api.model.OwnerReferenceBuilder;
 import org.junit.jupiter.api.Test;
-import org.keycloak.operator.controllers.KeycloakIngress;
+import org.keycloak.operator.controllers.KeycloakIngressDependentResource;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.IngressSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.spec.IngressSpecBuilder;
 import org.keycloak.operator.testsuite.utils.K8sUtils;
 
-import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.fabric8.kubernetes.api.model.networking.v1.Ingress;
-import io.fabric8.kubernetes.api.model.networking.v1.IngressBuilder;
+import java.util.Map;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -43,7 +39,7 @@ public class IngressLogicTest {
 
     private static final String EXISTING_ANNOTATION_KEY = "annotation";
 
-    static class MockKeycloakIngress extends KeycloakIngress {
+    static class MockKeycloakIngress {
 
         private static Keycloak getKeycloak(boolean tlsConfigured, IngressSpec ingressSpec) {
             var kc = K8sUtils.getDefaultKeycloakDeployment();
@@ -66,7 +62,6 @@ public class IngressLogicTest {
         }
 
         public static MockKeycloakIngress build(Boolean defaultIngressEnabled, boolean ingressExists, boolean ingressSpecDefined, boolean tlsConfigured, Map<String, String> annotations) {
-            MockKeycloakIngress.ingressExists = ingressExists;
             IngressSpec ingressSpec = null;
             if (ingressSpecDefined) {
                 ingressSpec = new IngressSpec();
@@ -77,18 +72,18 @@ public class IngressLogicTest {
                     ingressSpec.setAnnotations(annotations);
                 }
             }
-            return new MockKeycloakIngress(tlsConfigured, ingressSpec);
+            MockKeycloakIngress mock = new MockKeycloakIngress(tlsConfigured, ingressSpec);
+            mock.ingressExists = ingressExists;
+            return mock;
         }
 
-        public static boolean ingressExists = false;
+        private KeycloakIngressDependentResource keycloakIngressDependentResource = new KeycloakIngressDependentResource();
+        private boolean ingressExists = false;
         private boolean deleted = false;
-        public MockKeycloakIngress(boolean tlsConfigured, IngressSpec ingressSpec) {
-            super(null, getKeycloak(tlsConfigured, ingressSpec));
-        }
+        private Keycloak keycloak;
 
-        @Override
-        public Optional<HasMetadata> getReconciledResource() {
-            return super.getReconciledResource();
+        public MockKeycloakIngress(boolean tlsConfigured, IngressSpec ingressSpec) {
+            this.keycloak = getKeycloak(tlsConfigured, ingressSpec);
         }
 
         public boolean reconciled() {
@@ -99,35 +94,15 @@ public class IngressLogicTest {
             return deleted;
         }
 
-        @Override
-        protected Ingress fetchExistingIngress() {
-            if (ingressExists) {
-
-                OwnerReference sameCROwnerRef = new OwnerReferenceBuilder()
-                        .withApiVersion(cr.getApiVersion())
-                        .withKind(cr.getKind())
-                        .withName(cr.getMetadata().getName())
-                        .withUid(cr.getMetadata().getUid())
-                        .withBlockOwnerDeletion(true)
-                        .withController(true)
-                        .build();
-
-                return new IngressBuilder()
-                        .withNewMetadata()
-                            .withName(getName())
-                            .withNamespace(cr.getMetadata().getNamespace())
-                            .withOwnerReferences(Collections.singletonList(sameCROwnerRef))
-                            .withAnnotations(Map.of(EXISTING_ANNOTATION_KEY, "value"))
-                        .endMetadata()
-                        .build();
-            } else {
-                return null;
+        public Optional<HasMetadata> getReconciledResource() {
+            if (!KeycloakIngressDependentResource.isIngressEnabled(keycloak)) {
+                if (ingressExists) {
+                    deleted = true;
+                }
+                return Optional.empty();
             }
-        }
-
-        @Override
-        protected void deleteExistingIngress() {
-            deleted = true;
+            
+            return Optional.of(keycloakIngressDependentResource.desired(keycloak, null));
         }
     }
 
@@ -226,7 +201,7 @@ public class IngressLogicTest {
         assertEquals("passthrough", reconciled.get().getMetadata().getAnnotations().get("route.openshift.io/termination"));
         assertEquals("another-value", reconciled.get().getMetadata().getAnnotations().get(EXISTING_ANNOTATION_KEY));
     }
-    
+
     @Test
     public void testIngressSpecDefinedWithoutClassName() {
         var kc = new MockKeycloakIngress(true, new IngressSpec());
@@ -234,7 +209,7 @@ public class IngressLogicTest {
         Ingress ingress = reconciled.map(Ingress.class::cast).orElseThrow();
         assertNull(ingress.getSpec().getIngressClassName());
     }
-    
+
     @Test
     public void testIngressSpecDefinedWithClassName() {
         var kc = new MockKeycloakIngress(true, new IngressSpecBuilder().withIngressClassName("my-class").build());

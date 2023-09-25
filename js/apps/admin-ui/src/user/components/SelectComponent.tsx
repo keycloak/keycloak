@@ -1,22 +1,54 @@
 import { Select, SelectOption } from "@patternfly/react-core";
 import { useState } from "react";
-import { Controller, useFormContext } from "react-hook-form";
+import {
+  Controller,
+  useFormContext,
+  ControllerRenderProps,
+  FieldValues,
+} from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
 import { Options } from "../UserProfileFields";
-import { DEFAULT_ROLES, fieldName } from "../utils";
+import { fieldName, unWrap } from "../utils";
 import { UserProfileFieldsProps, UserProfileGroup } from "./UserProfileGroup";
 
-export const SelectComponent = ({
-  roles = [],
-  ...attribute
-}: UserProfileFieldsProps) => {
-  const { t } = useTranslation("users");
+type OptionLabel = Record<string, string> | undefined;
+export const SelectComponent = (attribute: UserProfileFieldsProps) => {
+  const { t } = useTranslation();
   const { control } = useFormContext();
   const [open, setOpen] = useState(false);
 
+  const isMultiValue = (field: ControllerRenderProps<FieldValues, string>) => {
+    return (
+      attribute.annotations?.["inputType"] === "multiselect" ||
+      Array.isArray(field.value)
+    );
+  };
+
+  const setValue = (
+    value: string,
+    field: ControllerRenderProps<FieldValues, string>,
+  ) => {
+    if (isMultiValue(field)) {
+      if (field.value.includes(value)) {
+        field.onChange(field.value.filter((item: string) => item !== value));
+      } else {
+        field.onChange([...field.value, value]);
+      }
+    } else {
+      field.onChange(value);
+    }
+  };
+
   const options =
-    (attribute.validations?.options as Options | undefined)?.options || [];
+    (attribute.validators?.options as Options | undefined)?.options || [];
+
+  const optionLabel = attribute.annotations?.[
+    "inputOptionLabels"
+  ] as OptionLabel;
+  const label = (label: string) =>
+    optionLabel ? t(unWrap(optionLabel[label])) : label;
+
   return (
     <UserProfileGroup {...attribute}>
       <Controller
@@ -27,30 +59,22 @@ export const SelectComponent = ({
           <Select
             toggleId={attribute.name}
             onToggle={(b) => setOpen(b)}
+            isCreatable
+            onCreateOption={(value) => setValue(value, field)}
             onSelect={(_, value) => {
               const option = value.toString();
-              if (Array.isArray(field.value)) {
-                if (field.value.includes(option)) {
-                  field.onChange(
-                    field.value.filter((item: string) => item !== option),
-                  );
-                } else {
-                  field.onChange([...field.value, option]);
-                }
-              } else {
-                field.onChange(option);
+              setValue(option, field);
+              if (!Array.isArray(field.value)) {
                 setOpen(false);
               }
             }}
-            selections={field.value ? field.value : t("common:choose")}
-            variant={Array.isArray(field.value) ? "typeaheadmulti" : "single"}
-            aria-label={t("common:selectOne")}
-            isOpen={open}
-            isDisabled={
-              !(attribute.permissions?.edit || DEFAULT_ROLES).some((r) =>
-                roles.includes(r),
-              )
+            selections={
+              field.value ? field.value : isMultiValue(field) ? [] : t("choose")
             }
+            variant={isMultiValue(field) ? "typeaheadmulti" : "single"}
+            aria-label={t("selectOne")}
+            isOpen={open}
+            readOnly={attribute.readOnly}
           >
             {options.map((option) => (
               <SelectOption
@@ -58,7 +82,7 @@ export const SelectComponent = ({
                 key={option}
                 value={option}
               >
-                {option}
+                {label(option)}
               </SelectOption>
             ))}
           </Select>

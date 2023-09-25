@@ -20,10 +20,11 @@ package org.keycloak.operator.testsuite.integration;
 import io.fabric8.kubernetes.api.model.ServiceSpecBuilder;
 import io.quarkus.logging.Log;
 import io.quarkus.test.junit.QuarkusTest;
+
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
-import org.keycloak.operator.controllers.KeycloakDiscoveryService;
-import org.keycloak.operator.controllers.KeycloakService;
+import org.keycloak.operator.controllers.KeycloakDiscoveryServiceDependentResource;
+import org.keycloak.operator.controllers.KeycloakServiceDependentResource;
 import org.keycloak.operator.testsuite.utils.K8sUtils;
 
 import java.time.Duration;
@@ -37,8 +38,8 @@ public class KeycloakServicesTest extends BaseOperatorTest {
     public void testMainServiceDurability() {
         var kc = getTestKeycloakDeployment(true);
         K8sUtils.deployKeycloak(k8sclient, kc, true);
-        var service = new KeycloakService(k8sclient, kc);
-        var serviceSelector = k8sclient.services().inNamespace(namespace).withName(service.getName());
+        String serviceName = KeycloakServiceDependentResource.getServiceName(kc);
+        var serviceSelector = k8sclient.services().inNamespace(namespace).withName(serviceName);
 
         Log.info("Trying to delete the service");
         assertThat(serviceSelector.delete()).isNotNull();
@@ -61,7 +62,6 @@ public class KeycloakServicesTest extends BaseOperatorTest {
         var origSpecs = new ServiceSpecBuilder(currentService.getSpec()).build(); // deep copy
 
         // a managed change
-        currentService.getSpec().getPorts().get(0).setProtocol("UDP");
         currentService.getSpec().getPorts().get(0).setName(null);
 
         currentService.getMetadata().getLabels().putAll(labels);
@@ -86,8 +86,7 @@ public class KeycloakServicesTest extends BaseOperatorTest {
     public void testDiscoveryServiceDurability() {
         var kc = getTestKeycloakDeployment(true);
         K8sUtils.deployKeycloak(k8sclient, kc, true);
-        var discoveryService = new KeycloakDiscoveryService(k8sclient, kc);
-        var discoveryServiceSelector = k8sclient.services().inNamespace(namespace).withName(discoveryService.getName());
+        var discoveryServiceSelector = k8sclient.services().inNamespace(namespace).withName(KeycloakDiscoveryServiceDependentResource.getName(kc));
 
         Log.info("Trying to delete the discovery service");
         assertThat(discoveryServiceSelector.delete()).isNotNull();
@@ -113,7 +112,7 @@ public class KeycloakServicesTest extends BaseOperatorTest {
         var origDiscoverySpecs = new ServiceSpecBuilder(currentDiscoveryService.getSpec()).build(); // deep copy
 
         // a managed change
-        currentDiscoveryService.getSpec().getPorts().get(0).setProtocol("UDP");
+        currentDiscoveryService.getSpec().getPorts().get(0).setName(null);
 
         currentDiscoveryService.getMetadata().setResourceVersion(null);
         k8sclient.resource(currentDiscoveryService).update();

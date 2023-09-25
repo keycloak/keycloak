@@ -15,7 +15,7 @@ export const NameDescription = ({
   prefix,
   isDisabled,
 }: NameDescriptionProps) => {
-  const { t } = useTranslation("clients");
+  const { t } = useTranslation();
   const {
     register,
     formState: { errors },
@@ -24,18 +24,15 @@ export const NameDescription = ({
   return (
     <>
       <FormGroup
-        label={t("common:name")}
+        label={t("name")}
         fieldId="kc-name"
-        helperTextInvalid={t("common:required")}
+        helperTextInvalid={t("required")}
         validated={
           errors.name ? ValidatedOptions.error : ValidatedOptions.default
         }
         isRequired
         labelIcon={
-          <HelpItem
-            helpText={t(`clients-help:${prefix}-name`)}
-            fieldLabelId="name"
-          />
+          <HelpItem helpText={t(`${prefix}-nameHelp`)} fieldLabelId="name" />
         }
       >
         <KeycloakTextInput
@@ -49,18 +46,18 @@ export const NameDescription = ({
         />
       </FormGroup>
       <FormGroup
-        label={t("common:description")}
+        label={t("description")}
         fieldId="kc-description"
         labelIcon={
           <HelpItem
-            helpText={t(`clients-help:${prefix}-description`)}
+            helpText={t(`${prefix}-descriptionHelp`)}
             fieldLabelId="description"
           />
         }
         validated={
           errors.description ? ValidatedOptions.error : ValidatedOptions.default
         }
-        helperTextInvalid={t("common:maxLength", { length: 255 })}
+        helperTextInvalid={t("maxLength", { length: 255 })}
       >
         <KeycloakTextArea
           isDisabled={isDisabled}

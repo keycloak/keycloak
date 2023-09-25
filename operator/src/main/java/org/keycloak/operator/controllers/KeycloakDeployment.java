@@ -62,6 +62,7 @@ import static org.keycloak.operator.crds.v2alpha1.CRDUtils.isTlsConfigured;
 
 public class KeycloakDeployment extends OperatorManagedResource<StatefulSet> {
 
+    public static final String OPTIMIZED_ARG = "--optimized";
     private final Config operatorConfig;
     private final KeycloakDistConfigurator distConfigurator;
 
@@ -226,13 +227,13 @@ public class KeycloakDeployment extends OperatorManagedResource<StatefulSet> {
             containerBuilder.withArgs("--verbose", "start");
         }
         if (customImage.isPresent()) {
-            containerBuilder.addToArgs("--optimized");
+            containerBuilder.addToArgs(OPTIMIZED_ARG);
         }
 
         // probes
         var tlsConfigured = isTlsConfigured(keycloakCR);
         var protocol = !tlsConfigured ? "HTTP" : "HTTPS";
-        var kcPort = KeycloakService.getServicePort(keycloakCR);
+        var kcPort = KeycloakServiceDependentResource.getServicePort(tlsConfigured, keycloakCR);
 
         // Relative path ends with '/'
         var kcRelativePath = Optional.ofNullable(readConfigurationValue(Constants.KEYCLOAK_HTTP_RELATIVE_PATH_KEY))

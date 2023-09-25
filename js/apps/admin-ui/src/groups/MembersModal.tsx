@@ -21,7 +21,7 @@ type MemberModalProps = {
 };
 
 export const MemberModal = ({ groupId, onClose }: MemberModalProps) => {
-  const { t } = useTranslation("groups");
+  const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
   const [selectedRows, setSelectedRows] = useState<UserRepresentation[]>([]);
 
@@ -37,7 +37,7 @@ export const MemberModal = ({ groupId, onClose }: MemberModalProps) => {
       const users = await adminClient.users.find({ ...params });
       return differenceBy(users, members, "id").slice(0, max);
     } catch (error) {
-      addError("groups:noUsersFoundError", error);
+      addError("noUsersFoundError", error);
       return [];
     }
   };
@@ -66,11 +66,11 @@ export const MemberModal = ({ groupId, onClose }: MemberModalProps) => {
                 AlertVariant.success,
               );
             } catch (error) {
-              addError("groups:usersAddedError", error);
+              addError("usersAddedError", error);
             }
           }}
         >
-          {t("common:add")}
+          {t("add")}
         </Button>,
         <Button
           data-testid="cancel"
@@ -78,40 +78,40 @@ export const MemberModal = ({ groupId, onClose }: MemberModalProps) => {
           variant="link"
           onClick={onClose}
         >
-          {t("common:cancel")}
+          {t("cancel")}
         </Button>,
       ]}
     >
       <KeycloakDataTable
         loader={loader}
         isPaginated
-        ariaLabelKey="users:title"
-        searchPlaceholderKey="users:searchForUser"
+        ariaLabelKey="titleUsers"
+        searchPlaceholderKey="searchForUser"
         canSelectAll
         onSelect={(rows) => setSelectedRows([...rows])}
         emptyState={
           <ListEmptyState
-            message={t("users:noUsersFound")}
-            instructions={t("users:emptyInstructions")}
+            message={t("noUsersFound")}
+            instructions={t("emptyInstructions")}
           />
         }
         columns={[
           {
             name: "username",
-            displayKey: "users:username",
+            displayKey: "username",
           },
           {
             name: "email",
-            displayKey: "users:email",
+            displayKey: "email",
           },
           {
             name: "lastName",
-            displayKey: "users:lastName",
+            displayKey: "lastName",
             cellFormatters: [emptyFormatter()],
           },
           {
             name: "firstName",
-            displayKey: "users:firstName",
+            displayKey: "firstName",
             cellFormatters: [emptyFormatter()],
           },
         ]}

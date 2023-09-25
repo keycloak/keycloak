@@ -29,6 +29,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -70,15 +71,7 @@ abstract class AbstractUserRoleMappingMapper extends AbstractOIDCProtocolMapper 
             realmRoleNames = rolesToAdd;
         }
 
-        Object claimValue = realmRoleNames;
-
-        boolean multiValued = "true".equals(mappingModel.getConfig().get(ProtocolMapperUtils.MULTIVALUED));
-        if (!multiValued) {
-            claimValue = realmRoleNames.toString();
-        }
-
-        //OIDCAttributeMapperHelper.mapClaim(token, mappingModel, claimValue);
-        mapClaim(token, mappingModel, claimValue, clientId);
+        mapClaim(token, mappingModel, realmRoleNames, clientId);
     }
 
 
@@ -99,7 +92,16 @@ abstract class AbstractUserRoleMappingMapper extends AbstractOIDCProtocolMapper 
         if (clientId != null) {
             // case when clientId contains dots
             clientId = DOT_PATTERN.matcher(clientId).replaceAll(DOT_REPLACEMENT);
-            protocolClaim = CLIENT_ID_PATTERN.matcher(protocolClaim).replaceAll(clientId);
+            Matcher matcher = CLIENT_ID_PATTERN.matcher(protocolClaim);
+            if (matcher.find()) {
+                protocolClaim = matcher.replaceAll(clientId);
+            }
+            if (!(protocolClaim.endsWith("roles") || protocolClaim.startsWith(clientId) || protocolClaim.endsWith(clientId))) {
+                // the claim name does not reference the current client, do not map roles
+                // or if the claim does not end with roles suffix, do not map roles.
+                // the role suffix is used to move roles to a single location other than the default location (e.g.: realm_access and resource_access claims)
+                return;
+            }
         }
 
         List<String> split = splitClaimPath(protocolClaim);

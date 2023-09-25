@@ -30,7 +30,7 @@ export const UserIdpModal = ({
   onClose,
   onRefresh,
 }: UserIdpModalProps) => {
-  const { t } = useTranslation("users");
+  const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
   const {
     register,
@@ -49,18 +49,18 @@ export const UserIdpModal = ({
         federatedIdentityId: federatedId,
         federatedIdentity,
       });
-      addAlert(t("users:idpLinkSuccess"), AlertVariant.success);
+      addAlert(t("idpLinkSuccess"), AlertVariant.success);
       onClose();
       onRefresh();
     } catch (error) {
-      addError("users:couldNotLinkIdP", error);
+      addError("couldNotLinkIdP", error);
     }
   };
 
   return (
     <Modal
       variant={ModalVariant.small}
-      title={t("users:linkAccountTitle", {
+      title={t("linkAccountTitle", {
         provider: capitalize(federatedId),
       })}
       onClose={onClose}
@@ -81,16 +81,13 @@ export const UserIdpModal = ({
           variant={ButtonVariant.link}
           onClick={onClose}
         >
-          {t("common:cancel")}
+          {t("cancel")}
         </Button>,
       ]}
       isOpen
     >
       <Form id="group-form" onSubmit={handleSubmit(onSubmit)}>
-        <FormGroup
-          label={t("users:identityProvider")}
-          fieldId="identityProvider"
-        >
+        <FormGroup label={t("identityProvider")} fieldId="identityProvider">
           <KeycloakTextInput
             id="identityProvider"
             data-testid="idpNameInput"
@@ -99,10 +96,10 @@ export const UserIdpModal = ({
           />
         </FormGroup>
         <FormGroup
-          label={t("users:userID")}
+          label={t("userID")}
           fieldId="userID"
-          helperText={t("users-help:userIdHelperText")}
-          helperTextInvalid={t("common:required")}
+          helperText={t("userIdHelperText")}
+          helperTextInvalid={t("required")}
           validated={
             errors.userId ? ValidatedOptions.error : ValidatedOptions.default
           }
@@ -119,10 +116,10 @@ export const UserIdpModal = ({
           />
         </FormGroup>
         <FormGroup
-          label={t("users:username")}
+          label={t("username")}
           fieldId="username"
-          helperText={t("users-help:usernameHelperText")}
-          helperTextInvalid={t("common:required")}
+          helperText={t("usernameHelperText")}
+          helperTextInvalid={t("required")}
           validated={
             errors.userName ? ValidatedOptions.error : ValidatedOptions.default
           }

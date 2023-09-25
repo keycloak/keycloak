@@ -16,7 +16,7 @@ const NewClientPolicyCondition = lazy(
 export const EditClientPolicyConditionRoute: AppRouteObject = {
   path: "/:realm/realm-settings/client-policies/:policyName/edit-policy/:conditionName/edit-condition",
   element: <NewClientPolicyCondition />,
-  breadcrumb: (t) => t("realm-settings:editCondition"),
+  breadcrumb: (t) => t("editCondition"),
   handle: {
     access: "manage-clients",
   },

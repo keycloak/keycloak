@@ -3,10 +3,9 @@ import { login } from "./login";
 
 test.describe("My resources page", () => {
   test("List my resources", async ({ page }) => {
-    await page.goto("/?realm=photoz");
-    login(page, "jdoe", "jdoe");
-    await page.waitForURL("/?realm=photoz");
+    await login(page, "jdoe", "jdoe", "photoz");
     await page.getByTestId("resources").click();
+    //await expect(page.getByTestId("row[0].name")).toHaveText("one");
     await expect(page.getByRole("gridcell", { name: "one" })).toBeVisible();
   });
 });

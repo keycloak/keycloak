@@ -33,7 +33,7 @@ import { toClientScope } from "../routes/ClientScope";
 import { MapperParams, MapperRoute } from "../routes/Mapper";
 
 export default function MappingDetails() {
-  const { t } = useTranslation("client-scopes");
+  const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
 
   const { id, mapperId } = useParams<MapperParams>();
@@ -78,7 +78,7 @@ export default function MappingDetails() {
           });
         }
         if (!data) {
-          throw new Error(t("common:notFound"));
+          throw new Error(t("notFound"));
         }
 
         const mapperTypes = serverInfo.protocolMapperTypes![data!.protocol!];
@@ -99,7 +99,7 @@ export default function MappingDetails() {
           ? await adminClient.clientScopes.findOne({ id })
           : await adminClient.clients.findOne({ id });
         if (!model) {
-          throw new Error(t("common:notFound"));
+          throw new Error(t("notFound"));
         }
         const protocolMappers =
           serverInfo.protocolMapperTypes![model.protocol!];
@@ -107,7 +107,7 @@ export default function MappingDetails() {
           (mapper) => mapper.id === mapperId,
         );
         if (!mapping) {
-          throw new Error(t("common:notFound"));
+          throw new Error(t("notFound"));
         }
         return {
           mapping,
@@ -129,9 +129,9 @@ export default function MappingDetails() {
   );
 
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
-    titleKey: "common:deleteMappingTitle",
-    messageKey: "common:deleteMappingConfirm",
-    continueButtonLabel: "common:delete",
+    titleKey: "deleteMappingTitle",
+    messageKey: "deleteMappingConfirm",
+    continueButtonLabel: "delete",
     continueButtonVariant: ButtonVariant.danger,
     onConfirm: async () => {
       try {
@@ -146,10 +146,10 @@ export default function MappingDetails() {
             mapperId,
           });
         }
-        addAlert(t("common:mappingDeletedSuccess"), AlertVariant.success);
+        addAlert(t("mappingDeletedSuccess"), AlertVariant.success);
         navigate(toDetails());
       } catch (error) {
-        addError("common:mappingDeletedError", error);
+        addError("mappingDeletedError", error);
       }
     },
   });
@@ -173,9 +173,9 @@ export default function MappingDetails() {
           ? await adminClient.clientScopes.addProtocolMapper({ id }, mapping)
           : await adminClient.clients.addProtocolMapper({ id }, mapping);
       }
-      addAlert(t(`common:mapping${key}Success`), AlertVariant.success);
+      addAlert(t(`mapping${key}Success`), AlertVariant.success);
     } catch (error) {
-      addError(`common:mapping${key}Error`, error);
+      addError(`mapping${key}Error`, error);
     }
   };
 
@@ -183,8 +183,8 @@ export default function MappingDetails() {
     <>
       <DeleteConfirm />
       <ViewHeader
-        titleKey={isUpdating ? mapping?.name! : t("common:addMapper")}
-        subKey={isUpdating ? mapperId : "client-scopes:addMapperExplain"}
+        titleKey={isUpdating ? mapping?.name! : t("addMapper")}
+        subKey={isUpdating ? mapperId : "addMapperExplain"}
         dropdownItems={
           isUpdating
             ? [
@@ -193,7 +193,7 @@ export default function MappingDetails() {
                   value="delete"
                   onClick={toggleDeleteDialog}
                 >
-                  {t("common:delete")}
+                  {t("delete")}
                 </DropdownItem>,
               ]
             : undefined
@@ -205,7 +205,7 @@ export default function MappingDetails() {
           onSubmit={handleSubmit(save)}
           role="manage-clients"
         >
-          <FormGroup label={t("common:mapperType")} fieldId="mapperType">
+          <FormGroup label={t("mapperType")} fieldId="mapperType">
             <KeycloakTextInput
               type="text"
               id="mapperType"
@@ -215,19 +215,16 @@ export default function MappingDetails() {
             />
           </FormGroup>
           <FormGroup
-            label={t("common:name")}
+            label={t("name")}
             labelIcon={
-              <HelpItem
-                helpText={t("client-scopes-help:mapperName")}
-                fieldLabelId="name"
-              />
+              <HelpItem helpText={t("mapperNameHelp")} fieldLabelId="name" />
             }
             fieldId="name"
             isRequired
             validated={
               errors.name ? ValidatedOptions.error : ValidatedOptions.default
             }
-            helperTextInvalid={t("common:required")}
+            helperTextInvalid={t("required")}
           >
             <KeycloakTextInput
               id="name"
@@ -246,13 +243,13 @@ export default function MappingDetails() {
           </FormProvider>
           <ActionGroup>
             <Button variant="primary" type="submit">
-              {t("common:save")}
+              {t("save")}
             </Button>
             <Button
               variant="link"
               component={(props) => <Link {...props} to={toDetails()} />}
             >
-              {t("common:cancel")}
+              {t("cancel")}
             </Button>
           </ActionGroup>
         </FormAccess>

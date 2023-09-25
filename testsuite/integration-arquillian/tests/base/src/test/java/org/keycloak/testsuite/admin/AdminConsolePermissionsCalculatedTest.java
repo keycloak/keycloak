@@ -16,13 +16,13 @@
  */
 package org.keycloak.testsuite.admin;
 
-import org.keycloak.Config;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.keycloak.Config;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.representations.AccessTokenResponse;
@@ -69,12 +69,11 @@ public class AdminConsolePermissionsCalculatedTest extends AbstractKeycloakTest 
             AccessTokenResponse accessToken = adminClient.tokenManager().getAccessToken();
             assertNotNull(adminClient.realms().findAll());
 
-            String whoAmiUrl = suiteContext.getAuthServerInfo().getContextRoot().toString() + "/auth/admin/master/console/whoami";
+            String whoAmiUrl = suiteContext.getAuthServerInfo().getContextRoot().toString() + "/auth/admin/master/console/whoami?currentRealm=master";
 
             JsonNode jsonNode = SimpleHttp.doGet(whoAmiUrl, client).auth(accessToken.getToken()).asJson();
 
             assertTrue("Permissions for " + Config.getAdminRealm() + " realm.", jsonNode.at("/realm_access/" + Config.getAdminRealm()).isArray());
-            assertTrue("Permissions for " + REALM_NAME + " realm.", jsonNode.at("/realm_access/" + REALM_NAME).isArray());
         }
     }
 

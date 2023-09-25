@@ -48,6 +48,7 @@ import org.keycloak.component.ComponentModel;
 import org.keycloak.component.ComponentValidationException;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -517,7 +518,7 @@ public class UserProfileTest extends AbstractUserProfileTest {
         UserModel user = profile.create();
 
         assertThat(profile.getAttributes().nameSet(),
-                containsInAnyOrder(UserModel.USERNAME, UserModel.EMAIL, UserModel.LOCALE, "address", "department"));
+                containsInAnyOrder(UserModel.USERNAME, UserModel.EMAIL, UserModel.LOCALE, "department"));
 
         assertNull(user.getFirstAttribute("department"));
 
@@ -644,17 +645,16 @@ public class UserProfileTest extends AbstractUserProfileTest {
         provider.setConfiguration("{\"attributes\": [{\"name\": \"department\", \"permissions\": {\"edit\": [\"admin\"]}},"
                 + "{\"name\": \"phone\", \"permissions\": {\"edit\": [\"admin\"]}},"
                 + "{\"name\": \"address\", \"permissions\": {\"edit\": [\"admin\"]}}]}");
-
         UserProfile profile = provider.create(UserProfileContext.ACCOUNT, attributes);
         UserModel user = profile.create();
-
         assertThat(profile.getAttributes().nameSet(),
                 containsInAnyOrder(UserModel.USERNAME, UserModel.EMAIL, UserModel.LOCALE, "address", "department", "phone"));
 
+        attributes.put("address", Arrays.asList("change-address"));
+        attributes.put("department", Arrays.asList("changed-sales"));
+        attributes.put("phone", Arrays.asList("changed-phone"));
         profile = provider.create(UserProfileContext.USER_API, attributes, user);
-
         Set<String> attributesUpdated = new HashSet<>();
-
         profile.update((attributeName, userModel, oldValue) -> assertTrue(attributesUpdated.add(attributeName)));
         assertThat(attributesUpdated, containsInAnyOrder("department", "address", "phone"));
 
@@ -1315,6 +1315,32 @@ public class UserProfileTest extends AbstractUserProfileTest {
     }
 
     @Test
+    public void testReadOnlyInternalAttributeValidation() {
+        getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) UserProfileTest::testReadOnlyInternalAttributeValidation);
+    }
+
+    private static void testReadOnlyInternalAttributeValidation(KeycloakSession session) throws IOException {
+        RealmModel realm = session.getContext().getRealm();
+        UserModel maria = session.users().addUser(realm, "maria");
+
+        maria.setAttribute(LDAPConstants.LDAP_ID, List.of("1"));
+
+        DeclarativeUserProfileProvider provider = getDynamicUserProfileProvider(session);
+        Map<String, List<String>> attributes = new HashMap<>();
+
+        attributes.put(LDAPConstants.LDAP_ID, List.of("2"));
+
+        UserProfile profile = provider.create(UserProfileContext.USER_API, attributes, maria);
+
+        try {
+            profile.validate();
+            fail("Should fail validation");
+        } catch (ValidationException ve) {
+            assertTrue(ve.isAttributeOnError(LDAPConstants.LDAP_ID));
+        }
+    }
+
+    @Test
     public void testRequiredByClientScope() {
         getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) UserProfileTest::testRequiredByClientScope);
     }
@@ -1464,6 +1490,7 @@ public class UserProfileTest extends AbstractUserProfileTest {
         UserModel user = session.users().addUser(realm, username);
         Map<String, Object> attributes = new HashMap<>();
 
+        attributes.put(UserModel.USERNAME, user.getUsername());
         attributes.put(UserModel.EMAIL, "test@keycloak.com");
 
         UserProfile profile = provider.create(UserProfileContext.USER_API, attributes, user);
@@ -1502,10 +1529,20 @@ public class UserProfileTest extends AbstractUserProfileTest {
         attributes.put(UserModel.EMAIL, Arrays.asList("new-email@test.com"));
         attributes.put("foo", "changed");
         profile = provider.create(UserProfileContext.USER_API, attributes, user);
+        try {
+            profile.update(false);
+            fail("Should fail validation");
+        } catch (ValidationException ve) {
+            assertTrue(ve.isAttributeOnError(UserModel.USERNAME));
+            assertTrue(ve.hasError(Messages.MISSING_USERNAME));
+        }
+
+        attributes.put(UserModel.USERNAME, Collections.singletonList(user.getUsername()));
+        profile = provider.create(UserProfileContext.USER_API, attributes, user);
         profile.update(false);
+
         profile = provider.create(UserProfileContext.USER_API, user);
         Attributes userAttributes = profile.getAttributes();
-
         assertEquals("new-email@test.com", userAttributes.getFirstValue(UserModel.EMAIL));
         assertEquals("Test Value", userAttributes.getFirstValue("test-attribute"));
         assertEquals("changed", userAttributes.getFirstValue("foo"));
@@ -1546,5 +1583,52 @@ public class UserProfileTest extends AbstractUserProfileTest {
         // removes the test-attribute attribute because now admin has write permission
         assertEquals("new-email@test.com", userAttributes.getFirstValue(UserModel.EMAIL));
         assertNull(userAttributes.getFirstValue("test-attribute"));
+    }
+
+    @Test
+    public void testRemoveEmptyRootAttribute() {
+        getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) UserProfileTest::testRemoveEmptyRootAttribute);
+    }
+
+    private static void testRemoveEmptyRootAttribute(KeycloakSession session) {
+        Map<String, List<String>> attributes = new HashMap<>();
+
+        attributes.put(UserModel.USERNAME, List.of(org.keycloak.models.utils.KeycloakModelUtils.generateId()));
+        attributes.put(UserModel.EMAIL, List.of(""));
+        attributes.put(UserModel.FIRST_NAME, List.of(""));
+        attributes.put("test-attribute", List.of(""));
+
+        UserProfileProvider provider = getDynamicUserProfileProvider(session);
+
+        provider.setConfiguration("{\"attributes\": ["
+                + "{\"name\": \"test-attribute\", \"permissions\": {\"edit\": [\"admin\", \"user\"]}},"
+                + "{\"name\": \"firstName\", \"permissions\": {\"edit\": [\"admin\", \"user\"]}},"
+                + "{\"name\": \"lastName\", \"permissions\": {\"edit\": [\"admin\", \"user\"]}},"
+                + "{\"name\": \"email\", \"permissions\": {\"edit\": [\"admin\", \"user\"]}}]}");
+
+        UserProfile profile = provider.create(UserProfileContext.USER_API, attributes);
+        UserModel user = profile.create();
+        assertNull(user.getEmail());
+        assertNull(user.getFirstName());
+        assertNull(user.getLastName());
+
+        attributes.remove(UserModel.EMAIL);
+        attributes.put(UserModel.FIRST_NAME, List.of("myfname"));
+        profile = provider.create(UserProfileContext.USER_API, attributes);
+        Attributes upAttributes = profile.getAttributes();
+        assertRemoveEmptyRootAttribute(attributes, user, upAttributes);
+
+        profile = provider.create(UserProfileContext.USER_API, attributes, user);
+        profile.update(false);
+        upAttributes = profile.getAttributes();
+        assertRemoveEmptyRootAttribute(attributes, user, upAttributes);
+    }
+
+    private static void assertRemoveEmptyRootAttribute(Map<String, List<String>> attributes, UserModel user, Attributes upAttributes) {
+        assertNull(upAttributes.getFirstValue(UserModel.LAST_NAME));
+        assertNull(user.getLastName());
+        assertNull(upAttributes.getFirstValue(UserModel.EMAIL));
+        assertNull(user.getEmail());
+        assertEquals(upAttributes.getFirstValue(UserModel.FIRST_NAME), attributes.get(UserModel.FIRST_NAME).get(0));
     }
 }

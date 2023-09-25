@@ -72,4 +72,12 @@ public class KeycloakUriBuilderTest {
         Assert.assertEquals("https://localhost/path", KeycloakUriBuilder.fromUri("https://localhost/path").buildAsString());
         Assert.assertEquals("https://localhost/path", KeycloakUriBuilder.fromUri("https://localhost/path").preserveDefaultPort().buildAsString());
     }
+
+    @Test
+    public void testTemplateAndNotTemplate() {
+        Assert.assertEquals("https://localhost:8443/path?key=query#fragment", KeycloakUriBuilder.fromUri(
+                "https://localhost:8443/{path}?key={query}#{fragment}").buildAsString("path", "query", "fragment"));
+        Assert.assertEquals("https://localhost:8443/%7Bpath%7D?key=%7Bquery%7D#%7Bfragment%7D", KeycloakUriBuilder.fromUri(
+                "https://localhost:8443/{path}?key={query}#{fragment}", false).buildAsString());
+    }
 }

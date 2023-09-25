@@ -33,7 +33,7 @@ export const UserFederationLdapForm = ({
   id,
   onSubmit,
 }: UserFederationLdapFormProps) => {
-  const { t } = useTranslation("user-federation");
+  const { t } = useTranslation();
   const form = useFormContext<LdapComponentRepresentation>();
   const navigate = useNavigate();
   const { realm } = useRealm();
@@ -82,7 +82,7 @@ export const UserFederationLdapForm = ({
             onClick={() => navigate(toUserFederation({ realm }))}
             data-testid="ldap-cancel"
           >
-            {t("common:cancel")}
+            {t("cancel")}
           </Button>
         </FixedButtonsGroup>
       </Form>

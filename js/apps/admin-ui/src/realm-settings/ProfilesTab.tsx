@@ -42,7 +42,7 @@ type ClientProfile = ClientProfileRepresentation & {
 };
 
 export default function ProfilesTab() {
-  const { t } = useTranslation("realm-settings");
+  const { t } = useTranslation();
   const { realm } = useRealm();
   const { addAlert, addError } = useAlerts();
   const [tableProfiles, setTableProfiles] = useState<ClientProfile[]>();
@@ -152,13 +152,10 @@ export default function ProfilesTab() {
           profiles: changedProfiles,
           globalProfiles: changedGlobalProfiles,
         });
-        addAlert(
-          t("realm-settings:updateClientProfilesSuccess"),
-          AlertVariant.success,
-        );
+        addAlert(t("updateClientProfilesSuccess"), AlertVariant.success);
         setKey(key + 1);
       } catch (error) {
-        addError("realm-settings:updateClientProfilesError", error);
+        addError("updateClientProfilesError", error);
       }
     } catch (error) {
       console.warn("Invalid json, ignoring value using {}");
@@ -203,8 +200,8 @@ export default function ProfilesTab() {
       {!show ? (
         <KeycloakDataTable
           key={tableProfiles.length}
-          ariaLabelKey="realm-settings:profiles"
-          searchPlaceholderKey="realm-settings:clientProfileSearch"
+          ariaLabelKey="profiles"
+          searchPlaceholderKey="clientProfileSearch"
           loader={loader}
           toolbarItem={
             <ToolbarItem>
@@ -225,7 +222,7 @@ export default function ProfilesTab() {
           isRowDisabled={(value) => value.global}
           actions={[
             {
-              title: t("common:delete"),
+              title: t("delete"),
               onRowClick: (profile) => {
                 setSelectedProfile(profile);
                 toggleDeleteDialog();
@@ -235,7 +232,7 @@ export default function ProfilesTab() {
           columns={[
             {
               name: "name",
-              displayKey: t("common:name"),
+              displayKey: t("name"),
               cellRenderer: cellFormatter,
             },
             {

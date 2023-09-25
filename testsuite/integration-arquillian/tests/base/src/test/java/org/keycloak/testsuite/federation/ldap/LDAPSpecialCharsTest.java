@@ -159,12 +159,12 @@ public class LDAPSpecialCharsTest extends AbstractLDAPTest {
             // 1 - Grant some groups in LDAP
 
             // This group should already exists as it was imported from LDAP
-            GroupModel specialGroup = KeycloakModelUtils.findGroupByPath(appRealm, "/group-spec,ia*l_characžter)s");
+            GroupModel specialGroup = KeycloakModelUtils.findGroupByPath(session, appRealm, "/group-spec,ia*l_characžter)s");
             Assert.assertNotNull(specialGroup);
 
             specialUser.joinGroup(specialGroup);
 
-            GroupModel groupWithSlashes = KeycloakModelUtils.findGroupByPath(appRealm, "/group/with/three/slashes");
+            GroupModel groupWithSlashes = KeycloakModelUtils.findGroupByPath(session, appRealm, "/group/with/three/slashes");
             Assert.assertNotNull(groupWithSlashes);
 
             specialUser.joinGroup(groupWithSlashes);

@@ -16,10 +16,11 @@ Options:
 
 Cache:
 
---cache <type>       Defines the cache mechanism for high-availability. By default, a 'ispn' cache
-                       is used to create a cluster between multiple server nodes. A 'local' cache
-                       disables clustering and is intended for development and testing purposes.
-                       Possible values are: ispn, local. Default: ispn.
+--cache <type>       Defines the cache mechanism for high-availability. By default in production
+                       mode, a 'ispn' cache is used to create a cluster between multiple server
+                       nodes. By default in development mode, a 'local' cache disables clustering
+                       and is intended for development and testing purposes. Possible values are:
+                       ispn, local. Default: ispn.
 --cache-config-file <file>
                      Defines the file from which cache configuration should be loaded from. The
                        configuration file is relative to the 'conf/' directory.
@@ -135,15 +136,17 @@ Feature:
                        account2, account3, admin-api, admin-fine-grained-authz, admin2,
                        authorization, ciba, client-policies, client-secret-rotation,
                        declarative-user-profile, docker, dpop, dynamic-scopes, fips, impersonation,
-                       js-adapter, kerberos, map-storage, par, preview, recovery-codes, scripts,
-                       step-up-authentication, token-exchange, update-email, web-authn.
+                       js-adapter, kerberos, linkedin-oauth, map-storage, par, preview,
+                       recovery-codes, scripts, step-up-authentication, token-exchange,
+                       update-email, web-authn.
 --features-disabled <feature>
                      Disables a set of one or more features. Possible values are: account-api,
                        account2, account3, admin-api, admin-fine-grained-authz, admin2,
                        authorization, ciba, client-policies, client-secret-rotation,
                        declarative-user-profile, docker, dpop, dynamic-scopes, fips, impersonation,
-                       js-adapter, kerberos, map-storage, par, preview, recovery-codes, scripts,
-                       step-up-authentication, token-exchange, update-email, web-authn.
+                       js-adapter, kerberos, linkedin-oauth, map-storage, par, preview,
+                       recovery-codes, scripts, step-up-authentication, token-exchange,
+                       update-email, web-authn.
 
 Hostname:
 

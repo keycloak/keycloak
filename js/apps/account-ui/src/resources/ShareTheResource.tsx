@@ -113,7 +113,7 @@ export const ShareTheResource = ({
 
   return (
     <Modal
-      title={t("shareTheResource", [resource.name])}
+      title={t("shareTheResource", { name: resource.name })}
       variant="medium"
       isOpen={open}
       onClose={onClose}

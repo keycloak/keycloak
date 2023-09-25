@@ -11,7 +11,7 @@ includes a single realm, called `master`. Use this realm only for managing Keycl
 Use these steps to create the first realm.
 
 . Open the {links-admin-console}.
-. Click the word *master* in the top-left corner, then click *Create realm*.
+. Click the word *master* in the top-left corner, then click *Create Realm*.
 . Enter `myrealm` in the *Realm name* field.
 . Click *Create*.
 
@@ -22,8 +22,9 @@ image::add-realm.png[Add realm]
 Initially, the realm has no users. Use these steps to create a user:
 
 . Open the {links-admin-console}.
+. Click the word *master* in the top-left corner, then click *myrealm*.
 . Click *Users* in the left-hand menu.
-. Click *Create new user*.
+. Click *Add user*.
 . Fill in the form with the following values:
 ** *Username*: `myuser`
 ** *First name*: any first name

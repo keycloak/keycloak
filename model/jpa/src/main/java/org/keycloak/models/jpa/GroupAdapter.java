@@ -122,6 +122,7 @@ public class GroupAdapter implements GroupModel , JpaModel<GroupEntity> {
     @Override
     public Stream<GroupModel> getSubGroupsStream() {
         TypedQuery<String> query = em.createNamedQuery("getGroupIdsByParent", String.class);
+        query.setParameter("realm", group.getRealm());
         query.setParameter("parent", group.getId());
         return closing(query.getResultStream().map(realm::getGroupById).filter(Objects::nonNull));
     }

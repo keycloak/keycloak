@@ -4,6 +4,11 @@
 
     <properties>
         <version.log4j>2.17.1</version.log4j>
+        <!-- this property prevents the warning "WARN FilenoUtil: Native subprocess control requires open access" when using JRuby for the unit tests on JDK17 -->
+        <surefire.system.args>
+            --add-opens=java.base/sun.nio.ch=ALL-UNNAMED
+            --add-opens java.base/java.io=ALL-UNNAMED
+        </surefire.system.args>
     </properties>
 
     <build>
@@ -134,7 +139,7 @@
         <dependency>
             <groupId>org.asciidoctor</groupId>
             <artifactId>asciidoctorj</artifactId>
-            <version>2.1.0</version>
+            <version>2.5.10</version>
             <scope>test</scope>
         </dependency>
         <dependency>

@@ -1,6 +1,7 @@
 import AuthenticationExecutionInfoRepresentation from "@keycloak/keycloak-admin-client/lib/defs/authenticationExecutionInfoRepresentation";
 import AuthenticationFlowRepresentation from "@keycloak/keycloak-admin-client/lib/defs/authenticationFlowRepresentation";
 import type { AuthenticationProviderRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/authenticatorConfigRepresentation";
+import AuthenticatorConfigRepresentation from "@keycloak/keycloak-admin-client/lib/defs/authenticatorConfigRepresentation";
 import {
   AlertVariant,
   Button,
@@ -51,7 +52,7 @@ export const providerConditionFilter = (
 ) => value.displayName?.startsWith("Condition ");
 
 export default function FlowDetails() {
-  const { t } = useTranslation("authentication");
+  const { t } = useTranslation();
   const { realm } = useRealm();
   const { addAlert, addError } = useAlerts();
   const { id, usedBy, builtIn } = useParams<FlowParams>();
@@ -80,7 +81,7 @@ export default function FlowDetails() {
       const flows = await adminClient.authenticationManagement.getFlows();
       const flow = flows.find((f) => f.id === id);
       if (!flow) {
-        throw new Error(t("common:notFound"));
+        throw new Error(t("notFound"));
       }
 
       const executions =
@@ -103,12 +104,29 @@ export default function FlowDetails() {
     try {
       let id = ex.id!;
       if ("parent" in change) {
+        let config: AuthenticatorConfigRepresentation = {};
+        if ("authenticationConfig" in ex) {
+          config = await adminClient.authenticationManagement.getConfig({
+            id: ex.authenticationConfig as string,
+          });
+        }
+
         await adminClient.authenticationManagement.delExecution({ id });
         const result =
           await adminClient.authenticationManagement.addExecutionToFlow({
             flow: change.parent?.displayName! || flow?.alias!,
             provider: ex.providerId!,
           });
+
+        if (config.id) {
+          const newConfig = {
+            id: result.id,
+            alias: config.alias,
+            config: config.config,
+          };
+          await adminClient.authenticationManagement.createConfig(newConfig);
+        }
+
         id = result.id!;
       }
       const times = change.newIndex - change.oldIndex;
@@ -126,7 +144,7 @@ export default function FlowDetails() {
       refresh();
       addAlert(t("updateFlowSuccess"), AlertVariant.success);
     } catch (error: any) {
-      addError("authentication:updateFlowError", error);
+      addError("updateFlowError", error);
     }
   };
 
@@ -141,7 +159,7 @@ export default function FlowDetails() {
       refresh();
       addAlert(t("updateFlowSuccess"), AlertVariant.success);
     } catch (error: any) {
-      addError("authentication:updateFlowError", error);
+      addError("updateFlowError", error);
     }
   };
 
@@ -157,7 +175,7 @@ export default function FlowDetails() {
       refresh();
       addAlert(t("updateFlowSuccess"), AlertVariant.success);
     } catch (error) {
-      addError("authentication:updateFlowError", error);
+      addError("updateFlowError", error);
     }
   };
 
@@ -176,19 +194,19 @@ export default function FlowDetails() {
       refresh();
       addAlert(t("updateFlowSuccess"), AlertVariant.success);
     } catch (error) {
-      addError("authentication:updateFlowError", error);
+      addError("updateFlowError", error);
     }
   };
 
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
-    titleKey: "authentication:deleteConfirmExecution",
+    titleKey: "deleteConfirmExecution",
     children: (
-      <Trans i18nKey="authentication:deleteConfirmExecutionMessage">
+      <Trans i18nKey="deleteConfirmExecutionMessage">
         {" "}
         <strong>{{ name: selectedExecution?.displayName }}</strong>.
       </Trans>
     ),
-    continueButtonLabel: "common:delete",
+    continueButtonLabel: "delete",
     continueButtonVariant: ButtonVariant.danger,
     onConfirm: async () => {
       try {
@@ -198,20 +216,20 @@ export default function FlowDetails() {
         addAlert(t("deleteExecutionSuccess"), AlertVariant.success);
         refresh();
       } catch (error) {
-        addError("authentication:deleteExecutionError", error);
+        addError("deleteExecutionError", error);
       }
     },
   });
 
   const [toggleDeleteFlow, DeleteFlowConfirm] = useConfirmDialog({
-    titleKey: "authentication:deleteConfirmFlow",
+    titleKey: "deleteConfirmFlow",
     children: (
-      <Trans i18nKey="authentication:deleteConfirmFlowMessage">
+      <Trans i18nKey="deleteConfirmFlowMessage">
         {" "}
         <strong>{{ flow: flow?.alias || "" }}</strong>.
       </Trans>
     ),
-    continueButtonLabel: "common:delete",
+    continueButtonLabel: "delete",
     continueButtonVariant: ButtonVariant.danger,
     onConfirm: async () => {
       try {
@@ -221,7 +239,7 @@ export default function FlowDetails() {
         navigate(toAuthentication({ realm }));
         addAlert(t("deleteFlowSuccess"), AlertVariant.success);
       } catch (error) {
-        addError("authentication:deleteFlowError", error);
+        addError("deleteFlowError", error);
       }
     },
   });
@@ -257,7 +275,7 @@ export default function FlowDetails() {
             key="delete"
             onClick={() => toggleDeleteFlow()}
           >
-            {t("common:delete")}
+            {t("delete")}
           </DropdownItem>,
         ]
       : []),
@@ -359,7 +377,7 @@ export default function FlowDetails() {
                 onDragFinish={(order) => {
                   const withoutHeaderId = order.slice(1);
                   setLiveText(
-                    t("common:onDragFinish", { list: dragged?.displayName }),
+                    t("onDragFinish", { list: dragged?.displayName }),
                   );
                   const change = executionList.getChange(
                     dragged!,
@@ -369,9 +387,7 @@ export default function FlowDetails() {
                 }}
                 onDragStart={(id) => {
                   const item = executionList.findExecution(id)!;
-                  setLiveText(
-                    t("common:onDragStart", { item: item.displayName }),
-                  );
+                  setLiveText(t("onDragStart", { item: item.displayName }));
                   setDragged(item);
                   if (!item.isCollapsed) {
                     item.isCollapsed = true;
@@ -379,11 +395,9 @@ export default function FlowDetails() {
                   }
                 }}
                 onDragMove={() =>
-                  setLiveText(
-                    t("common:onDragMove", { item: dragged?.displayName }),
-                  )
+                  setLiveText(t("onDragMove", { item: dragged?.displayName }))
                 }
-                onDragCancel={() => setLiveText(t("common:onDragCancel"))}
+                onDragCancel={() => setLiveText(t("onDragCancel"))}
                 itemOrder={[
                   "header",
                   ...executionList.order().map((ex) => ex.id!),

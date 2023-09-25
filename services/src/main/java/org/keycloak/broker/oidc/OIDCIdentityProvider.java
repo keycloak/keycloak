@@ -426,7 +426,9 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
                 }
             }
 
-            identity.getContextData().put(BROKER_NONCE_PARAM, idToken.getOtherClaims().get(OIDCLoginProtocol.NONCE_PARAM));
+            if (!getConfig().isDisableNonce()) {
+                identity.getContextData().put(BROKER_NONCE_PARAM, idToken.getOtherClaims().get(OIDCLoginProtocol.NONCE_PARAM));
+            }
             
             if (getConfig().isStoreToken()) {
                 if (tokenResponse.getExpiresIn() > 0) {
@@ -496,7 +498,7 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
                     if (MediaType.APPLICATION_JSON_TYPE.isCompatible(contentMediaType)) {
                         userInfo = response.asJson();
                     } else if (APPLICATION_JWT_TYPE.isCompatible(contentMediaType)) {
-                        userInfo = JsonSerialization.readValue(parseTokenInput(accessToken, false), JsonNode.class);
+                        userInfo = JsonSerialization.readValue(parseTokenInput(response.asString(), false), JsonNode.class);
                     } else {
                         throw new RuntimeException("Unsupported content-type [" + contentType + "] in response from [" + userInfoUrl + "].");
                     }
@@ -584,11 +586,15 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
         return accessToken;
     }
 
+    protected KeyWrapper getIdentityProviderKeyWrapper(JWSInput jws) {
+        return PublicKeyStorageManager.getIdentityProviderKeyWrapper(session, session.getContext().getRealm(), getConfig(), jws);
+    }
+
     protected boolean verify(JWSInput jws) {
         if (!getConfig().isValidateSignature()) return true;
 
         try {
-            KeyWrapper key = PublicKeyStorageManager.getIdentityProviderKeyWrapper(session, session.getContext().getRealm(), getConfig(), jws);
+            KeyWrapper key = getIdentityProviderKeyWrapper(jws);
             if (key == null) {
                 logger.debugf("Failed to verify token, key not found for algorithm %s", jws.getHeader().getRawAlgorithm());
                 return false;
@@ -910,11 +916,13 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
     @Override
     protected UriBuilder createAuthorizationUrl(AuthenticationRequest request) {
         UriBuilder uriBuilder = super.createAuthorizationUrl(request);
-        String nonce = Base64Url.encode(SecretGenerator.getInstance().randomBytes(16));
         AuthenticationSessionModel authenticationSession = request.getAuthenticationSession();
 
-        authenticationSession.setClientNote(BROKER_NONCE_PARAM, nonce);
-        uriBuilder.queryParam(OIDCLoginProtocol.NONCE_PARAM, nonce);
+        if (!getConfig().isDisableNonce()) {
+            String nonce = Base64Url.encode(SecretGenerator.getInstance().randomBytes(16));
+            authenticationSession.setClientNote(BROKER_NONCE_PARAM, nonce);
+            uriBuilder.queryParam(OIDCLoginProtocol.NONCE_PARAM, nonce);
+        }
 
         String maxAge = request.getAuthenticationSession().getClientNote(OIDCLoginProtocol.MAX_AGE_PARAM);
 
@@ -929,8 +937,8 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
     public void preprocessFederatedIdentity(KeycloakSession session, RealmModel realm, BrokeredIdentityContext context) {
         AuthenticationSessionModel authenticationSession = session.getContext().getAuthenticationSession();
         
-        if (authenticationSession == null) {
-            // no interacting with the brokered OP, likely doing token exchanges
+        if (authenticationSession == null || getConfig().isDisableNonce()) {
+            // no interacting with the brokered OP, likely doing token exchanges or no nonce
             return;
         }
 

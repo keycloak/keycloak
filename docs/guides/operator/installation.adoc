@@ -2,6 +2,7 @@
 <#import "/templates/kc.adoc" as kc>
 <#import "/templates/options.adoc" as opts>
 <#import "/templates/links.adoc" as links>
+<#import "/templates/profile.adoc" as profile>
 
 <@tmpl.guide
 title="Keycloak Operator Installation"
@@ -39,8 +40,9 @@ image::select-operator.jpeg["Select the Keycloak Operator in the UI"]
 +
 Make sure you are installing from the *fast* channel:
 +
-image::configure-operator.jpeg["Configure Keycloak Operator"]
+image::configure-operator.png["Configure Keycloak Operator"]
 
+<@profile.ifCommunity>
 === Installing by using kubectl without Operator Lifecycle Manager
 
 You can install the Operator on a vanilla Kubernetes cluster by using `kubectl` commands:
@@ -61,5 +63,6 @@ kubectl apply -f https://raw.githubusercontent.com/keycloak/keycloak-k8s-resourc
 ----
 
 Currently the Operator watches only the namespace where the Operator is installed.
+</@profile.ifCommunity>
 
 </@tmpl.guide>

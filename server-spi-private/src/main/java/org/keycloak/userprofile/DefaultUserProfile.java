@@ -32,6 +32,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.UserModel;
 import org.keycloak.storage.ReadOnlyException;
+import org.keycloak.utils.StringUtil;
 
 /**
  * <p>The default implementation for {@link UserProfile}. Should be reused as much as possible by the different implementations
@@ -104,29 +105,31 @@ public final class DefaultUserProfile implements UserProfile {
         }
 
         try {
-            for (Map.Entry<String, List<String>> attribute : attributes.attributeSet()) {
+            for (Map.Entry<String, List<String>> attribute : attributes.getWritable().entrySet()) {
                 String name = attribute.getKey();
+                List<String> currentValue = user.getAttributeStream(name)
+                        .filter(Objects::nonNull).collect(Collectors.toList());
+                List<String> updatedValue = attribute.getValue().stream()
+                        .filter(StringUtil::isNotBlank).collect(Collectors.toList());
 
-                if (attributes.isReadOnly(name)) {
+                if (CollectionUtil.collectionEquals(currentValue, updatedValue)) {
                     continue;
                 }
 
-                List<String> currentValue = user.getAttributeStream(name).filter(Objects::nonNull).collect(Collectors.toList());
-                List<String> updatedValue = attribute.getValue().stream().filter(Objects::nonNull).collect(Collectors.toList());
+                boolean ignoreEmptyValue = !removeAttributes && updatedValue.isEmpty();
 
-                if (!CollectionUtil.collectionEquals(currentValue, updatedValue)) {
-                    if (!removeAttributes && updatedValue.isEmpty()) {
-                        continue;
-                    }
-                    user.setAttribute(name, updatedValue);
+                if (isCustomAttribute(name) && ignoreEmptyValue) {
+                    continue;
+                }
 
-                    if (UserModel.EMAIL.equals(name) && metadata.getContext().isResetEmailVerified()) {
-                        user.setEmailVerified(false);
-                    }
+                user.setAttribute(name, updatedValue);
 
-                    for (AttributeChangeListener listener : changeListener) {
-                        listener.onChange(name, user, currentValue);
-                    }
+                if (UserModel.EMAIL.equals(name) && metadata.getContext().isResetEmailVerified()) {
+                    user.setEmailVerified(false);
+                }
+
+                for (AttributeChangeListener listener : changeListener) {
+                    listener.onChange(name, user, currentValue);
                 }
             }
 
@@ -139,7 +142,7 @@ public final class DefaultUserProfile implements UserProfile {
                 attrsToRemove.removeAll(attributes.nameSet());
 
                 for (String attr : attrsToRemove) {
-                    if (this.attributes.isReadOnly(attr)) {
+                    if (attributes.isReadOnly(attr)) {
                         continue;
                     }
 
@@ -159,6 +162,10 @@ public final class DefaultUserProfile implements UserProfile {
         }
 
         return user;
+    }
+
+    private boolean isCustomAttribute(String name) {
+        return !getAttributes().isRootAttribute(name);
     }
 
     @Override

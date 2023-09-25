@@ -19,7 +19,7 @@ const PermissionDetails = lazy(
 export const NewPermissionRoute: AppRouteObject = {
   path: "/:realm/clients/:id/authorization/permission/new/:permissionType",
   element: <PermissionDetails />,
-  breadcrumb: (t) => t("clients:createPermission"),
+  breadcrumb: (t) => t("createPermission"),
   handle: {
     access: "view-clients",
   },

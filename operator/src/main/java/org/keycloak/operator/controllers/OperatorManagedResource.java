@@ -24,11 +24,9 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.dsl.base.PatchContext;
 import io.fabric8.kubernetes.client.dsl.base.PatchType;
-import io.fabric8.kubernetes.client.utils.Serialization;
 import io.quarkus.logging.Log;
 
 import org.keycloak.operator.Constants;
-import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -79,11 +77,12 @@ public abstract class OperatorManagedResource<T extends HasMetadata> {
                         throw ex;
                     }
                 }
-                Log.debugf("Successfully created or updated resource: %s", resource);
+                Log.debugf("Successfully created or updated resource: %s %s/%s", resource.getKind(), resource.getMetadata().getNamespace(),
+                        resource.getMetadata().getName());
                 return resource;
             } catch (Exception e) {
-                Log.error("Failed to create or update resource");
-                Log.error(Serialization.asYaml(resource));
+                Log.errorf("Failed to create or update resource %s %s/%s", resource.getKind(), resource.getMetadata().getNamespace(),
+                        resource.getMetadata().getName());
                 throw KubernetesClientException.launderThrowable(e);
             }
         });
@@ -104,9 +103,9 @@ public abstract class OperatorManagedResource<T extends HasMetadata> {
         return labels;
     }
 
-    public static Map<String, String> allInstanceLabels(Keycloak keycloak) {
+    public static Map<String, String> allInstanceLabels(HasMetadata primary) {
         var labels = new LinkedHashMap<>(Constants.DEFAULT_LABELS);
-        labels.put(Constants.INSTANCE_LABEL, keycloak.getMetadata().getName());
+        labels.put(Constants.INSTANCE_LABEL, primary.getMetadata().getName());
         return labels;
     }
 

@@ -42,11 +42,11 @@ type OtpPolicyProps = {
 
 type FormFields = Omit<
   RealmRepresentation,
-  "clients" | "components" | "groups"
+  "clients" | "components" | "groups" | "users" | "federatedUsers"
 >;
 
 export const OtpPolicy = ({ realm, realmUpdated }: OtpPolicyProps) => {
-  const { t } = useTranslation("authentication");
+  const { t } = useTranslation();
   const {
     control,
     reset,
@@ -86,7 +86,7 @@ export const OtpPolicy = ({ realm, realmUpdated }: OtpPolicyProps) => {
       setupForm(updatedRealm!);
       addAlert(t("updateOtpSuccess"), AlertVariant.success);
     } catch (error) {
-      addError("authentication:updateOtpError", error);
+      addError("updateOtpError", error);
     }
   };
 
@@ -101,10 +101,7 @@ export const OtpPolicy = ({ realm, realmUpdated }: OtpPolicyProps) => {
         <FormGroup
           label={t("otpType")}
           labelIcon={
-            <HelpItem
-              helpText={t("authentication-help:otpType")}
-              fieldLabelId="authentication:otpType"
-            />
+            <HelpItem helpText={t("otpTypeHelp")} fieldLabelId="otpType" />
           }
           hasNoPaddingTop
         >
@@ -135,8 +132,8 @@ export const OtpPolicy = ({ realm, realmUpdated }: OtpPolicyProps) => {
           label={t("otpHashAlgorithm")}
           labelIcon={
             <HelpItem
-              helpText={t("authentication-help:otpHashAlgorithm")}
-              fieldLabelId="authentication:otpHashAlgorithm"
+              helpText={t("otpHashAlgorithmHelp")}
+              fieldLabelId="otpHashAlgorithm"
             />
           }
           fieldId="otpHashAlgorithm"
@@ -174,8 +171,8 @@ export const OtpPolicy = ({ realm, realmUpdated }: OtpPolicyProps) => {
           label={t("otpPolicyDigits")}
           labelIcon={
             <HelpItem
-              helpText={t("authentication-help:otpPolicyDigits")}
-              fieldLabelId="authentication:otpPolicyDigits"
+              helpText={t("otpPolicyDigitsHelp")}
+              fieldLabelId="otpPolicyDigits"
             />
           }
           hasNoPaddingTop
@@ -207,8 +204,8 @@ export const OtpPolicy = ({ realm, realmUpdated }: OtpPolicyProps) => {
           label={t("lookAround")}
           labelIcon={
             <HelpItem
-              helpText={t("authentication-help:lookAround")}
-              fieldLabelId="authentication:lookAround"
+              helpText={t("lookAroundHelp")}
+              fieldLabelId="lookAround"
             />
           }
           fieldId="lookAround"
@@ -251,8 +248,8 @@ export const OtpPolicy = ({ realm, realmUpdated }: OtpPolicyProps) => {
             }
             labelIcon={
               <HelpItem
-                helpText={t("authentication-help:otpPolicyPeriod")}
-                fieldLabelId="authentication:otpPolicyPeriod"
+                helpText={t("otpPolicyPeriodHelp")}
+                fieldLabelId="otpPolicyPeriod"
               />
             }
           >
@@ -294,8 +291,8 @@ export const OtpPolicy = ({ realm, realmUpdated }: OtpPolicyProps) => {
             }
             labelIcon={
               <HelpItem
-                helpText={t("authentication-help:initialCounter")}
-                fieldLabelId="authentication:initialCounter"
+                helpText={t("initialCounterHelp")}
+                fieldLabelId="initialCounter"
               />
             }
           >
@@ -331,8 +328,8 @@ export const OtpPolicy = ({ realm, realmUpdated }: OtpPolicyProps) => {
           label={t("supportedApplications")}
           labelIcon={
             <HelpItem
-              helpText={t("authentication-help:supportedApplications")}
-              fieldLabelId="authentication:supportedApplications"
+              helpText={t("supportedApplicationsHelp")}
+              fieldLabelId="supportedApplications"
             />
           }
         >
@@ -351,8 +348,8 @@ export const OtpPolicy = ({ realm, realmUpdated }: OtpPolicyProps) => {
             fieldId="otpPolicyCodeReusable"
             labelIcon={
               <HelpItem
-                helpText={t("authentication-help:otpPolicyCodeReusable")}
-                fieldLabelId="authentication:otpPolicyCodeReusable"
+                helpText={t("otpPolicyCodeReusableHelp")}
+                fieldLabelId="otpPolicyCodeReusable"
               />
             }
           >
@@ -363,8 +360,8 @@ export const OtpPolicy = ({ realm, realmUpdated }: OtpPolicyProps) => {
               render={({ field }) => (
                 <Switch
                   id="otpPolicyCodeReusable"
-                  label={t("common:on")}
-                  labelOff={t("common:off")}
+                  label={t("on")}
+                  labelOff={t("off")}
                   isChecked={field.value}
                   onChange={field.onChange}
                 />
@@ -380,14 +377,14 @@ export const OtpPolicy = ({ realm, realmUpdated }: OtpPolicyProps) => {
             type="submit"
             isDisabled={!isValid || !isDirty}
           >
-            {t("common:save")}
+            {t("save")}
           </Button>
           <Button
             data-testid="reload"
             variant={ButtonVariant.link}
             onClick={() => reset({ ...realm })}
           >
-            {t("common:reload")}
+            {t("reload")}
           </Button>
         </ActionGroup>
       </FormAccess>

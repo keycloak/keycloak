@@ -1,7 +1,7 @@
 import ModalUtils from "../../../../util/ModalUtils";
 
 export default class MoveGroupModal extends ModalUtils {
-  private moveButton = "groups:moveHere-button";
+  private moveButton = "moveHere-button";
   private title = ".pf-c-modal-box__title";
 
   clickRow(groupName: string) {

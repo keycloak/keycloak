@@ -337,9 +337,9 @@ public class PolicyEnforcer {
             String ticket = getPermissionTicket(pathConfig, methodConfig, authzClient, request);
 
             if (ticket != null) {
-                response.sendError(401);
                 response.setHeader("WWW-Authenticate", new StringBuilder("UMA realm=\"").append(authzClient.getConfiguration().getRealm()).append("\"").append(",as_uri=\"")
                         .append(authzClient.getServerConfiguration().getIssuer()).append("\"").append(",ticket=\"").append(ticket).append("\"").toString());
+                response.sendError(401);
             } else {
                 response.sendError(403);
             }
@@ -360,8 +360,8 @@ public class PolicyEnforcer {
         String accessDeniedPath = enforcerConfig.getOnDenyRedirectTo();
 
         if (accessDeniedPath != null) {
-            response.sendError(302);
             response.setHeader("Location", accessDeniedPath);
+            response.sendError(302);
         } else {
             response.sendError(403);
         }

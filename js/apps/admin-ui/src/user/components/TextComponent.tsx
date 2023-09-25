@@ -18,6 +18,7 @@ export const TextComponent = (attr: UserProfileAttribute) => {
         data-testid={attr.name}
         type={type}
         placeholder={attr.annotations?.["inputTypePlaceholder"] as string}
+        readOnly={attr.readOnly}
         {...register(fieldName(attr))}
       />
     </UserProfileGroup>
