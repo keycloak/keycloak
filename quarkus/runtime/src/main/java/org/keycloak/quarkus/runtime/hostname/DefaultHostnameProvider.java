@@ -70,7 +70,7 @@ public final class DefaultHostnameProvider implements HostnameProvider, Hostname
             return fromBaseUriOrDefault(URI::getScheme, adminBaseUri, getScheme(originalUriInfo));
         }
         if (LOCAL_ADMIN.equals(urlType)) {
-            return fromBaseUriOrDefault(URI::getHost, localAdminUri, getScheme(originalUriInfo));
+            return fromBaseUriOrDefault(URI::getScheme, localAdminUri, getScheme(originalUriInfo));
         }
 
         String scheme = forNonStrictBackChannel(originalUriInfo, urlType, this::getScheme, this::getScheme);
