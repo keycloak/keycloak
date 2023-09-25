@@ -78,3 +78,11 @@ New code example:
 When running on OpenShift, with ingress enabled, and with the spec.ingress.classname set to openshift-default, you may leave the spec.hostname.hostname unpopulated in the Keycloak CR.
 The operator will assign a default hostname to the stored version of the CR similar to what would be created by an OpenShift Route without an explicit host - that is ingress-namespace.appsDomain
 If the appsDomain changes, or should you need a different hostname for any reason, then update the Keycloak CR.
+
+= The deprecated `auto-build` CLI option was removed
+
+The `auto-build` CLI option has been marked as deprecated for a long time.
+In this release, it was completely removed, and it is no longer supported.
+
+When executing the `start` command, the server is automatically built based on the configuration.
+In order to prevent this behavior, set the `--optimized` flag.

@@ -8,11 +8,6 @@ Use this command to run the server in production.
 
 Options:
 
--b, --auto-build     (Deprecated) Automatically detects whether the server configuration changed
-                       and a new server image must be built prior to starting the server. This
-                       option provides an alternative to manually running the 'build' prior to
-                       starting the server. Use this configuration carefully in production as it
-                       might impact the startup time.
 -h, --help           This help message.
 --help-all           This same help message but with additional options.
 --import-realm       Import realms during startup by reading any realm configuration file from the
