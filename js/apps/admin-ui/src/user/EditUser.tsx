@@ -57,7 +57,6 @@ export default function EditUser() {
   const [bruteForced, setBruteForced] = useState<BruteForced>();
   const [refreshCount, setRefreshCount] = useState(0);
   const refresh = () => setRefreshCount((count) => count + 1);
-  const [isUserProfileEnabled, setIsUserProfileEnabled] = useState(false);
   const [realmRepresentation, setRealmRepresentation] =
     useState<RealmRepresentation>();
   const isFeatureEnabled = useIsFeatureEnabled();
@@ -86,6 +85,13 @@ export default function EditUser() {
   const identityProviderLinksTab = useTab("identity-provider-links");
   const sessionsTab = useTab("sessions");
 
+  function isUserProfileEnabled({ attributes }: RealmRepresentation) {
+    return (
+      isFeatureEnabled(Feature.DeclarativeUserProfile) &&
+      attributes?.userProfileEnabled === "true"
+    );
+  }
+
   useFetch(
     async () => {
       const [user, currentRealm, attackDetection] = await Promise.all([
@@ -109,11 +115,9 @@ export default function EditUser() {
     },
     ({ user, bruteForced, currentRealm }) => {
       setUser(user);
-      const isUserProfileEnabled =
-        isFeatureEnabled(Feature.DeclarativeUserProfile) &&
-        currentRealm.attributes?.userProfileEnabled === "true";
-      userForm.reset(isUserProfileEnabled ? user : toUserFormFields(user));
-      setIsUserProfileEnabled(isUserProfileEnabled);
+      userForm.reset(
+        toUserFormFields(user, isUserProfileEnabled(currentRealm)),
+      );
       setRealmRepresentation(currentRealm);
       setBruteForced(bruteForced);
     },
@@ -174,7 +178,7 @@ export default function EditUser() {
     },
   });
 
-  if (!user || !bruteForced) {
+  if (!user || !bruteForced || !realmRepresentation) {
     return <KeycloakSpinner />;
   }
 
@@ -203,7 +207,13 @@ export default function EditUser() {
           </DropdownItem>,
         ]}
         onToggle={(value) =>
-          save({ ...toUserFormFields(user), enabled: value })
+          save({
+            ...toUserFormFields(
+              user,
+              isUserProfileEnabled(realmRepresentation),
+            ),
+            enabled: value,
+          })
         }
         isEnabled={user.enabled}
       />
@@ -230,7 +240,7 @@ export default function EditUser() {
                   />
                 </PageSection>
               </Tab>
-              {!isUserProfileEnabled && (
+              {!isUserProfileEnabled(realmRepresentation) && (
                 <Tab
                   data-testid="attributes"
                   title={<TabTitleText>{t("attributes")}</TabTitleText>}

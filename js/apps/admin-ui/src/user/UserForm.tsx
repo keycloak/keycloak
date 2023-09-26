@@ -31,6 +31,7 @@ import { FederatedUserLink } from "./FederatedUserLink";
 import { UserProfileFields } from "./UserProfileFields";
 import { UserFormFields } from "./form-state";
 import { RequiredActionMultiSelect } from "./user-credentials/RequiredActionMultiSelect";
+import { useUserProfile } from "../realm-settings/user-profile/UserProfileContext";
 
 export type BruteForced = {
   isBruteForceProtected?: boolean;
@@ -93,7 +94,7 @@ export const UserForm = ({
   const { realm: realmName } = useRealm();
   const formatDate = useFormatDate();
   const isFeatureEnabled = useIsFeatureEnabled();
-
+  const { config } = useUserProfile();
   const navigate = useNavigate();
   const { addAlert, addError } = useAlerts();
   const { hasAccess } = useAccess();
@@ -223,8 +224,8 @@ export const UserForm = ({
           <FederatedUserLink user={user} />
         </FormGroup>
       )}
-      {isUserProfileEnabled && user?.userProfileMetadata ? (
-        <UserProfileFields config={user.userProfileMetadata} />
+      {isUserProfileEnabled && config ? (
+        <UserProfileFields config={config} />
       ) : (
         <>
           {!realm?.registrationEmailAsUsername && (
