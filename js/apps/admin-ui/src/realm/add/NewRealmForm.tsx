@@ -76,21 +76,21 @@ export default function NewRealmForm() {
             onChange={handleFileChange}
           />
           <FormGroup
-            label={t("realmNameField")}
+            label={t("realmIdField")}
             isRequired
-            fieldId="kc-realm-name"
+            fieldId="kc-realm-id"
             validated={errors.realm ? "error" : "default"}
             helperTextInvalid={errors.realm?.message}
           >
             <KeycloakTextInput
               isRequired
-              id="kc-realm-name"
+              id="kc-realm-id"
               validated={errors.realm ? "error" : "default"}
               {...register("realm", {
                 required: { value: true, message: t("required") },
                 pattern: {
                   value: /^[a-zA-Z0-9-_]+$/,
-                  message: t("invalidRealmName"),
+                  message: t("invalidRealmId"),
                 },
               })}
             />
