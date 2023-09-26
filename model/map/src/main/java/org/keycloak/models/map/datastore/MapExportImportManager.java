@@ -414,11 +414,7 @@ public class MapExportImportManager implements ExportImportManager {
         if (rep.getGroups() != null) {
             importGroups(newRealm, rep);
             if (rep.getDefaultGroups() != null) {
-                for (String path : rep.getDefaultGroups()) {
-                    GroupModel found = KeycloakModelUtils.findGroupByPath(session, newRealm, path);
-                    if (found == null) throw new RuntimeException("default group in realm rep doesn't exist: " + path);
-                    newRealm.addDefaultGroup(found);
-                }
+                KeycloakModelUtils.setDefaultGroups(session, newRealm, rep.getDefaultGroups().stream());
             }
         }
 
@@ -1018,6 +1014,9 @@ public class MapExportImportManager implements ExportImportManager {
             }
         }
 
+        if (rep.getDefaultGroups() != null) {
+            KeycloakModelUtils.setDefaultGroups(session, realm, rep.getDefaultGroups().stream());
+        }
         if (rep.getDisplayName() != null) realm.setDisplayName(rep.getDisplayName());
         if (rep.getDisplayNameHtml() != null) realm.setDisplayNameHtml(rep.getDisplayNameHtml());
         if (rep.isEnabled() != null) realm.setEnabled(rep.isEnabled());
