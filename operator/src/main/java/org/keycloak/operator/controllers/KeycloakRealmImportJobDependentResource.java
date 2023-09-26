@@ -34,6 +34,7 @@ import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDep
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResourceConfig;
 
 import org.keycloak.operator.Constants;
+import org.keycloak.operator.Utils;
 import org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImport;
 
 import java.util.List;
@@ -93,7 +94,7 @@ public class KeycloakRealmImportJobDependentResource extends KubernetesDependent
                 .withName(primary.getMetadata().getName())
                 .withNamespace(primary.getMetadata().getNamespace())
                 // this is labeling the instance as the realm import, not the keycloak
-                .withLabels(OperatorManagedResource.allInstanceLabels(primary))
+                .withLabels(Utils.allInstanceLabels(primary))
                 .endMetadata()
                 .withNewSpec()
                 .withTemplate(keycloakPodTemplate)
@@ -117,7 +118,7 @@ public class KeycloakRealmImportJobDependentResource extends KubernetesDependent
 
         var override = "--override=false";
 
-        var runBuild = !keycloakContainer.getArgs().contains(KeycloakDeployment.OPTIMIZED_ARG) ? "/opt/keycloak/bin/kc.sh --verbose build && " : "";
+        var runBuild = !keycloakContainer.getArgs().contains(KeycloakDeploymentDependentResource.OPTIMIZED_ARG) ? "/opt/keycloak/bin/kc.sh --verbose build && " : "";
 
         var commandArgs = List.of("-c",
                 runBuild + "/opt/keycloak/bin/kc.sh --verbose import --optimized --file='" + importMntPath + realmName + "-realm.json' " + override);

@@ -27,7 +27,7 @@ public class KeycloakAdminSecretDependentResource extends KubernetesDependentRes
         return new SecretBuilder()
                 .withNewMetadata()
                 .withName(getName(primary))
-                .addToLabels(OperatorManagedResource.allInstanceLabels(primary))
+                .addToLabels(Utils.allInstanceLabels(primary))
                 .withNamespace(primary.getMetadata().getNamespace())
                 .endMetadata()
                 .withType("kubernetes.io/basic-auth")
