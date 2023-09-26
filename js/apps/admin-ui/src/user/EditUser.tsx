@@ -115,7 +115,7 @@ export default function EditUser() {
         isUserProfileEnabled ? userProfileMetadata : undefined,
       );
 
-      form.reset(toUserFormFields(user));
+      form.reset(toUserFormFields(user, !!userProfileMetadata));
     },
     [refreshCount],
   );
@@ -174,7 +174,7 @@ export default function EditUser() {
     },
   });
 
-  if (!realm || !user || !bruteForced || !userProfileMetadata) {
+  if (!realm || !user || !bruteForced) {
     return <KeycloakSpinner />;
   }
 
@@ -203,7 +203,10 @@ export default function EditUser() {
           </DropdownItem>,
         ]}
         onToggle={(value) =>
-          save({ ...toUserFormFields(user), enabled: value })
+          save({
+            ...toUserFormFields(user, !!userProfileMetadata),
+            enabled: value,
+          })
         }
         isEnabled={user.enabled}
       />
@@ -232,7 +235,7 @@ export default function EditUser() {
                   />
                 </PageSection>
               </Tab>
-              {!userProfileMetadata.attributes && (
+              {!userProfileMetadata && (
                 <Tab
                   data-testid="attributes"
                   title={<TabTitleText>{t("attributes")}</TabTitleText>}

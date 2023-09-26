@@ -82,7 +82,7 @@ export default function CreateUser() {
     }
   };
 
-  if (!realm || !userProfileMetadata) {
+  if (!realm) {
     return <KeycloakSpinner />;
   }
 
