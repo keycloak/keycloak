@@ -18,6 +18,8 @@ package org.keycloak.client.admin.cli.commands;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+
+import org.apache.http.entity.ContentType;
 import org.jboss.aesh.console.command.CommandException;
 import org.jboss.aesh.console.command.CommandResult;
 import org.jboss.aesh.console.command.invocation.CommandInvocation;
@@ -48,6 +50,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import static org.keycloak.client.admin.cli.common.AttributeOperation.Type.DELETE;
 import static org.keycloak.client.admin.cli.common.AttributeOperation.Type.SET;
@@ -398,11 +401,11 @@ public abstract class AbstractRequestCmd extends AbstractAuthOptionsCmd {
                 }
             }
 
-            Header contentType = response.getHeaders().get("content-type");
-            boolean canPrettyPrint = contentType != null && contentType.getValue().equals("application/json");
-            boolean pretty = !compressed;
+            boolean json = Optional.ofNullable(response.getHeaders().get("content-type"))
+                    .map(Header::getValue).map(ContentType::parse).map(ContentType::getMimeType)
+                    .filter("application/json"::equals).isPresent();
 
-            if (canPrettyPrint && (pretty || returnFields != null)) {
+            if (json && !compressed) {
                 ByteArrayOutputStream buffer = new ByteArrayOutputStream();
                 copyStream(response.getBody(), buffer);
 
@@ -417,10 +420,16 @@ public abstract class AbstractRequestCmd extends AbstractAuthOptionsCmd {
                     } else {
                         printAsCsv(rootNode, returnFields, unquoted);
                     }
-                } catch (Exception ignored) {
-                    copyStream(new ByteArrayInputStream(buffer.toByteArray()), abos);
+                } catch (Exception e) {
+                    throw new RuntimeException("Error processing results: " + e.getMessage(), e);
                 }
             } else {
+                if (outputFormat != OutputFormat.JSON || returnFields != null) {
+                    printErr("Cannot create CSV nor filter returned fields because the response is " + (compressed ? "compressed":"not json"));
+                    return CommandResult.SUCCESS;
+                }
+                // in theory the user could explicitly request json, but this could be a non-json response
+                // since there's no option for raw and we don't differentiate the default, there's no error about this
                 copyStream(response.getBody(), abos);
             }
         }
