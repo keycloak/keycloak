@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2023 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,18 +14,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.keycloak.timer;
 
-import org.keycloak.models.KeycloakSessionTask;
-
 /**
- * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
+ * Wrapper around {@link ScheduledTask}.
  */
-public interface ScheduledTask extends KeycloakSessionTask {
+public interface TaskRunner extends Runnable {
 
+    /**
+     * Returns the task.
+     * @return
+     */
+    ScheduledTask getTask();
+
+    /**
+     * Name of the task.
+     * @return
+     */
     default String getTaskName() {
-        return getClass().getSimpleName();
+        return getTask().getTaskName();
     }
-
 }

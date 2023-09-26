@@ -20,6 +20,7 @@ package org.keycloak.models.sessions.infinispan.changes.sessions;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.utils.SessionTimeoutHelper;
+import org.keycloak.timer.ScheduledTask;
 import org.keycloak.timer.TimerProvider;
 
 /**
@@ -36,14 +37,22 @@ public abstract class AbstractLastSessionRefreshStoreFactory {
     // Max count of lastSessionRefreshes. If count of lastSessionRefreshes reach this value, the message is sent to second DC
     public static final int DEFAULT_MAX_COUNT = 100;
 
-
-
     protected void setupPeriodicTimer(KeycloakSession kcSession, AbstractLastSessionRefreshStore store, long timerIntervalMs, String eventKey) {
         TimerProvider timer = kcSession.getProvider(TimerProvider.class);
-        timer.scheduleTask((KeycloakSession keycloakSession) -> {
+        timer.scheduleTask(new PropagateLastSessionRefreshTask(store), timerIntervalMs, eventKey);
+    }
 
-            store.checkSendingMessage(keycloakSession, Time.currentTime());
+    public static class PropagateLastSessionRefreshTask implements ScheduledTask {
 
-        }, timerIntervalMs, eventKey);
+        private final AbstractLastSessionRefreshStore store;
+
+        public PropagateLastSessionRefreshTask(AbstractLastSessionRefreshStore store) {
+            this.store = store;
+        }
+
+        @Override
+        public void run(KeycloakSession session) {
+            store.checkSendingMessage(session, Time.currentTime());
+        }
     }
 }
