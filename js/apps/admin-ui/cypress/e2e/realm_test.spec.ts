@@ -48,7 +48,7 @@ describe("Realm tests", () => {
     sidebarPage.goToCreateRealm();
     createRealmPage.createRealm();
 
-    createRealmPage.verifyRealmNameFieldInvalid();
+    createRealmPage.verifyRealmIDFieldInvalid();
   });
 
   it("should create Test realm", () => {
