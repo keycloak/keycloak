@@ -15,7 +15,7 @@ import {
   isUserProfileError,
   userProfileErrorToString,
 } from "./UserProfileFields";
-import { UserFormFields, toUserRepresentation } from "./form-state";
+import { UserFormFields } from "./form-state";
 import { toUser } from "./routes/User";
 
 import "./user-section.css";
@@ -42,7 +42,7 @@ export default function CreateUser() {
   const save = async (data: UserFormFields) => {
     try {
       const createdUser = await adminClient.users.create({
-        ...toUserRepresentation(data),
+        ...data,
         groups: addedGroups.map((group) => group.path!),
         enabled: true,
       });

@@ -31,6 +31,8 @@ import { FederatedUserLink } from "./FederatedUserLink";
 import { UserProfileFields } from "./UserProfileFields";
 import { UserFormFields } from "./form-state";
 import { RequiredActionMultiSelect } from "./user-credentials/RequiredActionMultiSelect";
+import { useFetch } from "../utils/useFetch";
+import UserProfileConfig from "@keycloak/keycloak-admin-client/lib/defs/userProfileConfig";
 
 export type BruteForced = {
   isBruteForceProtected?: boolean;
@@ -158,6 +160,14 @@ export const UserForm = ({
     isFeatureEnabled(Feature.DeclarativeUserProfile) &&
     realm?.attributes?.userProfileEnabled === "true";
 
+  const [profileMetadata, setProfileMetadata] = useState<UserProfileConfig>();
+
+  useFetch(
+    () => adminClient.users.getProfileMetadata(),
+    (result) => setProfileMetadata(result),
+    [],
+  );
+
   return (
     <FormAccess
       isHorizontal
@@ -223,8 +233,8 @@ export const UserForm = ({
           <FederatedUserLink user={user} />
         </FormGroup>
       )}
-      {isUserProfileEnabled && user?.userProfileMetadata ? (
-        <UserProfileFields config={user.userProfileMetadata} />
+      {isUserProfileEnabled && profileMetadata ? (
+        <UserProfileFields config={profileMetadata} />
       ) : (
         <>
           {!realm?.registrationEmailAsUsername && (

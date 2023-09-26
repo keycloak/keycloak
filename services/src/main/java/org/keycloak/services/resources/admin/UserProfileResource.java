@@ -16,6 +16,13 @@
  */
 package org.keycloak.services.resources.admin;
 
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Collectors;
+
+import jakarta.ws.rs.Path;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
@@ -29,10 +36,18 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 import org.keycloak.component.ComponentValidationException;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.provider.ConfiguredProvider;
+import org.keycloak.representations.idm.UserProfileAttributeMetadata;
+import org.keycloak.representations.idm.UserProfileMetadata;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.resources.KeycloakOpenAPI;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
+import org.keycloak.userprofile.AttributeMetadata;
+import org.keycloak.userprofile.AttributeValidatorMetadata;
+import org.keycloak.userprofile.UserProfile;
+import org.keycloak.userprofile.UserProfileContext;
 import org.keycloak.userprofile.UserProfileProvider;
+import org.keycloak.validate.Validators;
 
 /**
  * @author Vlastimil Elias <velias@redhat.com>
@@ -60,6 +75,17 @@ public class UserProfileResource {
         return session.getProvider(UserProfileProvider.class).getConfiguration();
     }
 
+    @GET
+    @Path("/metadata")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Tag(name = KeycloakOpenAPI.Admin.Tags.USERS)
+    @Operation()
+    public UserProfileMetadata getMetadata() {
+        auth.requireAnyAdminRole();
+        UserProfile profile = session.getProvider(UserProfileProvider.class).create(UserProfileContext.USER_API, Collections.emptyMap());
+        return createUserProfileMetadata(session, profile);
+    }
+
     @PUT
     @Consumes(MediaType.APPLICATION_JSON)
     @Tag(name = KeycloakOpenAPI.Admin.Tags.USERS)
@@ -78,4 +104,34 @@ public class UserProfileResource {
         return Response.ok(t.getConfiguration()).type(MediaType.APPLICATION_JSON).build();
     }
 
+    static UserProfileMetadata createUserProfileMetadata(KeycloakSession session, UserProfile profile) {
+        Map<String, List<String>> am = profile.getAttributes().getReadable();
+
+        if(am == null)
+            return null;
+
+        List<UserProfileAttributeMetadata> attributes = am.keySet().stream()
+                .map(name -> profile.getAttributes().getMetadata(name))
+                .filter(Objects::nonNull)
+                .sorted((a,b) -> Integer.compare(a.getGuiOrder(), b.getGuiOrder()))
+                .map(sam -> toRestMetadata(sam, session, profile))
+                .collect(Collectors.toList());
+        return new UserProfileMetadata(attributes);
+    }
+
+    private static UserProfileAttributeMetadata toRestMetadata(AttributeMetadata am, KeycloakSession session, UserProfile profile) {
+        return new UserProfileAttributeMetadata(am.getName(),
+                am.getAttributeDisplayName(),
+                profile.getAttributes().isRequired(am.getName()),
+                profile.getAttributes().isReadOnly(am.getName()),
+                am.getAnnotations(),
+                toValidatorMetadata(am, session));
+    }
+
+    private static Map<String, Map<String, Object>> toValidatorMetadata(AttributeMetadata am, KeycloakSession session){
+        // we return only validators which are instance of ConfiguredProvider. Others are expected as internal.
+        return am.getValidators() == null ? null : am.getValidators().stream()
+                .filter(avm -> (Validators.validator(session, avm.getValidatorId()) instanceof ConfiguredProvider))
+                .collect(Collectors.toMap(AttributeValidatorMetadata::getValidatorId, AttributeValidatorMetadata::getValidatorConfig));
+    }
 }

@@ -124,7 +124,7 @@ export default function EditUser() {
     try {
       await adminClient.users.update(
         { id: user!.id! },
-        toUserRepresentation(data),
+        isUserProfileEnabled ? data : toUserRepresentation(data),
       );
       addAlert(t("userSaved"), AlertVariant.success);
       refresh();

@@ -83,6 +83,11 @@ export class Users extends Resource<{ realm?: string }> {
     path: "/profile",
   });
 
+  public getProfileMetadata = this.makeRequest<{}, UserProfileConfig>({
+    method: "GET",
+    path: "/profile/metadata",
+  });
+
   public updateProfile = this.makeRequest<UserProfileConfig, UserProfileConfig>(
     {
       method: "PUT",
