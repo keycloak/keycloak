@@ -983,6 +983,9 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
             long lifespan = lifespanMsCalculator.apply(currentRealm, client, sessionEntity);
             long maxIdle = maxIdleTimeMsCalculator.apply(currentRealm, client, sessionEntity);
 
+            log.tracef("Lifespan of sessionId=%s to be imported to the cache %d ms", id, lifespan);
+            log.tracef("Max idle of sessionId=%s to be imported to the cache %d ms", id, maxIdle);
+
             if (lifespan != SessionTimeouts.ENTRY_EXPIRED_FLAG
                     && maxIdle != SessionTimeouts.ENTRY_EXPIRED_FLAG) {
                 if (cache instanceof RemoteCache) {

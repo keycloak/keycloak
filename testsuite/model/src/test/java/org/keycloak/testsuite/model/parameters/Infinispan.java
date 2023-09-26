@@ -50,6 +50,8 @@ import org.keycloak.timer.TimerProviderFactory;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static org.keycloak.testsuite.model.session.OfflineSessionPersistenceTest.SESSIONS_OWNERS_SYSTEM_PROPERTY;
+
 /**
  *
  * @author hmlnarik
@@ -96,6 +98,7 @@ public class Infinispan extends KeycloakModelParameters {
                 .config("clustered", "true")
                 .config("useKeycloakTimeService", "true")
                 .config("nodeName", "node-" + NODE_COUNTER.incrementAndGet())
+                .config("sessionsOwners", "${" + SESSIONS_OWNERS_SYSTEM_PROPERTY + ":2}")
                 .spi(UserLoginFailureSpi.NAME)
                 .provider(InfinispanUserLoginFailureProviderFactory.PROVIDER_ID)
                 .config("stalledTimeoutInSeconds", "10")

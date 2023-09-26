@@ -72,6 +72,7 @@ public class OfflineSessionPersistenceTest extends KeycloakModelTest {
 
     private static final int USER_COUNT = 50;
     private static final int OFFLINE_SESSION_COUNT_PER_USER = 10;
+    public static final String SESSIONS_OWNERS_SYSTEM_PROPERTY = "keycloak.model.tests.sessionsOwners";
     
     private String realmId;
     private List<String> userIds;
@@ -90,6 +91,7 @@ public class OfflineSessionPersistenceTest extends KeycloakModelTest {
     private static RealmModel prepareRealm(KeycloakSession s, String name) {
         RealmModel realm = createRealm(s, name);
         realm.setDefaultRole(s.roles().addRealmRole(realm, Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + realm.getName()));
+        realm.setOfflineSessionMaxLifespanEnabled(true);
         realm.setSsoSessionMaxLifespan(10 * 60 * 60);
         realm.setSsoSessionIdleTimeout(1 * 60 * 60);
         realm.setOfflineSessionMaxLifespan(365 * 24 * 60 * 60);
@@ -235,53 +237,63 @@ public class OfflineSessionPersistenceTest extends KeycloakModelTest {
     @RequireProvider(UserSessionPersisterProvider.class)
     @RequireProvider(value = UserSessionProvider.class, only = InfinispanUserSessionProviderFactory.PROVIDER_ID)
     public void testPersistenceMultipleNodesClientSessionsAtRandomNode() throws InterruptedException {
-        List<String> clientIds = withRealm(realmId, (session, realm) -> IntStream.range(0, 5)
-              .mapToObj(cid -> session.clients().addClient(realm, "client-" + cid))
-              .map(ClientModel::getId)
-              .collect(Collectors.toList()));
-        List<String> offlineSessionIds = createOfflineSessions(realmId, userIds);
+        try {
+            // increase session owners to 3 for the test
+            // test restarts nodes in cluster, and from time to time, it can happen that both owners for a session are offline/initializing
+            // therefore a session can be lost during import from the persister
+            System.setProperty(SESSIONS_OWNERS_SYSTEM_PROPERTY, "3");
+            reinitializeKeycloakSessionFactory();
 
-        // Shutdown factory -> enforce session persistence
-        closeKeycloakSessionFactory();
+            List<String> clientIds = withRealm(realmId, (session, realm) -> IntStream.range(0, 5)
+                    .mapToObj(cid -> session.clients().addClient(realm, "client-" + cid))
+                    .map(ClientModel::getId)
+                    .collect(Collectors.toList()));
+            List<String> offlineSessionIds = createOfflineSessions(realmId, userIds);
 
-        Map<String, List<String>> clientSessionIds = new ConcurrentHashMap<>();
-        AtomicInteger i = new AtomicInteger();
-        inIndependentFactories(3, 60, () -> {
-            for (int j = 0; j < USER_COUNT * 3; j ++) {
-                int index = i.incrementAndGet();
-                int oid = index % offlineSessionIds.size();
-                String offlineSessionId = offlineSessionIds.get(oid);
-                int cid = index % clientIds.size();
-                try {
-                    clientSessionIds.computeIfAbsent(offlineSessionId, a -> Collections.synchronizedList(new LinkedList<>())).add(createOfflineClientSession(offlineSessionId, clientIds.get(cid)));
-                } catch (RuntimeException ex) {
-                    // invocation can fail when remote cache is stopping, this is actually part of this test:
-                    // "ISPN000217: Received exception from node-8, see cause for remote stack trace
-                    // IllegalLifecycleStateException: ISPN000324: Cache 'clientSessions' is in 'STOPPING' state and this is an invocation not belonging to an
-                    // on-going transaction, so it does not accept new invocations."
-                    // also: org.infinispan.commons.CacheException: java.lang.IllegalStateException: Read commands must ignore leavers
-                    if ((ex.getCause() != null && ex.getCause().getMessage().contains("ISPN000324")) || 
-                            (ex.getMessage() != null && ex.getMessage().contains("ISPN000217")) ||
-                            (ex instanceof CacheException && ex.getMessage().contains("Read commands must ignore leavers"))) {
-                        log.warn("invocation failed, skipping. Retrying might lead to a 'Unique index or primary key violation' when the offline session has already been stored in the DB in the current session", ex);
-                    } else {
-                        throw ex;
+            // Shutdown factory -> enforce session persistence
+            closeKeycloakSessionFactory();
+
+            Map<String, List<String>> clientSessionIds = new ConcurrentHashMap<>();
+            AtomicInteger i = new AtomicInteger();
+            inIndependentFactories(3, 60, () -> {
+                for (int j = 0; j < USER_COUNT * 3; j++) {
+                    int index = i.incrementAndGet();
+                    int oid = index % offlineSessionIds.size();
+                    String offlineSessionId = offlineSessionIds.get(oid);
+                    int cid = index % clientIds.size();
+                    try {
+                        clientSessionIds.computeIfAbsent(offlineSessionId, a -> Collections.synchronizedList(new LinkedList<>())).add(createOfflineClientSession(offlineSessionId, clientIds.get(cid)));
+                    } catch (RuntimeException ex) {
+                        // invocation can fail when remote cache is stopping, this is actually part of this test:
+                        // "ISPN000217: Received exception from node-8, see cause for remote stack trace
+                        // IllegalLifecycleStateException: ISPN000324: Cache 'clientSessions' is in 'STOPPING' state and this is an invocation not belonging to an
+                        // on-going transaction, so it does not accept new invocations."
+                        // also: org.infinispan.commons.CacheException: java.lang.IllegalStateException: Read commands must ignore leavers
+                        if ((ex.getCause() != null && ex.getCause().getMessage().contains("ISPN000324")) ||
+                                (ex.getMessage() != null && ex.getMessage().contains("ISPN000217")) ||
+                                (ex instanceof CacheException && ex.getMessage().contains("Read commands must ignore leavers"))) {
+                            log.warn("invocation failed, skipping. Retrying might lead to a 'Unique index or primary key violation' when the offline session has already been stored in the DB in the current session", ex);
+                        } else {
+                            throw ex;
+                        }
+                    }
+
+                    // re-initialize the session factory N times in this test
+                    if (index % 100 == 0) {
+                        // don't re-initialize all caches at the same time to avoid an unstable cluster with no leader
+                        // otherwise seen CacheInitializer#loadSessions to loop sleeping
+                        synchronized (OfflineSessionPersistenceTest.class) {
+                            reinitializeKeycloakSessionFactory();
+                        }
                     }
                 }
+            });
 
-                // re-initialize the session factory N times in this test
-                if (index % 100 == 0) {
-                    // don't re-initialize all caches at the same time to avoid an unstable cluster with no leader
-                    // otherwise seen CacheInitializer#loadSessions to loop sleeping
-                    synchronized (OfflineSessionPersistenceTest.class) {
-                        reinitializeKeycloakSessionFactory();
-                    }
-                }
-            }
-        });
-
-        reinitializeKeycloakSessionFactory();
-        assertOfflineSessionsExist(realmId, offlineSessionIds);
+            reinitializeKeycloakSessionFactory();
+            assertOfflineSessionsExist(realmId, offlineSessionIds);
+        } finally {
+            System.setProperty(SESSIONS_OWNERS_SYSTEM_PROPERTY, "2");
+        }
     }
 
     @Test
