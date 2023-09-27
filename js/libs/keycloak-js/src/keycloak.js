@@ -1298,12 +1298,17 @@ function Keycloak (config) {
                 if (event.data !== "supported" && event.data !== "unsupported") {
                     return;
                 } else if (event.data === "unsupported") {
+                    logWarn(
+                        "[KEYCLOAK] Your browser is blocking access to 3rd-party cookies, this means:\n\n" +
+                        " - It is not possible to retrieve tokens without redirecting to the Keycloak server (a.k.a. no support for silent authentication).\n" +
+                        " - It is not possible to automatically detect changes to the session status (such as the user logging out in another tab).\n\n" +
+                        "For more information see: https://www.keycloak.org/docs/latest/securing_apps/#_modern_browsers"
+                    );
+
                     loginIframe.enable = false;
                     if (kc.silentCheckSsoFallback) {
                         kc.silentCheckSsoRedirectUri = false;
                     }
-                    logWarn("[KEYCLOAK] 3rd party cookies aren't supported by this browser. checkLoginIframe and " +
-                        "silent check-sso are not available.")
                 }
 
                 document.body.removeChild(iframe);
