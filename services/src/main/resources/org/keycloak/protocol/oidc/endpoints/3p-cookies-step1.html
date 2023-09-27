@@ -1,65 +1,41 @@
 <!doctype html>
 <html>
   <head>
-    <meta charset="utf-8" />
+    <meta charset="utf-8">
   </head>
   <body>
     <script type="module">
       // Check if the browser has granted us access to 3rd-party storage (such as cookies).
-      if (await hasStorageAccess()) {
-        // If so, signal support to the page embedding this iframe.
-        window.parent.postMessage("supported", "*");
-      } else {
-        // Otherwise, attempt to place a test cookie to verify support.
+      const hasAccess = await hasStorageAccess();
+
+      if (hasAccess) {
+        // If so, attempt to place a cookie to test this assumption.
         attemptWithTestCookie();
+      } else {
+        // Otherwise, signal that 3rd-party access is not supported.
+        signalSupport(false);
       }
 
-      // See: https://developer.mozilla.org/en-US/docs/Web/API/Storage_Access_API/Using
       async function hasStorageAccess() {
-        // If the Storage Access API is not implemented, assume we don't have access.
         if (!("hasStorageAccess" in document)) {
-          return false;
-        }
-
-        const hasAccess = await document.hasStorageAccess();
-
-        // If we have access to unpartitioned cookies, signal support.
-        if (hasAccess) {
           return true;
         }
 
-        // Otherwise, check whether unpartitioned cookie access has been granted to another same-site embed.
-        let permission;
-
-        try {
-          permission = await navigator.permissions.query({
-            name: "storage-access",
-          });
-        } catch (error) {
-          return false;
-        }
-
-        // If not, signal that there is no support.
-        if (permission.state !== "granted") {
-          return false;
-        }
-
-        // Otherwise, call requestStorageAccess() without a user interaction, and it should resolve automatically.
-        // But just to be sure, handle a possible exception in case this behavior changes in the future.
-        try {
-          await document.requestStorageAccess();
-          return true;
-        } catch (error) {
-          return false;
-        }
+        return document.hasStorageAccess();
       }
 
       function attemptWithTestCookie() {
         // Place a cookie to test whether we can access cookies from 3rd-party storage.
         document.cookie = "KEYCLOAK_3P_COOKIE_SAMESITE=supported; Max-Age=60; SameSite=None; Secure";
         document.cookie = "KEYCLOAK_3P_COOKIE=supported; Max-Age=60";
+
         // Then redirect to the page where we will read these cookies to confirm this.
         window.location = "step2.html";
+      }
+
+      function signalSupport(isSupported) {
+        // Signal 3rd-party access support to the page embedding this iframe.
+        window.parent.postMessage(isSupported ? "supported" : "unsupported", "*");
       }
     </script>
   </body>

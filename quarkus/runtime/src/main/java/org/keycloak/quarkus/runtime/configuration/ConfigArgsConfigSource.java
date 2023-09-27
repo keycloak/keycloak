@@ -19,8 +19,6 @@ package org.keycloak.quarkus.runtime.configuration;
 
 import static java.util.Arrays.asList;
 import static org.keycloak.quarkus.runtime.cli.Picocli.ARG_SHORT_PREFIX;
-import static org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand.AUTO_BUILD_OPTION_LONG;
-import static org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand.AUTO_BUILD_OPTION_SHORT;
 import static org.keycloak.quarkus.runtime.configuration.Configuration.OPTION_PART_SEPARATOR_CHAR;
 import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX;
 
@@ -35,6 +33,7 @@ import io.smallrye.config.PropertiesConfigSource;
 
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
+import org.keycloak.utils.StringUtil;
 
 /**
  * <p>A configuration source for mapping configuration arguments to their corresponding properties so that they can be recognized
@@ -134,10 +133,10 @@ public class ConfigArgsConfigSource extends PropertiesConfigSource {
 
     public static void parseConfigArgs(BiConsumer<String, String> cliArgConsumer) {
         // init here because the class might be loaded by CL without init
-        List<String> ignoredArgs = asList("--verbose", "-v", "--help", "-h", AUTO_BUILD_OPTION_LONG, AUTO_BUILD_OPTION_SHORT);
+        List<String> ignoredArgs = asList("--verbose", "-v", "--help", "-h");
         String rawArgs = getRawConfigArgs();
 
-        if (rawArgs == null || "".equals(rawArgs.trim())) {
+        if (StringUtil.isBlank(rawArgs)) {
             return;
         }
 
