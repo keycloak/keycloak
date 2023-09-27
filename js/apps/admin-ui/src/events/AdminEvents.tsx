@@ -79,7 +79,7 @@ const DisplayDialog = ({
   onClose,
   children,
 }: PropsWithChildren<DisplayDialogProps>) => {
-  const { t } = useTranslation("events");
+  const { t } = useTranslation();
   return (
     <Modal
       variant={ModalVariant.medium}
@@ -93,7 +93,7 @@ const DisplayDialog = ({
 };
 
 export const AdminEvents = () => {
-  const { t } = useTranslation("events");
+  const { t } = useTranslation();
   const { realm } = useRealm();
   const serverInfo = useServerInfo();
   const formatDate = useFormatDate();
@@ -234,8 +234,8 @@ export const AdminEvents = () => {
                       data-testid="resource-types-searchField"
                       chipGroupProps={{
                         numChips: 1,
-                        expandedText: t("common:hide"),
-                        collapsedText: t("common:showRemaining"),
+                        expandedText: t("hide"),
+                        collapsedText: t("showRemaining"),
                       }}
                       variant={SelectVariant.typeaheadMulti}
                       typeAheadAriaLabel="Select"
@@ -295,8 +295,8 @@ export const AdminEvents = () => {
                       data-testid="operation-types-searchField"
                       chipGroupProps={{
                         numChips: 1,
-                        expandedText: t("common:hide"),
-                        collapsedText: t("common:showRemaining"),
+                        expandedText: t("hide"),
+                        collapsedText: t("showRemaining"),
                       }}
                       variant={SelectVariant.typeaheadMulti}
                       typeAheadAriaLabel="Select"
@@ -548,7 +548,7 @@ export const AdminEvents = () => {
         key={key}
         loader={loader}
         isPaginated
-        ariaLabelKey="events:adminEvents"
+        ariaLabelKey="adminEvents"
         toolbarItem={adminEventSearchFormDisplay()}
         actions={
           [
@@ -565,27 +565,27 @@ export const AdminEvents = () => {
         columns={[
           {
             name: "time",
-            displayKey: "events:time",
+            displayKey: "time",
             cellRenderer: (row) =>
               formatDate(new Date(row.time!), FORMAT_DATE_AND_TIME),
           },
           {
             name: "resourcePath",
-            displayKey: "events:resourcePath",
+            displayKey: "resourcePath",
             cellRenderer: CellResourceLinkRenderer,
           },
           {
             name: "resourceType",
-            displayKey: "events:resourceType",
+            displayKey: "resourceType",
           },
           {
             name: "operationType",
-            displayKey: "events:operationType",
+            displayKey: "operationType",
             transforms: [cellWidth(10)],
           },
           {
             name: "",
-            displayKey: "events:user",
+            displayKey: "user",
             cellRenderer: (event) => event.authDetails?.userId || "",
           },
         ]}

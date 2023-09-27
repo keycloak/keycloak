@@ -80,7 +80,7 @@ export default function SessionsTable({
 }: SessionsTableProps) {
   const { realm } = useRealm();
   const { whoAmI } = useWhoAmI();
-  const { t } = useTranslation("sessions");
+  const { t } = useTranslation();
   const { addError } = useAlerts();
   const formatDate = useFormatDate();
   const [key, setKey] = useState(0);
@@ -90,30 +90,30 @@ export default function SessionsTable({
     const defaultColumns: Field<UserSessionRepresentation>[] = [
       {
         name: "username",
-        displayKey: "sessions:user",
+        displayKey: "user",
         cellRenderer: UsernameCell,
       },
       {
         name: "type",
-        displayKey: "common:type",
+        displayKey: "type",
       },
       {
         name: "start",
-        displayKey: "sessions:started",
+        displayKey: "started",
         cellRenderer: (row) => formatDate(new Date(row.start!)),
       },
       {
         name: "lastAccess",
-        displayKey: "sessions:lastAccess",
+        displayKey: "lastAccess",
         cellRenderer: (row) => formatDate(new Date(row.lastAccess!)),
       },
       {
         name: "ipAddress",
-        displayKey: "events:ipAddress",
+        displayKey: "ipAddress",
       },
       {
         name: "clients",
-        displayKey: "sessions:clients",
+        displayKey: "clients",
         cellRenderer: ClientsCell,
       },
     ];
@@ -124,15 +124,15 @@ export default function SessionsTable({
   }, [realm, hiddenColumns]);
 
   const [toggleLogoutDialog, LogoutConfirm] = useConfirmDialog({
-    titleKey: "sessions:logoutAllSessions",
-    messageKey: "sessions:logoutAllDescription",
-    continueButtonLabel: "common:confirm",
+    titleKey: "logoutAllSessions",
+    messageKey: "logoutAllDescription",
+    continueButtonLabel: "confirm",
     onConfirm: async () => {
       try {
         await adminClient.users.logout({ id: logoutUser! });
         refresh();
       } catch (error) {
-        addError("sessions:logoutAllSessionsError", error);
+        addError("logoutAllSessionsError", error);
       }
     },
   });
@@ -153,8 +153,8 @@ export default function SessionsTable({
       <KeycloakDataTable
         key={key}
         loader={loader}
-        ariaLabelKey="sessions:title"
-        searchPlaceholderKey="sessions:searchForSession"
+        ariaLabelKey="titleSessions"
+        searchPlaceholderKey="searchForSession"
         isPaginated={isPaginated}
         isSearching={isSearching}
         searchTypeComponent={filter}
@@ -170,7 +170,7 @@ export default function SessionsTable({
         columns={columns}
         actions={[
           {
-            title: t("common:signOut"),
+            title: t("signOut"),
             onRowClick: onClickSignOut,
           } as Action<UserSessionRepresentation>,
         ]}

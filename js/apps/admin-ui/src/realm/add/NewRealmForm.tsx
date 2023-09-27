@@ -23,7 +23,7 @@ import { toDashboard } from "../../dashboard/routes/Dashboard";
 import { convertFormValuesToObject, convertToFormValues } from "../../util";
 
 export default function NewRealmForm() {
-  const { t } = useTranslation("realm");
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { refresh, whoAmI } = useWhoAmI();
   const { refresh: refreshRealms } = useRealms();
@@ -76,7 +76,7 @@ export default function NewRealmForm() {
             onChange={handleFileChange}
           />
           <FormGroup
-            label={t("realmName")}
+            label={t("realmNameField")}
             isRequired
             fieldId="kc-realm-name"
             validated={errors.realm ? "error" : "default"}
@@ -87,7 +87,7 @@ export default function NewRealmForm() {
               id="kc-realm-name"
               validated={errors.realm ? "error" : "default"}
               {...register("realm", {
-                required: { value: true, message: t("common:required") },
+                required: { value: true, message: t("required") },
                 pattern: {
                   value: /^[a-zA-Z0-9-_]+$/,
                   message: t("invalidRealmName"),
@@ -104,8 +104,8 @@ export default function NewRealmForm() {
                 <Switch
                   id="kc-realm-enabled-switch"
                   name="enabled"
-                  label={t("common:on")}
-                  labelOff={t("common:off")}
+                  label={t("on")}
+                  labelOff={t("off")}
                   isChecked={field.value}
                   onChange={field.onChange}
                   aria-label={t("enabled")}
@@ -115,10 +115,10 @@ export default function NewRealmForm() {
           </FormGroup>
           <ActionGroup>
             <Button variant="primary" type="submit">
-              {t("common:create")}
+              {t("create")}
             </Button>
             <Button variant="link" onClick={() => navigate(-1)}>
-              {t("common:cancel")}
+              {t("cancel")}
             </Button>
           </ActionGroup>
         </FormAccess>

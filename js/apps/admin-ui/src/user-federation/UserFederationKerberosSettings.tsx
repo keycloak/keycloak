@@ -21,7 +21,7 @@ import { Header } from "./shared/Header";
 import { SettingsCache } from "./shared/SettingsCache";
 
 export default function UserFederationKerberosSettings() {
-  const { t } = useTranslation("user-federation");
+  const { t } = useTranslation();
   const form = useForm<ComponentRepresentation>({ mode: "onChange" });
   const navigate = useNavigate();
   const { realm } = useRealm();
@@ -40,7 +40,7 @@ export default function UserFederationKerberosSettings() {
       if (fetchedComponent) {
         setupForm(fetchedComponent);
       } else if (id) {
-        throw new Error(t("common:notFound"));
+        throw new Error(t("notFound"));
       }
     },
     [],
@@ -59,9 +59,15 @@ export default function UserFederationKerberosSettings() {
         await adminClient.components.update({ id }, component);
       }
       setupForm(component as ComponentRepresentation);
-      addAlert(t(!id ? "createSuccess" : "saveSuccess"), AlertVariant.success);
+      addAlert(
+        t(!id ? "createUserProviderSuccess" : "userProviderSaveSuccess"),
+        AlertVariant.success,
+      );
     } catch (error) {
-      addError(`user-federation:${!id ? "createError" : "saveError"}`, error);
+      addError(
+        `${!id ? "createUserProviderError" : "userProviderSaveError"}`,
+        error,
+      );
     }
   };
 
@@ -83,14 +89,14 @@ export default function UserFederationKerberosSettings() {
               type="submit"
               data-testid="kerberos-save"
             >
-              {t("common:save")}
+              {t("save")}
             </Button>
             <Button
               variant="link"
               onClick={() => navigate(toUserFederation({ realm }))}
               data-testid="kerberos-cancel"
             >
-              {t("common:cancel")}
+              {t("cancel")}
             </Button>
           </ActionGroup>
         </Form>

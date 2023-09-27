@@ -82,6 +82,7 @@ public class ProvidersTest extends AbstractAuthenticationTest {
         List<Map<String, Object>> result = authMgmtResource.getClientAuthenticatorProviders();
 
         List<Map<String, Object>> expected = new LinkedList<>();
+      
         addClientAuthenticatorProviderInfo(expected, "client-jwt", "Signed Jwt",
                 "Validates client based on signed JWT issued by client and signed with the Client private key", false);
         addClientAuthenticatorProviderInfo(expected, "client-secret", "Client Id and Secret", "Validates client based on 'client_id' and " +

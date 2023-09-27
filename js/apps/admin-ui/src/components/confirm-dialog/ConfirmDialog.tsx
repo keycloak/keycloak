@@ -80,7 +80,7 @@ export const ConfirmDialogModal = ({
             toggleDialog();
           }}
         >
-          {t(continueButtonLabel || "common:continue")}
+          {t(continueButtonLabel || "continue")}
         </Button>,
         !noCancelButton && (
           <Button
@@ -93,7 +93,7 @@ export const ConfirmDialogModal = ({
               toggleDialog();
             }}
           >
-            {t(cancelButtonLabel || "common:cancel")}
+            {t(cancelButtonLabel || "cancel")}
           </Button>
         ),
       ]}

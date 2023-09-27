@@ -415,7 +415,7 @@ public class MapExportImportManager implements ExportImportManager {
             importGroups(newRealm, rep);
             if (rep.getDefaultGroups() != null) {
                 for (String path : rep.getDefaultGroups()) {
-                    GroupModel found = KeycloakModelUtils.findGroupByPath(newRealm, path);
+                    GroupModel found = KeycloakModelUtils.findGroupByPath(session, newRealm, path);
                     if (found == null) throw new RuntimeException("default group in realm rep doesn't exist: " + path);
                     newRealm.addDefaultGroup(found);
                 }
@@ -975,6 +975,18 @@ public class MapExportImportManager implements ExportImportManager {
             }
             accountClient.setRedirectUris(accountRedirectUris);
         }
+
+        ClientModel accountConsoleClient = realm.getClientByClientId(Constants.ACCOUNT_CONSOLE_CLIENT_ID);
+        if (accountConsoleClient != null) {
+            if (accountConsoleClient.getBaseUrl() != null) {
+                accountConsoleClient.setBaseUrl(accountConsoleClient.getBaseUrl().replace("/realms/" + oldName + "/", "/realms/" + name + "/"));
+            }
+            Set<String> accountConsoleRedirectUris = new HashSet<>();
+            for (String r : accountConsoleClient.getRedirectUris()) {
+                accountConsoleRedirectUris.add(replace(r, "/realms/" + oldName + "/", "/realms/" + name + "/"));
+            }
+            accountConsoleClient.setRedirectUris(accountConsoleRedirectUris);
+        }
     }
 
     private static String replace(String url, String target, String replacement) {
@@ -1192,7 +1204,7 @@ public class MapExportImportManager implements ExportImportManager {
             }
             user.setServiceAccountClientLink(client.getId());
         }
-        createGroups(userRep, newRealm, user);
+        createGroups(session, userRep, newRealm, user);
         return user;
     }
 

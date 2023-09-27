@@ -12,7 +12,7 @@ const Dashboard = lazy(() => import("../Dashboard"));
 export const DashboardRoute: AppRouteObject = {
   path: "/",
   element: <Dashboard />,
-  breadcrumb: (t) => t("common:home"),
+  breadcrumb: (t) => t("home"),
   handle: {
     access: "anyone",
   },

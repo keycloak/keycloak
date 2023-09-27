@@ -284,12 +284,12 @@ public class RegisterWithUserProfileTest extends RegisterTest {
         );
         Assert.assertTrue(
                 driver.findElement(
-                        By.cssSelector("form#kc-register-form > div:nth-child(4) > div:nth-child(2) > input#password")
+                        By.cssSelector("#password")
                 ).isDisplayed()
         );
         Assert.assertTrue(
                 driver.findElement(
-                        By.cssSelector("form#kc-register-form > div:nth-child(5) > div:nth-child(2) > input#password-confirm")
+                        By.cssSelector("#password-confirm")
                 ).isDisplayed()
         );
         Assert.assertTrue(
@@ -434,12 +434,12 @@ public class RegisterWithUserProfileTest extends RegisterTest {
         );
         Assert.assertTrue(
                 driver.findElement(
-                        By.cssSelector("form#kc-register-form > div:nth-child(3) > div:nth-child(2) > input#password")
+                        By.cssSelector("#password")
                 ).isDisplayed()
         );
         Assert.assertTrue(
                 driver.findElement(
-                        By.cssSelector("form#"+htmlFormId+" > div:nth-child(4) > div:nth-child(2) > input#password-confirm")
+                        By.cssSelector("#password-confirm")
                 ).isDisplayed()
         );
         Assert.assertTrue(

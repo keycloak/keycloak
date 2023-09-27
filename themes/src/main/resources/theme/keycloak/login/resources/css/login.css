@@ -24,7 +24,6 @@ p.instruction {
 }
 
 .pf-c-button.pf-m-control {
-    border: solid var(--pf-global--BorderWidth--sm);
     border-color: rgba(230, 230, 230, 0.5);
 }
 

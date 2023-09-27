@@ -1,18 +1,19 @@
 import type { UserProfileAttribute } from "@keycloak/keycloak-admin-client/lib/defs/userProfileConfig";
+import UserProfileConfig from "@keycloak/keycloak-admin-client/lib/defs/userProfileConfig";
 import { Text } from "@patternfly/react-core";
 import { Fragment } from "react";
+import { useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
-import { useFormContext } from "react-hook-form";
 import { ScrollForm } from "../components/scroll-form/ScrollForm";
-import { useUserProfile } from "../realm-settings/user-profile/UserProfileContext";
 import { OptionComponent } from "./components/OptionsComponent";
 import { SelectComponent } from "./components/SelectComponent";
 import { TextAreaComponent } from "./components/TextAreaComponent";
 import { TextComponent } from "./components/TextComponent";
-import { DEFAULT_ROLES, fieldName } from "./utils";
+import { fieldName } from "./utils";
 
 type UserProfileFieldsProps = {
+  config: UserProfileConfig;
   roles?: string[];
 };
 
@@ -78,26 +79,25 @@ export const isValidComponentType = (value: string): value is Field =>
   value in FIELDS;
 
 export const UserProfileFields = ({
+  config,
   roles = ["admin"],
 }: UserProfileFieldsProps) => {
-  const { t } = useTranslation("realm-settings");
-  const { config } = useUserProfile();
+  const { t } = useTranslation();
 
   return (
     <ScrollForm
-      sections={[{ name: "" }, ...(config?.groups || [])].map((g) => ({
+      sections={[{ name: "" }, ...(config.groups || [])].map((g) => ({
         title: g.displayHeader || g.name || t("general"),
         panel: (
           <div className="pf-c-form">
             {g.displayDescription && (
               <Text className="pf-u-pb-lg">{g.displayDescription}</Text>
             )}
-            {config?.attributes?.map((attribute) => (
+            {config.attributes?.map((attribute) => (
               <Fragment key={attribute.name}>
-                {(attribute.group || "") === g.name &&
-                  (attribute.permissions?.view || DEFAULT_ROLES).some((r) =>
-                    roles.includes(r),
-                  ) && <FormField attribute={attribute} roles={roles} />}
+                {(attribute.group || "") === g.name && (
+                  <FormField attribute={attribute} roles={roles} />
+                )}
               </Fragment>
             ))}
           </div>

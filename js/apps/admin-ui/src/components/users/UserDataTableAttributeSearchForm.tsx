@@ -38,7 +38,7 @@ export function UserDataTableAttributeSearchForm({
   createAttributeSearchChips,
   searchUserWithAttributes,
 }: UserDataTableAttributeSearchFormProps) {
-  const { t } = useTranslation("users");
+  const { t } = useTranslation();
   const { addAlert } = useAlerts();
   const [selectAttributeKeyOpen, setSelectAttributeKeyOpen] = useState(false);
 
@@ -171,7 +171,7 @@ export function UserDataTableAttributeSearchForm({
       return (
         <KeycloakTextInput
           id="name"
-          placeholder={t("common:keyPlaceholder")}
+          placeholder={t("keyPlaceholder")}
           validated={errors.name && "error"}
           onKeyDown={(e) => e.key === "Enter" && addToFilter()}
           {...register("name", {
@@ -196,10 +196,10 @@ export function UserDataTableAttributeSearchForm({
       />
       <TextContent className="user-attribute-search-form-key-value">
         <div className="user-attribute-search-form-left">
-          <Text component={TextVariants.h6}>{t("common:key")}</Text>
+          <Text component={TextVariants.h6}>{t("key")}</Text>
         </div>
         <div className="user-attribute-search-form-right">
-          <Text component={TextVariants.h6}>{t("common:value")}</Text>
+          <Text component={TextVariants.h6}>{t("value")}</Text>
         </div>
       </TextContent>
       <div className="user-attribute-search-form-left">
@@ -209,7 +209,7 @@ export function UserDataTableAttributeSearchForm({
         <InputGroup>
           <KeycloakTextInput
             id="value"
-            placeholder={t("common:valuePlaceholder")}
+            placeholder={t("valuePlaceholder")}
             validated={errors.value && "error"}
             onKeyDown={(e) => {
               if (e.key === "Enter") {
@@ -238,7 +238,7 @@ export function UserDataTableAttributeSearchForm({
           isDisabled={!activeFilters.length}
           onClick={searchUserWithAttributes}
         >
-          {t("common:search")}
+          {t("search")}
         </Button>
         <Button
           variant={ButtonVariant.link}
@@ -247,7 +247,7 @@ export function UserDataTableAttributeSearchForm({
             clearActiveFilters();
           }}
         >
-          {t("common:reset")}
+          {t("reset")}
         </Button>
       </ActionGroup>
     </Form>

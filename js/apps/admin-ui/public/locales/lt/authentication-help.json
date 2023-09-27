@@ -1,9 +1,0 @@
-{
-  "flowType": "Kokios rūšies ši forma?",
-  "topLevelFlowType": "Kokio tipo ši aukščiausio lygio sritis? 'client' tipas naudojamas klientų (programų) autentifikacijai. 'generic' naudojamas visais kitais atvejais.",
-  "alias": "Konfigūracijos pavadinimas",
-  "otpType": "'totp' paremtas ribotą laiką galiojančiu vienkartiniu slaptažodžiu. 'hotp' - ribotą kartų galiojančiu vienkartiniu slaptažodžiu.",
-  "otpHashAlgorithm": "Kuris maišos algoritmas turi būti naudojamas OTP generavimui.",
-  "otpPolicyDigits": "Kiek OTP turėtų turėti skaitmenų?",
-  "otpPolicyPeriod": "Kiek sekundžiu galios OTP prieigos raktas? Numatyta reikšmė 30 sekundžių."
-}

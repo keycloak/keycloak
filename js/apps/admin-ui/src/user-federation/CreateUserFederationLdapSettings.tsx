@@ -15,7 +15,7 @@ import { toUserFederation } from "./routes/UserFederation";
 import { ExtendedHeader } from "./shared/ExtendedHeader";
 
 export default function CreateUserFederationLdapSettings() {
-  const { t } = useTranslation("user-federation");
+  const { t } = useTranslation();
   const form = useForm<LdapComponentRepresentation>({ mode: "onChange" });
   const navigate = useNavigate();
   const { realm } = useRealm();
@@ -24,10 +24,10 @@ export default function CreateUserFederationLdapSettings() {
   const onSubmit = async (formData: LdapComponentRepresentation) => {
     try {
       await adminClient.components.create(serializeFormData(formData));
-      addAlert(t("createSuccess"), AlertVariant.success);
+      addAlert(t("createUserProviderSuccess"), AlertVariant.success);
       navigate(toUserFederation({ realm }));
     } catch (error) {
-      addError("user-federation:createError", error);
+      addError("createUserProviderError", error);
     }
   };
 

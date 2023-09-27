@@ -2,6 +2,7 @@
 <#import "/templates/kc.adoc" as kc>
 <#import "/templates/options.adoc" as opts>
 <#import "/templates/links.adoc" as links>
+<#import "/templates/profile.adoc" as profile>
 
 <@tmpl.guide
     title="Configuring the database"
@@ -28,11 +29,15 @@ The server has built-in support for different databases. You can query the avail
 By default, the server uses the `dev-file` database. This is the default database that the server will use to persist data and
 only exists for development use-cases. The `dev-file` database is not suitable for production use-cases, and must be replaced before deploying to production.
 
-== Installing a database driver (Oracle)
+<@profile.ifProduct>
 
-Database drivers are shipped as part of Keycloak except for the Oracle Database driver which needs to be installed separately.
+== Installing a database driver
 
-Install the Oracle Database driver if you want to connect to an Oracle Database, or skip this section if you want to connect to a different database.
+Database drivers are shipped as part of Keycloak except for the Oracle Database and Micrsoft SQL Server drivers which need to be installed separately.
+
+Install the necessary driver if you want to connect to one of these databases or skip this section if you want to connect to a different database for which the database driver is already included.
+
+=== Installing the Oracle Database driver
 
 To install the Oracle Database driver for Keycloak:
 
@@ -67,6 +72,43 @@ RUN /opt/keycloak/bin/kc.sh build
 See the <@links.server id="containers" /> {section} for details on how to build optimized images.
 
 Then continue configuring the database as described in the next section.
+
+=== Installing the Microsoft SQL Server driver
+
+To install the Microsoft SQL Server driver for Keycloak:
+
+. Download the `mssql-jdbc` JAR file from one of the following sources:
+
+.. Download a version from the https://learn.microsoft.com/en-us/sql/connect/jdbc/download-microsoft-jdbc-driver-for-sql-server[Microsoft JDBC Driver for SQL Server page].
+
+.. Maven Central via `link:++https://repo1.maven.org/maven2/com/microsoft/sqlserver/mssql-jdbc/${properties["mssql-jdbc.version"]}/mssql-jdbc-${properties["mssql-jdbc.version"]}.jar++[mssql-jdbc]`.
+
+.. Installation media recommended by the database vendor for the specific database in use.
+
+. When running the unzipped distribution: Place the `mssql-jdbc` in Keycloak's `providers` folder
+
+. When running containers: Build a custom Keycloak image and add the JARs in the `providers` folder. When building a custom image for the Keycloak Operator, those images need to be optimized images with all build-time options of Keycloak set.
++
+A minimal Dockerfile to build an image which can be used with the Keycloak Operator and includes Microsoft SQL Server JDBC drivers downloaded from Maven Central looks like the following:
++
+[source,dockerfile]
+----
+FROM quay.io/keycloak/keycloak:latest
+ADD --chown=keycloak:keycloak https://repo1.maven.org/maven2/com/microsoft/sqlserver/mssql-jdbc/${properties["mssql-jdbc.version"]}/mssql-jdbc-${properties["mssql-jdbc.version"]}.jar /opt/keycloak/providers/mssql-jdbc.jar
+# Setting the build parameter for the database:
+ENV KC_DB=mssql
+# Add all other build parameters needed, for example enable health and metrics:
+ENV KC_HEALTH_ENABLED=true
+ENV KC_METRICS_ENABLED=true
+# To be able to use the image with the Keycloak Operator, it needs to be optimized, which requires Keycloak's build step:
+RUN /opt/keycloak/bin/kc.sh build
+----
++
+See the <@links.server id="containers" /> {section} for details on how to build optimized images.
+
+Then continue configuring the database as described in the next section.
+
+</@profile.ifProduct>
 
 == Configuring a database
 

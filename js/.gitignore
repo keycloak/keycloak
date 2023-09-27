@@ -21,11 +21,6 @@ node_modules
 *.sln
 *.sw?
 
-# Cypress
-assets
-**/cypress.env.json
-**/cypress/downloads
-
 # Optional eslint cache
 .eslintcache
 

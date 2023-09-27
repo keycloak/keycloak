@@ -66,6 +66,7 @@ public class UserRepresentation {
 
     protected List<String> groups;
     private Map<String, Boolean> access;
+    private UserProfileMetadata userProfileMetadata;
 
     public String getSelf() {
         return self;
@@ -311,5 +312,13 @@ public class UserRepresentation {
             attrs.put("firstName", Collections.singletonList(getFirstName()));
 
         return attrs;
+    }
+
+    public void setUserProfileMetadata(UserProfileMetadata userProfileMetadata) {
+        this.userProfileMetadata = userProfileMetadata;
+    }
+
+    public UserProfileMetadata getUserProfileMetadata() {
+        return userProfileMetadata;
     }
 }

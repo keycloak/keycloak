@@ -19,7 +19,7 @@ export const LoginSettings = ({
   protocol = "openid-connect",
   ...rest
 }: LoginSettingsProps) => {
-  const { t } = useTranslation("clients");
+  const { t } = useTranslation();
   const { register, watch } = useFormContext<FormFields>();
   const { realm } = useRealm();
 
@@ -34,10 +34,7 @@ export const LoginSettings = ({
         label={t("rootUrl")}
         fieldId="kc-root-url"
         labelIcon={
-          <HelpItem
-            helpText={t("clients-help:rootURL")}
-            fieldLabelId="clients:rootUrl"
-          />
+          <HelpItem helpText={t("rootURLHelp")} fieldLabelId="rootUrl" />
         }
       >
         <KeycloakTextInput
@@ -51,10 +48,7 @@ export const LoginSettings = ({
         label={t("homeURL")}
         fieldId="kc-home-url"
         labelIcon={
-          <HelpItem
-            helpText={t("clients-help:homeURL")}
-            fieldLabelId="clients:homeURL"
-          />
+          <HelpItem helpText={t("homeURLHelp")} fieldLabelId="homeURL" />
         }
       >
         <KeycloakTextInput
@@ -71,8 +65,8 @@ export const LoginSettings = ({
             fieldId="kc-redirect"
             labelIcon={
               <HelpItem
-                helpText={t("clients-help:validRedirectURIs")}
-                fieldLabelId="clients:validRedirectUri"
+                helpText={t("validRedirectURIsHelp")}
+                fieldLabelId="validRedirectUri"
               />
             }
           >
@@ -80,7 +74,7 @@ export const LoginSettings = ({
               id="kc-redirect"
               name="redirectUris"
               aria-label={t("validRedirectUri")}
-              addButtonLabel="clients:addRedirectUri"
+              addButtonLabel="addRedirectUri"
               {...rest}
             />
           </FormGroup>
@@ -89,8 +83,8 @@ export const LoginSettings = ({
             fieldId="kc-postLogoutRedirect"
             labelIcon={
               <HelpItem
-                helpText={t("clients-help:validPostLogoutRedirectURIs")}
-                fieldLabelId="clients:validPostLogoutRedirectUri"
+                helpText={t("validPostLogoutRedirectURIsHelp")}
+                fieldLabelId="validPostLogoutRedirectUri"
               />
             }
           >
@@ -100,7 +94,7 @@ export const LoginSettings = ({
                 "attributes.post.logout.redirect.uris",
               )}
               aria-label={t("validPostLogoutRedirectUri")}
-              addButtonLabel="clients:addPostLogoutRedirectUri"
+              addButtonLabel="addPostLogoutRedirectUri"
               stringify
               {...rest}
             />
@@ -114,8 +108,8 @@ export const LoginSettings = ({
             fieldId="idpInitiatedSsoUrlName"
             labelIcon={
               <HelpItem
-                helpText={t("clients-help:idpInitiatedSsoUrlName")}
-                fieldLabelId="clients:idpInitiatedSsoUrlName"
+                helpText={t("idpInitiatedSsoUrlNameHelp")}
+                fieldLabelId="idpInitiatedSsoUrlName"
               />
             }
             helperText={
@@ -137,8 +131,8 @@ export const LoginSettings = ({
             fieldId="idpInitiatedSsoRelayState"
             labelIcon={
               <HelpItem
-                helpText={t("clients-help:idpInitiatedSsoRelayState")}
-                fieldLabelId="clients:idpInitiatedSsoRelayState"
+                helpText={t("idpInitiatedSsoRelayStateHelp")}
+                fieldLabelId="idpInitiatedSsoRelayState"
               />
             }
           >
@@ -154,8 +148,8 @@ export const LoginSettings = ({
             fieldId="masterSamlProcessingUrl"
             labelIcon={
               <HelpItem
-                helpText={t("clients-help:masterSamlProcessingUrl")}
-                fieldLabelId="clients:masterSamlProcessingUrl"
+                helpText={t("masterSamlProcessingUrlHelp")}
+                fieldLabelId="masterSamlProcessingUrl"
               />
             }
           >
@@ -175,8 +169,8 @@ export const LoginSettings = ({
           fieldId="kc-web-origins"
           labelIcon={
             <HelpItem
-              helpText={t("clients-help:webOrigins")}
-              fieldLabelId="clients:webOrigins"
+              helpText={t("webOriginsHelp")}
+              fieldLabelId="webOrigins"
             />
           }
         >
@@ -184,7 +178,7 @@ export const LoginSettings = ({
             id="kc-web-origins"
             name="webOrigins"
             aria-label={t("webOrigins")}
-            addButtonLabel="clients:addWebOrigins"
+            addButtonLabel="addWebOrigins"
             {...rest}
           />
         </FormGroup>

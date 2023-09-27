@@ -21,7 +21,7 @@ import "./page-nav.css";
 type LeftNavProps = { title: string; path: string };
 
 const LeftNav = ({ title, path }: LeftNavProps) => {
-  const { t } = useTranslation("common");
+  const { t } = useTranslation();
   const { hasAccess } = useAccess();
   const { realm } = useRealm();
   const route = routes.find(
@@ -54,7 +54,7 @@ const LeftNav = ({ title, path }: LeftNavProps) => {
 };
 
 export const PageNav = () => {
-  const { t } = useTranslation("common");
+  const { t } = useTranslation();
   const { hasSomeAccess } = useAccess();
 
   const navigate = useNavigate();

@@ -39,7 +39,7 @@ const defaultValues: ExecutorForm = {
 };
 
 export default function ExecutorForm() {
-  const { t } = useTranslation("realm-settings");
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { realm, profileName } = useParams<ClientProfileParams>();
   const { executorName } = useParams<ExecutorParams>();
@@ -119,20 +119,13 @@ export default function ExecutorForm() {
         globalProfiles: globalProfiles,
       });
       addAlert(
-        editMode
-          ? t("realm-settings:updateExecutorSuccess")
-          : t("realm-settings:addExecutorSuccess"),
+        editMode ? t("updateExecutorSuccess") : t("addExecutorSuccess"),
         AlertVariant.success,
       );
 
       navigate(toClientProfile({ realm, profileName }));
     } catch (error) {
-      addError(
-        editMode
-          ? "realm-settings:updateExecutorError"
-          : "realm-settings:addExecutorError",
-        error,
-      );
+      addError(editMode ? "updateExecutorError" : "addExecutorError", error);
     }
   };
 
@@ -175,12 +168,12 @@ export default function ExecutorForm() {
               executors.length > 0 && executors[0].helpText! !== "" ? (
                 <HelpItem
                   helpText={executors[0].helpText}
-                  fieldLabelId="realm-settings:executorTypeHelpText"
+                  fieldLabelId="executorTypeHelpText"
                 />
               ) : editMode ? (
                 <HelpItem
                   helpText={profileExecutorType?.helpText}
-                  fieldLabelId="realm-settings:executorTypeHelpText"
+                  fieldLabelId="executorTypeHelpText"
                 />
               ) : undefined
             }
@@ -239,7 +232,7 @@ export default function ExecutorForm() {
                 onClick={() => handleSubmit(save)()}
                 data-testid="addExecutor-saveBtn"
               >
-                {editMode ? t("common:save") : t("common:add")}
+                {editMode ? t("save") : t("add")}
               </Button>
               <Button
                 variant="link"
@@ -251,7 +244,7 @@ export default function ExecutorForm() {
                 )}
                 data-testid="addExecutor-cancelBtn"
               >
-                {t("common:cancel")}
+                {t("cancel")}
               </Button>
             </ActionGroup>
           )}
@@ -264,7 +257,7 @@ export default function ExecutorForm() {
               )}
               variant="primary"
             >
-              {t("realm-settings:back")}
+              {t("back")}
             </Button>
           </div>
         )}

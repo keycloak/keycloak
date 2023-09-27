@@ -7,7 +7,7 @@ import { useRealm } from "../../context/realm-context/RealmContext";
 import { addTrailingSlash } from "../../util";
 
 export const RedirectUrl = ({ id }: { id: string }) => {
-  const { t } = useTranslation("identity-providers");
+  const { t } = useTranslation();
 
   const { realm } = useRealm();
   const callbackUrl = `${addTrailingSlash(
@@ -18,10 +18,7 @@ export const RedirectUrl = ({ id }: { id: string }) => {
     <FormGroup
       label={t("redirectURI")}
       labelIcon={
-        <HelpItem
-          helpText={t("identity-providers-help:redirectURI")}
-          fieldLabelId="identity-providers:redirectURI"
-        />
+        <HelpItem helpText={t("redirectURIHelp")} fieldLabelId="redirectURI" />
       }
       fieldId="kc-redirect-uri"
     >

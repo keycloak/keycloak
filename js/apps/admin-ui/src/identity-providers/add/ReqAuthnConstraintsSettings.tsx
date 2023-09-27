@@ -14,7 +14,7 @@ import { MultiLineInput } from "../../components/multi-line-input/MultiLineInput
 const comparisonValues = ["exact", "minimum", "maximum", "better"];
 
 export const ReqAuthnConstraints = () => {
-  const { t } = useTranslation("identity-providers");
+  const { t } = useTranslation();
   const { control } = useFormContext();
   const [comparisonOpen, setComparisonOpen] = useState(false);
   return (
@@ -22,10 +22,7 @@ export const ReqAuthnConstraints = () => {
       <FormGroup
         label={t("comparison")}
         labelIcon={
-          <HelpItem
-            helpText={t("identity-providers-help:comparison")}
-            fieldLabelId="identity-providers:comparison"
-          />
+          <HelpItem helpText={t("comparisonHelp")} fieldLabelId="comparison" />
         }
         fieldId="comparison"
       >
@@ -66,7 +63,7 @@ export const ReqAuthnConstraints = () => {
         fieldId="kc-authnContextClassRefs"
         labelIcon={
           <HelpItem
-            helpText={t("identity-providers-help:authnContextClassRefs")}
+            helpText={t("authnContextClassRefsHelp")}
             fieldLabelId="authnContextClassRefs"
           />
         }
@@ -74,7 +71,7 @@ export const ReqAuthnConstraints = () => {
         <MultiLineInput
           name="config.authnContextClassRefs"
           aria-label={t("identify-providers:authnContextClassRefs")}
-          addButtonLabel="identity-providers:addAuthnContextClassRef"
+          addButtonLabel="addAuthnContextClassRef"
           data-testid="classref-field"
         />
       </FormGroup>
@@ -83,7 +80,7 @@ export const ReqAuthnConstraints = () => {
         fieldId="kc-authnContextDeclRefs"
         labelIcon={
           <HelpItem
-            helpText={t("identity-providers-help:authnContextDeclRefs")}
+            helpText={t("authnContextDeclRefsHelp")}
             fieldLabelId="authnContextDeclRefs"
           />
         }
@@ -91,7 +88,7 @@ export const ReqAuthnConstraints = () => {
         <MultiLineInput
           name="config.authnContextDeclRefs"
           aria-label={t("identify-providers:authnContextDeclRefs")}
-          addButtonLabel="identity-providers:addAuthnContextDeclRef"
+          addButtonLabel="addAuthnContextDeclRef"
           data-testid="declref-field"
         />
       </FormGroup>

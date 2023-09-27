@@ -15,7 +15,7 @@ const EventsSection = lazy(() => import("../EventsSection"));
 export const EventsRoute: AppRouteObject = {
   path: "/:realm/events",
   element: <EventsSection />,
-  breadcrumb: (t) => t("events:title"),
+  breadcrumb: (t) => t("titleEvents"),
   handle: {
     access: "view-events",
   },

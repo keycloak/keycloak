@@ -25,15 +25,15 @@ export const DeleteScopeDialog = ({
   open,
   toggleDialog,
 }: DeleteScopeDialogProps) => {
-  const { t } = useTranslation("clients");
+  const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
 
   return (
     <ConfirmDialogModal
       open={open}
       toggleDialog={toggleDialog}
-      titleKey="clients:deleteScope"
-      continueButtonLabel="clients:confirm"
+      titleKey="deleteScope"
+      continueButtonLabel="confirm"
       onConfirm={async () => {
         try {
           await adminClient.clients.delAuthorizationScope({
@@ -43,7 +43,7 @@ export const DeleteScopeDialog = ({
           addAlert(t("resourceScopeSuccess"), AlertVariant.success);
           refresh();
         } catch (error) {
-          addError("clients:resourceScopeError", error);
+          addError("resourceScopeError", error);
         }
       }}
     >

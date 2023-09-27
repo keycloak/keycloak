@@ -67,7 +67,7 @@ const AssociatedPoliciesRenderer = ({
 };
 
 export const AuthorizationPermissions = ({ clientId }: PermissionsProps) => {
-  const { t } = useTranslation("clients");
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { addAlert, addError } = useAlerts();
   const { realm } = useRealm();
@@ -149,12 +149,12 @@ export const AuthorizationPermissions = ({ clientId }: PermissionsProps) => {
   );
 
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
-    titleKey: "clients:deletePermission",
+    titleKey: "deletePermission",
     messageKey: t("deletePermissionConfirm", {
       permission: selectedPermission?.name,
     }),
     continueButtonVariant: ButtonVariant.danger,
-    continueButtonLabel: "clients:confirm",
+    continueButtonLabel: "confirm",
     onConfirm: async () => {
       try {
         await adminClient.clients.delPermission({
@@ -165,7 +165,7 @@ export const AuthorizationPermissions = ({ clientId }: PermissionsProps) => {
         addAlert(t("permissionDeletedSuccess"), AlertVariant.success);
         refresh();
       } catch (error) {
-        addError("clients:permissionDeletedError", error);
+        addError("permissionDeletedError", error);
       }
     },
   });
@@ -267,10 +267,10 @@ export const AuthorizationPermissions = ({ clientId }: PermissionsProps) => {
               <Thead>
                 <Tr>
                   <Th aria-hidden="true" />
-                  <Th>{t("common:name")}</Th>
-                  <Th>{t("common:type")}</Th>
+                  <Th>{t("name")}</Th>
+                  <Th>{t("type")}</Th>
                   <Th>{t("associatedPolicy")}</Th>
-                  <Th>{t("common:description")}</Th>
+                  <Th>{t("description")}</Th>
                   <Th aria-hidden="true" />
                 </Tr>
               </Thead>
@@ -317,7 +317,7 @@ export const AuthorizationPermissions = ({ clientId }: PermissionsProps) => {
                       actions={{
                         items: [
                           {
-                            title: t("common:delete"),
+                            title: t("delete"),
                             onClick: async () => {
                               setSelectedPermission(permission);
                               toggleDeleteDialog();
@@ -373,8 +373,8 @@ export const AuthorizationPermissions = ({ clientId }: PermissionsProps) => {
       {noData && searching && (
         <ListEmptyState
           isSearchVariant
-          message={t("common:noSearchResults")}
-          instructions={t("common:noSearchResultsInstructions")}
+          message={t("noSearchResults")}
+          instructions={t("noSearchResultsInstructions")}
         />
       )}
     </PageSection>

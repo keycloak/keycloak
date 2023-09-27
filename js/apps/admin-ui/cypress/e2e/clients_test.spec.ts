@@ -149,9 +149,7 @@ describe("Clients test", () => {
           .checkModalTitle("Add client scopes to " + clientId);
         commonPage.tableUtils().selectRowItemCheckbox(itemName);
         commonPage.modalUtils().confirmModalWithItem(assignedType);
-        commonPage
-          .masthead()
-          .checkNotificationMessage("Scope mapping successfully updated");
+        commonPage.masthead().checkNotificationMessage("Scope mapping updated");
         commonPage.tableToolbarUtils().searchItem(itemName, false);
         commonPage
           .tableUtils()

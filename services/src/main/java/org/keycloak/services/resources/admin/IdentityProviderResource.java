@@ -18,7 +18,6 @@ package org.keycloak.services.resources.admin;
 
 import static jakarta.ws.rs.core.Response.Status.BAD_REQUEST;
 
-import com.google.common.collect.Streams;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.extensions.Extension;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
@@ -65,9 +64,7 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
@@ -244,13 +241,14 @@ public class IdentityProviderResource {
     }
 
 
-    private IdentityProviderFactory getIdentityProviderFactory() {
-        return Streams.concat(session.getKeycloakSessionFactory().getProviderFactoriesStream(IdentityProvider.class),
+    private IdentityProviderFactory<?> getIdentityProviderFactory() {
+        String providerId = identityProviderModel.getProviderId();
+        return Stream.concat(session.getKeycloakSessionFactory().getProviderFactoriesStream(IdentityProvider.class),
                 session.getKeycloakSessionFactory().getProviderFactoriesStream(SocialIdentityProvider.class))
-                .filter(providerFactory -> Objects.equals(providerFactory.getId(), identityProviderModel.getProviderId()))
+                .filter(providerFactory -> Objects.equals(providerFactory.getId(), providerId))
                 .map(IdentityProviderFactory.class::cast)
                 .findFirst()
-                .orElse(null);
+                .orElseThrow(() -> new IllegalStateException("IDP not found by Provider ID: " + providerId));
     }
 
     /**
@@ -272,11 +270,15 @@ public class IdentityProviderResource {
         }
 
         try {
-            IdentityProviderFactory factory = getIdentityProviderFactory();
-            return factory.create(session, identityProviderModel).export(session.getContext().getUri(), realm, format);
+            return createIdentityProviderInstance().export(session.getContext().getUri(), realm, format);
         } catch (Exception e) {
             throw ErrorResponse.error("Could not export public broker configuration for identity provider [" + identityProviderModel.getProviderId() + "].", Response.Status.NOT_FOUND);
         }
+    }
+
+    private IdentityProvider<?> createIdentityProviderInstance() {
+        IdentityProviderFactory<?> factory = getIdentityProviderFactory();
+        return factory.create(session, identityProviderModel);
     }
 
     /**
@@ -294,26 +296,22 @@ public class IdentityProviderResource {
             throw new jakarta.ws.rs.NotFoundException();
         }
 
+        IdentityProvider<?> identityProviderInstance = createIdentityProviderInstance();
         KeycloakSessionFactory sessionFactory = session.getKeycloakSessionFactory();
         return sessionFactory.getProviderFactoriesStream(IdentityProviderMapper.class)
                 .map(IdentityProviderMapper.class::cast)
-                .map(mapper -> Arrays.stream(mapper.getCompatibleProviders())
-                        .filter(type -> Objects.equals(IdentityProviderMapper.ANY_PROVIDER, type) ||
-                                Objects.equals(identityProviderModel.getProviderId(), type))
-                        .map(type -> {
-                            IdentityProviderMapperTypeRepresentation rep = new IdentityProviderMapperTypeRepresentation();
-                            rep.setId(mapper.getId());
-                            rep.setCategory(mapper.getDisplayCategory());
-                            rep.setName(mapper.getDisplayType());
-                            rep.setHelpText(mapper.getHelpText());
-                            rep.setProperties(mapper.getConfigProperties().stream()
-                                    .map(ModelToRepresentation::toRepresentation)
-                                    .collect(Collectors.toList()));
-                            return rep;
-                        })
-                        .findFirst()
-                        .orElse(null))
-                .filter(Objects::nonNull)
+                .filter(identityProviderInstance::isMapperSupported)
+                .map(mapper -> {
+                    IdentityProviderMapperTypeRepresentation rep = new IdentityProviderMapperTypeRepresentation();
+                    rep.setId(mapper.getId());
+                    rep.setCategory(mapper.getDisplayCategory());
+                    rep.setName(mapper.getDisplayType());
+                    rep.setHelpText(mapper.getHelpText());
+                    rep.setProperties(mapper.getConfigProperties().stream()
+                            .map(ModelToRepresentation::toRepresentation)
+                            .collect(Collectors.toList()));
+                    return rep;
+                })
                 .collect(Collectors.toMap(IdentityProviderMapperTypeRepresentation::getId, Function.identity()));
     }
 

@@ -6,7 +6,6 @@ import org.keycloak.config.ConfigKeystoreOptions;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Optional;
 
 import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromOption;
@@ -50,11 +49,12 @@ final class ConfigKeystorePropertyMappers {
             throw new IllegalArgumentException("config-keystore-password must be specified");
         }
 
-        Optional<String> realPath = Optional.of(String.valueOf(Paths.get(path.getValue()).toAbsolutePath().normalize()));
-        if (!Files.exists(Path.of(realPath.get()))) {
-            throw new IllegalArgumentException("config-keystore path does not exist: " + realPath.get());
+        final Path realPath = Path.of(path.getValue()).toAbsolutePath().normalize();
+        if (!Files.exists(realPath)) {
+            throw new IllegalArgumentException("config-keystore path does not exist: " + realPath);
         }
-        return realPath;
+
+        return Optional.of(realPath.toUri().toString());
     }
 
     private static Optional<String> validatePassword(Optional<String> option, ConfigSourceInterceptorContext context) {

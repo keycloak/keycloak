@@ -26,7 +26,7 @@ const LoginFlow = ({
   label,
   defaultValue,
 }: FieldProps & { defaultValue: string }) => {
-  const { t } = useTranslation("identity-providers");
+  const { t } = useTranslation();
   const { control } = useFormContext();
 
   const [flows, setFlows] = useState<AuthenticationFlowRepresentation[]>();
@@ -42,12 +42,7 @@ const LoginFlow = ({
   return (
     <FormGroup
       label={t(label)}
-      labelIcon={
-        <HelpItem
-          helpText={t(`identity-providers-help:${label}`)}
-          fieldLabelId={`identity-providers:${label}`}
-        />
-      }
+      labelIcon={<HelpItem helpText={t(`${label}Help`)} fieldLabelId={label} />}
       fieldId={label}
     >
       <Controller
@@ -63,7 +58,7 @@ const LoginFlow = ({
               field.onChange(value as string);
               setOpen(false);
             }}
-            selections={field.value || t("common:none")}
+            selections={field.value || t("none")}
             variant={SelectVariant.single}
             aria-label={t(label)}
             isOpen={open}
@@ -72,7 +67,7 @@ const LoginFlow = ({
               ...(defaultValue === ""
                 ? [
                     <SelectOption key="empty" value="">
-                      {t("common:none")}
+                      {t("none")}
                     </SelectOption>,
                   ]
                 : []),
@@ -97,7 +92,7 @@ const syncModes = ["import", "legacy", "force"];
 type AdvancedSettingsProps = { isOIDC: boolean; isSAML: boolean };
 
 export const AdvancedSettings = ({ isOIDC, isSAML }: AdvancedSettingsProps) => {
-  const { t } = useTranslation("identity-providers");
+  const { t } = useTranslation();
   const {
     control,
     register,
@@ -152,8 +147,8 @@ export const AdvancedSettings = ({ isOIDC, isSAML }: AdvancedSettingsProps) => {
             render={({ field }) => (
               <Switch
                 id="filteredByClaim"
-                label={t("common:on")}
-                labelOff={t("common:off")}
+                label={t("on")}
+                labelOff={t("off")}
                 isChecked={field.value === "true"}
                 onChange={(value) => {
                   field.onChange(value.toString());
@@ -166,11 +161,11 @@ export const AdvancedSettings = ({ isOIDC, isSAML }: AdvancedSettingsProps) => {
       {(!isSAML || isOIDC) && claimFilterRequired && (
         <>
           <FormGroup
-            label={t("identity-providers:claimFilterName")}
+            label={t("claimFilterName")}
             labelIcon={
               <HelpItem
-                helpText={t("identity-providers-help:claimFilterName")}
-                fieldLabelId="identity-providers:claimFilterName"
+                helpText={t("claimFilterNameHelp")}
+                fieldLabelId="claimFilterName"
               />
             }
             fieldId="kc-claim-filter-name"
@@ -180,7 +175,7 @@ export const AdvancedSettings = ({ isOIDC, isSAML }: AdvancedSettingsProps) => {
                 ? ValidatedOptions.error
                 : ValidatedOptions.default
             }
-            helperTextInvalid={t("common:required")}
+            helperTextInvalid={t("required")}
           >
             <KeycloakTextInput
               isRequired
@@ -195,11 +190,11 @@ export const AdvancedSettings = ({ isOIDC, isSAML }: AdvancedSettingsProps) => {
             />
           </FormGroup>
           <FormGroup
-            label={t("identity-providers:claimFilterValue")}
+            label={t("claimFilterValue")}
             labelIcon={
               <HelpItem
-                helpText={t("identity-providers-help:claimFilterValue")}
-                fieldLabelId="identity-providers:claimFilterName"
+                helpText={t("claimFilterValueHelp")}
+                fieldLabelId="claimFilterName"
               />
             }
             fieldId="kc-claim-filter-value"
@@ -209,7 +204,7 @@ export const AdvancedSettings = ({ isOIDC, isSAML }: AdvancedSettingsProps) => {
                 ? ValidatedOptions.error
                 : ValidatedOptions.default
             }
-            helperTextInvalid={t("common:required")}
+            helperTextInvalid={t("required")}
           >
             <KeycloakTextInput
               isRequired
@@ -240,10 +235,7 @@ export const AdvancedSettings = ({ isOIDC, isSAML }: AdvancedSettingsProps) => {
         className="pf-u-pb-3xl"
         label={t("syncMode")}
         labelIcon={
-          <HelpItem
-            helpText={t("identity-providers-help:syncMode")}
-            fieldLabelId="identity-providers:syncMode"
-          />
+          <HelpItem helpText={t("syncModeHelp")} fieldLabelId="syncMode" />
         }
         fieldId="syncMode"
       >

@@ -16,7 +16,7 @@ const EditClientScope = lazy(() => import("../EditClientScope"));
 export const ClientScopeRoute: AppRouteObject = {
   path: "/:realm/client-scopes/:id/:tab",
   element: <EditClientScope />,
-  breadcrumb: (t) => t("client-scopes:clientScopeDetails"),
+  breadcrumb: (t) => t("clientScopeDetails"),
   handle: {
     access: "view-clients",
   },

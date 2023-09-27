@@ -25,9 +25,13 @@ public interface PlatformProvider {
 
     String name();
     
-    void onStartup(Runnable runnable);
+    default void onStartup(Runnable runnable) {
 
-    void onShutdown(Runnable runnable);
+    }
+
+    default void onShutdown(Runnable runnable) {
+
+    }
 
     void exit(Throwable cause);
 

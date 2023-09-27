@@ -43,7 +43,7 @@ export default class UserRegistration {
 }
 
 export class GroupPickerDialog {
-  private addButton = "common:add-button";
+  private addButton = "add-button";
   private title = ".pf-c-modal-box__title";
 
   clickRow(groupName: string) {

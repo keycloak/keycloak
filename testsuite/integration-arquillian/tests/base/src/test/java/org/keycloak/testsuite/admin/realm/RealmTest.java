@@ -39,7 +39,6 @@ import org.keycloak.models.Constants;
 import org.keycloak.models.OAuth2DeviceConfig;
 import org.keycloak.models.OTPPolicy;
 import org.keycloak.models.ParConfig;
-import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.saml.SamlProtocol;
 import org.keycloak.representations.adapters.action.GlobalRequestResult;
@@ -88,6 +87,7 @@ import java.util.stream.Collectors;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.Assert.assertEquals;
@@ -130,32 +130,65 @@ public class RealmTest extends AbstractAdminTest {
 
     @Test
     public void renameRealm() {
+        String OLD = "old";
+        String NEW = "new";
+
         getCleanup()
-          .addCleanup(() -> adminClient.realms().realm("old").remove())
-          .addCleanup(() -> adminClient.realms().realm("new").remove());
+          .addCleanup(() -> adminClient.realms().realm(OLD).remove())
+          .addCleanup(() -> adminClient.realms().realm(NEW).remove());
 
         RealmRepresentation rep = new RealmRepresentation();
-        rep.setId("old");
-        rep.setRealm("old");
+        rep.setId(OLD);
+        rep.setRealm(OLD);
 
         adminClient.realms().create(rep);
 
-        rep.setRealm("new");
-        adminClient.realm("old").update(rep);
+        Map<String, String> newBaseUrls = new HashMap<>();
+        Map<String, List<String>> newRedirectUris = new HashMap<>();
+
+        // memorize all existing clients with their soon-to-be URIs
+        adminClient.realm(OLD).clients().findAll().forEach(client -> {
+            if (client.getBaseUrl() != null && client.getBaseUrl().contains("/" + OLD + "/")) {
+                newBaseUrls.put(client.getClientId(), client.getBaseUrl().replace("/" + OLD + "/", "/" + NEW + "/"));
+            }
+            if (client.getRedirectUris() != null) {
+                newRedirectUris.put(
+                        client.getClientId(),
+                        client.getRedirectUris()
+                                .stream()
+                                .map(redirectUri -> redirectUri.replace("/" + OLD + "/", "/" + NEW + "/"))
+                                .collect(Collectors.toList())
+                );
+            }
+        });
+
+        // at least those three default clients should be in the list of things to be tested
+        assertThat(newBaseUrls.keySet(), hasItems(Constants.ADMIN_CONSOLE_CLIENT_ID, Constants.ACCOUNT_MANAGEMENT_CLIENT_ID, Constants.ACCOUNT_CONSOLE_CLIENT_ID));
+        assertThat(newRedirectUris.keySet(), hasItems(Constants.ADMIN_CONSOLE_CLIENT_ID, Constants.ACCOUNT_MANAGEMENT_CLIENT_ID, Constants.ACCOUNT_CONSOLE_CLIENT_ID));
+
+        rep.setRealm(NEW);
+        adminClient.realm(OLD).update(rep);
 
         // Check client in master realm renamed
         Assert.assertEquals(0, adminClient.realm("master").clients().findByClientId("old-realm").size());
         Assert.assertEquals(1, adminClient.realm("master").clients().findByClientId("new-realm").size());
 
-        ClientRepresentation adminConsoleClient = adminClient.realm("new").clients().findByClientId(Constants.ADMIN_CONSOLE_CLIENT_ID).get(0);
+        ClientRepresentation adminConsoleClient = adminClient.realm(NEW).clients().findByClientId(Constants.ADMIN_CONSOLE_CLIENT_ID).get(0);
         assertEquals(Constants.AUTH_ADMIN_URL_PROP, adminConsoleClient.getRootUrl());
-        assertEquals("/admin/new/console/", adminConsoleClient.getBaseUrl());
-        assertEquals("/admin/new/console/*", adminConsoleClient.getRedirectUris().get(0));
 
-        ClientRepresentation accountClient = adminClient.realm("new").clients().findByClientId(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID).get(0);
+        ClientRepresentation accountClient = adminClient.realm(NEW).clients().findByClientId(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID).get(0);
         assertEquals(Constants.AUTH_BASE_URL_PROP, accountClient.getRootUrl());
-        assertEquals("/realms/new/account/", accountClient.getBaseUrl());
-        assertEquals("/realms/new/account/*", accountClient.getRedirectUris().get(0));
+
+        ClientRepresentation accountConsoleClient = adminClient.realm(NEW).clients().findByClientId(Constants.ACCOUNT_CONSOLE_CLIENT_ID).get(0);
+        assertEquals(Constants.AUTH_BASE_URL_PROP, accountConsoleClient.getRootUrl());
+
+        newBaseUrls.forEach((clientId, baseUrl) -> {
+            assertEquals(baseUrl, adminClient.realm(NEW).clients().findByClientId(clientId).get(0).getBaseUrl());
+        });
+        newRedirectUris.forEach((clientId, redirectUris) -> {
+            assertEquals(redirectUris, adminClient.realm(NEW).clients().findByClientId(clientId).get(0).getRedirectUris());
+        });
+
     }
 
     @Test

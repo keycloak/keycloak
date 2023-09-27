@@ -41,9 +41,7 @@ import java.util.concurrent.TimeUnit;
 
 import jakarta.inject.Inject;
 
-import static io.javaoperatorsdk.operator.api.reconciler.Constants.WATCH_CURRENT_NAMESPACE;
-
-@ControllerConfiguration(namespaces = WATCH_CURRENT_NAMESPACE,
+@ControllerConfiguration(
 dependents = {
     @Dependent(type = KeycloakRealmImportSecretDependentResource.class)
 })

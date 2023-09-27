@@ -17,7 +17,6 @@
 
 package org.keycloak.authentication;
 
-import com.google.common.collect.Sets;
 import org.jboss.logging.Logger;
 import org.keycloak.authentication.actiontoken.ActionTokenContext;
 import org.keycloak.authentication.actiontoken.DefaultActionToken;
@@ -33,6 +32,7 @@ import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.utils.StringUtil;
 
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
@@ -94,7 +94,12 @@ public class AuthenticatorUtil {
         final String callbacksFactories = authSession.getAuthNote(CALLBACKS_FACTORY_IDS_NOTE);
 
         if (StringUtil.isNotBlank(callbacksFactories)) {
-            return Sets.newHashSet(callbacksFactories.split(Constants.CFG_DELIMITER));
+            String[] split = callbacksFactories.split(Constants.CFG_DELIMITER);
+            Set<String> set = new HashSet<>(split.length);
+            for (String s : split) {
+                set.add(s);
+            }
+            return Collections.unmodifiableSet(set);
         } else {
             return Collections.emptySet();
         }

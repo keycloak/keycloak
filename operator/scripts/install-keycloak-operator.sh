@@ -3,6 +3,8 @@ set -euxo pipefail
 
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
+INSTALL_NAMESPACE=${1:-default}
+
 # Delete the default catalog if it exists
 sh -c "kubectl delete catalogsources operatorhubio-catalog -n olm | true"
 
@@ -18,5 +20,5 @@ do
   sleep 1
 done
 
-kubectl apply -f $SCRIPT_DIR/../olm/testing-resources/operatorgroup.yaml
-kubectl apply -f $SCRIPT_DIR/../olm/testing-resources/subscription.yaml
+kubectl apply -f $SCRIPT_DIR/../olm/testing-resources/operatorgroup.yaml -n $INSTALL_NAMESPACE
+kubectl apply -f $SCRIPT_DIR/../olm/testing-resources/subscription.yaml -n $INSTALL_NAMESPACE

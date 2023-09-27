@@ -40,7 +40,7 @@ public abstract class AbstractClaimToGroupMapper extends AbstractClaimMapper {
     public void importNewUser(KeycloakSession session, RealmModel realm, UserModel user,
             IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
 
-        GroupModel group = this.getGroup(realm, mapperModel);
+        GroupModel group = this.getGroup(session, realm, mapperModel);
         if (group == null) {
             return;
         }
@@ -54,7 +54,7 @@ public abstract class AbstractClaimToGroupMapper extends AbstractClaimMapper {
     public void updateBrokeredUser(KeycloakSession session, RealmModel realm, UserModel user,
             IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
 
-        GroupModel group = this.getGroup(realm, mapperModel);
+        GroupModel group = this.getGroup(session, realm, mapperModel);
         if (group == null) {
             return;
         }
@@ -81,9 +81,9 @@ public abstract class AbstractClaimToGroupMapper extends AbstractClaimMapper {
     protected abstract boolean applies(final IdentityProviderMapperModel mapperModel,
             final BrokeredIdentityContext context);
 
-    private GroupModel getGroup(final RealmModel realm, final IdentityProviderMapperModel mapperModel) {
+    private GroupModel getGroup(KeycloakSession session, final RealmModel realm, final IdentityProviderMapperModel mapperModel) {
         String groupPath = mapperModel.getConfig().get(ConfigConstants.GROUP);
-        GroupModel group = KeycloakModelUtils.findGroupByPath(realm, groupPath);
+        GroupModel group = KeycloakModelUtils.findGroupByPath(session, realm, groupPath);
 
         if (group == null) {
             LOG.warnf("Unable to find group by path '%s' referenced by mapper '%s' on realm '%s'.", groupPath,

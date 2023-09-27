@@ -29,6 +29,7 @@ import useFormatDate from "../utils/useFormatDate";
 import useIsFeatureEnabled, { Feature } from "../utils/useIsFeatureEnabled";
 import { FederatedUserLink } from "./FederatedUserLink";
 import { UserProfileFields } from "./UserProfileFields";
+import { UserFormFields } from "./form-state";
 import { RequiredActionMultiSelect } from "./user-credentials/RequiredActionMultiSelect";
 
 export type BruteForced = {
@@ -40,22 +41,22 @@ export type UserFormProps = {
   user?: UserRepresentation;
   bruteForce?: BruteForced;
   realm?: RealmRepresentation;
-  save: (user: UserRepresentation) => void;
+  save: (user: UserFormFields) => void;
   onGroupsUpdate?: (groups: GroupRepresentation[]) => void;
 };
 
 const EmailVerified = () => {
-  const { t } = useTranslation("users");
-  const { control } = useFormContext();
+  const { t } = useTranslation();
+  const { control } = useFormContext<UserFormFields>();
   return (
     <FormGroup
       label={t("emailVerified")}
       fieldId="kc-email-verified"
-      helperTextInvalid={t("common:required")}
+      helperTextInvalid={t("required")}
       labelIcon={
         <HelpItem
-          helpText={t("users-help:emailVerified")}
-          fieldLabelId="users:emailVerified"
+          helpText={t("emailVerifiedHelp")}
+          fieldLabelId="emailVerified"
         />
       }
     >
@@ -69,8 +70,8 @@ const EmailVerified = () => {
             id="kc-user-email-verified"
             onChange={(value) => field.onChange(value)}
             isChecked={field.value}
-            label={t("common:yes")}
-            labelOff={t("common:no")}
+            label={t("yes")}
+            labelOff={t("no")}
           />
         )}
       />
@@ -88,7 +89,7 @@ export const UserForm = ({
   save,
   onGroupsUpdate,
 }: UserFormProps) => {
-  const { t } = useTranslation("users");
+  const { t } = useTranslation();
   const { realm: realmName } = useRealm();
   const formatDate = useFormatDate();
   const isFeatureEnabled = useIsFeatureEnabled();
@@ -106,7 +107,7 @@ export const UserForm = ({
     control,
     reset,
     formState: { errors },
-  } = useFormContext();
+  } = useFormContext<UserFormFields>();
   const watchUsernameInput = watch("username");
   const [selectedGroups, setSelectedGroups] = useState<GroupRepresentation[]>(
     [],
@@ -119,7 +120,7 @@ export const UserForm = ({
       await adminClient.attackDetection.del({ id: user!.id! });
       addAlert(t("unlockSuccess"), AlertVariant.success);
     } catch (error) {
-      addError("users:unlockError", error);
+      addError("unlockError", error);
     }
   };
 
@@ -142,9 +143,9 @@ export const UserForm = ({
           id: user!.id!,
           groupId: group.id!,
         });
-        addAlert(t("users:addedGroupMembership"), AlertVariant.success);
+        addAlert(t("addedGroupMembership"), AlertVariant.success);
       } catch (error) {
-        addError("users:addedGroupMembershipError", error);
+        addError("addedGroupMembershipError", error);
       }
     });
   };
@@ -169,8 +170,8 @@ export const UserForm = ({
         <GroupPickerDialog
           type="selectMany"
           text={{
-            title: "users:selectGroups",
-            ok: "users:join",
+            title: "selectGroups",
+            ok: "join",
           }}
           canBrowse={isManager}
           onConfirm={(groups) => {
@@ -181,10 +182,9 @@ export const UserForm = ({
           filterGroups={selectedGroups}
         />
       )}
-      {isUserProfileEnabled && <EmailVerified />}
       {user?.id && (
         <>
-          <FormGroup label={t("common:id")} fieldId="kc-id" isRequired>
+          <FormGroup label={t("id")} fieldId="kc-id" isRequired>
             <KeycloakTextInput
               id={user.id}
               aria-label={t("userID")}
@@ -208,23 +208,23 @@ export const UserForm = ({
       <RequiredActionMultiSelect
         name="requiredActions"
         label="requiredUserActions"
-        help="users-help:requiredUserActions"
+        help="requiredUserActionsHelp"
       />
       {(user?.federationLink || user?.origin) && canViewFederationLink && (
         <FormGroup
           label={t("federationLink")}
           labelIcon={
             <HelpItem
-              helpText={t("users-help:federationLink")}
-              fieldLabelId="users:federationLink"
+              helpText={t("federationLinkHelp")}
+              fieldLabelId="federationLink"
             />
           }
         >
           <FederatedUserLink user={user} />
         </FormGroup>
       )}
-      {isUserProfileEnabled ? (
-        <UserProfileFields />
+      {isUserProfileEnabled && user?.userProfileMetadata ? (
+        <UserProfileFields config={user.userProfileMetadata} />
       ) : (
         <>
           {!realm?.registrationEmailAsUsername && (
@@ -233,7 +233,7 @@ export const UserForm = ({
               fieldId="kc-username"
               isRequired
               validated={errors.username ? "error" : "default"}
-              helperTextInvalid={t("common:required")}
+              helperTextInvalid={t("required")}
             >
               <KeycloakTextInput
                 id="kc-username"
@@ -250,7 +250,7 @@ export const UserForm = ({
             label={t("email")}
             fieldId="kc-email"
             validated={errors.email ? "error" : "default"}
-            helperTextInvalid={t("users:emailInvalid")}
+            helperTextInvalid={t("emailInvalid")}
           >
             <KeycloakTextInput
               type="email"
@@ -266,7 +266,7 @@ export const UserForm = ({
             label={t("firstName")}
             fieldId="kc-firstName"
             validated={errors.firstName ? "error" : "default"}
-            helperTextInvalid={t("common:required")}
+            helperTextInvalid={t("required")}
           >
             <KeycloakTextInput
               data-testid="firstName-input"
@@ -281,7 +281,7 @@ export const UserForm = ({
           >
             <KeycloakTextInput
               data-testid="lastName-input"
-              id="kc-lastname"
+              id="kc-lastName"
               aria-label={t("lastName")}
               {...register("lastName")}
             />
@@ -294,8 +294,8 @@ export const UserForm = ({
           fieldId="temporaryLocked"
           labelIcon={
             <HelpItem
-              helpText={t("users-help:temporaryLocked")}
-              fieldLabelId="users:temporaryLocked"
+              helpText={t("temporaryLockedHelp")}
+              fieldLabelId="temporaryLocked"
             />
           }
         >
@@ -308,20 +308,18 @@ export const UserForm = ({
             }}
             isChecked={locked}
             isDisabled={!locked}
-            label={t("common:on")}
-            labelOff={t("common:off")}
+            label={t("on")}
+            labelOff={t("off")}
           />
         </FormGroup>
       )}
       {!user?.id && (
         <FormGroup
-          label={t("common:groups")}
+          label={t("groups")}
           fieldId="kc-groups"
           validated={errors.requiredActions ? "error" : "default"}
-          helperTextInvalid={t("common:required")}
-          labelIcon={
-            <HelpItem helpText={t("users-help:groups")} fieldLabelId="groups" />
-          }
+          helperTextInvalid={t("required")}
+          labelIcon={<HelpItem helpText={t("groups")} fieldLabelId="groups" />}
         >
           <Controller
             name="groups"
@@ -345,7 +343,7 @@ export const UserForm = ({
                   variant="secondary"
                   data-testid="join-groups-button"
                 >
-                  {t("users:joinGroups")}
+                  {t("joinGroups")}
                 </Button>
               </InputGroup>
             )}
@@ -364,7 +362,7 @@ export const UserForm = ({
           variant="primary"
           type="submit"
         >
-          {user?.id ? t("common:save") : t("common:create")}
+          {user?.id ? t("save") : t("create")}
         </Button>
         <Button
           data-testid="cancel-create-user"
@@ -373,7 +371,7 @@ export const UserForm = ({
           }
           variant="link"
         >
-          {user?.id ? t("common:revert") : t("common:cancel")}
+          {user?.id ? t("revert") : t("cancel")}
         </Button>
       </ActionGroup>
     </FormAccess>

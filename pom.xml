@@ -43,19 +43,28 @@
         <jboss.snapshots.repo.id>jboss-snapshots-repository</jboss.snapshots.repo.id>
         <jboss.snapshots.repo.url>https://s01.oss.sonatype.org/content/repositories/snapshots/</jboss.snapshots.repo.url>
 
-        <quarkus.version>3.2.4.Final</quarkus.version>
-        <quarkus.build.version>3.2.3.Final</quarkus.build.version>
+        <quarkus.version>3.2.6.Final</quarkus.version>
+        <quarkus.build.version>3.2.6.Final</quarkus.build.version>
 
         <project.build-time>${timestamp}</project.build-time>
 
-        <wildfly.version>27.0.1.Final</wildfly.version>
-        <wildfly.build-tools.version>1.2.13.Final</wildfly.build-tools.version>
-        <wildfly.core.version>19.0.1.Final</wildfly.core.version>
+        <!-- core version for app-server-wildfly/eap tests, should match wildfly/eap server -->
+        <tests.wildfly.core.version>19.0.1.Final</tests.wildfly.core.version>
+
+        <!-- Upstream WildFly Versions -->
+        <upstream.wildfly.version>29.0.0.Final</upstream.wildfly.version>
+        <upstream.wildfly.build-tools.version>1.2.13.Final</upstream.wildfly.build-tools.version>
+        <upstream.wildfly.core.version>21.1.0.Final</upstream.wildfly.core.version>
+
+        <!-- Downstream Builds WildFly Versions Override -->
+        <eap8.version>8.0.0.GA-redhat-00007</eap8.version>  <!-- G:A = org.jboss.eap:jboss-eap-parent -->
+        <eap8.wildfly.version>${eap8.version}</eap8.wildfly.version>
+        <eap8.wildfly.core.version>21.1.0.Final</eap8.wildfly.core.version>
+        <eap8.wildfly.build-tools.version>1.2.13.Final</eap8.wildfly.build-tools.version>
+
         <wildfly.jakarta.adapters>true</wildfly.jakarta.adapters>
         <apache.httpcomponents.fuse.version>4.5.2</apache.httpcomponents.fuse.version>
         <apache.httpcomponents.httpcore.fuse.version>4.4.4</apache.httpcomponents.httpcore.fuse.version>
-        <ee.maven.groupId>org.wildfly</ee.maven.groupId>
-        <ee.maven.version>${wildfly.version}</ee.maven.version>
 
         <jboss.as.version>7.2.0.Final</jboss.as.version>
         <jboss.as.subsystem.test.version>7.5.22.Final-redhat-1</jboss.as.subsystem.test.version>
@@ -76,8 +85,8 @@
         <h2.version>2.2.220</h2.version>
         <hibernate-orm.plugin.version>6.2.7.Final</hibernate-orm.plugin.version>
         <hibernate.c3p0.version>6.2.7.Final</hibernate.c3p0.version>
-        <infinispan.version>14.0.14.Final</infinispan.version>
-        <infinispan.protostream.processor.version>4.6.2.Final</infinispan.protostream.processor.version>
+        <infinispan.version>14.0.17.Final</infinispan.version>
+        <infinispan.protostream.processor.version>4.6.5.Final</infinispan.protostream.processor.version>
 
         <!--JAKARTA-->
         <jakarta.mail.version>2.1.1</jakarta.mail.version>
@@ -110,7 +119,8 @@
         <elytron.undertow-server.version>1.9.0.Final</elytron.undertow-server.version>
         <jetty94.version>9.4.40.v20210413</jetty94.version>
         <woodstox.version>6.0.3</woodstox.version>
-        <wildfly.common.version>1.6.0.Final</wildfly.common.version>
+        <wildfly.common.quarkus.aligned.version>1.5.4.Final-format-001</wildfly.common.quarkus.aligned.version>
+        <wildfly.common.wildfly.aligned.version>1.6.0.Final</wildfly.common.wildfly.aligned.version>
         <xmlsec.version>2.2.3</xmlsec.version>
         <nashorn.version>15.4</nashorn.version>
         <ua-parser.version>1.5.4</ua-parser.version>
@@ -141,9 +151,10 @@
         <mariadb.version>10.11</mariadb.version>
         <mariadb-jdbc.version>3.1.4</mariadb-jdbc.version>
         <mssql.version>2022-latest</mssql.version>
-        <mssql-jdbc.version>9.2.0.jre8</mssql-jdbc.version>
-        <!-- this is the oracle driver version also used in the Quarkus BOM -->
+        <!-- this is the mssql driver version also used in the Quarkus BOM -->
+        <mssql-jdbc.version>12.2.0.jre11</mssql-jdbc.version>
         <oracledb.version>19.3</oracledb.version>
+        <!-- this is the oracle driver version also used in the Quarkus BOM -->
         <oracle-jdbc.version>23.2.0.0</oracle-jdbc.version>
 
         <!-- Test -->
@@ -198,8 +209,9 @@
         <org.apache.kerby.kerby-asn1.version>2.0.3</org.apache.kerby.kerby-asn1.version>
 
         <!-- WildFly Galleon Build related properties -->
-        <org.wildfly.galleon-plugins.version>5.2.7.Final</org.wildfly.galleon-plugins.version>
-        <org.jboss.galleon.version>4.2.8.Final</org.jboss.galleon.version>
+        <org.wildfly.galleon-plugins.version>6.4.2.Final</org.wildfly.galleon-plugins.version>
+        <org.jboss.galleon.version>5.1.0.Final</org.jboss.galleon.version>
+        <org.wildfly.maven.plugins.licenses-plugin.version>2.3.1.Final</org.wildfly.maven.plugins.licenses-plugin.version>
 
         <!-- Galleon -->
         <galleon.fork.embedded>true</galleon.fork.embedded>
@@ -212,8 +224,8 @@
         <server.output.dir.version>${project.version}</server.output.dir.version>
 
         <!-- Frontend -->
-        <node.version>v18.16.0</node.version>
-        <pnpm.version>8.6.2</pnpm.version>
+        <node.version>v18.17.1</node.version>
+        <pnpm.version>8.6.12</pnpm.version>
     </properties>
 
     <url>http://keycloak.org</url>
@@ -543,6 +555,12 @@
                 <groupId>org.twitter4j</groupId>
                 <artifactId>twitter4j-core</artifactId>
                 <version>${twitter4j.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.jetbrains</groupId>
+                        <artifactId>annotations</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
 
             <!-- QR Code Generator -->
@@ -659,6 +677,11 @@
                 <version>${apache.httpcomponents.version}</version>
             </dependency>
             <dependency>
+                <groupId>org.wildfly.common</groupId>
+                <artifactId>wildfly-common</artifactId>
+                <version>${wildfly.common.quarkus.aligned.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>org.wildfly.core</groupId>
                 <artifactId>wildfly-controller</artifactId>
                 <version>${wildfly.core.version}</version>
@@ -717,7 +740,7 @@
                 <scope>test</scope>
             </dependency>
             <dependency>
-                <groupId>org.wildfly</groupId>
+                <groupId>${ee.maven.groupId}</groupId>
                 <artifactId>wildfly-undertow</artifactId>
                 <version>${wildfly.version}</version>
                 <scope>test</scope>
@@ -788,12 +811,12 @@
                 <version>${wildfly.core.version}</version>
             </dependency>
             <dependency>
-                <groupId>org.wildfly</groupId>
+                <groupId>${ee.maven.groupId}</groupId>
                 <artifactId>wildfly-web-common</artifactId>
                 <version>${wildfly.version}</version>
             </dependency>
             <dependency>
-                <groupId>org.wildfly</groupId>
+                <groupId>${ee.maven.groupId}</groupId>
                 <artifactId>wildfly-clustering-infinispan-marshalling</artifactId>
                 <version>${wildfly.version}</version>
             </dependency>
@@ -919,6 +942,16 @@
                 <groupId>org.infinispan.protostream</groupId>
                 <artifactId>protostream-processor</artifactId>
                 <scope>provided</scope>
+                <version>${infinispan.protostream.processor.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.infinispan.protostream</groupId>
+                <artifactId>protostream</artifactId>
+                <version>${infinispan.protostream.processor.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.infinispan.protostream</groupId>
+                <artifactId>protostream-types</artifactId>
                 <version>${infinispan.protostream.processor.version}</version>
             </dependency>
             <dependency>
@@ -1838,7 +1871,7 @@
                         <dependency>
                             <groupId>org.wildfly.common</groupId>
                             <artifactId>wildfly-common</artifactId>
-                            <version>${wildfly.common.version}</version>
+                            <version>${wildfly.common.wildfly.aligned.version}</version>
                         </dependency>
                     </dependencies>
                 </plugin>
@@ -1928,6 +1961,39 @@
             <modules>
                 <module>examples</module>
             </modules>
+        </profile>
+
+        <!-- Profile to activate EAP8 Adapters Build -->
+        <profile>
+            <id>eap8-adapters</id>
+            <activation>
+                <property>
+                    <name>eap8-adapters</name>
+                </property>
+            </activation>
+            <properties>
+                <ee.maven.groupId>org.jboss.eap</ee.maven.groupId>
+                <ee.maven.version>${eap8.version}</ee.maven.version>
+                <wildfly.version>${eap8.version}</wildfly.version>
+                <wildfly.build-tools.version>${eap8.wildfly.build-tools.version}</wildfly.build-tools.version>
+                <wildfly.core.version>${eap8.wildfly.core.version}</wildfly.core.version>
+            </properties>
+        </profile>
+        <profile>
+            <id>upstream-adapters</id>
+            <activation>
+                <property>
+                    <name>!eap8-adapters</name>
+                </property>
+            </activation>
+            <properties>
+                <ee.maven.groupId>org.wildfly</ee.maven.groupId>
+                <ee.maven.version>${upstream.wildfly.version}</ee.maven.version>
+                <wildfly.version>${upstream.wildfly.version}</wildfly.version>
+                <wildfly.build-tools.version>${upstream.wildfly.build-tools.version}</wildfly.build-tools.version>
+                <wildfly.core.version>${upstream.wildfly.core.version}</wildfly.core.version>
+            </properties>
+
         </profile>
 
         <profile>

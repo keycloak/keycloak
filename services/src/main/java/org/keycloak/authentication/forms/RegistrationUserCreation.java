@@ -18,6 +18,8 @@
 package org.keycloak.authentication.forms;
 
 import org.keycloak.Config;
+import org.keycloak.authentication.AuthenticationFlowError;
+import org.keycloak.authentication.AuthenticationFlowException;
 import org.keycloak.authentication.FormAction;
 import org.keycloak.authentication.FormActionFactory;
 import org.keycloak.authentication.FormContext;
@@ -106,11 +108,13 @@ public class RegistrationUserCreation implements FormAction, FormActionFactory {
 
     @Override
     public void buildPage(FormContext context, LoginFormsProvider form) {
-
+        checkNotOtherUserAuthenticating(context);
     }
 
     @Override
     public void success(FormContext context) {
+        checkNotOtherUserAuthenticating(context);
+
         MultivaluedMap<String, String> formData = context.getHttpRequest().getDecodedFormParameters();
 
         String email = formData.getFirst(UserModel.EMAIL);
@@ -145,6 +149,14 @@ public class RegistrationUserCreation implements FormAction, FormActionFactory {
         String authType = context.getAuthenticationSession().getAuthNote(Details.AUTH_TYPE);
         if (authType != null) {
             context.getEvent().detail(Details.AUTH_TYPE, authType);
+        }
+    }
+
+    private void checkNotOtherUserAuthenticating(FormContext context) {
+        if (context.getUser() != null) {
+            // the user probably did some back navigation in the browser, hitting this page in a strange state
+            context.getEvent().detail(Details.EXISTING_USER, context.getUser().getUsername());
+            throw new AuthenticationFlowException(AuthenticationFlowError.GENERIC_AUTHENTICATION_ERROR, Errors.DIFFERENT_USER_AUTHENTICATING, Messages.EXPIRED_ACTION);
         }
     }
 

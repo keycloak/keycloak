@@ -72,7 +72,9 @@ const DeviceActivity = () => {
   ) => {
     try {
       await deleteSession(session.id);
-      addAlert(t("signedOutSession", [session.browser, device.os]));
+      addAlert(
+        t("signedOutSession", { browser: session.browser, os: device.os }),
+      );
       refresh();
     } catch (error) {
       addError(t("errorSignOutMessage", { error }).toString());
@@ -142,7 +144,7 @@ const DeviceActivity = () => {
         className="signed-in-device-list"
         aria-label={t("signedInDevices")}
       >
-        <DataListItem aria-labelledby="sessions">
+        <DataListItem aria-labelledby={`sessions-${key}`}>
           {devices.map((device) =>
             device.sessions.map((session) => (
               <DataListItemRow key={device.id}>
