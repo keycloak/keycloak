@@ -31,9 +31,8 @@ export default function CreateFlow() {
     const flow = { ...formValues, builtIn: false, topLevel: true };
 
     try {
-      const { id } = await adminClient.authenticationManagement.createFlow(
-        flow,
-      );
+      const { id } =
+        await adminClient.authenticationManagement.createFlow(flow);
       addAlert(t("flowCreatedSuccess"), AlertVariant.success);
       navigate(
         toFlow({
