@@ -217,6 +217,7 @@ export const ResetPasswordDialog = ({
                   label={t("on")}
                   labelOff={t("off")}
                   aria-label={t("temporaryPassword")}
+                  data-testid="temporaryPasswordSwitch"
                 />
               )}
             />

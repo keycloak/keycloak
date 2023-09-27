@@ -23,6 +23,7 @@ export default class CredentialsPage {
   private readonly editConfirmationBtn = "editUserLabelAcceptBtn";
   private readonly showDataDialogBtn = "showDataBtn";
   private readonly closeDataDialogBtn = '.pf-c-modal-box [aria-label^="Close"]';
+  private readonly temporaryPasswordOffBtn = "temporaryPasswordSwitch";
 
   goToCredentialsTab() {
     cy.intercept("/admin/realms/*/users/*/credentials").as("load");
@@ -71,6 +72,16 @@ export default class CredentialsPage {
   fillPasswordForm() {
     cy.findByTestId(this.passwordField).type("test");
     cy.findByTestId(this.passwordConfirmationField).type("test");
+
+    return this;
+  }
+
+  fillPasswordFormWithTempOff() {
+    cy.findByTestId(this.passwordField).type("test");
+    cy.findByTestId(this.passwordConfirmationField).type("test");
+    cy.findByTestId(this.temporaryPasswordOffBtn).click({
+      force: true,
+    });
 
     return this;
   }
