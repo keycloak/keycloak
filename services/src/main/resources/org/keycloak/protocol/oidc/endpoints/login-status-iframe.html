@@ -1,7 +1,7 @@
 <!doctype html>
 <html>
   <head>
-    <meta charset="utf-8" />
+    <meta charset="utf-8">
   </head>
   <body>
     <script type="module">
@@ -30,7 +30,14 @@
       let init;
 
       async function checkState(clientId, origin, sessionState) {
-        const cookie = getSessionCookie();
+        // Check if the browser has granted us access to 3rd-party storage (such as cookies).
+        const hasAccess = await hasStorageAccess();
+
+        // If we don't have access, signal an error.
+        // As we cannot read cookies, we cannot verify the session state.
+        if (!hasAccess) {
+          return "error";
+        }
 
         // If not initialized, verify this client is allowed access with a call to the server.
         if (!init) {
@@ -48,6 +55,8 @@
           init = { clientId, origin };
         }
 
+        const cookie = getSessionCookie();
+
         // Signal a change in state if there is no cookie, and the session state is not empty.
         if (!cookie) {
           return sessionState !== "" ? "changed" : "unchanged";
@@ -61,6 +70,14 @@
 
         // Otherwise, if there is no match, then signal an error.
         return "error";
+      }
+
+      async function hasStorageAccess() {
+        if (!("hasStorageAccess" in document)) {
+          return true;
+        }
+
+        return document.hasStorageAccess();
       }
 
       function getSessionCookie() {
