@@ -32,7 +32,6 @@ import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.resource.AccountResourceProvider;
 import org.keycloak.services.resources.Cors;
 import org.keycloak.theme.Theme;
-import org.keycloak.theme.ThemeProperties;
 
 import jakarta.ws.rs.HttpMethod;
 import jakarta.ws.rs.InternalServerErrorException;
@@ -152,8 +151,8 @@ public class AccountLoader {
 
     private AccountResourceProvider getAccountResourceProvider(Theme theme) {
       try {
-        if (theme.getProperties().containsKey(ThemeProperties.ACCOUNT_RESOURCE_PROVIDER_KEY)) {
-          return session.getProvider(AccountResourceProvider.class, theme.getProperties().getProperty(ThemeProperties.ACCOUNT_RESOURCE_PROVIDER_KEY));
+        if (theme.getProperties().containsKey(Theme.ACCOUNT_RESOURCE_PROVIDER_KEY)) {
+          return session.getProvider(AccountResourceProvider.class, theme.getProperties().getProperty(Theme.ACCOUNT_RESOURCE_PROVIDER_KEY));
         }
       } catch (IOException ignore) {}
       return session.getProvider(AccountResourceProvider.class);
