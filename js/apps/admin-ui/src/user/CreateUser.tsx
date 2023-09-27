@@ -1,54 +1,78 @@
 import type GroupRepresentation from "@keycloak/keycloak-admin-client/lib/defs/groupRepresentation";
+import RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
+import UserProfileConfig from "@keycloak/keycloak-admin-client/lib/defs/userProfileConfig";
 import { AlertVariant, PageSection } from "@patternfly/react-core";
 import { useState } from "react";
-import { FormProvider, useForm } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 
 import { adminClient } from "../admin-client";
 import { useAlerts } from "../components/alert/Alerts";
+import { KeycloakSpinner } from "../components/keycloak-spinner/KeycloakSpinner";
 import { ViewHeader } from "../components/view-header/ViewHeader";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { UserProfileProvider } from "../realm-settings/user-profile/UserProfileContext";
+import { useFetch } from "../utils/useFetch";
+import useIsFeatureEnabled, { Feature } from "../utils/useIsFeatureEnabled";
 import { UserForm } from "./UserForm";
 import {
   isUserProfileError,
   userProfileErrorToString,
 } from "./UserProfileFields";
-import { UserFormFields } from "./form-state";
+import { UserFormFields, toUserRepresentation } from "./form-state";
 import { toUser } from "./routes/User";
 
 import "./user-section.css";
-import RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
-import { useFetch } from "../utils/useFetch";
 
 export default function CreateUser() {
   const { t } = useTranslation();
   const { addAlert, addError } = useAlerts();
   const navigate = useNavigate();
-  const { realm } = useRealm();
-  const userForm = useForm<UserFormFields>({ mode: "onChange" });
+  const { realm: realmName } = useRealm();
+  const isFeatureEnabled = useIsFeatureEnabled();
+  const form = useForm<UserFormFields>({ mode: "onChange" });
   const [addedGroups, setAddedGroups] = useState<GroupRepresentation[]>([]);
-
-  const [realmRepresentation, setRealmRepresentation] =
-    useState<RealmRepresentation>();
+  const [realm, setRealm] = useState<RealmRepresentation>();
+  const [userProfileMetadata, setUserProfileMetadata] =
+    useState<UserProfileConfig>();
 
   useFetch(
-    () => adminClient.realms.findOne({ realm }),
-    (result) => setRealmRepresentation(result),
+    () =>
+      Promise.all([
+        adminClient.realms.findOne({ realm: realmName }),
+        adminClient.users.getProfileMetadata({ realm: realmName }),
+      ]),
+    ([realm, userProfileMetadata]) => {
+      if (!realm) {
+        throw new Error(t("notFound"));
+      }
+
+      setRealm(realm);
+
+      const isUserProfileEnabled =
+        isFeatureEnabled(Feature.DeclarativeUserProfile) &&
+        realm.attributes?.userProfileEnabled === "true";
+
+      setUserProfileMetadata(
+        isUserProfileEnabled ? userProfileMetadata : undefined,
+      );
+    },
     [],
   );
 
   const save = async (data: UserFormFields) => {
     try {
       const createdUser = await adminClient.users.create({
-        ...data,
+        ...toUserRepresentation(data),
         groups: addedGroups.map((group) => group.path!),
         enabled: true,
       });
 
       addAlert(t("userCreated"), AlertVariant.success);
-      navigate(toUser({ id: createdUser.id, realm, tab: "settings" }));
+      navigate(
+        toUser({ id: createdUser.id, realm: realmName, tab: "settings" }),
+      );
     } catch (error) {
       if (isUserProfileError(error)) {
         addError(userProfileErrorToString(error), error);
@@ -58,6 +82,10 @@ export default function CreateUser() {
     }
   };
 
+  if (!realm || !userProfileMetadata) {
+    return <KeycloakSpinner />;
+  }
+
   return (
     <>
       <ViewHeader
@@ -66,15 +94,15 @@ export default function CreateUser() {
       />
       <PageSection variant="light" className="pf-u-p-0">
         <UserProfileProvider>
-          <FormProvider {...userForm}>
-            <PageSection variant="light">
-              <UserForm
-                realm={realmRepresentation}
-                onGroupsUpdate={setAddedGroups}
-                save={save}
-              />
-            </PageSection>
-          </FormProvider>
+          <PageSection variant="light">
+            <UserForm
+              form={form}
+              realm={realm}
+              userProfileMetadata={userProfileMetadata}
+              onGroupsUpdate={setAddedGroups}
+              save={save}
+            />
+          </PageSection>
         </UserProfileProvider>
       </PageSection>
     </>

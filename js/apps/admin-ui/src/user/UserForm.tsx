@@ -1,5 +1,6 @@
 import type GroupRepresentation from "@keycloak/keycloak-admin-client/lib/defs/groupRepresentation";
 import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
+import UserProfileConfig from "@keycloak/keycloak-admin-client/lib/defs/userProfileConfig";
 import type UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
 import {
   ActionGroup,
@@ -12,9 +13,9 @@ import {
   Switch,
 } from "@patternfly/react-core";
 import { useState } from "react";
-import { Controller, useFormContext } from "react-hook-form";
+import { Controller, UseFormReturn, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { HelpItem } from "ui-shared";
 
 import { adminClient } from "../admin-client";
@@ -23,16 +24,13 @@ import { FormAccess } from "../components/form/FormAccess";
 import { GroupPickerDialog } from "../components/group/GroupPickerDialog";
 import { KeycloakTextInput } from "../components/keycloak-text-input/KeycloakTextInput";
 import { useAccess } from "../context/access/Access";
-import { useRealm } from "../context/realm-context/RealmContext";
 import { emailRegexPattern } from "../util";
 import useFormatDate from "../utils/useFormatDate";
-import useIsFeatureEnabled, { Feature } from "../utils/useIsFeatureEnabled";
 import { FederatedUserLink } from "./FederatedUserLink";
 import { UserProfileFields } from "./UserProfileFields";
-import { UserFormFields } from "./form-state";
+import { UserFormFields, toUserFormFields } from "./form-state";
+import { toUsers } from "./routes/Users";
 import { RequiredActionMultiSelect } from "./user-credentials/RequiredActionMultiSelect";
-import { useFetch } from "../utils/useFetch";
-import UserProfileConfig from "@keycloak/keycloak-admin-client/lib/defs/userProfileConfig";
 
 export type BruteForced = {
   isBruteForceProtected?: boolean;
@@ -40,9 +38,11 @@ export type BruteForced = {
 };
 
 export type UserFormProps = {
+  form: UseFormReturn<UserFormFields>;
+  realm: RealmRepresentation;
   user?: UserRepresentation;
   bruteForce?: BruteForced;
-  realm?: RealmRepresentation;
+  userProfileMetadata?: UserProfileConfig;
   save: (user: UserFormFields) => void;
   onGroupsUpdate?: (groups: GroupRepresentation[]) => void;
 };
@@ -82,21 +82,19 @@ const EmailVerified = () => {
 };
 
 export const UserForm = ({
-  user,
+  form,
   realm,
+  user,
   bruteForce: { isBruteForceProtected, isLocked } = {
     isBruteForceProtected: false,
     isLocked: false,
   },
+  userProfileMetadata,
   save,
   onGroupsUpdate,
 }: UserFormProps) => {
   const { t } = useTranslation();
-  const { realm: realmName } = useRealm();
   const formatDate = useFormatDate();
-  const isFeatureEnabled = useIsFeatureEnabled();
-
-  const navigate = useNavigate();
   const { addAlert, addError } = useAlerts();
   const { hasAccess } = useAccess();
   const isManager = hasAccess("manage-users");
@@ -109,7 +107,7 @@ export const UserForm = ({
     control,
     reset,
     formState: { errors },
-  } = useFormContext<UserFormFields>();
+  } = form;
   const watchUsernameInput = watch("username");
   const [selectedGroups, setSelectedGroups] = useState<GroupRepresentation[]>(
     [],
@@ -155,18 +153,6 @@ export const UserForm = ({
   const toggleModal = () => {
     setOpen(!open);
   };
-
-  const isUserProfileEnabled =
-    isFeatureEnabled(Feature.DeclarativeUserProfile) &&
-    realm?.attributes?.userProfileEnabled === "true";
-
-  const [profileMetadata, setProfileMetadata] = useState<UserProfileConfig>();
-
-  useFetch(
-    () => adminClient.users.getProfileMetadata(),
-    (result) => setProfileMetadata(result),
-    [],
-  );
 
   return (
     <FormAccess
@@ -233,11 +219,11 @@ export const UserForm = ({
           <FederatedUserLink user={user} />
         </FormGroup>
       )}
-      {isUserProfileEnabled && profileMetadata ? (
-        <UserProfileFields config={profileMetadata} />
+      {userProfileMetadata ? (
+        <UserProfileFields config={userProfileMetadata} />
       ) : (
         <>
-          {!realm?.registrationEmailAsUsername && (
+          {!realm.registrationEmailAsUsername && (
             <FormGroup
               label={t("username")}
               fieldId="kc-username"
@@ -249,8 +235,8 @@ export const UserForm = ({
                 id="kc-username"
                 isReadOnly={
                   !!user?.id &&
-                  !realm?.editUsernameAllowed &&
-                  realm?.editUsernameAllowed !== undefined
+                  !realm.editUsernameAllowed &&
+                  realm.editUsernameAllowed !== undefined
                 }
                 {...register("username")}
               />
@@ -367,7 +353,7 @@ export const UserForm = ({
           isDisabled={
             !user?.id &&
             !watchUsernameInput &&
-            !realm?.registrationEmailAsUsername
+            !realm.registrationEmailAsUsername
           }
           variant="primary"
           type="submit"
@@ -376,10 +362,15 @@ export const UserForm = ({
         </Button>
         <Button
           data-testid="cancel-create-user"
-          onClick={() =>
-            user?.id ? reset(user) : navigate(`/${realmName}/users`)
-          }
           variant="link"
+          onClick={user?.id ? () => reset(toUserFormFields(user)) : undefined}
+          component={
+            !user?.id
+              ? (props) => (
+                  <Link {...props} to={toUsers({ realm: realm.id! })} />
+                )
+              : undefined
+          }
         >
           {user?.id ? t("revert") : t("cancel")}
         </Button>
