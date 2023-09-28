@@ -145,6 +145,9 @@ public interface OAuth2Constants {
 
     // https://openid.net/specs/openid-financial-api-jarm-ID1.html
     String RESPONSE = "response";
+
+    // https://www.rfc-editor.org/rfc/rfc9207.html
+    String ISSUER = "iss";
 }
 
 
