@@ -92,9 +92,8 @@ export default function EditUser() {
         adminClient.realms.findOne({ realm: realmName }),
         adminClient.users.findOne({ id: id!, userProfileMetadata: true }),
         adminClient.attackDetection.findOne({ id: id! }),
-        adminClient.users.getProfileMetadata({ realm: realmName }),
       ]),
-    ([realm, user, attackDetection, userProfileMetadata]) => {
+    ([realm, user, attackDetection]) => {
       if (!user || !realm || !attackDetection) {
         throw new Error(t("notFound"));
       }
@@ -112,7 +111,7 @@ export default function EditUser() {
         realm.attributes?.userProfileEnabled === "true";
 
       setUserProfileMetadata(
-        isUserProfileEnabled ? userProfileMetadata : undefined,
+        isUserProfileEnabled ? user.userProfileMetadata : undefined,
       );
 
       form.reset(toUserFormFields(user, !!userProfileMetadata));
