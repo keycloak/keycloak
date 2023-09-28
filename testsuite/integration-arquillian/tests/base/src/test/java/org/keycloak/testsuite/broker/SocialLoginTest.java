@@ -516,7 +516,12 @@ public class SocialLoginTest extends AbstractKeycloakTest {
 
     private void navigateToLoginPage() {
         currentSocialLoginPage.logout(); // try to logout first to be sure we're not logged in
-        driver.navigate().to(oauth.getLoginFormUrl());
+
+        driver.navigate().to(
+                currentTestProvider.equals(PAYPAL)
+                        ? oauth.getLoginFormUrl("https://127.0.0.1:8543/auth")
+                        : oauth.getLoginFormUrl()
+        );
         loginPage.clickSocial(currentTestProvider.id());
 
         // Just to be sure there's no redirect in progress
