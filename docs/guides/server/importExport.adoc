@@ -71,6 +71,12 @@ If you do not specify a specific realm to export, all realms are exported. To ex
 
 <@kc.export parameters="[--dir|--file] <path> --realm my-realm"/>
 
+== Exporting realm information in the admin console
+
+It's also possible to export realm information from the admin console; note that this export is only a *partial* export and will **not** include users. Additionally, all sensitive values like passwords and client secrets will be masked with `*` symbols.
+
+To do a partial export of a realm, use the "partial export" action on the realm settings page.
+
 == Importing a Realm from a Directory
 
 To import a realm, you can use the `import` command. Your Keycloak server instance must not be started when invoking this command.
