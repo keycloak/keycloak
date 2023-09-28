@@ -1,17 +1,19 @@
 import { useFormContext } from "react-hook-form";
-import {
-  UserProfileAttributeMetadata,
-  UserProfileMetadata,
-} from "../api/representations";
 import { LocaleSelector } from "./LocaleSelector";
-import { OptionComponent } from "./components/OptionsComponent";
-import { SelectComponent } from "./components/SelectComponent";
-import { TextAreaComponent } from "./components/TextAreaComponent";
-import { TextComponent } from "./components/TextComponent";
-import { fieldName } from "./utils";
+import { OptionComponent } from "./OptionsComponent";
+import { SelectComponent } from "./SelectComponent";
+import { TextAreaComponent } from "./TextAreaComponent";
+import { TextComponent } from "./TextComponent";
+import {
+  UserProfileMetadata,
+  UserProfileAttributeMetadata,
+} from "./userProfileConfig";
+import { TranslationFunction, fieldName } from "./utils";
 
 type UserProfileFieldsProps = {
+  t: TranslationFunction;
   metaData: UserProfileMetadata;
+  supportedLocales: string[];
 };
 
 export type Options = {
@@ -61,23 +63,36 @@ export const FIELDS: {
 export const isValidComponentType = (value: string): value is Field =>
   value in FIELDS;
 
-export const UserProfileFields = ({ metaData }: UserProfileFieldsProps) =>
+export const UserProfileFields = ({
+  metaData,
+  ...rest
+}: UserProfileFieldsProps) =>
   metaData.attributes.map((attribute) => (
-    <FormField key={attribute.name} attribute={attribute} />
+    <FormField key={attribute.name} attribute={attribute} {...rest} />
   ));
 
 type FormFieldProps = {
+  t: TranslationFunction;
+  supportedLocales: string[];
   attribute: UserProfileAttributeMetadata;
 };
 
-const FormField = ({ attribute }: FormFieldProps) => {
+const FormField = (attr: FormFieldProps) => {
+  const { attribute, supportedLocales, t } = attr;
   const { watch } = useFormContext();
-  const value = watch(fieldName(attribute));
+  const value = watch(fieldName(attr));
 
   const componentType = (attribute.annotations?.["inputType"] ||
     (Array.isArray(value) ? "multiselect" : "text")) as Field;
   const Component = FIELDS[componentType];
 
-  if (attribute.name === "locale") return <LocaleSelector />;
-  return <Component {...{ ...attribute }} />;
+  if (attribute.name === "locale")
+    return <LocaleSelector supportedLocales={supportedLocales} t={t} />;
+  return (
+    <Component
+      attribute={attribute}
+      t={t}
+      supportedLocales={supportedLocales}
+    />
+  );
 };

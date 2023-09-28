@@ -10,8 +10,12 @@ import { useKeycloak } from "keycloak-masthead";
 import { useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { useAlerts } from "ui-shared";
-import { getPersonalInfo, savePersonalInfo } from "../api/methods";
+import { UserProfileFields, useAlerts } from "ui-shared";
+import {
+  getPersonalInfo,
+  getSupportedLocales,
+  savePersonalInfo,
+} from "../api/methods";
 import {
   UserProfileMetadata,
   UserRepresentation,
@@ -20,7 +24,6 @@ import { Page } from "../components/page/Page";
 import { environment } from "../environment";
 import { TFuncKey } from "../i18n";
 import { usePromise } from "../utils/usePromise";
-import { UserProfileFields } from "./UserProfileFields";
 
 type FieldError = {
   field: string;
@@ -41,14 +44,20 @@ const PersonalInfo = () => {
   const keycloak = useKeycloak();
   const [userProfileMetadata, setUserProfileMetadata] =
     useState<UserProfileMetadata>();
+  const [supportedLocales, setSupportedLocales] = useState<string[]>([]);
   const form = useForm<UserRepresentation>({ mode: "onChange" });
   const { handleSubmit, reset, setError } = form;
   const { addAlert, addError } = useAlerts();
 
   usePromise(
-    (signal) => getPersonalInfo({ signal }),
-    (personalInfo) => {
+    (signal) =>
+      Promise.all([
+        getPersonalInfo({ signal }),
+        getSupportedLocales({ signal }),
+      ]),
+    ([personalInfo, supportedLocales]) => {
       setUserProfileMetadata(personalInfo.userProfileMetadata);
+      setSupportedLocales(supportedLocales);
       reset(personalInfo);
     },
   );
@@ -85,7 +94,11 @@ const PersonalInfo = () => {
     <Page title={t("personalInfo")} description={t("personalInfoDescription")}>
       <Form isHorizontal onSubmit={handleSubmit(onSubmit)}>
         <FormProvider {...form}>
-          <UserProfileFields metaData={userProfileMetadata} />
+          <UserProfileFields
+            metaData={userProfileMetadata}
+            supportedLocales={supportedLocales}
+            t={(key: TFuncKey) => t(key)}
+          />
         </FormProvider>
         <ActionGroup>
           <Button

@@ -1,17 +1,16 @@
 import { Checkbox, Radio } from "@patternfly/react-core";
 import { Controller, useFormContext } from "react-hook-form";
-import { UserProfileAttributeMetadata } from "../../api/representations";
-import { Options } from "../UserProfileFields";
-import { fieldName } from "../utils";
-import { UserProfileGroup } from "./UserProfileGroup";
+import { Options } from "./UserProfileFields";
+import { UserProfileFieldsProps, UserProfileGroup } from "./UserProfileGroup";
+import { fieldName } from "./utils";
 
-export const OptionComponent = (attr: UserProfileAttributeMetadata) => {
+export const OptionComponent = (attr: UserProfileFieldsProps) => {
   const { control } = useFormContext();
   const type = attr.annotations?.["inputType"] as string;
   const isMultiSelect = type.includes("multiselect");
   const Component = isMultiSelect ? Checkbox : Radio;
 
-  const options = (attr.validators.options as Options).options || [];
+  const options = (attr.validators?.options as Options).options || [];
 
   return (
     <UserProfileGroup {...attr}>
@@ -42,6 +41,7 @@ export const OptionComponent = (attr: UserProfileAttributeMetadata) => {
                     field.onChange([option]);
                   }
                 }}
+                readOnly={attr.readOnly}
               />
             ))}
           </>

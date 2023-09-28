@@ -1,10 +1,9 @@
 import { useFormContext } from "react-hook-form";
-import { KeycloakTextInput } from "ui-shared";
-import { fieldName } from "../utils";
-import { UserProfileGroup } from "./UserProfileGroup";
-import { UserProfileAttributeMetadata } from "../../api/representations";
+import { KeycloakTextInput } from "../keycloak-text-input/KeycloakTextInput";
+import { UserProfileFieldsProps, UserProfileGroup } from "./UserProfileGroup";
+import { fieldName } from "./utils";
 
-export const TextComponent = (attr: UserProfileAttributeMetadata) => {
+export const TextComponent = (attr: UserProfileFieldsProps) => {
   const { register } = useFormContext();
   const inputType = attr.annotations?.["inputType"] as string | undefined;
   const type: any = inputType?.startsWith("html")
@@ -18,6 +17,7 @@ export const TextComponent = (attr: UserProfileAttributeMetadata) => {
         data-testid={attr.name}
         type={type}
         placeholder={attr.annotations?.["inputTypePlaceholder"] as string}
+        readOnly={attr.readOnly}
         {...register(fieldName(attr))}
       />
     </UserProfileGroup>
