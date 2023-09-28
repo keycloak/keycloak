@@ -12,7 +12,6 @@ import { useAlerts } from "../components/alert/Alerts";
 import { KeycloakSpinner } from "../components/keycloak-spinner/KeycloakSpinner";
 import { ViewHeader } from "../components/view-header/ViewHeader";
 import { useRealm } from "../context/realm-context/RealmContext";
-import { UserProfileProvider } from "../realm-settings/user-profile/UserProfileContext";
 import { useFetch } from "../utils/useFetch";
 import useIsFeatureEnabled, { Feature } from "../utils/useIsFeatureEnabled";
 import { UserForm } from "./UserForm";
@@ -93,17 +92,15 @@ export default function CreateUser() {
         className="kc-username-view-header"
       />
       <PageSection variant="light" className="pf-u-p-0">
-        <UserProfileProvider>
-          <PageSection variant="light">
-            <UserForm
-              form={form}
-              realm={realm}
-              userProfileMetadata={userProfileMetadata}
-              onGroupsUpdate={setAddedGroups}
-              save={save}
-            />
-          </PageSection>
-        </UserProfileProvider>
+        <PageSection variant="light">
+          <UserForm
+            form={form}
+            realm={realm}
+            userProfileMetadata={userProfileMetadata}
+            onGroupsUpdate={setAddedGroups}
+            save={save}
+          />
+        </PageSection>
       </PageSection>
     </>
   );
