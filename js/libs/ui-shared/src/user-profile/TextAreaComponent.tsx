@@ -1,10 +1,9 @@
 import { useFormContext } from "react-hook-form";
-import { UserProfileAttributeMetadata } from "../../api/representations";
-import { fieldName } from "../utils";
-import { UserProfileGroup } from "./UserProfileGroup";
-import { KeycloakTextArea } from "ui-shared";
+import { KeycloakTextArea } from "../controls/keycloak-text-area/KeycloakTextArea";
+import { UserProfileFieldsProps, UserProfileGroup } from "./UserProfileGroup";
+import { fieldName } from "./utils";
 
-export const TextAreaComponent = (attr: UserProfileAttributeMetadata) => {
+export const TextAreaComponent = (attr: UserProfileFieldsProps) => {
   const { register } = useFormContext();
 
   return (
@@ -15,6 +14,7 @@ export const TextAreaComponent = (attr: UserProfileAttributeMetadata) => {
         {...register(fieldName(attr))}
         cols={attr.annotations?.["inputTypeCols"] as number}
         rows={attr.annotations?.["inputTypeRows"] as number}
+        readOnly={attr.readOnly}
       />
     </UserProfileGroup>
   );
