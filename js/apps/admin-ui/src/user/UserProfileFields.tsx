@@ -2,7 +2,7 @@ import type { UserProfileAttribute } from "@keycloak/keycloak-admin-client/lib/d
 import UserProfileConfig from "@keycloak/keycloak-admin-client/lib/defs/userProfileConfig";
 import { Text } from "@patternfly/react-core";
 import { Fragment } from "react";
-import { useFormContext } from "react-hook-form";
+import { FieldPath, UseFormReturn } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
 import { ScrollForm } from "../components/scroll-form/ScrollForm";
@@ -10,19 +10,15 @@ import { OptionComponent } from "./components/OptionsComponent";
 import { SelectComponent } from "./components/SelectComponent";
 import { TextAreaComponent } from "./components/TextAreaComponent";
 import { TextComponent } from "./components/TextComponent";
+import { UserFormFields } from "./form-state";
 import { fieldName } from "./utils";
-
-type UserProfileFieldsProps = {
-  config: UserProfileConfig;
-  roles?: string[];
-};
 
 export type UserProfileError = {
   responseData: { errors?: { errorMessage: string }[] };
 };
 
 export type Options = {
-  options: string[] | undefined;
+  options?: string[];
 };
 
 export function isUserProfileError(error: unknown): error is UserProfileError {
@@ -35,7 +31,7 @@ export function userProfileErrorToString(error: UserProfileError) {
   );
 }
 
-const FieldTypes = [
+const INPUT_TYPES = [
   "text",
   "textarea",
   "select",
@@ -53,10 +49,17 @@ const FieldTypes = [
   "html5-time",
 ] as const;
 
-export type Field = (typeof FieldTypes)[number];
+export type InputType = (typeof INPUT_TYPES)[number];
+
+export type UserProfileFieldProps = {
+  form: UseFormReturn<UserFormFields>;
+  inputType: InputType;
+  attribute: UserProfileAttribute;
+  roles: string[];
+};
 
 export const FIELDS: {
-  [index in Field]: (props: any) => JSX.Element;
+  [type in InputType]: (props: UserProfileFieldProps) => JSX.Element;
 } = {
   text: TextComponent,
   textarea: TextAreaComponent,
@@ -75,10 +78,14 @@ export const FIELDS: {
   "html5-time": TextComponent,
 } as const;
 
-export const isValidComponentType = (value: string): value is Field =>
-  value in FIELDS;
+export type UserProfileFieldsProps = {
+  form: UseFormReturn<UserFormFields>;
+  config: UserProfileConfig;
+  roles?: string[];
+};
 
 export const UserProfileFields = ({
+  form,
   config,
   roles = ["admin"],
 }: UserProfileFieldsProps) => {
@@ -96,7 +103,7 @@ export const UserProfileFields = ({
             {config.attributes?.map((attribute) => (
               <Fragment key={attribute.name}>
                 {(attribute.group || "") === g.name && (
-                  <FormField attribute={attribute} roles={roles} />
+                  <FormField form={form} attribute={attribute} roles={roles} />
                 )}
               </Fragment>
             ))}
@@ -108,18 +115,32 @@ export const UserProfileFields = ({
 };
 
 type FormFieldProps = {
+  form: UseFormReturn<UserFormFields>;
   attribute: UserProfileAttribute;
   roles: string[];
 };
 
-const FormField = ({ attribute, roles }: FormFieldProps) => {
-  const { watch } = useFormContext();
-  const value = watch(fieldName(attribute));
+const FormField = ({ form, attribute, roles }: FormFieldProps) => {
+  const value = form.watch(fieldName(attribute) as FieldPath<UserFormFields>);
+  const inputType =
+    attribute.annotations?.["inputType"] ??
+    (Array.isArray(value) && value.length > 1 ? "multiselect" : "text");
 
-  const componentType = (attribute.annotations?.["inputType"] ||
-    (Array.isArray(value) ? "multiselect" : "text")) as Field;
+  if (!isValidInputType(inputType)) {
+    return null;
+  }
 
-  const Component = FIELDS[componentType];
+  const Component = FIELDS[inputType];
 
-  return <Component {...{ ...attribute, roles }} />;
+  return (
+    <Component
+      form={form}
+      inputType={inputType}
+      attribute={attribute}
+      roles={roles}
+    />
+  );
 };
+
+const isValidInputType = (value: unknown): value is InputType =>
+  typeof value === "string" && value in FIELDS;

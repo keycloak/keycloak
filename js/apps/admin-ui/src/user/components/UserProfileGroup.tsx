@@ -1,15 +1,12 @@
 import { UserProfileAttribute } from "@keycloak/keycloak-admin-client/lib/defs/userProfileConfig";
 import { FormGroup } from "@patternfly/react-core";
 import { PropsWithChildren } from "react";
-import { useFormContext } from "react-hook-form";
+import { UseFormReturn } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-
 import { HelpItem } from "ui-shared";
-import { label } from "../utils";
 
-export type UserProfileFieldsProps = UserProfileAttribute & {
-  roles?: string[];
-};
+import { UserFormFields } from "../form-state";
+import { label } from "../utils";
 
 type LengthValidator =
   | {
@@ -21,16 +18,21 @@ const isRequired = (attribute: UserProfileAttribute) =>
   Object.keys(attribute.required || {}).length !== 0 ||
   (((attribute.validators?.length as LengthValidator)?.min as number) || 0) > 0;
 
+export type UserProfileGroupProps = {
+  form: UseFormReturn<UserFormFields>;
+  attribute: UserProfileAttribute;
+};
+
 export const UserProfileGroup = ({
+  form,
+  attribute,
   children,
-  ...attribute
-}: PropsWithChildren<UserProfileFieldsProps>) => {
+}: PropsWithChildren<UserProfileGroupProps>) => {
   const { t } = useTranslation();
   const helpText = attribute.annotations?.["inputHelperTextBefore"] as string;
-
   const {
     formState: { errors },
-  } = useFormContext();
+  } = form;
 
   return (
     <FormGroup

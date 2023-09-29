@@ -1,25 +1,30 @@
-import { UserProfileAttribute } from "@keycloak/keycloak-admin-client/lib/defs/userProfileConfig";
-import { useFormContext } from "react-hook-form";
+import { TextInputTypes } from "@patternfly/react-core";
+import { FieldPath } from "react-hook-form";
 import { KeycloakTextInput } from "ui-shared";
+
+import { UserProfileFieldProps } from "../UserProfileFields";
+import { UserFormFields } from "../form-state";
 import { fieldName } from "../utils";
 import { UserProfileGroup } from "./UserProfileGroup";
 
-export const TextComponent = (attr: UserProfileAttribute) => {
-  const { register } = useFormContext();
-  const inputType = attr.annotations?.["inputType"] as string | undefined;
-  const type: any = inputType?.startsWith("html")
-    ? inputType.substring("html".length + 2)
+export const TextComponent = ({
+  form,
+  inputType,
+  attribute,
+}: UserProfileFieldProps) => {
+  const type = inputType.startsWith("html")
+    ? (inputType.substring("html".length + 2) as TextInputTypes)
     : "text";
 
   return (
-    <UserProfileGroup {...attr}>
+    <UserProfileGroup form={form} attribute={attribute}>
       <KeycloakTextInput
-        id={attr.name}
-        data-testid={attr.name}
+        id={attribute.name}
+        data-testid={attribute.name}
         type={type}
-        placeholder={attr.annotations?.["inputTypePlaceholder"] as string}
-        readOnly={attr.readOnly}
-        {...register(fieldName(attr))}
+        placeholder={attribute.annotations?.["inputTypePlaceholder"] as string}
+        readOnly={attribute.readOnly}
+        {...form.register(fieldName(attribute) as FieldPath<UserFormFields>)}
       />
     </UserProfileGroup>
   );

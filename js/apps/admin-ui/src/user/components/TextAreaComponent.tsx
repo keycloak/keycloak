@@ -1,21 +1,24 @@
-import { UserProfileAttribute } from "@keycloak/keycloak-admin-client/lib/defs/userProfileConfig";
-import { useFormContext } from "react-hook-form";
+import { FieldPath } from "react-hook-form";
+
 import { KeycloakTextArea } from "../../components/keycloak-text-area/KeycloakTextArea";
-import { UserProfileGroup } from "./UserProfileGroup";
+import { UserProfileFieldProps } from "../UserProfileFields";
+import { UserFormFields } from "../form-state";
 import { fieldName } from "../utils";
+import { UserProfileGroup } from "./UserProfileGroup";
 
-export const TextAreaComponent = (attr: UserProfileAttribute) => {
-  const { register } = useFormContext();
-
+export const TextAreaComponent = ({
+  form,
+  attribute,
+}: UserProfileFieldProps) => {
   return (
-    <UserProfileGroup {...attr}>
+    <UserProfileGroup form={form} attribute={attribute}>
       <KeycloakTextArea
-        id={attr.name}
-        data-testid={attr.name}
-        {...register(fieldName(attr))}
-        cols={attr.annotations?.["inputTypeCols"] as number}
-        rows={attr.annotations?.["inputTypeRows"] as number}
-        readOnly={attr.readOnly}
+        id={attribute.name}
+        data-testid={attribute.name}
+        {...form.register(fieldName(attribute) as FieldPath<UserFormFields>)}
+        cols={attribute.annotations?.["inputTypeCols"] as number}
+        rows={attribute.annotations?.["inputTypeRows"] as number}
+        readOnly={attribute.readOnly}
       />
     </UserProfileGroup>
   );
