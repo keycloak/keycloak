@@ -247,23 +247,14 @@ public class UserResource {
             profile.validate();
         } catch (ValidationException pve) {
             List<ErrorRepresentation> errors = new ArrayList<>();
-            AdminMessageFormatter adminMessageFormatter = createAdminMessageFormatter(session, adminAuth);
-
             for (ValidationException.Error error : pve.getErrors()) {
-                errors.add(new ErrorRepresentation(error.getFormattedMessage(adminMessageFormatter)));
+                errors.add(new ErrorRepresentation(error.getAttribute(), error.getMessage(), error.getMessageParameters()));
             }
 
             throw ErrorResponse.errors(errors, Status.BAD_REQUEST);
         }
 
         return null;
-    }
-
-    private static AdminMessageFormatter createAdminMessageFormatter(KeycloakSession session, AdminAuth adminAuth) {
-        // the authenticated user is used to resolve the locale for the messages. It can be null.
-        UserModel authenticatedUser = adminAuth == null ? null : adminAuth.getUser();
-
-        return new AdminMessageFormatter(session, authenticatedUser);
     }
 
     public static void updateUserFromRep(UserProfile profile, UserModel user, UserRepresentation rep, KeycloakSession session, boolean isUpdateExistingUser) {

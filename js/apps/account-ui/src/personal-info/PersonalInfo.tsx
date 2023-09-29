@@ -6,11 +6,16 @@ import {
   Form,
   Spinner,
 } from "@patternfly/react-core";
+import { ExternalLinkSquareAltIcon } from "@patternfly/react-icons";
 import { useKeycloak } from "keycloak-masthead";
 import { useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { UserProfileFields, useAlerts } from "ui-shared";
+import {
+  UserProfileFields,
+  setUserProfileServerError,
+  useAlerts,
+} from "ui-shared";
 import {
   getPersonalInfo,
   getSupportedLocales,
@@ -24,20 +29,6 @@ import { Page } from "../components/page/Page";
 import { environment } from "../environment";
 import { TFuncKey } from "../i18n";
 import { usePromise } from "../utils/usePromise";
-
-type FieldError = {
-  field: string;
-  errorMessage: string;
-  params: string[];
-};
-
-const ROOT_ATTRIBUTES = ["username", "firstName", "lastName", "email"];
-export const isBundleKey = (key?: string) => key?.includes("${");
-export const unWrap = (key: string) => key.substring(2, key.length - 1);
-export const isRootAttribute = (attr?: string) =>
-  attr && ROOT_ATTRIBUTES.includes(attr);
-export const fieldName = (name: string) =>
-  `${isRootAttribute(name) ? "" : "attributes."}${name}`;
 
 const PersonalInfo = () => {
   const { t } = useTranslation();
@@ -70,19 +61,11 @@ const PersonalInfo = () => {
     } catch (error) {
       addError(t("accountUpdatedError").toString());
 
-      (error as FieldError[]).forEach((e) => {
-        const params = Object.assign(
-          {},
-          e.params.map((p) => t((isBundleKey(p) ? unWrap(p) : p) as TFuncKey)),
-        );
-        setError(fieldName(e.field) as keyof UserRepresentation, {
-          message: t(e.errorMessage as TFuncKey, {
-            ...params,
-            defaultValue: e.field,
-          }),
-          type: "server",
-        });
-      });
+      setUserProfileServerError(
+        error,
+        setError,
+        (key: TFuncKey, param?: object) => t(key, { ...param }),
+      );
     }
   };
 
@@ -90,6 +73,12 @@ const PersonalInfo = () => {
     return <Spinner />;
   }
 
+  const {
+    updateEmailFeatureEnabled,
+    updateEmailActionEnabled,
+    isRegistrationEmailAsUsername,
+    isEditUserNameAllowed,
+  } = environment.features;
   return (
     <Page title={t("personalInfo")} description={t("personalInfoDescription")}>
       <Form isHorizontal onSubmit={handleSubmit(onSubmit)}>
@@ -98,6 +87,24 @@ const PersonalInfo = () => {
             metaData={userProfileMetadata}
             supportedLocales={supportedLocales}
             t={(key: TFuncKey) => t(key)}
+            renderer={(attribute) =>
+              attribute.name === "email" &&
+              updateEmailFeatureEnabled &&
+              updateEmailActionEnabled &&
+              (!isRegistrationEmailAsUsername || isEditUserNameAllowed) ? (
+                <Button
+                  id="update-email-btn"
+                  variant="link"
+                  onClick={() =>
+                    keycloak?.keycloak.login({ action: "UPDATE_EMAIL" })
+                  }
+                  icon={<ExternalLinkSquareAltIcon />}
+                  iconPosition="right"
+                >
+                  {t("updateEmail")}
+                </Button>
+              ) : undefined
+            }
           />
         </FormProvider>
         <ActionGroup>

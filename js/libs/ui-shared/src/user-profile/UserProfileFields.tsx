@@ -7,6 +7,7 @@ import { TextComponent } from "./TextComponent";
 import {
   UserProfileMetadata,
   UserProfileAttributeMetadata,
+  UserProfileAttribute,
 } from "./userProfileConfig";
 import { TranslationFunction, fieldName } from "./utils";
 
@@ -14,6 +15,7 @@ type UserProfileFieldsProps = {
   t: TranslationFunction;
   metaData: UserProfileMetadata;
   supportedLocales: string[];
+  renderer?: (attribute: UserProfileAttribute) => JSX.Element | undefined;
 };
 
 export type Options = {
@@ -71,28 +73,22 @@ export const UserProfileFields = ({
     <FormField key={attribute.name} attribute={attribute} {...rest} />
   ));
 
-type FormFieldProps = {
-  t: TranslationFunction;
-  supportedLocales: string[];
+export type FormFieldProps = Omit<UserProfileFieldsProps, "metaData"> & {
   attribute: UserProfileAttributeMetadata;
 };
 
 const FormField = (attr: FormFieldProps) => {
   const { attribute, supportedLocales, t } = attr;
   const { watch } = useFormContext();
-  const value = watch(fieldName(attr));
+  const value = watch(fieldName(attribute.name));
 
   const componentType = (attribute.annotations?.["inputType"] ||
-    (Array.isArray(value) ? "multiselect" : "text")) as Field;
+    (Array.isArray(value) && value.length > 1
+      ? "multiselect"
+      : "text")) as Field;
   const Component = FIELDS[componentType];
 
   if (attribute.name === "locale")
     return <LocaleSelector supportedLocales={supportedLocales} t={t} />;
-  return (
-    <Component
-      attribute={attribute}
-      t={t}
-      supportedLocales={supportedLocales}
-    />
-  );
+  return <Component {...attribute} {...attr} />;
 };
