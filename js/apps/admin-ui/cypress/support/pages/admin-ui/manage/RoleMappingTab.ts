@@ -105,19 +105,5 @@ export default class RoleMappingTab {
     cy.findByTestId(this.filterTypeDropdownItem).click();
 
     cy.get(this.addRoleTable).type(`${roleName}{enter}`);
-
-    // cy.findByTestId(this.addAssociatedRolesModalButton).click();
-
-    // cy.contains("Users in role").click();
-    // cy.findByTestId(this.usersPage).should("exist");
   }
-
-  // addClientRole(roleName: string) {
-  //   cy.findByTestId("assignRole").click({ force: true });
-  //   cy.findByTestId("filter-type-dropdown").click();
-  //   cy.findByTestId("roles").click();
-  //   cy.get('input[placeholder="Search by role name"]').type(
-  //     "view-groups{enter}",
-  //   );
-  // }
 }
