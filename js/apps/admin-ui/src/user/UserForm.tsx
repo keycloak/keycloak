@@ -13,7 +13,7 @@ import {
   Switch,
 } from "@patternfly/react-core";
 import { useState } from "react";
-import { Controller, UseFormReturn, useFormContext } from "react-hook-form";
+import { Controller, UseFormReturn } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import { HelpItem } from "ui-shared";
@@ -45,40 +45,6 @@ export type UserFormProps = {
   userProfileMetadata?: UserProfileConfig;
   save: (user: UserFormFields) => void;
   onGroupsUpdate?: (groups: GroupRepresentation[]) => void;
-};
-
-const EmailVerified = () => {
-  const { t } = useTranslation();
-  const { control } = useFormContext<UserFormFields>();
-  return (
-    <FormGroup
-      label={t("emailVerified")}
-      fieldId="kc-email-verified"
-      helperTextInvalid={t("required")}
-      labelIcon={
-        <HelpItem
-          helpText={t("emailVerifiedHelp")}
-          fieldLabelId="emailVerified"
-        />
-      }
-    >
-      <Controller
-        name="emailVerified"
-        defaultValue={false}
-        control={control}
-        render={({ field }) => (
-          <Switch
-            data-testid="email-verified-switch"
-            id="kc-user-email-verified"
-            onChange={(value) => field.onChange(value)}
-            isChecked={field.value}
-            label={t("yes")}
-            labelOff={t("no")}
-          />
-        )}
-      />
-    </FormGroup>
-  );
 };
 
 export const UserForm = ({
@@ -202,6 +168,7 @@ export const UserForm = ({
         </>
       )}
       <RequiredActionMultiSelect
+        control={control}
         name="requiredActions"
         label="requiredUserActions"
         help="requiredUserActionsHelp"
@@ -257,7 +224,33 @@ export const UserForm = ({
               })}
             />
           </FormGroup>
-          <EmailVerified />
+          <FormGroup
+            label={t("emailVerified")}
+            fieldId="kc-email-verified"
+            helperTextInvalid={t("required")}
+            labelIcon={
+              <HelpItem
+                helpText={t("emailVerifiedHelp")}
+                fieldLabelId="emailVerified"
+              />
+            }
+          >
+            <Controller
+              name="emailVerified"
+              defaultValue={false}
+              control={control}
+              render={({ field }) => (
+                <Switch
+                  data-testid="email-verified-switch"
+                  id="kc-user-email-verified"
+                  onChange={(value) => field.onChange(value)}
+                  isChecked={field.value}
+                  label={t("yes")}
+                  labelOff={t("no")}
+                />
+              )}
+            />
+          </FormGroup>
           <FormGroup
             label={t("firstName")}
             fieldId="kc-firstName"
