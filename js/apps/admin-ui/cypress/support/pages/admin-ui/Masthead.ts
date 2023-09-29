@@ -13,6 +13,7 @@ export default class Masthead extends CommonElements {
   private documentationLink = "#link";
   private backToAdminConsoleLink = "#landingReferrerLink";
   private userDrpdwnItem = ".pf-c-dropdown__menu-item";
+  private signOutAccountBtn = "options";
 
   private getAlertsContainer() {
     return cy.findByTestId(this.globalAlerts);
@@ -135,5 +136,11 @@ export default class Masthead extends CommonElements {
     cy.get(this.userDrpDwnKebab).should("be.visible");
 
     return this;
+  }
+
+  signOutFromAccount() {
+    cy.findByTestId(this.signOutAccountBtn).click();
+    cy.get(this.userDrpdwnItem).click();
+    Cypress.session.clearAllSavedSessions();
   }
 }

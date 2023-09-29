@@ -13,6 +13,9 @@ export default class RoleMappingTab {
   private assignedRolesTable = "assigned-roles";
   private namesColumn = 'td[data-label="Name"]:visible';
   private roleMappingTab = "role-mapping-tab";
+  private filterTypeDropdown = "filter-type-dropdown";
+  private filterTypeDropdownItem = "roles";
+  private addRoleTable = 'input[placeholder="Search by role name"]';
 
   constructor(type: string) {
     this.type = type;
@@ -95,4 +98,26 @@ export default class RoleMappingTab {
     cy.findByTestId(this.roleMappingTab).click();
     return this;
   }
+
+  addClientRole(roleName: string) {
+    cy.findByTestId(this.assignRoleBtn).click();
+    cy.findByTestId(this.filterTypeDropdown).click();
+    cy.findByTestId(this.filterTypeDropdownItem).click();
+
+    cy.get(this.addRoleTable).type(`${roleName}{enter}`);
+
+    // cy.findByTestId(this.addAssociatedRolesModalButton).click();
+
+    // cy.contains("Users in role").click();
+    // cy.findByTestId(this.usersPage).should("exist");
+  }
+
+  // addClientRole(roleName: string) {
+  //   cy.findByTestId("assignRole").click({ force: true });
+  //   cy.findByTestId("filter-type-dropdown").click();
+  //   cy.findByTestId("roles").click();
+  //   cy.get('input[placeholder="Search by role name"]').type(
+  //     "view-groups{enter}",
+  //   );
+  // }
 }

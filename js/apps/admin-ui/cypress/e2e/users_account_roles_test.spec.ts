@@ -48,7 +48,6 @@ describe("User account roles tests", () => {
   });
 
   it("should check that user with inherited roles (view-profile, manage-account-links, manage-account) can access and perform specific actions in account console", () => {
-    //Add identity provider
     const identityProviderName = "bitbucket";
     const deletePrompt = "Delete provider?";
     const deleteSuccessMsg = "Provider successfully deleted.";
@@ -59,7 +58,6 @@ describe("User account roles tests", () => {
       .fill(identityProviderName, "123")
       .clickAdd();
 
-    //Sign out and login as created user
     masthead.signOut();
     loginPage.logIn("test", "test");
     keycloakBefore();
@@ -91,9 +89,7 @@ describe("User account roles tests", () => {
     cy.contains("Groups").should("not.exist");
 
     //Clean up
-    cy.findByTestId("options").click();
-    cy.get(".pf-c-dropdown__menu-item").click();
-
+    masthead.signOutFromAccount();
     loginPage.logIn("admin", "admin");
     keycloakBefore();
 
@@ -105,15 +101,9 @@ describe("User account roles tests", () => {
 
   it("should check that user with delete-account role has an access to delete account in account console", () => {
     roleMappingTab.goToRoleMappingTab();
-    cy.findByTestId("assignRole").click({ force: true });
-    cy.findByTestId("filter-type-dropdown").click();
-    cy.findByTestId("roles").click();
-    cy.get('input[placeholder="Search by role name"]').type(
-      "delete-account{enter}",
-    );
+    roleMappingTab.addClientRole("delete-account");
     roleMappingTab.selectRow("delete-account", true).assign();
 
-    // Enable delete account in the Authentication/ Required action
     sidebarPage.goToAuthentication();
 
     const action = "Delete Account";
@@ -121,7 +111,6 @@ describe("User account roles tests", () => {
     masthead.checkNotificationMessage("Updated required action successfully");
     requiredActionsPage.isChecked(action);
 
-    //Sign out and login as created user
     masthead.signOut();
     loginPage.logIn("test", "test");
     keycloakBefore();
@@ -132,25 +121,22 @@ describe("User account roles tests", () => {
     //Check that user has access to delete account from personal info
     cy.contains("Delete account").should("exist");
 
-    // Todo: Clean up
-    // masthead.signOut();
-    // loginPage.logIn("admin", "admin");
+    //Cleanup
+    masthead.signOutFromAccount();
+    loginPage.logIn("admin", "admin");
+    keycloakBefore();
 
-    // sidebarPage.goToAuthentication();
-    // set delete account to off
+    sidebarPage.goToAuthentication();
+    requiredActionsPage.enableAction(action);
+    masthead.checkNotificationMessage("Updated required action successfully");
+    requiredActionsPage.isChecked(action);
   });
 
   it("should check that user with view-groups role has an access to groups in account console", () => {
     roleMappingTab.goToRoleMappingTab();
-    cy.findByTestId("assignRole").click({ force: true });
-    cy.findByTestId("filter-type-dropdown").click();
-    cy.findByTestId("roles").click();
-    cy.get('input[placeholder="Search by role name"]').type(
-      "view-groups{enter}",
-    );
+    roleMappingTab.addClientRole("view-groups");
     roleMappingTab.selectRow("view-groups", true).assign();
 
-    //Sign out and login as created user
     masthead.signOut();
     loginPage.logIn("test", "test");
     keycloakBefore();
