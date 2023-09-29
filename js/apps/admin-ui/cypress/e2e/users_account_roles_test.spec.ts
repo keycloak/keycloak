@@ -8,6 +8,8 @@ import RoleMappingTab from "../support/pages/admin-ui/manage/RoleMappingTab";
 import CreateProviderPage from "../support/pages/admin-ui/manage/identity_providers/CreateProviderPage";
 import RequiredActions from "../support/pages/admin-ui/manage/authentication/RequiredActions";
 import adminClient from "../support/util/AdminClient";
+import ModalUtils from "../support/util/ModalUtils";
+import ListingPage from "../support/pages/admin-ui/ListingPage";
 
 const loginPage = new LoginPage();
 const masthead = new Masthead();
@@ -17,7 +19,8 @@ const credentialsPage = new CredentialsPage();
 const roleMappingTab = new RoleMappingTab("");
 const createProviderPage = new CreateProviderPage();
 const requiredActionsPage = new RequiredActions();
-
+const modalUtils = new ModalUtils();
+const listingPage = new ListingPage();
 const itemId = "test";
 
 describe("User account roles tests", () => {
@@ -46,10 +49,14 @@ describe("User account roles tests", () => {
 
   it("should check that user with inherited roles (view-profile, manage-account-links, manage-account) can access and perform specific actions in account console", () => {
     //Add identity provider
+    const identityProviderName = "bitbucket";
+    const deletePrompt = "Delete provider?";
+    const deleteSuccessMsg = "Provider successfully deleted.";
+
     sidebarPage.goToIdentityProviders();
     createProviderPage
       .clickItem("bitbucket-card")
-      .fill("bitbucket", "123")
+      .fill(identityProviderName, "123")
       .clickAdd();
 
     //Sign out and login as created user
@@ -83,12 +90,17 @@ describe("User account roles tests", () => {
     //Check that user doesn't have access to groups
     cy.contains("Groups").should("not.exist");
 
-    // Todo: Clean up
-    // masthead.signOut();
-    // loginPage.logIn("admin", "admin");
+    //Clean up
+    cy.findByTestId("options").click();
+    cy.get(".pf-c-dropdown__menu-item").click();
 
-    // sidebarPage.goToIdentityProviders();
-    // delete bitbucket identity provider
+    loginPage.logIn("admin", "admin");
+    keycloakBefore();
+
+    sidebarPage.goToIdentityProviders();
+    listingPage.deleteItem(identityProviderName);
+    modalUtils.checkModalTitle(deletePrompt).confirmModal();
+    masthead.checkNotificationMessage(deleteSuccessMsg, true);
   });
 
   it("should check that user with delete-account role has an access to delete account in account console", () => {
@@ -146,8 +158,8 @@ describe("User account roles tests", () => {
     masthead.accountManagement();
     sidebarPage.waitForPageLoad();
 
-    //Check that user has access to delete account from personal info
+    //Check that user has access to view groups page
     cy.contains("Groups").should("exist").click();
-    cy.get('h1.pf-c-title.pf-m-2xl:contains("Groups")').should("exist");
+    cy.get('h1.pf-c-title:contains("Groups")').should("exist");
   });
 });
