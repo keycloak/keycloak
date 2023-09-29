@@ -1,13 +1,14 @@
-import { FormGroup } from "@patternfly/react-core";
+import { FormGroup, InputGroup } from "@patternfly/react-core";
+import { get } from "lodash-es";
 import { PropsWithChildren } from "react";
 import { useFormContext } from "react-hook-form";
 import { HelpItem } from "../controls/HelpItem";
+import { FormFieldProps } from "./UserProfileFields";
 import { UserProfileAttribute } from "./userProfileConfig";
-import { TranslationFunction, label } from "./utils";
+import { fieldName, label } from "./utils";
 
-export type UserProfileFieldsProps = UserProfileAttribute & {
-  t: TranslationFunction;
-};
+export type UserProfileFieldsProps = Omit<FormFieldProps, "attribute"> &
+  UserProfileAttribute;
 
 type LengthValidator =
   | {
@@ -16,11 +17,12 @@ type LengthValidator =
   | undefined;
 
 const isRequired = (attribute: UserProfileAttribute) =>
-  Object.keys(attribute.required || {}).length !== 0 ||
+  !!attribute.required ||
   (((attribute.validators?.length as LengthValidator)?.min as number) || 0) > 0;
 
 export const UserProfileGroup = ({
   children,
+  renderer,
   ...attribute
 }: PropsWithChildren<UserProfileFieldsProps>) => {
   const { t } = attribute;
@@ -30,22 +32,24 @@ export const UserProfileGroup = ({
     formState: { errors },
   } = useFormContext();
 
-  console.log("label", label(attribute));
   return (
     <FormGroup
       key={attribute.name}
       label={label(attribute) || ""}
       fieldId={attribute.name}
       isRequired={isRequired(attribute)}
-      validated={errors.username ? "error" : "default"}
-      helperTextInvalid={t("required")}
+      validated={get(errors, fieldName(attribute.name)) ? "error" : "default"}
+      helperTextInvalid={t(get(errors, fieldName(attribute.name))?.message)}
       labelIcon={
         helpText ? (
           <HelpItem helpText={helpText} fieldLabelId={attribute.name!} />
         ) : undefined
       }
     >
-      {children}
+      <InputGroup>
+        {children}
+        {renderer?.(attribute)}
+      </InputGroup>
     </FormGroup>
   );
 };

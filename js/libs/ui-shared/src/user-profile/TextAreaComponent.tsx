@@ -11,7 +11,7 @@ export const TextAreaComponent = (attr: UserProfileFieldsProps) => {
       <KeycloakTextArea
         id={attr.name}
         data-testid={attr.name}
-        {...register(fieldName(attr))}
+        {...register(fieldName(attr.name))}
         cols={attr.annotations?.["inputTypeCols"] as number}
         rows={attr.annotations?.["inputTypeRows"] as number}
         readOnly={attr.readOnly}

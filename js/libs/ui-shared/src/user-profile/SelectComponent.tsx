@@ -51,7 +51,7 @@ export const SelectComponent = (attr: UserProfileFieldsProps) => {
   return (
     <UserProfileGroup {...attr}>
       <Controller
-        name={fieldName(attr)}
+        name={fieldName(attr.name)}
         defaultValue=""
         control={control}
         render={({ field }) => (

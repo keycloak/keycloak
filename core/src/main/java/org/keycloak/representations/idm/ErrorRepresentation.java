@@ -31,10 +31,6 @@ public class ErrorRepresentation {
     public ErrorRepresentation() {
     }
 
-    public ErrorRepresentation(String errorMessage) {
-        this.errorMessage = errorMessage;
-    }
-
     public ErrorRepresentation(String field, String errorMessage, Object[] params) {
         super();
         this.field = field;

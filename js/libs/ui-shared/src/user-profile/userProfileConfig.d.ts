@@ -55,3 +55,13 @@ export interface UserRepresentation {
   userProfileMetadata: UserProfileMetadata;
   attributes: { [index: string]: string[] };
 }
+
+type FieldError = {
+  field: string;
+  errorMessage: string;
+  params?: string[];
+};
+
+export type UserProfileError = {
+  responseData?: { errors?: FieldError[] };
+};

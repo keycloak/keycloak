@@ -15,7 +15,7 @@ export const OptionComponent = (attr: UserProfileFieldsProps) => {
   return (
     <UserProfileGroup {...attr}>
       <Controller
-        name={fieldName(attr)}
+        name={fieldName(attr.name)}
         control={control}
         defaultValue=""
         render={({ field }) => (

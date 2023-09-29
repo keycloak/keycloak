@@ -15,10 +15,7 @@ import { useRealm } from "../context/realm-context/RealmContext";
 import { useFetch } from "../utils/useFetch";
 import useIsFeatureEnabled, { Feature } from "../utils/useIsFeatureEnabled";
 import { UserForm } from "./UserForm";
-import {
-  isUserProfileError,
-  userProfileErrorToString,
-} from "./UserProfileFields";
+import { isUserProfileError, setUserProfileServerError } from "ui-shared";
 import { UserFormFields, toUserRepresentation } from "./form-state";
 import { toUser } from "./routes/User";
 
@@ -74,7 +71,9 @@ export default function CreateUser() {
       );
     } catch (error) {
       if (isUserProfileError(error)) {
-        addError(userProfileErrorToString(error), error);
+        setUserProfileServerError(error, form.setError, (key, param) =>
+          t(key as string, { ...param }),
+        );
       } else {
         addError("userCreateError", error);
       }

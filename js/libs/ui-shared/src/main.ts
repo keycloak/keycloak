@@ -15,3 +15,7 @@ export { isDefined } from "./utils/isDefined";
 export { createNamedContext } from "./utils/createNamedContext";
 export { useRequiredContext } from "./utils/useRequiredContext";
 export { UserProfileFields } from "./user-profile/UserProfileFields";
+export {
+  setUserProfileServerError,
+  isUserProfileError,
+} from "./user-profile/utils";
