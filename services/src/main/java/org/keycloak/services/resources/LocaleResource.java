@@ -49,7 +49,7 @@ public class LocaleResource {
             Map<Locale, Properties> realmLocalizationMessages = LocaleUtil.getRealmLocalizationTexts(realm, locale);
             for (Locale currentLocale = locale; currentLocale != null; currentLocale = LocaleUtil.getParentLocale(currentLocale)) {
                 final List<KeySource> realmOverride = realmLocalizationMessages.get(currentLocale).entrySet().stream().map(e ->
-                        new KeySource((String) e.getKey(), (String) e.getValue(), Source.OVERRIDE)).collect(toList());
+                        new KeySource((String) e.getKey(), (String) e.getValue(), Source.REALM)).collect(toList());
                 result.addAll(realmOverride);
             }
 
@@ -62,7 +62,7 @@ public class LocaleResource {
 
 enum Source {
     THEME,
-    OVERRIDE
+    REALM
 }
 class KeySource {
     private String key;
