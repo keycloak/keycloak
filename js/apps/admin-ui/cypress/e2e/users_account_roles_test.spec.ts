@@ -63,7 +63,7 @@ describe("User account roles tests", () => {
     keycloakBefore();
 
     masthead.accountManagement();
-    sidebarPage.waitForPageLoad();
+    cy.wait(1000);
 
     //Check that user can view personal info
     cy.findByTestId("username").should("have.value", "test");
@@ -116,7 +116,7 @@ describe("User account roles tests", () => {
     keycloakBefore();
 
     masthead.accountManagement();
-    sidebarPage.waitForPageLoad();
+    cy.wait(1000);
 
     //Check that user has access to delete account from personal info
     cy.contains("Delete account").should("exist");
@@ -142,7 +142,7 @@ describe("User account roles tests", () => {
     keycloakBefore();
 
     masthead.accountManagement();
-    sidebarPage.waitForPageLoad();
+    cy.wait(1000);
 
     //Check that user has access to view groups page
     cy.contains("Groups").should("exist").click();
