@@ -29,6 +29,7 @@ import org.keycloak.representations.idm.AuthenticationExecutionExportRepresentat
 import org.keycloak.representations.idm.AuthenticationExecutionInfoRepresentation;
 import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
 import org.keycloak.representations.idm.AuthenticatorConfigRepresentation;
+import org.keycloak.representations.idm.ErrorRepresentation;
 import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
 import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.admin.ApiUtil;
@@ -317,7 +318,7 @@ public class FlowTest extends AbstractAuthenticationTest {
         response.close();
         assertAdminEvents.assertEvent(testRealmId, OperationType.CREATE, AdminEventPaths.authCopyFlowPath("browser"), params, ResourceType.AUTH_FLOW);
 
-        params = new HashMap<>();
+        params.clear();
         params.put("alias", "child");
         params.put("description", "Description");
         params.put("provider", "registration-page-form");
@@ -328,11 +329,9 @@ public class FlowTest extends AbstractAuthenticationTest {
 
         // add execution flow with alias that contains reserved characters
         params.put("alias", "Child/of:browser");
-        try {
-            authMgmtResource.addExecutionFlow("parent", params);
-        } catch (ClientErrorException exception){
-            // expected
-        }
+        ClientErrorException e = Assert.assertThrows(ClientErrorException.class, () -> authMgmtResource.addExecutionFlow("parent", params));
+        OAuth2ErrorRepresentation error = e.getResponse().readEntity(OAuth2ErrorRepresentation.class);
+        Assert.assertEquals("Character '/' not allowed.", error.getError());
         List<AuthenticationExecutionInfoRepresentation> executions = authMgmtResource.getExecutions("parent");
         // Execution with flow's displayName should not exist
         Assert.assertNull("Child/of:browser", findExecutionByDisplayName("Child/of:browser", executions));
@@ -377,11 +376,10 @@ public class FlowTest extends AbstractAuthenticationTest {
 
         //try to update old flow with alias that already exists
         testFlow.setAlias("New Flow");
-        try {
-            authMgmtResource.updateFlow(found.getId(), testFlow);
-        } catch (ClientErrorException exception){
-            //expoected
-        }
+        ClientErrorException e = Assert.assertThrows(ClientErrorException.class, () -> authMgmtResource.updateFlow(testFlow.getId(), testFlow));
+        ErrorRepresentation error = e.getResponse().readEntity(ErrorRepresentation.class);
+        Assert.assertEquals("Flow alias name already exists", error.getErrorMessage());
+
         flows = authMgmtResource.getFlows();
 
         //name should be the same for the old Flow
@@ -389,11 +387,10 @@ public class FlowTest extends AbstractAuthenticationTest {
 
         //try to update old flow with alias that contains reserved characters
         testFlow.setAlias("Copy/of:browser2");
-        try {
-            authMgmtResource.updateFlow(testFlow.getId(), testFlow);
-        } catch (ClientErrorException exception){
-            //expected
-        }
+        e = Assert.assertThrows(ClientErrorException.class, () -> authMgmtResource.updateFlow(testFlow.getId(), testFlow));
+        OAuth2ErrorRepresentation oauth2Error = e.getResponse().readEntity(OAuth2ErrorRepresentation.class);
+        Assert.assertEquals("Character '/' not allowed.", oauth2Error.getError());
+
         flows = authMgmtResource.getFlows();
 
         //name should be the same for the old Flow
