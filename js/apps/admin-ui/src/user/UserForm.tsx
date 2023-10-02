@@ -187,7 +187,11 @@ export const UserForm = ({
         </FormGroup>
       )}
       {userProfileMetadata ? (
-        <UserProfileFields form={form} config={userProfileMetadata} />
+        <UserProfileFields
+          form={form}
+          config={userProfileMetadata}
+          hideReadOnly={!user}
+        />
       ) : (
         <>
           {!realm.registrationEmailAsUsername && (

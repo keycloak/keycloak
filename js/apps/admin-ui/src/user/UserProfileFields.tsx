@@ -82,14 +82,20 @@ export type UserProfileFieldsProps = {
   form: UseFormReturn<UserFormFields>;
   config: UserProfileConfig;
   roles?: string[];
+  hideReadOnly?: boolean;
 };
 
 export const UserProfileFields = ({
   form,
   config,
   roles = ["admin"],
+  hideReadOnly = false,
 }: UserProfileFieldsProps) => {
   const { t } = useTranslation();
+  // Hide read-only attributes if 'hideReadOnly' is enabled.
+  const attributes = hideReadOnly
+    ? config.attributes?.filter(({ readOnly }) => !readOnly)
+    : config.attributes;
 
   return (
     <ScrollForm
@@ -100,7 +106,7 @@ export const UserProfileFields = ({
             {g.displayDescription && (
               <Text className="pf-u-pb-lg">{g.displayDescription}</Text>
             )}
-            {config.attributes?.map((attribute) => (
+            {attributes?.map((attribute) => (
               <Fragment key={attribute.name}>
                 {(attribute.group || "") === g.name && (
                   <FormField form={form} attribute={attribute} roles={roles} />
