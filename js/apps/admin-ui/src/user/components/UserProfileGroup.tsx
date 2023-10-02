@@ -11,6 +11,12 @@ export type UserProfileFieldsProps = UserProfileAttribute & {
   roles?: string[];
 };
 
+type LengthValidator =
+  | {
+      min: number;
+    }
+  | undefined;
+
 const isRequired = (attribute: UserProfileAttribute) =>
   Object.keys(attribute.required || {}).length !== 0 ||
   (((attribute.validators?.length as LengthValidator)?.min as number) || 0) > 0;
