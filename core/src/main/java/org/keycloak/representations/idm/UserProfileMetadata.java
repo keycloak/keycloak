@@ -16,7 +16,10 @@
  */
 package org.keycloak.representations.idm;
 
+import static java.util.Collections.emptyList;
+
 import java.util.List;
+import java.util.Optional;
 
 /**
  * @author Vlastimil Elias <velias@redhat.com>
@@ -42,4 +45,13 @@ public class UserProfileMetadata {
         this.attributes = attributes;
     }
 
+    public UserProfileAttributeMetadata getAttributeMetadata(String name) {
+        for (UserProfileAttributeMetadata m : Optional.ofNullable(getAttributes()).orElse(emptyList())) {
+            if (m.getName().equals(name)) {
+                return m;
+            }
+        }
+
+        return null;
+    }
 }

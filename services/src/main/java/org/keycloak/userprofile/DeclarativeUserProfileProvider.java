@@ -349,7 +349,25 @@ public class DeclarativeUserProfileProvider extends AbstractUserProfileProvider<
                 }
 
                 if (UserModel.USERNAME.equals(attributeName)) {
-                    required = AttributeMetadata.ALWAYS_TRUE;
+                    required = new Predicate<AttributeContext>() {
+                        @Override
+                        public boolean test(AttributeContext context) {
+                            RealmModel realm = context.getSession().getContext().getRealm();
+                            return !realm.isRegistrationEmailAsUsername();
+                        }
+                    };
+                }
+
+                if (UserModel.EMAIL.equals(attributeName)) {
+                    if (UserProfileContext.USER_API.equals(context)) {
+                        required = new Predicate<AttributeContext>() {
+                            @Override
+                            public boolean test(AttributeContext context) {
+                                RealmModel realm = context.getSession().getContext().getRealm();
+                                return realm.isRegistrationEmailAsUsername();
+                            }
+                        };
+                    }
                 }
 
                 // Add ImmutableAttributeValidator to ensure that attributes that are configured

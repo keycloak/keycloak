@@ -20,6 +20,8 @@
 package org.keycloak.testsuite.admin.userprofile;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import static org.keycloak.userprofile.DeclarativeUserProfileProvider.REALM_USER_PROFILE_ENABLED;
 import static org.keycloak.userprofile.config.UPConfigUtils.readDefaultConfig;
 
@@ -27,9 +29,12 @@ import java.io.IOException;
 import java.util.HashMap;
 
 import org.junit.Test;
+import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserProfileResource;
 import org.keycloak.common.Profile;
+import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.representations.idm.UserProfileMetadata;
 import org.keycloak.testsuite.admin.AbstractAdminTest;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 
@@ -53,12 +58,76 @@ public class UserProfileAdminTest extends AbstractAdminTest {
     }
 
     @Test
-    public void testSetDefaultConfig() throws IOException {
+    public void testSetDefaultConfig() {
         String rawConfig = "{\"attributes\": [{\"name\": \"test\"}]}";
         UserProfileResource userProfile = testRealm().users().userProfile();
-
         userProfile.update(rawConfig);
+        getCleanup().addCleanup(() -> testRealm().users().userProfile().update(null));
 
         assertEquals(rawConfig, userProfile.getConfiguration());
+    }
+
+    @Test
+    public void testEmailRequiredIfEmailAsUsernameEnabled() {
+        RealmResource realm = testRealm();
+        RealmRepresentation realmRep = realm.toRepresentation();
+        Boolean registrationEmailAsUsername = realmRep.isRegistrationEmailAsUsername();
+        realmRep.setRegistrationEmailAsUsername(true);
+        realm.update(realmRep);
+        getCleanup().addCleanup(() -> {
+            realmRep.setRegistrationEmailAsUsername(registrationEmailAsUsername);
+            realm.update(realmRep);
+        });
+        UserProfileResource userProfile = realm.users().userProfile();
+        UserProfileMetadata metadata = userProfile.getMetadata();
+        assertTrue(metadata.getAttributeMetadata(UserModel.EMAIL).isRequired());
+    }
+
+    @Test
+    public void testEmailNotRequiredIfEmailAsUsernameDisabled() {
+        RealmResource realm = testRealm();
+        RealmRepresentation realmRep = realm.toRepresentation();
+        Boolean registrationEmailAsUsername = realmRep.isRegistrationEmailAsUsername();
+        realmRep.setRegistrationEmailAsUsername(false);
+        realm.update(realmRep);
+        getCleanup().addCleanup(() -> {
+            realmRep.setRegistrationEmailAsUsername(registrationEmailAsUsername);
+            realm.update(realmRep);
+        });
+        UserProfileResource userProfile = realm.users().userProfile();
+        UserProfileMetadata metadata = userProfile.getMetadata();
+        assertFalse(metadata.getAttributeMetadata(UserModel.EMAIL).isRequired());
+    }
+
+    @Test
+    public void testUsernameRequiredIfEmailAsUsernameDisabled() {
+        RealmResource realm = testRealm();
+        RealmRepresentation realmRep = realm.toRepresentation();
+        Boolean registrationEmailAsUsername = realmRep.isRegistrationEmailAsUsername();
+        realmRep.setRegistrationEmailAsUsername(false);
+        realm.update(realmRep);
+        getCleanup().addCleanup(() -> {
+            realmRep.setRegistrationEmailAsUsername(registrationEmailAsUsername);
+            realm.update(realmRep);
+        });
+        UserProfileResource userProfile = realm.users().userProfile();
+        UserProfileMetadata metadata = userProfile.getMetadata();
+        assertTrue(metadata.getAttributeMetadata(UserModel.USERNAME).isRequired());
+    }
+
+    @Test
+    public void testUsernameNotRequiredIfEmailAsUsernameEnabled() {
+        RealmResource realm = testRealm();
+        RealmRepresentation realmRep = realm.toRepresentation();
+        Boolean registrationEmailAsUsername = realmRep.isRegistrationEmailAsUsername();
+        realmRep.setRegistrationEmailAsUsername(true);
+        realm.update(realmRep);
+        getCleanup().addCleanup(() -> {
+            realmRep.setRegistrationEmailAsUsername(registrationEmailAsUsername);
+            realm.update(realmRep);
+        });
+        UserProfileResource userProfile = realm.users().userProfile();
+        UserProfileMetadata metadata = userProfile.getMetadata();
+        assertFalse(metadata.getAttributeMetadata(UserModel.USERNAME).isRequired());
     }
 }
