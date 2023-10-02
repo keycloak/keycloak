@@ -114,7 +114,7 @@ export default function EditUser() {
         isUserProfileEnabled ? user.userProfileMetadata : undefined,
       );
 
-      form.reset(toUserFormFields(user, !!userProfileMetadata));
+      form.reset(toUserFormFields(user, isUserProfileEnabled));
     },
     [refreshCount],
   );
