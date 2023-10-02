@@ -61,6 +61,7 @@ describe("User account roles tests", () => {
     masthead.signOut();
     loginPage.logIn("test", "test");
     keycloakBefore();
+    sidebarPage.waitForPageLoad();
     masthead.accountManagement();
 
     //Check that user can view personal info
@@ -113,6 +114,7 @@ describe("User account roles tests", () => {
     masthead.signOut();
     loginPage.logIn("test", "test");
     keycloakBefore();
+    sidebarPage.waitForPageLoad();
     masthead.accountManagement();
 
     //Check that user has access to delete account from personal info
@@ -138,6 +140,7 @@ describe("User account roles tests", () => {
     masthead.signOut();
     loginPage.logIn("test", "test");
     keycloakBefore();
+    sidebarPage.waitForPageLoad();
     masthead.accountManagement();
 
     //Check that user has access to view groups page
