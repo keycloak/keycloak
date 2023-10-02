@@ -59,7 +59,7 @@ describe("User account roles tests", () => {
       .clickAdd();
 
     masthead.signOut();
-    loginPage.logInToAccount("test", "test");
+    loginPage.logIn("test", "test");
     keycloakBefore();
     masthead.accountManagement();
 
@@ -111,7 +111,7 @@ describe("User account roles tests", () => {
     requiredActionsPage.isChecked(action);
 
     masthead.signOut();
-    loginPage.logInToAccount("test", "test");
+    loginPage.logIn("test", "test");
     keycloakBefore();
     masthead.accountManagement();
 
@@ -136,7 +136,7 @@ describe("User account roles tests", () => {
     roleMappingTab.selectRow("view-groups", true).assign();
 
     masthead.signOut();
-    loginPage.logInToAccount("test", "test");
+    loginPage.logIn("test", "test");
     keycloakBefore();
     masthead.accountManagement();
 
