@@ -60,9 +60,8 @@ describe("User account roles tests", () => {
 
     masthead.signOut();
     loginPage.logIn("test", "test");
-    // keycloakBefore();
-
-    // masthead.accountManagement();
+    keycloakBefore();
+    masthead.accountManagement();
     cy.visit("http://localhost:8180/realms/master/account/");
 
     //Check that user can view personal info
@@ -113,11 +112,9 @@ describe("User account roles tests", () => {
 
     masthead.signOut();
     loginPage.logIn("test", "test");
-
-    // keycloakBefore();
+    keycloakBefore();
+    masthead.accountManagement();
     cy.visit("http://localhost:8180/realms/master/account/");
-    // masthead.accountManagement();
-    // cy.wait(1000);
 
     //Check that user has access to delete account from personal info
     cy.contains("Delete account").should("exist");
@@ -140,11 +137,9 @@ describe("User account roles tests", () => {
 
     masthead.signOut();
     loginPage.logIn("test", "test");
+    keycloakBefore();
+    masthead.accountManagement();
     cy.visit("http://localhost:8180/realms/master/account/");
-    // keycloakBefore();
-
-    // masthead.accountManagement();
-    // cy.wait(1000);
 
     //Check that user has access to view groups page
     cy.contains("Groups").should("exist").click();
