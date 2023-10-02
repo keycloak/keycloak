@@ -363,6 +363,12 @@ public class DeclarativeUserProfileProvider extends AbstractUserProfileProvider<
                         required = new Predicate<AttributeContext>() {
                             @Override
                             public boolean test(AttributeContext context) {
+                                UserModel user = context.getUser();
+
+                                if (user != null && user.getServiceAccountClientLink() != null) {
+                                    return false;
+                                }
+
                                 RealmModel realm = context.getSession().getContext().getRealm();
                                 return realm.isRegistrationEmailAsUsername();
                             }

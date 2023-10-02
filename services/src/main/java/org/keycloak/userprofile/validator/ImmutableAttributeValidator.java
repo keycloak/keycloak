@@ -19,6 +19,7 @@ package org.keycloak.userprofile.validator;
 import static org.keycloak.validate.Validators.notBlankValidator;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import org.keycloak.common.util.CollectionUtil;
@@ -57,7 +58,7 @@ public class ImmutableAttributeValidator implements SimpleValidator {
             return context;
         }
 
-        List<String> currentValue = user.getAttributeStream(inputHint).collect(Collectors.toList());
+        List<String> currentValue = user.getAttributeStream(inputHint).filter(Objects::nonNull).collect(Collectors.toList());
         List<String> values = (List<String>) input;
 
         if (!CollectionUtil.collectionEquals(currentValue, values) && isReadOnly(attributeContext)) {
