@@ -59,10 +59,9 @@ describe("User account roles tests", () => {
       .clickAdd();
 
     masthead.signOut();
-    loginPage.logIn("test", "test");
+    loginPage.logInToAccount("test", "test");
     keycloakBefore();
     masthead.accountManagement();
-    cy.visit("http://localhost:8080/realms/master/account/");
 
     //Check that user can view personal info
     cy.findByTestId("username").should("have.value", "test");
@@ -106,15 +105,15 @@ describe("User account roles tests", () => {
     sidebarPage.goToAuthentication();
 
     const action = "Delete Account";
+    requiredActionsPage.goToTab();
     requiredActionsPage.enableAction(action);
     masthead.checkNotificationMessage("Updated required action successfully");
     requiredActionsPage.isChecked(action);
 
     masthead.signOut();
-    loginPage.logIn("test", "test");
+    loginPage.logInToAccount("test", "test");
     keycloakBefore();
     masthead.accountManagement();
-    cy.visit("http://localhost:8080/realms/master/account/");
 
     //Check that user has access to delete account from personal info
     cy.contains("Delete account").should("exist");
@@ -125,6 +124,7 @@ describe("User account roles tests", () => {
     keycloakBefore();
 
     sidebarPage.goToAuthentication();
+    requiredActionsPage.goToTab();
     requiredActionsPage.enableAction(action);
     masthead.checkNotificationMessage("Updated required action successfully");
     requiredActionsPage.isChecked(action);
@@ -136,10 +136,9 @@ describe("User account roles tests", () => {
     roleMappingTab.selectRow("view-groups", true).assign();
 
     masthead.signOut();
-    loginPage.logIn("test", "test");
+    loginPage.logInToAccount("test", "test");
     keycloakBefore();
     masthead.accountManagement();
-    cy.visit("http://localhost:8080/realms/master/account/");
 
     //Check that user has access to view groups page
     cy.contains("Groups").should("exist").click();
