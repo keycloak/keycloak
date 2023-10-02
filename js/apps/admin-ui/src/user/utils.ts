@@ -16,4 +16,6 @@ const isRootAttribute = (attr?: string) =>
   attr && ROOT_ATTRIBUTES.includes(attr);
 
 export const fieldName = (attribute: UserProfileAttribute) =>
-  `${isRootAttribute(attribute.name) ? "" : "attributes."}${attribute.name}`;
+  isRootAttribute(attribute.name)
+    ? attribute.name
+    : `attributes.${attribute.name}`;
