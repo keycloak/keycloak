@@ -7,11 +7,13 @@ import { Options, UserProfileFieldProps } from "../UserProfileFields";
 import { UserFormFields } from "../form-state";
 import { fieldName, unWrap } from "../utils";
 import { UserProfileGroup } from "./UserProfileGroup";
+import { isRequiredAttribute } from "../utils/user-profile";
 
 type OptionLabel = Record<string, string> | undefined;
 export const SelectComponent = ({ form, attribute }: UserProfileFieldProps) => {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
+  const isRequired = isRequiredAttribute(attribute);
 
   const isMultiValue = (field: ControllerRenderProps<UserFormFields>) => {
     return (
@@ -70,6 +72,7 @@ export const SelectComponent = ({ form, attribute }: UserProfileFieldProps) => {
             aria-label={t("selectOne")}
             isOpen={open}
             readOnly={attribute.readOnly}
+            required={isRequired}
           >
             {options.map((option) => (
               <SelectOption

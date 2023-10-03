@@ -1,5 +1,6 @@
 import { Checkbox, Radio } from "@patternfly/react-core";
 import { Controller, FieldPath } from "react-hook-form";
+import { isRequiredAttribute } from "../utils/user-profile";
 
 import { Options, UserProfileFieldProps } from "../UserProfileFields";
 import { UserFormFields } from "../form-state";
@@ -11,6 +12,7 @@ export const OptionComponent = ({
   inputType,
   attribute,
 }: UserProfileFieldProps) => {
+  const isRequired = isRequiredAttribute(attribute);
   const isMultiSelect = inputType.includes("multiselect");
   const Component = isMultiSelect ? Checkbox : Radio;
   const options = (attribute.validators?.options as Options).options || [];
@@ -45,6 +47,7 @@ export const OptionComponent = ({
                   }
                 }}
                 readOnly={attribute.readOnly}
+                isRequired={isRequired}
               />
             ))}
           </>

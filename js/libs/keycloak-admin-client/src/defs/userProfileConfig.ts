@@ -7,10 +7,9 @@ export default interface UserProfileConfig {
 // See: https://github.com/keycloak/keycloak/blob/main/services/src/main/java/org/keycloak/userprofile/config/UPAttribute.java
 export interface UserProfileAttribute {
   name?: string;
-  validations?: Record<string, unknown>;
   validators?: Record<string, unknown>;
   annotations?: Record<string, unknown>;
-  required?: UserProfileAttributeRequired;
+  required?: boolean | UserProfileAttributeRequired;
   readOnly?: boolean;
   permissions?: UserProfileAttributePermissions;
   selector?: UserProfileAttributeSelector;

@@ -7,16 +7,7 @@ import { HelpItem } from "ui-shared";
 
 import { UserFormFields } from "../form-state";
 import { label } from "../utils";
-
-type LengthValidator =
-  | {
-      min: number;
-    }
-  | undefined;
-
-const isRequired = (attribute: UserProfileAttribute) =>
-  Object.keys(attribute.required || {}).length !== 0 ||
-  (((attribute.validators?.length as LengthValidator)?.min as number) || 0) > 0;
+import { isRequiredAttribute } from "../utils/user-profile";
 
 export type UserProfileGroupProps = {
   form: UseFormReturn<UserFormFields>;
@@ -39,7 +30,7 @@ export const UserProfileGroup = ({
       key={attribute.name}
       label={label(attribute, t) || ""}
       fieldId={attribute.name}
-      isRequired={isRequired(attribute)}
+      isRequired={isRequiredAttribute(attribute)}
       validated={errors.username ? "error" : "default"}
       helperTextInvalid={t("required")}
       labelIcon={
