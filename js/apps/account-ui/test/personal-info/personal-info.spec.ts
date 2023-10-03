@@ -79,6 +79,7 @@ test.describe("Personal info with userprofile enabled", async () => {
     await page.getByTestId("save").click();
 
     await page.reload();
+    await page.locator("delete-account").isVisible();
     await expect(page.getByTestId("email2")).toHaveValue("valid@email.com");
   });
 });
