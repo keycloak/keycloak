@@ -1,6 +1,6 @@
 import { lazy } from "react";
 import type { Path } from "react-router-dom";
-import { generatePath } from "react-router-dom";
+import { generatePath } from "../../util";
 import type { AppRouteObject } from "../../routes";
 
 export type ClientRoleTab =
