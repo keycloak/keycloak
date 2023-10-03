@@ -1,7 +1,7 @@
 import { lazy } from "react";
 import type { Path } from "react-router-dom";
-import { generatePath } from "react-router-dom";
 import type { AppRouteObject } from "../../routes";
+import { generatePath } from "../../util";
 
 export type DedicatedScopeTab = "mappers" | "scope";
 
