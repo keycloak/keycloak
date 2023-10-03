@@ -130,7 +130,7 @@ const FormField = ({ form, attribute, roles }: FormFieldProps) => {
   const value = form.watch(fieldName(attribute) as FieldPath<UserFormFields>);
   const inputType =
     attribute.annotations?.["inputType"] ??
-    (Array.isArray(value) && value.length > 1 ? "multiselect" : "text");
+    (Array.isArray(value) ? "multiselect" : "text");
 
   if (!isValidInputType(inputType)) {
     return null;
