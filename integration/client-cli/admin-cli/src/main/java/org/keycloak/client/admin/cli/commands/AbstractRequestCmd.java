@@ -50,7 +50,6 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 import static org.keycloak.client.admin.cli.common.AttributeOperation.Type.DELETE;
 import static org.keycloak.client.admin.cli.common.AttributeOperation.Type.SET;
@@ -401,8 +400,7 @@ public abstract class AbstractRequestCmd extends AbstractAuthOptionsCmd {
                 }
             }
 
-            boolean json = Optional.ofNullable(response.getHeaders().get("content-type"))
-                    .map(Header::getValue).map(ContentType::parse).map(ContentType::getMimeType)
+            boolean json = response.getHeaders().getContentType().map(ContentType::getMimeType)
                     .filter("application/json"::equals).isPresent();
 
             if (json && !compressed) {
