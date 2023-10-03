@@ -241,7 +241,7 @@ public class WebAuthnCredentialProvider implements CredentialProvider<WebAuthnCr
     }
 
     protected WebAuthnAuthenticationManager getWebAuthnAuthenticationManager() {
-        WebAuthnPolicy policy = session.getContext().getRealm().getWebAuthnPolicy();
+        WebAuthnPolicy policy = getWebAuthnPolicy();
         Set<Origin> origins = policy.getExtraOrigins().stream()
                 .map(Origin::new)
                 .collect(Collectors.toSet());
@@ -260,6 +260,10 @@ public class WebAuthnCredentialProvider implements CredentialProvider<WebAuthnCr
             }
         });
         return webAuthnAuthenticationManager;
+    }
+
+    protected WebAuthnPolicy getWebAuthnPolicy() {
+        return session.getContext().getRealm().getWebAuthnPolicy();
     }
 
     @Override
