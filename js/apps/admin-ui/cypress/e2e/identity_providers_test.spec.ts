@@ -353,6 +353,7 @@ describe("Identity provider test", () => {
       advancedSettings.assertClaimValueInputEqual("claim-value");
 
       cy.findByTestId("idp-details-save").click();
+      masthead.checkNotificationMessage("Provider successfully updated");
     });
 
     it("should revert and save options", () => {
