@@ -16,7 +16,6 @@ import { useFetch } from "../../utils/useFetch";
 import type { ComponentProps } from "../dynamic/components";
 
 type ClientSelectProps = ComponentProps & {
-  namespace: string;
 };
 
 export const ClientSelect = ({
@@ -24,11 +23,10 @@ export const ClientSelect = ({
   label,
   helpText,
   defaultValue,
-  namespace,
   isDisabled = false,
   required = false,
 }: ClientSelectProps) => {
-  const { t } = useTranslation(namespace);
+  const { t } = useTranslation();
   const {
     control,
     formState: { errors },
@@ -66,12 +64,7 @@ export const ClientSelect = ({
     <FormGroup
       label={t(label!)}
       isRequired={required}
-      labelIcon={
-        <HelpItem
-          helpText={t(helpText!)}
-          fieldLabelId={`${namespace}:${label}`}
-        />
-      }
+      labelIcon={<HelpItem helpText={t(helpText!)} fieldLabelId={label!} />}
       fieldId={name!}
       validated={errors[name!] ? "error" : "default"}
       helperTextInvalid={t("required")}

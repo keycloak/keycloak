@@ -209,7 +209,6 @@ const AuthorizationEvaluateContent = ({ client }: Props) => {
               <ClientSelect
                 name="client"
                 label="client"
-                namespace="clients"
                 helpText={"clientHelp"}
                 defaultValue={client.clientId}
               />
