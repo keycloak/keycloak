@@ -51,8 +51,7 @@
       "access": {
         "view": true,
         "configure": true,
-        "manage": true,
-        "delete": true
+        "manage": true
       }
     }
   ]
