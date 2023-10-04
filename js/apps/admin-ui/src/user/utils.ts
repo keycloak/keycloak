@@ -12,7 +12,7 @@ export const label = (attribute: UserProfileAttribute, t: TFunction) =>
 
 const ROOT_ATTRIBUTES = ["username", "firstName", "lastName", "email"];
 
-const isRootAttribute = (attr?: string) =>
+export const isRootAttribute = (attr?: string) =>
   attr && ROOT_ATTRIBUTES.includes(attr);
 
 export const fieldName = (attribute: UserProfileAttribute) =>

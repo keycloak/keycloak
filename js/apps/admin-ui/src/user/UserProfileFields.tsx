@@ -11,7 +11,7 @@ import { SelectComponent } from "./components/SelectComponent";
 import { TextAreaComponent } from "./components/TextAreaComponent";
 import { TextComponent } from "./components/TextComponent";
 import { UserFormFields } from "./form-state";
-import { fieldName } from "./utils";
+import { fieldName, isRootAttribute } from "./utils";
 
 export type UserProfileError = {
   responseData: { errors?: { errorMessage: string }[] };
@@ -147,6 +147,11 @@ function determineInputType(
   attribute: UserProfileAttribute,
   value: string | string[],
 ): InputType {
+  // Always treat the root attributes as a text field.
+  if (isRootAttribute(attribute.name)) {
+    return "text";
+  }
+
   const inputType = attribute.annotations?.inputType;
 
   // If the attribute has no valid input type, it is always multi-valued.
