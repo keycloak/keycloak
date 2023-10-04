@@ -102,8 +102,6 @@ export const RealmOverrides = ({
     setTableKey(tableKey + 1);
   };
 
-  console.log(">>> selectedKey ", selectedKey);
-
   useFetch(
     async () => {
       let result = await adminClient.realms
@@ -116,7 +114,6 @@ export const RealmOverrides = ({
             getValues("defaultLocale") ||
             whoAmI.getLocale(),
         })
-        // prevents server error in dev mode due to snowpack
         .catch(() => []);
 
       const searchInBundles = (idx: number) => {
@@ -338,13 +335,10 @@ export const RealmOverrides = ({
     if (isSelected) {
       const updatedTableRows = [...tableRows];
       updatedTableRows[rowIndex].isSelected = isSelected;
-      setSelectedRows((prevSelected) => [
-        ...prevSelected,
-        updatedTableRows[rowIndex],
-      ]);
+      setSelectedRows((prevSelected) => [...prevSelected, rowIndex]);
     } else {
       setSelectedRows((prevSelected) =>
-        prevSelected.filter((row) => row !== tableRows[rowIndex]),
+        prevSelected.filter((rowIndex) => rowIndex !== rowIndex),
       );
     }
   };
@@ -472,7 +466,7 @@ export const RealmOverrides = ({
                   (tableRows[rowIndex].cells?.[0] as IRowCell).props.value,
                 );
               }}
-              // canSelectAll={canSelectAll}
+              canSelectAll
               selectVariant="checkbox"
               onRowEdit={(_, type, _b, rowIndex, validation) =>
                 updateEditableRows(type, rowIndex, validation)
