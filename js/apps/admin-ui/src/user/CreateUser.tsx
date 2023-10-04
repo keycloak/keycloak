@@ -91,16 +91,14 @@ export default function CreateUser() {
         titleKey={t("createUser")}
         className="kc-username-view-header"
       />
-      <PageSection variant="light" className="pf-u-p-0">
-        <PageSection variant="light">
-          <UserForm
-            form={form}
-            realm={realm}
-            userProfileMetadata={userProfileMetadata}
-            onGroupsUpdate={setAddedGroups}
-            save={save}
-          />
-        </PageSection>
+      <PageSection variant="light">
+        <UserForm
+          form={form}
+          realm={realm}
+          userProfileMetadata={userProfileMetadata}
+          onGroupsUpdate={setAddedGroups}
+          save={save}
+        />
       </PageSection>
     </>
   );
