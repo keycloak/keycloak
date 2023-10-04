@@ -4,6 +4,7 @@ import type {
   UserProfileMetadata,
 } from "@keycloak/keycloak-admin-client/lib/defs/userProfileMetadata";
 import { Text } from "@patternfly/react-core";
+import { useMemo } from "react";
 import { FieldPath, UseFormReturn } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
@@ -99,23 +100,37 @@ export const UserProfileFields = ({
   hideReadOnly = false,
 }: UserProfileFieldsProps) => {
   const { t } = useTranslation();
-  // Hide read-only attributes if 'hideReadOnly' is enabled.
-  const attributes = hideReadOnly
-    ? userProfileMetadata.attributes?.filter(({ readOnly }) => !readOnly)
-    : userProfileMetadata.attributes;
-  const groups = userProfileMetadata.groups ?? [];
-  const groupsWithAttributes = [
-    { name: undefined },
-    ...groups,
-  ].map<GroupWithAttributes>((group) => {
-    const groupAttributes =
-      attributes?.filter((attribute) => attribute.group === group.name) ?? [];
+  // Group attributes by group, for easier rendering.
+  const groupsWithAttributes = useMemo(() => {
+    // If there are no attributes, there is no need to group them.
+    if (!userProfileMetadata.attributes) {
+      return [];
+    }
 
-    return {
+    // Hide read-only attributes if 'hideReadOnly' is enabled.
+    const attributes = hideReadOnly
+      ? userProfileMetadata.attributes.filter(({ readOnly }) => !readOnly)
+      : userProfileMetadata.attributes;
+
+    return [
+      // Insert an empty group for attributes without a group.
+      { name: undefined },
+      ...(userProfileMetadata.groups ?? []),
+    ].map<GroupWithAttributes>((group) => ({
       group,
-      attributes: groupAttributes,
-    };
-  });
+      attributes: attributes.filter(
+        (attribute) => attribute.group === group.name,
+      ),
+    }));
+  }, [
+    hideReadOnly,
+    userProfileMetadata.groups,
+    userProfileMetadata.attributes,
+  ]);
+
+  if (groupsWithAttributes.length === 0) {
+    return null;
+  }
 
   return (
     <ScrollForm
