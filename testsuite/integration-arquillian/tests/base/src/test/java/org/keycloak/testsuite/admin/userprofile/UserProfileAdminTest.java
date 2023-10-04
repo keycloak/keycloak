@@ -21,12 +21,15 @@ package org.keycloak.testsuite.admin.userprofile;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.keycloak.userprofile.DeclarativeUserProfileProvider.REALM_USER_PROFILE_ENABLED;
 import static org.keycloak.userprofile.config.UPConfigUtils.readDefaultConfig;
 
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import org.junit.Test;
 import org.keycloak.admin.client.resource.RealmResource;
@@ -34,9 +37,14 @@ import org.keycloak.admin.client.resource.UserProfileResource;
 import org.keycloak.common.Profile;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.representations.idm.UserProfileAttributeGroupMetadata;
 import org.keycloak.representations.idm.UserProfileMetadata;
 import org.keycloak.testsuite.admin.AbstractAdminTest;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
+import org.keycloak.userprofile.config.UPAttribute;
+import org.keycloak.userprofile.config.UPConfig;
+import org.keycloak.userprofile.config.UPGroup;
+import org.keycloak.util.JsonSerialization;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -129,5 +137,40 @@ public class UserProfileAdminTest extends AbstractAdminTest {
         UserProfileResource userProfile = realm.users().userProfile();
         UserProfileMetadata metadata = userProfile.getMetadata();
         assertFalse(metadata.getAttributeMetadata(UserModel.USERNAME).isRequired());
+    }
+
+    @Test
+    public void testGroupsMetadata() throws IOException {
+        UPConfig config = JsonSerialization.readValue(testRealm().users().userProfile().getConfiguration(), UPConfig.class);
+
+        for (int i = 0; i < 3; i++) {
+            UPGroup group = new UPGroup();
+            group.setName("name-" + i);
+            group.setDisplayHeader("displayHeader-" + i);
+            group.setDisplayDescription("displayDescription-" + i);
+            group.setAnnotations(Map.of("k1", "v1", "k2", "v2", "k3", "v3"));
+            config.addGroup(group);
+        }
+
+        UPAttribute firstName = config.getAttribute(UserModel.FIRST_NAME);
+        firstName.setGroup(config.getGroups().get(0).getName());
+        UserProfileResource userProfile = testRealm().users().userProfile();
+        userProfile.update(JsonSerialization.writeValueAsString(config));
+        getCleanup().addCleanup(() -> testRealm().users().userProfile().update(null));
+
+        UserProfileMetadata metadata = testRealm().users().userProfile().getMetadata();
+        List<UserProfileAttributeGroupMetadata> groups = metadata.getGroups();
+        assertNotNull(groups);
+        assertFalse(groups.isEmpty());
+        assertEquals(config.getGroups().size(), groups.size());
+        for (UPGroup group : config.getGroups()) {
+            UserProfileAttributeGroupMetadata mGroup = metadata.getAttributeGroupMetadata(group.getName());
+            assertNotNull(mGroup);
+            assertEquals(group.getName(), mGroup.getName());
+            assertEquals(group.getDisplayHeader(), mGroup.getDisplayHeader());
+            assertEquals(group.getDisplayDescription(), mGroup.getDisplayDescription());
+            assertEquals(group.getAnnotations().size(), mGroup.getAnnotations().size());
+        }
+        assertEquals(config.getGroups().get(0).getName(), metadata.getAttributeMetadata(UserModel.FIRST_NAME).getGroup());
     }
 }

@@ -60,4 +60,14 @@ public class UserProfileMetadata {
 
         return null;
     }
+
+    public UserProfileAttributeGroupMetadata getAttributeGroupMetadata(String name) {
+        for (UserProfileAttributeGroupMetadata m : Optional.ofNullable(getGroups()).orElse(emptyList())) {
+            if (m.getName().equals(name)) {
+                return m;
+            }
+        }
+
+        return null;
+    }
 }

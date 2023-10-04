@@ -143,10 +143,17 @@ public class UserProfileResource {
     }
 
     private static UserProfileAttributeMetadata toRestMetadata(AttributeMetadata am, KeycloakSession session, UserProfile profile) {
+        String group = null;
+
+        if (am.getAttributeGroupMetadata() != null) {
+            group = am.getAttributeGroupMetadata().getName();
+        }
+
         return new UserProfileAttributeMetadata(am.getName(),
                 am.getAttributeDisplayName(),
                 profile.getAttributes().isRequired(am.getName()),
                 profile.getAttributes().isReadOnly(am.getName()),
+                group,
                 am.getAnnotations(),
                 toValidatorMetadata(am, session));
     }
